@@ -14,6 +14,11 @@ run() {
   trap 'popd' EXIT
 
   for url in $(curl https://api.github.com/repos/microsoft/ripgrep-prebuilt/releases/tags/$VERSION 2>/dev/null | jq -r '.assets[] | .browser_download_url'); do
+    # skip obscure platforms
+    if [[ "$url" == *"powerpc64le"* ]] || [[ "$url" == *"s390x"* ]] || [[ "$url" == *"i686"* ]]; then
+      continue
+    fi
+
     # filter out files that don't match the filter
     if [ -n "$FILTER" ] && [[ "$url" != *"$FILTER"* ]]; then
       continue

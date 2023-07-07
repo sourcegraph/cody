@@ -1,17 +1,13 @@
 {
-  "extends": "../../tsconfig.base.json",
+  "extends": "../tsconfig.base.json",
   "compilerOptions": {
     "rootDir": ".",
-    "sourceRoot": "src",
-    "outDir": "out",
+    "outDir": "dist",
     "jsx": "react-jsx",
+    "lib": ["ESNext", "DOM"],
+    "types": ["vitest/globals"],
   },
-  "include": ["src", "vite.config.ts", "package.json", ".eslintrc.js", "jest.config.js"],
-  "exclude": ["out", "dist"],
-  "references": [
-    { "path": "../cody-shared" },
-    { "path": "../cody-ui" },
-    { "path": "../common" },
-    { "path": "../wildcard" },
-  ],
+  "include": ["src", "vite.config.ts", ".eslintrc.js"],
+  "exclude": ["dist"],
+  "references": [{ "path": "../lib/shared" }, { "path": "../lib/ui" }],
 }

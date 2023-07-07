@@ -1,8 +1,7 @@
-import { useState, useCallback, useMemo } from 'react'
-
-import { isErrorLike } from '@sourcegraph/common'
+import { useCallback, useMemo, useState } from 'react'
 
 import { CodebaseContext } from '../codebase-context'
+import { isErrorLike } from '../common'
 import { ConfigurationWithAccessToken } from '../configuration'
 import { Editor, NoopEditor } from '../editor'
 import { PrefilledOptions, withPreselectedOptions } from '../editor/withPreselectedOptions'

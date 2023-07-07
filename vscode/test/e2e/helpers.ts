@@ -2,7 +2,7 @@ import { mkdir, mkdtempSync, rmdirSync, writeFile } from 'fs'
 import { tmpdir } from 'os'
 import * as path from 'path'
 
-import { Frame, Page, test as base } from '@playwright/test'
+import { test as base, Frame, Page } from '@playwright/test'
 import { downloadAndUnzipVSCode } from '@vscode/test-electron'
 import { _electron as electron } from 'playwright'
 
@@ -15,7 +15,7 @@ export const test = base
 
             const codyRoot = path.resolve(__dirname, '..', '..')
 
-            const vscodeExecutablePath = await downloadAndUnzipVSCode('1.78.2')
+            const vscodeExecutablePath = await downloadAndUnzipVSCode('1.79.2')
             const extensionDevelopmentPath = codyRoot
 
             const userDataDirectory = mkdtempSync(path.join(tmpdir(), 'cody-vsce'))

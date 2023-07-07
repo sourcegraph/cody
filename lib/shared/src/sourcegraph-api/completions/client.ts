@@ -1,6 +1,6 @@
 import { ConfigurationWithAccessToken } from '../../configuration'
 
-import { Event, CompletionCallbacks, CompletionParameters, CompletionResponse } from './types'
+import { CompletionCallbacks, CompletionParameters, CompletionResponse, Event } from './types'
 
 export interface CompletionLogger {
     startCompletion(params: CompletionParameters | {}):

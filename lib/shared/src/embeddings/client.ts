@@ -1,4 +1,4 @@
-import { SourcegraphGraphQLAPIClient, EmbeddingsSearchResults } from '../sourcegraph-api/graphql'
+import { EmbeddingsSearchResults, SourcegraphGraphQLAPIClient } from '../sourcegraph-api/graphql'
 
 import { EmbeddingsSearch } from '.'
 

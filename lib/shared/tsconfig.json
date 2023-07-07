@@ -1,12 +1,12 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "module": "commonjs",
-    "rootDir": ".",
-    "sourceRoot": "src",
-    "outDir": "out",
+    "module": "ESNext",
+    "rootDir": "src",
+    "outDir": "dist",
+    "lib": ["ESNext", "DOM.Iterable"],
+    "types": ["vitest/globals"],
   },
-  "include": ["**/*", ".*", "package.json"],
-  "exclude": ["out"],
-  "references": [{ "path": "../common" }, { "path": "../http-client" }],
+  "include": ["src"],
+  "exclude": ["dist"],
 }

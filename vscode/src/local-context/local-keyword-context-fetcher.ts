@@ -8,7 +8,7 @@ import winkUtils from 'wink-nlp-utils'
 
 import { ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
 import { Editor } from '@sourcegraph/cody-shared/src/editor'
-import { KeywordContextFetcher, ContextResult } from '@sourcegraph/cody-shared/src/local-context'
+import { ContextResult, KeywordContextFetcher } from '@sourcegraph/cody-shared/src/local-context'
 
 import { logEvent } from '../event-logger'
 import { debug } from '../log'
@@ -94,6 +94,7 @@ export class LocalKeywordContextFetcher implements KeywordContextFetcher {
     /**
      * Returns pieces of context relevant for the given query. Uses a keyword-search-based
      * approach.
+     *
      * @param query user query
      * @param numResults the number of context results to return
      * @returns a list of context results, sorted in *reverse* order (that is,

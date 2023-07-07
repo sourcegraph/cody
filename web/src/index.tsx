@@ -2,8 +2,7 @@ import React from 'react'
 
 import ReactDOM from 'react-dom/client'
 
-import { PromptMixin, languagePromptMixin } from '@sourcegraph/cody-shared/src/prompt/prompt-mixin'
-import { WildcardThemeContext } from '@sourcegraph/wildcard'
+import { languagePromptMixin, PromptMixin } from '@sourcegraph/cody-shared/src/prompt/prompt-mixin'
 
 import { App } from './App'
 
@@ -12,8 +11,6 @@ import './index.css'
 PromptMixin.add(languagePromptMixin(navigator.language))
 ReactDOM.createRoot(document.querySelector('#root') as HTMLElement).render(
     <React.StrictMode>
-        <WildcardThemeContext.Provider value={{ isBranded: true }}>
-            <App />
-        </WildcardThemeContext.Provider>
+        <App />
     </React.StrictMode>
 )

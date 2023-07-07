@@ -16,7 +16,7 @@ import * as CompletionLogger from './logger'
 import { detectMultilineMode } from './multiline'
 import { Provider, ProviderConfig } from './providers/provider'
 import { sharedPostProcess } from './shared-post-process'
-import { SNIPPET_WINDOW_SIZE, isAbortError } from './utils'
+import { isAbortError, SNIPPET_WINDOW_SIZE } from './utils'
 
 interface CodyCompletionItemProviderConfig {
     providerConfig: ProviderConfig
@@ -109,7 +109,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
     ): Promise<vscode.InlineCompletionItem[]> {
         try {
             return await this.provideInlineCompletionItemsInner(document, position, context, token)
-        } catch (error) {
+        } catch (error: any) {
             this.stopLoading()
 
             if (isAbortError(error)) {

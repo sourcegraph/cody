@@ -6,7 +6,7 @@ import { ChatContextStatus } from '@sourcegraph/cody-shared/src/chat/context'
 import { ChatHistory, ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { Configuration } from '@sourcegraph/cody-shared/src/configuration'
 
-import { AuthStatus, LocalEnv, defaultAuthStatus } from '../src/chat/protocol'
+import { AuthStatus, defaultAuthStatus, LocalEnv } from '../src/chat/protocol'
 
 import { Chat } from './Chat'
 import { Debug } from './Debug'

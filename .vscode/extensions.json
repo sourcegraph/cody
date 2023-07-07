@@ -1,0 +1,10 @@
+{
+  "recommendations": [
+    "sourcegraph.cody-ai",
+    "editorconfig.editorconfig",
+    "esbenp.prettier-vscode",
+    "ecmel.vscode-html-css",
+    "dbaeumer.vscode-eslint",
+    "stylelint.vscode-stylelint"
+  ]
+}

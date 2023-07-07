@@ -2,7 +2,7 @@ import path from 'path'
 
 import * as vscode from 'vscode'
 
-import { JaccardMatch, bestJaccardMatch } from './bestJaccardMatch'
+import { bestJaccardMatch, JaccardMatch } from './bestJaccardMatch'
 import type { ReferenceSnippet } from './context'
 import { History } from './history'
 

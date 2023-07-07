@@ -2,15 +2,15 @@ import React, { useState } from 'react'
 
 import classNames from 'classnames'
 
-import { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
+import { ChatMessage } from '@sourcegraph/cody-shared'
 
 import {
+    ChatButtonProps,
+    ChatUISubmitButtonProps,
     ChatUITextAreaProps,
+    CopyButtonProps,
     EditButtonProps,
     FeedbackButtonsProps,
-    CopyButtonProps,
-    ChatUISubmitButtonProps,
-    ChatButtonProps,
 } from '../Chat'
 
 import { BlinkingCursor } from './BlinkingCursor'

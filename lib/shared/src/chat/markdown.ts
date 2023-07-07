@@ -1,6 +1,6 @@
 import { marked } from 'marked'
 
-import { registerHighlightContributions, renderMarkdown as renderMarkdownCommon } from '@sourcegraph/common'
+import { registerHighlightContributions, renderMarkdown as renderMarkdownCommon } from '../common/markdown'
 
 /**
  * Supported URIs to render as links in outputted markdown.

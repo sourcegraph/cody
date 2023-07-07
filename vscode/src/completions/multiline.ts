@@ -1,6 +1,6 @@
 import detectIndent from 'detect-indent'
 
-import { PrefixComponents, getEditorTabSize, indentation } from './text-processing'
+import { getEditorTabSize, indentation, PrefixComponents } from './text-processing'
 
 const BRACKET_PAIR = {
     '(': ')',

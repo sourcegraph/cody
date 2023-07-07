@@ -1,0 +1,8 @@
+**/*.js
+**/*.jsx
+**/*.ts
+**/*.tsx
+**/*.svg
+node_modules/
+__mocks__/
+dist/

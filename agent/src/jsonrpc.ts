@@ -133,7 +133,7 @@ class MessageDecoder extends Writable {
                         this.contentBuffer = Buffer.alloc(0)
                         this.contentLengthRemaining = null
                         this.callback(null, data)
-                    } catch (error) {
+                    } catch (error: any) {
                         this.callback(error, null)
                     }
 

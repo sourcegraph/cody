@@ -70,7 +70,7 @@ export class OpenAICompletionsClient implements Pick<SourcegraphCompletionsClien
                                 }
 
                                 buffer = buffer.slice(Math.max(0, buffer.indexOf(payload) + payload.length))
-                            } catch (error) {
+                            } catch (error: any) {
                                 if (error instanceof SyntaxError && buffer.length > 0) {
                                     // Incomplete JSON string, wait for more data
                                     continue

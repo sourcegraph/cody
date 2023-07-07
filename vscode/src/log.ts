@@ -1,4 +1,4 @@
-import vscode from 'vscode'
+import * as vscode from 'vscode'
 
 import { CompletionLogger } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/client'
 import {

@@ -1,0 +1,24 @@
+{
+  "version": "0.1.0",
+  "configurations": [
+    {
+      "name": "Launch VS Code Extension",
+      "type": "extensionHost",
+      "request": "launch",
+      "runtimeExecutable": "${execPath}",
+      "preLaunchTask": "Build VS Code Extension",
+      "args": [
+        "--extensionDevelopmentPath=${workspaceRoot}/vscode",
+        "--disable-extension=sourcegraph.cody-ai",
+        "--disable-extension=github.copilot",
+        "--disable-extension=github.copilot-nightly"
+      ],
+      "sourceMaps": true,
+      "outFiles": ["${workspaceRoot}/vscode/dist/**/*.js"],
+      "env": {
+        "NODE_ENV": "development",
+        "CODY_FOCUS_ON_STARTUP": "1"
+      }
+    }
+  ]
+}

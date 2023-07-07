@@ -6,7 +6,7 @@ import { toPartialUtf8String } from '../utils'
 
 import { SourcegraphCompletionsClient } from './client'
 import { parseEvents } from './parse'
-import { CompletionParameters, CompletionCallbacks, CompletionResponse } from './types'
+import { CompletionCallbacks, CompletionParameters, CompletionResponse } from './types'
 
 export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClient {
     public async complete(params: CompletionParameters, abortSignal: AbortSignal): Promise<CompletionResponse> {

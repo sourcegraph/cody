@@ -1,3 +1,5 @@
+import fetch from 'isomorphic-fetch'
+
 import { Completion } from '..'
 import { logger } from '../../log'
 import { isAbortError } from '../utils'
@@ -67,7 +69,7 @@ export class UnstableHuggingFaceProvider extends Provider {
                 prefix: this.prefix,
                 content,
             }))
-        } catch (error) {
+        } catch (error: any) {
             if (!isAbortError(error)) {
                 log?.onError(error)
             }

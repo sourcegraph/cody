@@ -24,8 +24,8 @@ export class InlineController {
         placeHolder:
             'Examples: "How can I improve this?", "/fix convert tabs to spaces", "/touch Create 5 different versions of this function". "What does this regex do?"',
     }
-    private readonly codyIcon: vscode.Uri = getIconPath('cody', this.extensionPath)
-    private readonly userIcon: vscode.Uri = getIconPath('user', this.extensionPath)
+    private readonly codyIcon: vscode.Uri
+    private readonly userIcon: vscode.Uri
     private _disposables: vscode.Disposable[] = []
     // Constroller State
     private commentController: vscode.CommentController | null = null
@@ -46,6 +46,8 @@ export class InlineController {
     private codeLenses: Map<string, CodeLensProvider> = new Map()
 
     constructor(private extensionPath: string) {
+        this.codyIcon = getIconPath('cody', this.extensionPath)
+        this.userIcon = getIconPath('user', this.extensionPath)
         this.commentController = this.init()
         this._disposables.push(this.commentController)
         // Toggle Inline Chat on Config Change

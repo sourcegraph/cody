@@ -1,3 +1,4 @@
+import fetch from 'isomorphic-fetch'
 import * as vscode from 'vscode'
 
 import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
@@ -6,13 +7,13 @@ import { isError } from '@sourcegraph/cody-shared/src/utils'
 
 import {
     AuthStatus,
-    DOTCOM_URL,
-    LOCAL_APP_URL,
     defaultAuthStatus,
-    isLocalApp,
-    isLoggedIn as isAuthed,
-    unauthenticatedStatus,
+    DOTCOM_URL,
     ExtensionMessage,
+    isLoggedIn as isAuthed,
+    isLocalApp,
+    LOCAL_APP_URL,
+    unauthenticatedStatus,
 } from '../chat/protocol'
 import { newAuthStatus } from '../chat/utils'
 import { logEvent } from '../event-logger'

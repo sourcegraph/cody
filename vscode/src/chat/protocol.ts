@@ -57,7 +57,7 @@ export const CODY_DOC_URL = new URL('https://docs.sourcegraph.com/cody')
 // Community and support
 export const DISCORD_URL = new URL('https://discord.gg/s2qDtYGnAE')
 export const CODY_FEEDBACK_URL = new URL(
-    'https://github.com/sourcegraph/sourcegraph/discussions/new?category=product-feedback&labels=cody,cody/vscode'
+    'https://github.com/sourcegraph/cody/discussions/new?category=product-feedback&labels=vscode'
 )
 // APP
 export const LOCAL_APP_URL = new URL('http://localhost:3080')

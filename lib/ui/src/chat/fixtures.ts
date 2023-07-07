@@ -1,4 +1,4 @@
-import { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
+import { ChatMessage } from '@sourcegraph/cody-shared'
 
 export const FIXTURE_TRANSCRIPT: Record<string, ChatMessage[]> = {
     simple: [
@@ -26,8 +26,8 @@ export const FIXTURE_TRANSCRIPT: Record<string, ChatMessage[]> = {
             speaker: 'assistant',
             displayText: 'This code generates a random 32-character string (nonce) using characters A-Z, a-z, and 0-9.',
             contextFiles: [
-                { fileName: 'client/cody/src/chat/ChatViewProvider.ts' },
-                { fileName: 'client/cody-shared/src/timestamp.ts' },
+                { fileName: 'vscode/src/chat/ChatViewProvider.ts' },
+                { fileName: 'lib/shared/src/timestamp.ts' },
             ],
         },
         {

@@ -1,28 +1,27 @@
 import fetch from 'isomorphic-fetch'
 
-import { buildGraphQLUrl } from '@sourcegraph/http-client'
-
 import { ConfigurationWithAccessToken } from '../../configuration'
 import { isError } from '../../utils'
 
 import {
+    CURRENT_SITE_CODY_LLM_CONFIGURATION,
+    CURRENT_SITE_GRAPHQL_FIELDS_QUERY,
+    CURRENT_SITE_HAS_CODY_ENABLED_QUERY,
+    CURRENT_SITE_VERSION_QUERY,
+    CURRENT_USER_ID_AND_VERIFIED_EMAIL_QUERY,
     CURRENT_USER_ID_QUERY,
+    GET_CODY_CONTEXT_QUERY,
     IS_CONTEXT_REQUIRED_QUERY,
+    LEGACY_SEARCH_EMBEDDINGS_QUERY,
+    LOG_EVENT_MUTATION,
+    REPOSITORY_EMBEDDING_EXISTS_QUERY,
     REPOSITORY_ID_QUERY,
     REPOSITORY_IDS_QUERY,
     REPOSITORY_NAMES_QUERY,
     SEARCH_ATTRIBUTION_QUERY,
     SEARCH_EMBEDDINGS_QUERY,
-    LEGACY_SEARCH_EMBEDDINGS_QUERY,
-    LOG_EVENT_MUTATION,
-    REPOSITORY_EMBEDDING_EXISTS_QUERY,
-    CURRENT_USER_ID_AND_VERIFIED_EMAIL_QUERY,
-    CURRENT_SITE_VERSION_QUERY,
-    CURRENT_SITE_HAS_CODY_ENABLED_QUERY,
-    CURRENT_SITE_GRAPHQL_FIELDS_QUERY,
-    GET_CODY_CONTEXT_QUERY,
-    CURRENT_SITE_CODY_LLM_CONFIGURATION,
 } from './queries'
+import { buildGraphQLUrl } from './url'
 
 interface APIResponse<T> {
     data?: T
@@ -329,7 +328,7 @@ export class SourcegraphGraphQLAPIClient {
                     ),
                 ])
             }
-        } catch (error) {
+        } catch (error: any) {
             return error
         }
     }
@@ -408,7 +407,7 @@ export class SourcegraphGraphQLAPIClient {
     }
 
     // make an anonymous request to the dotcom API
-    private async fetchSourcegraphDotcomAPI<T>(query: string, variables: Record<string, any>): Promise<T | Error> {
+    private fetchSourcegraphDotcomAPI<T>(query: string, variables: Record<string, any>): Promise<T | Error> {
         const url = buildGraphQLUrl({ request: query, baseUrl: this.dotcomUrl })
         return fetch(url, {
             method: 'POST',

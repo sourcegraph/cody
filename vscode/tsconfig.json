@@ -1,12 +1,12 @@
 {
-  "extends": "../../tsconfig.base.json",
+  "extends": "../tsconfig.base.json",
   "compilerOptions": {
     "sourceMap": true,
     "rootDir": ".",
-    "sourceRoot": "src",
-    "outDir": "out",
+    "outDir": "dist",
     "jsx": "react-jsx",
-    "types": ["jest"],
+    "lib": ["ESNext", "DOM"],
+    "types": ["vitest/globals"],
   },
   "include": [
     "src",
@@ -18,8 +18,8 @@
     "webpack.config.js",
     "package.json",
     ".eslintrc.js",
-    "jest.config.js",
+    ".storybook/*.ts",
   ],
-  "exclude": ["scripts", "out", "dist", "test/integration"],
-  "references": [{ "path": "../cody-shared" }, { "path": "../cody-ui" }],
+  "exclude": ["scripts", "dist", "test/integration"],
+  "references": [{ "path": "../lib/shared" }, { "path": "../lib/ui" }],
 }

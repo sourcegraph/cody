@@ -3,12 +3,11 @@
   "compilerOptions": {
     "sourceMap": true,
     "rootDir": ".",
-    "sourceRoot": ".",
-    "outDir": "../../out/test/integration",
+    "outDir": "../../dist/test/integration",
     "types": ["mocha", "node"],
     "jsx": "react-jsx",
   },
   "references": [{ "path": "../../" }],
   "include": ["*", "**/*", "../fixtures/mock-server.ts"],
-  "exclude": ["out", "testdata"],
+  "exclude": ["dist", "testdata"],
 }

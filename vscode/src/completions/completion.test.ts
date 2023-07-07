@@ -5,13 +5,13 @@ import {
     CompletionResponse,
 } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
 
-import { mockVSCodeExports } from '../testutils/vscode'
+import { vsCodeMocks } from '../testutils/mocks'
 
 import { CodyCompletionItemProvider } from '.'
 import { createProviderConfig } from './providers/anthropic'
 
-jest.mock('vscode', () => ({
-    ...mockVSCodeExports(),
+vi.mock('vscode', () => ({
+    ...vsCodeMocks,
     InlineCompletionTriggerKind: {
         Invoke: 0,
         Automatic: 1,
@@ -38,7 +38,7 @@ jest.mock('vscode', () => ({
     },
 }))
 
-jest.mock('./context-embeddings.ts', () => ({
+vi.mock('./context-embeddings.ts', () => ({
     getContextFromEmbeddings: () => [],
 }))
 
@@ -150,7 +150,7 @@ async function complete(
 
 /**
  * A helper function used so that the below code example can be intended in code but will have their
- * prefix stripped. This is similar to what Jest snapshots use but without the prettier hack so that
+ * prefix stripped. This is similar to what Vitest snapshots use but without the prettier hack so that
  * the starting ` is always in the same line as the function name :shrug:
  */
 function truncateMultilineString(string: string): string {
@@ -198,7 +198,7 @@ describe('Cody completions', () => {
         expect(requests).toHaveLength(3)
         const messages = requests[0]!.messages
         expect(messages[messages.length - 1]).toMatchInlineSnapshot(`
-            Object {
+            {
               "speaker": "assistant",
               "text": "Okay, here is some code: <CODE5711>constructor(startLine: number, startCharacter: number, endLine: number, endCharacter: number) {
                     this.startLine =",
@@ -219,7 +219,7 @@ describe('Cody completions', () => {
         ])
 
         expect(completions).toMatchInlineSnapshot(`
-            Array [
+            [
               InlineCompletionItem {
                 "insertText": "'bar'",
               },
@@ -237,7 +237,7 @@ describe('Cody completions', () => {
         ])
 
         expect(completions).toMatchInlineSnapshot(`
-            Array [
+            [
               InlineCompletionItem {
                 "insertText": "array) {",
               },
@@ -267,7 +267,7 @@ describe('Cody completions', () => {
         ])
 
         expect(completions).toMatchInlineSnapshot(`
-            Array [
+            [
               InlineCompletionItem {
                 "insertText": "array) {",
               },
@@ -295,7 +295,7 @@ describe('Cody completions', () => {
             createCompletionResponse('.      3'),
         ])
         expect(completions).toMatchInlineSnapshot(`
-            Array [
+            [
               InlineCompletionItem {
                 "insertText": "1",
               },
@@ -313,7 +313,7 @@ describe('Cody completions', () => {
             createCompletionResponse('-  2'),
         ])
         expect(completions2).toMatchInlineSnapshot(`
-            Array [
+            [
               InlineCompletionItem {
                 "insertText": "1",
               },
@@ -329,7 +329,7 @@ describe('Cody completions', () => {
             const { completions } = await complete(`const foo = ${CURSOR_MARKER}`, [createCompletionResponse(' 1')])
 
             expect(completions).toMatchInlineSnapshot(`
-                Array [
+                [
                   InlineCompletionItem {
                     "insertText": "1",
                   },
@@ -358,7 +358,7 @@ describe('Cody completions', () => {
             )
 
             expect(completions).toMatchInlineSnapshot(`
-                            Array [
+                            [
                               InlineCompletionItem {
                                 "insertText": "
                                     const unsortedArray = [4,3,78,2,0,2]
@@ -388,7 +388,7 @@ describe('Cody completions', () => {
             )
 
             expect(completions).toMatchInlineSnapshot(`
-                            Array [
+                            [
                               InlineCompletionItem {
                                 "insertText": "const unsortedArray = [4,3,78,2,0,2]
                                     const sortedArray = bubbleSort(unsortedArray)
@@ -406,7 +406,7 @@ describe('Cody completions', () => {
             ])
 
             expect(completions).toMatchInlineSnapshot(`
-                            Array [
+                            [
                               InlineCompletionItem {
                                 "insertText": "{
                                 console.log('Hello');
@@ -452,7 +452,7 @@ describe('Cody completions', () => {
             )
 
             expect(completions).toMatchInlineSnapshot(`
-                Array [
+                [
                   InlineCompletionItem {
                     "insertText": "if (foo) {
                             console.log('foo1');
@@ -481,7 +481,7 @@ describe('Cody completions', () => {
             )
 
             expect(completions).toMatchInlineSnapshot(`
-                Array [
+                [
                   InlineCompletionItem {
                     "insertText": "console.log('foo')",
                   },
@@ -801,7 +801,7 @@ describe('Cody completions', () => {
             )
 
             expect(completions).toMatchInlineSnapshot(`
-                Array [
+                [
                   InlineCompletionItem {
                     "insertText": "console.log('foo')
                     console.log('foo')

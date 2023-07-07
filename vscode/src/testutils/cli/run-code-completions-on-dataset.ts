@@ -16,7 +16,7 @@ import { getFullConfig } from '../../configuration'
 import { logger } from '../../log'
 import { InMemorySecretStorage } from '../../services/SecretStorageProvider'
 
-import { CURSOR, completionsDataset } from './completions-dataset'
+import { completionsDataset, CURSOR } from './completions-dataset'
 import { ENVIRONMENT_CONFIG } from './environment-config'
 import { findSubstringPosition } from './utils'
 import { TextDocument } from './vscode-text-document'
@@ -79,7 +79,7 @@ interface CompletionResult {
 }
 
 // TODO: use VSCode mocked APIs to provide context for the completions provider
-// See client/cody/src/completions/context.ts:10:23
+// See vscode/src/completions/context.ts:10:23
 async function generateCompletionsForDataset(codeSamples: string[]): Promise<void> {
     const completionsProvider = await initCompletionsProvider()
 

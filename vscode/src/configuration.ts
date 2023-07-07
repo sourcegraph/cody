@@ -1,8 +1,8 @@
 import * as vscode from 'vscode'
 
 import type {
-    ConfigurationUseContext,
     Configuration,
+    ConfigurationUseContext,
     ConfigurationWithAccessToken,
 } from '@sourcegraph/cody-shared/src/configuration'
 
@@ -10,7 +10,7 @@ import { DOTCOM_URL } from './chat/protocol'
 import { CONFIG_KEY, ConfigKeys } from './configuration-keys'
 import { logEvent } from './event-logger'
 import { LocalStorage } from './services/LocalStorageProvider'
-import { SecretStorage, getAccessToken } from './services/SecretStorageProvider'
+import { getAccessToken, SecretStorage } from './services/SecretStorageProvider'
 
 interface ConfigGetter {
     get<T>(section: typeof CONFIG_KEY[ConfigKeys], defaultValue?: T): T
@@ -32,7 +32,7 @@ export function getConfiguration(config: ConfigGetter): Configuration {
                 debugRegex = new RegExp(debugPattern)
             }
         }
-    } catch (error) {
+    } catch (error: any) {
         void vscode.window.showErrorMessage("Error parsing cody.debug.filter regex - using default '*'", error)
         debugRegex = new RegExp('.*')
     }

@@ -1,4 +1,4 @@
-import { cleanEnv, str, num } from 'envalid'
+import { cleanEnv, num, str } from 'envalid'
 import { HNSWLib } from 'langchain/vectorstores/hnswlib'
 
 import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'

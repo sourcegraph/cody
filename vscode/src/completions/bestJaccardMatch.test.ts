@@ -124,7 +124,7 @@ describe('bestJaccardMatch', () => {
 
     it('works with code snippets', () => {
         expect(bestJaccardMatch(targetSnippet, matchSnippet, 5)).toMatchInlineSnapshot(`
-            Object {
+            {
               "content": "describe('bestJaccardMatch', () => {
                 it('should return the best match', () => {
                     const matchText = [

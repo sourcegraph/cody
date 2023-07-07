@@ -1,12 +1,12 @@
 {
-  "extends": "../../tsconfig.base.json",
+  "extends": "../tsconfig.base.json",
   "compilerOptions": {
     "module": "commonjs",
     "rootDir": ".",
-    "sourceRoot": "src",
-    "outDir": "out",
+    "outDir": "dist",
+    "types": ["vitest/globals"],
   },
   "include": ["**/*", ".*", "package.json"],
-  "exclude": ["out"],
-  "references": [{ "path": "../common" }, { "path": "../cody-shared" }],
+  "exclude": ["dist"],
+  "references": [{ "path": "../lib/shared" }],
 }

@@ -8,13 +8,13 @@ import { ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
 import { getPreamble } from '@sourcegraph/cody-shared/src/chat/preamble'
 import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 import { Transcript } from '@sourcegraph/cody-shared/src/chat/transcript'
-import { ChatMessage, ChatHistory } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
+import { ChatHistory, ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { reformatBotMessage } from '@sourcegraph/cody-shared/src/chat/viewHelpers'
 import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
 import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
 import { Editor } from '@sourcegraph/cody-shared/src/editor'
 import { SourcegraphEmbeddingsSearchClient } from '@sourcegraph/cody-shared/src/embeddings/client'
-import { Guardrails, annotateAttribution } from '@sourcegraph/cody-shared/src/guardrails'
+import { annotateAttribution, Guardrails } from '@sourcegraph/cody-shared/src/guardrails'
 import { highlightTokens } from '@sourcegraph/cody-shared/src/hallucinations-detector'
 import { IntentDetector } from '@sourcegraph/cody-shared/src/intent-detector'
 import { ANSWER_TOKENS, DEFAULT_MAX_TOKENS } from '@sourcegraph/cody-shared/src/prompt/constants'
@@ -40,11 +40,11 @@ import { TestSupport } from '../test-support'
 import { fastFilesExist } from './fastFileFinder'
 import {
     ConfigurationSubsetForWebview,
+    defaultAuthStatus,
     DOTCOM_URL,
     ExtensionMessage,
-    WebviewMessage,
-    defaultAuthStatus,
     LocalEnv,
+    WebviewMessage,
 } from './protocol'
 import { getRecipe } from './recipes'
 import { convertGitCloneURLToCodebaseName } from './utils'
@@ -871,14 +871,14 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
             enableCommandUris: true,
         }
 
-        // Create Webview using client/cody/index.html
+        // Create Webview using vscode/index.html
         const root = vscode.Uri.joinPath(webviewPath, 'index.html')
         const bytes = await vscode.workspace.fs.readFile(root)
         const decoded = new TextDecoder('utf-8').decode(bytes)
         const resources = webviewView.webview.asWebviewUri(webviewPath)
 
         // Set HTML for webview
-        // This replace variables from the client/cody/dist/index.html with webview info
+        // This replace variables from the vscode/dist/index.html with webview info
         // 1. Update URIs to load styles and scripts into webview (eg. path that starts with ./)
         // 2. Update URIs for content security policy to only allow specific scripts to be run
         webviewView.webview.html = decoded

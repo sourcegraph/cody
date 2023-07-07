@@ -1,3 +1,5 @@
+import fetch from 'isomorphic-fetch'
+
 import { Completion } from '..'
 import { logger } from '../../log'
 import { ReferenceSnippet } from '../context'
@@ -60,7 +62,7 @@ export class UnstableCodeGenProvider extends Provider {
                 prefix: this.prefix,
                 content,
             }))
-        } catch (error) {
+        } catch (error: any) {
             if (!isAbortError(error)) {
                 log?.onError(error)
             }

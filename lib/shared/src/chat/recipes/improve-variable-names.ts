@@ -3,10 +3,10 @@ import { truncateText, truncateTextStart } from '../../prompt/truncation'
 import { Interaction } from '../transcript/interaction'
 
 import {
-    MARKDOWN_FORMAT_PROMPT,
-    getNormalizedLanguageName,
     getContextMessagesFromSelection,
     getFileExtension,
+    getNormalizedLanguageName,
+    MARKDOWN_FORMAT_PROMPT,
 } from './helpers'
 import { Recipe, RecipeContext, RecipeID } from './recipe'
 

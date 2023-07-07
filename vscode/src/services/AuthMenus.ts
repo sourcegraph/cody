@@ -1,6 +1,6 @@
 import * as vscode from 'vscode'
 
-import { isLocalApp, isDotCom } from '../chat/protocol'
+import { isDotCom, isLocalApp } from '../chat/protocol'
 
 export interface LoginMenuItem {
     id: string

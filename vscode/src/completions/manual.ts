@@ -5,12 +5,12 @@ import { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/s
 import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
 
 import { Completion } from '.'
-import { ReferenceSnippet, getContext } from './context'
+import { getContext, ReferenceSnippet } from './context'
 import { CompletionsDocumentProvider } from './docprovider'
 import { getCurrentDocContext } from './document'
 import { History } from './history'
 import { logCompletionEvent } from './logger'
-import { batchCompletions, sliceUntilFirstNLinesOfSuffixMatch, SNIPPET_WINDOW_SIZE, messagesToText } from './utils'
+import { batchCompletions, messagesToText, sliceUntilFirstNLinesOfSuffixMatch, SNIPPET_WINDOW_SIZE } from './utils'
 
 const LOG_MANUAL = { type: 'manual' }
 
@@ -120,7 +120,7 @@ export class ManualCompletionService {
                 llmOptions: null,
             })
             logCompletionEvent('suggested', LOG_MANUAL)
-        } catch (error) {
+        } catch (error: any) {
             if (error.message === 'aborted') {
                 return
             }

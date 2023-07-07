@@ -3,8 +3,7 @@ import React from 'react'
 import { mdiDatabaseCheckOutline, mdiDatabaseOffOutline, mdiDatabaseRemoveOutline } from '@mdi/js'
 import classNames from 'classnames'
 
-import { ChatContextStatus } from '@sourcegraph/cody-shared/src/chat/context'
-import { basename } from '@sourcegraph/common'
+import { basename, ChatContextStatus } from '@sourcegraph/cody-shared'
 
 import { Icon } from '../../utils/Icon'
 

@@ -44,7 +44,7 @@ async function isMusl(): Promise<boolean> {
     let stderr
     try {
         stderr = (await exec('ldd --version')).stderr
-    } catch (error) {
+    } catch (error: any) {
         stderr = error.stderr
     }
     if (stderr.indexOf('musl') > -1) {

@@ -1,7 +1,5 @@
 # Cody E2E Testing
 
-See the [client/cody/CONTRIBUTING.md](../../CONTRIBUTING.md) for more information.
-
 ### Commands
 
 #### All Tests

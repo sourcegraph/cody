@@ -1,5 +1,4 @@
-import { isErrorLike } from '@sourcegraph/common'
-
+import { isErrorLike } from '../common'
 import { SourcegraphGraphQLAPIClient } from '../sourcegraph-api/graphql'
 
 import { UnifiedContextFetcher, UnifiedContextFetcherResult } from '.'

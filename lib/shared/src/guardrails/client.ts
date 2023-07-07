@@ -1,7 +1,7 @@
 import { SourcegraphGraphQLAPIClient } from '../sourcegraph-api/graphql'
 import { isError } from '../utils'
 
-import { Guardrails, Attribution } from '.'
+import { Attribution, Guardrails } from '.'
 
 export class SourcegraphGuardrailsClient implements Guardrails {
     constructor(private client: SourcegraphGraphQLAPIClient) {}

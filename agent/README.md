@@ -39,10 +39,7 @@ Currently, clients have to manually write bindings for the JSON-RPC methods.
 
 ## Client implementations
 
-- The Sourcegraph JetBrains plugin is defined in the sibling directory
-  [`client/jetbrains`](../jetbrains/README.md). The file
-  [`CodyAgentClient.java`](../jetbrains/src/main/java/com/sourcegraph/agent/CodyAgentClient.java)
-  implements the client-side of the protocol.
+- The Sourcegraph JetBrains plugin is defined in the `sourcegraph` repository's `client/jetbrains` directory. The `CodyAgentClient.java` file implements the client side of the protocol.
 
 ## Miscellaneous notes
 

@@ -11,7 +11,7 @@ import { FixupScheduler } from './FixupScheduler'
 import { FixupTask, taskID } from './FixupTask'
 import { FixupTypingUI } from './FixupTypingUI'
 import { FixupFileCollection, FixupIdleTaskRunner, FixupTaskFactory, FixupTextChanged, IdleRecipeRunner } from './roles'
-import { TaskViewProvider, FixupTaskTreeItem } from './TaskViewProvider'
+import { FixupTaskTreeItem, TaskViewProvider } from './TaskViewProvider'
 import { CodyTaskState } from './utils'
 
 // This class acts as the factory for Fixup Tasks and handles communication between the Tree View and editor

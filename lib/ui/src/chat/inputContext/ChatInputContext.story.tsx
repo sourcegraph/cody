@@ -1,20 +1,19 @@
-import { ComponentStoryObj, Meta } from '@storybook/react'
+import { Meta, StoryObj } from '@storybook/react'
 
 import { ChatInputContext } from './ChatInputContext'
 
-const meta: Meta = {
-    title: 'cody-ui/ChatInputContext',
+const meta: Meta<typeof ChatInputContext> = {
+    title: 'ui/ChatInputContext',
     component: ChatInputContext,
 
     decorators: [
         story => (
             <div
                 style={{
-                    color: 'white',
                     maxWidth: '600px',
                     margin: '2rem auto',
                     padding: '1rem',
-                    border: 'solid 1px #ffffff33',
+                    border: 'solid 1px #ccc',
                 }}
             >
                 {story()}
@@ -25,35 +24,35 @@ const meta: Meta = {
 
 export default meta
 
-export const Empty: ComponentStoryObj<typeof ChatInputContext> = {
-    render: () => <ChatInputContext contextStatus={{}} />,
+export const Empty: StoryObj<typeof meta> = {
+    args: {
+        contextStatus: {},
+    },
 }
 
-export const CodebaseIndexed: ComponentStoryObj<typeof ChatInputContext> = {
-    render: () => (
-        <ChatInputContext
-            contextStatus={{ codebase: 'github.com/sourcegraph/about', mode: 'embeddings', connection: true }}
-        />
-    ),
+export const CodebaseIndexed: StoryObj<typeof meta> = {
+    args: {
+        contextStatus: { codebase: 'github.com/sourcegraph/about', mode: 'embeddings', connection: true },
+    },
 }
 
-export const CodebaseError: ComponentStoryObj<typeof ChatInputContext> = {
-    render: () => <ChatInputContext contextStatus={{ codebase: 'github.com/sourcegraph/about' }} />,
+export const CodebaseError: StoryObj<typeof meta> = {
+    args: {
+        contextStatus: { codebase: 'github.com/sourcegraph/about' },
+    },
 }
 
-export const CodebaseAndFile: ComponentStoryObj<typeof ChatInputContext> = {
-    render: () => (
-        <ChatInputContext
-            contextStatus={{
-                codebase: 'github.com/sourcegraph/about',
-                filePath: 'path/to/file.go',
-                mode: 'embeddings',
-            }}
-        />
-    ),
+export const CodebaseAndFile: StoryObj<typeof meta> = {
+    args: {
+        contextStatus: {
+            codebase: 'github.com/sourcegraph/about',
+            filePath: 'path/to/file.go',
+            mode: 'embeddings',
+        },
+    },
 }
 
-export const CodebaseAndFileWithSelections: ComponentStoryObj<typeof ChatInputContext> = {
+export const CodebaseAndFileWithSelections: StoryObj<typeof meta> = {
     render: () => (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
             <ChatInputContext
@@ -92,6 +91,10 @@ export const CodebaseAndFileWithSelections: ComponentStoryObj<typeof ChatInputCo
     ),
 }
 
-export const File: ComponentStoryObj<typeof ChatInputContext> = {
-    render: () => <ChatInputContext contextStatus={{ filePath: 'path/to/file.go' }} />,
+export const File: StoryObj<typeof meta> = {
+    args: {
+        contextStatus: {
+            filePath: 'path/to/file.go',
+        },
+    },
 }

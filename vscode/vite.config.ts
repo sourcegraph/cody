@@ -1,11 +1,11 @@
+/// <reference types="vitest" />
+
 import { resolve } from 'path'
 
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
 import { viteStaticCopy } from 'vite-plugin-static-copy'
 
-// https://vitejs.dev/config/
-// eslint-disable-next-line import/no-default-export
 export default defineConfig({
     plugins: [
         viteStaticCopy({
@@ -47,5 +47,10 @@ export default defineConfig({
                 entryFileNames: '[name].js',
             },
         },
+    },
+    test: {
+        globals: true,
+        include: ['src/**/*.test.ts?(x)'],
+        setupFiles: ['src/testutils/vscode.ts'],
     },
 })

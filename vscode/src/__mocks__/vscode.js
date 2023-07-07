@@ -1,2 +1,2 @@
-// The Typescript mock is defined in `client/cody/src/testSetup/vscode.ts`.
+// The Typescript mock is defined in `vscode/src/testutils/vscode.ts`.
 module.exports = {}

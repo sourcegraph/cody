@@ -1,13 +1,13 @@
 import { Configuration } from '../configuration'
 import { EmbeddingsSearch } from '../embeddings'
-import { FilenameContextFetcher, KeywordContextFetcher, ContextResult } from '../local-context'
+import { ContextResult, FilenameContextFetcher, KeywordContextFetcher } from '../local-context'
 import { isMarkdownFile, populateCodeContextTemplate, populateMarkdownContextTemplate } from '../prompt/templates'
 import { Message } from '../sourcegraph-api'
 import { EmbeddingsSearchResult } from '../sourcegraph-api/graphql/client'
 import { UnifiedContextFetcher } from '../unified-context'
 import { isError } from '../utils'
 
-import { ContextMessage, ContextFile, getContextMessageWithResponse, ContextFileSource } from './messages'
+import { ContextFile, ContextFileSource, ContextMessage, getContextMessageWithResponse } from './messages'
 
 export interface ContextSearchOptions {
     numCodeResults: number

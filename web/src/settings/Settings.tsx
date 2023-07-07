@@ -2,7 +2,7 @@ import React, { useCallback, useState } from 'react'
 
 import { isEqual } from 'lodash'
 
-import { WebConfiguration, useConfig } from './useConfig'
+import { useConfig, WebConfiguration } from './useConfig'
 
 import styles from './Settings.module.css'
 

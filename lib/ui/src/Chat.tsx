@@ -2,9 +2,7 @@ import React, { useCallback, useMemo, useState } from 'react'
 
 import classNames from 'classnames'
 
-import { ChatContextStatus } from '@sourcegraph/cody-shared/src/chat/context'
-import { ChatButton, ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
-import { isDefined } from '@sourcegraph/common'
+import { ChatButton, ChatContextStatus, ChatMessage, isDefined } from '@sourcegraph/cody-shared'
 
 import { FileLinkProps } from './chat/ContextFiles'
 import { ChatInputContext } from './chat/inputContext/ChatInputContext'

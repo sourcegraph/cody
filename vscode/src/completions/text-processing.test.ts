@@ -1,4 +1,4 @@
-import { OPENING_CODE_TAG, CLOSING_CODE_TAG, extractFromCodeBlock } from './text-processing'
+import { CLOSING_CODE_TAG, extractFromCodeBlock, OPENING_CODE_TAG } from './text-processing'
 
 describe('extractFromCodeBlock', () => {
     it('extracts value from code completion XML tags', () => {

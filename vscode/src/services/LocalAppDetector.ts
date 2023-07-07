@@ -1,7 +1,8 @@
+import fetch from 'isomorphic-fetch'
 import * as vscode from 'vscode'
 
 import { version } from '../../package.json'
-import { LOCAL_APP_URL, LocalEnv, isOsSupportedByApp } from '../chat/protocol'
+import { isOsSupportedByApp, LOCAL_APP_URL, LocalEnv } from '../chat/protocol'
 import { debug } from '../log'
 
 import { AppJson, LOCAL_APP_LOCATIONS } from './LocalAppFsPaths'

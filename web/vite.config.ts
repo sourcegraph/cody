@@ -1,17 +1,17 @@
+/// <reference types="vitest" />
+
 import { resolve } from 'path'
 
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
 
-// https://vitejs.dev/config/
-// eslint-disable-next-line import/no-default-export
 export default defineConfig({
     plugins: [react()],
     publicDir: 'resources',
     base: './',
     resolve: {
         alias: {
-            path: 'path-browserify',
+            path: __dirname + '/node_modules/path-browserify',
         },
     },
     css: {
@@ -36,4 +36,5 @@ export default defineConfig({
             },
         },
     },
+    test: { globals: true },
 })

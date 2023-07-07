@@ -1,11 +1,10 @@
 import React, { useCallback, useEffect, useState } from 'react'
 
-import { Client, Transcript, createClient } from '@sourcegraph/cody-shared/src/chat/client'
+import { Client, createClient, Transcript } from '@sourcegraph/cody-shared/src/chat/client'
 import { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
+import { ErrorLike, isErrorLike } from '@sourcegraph/cody-shared/src/common'
 import type { Editor } from '@sourcegraph/cody-shared/src/editor'
 import { CodySvg } from '@sourcegraph/cody-ui/src/utils/icons'
-import { ErrorLike, isErrorLike } from '@sourcegraph/common'
-import { Alert, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { Chat } from './Chat'
 import { Settings } from './settings/Settings'
@@ -89,13 +88,9 @@ export const App: React.FunctionComponent = () => {
             </header>
             <main className={styles.main}>
                 {!client ? (
-                    <>
-                        <LoadingSpinner />
-                    </>
+                    <>Loading...</>
                 ) : isErrorLike(client) ? (
-                    <Alert className={styles.alert} variant="danger">
-                        {client.message}
-                    </Alert>
+                    <p>Error: {client.message}</p>
                 ) : (
                     <>
                         <Chat

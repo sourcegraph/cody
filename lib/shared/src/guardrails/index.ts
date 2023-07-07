@@ -1,6 +1,5 @@
-import { escapeMarkdown, pluralize } from '@sourcegraph/common'
-
 import { parseMarkdown } from '../chat/markdown'
+import { escapeMarkdown, pluralize } from '../common'
 import { isError } from '../utils'
 
 export interface Attribution {

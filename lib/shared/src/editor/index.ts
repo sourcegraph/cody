@@ -74,7 +74,7 @@ export interface Editor {
     showInputBox(prompt?: string): Promise<string | undefined>
 
     // TODO: When Non-Stop Fixup doesn't depend directly on the chat view,
-    // move the recipe to client/cody and remove this entrypoint.
+    // move the recipe to vscode and remove this entrypoint.
     didReceiveFixupText(id: string, text: string, state: 'streaming' | 'complete'): Promise<void>
 }
 

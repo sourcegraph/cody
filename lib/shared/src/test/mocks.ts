@@ -4,7 +4,7 @@ import { CodebaseContext } from '../codebase-context'
 import { ActiveTextEditor, ActiveTextEditorSelection, ActiveTextEditorVisibleContent, Editor } from '../editor'
 import { EmbeddingsSearch } from '../embeddings'
 import { IntentDetector } from '../intent-detector'
-import { KeywordContextFetcher, ContextResult } from '../local-context'
+import { ContextResult, KeywordContextFetcher } from '../local-context'
 import { EmbeddingsSearchResults } from '../sourcegraph-api/graphql'
 
 export class MockEmbeddingsClient implements EmbeddingsSearch {

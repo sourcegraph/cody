@@ -1,4 +1,4 @@
-import { ENVIRONMENT_CONFIG, DEFAULT_CODEBASES, AppContext, DEFAULT_APP_SETTINGS } from './constants'
+import { AppContext, DEFAULT_APP_SETTINGS, DEFAULT_CODEBASES, ENVIRONMENT_CONFIG } from './constants'
 import { handleHumanMessage } from './mention-handler'
 import { createCodebaseContext } from './services/codebase-context'
 import { getVectorStore } from './services/local-vector-store'

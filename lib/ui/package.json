@@ -1,25 +1,35 @@
 {
-  "private": true,
   "name": "@sourcegraph/cody-ui",
-  "version": "0.0.1",
+  "version": "0.0.6",
   "description": "Cody UI shared library",
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "https://github.com/sourcegraph/sourcegraph.git",
-    "directory": "client/cody-ui"
+    "url": "https://github.com/sourcegraph/cody",
+    "directory": "lib/ui"
   },
-  "main": "src/index.ts",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "src",
+    "!**/*.test.*",
+    "!**/*.story.*",
+    "!dist/**/*.ts?(x)",
+    "dist/**/*.d.ts"
+  ],
   "sideEffects": false,
   "scripts": {
-    "build": "tsc -b",
+    "build": "tsc --build && cp -R src/* dist/",
     "lint": "pnpm run lint:js",
     "lint:js": "eslint --cache '**/*.[tj]s?(x)'",
-    "test": "jest",
-    "storybook": "STORIES_GLOB='client/cody-ui/src/**/*.story.tsx' pnpm --filter @sourcegraph/storybook run start"
+    "test": "vitest",
+    "storybook": "storybook dev -p 6006 --no-open --no-version-updates --no-release-notes",
+    "prepublishOnly": "tsc --build --clean && pnpm run build"
   },
   "dependencies": {
-    "@sourcegraph/common": "workspace:*",
-    "@sourcegraph/cody-shared": "workspace:*"
+    "@mdi/js": "^7.2.96",
+    "@sourcegraph/cody-shared": "workspace:*",
+    "classnames": "^2.3.2"
   }
 }

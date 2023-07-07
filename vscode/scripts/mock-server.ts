@@ -4,11 +4,7 @@ import http from 'http'
 // mainly used as a stop-gap while we're waiting for proper access to some
 // services.
 //
-//
-// To run:
-//
-//   - `cd client/cody`
-//   - `pnpm ts-node ./scripts/mock-server.ts`
+// To run: `pnpm -C vscode ts-node ./scripts/mock-server.ts`
 
 const endpoints = {
     '/batch': {

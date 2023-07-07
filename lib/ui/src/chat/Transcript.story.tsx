@@ -1,4 +1,4 @@
-import { ComponentMeta, ComponentStoryObj } from '@storybook/react'
+import { Meta, StoryObj } from '@storybook/react'
 
 import { FileLinkProps } from './ContextFiles'
 import { FIXTURE_TRANSCRIPT } from './fixtures'
@@ -6,8 +6,8 @@ import { Transcript } from './Transcript'
 
 import styles from './Transcript.story.module.css'
 
-const meta: ComponentMeta<typeof Transcript> = {
-    title: 'cody-ui/Transcript',
+const meta: Meta<typeof Transcript> = {
+    title: 'ui/Transcript',
     component: Transcript,
 
     argTypes: {
@@ -23,27 +23,23 @@ const meta: ComponentMeta<typeof Transcript> = {
     },
 
     decorators: [
-        story => <div style={{ maxWidth: '600px', margin: '2rem auto', border: 'solid 1px #ffffff33' }}>{story()}</div>,
+        story => <div style={{ maxWidth: '600px', margin: '2rem auto', border: 'solid 1px #ccc' }}>{story()}</div>,
     ],
 }
 
 export default meta
 
-export const Simple: ComponentStoryObj<typeof Transcript> = {
-    render: args => (
-        <Transcript
-            messageInProgress={{ speaker: 'assistant' }}
-            messageBeingEdited={false}
-            setMessageBeingEdited={() => {}}
-            transcript={args.transcript}
-            fileLinkComponent={FileLink}
-            transcriptItemClassName={styles.transcriptItem}
-            humanTranscriptItemClassName={styles.humanTranscriptItem}
-            transcriptItemParticipantClassName={styles.transcriptItemParticipant}
-            transcriptActionClassName={styles.transcriptAction}
-            copyButtonOnSubmit={args.copyButtonOnSubmit}
-        />
-    ),
-}
-
 const FileLink: React.FunctionComponent<FileLinkProps> = ({ path }) => <>{path}</>
+
+export const Simple: StoryObj<typeof meta> = {
+    args: {
+        messageInProgress: null,
+        messageBeingEdited: false,
+        setMessageBeingEdited: () => {},
+        fileLinkComponent: FileLink,
+        transcriptItemClassName: styles.transcriptItem,
+        humanTranscriptItemClassName: styles.humanTranscriptItem,
+        transcriptItemParticipantClassName: styles.transcriptItemParticipant,
+        transcriptActionClassName: styles.transcriptAction,
+    },
+}

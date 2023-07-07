@@ -1,7 +1,7 @@
 import { fetchEventSource } from '@microsoft/fetch-event-source'
 
 import { SourcegraphCompletionsClient } from './client'
-import type { Event, CompletionParameters, CompletionCallbacks, CompletionResponse } from './types'
+import type { CompletionCallbacks, CompletionParameters, CompletionResponse, Event } from './types'
 
 export class SourcegraphBrowserCompletionsClient extends SourcegraphCompletionsClient {
     public complete(): Promise<CompletionResponse> {

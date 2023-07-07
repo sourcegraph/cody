@@ -1,0 +1,7 @@
+packages:
+  - agent
+  - cli
+  - lib/*
+  - slack
+  - vscode
+  - web

@@ -1,6 +1,6 @@
 # Cody AI by Sourcegraph
 
-Cody for VS Code is an AI code assistant that can write code and answers questions across your entire codebase. It combines the power of large language models with Sourcegraph’s Code Graph API, generating deep knowledge of all of your code (and not just your open files). Large monorepos, multiple languages, and complex codebases are no problem for Cody.
+Cody for VS Code is an AI code assistant that can write code and answer questions across your entire codebase. It combines the power of large language models with Sourcegraph’s Code Graph API, generating deep knowledge of all of your code (and not just your open files). Large monorepos, multiple languages, and complex codebases are no problem for Cody.
 
 For example, you can ask Cody:
 
@@ -10,7 +10,7 @@ For example, you can ask Cody:
 - Add helpful debug log statements
 - Make this work _(seriously, it often works—try it!)_
 
-  **Cody AI is in beta, and we’d love your [feedback](https://github.com/sourcegraph/sourcegraph/discussions/new?category=product-feedback&labels=cody,cody/vscode)**!
+  **Cody AI is in beta, and we’d love your [feedback](https://github.com/sourcegraph/cody/discussions/new?category=product-feedback&labels=vscode)**!
 
 ## Features
 
@@ -56,18 +56,10 @@ _We also welcome also pull request contributions for new, useful recipes!_
 
 ## Feedback
 
-- [Issue tracker](https://github.com/sourcegraph/sourcegraph/issues)
+- [Issue tracker](https://github.com/sourcegraph/cody/issues)
 - [Discord chat](https://discord.gg/s2qDtYGnAE)
 - [Twitter (@sourcegraph)](https://twitter.com/sourcegraph)
 
 ## Development
 
-See [CONTRIBUTING.md](./CONTRIBUTING.md).
-
-## Other Extensions by Sourcegraph
-
-- [Sourcegraph Search Extension](https://marketplace.visualstudio.com/items?itemName=sourcegraph.sourcegraph)
-
-## License
-
-[Cody's code](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/tree/client/cody) is open source (Apache License 2.0).
+Cody is open source (Apache 2) in the [sourcegraph/cody repository](https://github.com/sourcegraph/cody). See [CONTRIBUTING.md](CONTRIBUTING.md).

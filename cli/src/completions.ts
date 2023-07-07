@@ -2,8 +2,8 @@ import { ANSWER_TOKENS } from '@sourcegraph/cody-shared/src/prompt/constants'
 import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
 import { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/nodeClient'
 import {
-    CompletionParameters,
     CompletionCallbacks,
+    CompletionParameters,
 } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
 
 const DEFAULT_CHAT_COMPLETION_PARAMETERS: Omit<CompletionParameters, 'messages'> = {

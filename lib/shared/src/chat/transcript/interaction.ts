@@ -1,4 +1,4 @@
-import { ContextMessage, ContextFile } from '../../codebase-context/messages'
+import { ContextFile, ContextMessage } from '../../codebase-context/messages'
 
 import { ChatMessage, InteractionMessage } from './messages'
 

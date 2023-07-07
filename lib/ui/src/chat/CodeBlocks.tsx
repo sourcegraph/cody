@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef } from 'react'
 
 import classNames from 'classnames'
 
-import { renderCodyMarkdown } from '@sourcegraph/cody-shared/src/chat/markdown'
+import { renderCodyMarkdown } from '@sourcegraph/cody-shared'
 
 import { CopyButtonProps } from '../Chat'
 

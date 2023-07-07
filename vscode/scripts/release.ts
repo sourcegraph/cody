@@ -1,4 +1,3 @@
-/* eslint-disable no-sync */
 import childProcess from 'child_process'
 
 import * as semver from 'semver'
@@ -69,7 +68,7 @@ export const commands = {
     vscode_package_nightly: `pnpm --silent build && vsce package ${tonightVersion} --pre-release --no-dependencies -o dist/cody.vsix`,
     vscode_nightly: 'vsce publish --pre-release --packagePath dist/cody.vsix --pat $VSCODE_MARKETPLACE_TOKEN',
     // To publish to the open-vsx registry
-    openvsx_publish: 'npx ovsx publish dist/cody.vsix --pat $VSCODE_OPENVSX_TOKEN',
+    openvsx_publish: 'pnpm dlx ovsx publish dist/cody.vsix --pat $VSCODE_OPENVSX_TOKEN',
 }
 
 // Build and bundle the extension

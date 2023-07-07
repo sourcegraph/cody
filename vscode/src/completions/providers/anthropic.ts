@@ -7,12 +7,12 @@ import { CompletionParameters } from '@sourcegraph/cody-shared/src/sourcegraph-a
 import { Completion } from '..'
 import { ReferenceSnippet } from '../context'
 import {
-    OPENING_CODE_TAG,
     CLOSING_CODE_TAG,
     extractFromCodeBlock,
     fixBadCompletionStart,
-    PrefixComponents,
     getHeadAndTail,
+    OPENING_CODE_TAG,
+    PrefixComponents,
     trimStartUntilNewline,
 } from '../text-processing'
 import { batchCompletions, messagesToText } from '../utils'

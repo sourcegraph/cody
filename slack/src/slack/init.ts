@@ -1,5 +1,5 @@
 import { App } from '@slack/bolt'
-import { WebClient, LogLevel } from '@slack/web-api'
+import { LogLevel, WebClient } from '@slack/web-api'
 
 import { ENVIRONMENT_CONFIG } from '../constants'
 

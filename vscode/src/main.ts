@@ -18,7 +18,7 @@ import { createProviderConfig as createUnstableCodeGenProviderConfig } from './c
 import { createProviderConfig as createUnstableHuggingFaceProviderConfig } from './completions/providers/unstable-huggingface'
 import { getConfiguration, getFullConfig, migrateConfiguration } from './configuration'
 import { VSCodeEditor } from './editor/vscode-editor'
-import { logEvent, updateEventLogger, eventLogger } from './event-logger'
+import { eventLogger, logEvent, updateEventLogger } from './event-logger'
 import { configureExternalServices } from './external-services'
 import { FixupController } from './non-stop/FixupController'
 import { showSetupNotification } from './notifications/setup-notification'

@@ -2,15 +2,15 @@ import React, { useEffect, useRef } from 'react'
 
 import classNames from 'classnames'
 
-import { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
+import { ChatMessage } from '@sourcegraph/cody-shared'
 
 import {
     ChatButtonProps,
+    ChatUISubmitButtonProps,
     ChatUITextAreaProps,
+    CopyButtonProps,
     EditButtonProps,
     FeedbackButtonsProps,
-    CopyButtonProps,
-    ChatUISubmitButtonProps,
 } from '../Chat'
 
 import { FileLinkProps } from './ContextFiles'

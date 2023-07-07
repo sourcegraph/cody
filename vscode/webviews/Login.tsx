@@ -3,7 +3,7 @@ import { useCallback } from 'react'
 import { VSCodeButton } from '@vscode/webview-ui-toolkit/react'
 import classNames from 'classnames'
 
-import { AuthStatus, DOTCOM_URL, LOCAL_APP_URL, isOsSupportedByApp } from '../src/chat/protocol'
+import { AuthStatus, DOTCOM_URL, isOsSupportedByApp, LOCAL_APP_URL } from '../src/chat/protocol'
 
 import { ConnectApp } from './ConnectApp'
 import { ErrorContainer } from './Error'

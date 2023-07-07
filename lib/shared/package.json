@@ -1,28 +1,44 @@
 {
-  "private": true,
   "name": "@sourcegraph/cody-shared",
-  "version": "0.0.1",
+  "version": "0.0.4",
   "description": "Cody shared library",
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "https://github.com/sourcegraph/sourcegraph.git",
-    "directory": "client/cody-shared"
+    "url": "https://github.com/sourcegraph/cody",
+    "directory": "lib/shared"
   },
-  "main": "src/index.ts",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "src",
+    "!**/*.test.*"
+  ],
   "sideEffects": false,
   "scripts": {
-    "build": "tsc -b",
+    "build": "tsc --build",
     "lint": "pnpm run lint:js",
     "lint:js": "eslint --cache '**/*.[tj]s?(x)'",
-    "test": "jest"
+    "test": "vitest",
+    "prepublishOnly": "tsc --build --clean && pnpm run build"
   },
   "dependencies": {
-    "@sourcegraph/common": "workspace:*",
-    "@sourcegraph/http-client": "workspace:*",
+    "@microsoft/fetch-event-source": "^2.0.1",
+    "dompurify": "^3.0.4",
+    "highlight.js": "^10.7.3",
+    "isomorphic-fetch": "^3.0.0",
+    "lodash": "^4.17.21",
+    "marked": "^4.0.16",
     "xml2js": "^0.6.0"
   },
   "devDependencies": {
+    "@types/dompurify": "^3.0.2",
+    "@types/highlight.js": "^9.12.4",
+    "@types/isomorphic-fetch": "^0.0.36",
+    "@types/lodash": "^4.14.195",
+    "@types/marked": "^4.0.3",
+    "@types/vscode": "^1.80.0",
     "@types/xml2js": "^0.4.11"
   }
 }

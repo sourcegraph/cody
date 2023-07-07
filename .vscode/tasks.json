@@ -1,0 +1,29 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "type": "typescript",
+      "tsconfig": "tsconfig.json",
+      "problemMatcher": ["$tsc-watch"],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "option": "watch",
+      "runOptions": { "runOn": "folderOpen", "instanceLimit": 1 },
+      "isBackground": true,
+      "presentation": {
+        "reveal": "never"
+      }
+    },
+    {
+      "label": "Build VS Code Extension",
+      "type": "npm",
+      "path": "vscode",
+      "script": "build:dev",
+      "problemMatcher": "$tsc-watch",
+      "options": { "cwd": "vscode" },
+      "isBackground": true
+    }
+  ]
+}

@@ -3,9 +3,9 @@
 // import * as vscode from 'vscode'
 
 /**
- * This module defines shared VSCode mocks for use in every Jest test.
+ * This module defines shared VSCode mocks for use in every Vitest test.
  * Tests requiring no custom mocks will automatically apply the mocks defined in this file.
- * This is made possible via the `setupFilesAfterEnv` property in the Jest configuration.
+ * This is made possible via the `setupFiles` property in the Vitest configuration.
  */
 
 class Position {

@@ -1,8 +1,8 @@
 import { ANSWER_TOKENS } from '@sourcegraph/cody-shared/src/prompt/constants'
 import { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/nodeClient'
 import {
-    CompletionParameters,
     CompletionCallbacks,
+    CompletionParameters,
     Message,
 } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
 
