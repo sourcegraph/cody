@@ -25,14 +25,6 @@ const meta: ComponentMeta<typeof Transcript> = {
     decorators: [
         story => <div style={{ maxWidth: '600px', margin: '2rem auto', border: 'solid 1px #ffffff33' }}>{story()}</div>,
     ],
-
-    parameters: {
-        component: Transcript,
-        chromatic: {
-            enableDarkMode: true,
-            disableSnapshot: false,
-        },
-    },
 }
 
 export default meta

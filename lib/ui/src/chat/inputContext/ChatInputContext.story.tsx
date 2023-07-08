@@ -21,14 +21,6 @@ const meta: Meta = {
             </div>
         ),
     ],
-
-    parameters: {
-        component: ChatInputContext,
-        chromatic: {
-            enableDarkMode: true,
-            disableSnapshot: false,
-        },
-    },
 }
 
 export default meta

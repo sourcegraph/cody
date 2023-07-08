@@ -10,12 +10,6 @@ const meta: ComponentMeta<typeof Login> = {
     title: 'cody/Login',
     component: Login,
     decorators: [VSCodeStoryDecorator],
-    parameters: {
-        component: Login,
-        chromatic: {
-            disableSnapshot: false,
-        },
-    },
 }
 
 const vscodeAPI: VSCodeWrapper = {

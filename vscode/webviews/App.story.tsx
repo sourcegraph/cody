@@ -11,22 +11,6 @@ const meta: ComponentMeta<typeof App> = {
     component: App,
 
     decorators: [VSCodeStoryDecorator],
-
-    parameters: {
-        component: App,
-        chromatic: {
-            disableSnapshot: false,
-        },
-    },
-}
-
-// When this Story is rendered on Chromatic, the below DOM API will error. It
-// doesn't seem necessary for this UI at all and is likely coming from the VS
-// Code component library so we just stub it out for now.
-// eslint-disable-next-line @typescript-eslint/unbound-method
-const originalSetValidity = ElementInternals.prototype.setValidity
-ElementInternals.prototype.setValidity = function () {
-    return originalSetValidity.call(this, {})
 }
 
 export default meta
