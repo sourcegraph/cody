@@ -23,6 +23,7 @@ import { ChatViewProviderWebview } from './ChatViewProvider'
 import { fastFilesExist } from './fastFileFinder'
 import { defaultAuthStatus } from './protocol'
 import { getRecipe } from './recipes'
+import { isAbortError } from './utils'
 
 export type Config = Pick<
     ConfigurationWithAccessToken,
@@ -289,8 +290,4 @@ export class InlineChatViewProvider implements vscode.Disposable {
 
         return DEFAULT_MAX_TOKENS - solutionLimit
     }
-}
-
-function isAbortError(error: string): boolean {
-    return error === 'aborted' || error === 'socket hang up'
 }
