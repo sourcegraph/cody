@@ -86,7 +86,7 @@ export class AgentEditor implements Editor {
     }
 
     public showQuickPick(): Promise<string | undefined> {
-        throw new Error('Not implemented')
+        return this.agent.request('editor/quickpick', labels)
     }
 
     public showWarningMessage(): Promise<void> {

@@ -35,6 +35,7 @@ export type Requests = {
     // ================
     // Server -> Client
     // ================
+    'editor/quickpick': [string[], string]
 }
 
 // The JSON-RPC notifications of the Cody Agent protocol. Notifications are
