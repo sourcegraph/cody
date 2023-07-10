@@ -6,6 +6,7 @@ import { Configuration, ConfigurationWithAccessToken } from '@sourcegraph/cody-s
 import { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/nodeClient'
 
 import { ChatViewProvider } from './chat/ChatViewProvider'
+import { InlineChatViewProvider } from './chat/InlineChatViewProvider'
 import { CODY_FEEDBACK_URL } from './chat/protocol'
 import { CodyCompletionItemProvider } from './completions'
 import { CompletionsDocumentProvider } from './completions/docprovider'
@@ -131,7 +132,21 @@ const register = async (
         rgPath,
         authProvider
     )
-    disposables.push(chatProvider)
+
+    // Create inline chat
+    const inlineChatProvider = new InlineChatViewProvider(
+        initialConfig,
+        chatClient,
+        intentDetector,
+        codebaseContext,
+        guardrails,
+        editor,
+        rgPath,
+        authProvider,
+        chatProvider.webview
+    )
+
+    disposables.push(chatProvider, inlineChatProvider)
     fixup.recipeRunner = chatProvider
 
     disposables.push(
@@ -171,7 +186,7 @@ const register = async (
         vscode.commands.registerCommand('cody.comment.add', async (comment: vscode.CommentReply) => {
             const isFixMode = /^\/f(ix)?\s/i.test(comment.text.trimStart())
             await commentController.chat(comment, isFixMode)
-            await chatProvider.executeRecipe('inline-chat', comment.text.trimStart(), false)
+            await inlineChatProvider.executeRecipe('inline-chat', comment.text.trimStart())
             logEvent(`CodyVSCodeExtension:inline-assist:${isFixMode ? 'fixup' : 'chat'}`)
         }),
         vscode.commands.registerCommand('cody.comment.delete', (thread: vscode.CommentThread) => {
@@ -183,6 +198,12 @@ const register = async (
         vscode.commands.registerCommand('cody.inline.new', () =>
             vscode.commands.executeCommand('workbench.action.addComment')
         ),
+        vscode.commands.registerCommand('cody.inline.insert', async (copiedText: string) => {
+            // Insert copiedText to the current cursor position
+            await vscode.commands.executeCommand('editor.action.insertSnippet', {
+                snippet: copiedText,
+            })
+        }),
         // Tests
         // Access token - this is only used in configuration tests
         vscode.commands.registerCommand('cody.test.token', async (args: any[]) => {
@@ -198,12 +219,6 @@ const register = async (
         vscode.commands.registerCommand('cody.interactive.clear', async () => {
             await chatProvider.clearAndRestartSession()
             chatProvider.setWebviewView('chat')
-        }),
-        vscode.commands.registerCommand('cody.inline.insert', async (copiedText: string) => {
-            // Insert copiedText to the current cursor position
-            await vscode.commands.executeCommand('editor.action.insertSnippet', {
-                snippet: copiedText,
-            })
         }),
         vscode.commands.registerCommand('cody.focus', () => vscode.commands.executeCommand('cody.chat.focus')),
         vscode.commands.registerCommand('cody.settings.user', () => chatProvider.setWebviewView('settings')),

@@ -76,12 +76,14 @@ export type Config = Pick<
  */
 const SAFETY_PROMPT_TOKENS = 100
 
+export interface ChatViewProviderWebview extends Omit<vscode.Webview, 'postMessage'> {
+    postMessage(message: ExtensionMessage): Thenable<boolean>
+}
+
 export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disposable, IdleRecipeRunner {
     private isMessageInProgress = false
     private cancelCompletionCallback: (() => void) | null = null
-    public webview?: Omit<vscode.Webview, 'postMessage'> & {
-        postMessage(message: ExtensionMessage): Thenable<boolean>
-    }
+    public webview?: ChatViewProviderWebview
 
     private currentChatID = ''
     private inputHistory: string[] = []
@@ -329,7 +331,6 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
     private sendPrompt(promptMessages: Message[], responsePrefix = ''): void {
         this.cancelCompletion()
         void vscode.commands.executeCommand('setContext', 'cody.reply.pending', true)
-        this.editor.controllers.inline.setResponsePending(true)
 
         let text = ''
 
@@ -338,7 +339,6 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 text += content
                 const displayText = reformatBotMessage(text, responsePrefix)
                 this.transcript.addAssistantResponse(displayText)
-                this.editor.controllers.inline.reply(displayText, 'streaming')
                 this.sendTranscript()
                 return Promise.resolve()
             },
@@ -361,7 +361,6 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                     // TODO(keegancsmith) guardrails may be slow, we need to make this async update the interaction.
                     highlightedDisplayText = await this.guardrailsAnnotateAttributions(highlightedDisplayText)
                     this.transcript.addAssistantResponse(text || '', highlightedDisplayText)
-                    this.editor.controllers.inline.reply(highlightedDisplayText, 'complete')
                 }
                 void this.onCompletionEnd()
             },
@@ -408,7 +407,6 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 // We ignore embeddings errors in this instance because we're already showing an
                 // error message and don't want to overwhelm the user.
                 this.onCompletionEnd(true)
-                void this.editor.controllers.inline.error()
                 console.error(`Completion request failed: ${err}`)
             },
         })
