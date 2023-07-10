@@ -788,9 +788,10 @@
         "cody.serverEndpoint": {
           "order": 1,
           "type": "string",
-          "format": "uri",
           "description": "URL to the Sourcegraph instance.",
-          "examples": "https://example.sourcegraph.com"
+          "examples": "https://example.sourcegraph.com",
+          "markdownDeprecationMessage": "**Deprecated**: Please sign in via the UI instead. If you are already signed in, you can empty this field to remove this warning.",
+          "deprecationMessage": "Deprecated: Please sign in via the UI instead."
         },
         "cody.codebase": {
           "order": 2,
