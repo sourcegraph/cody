@@ -112,6 +112,7 @@ const config = {
     'id-length': 'off',
 
     // @typescript-eslint
+    '@typescript-eslint/no-explicit-any': 'warn',
     '@typescript-eslint/no-empty-interface': 'off',
     '@typescript-eslint/no-empty-function': ['error', { allow: ['arrowFunctions'] }],
     '@typescript-eslint/no-inferrable-types': ['error', { ignoreParameters: true }],
@@ -128,6 +129,14 @@ const config = {
       },
     ],
     '@typescript-eslint/no-extra-semi': 'off',
+    '@typescript-eslint/no-unused-vars': [
+      'warn',
+      {
+        varsIgnorePattern: '.*', // TS already enforces this
+        args: 'after-used',
+        ignoreRestSiblings: true,
+      },
+    ],
 
     // eslint-plugin-jsdoc
     'jsdoc/require-returns': 'off',
