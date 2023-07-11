@@ -5,8 +5,8 @@ const config = {
   extends: [
     'eslint:recommended',
     'plugin:@typescript-eslint/recommended',
-    //'plugin:@typescript-eslint/strict-type-checked',
-    //'plugin:@typescript-eslint/stylistic-type-checked',
+    // 'plugin:@typescript-eslint/strict-type-checked',
+    // 'plugin:@typescript-eslint/stylistic-type-checked',
     'plugin:react/recommended',
     // '@sourcegraph/eslint-config',
     'plugin:jsdoc/recommended-typescript',
@@ -16,6 +16,11 @@ const config = {
   ],
   parser: '@typescript-eslint/parser',
   plugins: ['@typescript-eslint'],
+  settings: {
+    react: {
+      version: 'detect',
+    },
+  },
   root: true,
   parserOptions: {
     sourceType: 'module',
@@ -95,7 +100,7 @@ const config = {
     'prefer-template': 'off',
     quotes: ['error', 'single', { avoidEscape: true }], // So autofixes use the right quote style
     radix: 'error',
-    'require-await': 'error',
+    'require-await': 'off',
     'spaced-comment': ['error', 'always', { line: { markers: ['/'] } }], // Don't error on TypeScript triple-slash comments
     'sort-imports': 'off', // Conflicts with TypeScript and is not fully autofixable.
     'use-isnan': 'error',
