@@ -2,7 +2,6 @@ import { spawnSync } from 'child_process'
 
 import * as vscode from 'vscode'
 
-import { ChatContextStatus } from '@sourcegraph/cody-shared'
 import { BotResponseMultiplexer } from '@sourcegraph/cody-shared/src/chat/bot-response-multiplexer'
 import { ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
 import { getPreamble } from '@sourcegraph/cody-shared/src/chat/preamble'
@@ -22,24 +21,23 @@ import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
 import { SourcegraphGraphQLAPIClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
 import { isError } from '@sourcegraph/cody-shared/src/utils'
 
-import { getFullConfig } from '../configuration'
-import { VSCodeEditor } from '../editor/vscode-editor'
-import { logEvent } from '../event-logger'
-import { FilenameContextFetcher } from '../local-context/filename-context-fetcher'
-import { LocalKeywordContextFetcher } from '../local-context/local-keyword-context-fetcher'
-import { debug } from '../log'
-import { getRerankWithLog } from '../logged-rerank'
-import { FixupTask } from '../non-stop/FixupTask'
-import { IdleRecipeRunner } from '../non-stop/roles'
-import { AuthProvider } from '../services/AuthProvider'
-import { LocalStorage } from '../services/LocalStorageProvider'
-import { SecretStorage } from '../services/SecretStorageProvider'
-import { TestSupport } from '../test-support'
+import { VSCodeEditor } from '../../editor/vscode-editor'
+import { logEvent } from '../../event-logger'
+import { FilenameContextFetcher } from '../../local-context/filename-context-fetcher'
+import { LocalKeywordContextFetcher } from '../../local-context/local-keyword-context-fetcher'
+import { debug } from '../../log'
+import { getRerankWithLog } from '../../logged-rerank'
+import { FixupTask } from '../../non-stop/FixupTask'
+import { IdleRecipeRunner } from '../../non-stop/roles'
+import { AuthProvider } from '../../services/AuthProvider'
+import { LocalStorage } from '../../services/LocalStorageProvider'
+import { TestSupport } from '../../test-support'
+import { fastFilesExist } from '../fastFileFinder'
+import { defaultAuthStatus } from '../protocol'
+import { getRecipe } from '../recipes'
+import { convertGitCloneURLToCodebaseName } from '../utils'
 
-import { fastFilesExist } from './fastFileFinder'
-import { AuthStatus, ConfigurationSubsetForWebview, defaultAuthStatus, LocalEnv } from './protocol'
-import { getRecipe } from './recipes'
-import { convertGitCloneURLToCodebaseName } from './utils'
+import { ContextProvider } from './ContextProvider'
 
 export type Config = Pick<
     ConfigurationWithAccessToken,
@@ -81,12 +79,7 @@ export abstract class MessageProvider implements vscode.Disposable, IdleRecipeRu
     // Allows recipes to hook up subscribers to process sub-streams of bot output
     protected multiplexer: BotResponseMultiplexer = new BotResponseMultiplexer()
 
-    private configurationChangeEvent = new vscode.EventEmitter<void>()
-
     protected disposables: vscode.Disposable[] = []
-
-    // Codebase-context-related state
-    private currentWorkspaceRoot: string
 
     constructor(
         protected config: Omit<Config, 'codebase'>, // should use codebaseContext.getCodebase() rather than config.codebase
@@ -95,30 +88,13 @@ export abstract class MessageProvider implements vscode.Disposable, IdleRecipeRu
         protected codebaseContext: CodebaseContext,
         protected guardrails: Guardrails,
         protected editor: VSCodeEditor,
-        protected secretStorage: SecretStorage,
         protected localStorage: LocalStorage,
         protected rgPath: string,
         protected authProvider: AuthProvider,
-        protected todoAuthStuff: boolean
+        protected contextProvider: ContextProvider
     ) {
         // chat id is used to identify chat session
         this.createNewChatID()
-        this.disposables.push(this.configurationChangeEvent)
-
-        // listen for vscode active editor change event
-        this.currentWorkspaceRoot = ''
-        this.disposables.push(
-            vscode.window.onDidChangeActiveTextEditor(async () => {
-                await this.updateCodebaseContext()
-            }),
-            vscode.workspace.onDidChangeWorkspaceFolders(async () => {
-                await this.updateCodebaseContext()
-            })
-        )
-
-        if (this.todoAuthStuff) {
-            this.disposables.push(vscode.commands.registerCommand('cody.auth.sync', () => this.syncAuthStatus()))
-        }
     }
 
     protected async init(): Promise<void> {
@@ -126,7 +102,7 @@ export abstract class MessageProvider implements vscode.Disposable, IdleRecipeRu
         this.getAndSendTranscript()
         this.getAndSendChatHistory()
         await this.loadRecentChat()
-        await this.publishContextStatus()
+        await this.contextProvider.init()
     }
 
     private idleCallbacks_: (() => void)[] = []
@@ -171,16 +147,6 @@ export abstract class MessageProvider implements vscode.Disposable, IdleRecipeRu
             throw new Error('not idle')
         }
         return this.executeRecipe(recipeId, humanChatInput)
-    }
-
-    public onConfigurationChange(newConfig: Config): void {
-        debug('ChatViewProvider:onConfigurationChange', '')
-        this.config = newConfig
-        const authStatus = this.authProvider.getAuthStatus()
-        if (authStatus.endpoint) {
-            this.config.serverEndpoint = authStatus.endpoint
-        }
-        this.configurationChangeEvent.fire()
     }
 
     public async clearAndRestartSession(): Promise<void> {
@@ -250,7 +216,7 @@ export abstract class MessageProvider implements vscode.Disposable, IdleRecipeRu
                     let { text: highlightedDisplayText } = await highlightTokens(
                         displayText || '',
                         fileExistFunc,
-                        this.currentWorkspaceRoot
+                        this.contextProvider.currentWorkspaceRoot
                     )
                     // TODO(keegancsmith) guardrails may be slow, we need to make this async update the interaction.
                     highlightedDisplayText = await this.guardrailsAnnotateAttributions(highlightedDisplayText)
@@ -325,30 +291,6 @@ export abstract class MessageProvider implements vscode.Disposable, IdleRecipeRu
             this.logEmbeddingsSearchErrors()
         }
         this.scheduleIdleRecipes()
-    }
-
-    private async updateCodebaseContext(): Promise<void> {
-        if (!this.editor.getActiveTextEditor() && vscode.window.visibleTextEditors.length !== 0) {
-            // these are ephemeral
-            return
-        }
-        const workspaceRoot = this.editor.getWorkspaceRootPath()
-        if (!workspaceRoot || workspaceRoot === '' || workspaceRoot === this.currentWorkspaceRoot) {
-            return
-        }
-        this.currentWorkspaceRoot = workspaceRoot
-
-        const codebaseContext = await getCodebaseContext(this.config, this.rgPath, this.editor, this.chat)
-        if (!codebaseContext) {
-            return
-        }
-        // after await, check we're still hitting the same workspace root
-        if (this.currentWorkspaceRoot !== workspaceRoot) {
-            return
-        }
-
-        this.codebaseContext = codebaseContext
-        await this.publishContextStatus()
     }
 
     public async executeRecipe(recipeId: RecipeID, humanChatInput: string = ''): Promise<void> {
@@ -509,23 +451,6 @@ export abstract class MessageProvider implements vscode.Disposable, IdleRecipeRu
     }
 
     /**
-     * Save, verify, and sync authStatus between extension host and webview
-     * activate extension when user has valid login
-     */
-    public async syncAuthStatus(): Promise<void> {
-        const authStatus = this.authProvider.getAuthStatus()
-        await this.publishConfig()
-        if (authStatus.siteVersion) {
-            // Update codebase context
-            const codebaseContext = await getCodebaseContext(this.config, this.rgPath, this.editor, this.chat)
-            if (codebaseContext) {
-                this.codebaseContext = codebaseContext
-                await this.publishContextStatus()
-            }
-        }
-    }
-
-    /**
      * Delete history from current chat history and local storage
      */
     protected async deleteHistory(chatID: string): Promise<void> {
@@ -571,25 +496,6 @@ export abstract class MessageProvider implements vscode.Disposable, IdleRecipeRu
     }
 
     /**
-     * Publish the current context status to the webview.
-     */
-    private async publishContextStatus(): Promise<void> {
-        const send = async (): Promise<void> => {
-            const editorContext = this.editor.getActiveTextEditor()
-            return this.sendContextStatus2({
-                mode: this.config.useContext,
-                connection: this.codebaseContext.checkEmbeddingsConnection(),
-                codebase: this.codebaseContext.getCodebase(),
-                filePath: editorContext ? vscode.workspace.asRelativePath(editorContext.filePath) : undefined,
-                selection: editorContext ? editorContext.selection : undefined,
-                supportsKeyword: true,
-            })
-        }
-        this.disposables.push(vscode.window.onDidChangeTextEditorSelection(() => send()))
-        return send()
-    }
-
-    /**
      * Send embedding connections or results error to output
      */
     private logEmbeddingsSearchErrors(): void {
@@ -602,32 +508,6 @@ export abstract class MessageProvider implements vscode.Disposable, IdleRecipeRu
             this.transcript.addErrorAsAssistantResponse(searchErrors)
             debug('ChatViewProvider:onLogEmbeddingsErrors', '', { verbose: searchErrors })
         }
-    }
-
-    /**
-     * Publish the config to the webview.
-     */
-    private async publishConfig(): Promise<void> {
-        const send = async (): Promise<void> => {
-            this.config = await getFullConfig(this.secretStorage, this.localStorage)
-
-            // check if the new configuration change is valid or not
-            const authStatus = this.authProvider.getAuthStatus()
-            const localProcess = await this.authProvider.appDetector.getProcessInfo(authStatus.isLoggedIn)
-            const configForWebview: ConfigurationSubsetForWebview & LocalEnv = {
-                ...localProcess,
-                debugEnable: this.config.debugEnable,
-                serverEndpoint: this.config.serverEndpoint,
-            }
-
-            // update codebase context on configuration change
-            await this.updateCodebaseContext()
-            await this.sendConfig2(configForWebview, authStatus)
-            debug('Cody:publishConfig', 'configForWebview', { verbose: configForWebview })
-        }
-
-        this.disposables.push(this.configurationChangeEvent.event(() => send()))
-        await send()
     }
 
     public transcriptForTesting(testing: TestSupport): ChatMessage[] {
@@ -681,13 +561,6 @@ export abstract class MessageProvider implements vscode.Disposable, IdleRecipeRu
     protected abstract sendError2(errorMsg: string): void
 
     protected abstract sendSuggestions2(suggestions: string[]): void
-
-    protected abstract sendContextStatus2(contextStatus: ChatContextStatus): Promise<void>
-
-    protected abstract sendConfig2(
-        config: ConfigurationSubsetForWebview & LocalEnv,
-        authStatus: AuthStatus
-    ): Promise<void>
 }
 
 /**

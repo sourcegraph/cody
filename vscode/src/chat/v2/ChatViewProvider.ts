@@ -2,35 +2,29 @@ import path from 'path'
 
 import * as vscode from 'vscode'
 
-import { ChatContextStatus } from '@sourcegraph/cody-shared'
 import { ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
 import { ChatMessage, UserLocalHistory } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
 import { Guardrails } from '@sourcegraph/cody-shared/src/guardrails'
 import { IntentDetector } from '@sourcegraph/cody-shared/src/intent-detector'
 
-import { View } from '../../webviews/NavBar'
-import { VSCodeEditor } from '../editor/vscode-editor'
-import { logEvent } from '../event-logger'
-import { debug } from '../log'
-import { AuthProvider } from '../services/AuthProvider'
-import { LocalStorage } from '../services/LocalStorageProvider'
-import { SecretStorage } from '../services/SecretStorageProvider'
+import { View } from '../../../webviews/NavBar'
+import { VSCodeEditor } from '../../editor/vscode-editor'
+import { logEvent } from '../../event-logger'
+import { debug } from '../../log'
+import { AuthProvider } from '../../services/AuthProvider'
+import { LocalStorage } from '../../services/LocalStorageProvider'
+import { DOTCOM_URL, ExtensionMessage, WebviewMessage } from '../protocol'
 
-import { Config, MessageProvider } from './MessageProvider2'
-import {
-    AuthStatus,
-    ConfigurationSubsetForWebview,
-    DOTCOM_URL,
-    ExtensionMessage,
-    LocalEnv,
-    WebviewMessage,
-} from './protocol'
+import { ContextProvider } from './ContextProvider'
+import { Config, MessageProvider } from './MessageProvider'
+
+export interface ChatViewProviderWebview extends Omit<vscode.Webview, 'postMessage'> {
+    postMessage(message: ExtensionMessage): Thenable<boolean>
+}
 
 export class ChatViewProvider extends MessageProvider implements vscode.WebviewViewProvider {
-    public webview?: Omit<vscode.Webview, 'postMessage'> & {
-        postMessage(message: ExtensionMessage): Thenable<boolean>
-    }
+    public webview?: ChatViewProviderWebview
 
     constructor(
         protected extensionPath: string,
@@ -40,10 +34,10 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
         protected codebaseContext: CodebaseContext,
         protected guardrails: Guardrails,
         protected editor: VSCodeEditor,
-        protected secretStorage: SecretStorage,
         protected localStorage: LocalStorage,
         protected rgPath: string,
-        protected authProvider: AuthProvider
+        protected authProvider: AuthProvider,
+        protected contextProvider: ContextProvider
     ) {
         super(
             config,
@@ -52,11 +46,10 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
             codebaseContext,
             guardrails,
             editor,
-            secretStorage,
             localStorage,
             rgPath,
             authProvider,
-            true
+            contextProvider
         )
     }
 
@@ -215,20 +208,6 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
         })
     }
 
-    protected async sendContextStatus2(contextStatus: ChatContextStatus): Promise<void> {
-        await this.webview?.postMessage({
-            type: 'contextStatus',
-            contextStatus,
-        })
-    }
-
-    protected async sendConfig2(
-        config: ConfigurationSubsetForWebview & LocalEnv,
-        authStatus: AuthStatus
-    ): Promise<void> {
-        await this.webview?.postMessage({ type: 'config', config, authStatus })
-    }
-
     /**
      * Display error message in webview view as banner in chat view
      * It does not display error message as assistant response
@@ -305,6 +284,7 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
     ): Promise<void> {
         this.webview = webviewView.webview
         this.authProvider.webview = webviewView.webview
+        this.contextProvider.webview = webviewView.webview
 
         const extensionPath = vscode.Uri.file(this.extensionPath)
         const webviewPath = vscode.Uri.joinPath(extensionPath, 'dist')

@@ -4,12 +4,12 @@ import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
 import { Guardrails } from '@sourcegraph/cody-shared/src/guardrails'
 import { IntentDetector } from '@sourcegraph/cody-shared/src/intent-detector'
 
-import { VSCodeEditor } from '../editor/vscode-editor'
-import { AuthProvider } from '../services/AuthProvider'
-import { LocalStorage } from '../services/LocalStorageProvider'
-import { SecretStorage } from '../services/SecretStorageProvider'
+import { VSCodeEditor } from '../../editor/vscode-editor'
+import { AuthProvider } from '../../services/AuthProvider'
+import { LocalStorage } from '../../services/LocalStorageProvider'
 
-import { Config, MessageProvider } from './MessageProvider2'
+import { ContextProvider } from './ContextProvider'
+import { Config, MessageProvider } from './MessageProvider'
 
 export class InlineChatViewProvider extends MessageProvider {
     constructor(
@@ -19,10 +19,10 @@ export class InlineChatViewProvider extends MessageProvider {
         protected codebaseContext: CodebaseContext,
         protected guardrails: Guardrails,
         protected editor: VSCodeEditor,
-        protected secretStorage: SecretStorage,
         protected localStorage: LocalStorage,
         protected rgPath: string,
-        protected authProvider: AuthProvider
+        protected authProvider: AuthProvider,
+        protected contextProvider: ContextProvider
     ) {
         super(
             config,
@@ -31,11 +31,10 @@ export class InlineChatViewProvider extends MessageProvider {
             codebaseContext,
             guardrails,
             editor,
-            secretStorage,
             localStorage,
             rgPath,
             authProvider,
-            false
+            contextProvider
         )
     }
 
@@ -66,14 +65,6 @@ export class InlineChatViewProvider extends MessageProvider {
      * Sends chat history to webview
      */
     protected sendHistory2(): void {
-        // not implemented
-    }
-
-    protected async sendContextStatus2(): Promise<void> {
-        // not implemented
-    }
-
-    protected async sendConfig2(): Promise<void> {
         // not implemented
     }
 }

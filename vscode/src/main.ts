@@ -5,9 +5,10 @@ import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
 import { Configuration, ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
 import { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/nodeClient'
 
-import { ChatViewProvider } from './chat/ChatViewProvider2'
-import { InlineChatViewProvider } from './chat/InlineChatViewProvider2'
 import { CODY_FEEDBACK_URL } from './chat/protocol'
+import { ChatViewProvider } from './chat/v2/ChatViewProvider'
+import { ContextProvider } from './chat/v2/ContextProvider'
+import { InlineChatViewProvider } from './chat/v2/InlineChatViewProvider'
 import { CodyCompletionItemProvider } from './completions'
 import { CompletionsDocumentProvider } from './completions/docprovider'
 import { History } from './completions/history'
@@ -118,6 +119,18 @@ const register = async (
     const authProvider = new AuthProvider(initialConfig, secretStorage, localStorage)
     await authProvider.init()
 
+    // TODO: Needs disposable?
+    const contextProvider = new ContextProvider(
+        initialConfig,
+        chatClient,
+        codebaseContext,
+        editor,
+        secretStorage,
+        localStorage,
+        rgPath,
+        authProvider
+    )
+
     // Create chat webview
     const chatProvider = new ChatViewProvider(
         context.extensionPath,
@@ -127,10 +140,10 @@ const register = async (
         codebaseContext,
         guardrails,
         editor,
-        secretStorage,
         localStorage,
         rgPath,
-        authProvider
+        authProvider,
+        contextProvider
     )
 
     // Create inline chat
@@ -141,10 +154,10 @@ const register = async (
         codebaseContext,
         guardrails,
         editor,
-        secretStorage,
         localStorage,
         rgPath,
-        authProvider
+        authProvider,
+        contextProvider
     )
 
     disposables.push(chatProvider, inlineChatProvider)
@@ -358,7 +371,7 @@ const register = async (
     return {
         disposable: vscode.Disposable.from(...disposables),
         onConfigurationChange: newConfig => {
-            chatProvider.onConfigurationChange(newConfig)
+            contextProvider.onConfigurationChange(newConfig)
             externalServicesOnDidConfigurationChange(newConfig)
             if (eventLogger) {
                 eventLogger.onConfigurationChange(vscode.workspace.getConfiguration())
