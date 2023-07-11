@@ -39,7 +39,7 @@ jobs:
           fi
       - run: vscode/scripts/download-rg.sh x86_64-unknown-linux
       - run: xvfb-run -a pnpm run test
-      - run: pnpm -C vscode run release
+      - run: CODY_RELEASE_TYPE=stable pnpm -C vscode run release
         if: github.repository == 'sourcegraph/cody'
         env:
           VSCODE_MARKETPLACE_TOKEN: ${{ secrets.VSCODE_MARKETPLACE_TOKEN }}
