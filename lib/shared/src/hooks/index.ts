@@ -7,6 +7,8 @@ export interface Hooks {
     preChat?: PreChatHook[]
 }
 
+type PromiseOr<T> = T | Promise<T>
+
 /**
  * A pre-chat hook is a function that is executed to augment (edit, append to, filter, etc.) chat
  * messages before they are sent to the LLM.
@@ -18,5 +20,5 @@ export interface PreChatHook {
      * @param input The input chat messages.
      * @returns The augmented messages.
      */
-    run(input: Message[]): Message[]
+    run(input: Message[]): PromiseOr<Message[]>
 }

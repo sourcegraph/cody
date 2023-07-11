@@ -18,10 +18,14 @@ const DEFAULT_CHAT_COMPLETION_PARAMETERS: ChatParameters = {
 export class ChatClient {
     constructor(private completions: SourcegraphCompletionsClient, private hooks: Pick<HooksExecutor, 'preChat'>) {}
 
-    public chat(messages: Message[], cb: CompletionCallbacks, params?: Partial<ChatParameters>): () => void {
+    public async chat(
+        messages: Message[],
+        cb: CompletionCallbacks,
+        params?: Partial<ChatParameters>
+    ): Promise<() => void> {
         const isLastMessageFromHuman = messages.length > 0 && messages[messages.length - 1].speaker === 'human'
         messages = isLastMessageFromHuman ? messages.concat([{ speaker: 'assistant' }]) : messages
-        messages = this.hooks.preChat(messages)
+        messages = await this.hooks.preChat(messages)
 
         const typewriter = createTypewriter({
             emit: cb.onChange,

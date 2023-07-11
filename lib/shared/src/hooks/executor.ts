@@ -12,18 +12,18 @@ export interface HooksExecutor {
      * @param input The input chat messages.
      * @returns The augmented messages.
      */
-    preChat(messages: Message[]): Message[]
+    preChat(messages: Message[]): Promise<Message[]>
 }
 
 export function createHooksExecutor(hooks: Hooks): HooksExecutor {
     return {
-        preChat(messages) {
+        async preChat(messages) {
             if (hooks.preChat) {
                 for (const { run } of hooks.preChat) {
-                    messages = run(messages)
+                    messages = await Promise.resolve(run(messages))
                 }
             }
-            console.log('ran pre-chat hook', messages)
+            console.log(messages)
             return messages
         },
     }

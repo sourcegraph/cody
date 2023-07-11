@@ -129,7 +129,7 @@ export async function createClient({
 
         const responsePrefix = interaction.getAssistantMessage().prefix ?? ''
         let rawText = ''
-        chatClient.chat(prompt, {
+        await chatClient.chat(prompt, {
             onChange(_rawText) {
                 rawText = _rawText
 
