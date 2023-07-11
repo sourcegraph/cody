@@ -13,8 +13,8 @@ const config = {
     'plugin:storybook/recommended',
     'plugin:react/recommended',
     'plugin:react-hooks/recommended',
-    // 'plugin:import/recommended',
-    // 'plugin:import/typescript',
+    'plugin:import/recommended',
+    'plugin:import/typescript',
   ],
   parser: '@typescript-eslint/parser',
   plugins: ['@typescript-eslint'],
@@ -199,6 +199,9 @@ const config = {
     // eslint-plugin-react-hooks
     'react-hooks/rules-of-hooks': 'error',
     'react-hooks/exhaustive-deps': 'warn',
+
+    // eslint-plugin-import
+    'import/no-unresolved': 'off',
   },
   overrides: [
     {
