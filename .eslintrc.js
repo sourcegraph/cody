@@ -15,9 +15,10 @@ const config = {
     'plugin:react-hooks/recommended',
     'plugin:import/recommended',
     'plugin:import/typescript',
+    'plugin:jsx-a11y/recommended',
   ],
   parser: '@typescript-eslint/parser',
-  plugins: ['@typescript-eslint'],
+  plugins: ['@typescript-eslint', 'unused-imports'],
   settings: {
     react: {
       version: 'detect',
@@ -202,12 +203,31 @@ const config = {
 
     // eslint-plugin-import
     'import/no-unresolved': 'off',
+    'import/extensions': ['error', 'never'],
+    'import/no-deprecated': 'warn',
+    'import/no-unused-modules': 'error',
+    'import/no-cycle': 'off', // Too slow
+    'import/no-self-import': 'error',
+    'import/no-dynamic-require': 'error',
+    'import/no-useless-path-segments': 'error',
+    'import/no-duplicates': 'error',
+    'import/no-default-export': 'error',
+
+    // eslint-plugin-unused-imports
+    'unused-imports/no-unused-imports': 'error',
+    'unused-imports/no-unused-vars': 'off',
+
+    // eslint-plugin-jsx-a11y
+    'jsx-a11y/no-onchange': 'off', // Deprecated due to better browser support
+    'jsx-a11y/no-autofocus': 'off', // Rule can't account for cases where autofocus can be expected
+    'jsx-a11y/accessible-emoji': 'off', // Deprecated due to better browser support
   },
   overrides: [
     {
       files: ['*.d.ts'],
       rules: {
         'no-restricted-imports': 'off',
+        'import/no-default-export': 'off',
       },
     },
     {
