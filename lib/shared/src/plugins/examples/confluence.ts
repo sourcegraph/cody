@@ -1,10 +1,9 @@
-import { IPlugin, IPluginFunctionOutput, IPluginFunctionParameters } from '../api/types'
+import {IPlugin, IPluginFunctionOutput, IPluginFunctionParameters} from '../api/types'
 import fetch from 'isomorphic-fetch'
 
 const email = process.env.CONFLUENCE_EMAIL!
 const apiToken = process.env.CONFLUENCE_API_TOKEN!
-
-const base_url = 'https://sourcegraph-source.atlassian.net'
+const base_url = process.env.CONFLUENCE_URL
 
 interface SearchResult {
     content: {
@@ -35,10 +34,9 @@ const searchWiki = async (query: string): Promise<any> => {
     try {
         const searchResponse = await fetch(searchUrl, searchOptions)
         const searchJson = await searchResponse.json()
-
         const results = searchJson?.results as SearchResult[]
 
-        const contentPromises = results.map(async result => {
+        return results.map(async result => {
             const contentUrl = `${base_url}/wiki/rest/api/content/${result.content.id}?expand=body.storage`
             const contentOptions = {
                 method: 'GET',
@@ -50,9 +48,7 @@ const searchWiki = async (query: string): Promise<any> => {
 
             const contentResponse = await fetch(contentUrl, contentOptions)
             const contentJson = await contentResponse.json()
-
             const content = contentJson as WikiContent
-
             const sanitizedParagraph = removeHtmlTags(content.body.storage.value)
             const sanitizedBlurb = removeHtmlTags(result.excerpt)
             const text = getSurroundingText(sanitizedParagraph, sanitizedBlurb)
@@ -61,7 +57,6 @@ const searchWiki = async (query: string): Promise<any> => {
                 url: `${base_url}/${result.url}`,
             }
         })
-        return contentPromises
     } catch (error) {
         // Handle and log any errors
         console.error('Error in searchWiki:', error)
@@ -94,8 +89,7 @@ export const confluencePlugin: IPlugin = {
 
                 if (typeof query === 'string') {
                     const items = await searchWiki(query)
-                    const x = await Promise.all(items)
-                    return x
+                    return await Promise.all(items)
                 }
                 return Promise.reject(new Error('Invalid parameters'))
             },
