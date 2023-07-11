@@ -219,10 +219,12 @@ export class InlineController {
     public setResponsePending(isResponsePending: boolean): void {
         let iterations = 0
 
-        if (!isResponsePending && this.responsePendingInterval) {
-            clearInterval(this.responsePendingInterval)
-            this.responsePendingInterval = null
-            iterations = 0
+        if (!isResponsePending) {
+            if (this.responsePendingInterval) {
+                clearInterval(this.responsePendingInterval)
+                this.responsePendingInterval = null
+                iterations = 0
+            }
             return
         }
 
