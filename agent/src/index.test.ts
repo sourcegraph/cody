@@ -2,6 +2,8 @@ import assert from 'assert'
 import { spawn } from 'child_process'
 import path from 'path'
 
+import { afterAll, describe, it } from 'vitest'
+
 import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 
 import { MessageHandler } from './jsonrpc'

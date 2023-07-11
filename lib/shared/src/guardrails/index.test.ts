@@ -1,3 +1,5 @@
+import { describe, expect, it } from 'vitest'
+
 import { summariseAttribution } from '.'
 
 const genRepos = (count: number) => {

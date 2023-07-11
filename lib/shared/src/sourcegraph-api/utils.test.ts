@@ -1,3 +1,5 @@
+import { describe, expect, it } from 'vitest'
+
 import { toPartialUtf8String } from './utils'
 
 describe('toPartialUtf8String', () => {

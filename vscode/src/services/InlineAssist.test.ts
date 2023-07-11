@@ -1,3 +1,4 @@
+import { describe, it,expect } from 'vitest'
 import * as vscode from 'vscode'
 
 import { editDocByUri, updateRangeOnDocChange } from './InlineAssist'

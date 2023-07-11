@@ -1,3 +1,4 @@
+import { describe, it,expect } from 'vitest'
 import { CLOSING_CODE_TAG, extractFromCodeBlock, OPENING_CODE_TAG } from './text-processing'
 
 describe('extractFromCodeBlock', () => {

@@ -1,3 +1,5 @@
+import { describe, expect, it, test } from 'vitest'
+
 import { escapeMarkdown, registerHighlightContributions, renderMarkdown } from '.'
 
 // TODO(sqs): copied from sourcegraph/sourcegraph. should dedupe.

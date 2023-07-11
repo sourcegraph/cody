@@ -1,3 +1,4 @@
+import { describe, it,expect } from 'vitest'
 import type * as vscode from 'vscode'
 
 import { DOTCOM_URL } from './chat/protocol'

@@ -1,3 +1,4 @@
+import { describe,expect } from 'vitest'
 import { defaultAuthStatus, unauthenticatedStatus } from './protocol'
 import { convertGitCloneURLToCodebaseName, newAuthStatus } from './utils'
 
