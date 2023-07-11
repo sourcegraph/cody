@@ -17,6 +17,7 @@ import { SourcegraphEmbeddingsSearchClient } from '@sourcegraph/cody-shared/src/
 import { annotateAttribution, Guardrails } from '@sourcegraph/cody-shared/src/guardrails'
 import { highlightTokens } from '@sourcegraph/cody-shared/src/hallucinations-detector'
 import { IntentDetector } from '@sourcegraph/cody-shared/src/intent-detector'
+import * as plugins from '@sourcegraph/cody-shared/src/plugins/api'
 import { ANSWER_TOKENS, DEFAULT_MAX_TOKENS } from '@sourcegraph/cody-shared/src/prompt/constants'
 import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
 import { SourcegraphGraphQLAPIClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
@@ -521,11 +522,42 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 this.onCompletionEnd()
                 break
             default: {
+                this.transcript.addAssistantResponse('', 'Choosing plugins for additional context...\n')
                 this.sendTranscript()
 
-                const { prompt, contextFiles } = await this.transcript.getPromptForLastInteraction(
+                // add data source context to Cody context
+                const { prompt: history } = await this.transcript.getPromptForLastInteraction(
                     getPreamble(this.codebaseContext.getCodebase()),
                     this.maxPromptTokens
+                )
+
+                let pluginContextMessages: Message[] = []
+                try {
+                    // todo: get query together with previous context
+                    // choose which plugins should be run based on the recipe and message
+                    const chosenPlugins = await plugins.chooseDataSources(humanChatInput, this.chat, history)
+                    if (chosenPlugins.length !== 0) {
+                        this.transcript.addAssistantResponse(
+                            '',
+                            `Querying ${chosenPlugins
+                                .map(([pluginName]) => pluginName)
+                                .join(', ')} for additional context...\n`
+                        )
+                        this.sendTranscript()
+                        const dataSources = chosenPlugins.map(([, dataSource]) => dataSource)
+
+                        // run data source functions in parallel
+                        pluginContextMessages = await plugins.getContext(dataSources)
+                    }
+                } catch (error) {
+                    console.error('Error getting plugin context', error)
+                }
+
+                // add data source context to Cody context
+                const { prompt, contextFiles } = await this.transcript.getPromptForLastInteraction(
+                    getPreamble(this.codebaseContext.getCodebase()),
+                    this.maxPromptTokens,
+                    pluginContextMessages
                 )
                 this.transcript.setUsedContextFilesForLastInteraction(contextFiles)
                 this.sendPrompt(prompt, interaction.getAssistantMessage().prefix ?? '')
