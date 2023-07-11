@@ -44,6 +44,8 @@
     "@vitejs/plugin-react": "^4.0.2",
     "esbuild": "^0.18.11",
     "eslint": "^8.13.0",
+    "eslint-plugin-jsdoc": "^46.4.3",
+    "eslint-plugin-react-hooks": "^4.6.0",
     "eslint-plugin-storybook": "^0.6.12",
     "jsdom": "^22.1.0",
     "prettier": "2.8.1",

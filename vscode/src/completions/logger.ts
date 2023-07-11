@@ -103,7 +103,6 @@ function createId(): string {
 
 function logSuggestionEvent(): void {
     const now = Date.now()
-    // eslint-disable-next-line ban/ban
     displayedCompletions.forEach(completionEvent => {
         const { suggestedAt, suggestionLoggedAt, startedAt, params, forceRead } = completionEvent
 
