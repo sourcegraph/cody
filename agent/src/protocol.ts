@@ -1,6 +1,11 @@
 /* eslint-disable @typescript-eslint/consistent-type-definitions */
 import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 import { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
+import { TextDocument } from '@sourcegraph/cody-shared/src/editor'
+
+interface TextDocumentIdentifier {
+    uri: string
+}
 
 // This file documents the Cody Agent JSON-RPC protocol. Consult the JSON-RPC
 // specification to learn about how JSON-RPC works https://www.jsonrpc.org/specification
@@ -64,11 +69,9 @@ export type Notifications = {
     // content is unchanged.
     'textDocument/didChange': [TextDocument]
     // The user focused on a document without changing the document's content.
-    // Only the 'uri' property is required, other properties are ignored.
-    'textDocument/didFocus': [TextDocument]
+    'textDocument/didFocus': [TextDocumentIdentifier]
     // The user closed the editor tab for the given document.
-    // Only the 'uri' property is required, other properties are ignored.
-    'textDocument/didClose': [TextDocument]
+    'textDocument/didClose': [TextDocumentIdentifier]
 
     // ================
     // Server -> Client
@@ -103,24 +106,6 @@ export interface ConnectionConfiguration {
     serverEndpoint: string
     accessToken: string
     customHeaders: Record<string, string>
-}
-
-export interface Position {
-    // 0-indexed
-    line: number
-    // 0-indexed
-    character: number
-}
-
-export interface Range {
-    start: Position
-    end: Position
-}
-
-export interface TextDocument {
-    filePath: string
-    content?: string
-    selection?: Range
 }
 
 export interface RecipeInfo {

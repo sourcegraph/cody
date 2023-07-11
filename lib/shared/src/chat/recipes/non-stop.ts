@@ -26,7 +26,7 @@ export class NonStop implements Recipe {
         const quarterFileContext = Math.floor(MAX_CURRENT_FILE_TOKENS / 4)
         if (truncateText(selectedText, quarterFileContext * 2) !== selectedText) {
             const msg = "The amount of text selected exceeds Cody's current capacity."
-            await context.editor.showWarningMessage(msg)
+            await context.editor.warn(msg)
             // TODO: Communicate this error back to the FixupController
             return null
         }

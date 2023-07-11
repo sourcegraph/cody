@@ -1,6 +1,7 @@
 import { CodebaseContext } from '../../codebase-context'
 import { ContextMessage, getContextMessageWithResponse } from '../../codebase-context/messages'
-import { ActiveTextEditorSelection, Editor } from '../../editor'
+import { Editor, SelectionText, TextDocument, uriToPath } from '../../editor'
+import { DocumentOffsets } from '../../editor/offsets'
 import { IntentDetector } from '../../intent-detector'
 import { MAX_CURRENT_FILE_TOKENS, MAX_HUMAN_INPUT_TOKENS } from '../../prompt/constants'
 import {
@@ -31,7 +32,7 @@ export class ChatQuestion implements Recipe {
                     context.firstInteraction,
                     context.intentDetector,
                     context.codebaseContext,
-                    context.editor.getActiveTextEditorSelection() || null
+                    context.editor.getActiveTextDocumentSelectionText()
                 ),
                 []
             )
@@ -44,7 +45,7 @@ export class ChatQuestion implements Recipe {
         firstInteraction: boolean,
         intentDetector: IntentDetector,
         codebaseContext: CodebaseContext,
-        selection: ActiveTextEditorSelection | null
+        selection: SelectionText | null
     ): Promise<ContextMessage[]> {
         const contextMessages: ContextMessage[] = []
         // If input is less than 2 words, it means it's most likely a statement or a follow-up question that does not require additional context
@@ -67,29 +68,50 @@ export class ChatQuestion implements Recipe {
 
         // Add selected text as context when available
         if (selection?.selectedText) {
-            contextMessages.push(...ChatQuestion.getEditorSelectionContext(selection))
+            contextMessages.push(...ChatQuestion.getEditorSelectionContext(editor.getActiveTextDocument()!, selection))
         }
 
         return contextMessages
     }
 
     public static getEditorContext(editor: Editor): ContextMessage[] {
-        const visibleContent = editor.getActiveTextEditorVisibleContent()
-        if (!visibleContent) {
+        const currentDocument = editor.getActiveTextDocument()
+        if (!currentDocument?.visible) {
             return []
         }
-        const truncatedContent = truncateText(visibleContent.content, MAX_CURRENT_FILE_TOKENS)
+
+        const filePath = uriToPath(currentDocument.uri)
+        if (!filePath) {
+            return []
+        }
+
+        const offset = new DocumentOffsets(currentDocument.content)
+
+        const truncatedContent = truncateText(offset.jointRangeSlice(currentDocument.visible), MAX_CURRENT_FILE_TOKENS)
         return getContextMessageWithResponse(
-            populateCurrentEditorContextTemplate(truncatedContent, visibleContent.fileName, visibleContent.repoName),
-            visibleContent
+            populateCurrentEditorContextTemplate(truncatedContent, filePath, currentDocument.repoName ?? undefined),
+            {
+                fileName: filePath,
+                repoName: currentDocument.repoName ?? undefined,
+                revision: currentDocument.revision ?? undefined,
+            }
         )
     }
 
-    public static getEditorSelectionContext(selection: ActiveTextEditorSelection): ContextMessage[] {
+    public static getEditorSelectionContext(document: TextDocument, selection: SelectionText): ContextMessage[] {
+        const filePath = uriToPath(document.uri)
+        if (!filePath) {
+            return []
+        }
+
         const truncatedContent = truncateText(selection.selectedText, MAX_CURRENT_FILE_TOKENS)
+
         return getContextMessageWithResponse(
-            populateCurrentEditorSelectedContextTemplate(truncatedContent, selection.fileName, selection.repoName),
-            selection
+            populateCurrentEditorSelectedContextTemplate(truncatedContent, filePath, document.repoName ?? undefined),
+            {
+                fileName: filePath,
+                ...selection,
+            }
         )
     }
 }

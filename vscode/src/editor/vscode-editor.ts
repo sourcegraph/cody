@@ -1,55 +1,97 @@
 import * as vscode from 'vscode'
 
 import {
-    ActiveTextEditor,
-    ActiveTextEditorSelection,
-    ActiveTextEditorVisibleContent,
     Editor,
+    Indentation,
+    LightTextDocument,
+    TextDocument,
+    TextEdit,
+    Uri,
+    Workspace,
 } from '@sourcegraph/cody-shared/src/editor'
-import { SURROUNDING_LINES } from '@sourcegraph/cody-shared/src/prompt/constants'
 
 import { MyPromptController } from '../my-cody/MyPromptController'
 import { FixupController } from '../non-stop/FixupController'
 import { InlineController } from '../services/InlineController'
 
-export class VSCodeEditor implements Editor {
+export class VSCodeEditor extends Editor {
     constructor(
         public controllers: {
             inline: InlineController
             fixups: FixupController
             prompt: MyPromptController
         }
-    ) {}
-
-    public get fileName(): string {
-        return vscode.window.activeTextEditor?.document.fileName ?? ''
+    ) {
+        super()
     }
 
-    public getWorkspaceRootPath(): string | null {
-        const uri = vscode.window.activeTextEditor?.document?.uri
-        if (uri) {
-            const wsFolder = vscode.workspace.getWorkspaceFolder(uri)
-            if (wsFolder) {
-                return wsFolder.uri.fsPath
+    public getActiveWorkspace(): Workspace | null {
+        const getRoot = (): string | null => {
+            const uri = vscode.window.activeTextEditor?.document?.uri
+            if (uri) {
+                const wsFolder = vscode.workspace.getWorkspaceFolder(uri)
+                if (wsFolder) {
+                    return wsFolder.uri.toString()
+                }
             }
+            return vscode.workspace.workspaceFolders?.[0]?.uri?.toString() ?? null
         }
-        return vscode.workspace.workspaceFolders?.[0]?.uri?.fsPath ?? null
+
+        const root = getRoot()
+        return root ? new Workspace(root) : null
     }
 
-    public getActiveTextEditor(): ActiveTextEditor | null {
+    public getWorkspaceOf(uri: Uri): Workspace | null {
+        const wsFolder = vscode.workspace.getWorkspaceFolder(vscode.Uri.parse(uri))
+
+        if (wsFolder) {
+            return new Workspace(wsFolder.uri.toString())
+        }
+
+        return null
+    }
+
+    public getActiveTextDocument(): TextDocument | null {
         const activeEditor = this.getActiveTextEditorInstance()
-        if (!activeEditor) {
+        const document = activeEditor?.document
+
+        if (!document) {
             return null
         }
-        const documentUri = activeEditor.document.uri
-        const documentText = activeEditor.document.getText()
-        const documentSelection = activeEditor.selection
+
+        const visibleRange = activeEditor.visibleRanges[0]
+        const selection = activeEditor.selection
 
         return {
-            content: documentText,
-            filePath: documentUri.fsPath,
-            selection: !documentSelection.isEmpty ? documentSelection : undefined,
+            uri: document.uri.toString(),
+            languageId: document.languageId,
+
+            content: document.getText(),
+
+            visible: visibleRange
+                ? {
+                      position: visibleRange,
+                      offset: null,
+                  }
+                : null,
+            selection: !selection.isEmpty
+                ? {
+                      position: selection,
+                      offset: null,
+                  }
+                : null,
+
+            // TODO
+            repoName: null,
+            revision: null,
         }
+    }
+
+    public getOpenLightTextDocuments(): LightTextDocument[] {
+        return vscode.workspace.textDocuments.map(doc => ({
+            uri: doc.uri.toString(),
+            languageId: doc.languageId,
+        }))
     }
 
     private getActiveTextEditorInstance(): vscode.TextEditor | null {
@@ -57,77 +99,36 @@ export class VSCodeEditor implements Editor {
         return activeEditor && activeEditor.document.uri.scheme === 'file' ? activeEditor : null
     }
 
-    public getActiveTextEditorSelection(): ActiveTextEditorSelection | null {
-        if (this.controllers.inline.isInProgress) {
-            return null
-        }
-        const activeEditor = this.getActiveTextEditorInstance()
-        if (!activeEditor) {
-            return null
-        }
-        const selection = activeEditor.selection
-        if (!selection || selection?.start.isEqual(selection.end)) {
-            return null
-        }
-        return this.createActiveTextEditorSelection(activeEditor, selection)
-    }
+    public async getLightTextDocument(uri: Uri): Promise<LightTextDocument | null> {
+        const document = await vscode.workspace.openTextDocument(uri)
 
-    public getActiveTextEditorSelectionOrEntireFile(): ActiveTextEditorSelection | null {
-        const activeEditor = this.getActiveTextEditorInstance()
-        if (!activeEditor) {
+        if (!document) {
             return null
         }
-        let selection = activeEditor.selection
-        if (!selection || selection.isEmpty) {
-            selection = new vscode.Selection(0, 0, activeEditor.document.lineCount, 0)
-        }
-        return this.createActiveTextEditorSelection(activeEditor, selection)
-    }
-
-    private createActiveTextEditorSelection(
-        activeEditor: vscode.TextEditor,
-        selection: vscode.Selection
-    ): ActiveTextEditorSelection {
-        const precedingText = activeEditor.document.getText(
-            new vscode.Range(
-                new vscode.Position(Math.max(0, selection.start.line - SURROUNDING_LINES), 0),
-                selection.start
-            )
-        )
-        const followingText = activeEditor.document.getText(
-            new vscode.Range(selection.end, new vscode.Position(selection.end.line + SURROUNDING_LINES, 0))
-        )
 
         return {
-            fileName: vscode.workspace.asRelativePath(activeEditor.document.uri.fsPath),
-            selectedText: activeEditor.document.getText(selection),
-            precedingText,
-            followingText,
+            uri,
+            languageId: document.languageId,
         }
     }
 
-    public getActiveTextEditorVisibleContent(): ActiveTextEditorVisibleContent | null {
-        const activeEditor = this.getActiveTextEditorInstance()
-        if (!activeEditor) {
+    public async getTextDocument(uri: Uri): Promise<TextDocument | null> {
+        const document = await vscode.workspace.openTextDocument(uri)
+
+        if (!document) {
             return null
         }
-
-        const visibleRanges = activeEditor.visibleRanges
-        if (visibleRanges.length === 0) {
-            return null
-        }
-
-        const visibleRange = visibleRanges[0]
-        const content = activeEditor.document.getText(
-            new vscode.Range(
-                new vscode.Position(visibleRange.start.line, 0),
-                new vscode.Position(visibleRange.end.line + 1, 0)
-            )
-        )
 
         return {
-            fileName: vscode.workspace.asRelativePath(activeEditor.document.uri.fsPath),
-            content,
+            uri,
+            languageId: document.languageId,
+
+            content: document.getText(),
+            // TODO
+            repoName: null,
+            revision: null,
+            visible: null,
+            selection: null,
         }
     }
 
@@ -163,23 +164,43 @@ export class VSCodeEditor implements Editor {
         return
     }
 
-    public async showQuickPick(labels: string[]): Promise<string | undefined> {
+    public async quickPick(labels: string[]): Promise<string | null> {
         const label = await vscode.window.showQuickPick(labels)
-        return label
+        return label ?? null
     }
 
-    public async showWarningMessage(message: string): Promise<void> {
+    public async warn(message: string): Promise<void> {
         await vscode.window.showWarningMessage(message)
     }
 
-    public async showInputBox(prompt?: string): Promise<string | undefined> {
-        return vscode.window.showInputBox({
-            placeHolder: prompt || 'Enter here...',
-        })
+    public async prompt(prompt?: string): Promise<string | null> {
+        return (
+            (await vscode.window.showInputBox({
+                placeHolder: prompt || 'Enter here...',
+            })) ?? null
+        )
+    }
+
+    public getIndentation(): Indentation {
+        return vscode.window.activeTextEditor
+            ? {
+                  kind: vscode.window.activeTextEditor.options.insertSpaces ? 'space' : 'tab',
+                  size:
+                      // tabSize is always resolved to a number when accessing the property
+                      vscode.window.activeTextEditor.options.tabSize as number,
+              }
+            : {
+                  kind: 'space',
+                  size: 2,
+              }
+    }
+
+    public edit(uri: string, edits: TextEdit[]): Promise<void> {
+        throw new Error('TODO: implement edit for vscode')
     }
 
     // TODO: When Non-Stop Fixup doesn't depend directly on the chat view,
-    // move the recipe to vscode and remove this entrypoint.
+    // move the recipe to client/cody and remove this entrypoint.
     public async didReceiveFixupText(id: string, text: string, state: 'streaming' | 'complete'): Promise<void> {
         await this.controllers.fixups.didReceiveFixupText(id, text, state)
     }

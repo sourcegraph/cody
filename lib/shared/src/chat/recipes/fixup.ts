@@ -1,5 +1,6 @@
 import { CodebaseContext } from '../../codebase-context'
 import { ContextMessage } from '../../codebase-context/messages'
+import { Editor, uriToPath } from '../../editor'
 import { MAX_CURRENT_FILE_TOKENS, MAX_HUMAN_INPUT_TOKENS } from '../../prompt/constants'
 import { truncateText, truncateTextStart } from '../../prompt/truncation'
 import { BufferedBotResponseSubscriber } from '../bot-response-multiplexer'
@@ -13,17 +14,20 @@ export class Fixup implements Recipe {
 
     public async getInteraction(humanChatInput: string, context: RecipeContext): Promise<Interaction | null> {
         // TODO: Prompt the user for additional direction.
-        const selection = context.editor.getActiveTextEditorSelection() || context.editor.controllers?.inline.selection
+        const active = context.editor.getActiveTextDocument()!
+        const selection = Editor.getTextDocumentSelectionText(active) || context.editor.controllers?.inline.selection
+
         if (!selection) {
             await context.editor.controllers?.inline.error()
-            await context.editor.showWarningMessage('Select some code to fixup.')
+            await context.editor.warn('Select some code to fixup.')
             return null
         }
+
         const quarterFileContext = Math.floor(MAX_CURRENT_FILE_TOKENS / 4)
         if (truncateText(selection.selectedText, quarterFileContext * 2) !== selection.selectedText) {
             const msg = "The amount of text selected exceeds Cody's current capacity."
             await context.editor.controllers?.inline.error()
-            await context.editor.showWarningMessage(msg)
+            await context.editor.warn(msg)
             return null
         }
 
@@ -36,23 +40,24 @@ export class Fixup implements Recipe {
             .replace('{truncateFollowingText}', truncateText(selection.followingText, quarterFileContext))
             .replace('{selectedText}', selection.selectedText)
             .replace('{truncateTextStart}', truncateTextStart(selection.precedingText, quarterFileContext))
-            .replace('{fileName}', selection.fileName)
+            .replace('{fileName}', uriToPath(active.uri)!)
 
         context.responseMultiplexer.sub(
             'selection',
             new BufferedBotResponseSubscriber(async content => {
                 if (!content) {
                     await context.editor.controllers?.inline.error()
-                    await context.editor.showWarningMessage(
+                    await context.editor.warn(
                         'Cody did not suggest any replacement.\nTry starting a new conversation with Cody.'
                     )
                     return
                 }
-                await context.editor.replaceSelection(
-                    selection.fileName,
-                    selection.selectedText,
-                    contentSanitizer(content)
-                )
+                await context.editor.edit(active.uri, [
+                    {
+                        range: active.selection!.position,
+                        newText: contentSanitizer(content),
+                    },
+                ])
             })
         )
 

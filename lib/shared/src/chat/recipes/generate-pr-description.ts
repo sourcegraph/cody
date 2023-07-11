@@ -2,6 +2,7 @@ import { spawnSync } from 'child_process'
 import { readFileSync } from 'fs'
 import path from 'path'
 
+import { uriToPath } from '../../editor'
 import { MAX_RECIPE_INPUT_TOKENS } from '../../prompt/constants'
 import { truncateText } from '../../prompt/truncation'
 import { Interaction } from '../transcript/interaction'
@@ -12,10 +13,12 @@ export class PrDescription implements Recipe {
     public id: RecipeID = 'pr-description'
 
     public async getInteraction(_humanChatInput: string, context: RecipeContext): Promise<Interaction | null> {
-        const dirPath = context.editor.getWorkspaceRootPath()
-        if (!dirPath) {
+        const wsRootUri = context.editor.getActiveWorkspace()?.root
+        if (!wsRootUri) {
             return Promise.resolve(null)
         }
+
+        const wsRootPath = uriToPath(wsRootUri)!
 
         const logFormat = '--pretty="Commit author: %an%nCommit message: %s%nChange description:%b%n"'
 
@@ -30,21 +33,21 @@ export class PrDescription implements Recipe {
             '.github/PULL_REQUEST_TEMPLATE.md',
         ]
 
-        const checkPrTemplate = spawnSync('git', ['ls-files', ...templateFormatArgs], { cwd: dirPath })
+        const checkPrTemplate = spawnSync('git', ['ls-files', ...templateFormatArgs], { cwd: wsRootPath })
         const prTemplateOutput = checkPrTemplate.stdout.toString().trim()
 
         let prTemplateContent = ''
 
         if (prTemplateOutput) {
-            const templatePath = path.join(dirPath.trim(), prTemplateOutput)
+            const templatePath = path.join(wsRootPath.trim(), prTemplateOutput)
             prTemplateContent = readFileSync(templatePath).toString()
         }
 
-        const userEmail = spawnSync('git', ['config', 'user.email'], { cwd: dirPath })
+        const userEmail = spawnSync('git', ['config', 'user.email'], { cwd: wsRootPath })
         const email = userEmail.stdout.toString().trim()
 
         const gitCommit = spawnSync('git', ['log', `--author=<${email}>`, 'origin/HEAD..HEAD', logFormat], {
-            cwd: dirPath,
+            cwd: wsRootPath,
         })
         const gitCommitOutput = gitCommit.stdout.toString().trim()
 

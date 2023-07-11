@@ -1,6 +1,8 @@
+import { Uri } from 'vscode'
+
 import { CodebaseContext } from '../../codebase-context'
 import { ContextMessage } from '../../codebase-context/messages'
-import { ActiveTextEditorSelection, Editor } from '../../editor'
+import { Editor, SelectionText, TextDocument } from '../../editor'
 import { MAX_HUMAN_INPUT_TOKENS, MAX_RECIPE_INPUT_TOKENS, MAX_RECIPE_SURROUNDING_TOKENS } from '../../prompt/constants'
 import { truncateText } from '../../prompt/truncation'
 import { Interaction } from '../transcript/interaction'
@@ -27,9 +29,17 @@ export class InlineChat implements Recipe {
             return new Fixup().getInteraction(humanChatInput.replace(commandRegex.fix, ''), context)
         }
 
+        const active = context.editor.getActiveTextDocument()
+
+        if (active === null) {
+            return null
+        }
+
+        const fileName = Uri.parse(active.uri).fsPath
         const selection = context.editor.controllers?.inline.selection
+
         if (!humanChatInput || !selection) {
-            await context.editor.showWarningMessage('Failed to start Inline Chat: empty input or selection.')
+            await context.editor.warn('Failed to start Inline Chat: empty input or selection.')
             return null
         }
 
@@ -42,7 +52,7 @@ export class InlineChat implements Recipe {
         const promptText = InlineChat.prompt
             .replace('{humanInput}', truncatedText)
             .replace('{selectedText}', truncatedSelectedText)
-            .replace('{fileName}', selection.fileName)
+            .replace('{fileName}', fileName)
 
         // Text display in UI fpr human that includes the selected code
         const displayText = humanChatInput + InlineChat.displayPrompt.replace('{selectedText}', selection.selectedText)
@@ -55,7 +65,7 @@ export class InlineChat implements Recipe {
                     displayText,
                 },
                 { speaker: 'assistant' },
-                this.getContextMessages(truncatedText, context.codebaseContext, selection, context.editor),
+                this.getContextMessages(active, truncatedText, context.codebaseContext, selection, context.editor),
                 []
             )
         )
@@ -86,14 +96,15 @@ export class InlineChat implements Recipe {
 
     // Get context from editor
     private async getContextMessages(
+        document: TextDocument,
         text: string,
         codebaseContext: CodebaseContext,
-        selection: ActiveTextEditorSelection,
+        selection: SelectionText,
         editor: Editor
     ): Promise<ContextMessage[]> {
         const contextMessages: ContextMessage[] = []
         // Add selected text and current file as context
-        contextMessages.push(...ChatQuestion.getEditorSelectionContext(selection))
+        contextMessages.push(...ChatQuestion.getEditorSelectionContext(document, selection))
         contextMessages.push(...ChatQuestion.getEditorContext(editor))
 
         const extraContext = await codebaseContext.getContextMessages(text, {

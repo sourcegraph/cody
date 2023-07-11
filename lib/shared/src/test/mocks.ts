@@ -1,7 +1,16 @@
 import { BotResponseMultiplexer } from '../chat/bot-response-multiplexer'
 import { RecipeContext } from '../chat/recipes/recipe'
 import { CodebaseContext } from '../codebase-context'
-import { ActiveTextEditor, ActiveTextEditorSelection, ActiveTextEditorVisibleContent, Editor } from '../editor'
+import {
+    Editor,
+    Indentation,
+    LightTextDocument,
+    SelectionText,
+    TextDocument,
+    TextEdit,
+    ViewControllers,
+    Workspace,
+} from '../editor'
 import { EmbeddingsSearch } from '../embeddings'
 import { IntentDetector } from '../intent-detector'
 import { ContextResult, KeywordContextFetcher } from '../local-context'
@@ -46,49 +55,66 @@ export class MockKeywordContextFetcher implements KeywordContextFetcher {
     }
 }
 
-export class MockEditor implements Editor {
-    constructor(private mocks: Partial<Editor> = {}) {}
+export class MockEditor extends Editor {
+    public controllers?: ViewControllers | undefined
 
-    public fileName = ''
+    constructor(private mocks: Partial<Editor> = {}) {
+        super()
 
-    public getWorkspaceRootPath(): string | null {
-        return this.mocks.getWorkspaceRootPath?.() ?? null
+        this.controllers = mocks.controllers
     }
 
-    public getActiveTextEditorSelection(): ActiveTextEditorSelection | null {
-        return this.mocks.getActiveTextEditorSelection?.() ?? null
+    public getActiveWorkspace(): Workspace | null {
+        return this.mocks.getActiveWorkspace?.() ?? null
     }
 
-    public getActiveTextEditorSelectionOrEntireFile(): ActiveTextEditorSelection | null {
-        return this.mocks.getActiveTextEditorSelection?.() ?? null
+    public getWorkspaceOf(uri: string): Workspace | null {
+        return this.mocks.getWorkspaceOf?.(uri) ?? null
     }
 
-    public getActiveTextEditor(): ActiveTextEditor | null {
-        return this.mocks.getActiveTextEditor?.() ?? null
+    public getActiveTextDocument(): TextDocument | null {
+        return this.mocks.getActiveTextDocument?.() ?? null
     }
 
-    public getActiveTextEditorVisibleContent(): ActiveTextEditorVisibleContent | null {
-        return this.mocks.getActiveTextEditorVisibleContent?.() ?? null
+    public getOpenLightTextDocuments(): LightTextDocument[] {
+        return this.mocks.getOpenLightTextDocuments?.() ?? []
     }
 
-    public replaceSelection(fileName: string, selectedText: string, replacement: string): Promise<void> {
-        return this.mocks.replaceSelection?.(fileName, selectedText, replacement) ?? Promise.resolve()
+    public getLightTextDocument(uri: string): Promise<LightTextDocument | null> {
+        return this.mocks.getLightTextDocument?.(uri) ?? Promise.resolve(null)
     }
 
-    public showQuickPick(labels: string[]): Promise<string | undefined> {
-        return this.mocks.showQuickPick?.(labels) ?? Promise.resolve(undefined)
+    public getTextDocument(uri: string): Promise<TextDocument | null> {
+        return this.mocks.getTextDocument?.(uri) ?? Promise.resolve(null)
     }
 
-    public showWarningMessage(message: string): Promise<void> {
-        return this.mocks.showWarningMessage?.(message) ?? Promise.resolve()
+    public edit(uri: string, edits: TextEdit[]): Promise<void> {
+        return this.mocks.edit?.(uri, edits) ?? Promise.resolve()
     }
 
-    public showInputBox(prompt?: string): Promise<string | undefined> {
-        return this.mocks.showInputBox?.(prompt) ?? Promise.resolve(undefined)
+    public quickPick(labels: string[]): Promise<string | null> {
+        return this.mocks.quickPick?.(labels) ?? Promise.resolve(null)
+    }
+
+    public warn(message: string): Promise<void> {
+        return this.mocks.warn?.(message) ?? Promise.resolve()
+    }
+
+    public prompt(prompt?: string | undefined): Promise<string | null> {
+        return this.mocks.prompt?.(prompt) ?? Promise.resolve(null)
+    }
+
+    public getIndentation(): Indentation {
+        return (
+            this.mocks.getIndentation?.() ?? {
+                kind: 'space',
+                size: 4,
+            }
+        )
     }
 
     public didReceiveFixupText(id: string, text: string, state: 'streaming' | 'complete'): Promise<void> {
-        return this.mocks.didReceiveFixupText?.(id, text, state) ?? Promise.resolve(undefined)
+        return this.mocks.didReceiveFixupText?.(id, text, state) ?? Promise.resolve()
     }
 }
 

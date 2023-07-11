@@ -1,3 +1,4 @@
+import { Editor, uriToPath } from '../../editor'
 import { MAX_RECIPE_INPUT_TOKENS, MAX_RECIPE_SURROUNDING_TOKENS } from '../../prompt/constants'
 import { truncateText, truncateTextStart } from '../../prompt/truncation'
 import { Interaction } from '../transcript/interaction'
@@ -14,20 +15,28 @@ export class ImproveVariableNames implements Recipe {
     public id: RecipeID = 'improve-variable-names'
 
     public async getInteraction(_humanChatInput: string, context: RecipeContext): Promise<Interaction | null> {
-        const selection = context.editor.getActiveTextEditorSelectionOrEntireFile()
+        const active = context.editor.getActiveTextDocument()
+
+        if (!active) {
+            return null
+        }
+
+        const fileName = uriToPath(active.uri)!
+        const selection = Editor.getTextDocumentSelectionTextOrEntireFile(active)
+
         if (!selection) {
-            await context.editor.showWarningMessage('No code selected. Please select some code and try again.')
+            await context.editor.warn('No code selected. Please select some code and try again.')
             return Promise.resolve(null)
         }
 
         const truncatedSelectedText = truncateText(selection.selectedText, MAX_RECIPE_INPUT_TOKENS)
         const truncatedPrecedingText = truncateTextStart(selection.precedingText, MAX_RECIPE_SURROUNDING_TOKENS)
         const truncatedFollowingText = truncateText(selection.followingText, MAX_RECIPE_SURROUNDING_TOKENS)
-        const extension = getFileExtension(selection.fileName)
+        const extension = getFileExtension(fileName)
 
         const displayText = `Improve the variable names in the following code:\n\`\`\`\n${selection.selectedText}\n\`\`\``
 
-        const languageName = getNormalizedLanguageName(selection.fileName)
+        const languageName = getNormalizedLanguageName(fileName)
         const promptMessage = `Improve the variable names in this ${languageName} code by replacing the variable names with new identifiers which succinctly capture the purpose of the variable. We want the new code to be a drop-in replacement, so do not change names bound outside the scope of this code, like function names or members defined elsewhere. Only change the names of local variables and parameters:\n\n\`\`\`${extension}\n${truncatedSelectedText}\n\`\`\`\n${MARKDOWN_FORMAT_PROMPT}`
         const assistantResponsePrefix = `Here is the improved code:\n\`\`\`${extension}\n`
 
@@ -42,7 +51,11 @@ export class ImproveVariableNames implements Recipe {
                 truncatedSelectedText,
                 truncatedPrecedingText,
                 truncatedFollowingText,
-                selection,
+                {
+                    fileName,
+                    repoName: active.repoName ?? undefined,
+                    revision: active.revision ?? undefined,
+                },
                 context.codebaseContext
             ),
             []

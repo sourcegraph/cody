@@ -24,6 +24,7 @@
     "prepublishOnly": "tsc --build --clean && pnpm run build"
   },
   "dependencies": {
+    "@flatten-js/interval-tree": "^1.0.21",
     "@microsoft/fetch-event-source": "^2.0.1",
     "dompurify": "^3.0.4",
     "highlight.js": "^10.7.3",

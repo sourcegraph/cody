@@ -1,6 +1,7 @@
 import * as vscode from 'vscode'
 
 import { CodebaseContext } from '../../codebase-context'
+import { uriToPath } from '../../editor'
 import { MAX_HUMAN_INPUT_TOKENS } from '../../prompt/constants'
 import { truncateText } from '../../prompt/truncation'
 import { Interaction } from '../transcript/interaction'
@@ -29,12 +30,23 @@ export class ContextSearch implements Recipe {
     public id: RecipeID = 'context-search'
 
     public async getInteraction(humanChatInput: string, context: RecipeContext): Promise<Interaction | null> {
-        const query = humanChatInput || (await context.editor.showInputBox('Enter your search query here...')) || ''
+        const query = humanChatInput || (await context.editor.prompt('Enter your search query here...')) || ''
         if (!query) {
             return null
         }
         const truncatedText = truncateText(query.replace('/search ', '').replace('/s ', ''), MAX_HUMAN_INPUT_TOKENS)
-        const wsRootPath = context.editor.getWorkspaceRootPath()
+
+        const wsRootUri = context.editor.getActiveWorkspace()?.root
+        if (!wsRootUri) {
+            return null
+        }
+
+        const wsRootPath = uriToPath(wsRootUri)
+
+        if (!wsRootPath) {
+            return null
+        }
+
         return new Interaction(
             {
                 speaker: 'human',

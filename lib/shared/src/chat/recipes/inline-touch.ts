@@ -1,7 +1,7 @@
 import * as vscode from 'vscode'
 
 import { ContextMessage } from '../../codebase-context/messages'
-import { ActiveTextEditorSelection } from '../../editor'
+import { Editor, SelectionText, TextDocument, uriToPath } from '../../editor'
 import { MAX_HUMAN_INPUT_TOKENS, MAX_RECIPE_INPUT_TOKENS, MAX_RECIPE_SURROUNDING_TOKENS } from '../../prompt/constants'
 import { truncateText } from '../../prompt/truncation'
 import { BufferedBotResponseSubscriber } from '../bot-response-multiplexer'
@@ -22,21 +22,30 @@ export class InlineTouch implements Recipe {
     constructor(private debug: (filterLabel: string, text: string, ...args: unknown[]) => void) {}
 
     public async getInteraction(humanChatInput: string, context: RecipeContext): Promise<Interaction | null> {
-        const selection = context.editor.getActiveTextEditorSelection() || context.editor.controllers?.inline.selection
-        if (!selection || !this.workspacePath) {
-            await context.editor.controllers?.inline.error()
-            await context.editor.showWarningMessage('Failed to start Inline Chat: empty selection.')
+        const active = context.editor.getActiveTextDocument()
+
+        if (!active) {
             return null
         }
+
+        const fileName = uriToPath(active.uri)!
+
+        const selection = Editor.getTextDocumentSelectionText(active) || context.editor.controllers?.inline.selection
+        if (!selection || !this.workspacePath) {
+            await context.editor.controllers?.inline.error()
+            await context.editor.warn('Failed to start Inline Chat: empty selection.')
+            return null
+        }
+
         const humanInput = humanChatInput.trim() || (await this.getInstructionFromInput()).trim()
         if (!humanInput) {
             await context.editor.controllers?.inline.error()
-            await context.editor.showWarningMessage('Failed to start Inline Chat: empty input.')
+            await context.editor.warn('Failed to start Inline Chat: empty input.')
             return null
         }
         // Get the current directory of the file that the user is currently working on
         // Create file path from selection.fileName and workspacePath
-        const currentFilePath = `${this.workspacePath.fsPath}/${selection.fileName}`
+        const currentFilePath = `${this.workspacePath.fsPath}/${fileName}`
         const currentDir = currentFilePath.replace(/\/[^/]+$/, '')
         this.debug('InlineTouch:currentDir', 'currentDir', currentDir)
 
@@ -44,7 +53,7 @@ export class InlineTouch implements Recipe {
         const newFileName = commandRegex.noTest.test(humanInput)
             ? currentFilePath.replace(/(\.[^./]+)$/, '.cody$1')
             : currentFilePath.replace(/(\.[^./]+)$/, '.test$1')
-        const newFsPath = newFileName || (await this.getNewFileNameFromInput(selection.fileName, currentDir))
+        const newFsPath = newFileName || (await this.getNewFileNameFromInput(fileName, currentDir))
         if (!newFsPath || !currentDir) {
             return null
         }
@@ -63,16 +72,16 @@ export class InlineTouch implements Recipe {
             .replace('{newFileName}', newFsPath)
             .replace('{humanInput}', truncatedText)
             .replace('{selectedText}', truncatedSelectedText)
-            .replace('{fileName}', selection.fileName)
+            .replace('{fileName}', fileName)
 
         // Text display in UI fpr human that includes the selected code
-        const displayText = this.getHumanDisplayText(humanInput, selection.fileName)
+        const displayText = this.getHumanDisplayText(humanInput, fileName)
         context.responseMultiplexer.sub(
             'selection',
             new BufferedBotResponseSubscriber(async content => {
                 if (!content) {
                     await context.editor.controllers?.inline.error()
-                    await context.editor.showWarningMessage(
+                    await context.editor.warn(
                         'Cody did not suggest any code updates. Please try again with a different question.'
                     )
                     return
@@ -98,7 +107,7 @@ export class InlineTouch implements Recipe {
                     speaker: 'assistant',
                     prefix: 'Working on it! I will show you the new file when it is ready.\n\n',
                 },
-                this.getContextMessages(selection, currentDir),
+                this.getContextMessages(active, selection, currentDir),
                 []
             )
         )
@@ -157,12 +166,13 @@ export class InlineTouch implements Recipe {
     // ======================================================== //
 
     private async getContextMessages(
-        selection: ActiveTextEditorSelection,
+        document: TextDocument,
+        selection: SelectionText,
         currentDir: string
     ): Promise<ContextMessage[]> {
         const contextMessages: ContextMessage[] = []
         // Add selected text and current file as context and create context messages from current directory
-        const selectedContext = ChatQuestion.getEditorSelectionContext(selection)
+        const selectedContext = ChatQuestion.getEditorSelectionContext(document, selection)
         const currentDirContext = await MyPrompt.getEditorDirContext(currentDir, true)
         contextMessages.push(...selectedContext, ...currentDirContext)
         // Create context messages from open tabs

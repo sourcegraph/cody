@@ -1,15 +1,16 @@
 import { Client, createClient } from '@sourcegraph/cody-shared/src/chat/client'
 import { registeredRecipes } from '@sourcegraph/cody-shared/src/chat/recipes/agent-recipes'
+import { TextDocument } from '@sourcegraph/cody-shared/src/editor'
 import { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/nodeClient'
 
 import { AgentEditor } from './editor'
 import { MessageHandler } from './jsonrpc'
-import { ConnectionConfiguration, TextDocument } from './protocol'
+import { ConnectionConfiguration } from './protocol'
 
 export class Agent extends MessageHandler {
     private client?: Promise<Client>
     public workspaceRootPath: string | null = null
-    public activeDocumentFilePath: string | null = null
+    public activeDocumentUri: string | null = null
     public documents: Map<string, TextDocument> = new Map()
 
     constructor() {
@@ -42,21 +43,25 @@ export class Agent extends MessageHandler {
         })
 
         this.registerNotification('textDocument/didFocus', document => {
-            this.activeDocumentFilePath = document.filePath
+            this.activeDocumentUri = document.uri
         })
+
         this.registerNotification('textDocument/didOpen', document => {
-            this.documents.set(document.filePath, document)
-            this.activeDocumentFilePath = document.filePath
+            this.documents.set(document.uri, document)
+            this.activeDocumentUri = document.uri
         })
+
         this.registerNotification('textDocument/didChange', document => {
             if (document.content === undefined) {
-                document.content = this.documents.get(document.filePath)?.content
+                document.content = this.documents.get(document.uri)!.content
             }
-            this.documents.set(document.filePath, document)
-            this.activeDocumentFilePath = document.filePath
+
+            this.documents.set(document.uri, document)
+            this.activeDocumentUri = document.uri
         })
+
         this.registerNotification('textDocument/didClose', document => {
-            this.documents.delete(document.filePath)
+            this.documents.delete(document.uri)
         })
 
         this.registerNotification('connectionConfiguration/didChange', config => {
