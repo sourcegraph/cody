@@ -529,9 +529,9 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
             default: {
                 this.sendTranscript()
 
-                // const myPremade = this.editor.controllers.prompt.getMyPrompts().premade
+                const myPremade = this.editor.controllers.prompt.getMyPrompts().premade
                 const { prompt, contextFiles } = await this.transcript.getPromptForLastInteraction(
-                    getPreamble(this.codebaseContext.getCodebase()),
+                    myPremade || getPreamble(this.codebaseContext.getCodebase()),
                     this.maxPromptTokens
                 )
                 this.transcript.setUsedContextFilesForLastInteraction(contextFiles)
@@ -563,8 +563,9 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         }
         transcript.addInteraction(interaction)
 
+        const myPremade = this.editor.controllers.prompt.getMyPrompts().premade
         const { prompt, contextFiles } = await transcript.getPromptForLastInteraction(
-            getPreamble(this.codebaseContext.getCodebase()),
+            myPremade || getPreamble(this.codebaseContext.getCodebase()),
             this.maxPromptTokens
         )
         transcript.setUsedContextFilesForLastInteraction(contextFiles)
@@ -653,6 +654,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         }
         const prompt = this.editor.controllers.prompt.find(title)
         if (!prompt) {
+            debug('executeMyPrompt:noPrompt', title)
             return
         }
         await this.executeRecipe('my-prompt', prompt, true)

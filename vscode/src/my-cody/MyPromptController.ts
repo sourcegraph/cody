@@ -23,7 +23,8 @@ export class MyPromptController {
         this.debug('MyPromptsProvider', 'Initialized')
         this.tools = new MyToolsProvider(context)
         this.refresh().catch(error => console.error(error))
-        this.dev = process.env.CODY_PROMPTS_DEV === 'true'
+        // TODO (bee) remove this when we have a better way to refresh the prompts
+        this.dev = true
         const user = this.tools.getUserInfo()
         // TODO (bee) update recipe list in UI on file change
         if (user?.workspaceRoot) {
@@ -158,7 +159,8 @@ export class MyPromptController {
             const decoded = new TextDecoder('utf-8').decode(bytes) || null
             this.raw = decoded
             return decoded
-        } catch {
+        } catch (error) {
+            console.error(error)
             return null
         }
     }
