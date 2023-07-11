@@ -426,6 +426,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         void this.saveTranscriptToChatHistory()
         this.sendChatHistory()
         void vscode.commands.executeCommand('setContext', 'cody.reply.pending', false)
+        this.editor.controllers.inline.setResponsePending(false)
         if (!ignoreEmbeddingsError) {
             this.logEmbeddingsSearchErrors()
         }
