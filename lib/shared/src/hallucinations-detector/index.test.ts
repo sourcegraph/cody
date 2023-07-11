@@ -1,5 +1,7 @@
 import assert from 'assert'
 
+import { describe, it } from 'vitest'
+
 import { findFilePaths, highlightTokens } from '.'
 
 const markdownText = `# Title

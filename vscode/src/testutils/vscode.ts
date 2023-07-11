@@ -1,3 +1,5 @@
+import { vi } from 'vitest'
+
 import { vsCodeMocks } from './mocks'
 
 /**

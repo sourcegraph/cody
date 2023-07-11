@@ -4,7 +4,6 @@
     "module": "commonjs",
     "rootDir": ".",
     "outDir": "dist",
-    "types": ["vitest/globals"],
   },
   "include": ["**/*", ".*", "package.json"],
   "exclude": ["dist"],

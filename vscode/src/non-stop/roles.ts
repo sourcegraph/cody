@@ -18,6 +18,7 @@ export interface FixupFileCollection {
      * If there is a FixupFile for the specified URI, return it, otherwise
      * undefined. VScode callbacks which have a document or URI can use this
      * to determine if there may be interest in the URI.
+     *
      * @param uri the URI of the document of interest.
      */
     maybeFileForUri(uri: vscode.Uri): FixupFile | undefined
