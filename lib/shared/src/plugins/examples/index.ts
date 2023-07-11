@@ -8,10 +8,11 @@ import { urlReaderPlugin } from './url-reader'
 import { weatherPlugin } from './weather'
 
 export const defaultPlugins: IPlugin[] = [
-    confluencePlugin,
-    githubIssuesPlugin,
-    urlReaderPlugin,
     weatherPlugin,
     timezonePlugin,
     airQualityPlugin,
+    urlReaderPlugin,
+
+    confluencePlugin,
+    githubIssuesPlugin,
 ]
