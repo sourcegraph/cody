@@ -5,7 +5,6 @@
     "rootDir": "src",
     "outDir": "dist",
     "lib": ["ESNext", "DOM.Iterable"],
-    "types": ["vitest/globals"],
   },
   "include": ["src"],
   "exclude": ["dist"],

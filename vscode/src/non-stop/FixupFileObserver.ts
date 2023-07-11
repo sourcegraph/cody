@@ -21,6 +21,7 @@ export class FixupFileObserver {
      * document is renamed or deleted the FixupFile will be updated to provide
      * the current file URI. This creates a FixupFile if one does not exist and
      * starts tracking it; see maybeForUri.
+     *
      * @param uri the URI of the document to monitor.
      * @returns a new FixupFile representing the document.
      */
@@ -37,6 +38,7 @@ export class FixupFileObserver {
      * Gets the FixupFile for a given URI, if one exists. This operation is
      * fast; vscode event sinks which are provided a URI can use this to quickly
      * check whether the file may have fixups.
+     *
      * @param uri the URI of the document of interest.
      * @returns a FixupFile representing the document, if one exists.
      */

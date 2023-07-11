@@ -1,3 +1,5 @@
+import { describe, expect, it } from 'vitest'
+
 import { bestJaccardMatch, getWords } from './bestJaccardMatch'
 
 const targetSnippet = `

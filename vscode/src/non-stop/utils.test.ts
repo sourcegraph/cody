@@ -1,3 +1,5 @@
+import { describe, expect } from 'vitest'
+
 import { getFileNameAfterLastDash } from './utils'
 
 // Test for getFileNameAfterLastDash

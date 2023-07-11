@@ -6,7 +6,6 @@
     "outDir": "dist",
     "jsx": "react-jsx",
     "lib": ["ESNext", "DOM"],
-    "types": ["vitest/globals"],
   },
   "include": [
     "src",

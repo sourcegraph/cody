@@ -9,6 +9,7 @@ import * as vscode from 'vscode'
  * defined by `maxPrefixLength` and `maxSuffixLength` respectively. If the length of the entire
  * document content in either direction is smaller than these parameters, the entire content will be used.
  *w
+ *
  * @param document - A `vscode.TextDocument` object, the document in which to find the context.
  * @param position - A `vscode.Position` object, the position in the document from which to find the context.
  * @param maxPrefixLength - A number representing the maximum length of the prefix to get from the document.

@@ -1,3 +1,5 @@
+import { describe, expect, it } from 'vitest'
+
 import { computeDiff, dumpUse, longestCommonSubsequence } from './diff'
 
 // Note, computeDiff does not treat its arguments symmetrically
