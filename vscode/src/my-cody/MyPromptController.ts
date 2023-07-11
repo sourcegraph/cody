@@ -23,19 +23,19 @@ export class MyPromptController {
         this.debug('MyPromptsProvider', 'Initialized')
         this.tools = new MyToolsProvider(context)
         this.refresh().catch(error => console.error(error))
-        // this.dev = process.env.CODY_PROMPTS_DEV === 'true'
-        this.dev = true
+        this.dev = process.env.CODY_PROMPTS_DEV === 'true'
         const user = this.tools.getUserInfo()
+        // TODO (bee) update recipe list in UI on file change
         if (user?.workspaceRoot) {
-            const fileName = this.dev ? '.cody/config.json' : '.cody/prompts.json'
+            const fileName = '.vscode/cody.json'
             const watchPattern = new vscode.RelativePattern(user.workspaceRoot, fileName)
-            const watchFileListener = vscode.workspace.createFileSystemWatcher(watchPattern)
-            watchFileListener.onDidCreate(() => this.refresh().catch(error => console.error(error)))
-            watchFileListener.onDidChange(() => this.refresh().catch(error => console.error(error)))
+            const watcher = vscode.workspace.createFileSystemWatcher(watchPattern)
+            watcher.onDidCreate(() => this.refresh().catch(error => this.debug('MyPromptsProvider:watcher', error)))
+            watcher.onDidChange(() => this.refresh().catch(error => this.debug('MyPromptsProvider:watcher', error)))
         }
     }
 
-    // get output from the last command run
+    // get the terminal output from the last command run
     public get(): string | null {
         return this.getCommandOutput() || this.raw
     }
@@ -48,10 +48,13 @@ export class MyPromptController {
         this.codebase = codebase || null
     }
 
+    // get the list of recipe names to share with the webview to display
+    // we will then use the selected recipe name to get the prompt during the recipe execution step
     public getPromptList(): string[] {
         return [...this.promptIDs]
     }
 
+    // Find the prompt based on the id
     public find(id: string): string {
         if (this.dev) {
             const myPrompt = this.myPromptStore.get(id)
@@ -81,6 +84,7 @@ export class MyPromptController {
         await this.context.globalState.update('prompts', this.promptStore)
     }
 
+    // Get the prompts and premade for client to use
     public getMyPrompts(): { prompts: Map<string, CodyPrompt> | null; premade: Message[] | null } {
         return {
             prompts: this.myPromptStore,
@@ -88,7 +92,7 @@ export class MyPromptController {
         }
     }
 
-    // WIP: prompts that allow using tools
+    // Create a map of prompts from the json file
     private async makeMyPrompts(): Promise<Map<string, CodyPrompt> | null> {
         const fileContent = await this.getUserFileFromExtensionStorage()
         this.promptIDs = new Set<string>()
@@ -141,13 +145,14 @@ export class MyPromptController {
         ]
     }
 
+    // Dev mode allows devs to make changes to the preamble for testing purposes
     private async getUserFileFromExtensionStorage(): Promise<string | null> {
         const user = this.tools.getUserInfo()
         if (!user.workspaceRoot) {
             return null
         }
         try {
-            const fileName = this.dev ? 'cody_dev.json' : 'cody.json'
+            const fileName = 'cody.json'
             const filePath = vscode.Uri.file(`${user.workspaceRoot}/.vscode/${fileName}`)
             const bytes = await vscode.workspace.fs.readFile(filePath)
             const decoded = new TextDecoder('utf-8').decode(bytes) || null

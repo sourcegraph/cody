@@ -53,7 +53,7 @@ export const Recipes: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper; myProm
                         </VSCodeButton>
                     ))}
                     <div className={styles.recipesHeader}>
-                        <span>Other</span>
+                        <span>Featured</span>
                     </div>
                     {Object.entries(recipesList).map(([key, value]) => (
                         <VSCodeButton

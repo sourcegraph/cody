@@ -7,7 +7,7 @@ const rootPath = vscode.workspace.workspaceFolders?.[0].uri.fsPath
 const currentFilePath = vscode.window.activeTextEditor?.document.uri.fsPath
 const homePath = os.homedir()
 
-// A Class that provides different tools for the user to use during prompt building
+// WIP: A Class that provides different tools for the user to use during prompt building
 export class MyToolsProvider {
     private tools = new Map<string, string>()
     private username: string
@@ -67,7 +67,7 @@ export class MyToolsProvider {
 }
 
 const outputWrapper = `
-The output is from running this command \`{command}\`:
+The output below is from \`{command}\`:
 \`\`\`sh
 {output}
 \`\`\``
