@@ -29,16 +29,14 @@ _&mdash; or &mdash;_
 
 Cody is a code AI tool that autocompletes, writes, fixes, and refactors code (and answers code questions), with:
 
-- **Codebase context**: Cody fetches relevant code context from across your entire codebase to write better code that uses more of your codebase's APIs, impls, and idioms, with less hallucination.
-- **Smooth editor UX:** Popular extensions for [VS Code](https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai) and [JetBrains](https://plugins.jetbrains.com/plugin/9682-cody-ai-by-sourcegraph) (and WIP support for Neovim and Emacs).
+- **Codebase context:** Cody fetches relevant code context from across your entire codebase to write better code that uses more of your codebase's APIs, impls, and idioms, with less hallucination.
+- **Editor features:** Popular extensions for [VS Code](https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai) and [JetBrains](https://plugins.jetbrains.com/plugin/9682-cody-ai-by-sourcegraph) (and WIP support for Neovim and Emacs).
+  - **Autocomplete:** with better suggestions based on your entire codebase, not just a few recently opened files
+  - **Inline chat:** refactor code based on natural language input, ask questions about code snippets, etc.
+  - **Recipes:** explain code, generate unit test, generate docstring, and many more (contribute your own!)
+  - **Codebase-wide chat:** ask questions about your entire codebase
 - **Swappable LLMs:** Support for Anthropic Claude and OpenAI GPT-4/3.5, highly experimental support for self-hosted LLMs, and more soon.
-
-Cody's main features are:
-
-- Autocomplete
-- Inline chat: refactor code based on natural language input, ask questions about code snippets, etc.
-- Recipes: explain code, generate unit test, generate docstring, and many more (contribute your own!)
-- Codebase-wide chat: ask questions about your entire codebase
+  - **Free LLM usage included** (currently Anthropic Claude/OpenAI GPT-4) for individual devs on both personal and work code, subject to reasonable per-user rate limits ([more info](#usage)).
 
 See [cody.dev](https://cody.dev) for more info.
 
@@ -68,7 +66,8 @@ Cody is often magical and sometimes frustratingly wrong. Cody's goal is to be po
 
 - Use the <kbd>👍</kbd>/<kbd>👎</kbd> buttons in the chat sidebar to give feedback.
 - [File an issue](https://github.com/sourcegraph/cody/issues) (or submit a PR!) when you see problems.
-- [Join our Discord.](https://discord.gg/s2qDtYGnAE)
+- [Discussions](https://github.com/sourcegraph/cody/discussions)
+- [Discord](https://discord.gg/s2qDtYGnAE)
 
 ## Usage
 

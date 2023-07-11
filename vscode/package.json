@@ -1,12 +1,12 @@
 {
   "name": "cody-ai",
   "private": true,
-  "displayName": "Cody AI by Sourcegraph",
-  "version": "0.4.2",
+  "displayName": "Cody AI",
+  "version": "0.4.3",
   "publisher": "sourcegraph",
   "license": "Apache-2.0",
   "icon": "resources/cody.png",
-  "description": "AI code assistant that writes code and answers questions for you",
+  "description": "Code AI with codebase context",
   "scripts": {
     "dev": "pnpm run build:dev && CODY_FOCUS_ON_STARTUP=1 NODE_ENV=development code --extensionDevelopmentPath=\"$INIT_CWD/vscode\" --disable-extension=sourcegraph.cody-ai --disable-extension=github.copilot --disable-extension=github.copilot-nightly --inspect-extensions=9333 . --goto ./src/logged-rerank.ts:16:5",
     "generate:completions": "ts-node-transpile-only ./src/testutils/cli/run-code-completions-on-dataset.ts",
@@ -52,7 +52,18 @@
     "codegen",
     "autocomplete",
     "bot",
-    "model"
+    "model",
+    "typescript",
+    "javascript",
+    "python",
+    "golang",
+    "go",
+    "html",
+    "css",
+    "java",
+    "php",
+    "swift",
+    "kotlin"
   ],
   "repository": {
     "type": "git",
@@ -788,9 +799,10 @@
         "cody.serverEndpoint": {
           "order": 1,
           "type": "string",
-          "format": "uri",
           "description": "URL to the Sourcegraph instance.",
-          "examples": "https://example.sourcegraph.com"
+          "examples": "https://example.sourcegraph.com",
+          "markdownDeprecationMessage": "**Deprecated**: Please sign in via the UI instead. If you are already signed in, you can empty this field to remove this warning.",
+          "deprecationMessage": "Deprecated: Please sign in via the UI instead."
         },
         "cody.codebase": {
           "order": 2,
@@ -858,7 +870,7 @@
         "cody.debug.enable": {
           "order": 99,
           "type": "boolean",
-          "markdownDescription": "Turns on debug output (visible in the VS Code Output panel under \"Cody AI by Sourcegraph\")"
+          "markdownDescription": "Turns on debug output (visible in the VS Code Output panel under \"Cody by Sourcegraph\")"
         },
         "cody.debug.verbose": {
           "order": 99,

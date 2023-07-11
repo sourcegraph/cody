@@ -1,5 +1,3 @@
-/* eslint-disable react/no-array-index-key */
-
 import { useCallback } from 'react'
 
 import { VSCodeButton } from '@vscode/webview-ui-toolkit/react'

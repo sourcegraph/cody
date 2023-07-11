@@ -68,7 +68,7 @@ export const Transcript: React.FunctionComponent<
             // We allow some small threshold for "what is considered not scrolled up" so that
             // minimal scroll doesn't affect it (ie. if I'm not all the way scrolled down by like a
             // pixel or two, I probably still want it to scroll).
-            const SCROLL_THRESHOLD = 100
+            const SCROLL_THRESHOLD = 50
             const delta = Math.abs(
                 transcriptContainerRef.current.scrollHeight -
                     transcriptContainerRef.current.offsetHeight -

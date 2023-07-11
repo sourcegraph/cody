@@ -9,10 +9,10 @@ import {
 
 import { getConfiguration } from './configuration'
 
-const outputChannel: vscode.OutputChannel = vscode.window.createOutputChannel('Cody AI by Sourcegraph', 'json')
+const outputChannel: vscode.OutputChannel = vscode.window.createOutputChannel('Cody by Sourcegraph', 'json')
 
 /**
- * Logs text for debugging purposes to the "Cody AI by Sourcegraph" output channel.
+ * Logs text for debugging purposes to the "Cody by Sourcegraph" output channel.
  *
  * There are three config settings that alter the behavior of this function.
  * A window refresh may be needed if these settings are changed for the behavior

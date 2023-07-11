@@ -10,7 +10,7 @@ fi
 run() {
   RIPGREP_DIR="$(dirname "$(readlink -f "$0")")/../resources/bin"
   mkdir -p "${RIPGREP_DIR}"
-  pushd "${RIPGREP_DIR}" || return
+  pushd "${RIPGREP_DIR}" > /dev/null || return
   trap 'popd' EXIT
 
   for url in $(curl https://api.github.com/repos/microsoft/ripgrep-prebuilt/releases/tags/$VERSION 2>/dev/null | jq -r '.assets[] | .browser_download_url'); do
@@ -30,17 +30,21 @@ run() {
     if [ "$ext" = "gz" ]; then
       stripped=${b%.tar.gz}
 
-      echo "$url -> $stripped"
-      wget -qO- "$url" | tar xvz -C ./ && mv ./rg "./$stripped"
+      if [ ! -f "$stripped" ]; then
+        echo "$url -> $stripped"
+        wget -qO- "$url" | tar xvz -C ./ && mv ./rg "./$stripped"
+      fi
 
     elif [ "$ext" = "zip" ]; then
       stripped=${b%.zip}
 
-      echo "$url -> $stripped"
-      wget -q "$url"
-      unzip -q "$b"
-      mv "rg.exe" "./$stripped"
-      rm "$b"
+      if [ ! -f "$stripped" ]; then
+        echo "$url -> $stripped"
+        wget -q "$url"
+        unzip -q "$b"
+        mv "rg.exe" "./$stripped"
+        rm "$b"
+      fi
 
     else
       echo "ERROR: unrecognized extension $ext"

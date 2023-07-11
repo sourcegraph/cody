@@ -1,5 +1,7 @@
 import assert from 'assert'
 
+import { describe, it } from 'vitest'
+
 import { CodebaseContext } from '../../codebase-context'
 import { MAX_AVAILABLE_PROMPT_LENGTH } from '../../prompt/constants'
 import { Message } from '../../sourcegraph-api'

@@ -1,5 +1,6 @@
 import assert from 'assert'
 
+import { describe, expect, it } from 'vitest'
 import { Position, Range } from 'vscode'
 
 import { updateRange, updateRangeMultipleChanges } from './tracked-range'

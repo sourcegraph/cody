@@ -1,5 +1,7 @@
 import assert from 'assert'
 
+import { describe, it } from 'vitest'
+
 import { BotResponseMultiplexer, BufferedBotResponseSubscriber } from './bot-response-multiplexer'
 
 function promise<T>(): [(value: T) => void, Promise<T>] {
