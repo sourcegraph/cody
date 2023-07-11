@@ -5,8 +5,8 @@ import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
 import { Configuration, ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
 import { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/nodeClient'
 
-import { ChatViewProvider } from './chat/ChatViewProvider'
-import { InlineChatViewProvider } from './chat/InlineChatViewProvider'
+import { ChatViewProvider } from './chat/ChatViewProvider2'
+import { InlineChatViewProvider } from './chat/InlineChatViewProvider2'
 import { CODY_FEEDBACK_URL } from './chat/protocol'
 import { CodyCompletionItemProvider } from './completions'
 import { CompletionsDocumentProvider } from './completions/docprovider'
@@ -141,9 +141,10 @@ const register = async (
         codebaseContext,
         guardrails,
         editor,
+        secretStorage,
+        localStorage,
         rgPath,
-        authProvider,
-        chatProvider.webview
+        authProvider
     )
 
     disposables.push(chatProvider, inlineChatProvider)
@@ -156,7 +157,7 @@ const register = async (
     )
 
     const executeRecipe = async (recipe: RecipeID, openChatView = true): Promise<void> => {
-        await chatProvider.executeRecipe(recipe, '', openChatView)
+        await chatProvider.executeRecipe(recipe, '')
     }
 
     const webviewErrorMessenger = async (error: string): Promise<void> => {
@@ -176,7 +177,7 @@ const register = async (
                 }
             }
         }
-        chatProvider.sendErrorToWebview(error)
+        chatProvider.sendError2(error)
     }
 
     const statusBar = createStatusBar()
@@ -186,6 +187,7 @@ const register = async (
         vscode.commands.registerCommand('cody.comment.add', async (comment: vscode.CommentReply) => {
             const isFixMode = /^\/f(ix)?\s/i.test(comment.text.trimStart())
             await commentController.chat(comment, isFixMode)
+            commentController.setResponsePending(true)
             await inlineChatProvider.executeRecipe('inline-chat', comment.text.trimStart())
             logEvent(`CodyVSCodeExtension:inline-assist:${isFixMode ? 'fixup' : 'chat'}`)
         }),

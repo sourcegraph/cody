@@ -260,8 +260,8 @@ export class InlineController {
         this.thread = null
     }
 
-    public async error(): Promise<void> {
-        this.reply('Request failed. Please close this and try again.', 'error')
+    public async error(message = 'Request failed. Please close this and try again.'): Promise<void> {
+        this.reply(message, 'error')
         if (this.currentTaskId) {
             await this.stopFixMode(true)
         }
