@@ -4,8 +4,7 @@
 const config = {
   extends: [
     'eslint:recommended',
-    'plugin:@typescript-eslint/recommended',
-    // 'plugin:@typescript-eslint/strict-type-checked',
+    'plugin:@typescript-eslint/recommended-type-checked',
     // 'plugin:@typescript-eslint/stylistic-type-checked',
     'plugin:react/recommended',
     // '@sourcegraph/eslint-config',
@@ -112,6 +111,8 @@ const config = {
     'id-length': 'off',
 
     // @typescript-eslint
+    //
+    // TODO(sqs): make these stricter
     '@typescript-eslint/no-explicit-any': 'warn',
     '@typescript-eslint/no-empty-interface': 'off',
     '@typescript-eslint/no-empty-function': ['error', { allow: ['arrowFunctions'] }],
@@ -137,6 +138,14 @@ const config = {
         ignoreRestSiblings: true,
       },
     ],
+    '@typescript-eslint/no-unsafe-call': 'warn',
+    '@typescript-eslint/no-unsafe-member-access': 'warn',
+    '@typescript-eslint/no-unsafe-return': 'off',
+    '@typescript-eslint/no-unsafe-assignment': 'warn',
+    '@typescript-eslint/restrict-template-expressions': 'off',
+    '@typescript-eslint/no-unsafe-argument': 'off',
+    '@typescript-eslint/no-misused-promises': 'warn',
+    '@typescript-eslint/no-unsafe-enum-comparison': 'warn',
 
     // eslint-plugin-jsdoc
     'jsdoc/require-returns': 'off',
