@@ -5,8 +5,21 @@ export interface ContextHook {
     /**
      * Called before the LLM input is sent.
      *
-     * @param input The current LLM input.
+     * @param input The LLM input.
      * @returns The augmented input string.
      */
     run(input: string): string
+}
+
+/**
+ * Run an array of context hooks sequentially.
+ *
+ * @param input The LLM input.
+ * @returns The augmented input string.
+ */
+export function runContextHooks(input: string, contextHooks: ContextHook[]): string {
+    for (const { run } of contextHooks) {
+        input = run(input)
+    }
+    return input
 }
