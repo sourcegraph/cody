@@ -6,7 +6,7 @@ export const ENVIRONMENT_CONFIG = cleanEnv(process.env, {
 
 export const DEFAULTS = {
     codebase: 'github.com/sourcegraph/sourcegraph',
-    serverEndpoint: 'https://sourcegraph.sourcegraph.com',
+    serverEndpoint: 'https://sourcegraph.com',
     contextType: 'blended',
     debug: 'development',
 } as const
