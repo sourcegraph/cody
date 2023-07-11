@@ -3,6 +3,8 @@ import { ConfigurationWithAccessToken } from '../configuration'
 import { Editor } from '../editor'
 import { PrefilledOptions, withPreselectedOptions } from '../editor/withPreselectedOptions'
 import { SourcegraphEmbeddingsSearchClient } from '../embeddings/client'
+import { hooksFromConfiguration } from '../hooks/configuration'
+import { createHooksExecutor } from '../hooks/executor'
 import { SourcegraphIntentDetectorClient } from '../intent-detector/client'
 import { SourcegraphBrowserCompletionsClient } from '../sourcegraph-api/completions/browserClient'
 import { CompletionsClientConfig, SourcegraphCompletionsClient } from '../sourcegraph-api/completions/client'
@@ -23,7 +25,7 @@ export { Transcript }
 
 export type ClientInitConfig = Pick<
     ConfigurationWithAccessToken,
-    'serverEndpoint' | 'codebase' | 'useContext' | 'accessToken' | 'customHeaders'
+    'serverEndpoint' | 'codebase' | 'useContext' | 'accessToken' | 'customHeaders' | 'hooks'
 >
 
 export interface ClientInit {
@@ -61,7 +63,8 @@ export async function createClient({
     const fullConfig = { debugEnable: false, ...config }
 
     const completionsClient = createCompletionsClient(fullConfig)
-    const chatClient = new ChatClient(completionsClient)
+    const hooksExecutor = createHooksExecutor(hooksFromConfiguration(fullConfig.hooks))
+    const chatClient = new ChatClient(completionsClient, hooksExecutor)
 
     const graphqlClient = new SourcegraphGraphQLAPIClient(fullConfig)
 

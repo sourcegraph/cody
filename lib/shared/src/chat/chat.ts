@@ -1,3 +1,4 @@
+import { HooksExecutor } from '../hooks/executor'
 import { ANSWER_TOKENS } from '../prompt/constants'
 import { Message } from '../sourcegraph-api'
 import type { SourcegraphCompletionsClient } from '../sourcegraph-api/completions/client'
@@ -15,11 +16,13 @@ const DEFAULT_CHAT_COMPLETION_PARAMETERS: ChatParameters = {
 }
 
 export class ChatClient {
-    constructor(private completions: SourcegraphCompletionsClient) {}
+    constructor(private completions: SourcegraphCompletionsClient, private hooks: Pick<HooksExecutor, 'preChat'>) {}
 
     public chat(messages: Message[], cb: CompletionCallbacks, params?: Partial<ChatParameters>): () => void {
         const isLastMessageFromHuman = messages.length > 0 && messages[messages.length - 1].speaker === 'human'
-        const augmentedMessages = isLastMessageFromHuman ? messages.concat([{ speaker: 'assistant' }]) : messages
+        messages = isLastMessageFromHuman ? messages.concat([{ speaker: 'assistant' }]) : messages
+        messages = this.hooks.preChat(messages)
+
         const typewriter = createTypewriter({
             emit: cb.onChange,
         })
@@ -28,7 +31,7 @@ export class ChatClient {
             {
                 ...DEFAULT_CHAT_COMPLETION_PARAMETERS,
                 ...params,
-                messages: augmentedMessages,
+                messages,
             },
             {
                 ...cb,

@@ -1,7 +1,12 @@
-.container {}
+.container {
+    flex: 1;
+    display: flex;
+}
 
 .form {
+    flex: 1;
     display: flex;
+    align-items: flex-start;
     gap: 0.5rem;
 }
 
@@ -10,21 +15,43 @@
     color: GrayText;
     display: block;
 }
+
 .label:focus-within {
     color: Highlight;
+}
+
+.hook-label {
+    flex: 1;
 }
 
 .label input {
     display: block;
     font-size: 0.8rem;
+}
 
+.label textarea {
+    display: block;
+    width: calc(100% - 0.5rem);
+    font-size: 0.65rem;
+    padding: 1px 2px;
+    resize: none;
+}
+
+.label textarea:not(:focus) {
+    height: 1rem;
+}
+
+.label textarea:focus {
+    height: 4rem;
 }
 
 .button {
     font-size: 0.75rem;
     height: 24px;
-    align-self: flex-end;
+    margin-top: 0.75rem;
+    align-self: flex-start;
 }
+
 .button:disabled {
     visibility: hidden;
 }

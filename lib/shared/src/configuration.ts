@@ -1,3 +1,5 @@
+import { HooksConfiguration } from './hooks/configuration'
+
 export type ConfigurationUseContext = 'embeddings' | 'keyword' | 'none' | 'blended' | 'unified'
 
 // Should we share VS Code specific config via cody-shared?
@@ -19,6 +21,7 @@ export interface Configuration {
     autocompleteAdvancedAccessToken: string | null
     autocompleteAdvancedCache: boolean
     autocompleteAdvancedEmbeddings: boolean
+    hooks?: HooksConfiguration
 }
 
 export interface ConfigurationWithAccessToken extends Configuration {

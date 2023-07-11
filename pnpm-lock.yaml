@@ -384,6 +384,9 @@ importers:
       '@sourcegraph/cody-ui':
         specifier: workspace:*
         version: link:../lib/ui
+      classnames:
+        specifier: ^2.3.2
+        version: 2.3.2
       lodash:
         specifier: ^4.17.21
         version: 4.17.21

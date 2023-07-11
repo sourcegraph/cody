@@ -1,5 +1,6 @@
 import React, { useCallback, useState } from 'react'
 
+import classNames from 'classnames'
 import { isEqual } from 'lodash'
 
 import { useConfig, WebConfiguration } from './useConfig'
@@ -8,20 +9,25 @@ import styles from './Settings.module.css'
 
 const SAMPLE_PUBLIC_CODEBASES = ['github.com/sourcegraph/sourcegraph', 'github.com/hashicorp/errwrap']
 
+const PRE_CHAT_HOOK_INPUT_NAME = 'hooks.preChat[0]'
+
 export const Settings: React.FunctionComponent<{
     config: WebConfiguration
     setConfig: ReturnType<typeof useConfig>[1]
 }> = ({ config, setConfig }) => {
     const [pendingConfig, setPendingConfig] = useState<WebConfiguration>()
-    const onInput = useCallback<React.FormEventHandler<HTMLInputElement>>(
+    const onInput = useCallback<React.FormEventHandler<HTMLInputElement | HTMLTextAreaElement>>(
         event => {
             const { name, value } = event.currentTarget
             setPendingConfig(prev => {
                 const base = prev ?? config
-                const updated: WebConfiguration = {
-                    ...base,
-                    [name]: value,
-                }
+                const updated: WebConfiguration =
+                    name === PRE_CHAT_HOOK_INPUT_NAME
+                        ? { ...base, hooks: { preChat: [value] } }
+                        : {
+                              ...base,
+                              [name]: value,
+                          }
                 if (isEqual(updated, config)) {
                     return undefined // no changes vs. applied config
                 }
@@ -55,7 +61,7 @@ export const Settings: React.FunctionComponent<{
                         required={true}
                         value={pendingConfig?.serverEndpoint ?? config.serverEndpoint}
                         onInput={onInput}
-                        size={24}
+                        size={18}
                     />
                 </label>
                 <label className={styles.label}>
@@ -65,7 +71,7 @@ export const Settings: React.FunctionComponent<{
                         type="password"
                         value={pendingConfig?.accessToken ?? config?.accessToken ?? ''}
                         onInput={onInput}
-                        size={12}
+                        size={8}
                     />
                 </label>
                 <label className={styles.label}>
@@ -76,7 +82,7 @@ export const Settings: React.FunctionComponent<{
                         value={pendingConfig?.codebase ?? config.codebase ?? ''}
                         onInput={onInput}
                         list="codebases"
-                        size={30}
+                        size={24}
                     />
                     {sampleCodebases && (
                         <datalist id="codebases">
@@ -86,6 +92,15 @@ export const Settings: React.FunctionComponent<{
                         </datalist>
                     )}
                 </label>
+                <label className={classNames(styles.label, styles.hookLabel)}>
+                    Pre-chat hook{' '}
+                    <textarea
+                        name={PRE_CHAT_HOOK_INPUT_NAME}
+                        value={pendingConfig?.hooks?.preChat?.[0] ?? config.hooks?.preChat?.[0] ?? ''}
+                        onChange={onInput}
+                    />
+                </label>
+
                 <button type="submit" className={styles.button} disabled={!pendingConfig}>
                     Apply
                 </button>
