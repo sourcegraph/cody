@@ -4,6 +4,7 @@
 const config = {
   extends: [
     'eslint:recommended',
+    'plugin:prettier/recommended',
     'plugin:@typescript-eslint/recommended-type-checked',
     // 'plugin:@typescript-eslint/stylistic-type-checked',
     'plugin:react/recommended',
@@ -12,6 +13,8 @@ const config = {
     'plugin:storybook/recommended',
     'plugin:react/recommended',
     'plugin:react-hooks/recommended',
+    // 'plugin:import/recommended',
+    // 'plugin:import/typescript',
   ],
   parser: '@typescript-eslint/parser',
   plugins: ['@typescript-eslint'],
@@ -38,7 +41,6 @@ const config = {
     ],
   },
   rules: {
-    'arrow-body-style': 'error',
     'arrow-parens': ['error', 'as-needed'],
     'callback-return': 'error',
     complexity: 'off',
@@ -90,7 +92,7 @@ const config = {
     'no-void': 'error',
     'object-shorthand': 'error',
     'one-var': ['error', 'never'],
-    'prefer-arrow-callback': ['error', { allowNamedFunctions: true }],
+    // TODO(sqs) can remove 'prefer-arrow-callback': ['error', { allowNamedFunctions: true }],
     'prefer-const': ['error', { destructuring: 'all' }],
     'prefer-object-spread': 'error',
     'prefer-promise-reject-errors': 'error',
