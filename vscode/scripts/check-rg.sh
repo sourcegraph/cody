@@ -13,10 +13,6 @@ ripgrep-v13.0.0-8-aarch64-pc-windows-msvc
 ripgrep-v13.0.0-8-aarch64-unknown-linux-gnu
 ripgrep-v13.0.0-8-aarch64-unknown-linux-musl
 ripgrep-v13.0.0-8-arm-unknown-linux-gnueabihf
-ripgrep-v13.0.0-8-i686-pc-windows-msvc
-ripgrep-v13.0.0-8-i686-unknown-linux-musl
-ripgrep-v13.0.0-8-powerpc64le-unknown-linux-gnu
-ripgrep-v13.0.0-8-s390x-unknown-linux-gnu
 ripgrep-v13.0.0-8-x86_64-apple-darwin
 ripgrep-v13.0.0-8-x86_64-pc-windows-msvc
 ripgrep-v13.0.0-8-x86_64-unknown-linux-musl
