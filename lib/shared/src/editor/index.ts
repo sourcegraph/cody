@@ -51,9 +51,15 @@ interface VsCodeFixupController {
     >
 }
 
+interface VsCodeMyPromptController {
+    get(): string | null
+    run(command: string): string | null
+}
+
 export interface ActiveTextEditorViewControllers {
     inline: VsCodeInlineController
     fixups: VsCodeFixupController
+    prompt: VsCodeMyPromptController
 }
 
 export interface Editor {

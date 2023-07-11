@@ -21,15 +21,40 @@ export const recipesList = {
     'pr-description': 'Generate pull request description',
 }
 
-export const Recipes: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vscodeAPI }) => {
+export const Recipes: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper; myPrompts: string[] }> = ({
+    vscodeAPI,
+    myPrompts,
+}) => {
     const onRecipeClick = (recipeID: RecipeID): void => {
         vscodeAPI.postMessage({ command: 'executeRecipe', recipe: recipeID })
+    }
+    const onMyPromptClick = (promptID: string): void => {
+        vscodeAPI.postMessage({ command: 'my-prompt', title: promptID })
     }
 
     return (
         <div className="inner-container">
             <div className="non-transcript-container">
                 <div className={styles.recipes}>
+                    <div className={styles.recipesHeader}>
+                        <span>My Prompts</span>
+                        <VSCodeButton type="button" appearance="icon" onClick={() => onMyPromptClick('get')}>
+                            <i className="codicon codicon-refresh" />
+                        </VSCodeButton>
+                    </div>
+                    {myPrompts.map(promptID => (
+                        <VSCodeButton
+                            key={promptID}
+                            className={styles.recipeButton}
+                            type="button"
+                            onClick={() => onMyPromptClick(promptID)}
+                        >
+                            {promptID}
+                        </VSCodeButton>
+                    ))}
+                    <div className={styles.recipesHeader}>
+                        <span>Other</span>
+                    </div>
                     {Object.entries(recipesList).map(([key, value]) => (
                         <VSCodeButton
                             key={key}

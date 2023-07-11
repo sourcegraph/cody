@@ -26,6 +26,7 @@ export type WebviewMessage =
     | { command: 'auth'; type: 'signin' | 'signout' | 'support' | 'app' | 'callback'; endpoint?: string }
     | { command: 'abort' }
     | { command: 'chat-button'; action: string }
+    | { command: 'my-prompt'; title: string }
 
 /**
  * A message sent from the extension host to the webview.
@@ -42,6 +43,7 @@ export type ExtensionMessage =
     | { type: 'errors'; errors: string }
     | { type: 'suggestions'; suggestions: string[] }
     | { type: 'app-state'; isInstalled: boolean }
+    | { type: 'my-prompts'; prompts: string[] }
 
 /**
  * The subset of configuration that is visible to the webview.
