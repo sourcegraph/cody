@@ -20,6 +20,7 @@ import {
     REPOSITORY_NAMES_QUERY,
     SEARCH_ATTRIBUTION_QUERY,
     SEARCH_EMBEDDINGS_QUERY,
+    PRECISE_CONTEXT,
 } from './queries'
 import { buildGraphQLUrl } from './url'
 
@@ -94,6 +95,33 @@ type GetCodyContextResult = CodyFileChunkContext | null
 
 interface GetCodyContextResponse {
     getCodyContext: GetCodyContextResult[]
+}
+
+export interface PreciseContextResult {
+    symbol: string
+    syntectDescriptor: string
+    repository: string
+    symbolRole: number
+    confidence: string
+    text: string
+    filepath: string
+}
+
+interface PreciseContextResponse {
+    getPreciseContext: PreciseContext
+}
+interface PreciseContext {
+    context: PreciseDataContext[]
+}
+
+interface PreciseDataContext {
+    symbol: string
+    syntectDescriptor: string
+    repository: string
+    symbolRole: number
+    confidence: string
+    text: string
+    filepath: string
 }
 
 interface SearchAttributionResponse {
@@ -199,6 +227,23 @@ export class SourcegraphGraphQLAPIClient {
                 data.currentUser ? data.currentUser.id : new Error('current user not found')
             )
         )
+    }
+
+    public async getPreciseContext(
+        repository: string,
+        commitID: string,
+        activeFile: string,
+        activeFileContent: string
+    ): Promise<PreciseContextResult[] | Error> {
+        return this.fetchSourcegraphAPI<APIResponse<PreciseContextResponse>>(PRECISE_CONTEXT, {
+            input: {
+                symbols: [],
+                repository,
+                commitID,
+                activeFile,
+                activeFileContent,
+            },
+        }).then(response => extractDataOrError(response, data => data.getPreciseContext.context))
     }
 
     public async getCurrentUserIdAndVerifiedEmail(): Promise<{ id: string; hasVerifiedEmail: boolean } | Error> {

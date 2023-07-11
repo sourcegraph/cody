@@ -14,13 +14,14 @@ import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
 import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
 import { Editor } from '@sourcegraph/cody-shared/src/editor'
 import { SourcegraphEmbeddingsSearchClient } from '@sourcegraph/cody-shared/src/embeddings/client'
+import { VSCodeGraphContextFetcher } from '@sourcegraph/cody-shared/src/graph-context/graph-context-fetcher'
 import { annotateAttribution, Guardrails } from '@sourcegraph/cody-shared/src/guardrails'
 import { highlightTokens } from '@sourcegraph/cody-shared/src/hallucinations-detector'
 import { IntentDetector } from '@sourcegraph/cody-shared/src/intent-detector'
 import { ANSWER_TOKENS, DEFAULT_MAX_TOKENS } from '@sourcegraph/cody-shared/src/prompt/constants'
 import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
 import { SourcegraphGraphQLAPIClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
-import { isError } from '@sourcegraph/cody-shared/src/utils'
+import { convertGitCloneURLToCodebaseName, isError } from '@sourcegraph/cody-shared/src/utils'
 
 import { View } from '../../webviews/NavBar'
 import { getFullConfig } from '../configuration'
@@ -47,7 +48,6 @@ import {
     WebviewMessage,
 } from './protocol'
 import { getRecipe } from './recipes'
-import { convertGitCloneURLToCodebaseName } from './utils'
 
 export type Config = Pick<
     ConfigurationWithAccessToken,
@@ -987,6 +987,7 @@ export async function getCodebaseContext(
         embeddingsSearch,
         new LocalKeywordContextFetcher(rgPath, editor, chatClient),
         new FilenameContextFetcher(rgPath, editor, chatClient),
+        new VSCodeGraphContextFetcher(client, editor),
         undefined,
         getRerankWithLog(chatClient)
     )

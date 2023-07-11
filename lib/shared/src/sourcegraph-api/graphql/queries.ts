@@ -176,3 +176,19 @@ mutation LogEventMutation($event: String!, $userCookieID: String!, $url: String!
 		alwaysNil
 	}
 }`
+
+export const PRECISE_CONTEXT = `
+query GetPreciseContext($input: PreciseContextInput!) {
+    getPreciseContext(input: $input) {
+        context {
+            symbol
+            symbolRole
+            syntectDescriptor
+            repository
+            text
+            confidence
+            filepath
+        }
+    }
+}
+`
