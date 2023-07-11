@@ -86,7 +86,7 @@ export class AgentEditor implements Editor {
     }
 
     public showQuickPick(labels: string[]): Promise<string | undefined> {
-        return this.agent.request('editor/quickpick',  { items: labels }).then(resp => resp.item)
+        return this.agent.request('editor/quickpick', { items: labels }).then(resp => resp.item)
     }
 
     public showWarningMessage(): Promise<void> {

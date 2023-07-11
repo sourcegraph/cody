@@ -152,5 +152,5 @@ export interface QuickPickParams {
 }
 
 export interface QuickPickSelection {
-    item?: string;
+    item?: string
 }
