@@ -2,6 +2,7 @@
 
 const baseConfig = require('@sourcegraph/prettierrc')
 
+/** @type {import('prettier').Config} */
 module.exports = {
   ...baseConfig,
   plugins: [...(baseConfig.plugins || []), '@ianvs/prettier-plugin-sort-imports'],
