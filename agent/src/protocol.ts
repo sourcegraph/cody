@@ -47,7 +47,7 @@ export type Requests = {
     // ... client shows some UI to select things, user selects 'Tuesday'
     // client --- 'Tuesday' -> server
     //
-    'editor/quickpick': [string[], string]
+    'editor/quickpick': [QuickPickParams, QuickPickSelection]
 }
 
 // The JSON-RPC notifications of the Cody Agent protocol. Notifications are
@@ -144,4 +144,13 @@ export interface RecipeInfo {
 export interface ExecuteRecipeParams {
     id: RecipeID
     humanChatInput: string
+}
+
+export interface QuickPickParams {
+    items: string[]
+    default?: string
+}
+
+export interface QuickPickSelection {
+    item?: string;
 }
