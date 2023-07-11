@@ -216,8 +216,7 @@ export class CodebaseContext {
         // that in the long-term, but this will do for now :)
 
         if (!this.graph) {
-            console.log('>>>>>>>>>>>>>>>> No graph available')
-            return []
+            return Promise.resolve([])
         }
 
         const contextMessages: ContextMessage[] = []
@@ -245,10 +244,7 @@ export class CodebaseContext {
             contextMessages.push({ speaker: 'assistant', text: 'okay' })
         }
 
-        console.log(
-            '🚀 ~ file: index.ts:249 ~ CodebaseContext ~ getGraphContextMessages ~ contextMessages:',
-            contextMessages
-        )
+        return contextMessages
 
         // contextMessages.push({
         //     speaker: 'human',
