@@ -2,13 +2,20 @@
 
 /** @type {import('eslint').Linter.Config} */
 const config = {
-  extends: ['@sourcegraph/eslint-config', 'plugin:storybook/recommended'],
+  extends: [
+    'eslint:recommended',
+    // 'plugin:@typescript-eslint/recommended',
+    // 'plugin:@typescript-eslint/recommended-type-checked',
+    // 'plugin:react/recommended',
+    '@sourcegraph/eslint-config',
+    // 'plugin:jsdoc/recommended-typescript',
+    'plugin:storybook/recommended',
+  ],
+  parser: '@typescript-eslint/parser',
+  plugins: ['@typescript-eslint'],
   root: true,
   parserOptions: {
     sourceType: 'module',
-    ecmaFeatures: {
-      jsx: true,
-    },
     EXPERIMENTAL_useSourceOfProjectReferenceRedirect: true,
     project: [
       'agent/tsconfig.json',
@@ -22,11 +29,6 @@ const config = {
       'web/tsconfig.json',
       'tsconfig.json',
     ],
-  },
-  settings: {
-    react: {
-      version: 'detect',
-    },
   },
   rules: {
     'import/order': 'off',
