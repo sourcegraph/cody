@@ -3,11 +3,6 @@
 /** @type {import('eslint').Linter.Config} */
 const config = {
   extends: ['@sourcegraph/eslint-config', 'plugin:storybook/recommended'],
-  env: {
-    browser: true,
-    node: true,
-    es6: true,
-  },
   root: true,
   parserOptions: {
     sourceType: 'module',
@@ -56,6 +51,12 @@ const config = {
       files: ['vitest.workspace.js', 'vite.config.ts', 'vitest.config.ts', 'vitest.config.ts', 'playwright.config.ts'],
       rules: {
         'import/no-default-export': 'off',
+      },
+    },
+    {
+      files: ['*.js'],
+      env: {
+        commonjs: true,
       },
     },
   ],
