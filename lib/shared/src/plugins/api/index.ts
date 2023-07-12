@@ -1,4 +1,3 @@
-
 import { ChatClient } from '../../chat/chat'
 import { Message } from '../../sourcegraph-api/completions/types'
 import { defaultPlugins } from '../examples/index'
@@ -60,7 +59,10 @@ export const chooseDataSources = (
 export const getContext = async (dataSourcesCallDescriptors: IPluginFunctionCallDescriptor[]): Promise<Message[]> => {
     let outputs = await Promise.all(
         dataSourcesCallDescriptors.map(async ([dataSource, parameters]) => {
-            const response = await dataSource.handler(parameters)
+            const response = await dataSource.handler(parameters).catch(error => {
+                console.error(error)
+                return []
+            })
 
             if (!response.length) {
                 return
