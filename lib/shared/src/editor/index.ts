@@ -115,7 +115,7 @@ export interface Indentation {
 }
 
 export abstract class Editor {
-    controllers?: ViewControllers
+    public controllers?: ViewControllers
 
     public abstract getActiveWorkspace(): Workspace | null
     /** TODO: What do we do in the event that a document could belong to multiple available workspace? */

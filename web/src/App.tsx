@@ -14,16 +14,16 @@ import styles from './App.module.css'
 
 /* eslint-disable @typescript-eslint/require-await */
 const editor: Editor = new (class extends NoopEditor {
-    async quickPick(labels: string[]) {
+    public async quickPick(labels: string[]): Promise<string | null> {
         // TODO: Use a proper UI element
         return window.prompt(`Choose: ${labels.join(', ')}`, labels[0]) || null
     }
 
-    async warn(message: string) {
+    public async warn(message: string): Promise<void> {
         console.warn(message)
     }
 
-    async prompt(prompt?: string) {
+    public async prompt(prompt?: string): Promise<string | null> {
         // TODO: Use a proper UI element
         return window.prompt(prompt || 'Enter here...') || null
     }

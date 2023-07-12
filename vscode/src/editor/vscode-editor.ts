@@ -68,7 +68,7 @@ export class VSCodeEditor extends Editor {
 
             content: document.getText(),
 
-            visible: visibleRange ? visibleRange : null,
+            visible: visibleRange,
             selection: !selection.isEmpty ? selection : null,
 
             // TODO
