@@ -238,11 +238,8 @@ describe('Transcript', () => {
                 repoName: null,
                 revision: null,
                 visible: {
-                    offset: null,
-                    position: {
-                        start: { line: 0, character: 0 },
-                        end: { line: 0, character: 11 },
-                    },
+                    start: { line: 0, character: 0 },
+                    end: { line: 0, character: 11 },
                 },
                 selection: null,
             }),
@@ -314,11 +311,8 @@ describe('Transcript', () => {
                 repoName: null,
                 revision: null,
                 visible: {
-                    offset: null,
-                    position: {
-                        start: { line: 0, character: 0 },
-                        end: { line: 0, character: 11 },
-                    },
+                    start: { line: 0, character: 0 },
+                    end: { line: 0, character: 11 },
                 },
                 selection: null,
             }),

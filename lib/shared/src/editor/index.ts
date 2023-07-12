@@ -35,15 +35,10 @@ export interface Range {
     end: Position
 }
 
-export interface OffsetRange {
-    start: number
-    end: number
-}
-
 /** Stop recomputing the offset all the time! */
-export interface JointRange {
-    position: Range
-    offset: OffsetRange | null
+export interface JointRange extends Range {
+    offsetStart?: number
+    offsetEnd?: number
 }
 
 interface VsCodeInlineController {
@@ -192,16 +187,16 @@ export abstract class Editor {
 
         const precedingText = offset.rangeSlice({
             start: {
-                line: Math.max(0, document.selection.position.start.line - SURROUNDING_LINES),
+                line: Math.max(0, document.selection.start.line - SURROUNDING_LINES),
                 character: 0,
             },
-            end: document.selection.position.start,
+            end: document.selection.start,
         })
 
         const followingText = offset.rangeSlice({
-            start: document.selection.position.end,
+            start: document.selection.end,
             end: {
-                line: document.selection.position.end.line + SURROUNDING_LINES,
+                line: document.selection.end.line + SURROUNDING_LINES,
                 character: 0,
             },
         })

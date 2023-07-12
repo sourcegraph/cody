@@ -68,18 +68,8 @@ export class VSCodeEditor extends Editor {
 
             content: document.getText(),
 
-            visible: visibleRange
-                ? {
-                      position: visibleRange,
-                      offset: null,
-                  }
-                : null,
-            selection: !selection.isEmpty
-                ? {
-                      position: selection,
-                      offset: null,
-                  }
-                : null,
+            visible: visibleRange ? visibleRange : null,
+            selection: !selection.isEmpty ? selection : null,
 
             // TODO
             repoName: null,

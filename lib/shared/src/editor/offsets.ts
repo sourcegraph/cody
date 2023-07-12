@@ -74,23 +74,19 @@ export class DocumentOffsets {
     }
 
     public jointRangeSlice(range: JointRange): string {
-        if (!range.offset) {
-            range.offset = {
-                start: this.offset(range.position.start),
-                end: this.offset(range.position.end),
-            }
+        if (!range.offsetStart) {
+            range.offsetStart = this.offset(range.start)
+            range.offsetEnd = this.offset(range.end)
         }
 
-        return this.content.slice(range.offset.start, range.offset.end)
+        return this.content.slice(range.offsetStart, range.offsetEnd)
     }
 
     public toJointRange(range: Range): JointRange {
         return {
-            position: range,
-            offset: {
-                start: this.offset(range.start),
-                end: this.offset(range.end),
-            },
+            ...range,
+            offsetStart: this.offset(range.start),
+            offsetEnd: this.offset(range.end),
         }
     }
 

@@ -54,7 +54,7 @@ export class Fixup implements Recipe {
                 }
                 await context.editor.edit(active.uri, [
                     {
-                        range: active.selection!.position,
+                        range: active.selection!,
                         newText: contentSanitizer(content),
                     },
                 ])
