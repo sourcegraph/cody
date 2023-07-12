@@ -8,7 +8,8 @@
   "icon": "resources/cody.png",
   "description": "Code AI with codebase context",
   "scripts": {
-    "dev": "pnpm run build:dev && CODY_FOCUS_ON_STARTUP=1 NODE_ENV=development code --extensionDevelopmentPath=\"$INIT_CWD/vscode\" --disable-extension=sourcegraph.cody-ai --disable-extension=github.copilot --disable-extension=github.copilot-nightly --inspect-extensions=9333 . --goto ./src/logged-rerank.ts:16:5",
+    "dev:instance": "CODY_FOCUS_ON_STARTUP=1 NODE_ENV=development code --extensionDevelopmentPath=\"$INIT_CWD/vscode\" --disable-extension=sourcegraph.cody-ai --disable-extension=github.copilot --disable-extension=github.copilot-nightly --inspect-extensions=9333 . --goto ./src/logged-rerank.ts:16:5",
+    "dev": "pnpm run build:dev && pnpm run dev:instance",
     "generate:completions": "ts-node-transpile-only ./src/testutils/cli/run-code-completions-on-dataset.ts",
     "build": "tsc --build && pnpm run esbuild --minify && vite build --mode production",
     "build:dev": "tsc --build && concurrently \"pnpm run esbuild --sourcemap\" \"vite build --mode development\"",

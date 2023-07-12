@@ -779,6 +779,26 @@ describe('Cody completions', () => {
             `)
         })
 
+        it('stops when the next non-empty line of the suffix matches partially', async () => {
+            const { completions } = await complete(
+                `path: $GITHUB_WORKSPACE/vscode/.vscod-etest/${CURSOR_MARKER}
+    key: {{ runner.os }}-pnpm-store-{{ hashFiles('**/pnpm-lock.yaml') }}
+                `,
+                [
+                    createCompletionResponse(`
+                    pnpm-store
+                        key: {{ runner.os }}-pnpm-{{ steps.pnpm-cache.outputs.STORE_PATH }}
+                    }`),
+                ]
+            )
+
+            expect(completions[0]).toMatchInlineSnapshot(`
+                InlineCompletionItem {
+                  "insertText": "pnpm-store",
+                }
+            `)
+        })
+
         it('ranks results by number of lines', async () => {
             const { completions } = await complete(
                 `
