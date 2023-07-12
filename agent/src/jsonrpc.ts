@@ -144,7 +144,7 @@ class MessageDecoder extends Writable {
 
                 // If there isn't anymore data, break out of the loop to wait
                 // for more chunks to be written to the stream.
-                if (data.length == 0) {
+                if (data.length === 0) {
                     break
                 }
 
