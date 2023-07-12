@@ -933,6 +933,45 @@
           "type": "boolean",
           "default": false,
           "markdownDescription": "Enables the use of built-in experimental plugins."
+        },
+        "cody.plugins": {
+          "type": "object",
+          "default": {},
+          "properties": {
+            "confluence": {
+              "type": "object",
+              "properties": {
+                "baseUrl": {
+                  "type": "string",
+                  "description": "Confluence instance base url."
+                },
+                "email": {
+                  "type": "string",
+                  "description": "Confluence Email."
+                },
+                "apiToken": {
+                  "type": "string",
+                  "description": "Confluence API Token."
+                }
+              }
+            },
+            "github": {
+              "type": "object",
+              "properties": {
+                "type": "string",
+                "description": "GitHub API Token."
+              }
+            },
+            "apiNinjas": {
+              "type": "object",
+              "properties": {
+                "apiKey": {
+                  "type": "string",
+                  "description": "API Ninjas Key. Use https://api-ninjas.com to get one."
+                }
+              }
+            }
+          }
         }
       }
     },

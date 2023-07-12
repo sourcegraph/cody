@@ -1,11 +1,8 @@
-import { pick } from 'lodash'
 import fetch from 'isomorphic-fetch'
+import { pick } from 'lodash'
 
-import { IPlugin, IPluginFunctionOutput, IPluginFunctionParameters } from '../api/types'
+import { IPlugin, IPluginAPI, IPluginFunctionOutput, IPluginFunctionParameters } from '../api/types'
 
-// TODO: env variables or pluging configuration
-// TODO: support OAuth tokens as well
-const apiToken = 'API_TOKEN'
 const org = 'sourcegraph'
 
 const baseURL = 'https://api.github.com/'
@@ -28,7 +25,7 @@ interface Item {
     state: string
 }
 
-const searchGitHub = async (query: string): Promise<any> => {
+const searchGitHub = async (query: string, apiToken: string): Promise<any> => {
     const url = new URL(path, baseURL)
     // TODO: what is a good limit of results here?
     url.searchParams.set('per_page', '2')
@@ -50,7 +47,7 @@ const searchGitHub = async (query: string): Promise<any> => {
             const title = item.title.slice(0, 180) // up to 180 characters
             const body = removeHtmlTags(item.body).slice(0, 300) // up to 300 characters
             const user =
-                item.user != null
+                item.user !== null
                     ? {
                           name: item.user.name,
                           login: item.user.login,
@@ -58,7 +55,7 @@ const searchGitHub = async (query: string): Promise<any> => {
                       }
                     : null
             const assignee =
-                item.assignee != null
+                item.assignee !== null
                     ? {
                           name: item.assignee.name,
                           login: item.assignee.login,
@@ -101,14 +98,21 @@ export const githubIssuesPlugin: IPlugin = {
                 },
                 required: ['query'],
             },
-            handler: async (parameters: IPluginFunctionParameters): Promise<IPluginFunctionOutput[]> => {
+            handler: async (
+                parameters: IPluginFunctionParameters,
+                api: IPluginAPI
+            ): Promise<IPluginFunctionOutput[]> => {
                 const { query } = parameters
 
                 if (typeof query !== 'string') {
                     return Promise.reject(new Error('Invalid parameters'))
                 }
+                const apiToken = api.config?.github?.apiToken
+                if (!apiToken) {
+                    return Promise.reject(new Error('Missing GitHub API token'))
+                }
 
-                return searchGitHub(query)
+                return searchGitHub(query, apiToken)
             },
         },
     ],

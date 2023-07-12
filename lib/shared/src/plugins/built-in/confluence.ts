@@ -1,9 +1,6 @@
-import {IPlugin, IPluginFunctionOutput, IPluginFunctionParameters} from '../api/types'
 import fetch from 'isomorphic-fetch'
 
-const email = process.env.CONFLUENCE_EMAIL!
-const apiToken = process.env.CONFLUENCE_API_TOKEN!
-const base_url = process.env.CONFLUENCE_URL
+import { IPlugin, IPluginAPI, IPluginFunctionOutput, IPluginFunctionParameters } from '../api/types'
 
 interface SearchResult {
     content: {
@@ -21,12 +18,12 @@ interface WikiContent {
     }
 }
 
-const searchWiki = async (query: string): Promise<any> => {
-    const searchUrl = `${base_url}/wiki/rest/api/search?cql=${encodeURIComponent(`text ~ "${query}"`)}&limit=2`
+const searchWiki = async (query: string, opts: { email: string; token: string; baseUrl: string }): Promise<any> => {
+    const searchUrl = `${opts.baseUrl}/wiki/rest/api/search?cql=${encodeURIComponent(`text ~ "${query}"`)}&limit=2`
     const searchOptions = {
         method: 'GET',
         headers: {
-            Authorization: 'Basic ' + btoa(email + ':' + apiToken),
+            Authorization: 'Basic ' + btoa(opts.email + ':' + opts.token),
             'Content-Type': 'application/json',
         },
     }
@@ -37,16 +34,8 @@ const searchWiki = async (query: string): Promise<any> => {
         const results = searchJson?.results as SearchResult[]
 
         return results.map(async result => {
-            const contentUrl = `${base_url}/wiki/rest/api/content/${result.content.id}?expand=body.storage`
-            const contentOptions = {
-                method: 'GET',
-                headers: {
-                    Authorization: 'Basic ' + btoa(email + ':' + apiToken),
-                    'Content-Type': 'application/json',
-                },
-            }
-
-            const contentResponse = await fetch(contentUrl, contentOptions)
+            const contentUrl = `${opts.baseUrl}/wiki/rest/api/content/${result.content.id}?expand=body.storage`
+            const contentResponse = await fetch(contentUrl, searchOptions)
             const contentJson = await contentResponse.json()
             const content = contentJson as WikiContent
             const sanitizedParagraph = removeHtmlTags(content.body.storage.value)
@@ -54,7 +43,7 @@ const searchWiki = async (query: string): Promise<any> => {
             const text = getSurroundingText(sanitizedParagraph, sanitizedBlurb)
             return {
                 content: text,
-                url: `${base_url}/${result.url}`,
+                url: `${opts.baseUrl}/${result.url}`,
             }
         })
     } catch (error) {
@@ -84,12 +73,25 @@ export const confluencePlugin: IPlugin = {
                 },
                 required: ['query'],
             },
-            handler: async (parameters: IPluginFunctionParameters): Promise<IPluginFunctionOutput[]> => {
+            handler: async (
+                parameters: IPluginFunctionParameters,
+                api: IPluginAPI
+            ): Promise<IPluginFunctionOutput[]> => {
                 const { query } = parameters
 
+                const email = api.config?.confluence?.email
+                const token = api.config?.confluence?.apiToken
+                const baseUrl = api.config?.confluence?.baseUrl
+                if (!email || !token || !baseUrl) {
+                    return Promise.reject(new Error('Confluence plugin not configured'))
+                }
                 if (typeof query === 'string') {
-                    const items = await searchWiki(query)
-                    return await Promise.all(items)
+                    const items = await searchWiki(query, {
+                        email,
+                        token,
+                        baseUrl,
+                    })
+                    return Promise.all(items)
                 }
                 return Promise.reject(new Error('Invalid parameters'))
             },

@@ -64,6 +64,7 @@ export type Config = Pick<
     | 'experimentalChatPredictions'
     | 'experimentalGuardrails'
     | 'pluginsEnabled'
+    | 'plugins'
 >
 
 /**
@@ -523,7 +524,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 const dataSources = chosenPlugins.map(([, dataSource]) => dataSource)
 
                 // run data source functions in parallel
-                return await plugins.getContext(dataSources)
+                return await plugins.getContext(dataSources, this.config.plugins)
             }
         } catch (error) {
             console.error('Error getting plugin context', error)

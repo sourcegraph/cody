@@ -18,8 +18,7 @@
       "env": {
         "NODE_ENV": "development",
         "CODY_FOCUS_ON_STARTUP": "1"
-      },
-      "envFile": "${workspaceFolder}/.env"
+      }
     }
   ]
 }

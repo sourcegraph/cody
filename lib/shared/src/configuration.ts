@@ -20,6 +20,19 @@ export interface Configuration {
     autocompleteAdvancedCache: boolean
     autocompleteAdvancedEmbeddings: boolean
     pluginsEnabled?: boolean
+    plugins?: {
+        confluence?: {
+            baseUrl: string
+            email?: string
+            apiToken?: string
+        }
+        github?: {
+            apiToken?: string
+        }
+        apiNinjas?: {
+            apiKey?: string
+        }
+    }
 }
 
 export interface ConfigurationWithAccessToken extends Configuration {

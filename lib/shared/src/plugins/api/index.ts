@@ -1,4 +1,5 @@
-import { ChatClient } from '../../chat/chat'
+import { ChatClient } from '../../chat/chat';
+import { Configuration } from '../../configuration'
 import { Message } from '../../sourcegraph-api/completions/types'
 
 import { makePrompt } from './prompt'
@@ -55,10 +56,13 @@ export const chooseDataSources = (
     })
 }
 
-export const getContext = async (dataSourcesCallDescriptors: IPluginFunctionCallDescriptor[]): Promise<Message[]> => {
+export const getContext = async (
+    dataSourcesCallDescriptors: IPluginFunctionCallDescriptor[],
+    config: Configuration['plugins']
+): Promise<Message[]> => {
     let outputs = await Promise.all(
         dataSourcesCallDescriptors.map(async ([dataSource, parameters]) => {
-            const response = await dataSource.handler(parameters).catch(error => {
+            const response = await dataSource.handler(parameters, { config }).catch(error => {
                 console.error(error)
                 return []
             })

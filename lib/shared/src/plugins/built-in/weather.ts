@@ -1,4 +1,4 @@
-import { IPlugin, IPluginFunctionOutput, IPluginFunctionParameters } from '../api/types'
+import { IPlugin, IPluginAPI, IPluginFunctionOutput, IPluginFunctionParameters } from '../api/types'
 
 import { fetchAPINinjas } from './lib/fetch-api-ninjas'
 
@@ -19,12 +19,16 @@ export const weatherPlugin: IPlugin = {
                 },
                 required: ['city'],
             },
-            handler: (parameters: IPluginFunctionParameters): Promise<IPluginFunctionOutput[]> => {
+            handler: (parameters: IPluginFunctionParameters, api: IPluginAPI): Promise<IPluginFunctionOutput[]> => {
                 if (typeof parameters?.city !== 'string') {
                     return Promise.reject(new Error('Invalid parameters'))
                 }
                 const url = 'https://api.api-ninjas.com/v1/weather?city=' + parameters.city
-                return fetchAPINinjas(url).then(async response => {
+                const apiKey = api.config?.apiNinjas?.apiKey
+                if (!apiKey) {
+                    return Promise.reject(new Error('Missing API key'))
+                }
+                return fetchAPINinjas(url, apiKey).then(async response => {
                     if (!response.ok) {
                         return [
                             {

@@ -1,8 +1,6 @@
 import fetch from 'isomorphic-fetch'
 
-const apiKey = process.env.API_NINJA_API_KEY!
-
-export const fetchAPINinjas = (url: string): Promise<any> =>
+export const fetchAPINinjas = (url: string, apiKey: string): Promise<any> =>
     fetch(url, {
         method: 'GET',
         headers: {

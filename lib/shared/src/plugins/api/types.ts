@@ -1,3 +1,5 @@
+import { Configuration } from '../../configuration'
+
 export interface IPluginFunction {
     name: string
     description: string
@@ -13,7 +15,7 @@ export interface IPluginFunction {
         description?: string
         required?: string[]
     }
-    handler: (parameters: IPluginFunctionParameters) => Promise<IPluginFunctionOutput[]>
+    handler: (parameters: IPluginFunctionParameters, api: IPluginAPI) => Promise<IPluginFunctionOutput[]>
 }
 
 export interface IPluginFunctionOutput {
@@ -36,4 +38,8 @@ export interface IPlugin {
     name: string
     description: string
     dataSources: IPluginFunction[]
+}
+
+export interface IPluginAPI<TConfig = Configuration['plugins']> {
+    config: TConfig
 }
