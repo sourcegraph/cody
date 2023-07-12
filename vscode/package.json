@@ -928,6 +928,11 @@
           "type": "boolean",
           "default": true,
           "markdownDescription": "Enables the use of embeddings as code completions context."
+        },
+        "cody.plugins.enabled": {
+          "type": "boolean",
+          "default": false,
+          "markdownDescription": "Enables the use of built-in experimental plugins."
         }
       }
     },

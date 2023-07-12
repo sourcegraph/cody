@@ -19,6 +19,7 @@ export interface Configuration {
     autocompleteAdvancedAccessToken: string | null
     autocompleteAdvancedCache: boolean
     autocompleteAdvancedEmbeddings: boolean
+    pluginsEnabled?: boolean
 }
 
 export interface ConfigurationWithAccessToken extends Configuration {

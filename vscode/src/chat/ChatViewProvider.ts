@@ -62,6 +62,7 @@ export type Config = Pick<
     | 'useContext'
     | 'experimentalChatPredictions'
     | 'experimentalGuardrails'
+    | 'pluginsEnabled'
 >
 
 /**
@@ -483,6 +484,37 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         await this.publishContextStatus()
     }
 
+    private async getPluginMessages(humanChatInput: string): Promise<Message[]> {
+        this.transcript.addAssistantResponse('', 'Choosing plugins for additional context...\n')
+        this.sendTranscript()
+
+        // add data source context to Cody context
+        const { prompt: history } = await this.transcript.getPromptForLastInteraction(
+            getPreamble(this.codebaseContext.getCodebase()),
+            this.maxPromptTokens
+        )
+
+        try {
+            // todo: get query together with previous context
+            // choose which plugins should be run based on the recipe and message
+            const chosenPlugins = await plugins.chooseDataSources(humanChatInput, this.chat, history)
+            if (chosenPlugins.length !== 0) {
+                this.transcript.addAssistantResponse(
+                    '',
+                    `Querying ${chosenPlugins.map(([pluginName]) => pluginName).join(', ')} for additional context...\n`
+                )
+                this.sendTranscript()
+                const dataSources = chosenPlugins.map(([, dataSource]) => dataSource)
+
+                // run data source functions in parallel
+                return await plugins.getContext(dataSources)
+            }
+        } catch (error) {
+            console.error('Error getting plugin context', error)
+        }
+        return []
+    }
+
     public async executeRecipe(recipeId: RecipeID, humanChatInput: string = '', showTab = true): Promise<void> {
         debug('ChatViewProvider:executeRecipe', recipeId, { verbose: humanChatInput })
         if (this.isMessageInProgress) {
@@ -522,37 +554,12 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 this.onCompletionEnd()
                 break
             default: {
-                this.transcript.addAssistantResponse('', 'Choosing plugins for additional context...\n')
                 this.sendTranscript()
 
-                // add data source context to Cody context
-                const { prompt: history } = await this.transcript.getPromptForLastInteraction(
-                    getPreamble(this.codebaseContext.getCodebase()),
-                    this.maxPromptTokens
-                )
-
                 let pluginContextMessages: Message[] = []
-                try {
-                    // todo: get query together with previous context
-                    // choose which plugins should be run based on the recipe and message
-                    const chosenPlugins = await plugins.chooseDataSources(humanChatInput, this.chat, history)
-                    if (chosenPlugins.length !== 0) {
-                        this.transcript.addAssistantResponse(
-                            '',
-                            `Querying ${chosenPlugins
-                                .map(([pluginName]) => pluginName)
-                                .join(', ')} for additional context...\n`
-                        )
-                        this.sendTranscript()
-                        const dataSources = chosenPlugins.map(([, dataSource]) => dataSource)
-
-                        // run data source functions in parallel
-                        pluginContextMessages = await plugins.getContext(dataSources)
-                    }
-                } catch (error) {
-                    console.error('Error getting plugin context', error)
+                if (this.config.pluginsEnabled) {
+                    pluginContextMessages = await this.getPluginMessages(humanChatInput)
                 }
-
                 // add data source context to Cody context
                 const { prompt, contextFiles } = await this.transcript.getPromptForLastInteraction(
                     getPreamble(this.codebaseContext.getCodebase()),
@@ -806,6 +813,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 ...localProcess,
                 debugEnable: this.config.debugEnable,
                 serverEndpoint: this.config.serverEndpoint,
+                pluginsEnabled: this.config.pluginsEnabled,
             }
 
             // update codebase context on configuration change

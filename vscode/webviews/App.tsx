@@ -21,9 +21,9 @@ import { UserHistory } from './UserHistory'
 import type { VSCodeWrapper } from './utils/VSCodeApi'
 
 export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vscodeAPI }) => {
-    const [config, setConfig] = useState<(Pick<Configuration, 'debugEnable' | 'serverEndpoint'> & LocalEnv) | null>(
-        null
-    )
+    const [config, setConfig] = useState<
+        (Pick<Configuration, 'debugEnable' | 'serverEndpoint' | 'pluginsEnabled'> & LocalEnv) | null
+    >(null)
     const [endpoint, setEndpoint] = useState<string | null>(null)
     const [debugLog, setDebugLog] = useState<string[]>([])
     const [view, setView] = useState<View | undefined>()
@@ -147,7 +147,12 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                 />
             ) : (
                 <>
-                    <NavBar view={view} setView={setView} devMode={Boolean(config?.debugEnable)} />
+                    <NavBar
+                        view={view}
+                        setView={setView}
+                        devMode={Boolean(config?.debugEnable)}
+                        pluginsEnabled={Boolean(config?.pluginsEnabled)}
+                    />
                     {errorMessages && <ErrorBanner errors={errorMessages} setErrors={setErrorMessages} />}
                     {view === 'debug' && config?.debugEnable && <Debug debugLog={debugLog} />}
                     {view === 'history' && (
@@ -182,7 +187,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                 </>
             )}
 
-            {view === 'plugins' && <Plugins />}
+            {config.pluginsEnabled && view === 'plugins' && <Plugins />}
         </div>
     )
 }
