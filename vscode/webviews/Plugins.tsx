@@ -1,4 +1,4 @@
-import { defaultPlugins } from '@sourcegraph/cody-shared/src/plugins/examples'
+import { defaultPlugins } from '@sourcegraph/cody-shared/src/plugins/built-in'
 
 import styles from './Plugins.module.css'
 

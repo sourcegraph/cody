@@ -12,7 +12,6 @@ export const defaultPlugins: IPlugin[] = [
     timezonePlugin,
     airQualityPlugin,
     urlReaderPlugin,
-
     confluencePlugin,
     githubIssuesPlugin,
 ]

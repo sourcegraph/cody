@@ -18,7 +18,7 @@ import { annotateAttribution, Guardrails } from '@sourcegraph/cody-shared/src/gu
 import { highlightTokens } from '@sourcegraph/cody-shared/src/hallucinations-detector'
 import { IntentDetector } from '@sourcegraph/cody-shared/src/intent-detector'
 import * as plugins from '@sourcegraph/cody-shared/src/plugins/api'
-import { defaultPlugins } from '@sourcegraph/cody-shared/src/plugins/examples'
+import { defaultPlugins } from '@sourcegraph/cody-shared/src/plugins/built-in'
 import { ANSWER_TOKENS, DEFAULT_MAX_TOKENS } from '@sourcegraph/cody-shared/src/prompt/constants'
 import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
 import { SourcegraphGraphQLAPIClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
