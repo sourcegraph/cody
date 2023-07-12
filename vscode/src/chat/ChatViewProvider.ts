@@ -38,14 +38,7 @@ import { SecretStorage } from '../services/SecretStorageProvider'
 import { TestSupport } from '../test-support'
 
 import { fastFilesExist } from './fastFileFinder'
-import {
-    ConfigurationSubsetForWebview,
-    defaultAuthStatus,
-    DOTCOM_URL,
-    ExtensionMessage,
-    LocalEnv,
-    WebviewMessage,
-} from './protocol'
+import { ConfigurationSubsetForWebview, DOTCOM_URL, ExtensionMessage, LocalEnv, WebviewMessage } from './protocol'
 import { getRecipe } from './recipes'
 import { convertGitCloneURLToCodebaseName } from './utils'
 
@@ -390,20 +383,16 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 this.transcript.addErrorAsAssistantResponse(err)
                 // Log users out on unauth error
                 if (statusCode && statusCode >= 400 && statusCode <= 410) {
-                    const authStatus = { ...defaultAuthStatus }
-                    if (statusCode === 403) {
-                        authStatus.authenticated = true
-                        authStatus.requiresVerifiedEmail = true
-                    } else {
-                        authStatus.showInvalidAccessTokenError = true
-                    }
-                    debug('ChatViewProvider:onError:unauth', err, { verbose: { authStatus } })
-                    void this.clearAndRestartSession()
-                    void this.authProvider.auth(
-                        this.config.serverEndpoint,
-                        this.config.accessToken,
-                        this.config.customHeaders
-                    )
+                    void this.authProvider
+                        .auth(this.config.serverEndpoint, this.config.accessToken, this.config.customHeaders)
+                        .then(authStatus => {
+                            if (!authStatus?.authStatus.hasVerifiedEmail) {
+                                this.transcript.addErrorAsAssistantResponse('Email is not verified.')
+                            } else if (authStatus?.authStatus.showInvalidAccessTokenError) {
+                                this.transcript.addErrorAsAssistantResponse('Invalid Token. Please signin again.')
+                            }
+                        })
+                    debug('ChatViewProvider:onError:unauth', err, { verbose: { statusCode } })
                 }
                 // We ignore embeddings errors in this instance because we're already showing an
                 // error message and don't want to overwhelm the user.
