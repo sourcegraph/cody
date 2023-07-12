@@ -30,7 +30,7 @@ export class DocumentOffsets {
     }
 
     public get lines(): number[] {
-        if (this.lines_ == null) {
+        if (this.lines_ === null) {
             this.compute()
         }
 
@@ -38,7 +38,7 @@ export class DocumentOffsets {
     }
 
     public get intervalTree(): IntervalTree {
-        if (this.intervalTree_ == null) {
+        if (this.intervalTree_ === null) {
             this.compute()
         }
 

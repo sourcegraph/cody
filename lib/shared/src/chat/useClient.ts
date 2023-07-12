@@ -144,10 +144,10 @@ export const useClient = ({
 
     const setEditorScope = useCallback(
         (editor: Editor) => {
-            const newRepoName = editor.getActiveTextEditor()?.repoName
+            const newRepoName = editor.getActiveTextDocument()?.repoName
 
             return setScopeState(scope => {
-                const oldRepoName = scope.editor.getActiveTextEditor()?.repoName
+                const oldRepoName = scope.editor.getActiveTextDocument()?.repoName
 
                 const resetInferredScope = newRepoName !== oldRepoName
 
@@ -177,7 +177,7 @@ export const useClient = ({
         [setScopeState]
     )
 
-    const activeEditor = useMemo(() => scope.editor.getActiveTextEditor(), [scope.editor])
+    const activeEditor = useMemo(() => scope.editor.getActiveTextDocument(), [scope.editor])
 
     const codebases: string[] = useMemo(() => {
         const repos = [...scope.repositories]
@@ -256,7 +256,7 @@ export const useClient = ({
             const repoNames = [...codebases]
             const repoIds = [...(await codebaseIds)]
             const editor = options?.scope?.editor || (scope.includeInferredFile ? scope.editor : new NoopEditor())
-            const activeEditor = editor.getActiveTextEditor()
+            const activeEditor = editor.getActiveTextDocument()
             if (activeEditor?.repoName && !repoNames.includes(activeEditor.repoName)) {
                 // NOTE(naman): We allow users to disable automatic inferrence of current file & repo
                 // using `includeInferredFile` and `includeInferredRepository` options. But for editor recipes

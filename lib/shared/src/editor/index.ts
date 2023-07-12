@@ -85,7 +85,7 @@ export interface SelectionText {
 export function uriToPath(uri: string): string | null {
     const url = new URL(uri)
 
-    if (url.protocol !== 'file') {
+    if (url.protocol !== 'file:') {
         return null
     }
 

@@ -75,12 +75,17 @@ export class ChatQuestion implements Recipe {
     }
 
     public static getEditorContext(editor: Editor): ContextMessage[] {
+        const currentWorkspace = editor.getActiveWorkspace()
+        if (!currentWorkspace) {
+            return []
+        }
+
         const currentDocument = editor.getActiveTextDocument()
         if (!currentDocument?.visible) {
             return []
         }
 
-        const filePath = uriToPath(currentDocument.uri)
+        const filePath = currentWorkspace.relativeTo(currentDocument.uri)
         if (!filePath) {
             return []
         }

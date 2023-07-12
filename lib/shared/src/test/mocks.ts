@@ -1,16 +1,7 @@
 import { BotResponseMultiplexer } from '../chat/bot-response-multiplexer'
 import { RecipeContext } from '../chat/recipes/recipe'
 import { CodebaseContext } from '../codebase-context'
-import {
-    Editor,
-    Indentation,
-    LightTextDocument,
-    SelectionText,
-    TextDocument,
-    TextEdit,
-    ViewControllers,
-    Workspace,
-} from '../editor'
+import { Editor, Indentation, LightTextDocument, TextDocument, TextEdit, ViewControllers, Workspace } from '../editor'
 import { EmbeddingsSearch } from '../embeddings'
 import { IntentDetector } from '../intent-detector'
 import { ContextResult, KeywordContextFetcher } from '../local-context'
