@@ -32,7 +32,7 @@ import { debug } from '../log'
 import { getRerankWithLog } from '../logged-rerank'
 import { FixupTask } from '../non-stop/FixupTask'
 import { IdleRecipeRunner } from '../non-stop/roles'
-import { AuthProvider } from '../services/AuthProvider'
+import { AuthProvider, isNetworkError } from '../services/AuthProvider'
 import { LocalStorage } from '../services/LocalStorageProvider'
 import { SecretStorage } from '../services/SecretStorageProvider'
 import { TestSupport } from '../test-support'
@@ -263,9 +263,12 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 // cody.auth.signin or cody.auth.signout
                 await vscode.commands.executeCommand(`cody.auth.${message.type}`)
                 break
-            case 'settings':
-                await this.authProvider.auth(message.serverEndpoint, message.accessToken, this.config.customHeaders)
+            case 'settings': {
+                const endpoint = message.serverEndpoint.length ? message.serverEndpoint : this.config.serverEndpoint
+                const token = message.accessToken.length ? message.accessToken : this.config.accessToken
+                await this.authProvider.auth(endpoint, token, this.config.customHeaders)
                 break
+            }
             case 'insert':
                 await vscode.commands.executeCommand('cody.inline.insert', message.text)
                 break
@@ -386,8 +389,18 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 if (isAbortError(err)) {
                     return
                 }
+                // check first if search error is due to any network issue
+                if (isNetworkError(err)) {
+                    void this.sendErrorToWebview(
+                        'Cody cannot respond due to network error. Please check your connection and try again.'
+                    )
+                    this.onCompletionEnd(true)
+                    return
+                }
+
                 // Display error message as assistant response
                 this.transcript.addErrorAsAssistantResponse(err)
+
                 // Log users out on unauth error
                 if (statusCode && statusCode >= 400 && statusCode <= 410) {
                     const authStatus = { ...defaultAuthStatus }
@@ -753,6 +766,16 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
             return
         }
         const searchErrors = this.codebaseContext.getEmbeddingSearchErrors()
+
+        // check first if search error is due to any network issue
+        if (isNetworkError(searchErrors)) {
+            void this.sendErrorToWebview(
+                'Cody cannot respond due to network error. Please check your connection and try again.'
+            )
+            return
+        }
+        console.log(searchErrors)
+
         // Display error message as assistant response for users with indexed codebase but getting search errors
         if (this.codebaseContext.checkEmbeddingsConnection() && searchErrors) {
             this.transcript.addErrorAsAssistantResponse(searchErrors)
