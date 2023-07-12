@@ -81,8 +81,8 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
     private cancelCompletionCallback: (() => void) | null = null
 
     private currentChatID = ''
-    protected inputHistory: string[] = []
-    private chatHistory: ChatHistory = {}
+    protected static inputHistory: string[] = []
+    protected static chatHistory: ChatHistory = {}
 
     protected transcript: Transcript = new Transcript()
 
@@ -186,8 +186,8 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
     }
 
     public async clearHistory(): Promise<void> {
-        this.chatHistory = {}
-        this.inputHistory = []
+        MessageProvider.chatHistory = {}
+        MessageProvider.inputHistory = []
         await this.localStorage.removeChatHistory()
     }
 
@@ -202,7 +202,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         await this.saveTranscriptToChatHistory()
         this.cancelCompletion()
         this.currentChatID = chatID
-        this.transcript = Transcript.fromJSON(this.chatHistory[chatID])
+        this.transcript = Transcript.fromJSON(MessageProvider.chatHistory[chatID])
         await this.transcript.toJSON()
         this.sendTranscript()
         this.sendHistory()
@@ -461,7 +461,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         if (this.transcript.isEmpty) {
             return
         }
-        this.chatHistory[this.currentChatID] = await this.transcript.toJSON()
+        MessageProvider.chatHistory[this.currentChatID] = await this.transcript.toJSON()
         await this.saveChatHistory()
     }
 
@@ -470,8 +470,8 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
      */
     private async saveChatHistory(): Promise<void> {
         const userHistory = {
-            chat: this.chatHistory,
-            input: this.inputHistory,
+            chat: MessageProvider.chatHistory,
+            input: MessageProvider.inputHistory,
         }
         await this.localStorage.setChatHistory(userHistory)
     }
@@ -480,7 +480,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
      * Delete history from current chat history and local storage
      */
     protected async deleteHistory(chatID: string): Promise<void> {
-        delete this.chatHistory[chatID]
+        delete MessageProvider.chatHistory[chatID]
         await this.localStorage.deleteChatHistory(chatID)
         this.sendHistory()
     }
@@ -491,8 +491,8 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
     private loadChatHistory(): void {
         const localHistory = this.localStorage.getChatHistory()
         if (localHistory) {
-            this.chatHistory = localHistory?.chat
-            this.inputHistory = localHistory.input
+            MessageProvider.chatHistory = localHistory?.chat
+            MessageProvider.inputHistory = localHistory.input
         }
     }
 
@@ -516,8 +516,8 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
      */
     private sendHistory(): void {
         this.handleHistory({
-            chat: this.chatHistory,
-            input: this.inputHistory,
+            chat: MessageProvider.chatHistory,
+            input: MessageProvider.inputHistory,
         })
     }
 

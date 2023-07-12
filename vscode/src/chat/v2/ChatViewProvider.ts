@@ -53,7 +53,7 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
             case 'abort':
                 this.cancelCompletion()
                 await this.multiplexer.notifyTurnComplete()
-                this.onCompletionEnd()
+                await this.onCompletionEnd()
                 break
             case 'executeRecipe':
                 await this.executeRecipe(message.recipe)
@@ -134,7 +134,7 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
         if (submitType === 'suggestion') {
             logEvent('CodyVSCodeExtension:chatPredictions:used')
         }
-        this.inputHistory.push(text)
+        MessageProvider.inputHistory.push(text)
         if (this.config.experimentalChatPredictions) {
             void this.runRecipeForSuggestion('next-questions', text)
         }
