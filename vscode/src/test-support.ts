@@ -2,7 +2,7 @@ import { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messag
 import { MockReranker, Reranker } from '@sourcegraph/cody-shared/src/codebase-context/rerank'
 import { ContextResult } from '@sourcegraph/cody-shared/src/local-context'
 
-import { ChatViewProvider } from './chat/ChatViewProvider'
+import { ChatViewProvider } from './chat/v2/ChatViewProvider'
 import { FixupController } from './non-stop/FixupController'
 import { FixupTask } from './non-stop/FixupTask'
 

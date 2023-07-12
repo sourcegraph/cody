@@ -1,47 +1,15 @@
-import { ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
-import { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
-import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
-import { Guardrails } from '@sourcegraph/cody-shared/src/guardrails'
-import { IntentDetector } from '@sourcegraph/cody-shared/src/intent-detector'
+import { ChatMessage, UserLocalHistory } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 
-import { VSCodeEditor } from '../../editor/vscode-editor'
-import { AuthProvider } from '../../services/AuthProvider'
-import { LocalStorage } from '../../services/LocalStorageProvider'
-
-import { ContextProvider } from './ContextProvider'
-import { Config, MessageProvider } from './MessageProvider'
+import { ChatViewProviderWebview } from './ChatViewProvider'
+import { MessageProvider } from './MessageProvider'
 
 export class InlineChatViewProvider extends MessageProvider {
-    constructor(
-        protected config: Omit<Config, 'codebase'>, // should use codebaseContext.getCodebase() rather than config.codebase
-        protected chat: ChatClient,
-        protected intentDetector: IntentDetector,
-        protected codebaseContext: CodebaseContext,
-        protected guardrails: Guardrails,
-        protected editor: VSCodeEditor,
-        protected localStorage: LocalStorage,
-        protected rgPath: string,
-        protected authProvider: AuthProvider,
-        protected contextProvider: ContextProvider
-    ) {
-        super(
-            config,
-            chat,
-            intentDetector,
-            codebaseContext,
-            guardrails,
-            editor,
-            localStorage,
-            rgPath,
-            authProvider,
-            contextProvider
-        )
-    }
+    public webview?: ChatViewProviderWebview
 
     /**
-     * Send transcript to webview
+     * Send transcript to the active inline chat thread.
      */
-    protected sendTranscript2(transcript: ChatMessage[], isMessageInProgress: boolean): void {
+    protected handleTranscript(transcript: ChatMessage[], isMessageInProgress: boolean): void {
         const lastMessage = transcript[transcript.length - 1].displayText
 
         if (lastMessage) {
@@ -50,21 +18,28 @@ export class InlineChatViewProvider extends MessageProvider {
     }
 
     /**
-     * Display error message in webview view as banner in chat view
-     * It does not display error message as assistant response
+     * Display error message in the active inline chat thread..
+     * Unlike the sidebar, this message is displayed as an assistant response.
+     * We don't yet have a good way to render errors separately in the inline chat window.
+     * TODO: Can we render this as a label?
      */
-    protected sendError2(errorMsg: string): void {
+    protected handleError(errorMsg: string): void {
         void this.editor.controllers.inline.error(errorMsg)
     }
 
-    protected sendSuggestions2(): void {
-        // not implemented
+    /**
+     * Sends chat history to webview.
+     * Note: The sidebar is the only current way to navigate chat history.
+     * This is ensure that users can still find old inline chats from previous sessions.
+     */
+    protected handleHistory(history: UserLocalHistory): void {
+        void this.webview?.postMessage({
+            type: 'history',
+            messages: history,
+        })
     }
 
-    /**
-     * Sends chat history to webview
-     */
-    protected sendHistory2(): void {
-        // not implemented
+    protected handleSuggestions(): void {
+        // suggestions are not yet implemented for inline chat
     }
 }

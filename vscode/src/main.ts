@@ -9,6 +9,7 @@ import { CODY_FEEDBACK_URL } from './chat/protocol'
 import { ChatViewProvider } from './chat/v2/ChatViewProvider'
 import { ContextProvider } from './chat/v2/ContextProvider'
 import { InlineChatViewProvider } from './chat/v2/InlineChatViewProvider'
+import { MessageProviderOptions } from './chat/v2/MessageProvider'
 import { CodyCompletionItemProvider } from './completions'
 import { CompletionsDocumentProvider } from './completions/docprovider'
 import { History } from './completions/history'
@@ -131,11 +132,10 @@ const register = async (
         authProvider
     )
 
-    // Create chat webview
-    const chatProvider = new ChatViewProvider(
-        context.extensionPath,
-        initialConfig,
-        chatClient,
+    // Shared configuration that is required for chat views to send and receive messages
+    const messageProviderOptions: MessageProviderOptions = {
+        config: initialConfig,
+        chat: chatClient,
         intentDetector,
         codebaseContext,
         guardrails,
@@ -143,24 +143,23 @@ const register = async (
         localStorage,
         rgPath,
         authProvider,
-        contextProvider
-    )
+        contextProvider,
+    }
 
-    // Create inline chat
-    const inlineChatProvider = new InlineChatViewProvider(
-        initialConfig,
-        chatClient,
-        intentDetector,
-        codebaseContext,
-        guardrails,
-        editor,
-        localStorage,
-        rgPath,
-        authProvider,
-        contextProvider
-    )
+    // Inline chat -> Cody
+    const inlineChatProvider = new InlineChatViewProvider(messageProviderOptions)
+    // Sidebar -> Cody
+    const chatProvider = new ChatViewProvider({
+        ...messageProviderOptions,
+        // Note: chatProvider needs to provide the webview to inlineChat so we can keep history in sync
+        inlineChatProvider,
+        extensionPath: context.extensionPath,
+    })
 
     disposables.push(chatProvider, inlineChatProvider)
+
+    // TODO: Should this use inlineChatProvider?
+    // We close the inline chat
     fixup.recipeRunner = chatProvider
 
     disposables.push(
@@ -190,7 +189,7 @@ const register = async (
                 }
             }
         }
-        chatProvider.sendError2(error)
+        chatProvider.handleError(error)
     }
 
     const statusBar = createStatusBar()

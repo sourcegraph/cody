@@ -1,5 +1,3 @@
-import { spawnSync } from 'child_process'
-
 import * as vscode from 'vscode'
 
 import { BotResponseMultiplexer } from '@sourcegraph/cody-shared/src/chat/bot-response-multiplexer'
@@ -11,22 +9,15 @@ import { ChatHistory, ChatMessage, UserLocalHistory } from '@sourcegraph/cody-sh
 import { reformatBotMessage } from '@sourcegraph/cody-shared/src/chat/viewHelpers'
 import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
 import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
-import { Editor } from '@sourcegraph/cody-shared/src/editor'
-import { SourcegraphEmbeddingsSearchClient } from '@sourcegraph/cody-shared/src/embeddings/client'
 import { annotateAttribution, Guardrails } from '@sourcegraph/cody-shared/src/guardrails'
 import { highlightTokens } from '@sourcegraph/cody-shared/src/hallucinations-detector'
 import { IntentDetector } from '@sourcegraph/cody-shared/src/intent-detector'
 import { ANSWER_TOKENS, DEFAULT_MAX_TOKENS } from '@sourcegraph/cody-shared/src/prompt/constants'
 import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
-import { SourcegraphGraphQLAPIClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
-import { isError } from '@sourcegraph/cody-shared/src/utils'
 
 import { VSCodeEditor } from '../../editor/vscode-editor'
 import { logEvent } from '../../event-logger'
-import { FilenameContextFetcher } from '../../local-context/filename-context-fetcher'
-import { LocalKeywordContextFetcher } from '../../local-context/local-keyword-context-fetcher'
 import { debug } from '../../log'
-import { getRerankWithLog } from '../../logged-rerank'
 import { FixupTask } from '../../non-stop/FixupTask'
 import { IdleRecipeRunner } from '../../non-stop/roles'
 import { AuthProvider } from '../../services/AuthProvider'
@@ -35,7 +26,6 @@ import { TestSupport } from '../../test-support'
 import { fastFilesExist } from '../fastFileFinder'
 import { defaultAuthStatus } from '../protocol'
 import { getRecipe } from '../recipes'
-import { convertGitCloneURLToCodebaseName } from '../utils'
 
 import { ContextProvider } from './ContextProvider'
 
@@ -66,7 +56,27 @@ export type Config = Pick<
  */
 const SAFETY_PROMPT_TOKENS = 100
 
-export abstract class MessageProvider implements vscode.Disposable, IdleRecipeRunner {
+abstract class MessageHandler {
+    protected abstract handleTranscript(transcript: ChatMessage[], messageInProgress: boolean): void
+    protected abstract handleHistory(history: UserLocalHistory): void
+    protected abstract handleError(errorMsg: string): void
+    protected abstract handleSuggestions(suggestions: string[]): void
+}
+
+export interface MessageProviderOptions {
+    config: Omit<Config, 'codebase'>
+    chat: ChatClient
+    intentDetector: IntentDetector
+    codebaseContext: CodebaseContext
+    guardrails: Guardrails
+    editor: VSCodeEditor
+    localStorage: LocalStorage
+    rgPath: string
+    authProvider: AuthProvider
+    contextProvider: ContextProvider
+}
+
+export abstract class MessageProvider extends MessageHandler implements vscode.Disposable, IdleRecipeRunner {
     private isMessageInProgress = false
     private cancelCompletionCallback: (() => void) | null = null
 
@@ -81,26 +91,40 @@ export abstract class MessageProvider implements vscode.Disposable, IdleRecipeRu
 
     protected disposables: vscode.Disposable[] = []
 
-    constructor(
-        protected config: Omit<Config, 'codebase'>, // should use codebaseContext.getCodebase() rather than config.codebase
-        protected chat: ChatClient,
-        protected intentDetector: IntentDetector,
-        protected codebaseContext: CodebaseContext,
-        protected guardrails: Guardrails,
-        protected editor: VSCodeEditor,
-        protected localStorage: LocalStorage,
-        protected rgPath: string,
-        protected authProvider: AuthProvider,
-        protected contextProvider: ContextProvider
-    ) {
+    // Provided configuration to the MessageProvider
+    protected config: Omit<Config, 'codebase'>
+    protected chat: ChatClient
+    protected intentDetector: IntentDetector
+    protected codebaseContext: CodebaseContext
+    protected guardrails: Guardrails
+    protected editor: VSCodeEditor
+    protected localStorage: LocalStorage
+    protected rgPath: string
+    protected authProvider: AuthProvider
+    protected contextProvider: ContextProvider
+
+    constructor(options: MessageProviderOptions) {
+        super()
+
+        this.config = options.config
+        this.chat = options.chat
+        this.intentDetector = options.intentDetector
+        this.codebaseContext = options.codebaseContext
+        this.guardrails = options.guardrails
+        this.editor = options.editor
+        this.localStorage = options.localStorage
+        this.rgPath = options.rgPath
+        this.authProvider = options.authProvider
+        this.contextProvider = options.contextProvider
+
         // chat id is used to identify chat session
         this.createNewChatID()
     }
 
     protected async init(): Promise<void> {
         this.loadChatHistory()
-        this.getAndSendTranscript()
-        this.getAndSendChatHistory()
+        this.sendTranscript()
+        this.sendHistory()
         await this.loadRecentChat()
         await this.contextProvider.init()
     }
@@ -156,9 +180,9 @@ export abstract class MessageProvider implements vscode.Disposable, IdleRecipeRu
         this.cancelCompletion()
         this.isMessageInProgress = false
         this.transcript.reset()
-        this.sendSuggestions2([])
-        this.getAndSendTranscript()
-        this.getAndSendChatHistory()
+        this.handleSuggestions([])
+        this.sendTranscript()
+        this.sendHistory()
     }
 
     public async clearHistory(): Promise<void> {
@@ -180,8 +204,8 @@ export abstract class MessageProvider implements vscode.Disposable, IdleRecipeRu
         this.currentChatID = chatID
         this.transcript = Transcript.fromJSON(this.chatHistory[chatID])
         await this.transcript.toJSON()
-        this.getAndSendTranscript()
-        this.getAndSendChatHistory()
+        this.sendTranscript()
+        this.sendHistory()
     }
 
     private createNewChatID(): void {
@@ -199,7 +223,7 @@ export abstract class MessageProvider implements vscode.Disposable, IdleRecipeRu
                 text += content
                 const displayText = reformatBotMessage(text, responsePrefix)
                 this.transcript.addAssistantResponse(displayText)
-                this.getAndSendTranscript()
+                this.sendTranscript()
                 return Promise.resolve()
             },
             onTurnComplete: async () => {
@@ -222,7 +246,7 @@ export abstract class MessageProvider implements vscode.Disposable, IdleRecipeRu
                     highlightedDisplayText = await this.guardrailsAnnotateAttributions(highlightedDisplayText)
                     this.transcript.addAssistantResponse(text || '', highlightedDisplayText)
                 }
-                void this.onCompletionEnd()
+                await this.onCompletionEnd()
             },
         })
 
@@ -266,7 +290,9 @@ export abstract class MessageProvider implements vscode.Disposable, IdleRecipeRu
                 }
                 // We ignore embeddings errors in this instance because we're already showing an
                 // error message and don't want to overwhelm the user.
-                this.onCompletionEnd(true)
+                // TODO: Make this async?
+                void this.onCompletionEnd(true)
+                // TODO: Move this
                 void this.editor.controllers.inline.error()
                 console.error(`Completion request failed: ${err}`)
             },
@@ -278,12 +304,12 @@ export abstract class MessageProvider implements vscode.Disposable, IdleRecipeRu
         this.cancelCompletionCallback = null
     }
 
-    protected onCompletionEnd(ignoreEmbeddingsError: boolean = false): void {
+    protected async onCompletionEnd(ignoreEmbeddingsError: boolean = false): Promise<void> {
         this.isMessageInProgress = false
         this.cancelCompletionCallback = null
-        this.getAndSendTranscript()
-        void this.saveTranscriptToChatHistory()
-        this.getAndSendChatHistory()
+        this.sendTranscript()
+        await this.saveTranscriptToChatHistory()
+        this.sendHistory()
         void vscode.commands.executeCommand('setContext', 'cody.reply.pending', false)
         // TODO: move this
         this.editor.controllers.inline.setResponsePending(false)
@@ -296,7 +322,7 @@ export abstract class MessageProvider implements vscode.Disposable, IdleRecipeRu
     public async executeRecipe(recipeId: RecipeID, humanChatInput: string = ''): Promise<void> {
         debug('ChatViewProvider:executeRecipe', recipeId, { verbose: humanChatInput })
         if (this.isMessageInProgress) {
-            this.sendError2('Cannot execute multiple recipes. Please wait for the current recipe to finish.')
+            this.handleError('Cannot execute multiple recipes. Please wait for the current recipe to finish.')
             return
         }
 
@@ -325,10 +351,10 @@ export abstract class MessageProvider implements vscode.Disposable, IdleRecipeRu
         // Ex: performing fuzzy / context-search does not require responses from LLM backend
         switch (recipeId) {
             case 'context-search':
-                this.onCompletionEnd()
+                await this.onCompletionEnd()
                 break
             default: {
-                this.getAndSendTranscript()
+                this.sendTranscript()
 
                 const { prompt, contextFiles } = await this.transcript.getPromptForLastInteraction(
                     getPreamble(this.codebaseContext.getCodebase()),
@@ -382,7 +408,7 @@ export abstract class MessageProvider implements vscode.Disposable, IdleRecipeRu
                     .split('\n')
                     .slice(0, 3)
                     .map(line => line.trim().replace(/^-/, '').trim())
-                this.sendSuggestions2(suggestions)
+                this.handleSuggestions(suggestions)
                 return Promise.resolve()
             },
         })
@@ -424,11 +450,11 @@ export abstract class MessageProvider implements vscode.Disposable, IdleRecipeRu
     }
 
     /**
-     * Send transcript to webview
+     * Send transcript to view
      */
-    private getAndSendTranscript(): void {
+    private sendTranscript(): void {
         const chatTranscript = this.transcript.toChat()
-        this.sendTranscript2(chatTranscript, this.isMessageInProgress)
+        this.handleTranscript(chatTranscript, this.isMessageInProgress)
     }
 
     private async saveTranscriptToChatHistory(): Promise<void> {
@@ -456,7 +482,7 @@ export abstract class MessageProvider implements vscode.Disposable, IdleRecipeRu
     protected async deleteHistory(chatID: string): Promise<void> {
         delete this.chatHistory[chatID]
         await this.localStorage.deleteChatHistory(chatID)
-        this.getAndSendChatHistory()
+        this.sendHistory()
     }
 
     /**
@@ -486,10 +512,10 @@ export abstract class MessageProvider implements vscode.Disposable, IdleRecipeRu
     }
 
     /**
-     * Sends chat history to webview
+     * Send history to view
      */
-    private getAndSendChatHistory(): void {
-        this.sendHistory2({
+    private sendHistory(): void {
+        this.handleHistory({
             chat: this.chatHistory,
             input: this.inputHistory,
         })
@@ -553,60 +579,6 @@ export abstract class MessageProvider implements vscode.Disposable, IdleRecipeRu
 
         return DEFAULT_MAX_TOKENS - solutionLimit
     }
-
-    protected abstract sendTranscript2(transcript: ChatMessage[], messageInProgress: boolean): void
-
-    protected abstract sendHistory2(history: UserLocalHistory): void
-
-    protected abstract sendError2(errorMsg: string): void
-
-    protected abstract sendSuggestions2(suggestions: string[]): void
-}
-
-/**
- * Gets codebase context for the current workspace.
- *
- * @param config Cody configuration
- * @param rgPath Path to rg (ripgrep) executable
- * @param editor Editor instance
- * @returns CodebaseContext if a codebase can be determined, else null
- */
-export async function getCodebaseContext(
-    config: Config,
-    rgPath: string,
-    editor: Editor,
-    chatClient: ChatClient
-): Promise<CodebaseContext | null> {
-    const client = new SourcegraphGraphQLAPIClient(config)
-    const workspaceRoot = editor.getWorkspaceRootPath()
-    if (!workspaceRoot) {
-        return null
-    }
-    const gitCommand = spawnSync('git', ['remote', 'get-url', 'origin'], { cwd: workspaceRoot })
-    const gitOutput = gitCommand.stdout.toString().trim()
-    // Get codebase from config or fallback to getting repository name from git clone URL
-    const codebase = config.codebase || convertGitCloneURLToCodebaseName(gitOutput)
-    if (!codebase) {
-        return null
-    }
-    // Check if repo is embedded in endpoint
-    const repoId = await client.getRepoIdIfEmbeddingExists(codebase)
-    if (isError(repoId)) {
-        const infoMessage = `Cody could not find embeddings for '${codebase}' on your Sourcegraph instance.\n`
-        console.info(infoMessage)
-        return null
-    }
-
-    const embeddingsSearch = repoId && !isError(repoId) ? new SourcegraphEmbeddingsSearchClient(client, repoId) : null
-    return new CodebaseContext(
-        config,
-        codebase,
-        embeddingsSearch,
-        new LocalKeywordContextFetcher(rgPath, editor, chatClient),
-        new FilenameContextFetcher(rgPath, editor, chatClient),
-        undefined,
-        getRerankWithLog(chatClient)
-    )
 }
 
 function isAbortError(error: string): boolean {

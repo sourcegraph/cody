@@ -2,55 +2,34 @@ import path from 'path'
 
 import * as vscode from 'vscode'
 
-import { ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
 import { ChatMessage, UserLocalHistory } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
-import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
-import { Guardrails } from '@sourcegraph/cody-shared/src/guardrails'
-import { IntentDetector } from '@sourcegraph/cody-shared/src/intent-detector'
 
 import { View } from '../../../webviews/NavBar'
-import { VSCodeEditor } from '../../editor/vscode-editor'
 import { logEvent } from '../../event-logger'
 import { debug } from '../../log'
-import { AuthProvider } from '../../services/AuthProvider'
-import { LocalStorage } from '../../services/LocalStorageProvider'
 import { DOTCOM_URL, ExtensionMessage, WebviewMessage } from '../protocol'
 
-import { ContextProvider } from './ContextProvider'
-import { Config, MessageProvider } from './MessageProvider'
+import { InlineChatViewProvider } from './InlineChatViewProvider'
+import { MessageProvider, MessageProviderOptions } from './MessageProvider'
 
 export interface ChatViewProviderWebview extends Omit<vscode.Webview, 'postMessage'> {
     postMessage(message: ExtensionMessage): Thenable<boolean>
 }
 
+interface ChatViewProviderOptions extends MessageProviderOptions {
+    extensionPath: string
+    inlineChatProvider: InlineChatViewProvider
+}
+
 export class ChatViewProvider extends MessageProvider implements vscode.WebviewViewProvider {
+    private extensionPath: string
+    private inlineChatProvider: InlineChatViewProvider
     public webview?: ChatViewProviderWebview
 
-    constructor(
-        protected extensionPath: string,
-        protected config: Omit<Config, 'codebase'>, // should use codebaseContext.getCodebase() rather than config.codebase
-        protected chat: ChatClient,
-        protected intentDetector: IntentDetector,
-        protected codebaseContext: CodebaseContext,
-        protected guardrails: Guardrails,
-        protected editor: VSCodeEditor,
-        protected localStorage: LocalStorage,
-        protected rgPath: string,
-        protected authProvider: AuthProvider,
-        protected contextProvider: ContextProvider
-    ) {
-        super(
-            config,
-            chat,
-            intentDetector,
-            codebaseContext,
-            guardrails,
-            editor,
-            localStorage,
-            rgPath,
-            authProvider,
-            contextProvider
-        )
+    constructor({ inlineChatProvider, extensionPath, ...options }: ChatViewProviderOptions) {
+        super(options)
+        this.inlineChatProvider = inlineChatProvider
+        this.extensionPath = extensionPath
     }
 
     private async onDidReceiveMessage(message: WebviewMessage): Promise<void> {
@@ -115,7 +94,7 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
             case 'openFile': {
                 const rootPath = this.editor.getWorkspaceRootPath()
                 if (!rootPath) {
-                    this.sendError2('Failed to open file: missing rootPath')
+                    this.handleError('Failed to open file: missing rootPath')
                     return
                 }
                 try {
@@ -146,7 +125,7 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
                 break
             }
             default:
-                this.sendError2('Invalid request type from Webview')
+                this.handleError('Invalid request type from Webview')
         }
     }
 
@@ -183,7 +162,7 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
     /**
      * Send transcript to webview
      */
-    protected sendTranscript2(transcript: ChatMessage[], isMessageInProgress: boolean): void {
+    protected handleTranscript(transcript: ChatMessage[], isMessageInProgress: boolean): void {
         void this.webview?.postMessage({
             type: 'transcript',
             messages: transcript,
@@ -191,7 +170,7 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
         })
     }
 
-    protected sendSuggestions2(suggestions: string[]): void {
+    protected handleSuggestions(suggestions: string[]): void {
         void this.webview?.postMessage({
             type: 'suggestions',
             suggestions,
@@ -201,7 +180,7 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
     /**
      * Sends chat history to webview
      */
-    protected sendHistory2(history: UserLocalHistory): void {
+    protected handleHistory(history: UserLocalHistory): void {
         void this.webview?.postMessage({
             type: 'history',
             messages: history,
@@ -212,7 +191,7 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
      * Display error message in webview view as banner in chat view
      * It does not display error message as assistant response
      */
-    public sendError2(errorMsg: string): void {
+    public handleError(errorMsg: string): void {
         void this.webview?.postMessage({ type: 'errors', errors: errorMsg })
     }
 
@@ -285,6 +264,7 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
         this.webview = webviewView.webview
         this.authProvider.webview = webviewView.webview
         this.contextProvider.webview = webviewView.webview
+        this.inlineChatProvider.webview = webviewView.webview
 
         const extensionPath = vscode.Uri.file(this.extensionPath)
         const webviewPath = vscode.Uri.joinPath(extensionPath, 'dist')
