@@ -6,7 +6,6 @@ import { MAX_CURRENT_FILE_TOKENS, MAX_HUMAN_INPUT_TOKENS } from '../../prompt/co
 import {
     populateCurrentEditorContextTemplate,
     populateCurrentEditorSelectedContextTemplate,
-    populateTerminalOutputContextTemplate,
 } from '../../prompt/templates'
 import { truncateText } from '../../prompt/truncation'
 import { Interaction } from '../transcript/interaction'
@@ -65,11 +64,6 @@ export class ChatQuestion implements Recipe {
             contextMessages.push(...ChatQuestion.getEditorContext(editor))
         }
 
-        const commandOutput = editor.controllers?.prompt.get()
-        if (commandOutput) {
-            contextMessages.push(...ChatQuestion.getTerminalOutputContext(commandOutput))
-        }
-
         // Add selected text as context when available
         if (selection?.selectedText) {
             contextMessages.push(...ChatQuestion.getEditorSelectionContext(selection))
@@ -96,13 +90,5 @@ export class ChatQuestion implements Recipe {
             populateCurrentEditorSelectedContextTemplate(truncatedContent, selection.fileName, selection.repoName),
             selection
         )
-    }
-
-    public static getTerminalOutputContext(output: string): ContextMessage[] {
-        const truncatedContent = truncateText(output, MAX_CURRENT_FILE_TOKENS)
-        return [
-            { speaker: 'human', text: populateTerminalOutputContextTemplate(truncatedContent) },
-            { speaker: 'assistant', text: 'OK.' },
-        ]
     }
 }

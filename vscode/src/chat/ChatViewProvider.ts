@@ -654,12 +654,16 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         }
         const prompt = this.editor.controllers.prompt.find(title)
         if (!prompt) {
+            void vscode.window.showErrorMessage(`Could not find prompt for the "${title}" recipe.`)
             debug('executeMyPrompt:noPrompt', title)
             return
         }
         await this.executeRecipe('my-prompt', prompt, true)
     }
 
+    /**
+     * Send custom recipe names to webview
+     */
     private async sendMyPrompts(): Promise<void> {
         await this.editor.controllers.prompt.refresh()
         const prompts = this.editor.controllers.prompt.getPromptList()

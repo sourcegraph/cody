@@ -2,7 +2,30 @@ import * as vscode from 'vscode'
 
 import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
 
+import { LocalStorage } from '../services/LocalStorageProvider'
+
 import { MyToolsProvider } from './MyToolsProvider'
+
+interface MyPromptsConfig {
+    recipes: { [id: string]: CodyPrompt }
+    premade?: CodyPromptPremade
+}
+
+interface CodyPrompt {
+    prompt: string
+    command?: string
+    args?: string[]
+    context?: {
+        codebase: boolean
+        openTabs?: boolean
+    }
+}
+
+interface CodyPromptPremade {
+    actions: string
+    rules: string
+    answer: string
+}
 
 export class MyPromptController {
     private promptStore = new Map<string, string>()
@@ -18,13 +41,14 @@ export class MyPromptController {
 
     constructor(
         private debug: (filterLabel: string, text: string, ...args: unknown[]) => void,
-        private context: vscode.ExtensionContext
+        private context: vscode.ExtensionContext,
+        localStorage: LocalStorage
     ) {
         this.debug('MyPromptsProvider', 'Initialized')
+        // NOTE: Internal s2 users only
+        this.dev = localStorage.getEndpoint() === 'https://sourcegraph.sourcegraph.com/'
         this.tools = new MyToolsProvider(context)
         this.refresh().catch(error => console.error(error))
-        // TODO (bee) remove this when we have a better way to refresh the prompts
-        this.dev = true
         const user = this.tools.getUserInfo()
         // TODO (bee) update recipe list in UI on file change
         if (user?.workspaceRoot) {
@@ -36,8 +60,12 @@ export class MyPromptController {
         }
     }
 
-    // get the terminal output from the last command run
-    public get(): string | null {
+    // getter for the promptInProgress
+    public get(type?: string): string | null {
+        if (type === 'context') {
+            return this.myPromptInProgress?.context?.codebase ? 'codebase' : null
+        }
+        // return the terminal output from the last command run
         return this.getCommandOutput() || this.raw
     }
 
@@ -57,15 +85,10 @@ export class MyPromptController {
 
     // Find the prompt based on the id
     public find(id: string): string {
-        if (this.dev) {
-            const myPrompt = this.myPromptStore.get(id)
-            this.myPromptInProgress = myPrompt || null
-            this.promptInProgress = myPrompt?.prompt || ''
-            return this.promptInProgress
-        }
-        const prompt = this.promptStore.get(id) || ''
-        this.promptInProgress = prompt
-        return prompt
+        const myPrompt = this.myPromptStore.get(id)
+        this.myPromptInProgress = myPrompt || null
+        this.promptInProgress = myPrompt?.prompt || ''
+        return this.promptInProgress
     }
 
     public getCommandOutput(): string | null {
@@ -102,7 +125,7 @@ export class MyPromptController {
         }
         const json = JSON.parse(fileContent) as MyPromptsConfig
         const map = new Map<string, CodyPrompt>()
-        const prompts = json.prompts
+        const prompts = json.recipes
         for (const key in prompts) {
             if (Object.prototype.hasOwnProperty.call(prompts, key)) {
                 map.set(key, prompts[key])
@@ -165,25 +188,11 @@ export class MyPromptController {
         }
     }
 
+    // NOTE: Internal s2 users only
     public async refresh(): Promise<void> {
+        if (!this.dev) {
+            return
+        }
         await this.makeMyPrompts()
     }
-}
-
-interface MyPromptsConfig {
-    prompts: { [id: string]: CodyPrompt }
-    premade?: CodyPromptPremade
-}
-
-interface CodyPrompt {
-    name: string
-    prompt: string
-    command?: 'git' | 'fileSystem' | undefined
-    args?: string[]
-}
-
-interface CodyPromptPremade {
-    actions: string
-    rules: string
-    answer: string
 }

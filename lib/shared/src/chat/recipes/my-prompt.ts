@@ -2,8 +2,9 @@ import * as vscode from 'vscode'
 
 import { CodebaseContext } from '../../codebase-context'
 import { ContextMessage, getContextMessageWithResponse } from '../../codebase-context/messages'
+import { ActiveTextEditorSelection, Editor } from '../../editor'
 import { MAX_CURRENT_FILE_TOKENS, MAX_HUMAN_INPUT_TOKENS } from '../../prompt/constants'
-import { populateCurrentEditorContextTemplate } from '../../prompt/templates'
+import { populateCurrentEditorContextTemplate, populateTerminalOutputContextTemplate } from '../../prompt/templates'
 import { truncateText } from '../../prompt/truncation'
 import { Interaction } from '../transcript/interaction'
 
@@ -12,7 +13,7 @@ import { InlineTouch } from './inline-touch'
 import { Recipe, RecipeContext, RecipeID } from './recipe'
 
 /** ======================================================
- * Recipe for Generating Prompts from Workspace Files
+ * Recipe for running custom prompts from the cody.json files
 ====================================================== **/
 export class MyPrompt implements Recipe {
     public id: RecipeID = 'my-prompt'
@@ -20,54 +21,79 @@ export class MyPrompt implements Recipe {
 
     public async getInteraction(humanChatInput: string, context: RecipeContext): Promise<Interaction | null> {
         const selection = context.editor.getActiveTextEditorSelection() || context.editor.controllers?.inline.selection
+
         // Make prompt text
         const humanInput = humanChatInput.trim()
-
-        // GMatch human input with key from promptStore to get prompt
-        let promptText = humanInput || this.promptStore.get(humanInput) || (await this.gePromptFromInput())
+        // Match human input with key from promptStore to get prompt text when there is none
+        let promptText = humanInput || this.promptStore.get(humanInput) || null
         if (!promptText) {
+            await vscode.window.showErrorMessage('Please enter a valid for the recipe.')
             return null
         }
+
         const truncatedText = truncateText(promptText, MAX_HUMAN_INPUT_TOKENS)
+
+        // Add command output to prompt text when available
         const commandOutput = context.editor.controllers?.prompt.get()
         if (commandOutput) {
-            promptText += `\n${commandOutput}`
+            // promptText += `\n${commandOutput}\n`
+            promptText += 'Please refer to the command output when answering my quesiton.'
         }
-        let displayText = ''
-        // Add selected text as context when available
-        if (selection?.selectedText) {
-            promptText += ChatQuestion.getEditorSelectionContext(selection)[0].text
-            displayText = this.getHumanDisplayText(humanInput, selection.fileName)
-        }
+
+        // Add selection file name as display when available
+        const displayText = selection?.fileName ? this.getHumanDisplayText(humanInput, selection?.fileName) : humanInput
 
         return Promise.resolve(
             new Interaction(
-                {
-                    speaker: 'human',
-                    text:
-                        promptText +
-                        'Please refer to the code and command output I am sharing with you as context to answer my quesitons.',
-                    displayText,
-                },
+                { speaker: 'human', text: promptText, displayText },
                 { speaker: 'assistant' },
-                this.getContextMessages(truncatedText, context.codebaseContext),
+                this.getContextMessages(
+                    truncatedText,
+                    context.editor,
+                    context.codebaseContext,
+                    selection,
+                    commandOutput
+                ),
                 []
             )
         )
     }
 
-    private async getContextMessages(text: string, codebaseContext: CodebaseContext): Promise<ContextMessage[]> {
+    private async getContextMessages(
+        text: string,
+        editor: Editor,
+        codebaseContext: CodebaseContext,
+        selection?: ActiveTextEditorSelection | null,
+        commandOutput?: string | null
+    ): Promise<ContextMessage[]> {
         const contextMessages: ContextMessage[] = []
-        const codebaseContextMessages = await codebaseContext.getContextMessages(text, {
-            numCodeResults: 12,
-            numTextResults: 3,
-        })
-        contextMessages.push(...codebaseContextMessages)
-        // Create context messages from open tabs
-        if (contextMessages.length < 12) {
-            contextMessages.push(...MyPrompt.getEditorOpenTabsContext())
+
+        const isCodebaseContextRequired = editor.controllers?.prompt.get('context')
+        if (isCodebaseContextRequired) {
+            await vscode.window.showInformationMessage('Codebase is not required.')
+            const codebaseContextMessages = await codebaseContext.getContextMessages(text, {
+                numCodeResults: 12,
+                numTextResults: 3,
+            })
+            contextMessages.push(...codebaseContextMessages)
+
+            // Create context messages from open tabs
+            if (contextMessages.length < 10) {
+                contextMessages.push(...MyPrompt.getEditorOpenTabsContext())
+            }
         }
-        return contextMessages.slice(-16)
+
+        // Add selected text as context when available
+        if (selection?.selectedText) {
+            contextMessages.push(...ChatQuestion.getEditorSelectionContext(selection))
+        }
+
+        // Create context messages from terminal output if any
+        if (commandOutput) {
+            contextMessages.push(...MyPrompt.getTerminalOutputContext(commandOutput))
+        }
+
+        return contextMessages.slice(-12)
     }
 
     // Get context from current editor open tabs
@@ -92,39 +118,16 @@ export class MyPrompt implements Recipe {
         return contextMessages
     }
 
-    // ======================================================== //
-    //                          HELPERS                         //
-    // ======================================================== //
-
     // Get display text for human
     private getHumanDisplayText(humanChatInput: string, fileName: string): string {
         return humanChatInput + InlineTouch.displayPrompt + fileName
     }
 
-    private async gePromptFromInput(): Promise<void> {
-        // Get the prompt name and prompt description from the user using the input box with 2 steps
-        const promptName = await vscode.window.showInputBox({
-            prompt: 'Enter a prompt name:',
-            validateInput: (input: string) => {
-                if (!input) {
-                    return 'Please enter a prompt name.'
-                }
-                return
-            },
-        })
-        const promptDescription = await vscode.window.showInputBox({
-            prompt: 'Enter a prompt description:',
-            validateInput: (input: string) => {
-                if (!input) {
-                    return 'Please enter a prompt description.'
-                }
-                return
-            },
-        })
-
-        if (!promptName || !promptDescription) {
-            return
-        }
-        this.promptStore.set(promptName, promptDescription)
+    public static getTerminalOutputContext(output: string): ContextMessage[] {
+        const truncatedContent = truncateText(output, MAX_CURRENT_FILE_TOKENS)
+        return [
+            { speaker: 'human', text: populateTerminalOutputContextTemplate(truncatedContent) },
+            { speaker: 'assistant', text: 'OK.' },
+        ]
     }
 }

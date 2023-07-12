@@ -52,7 +52,7 @@ interface VsCodeFixupController {
 }
 
 interface VsCodeMyPromptController {
-    get(): string | null
+    get(type?: string): string | null
     run(command: string): string | null
 }
 
