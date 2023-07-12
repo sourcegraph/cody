@@ -121,6 +121,11 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
 
         // listen for vscode active editor change event
         this.currentWorkspaceRoot = ''
+        const myPromptsWatcher = this.editor.controllers?.prompt?.fileWatcher
+        myPromptsWatcher?.onDidCreate(() => this.sendMyPrompts())
+        myPromptsWatcher?.onDidChange(() => this.sendMyPrompts())
+
+        // listen for vscode active editor change event
         this.disposables.push(
             vscode.window.onDidChangeActiveTextEditor(async () => {
                 await this.updateCodebaseContext()
@@ -648,10 +653,13 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
     }
 
     private async executeMyPrompt(title: string): Promise<void> {
+        // Send prompt names to webview to display as recipe options
         if (!title || title === 'get') {
             await this.sendMyPrompts()
             return
         }
+        this.showTab('chat')
+        // Get prompt details from controller by title then execute
         const prompt = this.editor.controllers.prompt.find(title)
         if (!prompt) {
             void vscode.window.showErrorMessage(`Could not find prompt for the "${title}" recipe.`)

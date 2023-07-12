@@ -36,12 +36,14 @@ export const Recipes: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper; myProm
         <div className="inner-container">
             <div className="non-transcript-container">
                 <div className={styles.recipes}>
-                    <div className={styles.recipesHeader}>
-                        <span>My Prompts</span>
-                        <VSCodeButton type="button" appearance="icon" onClick={() => onMyPromptClick('get')}>
-                            <i className="codicon codicon-refresh" />
-                        </VSCodeButton>
-                    </div>
+                    {myPrompts.length > 0 && (
+                        <div className={styles.recipesHeader}>
+                            <span>My Prompts</span>
+                            <VSCodeButton type="button" appearance="icon" onClick={() => onMyPromptClick('get')}>
+                                <i className="codicon codicon-refresh" />
+                            </VSCodeButton>
+                        </div>
+                    )}
                     {myPrompts.map(promptID => (
                         <VSCodeButton
                             key={promptID}

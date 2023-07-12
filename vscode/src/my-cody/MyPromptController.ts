@@ -38,6 +38,7 @@ export class MyPromptController {
     private myPromptInProgress: CodyPrompt | null = null
     private promptInProgress: string | null = null
     private dev = false
+    public fileWatcher: vscode.FileSystemWatcher | null = null
 
     constructor(
         private debug: (filterLabel: string, text: string, ...args: unknown[]) => void,
@@ -50,13 +51,11 @@ export class MyPromptController {
         this.tools = new MyToolsProvider(context)
         this.refresh().catch(error => console.error(error))
         const user = this.tools.getUserInfo()
-        // TODO (bee) update recipe list in UI on file change
         if (user?.workspaceRoot) {
             const fileName = '.vscode/cody.json'
             const watchPattern = new vscode.RelativePattern(user.workspaceRoot, fileName)
             const watcher = vscode.workspace.createFileSystemWatcher(watchPattern)
-            watcher.onDidCreate(() => this.refresh().catch(error => this.debug('MyPromptsProvider:watcher', error)))
-            watcher.onDidChange(() => this.refresh().catch(error => this.debug('MyPromptsProvider:watcher', error)))
+            this.fileWatcher = watcher
         }
     }
 
@@ -112,7 +111,7 @@ export class MyPromptController {
     public getMyPrompts(): { prompts: Map<string, CodyPrompt> | null; premade: Message[] | null } {
         return {
             prompts: this.myPromptStore,
-            premade: this.getMyPremade(),
+            premade: this.makeMyPremade(),
         }
     }
 
@@ -137,7 +136,7 @@ export class MyPromptController {
         return map || null
     }
 
-    public getMyPremade(): Message[] | null {
+    public makeMyPremade(): Message[] | null {
         if (!this.myPrompts?.premade) {
             return null
         }
@@ -176,8 +175,8 @@ export class MyPromptController {
             return null
         }
         try {
-            const fileName = 'cody.json'
-            const filePath = vscode.Uri.file(`${user.workspaceRoot}/.vscode/${fileName}`)
+            const fileName = '.vscode/cody.json'
+            const filePath = vscode.Uri.file(`${user.workspaceRoot}/${fileName}`)
             const bytes = await vscode.workspace.fs.readFile(filePath)
             const decoded = new TextDecoder('utf-8').decode(bytes) || null
             this.raw = decoded
