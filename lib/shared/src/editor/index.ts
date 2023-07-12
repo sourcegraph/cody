@@ -139,6 +139,15 @@ export abstract class Editor {
     // move the recipe to client/cody and remove this entrypoint.
     public abstract didReceiveFixupText(id: string, text: string, state: 'streaming' | 'complete'): Promise<void>
 
+    public getActiveWorkspaceRootPath(): string | null {
+        const uri = this.getActiveWorkspace()?.root
+        if (!uri) {
+            return null
+        }
+
+        return uriToPath(uri)
+    }
+
     public async getFullTextDocument(light: LightTextDocument): Promise<TextDocument> {
         const document = await this.getTextDocument(light.uri)
 

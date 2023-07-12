@@ -5,7 +5,7 @@ import { uniq } from 'lodash'
 import * as vscode from 'vscode'
 
 import { ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
-import { Editor } from '@sourcegraph/cody-shared/src/editor'
+import { Editor, uriToPath } from '@sourcegraph/cody-shared/src/editor'
 import { ContextResult } from '@sourcegraph/cody-shared/src/local-context'
 
 import { debug } from '../log'
@@ -32,10 +32,16 @@ export class FilenameContextFetcher {
     public async getContext(query: string, numResults: number): Promise<ContextResult[]> {
         const time0 = performance.now()
 
-        const rootPath = this.editor.getWorkspaceRootPath()
+        const rootUri = this.editor.getActiveWorkspace()?.root
+        if (!rootUri) {
+            return []
+        }
+
+        const rootPath = uriToPath(rootUri)
         if (!rootPath) {
             return []
         }
+
         const time1 = performance.now()
         const filenameFragments = await this.queryToFileFragments(query)
         const time2 = performance.now()

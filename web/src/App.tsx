@@ -3,7 +3,7 @@ import React, { useCallback, useEffect, useState } from 'react'
 import { Client, createClient, Transcript } from '@sourcegraph/cody-shared/src/chat/client'
 import { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { ErrorLike, isErrorLike } from '@sourcegraph/cody-shared/src/common'
-import type { Editor } from '@sourcegraph/cody-shared/src/editor'
+import { NoopEditor, type Editor } from '@sourcegraph/cody-shared/src/editor'
 import { CodySvg } from '@sourcegraph/cody-ui/src/utils/icons'
 
 import { Chat } from './Chat'
@@ -13,40 +13,21 @@ import { useConfig } from './settings/useConfig'
 import styles from './App.module.css'
 
 /* eslint-disable @typescript-eslint/require-await */
-const editor: Editor = {
-    getActiveTextEditor() {
-        return null
-    },
-    getActiveTextEditorSelection() {
-        return null
-    },
-    getActiveTextEditorSelectionOrEntireFile() {
-        return null
-    },
-    getActiveTextEditorVisibleContent() {
-        return null
-    },
-    getWorkspaceRootPath() {
-        return null
-    },
-    replaceSelection(_fileName, _selectedText, _replacement) {
-        return Promise.resolve()
-    },
-    async showQuickPick(labels) {
+const editor: Editor = new (class extends NoopEditor {
+    async quickPick(labels: string[]) {
         // TODO: Use a proper UI element
-        return window.prompt(`Choose: ${labels.join(', ')}`, labels[0]) || undefined
-    },
-    async showWarningMessage(message) {
+        return window.prompt(`Choose: ${labels.join(', ')}`, labels[0]) || null
+    }
+
+    async warn(message: string) {
         console.warn(message)
-    },
-    async showInputBox(prompt?: string) {
+    }
+
+    async prompt(prompt?: string) {
         // TODO: Use a proper UI element
-        return window.prompt(prompt || 'Enter here...') || undefined
-    },
-    didReceiveFixupText(_id: string, _text: string, _state: 'streaming' | 'complete'): Promise<void> {
-        return Promise.resolve()
-    },
-}
+        return window.prompt(prompt || 'Enter here...') || null
+    }
+})()
 /* eslint-enable @typescript-eslint/require-await */
 
 export const App: React.FunctionComponent = () => {

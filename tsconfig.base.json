@@ -15,8 +15,7 @@
     "resolveJsonModule": true,
     "composite": true,
     "outDir": "dist",
-    "rootDir": ".",
-    "moduleResolution": "NodeNext"
+    "rootDir": "."
   },
   "watchOptions": {
     "watchFile": "useFsEvents",

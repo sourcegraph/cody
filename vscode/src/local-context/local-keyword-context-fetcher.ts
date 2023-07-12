@@ -7,7 +7,7 @@ import * as vscode from 'vscode'
 import winkUtils from 'wink-nlp-utils'
 
 import { ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
-import { Editor } from '@sourcegraph/cody-shared/src/editor'
+import { Editor, uriToPath } from '@sourcegraph/cody-shared/src/editor'
 import { ContextResult, KeywordContextFetcher } from '@sourcegraph/cody-shared/src/local-context'
 
 import { logEvent } from '../event-logger'
@@ -106,7 +106,12 @@ export class LocalKeywordContextFetcher implements KeywordContextFetcher {
      */
     public async getContext(query: string, numResults: number): Promise<ContextResult[]> {
         const startTime = performance.now()
-        const rootPath = this.editor.getWorkspaceRootPath()
+        const rootUri = this.editor.getActiveWorkspace()?.root
+        if (!rootUri) {
+            return []
+        }
+
+        const rootPath = uriToPath(rootUri)
         if (!rootPath) {
             return []
         }
@@ -207,7 +212,12 @@ export class LocalKeywordContextFetcher implements KeywordContextFetcher {
 
     // Return context results for the Codebase Context Search recipe
     public async getSearchContext(query: string, numResults: number): Promise<ContextResult[]> {
-        const rootPath = this.editor.getWorkspaceRootPath()
+        const rootUri = this.editor.getActiveWorkspace()?.root
+        if (!rootUri) {
+            return []
+        }
+
+        const rootPath = uriToPath(rootUri)
         if (!rootPath) {
             return []
         }
@@ -424,9 +434,9 @@ export class LocalKeywordContextFetcher implements KeywordContextFetcher {
         const { fileTermCounts, termTotalFiles, totalFiles } = fileMatches
         const idfDict = idf(termTotalFiles, totalFiles)
 
-        const activeTextEditor = this.editor.getActiveTextEditor()
+        const activeTextEditor = this.editor.getActiveTextDocument()
         const activeFilename = activeTextEditor
-            ? path.normalize(vscode.workspace.asRelativePath(activeTextEditor.filePath))
+            ? path.normalize(vscode.workspace.asRelativePath(uriToPath(activeTextEditor.uri)!))
             : undefined
 
         const querySizeBytes = query

@@ -1,7 +1,7 @@
 import { throttle } from 'lodash'
 import * as vscode from 'vscode'
 
-import { ActiveTextEditorSelection } from '@sourcegraph/cody-shared/src/editor'
+import { SelectionText } from '@sourcegraph/cody-shared/src/editor'
 import { SURROUNDING_LINES } from '@sourcegraph/cody-shared/src/prompt/constants'
 
 import { logEvent } from '../event-logger'
@@ -39,7 +39,8 @@ export class InlineController {
     private currentTaskId = ''
     // Workspace State
     private workspacePath = vscode.workspace.workspaceFolders?.[0].uri
-    public selection: ActiveTextEditorSelection | null = null
+    // TODO(Auguste): Make this a range instead of text so we can send an edit request via range
+    public selection: SelectionText | null = null
     public selectionRange = initRange
     // Inline Tasks States
     public isInProgress = false
@@ -311,7 +312,7 @@ export class InlineController {
      * Get current selected lines from the comment thread.
      * Add an extra line to the end line to prevent empty selection on single line selection
      */
-    public async makeSelection(isFixMode: boolean): Promise<ActiveTextEditorSelection | null> {
+    public async makeSelection(isFixMode: boolean): Promise<SelectionText | null> {
         if (!this.thread) {
             return null
         }
@@ -401,7 +402,7 @@ export class InlineController {
     /**
      * Return latest selection
      */
-    public getSelection(): ActiveTextEditorSelection | null {
+    public getSelection(): SelectionText | null {
         return this.selection
     }
     /**
