@@ -1,15 +1,14 @@
 import { ChatClient } from '../../chat/chat'
 import { Message } from '../../sourcegraph-api/completions/types'
-import { defaultPlugins } from '../examples/index'
 
 import { makePrompt } from './prompt'
-import { IPluginFunctionCallDescriptor, IPluginFunctionChosenDescriptor } from './types'
+import { IPlugin, IPluginFunctionCallDescriptor, IPluginFunctionChosenDescriptor } from './types'
 
 export const chooseDataSources = (
     humanChatInput: string,
     client: ChatClient,
-    history: Message[] = [],
-    plugins = defaultPlugins
+    plugins: IPlugin[],
+    history: Message[] = []
 ): Promise<[string, IPluginFunctionCallDescriptor][]> => {
     const allDataSources = plugins.flatMap(plugin => plugin.dataSources)
 

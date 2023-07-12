@@ -18,6 +18,7 @@ import { annotateAttribution, Guardrails } from '@sourcegraph/cody-shared/src/gu
 import { highlightTokens } from '@sourcegraph/cody-shared/src/hallucinations-detector'
 import { IntentDetector } from '@sourcegraph/cody-shared/src/intent-detector'
 import * as plugins from '@sourcegraph/cody-shared/src/plugins/api'
+import { defaultPlugins } from '@sourcegraph/cody-shared/src/plugins/examples'
 import { ANSWER_TOKENS, DEFAULT_MAX_TOKENS } from '@sourcegraph/cody-shared/src/prompt/constants'
 import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
 import { SourcegraphGraphQLAPIClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
@@ -235,6 +236,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 this.loadChatHistory()
                 this.sendTranscript()
                 this.sendChatHistory()
+                this.sendEnabledPlugins(this.localStorage.getEnabledPlugins() ?? [])
                 await this.loadRecentChat()
                 await this.publishContextStatus()
                 break
@@ -319,9 +321,17 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 }
                 break
             }
+            case 'setEnabledPlugins':
+                await this.localStorage.setEnabledPlugins(message.plugins)
+                this.sendEnabledPlugins(message.plugins)
+                break
             default:
                 this.sendErrorToWebview('Invalid request type from Webview')
         }
+    }
+
+    private sendEnabledPlugins(plugins: string[]): void {
+        void this.webview?.postMessage({ type: 'enabled-plugins', plugins })
     }
 
     private createNewChatID(): void {
@@ -485,6 +495,12 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
     }
 
     private async getPluginMessages(humanChatInput: string): Promise<Message[]> {
+        const enabledPluginNames = this.localStorage.getEnabledPlugins() ?? []
+        const enabledPlugins = defaultPlugins.filter(plugin => enabledPluginNames.includes(plugin.name))
+        if (enabledPlugins.length === 0) {
+            return []
+        }
+
         this.transcript.addAssistantResponse('', 'Choosing plugins for additional context...\n')
         this.sendTranscript()
 
@@ -497,7 +513,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         try {
             // todo: get query together with previous context
             // choose which plugins should be run based on the recipe and message
-            const chosenPlugins = await plugins.chooseDataSources(humanChatInput, this.chat, history)
+            const chosenPlugins = await plugins.chooseDataSources(humanChatInput, this.chat, enabledPlugins, history)
             if (chosenPlugins.length !== 0) {
                 this.transcript.addAssistantResponse(
                     '',

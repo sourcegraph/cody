@@ -2,6 +2,8 @@ import { useCallback, useEffect, useState } from 'react'
 
 import './App.css'
 
+import { uniq, without } from 'lodash'
+
 import { ChatContextStatus } from '@sourcegraph/cody-shared/src/chat/context'
 import { ChatHistory, ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { Configuration } from '@sourcegraph/cody-shared/src/configuration'
@@ -38,6 +40,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     const [errorMessages, setErrorMessages] = useState<string[]>([])
     const [suggestions, setSuggestions] = useState<string[] | undefined>()
     const [isAppInstalled, setIsAppInstalled] = useState<boolean>(false)
+    const [enabledPlugins, setEnabledPlugins] = useState<string[]>([])
 
     useEffect(
         () =>
@@ -91,6 +94,9 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                     case 'app-state':
                         setIsAppInstalled(message.isInstalled)
                         break
+                    case 'enabled-plugins':
+                        setEnabledPlugins(message.plugins)
+                        break
                 }
             }),
         [debugLog, errorMessages, view, vscodeAPI]
@@ -124,6 +130,15 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
             vscodeAPI.postMessage({ command: 'auth', type: 'callback', endpoint: uri })
         },
         [setEndpoint, vscodeAPI]
+    )
+
+    const onPluginToggle = useCallback(
+        (pluginName: string, enabled: boolean) => {
+            const newPlugins = enabled ? uniq([...enabledPlugins, pluginName]) : without(enabledPlugins, pluginName)
+            vscodeAPI.postMessage({ command: 'setEnabledPlugins', plugins: newPlugins })
+            setEnabledPlugins(newPlugins)
+        },
+        [enabledPlugins, vscodeAPI]
     )
 
     if (!view || !authStatus || !config) {
@@ -187,7 +202,9 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                 </>
             )}
 
-            {config.pluginsEnabled && view === 'plugins' && <Plugins />}
+            {config.pluginsEnabled && view === 'plugins' && (
+                <Plugins plugins={enabledPlugins} onPluginToggle={onPluginToggle} />
+            )}
         </div>
     )
 }

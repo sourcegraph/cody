@@ -2,18 +2,47 @@ import { defaultPlugins } from '@sourcegraph/cody-shared/src/plugins/examples'
 
 import styles from './Plugins.module.css'
 
-export const Plugins: React.FunctionComponent = () => (
+interface PluginItemProps {
+    name: string
+    description: string
+    enabled: boolean
+    onToggle: (pluginName: string, enabled: boolean) => void
+}
+
+const PluginItem: React.FC<PluginItemProps> = ({ name, description, enabled, onToggle }) => (
+    <label htmlFor={name} className={styles.plugin}>
+        <input
+            type="checkbox"
+            id={name}
+            checked={enabled}
+            className={styles.pluginCheckbox}
+            onChange={event => {
+                onToggle(name, event.target.checked)
+            }}
+        />
+        <div>
+            <p className={styles.pluginHeader}>{name}</p>
+            <p className={styles.pluginDescription}>{description}</p>
+        </div>
+    </label>
+)
+
+export const Plugins: React.FC<{
+    plugins: string[]
+    onPluginToggle: PluginItemProps['onToggle']
+}> = ({ plugins, onPluginToggle }) => (
     <div className={styles.container}>
-        <input placeholder="Search plugins @installed, @enabled..." />
-        <div className={styles.divider} />
-        {defaultPlugins.map(plugin => (
-            <section className={styles.plugin} key={plugin.name}>
-                <div className={styles.pluginHeader}>
-                    <input type="checkbox" checked={true} />
-                    <h3>{plugin.name}</h3>
-                </div>
-                <p className={styles.pluginDescription}>{plugin.description}</p>
-            </section>
-        ))}
+        <ul className={styles.list}>
+            {defaultPlugins.map(plugin => (
+                <li key={plugin.name}>
+                    <PluginItem
+                        name={plugin.name}
+                        enabled={plugins.includes(plugin.name)}
+                        description={plugin.description}
+                        onToggle={onPluginToggle}
+                    />
+                </li>
+            ))}
+        </ul>
     </div>
 )

@@ -13,18 +13,31 @@
     margin-bottom: 1.25rem;
 }
 
+.list {
+    list-style: none;
+    padding: 0;
+}
+
 .plugin {
-    margin-bottom: 0.5rem;
+    margin-bottom: 1rem;
     border-bottom: 1px solid var(--vscode-activityBar-border);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.plugin-checkbox {
+    min-width: 3rem;
+    min-height: 3rem;
 }
 
 .plugin-header {
-    display: flex;
-    h3 {
-        margin: 0 0 0.25rem 0.25rem;
-    }
+    font-weight: 600;
+    margin: 0 0 0.5rem;
+    font-size: 1rem;
 }
 
-.plugin-description  {
+.plugin-description {
+    font-style: italic;
     margin: 0;
 }
