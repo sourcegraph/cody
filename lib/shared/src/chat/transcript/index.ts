@@ -1,5 +1,5 @@
 import { ContextFile, ContextMessage, OldContextMessage } from '../../codebase-context/messages'
-import { IPluginContext } from '../../plugins/api/types'
+import { PluginFunctionExecutionInfo } from '../../plugins/api/types'
 import { CHARS_PER_TOKEN, MAX_AVAILABLE_PROMPT_LENGTH } from '../../prompt/constants'
 import { PromptMixin } from '../../prompt/prompt-mixin'
 import { Message } from '../../sourcegraph-api'
@@ -36,7 +36,7 @@ export class Transcript {
                     fullContext,
                     usedContextFiles,
                     timestamp,
-                    usedPluginsContext,
+                    pluginExecutionInfos,
                 }) => {
                     if (!fullContext) {
                         fullContext = context || []
@@ -60,7 +60,7 @@ export class Transcript {
                         ),
                         usedContextFiles || [],
                         timestamp || new Date().toISOString(),
-                        usedPluginsContext || []
+                        pluginExecutionInfos || []
                     )
                 }
             ),
@@ -211,12 +211,12 @@ export class Transcript {
 
     public setUsedContextFilesForLastInteraction(
         contextFiles: ContextFile[],
-        pluginsContext: IPluginContext[] = []
+        pluginExecutionInfos: PluginFunctionExecutionInfo[] = []
     ): void {
         if (this.interactions.length === 0) {
             throw new Error('Cannot set context files for empty transcript')
         }
-        this.interactions[this.interactions.length - 1].setUsedContext(contextFiles, pluginsContext)
+        this.interactions[this.interactions.length - 1].setUsedContext(contextFiles, pluginExecutionInfos)
     }
 
     public toChat(): ChatMessage[] {

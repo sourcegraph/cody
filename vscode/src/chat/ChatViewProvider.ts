@@ -18,7 +18,7 @@ import { annotateAttribution, Guardrails } from '@sourcegraph/cody-shared/src/gu
 import { highlightTokens } from '@sourcegraph/cody-shared/src/hallucinations-detector'
 import { IntentDetector } from '@sourcegraph/cody-shared/src/intent-detector'
 import * as plugins from '@sourcegraph/cody-shared/src/plugins/api'
-import { IPluginContext } from '@sourcegraph/cody-shared/src/plugins/api/types'
+import { PluginFunctionExecutionInfo } from '@sourcegraph/cody-shared/src/plugins/api/types'
 import { defaultPlugins } from '@sourcegraph/cody-shared/src/plugins/built-in'
 import { ANSWER_TOKENS, DEFAULT_MAX_TOKENS } from '@sourcegraph/cody-shared/src/prompt/constants'
 import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
@@ -498,7 +498,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
 
     private async getPluginsContext(
         humanChatInput: string
-    ): Promise<{ prompt?: Message[]; contexts?: IPluginContext[] }> {
+    ): Promise<{ prompt?: Message[]; executionInfos?: PluginFunctionExecutionInfo[] }> {
         const enabledPluginNames = this.localStorage.getEnabledPlugins() ?? []
         const enabledPlugins = defaultPlugins.filter(plugin => enabledPluginNames.includes(plugin.name))
         if (enabledPlugins.length === 0) {
@@ -531,7 +531,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 )
                 this.sendTranscript()
 
-                return plugins.runPluginFunctions(descriptors, this.config.pluginsConfig)
+                return await plugins.runPluginFunctions(descriptors, this.config.pluginsConfig)
             }
         } catch (error) {
             console.error('Error getting plugin context', error)
@@ -581,11 +581,11 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 this.sendTranscript()
 
                 let pluginsPrompt: Message[] = []
-                let pluginsContext: IPluginContext[] = []
+                let pluginExecutionInfos: PluginFunctionExecutionInfo[] = []
                 if (this.config.pluginsEnabled) {
-                    const { prompt = [], contexts = [] } = await this.getPluginsContext(humanChatInput)
-                    pluginsPrompt = prompt
-                    pluginsContext = contexts
+                    const result = await this.getPluginsContext(humanChatInput)
+                    pluginsPrompt = result?.prompt ?? []
+                    pluginExecutionInfos = result?.executionInfos ?? []
                 }
                 // add data source context to Cody context
                 const { prompt, contextFiles } = await this.transcript.getPromptForLastInteraction(
@@ -593,7 +593,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                     this.maxPromptTokens,
                     pluginsPrompt
                 )
-                this.transcript.setUsedContextFilesForLastInteraction(contextFiles, pluginsContext)
+                this.transcript.setUsedContextFilesForLastInteraction(contextFiles, pluginExecutionInfos)
                 this.sendPrompt(prompt, interaction.getAssistantMessage().prefix ?? '')
                 await this.saveTranscriptToChatHistory()
             }

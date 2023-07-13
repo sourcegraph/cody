@@ -1,8 +1,8 @@
 import fetch from 'isomorphic-fetch'
 
-import { IPlugin, IPluginFunctionOutput, IPluginFunctionParameters } from '../api/types'
+import { Plugin, PluginFunctionOutput, PluginFunctionParameters } from '../api/types'
 
-async function fetchURL(url: string): Promise<IPluginFunctionOutput> {
+async function fetchURL(url: string): Promise<PluginFunctionOutput> {
     // Use the fetch API to get the webpage content
     const response = await fetch(url)
 
@@ -23,24 +23,26 @@ async function fetchURL(url: string): Promise<IPluginFunctionOutput> {
     return result
 }
 
-export const urlReaderPlugin: IPlugin = {
+export const urlReaderPlugin: Plugin = {
     name: 'URL Reader plugin',
     description: 'Get the content of a web page by URL.',
     dataSources: [
         {
-            name: 'get_web_page_content',
-            description: 'Get the content of a web page by URL.',
-            parameters: {
-                type: 'object',
-                properties: {
-                    url: {
-                        type: 'string',
-                        description: 'The URL of the web page to get the content of.',
+            descriptor: {
+                name: 'get_web_page_content',
+                description: 'Get the content of a web page by URL.',
+                parameters: {
+                    type: 'object',
+                    properties: {
+                        url: {
+                            type: 'string',
+                            description: 'The URL of the web page to get the content of.',
+                        },
                     },
+                    required: ['url'],
                 },
-                required: ['url'],
             },
-            handler: async (parameters: IPluginFunctionParameters): Promise<IPluginFunctionOutput[]> => {
+            handler: async (parameters: PluginFunctionParameters): Promise<PluginFunctionOutput[]> => {
                 if (typeof parameters?.url === 'string') {
                     return fetchURL(parameters.url).then(page => [page])
                 }

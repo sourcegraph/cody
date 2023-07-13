@@ -1,25 +1,27 @@
-import { IPlugin, IPluginAPI, IPluginFunctionOutput, IPluginFunctionParameters } from '../api/types'
+import { Plugin, PluginAPI, PluginFunctionOutput, PluginFunctionParameters } from '../api/types'
 
 import { fetchAPINinjas } from './lib/fetch-api-ninjas'
 
-export const timezonePlugin: IPlugin = {
+export const timezonePlugin: Plugin = {
     name: 'Timezone plugin',
     description: 'Search timezone. Use this to find out what is the timezone in different cities.',
     dataSources: [
         {
-            name: 'get_city_time',
-            description: 'Get the current time for a given city',
-            parameters: {
-                type: 'object',
-                properties: {
-                    city: {
-                        type: 'string',
-                        description: 'A valid full city name to get the weather for, e.g San Francisco',
+            descriptor: {
+                name: 'get_city_time',
+                description: 'Get the current time for a given city',
+                parameters: {
+                    type: 'object',
+                    properties: {
+                        city: {
+                            type: 'string',
+                            description: 'A valid full city name to get the weather for, e.g San Francisco',
+                        },
                     },
+                    required: ['city'],
                 },
-                required: ['city'],
             },
-            handler: (parameters: IPluginFunctionParameters, api: IPluginAPI): Promise<IPluginFunctionOutput[]> => {
+            handler: (parameters: PluginFunctionParameters, api: PluginAPI): Promise<PluginFunctionOutput[]> => {
                 if (typeof parameters?.city !== 'string') {
                     return Promise.reject(new Error('Invalid parameters'))
                 }

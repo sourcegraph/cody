@@ -1,9 +1,8 @@
 import React, { useState } from 'react'
 
-import { mdiCodeJson } from '@mdi/js'
 import classNames from 'classnames'
 
-import { ChatMessage, pluralize } from '@sourcegraph/cody-shared'
+import { ChatMessage } from '@sourcegraph/cody-shared'
 
 import {
     ChatButtonProps,
@@ -14,10 +13,10 @@ import {
     FeedbackButtonsProps,
 } from '../Chat'
 
-import { TranscriptAction } from './actions/TranscriptAction'
 import { BlinkingCursor } from './BlinkingCursor'
 import { CodeBlocks } from './CodeBlocks'
 import { ContextFiles, FileLinkProps } from './ContextFiles'
+import { PluginExecutionInfos } from './PluginExecutionInfos'
 
 import styles from './TranscriptItem.module.css'
 
@@ -155,39 +154,12 @@ export const TranscriptItem: React.FunctionComponent<
                     />
                 </div>
             )}
-            {message.pluginsContext && message.pluginsContext.length > 0 && (
+            {message.pluginExecutionInfos && message.pluginExecutionInfos.length > 0 && (
                 <div className={styles.actions}>
-                    <TranscriptAction
-                        title={{
-                            verb: 'Used',
-                            object: `${message.pluginsContext.length} ${pluralize(
-                                'plugin',
-                                message.pluginsContext.length
-                            )}`,
-                        }}
-                        steps={[
-                            ...message.pluginsContext.map(item => ({
-                                verb: '',
-                                object: (
-                                    <div>
-                                        {devMode ? (
-                                            <pre className={styles.pluginContextItem}>
-                                                {JSON.stringify(item, null, 2)}
-                                            </pre>
-                                        ) : (
-                                            <>
-                                                <p>from "{item.pluginName}" got:</p>
-                                                <pre className={styles.pluginContextItem}>
-                                                    {JSON.stringify(item.outputs, null, 2)}
-                                                </pre>
-                                            </>
-                                        )}
-                                    </div>
-                                ),
-                                icon: mdiCodeJson,
-                            })),
-                        ]}
+                    <PluginExecutionInfos
+                        pluginExecutionInfos={message.pluginExecutionInfos}
                         className={transcriptActionClassName}
+                        devMode={devMode}
                     />
                 </div>
             )}

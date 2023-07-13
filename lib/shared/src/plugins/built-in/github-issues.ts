@@ -1,7 +1,7 @@
 import fetch from 'isomorphic-fetch'
 import { pick } from 'lodash'
 
-import { IPlugin, IPluginAPI, IPluginFunctionOutput, IPluginFunctionParameters } from '../api/types'
+import { Plugin, PluginAPI, PluginFunctionOutput, PluginFunctionParameters } from '../api/types'
 
 const org = 'sourcegraph'
 
@@ -87,29 +87,28 @@ const searchGitHub = async (query: string, baseUrl: string, apiToken: string): P
 }
 
 // todo: add isEnabled check function
-export const githubIssuesPlugin: IPlugin = {
+export const githubIssuesPlugin: Plugin = {
     name: 'GitHub Issues plugin',
     description:
         'Search GitHub Issues and pull requests. Use this to understand current code problems, feature implementations, their rationale, and to gain deeper insights into various topics.',
     dataSources: [
         {
-            name: 'search_github_issues',
-            description:
-                'Search GitHub Issues and pull requests. Use this to understand current code problems, feature implementations, their rationale, and to gain deeper insights into various topics.',
-            parameters: {
-                type: 'object',
-                properties: {
-                    query: {
-                        type: 'string',
-                        description: 'Query, uses github issue search query format',
+            descriptor: {
+                name: 'search_github_issues',
+                description:
+                    'Search GitHub Issues and pull requests. Use this to understand current code problems, feature implementations, their rationale, and to gain deeper insights into various topics.',
+                parameters: {
+                    type: 'object',
+                    properties: {
+                        query: {
+                            type: 'string',
+                            description: 'Query, uses github issue search query format',
+                        },
                     },
+                    required: ['query'],
                 },
-                required: ['query'],
             },
-            handler: async (
-                parameters: IPluginFunctionParameters,
-                api: IPluginAPI
-            ): Promise<IPluginFunctionOutput[]> => {
+            handler: async (parameters: PluginFunctionParameters, api: PluginAPI): Promise<PluginFunctionOutput[]> => {
                 const { query } = parameters
 
                 if (typeof query !== 'string') {

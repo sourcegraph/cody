@@ -1,6 +1,6 @@
 import fetch from 'isomorphic-fetch'
 
-import { IPlugin, IPluginAPI, IPluginFunctionOutput, IPluginFunctionParameters } from '../api/types'
+import { Plugin, PluginAPI, PluginFunctionOutput, PluginFunctionParameters } from '../api/types'
 
 interface SearchResult {
     content: {
@@ -54,29 +54,28 @@ const searchWiki = async (query: string, opts: { email: string; token: string; b
 }
 
 // todo: add isEnabled check function
-export const confluencePlugin: IPlugin = {
+export const confluencePlugin: Plugin = {
     name: 'Confluence plugin',
     description:
         'Search Confluence pages where company shared knowledge is stored as a wiki. Use this to find out how to do something, what something means, or to get a better understanding of a topic.',
     dataSources: [
         {
-            name: 'search_confluence_wiki_pages',
-            description:
-                'Search Confluence pages where company shared knowledge is stored as a wiki. Use this to find out how to do something, what something means, or to get a better understanding of a topic.',
-            parameters: {
-                type: 'object',
-                properties: {
-                    query: {
-                        type: 'string',
-                        description: 'Query by page title or content',
+            descriptor: {
+                name: 'search_confluence_wiki_pages',
+                description:
+                    'Search Confluence pages where company shared knowledge is stored as a wiki. Use this to find out how to do something, what something means, or to get a better understanding of a topic.',
+                parameters: {
+                    type: 'object',
+                    properties: {
+                        query: {
+                            type: 'string',
+                            description: 'Query by page title or content',
+                        },
                     },
+                    required: ['query'],
                 },
-                required: ['query'],
             },
-            handler: async (
-                parameters: IPluginFunctionParameters,
-                api: IPluginAPI
-            ): Promise<IPluginFunctionOutput[]> => {
+            handler: async (parameters: PluginFunctionParameters, api: PluginAPI): Promise<PluginFunctionOutput[]> => {
                 const { query } = parameters
 
                 const email = api.config?.confluence?.email

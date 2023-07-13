@@ -1,25 +1,27 @@
-import { IPlugin, IPluginAPI, IPluginFunctionOutput, IPluginFunctionParameters } from '../api/types'
+import { Plugin, PluginAPI, PluginFunctionOutput, PluginFunctionParameters } from '../api/types'
 
 import { fetchAPINinjas } from './lib/fetch-api-ninjas'
 
-export const weatherPlugin: IPlugin = {
+export const weatherPlugin: Plugin = {
     name: 'Weather plugin',
     description: 'Search weather. Use this to find out what is the weather today in different cities.',
     dataSources: [
         {
-            name: 'get_current_weather',
-            description: 'Get the current weather in a given city',
-            parameters: {
-                type: 'object',
-                properties: {
-                    city: {
-                        type: 'string',
-                        description: 'A valid full city name to get the weather for, e.g San Francisco',
+            descriptor: {
+                name: 'get_current_weather',
+                description: 'Get the current weather in a given city',
+                parameters: {
+                    type: 'object',
+                    properties: {
+                        city: {
+                            type: 'string',
+                            description: 'A valid full city name to get the weather for, e.g San Francisco',
+                        },
                     },
+                    required: ['city'],
                 },
-                required: ['city'],
             },
-            handler: (parameters: IPluginFunctionParameters, api: IPluginAPI): Promise<IPluginFunctionOutput[]> => {
+            handler: (parameters: PluginFunctionParameters, api: PluginAPI): Promise<PluginFunctionOutput[]> => {
                 if (typeof parameters?.city !== 'string') {
                     return Promise.reject(new Error('Invalid parameters'))
                 }

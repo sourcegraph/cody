@@ -1,10 +1,10 @@
 import { Message } from '../../sourcegraph-api/completions/types'
 
-import { IPluginFunctionChosenDescriptor, IPluginFunctionDescriptor } from './types'
+import { PluginChosenFunctionDescriptor, PluginFunctionDescriptor } from './types'
 
 export const makePrompt = (
     humanChatInput: string,
-    funcs: IPluginFunctionDescriptor[],
+    funcs: PluginFunctionDescriptor[],
     history: Message[] = []
 ): Message[] => [
     ...history,
@@ -28,7 +28,7 @@ ${JSON.stringify(
                 parameter_name: 'parameter_value',
             },
         },
-    ] as IPluginFunctionChosenDescriptor[],
+    ] as PluginChosenFunctionDescriptor[],
     null,
     2
 )}

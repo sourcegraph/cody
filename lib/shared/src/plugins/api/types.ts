@@ -1,7 +1,8 @@
 import { Configuration } from '../../configuration'
 
-// todo: rename to IPluginHandler or smth
-export interface IPluginFunction {
+export type PluginFunctionParameters = Record<string, string | number | boolean>
+
+export interface PluginFunctionDescriptor {
     name: string
     description: string
     parameters: {
@@ -16,43 +17,44 @@ export interface IPluginFunction {
         description?: string
         required?: string[]
     }
-    handler: (parameters: IPluginFunctionParameters, api: IPluginAPI) => Promise<IPluginFunctionOutput[]>
 }
 
-export interface IPluginFunctionOutput {
+export interface PluginFunctionOutput {
     url: string
     [key: string]: any
 }
 
-export type IPluginFunctionDescriptor = Omit<IPluginFunction, 'handler'>
+type FunctionHandler = (parameters: PluginFunctionParameters, api: PluginAPI) => Promise<PluginFunctionOutput[]>
 
-export type IPluginFunctionParameters = Record<string, string | number | boolean>
-
-export interface IPluginFunctionCallDescriptor {
-    pluginName: string
-    dataSource: IPluginFunction
-    parameters: IPluginFunctionParameters
+interface PluginFunction {
+    descriptor: PluginFunctionDescriptor
+    handler: FunctionHandler
 }
 
-export interface IPluginContext {
+export interface PluginFunctionWithParameters extends PluginFunction {
     pluginName: string
-    dataSourceName: string
-    dataSourceParameters?: IPluginFunctionParameters
-    outputs: IPluginFunctionOutput[]
+    parameters: PluginFunctionParameters
+}
+
+export interface PluginFunctionExecutionInfo {
+    name: string
+    pluginName: string
+    parameters?: PluginFunctionParameters
+    output: PluginFunctionOutput[]
     error?: any
 }
 
-export interface IPluginFunctionChosenDescriptor {
+export interface PluginChosenFunctionDescriptor {
     name: string
-    parameters: IPluginFunctionParameters
+    parameters: PluginFunctionParameters
 }
 
-export interface IPlugin {
+export interface Plugin {
     name: string
     description: string
-    dataSources: IPluginFunction[]
+    dataSources: PluginFunction[]
 }
 
-export interface IPluginAPI<TConfig = Configuration['pluginsConfig']> {
+export interface PluginAPI<TConfig = Configuration['pluginsConfig']> {
     config: TConfig
 }

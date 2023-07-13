@@ -4,27 +4,27 @@ import { Message } from '../../sourcegraph-api/completions/types'
 
 import { makePrompt } from './prompt'
 import {
-    IPlugin,
-    IPluginContext,
-    IPluginFunctionCallDescriptor,
-    IPluginFunctionChosenDescriptor,
-    IPluginFunctionOutput,
+    Plugin,
+    PluginChosenFunctionDescriptor,
+    PluginFunctionExecutionInfo,
+    PluginFunctionOutput,
+    PluginFunctionWithParameters,
 } from './types'
 
 export const chooseDataSources = (
     humanChatInput: string,
     client: ChatClient,
-    plugins: IPlugin[],
+    plugins: Plugin[],
     previousMessages: Message[] = []
-): Promise<IPluginFunctionCallDescriptor[]> => {
-    const allDataSources = plugins.flatMap(plugin => plugin.dataSources)
+): Promise<PluginFunctionWithParameters[]> => {
+    const dataSources = plugins.flatMap(plugin => plugin.dataSources)
 
     const messages = makePrompt(
         humanChatInput,
-        allDataSources.map(({ handler, ...rest }) => rest),
+        dataSources.map(({ descriptor }) => descriptor),
         previousMessages
     )
-    return new Promise<IPluginFunctionCallDescriptor[]>((resolve, reject) => {
+    return new Promise<PluginFunctionWithParameters[]>((resolve, reject) => {
         let lastResponse = ''
         client.chat(
             messages,
@@ -34,24 +34,24 @@ export const chooseDataSources = (
                 },
                 onComplete: () => {
                     try {
-                        const chosenFunctions = JSON.parse(lastResponse.trim()) as IPluginFunctionChosenDescriptor[]
-                        const descriptors = chosenFunctions
+                        const chosenFunctions = JSON.parse(lastResponse.trim()) as PluginChosenFunctionDescriptor[]
+                        const functionsWithParameters = chosenFunctions
                             .map(item => {
-                                const dataSource = allDataSources.find(dataSource => dataSource.name === item.name)
+                                const dataSource = dataSources.find(ds => ds.descriptor.name === item.name)
                                 const plugin = plugins.find(plugin =>
-                                    plugin.dataSources.some(ds => ds.name === item.name)
+                                    plugin.dataSources.some(ds => ds.descriptor.name === item.name)
                                 )
                                 if (!plugin || !dataSource) {
                                     return undefined
                                 }
                                 return {
+                                    ...dataSource,
                                     pluginName: plugin?.name,
-                                    dataSource,
                                     parameters: item.parameters,
                                 }
                             })
                             .filter(Boolean)
-                        resolve(descriptors as IPluginFunctionCallDescriptor[])
+                        resolve(functionsWithParameters as PluginFunctionWithParameters[])
                     } catch (error) {
                         reject(new Error(`Error parsing llm intent detection response: ${error}`))
                     }
@@ -68,37 +68,47 @@ export const chooseDataSources = (
 }
 
 export const runPluginFunctions = async (
-    dataSourcesCallDescriptors: IPluginFunctionCallDescriptor[],
+    functionsWithParameters: PluginFunctionWithParameters[],
     config: Configuration['pluginsConfig']
-): Promise<{ prompt: Message[]; contexts: IPluginContext[] }> => {
-    const contexts = await Promise.all(
-        dataSourcesCallDescriptors.map(async ({ pluginName, dataSource, parameters }): Promise<IPluginContext> => {
-            const [outputs = [], error] = await dataSource
-                .handler(parameters, { config })
-                .then(res => [res, undefined] as [IPluginFunctionOutput[], undefined])
-                .catch(error => [undefined, error] as [undefined, Error])
+): Promise<{ prompt: Message[]; executionInfos: PluginFunctionExecutionInfo[] }> => {
+    const executionInfos = await Promise.all(
+        functionsWithParameters.map(
+            async ({ pluginName, descriptor, handler, parameters }): Promise<PluginFunctionExecutionInfo> => {
+                const { output = [], error }: { output?: PluginFunctionOutput[]; error?: any } = await handler(
+                    parameters,
+                    { config }
+                )
+                    .then(output => ({ output }))
+                    .catch(error => ({
+                        error: `${error}`,
+                    }))
 
-            return {
-                pluginName,
-                dataSourceName: dataSource.name,
-                dataSourceParameters: parameters,
-                outputs,
-                error,
+                return {
+                    pluginName,
+                    name: descriptor.name,
+                    parameters,
+                    output,
+                    error,
+                }
             }
-        })
+        )
     )
 
-    const filteredContexts = contexts.filter(context => !!context.error)
-    if (filteredContexts.length === 0) {
+    const filtered = executionInfos.filter(executionInfo => !executionInfo.error)
+
+    if (filtered.length > 0) {
         return {
             prompt: [
                 {
                     speaker: 'human',
                     text:
                         'I have following responses from external API plugins that I called now:\n' +
-                        filteredContexts
+                        filtered
                             .map(
-                                output => `from "${output.pluginName}":\n\`\`\`json\n${JSON.stringify(output.outputs)}`
+                                executionInfo =>
+                                    `from "${executionInfo.pluginName}":\n\`\`\`json\n${JSON.stringify(
+                                        executionInfo.output
+                                    )}`
                             )
                             .join('\n'),
                 },
@@ -107,9 +117,9 @@ export const runPluginFunctions = async (
                     text: 'Understood, I have additional knowledge when answering your question.',
                 },
             ],
-            contexts,
+            executionInfos,
         }
     }
 
-    return { prompt: [], contexts }
+    return { prompt: [], executionInfos }
 }

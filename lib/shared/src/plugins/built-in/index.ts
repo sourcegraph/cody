@@ -1,4 +1,4 @@
-import { IPlugin } from '../api/types'
+import { Plugin } from '../api/types'
 
 import { airQualityPlugin } from './air-quality'
 import { confluencePlugin } from './confluence'
@@ -7,7 +7,7 @@ import { timezonePlugin } from './timezone'
 import { urlReaderPlugin } from './url-reader'
 import { weatherPlugin } from './weather'
 
-export const defaultPlugins: IPlugin[] = [
+export const defaultPlugins: Plugin[] = [
     weatherPlugin,
     timezonePlugin,
     airQualityPlugin,
