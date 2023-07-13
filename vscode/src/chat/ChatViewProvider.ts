@@ -447,7 +447,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
 
     private async executeChatCommands(text: string): Promise<void> {
         switch (true) {
-            case /^\/r(est)?\s/i.test(text):
+            case /^\/r(est)?/i.test(text):
                 await this.clearAndRestartSession()
                 break
             case /^\/s(earch)?\s/i.test(text):
