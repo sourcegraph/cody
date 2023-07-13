@@ -139,7 +139,7 @@ export class MyPromptController {
         // Get the prompt name and prompt description from the user using the input box with 2 steps
         const promptName = await vscode.window.showInputBox({
             title: 'Creating a new custom recipe...',
-            prompt: 'What is the name for the new recipe?:',
+            prompt: 'What is the name for the new recipe?',
             placeHolder: 'e,g. Vulnerability Scanner',
             validateInput: (input: string) => {
                 if (!input) {
@@ -167,6 +167,19 @@ export class MyPromptController {
             return
         }
         const newPrompt: CodyPrompt = { prompt: promptDescription }
+        const promptCommand = await vscode.window.showInputBox({
+            title: 'Creating a new custom recipe...',
+            prompt: '[Optional] Add a terminal command for the recipe to run from your current workspace. The output will be shared with Cody as context for the prompt. (The added command must work on your local machine.)',
+            placeHolder: 'e,g. node your-script.js, git describe --long, etc.',
+        })
+        if (promptCommand) {
+            const commandParts = promptCommand.split(' ')
+            if (!commandParts.length) {
+                return
+            }
+            newPrompt.command = commandParts.shift()
+            newPrompt.args = commandParts
+        }
         this.myPromptStore.set(promptName, newPrompt)
         // Save the prompt to the extension storage
         await this.save(promptName, newPrompt)

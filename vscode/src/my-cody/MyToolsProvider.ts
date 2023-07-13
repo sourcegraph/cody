@@ -32,7 +32,7 @@ export class MyToolsProvider {
 
     public runCommand(command: string, args: string[] = [], runFromWSRoot = true): string {
         const fullCommand = `${command} ${args.join(' ')}`
-        const output = spawnSync(command, args, { cwd: runFromWSRoot ? rootPath : currentFilePath })
+        const output = spawnSync(command, args, { cwd: runFromWSRoot ? rootPath : currentFilePath, encoding: 'utf8' })
         return outputWrapper.replace('{command}', fullCommand).replace('{output}', output.stdout.toString().trim())
     }
 
