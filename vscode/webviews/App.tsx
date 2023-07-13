@@ -162,7 +162,9 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                             vscodeAPI={vscodeAPI}
                         />
                     )}
-                    {view === 'recipes' && <Recipes vscodeAPI={vscodeAPI} myPrompts={myPrompts} />}
+                    {view === 'recipes' && endpoint && (
+                        <Recipes vscodeAPI={vscodeAPI} myPrompts={myPrompts} endpoint={endpoint} />
+                    )}
                     {view === 'settings' && endpoint && (
                         <Settings onLogout={onLogout} endpoint={endpoint} version={config?.extensionVersion} />
                     )}

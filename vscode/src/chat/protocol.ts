@@ -56,6 +56,7 @@ export interface ConfigurationSubsetForWebview extends Pick<Configuration, 'debu
 export const DOTCOM_URL = new URL('https://sourcegraph.com')
 export const DOTCOM_CALLBACK_URL = new URL('https://sourcegraph.com/user/settings/tokens/new/callback')
 export const CODY_DOC_URL = new URL('https://docs.sourcegraph.com/cody')
+export const INTERNAL_S2_URL = new URL('https://sourcegraph.sourcegraph.com/')
 // Community and support
 export const DISCORD_URL = new URL('https://discord.gg/s2qDtYGnAE')
 export const CODY_FEEDBACK_URL = new URL(
@@ -142,6 +143,14 @@ export function isLocalApp(url: string): boolean {
 export function isDotCom(url: string): boolean {
     try {
         return new URL(url).origin === DOTCOM_URL.origin
+    } catch {
+        return false
+    }
+}
+
+export function isInternalUser(url: string): boolean {
+    try {
+        return new URL(url).origin === INTERNAL_S2_URL.origin
     } catch {
         return false
     }

@@ -102,7 +102,7 @@ const register = async (
         TestSupport.instance.fixupController.set(fixup)
     }
 
-    const prompt = new MyPromptController(debug, context, localStorage)
+    const prompt = new MyPromptController(debug, context, initialConfig.serverEndpoint)
 
     const controllers = { inline: commentController, fixups: fixup, prompt }
 

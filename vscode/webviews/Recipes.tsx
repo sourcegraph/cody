@@ -2,6 +2,8 @@ import { VSCodeButton } from '@vscode/webview-ui-toolkit/react'
 
 import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 
+import { isInternalUser } from '../src/chat/protocol'
+
 import { VSCodeWrapper } from './utils/VSCodeApi'
 
 import styles from './Recipes.module.css'
@@ -21,30 +23,32 @@ export const recipesList = {
     'pr-description': 'Generate pull request description',
 }
 
-export const Recipes: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper; myPrompts: string[] }> = ({
-    vscodeAPI,
-    myPrompts,
-}) => {
+export const Recipes: React.FunctionComponent<{
+    vscodeAPI: VSCodeWrapper
+    myPrompts: string[]
+    endpoint: string
+}> = ({ vscodeAPI, myPrompts, endpoint }) => {
     const onRecipeClick = (recipeID: RecipeID): void => {
         vscodeAPI.postMessage({ command: 'executeRecipe', recipe: recipeID })
     }
     const onMyPromptClick = (promptID: string): void => {
         vscodeAPI.postMessage({ command: 'my-prompt', title: promptID })
     }
+    const myPromptsEnabled = isInternalUser(endpoint)
 
     return (
         <div className="inner-container">
             <div className="non-transcript-container">
                 <div className={styles.recipes}>
-                    {myPrompts.length > 0 && (
+                    {myPromptsEnabled && (
                         <div className={styles.recipesHeader}>
                             <span>My Prompts</span>
-                            <VSCodeButton type="button" appearance="icon" onClick={() => onMyPromptClick('get')}>
-                                <i className="codicon codicon-refresh" />
+                            <VSCodeButton type="button" appearance="icon" onClick={() => onMyPromptClick('new')}>
+                                <i className="codicon codicon-plus" title="Create a new recipe with custom prompt" />
                             </VSCodeButton>
                         </div>
                     )}
-                    {myPrompts.map(promptID => (
+                    {myPrompts?.map(promptID => (
                         <VSCodeButton
                             key={promptID}
                             className={styles.recipeButton}

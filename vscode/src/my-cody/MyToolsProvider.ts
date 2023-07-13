@@ -7,7 +7,7 @@ const rootPath = vscode.workspace.workspaceFolders?.[0].uri.fsPath
 const currentFilePath = vscode.window.activeTextEditor?.document.uri.fsPath
 const homePath = os.homedir()
 
-// WIP: A Class that provides different tools for the user to use during prompt building
+// WIP: A Class that provides different tools for users to use during prompt building
 export class MyToolsProvider {
     private tools = new Map<string, string>()
     private username: string
@@ -36,7 +36,7 @@ export class MyToolsProvider {
         return outputWrapper.replace('{command}', fullCommand).replace('{output}', output.stdout.toString().trim())
     }
 
-    // A tool that allows the user to interact with the file system
+    // A tool that allows the user to interact with the the file system
     public async runFileSystemCommand(command: string): Promise<void> {
         switch (command) {
             case 'add': {
