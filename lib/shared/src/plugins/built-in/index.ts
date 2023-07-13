@@ -14,4 +14,4 @@ export const defaultPlugins: IPlugin[] = [
     urlReaderPlugin,
     confluencePlugin,
     githubIssuesPlugin,
-]
+].sort((a, b) => a.name.localeCompare(b.name))
