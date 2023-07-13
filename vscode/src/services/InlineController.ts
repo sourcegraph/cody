@@ -368,16 +368,28 @@ export class InlineController {
         }
         // Stop tracking for file changes to perfotm replacement
         this.isInProgress = false
-        const chatSelection = this.getSelectionRange()
-        const documentUri = vscode.Uri.joinPath(this.workspacePath, fileName)
-        const range = new vscode.Selection(chatSelection.start, new vscode.Position(chatSelection.end.line + 1, 0))
-        const newRange = await editDocByUri(documentUri, { start: range.start.line, end: range.end.line }, replacement)
+        try {
+            const chatSelection = this.getSelectionRange()
+            const documentUri = vscode.Uri.joinPath(this.workspacePath, fileName)
+            const range = new vscode.Selection(chatSelection.start, new vscode.Position(chatSelection.end.line + 1, 0))
+            const newRange = await editDocByUri(
+                documentUri,
+                { start: range.start.line, end: range.end.line },
+                replacement
+            )
 
-        const lens = this.codeLenses.get(this.currentTaskId)
-        lens?.storeContext(this.currentTaskId, documentUri, original, replacement)
+            const lens = this.codeLenses.get(this.currentTaskId)
+            lens?.storeContext(this.currentTaskId, documentUri, original, replacement)
 
-        await this.stopFixMode(false, newRange)
-        logEvent('CodyVSCodeExtension:inline-assist:replaced')
+            await this.stopFixMode(false, newRange)
+            logEvent('CodyVSCodeExtension:inline-assist:replaced')
+        } catch (error) {
+            await this.stopFixMode(true)
+            console.error(error)
+            await vscode.window.showErrorMessage(
+                'Fixup failed. Please make sure you are in a single repository workspace and try again.'
+            )
+        }
     }
     /**
      * Return latest selection

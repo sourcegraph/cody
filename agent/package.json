@@ -13,6 +13,7 @@
   "sideEffects": false,
   "scripts": {
     "build": "esbuild ./src/index.ts --bundle --outfile=dist/agent.js --format=cjs --platform=node",
+    "build-minify": "pnpm build --minify",
     "build-ts": "tsc --build",
     "build-agent-binaries": "pnpm run build && pkg -t node16-linux-arm64,node16-linux-x64,node16-macos-arm64,node16-macos-x64,node16-win-x64 dist/agent.js --out-path ${AGENT_EXECUTABLE_TARGET_DIRECTORY:-dist}",
     "lint": "pnpm run lint:js",

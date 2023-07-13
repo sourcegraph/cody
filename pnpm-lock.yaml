@@ -123,18 +123,16 @@ importers:
       '@sourcegraph/cody-shared':
         specifier: workspace:*
         version: link:../lib/shared
-      '@types/prompts':
-        specifier: ^2.4.4
-        version: 2.4.4
       commander:
         specifier: ^10.0.1
         version: 10.0.1
-      envalid:
-        specifier: ^7.3.1
-        version: 7.3.1
       prompts:
         specifier: ^2.4.2
         version: 2.4.2
+    devDependencies:
+      '@types/prompts':
+        specifier: ^2.4.4
+        version: 2.4.4
 
   lib/icons:
     dependencies:
@@ -5329,7 +5327,7 @@ packages:
     dependencies:
       '@types/node': 20.4.0
       kleur: 3.0.3
-    dev: false
+    dev: true
 
   /@types/prop-types@15.7.5:
     resolution: {integrity: sha512-JCB8C6SnDoQf0cNycqd/35A7MjcnK+ZTqE7judS6o7utxUCg6imJg3QK2qzHKszlTjcj2cn+NwMB2i96ubpj7w==}

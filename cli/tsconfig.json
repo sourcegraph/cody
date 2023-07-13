@@ -2,12 +2,11 @@
   "extends": "../tsconfig.base.json",
   "compilerOptions": {
     "module": "commonjs",
-    "sourceRoot": "src",
-    "rootDir": ".",
+    "rootDir": "src",
     "outDir": "dist",
     "baseUrl": "./src",
   },
-  "include": ["src", ".eslintrc.js"],
+  "include": ["src"],
   "exclude": ["dist"],
   "references": [
     {
