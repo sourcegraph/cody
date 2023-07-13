@@ -1,44 +1,38 @@
-#! /usr/bin/env node
 import { Command } from 'commander'
 import prompts from 'prompts'
 
 import { Transcript } from '@sourcegraph/cody-shared/src/chat/transcript'
-import { ConfigurationUseContext } from '@sourcegraph/cody-shared/src/configuration'
 import { SourcegraphIntentDetectorClient } from '@sourcegraph/cody-shared/src/intent-detector/client'
+import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
 import { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/nodeClient'
-import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
 import { SourcegraphGraphQLAPIClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
 import { isRepoNotFoundError } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
 
-import { streamCompletions } from './completions'
-import { DEFAULTS, ENVIRONMENT_CONFIG } from './config'
-import { createCodebaseContext } from './context'
-import { interactionFromMessage } from './interactions'
-import { getPreamble } from './preamble'
+import { streamCompletions } from '../../completions'
+import { createCodebaseContext } from '../../context'
+import { interactionFromMessage } from '../../interactions'
+import { getPreamble } from '../../preamble'
+import { GlobalOptions } from '../../program'
 
-async function startCLI() {
-    const program = new Command()
+interface ReplCommandOptions {
+    prompt?: string
+}
 
-    program
-        .version('0.0.1')
-        .description('Cody CLI')
-        .option('-p, --prompt <value>', 'Give Cody a prompt')
-        .option('-c, --codebase <value>', `Codebase to use for context fetching. Default: ${DEFAULTS.codebase}`)
-        .option('-e, --endpoint <value>', `Sourcegraph instance to connect to. Default: ${DEFAULTS.serverEndpoint}`)
-        .option(
-            '--context [embeddings,keyword,none,blended]',
-            `How Cody fetches context for query. Default: ${DEFAULTS.contextType}`
-        )
-        .option('--lsp', 'Start LSP')
-        .parse(process.argv)
+export const replCommand = new Command('repl')
+    .description('Cody repl')
+    .option('-p, --prompt <value>', 'Give Cody a prompt')
+    .action(run)
 
-    const options = program.opts()
+async function run(_options: unknown, program: Command): Promise<void> {
+    const {
+        codebase,
+        endpoint,
+        context: contextType,
+        debug,
+        prompt,
+    } = program.optsWithGlobals<GlobalOptions & ReplCommandOptions>()
 
-    const codebase: string = (options.codebase as string) || DEFAULTS.codebase
-    const endpoint: string = (options.endpoint as string) || DEFAULTS.serverEndpoint
-    const contextType: ConfigurationUseContext =
-        (options.contextType as ConfigurationUseContext) || DEFAULTS.contextType
-    const accessToken: string | undefined = ENVIRONMENT_CONFIG.SRC_ACCESS_TOKEN
+    const accessToken: string | undefined = process.env.SRC_ACCESS_TOKEN
     if (accessToken === undefined || accessToken === '') {
         console.error(
             'No access token found. Set SRC_ACCESS_TOKEN to an access token created on the Sourcegraph instance.'
@@ -74,12 +68,12 @@ async function startCLI() {
 
     const completionsClient = new SourcegraphNodeCompletionsClient({
         serverEndpoint: endpoint,
-        accessToken: ENVIRONMENT_CONFIG.SRC_ACCESS_TOKEN,
-        debugEnable: DEFAULTS.debug === 'development',
+        accessToken,
+        debugEnable: debug,
         customHeaders: {},
     })
 
-    let prompt = options.prompt as string
+    let promptToUse = prompt
     if (prompt === undefined || prompt === '') {
         const response = await prompts({
             type: 'text',
@@ -87,14 +81,14 @@ async function startCLI() {
             message: 'What do you want to ask Cody?',
         })
 
-        prompt = response.value as string
+        promptToUse = response.value as string
     }
 
     const transcript = new Transcript()
 
     // TODO: Keep track of all user input if we add REPL mode
 
-    const initialMessage: Message = { speaker: 'human', text: prompt }
+    const initialMessage: Message = { speaker: 'human', text: promptToUse }
     const messages: { human: Message; assistant?: Message }[] = [{ human: initialMessage }]
     for (const [index, message] of messages.entries()) {
         const interaction = await interactionFromMessage(
@@ -127,10 +121,3 @@ async function startCLI() {
         },
     })
 }
-
-startCLI()
-    .then(() => {})
-    .catch(error => {
-        console.error('Error starting the bot:', error)
-        process.exit(1)
-    })
