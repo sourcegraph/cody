@@ -377,7 +377,7 @@
         "title": "Ask Cody",
         "category": "Cody Inline Chat",
         "when": "cody.activated && config.cody.inlineChat.enabled",
-        "enablement": "!commentIsEmpty"
+        "enablement": "!commentIsEmpty && !cody.inline.reply.pending"
       },
       {
         "command": "cody.comment.delete",

@@ -7,7 +7,7 @@ import { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/s
 
 import { ChatViewProvider } from './chat/ChatViewProvider'
 import { ContextProvider } from './chat/ContextProvider'
-import { InlineChatViewProvider } from './chat/InlineChatViewProvider'
+import { InlineChatViewManager } from './chat/InlineChatViewProvider'
 import { MessageProviderOptions } from './chat/MessageProvider'
 import { CODY_FEEDBACK_URL } from './chat/protocol'
 import { CodyCompletionItemProvider } from './completions'
@@ -146,15 +146,13 @@ const register = async (
         contextProvider,
     }
 
-    const inlineChatProvider = new InlineChatViewProvider(messageProviderOptions)
+    const inlineChatManager = new InlineChatViewManager(messageProviderOptions)
     const chatProvider = new ChatViewProvider({
         ...messageProviderOptions,
-        // Note: chatProvider needs to provide the webview to inlineChat so we can keep history in sync
-        inlineChatProvider,
         extensionPath: context.extensionPath,
     })
 
-    disposables.push(chatProvider, inlineChatProvider)
+    disposables.push(chatProvider)
 
     // TODO: Should this use inlineChatProvider?
     // We close the inline chat
@@ -167,6 +165,10 @@ const register = async (
     )
 
     const executeRecipe = async (recipe: RecipeID, openChatView = true): Promise<void> => {
+        if (openChatView) {
+            chatProvider.showTab('chat')
+        }
+
         await chatProvider.executeRecipe(recipe, '')
     }
 
@@ -196,24 +198,24 @@ const register = async (
         // Inline Chat Provider
         vscode.commands.registerCommand('cody.comment.add', async (comment: vscode.CommentReply) => {
             const isFixMode = /^\/f(ix)?\s/i.test(comment.text.trimStart())
-            await inlineChatProvider.addChat(comment.text, comment.thread, isFixMode)
+            const inlineChatProvider = inlineChatManager.getProviderForThread(comment.thread)
+            await inlineChatProvider.addChat(comment.text, isFixMode)
             logEvent(`CodyVSCodeExtension:inline-assist:${isFixMode ? 'fixup' : 'chat'}`)
         }),
         vscode.commands.registerCommand('cody.comment.delete', (thread: vscode.CommentThread) => {
-            inlineChatProvider.removeChat(thread)
+            const inlineChatProvider = inlineChatManager.getProviderForThread(thread)
+            inlineChatProvider.removeChat()
         }),
         vscode.commands.registerCommand('cody.comment.collapse-all', () =>
             vscode.commands.executeCommand('workbench.action.collapseAllComments')
         ),
         vscode.commands.registerCommand('cody.comment.open-in-sidebar', async (thread: vscode.CommentThread) => {
-            const associatedChatId = inlineChatProvider.getChatIDForThread(thread)
-            if (associatedChatId) {
-                // The inline chat is already saved in history, we just need to tell the sidebar chat to restore it
-                await chatProvider.restoreSession(associatedChatId)
-                // Ensure that the sidebar view is open if not already
-                chatProvider.setWebviewView('chat')
-                await vscode.commands.executeCommand('cody.chat.focus')
-            }
+            const inlineChatProvider = inlineChatManager.getProviderForThread(thread)
+            // The inline chat is already saved in history, we just need to tell the sidebar chat to restore it
+            await chatProvider.restoreSession(inlineChatProvider.currentChatID)
+            // Ensure that the sidebar view is open if not already
+            chatProvider.setWebviewView('chat')
+            await vscode.commands.executeCommand('cody.chat.focus')
         }),
         vscode.commands.registerCommand('cody.inline.new', () =>
             vscode.commands.executeCommand('workbench.action.addComment')

@@ -293,8 +293,6 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
                 // error message and don't want to overwhelm the user.
                 // TODO: Make this async?
                 void this.onCompletionEnd(true)
-                // TODO: Move this
-                void this.editor.controllers.inline.error()
                 console.error(`Completion request failed: ${err}`)
             },
         })
@@ -312,8 +310,6 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         await this.saveTranscriptToChatHistory()
         this.sendHistory()
         void vscode.commands.executeCommand('setContext', 'cody.reply.pending', false)
-        // TODO: move this
-        this.editor.controllers.inline.setResponsePending(false)
         if (!ignoreEmbeddingsError) {
             this.logEmbeddingsSearchErrors()
         }

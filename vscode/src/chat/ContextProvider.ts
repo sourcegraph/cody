@@ -40,8 +40,6 @@ export type Config = Pick<
 
 export class ContextProvider implements vscode.Disposable {
     public webview?: ChatViewProviderWebview
-    private static instance: ContextProvider
-
     private configurationChangeEvent = new vscode.EventEmitter<void>()
 
     protected disposables: vscode.Disposable[] = []
@@ -76,32 +74,6 @@ export class ContextProvider implements vscode.Disposable {
 
     public async init(): Promise<void> {
         await this.publishContextStatus()
-    }
-
-    public static getInstance(
-        config: Omit<Config, 'codebase'>, // should use codebaseContext.getCodebase() rather than config.codebase
-        chat: ChatClient,
-        codebaseContext: CodebaseContext,
-        editor: VSCodeEditor,
-        secretStorage: SecretStorage,
-        localStorage: LocalStorage,
-        rgPath: string,
-        authProvider: AuthProvider
-    ): ContextProvider {
-        if (!ContextProvider.instance) {
-            ContextProvider.instance = new ContextProvider(
-                config,
-                chat,
-                codebaseContext,
-                editor,
-                secretStorage,
-                localStorage,
-                rgPath,
-                authProvider
-            )
-        }
-
-        return ContextProvider.instance
     }
 
     public onConfigurationChange(newConfig: Config): void {

@@ -18,17 +18,14 @@ export interface ChatViewProviderWebview extends Omit<vscode.Webview, 'postMessa
 
 interface ChatViewProviderOptions extends MessageProviderOptions {
     extensionPath: string
-    inlineChatProvider: InlineChatViewProvider
 }
 
 export class ChatViewProvider extends MessageProvider implements vscode.WebviewViewProvider {
     private extensionPath: string
-    private inlineChatProvider: InlineChatViewProvider
     public webview?: ChatViewProviderWebview
 
-    constructor({ inlineChatProvider, extensionPath, ...options }: ChatViewProviderOptions) {
+    constructor({ extensionPath, ...options }: ChatViewProviderOptions) {
         super(options)
-        this.inlineChatProvider = inlineChatProvider
         this.extensionPath = extensionPath
     }
 
@@ -262,7 +259,7 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
         this.webview = webviewView.webview
         this.authProvider.webview = webviewView.webview
         this.contextProvider.webview = webviewView.webview
-        this.inlineChatProvider.webview = webviewView.webview
+        InlineChatViewProvider.webview = webviewView.webview
 
         const extensionPath = vscode.Uri.file(this.extensionPath)
         const webviewPath = vscode.Uri.joinPath(extensionPath, 'dist')

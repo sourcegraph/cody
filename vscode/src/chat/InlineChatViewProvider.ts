@@ -3,37 +3,53 @@ import * as vscode from 'vscode'
 import { ChatMessage, UserLocalHistory } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 
 import { ChatViewProviderWebview } from './ChatViewProvider'
-import { MessageProvider } from './MessageProvider'
+import { MessageProvider, MessageProviderOptions } from './MessageProvider'
 
-export class InlineChatViewProvider extends MessageProvider {
-    public webview?: ChatViewProviderWebview
-    private activeThread?: vscode.CommentThread
-    private inlineChats = new Map<vscode.Uri, string>()
+export class InlineChatViewManager {
+    private inlineChatThreadProviders = new Map<vscode.Uri, InlineChatViewProvider>()
+    private messageProviderOptions: MessageProviderOptions
 
-    public async addChat(reply: string, thread: vscode.CommentThread, isFixMode: boolean): Promise<void> {
-        this.activeThread = thread
-        const existingChatID = this.getChatIDForThread(this.activeThread)
+    constructor(options: MessageProviderOptions) {
+        this.messageProviderOptions = options
+    }
 
-        if (existingChatID) {
-            // Restore context from the previous chat
-            await this.restoreSession(existingChatID)
-        } else {
-            await this.clearAndRestartSession()
-            this.inlineChats.set(this.activeThread.uri, this.currentChatID)
+    public getProviderForThread(thread: vscode.CommentThread): InlineChatViewProvider {
+        let provider = this.inlineChatThreadProviders.get(thread.uri)
+
+        if (!provider) {
+            provider = new InlineChatViewProvider({ thread, ...this.messageProviderOptions })
+            this.inlineChatThreadProviders.set(thread.uri, provider)
         }
 
-        await this.editor.controllers.inline.chat(reply, thread, isFixMode)
+        return provider
+    }
+}
+
+interface InlineChatViewProviderOptions extends MessageProviderOptions {
+    thread: vscode.CommentThread
+}
+
+export class InlineChatViewProvider extends MessageProvider {
+    public static webview?: ChatViewProviderWebview
+    private thread: vscode.CommentThread
+
+    constructor({ thread, ...options }: InlineChatViewProviderOptions) {
+        super(options)
+        this.thread = thread
+    }
+
+    public async addChat(reply: string, isFixMode: boolean): Promise<void> {
+        // TODO(umpox): We use `inline.reply.pending` to gate against multiple inline chats being sent at once.
+        // We need to update the comment controller to support more than one active thread at a time.
+        void vscode.commands.executeCommand('setContext', 'cody.inline.reply.pending', true)
+
+        await this.editor.controllers.inline.chat(reply, this.thread, isFixMode)
         this.editor.controllers.inline.setResponsePending(true)
         await this.executeRecipe('inline-chat', reply.trimStart())
     }
 
-    public removeChat(thread: vscode.CommentThread): void {
-        this.inlineChats.delete(thread.uri)
-        this.editor.controllers.inline.delete(thread)
-    }
-
-    public getChatIDForThread(thread: vscode.CommentThread): string | undefined {
-        return this.inlineChats.get(thread.uri)
+    public removeChat(): void {
+        this.editor.controllers.inline.delete(this.thread)
     }
 
     /**
@@ -42,16 +58,18 @@ export class InlineChatViewProvider extends MessageProvider {
     protected handleTranscript(transcript: ChatMessage[], isMessageInProgress: boolean): void {
         const lastMessage = transcript[transcript.length - 1]
 
-        // If the thread we're targeting doesn't match the controllers thread, do nothing
-        if (this.activeThread && this.activeThread?.uri !== this.editor.controllers.inline.thread?.uri) {
+        // If we have nothing to show, do nothing.
+        // Note that we only care about the assistants response.
+        // The users' messages are already added through the comments API.
+        if (!lastMessage.displayText || lastMessage.speaker !== 'assistant') {
             return
         }
 
-        if (lastMessage?.displayText) {
-            this.editor.controllers.inline.reply(
-                lastMessage.displayText,
-                isMessageInProgress ? 'streaming' : 'complete'
-            )
+        this.editor.controllers.inline.setResponsePending(false)
+        this.editor.controllers.inline.reply(lastMessage.displayText, isMessageInProgress ? 'streaming' : 'complete')
+        if (!isMessageInProgress) {
+            // Finished completing, we can allow users to send another inline chat message.
+            void vscode.commands.executeCommand('setContext', 'cody.inline.reply.pending', false)
         }
     }
 
@@ -59,7 +77,6 @@ export class InlineChatViewProvider extends MessageProvider {
      * Display error message in the active inline chat thread..
      * Unlike the sidebar, this message is displayed as an assistant response.
      * We don't yet have a good way to render errors separately in the inline chat window.
-     * TODO: Can we render this as a label?
      */
     protected handleError(errorMsg: string): void {
         void this.editor.controllers.inline.error(errorMsg)
@@ -71,7 +88,7 @@ export class InlineChatViewProvider extends MessageProvider {
      * This is ensure that users can still find old inline chats from previous sessions.
      */
     protected handleHistory(history: UserLocalHistory): void {
-        void this.webview?.postMessage({
+        void InlineChatViewProvider.webview?.postMessage({
             type: 'history',
             messages: history,
         })
