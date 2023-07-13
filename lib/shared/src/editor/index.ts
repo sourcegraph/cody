@@ -205,7 +205,7 @@ export abstract class Editor {
         const followingText = offset.rangeSlice({
             start: document.selection.end,
             end: {
-                line: document.selection.end.line + SURROUNDING_LINES,
+                line: Math.min(offset.lines.length - 1, document.selection.end.line + SURROUNDING_LINES),
                 character: 0,
             },
         })
