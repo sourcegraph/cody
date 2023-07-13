@@ -156,16 +156,14 @@ export class InlineController {
     /**
      * List response from Human as comment
      */
-    public async chat(reply: vscode.CommentReply, isFixMode: boolean = false): Promise<void> {
+    public async chat(reply: string, thread: vscode.CommentThread, isFixMode: boolean = false): Promise<void> {
         this.isInProgress = true
-        const humanInput = reply.text
-        const thread = reply.thread
         // disable reply until the task is completed
         thread.canReply = false
         thread.label = this.threadLabel
         thread.collapsibleState = vscode.CommentThreadCollapsibleState.Collapsed
 
-        const comment = new Comment(humanInput, 'Me', this.userIcon, reply.thread)
+        const comment = new Comment(reply, 'Me', this.userIcon, thread)
         thread.comments = [...thread.comments, comment]
 
         if (isFixMode) {

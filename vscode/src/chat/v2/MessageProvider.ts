@@ -80,7 +80,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
     private isMessageInProgress = false
     private cancelCompletionCallback: (() => void) | null = null
 
-    private currentChatID = ''
+    public currentChatID = ''
     protected static inputHistory: string[] = []
     protected static chatHistory: ChatHistory = {}
 

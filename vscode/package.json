@@ -395,6 +395,14 @@
         "icon": "$(sync~spin)"
       },
       {
+        "command": "cody.comment.open-in-sidebar",
+        "title": "Open this chat in the sidebar",
+        "category": "Cody Inline Chat",
+        "when": "cody.activated && config.cody.inlineChat.enabled",
+        "enablement": "!commentThreadIsEmpty",
+        "icon": "$(comment-discussion)"
+      },
+      {
         "command": "cody.comment.collapse-all",
         "title": "Collapse All Inline Chats",
         "category": "Cody Inline Chat",
@@ -573,6 +581,10 @@
         },
         {
           "command": "cody.comment.load",
+          "when": "false"
+        },
+        {
+          "command": "cody.comment.open-in-sidebar",
           "when": "false"
         },
         {
@@ -768,8 +780,13 @@
           "when": "cody.activated && commentController =~ /^cody-inline/ && cody.reply.pending && config.cody.inlineChat.enabled"
         },
         {
-          "command": "cody.comment.collapse-all",
+          "command": "cody.comment.open-in-sidebar",
           "group": "inline@3",
+          "when": "cody.activated && commentController =~ /^cody-inline/ && cody.replied && config.cody.inlineChat.enabled"
+        },
+        {
+          "command": "cody.comment.collapse-all",
+          "group": "inline@4",
           "when": "cody.activated && commentController =~ /^cody-inline/ && config.cody.inlineChat.enabled"
         }
       ],

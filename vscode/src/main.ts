@@ -198,18 +198,26 @@ const register = async (
         // Inline Chat Provider
         vscode.commands.registerCommand('cody.comment.add', async (comment: vscode.CommentReply) => {
             const isFixMode = /^\/f(ix)?\s/i.test(comment.text.trimStart())
-            await commentController.chat(comment, isFixMode)
-            commentController.setResponsePending(true)
-            await inlineChatProvider.executeRecipe('inline-chat', comment.text.trimStart())
+            await inlineChatProvider.addChat(comment.text, comment.thread, isFixMode)
             logEvent(`CodyVSCodeExtension:inline-assist:${isFixMode ? 'fixup' : 'chat'}`)
         }),
         vscode.commands.registerCommand('cody.comment.delete', (thread: vscode.CommentThread) => {
-            commentController.delete(thread)
+            inlineChatProvider.removeChat(thread)
         }),
         vscode.commands.registerCommand('cody.comment.collapse-all', () =>
             vscode.commands.executeCommand('workbench.action.collapseAllComments')
         ),
-        vscode.commands.registerCommand('cody.inline.new', () =>
+        vscode.commands.registerCommand('cody.comment.open-in-sidebar', async (thread: vscode.CommentThread) => {
+            const associatedChatId = inlineChatProvider.getChatIDForThread(thread)
+            if (associatedChatId) {
+                // The inline chat is already saved in history, we just need to tell the sidebar chat to restore it
+                await chatProvider.restoreSession(associatedChatId)
+                // Ensure that the sidebar view is open if not already
+                chatProvider.setWebviewView('chat')
+                await vscode.commands.executeCommand('cody.chat.focus')
+            }
+        }),
+        vscode.commands.registerCommand('cody.inline.new', async () =>
             vscode.commands.executeCommand('workbench.action.addComment')
         ),
         vscode.commands.registerCommand('cody.inline.insert', async (copiedText: string) => {
