@@ -511,7 +511,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
 
         // add data source context to Cody context
         const { prompt: history } = await this.transcript.getPromptForLastInteraction(
-            getPreamble(this.codebaseContext.getCodebase()),
+            [],
             this.maxPromptTokens,
             [],
             true
@@ -531,7 +531,11 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 this.sendTranscript()
 
                 // run data source functions in parallel
-                const { prompt = [], context = [] } = await plugins.getContext(descriptors, this.config.pluginsConfig, this.config.pluginsDebugEnabled)
+                const { prompt = [], context = [] } = await plugins.getContext(
+                    descriptors,
+                    this.config.pluginsConfig,
+                    this.config.pluginsDebugEnabled
+                )
                 return { prompt, context }
             }
         } catch (error) {
