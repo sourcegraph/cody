@@ -531,7 +531,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 )
                 this.sendTranscript()
 
-                return await plugins.runPluginFunctions(descriptors, this.config.pluginsConfig)
+                return plugins.runPluginFunctions(descriptors, this.config.pluginsConfig)
             }
         } catch (error) {
             console.error('Error getting plugin context', error)
