@@ -499,11 +499,13 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
     private async getPluginsContext(
         humanChatInput: string
     ): Promise<{ prompt?: Message[]; executionInfos?: PluginFunctionExecutionInfo[] }> {
+        logEvent('CodyVSCodeExtension:getPluginsContext:used')
         const enabledPluginNames = this.localStorage.getEnabledPlugins() ?? []
         const enabledPlugins = defaultPlugins.filter(plugin => enabledPluginNames.includes(plugin.name))
         if (enabledPlugins.length === 0) {
             return {}
         }
+        logEvent('CodyVSCodeExtension:getPluginsContext:enabledPlugins', { names: enabledPluginNames })
 
         this.transcript.addAssistantResponse('', 'Identifying applicable plugins...\n')
         this.sendTranscript()
@@ -516,12 +518,14 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         )
 
         try {
+            logEvent('CodyVSCodeExtension:getPluginsContext:chooseDataSourcesUsed')
             const descriptors = await plugins.chooseDataSources(
                 humanChatInput,
                 this.chat,
                 enabledPlugins,
                 previousMessages
             )
+            logEvent('CodyVSCodeExtension:getPluginsContext:descriptorsFound', { count: descriptors.length })
             if (descriptors.length !== 0) {
                 this.transcript.addAssistantResponse(
                     '',
@@ -531,6 +535,9 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 )
                 this.sendTranscript()
 
+                logEvent('CodyVSCodeExtension:getPluginsContext:runPluginFunctionsCalled', {
+                    count: descriptors.length,
+                })
                 return await plugins.runPluginFunctions(descriptors, this.config.pluginsConfig)
             }
         } catch (error) {
