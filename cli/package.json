@@ -14,9 +14,11 @@
   },
   "dependencies": {
     "@sourcegraph/cody-shared": "workspace:*",
-    "@types/prompts": "^2.4.4",
     "commander": "^10.0.1",
     "prompts": "^2.4.2"
+  },
+  "devDependencies": {
+    "@types/prompts": "^2.4.4"
   },
   "main": "dist/program.js",
   "bin": {
