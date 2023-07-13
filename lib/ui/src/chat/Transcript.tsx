@@ -34,7 +34,7 @@ export const Transcript: React.FunctionComponent<
         copyButtonOnSubmit?: CopyButtonProps['copyButtonOnSubmit']
         submitButtonComponent?: React.FunctionComponent<ChatUISubmitButtonProps>
         ChatButtonComponent?: React.FunctionComponent<ChatButtonProps>
-        devMode?: boolean
+        pluginsDevMode?: boolean
     } & TranscriptItemClassNames
 > = React.memo(function TranscriptContent({
     transcript,
@@ -58,7 +58,7 @@ export const Transcript: React.FunctionComponent<
     submitButtonComponent,
     chatInputClassName,
     ChatButtonComponent,
-    devMode,
+    pluginsDevMode,
 }) {
     const transcriptContainerRef = useRef<HTMLDivElement>(null)
     useEffect(() => {
@@ -122,7 +122,7 @@ export const Transcript: React.FunctionComponent<
                             submitButtonComponent={submitButtonComponent}
                             chatInputClassName={chatInputClassName}
                             ChatButtonComponent={ChatButtonComponent}
-                            devMode={devMode}
+                            pluginsDevMode={pluginsDevMode}
                         />
                     )
             )}

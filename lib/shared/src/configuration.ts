@@ -20,6 +20,7 @@ export interface Configuration {
     autocompleteAdvancedCache: boolean
     autocompleteAdvancedEmbeddings: boolean
     pluginsEnabled?: boolean
+    pluginsDebugEnabled?: boolean
     pluginsConfig?: {
         confluence?: {
             baseUrl: string

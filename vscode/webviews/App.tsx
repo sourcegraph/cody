@@ -24,7 +24,8 @@ import type { VSCodeWrapper } from './utils/VSCodeApi'
 
 export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vscodeAPI }) => {
     const [config, setConfig] = useState<
-        (Pick<Configuration, 'debugEnable' | 'serverEndpoint' | 'pluginsEnabled'> & LocalEnv) | null
+        | (Pick<Configuration, 'debugEnable' | 'serverEndpoint' | 'pluginsEnabled' | 'pluginsDebugEnabled'> & LocalEnv)
+        | null
     >(null)
     const [endpoint, setEndpoint] = useState<string | null>(null)
     const [debugLog, setDebugLog] = useState<string[]>([])
@@ -196,7 +197,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                             setInputHistory={setInputHistory}
                             vscodeAPI={vscodeAPI}
                             suggestions={suggestions}
-                            devMode={Boolean(config?.debugEnable)}
+                            pluginsDevMode={Boolean(config?.pluginsDebugEnabled)}
                             setSuggestions={setSuggestions}
                         />
                     )}

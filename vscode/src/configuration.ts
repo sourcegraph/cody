@@ -74,7 +74,8 @@ export function getConfiguration(config: ConfigGetter): Configuration {
         autocompleteAdvancedAccessToken: config.get<string | null>(CONFIG_KEY.autocompleteAdvancedAccessToken, null),
         autocompleteAdvancedCache: config.get(CONFIG_KEY.autocompleteAdvancedCache, true),
         autocompleteAdvancedEmbeddings: config.get(CONFIG_KEY.autocompleteAdvancedEmbeddings, true),
-        pluginsEnabled: config.get<boolean>(CONFIG_KEY.pluginsEnabled, true),
+        pluginsEnabled: config.get<boolean>(CONFIG_KEY.pluginsEnabled, false),
+        pluginsDebugEnabled: config.get<boolean>(CONFIG_KEY.pluginsDebugEnabled, true),
         pluginsConfig: config.get(CONFIG_KEY.pluginsConfig, {}),
     }
 }

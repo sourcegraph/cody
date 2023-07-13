@@ -34,7 +34,7 @@ interface ChatboxProps {
     vscodeAPI: VSCodeWrapper
     suggestions?: string[]
     setSuggestions?: (suggestions: undefined | string[]) => void
-    devMode?: boolean
+    pluginsDevMode?: boolean
 }
 
 export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>> = ({
@@ -50,7 +50,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     vscodeAPI,
     suggestions,
     setSuggestions,
-    devMode,
+    pluginsDevMode,
 }) => {
     const [abortMessageInProgressInternal, setAbortMessageInProgress] = useState<() => void>(() => () => undefined)
 
@@ -147,7 +147,7 @@ To get started, select some code and run one of Cody's recipes:"
                 { label: 'Generate a unit test', action: 'generate-unit-test', onClick: onChatButtonClick },
             ]}
             ChatButtonComponent={ChatButton}
-            devMode={devMode}
+            pluginsDevMode={pluginsDevMode}
         />
     )
 }

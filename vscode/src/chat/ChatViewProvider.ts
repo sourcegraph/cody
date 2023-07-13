@@ -66,6 +66,7 @@ export type Config = Pick<
     | 'experimentalGuardrails'
     | 'pluginsEnabled'
     | 'pluginsConfig'
+    | 'pluginsDebugEnabled'
 >
 
 /**
@@ -848,6 +849,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 debugEnable: this.config.debugEnable,
                 serverEndpoint: this.config.serverEndpoint,
                 pluginsEnabled: this.config.pluginsEnabled,
+                pluginsDebugEnabled: this.config.pluginsDebugEnabled,
             }
 
             // update codebase context on configuration change

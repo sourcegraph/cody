@@ -55,7 +55,7 @@ export const TranscriptItem: React.FunctionComponent<
         abortMessageInProgressComponent?: React.FunctionComponent<{ onAbortMessageInProgress: () => void }>
         onAbortMessageInProgress?: () => void
         ChatButtonComponent?: React.FunctionComponent<ChatButtonProps>
-        devMode?: boolean
+        pluginsDevMode?: boolean
     } & TranscriptItemClassNames
 > = React.memo(function TranscriptItemContent({
     message,
@@ -80,7 +80,7 @@ export const TranscriptItem: React.FunctionComponent<
     submitButtonComponent: SubmitButton,
     chatInputClassName,
     ChatButtonComponent,
-    devMode,
+    pluginsDevMode,
 }) {
     const [formInput, setFormInput] = useState<string>(message.displayText ?? '')
     const textarea =
@@ -159,7 +159,7 @@ export const TranscriptItem: React.FunctionComponent<
                     <PluginExecutionInfos
                         pluginExecutionInfos={message.pluginExecutionInfos}
                         className={transcriptActionClassName}
-                        devMode={devMode}
+                        devMode={pluginsDevMode}
                     />
                 </div>
             )}
