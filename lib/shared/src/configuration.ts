@@ -28,6 +28,7 @@ export interface Configuration {
         }
         github?: {
             apiToken?: string
+            baseURL?: string
         }
         apiNinjas?: {
             apiKey?: string

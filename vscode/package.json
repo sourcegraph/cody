@@ -958,8 +958,15 @@
             "github": {
               "type": "object",
               "properties": {
-                "type": "string",
-                "description": "GitHub API Token."
+                "apiToken": {
+                  "type": "string",
+                  "description": "GitHub API Token."
+                },
+                "baseUrl": {
+                  "type": "string",
+                  "description": "Github API URL.",
+                  "default": "https://api.github.com/"
+                }
               }
             },
             "apiNinjas": {

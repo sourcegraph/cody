@@ -5,13 +5,14 @@ import { IPlugin, IPluginAPI, IPluginFunctionOutput, IPluginFunctionParameters }
 
 const org = 'sourcegraph'
 
-const baseURL = 'https://api.github.com/'
+const defaultBaseURL = 'https://api.github.com/'
 const path = '/search/issues'
 
 interface User {
     name: string | null
     login: string
-    html_url: string
+    html_url?: string
+    url?: string
 }
 
 interface Item {
@@ -25,8 +26,16 @@ interface Item {
     state: string
 }
 
-const searchGitHub = async (query: string, apiToken: string): Promise<any> => {
-    const url = new URL(path, baseURL)
+interface OutputItem extends Omit<Item, 'html_url'> {
+    url: Item['html_url']
+}
+
+interface GitHubResponse {
+    items: Item[]
+}
+
+const searchGitHub = async (query: string, baseUrl: string, apiToken: string): Promise<OutputItem[]> => {
+    const url = new URL(path, baseUrl)
     // TODO: what is a good limit of results here?
     url.searchParams.set('per_page', '2')
     url.searchParams.set('q', `${query} org:${org}`)
@@ -40,29 +49,27 @@ const searchGitHub = async (query: string, apiToken: string): Promise<any> => {
 
     try {
         const rawResponse = await fetch(url, opts)
-        const response = await rawResponse.json()
+        const response = (await rawResponse.json()) as GitHubResponse
 
-        const items = response?.items as Item[]
+        const items = response?.items
         return items.map(item => {
             const title = item.title.slice(0, 180) // up to 180 characters
             const body = removeHtmlTags(item.body).slice(0, 300) // up to 300 characters
-            const user =
-                item.user !== null
-                    ? {
-                          name: item.user.name,
-                          login: item.user.login,
-                          url: item.user.html_url,
-                      }
-                    : null
-            const assignee =
-                item.assignee !== null
-                    ? {
-                          name: item.assignee.name,
-                          login: item.assignee.login,
-                          url: item.assignee.html_url,
-                      }
-                    : null
-            return {
+            const user: User | null = item.user
+                ? {
+                      name: item.user.name,
+                      login: item.user.login,
+                      url: item.user.html_url,
+                  }
+                : null
+            const assignee: User | null = item.assignee
+                ? {
+                      name: item.assignee.name,
+                      login: item.assignee.login,
+                      url: item.assignee.html_url,
+                  }
+                : null
+            const output: OutputItem = {
                 ...pick(item, ['created_at', 'updated_at', 'state']),
                 title,
                 body,
@@ -70,6 +77,7 @@ const searchGitHub = async (query: string, apiToken: string): Promise<any> => {
                 assignee,
                 url: item.html_url,
             }
+            return output
         })
     } catch (error) {
         // Handle and log any errors
@@ -93,7 +101,7 @@ export const githubIssuesPlugin: IPlugin = {
                 properties: {
                     query: {
                         type: 'string',
-                        description: 'Query, uses github search query format',
+                        description: 'Query, uses github issue search query format',
                     },
                 },
                 required: ['query'],
@@ -111,8 +119,9 @@ export const githubIssuesPlugin: IPlugin = {
                 if (!apiToken) {
                     return Promise.reject(new Error('Missing GitHub API token'))
                 }
+                const baseUrl = api.config?.github?.baseURL ?? defaultBaseURL
 
-                return searchGitHub(query, apiToken)
+                return searchGitHub(query, baseUrl, apiToken)
             },
         },
     ],
