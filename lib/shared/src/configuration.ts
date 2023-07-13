@@ -20,7 +20,7 @@ export interface Configuration {
     autocompleteAdvancedCache: boolean
     autocompleteAdvancedEmbeddings: boolean
     pluginsEnabled?: boolean
-    plugins?: {
+    pluginsConfig?: {
         confluence?: {
             baseUrl: string
             email?: string
@@ -33,6 +33,7 @@ export interface Configuration {
             apiKey?: string
         }
     }
+    pluginsDebugEnabled?: boolean
 }
 
 export interface ConfigurationWithAccessToken extends Configuration {

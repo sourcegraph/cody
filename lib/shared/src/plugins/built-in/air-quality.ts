@@ -3,7 +3,7 @@ import { IPlugin, IPluginAPI, IPluginFunctionOutput, IPluginFunctionParameters }
 import { fetchAPINinjas } from './lib/fetch-api-ninjas'
 
 export const airQualityPlugin: IPlugin = {
-    name: 'Air Quality Cody plugin',
+    name: 'Air Quality plugin',
     description: 'Search air quality. Use this to find out what is the air quality in different cities.',
     dataSources: [
         {

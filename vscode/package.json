@@ -934,7 +934,12 @@
           "default": false,
           "markdownDescription": "Enables the use of built-in experimental plugins."
         },
-        "cody.plugins": {
+        "cody.plugins.debug.enabled": {
+          "type": "boolean",
+          "default": false,
+          "markdownDescription": "Enables debug output for plugins."
+        },
+        "cody.plugins.config": {
           "type": "object",
           "default": {},
           "properties": {

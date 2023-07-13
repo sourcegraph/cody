@@ -55,7 +55,7 @@ const searchWiki = async (query: string, opts: { email: string; token: string; b
 
 // todo: add isEnabled check function
 export const confluencePlugin: IPlugin = {
-    name: 'Confluence Cody plugin',
+    name: 'Confluence plugin',
     description:
         'Search Confluence pages where company shared knowledge is stored as a wiki. Use this to find out how to do something, what something means, or to get a better understanding of a topic.',
     dataSources: [

@@ -3,7 +3,7 @@ import { IPlugin, IPluginAPI, IPluginFunctionOutput, IPluginFunctionParameters }
 import { fetchAPINinjas } from './lib/fetch-api-ninjas'
 
 export const timezonePlugin: IPlugin = {
-    name: 'Timezone Cody plugin',
+    name: 'Timezone plugin',
     description: 'Search timezone. Use this to find out what is the timezone in different cities.',
     dataSources: [
         {

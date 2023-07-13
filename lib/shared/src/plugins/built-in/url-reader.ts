@@ -1,5 +1,6 @@
-import { IPlugin, IPluginFunctionOutput, IPluginFunctionParameters } from '../api/types'
 import fetch from 'isomorphic-fetch'
+
+import { IPlugin, IPluginFunctionOutput, IPluginFunctionParameters } from '../api/types'
 
 async function fetchURL(url: string): Promise<IPluginFunctionOutput> {
     // Use the fetch API to get the webpage content
@@ -23,7 +24,7 @@ async function fetchURL(url: string): Promise<IPluginFunctionOutput> {
 }
 
 export const urlReaderPlugin: IPlugin = {
-    name: 'URL Reader',
+    name: 'URL Reader plugin',
     description: 'Get the content of a web page by URL.',
     dataSources: [
         {

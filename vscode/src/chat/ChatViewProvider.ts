@@ -18,6 +18,7 @@ import { annotateAttribution, Guardrails } from '@sourcegraph/cody-shared/src/gu
 import { highlightTokens } from '@sourcegraph/cody-shared/src/hallucinations-detector'
 import { IntentDetector } from '@sourcegraph/cody-shared/src/intent-detector'
 import * as plugins from '@sourcegraph/cody-shared/src/plugins/api'
+import { IPluginContext } from '@sourcegraph/cody-shared/src/plugins/api/types'
 import { defaultPlugins } from '@sourcegraph/cody-shared/src/plugins/built-in'
 import { ANSWER_TOKENS, DEFAULT_MAX_TOKENS } from '@sourcegraph/cody-shared/src/prompt/constants'
 import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
@@ -64,7 +65,8 @@ export type Config = Pick<
     | 'experimentalChatPredictions'
     | 'experimentalGuardrails'
     | 'pluginsEnabled'
-    | 'plugins'
+    | 'pluginsConfig'
+    | 'pluginsDebugEnabled'
 >
 
 /**
@@ -495,14 +497,16 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         await this.publishContextStatus()
     }
 
-    private async getPluginMessages(humanChatInput: string): Promise<Message[]> {
+    private async getPluginsContext(
+        humanChatInput: string
+    ): Promise<{ prompt?: Message[]; context?: IPluginContext[] }> {
         const enabledPluginNames = this.localStorage.getEnabledPlugins() ?? []
         const enabledPlugins = defaultPlugins.filter(plugin => enabledPluginNames.includes(plugin.name))
         if (enabledPlugins.length === 0) {
-            return []
+            return {}
         }
 
-        this.transcript.addAssistantResponse('', 'Choosing plugins for additional context...\n')
+        this.transcript.addAssistantResponse('', 'Identifying applicable plugins...\n')
         this.sendTranscript()
 
         // add data source context to Cody context
@@ -514,22 +518,24 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         try {
             // todo: get query together with previous context
             // choose which plugins should be run based on the recipe and message
-            const chosenPlugins = await plugins.chooseDataSources(humanChatInput, this.chat, enabledPlugins, history)
-            if (chosenPlugins.length !== 0) {
+            const descriptors = await plugins.chooseDataSources(humanChatInput, this.chat, enabledPlugins, history)
+            if (descriptors.length !== 0) {
                 this.transcript.addAssistantResponse(
                     '',
-                    `Querying ${chosenPlugins.map(([pluginName]) => pluginName).join(', ')} for additional context...\n`
+                    `Using ${descriptors
+                        .map(descriptor => descriptor.pluginName)
+                        .join(', ')} for additional context...\n`
                 )
                 this.sendTranscript()
-                const dataSources = chosenPlugins.map(([, dataSource]) => dataSource)
 
                 // run data source functions in parallel
-                return await plugins.getContext(dataSources, this.config.plugins)
+                const { prompt = [], context = [] } = await plugins.getContext(descriptors, this.config.pluginsConfig, this.config.pluginsDebugEnabled)
+                return { prompt, context }
             }
         } catch (error) {
             console.error('Error getting plugin context', error)
         }
-        return []
+        return {}
     }
 
     public async executeRecipe(recipeId: RecipeID, humanChatInput: string = '', showTab = true): Promise<void> {
@@ -573,17 +579,20 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
             default: {
                 this.sendTranscript()
 
-                let pluginContextMessages: Message[] = []
+                let pluginsPrompt: Message[] = []
+                let pluginsContext: IPluginContext[] = []
                 if (this.config.pluginsEnabled) {
-                    pluginContextMessages = await this.getPluginMessages(humanChatInput)
+                    const { prompt = [], context = [] } = await this.getPluginsContext(humanChatInput)
+                    pluginsPrompt = prompt
+                    pluginsContext = context
                 }
                 // add data source context to Cody context
                 const { prompt, contextFiles } = await this.transcript.getPromptForLastInteraction(
                     getPreamble(this.codebaseContext.getCodebase()),
                     this.maxPromptTokens,
-                    pluginContextMessages
+                    pluginsPrompt
                 )
-                this.transcript.setUsedContextFilesForLastInteraction(contextFiles)
+                this.transcript.setUsedContextFilesForLastInteraction(contextFiles, pluginsContext)
                 this.sendPrompt(prompt, interaction.getAssistantMessage().prefix ?? '')
                 await this.saveTranscriptToChatHistory()
             }

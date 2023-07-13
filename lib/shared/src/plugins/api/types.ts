@@ -1,5 +1,6 @@
 import { Configuration } from '../../configuration'
 
+// todo: rename to IPluginHandler or smth
 export interface IPluginFunction {
     name: string
     description: string
@@ -27,7 +28,18 @@ export type IPluginFunctionDescriptor = Omit<IPluginFunction, 'handler'>
 
 export type IPluginFunctionParameters = Record<string, string | number | boolean>
 
-export type IPluginFunctionCallDescriptor = [IPluginFunction, IPluginFunctionParameters]
+export interface IPluginFunctionCallDescriptor {
+    pluginName: string
+    dataSource: IPluginFunction
+    parameters: IPluginFunctionParameters
+}
+
+export interface IPluginContext {
+    pluginName: string
+    dataSourceName: string
+    dataSourceParameters?: IPluginFunctionParameters
+    context: any
+}
 
 export interface IPluginFunctionChosenDescriptor {
     name: string
@@ -40,6 +52,6 @@ export interface IPlugin {
     dataSources: IPluginFunction[]
 }
 
-export interface IPluginAPI<TConfig = Configuration['plugins']> {
+export interface IPluginAPI<TConfig = Configuration['pluginsConfig']> {
     config: TConfig
 }

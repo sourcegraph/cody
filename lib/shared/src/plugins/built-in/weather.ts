@@ -3,7 +3,7 @@ import { IPlugin, IPluginAPI, IPluginFunctionOutput, IPluginFunctionParameters }
 import { fetchAPINinjas } from './lib/fetch-api-ninjas'
 
 export const weatherPlugin: IPlugin = {
-    name: 'Weather Cody plugin',
+    name: 'Weather plugin',
     description: 'Search weather. Use this to find out what is the weather today in different cities.',
     dataSources: [
         {

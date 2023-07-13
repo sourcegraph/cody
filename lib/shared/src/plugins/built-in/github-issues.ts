@@ -80,7 +80,7 @@ const searchGitHub = async (query: string, apiToken: string): Promise<any> => {
 
 // todo: add isEnabled check function
 export const githubIssuesPlugin: IPlugin = {
-    name: 'GitHub Issues Cody plugin',
+    name: 'GitHub Issues plugin',
     description:
         'Search GitHub Issues and pull requests. Use this to understand current code problems, feature implementations, their rationale, and to gain deeper insights into various topics.',
     dataSources: [

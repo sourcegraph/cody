@@ -135,3 +135,8 @@
 .submit-button:hover {
     opacity: 1;
 }
+
+.plugin-context-item {
+    padding: 0.5rem;
+    overflow-x: auto;
+}
