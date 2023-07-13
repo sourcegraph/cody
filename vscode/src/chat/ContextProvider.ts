@@ -10,19 +10,19 @@ import { SourcegraphEmbeddingsSearchClient } from '@sourcegraph/cody-shared/src/
 import { SourcegraphGraphQLAPIClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
 import { isError } from '@sourcegraph/cody-shared/src/utils'
 
-import { getFullConfig } from '../../configuration'
-import { VSCodeEditor } from '../../editor/vscode-editor'
-import { FilenameContextFetcher } from '../../local-context/filename-context-fetcher'
-import { LocalKeywordContextFetcher } from '../../local-context/local-keyword-context-fetcher'
-import { debug } from '../../log'
-import { getRerankWithLog } from '../../logged-rerank'
-import { AuthProvider } from '../../services/AuthProvider'
-import { LocalStorage } from '../../services/LocalStorageProvider'
-import { SecretStorage } from '../../services/SecretStorageProvider'
-import { ConfigurationSubsetForWebview, LocalEnv } from '../protocol'
-import { convertGitCloneURLToCodebaseName } from '../utils'
+import { getFullConfig } from '../configuration'
+import { VSCodeEditor } from '../editor/vscode-editor'
+import { FilenameContextFetcher } from '../local-context/filename-context-fetcher'
+import { LocalKeywordContextFetcher } from '../local-context/local-keyword-context-fetcher'
+import { debug } from '../log'
+import { getRerankWithLog } from '../logged-rerank'
+import { AuthProvider } from '../services/AuthProvider'
+import { LocalStorage } from '../services/LocalStorageProvider'
+import { SecretStorage } from '../services/SecretStorageProvider'
 
 import { ChatViewProviderWebview } from './ChatViewProvider'
+import { ConfigurationSubsetForWebview, LocalEnv } from './protocol'
+import { convertGitCloneURLToCodebaseName } from './utils'
 
 export type Config = Pick<
     ConfigurationWithAccessToken,

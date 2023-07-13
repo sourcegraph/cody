@@ -4,13 +4,13 @@ import * as vscode from 'vscode'
 
 import { ChatMessage, UserLocalHistory } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 
-import { View } from '../../../webviews/NavBar'
-import { logEvent } from '../../event-logger'
-import { debug } from '../../log'
-import { DOTCOM_URL, ExtensionMessage, WebviewMessage } from '../protocol'
+import { View } from '../../webviews/NavBar'
+import { logEvent } from '../event-logger'
+import { debug } from '../log'
 
 import { InlineChatViewProvider } from './InlineChatViewProvider'
 import { MessageProvider, MessageProviderOptions } from './MessageProvider'
+import { DOTCOM_URL, ExtensionMessage, WebviewMessage } from './protocol'
 
 export interface ChatViewProviderWebview extends Omit<vscode.Webview, 'postMessage'> {
     postMessage(message: ExtensionMessage): Thenable<boolean>
