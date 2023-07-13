@@ -16,7 +16,6 @@
     "vite.config.ts",
     "webpack.config.js",
     "package.json",
-    ".eslintrc.js",
     ".storybook/*.ts",
   ],
   "exclude": ["scripts", "dist", "test/integration"],

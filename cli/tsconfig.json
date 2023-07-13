@@ -7,7 +7,7 @@
     "outDir": "dist",
     "baseUrl": "./src",
   },
-  "include": ["src", ".eslintrc.js"],
+  "include": ["src"],
   "exclude": ["dist"],
   "references": [
     {
