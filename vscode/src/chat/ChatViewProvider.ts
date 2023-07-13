@@ -38,14 +38,7 @@ import { SecretStorage } from '../services/SecretStorageProvider'
 import { TestSupport } from '../test-support'
 
 import { fastFilesExist } from './fastFileFinder'
-import {
-    ConfigurationSubsetForWebview,
-    defaultAuthStatus,
-    DOTCOM_URL,
-    ExtensionMessage,
-    LocalEnv,
-    WebviewMessage,
-} from './protocol'
+import { ConfigurationSubsetForWebview, DOTCOM_URL, ExtensionMessage, LocalEnv, WebviewMessage } from './protocol'
 import { getRecipe } from './recipes'
 import { convertGitCloneURLToCodebaseName } from './utils'
 
@@ -92,7 +85,8 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
     // Allows recipes to hook up subscribers to process sub-streams of bot output
     private multiplexer: BotResponseMultiplexer = new BotResponseMultiplexer()
 
-    private configurationChangeEvent = new vscode.EventEmitter<void>()
+    // Fire event to let subscribers know that the configuration has changed
+    public configurationChangeEvent = new vscode.EventEmitter<void>()
 
     private disposables: vscode.Disposable[] = []
 
@@ -391,29 +385,18 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
             onError: (err, statusCode) => {
                 // TODO notify the multiplexer of the error
                 debug('ChatViewProvider:onError', err)
-
                 if (isAbortError(err)) {
                     return
                 }
-                // Display error message as assistant response
-                this.transcript.addErrorAsAssistantResponse(err)
                 // Log users out on unauth error
                 if (statusCode && statusCode >= 400 && statusCode <= 410) {
-                    const authStatus = { ...defaultAuthStatus }
-                    if (statusCode === 403) {
-                        authStatus.authenticated = true
-                        authStatus.requiresVerifiedEmail = true
-                    } else {
-                        authStatus.showInvalidAccessTokenError = true
-                    }
-                    debug('ChatViewProvider:onError:unauth', err, { verbose: { authStatus } })
-                    void this.clearAndRestartSession()
-                    void this.authProvider.auth(
-                        this.config.serverEndpoint,
-                        this.config.accessToken,
-                        this.config.customHeaders
-                    )
+                    this.authProvider
+                        .auth(this.config.serverEndpoint, this.config.accessToken, this.config.customHeaders)
+                        .catch(error => console.error(error))
+                    debug('ChatViewProvider:onError:unauthUser', err, { verbose: { statusCode } })
                 }
+                // Display error message as assistant response
+                this.transcript.addErrorAsAssistantResponse(err)
                 // We ignore embeddings errors in this instance because we're already showing an
                 // error message and don't want to overwhelm the user.
                 this.onCompletionEnd(true)
@@ -712,15 +695,17 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
      */
     public async syncAuthStatus(): Promise<void> {
         const authStatus = this.authProvider.getAuthStatus()
-        await this.publishConfig()
+        // Update config to the latest one and fire configure change event to update external services
+        const newConfig = await getFullConfig(this.secretStorage, this.localStorage)
         if (authStatus.siteVersion) {
             // Update codebase context
-            const codebaseContext = await getCodebaseContext(this.config, this.rgPath, this.editor, this.chat)
+            const codebaseContext = await getCodebaseContext(newConfig, this.rgPath, this.editor, this.chat)
             if (codebaseContext) {
                 this.codebaseContext = codebaseContext
-                await this.publishContextStatus()
             }
         }
+        await this.publishConfig()
+        this.onConfigurationChange(newConfig)
     }
 
     /**
@@ -789,6 +774,8 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 },
             })
         }
+
+        this.disposables.push(this.configurationChangeEvent.event(() => send()))
         this.disposables.push(vscode.window.onDidChangeTextEditorSelection(() => send()))
         await send()
     }
@@ -830,7 +817,6 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
             debug('Cody:publishConfig', 'configForWebview', { verbose: configForWebview })
         }
 
-        this.disposables.push(this.configurationChangeEvent.event(() => send()))
         await send()
     }
 

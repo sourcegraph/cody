@@ -62,13 +62,8 @@ export async function start(context: vscode.ExtensionContext): Promise<vscode.Di
     )
     disposables.push(disposable)
 
-    // Re-initialize when configuration or secrets change.
+    // Re-initialize when configuration
     disposables.push(
-        secretStorage.onDidChange(async key => {
-            if (key === CODY_ACCESS_TOKEN_SECRET) {
-                onConfigurationChange(await getFullConfig(secretStorage, localStorage))
-            }
-        }),
         vscode.workspace.onDidChangeConfiguration(async event => {
             if (event.affectsConfiguration('cody')) {
                 onConfigurationChange(await getFullConfig(secretStorage, localStorage))
@@ -143,6 +138,10 @@ const register = async (
     disposables.push(
         vscode.window.registerWebviewViewProvider('cody.chat', chatProvider, {
             webviewOptions: { retainContextWhenHidden: true },
+        }),
+        // Update external services when configurationChangeEvent is fired by chatProvider
+        chatProvider.configurationChangeEvent.event(async () => {
+            externalServicesOnDidConfigurationChange(await getFullConfig(secretStorage, localStorage))
         })
     )
 
