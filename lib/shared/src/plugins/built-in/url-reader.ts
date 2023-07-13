@@ -29,8 +29,9 @@ export const urlReaderPlugin: Plugin = {
     dataSources: [
         {
             descriptor: {
-                name: 'get_web_page_content',
-                description: 'Get the content of a web page by URL.',
+                name: 'get_page_content_by_url',
+                description:
+                    'The API provides web scraper service to retrieve HTML from any website URL. The API returns the scraped data from the provided URL, with a maximum size of initial 1000 chars of the content.',
                 parameters: {
                     type: 'object',
                     properties: {

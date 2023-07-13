@@ -56,20 +56,20 @@ const searchWiki = async (query: string, opts: { email: string; token: string; b
 // todo: add isEnabled check function
 export const confluencePlugin: Plugin = {
     name: 'Confluence plugin',
-    description:
-        'Search Confluence pages where company shared knowledge is stored as a wiki. Use this to find out how to do something, what something means, or to get a better understanding of a topic.',
+    description: 'Search Confluence Wiki pages.',
     dataSources: [
         {
             descriptor: {
                 name: 'search_confluence_wiki_pages',
                 description:
-                    'Search Confluence pages where company shared knowledge is stored as a wiki. Use this to find out how to do something, what something means, or to get a better understanding of a topic.',
+                    'The API provides a powerful search functionality for finding content within your connected Confluence Wiki. It allows users to search for pages, blog posts, comments, attachments, and other content types within the Confluence space. The search results include the matching piece of content and its unique URL.',
                 parameters: {
                     type: 'object',
                     properties: {
                         query: {
                             type: 'string',
-                            description: 'Query by page title or content',
+                            description:
+                                'Keyword to search against Confluence Wiki pages. It can be a title, a page content, or a page excerpt.',
                         },
                     },
                     required: ['query'],

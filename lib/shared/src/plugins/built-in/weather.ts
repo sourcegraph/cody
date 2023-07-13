@@ -4,12 +4,13 @@ import { fetchAPINinjas } from './lib/fetch-api-ninjas'
 
 export const weatherPlugin: Plugin = {
     name: 'Weather plugin',
-    description: 'Search weather. Use this to find out what is the weather today in different cities.',
+    description: 'Get weather information for any city in the world.',
     dataSources: [
         {
             descriptor: {
-                name: 'get_current_weather',
-                description: 'Get the current weather in a given city',
+                name: 'get_city_weather_info',
+                description:
+                    "The API provides the latest weather information for any city in the world. The API returns a variety of weather data including wind speed, wind degrees, temperature, humidity, sunset and sunrise times, minimum and maximum temperatures, cloud percentage, and the 'feels like' temperature.",
                 parameters: {
                     type: 'object',
                     properties: {

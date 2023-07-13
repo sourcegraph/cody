@@ -4,12 +4,13 @@ import { fetchAPINinjas } from './lib/fetch-api-ninjas'
 
 export const airQualityPlugin: Plugin = {
     name: 'Air Quality plugin',
-    description: 'Search air quality. Use this to find out what is the air quality in different cities.',
+    description: 'Get air quality information for any city in the world.',
     dataSources: [
         {
             descriptor: {
-                name: 'get_airquality_in_city',
-                description: 'Get the current air quality for a given city',
+                name: 'get_air_quality_in_city',
+                description:
+                    'This API provides the latest air quality information for any city in the world. It provides not only the overall Air Quality Index (AQI) but also concentrations for major pollutants such as Carbon monoxide (CO), Nitrogen dioxide (NO2), Ozone (O3), Sulphur dioxide (SO2), PM2.5 particulates, and PM10 particulates.',
                 parameters: {
                     type: 'object',
                     properties: {

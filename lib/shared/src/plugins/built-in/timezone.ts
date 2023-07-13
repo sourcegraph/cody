@@ -4,12 +4,13 @@ import { fetchAPINinjas } from './lib/fetch-api-ninjas'
 
 export const timezonePlugin: Plugin = {
     name: 'Timezone plugin',
-    description: 'Search timezone. Use this to find out what is the timezone in different cities.',
+    description: 'Get current data and time for any city in the world.',
     dataSources: [
         {
             descriptor: {
                 name: 'get_city_time',
-                description: 'Get the current time for a given city',
+                description:
+                    'The API provides the current date and time for any city in the world. The data returned includes the timezone, full datetime, and day of the week.',
                 parameters: {
                     type: 'object',
                     properties: {

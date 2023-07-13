@@ -103,15 +103,15 @@ const searchGitHub = async (
 
 // todo: add isEnabled check function
 export const githubIssuesPlugin: Plugin = {
-    name: 'GitHub Issues plugin',
-    description:
-        'Search GitHub Issues and pull requests. Use this to understand current code problems, feature implementations, their rationale, and to gain deeper insights into various topics.',
+    name: 'GitHub plugin',
+    description: 'Search GitHub Issues and pull requests.',
     dataSources: [
         {
             descriptor: {
                 name: 'search_github_issues',
                 description:
-                    'Search GitHub Issues and pull requests. Use this to understand current code problems, feature implementations, their rationale, and to gain deeper insights into various topics.',
+                    'The API provides a comprehensive search functionality for finding issues across GitHub repositories. It allows to search for issues based on various parameters such as keywords, labels, status (open or closed), author, assignee, mentions, commenter, involved users, repository, created or updated date, and more.' +
+                    ' The search results include details about each issue such as the issue number, title, body, author who created issue, state (open or closed), assignee, created and updated dates, and the issue URL.',
                 parameters: {
                     type: 'object',
                     properties: {
