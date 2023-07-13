@@ -31,7 +31,11 @@ export const PluginExecutionInfos: React.FC<PluginExecutionInfosProps> = ({
                     <div>
                         <p>from "{pluginName}" got:</p>
                         <pre className={styles.item}>
-                            {JSON.stringify(devMode ? { name, output, parameters, error } : error || output, null, 2)}
+                            {JSON.stringify(
+                                devMode ? { function: name, input: parameters, output, error } : error || output,
+                                null,
+                                2
+                            )}
                         </pre>
                     </div>
                 ),
