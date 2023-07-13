@@ -8,7 +8,7 @@ Cody CLI is an experimental command-line interface for Cody.
 pnpm run build
 ```
 
-Then ask a question (currently it is hardcoded to use the [sourcegraph/sourcegraph repository](https://github.com/sourcegraph/sourcegraph)):
+Then ask a question.
 
 <pre><code>
 $ <strong>export SRC_ACCESS_TOKEN=sgp_aaaaaaaaaaaaaaaa</strong> # Sourcegraph access token
@@ -19,6 +19,8 @@ $ <strong>node dist/app.js</strong>
 
 ...
 </code></pre>
+
+Use `--help` for a list of command-line options.
 
 ## Development
 

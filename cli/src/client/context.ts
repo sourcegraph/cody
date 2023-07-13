@@ -14,7 +14,7 @@ export async function createCodebaseContext(
     codebase: string,
     contextType: 'embeddings' | 'keyword' | 'none' | 'blended' | 'unified',
     serverEndpoint: string
-) {
+): Promise<CodebaseContext> {
     const repoId = await getRepoId(client, codebase)
     if (isError(repoId)) {
         throw repoId

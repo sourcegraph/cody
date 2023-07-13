@@ -6,7 +6,7 @@
     "jsx": "react-jsx",
     "lib": ["ESNext", "DOM"],
   },
-  "include": ["src", "vite.config.ts", ".eslintrc.js"],
+  "include": ["src", "vite.config.ts"],
   "exclude": ["dist"],
   "references": [{ "path": "../lib/shared" }, { "path": "../lib/ui" }],
 }
