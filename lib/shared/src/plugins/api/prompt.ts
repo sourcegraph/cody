@@ -1,5 +1,5 @@
-
 import { Message } from '../../sourcegraph-api/completions/types'
+
 import { IPluginFunctionChosenDescriptor, IPluginFunctionDescriptor } from './types'
 
 export const makePrompt = (
@@ -18,7 +18,7 @@ Also, I have following functions to call:
 ${JSON.stringify(funcs, null, 2)}
 \`\`\`
 
-Choose up to 3 functions that you want to call to properly reply to me. Respond in a only json format like this, example:
+Choose up to 3 functions that you want to call to properly reply to the conversation. Only choose functions that you absolutely need. Respond in a only json format like this, example:
 \`\`\`json
 ${JSON.stringify(
     [
@@ -34,14 +34,14 @@ ${JSON.stringify(
 )}
 \`\`\`
 
-If no additional function call is needed respond with empty JSON array, like this:
+If no additional functions calls are needed or you don't know what to reply respond with empty JSON array, like this:
 \`\`\`json
 []
 \`\`\`
 
 Order array elements by priority, the first element is the most important one.
 
-My reply starts\n\n:
+Conversation starts here:\n\n
 
 ${JSON.stringify(humanChatInput)}
 `,
