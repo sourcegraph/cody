@@ -56,6 +56,7 @@ export const TranscriptItem: React.FunctionComponent<
         abortMessageInProgressComponent?: React.FunctionComponent<{ onAbortMessageInProgress: () => void }>
         onAbortMessageInProgress?: () => void
         ChatButtonComponent?: React.FunctionComponent<ChatButtonProps>
+        devMode?: boolean
     } & TranscriptItemClassNames
 > = React.memo(function TranscriptItemContent({
     message,
@@ -80,6 +81,7 @@ export const TranscriptItem: React.FunctionComponent<
     submitButtonComponent: SubmitButton,
     chatInputClassName,
     ChatButtonComponent,
+    devMode,
 }) {
     const [formInput, setFormInput] = useState<string>(message.displayText ?? '')
     const textarea =
@@ -168,23 +170,15 @@ export const TranscriptItem: React.FunctionComponent<
                                 verb: '',
                                 object: (
                                     <div>
-                                        {item.dataSourceParameters ? (
+                                        {devMode ? (
                                             <pre className={styles.pluginContextItem}>
-                                                {JSON.stringify(
-                                                    {
-                                                        function: item.dataSourceName,
-                                                        parameters: item.dataSourceParameters,
-                                                        response: item.context,
-                                                    },
-                                                    null,
-                                                    2
-                                                )}
+                                                {JSON.stringify(item, null, 2)}
                                             </pre>
                                         ) : (
                                             <>
                                                 <p>from "{item.pluginName}" got:</p>
                                                 <pre className={styles.pluginContextItem}>
-                                                    {JSON.stringify(item.context, null, 2)}
+                                                    {JSON.stringify(item.outputs, null, 2)}
                                                 </pre>
                                             </>
                                         )}

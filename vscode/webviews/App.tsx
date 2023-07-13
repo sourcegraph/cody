@@ -196,6 +196,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                             setInputHistory={setInputHistory}
                             vscodeAPI={vscodeAPI}
                             suggestions={suggestions}
+                            devMode={Boolean(config?.debugEnable)}
                             setSuggestions={setSuggestions}
                         />
                     )}

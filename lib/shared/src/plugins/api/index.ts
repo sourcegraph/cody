@@ -3,20 +3,26 @@ import { Configuration } from '../../configuration'
 import { Message } from '../../sourcegraph-api/completions/types'
 
 import { makePrompt } from './prompt'
-import { IPlugin, IPluginContext, IPluginFunctionCallDescriptor, IPluginFunctionChosenDescriptor } from './types'
+import {
+    IPlugin,
+    IPluginContext,
+    IPluginFunctionCallDescriptor,
+    IPluginFunctionChosenDescriptor,
+    IPluginFunctionOutput,
+} from './types'
 
 export const chooseDataSources = (
     humanChatInput: string,
     client: ChatClient,
     plugins: IPlugin[],
-    history: Message[] = []
+    previousMessages: Message[] = []
 ): Promise<IPluginFunctionCallDescriptor[]> => {
     const allDataSources = plugins.flatMap(plugin => plugin.dataSources)
 
     const messages = makePrompt(
         humanChatInput,
         allDataSources.map(({ handler, ...rest }) => rest),
-        history
+        previousMessages
     )
     return new Promise<IPluginFunctionCallDescriptor[]>((resolve, reject) => {
         let lastResponse = ''
@@ -61,49 +67,49 @@ export const chooseDataSources = (
     })
 }
 
-export const getContext = async (
+export const runPluginFunctions = async (
     dataSourcesCallDescriptors: IPluginFunctionCallDescriptor[],
-    config: Configuration['pluginsConfig'],
-    debug = false
-): Promise<{ prompt?: Message[]; context?: IPluginContext[] }> => {
-    const output = await Promise.all(
-        dataSourcesCallDescriptors.map(async ({ pluginName, dataSource, parameters }) => {
-            const response = await dataSource.handler(parameters, { config }).catch(error => {
-                console.error(error)
-                return []
-            })
+    config: Configuration['pluginsConfig']
+): Promise<{ prompt: Message[]; contexts: IPluginContext[] }> => {
+    const contexts = await Promise.all(
+        dataSourcesCallDescriptors.map(async ({ pluginName, dataSource, parameters }): Promise<IPluginContext> => {
+            const [outputs = [], error] = await dataSource
+                .handler(parameters, { config })
+                .then(res => [res, undefined] as [IPluginFunctionOutput[], undefined])
+                .catch(error => [undefined, error] as [undefined, Error])
 
-            if (!response.length) {
-                return
-            }
             return {
                 pluginName,
                 dataSourceName: dataSource.name,
-                dataSourceParameters: debug ? parameters : undefined,
-                context: response,
-            } as IPluginContext
+                dataSourceParameters: parameters,
+                outputs,
+                error,
+            }
         })
     )
 
-    const filteredOutput = output.filter((output): output is IPluginContext => output !== undefined)
-    if (filteredOutput.length === 0) {
-        return {}
+    const filteredContexts = contexts.filter(context => !!context.error)
+    if (filteredContexts.length === 0) {
+        return {
+            prompt: [
+                {
+                    speaker: 'human',
+                    text:
+                        'I have following responses from external API plugins that I called now:\n' +
+                        filteredContexts
+                            .map(
+                                output => `from "${output.pluginName}":\n\`\`\`json\n${JSON.stringify(output.outputs)}`
+                            )
+                            .join('\n'),
+                },
+                {
+                    speaker: 'assistant',
+                    text: 'Understood, I have additional knowledge when answering your question.',
+                },
+            ],
+            contexts,
+        }
     }
 
-    const prompt = [
-        {
-            speaker: 'human',
-            text:
-                'I have following responses from external API plugins that I called now:\n' +
-                filteredOutput
-                    .map(output => `from "${output.pluginName}":\n\`\`\`json\n${JSON.stringify(output.context)}`)
-                    .join('\n'),
-        },
-        {
-            speaker: 'assistant',
-            text: 'Understood, I have additional knowledge when answering your question.',
-        },
-    ] as Message[]
-
-    return { prompt, context: filteredOutput }
+    return { prompt: [], contexts }
 }

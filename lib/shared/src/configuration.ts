@@ -33,7 +33,6 @@ export interface Configuration {
             apiKey?: string
         }
     }
-    pluginsDebugEnabled?: boolean
 }
 
 export interface ConfigurationWithAccessToken extends Configuration {

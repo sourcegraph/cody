@@ -38,7 +38,8 @@ export interface IPluginContext {
     pluginName: string
     dataSourceName: string
     dataSourceParameters?: IPluginFunctionParameters
-    context: any
+    outputs: IPluginFunctionOutput[]
+    error?: any
 }
 
 export interface IPluginFunctionChosenDescriptor {

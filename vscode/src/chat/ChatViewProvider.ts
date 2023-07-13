@@ -66,7 +66,6 @@ export type Config = Pick<
     | 'experimentalGuardrails'
     | 'pluginsEnabled'
     | 'pluginsConfig'
-    | 'pluginsDebugEnabled'
 >
 
 /**
@@ -499,7 +498,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
 
     private async getPluginsContext(
         humanChatInput: string
-    ): Promise<{ prompt?: Message[]; context?: IPluginContext[] }> {
+    ): Promise<{ prompt?: Message[]; contexts?: IPluginContext[] }> {
         const enabledPluginNames = this.localStorage.getEnabledPlugins() ?? []
         const enabledPlugins = defaultPlugins.filter(plugin => enabledPluginNames.includes(plugin.name))
         if (enabledPlugins.length === 0) {
@@ -509,8 +508,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         this.transcript.addAssistantResponse('', 'Identifying applicable plugins...\n')
         this.sendTranscript()
 
-        // add data source context to Cody context
-        const { prompt: history } = await this.transcript.getPromptForLastInteraction(
+        const { prompt: previousMessages } = await this.transcript.getPromptForLastInteraction(
             [],
             this.maxPromptTokens,
             [],
@@ -518,9 +516,12 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         )
 
         try {
-            // todo: get query together with previous context
-            // choose which plugins should be run based on the recipe and message
-            const descriptors = await plugins.chooseDataSources(humanChatInput, this.chat, enabledPlugins, history)
+            const descriptors = await plugins.chooseDataSources(
+                humanChatInput,
+                this.chat,
+                enabledPlugins,
+                previousMessages
+            )
             if (descriptors.length !== 0) {
                 this.transcript.addAssistantResponse(
                     '',
@@ -530,13 +531,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 )
                 this.sendTranscript()
 
-                // run data source functions in parallel
-                const { prompt = [], context = [] } = await plugins.getContext(
-                    descriptors,
-                    this.config.pluginsConfig,
-                    this.config.pluginsDebugEnabled
-                )
-                return { prompt, context }
+                return await plugins.runPluginFunctions(descriptors, this.config.pluginsConfig)
             }
         } catch (error) {
             console.error('Error getting plugin context', error)
@@ -588,9 +583,9 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 let pluginsPrompt: Message[] = []
                 let pluginsContext: IPluginContext[] = []
                 if (this.config.pluginsEnabled) {
-                    const { prompt = [], context = [] } = await this.getPluginsContext(humanChatInput)
+                    const { prompt = [], contexts = [] } = await this.getPluginsContext(humanChatInput)
                     pluginsPrompt = prompt
-                    pluginsContext = context
+                    pluginsContext = contexts
                 }
                 // add data source context to Cody context
                 const { prompt, contextFiles } = await this.transcript.getPromptForLastInteraction(
