@@ -29,6 +29,8 @@ export interface Configuration {
         github?: {
             apiToken?: string
             baseURL?: string
+            org?: string
+            repo?: string
         }
         apiNinjas?: {
             apiKey?: string

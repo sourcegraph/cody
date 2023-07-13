@@ -3,8 +3,8 @@ import { pick } from 'lodash'
 
 import { Plugin, PluginAPI, PluginFunctionOutput, PluginFunctionParameters } from '../api/types'
 
-const org = 'sourcegraph'
-
+// TODO: this is only useful for our organization
+const defaultOrg = 'sourcegraph'
 const defaultBaseURL = 'https://api.github.com/'
 const path = '/search/issues'
 
@@ -34,11 +34,24 @@ interface GitHubResponse {
     items: Item[]
 }
 
-const searchGitHub = async (query: string, baseUrl: string, apiToken: string): Promise<OutputItem[]> => {
+const searchGitHub = async (
+    query: string,
+    baseUrl: string,
+    apiToken: string,
+    org?: string,
+    repo?: string
+): Promise<OutputItem[]> => {
     const url = new URL(path, baseUrl)
+
+    // create a filter for org and repo, if defined
+    let filter = `org:${org ?? defaultOrg}`
+    if (repo) {
+        filter += ` repo:${repo}`
+    }
+
     // TODO: what is a good limit of results here?
-    url.searchParams.set('per_page', '2')
-    url.searchParams.set('q', `${query} org:${org}`)
+    url.searchParams.set('per_page', '3')
+    url.searchParams.set('q', `${query} ${filter}`)
     const opts = {
         method: 'GET',
         headers: {
@@ -52,33 +65,35 @@ const searchGitHub = async (query: string, baseUrl: string, apiToken: string): P
         const response = (await rawResponse.json()) as GitHubResponse
 
         const items = response?.items
-        return items.map(item => {
-            const title = item.title.slice(0, 180) // up to 180 characters
-            const body = removeHtmlTags(item.body).slice(0, 300) // up to 300 characters
-            const user: User | null = item.user
-                ? {
-                      name: item.user.name,
-                      login: item.user.login,
-                      url: item.user.html_url,
-                  }
-                : null
-            const assignee: User | null = item.assignee
-                ? {
-                      name: item.assignee.name,
-                      login: item.assignee.login,
-                      url: item.assignee.html_url,
-                  }
-                : null
-            const output: OutputItem = {
-                ...pick(item, ['created_at', 'updated_at', 'state']),
-                title,
-                body,
-                user,
-                assignee,
-                url: item.html_url,
-            }
-            return output
-        })
+        return (
+            items?.map(item => {
+                const title = item.title.slice(0, 180) // up to 180 characters
+                const body = removeHtmlTags(item.body).slice(0, 300) // up to 300 characters
+                const user: User | null = item.user
+                    ? {
+                          name: item.user.name,
+                          login: item.user.login,
+                          url: item.user.html_url,
+                      }
+                    : null
+                const assignee: User | null = item.assignee
+                    ? {
+                          name: item.assignee.name,
+                          login: item.assignee.login,
+                          url: item.assignee.html_url,
+                      }
+                    : null
+                const output: OutputItem = {
+                    ...pick(item, ['created_at', 'updated_at', 'state']),
+                    title,
+                    body,
+                    user,
+                    assignee,
+                    url: item.html_url,
+                }
+                return output
+            }) ?? []
+        )
     } catch (error) {
         // Handle and log any errors
         console.error('Error in searchGitHub:', error)
@@ -119,8 +134,9 @@ export const githubIssuesPlugin: Plugin = {
                     return Promise.reject(new Error('Missing GitHub API token'))
                 }
                 const baseUrl = api.config?.github?.baseURL ?? defaultBaseURL
+                const { org, repo } = api.config?.github ?? {}
 
-                return searchGitHub(query, baseUrl, apiToken)
+                return searchGitHub(query, baseUrl, apiToken, org, repo)
             },
         },
     ],

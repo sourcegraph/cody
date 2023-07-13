@@ -966,6 +966,14 @@
                   "type": "string",
                   "description": "Github API URL.",
                   "default": "https://api.github.com/"
+                },
+                "org": {
+                  "type": "string",
+                  "description": "GitHub organization to limit results to."
+                },
+                "repo": {
+                  "type": "string",
+                  "description": "GitHub repo to limit results to."
                 }
               }
             },
