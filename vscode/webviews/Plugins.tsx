@@ -11,17 +11,17 @@ interface PluginItemProps {
 
 const PluginItem: React.FC<PluginItemProps> = ({ name, description, enabled, onToggle }) => (
     <label htmlFor={name} className={styles.plugin}>
-        <input
-            type="checkbox"
-            id={name}
-            checked={enabled}
-            className={styles.pluginCheckbox}
-            onChange={event => {
-                onToggle(name, event.target.checked)
-            }}
-        />
-        <div>
-            <p className={styles.pluginHeader}>{name}</p>
+        <p className={styles.pluginHeader}>{name}</p>
+        <div className={styles.pluginInner}>
+            <input
+                type="checkbox"
+                id={name}
+                checked={enabled}
+                className={styles.pluginCheckbox}
+                onChange={event => {
+                    onToggle(name, event.target.checked)
+                }}
+            />
             <p className={styles.pluginDescription}>{description}</p>
         </div>
     </label>
@@ -34,7 +34,7 @@ export const Plugins: React.FC<{
     <div className={styles.container}>
         <ul className={styles.list}>
             {defaultPlugins.map(plugin => (
-                <li key={plugin.name}>
+                <li key={plugin.name} className={styles.listItem}>
                     <PluginItem
                         name={plugin.name}
                         enabled={plugins.includes(plugin.name)}
