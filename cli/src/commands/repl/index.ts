@@ -2,17 +2,12 @@ import { Command } from 'commander'
 import prompts from 'prompts'
 
 import { Transcript } from '@sourcegraph/cody-shared/src/chat/transcript'
-import { SourcegraphIntentDetectorClient } from '@sourcegraph/cody-shared/src/intent-detector/client'
 import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
-import { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/nodeClient'
-import { SourcegraphGraphQLAPIClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
-import { isRepoNotFoundError } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
 
+import { getClient } from '../../client'
 import { streamCompletions } from '../../client/completions'
-import { createCodebaseContext } from '../../client/context'
 import { interactionFromMessage } from '../../client/interactions'
 import { getPreamble } from '../../client/preamble'
-import { GlobalOptions } from '../../program'
 
 interface ReplCommandOptions {
     prompt?: string
@@ -23,55 +18,8 @@ export const replCommand = new Command('repl')
     .option('-p, --prompt <value>', 'Give Cody a prompt')
     .action(run)
 
-async function run(_options: unknown, program: Command): Promise<void> {
-    const {
-        codebase,
-        endpoint,
-        context: contextType,
-        debug,
-        prompt,
-    } = program.optsWithGlobals<GlobalOptions & ReplCommandOptions>()
-
-    const accessToken: string | undefined = process.env.SRC_ACCESS_TOKEN
-    if (accessToken === undefined || accessToken === '') {
-        console.error(
-            'No access token found. Set SRC_ACCESS_TOKEN to an access token created on the Sourcegraph instance.'
-        )
-        process.exit(1)
-    }
-
-    const sourcegraphClient = new SourcegraphGraphQLAPIClient({
-        serverEndpoint: endpoint,
-        accessToken,
-        customHeaders: {},
-    })
-
-    let codebaseContext
-    try {
-        codebaseContext = await createCodebaseContext(sourcegraphClient, codebase, contextType, endpoint)
-    } catch (error) {
-        let errorMessage = ''
-        if (isRepoNotFoundError(error)) {
-            errorMessage =
-                `Cody could not find the '${codebase}' repository on your Sourcegraph instance.\n` +
-                'Please check that the repository exists and is entered correctly in the cody.codebase setting.'
-        } else {
-            errorMessage =
-                `Cody could not connect to your Sourcegraph instance: ${error}\n` +
-                'Make sure that cody.serverEndpoint is set to a running Sourcegraph instance and that an access token is configured.'
-        }
-        console.error(errorMessage)
-        process.exit(1)
-    }
-
-    const intentDetector = new SourcegraphIntentDetectorClient(sourcegraphClient)
-
-    const completionsClient = new SourcegraphNodeCompletionsClient({
-        serverEndpoint: endpoint,
-        accessToken,
-        debugEnable: debug,
-        customHeaders: {},
-    })
+async function run({ prompt }: ReplCommandOptions, program: Command): Promise<void> {
+    const { codebaseContext, intentDetector, completionsClient } = await getClient(program)
 
     let promptToUse = prompt
     if (prompt === undefined || prompt === '') {
@@ -105,7 +53,9 @@ async function run(_options: unknown, program: Command): Promise<void> {
         }
     }
 
-    const { prompt: finalPrompt, contextFiles } = await transcript.getPromptForLastInteraction(getPreamble(codebase))
+    const { prompt: finalPrompt, contextFiles } = await transcript.getPromptForLastInteraction(
+        getPreamble(codebaseContext.getCodebase())
+    )
     transcript.setUsedContextFilesForLastInteraction(contextFiles)
 
     let text = ''
