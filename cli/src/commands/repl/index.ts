@@ -8,10 +8,10 @@ import { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/s
 import { SourcegraphGraphQLAPIClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
 import { isRepoNotFoundError } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
 
-import { streamCompletions } from '../../completions'
-import { createCodebaseContext } from '../../context'
-import { interactionFromMessage } from '../../interactions'
-import { getPreamble } from '../../preamble'
+import { streamCompletions } from '../../client/completions'
+import { createCodebaseContext } from '../../client/context'
+import { interactionFromMessage } from '../../client/interactions'
+import { getPreamble } from '../../client/preamble'
 import { GlobalOptions } from '../../program'
 
 interface ReplCommandOptions {
