@@ -6,9 +6,9 @@ import { ChatViewProviderWebview } from './ChatViewProvider'
 import { MessageProvider } from './MessageProvider'
 
 export class InlineChatViewProvider extends MessageProvider {
+    public webview?: ChatViewProviderWebview
     private activeThread?: vscode.CommentThread
     private inlineChats = new Map<vscode.Uri, string>()
-    public webview?: ChatViewProviderWebview
 
     public async addChat(reply: string, thread: vscode.CommentThread, isFixMode: boolean): Promise<void> {
         this.activeThread = thread
@@ -42,7 +42,8 @@ export class InlineChatViewProvider extends MessageProvider {
     protected handleTranscript(transcript: ChatMessage[], isMessageInProgress: boolean): void {
         const lastMessage = transcript[transcript.length - 1]
 
-        if (this.activeThread?.uri !== this.editor.controllers.inline.thread?.uri) {
+        // If the thread we're targeting doesn't match the controllers thread, do nothing
+        if (this.activeThread && this.activeThread?.uri !== this.editor.controllers.inline.thread?.uri) {
             return
         }
 

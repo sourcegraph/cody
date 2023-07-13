@@ -77,18 +77,19 @@ export interface MessageProviderOptions {
 }
 
 export abstract class MessageProvider extends MessageHandler implements vscode.Disposable, IdleRecipeRunner {
-    private isMessageInProgress = false
-    private cancelCompletionCallback: (() => void) | null = null
-
     public currentChatID = ''
+
+    // input and chat history are shared across all MessageProvider instances
     protected static inputHistory: string[] = []
     protected static chatHistory: ChatHistory = {}
 
-    protected transcript: Transcript = new Transcript()
+    private isMessageInProgress = false
+    private cancelCompletionCallback: (() => void) | null = null
 
     // Allows recipes to hook up subscribers to process sub-streams of bot output
-    protected multiplexer: BotResponseMultiplexer = new BotResponseMultiplexer()
+    private multiplexer: BotResponseMultiplexer = new BotResponseMultiplexer()
 
+    protected transcript: Transcript = new Transcript()
     protected disposables: vscode.Disposable[] = []
 
     // Provided configuration to the MessageProvider
@@ -317,6 +318,12 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
             this.logEmbeddingsSearchErrors()
         }
         this.scheduleIdleRecipes()
+    }
+
+    protected async abortCompletion(): Promise<void> {
+        this.cancelCompletion()
+        await this.multiplexer.notifyTurnComplete()
+        await this.onCompletionEnd()
     }
 
     public async executeRecipe(recipeId: RecipeID, humanChatInput: string = ''): Promise<void> {

@@ -81,7 +81,3 @@ export function newAuthStatus(
     authStatus.isLoggedIn = isLoggedIn && isAllowed
     return authStatus
 }
-
-export function isAbortError(error: string): boolean {
-    return error === 'aborted' || error === 'socket hang up'
-}

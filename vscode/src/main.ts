@@ -120,7 +120,6 @@ const register = async (
     const authProvider = new AuthProvider(initialConfig, secretStorage, localStorage)
     await authProvider.init()
 
-    // TODO: Needs disposable?
     const contextProvider = new ContextProvider(
         initialConfig,
         chatClient,
@@ -131,6 +130,7 @@ const register = async (
         rgPath,
         authProvider
     )
+    disposables.push(contextProvider)
 
     // Shared configuration that is required for chat views to send and receive messages
     const messageProviderOptions: MessageProviderOptions = {
@@ -146,9 +146,7 @@ const register = async (
         contextProvider,
     }
 
-    // Inline chat -> Cody
     const inlineChatProvider = new InlineChatViewProvider(messageProviderOptions)
-    // Sidebar -> Cody
     const chatProvider = new ChatViewProvider({
         ...messageProviderOptions,
         // Note: chatProvider needs to provide the webview to inlineChat so we can keep history in sync
@@ -217,15 +215,9 @@ const register = async (
                 await vscode.commands.executeCommand('cody.chat.focus')
             }
         }),
-        vscode.commands.registerCommand('cody.inline.new', async () =>
+        vscode.commands.registerCommand('cody.inline.new', () =>
             vscode.commands.executeCommand('workbench.action.addComment')
         ),
-        vscode.commands.registerCommand('cody.inline.insert', async (copiedText: string) => {
-            // Insert copiedText to the current cursor position
-            await vscode.commands.executeCommand('editor.action.insertSnippet', {
-                snippet: copiedText,
-            })
-        }),
         // Tests
         // Access token - this is only used in configuration tests
         vscode.commands.registerCommand('cody.test.token', async (args: any[]) => {
@@ -241,6 +233,12 @@ const register = async (
         vscode.commands.registerCommand('cody.interactive.clear', async () => {
             await chatProvider.clearAndRestartSession()
             chatProvider.setWebviewView('chat')
+        }),
+        vscode.commands.registerCommand('cody.inline.insert', async (copiedText: string) => {
+            // Insert copiedText to the current cursor position
+            await vscode.commands.executeCommand('editor.action.insertSnippet', {
+                snippet: copiedText,
+            })
         }),
         vscode.commands.registerCommand('cody.focus', () => vscode.commands.executeCommand('cody.chat.focus')),
         vscode.commands.registerCommand('cody.settings.user', () => chatProvider.setWebviewView('settings')),

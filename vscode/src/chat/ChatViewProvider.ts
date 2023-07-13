@@ -51,9 +51,7 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
                 await this.onHumanMessageSubmitted(message.text, 'user')
                 break
             case 'abort':
-                this.cancelCompletion()
-                await this.multiplexer.notifyTurnComplete()
-                await this.onCompletionEnd()
+                await this.abortCompletion()
                 break
             case 'executeRecipe':
                 await this.executeRecipe(message.recipe)
