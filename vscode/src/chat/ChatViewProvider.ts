@@ -512,7 +512,9 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         // add data source context to Cody context
         const { prompt: history } = await this.transcript.getPromptForLastInteraction(
             getPreamble(this.codebaseContext.getCodebase()),
-            this.maxPromptTokens
+            this.maxPromptTokens,
+            [],
+            true
         )
 
         try {

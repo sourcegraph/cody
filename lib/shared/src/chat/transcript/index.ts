@@ -164,7 +164,8 @@ export class Transcript {
     public async getPromptForLastInteraction(
         preamble: Message[] = [],
         maxPromptLength: number = MAX_AVAILABLE_PROMPT_LENGTH,
-        pluginsPrompt: Message[] = []
+        pluginsPrompt: Message[] = [],
+        onlyHumanMessages: boolean = false
     ): Promise<{ prompt: Message[]; contextFiles: ContextFile[] }> {
         if (this.interactions.length === 0) {
             return { prompt: [], contextFiles: [] }
@@ -177,7 +178,7 @@ export class Transcript {
             const humanMessage = PromptMixin.mixInto(interaction.getHumanMessage())
             const assistantMessage = interaction.getAssistantMessage()
             const contextMessages = await interaction.getFullContext()
-            if (index === lastInteractionWithContextIndex) {
+            if (index === lastInteractionWithContextIndex && !onlyHumanMessages) {
                 messages.push(...contextMessages, ...pluginsPrompt, humanMessage, assistantMessage)
             } else {
                 messages.push(...pluginsPrompt, humanMessage, assistantMessage)
