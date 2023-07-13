@@ -218,6 +218,11 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                 return
             }
 
+            // Clear & reset session on CMD+K
+            if (event.metaKey && event.key === 'k') {
+                onSubmit('/r', 'user')
+            }
+
             if (formInput === inputHistory[historyIndex] || !formInput) {
                 if (event.key === 'ArrowUp' && caretPosition === 0) {
                     const newIndex = historyIndex - 1 < 0 ? inputHistory.length - 1 : historyIndex - 1
@@ -230,7 +235,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                 }
             }
         },
-        [inputHistory, historyIndex, setFormInput, onChatSubmit, formInput, setMessageBeingEdited]
+        [inputHistory, historyIndex, setFormInput, onChatSubmit, onSubmit, formInput, setMessageBeingEdited]
     )
 
     const transcriptWithWelcome = useMemo<ChatMessage[]>(
