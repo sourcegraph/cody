@@ -66,6 +66,12 @@ export function populateCurrentEditorSelectedContextTemplate(
     )
 }
 
+const COMMAND_OUTPUT_TEMPLATE = 'Here is the output returned from the terminal.\n'
+
+export function populateTerminalOutputContextTemplate(output: string): string {
+    return COMMAND_OUTPUT_TEMPLATE + output
+}
+
 const MARKDOWN_EXTENSIONS = new Set(['md', 'markdown'])
 
 export function isMarkdownFile(filePath: string): boolean {

@@ -115,6 +115,12 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
 
         // listen for vscode active editor change event
         this.currentWorkspaceRoot = ''
+        const myPromptsWatcher = this.editor.controllers?.prompt?.fileWatcher
+        myPromptsWatcher?.onDidCreate(() => this.sendMyPrompts())
+        myPromptsWatcher?.onDidChange(() => this.sendMyPrompts())
+        myPromptsWatcher?.onDidDelete(() => this.sendMyPrompts())
+
+        // listen for vscode active editor change event
         this.disposables.push(
             vscode.window.onDidChangeActiveTextEditor(async () => {
                 await this.updateCodebaseContext()
@@ -229,6 +235,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 this.sendChatHistory()
                 await this.loadRecentChat()
                 await this.publishContextStatus()
+                await this.sendMyPrompts()
                 break
             case 'submit':
                 await this.onHumanMessageSubmitted(message.text, message.submitType)
@@ -277,6 +284,9 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 break
             case 'links':
                 void this.openExternalLinks(message.value)
+                break
+            case 'my-prompt':
+                await this.executeMyPrompt(message.title)
                 break
             case 'openFile': {
                 const rootPath = this.editor.getWorkspaceRootPath()
@@ -463,9 +473,10 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
 
         this.codebaseContext = codebaseContext
         await this.publishContextStatus()
+        this.editor.controllers.prompt.setCodebase(codebaseContext.getCodebase())
     }
 
-    public async executeRecipe(recipeId: RecipeID, humanChatInput: string = '', showTab = true): Promise<void> {
+    public async executeRecipe(recipeId: RecipeID, humanChatInput = '', showTab = true): Promise<void> {
         debug('ChatViewProvider:executeRecipe', recipeId, { verbose: humanChatInput })
         if (this.isMessageInProgress) {
             this.sendErrorToWebview('Cannot execute multiple recipes. Please wait for the current recipe to finish.')
@@ -474,6 +485,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
 
         const recipe = getRecipe(recipeId)
         if (!recipe) {
+            debug('ChatViewProvider:executeRecipe', 'no recipe found')
             return
         }
 
@@ -506,8 +518,9 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
             default: {
                 this.sendTranscript()
 
+                const myPremade = this.editor.controllers.prompt.getMyPrompts().premade
                 const { prompt, contextFiles } = await this.transcript.getPromptForLastInteraction(
-                    getPreamble(this.codebaseContext.getCodebase()),
+                    myPremade || getPreamble(this.codebaseContext.getCodebase()),
                     this.maxPromptTokens
                 )
                 this.transcript.setUsedContextFilesForLastInteraction(contextFiles)
@@ -539,8 +552,9 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         }
         transcript.addInteraction(interaction)
 
+        const myPremade = this.editor.controllers.prompt.getMyPrompts().premade
         const { prompt, contextFiles } = await transcript.getPromptForLastInteraction(
-            getPreamble(this.codebaseContext.getCodebase()),
+            myPremade || getPreamble(this.codebaseContext.getCodebase()),
             this.maxPromptTokens
         )
         transcript.setUsedContextFilesForLastInteraction(contextFiles)
@@ -619,6 +633,41 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         void this.webview?.postMessage({
             type: 'suggestions',
             suggestions,
+        })
+    }
+
+    private async executeMyPrompt(title: string): Promise<void> {
+        // Send prompt names to webview to display as recipe options
+        if (!title || title === 'get') {
+            await this.sendMyPrompts()
+            return
+        }
+        // Create a new recipe
+        if (title === 'new') {
+            await this.editor.controllers.prompt.add()
+            await this.sendMyPrompts()
+            return
+        }
+        this.showTab('chat')
+        // Get prompt details from controller by title then execute
+        const prompt = this.editor.controllers.prompt.find(title)
+        if (!prompt) {
+            void vscode.window.showErrorMessage(`Could not find prompt for the "${title}" recipe.`)
+            debug('executeMyPrompt:noPrompt', title)
+            return
+        }
+        await this.executeRecipe('my-prompt', prompt, true)
+    }
+
+    /**
+     * Send custom recipe names to webview
+     */
+    private async sendMyPrompts(): Promise<void> {
+        await this.editor.controllers.prompt.refresh()
+        const prompts = this.editor.controllers.prompt.getPromptList()
+        void this.webview?.postMessage({
+            type: 'my-prompts',
+            prompts,
         })
     }
 

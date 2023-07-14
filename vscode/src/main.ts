@@ -1,3 +1,5 @@
+import { debug } from 'console'
+
 import * as vscode from 'vscode'
 
 import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
@@ -20,6 +22,7 @@ import { getConfiguration, getFullConfig, migrateConfiguration } from './configu
 import { VSCodeEditor } from './editor/vscode-editor'
 import { eventLogger, logEvent, updateEventLogger } from './event-logger'
 import { configureExternalServices } from './external-services'
+import { MyPromptController } from './my-cody/MyPromptController'
 import { FixupController } from './non-stop/FixupController'
 import { showSetupNotification } from './notifications/setup-notification'
 import { getRgPath } from './rg'
@@ -93,7 +96,10 @@ const register = async (
     if (TestSupport.instance) {
         TestSupport.instance.fixupController.set(fixup)
     }
-    const controllers = { inline: commentController, fixups: fixup }
+
+    const prompt = new MyPromptController(debug, context, initialConfig.serverEndpoint)
+
+    const controllers = { inline: commentController, fixups: fixup, prompt }
 
     const editor = new VSCodeEditor(controllers)
     // Could we use the `initialConfig` instead?
