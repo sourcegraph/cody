@@ -2,7 +2,7 @@ import * as vscode from 'vscode'
 
 import { CodebaseContext } from '../../codebase-context'
 import { ContextMessage, getContextMessageWithResponse } from '../../codebase-context/messages'
-import { ActiveTextEditorSelection, Editor } from '../../editor'
+import { Editor, SelectionText, TextDocument } from '../../editor'
 import {
     MAX_CURRENT_FILE_TOKENS,
     MAX_HUMAN_INPUT_TOKENS,
@@ -49,7 +49,17 @@ export class MyPrompt implements Recipe {
     private promptStore = new Map<string, string>()
 
     public async getInteraction(humanChatInput: string, context: RecipeContext): Promise<Interaction | null> {
-        const selection = context.editor.getActiveTextEditorSelection()
+        const selection =
+            context.editor.getActiveTextDocumentSelectionText() || context.editor.controllers?.inline.selection
+
+        const active = context.editor.controllers?.inline.document
+
+        if (!active) {
+            return null
+        }
+
+        const fileName = vscode.Uri.parse(active.uri).fsPath
+
         // Make prompt text
         const humanInput = humanChatInput.trim()
         // Match human input with key from promptStore to get prompt text when there is none
@@ -62,13 +72,14 @@ export class MyPrompt implements Recipe {
         const note = ' Refer to the command output and shared code snippets to answer my quesiton.'
         const truncatedText = truncateText(promptText + note, MAX_HUMAN_INPUT_TOKENS)
         // Add selection file name as display when available
-        const displayText = selection?.fileName ? this.getHumanDisplayText(humanInput, selection?.fileName) : humanInput
+        const displayText = fileName ? this.getHumanDisplayText(humanInput, fileName) : humanInput
 
         return Promise.resolve(
             new Interaction(
                 { speaker: 'human', text: truncatedText, displayText },
                 { speaker: 'assistant' },
                 this.getContextMessages(
+                    active,
                     truncatedText,
                     context.editor,
                     context.codebaseContext,
@@ -86,10 +97,11 @@ export class MyPrompt implements Recipe {
     }
 
     private async getContextMessages(
+        document: TextDocument,
         text: string,
         editor: Editor,
         codebaseContext: CodebaseContext,
-        selection?: ActiveTextEditorSelection | null,
+        selection?: SelectionText | null,
         commandOutput?: string | null
     ): Promise<ContextMessage[]> {
         const contextMessages: ContextMessage[] = []
@@ -133,8 +145,8 @@ export class MyPrompt implements Recipe {
             contextMessages.push(...ChatQuestion.getEditorContext(editor))
         }
         // Add selected text as context when available
-        if (selection?.selectedText && !isContextRequired.excludeSelection) {
-            contextMessages.push(...ChatQuestion.getEditorSelectionContext(selection))
+        if (selection?.selectedText && !isCodebaseContextRequired.excludeSelection) {
+            contextMessages.push(...ChatQuestion.getEditorSelectionContext(document, selection))
         }
         // Create context messages from terminal output if any
         if (commandOutput) {
