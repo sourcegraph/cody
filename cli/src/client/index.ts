@@ -1,5 +1,3 @@
-import { Command } from 'commander'
-
 import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
 import { IntentDetector } from '@sourcegraph/cody-shared/src/intent-detector'
 import { SourcegraphIntentDetectorClient } from '@sourcegraph/cody-shared/src/intent-detector/client'
@@ -18,9 +16,7 @@ export interface Client {
     completionsClient: SourcegraphCompletionsClient
 }
 
-export async function getClient(program: Command): Promise<Client> {
-    const { codebase, endpoint, context: contextType, debug } = program.optsWithGlobals<GlobalOptions>()
-
+export async function getClient({ codebase, endpoint, context: contextType, debug }: GlobalOptions): Promise<Client> {
     const accessToken: string | undefined = process.env.SRC_ACCESS_TOKEN
     if (accessToken === undefined || accessToken === '') {
         console.error(

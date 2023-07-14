@@ -3,6 +3,7 @@ import { Command } from 'commander'
 
 import { ConfigurationUseContext } from '@sourcegraph/cody-shared/src/configuration'
 
+import { commitCommand } from './commands/commit'
 import { replCommand } from './commands/repl'
 
 export interface GlobalOptions {
@@ -16,11 +17,12 @@ const program = new Command()
     .name('cody')
     .version('0.0.1')
     .description('Cody CLI')
-    .option('-c, --codebase <value>', 'Codebase to use for context fetching', 'github.com/sourcegraph/sourcegraph')
+    .option('-c, --codebase <value>', 'Codebase to use for context fetching', 'github.com/sourcegraph/cody')
     .option('-e, --endpoint <value>', 'Sourcegraph instance to connect to', 'https://sourcegraph.com')
     .option('--context [embeddings,keyword,none,blended]', 'How Cody fetches context', 'blended')
     .option('--debug', 'Enable debug logging', false)
     .addCommand(replCommand)
+    .addCommand(commitCommand)
 
 // Make `repl` the default subcommand.
 const args = process.argv.slice(2)
