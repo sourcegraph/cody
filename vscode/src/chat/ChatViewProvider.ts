@@ -579,6 +579,14 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
             this.showTab('chat')
         }
 
+        let pluginsPrompt: Message[] = []
+        let pluginExecutionInfos: PluginFunctionExecutionInfo[] = []
+        if (this.config.pluginsEnabled && recipeId === 'chat-question') {
+            const result = await this.getPluginsContext(humanChatInput)
+            pluginsPrompt = result?.prompt ?? []
+            pluginExecutionInfos = result?.executionInfos ?? []
+        }
+
         // Check whether or not to connect to LLM backend for responses
         // Ex: performing fuzzy / context-search does not require responses from LLM backend
         switch (recipeId) {
@@ -588,14 +596,6 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
             default: {
                 this.sendTranscript()
 
-                let pluginsPrompt: Message[] = []
-                let pluginExecutionInfos: PluginFunctionExecutionInfo[] = []
-                if (this.config.pluginsEnabled) {
-                    const result = await this.getPluginsContext(humanChatInput)
-                    pluginsPrompt = result?.prompt ?? []
-                    pluginExecutionInfos = result?.executionInfos ?? []
-                }
-                // add data source context to Cody context
                 const { prompt, contextFiles } = await this.transcript.getPromptForLastInteraction(
                     getPreamble(this.codebaseContext.getCodebase()),
                     this.maxPromptTokens,
