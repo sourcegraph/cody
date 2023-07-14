@@ -8,6 +8,7 @@ import {
 } from '@sourcegraph/cody-shared/src/editor'
 import { SURROUNDING_LINES } from '@sourcegraph/cody-shared/src/prompt/constants'
 
+import { MyPromptController } from '../my-cody/MyPromptController'
 import { FixupController } from '../non-stop/FixupController'
 import { InlineController } from '../services/InlineController'
 
@@ -16,6 +17,7 @@ export class VSCodeEditor implements Editor {
         public controllers: {
             inline: InlineController
             fixups: FixupController
+            prompt: MyPromptController
         }
     ) {}
 

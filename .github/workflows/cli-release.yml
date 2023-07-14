@@ -1,9 +1,9 @@
-name: vscode-release
+name: cli-release
 
 on:
   push:
     tags:
-      - vscode-v*
+      - cli-v*
 
 jobs:
   release:
@@ -23,26 +23,25 @@ jobs:
       - name: get release version
         id: release_version
         run: |
-          TAGGED_VERSION="${GITHUB_REF/refs\/tags\/vscode-v/}"
+          TAGGED_VERSION="${GITHUB_REF/refs\/tags\/cli-v/}"
 
           if [[ ! "${TAGGED_VERSION}" =~ ^[0-9]+\.[0-9]+\.[0-9]+.*$ ]]; then
             echo "Invalid version tag '${TAGGED_VERSION}'"
             exit 1
           fi
 
-          echo "EXT_VERSION=${TAGGED_VERSION}" >> $GITHUB_ENV
-          WRITTEN_VERSION="$(cat vscode/package.json | jq '.version' -r)"
+          echo "CLI_VERSION=${TAGGED_VERSION}" >> $GITHUB_ENV
+          WRITTEN_VERSION="$(cat cli/package.json | jq '.version' -r)"
 
           if [[ "${TAGGED_VERSION}" != "${WRITTEN_VERSION}" ]]; then
-            echo "Release tag and version in vscode/package.json do not match: '${TAGGED_VERSION}' vs. '${WRITTEN_VERSION}'"
+            echo "Release tag and version in cli/package.json do not match: '${TAGGED_VERSION}' vs. '${WRITTEN_VERSION}'"
             exit 1
           fi
-      - run: xvfb-run -a pnpm run test
-      - run: CODY_RELEASE_TYPE=stable pnpm -C vscode run release
+      - run: pnpm -C cli run test
+      - run: pnpm -C cli publish
         if: github.repository == 'sourcegraph/cody'
         env:
-          VSCODE_MARKETPLACE_TOKEN: ${{ secrets.VSCODE_MARKETPLACE_TOKEN }}
-          VSCODE_OPENVSX_TOKEN: ${{ secrets.VSCODE_OPENVSX_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
       - name: create release
         id: create_release
         uses: actions/create-release@v1
@@ -50,7 +49,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: ${{ github.ref }}
-          release_name: Cody for VS Code ${{ env.EXT_VERSION }}
+          release_name: Cody CLI ${{ env.CLI_VERSION }}
           draft: false
       - name: upload release asset
         uses: actions/upload-release-asset@v1
@@ -58,6 +57,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./vscode/dist/cody.vsix
-          asset_name: cody-vscode-${{ env.EXT_VERSION }}.vsix
-          asset_content_type: application/zip
+          asset_path: ./cli/dist/cody
+          asset_name: cody-cli-${{ env.CLI_VERSION }}.js
+          asset_content_type: text/javascript

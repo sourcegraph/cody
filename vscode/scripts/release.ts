@@ -72,7 +72,6 @@ export const commands = {
 }
 
 // Build and bundle the extension
-childProcess.execSync('scripts/download-rg.sh', { stdio: 'inherit' })
 childProcess.execSync(releaseType === 'nightly' ? commands.vscode_package_nightly : commands.vscode_package, {
     stdio: 'inherit',
 })

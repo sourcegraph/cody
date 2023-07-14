@@ -49,7 +49,6 @@ jobs:
           key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
           restore-keys: ${{ runner.os }}-pnpm-store-
       - run: pnpm install
-      - run: vscode/scripts/download-rg.sh x86_64-unknown-linux
       - run: xvfb-run -a pnpm -C vscode run test:integration
 
   test-e2e:
@@ -71,7 +70,6 @@ jobs:
           key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
           restore-keys: ${{ runner.os }}-pnpm-store-
       - run: pnpm install
-      - run: vscode/scripts/download-rg.sh x86_64-unknown-linux
       - run: xvfb-run -a pnpm -C vscode run test:e2e
 
   build:

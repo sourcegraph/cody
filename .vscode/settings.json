@@ -6,7 +6,8 @@
   "files.exclude": {
     "**/node_modules": true,
     "**/dist": true,
-    "**/.eslintcache": true
+    "**/.eslintcache": true,
+    "**/.vscode-test": true
   },
   "editor.formatOnSave": true,
   "npm.packageManager": "pnpm",

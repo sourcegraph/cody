@@ -141,6 +141,13 @@ class MessageDecoder extends Writable {
                 }
 
                 const data = this.buffer.slice(0, this.contentLengthRemaining)
+
+                // If there isn't anymore data, break out of the loop to wait
+                // for more chunks to be written to the stream.
+                if (data.length === 0) {
+                    break
+                }
+
                 this.contentBuffer = Buffer.concat([this.contentBuffer, data])
                 this.buffer = this.buffer.slice(this.contentLengthRemaining)
 

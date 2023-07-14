@@ -1,3 +1,5 @@
+import { debug } from 'console'
+
 import * as vscode from 'vscode'
 
 import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
@@ -20,6 +22,7 @@ import { getConfiguration, getFullConfig, migrateConfiguration } from './configu
 import { VSCodeEditor } from './editor/vscode-editor'
 import { eventLogger, logEvent, updateEventLogger } from './event-logger'
 import { configureExternalServices } from './external-services'
+import { MyPromptController } from './my-cody/MyPromptController'
 import { FixupController } from './non-stop/FixupController'
 import { showSetupNotification } from './notifications/setup-notification'
 import { getRgPath } from './rg'
@@ -59,13 +62,8 @@ export async function start(context: vscode.ExtensionContext): Promise<vscode.Di
     )
     disposables.push(disposable)
 
-    // Re-initialize when configuration or secrets change.
+    // Re-initialize when configuration
     disposables.push(
-        secretStorage.onDidChange(async key => {
-            if (key === CODY_ACCESS_TOKEN_SECRET) {
-                onConfigurationChange(await getFullConfig(secretStorage, localStorage))
-            }
-        }),
         vscode.workspace.onDidChangeConfiguration(async event => {
             if (event.affectsConfiguration('cody')) {
                 onConfigurationChange(await getFullConfig(secretStorage, localStorage))
@@ -98,7 +96,10 @@ const register = async (
     if (TestSupport.instance) {
         TestSupport.instance.fixupController.set(fixup)
     }
-    const controllers = { inline: commentController, fixups: fixup }
+
+    const prompt = new MyPromptController(debug, context, initialConfig.serverEndpoint)
+
+    const controllers = { inline: commentController, fixups: fixup, prompt }
 
     const editor = new VSCodeEditor(controllers)
     // Could we use the `initialConfig` instead?
@@ -137,6 +138,10 @@ const register = async (
     disposables.push(
         vscode.window.registerWebviewViewProvider('cody.chat', chatProvider, {
             webviewOptions: { retainContextWhenHidden: true },
+        }),
+        // Update external services when configurationChangeEvent is fired by chatProvider
+        chatProvider.configurationChangeEvent.event(async () => {
+            externalServicesOnDidConfigurationChange(await getFullConfig(secretStorage, localStorage))
         })
     )
 
