@@ -74,9 +74,8 @@ export class InlineChatViewProvider extends MessageProvider {
             return
         }
 
-        this.editor.controllers.inline.setResponsePending(false)
-
         if (lastMessage.displayText) {
+            this.editor.controllers.inline.setResponsePending(false)
             this.editor.controllers.inline.reply(
                 lastMessage.displayText,
                 isMessageInProgress ? 'streaming' : 'complete'

@@ -445,7 +445,6 @@ export class Comment implements vscode.Comment {
     public mode = vscode.CommentMode.Preview
     public author: vscode.CommentAuthorInformation
     public update: DebouncedFunc<typeof this.unthrottledUpdate>
-    public label?: string | undefined
 
     constructor(
         public input: string,
