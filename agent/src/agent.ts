@@ -6,8 +6,6 @@ import { AgentEditor } from './editor'
 import { MessageHandler } from './jsonrpc'
 import { ConnectionConfiguration, TextDocument } from './protocol'
 
-// TODO: Comment to trigger CI, remove before merging this PR
-
 export class Agent extends MessageHandler {
     private client?: Promise<Client>
     public workspaceRootPath: string | null = null
