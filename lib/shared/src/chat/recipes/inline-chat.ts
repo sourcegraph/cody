@@ -29,9 +29,9 @@ export class InlineChat implements Recipe {
             return new Fixup().getInteraction(humanChatInput.replace(commandRegex.fix, ''), context)
         }
 
-        const active = context.editor.getActiveTextDocument()
+        const active = context.editor.controllers?.inline.document
 
-        if (active === null) {
+        if (!active) {
             return null
         }
 

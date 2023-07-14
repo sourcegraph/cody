@@ -42,6 +42,8 @@ export interface JointRange extends Range {
 }
 
 interface VsCodeInlineController {
+    workspace: Workspace | null
+    document: TextDocument | null
     selection: SelectionText | null
     error(): Promise<void>
 }

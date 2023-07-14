@@ -14,7 +14,12 @@ export class Fixup implements Recipe {
 
     public async getInteraction(humanChatInput: string, context: RecipeContext): Promise<Interaction | null> {
         // TODO: Prompt the user for additional direction.
-        const active = context.editor.getActiveTextDocument()!
+        const active = context.editor.getActiveTextDocument() || context.editor.controllers?.inline.document
+
+        if (!active) {
+            return null
+        }
+
         const selection = Editor.getTextDocumentSelectionText(active) || context.editor.controllers?.inline.selection
 
         if (!selection) {

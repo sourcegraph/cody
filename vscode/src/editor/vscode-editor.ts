@@ -102,15 +102,9 @@ export class VSCodeEditor extends Editor {
         }
     }
 
-    public async getTextDocument(uri: Uri): Promise<TextDocument | null> {
-        const document = await vscode.workspace.openTextDocument(uri)
-
-        if (!document) {
-            return null
-        }
-
+    public static convertTextDocument(document: vscode.TextDocument): TextDocument | null {
         return {
-            uri,
+            uri: document.uri.toString(),
             languageId: document.languageId,
 
             content: document.getText(),
@@ -120,6 +114,16 @@ export class VSCodeEditor extends Editor {
             visible: null,
             selection: null,
         }
+    }
+
+    public async getTextDocument(uri: Uri): Promise<TextDocument | null> {
+        const document = await vscode.workspace.openTextDocument(uri)
+
+        if (!document) {
+            return null
+        }
+
+        return VSCodeEditor.convertTextDocument(document)
     }
 
     public async replaceSelection(fileName: string, selectedText: string, replacement: string): Promise<void> {

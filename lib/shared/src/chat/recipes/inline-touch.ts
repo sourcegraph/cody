@@ -22,7 +22,7 @@ export class InlineTouch implements Recipe {
     constructor(private debug: (filterLabel: string, text: string, ...args: unknown[]) => void) {}
 
     public async getInteraction(humanChatInput: string, context: RecipeContext): Promise<Interaction | null> {
-        const active = context.editor.getActiveTextDocument()
+        const active = context.editor.controllers?.inline.document
 
         if (!active) {
             return null

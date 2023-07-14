@@ -1,9 +1,10 @@
 import { throttle } from 'lodash'
 import * as vscode from 'vscode'
 
-import { SelectionText } from '@sourcegraph/cody-shared/src/editor'
+import { SelectionText, TextDocument, Workspace } from '@sourcegraph/cody-shared/src/editor'
 import { SURROUNDING_LINES } from '@sourcegraph/cody-shared/src/prompt/constants'
 
+import { VSCodeEditor } from '../editor/vscode-editor'
 import { logEvent } from '../event-logger'
 import { CodyTaskState } from '../non-stop/utils'
 
@@ -39,7 +40,12 @@ export class InlineController {
     private currentTaskId = ''
     // Workspace State
     private workspacePath = vscode.workspace.workspaceFolders?.[0].uri
-    // TODO(Auguste): Make this a range instead of text so we can send an edit request via range
+    // TODO(Auguste): Clean this up when we add inline stuff to agent
+    public workspace: Workspace | null = vscode.workspace.workspaceFolders?.[0]
+        ? new Workspace(vscode.workspace.workspaceFolders?.[0].uri.toString())
+        : null
+    public document: TextDocument | null = null
+
     public selection: SelectionText | null = null
     public selectionRange = initRange
     // Inline Tasks States
@@ -65,6 +71,19 @@ export class InlineController {
                 this.commentController = null
                 this.dispose()
             }
+        })
+        // Track last document
+        vscode.window.onDidChangeActiveTextEditor(e => {
+            if (!e) {
+                this.document = null
+                return
+            }
+
+            if (e.document.uri.scheme !== 'file') {
+                return
+            }
+
+            this.document = VSCodeEditor.convertTextDocument(e.document)
         })
         // Track last selection range in valid doc before an action is called
         vscode.window.onDidChangeTextEditorSelection(e => {
