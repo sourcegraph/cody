@@ -21,8 +21,9 @@ export class Fixup implements Recipe {
         }
 
         const selection = Editor.getTextDocumentSelectionText(active) || context.editor.controllers?.inline.selection
+        const selectionRange = active.selection || context.editor.controllers?.inline.selectionRange
 
-        if (!selection) {
+        if (!selection || !selectionRange) {
             await context.editor.controllers?.inline.error()
             await context.editor.warn('Select some code to fixup.')
             return null
@@ -59,7 +60,7 @@ export class Fixup implements Recipe {
                 }
                 await context.editor.edit(active.uri, [
                     {
-                        range: active.selection!,
+                        range: selectionRange,
                         newText: contentSanitizer(content),
                     },
                 ])

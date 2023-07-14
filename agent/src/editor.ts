@@ -49,7 +49,7 @@ export class AgentEditor extends Editor {
         return this.getTextDocument(uri)
     }
 
-    public edit(uri: string, edits: TextEdit[]): Promise<void> {
+    public edit(uri: string, edits: TextEdit[]): Promise<boolean> {
         throw new Error('Method not implemented.')
     }
 

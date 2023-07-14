@@ -79,8 +79,8 @@ export class MockEditor extends Editor {
         return this.mocks.getTextDocument?.(uri) ?? Promise.resolve(null)
     }
 
-    public edit(uri: string, edits: TextEdit[]): Promise<void> {
-        return this.mocks.edit?.(uri, edits) ?? Promise.resolve()
+    public edit(uri: string, edits: TextEdit[]): Promise<boolean> {
+        return this.mocks.edit?.(uri, edits) ?? Promise.resolve(false)
     }
 
     public quickPick(labels: string[]): Promise<string | null> {

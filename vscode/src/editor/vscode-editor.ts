@@ -189,8 +189,19 @@ export class VSCodeEditor extends Editor {
               }
     }
 
-    public edit(uri: string, edits: TextEdit[]): Promise<void> {
-        throw new Error('TODO: implement edit for vscode')
+    public async edit(uri: string, edits: TextEdit[]): Promise<boolean> {
+        const workEdits = new vscode.WorkspaceEdit()
+        workEdits.set(
+            vscode.Uri.parse(uri),
+            edits.map(edit => ({
+                range: new vscode.Range(
+                    new vscode.Position(edit.range.start.line, edit.range.start.character),
+                    new vscode.Position(edit.range.end.line, edit.range.end.character)
+                ),
+                newText: edit.newText,
+            }))
+        )
+        return await vscode.workspace.applyEdit(workEdits)
     }
 
     // TODO: When Non-Stop Fixup doesn't depend directly on the chat view,

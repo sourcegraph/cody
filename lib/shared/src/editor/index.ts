@@ -45,6 +45,7 @@ interface VsCodeInlineController {
     workspace: Workspace | null
     document: TextDocument | null
     selection: SelectionText | null
+    selectionRange: Range | null
     error(): Promise<void>
 }
 
@@ -129,8 +130,8 @@ export abstract class Editor {
     public abstract getLightTextDocument(uri: Uri): Promise<LightTextDocument | null>
     public abstract getTextDocument(uri: Uri): Promise<TextDocument | null>
 
-    /** NOTE: This is currently unused but will be used for inline fix */
-    public abstract edit(uri: Uri, edits: TextEdit[]): Promise<void>
+    /** Edits are applied LSP-style (indices unshifted); returns whether the edit was successful */
+    public abstract edit(uri: Uri, edits: TextEdit[]): Promise<boolean>
     public abstract quickPick(labels: string[]): Promise<string | null>
     public abstract warn(message: string): Promise<void>
     public abstract prompt(prompt?: string): Promise<string | null>
@@ -275,8 +276,8 @@ export class NoopEditor extends Editor {
         return Promise.resolve(null)
     }
 
-    public edit(uri: string, edits: TextEdit[]): Promise<void> {
-        return Promise.resolve()
+    public edit(uri: string, edits: TextEdit[]): Promise<boolean> {
+        return Promise.resolve(false)
     }
 
     public quickPick(labels: string[]): Promise<string | null> {
