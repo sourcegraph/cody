@@ -4,15 +4,27 @@ Cody CLI is an experimental command-line interface for Cody.
 
 ## Getting started
 
+Install `cody`:
+
 ```shell
-pnpm run build
+npm install --global @sourcegraph/cody-cli
+pnpm add --global @sourcegraph/cody-cli
+yarn global add @sourcegraph/cody-cli
 ```
 
-Then ask a question.
+Or just run it live:
+
+```shell
+npx @sourcegraph/cody-cli
+pnpm dlx @sourcegraph/cody-cli
+yarn dlx @sourcegraph/cody-cli
+```
+
+To ask a question:
 
 <pre><code>
 $ <strong>export SRC_ACCESS_TOKEN=sgp_aaaaaaaaaaaaaaaa</strong> # Sourcegraph access token
-$ <strong>node dist/app.js</strong>
+$ <strong>cody</strong>
 
 ✔ What do you want to ask Cody? … <strong>Where is data stored?</strong>
  Data in Sourcegraph is stored in the following places:
