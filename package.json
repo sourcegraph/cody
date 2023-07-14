@@ -10,7 +10,7 @@
   },
   "engines": {
     "node": "^v18.9.0",
-    "pnpm": "^8.6.6"
+    "pnpm": "^8.6.7"
   },
   "scripts": {
     "build": "tsc --build",
@@ -60,7 +60,7 @@
     "react": "18.1.0",
     "react-dom": "18.1.0"
   },
-  "packageManager": "pnpm@8.6.6",
+  "packageManager": "pnpm@8.6.7",
   "resolutions": {
     "tslib": "2.1.0"
   },
