@@ -1,5 +1,5 @@
 {
-  "description": "This file is used for building custom workspace recipes for Cody by Sourcegraph to use.",
+  "description": "This file is used for building custom workspace recipes for Cody by Sourcegraph.",
   "recipes": {
     "Spell Checker": {
       "prompt": "Spell check the selected code and let me know if I have any typos or non-standard usage.",
