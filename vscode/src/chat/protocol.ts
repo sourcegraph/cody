@@ -26,6 +26,7 @@ export type WebviewMessage =
     | { command: 'auth'; type: 'signin' | 'signout' | 'support' | 'app' | 'callback'; endpoint?: string }
     | { command: 'abort' }
     | { command: 'chat-button'; action: string }
+    | { command: 'setEnabledPlugins'; plugins: string[] }
     | { command: 'my-prompt'; title: string }
 
 /**
@@ -43,12 +44,14 @@ export type ExtensionMessage =
     | { type: 'errors'; errors: string }
     | { type: 'suggestions'; suggestions: string[] }
     | { type: 'app-state'; isInstalled: boolean }
+    | { type: 'enabled-plugins'; plugins: string[] }
     | { type: 'my-prompts'; prompts: string[] }
 
 /**
  * The subset of configuration that is visible to the webview.
  */
-export interface ConfigurationSubsetForWebview extends Pick<Configuration, 'debugEnable' | 'serverEndpoint'> {}
+export interface ConfigurationSubsetForWebview
+    extends Pick<Configuration, 'debugEnable' | 'serverEndpoint' | 'pluginsEnabled' | 'pluginsDebugEnabled'> {}
 
 /**
  * URLs for the Sourcegraph instance and app.

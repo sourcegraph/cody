@@ -4,3 +4,6 @@ node_modules/
 dist/
 *.tsbuildinfo
 .DS_Store
+.idea*
+resources/bin*
+.env

@@ -10,6 +10,9 @@ describe('getConfiguration', () => {
             get: <T>(_key: string, defaultValue?: T): typeof defaultValue | undefined => defaultValue,
         }
         expect(getConfiguration(config)).toEqual({
+            pluginsConfig: {},
+            pluginsDebugEnabled: true,
+            pluginsEnabled: false,
             serverEndpoint: DOTCOM_URL.href,
             codebase: '',
             useContext: 'embeddings',
@@ -71,12 +74,23 @@ describe('getConfiguration', () => {
                         return false
                     case 'cody.autocomplete.advanced.embeddings':
                         return false
+                    case 'cody.plugins.enabled':
+                        return true
+                    case 'cody.plugins.config':
+                        return {
+                            foo: 'bar',
+                        }
+                    case 'cody.plugins.debug.enabled':
+                        return false
                     default:
                         throw new Error(`unexpected key: ${key}`)
                 }
             },
         }
         expect(getConfiguration(config)).toEqual({
+            pluginsEnabled: true,
+            pluginsConfig: { foo: 'bar' },
+            pluginsDebugEnabled: false,
             serverEndpoint: 'http://example.com',
             codebase: 'my/codebase',
             useContext: 'keyword',
