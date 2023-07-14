@@ -12,7 +12,7 @@ interface PluginItemProps {
 const PluginItem: React.FC<PluginItemProps> = ({ name, description, enabled, onToggle }) => (
     <label htmlFor={name} className={styles.plugin}>
         <p className={styles.pluginHeader}>{name}</p>
-        <div className={styles.pluginInner}>
+        <div>
             <input
                 type="checkbox"
                 id={name}

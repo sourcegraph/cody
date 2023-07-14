@@ -5,12 +5,6 @@
     padding: 1rem;
 }
 
-.divider {
-    height: 1px;
-    border-top: 1px solid var(--vscode-activityBar-border);
-    margin-bottom: 1.25rem;
-}
-
 .list {
     list-style: none;
     padding: 0;
@@ -24,12 +18,8 @@
 }
 
 .plugin {
-    border-bottom: 1px solid var(--vscode-activityBar-border);
     display: block;
     cursor: pointer;
-}
-
-.plugin-inner {
 }
 
 .plugin-checkbox {
