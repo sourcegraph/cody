@@ -48,16 +48,17 @@ export const Recipes: React.FunctionComponent<{
                             </VSCodeButton>
                         </div>
                     )}
-                    {myPrompts?.map(promptID => (
-                        <VSCodeButton
-                            key={promptID}
-                            className={styles.recipeButton}
-                            type="button"
-                            onClick={() => onMyPromptClick(promptID)}
-                        >
-                            {promptID}
-                        </VSCodeButton>
-                    ))}
+                    {myPromptsEnabled &&
+                        myPrompts?.map(promptID => (
+                            <VSCodeButton
+                                key={promptID}
+                                className={styles.recipeButton}
+                                type="button"
+                                onClick={() => onMyPromptClick(promptID)}
+                            >
+                                {promptID}
+                            </VSCodeButton>
+                        ))}
                     <div className={styles.recipesHeader}>
                         <span>Featured</span>
                     </div>
