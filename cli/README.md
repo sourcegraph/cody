@@ -32,7 +32,13 @@ $ <strong>cody</strong>
 ...
 </code></pre>
 
-Use `--help` for a list of command-line options.
+Or have it write a commit message for your Git changes:
+
+```shell
+$ cody commit --dry-run
+```
+
+Use `--help` for more information.
 
 ## Development
 
