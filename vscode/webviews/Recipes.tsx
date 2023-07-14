@@ -41,27 +41,60 @@ export const Recipes: React.FunctionComponent<{
             <div className="non-transcript-container">
                 <div className={styles.recipes}>
                     {myPromptsEnabled && (
-                        <div className={styles.recipesHeader}>
-                            <span>My Prompts</span>
-                            <VSCodeButton type="button" appearance="icon" onClick={() => onMyPromptClick('new')}>
-                                <i className="codicon codicon-plus" title="Create a new recipe with custom prompt" />
-                            </VSCodeButton>
-                        </div>
+                        <>
+                            <div>
+                                <div className={styles.recipesHeader}>
+                                    <span>My Prompts</span>
+                                    <VSCodeButton
+                                        type="button"
+                                        appearance="icon"
+                                        onClick={() => onMyPromptClick('add')}
+                                    >
+                                        <i
+                                            className="codicon codicon-plus"
+                                            title="Create a new recipe with custom prompt"
+                                        />
+                                    </VSCodeButton>
+                                </div>
+                                <small className={styles.recipesNotes}>
+                                    Use the + button above to create your very own recipe. To create a Workspace recipe
+                                    that is available to all users, add a recipe item to the .vscode/cody.json file in
+                                    your repository.
+                                </small>
+                            </div>
+                            {!myPrompts?.length && (
+                                <VSCodeButton
+                                    className={styles.recipeButton}
+                                    type="button"
+                                    onClick={() => onMyPromptClick('new-workspace-example-file')}
+                                >
+                                    Create a cody.json file with examples
+                                </VSCodeButton>
+                            )}
+                            {myPrompts?.map(promptID => (
+                                <VSCodeButton
+                                    key={promptID}
+                                    className={styles.recipeButton}
+                                    type="button"
+                                    onClick={() => onMyPromptClick(promptID)}
+                                >
+                                    {promptID}
+                                </VSCodeButton>
+                            ))}
+                            {myPrompts?.length && (
+                                <VSCodeButton
+                                    className={styles.recipeButton}
+                                    type="button"
+                                    onClick={() => onMyPromptClick('clear')}
+                                >
+                                    Remove all User Recipes
+                                </VSCodeButton>
+                            )}
+                            <div className={styles.recipesHeader}>
+                                <span>Featured</span>
+                            </div>
+                        </>
                     )}
-                    {myPromptsEnabled &&
-                        myPrompts?.map(promptID => (
-                            <VSCodeButton
-                                key={promptID}
-                                className={styles.recipeButton}
-                                type="button"
-                                onClick={() => onMyPromptClick(promptID)}
-                            >
-                                {promptID}
-                            </VSCodeButton>
-                        ))}
-                    <div className={styles.recipesHeader}>
-                        <span>Featured</span>
-                    </div>
                     {Object.entries(recipesList).map(([key, value]) => (
                         <VSCodeButton
                             key={key}

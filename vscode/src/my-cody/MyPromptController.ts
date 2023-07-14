@@ -1,5 +1,6 @@
 import * as vscode from 'vscode'
 
+import { CodyPromptContext, defaultCodyPromptContext } from '@sourcegraph/cody-shared/src/chat/recipes/my-prompt'
 import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
 
 import { isInternalUser } from '../chat/protocol'
@@ -15,10 +16,7 @@ interface CodyPrompt {
     prompt: string
     command?: string
     args?: string[]
-    context?: {
-        codebase: boolean
-        openTabs?: boolean
-    }
+    context?: CodyPromptContext
     type?: CodyPromptType
 }
 
@@ -73,6 +71,10 @@ export class MyPromptController {
     // getter for the promptInProgress
     public get(type?: string): string | null {
         if (type === 'context') {
+            const contextConfig = this.myPromptInProgress?.context
+            return JSON.stringify(contextConfig || defaultCodyPromptContext)
+        }
+        if (type === 'codebase') {
             return this.myPromptInProgress?.context?.codebase ? 'codebase' : null
         }
         // return the terminal output from the last command run
@@ -145,15 +147,27 @@ export class MyPromptController {
         this.myPromptStore = await this.builder.get()
     }
 
+    public async clear(): Promise<void> {
+        if (!this.builder.userPromptsSize) {
+            void vscode.window.showInformationMessage(
+                'No User Recipes to remove. If you want to remove Workspace Recipes, please remove the .vscode/cody.json file from your repository.'
+            )
+        }
+        await this.context.globalState.update(MY_CODY_PROMPTS_KEY, null)
+    }
+
     public async add(): Promise<void> {
         // Get the prompt name and prompt description from the user using the input box with 2 steps
         const promptName = await vscode.window.showInputBox({
             title: 'Creating a new custom recipe...',
-            prompt: 'What is the name for the new recipe?',
+            prompt: 'Enter an unique name for the new recipe.',
             placeHolder: 'e,g. Vulnerability Scanner',
             validateInput: (input: string) => {
-                if (!input) {
-                    return 'Please enter a prompt name.'
+                if (!input || input === 'add' || input === 'clear') {
+                    return 'Please enter a valid name for the recipe.'
+                }
+                if (this.myPromptStore.has(input)) {
+                    return 'A recipe with the same name already exists. Please enter a different name.'
                 }
                 return
             },
@@ -180,7 +194,7 @@ export class MyPromptController {
         const promptCommand = await vscode.window.showInputBox({
             title: 'Creating a new custom recipe...',
             prompt: '[Optional] Add a terminal command for the recipe to run from your current workspace. The output will be shared with Cody as context for the prompt. (The added command must work on your local machine.)',
-            placeHolder: 'e,g. node your-script.js, git describe --long, etc.',
+            placeHolder: 'e,g. node your-script.js, git describe --long, cat src/file-name.js etc.',
         })
         if (promptCommand) {
             const commandParts = promptCommand.split(' ')
@@ -201,6 +215,8 @@ class MyRecipesBuilder {
     public myPromptsMap = new Map<string, CodyPrompt>()
     public idSet = new Set<string>()
 
+    public userPromptsSize = 0
+
     public codebase: string | null = null
 
     constructor(private globalState: vscode.Memento, private workspaceRoot: string | null) {}
@@ -211,7 +227,8 @@ class MyRecipesBuilder {
         this.idSet = new Set<string>()
         // user prompts
         const storagePrompts = this.getPromptsFromExtensionStorage()
-        this.build(storagePrompts, 'user')
+        const storagePromptsMap = this.build(storagePrompts, 'user')
+        this.userPromptsSize = storagePromptsMap?.size || 0
         // workspace prompts
         const wsPrompts = await this.getPromptsFromWorkspace(this.workspaceRoot)
         this.build(wsPrompts, 'workspace')

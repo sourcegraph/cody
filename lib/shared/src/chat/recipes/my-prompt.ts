@@ -27,7 +27,7 @@ export class MyPrompt implements Recipe {
         // Match human input with key from promptStore to get prompt text when there is none
         let promptText = humanInput || this.promptStore.get(humanInput) || null
         if (!promptText) {
-            await vscode.window.showErrorMessage('Please enter a valid for the recipe.')
+            await vscode.window.showErrorMessage('Please enter a valid prompt for the recipe.')
             return null
         }
 
@@ -37,7 +37,7 @@ export class MyPrompt implements Recipe {
         const commandOutput = context.editor.controllers?.prompt.get()
         if (commandOutput) {
             // promptText += `\n${commandOutput}\n`
-            promptText += 'Please refer to the command output when answering my quesiton.'
+            promptText += 'Please refer to the command output or the code I am looking at to answer my quesiton.'
         }
 
         // Add selection file name as display when available
@@ -67,60 +67,60 @@ export class MyPrompt implements Recipe {
         commandOutput?: string | null
     ): Promise<ContextMessage[]> {
         const contextMessages: ContextMessage[] = []
-
-        const isCodebaseContextRequired = editor.controllers?.prompt.get('context')
-        if (isCodebaseContextRequired) {
-            await vscode.window.showInformationMessage('Codebase is not required.')
+        const contextConfig = editor.controllers?.prompt.get('context')
+        const isCodebaseContextRequired = contextConfig
+            ? (JSON.parse(contextConfig) as CodyPromptContext)
+            : defaultCodyPromptContext
+        // Codebase context is not included by default
+        if (isCodebaseContextRequired.codebase) {
             const codebaseContextMessages = await codebaseContext.getContextMessages(text, {
                 numCodeResults: 12,
                 numTextResults: 3,
             })
             contextMessages.push(...codebaseContextMessages)
-
-            // Create context messages from open tabs
-            if (contextMessages.length < 10) {
-                contextMessages.push(...MyPrompt.getEditorOpenTabsContext())
-            }
         }
-
+        // Create context messages from open tabs
+        if (isCodebaseContextRequired.openTabs) {
+            const openTabsContext = await MyPrompt.getEditorOpenTabsContext()
+            contextMessages.push(...openTabsContext)
+        }
+        // Create context messages from current directory
+        if (isCodebaseContextRequired.currentDir) {
+            const currentDirContext = await MyPrompt.getCurrentDirContext()
+            contextMessages.push(...currentDirContext)
+        }
         // Add selected text as context when available
-        if (selection?.selectedText) {
+        if (selection?.selectedText && !isCodebaseContextRequired.excludeSelection) {
             contextMessages.push(...ChatQuestion.getEditorSelectionContext(selection))
         }
-
         // Create context messages from terminal output if any
         if (commandOutput) {
             contextMessages.push(...MyPrompt.getTerminalOutputContext(commandOutput))
         }
-
         return contextMessages.slice(-12)
     }
 
     // Get context from current editor open tabs
-    public static getEditorOpenTabsContext(): ContextMessage[] {
+    public static async getEditorOpenTabsContext(): Promise<ContextMessage[]> {
         const contextMessages: ContextMessage[] = []
-        // Skip the current active tab (which is already included in selection context), files in currentDir, and non-file tabs
-        const openTabs = vscode.window.visibleTextEditors
-        for (const tab of openTabs) {
-            if (tab === vscode.window.activeTextEditor || tab.document.uri.scheme !== 'file') {
+        // Get a list of the open tabs
+        const openTabs = vscode.window.tabGroups.all
+        const files = openTabs.flatMap(group => group.tabs.map(tab => tab.input)) as vscode.TabInputText[]
+        for (const doc of files) {
+            if (doc.uri.scheme !== 'file') {
                 continue
             }
-            const fileName = tab.document.fileName
-            const truncatedContent = truncateText(tab.document.getText(), MAX_CURRENT_FILE_TOKENS)
-            const contextMessage = getContextMessageWithResponse(
+            const fileName = vscode.workspace.asRelativePath(doc.uri.fsPath)
+            // remove workspace root path from fileName
+            const fileContent = await vscode.workspace.openTextDocument(doc.uri)
+            const truncatedContent = truncateText(fileContent.getText(), MAX_CURRENT_FILE_TOKENS)
+            const docAsMessage = getContextMessageWithResponse(
                 populateCurrentEditorContextTemplate(truncatedContent, fileName),
-                {
-                    fileName,
-                }
+                { fileName }
             )
-            contextMessages.push(...contextMessage)
+            contextMessages.push(...docAsMessage)
         }
         return contextMessages
-    }
-
-    // Get display text for human
-    private getHumanDisplayText(humanChatInput: string, fileName: string): string {
-        return humanChatInput + InlineTouch.displayPrompt + fileName
     }
 
     public static getTerminalOutputContext(output: string): ContextMessage[] {
@@ -130,4 +130,33 @@ export class MyPrompt implements Recipe {
             { speaker: 'assistant', text: 'OK.' },
         ]
     }
+
+    // Create Context from Current Directory of Active Document
+    public static async getCurrentDirContext(): Promise<ContextMessage[]> {
+        // get current document file path
+        const currentDoc = vscode.window.activeTextEditor?.document
+        if (!currentDoc) {
+            return []
+        }
+        return InlineTouch.getEditorDirContext(currentDoc.fileName.replace(/\/[^/]+$/, ''))
+    }
+
+    // Get display text for human
+    private getHumanDisplayText(humanChatInput: string, fileName: string): string {
+        return humanChatInput + InlineTouch.displayPrompt + fileName
+    }
+}
+
+export interface CodyPromptContext {
+    codebase: boolean
+    openTabs?: boolean
+    currentDir?: boolean
+    excludeSelection?: boolean
+}
+
+export const defaultCodyPromptContext: CodyPromptContext = {
+    codebase: false,
+    openTabs: false,
+    currentDir: false,
+    excludeSelection: false,
 }

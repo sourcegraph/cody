@@ -717,9 +717,40 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
             return
         }
         // Create a new recipe
-        if (title === 'new') {
+        if (title === 'add') {
             await this.editor.controllers.prompt.add()
             await this.sendMyPrompts()
+            return
+        }
+        // Clear all recipes stored in user global storage
+        if (title === 'clear') {
+            await this.editor.controllers.prompt.clear()
+            await this.sendMyPrompts()
+            return
+        }
+        if (title === 'new-workspace-example-file') {
+            if (!this.currentWorkspaceRoot) {
+                void vscode.window.showErrorMessage('Could not find workspace path.')
+                return
+            }
+            try {
+                // copy the cody.json file from the extension path and move it to the workspace root directory
+                // Find the fsPath of the cody.json example file from the this.rgPath
+                const extensionPath = this.rgPath.slice(0, Math.max(0, this.rgPath.lastIndexOf('/')))
+                const extensionUri = vscode.Uri.parse(extensionPath)
+                const codyJsonPath = vscode.Uri.joinPath(extensionUri, 'cody.json')
+                const bytes = await vscode.workspace.fs.readFile(codyJsonPath)
+                const decoded = new TextDecoder('utf-8').decode(bytes)
+                const workspaceUri = vscode.Uri.parse(this.currentWorkspaceRoot)
+                const workspaceCodyJsonPath = vscode.Uri.joinPath(workspaceUri, '.vscode/cody.json')
+                const workspaceEditor = new vscode.WorkspaceEdit()
+                workspaceEditor.createFile(workspaceCodyJsonPath, { ignoreIfExists: false })
+                workspaceEditor.insert(workspaceCodyJsonPath, new vscode.Position(0, 0), decoded)
+                await vscode.workspace.applyEdit(workspaceEditor)
+                await vscode.window.showTextDocument(workspaceCodyJsonPath)
+            } catch (error) {
+                void vscode.window.showErrorMessage(`Could not create a new cody.json file: ${error}`)
+            }
             return
         }
         this.showTab('chat')
