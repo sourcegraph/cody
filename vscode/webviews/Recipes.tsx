@@ -56,11 +56,11 @@ export const Recipes: React.FunctionComponent<{
                                         />
                                     </VSCodeButton>
                                 </div>
-                            </div>
-                            <div className={styles.recipesNotes}>
-                                Use the + button above to create your very own recipe. To create a Workspace recipe that
-                                is available to all users, add the cody.json file to the .vscode directory of your
-                                workspace.
+                                <small className={styles.recipesNotes}>
+                                    Use the + button above to create your very own recipe. To create a Workspace recipe
+                                    that is available to all users, add the cody.json file to the .vscode directory of
+                                    your workspace.
+                                </small>
                             </div>
                             {myPrompts?.map(promptID => (
                                 <VSCodeButton
