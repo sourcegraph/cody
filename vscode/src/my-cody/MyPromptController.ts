@@ -148,6 +148,11 @@ export class MyPromptController {
     }
 
     public async clear(): Promise<void> {
+        if (!this.builder.userPromptsSize) {
+            void vscode.window.showInformationMessage(
+                'No User Recipes to remove. If you want to remove Workspace Recipes, please remove the .vscode/cody.json file from your repository.'
+            )
+        }
         await this.context.globalState.update(MY_CODY_PROMPTS_KEY, null)
     }
 
@@ -210,6 +215,8 @@ class MyRecipesBuilder {
     public myPromptsMap = new Map<string, CodyPrompt>()
     public idSet = new Set<string>()
 
+    public userPromptsSize = 0
+
     public codebase: string | null = null
 
     constructor(private globalState: vscode.Memento, private workspaceRoot: string | null) {}
@@ -220,7 +227,8 @@ class MyRecipesBuilder {
         this.idSet = new Set<string>()
         // user prompts
         const storagePrompts = this.getPromptsFromExtensionStorage()
-        this.build(storagePrompts, 'user')
+        const storagePromptsMap = this.build(storagePrompts, 'user')
+        this.userPromptsSize = storagePromptsMap?.size || 0
         // workspace prompts
         const wsPrompts = await this.getPromptsFromWorkspace(this.workspaceRoot)
         this.build(wsPrompts, 'workspace')
