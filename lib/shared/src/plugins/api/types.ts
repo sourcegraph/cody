@@ -12,6 +12,7 @@ export interface PluginFunctionDescriptor {
                 type: 'string' | 'number' | 'boolean'
                 enum?: string[]
                 description?: string
+                default?: string | number | boolean
             }
         }
         description?: string

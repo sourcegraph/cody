@@ -38,6 +38,7 @@ const searchGitHub = async (
     query: string,
     baseUrl: string,
     apiToken: string,
+    limit: number = 5,
     org?: string,
     repo?: string
 ): Promise<OutputItem[]> => {
@@ -49,8 +50,7 @@ const searchGitHub = async (
         filter += ` repo:${repo}`
     }
 
-    // TODO: what is a good limit of results here?
-    url.searchParams.set('per_page', '3')
+    url.searchParams.set('per_page', `${limit}`)
     url.searchParams.set('q', `${query} ${filter}`)
     const opts = {
         method: 'GET',
@@ -118,12 +118,17 @@ export const githubIssuesPlugin: Plugin = {
                             type: 'string',
                             description: 'Query, uses github issue search query format',
                         },
+                        limit: {
+                            type: 'number',
+                            description: 'Maximum number of results to return.',
+                            default: 5,
+                        },
                     },
                     required: ['query'],
                 },
             },
             handler: async (parameters: PluginFunctionParameters, api: PluginAPI): Promise<PluginFunctionOutput[]> => {
-                const { query } = parameters
+                const { query, limit = 5 } = parameters
 
                 if (typeof query !== 'string') {
                     return Promise.reject(new Error('Invalid parameters'))
@@ -135,7 +140,7 @@ export const githubIssuesPlugin: Plugin = {
                 const baseUrl = api.config?.github?.baseURL ?? defaultBaseURL
                 const { org, repo } = api.config?.github ?? {}
 
-                return searchGitHub(query, baseUrl, apiToken, org, repo)
+                return searchGitHub(query, baseUrl, apiToken, Number(limit), org, repo)
             },
         },
     ],
