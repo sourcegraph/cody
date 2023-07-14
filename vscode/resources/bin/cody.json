@@ -1,0 +1,36 @@
+{
+  "description": "This file is used for building custom workspace recipes for Cody by Sourcegraph to use.",
+  "recipes": {
+    "Spell Checker": {
+      "prompt": "Spell check the selected code and let me know if I have any typos or non-standard usage.",
+      "context": {
+        "codebase": false
+      }
+    },
+    "Refactor Code": {
+      "prompt": "Suggest ways to refactor the selected code to improve readability and maintainability",
+      "context": {
+        "currentDir": true
+      }
+    },
+    "Compare Files in Opened Tabs": {
+      "prompt": "Compare the code from the shared files and explain how they are related",
+      "context": {
+        "openTabs": true,
+        "excludeSelection": true
+      }
+    },
+    "GH Search: Deploy Repoes not owned by Sourcegraph": {
+      "prompt": "What are the names of repositories that are used for deploying Sourcegraph, but is not directly owned by Sourcegraph?",
+      "command": "gh",
+      "args": ["search", "repos", "sourcegraph", "deploy"],
+      "note": "You must have gh command installed and authenticated to use this recipe"
+    },
+    "Last Git Commit Info": {
+      "prompt": "Who made the last commit to this repository and what did they change?",
+      "command": "git",
+      "args": ["log", "-1"],
+      "note": "You must have git command installed and authenticated to use this recipe"
+    }
+  }
+}
