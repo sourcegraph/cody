@@ -201,7 +201,7 @@ export class VSCodeEditor extends Editor {
                 newText: edit.newText,
             }))
         )
-        return await vscode.workspace.applyEdit(workEdits)
+        return vscode.workspace.applyEdit(workEdits)
     }
 
     // TODO: When Non-Stop Fixup doesn't depend directly on the chat view,
