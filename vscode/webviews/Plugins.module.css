@@ -1,0 +1,39 @@
+.container {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    padding: 1rem;
+}
+
+.list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.list-item {
+    background-color: var(--vscode-tab-inactiveBackground);
+    padding: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.plugin {
+    display: block;
+    cursor: pointer;
+}
+
+.plugin-checkbox {
+    float: left;
+    margin: 0.1rem 0.25rem 0 0;
+}
+
+.plugin-header {
+    font-weight: 600;
+    margin: 0 0 0.5rem 0;
+    font-size: 1rem;
+}
+
+.plugin-description {
+    margin: 0;
+    line-height: 1.1rem;
+}

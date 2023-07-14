@@ -928,6 +928,70 @@
           "type": "boolean",
           "default": true,
           "markdownDescription": "Enables the use of embeddings as code completions context."
+        },
+        "cody.plugins.enabled": {
+          "type": "boolean",
+          "default": false,
+          "markdownDescription": "Enables the use of built-in experimental plugins."
+        },
+        "cody.plugins.config": {
+          "type": "object",
+          "default": {},
+          "properties": {
+            "confluence": {
+              "type": "object",
+              "properties": {
+                "baseUrl": {
+                  "type": "string",
+                  "description": "Confluence instance base url."
+                },
+                "email": {
+                  "type": "string",
+                  "description": "Confluence Email."
+                },
+                "apiToken": {
+                  "type": "string",
+                  "description": "Confluence API Token."
+                }
+              }
+            },
+            "github": {
+              "type": "object",
+              "properties": {
+                "apiToken": {
+                  "type": "string",
+                  "description": "GitHub API Token."
+                },
+                "baseUrl": {
+                  "type": "string",
+                  "description": "Github API URL.",
+                  "default": "https://api.github.com/"
+                },
+                "org": {
+                  "type": "string",
+                  "description": "GitHub organization to limit results to."
+                },
+                "repo": {
+                  "type": "string",
+                  "description": "GitHub repo to limit results to."
+                }
+              }
+            },
+            "apiNinjas": {
+              "type": "object",
+              "properties": {
+                "apiKey": {
+                  "type": "string",
+                  "description": "API Ninjas Key. Use https://api-ninjas.com to get one."
+                }
+              }
+            }
+          }
+        },
+        "cody.plugins.debug.enabled": {
+          "type": "boolean",
+          "default": true,
+          "markdownDescription": "Enables debug output for plugins."
         }
       }
     },

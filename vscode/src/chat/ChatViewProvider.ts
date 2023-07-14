@@ -17,6 +17,9 @@ import { SourcegraphEmbeddingsSearchClient } from '@sourcegraph/cody-shared/src/
 import { annotateAttribution, Guardrails } from '@sourcegraph/cody-shared/src/guardrails'
 import { highlightTokens } from '@sourcegraph/cody-shared/src/hallucinations-detector'
 import { IntentDetector } from '@sourcegraph/cody-shared/src/intent-detector'
+import * as plugins from '@sourcegraph/cody-shared/src/plugins/api'
+import { PluginFunctionExecutionInfo } from '@sourcegraph/cody-shared/src/plugins/api/types'
+import { defaultPlugins } from '@sourcegraph/cody-shared/src/plugins/built-in'
 import { ANSWER_TOKENS, DEFAULT_MAX_TOKENS } from '@sourcegraph/cody-shared/src/prompt/constants'
 import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
 import { SourcegraphGraphQLAPIClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
@@ -54,6 +57,9 @@ export type Config = Pick<
     | 'useContext'
     | 'experimentalChatPredictions'
     | 'experimentalGuardrails'
+    | 'pluginsEnabled'
+    | 'pluginsConfig'
+    | 'pluginsDebugEnabled'
 >
 
 /**
@@ -233,6 +239,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 this.loadChatHistory()
                 this.sendTranscript()
                 this.sendChatHistory()
+                this.sendEnabledPlugins(this.localStorage.getEnabledPlugins() ?? [])
                 await this.loadRecentChat()
                 await this.publishContextStatus()
                 await this.sendMyPrompts()
@@ -321,9 +328,17 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 }
                 break
             }
+            case 'setEnabledPlugins':
+                await this.localStorage.setEnabledPlugins(message.plugins)
+                this.sendEnabledPlugins(message.plugins)
+                break
             default:
                 this.sendErrorToWebview('Invalid request type from Webview')
         }
+    }
+
+    private sendEnabledPlugins(plugins: string[]): void {
+        void this.webview?.postMessage({ type: 'enabled-plugins', plugins })
     }
 
     private createNewChatID(): void {
@@ -476,6 +491,56 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         this.editor.controllers.prompt.setCodebase(codebaseContext.getCodebase())
     }
 
+    private async getPluginsContext(
+        humanChatInput: string
+    ): Promise<{ prompt?: Message[]; executionInfos?: PluginFunctionExecutionInfo[] }> {
+        logEvent('CodyVSCodeExtension:getPluginsContext:used')
+        const enabledPluginNames = this.localStorage.getEnabledPlugins() ?? []
+        const enabledPlugins = defaultPlugins.filter(plugin => enabledPluginNames.includes(plugin.name))
+        if (enabledPlugins.length === 0) {
+            return {}
+        }
+        logEvent('CodyVSCodeExtension:getPluginsContext:enabledPlugins', { names: enabledPluginNames })
+
+        this.transcript.addAssistantResponse('', 'Identifying applicable plugins...\n')
+        this.sendTranscript()
+
+        const { prompt: previousMessages } = await this.transcript.getPromptForLastInteraction(
+            [],
+            this.maxPromptTokens,
+            [],
+            true
+        )
+
+        try {
+            logEvent('CodyVSCodeExtension:getPluginsContext:chooseDataSourcesUsed')
+            const descriptors = await plugins.chooseDataSources(
+                humanChatInput,
+                this.chat,
+                enabledPlugins,
+                previousMessages
+            )
+            logEvent('CodyVSCodeExtension:getPluginsContext:descriptorsFound', { count: descriptors.length })
+            if (descriptors.length !== 0) {
+                this.transcript.addAssistantResponse(
+                    '',
+                    `Using ${descriptors
+                        .map(descriptor => descriptor.pluginName)
+                        .join(', ')} for additional context...\n`
+                )
+                this.sendTranscript()
+
+                logEvent('CodyVSCodeExtension:getPluginsContext:runPluginFunctionsCalled', {
+                    count: descriptors.length,
+                })
+                return await plugins.runPluginFunctions(descriptors, this.config.pluginsConfig)
+            }
+        } catch (error) {
+            console.error('Error getting plugin context', error)
+        }
+        return {}
+    }
+
     public async executeRecipe(recipeId: RecipeID, humanChatInput = '', showTab = true): Promise<void> {
         debug('ChatViewProvider:executeRecipe', recipeId, { verbose: humanChatInput })
         if (this.isMessageInProgress) {
@@ -509,6 +574,14 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
             this.showTab('chat')
         }
 
+        let pluginsPrompt: Message[] = []
+        let pluginExecutionInfos: PluginFunctionExecutionInfo[] = []
+        if (this.config.pluginsEnabled && recipeId === 'chat-question') {
+            const result = await this.getPluginsContext(humanChatInput)
+            pluginsPrompt = result?.prompt ?? []
+            pluginExecutionInfos = result?.executionInfos ?? []
+        }
+
         // Check whether or not to connect to LLM backend for responses
         // Ex: performing fuzzy / context-search does not require responses from LLM backend
         switch (recipeId) {
@@ -521,9 +594,10 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 const myPremade = this.editor.controllers.prompt.getMyPrompts().premade
                 const { prompt, contextFiles } = await this.transcript.getPromptForLastInteraction(
                     myPremade || getPreamble(this.codebaseContext.getCodebase()),
-                    this.maxPromptTokens
+                    this.maxPromptTokens,
+                    pluginsPrompt
                 )
-                this.transcript.setUsedContextFilesForLastInteraction(contextFiles)
+                this.transcript.setUsedContextFilesForLastInteraction(contextFiles, pluginExecutionInfos)
                 this.sendPrompt(prompt, interaction.getAssistantMessage().prefix ?? '')
                 await this.saveTranscriptToChatHistory()
             }
@@ -810,6 +884,8 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 ...localProcess,
                 debugEnable: this.config.debugEnable,
                 serverEndpoint: this.config.serverEndpoint,
+                pluginsEnabled: this.config.pluginsEnabled,
+                pluginsDebugEnabled: this.config.pluginsDebugEnabled,
             }
 
             // update codebase context on configuration change
