@@ -9,7 +9,7 @@ import { parseEvents } from './parse'
 import { CompletionCallbacks, CompletionParameters, CompletionResponse } from './types'
 
 export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClient {
-    public async complete(params: CompletionParameters, abortSignal: AbortSignal): Promise<CompletionResponse> {
+    public async complete(params: CompletionParameters, abortSignal?: AbortSignal): Promise<CompletionResponse> {
         const log = this.logger?.startCompletion(params)
 
         const headers = new Headers(this.config.customHeaders as HeadersInit)
