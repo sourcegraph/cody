@@ -155,11 +155,14 @@ export class MyPromptController {
         // Get the prompt name and prompt description from the user using the input box with 2 steps
         const promptName = await vscode.window.showInputBox({
             title: 'Creating a new custom recipe...',
-            prompt: 'What is the name for the new recipe?',
+            prompt: 'Enter an unique name for the new recipe.',
             placeHolder: 'e,g. Vulnerability Scanner',
             validateInput: (input: string) => {
-                if (!input) {
-                    return 'Please enter a prompt name.'
+                if (!input || input === 'add' || input === 'clear') {
+                    return 'Please enter a valid name for the recipe.'
+                }
+                if (this.myPromptStore.has(input)) {
+                    return 'A recipe with the same name already exists. Please enter a different name.'
                 }
                 return
             },

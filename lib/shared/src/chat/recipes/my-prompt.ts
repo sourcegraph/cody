@@ -81,7 +81,8 @@ export class MyPrompt implements Recipe {
         }
         // Create  context messages from open tabs
         if (isCodebaseContextRequired.openTabs) {
-            contextMessages.push(...MyPrompt.getEditorOpenTabsContext())
+            const openTabsContext = await MyPrompt.getEditorOpenTabsContext()
+            contextMessages.push(...openTabsContext)
         }
         // Create  context messages from current directory
         if (isCodebaseContextRequired.currentDir) {
@@ -100,23 +101,24 @@ export class MyPrompt implements Recipe {
     }
 
     // Get con text from current editor open tabs
-    public static getEditorOpenTabsContext(): ContextMessage[] {
+    public static async getEditorOpenTabsContext(): Promise<ContextMessage[]> {
         const contextMessages: ContextMessage[] = []
-        // Skip th e current active tab (which is already included in selection context), files in currentDir, and non-file tabs
-        const openTabs = vscode.window.visibleTextEditors
-        for (const tab of openTabs) {
-            if (tab === vscode.window.activeTextEditor || tab.document.uri.scheme !== 'file') {
+        // Get a list of the open tabs
+        const openTabs = vscode.window.tabGroups.all
+        const files = openTabs.flatMap(group => group.tabs.map(tab => tab.input)) as vscode.TabInputText[]
+        for (const doc of files) {
+            if (doc.uri.scheme !== 'file') {
                 continue
             }
-            const fileName = tab.document.fileName
-            const truncatedContent = truncateText(tab.document.getText(), MAX_CURRENT_FILE_TOKENS)
-            const contextMessage = getContextMessageWithResponse(
+            const fileName = vscode.workspace.asRelativePath(doc.uri.fsPath)
+            // remove workspace root path from fileName
+            const fileContent = await vscode.workspace.openTextDocument(doc.uri)
+            const truncatedContent = truncateText(fileContent.getText(), MAX_CURRENT_FILE_TOKENS)
+            const docAsMessage = getContextMessageWithResponse(
                 populateCurrentEditorContextTemplate(truncatedContent, fileName),
-                {
-                    fileName,
-                }
+                { fileName }
             )
-            contextMessages.push(...contextMessage)
+            contextMessages.push(...docAsMessage)
         }
         return contextMessages
     }

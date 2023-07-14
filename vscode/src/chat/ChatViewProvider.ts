@@ -643,7 +643,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
             return
         }
         // Create a new recipe
-        if (title === 'new') {
+        if (title === 'add') {
             await this.editor.controllers.prompt.add()
             await this.sendMyPrompts()
             return
