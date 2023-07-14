@@ -50,6 +50,7 @@ async function initCompletionsProvider(): Promise<CodyCompletionItemProvider> {
         history,
         codebaseContext: null as any,
         disableTimeouts: true,
+        triggerMoreEagerly: false,
     })
 
     return completionsProvider
@@ -95,7 +96,7 @@ async function generateCompletionsForDataset(codeSamples: string[]): Promise<voi
                 selectedCompletionInfo: undefined,
             })
 
-            const completions = completionItems.map(item =>
+            const completions = ('items' in completionItems ? completionItems.items : completionItems).map(item =>
                 typeof item.insertText === 'string' ? item.insertText : ''
             )
 

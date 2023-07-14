@@ -101,6 +101,7 @@ async function complete(
         history: null as any,
         codebaseContext: null as any,
         disableTimeouts: true,
+        triggerMoreEagerly: false,
     })
 
     if (!code.includes(CURSOR_MARKER)) {
@@ -145,7 +146,7 @@ async function complete(
 
     return {
         requests,
-        completions,
+        completions: 'items' in completions ? completions.items : completions,
     }
 }
 

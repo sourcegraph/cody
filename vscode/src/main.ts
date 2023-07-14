@@ -383,6 +383,7 @@ function createCompletionsProvider(
         codebaseContext,
         isCompletionsCacheEnabled: config.autocompleteAdvancedCache,
         isEmbeddingsContextEnabled: config.autocompleteAdvancedEmbeddings,
+        triggerMoreEagerly: config.autocompleteExperimentalTriggerMoreEagerly,
     })
 
     disposables.push(
