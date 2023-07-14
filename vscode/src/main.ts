@@ -29,7 +29,7 @@ import { getRgPath } from './rg'
 import { AuthProvider } from './services/AuthProvider'
 import { showFeedbackSupportQuickPick } from './services/FeedbackOptions'
 import { GuardrailsProvider } from './services/GuardrailsProvider'
-import { InlineController } from './services/InlineController'
+import { Comment, InlineController } from './services/InlineController'
 import { LocalStorage } from './services/LocalStorageProvider'
 import {
     CODY_ACCESS_TOKEN_SECRET,
@@ -205,6 +205,10 @@ const register = async (
         vscode.commands.registerCommand('cody.comment.delete', (thread: vscode.CommentThread) => {
             const inlineChatProvider = inlineChatManager.getProviderForThread(thread)
             inlineChatProvider.removeChat()
+        }),
+        vscode.commands.registerCommand('cody.comment.stop', async (comment: Comment) => {
+            const inlineChatProvider = inlineChatManager.getProviderForThread(comment.parent)
+            await inlineChatProvider.abortChat()
         }),
         vscode.commands.registerCommand('cody.comment.collapse-all', () =>
             vscode.commands.executeCommand('workbench.action.collapseAllComments')

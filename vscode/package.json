@@ -380,6 +380,14 @@
         "enablement": "!commentIsEmpty && !cody.inline.reply.pending"
       },
       {
+        "command": "cody.comment.stop",
+        "title": "Stop generating",
+        "category": "Cody Inline Chat",
+        "when": "cody.activated && config.cody.inlineChat.enabled",
+        "enablement": "!commentThreadIsEmpty",
+        "icon": "$(debug-stop)"
+      },
+      {
         "command": "cody.comment.delete",
         "title": "Remove Inline Chat",
         "category": "Cody Inline Chat",
@@ -570,6 +578,10 @@
         },
         {
           "command": "cody.comment.delete",
+          "when": "false"
+        },
+        {
+          "command": "cody.comment.stop",
           "when": "false"
         },
         {
@@ -765,13 +777,20 @@
         },
         {
           "command": "cody.comment.open-in-sidebar",
-          "group": "inline@3",
+          "group": "inline@2",
           "when": "cody.activated && commentController =~ /^cody-inline/ && cody.replied && config.cody.inlineChat.enabled"
         },
         {
           "command": "cody.comment.collapse-all",
-          "group": "inline@4",
+          "group": "inline@3",
           "when": "cody.activated && commentController =~ /^cody-inline/ && config.cody.inlineChat.enabled"
+        }
+      ],
+      "comments/comment/title": [
+        {
+          "command": "cody.comment.stop",
+          "group": "inline@1",
+          "when": "cody.activated && commentController =~ /^cody-inline/ && comment =~ /^cody-inline-(streaming|loading)/ && config.cody.inlineChat.enabled"
         }
       ],
       "view/item/context": [

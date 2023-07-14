@@ -5,8 +5,11 @@ import { ChatMessage, UserLocalHistory } from '@sourcegraph/cody-shared/src/chat
 import { ChatViewProviderWebview } from './ChatViewProvider'
 import { MessageProvider, MessageProviderOptions } from './MessageProvider'
 
+const getUniqueKeyForCommentThread = (thread: vscode.CommentThread): string =>
+    `${thread.uri.path}:L${thread.range.start.line}C${thread.range.start.character}-L${thread.range.end.line}C${thread.range.end.character}`
+
 export class InlineChatViewManager {
-    private inlineChatThreadProviders = new Map<vscode.Uri, InlineChatViewProvider>()
+    private inlineChatThreadProviders = new Map<string, InlineChatViewProvider>()
     private messageProviderOptions: MessageProviderOptions
 
     constructor(options: MessageProviderOptions) {
@@ -14,11 +17,12 @@ export class InlineChatViewManager {
     }
 
     public getProviderForThread(thread: vscode.CommentThread): InlineChatViewProvider {
-        let provider = this.inlineChatThreadProviders.get(thread.uri)
+        const threadKey = getUniqueKeyForCommentThread(thread)
+        let provider = this.inlineChatThreadProviders.get(threadKey)
 
         if (!provider) {
             provider = new InlineChatViewProvider({ thread, ...this.messageProviderOptions })
-            this.inlineChatThreadProviders.set(thread.uri, provider)
+            this.inlineChatThreadProviders.set(threadKey, provider)
         }
 
         return provider
@@ -52,6 +56,11 @@ export class InlineChatViewProvider extends MessageProvider {
         this.editor.controllers.inline.delete(this.thread)
     }
 
+    public async abortChat(): Promise<void> {
+        this.editor.controllers.inline.abort()
+        await this.abortCompletion()
+    }
+
     /**
      * Send transcript to the active inline chat thread.
      */
@@ -61,12 +70,19 @@ export class InlineChatViewProvider extends MessageProvider {
         // If we have nothing to show, do nothing.
         // Note that we only care about the assistants response.
         // The users' messages are already added through the comments API.
-        if (!lastMessage.displayText || lastMessage.speaker !== 'assistant') {
+        if (lastMessage?.speaker !== 'assistant') {
             return
         }
 
         this.editor.controllers.inline.setResponsePending(false)
-        this.editor.controllers.inline.reply(lastMessage.displayText, isMessageInProgress ? 'streaming' : 'complete')
+
+        if (lastMessage.displayText) {
+            this.editor.controllers.inline.reply(
+                lastMessage.displayText,
+                isMessageInProgress ? 'streaming' : 'complete'
+            )
+        }
+
         if (!isMessageInProgress) {
             // Finished completing, we can allow users to send another inline chat message.
             void vscode.commands.executeCommand('setContext', 'cody.inline.reply.pending', false)

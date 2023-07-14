@@ -1,4 +1,4 @@
-import { throttle } from 'lodash'
+import { DebouncedFunc, throttle } from 'lodash'
 import * as vscode from 'vscode'
 
 import { ActiveTextEditorSelection } from '@sourcegraph/cody-shared/src/editor'
@@ -31,7 +31,6 @@ export class InlineController {
     private commentController: vscode.CommentController | null = null
     public thread: vscode.CommentThread | null = null // a thread is a comment
     private threads = new Map<string, vscode.CommentThread>()
-    private inProgressComment: Comment | null = null
 
     // A repeating, text-based, loading indicator ("." -> ".." -> "...")
     private responsePendingInterval: NodeJS.Timeout | null = null
@@ -178,6 +177,14 @@ export class InlineController {
         }
         void vscode.commands.executeCommand('setContext', 'cody.replied', false)
     }
+    private getLatestReply(): vscode.Comment | undefined {
+        if (!this.thread || this.thread.comments.length === 0) {
+            return
+        }
+
+        return this.thread.comments[this.thread.comments.length - 1]
+    }
+
     /**
      * List response from Cody as comment
      */
@@ -186,16 +193,28 @@ export class InlineController {
             return
         }
 
-        // Clear out any loading indicator
-        if (state !== 'loading' && this.responsePendingInterval) {
-            this.setResponsePending(false)
+        let contextValue
+        switch (state) {
+            case 'loading':
+                contextValue = 'cody-inline-loading'
+                break
+            case 'streaming':
+                contextValue = 'cody-inline-streaming'
+                break
+            case 'complete':
+            case 'error':
+                contextValue = 'cody-inline-complete'
+                break
         }
 
-        if (this.inProgressComment) {
-            this.inProgressComment.update(text)
+        const latestReply = this.getLatestReply()
+        if (latestReply instanceof Comment && latestReply.author.name === 'Cody') {
+            latestReply.update(text, contextValue)
         } else {
-            this.inProgressComment = new Comment(text, 'Cody', this.codyIcon, this.thread)
-            this.thread.comments = [...this.thread.comments, this.inProgressComment]
+            this.thread.comments = [
+                ...this.thread.comments,
+                new Comment(text, 'Cody', this.codyIcon, this.thread, contextValue),
+            ]
         }
 
         const firstComment = this.thread.comments[0]
@@ -205,10 +224,16 @@ export class InlineController {
 
         // Terminal states
         if (state === 'complete' || state === 'error') {
-            this.inProgressComment = null
             this.thread.state = state === 'error' ? 1 : 0
             this.thread.canReply = state !== 'error'
             void vscode.commands.executeCommand('setContext', 'cody.replied', true)
+        }
+    }
+    public abort(): void {
+        this.setResponsePending(false)
+        const latestReply = this.getLatestReply()
+        if (latestReply instanceof Comment) {
+            latestReply.abort()
         }
     }
     /**
@@ -414,17 +439,20 @@ export class InlineController {
     }
 }
 
-class Comment implements vscode.Comment {
+export class Comment implements vscode.Comment {
     public id: string
     public body: vscode.MarkdownString
     public mode = vscode.CommentMode.Preview
     public author: vscode.CommentAuthorInformation
+    public update: DebouncedFunc<typeof this.unthrottledUpdate>
+    public label?: string | undefined
 
     constructor(
         public input: string,
         public name: string,
         public iconPath: vscode.Uri,
-        public parent: vscode.CommentThread
+        public parent: vscode.CommentThread,
+        public contextValue?: string
     ) {
         const timestamp = new Date(Date.now())
         this.id = timestamp.getTime().toString()
@@ -435,12 +463,22 @@ class Comment implements vscode.Comment {
          * We throttle the update function to ensure we do not try to update the comment too much.
          * Relevant VS Code logic: https://sourcegraph.com/github.com/microsoft/vscode@6c8cdf325eb1dc8a0e2ea9205a1d2ca05f69c101/-/blob/src/vs/workbench/api/common/extHostComments.ts?L461-492
          */
-        this.update = throttle(this.update.bind(this), 100)
+        this.update = throttle(this.unthrottledUpdate.bind(this), 500)
     }
 
-    public update(input: string): void {
+    private unthrottledUpdate(input: string, contextValue: string): void {
         this.body = this.markdown(input)
+        this.contextValue = contextValue
         this.refresh()
+    }
+
+    public abort(): void {
+        if (this.contextValue === 'cody-inline-loading') {
+            this.parent.comments = this.parent.comments.slice(0, -1)
+            this.parent.canReply = true
+        }
+        this.contextValue = undefined
+        this.update.cancel()
     }
 
     private refresh(): void {
