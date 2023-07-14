@@ -1,16 +1,21 @@
 {
   "name": "@sourcegraph/cody-cli",
-  "private": true,
-  "displayName": "Sourcegraph Cody CLI",
   "version": "0.0.1",
   "license": "Apache-2.0",
-  "description": "Cody CLI",
+  "description": "Cody CLI (experimental)",
+  "homepage": "https://cody.dev",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sourcegraph/cody",
+    "directory": "cli"
+  },
   "scripts": {
     "start": "pnpm run --silent build && dist/cody",
     "lint": "pnpm run lint:js",
     "lint:js": "eslint --cache '**/*.[tj]s?(x)'",
     "build": "esbuild ./src/program.ts --bundle --outfile=dist/cody --platform=node --log-level=warning",
-    "build-ts": "tsc --build --emitDeclarationOnly"
+    "build-ts": "tsc --build --emitDeclarationOnly",
+    "prepublishOnly": "pnpm run --silent build"
   },
   "dependencies": {
     "@sourcegraph/cody-shared": "workspace:*",
@@ -21,6 +26,12 @@
     "@types/prompts": "^2.4.4"
   },
   "main": "dist/program.js",
+  "files": [
+    "dist",
+    "src",
+    "!**/*.test.*",
+    "!**/*.tsbuildinfo"
+  ],
   "bin": {
     "cody": "./dist/cody"
   }

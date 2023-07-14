@@ -27,3 +27,13 @@ Use `--help` for a list of command-line options.
 ```shell
 pnpm run start
 ```
+
+### Release
+
+To publish a new release of the `@sourcegraph/cody-cli` package:
+
+1. Increment the `version` in [`package.json`](package.json).
+1. Commit the version increment.
+1. `git tag cli-v$(jq -r .version package.json)`
+1. `git push --tags`
+1. Wait for the [cli-release workflow](https://github.com/sourcegraph/cody/actions/workflows/cli-release.yml) to finish.
