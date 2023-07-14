@@ -647,6 +647,11 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
             await this.editor.controllers.prompt.add()
             await this.sendMyPrompts()
             return
+        } // Create a new recipe
+        if (title === 'clear') {
+            await this.editor.controllers.prompt.clear()
+            await this.sendMyPrompts()
+            return
         }
         this.showTab('chat')
         // Get prompt details from controller by title then execute
