@@ -33,14 +33,14 @@ export class MyPrompt implements Recipe {
 
         const truncatedText = truncateText(promptText, MAX_HUMAN_INPUT_TOKENS)
 
-        // Add com mand output to prompt text when available
+        // Add command output to prompt text when available
         const commandOutput = context.editor.controllers?.prompt.get()
         if (commandOutput) {
-            // promptT ext += `\n${commandOutput}\n`
+            // promptText += `\n${commandOutput}\n`
             promptText += 'Please refer to the command output or the code I am looking at to answer my quesiton.'
         }
 
-        // Add sel ection file name as display when available
+        // Add selection file name as display when available
         const displayText = selection?.fileName ? this.getHumanDisplayText(humanInput, selection?.fileName) : humanInput
 
         return Promise.resolve(
@@ -71,7 +71,7 @@ export class MyPrompt implements Recipe {
         const isCodebaseContextRequired = contextConfig
             ? (JSON.parse(contextConfig) as CodyPromptContext)
             : defaultCodyPromptContext
-        // Codebas e context is not included by default
+        // Codebase context is not included by default
         if (isCodebaseContextRequired.codebase) {
             const codebaseContextMessages = await codebaseContext.getContextMessages(text, {
                 numCodeResults: 12,
@@ -79,28 +79,28 @@ export class MyPrompt implements Recipe {
             })
             contextMessages.push(...codebaseContextMessages)
         }
-        // Create  context messages from open tabs
+        // Create context messages from open tabs
         if (isCodebaseContextRequired.openTabs) {
             const openTabsContext = await MyPrompt.getEditorOpenTabsContext()
             contextMessages.push(...openTabsContext)
         }
-        // Create  context messages from current directory
+        // Create context messages from current directory
         if (isCodebaseContextRequired.currentDir) {
             const currentDirContext = await MyPrompt.getCurrentDirContext()
             contextMessages.push(...currentDirContext)
         }
-        // Add sel ected text as context when available
+        // Add selected text as context when available
         if (selection?.selectedText && !isCodebaseContextRequired.excludeSelection) {
             contextMessages.push(...ChatQuestion.getEditorSelectionContext(selection))
         }
-        // Create  context messages from terminal output if any
+        // Create context messages from terminal output if any
         if (commandOutput) {
             contextMessages.push(...MyPrompt.getTerminalOutputContext(commandOutput))
         }
         return contextMessages.slice(-12)
     }
 
-    // Get con text from current editor open tabs
+    // Get context from current editor open tabs
     public static async getEditorOpenTabsContext(): Promise<ContextMessage[]> {
         const contextMessages: ContextMessage[] = []
         // Get a list of the open tabs
@@ -141,7 +141,7 @@ export class MyPrompt implements Recipe {
         return InlineTouch.getEditorDirContext(currentDoc.fileName.replace(/\/[^/]+$/, ''))
     }
 
-    // Get dis play text for human
+    // Get display text for human
     private getHumanDisplayText(humanChatInput: string, fileName: string): string {
         return humanChatInput + InlineTouch.displayPrompt + fileName
     }
