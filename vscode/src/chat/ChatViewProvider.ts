@@ -118,6 +118,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         const myPromptsWatcher = this.editor.controllers?.prompt?.fileWatcher
         myPromptsWatcher?.onDidCreate(() => this.sendMyPrompts())
         myPromptsWatcher?.onDidChange(() => this.sendMyPrompts())
+        myPromptsWatcher?.onDidDelete(() => this.sendMyPrompts())
 
         // listen for vscode active editor change event
         this.disposables.push(

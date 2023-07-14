@@ -19,6 +19,7 @@ interface CodyPrompt {
         codebase: boolean
         openTabs?: boolean
     }
+    type?: CodyPromptType
 }
 
 interface CodyPromptPremade {
@@ -26,6 +27,8 @@ interface CodyPromptPremade {
     rules: string
     answer: string
 }
+
+type CodyPromptType = 'workspace' | 'user'
 
 const MY_CODY_PROMPTS_KEY = 'my-cody-prompts'
 
@@ -114,15 +117,22 @@ export class MyPromptController {
         return this.tools.runCommand(command, args)
     }
 
-    // Save the prompts to the extension storage
+    // Save the user prompts to the extension storage
     public async save(id: string, prompt: CodyPrompt, deletePrompt = false): Promise<void> {
         if (deletePrompt) {
             this.myPromptStore.delete(id)
         } else {
             this.myPromptStore.set(id, prompt)
         }
+        // filter prompt map to remove prompt with type workspace
+        const filtered = new Map<string, CodyPrompt>()
+        for (const [key, value] of this.myPromptStore) {
+            if (value.type !== 'workspace') {
+                filtered.set(key, value)
+            }
+        }
         // turn prompt map into json
-        const jsonString = JSON.stringify({ recipes: Object.fromEntries(this.myPromptStore) })
+        const jsonString = JSON.stringify({ recipes: Object.fromEntries(filtered) })
         await this.context.globalState.update(MY_CODY_PROMPTS_KEY, jsonString)
     }
 
@@ -196,11 +206,15 @@ class MyRecipesBuilder {
     constructor(private globalState: vscode.Memento, private workspaceRoot: string | null) {}
 
     public async get(): Promise<Map<string, CodyPrompt>> {
+        // reset map and set
+        this.myPromptsMap = new Map<string, CodyPrompt>()
+        this.idSet = new Set<string>()
+        // user prompts
         const storagePrompts = this.getPromptsFromExtensionStorage()
-        this.build(storagePrompts)
-
+        this.build(storagePrompts, 'user')
+        // workspace prompts
         const wsPrompts = await this.getPromptsFromWorkspace(this.workspaceRoot)
-        this.build(wsPrompts)
+        this.build(wsPrompts, 'workspace')
 
         return this.myPromptsMap
     }
@@ -209,7 +223,7 @@ class MyRecipesBuilder {
         return [...this.idSet]
     }
 
-    public build(content: string | null): Map<string, CodyPrompt> | null {
+    public build(content: string | null, type: CodyPromptType): Map<string, CodyPrompt> | null {
         if (!content) {
             return null
         }
@@ -217,7 +231,9 @@ class MyRecipesBuilder {
         const prompts = json.recipes
         for (const key in prompts) {
             if (Object.prototype.hasOwnProperty.call(prompts, key)) {
-                this.myPromptsMap.set(key, prompts[key])
+                const prompt = prompts[key]
+                prompt.type = type
+                this.myPromptsMap.set(key, prompt)
                 this.idSet.add(key)
             }
         }
