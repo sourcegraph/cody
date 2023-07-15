@@ -1,4 +1,4 @@
-name: vscode-nightly
+name: vscode-insiders-release
 
 on:
   schedule:
@@ -19,7 +19,7 @@ jobs:
         with:
           run_install: true
       - run: xvfb-run -a pnpm run test
-      - run: CODY_RELEASE_TYPE=nightly pnpm -C vscode run release
+      - run: CODY_RELEASE_TYPE=insiders pnpm -C vscode run release
         if: github.ref == 'refs/heads/main' && github.repository == 'sourcegraph/cody'
         env:
           VSCODE_MARKETPLACE_TOKEN: ${{ secrets.VSCODE_MARKETPLACE_TOKEN }}

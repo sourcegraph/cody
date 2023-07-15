@@ -1020,7 +1020,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         this.authProvider.webview = webviewView.webview
 
         const extensionPath = vscode.Uri.file(this.extensionPath)
-        const webviewPath = vscode.Uri.joinPath(extensionPath, 'dist')
+        const webviewPath = vscode.Uri.joinPath(extensionPath, 'dist', 'webviews')
 
         webviewView.webview.options = {
             enableScripts: true,
