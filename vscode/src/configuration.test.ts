@@ -30,6 +30,7 @@ describe('getConfiguration', () => {
             autocompleteAdvancedAccessToken: null,
             autocompleteAdvancedCache: true,
             autocompleteAdvancedEmbeddings: true,
+            autocompleteExperimentalTriggerMoreEagerly: false,
         })
     })
 
@@ -74,6 +75,8 @@ describe('getConfiguration', () => {
                         return false
                     case 'cody.autocomplete.advanced.embeddings':
                         return false
+                    case 'cody.autocomplete.experimental.triggerMoreEagerly':
+                        return false
                     case 'cody.plugins.enabled':
                         return true
                     case 'cody.plugins.config':
@@ -111,6 +114,7 @@ describe('getConfiguration', () => {
             autocompleteAdvancedAccessToken: 'foobar',
             autocompleteAdvancedCache: false,
             autocompleteAdvancedEmbeddings: false,
+            autocompleteExperimentalTriggerMoreEagerly: false,
         })
     })
 })

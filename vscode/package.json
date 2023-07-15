@@ -929,6 +929,11 @@
           "default": true,
           "markdownDescription": "Enables the use of embeddings as code completions context."
         },
+        "cody.autocomplete.experimental.triggerMoreEagerly": {
+          "type": "boolean",
+          "default": false,
+          "markdownDescription": "Trigger autocomplete when the cursor is at the end of a word (instead of waiting for a space or other non-word character)."
+        },
         "cody.plugins.enabled": {
           "type": "boolean",
           "default": false,

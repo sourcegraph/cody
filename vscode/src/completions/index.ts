@@ -29,6 +29,7 @@ interface CodyCompletionItemProviderConfig {
     disableTimeouts?: boolean
     isCompletionsCacheEnabled?: boolean
     isEmbeddingsContextEnabled?: boolean
+    triggerMoreEagerly: boolean
 }
 
 export class CodyCompletionItemProvider implements vscode.InlineCompletionItemProvider {
@@ -50,6 +51,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
     private suffixPercentage: number
     private disableTimeouts: boolean
     private isEmbeddingsContextEnabled: boolean
+    private triggerMoreEagerly: boolean
     public inlineCompletionsCache?: CompletionsCache
 
     constructor(config: CodyCompletionItemProviderConfig) {
@@ -64,6 +66,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
             disableTimeouts = false,
             isEmbeddingsContextEnabled = true,
             isCompletionsCacheEnabled = true,
+            triggerMoreEagerly,
         } = config
 
         this.providerConfig = providerConfig
@@ -75,6 +78,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
         this.suffixPercentage = suffixPercentage
         this.disableTimeouts = disableTimeouts
         this.isEmbeddingsContextEnabled = isEmbeddingsContextEnabled
+        this.triggerMoreEagerly = triggerMoreEagerly
 
         this.promptChars =
             providerConfig.maximumContextCharacters - providerConfig.maximumContextCharacters * responsePercentage
@@ -106,7 +110,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
         context: vscode.InlineCompletionContext,
         // Making it optional here to execute multiple suggestion in parallel from the CLI script.
         token?: vscode.CancellationToken
-    ): Promise<vscode.InlineCompletionItem[]> {
+    ): Promise<vscode.InlineCompletionItem[] | vscode.InlineCompletionList> {
         try {
             return await this.provideInlineCompletionItemsInner(document, position, context, token)
         } catch (error: any) {
@@ -127,7 +131,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
         position: vscode.Position,
         context: vscode.InlineCompletionContext,
         token?: vscode.CancellationToken
-    ): Promise<vscode.InlineCompletionItem[]> {
+    ): Promise<vscode.InlineCompletionItem[] | vscode.InlineCompletionList> {
         const abortController = new AbortController()
         if (token) {
             this.abortOpenInlineCompletions()
@@ -148,7 +152,12 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
         }
 
         const languageId = document.languageId
-        const { prefix, suffix, prevLine: sameLinePrefix, prevNonEmptyLine } = docContext
+        const { prefix, suffix, prevNonEmptyLine } = docContext
+
+        /** Text before the cursor on the same line. */
+        const sameLinePrefix = docContext.prevLine
+
+        /** Text after the cursor on the same line. */
         const sameLineSuffix = suffix.slice(0, suffix.indexOf('\n'))
 
         // Avoid showing completions when we're deleting code (Cody can only insert code at the
@@ -161,25 +170,32 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
             // again
             const cachedCompletions = this.inlineCompletionsCache?.get(prefix, false)
             if (cachedCompletions?.isExactPrefix) {
-                return toInlineCompletionItems(cachedCompletions.logId, cachedCompletions.completions)
+                return toInlineCompletionItems(cachedCompletions.logId, position, cachedCompletions.completions)
             }
             return []
         }
 
         const cachedCompletions = this.inlineCompletionsCache?.get(prefix)
         if (cachedCompletions) {
-            return toInlineCompletionItems(cachedCompletions.logId, cachedCompletions.completions)
+            return toInlineCompletionItems(cachedCompletions.logId, position, cachedCompletions.completions)
         }
 
         const completers: Provider[] = []
         let timeout: number
-        // VS Code does not show completions if we are in the process of writing a word or if a
-        // selected completion info is present (so something is selected from the completions
-        // dropdown list based on the lang server) and the returned completion range does not
-        // contain the same selection.
-        if (context.selectedCompletionInfo || /[A-Za-z]$/.test(sameLinePrefix)) {
+
+        // Don't show completions if we are in the process of writing a word.
+        const cursorAtWord = /\w$/.test(sameLinePrefix)
+        if (cursorAtWord && !this.triggerMoreEagerly) {
             return []
         }
+
+        // Don't show completions if a selected completion info is present (so something is selected
+        // from the completions dropdown list based on the lang server) and the returned completion
+        // range does not contain the same selection.
+        if (context.selectedCompletionInfo) {
+            return []
+        }
+
         // If we have a suffix in the same line as the cursor and the suffix contains any word
         // characters, do not attempt to make a completion. This means we only make completions if
         // we have a suffix in the same line for special characters like `)]}` etc.
@@ -224,8 +240,13 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
                 })
             )
         } else {
-            // The current line has a suffix
-            timeout = 20
+            if (cursorAtWord) {
+                // The cursor is at a word and the user might still be typing it, so wait for longer.
+                timeout = 200
+            } else {
+                // The current line has a suffix.
+                timeout = 20
+            }
             completers.push(
                 this.providerConfig.create({
                     ...sharedProviderOptions,
@@ -296,7 +317,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
         if (rankedResults.length > 0) {
             CompletionLogger.suggest(logId)
             this.inlineCompletionsCache?.add(logId, rankedResults)
-            return toInlineCompletionItems(logId, rankedResults)
+            return toInlineCompletionItems(logId, position, rankedResults)
         }
 
         CompletionLogger.noResponse(logId)
@@ -310,15 +331,19 @@ export interface Completion {
     stopReason?: string
 }
 
-function toInlineCompletionItems(logId: string, completions: Completion[]): vscode.InlineCompletionItem[] {
-    return completions.map(
-        completion =>
-            new vscode.InlineCompletionItem(completion.content, undefined, {
-                title: 'Completion accepted',
-                command: 'cody.autocomplete.inline.accepted',
-                arguments: [{ codyLogId: logId, codyLines: completion.content.split('\n').length }],
-            })
-    )
+function toInlineCompletionItems(
+    logId: string,
+    position: vscode.Position,
+    completions: Completion[]
+): vscode.InlineCompletionItem[] {
+    return completions.map(completion => {
+        const lines = completion.content.split(/\r\n|\r|\n/m).length
+        return new vscode.InlineCompletionItem(completion.content, new vscode.Range(position, position), {
+            title: 'Completion accepted',
+            command: 'cody.autocomplete.inline.accepted',
+            arguments: [{ codyLogId: logId, codyLines: lines }],
+        })
+    })
 }
 
 function rankCompletions(completions: Completion[]): Completion[] {
