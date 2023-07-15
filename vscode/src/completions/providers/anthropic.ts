@@ -61,11 +61,11 @@ export class AnthropicProvider extends Provider {
         const prefixMessages: Message[] = [
             {
                 speaker: 'human',
-                text: `You are Cody, a code completion AI developed by Sourcegraph. You write code in between tags like this:${OPENING_CODE_TAG}/* Code goes here */${CLOSING_CODE_TAG}`,
+                text: `You are a code completion AI that writes high-quality code like a senior engineer. You write code in between tags like this:${OPENING_CODE_TAG}/* Code goes here */${CLOSING_CODE_TAG}`,
             },
             {
                 speaker: 'assistant',
-                text: 'I am Cody, a code completion AI developed by Sourcegraph.',
+                text: 'I am a code completion AI that writes high-quality code like a senior engineer.',
             },
             {
                 speaker: 'human',
@@ -73,7 +73,7 @@ export class AnthropicProvider extends Provider {
             },
             {
                 speaker: 'assistant',
-                text: `Okay, here is some code: ${OPENING_CODE_TAG}${tail.trimmed}`,
+                text: `Here is the code: ${OPENING_CODE_TAG}${tail.trimmed}`,
             },
         ]
         return { messages: prefixMessages, prefix: { head, tail, overlap } }

@@ -201,7 +201,7 @@ describe('Cody completions', () => {
         expect(messages[messages.length - 1]).toMatchInlineSnapshot(`
             {
               "speaker": "assistant",
-              "text": "Okay, here is some code: <CODE5711>constructor(startLine: number, startCharacter: number, endLine: number, endCharacter: number) {
+              "text": "Here is the code: <CODE5711>constructor(startLine: number, startCharacter: number, endLine: number, endCharacter: number) {
                     this.startLine =",
             }
         `)
