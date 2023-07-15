@@ -219,7 +219,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
             completers.push(
                 this.providerConfig.create({
                     ...sharedProviderOptions,
-                    n: 3,
+                    n: 3, // 3 vs. 1 does not meaningfully affect perf
                     multilineMode,
                 })
             )
@@ -229,7 +229,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
             completers.push(
                 this.providerConfig.create({
                     ...sharedProviderOptions,
-                    n: 3,
+                    n: 1, // 1 vs. 3 improves perf
                     multilineMode: null,
                 })
             )
