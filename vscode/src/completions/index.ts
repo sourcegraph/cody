@@ -141,8 +141,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
 
         CompletionLogger.clear()
 
-        const currentEditor = vscode.window.activeTextEditor
-        if (!currentEditor || currentEditor?.document.uri.scheme === 'cody') {
+        if (!vscode.window.activeTextEditor || document.uri.scheme === 'cody') {
             return []
         }
 
@@ -234,6 +233,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
             timeout = 100
             completers.push(
                 this.providerConfig.create({
+                    id: 'multiline',
                     ...sharedProviderOptions,
                     n: 3, // 3 vs. 1 does not meaningfully affect perf
                     multilineMode,
@@ -249,6 +249,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
             }
             completers.push(
                 this.providerConfig.create({
+                    id: 'single-line-suffix',
                     ...sharedProviderOptions,
                     n: 1, // 1 vs. 3 improves perf
                     multilineMode: null,
@@ -267,7 +268,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
         }
 
         const { context: similarCode, logSummary: contextSummary } = await getContext({
-            currentEditor,
+            document,
             prefix,
             suffix,
             history: this.history,
@@ -298,7 +299,18 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
         }
 
         const completions = (
-            await Promise.all(completers.map(c => c.generateCompletions(abortController.signal, similarCode)))
+            await Promise.all(
+                completers.map(async c => {
+                    const generateCompletionsStart = Date.now()
+                    const completions = await c.generateCompletions(abortController.signal, similarCode)
+                    debug(
+                        'CodyCompletionProvider:inline:timing',
+                        `${Math.round(Date.now() - generateCompletionsStart)}ms`,
+                        { id: c.id }
+                    )
+                    return completions
+                })
+            )
         ).flat()
 
         // Shared post-processing logic
