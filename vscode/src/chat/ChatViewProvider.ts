@@ -370,7 +370,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                         if (!rootPath) {
                             return Promise.resolve({})
                         }
-                        return fastFilesExist(this.rgPath, rootPath, filePaths)
+                        return fastFilesExist(rootPath, filePaths)
                     }
                     let { text: highlightedDisplayText } = await highlightTokens(
                         displayText || '',

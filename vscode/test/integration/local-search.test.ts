@@ -1,32 +1,21 @@
 import * as assert from 'assert'
-import path from 'path'
 
 import * as vscode from 'vscode'
 
 import { fastFilesExist } from '../../src/chat/fastFileFinder'
-import { getRgPath } from '../../src/rg'
 
 import { afterIntegrationTest, beforeIntegrationTest } from './helpers'
 
 suite('Local search', function () {
-    let mockRgPath: string | undefined
-    this.beforeEach(() => {
-        mockRgPath = process.env.MOCK_RG_PATH
-        process.env.MOCK_RG_PATH = ''
-        void beforeIntegrationTest()
-    })
-    this.afterEach(() => {
-        void afterIntegrationTest()
-        process.env.MOCK_RG_PATH = mockRgPath
-    })
+    this.beforeEach(() => beforeIntegrationTest())
+    this.afterEach(() => afterIntegrationTest())
 
     test('fast file finder', async () => {
         const workspaceFolders = vscode.workspace.workspaceFolders
         assert.ok(workspaceFolders)
         assert.ok(workspaceFolders.length >= 1)
 
-        const rgPath = await getRgPath(path.join(__dirname, '..', '..', '..'))
-        const filesExistMap = await fastFilesExist(rgPath, workspaceFolders[0].uri.fsPath, [
+        const filesExistMap = await fastFilesExist(workspaceFolders[0].uri.fsPath, [
             'lib',
             'batches',
             'env',
@@ -39,11 +28,11 @@ suite('Local search', function () {
         ])
         assert.deepStrictEqual(filesExistMap, {
             lib: true,
-            batches: true,
-            env: true,
-            'var.go': true,
+            batches: false,
+            env: false,
+            'var.go': false,
             'lib/batches': true,
-            'batches/env': true,
+            'batches/env': false,
             'lib/batches/env/var.go': true,
             'lib/batches/var.go': false,
             './lib/codeintel/tools/lsif-visualize/visualize.go': true,
