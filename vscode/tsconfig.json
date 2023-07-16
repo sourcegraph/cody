@@ -3,7 +3,7 @@
   "compilerOptions": {
     "sourceMap": true,
     "rootDir": ".",
-    "outDir": "dist",
+    "outDir": "dist/tsc",
     "jsx": "react-jsx",
     "lib": ["ESNext", "DOM"],
   },

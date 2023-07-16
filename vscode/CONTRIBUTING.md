@@ -31,6 +31,6 @@ To publish a new release to the [VS Code Marketplace](https://marketplace.visual
 1. Commit the version increment.
 1. `git tag vscode-v$(jq -r .version package.json)`
 1. `git push --tags`
-1. Wait for the [vscode-release workflow](https://github.com/sourcegraph/cody/actions/workflows/vscode-release.yml) to finish.
+1. Wait for the [vscode-stable-release workflow](https://github.com/sourcegraph/cody/actions/workflows/vscode-stable-release.yml) to finish.
 
-Nightly builds are published automatically daily at 1500 UTC (see [vscode-nightly workflow](https://github.com/sourcegraph/cody/actions/workflows/vscode-nightly.yml)).
+Insiders builds are published automatically daily at 1500 UTC (see [vscode-insiders-release workflow](https://github.com/sourcegraph/cody/actions/workflows/vscode-insiders-release.yml)). You can also manually trigger an insiders release.
