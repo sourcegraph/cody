@@ -7,36 +7,36 @@ import path from 'path'
 import * as vscode from 'vscode'
 import { URI } from 'vscode-uri'
 
-import { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/nodeClient'
+import { NoopEditor } from '@sourcegraph/cody-shared/src/editor'
 
-import { CodyCompletionItemProvider } from '../../completions'
-import { History } from '../../completions/history'
-import { createProviderConfig } from '../../completions/providers/anthropic'
-import { getFullConfig } from '../../configuration'
-import { logger } from '../../log'
-import { InMemorySecretStorage } from '../../services/SecretStorageProvider'
+import { CodyCompletionItemProvider } from '../../src/completions'
+import { History } from '../../src/completions/history'
+import { createProviderConfig } from '../../src/completions/providers/anthropic'
+import { getFullConfig } from '../../src/configuration'
+import { configureExternalServices } from '../../src/external-services'
+import { InMemorySecretStorage } from '../../src/services/SecretStorageProvider'
 
 import { completionsDataset, CURSOR } from './completions-dataset'
 import { ENVIRONMENT_CONFIG } from './environment-config'
 import { findSubstringPosition } from './utils'
 import { TextDocument } from './vscode-text-document'
 
-const noopStatusBar = {
-    startLoading: () => () => {},
-} as any
-
 async function initCompletionsProvider(): Promise<CodyCompletionItemProvider> {
     const secretStorage = new InMemorySecretStorage()
     await secretStorage.store('cody.access-token', ENVIRONMENT_CONFIG.SOURCEGRAPH_ACCESS_TOKEN)
 
     const initialConfig = await getFullConfig(secretStorage)
-    console.log('Running `initCompletionsProvider` with config:', initialConfig)
-
-    const completionsClient = new SourcegraphNodeCompletionsClient(initialConfig, logger)
+    console.error('Running `initCompletionsProvider` with config:', initialConfig)
 
     if (!initialConfig.autocomplete) {
         throw new Error('`cody.autocomplete` is not true!')
     }
+
+    const { completionsClient, codebaseContext } = await configureExternalServices(
+        initialConfig,
+        'rg',
+        new NoopEditor()
+    )
 
     const history = new History()
 
@@ -46,11 +46,16 @@ async function initCompletionsProvider(): Promise<CodyCompletionItemProvider> {
     })
     const completionsProvider = new CodyCompletionItemProvider({
         providerConfig,
-        statusBar: noopStatusBar,
+        statusBar: {
+            startLoading: () => () => {},
+            dispose: () => {},
+        },
         history,
-        codebaseContext: null as any,
+        codebaseContext,
         disableTimeouts: true,
         triggerMoreEagerly: false,
+        isCompletionsCacheEnabled: false,
+        isEmbeddingsContextEnabled: true,
     })
 
     return completionsProvider
@@ -68,29 +73,33 @@ function prepareTextDocument(code: string): { textDocument: TextDocument; positi
 
     // Remove CURSOR marks from the code before processing it further.
     const completionReadyCode = code.replaceAll(CURSOR, '')
-    const textDocument = new TextDocument(URI.parse('/whatever/'), completionReadyCode)
+    const textDocument = new TextDocument(URI.parse('file:///example.ts'), completionReadyCode)
 
     return { textDocument, position }
 }
 
 interface CompletionResult {
     completions: string[]
+    elapsed: number
     timestamp: string
     code: string
 }
+
+const iterationsPerCodeSample = parseInt(process.env.ITER || '1', 10)
 
 // TODO: use VSCode mocked APIs to provide context for the completions provider
 // See vscode/src/completions/context.ts:10:23
 async function generateCompletionsForDataset(codeSamples: string[]): Promise<void> {
     const completionsProvider = await initCompletionsProvider()
 
+    const timestamp = Date.now().toString()
     const results: CompletionResult[] = []
-    const timestamp = new Date().getTime().toString()
+    for (const [index, code] of codeSamples.entries()) {
+        const { textDocument, position } = prepareTextDocument(code)
 
-    await Promise.all(
-        codeSamples.map(async (code, index) => {
-            const { textDocument, position } = prepareTextDocument(code)
-
+        const codeSampleResults: CompletionResult[] = []
+        for (let i = 0; i < iterationsPerCodeSample; i++) {
+            const start = Date.now()
             const completionItems = await completionsProvider.provideInlineCompletionItems(textDocument, position, {
                 triggerKind: 1,
                 selectedCompletionInfo: undefined,
@@ -99,18 +108,22 @@ async function generateCompletionsForDataset(codeSamples: string[]): Promise<voi
             const completions = ('items' in completionItems ? completionItems.items : completionItems).map(item =>
                 typeof item.insertText === 'string' ? item.insertText : ''
             )
-
-            console.log(`#${index}`, completions)
-
-            // Write completionItems, timestamp and code to a JSON file
-            const data = {
+            console.error(`#${index}@i=${i}`, completions)
+            codeSampleResults.push({
                 completions,
+                elapsed: Date.now() - start,
                 timestamp,
                 code,
-            }
-            results.push(data)
-        })
-    )
+            })
+        }
+        results.push(...codeSampleResults)
+
+        if (iterationsPerCodeSample > 1) {
+            const meanElapsed =
+                codeSampleResults.reduce((acc, result) => acc + result.elapsed, 0) / codeSampleResults.length
+            console.error(`#${index} mean elapsed: ${Math.round(meanElapsed)}ms`)
+        }
+    }
 
     // TODO: prettfy path management
     // Save results to a JSON file in the completions-review-tool/data folder to be used by the review tool:
@@ -118,10 +131,7 @@ async function generateCompletionsForDataset(codeSamples: string[]): Promise<voi
     fs.mkdirSync(ENVIRONMENT_CONFIG.OUTPUT_PATH, { recursive: true })
     const filename = path.join(ENVIRONMENT_CONFIG.OUTPUT_PATH, `completions-${timestamp}.json`)
     fs.writeFileSync(filename, JSON.stringify(results, null, 2))
-    console.log(
-        '\n✅ Completions saved to:',
-        filename.slice(filename.indexOf('/sourcegraph/') + '/sourcegraph/'.length)
-    )
+    console.log('\n✅ Completions saved to:', filename)
 }
 
 generateCompletionsForDataset(completionsDataset).catch(console.error)

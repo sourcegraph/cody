@@ -10,7 +10,7 @@ import type { ReferenceSnippet } from './context'
 import { logCompletionEvent } from './logger'
 
 interface Options {
-    currentEditor: vscode.TextEditor
+    document: vscode.TextDocument
     prefix: string
     suffix: string
     codebaseContext: CodebaseContext
@@ -26,9 +26,9 @@ const embeddingsPerFile = new LRUCache<string, EmbeddingsForFile>({
 })
 
 export function getContextFromEmbeddings(options: Options): ReferenceSnippet[] {
-    const { currentEditor, codebaseContext, prefix, suffix } = options
+    const { document, codebaseContext, prefix, suffix } = options
 
-    const currentFilePath = path.normalize(currentEditor.document.fileName)
+    const currentFilePath = path.normalize(document.fileName)
     const embeddingsForCurrentFile = embeddingsPerFile.get(currentFilePath)
 
     /**

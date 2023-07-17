@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import type * as vscode from 'vscode'
+import { URI } from 'vscode-uri'
 
 import {
     CompletionParameters,
@@ -9,6 +10,7 @@ import {
 import { vsCodeMocks } from '../testutils/mocks'
 
 import { CodyCompletionItemProvider } from '.'
+import { History } from './history'
 import { createProviderConfig } from './providers/anthropic'
 
 vi.mock('vscode', () => ({
@@ -36,6 +38,11 @@ vi.mock('vscode', () => ({
         onDidChangeTextDocument() {
             return null
         },
+    },
+    window: {
+        ...vsCodeMocks.window,
+        visibleTextEditors: [],
+        tabGroups: { all: [] },
     },
 }))
 
@@ -98,7 +105,7 @@ async function complete(
     const completionProvider = new CodyCompletionItemProvider({
         providerConfig,
         statusBar: noopStatusBar,
-        history: null as any,
+        history: new History(),
         codebaseContext: null as any,
         disableTimeouts: true,
         triggerMoreEagerly: false,
@@ -120,6 +127,7 @@ async function complete(
     }
     const document: any = {
         filename: 'test.ts',
+        uri: URI.parse('file:///test.ts'),
         languageId,
         offsetAt(): number {
             return 0
