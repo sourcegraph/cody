@@ -59,11 +59,13 @@ export async function createClient({
     createCompletionsClient = config => new SourcegraphBrowserCompletionsClient(config),
 }: ClientInit): Promise<Client> {
     const fullConfig = { debugEnable: false, ...config }
+    const graphqlClient = new SourcegraphGraphQLAPIClient(fullConfig)
+    // const codyEnabled = await graphqlClient.isCodyEnabled()
+    // if (!codyEnabled) {
+    // }
 
     const completionsClient = createCompletionsClient(fullConfig)
     const chatClient = new ChatClient(completionsClient)
-
-    const graphqlClient = new SourcegraphGraphQLAPIClient(fullConfig)
 
     const repoId = config.codebase ? await graphqlClient.getRepoIdIfEmbeddingExists(config.codebase) : null
     if (isError(repoId)) {

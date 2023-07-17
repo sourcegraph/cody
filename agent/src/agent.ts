@@ -1,6 +1,7 @@
 import { Client, createClient } from '@sourcegraph/cody-shared/src/chat/client'
 import { registeredRecipes } from '@sourcegraph/cody-shared/src/chat/recipes/agent-recipes'
 import { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/nodeClient'
+import { SourcegraphGraphQLAPIClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
 
 import { AgentEditor } from './editor'
 import { MessageHandler } from './jsonrpc'
@@ -85,16 +86,24 @@ export class Agent extends MessageHandler {
     }
 
     private setClient(config: ConnectionConfiguration): void {
-        this.client = createClient({
-            editor: new AgentEditor(this),
-            config: { ...config, useContext: 'none' },
-            setMessageInProgress: messageInProgress => {
-                this.notify('chat/updateMessageInProgress', messageInProgress)
-            },
-            setTranscript: () => {
-                // Not supported yet by agent.
-            },
-            createCompletionsClient: config => new SourcegraphNodeCompletionsClient(config),
-        })
+        const graphqlClient = new SourcegraphGraphQLAPIClient(config)
+        const voided = graphqlClient
+            .isCodyEnabled()
+            .catch(error => console.error(error))
+            .then(x => {
+                if (x?.enabled) {
+                    this.client = createClient({
+                        editor: new AgentEditor(this),
+                        config: { ...config, useContext: 'none' },
+                        setMessageInProgress: messageInProgress => {
+                            this.notify('chat/updateMessageInProgress', messageInProgress)
+                        },
+                        setTranscript: () => {
+                            // Not supported yet by agent.
+                        },
+                        createCompletionsClient: config => new SourcegraphNodeCompletionsClient(config),
+                    })
+                }
+            })
     }
 }
