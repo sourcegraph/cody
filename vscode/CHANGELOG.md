@@ -8,9 +8,16 @@ Starting from `0.2.0`, Cody is using `major.EVEN_NUMBER.patch` for release versi
 
 ### Added
 
+- [Internal Only] `Custom Recipe`: Support context type selection when creating a new recipe via UI. [pull/279](https://github.com/sourcegraph/cody/pull/279)
+
 ### Fixed
 
+- Cody should no longer reply users with response related to the language-uage instruction. [pull/279](https://github.com/sourcegraph/cody/pull/279)
+
 ### Changed
+
+- Exclude context for chat input with only one word. [pull/279](https://github.com/sourcegraph/cody/pull/279)
+- [Internal Only] `Custom Recipe`: Store `cody.json` file for user recipes within the `.vscode` folder located in the $HOME directory. [pull/279](https://github.com/sourcegraph/cody/pull/279)
 
 ## [0.4.4]
 
