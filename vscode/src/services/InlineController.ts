@@ -57,6 +57,11 @@ export class InlineController {
         this.userIcon = getIconPath('user', this.extensionPath)
         this.commentController = this.init()
         this._disposables.push(this.commentController)
+
+        if (vscode.window.activeTextEditor?.document.uri.scheme === 'file') {
+            this.document = VSCodeEditor.convertTextDocument(vscode.window.activeTextEditor.document)
+        }
+
         // Toggle Inline Chat on Config Change
         vscode.workspace.onDidChangeConfiguration(e => {
             const config = vscode.workspace.getConfiguration('cody')

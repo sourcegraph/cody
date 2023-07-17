@@ -132,14 +132,17 @@ export abstract class Editor {
 
     /** Edits are applied LSP-style (indices unshifted); returns whether the edit was successful */
     public abstract edit(uri: Uri, edits: TextEdit[]): Promise<boolean>
+    /** TODO: Remove this and only use edit; this would require a massive refactor, so it'll
+    be completed in another PR */
+    public abstract replaceSelection(fileName: string, selectedText: string, replacement: string): Promise<void>
     public abstract quickPick(labels: string[]): Promise<string | null>
     public abstract warn(message: string): Promise<void>
     public abstract prompt(prompt?: string): Promise<string | null>
 
     public abstract getIndentation(): Indentation
 
-    // TODO: When Non-Stop Fixup doesn't depend directly on the chat view,
-    // move the recipe to client/cody and remove this entrypoint.
+    /** TODO: When Non-Stop Fixup doesn't depend directly on the chat view,
+    move the recipe to client/cody and remove this entrypoint. */
     public abstract didReceiveFixupText(id: string, text: string, state: 'streaming' | 'complete'): Promise<void>
 
     public getActiveWorkspaceRootPath(): string | null {
@@ -278,6 +281,10 @@ export class NoopEditor extends Editor {
 
     public edit(uri: string, edits: TextEdit[]): Promise<boolean> {
         return Promise.resolve(false)
+    }
+
+    public replaceSelection(fileName: string, selectedText: string, replacement: string): Promise<void> {
+        return Promise.resolve()
     }
 
     public quickPick(labels: string[]): Promise<string | null> {

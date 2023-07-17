@@ -53,6 +53,10 @@ export class AgentEditor extends Editor {
         throw new Error('Method not implemented.')
     }
 
+    public replaceSelection(fileName: string, selectedText: string, replacement: string): Promise<void> {
+        throw new Error('Method not implemented.')
+    }
+
     public quickPick(labels: string[]): Promise<string | null> {
         throw new Error('Method not implemented.')
     }

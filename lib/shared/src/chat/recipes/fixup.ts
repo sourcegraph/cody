@@ -1,6 +1,6 @@
 import { CodebaseContext } from '../../codebase-context'
 import { ContextMessage } from '../../codebase-context/messages'
-import { Editor, uriToPath } from '../../editor'
+import { Editor } from '../../editor'
 import { MAX_CURRENT_FILE_TOKENS, MAX_HUMAN_INPUT_TOKENS } from '../../prompt/constants'
 import { truncateText, truncateTextStart } from '../../prompt/truncation'
 import { BufferedBotResponseSubscriber } from '../bot-response-multiplexer'
@@ -14,16 +14,18 @@ export class Fixup implements Recipe {
 
     public async getInteraction(humanChatInput: string, context: RecipeContext): Promise<Interaction | null> {
         // TODO: Prompt the user for additional direction.
+        const workspace = context.editor.getActiveWorkspace()
         const active = context.editor.getActiveTextDocument() || context.editor.controllers?.inline.document
 
-        if (!active) {
+        if (!workspace || !active) {
             return null
         }
 
         const selection = Editor.getTextDocumentSelectionText(active) || context.editor.controllers?.inline.selection
         const selectionRange = active.selection || context.editor.controllers?.inline.selectionRange
+        const fileName = workspace?.relativeTo(active.uri)
 
-        if (!selection || !selectionRange) {
+        if (!selection || !selectionRange || !fileName) {
             await context.editor.controllers?.inline.error()
             await context.editor.warn('Select some code to fixup.')
             return null
@@ -46,7 +48,7 @@ export class Fixup implements Recipe {
             .replace('{truncateFollowingText}', truncateText(selection.followingText, quarterFileContext))
             .replace('{selectedText}', selection.selectedText)
             .replace('{truncateTextStart}', truncateTextStart(selection.precedingText, quarterFileContext))
-            .replace('{fileName}', uriToPath(active.uri)!)
+            .replace('{fileName}', fileName)
 
         context.responseMultiplexer.sub(
             'selection',
@@ -58,12 +60,18 @@ export class Fixup implements Recipe {
                     )
                     return
                 }
-                await context.editor.edit(active.uri, [
-                    {
-                        range: selectionRange,
-                        newText: contentSanitizer(content),
-                    },
-                ])
+                // TODO: In the future, this'll be the optimal way to this,
+                // but there's currently some custom document edit based
+                // functionality for communicating successful Cody fixuos
+                // that must be rewritten
+
+                // await context.editor.edit(active.uri, [
+                //     {
+                //         range: selectionRange,
+                //         newText: contentSanitizer(content),
+                //     },
+                // ])
+                await context.editor.replaceSelection(fileName, selection.selectedText, contentSanitizer(content))
             })
         )
 

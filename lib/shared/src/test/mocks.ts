@@ -83,6 +83,10 @@ export class MockEditor extends Editor {
         return this.mocks.edit?.(uri, edits) ?? Promise.resolve(false)
     }
 
+    public replaceSelection(fileName: string, selectedText: string, replacement: string): Promise<void> {
+        return this.mocks.replaceSelection?.(fileName, selectedText, replacement) ?? Promise.resolve()
+    }
+
     public quickPick(labels: string[]): Promise<string | null> {
         return this.mocks.quickPick?.(labels) ?? Promise.resolve(null)
     }
