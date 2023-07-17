@@ -930,7 +930,7 @@
         "cody.autocomplete.experimental.triggerMoreEagerly": {
           "type": "boolean",
           "default": false,
-          "markdownDescription": "Trigger autocomplete when the cursor is at the end of a word (instead of waiting for a space or other non-word character)."
+          "markdownDescription": "Trigger autocomplete when the cursor is at the end of a word (instead of waiting for a space or other non-word character). Share feedback at https://github.com/sourcegraph/cody/discussions/274."
         },
         "cody.plugins.enabled": {
           "type": "boolean",
