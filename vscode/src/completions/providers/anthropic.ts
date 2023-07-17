@@ -11,11 +11,12 @@ import {
     extractFromCodeBlock,
     fixBadCompletionStart,
     getHeadAndTail,
+    indentation,
     OPENING_CODE_TAG,
     PrefixComponents,
     trimStartUntilNewline,
 } from '../text-processing'
-import { batchCompletions, messagesToText } from '../utils'
+import { batchCompletions, lastNLines, messagesToText } from '../utils'
 
 import { Provider, ProviderConfig, ProviderOptions } from './provider'
 
@@ -112,6 +113,7 @@ export class AnthropicProvider extends Provider {
 
     private postProcess(rawResponse: string): string {
         let completion = extractFromCodeBlock(rawResponse)
+        const startIndentation = indentation(lastNLines(this.prefix, 1) + completion.split('\n')[0])
 
         const trimmedPrefixContainNewline = this.prefix.slice(this.prefix.trimEnd().length).includes('\n')
         if (trimmedPrefixContainNewline) {
@@ -127,9 +129,16 @@ export class AnthropicProvider extends Provider {
 
         // Remove incomplete lines in single-line completions
         if (this.multilineMode === null) {
-            const allowedNewlines = 2
+            let allowedNewlines = 2
             const lines = completion.split('\n')
             if (lines.length >= allowedNewlines) {
+                // Only select two lines if they have the same indentation, otherwise only show one
+                // line. This will then most-likely trigger a multi-line completion after accepting
+                // and result in a better experience.
+                if (lines.length > 1 && startIndentation !== indentation(lines[1])) {
+                    allowedNewlines = 1
+                }
+
                 completion = lines.slice(0, allowedNewlines).join('\n')
             }
         }

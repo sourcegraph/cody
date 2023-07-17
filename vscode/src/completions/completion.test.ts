@@ -234,6 +234,47 @@ describe('Cody completions', () => {
         `)
     })
 
+    it('completes up to two lines in single line mode', async () => {
+        const { completions } = await complete(
+            `
+        function test() {
+            console.log(1);
+            ${CURSOR_MARKER}
+        }
+        `,
+            [createCompletionResponse('console.log(2);\n    console.log(3);\n    console.log(4);')]
+        )
+
+        expect(completions).toMatchInlineSnapshot(`
+          [
+            InlineCompletionItem {
+              "insertText": "console.log(2);
+              console.log(3);",
+            },
+          ]
+        `)
+    })
+
+    it('only complete one line if the second line is indented in single line mode', async () => {
+        const { completions } = await complete(
+            `
+        function test() {
+            console.log(1);
+            ${CURSOR_MARKER}
+        }
+        `,
+            [createCompletionResponse('if (true) {\n        console.log(3);\n    }\n    console.log(4);')]
+        )
+
+        expect(completions).toMatchInlineSnapshot(`
+          [
+            InlineCompletionItem {
+              "insertText": "if (true) {",
+            },
+          ]
+        `)
+    })
+
     it('completes a single-line at the middle of a sentence', async () => {
         const { completions } = await complete(`function bubbleSort(${CURSOR_MARKER})`, [
             createCompletionResponse('array) {'),
