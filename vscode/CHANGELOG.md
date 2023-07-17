@@ -12,7 +12,7 @@ Starting from `0.2.0`, Cody is using `major.EVEN_NUMBER.patch` for release versi
 
 ### Fixed
 
-- Insert at Cusor now inserts the complete code snippets at cursor position. [pull/](https://github.com/sourcegraph/cody/pull/)
+- Insert at Cusor now inserts the complete code snippets at cursor position. [pull/282](https://github.com/sourcegraph/cody/pull/282)
 
 ### Changed
 
