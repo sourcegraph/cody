@@ -181,11 +181,12 @@ export class MyPrompt implements Recipe {
     // Get context from a file path
     public static async getFilePathContext(filePath: string): Promise<ContextMessage[]> {
         const fileUri = vscode.Uri.file(filePath)
+        const fileName = vscode.workspace.asRelativePath(filePath)
         try {
             const content = await vscode.workspace.fs.readFile(fileUri)
             const truncatedContent = truncateText(content.toString(), MAX_CURRENT_FILE_TOKENS)
-            return getContextMessageWithResponse(populateCodeContextTemplate(truncatedContent, filePath), {
-                fileName: filePath,
+            return getContextMessageWithResponse(populateCodeContextTemplate(truncatedContent, fileName), {
+                fileName,
             })
         } catch (error) {
             console.error(error)
@@ -235,8 +236,8 @@ async function populateVscodeDirContextMessage(
     const contextMessages: ContextMessage[] = []
     for (const file of filesInDir) {
         // Get the context from each file
-        const fileName = vscode.Uri.joinPath(dirUri, file[0]).fsPath
         const fileUri = vscode.Uri.joinPath(dirUri, file[0])
+        const fileName = vscode.workspace.asRelativePath(fileUri.fsPath)
         // check file size before opening the file
         // skip file if it's larger than 1MB
         const fileSize = await vscode.workspace.fs.stat(fileUri)

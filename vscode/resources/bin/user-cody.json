@@ -12,6 +12,13 @@
       "command": "gh",
       "args": ["search", "repos", "sourcegraph", "deploy"],
       "note": "You must have gh command installed and authenticated to use this recipe"
+    },
+    "Generate Unit Tests": {
+      "prompt": "Generate multiple unit tests with full workable code",
+      "context": {
+        "currentDir": true
+      },
+      "note": "Works best if there are other test files in the current directory"
     }
   }
 }

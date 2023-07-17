@@ -7,19 +7,6 @@
         "none": true
       }
     },
-    "Refactor Code": {
-      "prompt": "Suggest ways to refactor the selected code to improve readability and maintainability",
-      "context": {
-        "currentDir": true
-      }
-    },
-    "Compare Files in Opened Tabs": {
-      "prompt": "Compare the code and explain how they are related",
-      "context": {
-        "openTabs": true,
-        "excludeSelection": true
-      }
-    },
     "Generate README.md for Current Directory": {
       "prompt": "Create a README.md for this directory.",
       "context": {
@@ -46,12 +33,6 @@
         "excludeSelection": true
       },
       "note": "You must have Cody app installed to use this recipe"
-    },
-    "GH Search: Deploy Repoes not owned by Sourcegraph": {
-      "prompt": "What are the names of repositories that are used for deploying Sourcegraph but is not directly owned by Sourcegraph?",
-      "command": "gh",
-      "args": ["search", "repos", "sourcegraph", "deploy"],
-      "note": "You must have gh command installed and authenticated to use this recipe"
     }
   }
 }
