@@ -148,14 +148,12 @@ export interface ExecuteRecipeParams {
 
 export interface QuickPickParams {
     items: QuickPickItem[]
-
-    /* The default ID from itesm */
-    default?: string
 }
 
 export interface QuickPickItem {
     id: string
     title: string
+    default?: boolean
 }
 
 export interface QuickPickSelection {
