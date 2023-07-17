@@ -14,6 +14,43 @@ const escapeHTML = (html: string): string => {
 }
 
 /**
+ * Checks if a given HTML tag is a valid, non-custom HTML tag
+ *
+ * @example isValidHTMLTag('a') and isValidHTMLTag('svg') will return true
+ * @example isValidHTMLTag('myTag') will return false
+ * @param tag A HTML tag (e.g. img, svg, my-custom-tag)
+ * @returns If the given tag is a valid HTML tag
+ */
+export const isValidHTMLTag = (tag: string): boolean => {
+    // svg is not a valid HTML tag for document.createElement but should still be treated as valid.
+    const overrides: { [key: string]: boolean } = { SVG: true }
+
+    tag = tag.toUpperCase()
+    try {
+        return (
+            overrides[tag] ||
+            // eslint-disable-next-line @typescript-eslint/no-base-to-string
+            document.createElement(tag).toString() !== '[object HTMLUnknownElement]'
+        )
+    } catch {
+        return false
+    }
+}
+
+/**
+ * Extracts the name of the HTML tag of a given HTML token
+ *
+ * @param htmlToken The text of the HTML token (e.g. <img> or </img> or <img someAttribute>)
+ * @returns The name of the HTML tag (e.g. img)
+ */
+export const extractHtmlTagName = (htmlToken: string): string => {
+    // remove the leading < or </ if present
+    htmlToken = htmlToken.replace(/<\/?/, '')
+    // matches the first word consisting of alphanumeric characters, representing the html tag name
+    return htmlToken.match(/^[\dA-Za-z]*/)?.[0] ?? ''
+}
+
+/**
  * Attempts to syntax-highlight the given code.
  * If the language is not given, it is auto-detected.
  * If an error occurs, the code is returned as plain text with escaped HTML entities
@@ -76,11 +113,27 @@ export const renderMarkdown = (
         tokenizer.url = () => undefined as unknown as marked.Tokens.Link
     }
 
+    const renderer = options.renderer ?? new marked.Renderer()
+    renderer.options.walkTokens = (token: marked.Token) => {
+        if (token.type !== 'html') {
+            return
+        }
+
+        const tagName = extractHtmlTagName(token.text)
+        if (isValidHTMLTag(tagName)) {
+            return
+        }
+
+        // all custom HTML tags should be escaped as they are probably part of a text block or a regex.
+        // Otherwise they would be removed by the sanitizer
+        token.text = token.text.replaceAll('<', '&lt;').replaceAll('>', '&gt;')
+    }
+
     const rendered = marked(markdown, {
         gfm: true,
         breaks: options.breaks,
         highlight: (code, language) => highlightCodeSafe(code, language),
-        renderer: options.renderer,
+        renderer,
         headerPrefix: options.headerPrefix ?? '',
         tokenizer,
     })
