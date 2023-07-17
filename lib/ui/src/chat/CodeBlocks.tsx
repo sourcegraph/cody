@@ -87,31 +87,9 @@ function createInsertButton(
     button.title = 'Insert text at current cursor position'
     button.className = classNames(styles.insertButton, className)
     button.addEventListener('click', () => {
-        const selectedText = getSelectedTextWithin(container.querySelector('pre'))
-        copyButtonOnSubmit(selectedText || text, true)
+        copyButtonOnSubmit(text, true)
     })
     return button
-}
-
-function getSelectedTextWithin(element: HTMLElement | null): string | null {
-    if (!element) {
-        return null
-    }
-
-    const selection = document.getSelection()
-    if (!selection) {
-        return null
-    }
-
-    const range = selection.getRangeAt(0)
-    const startContainer = range.startContainer
-    const endContainer = range.endContainer
-
-    if (element.contains(startContainer) && element.contains(endContainer)) {
-        return selection.toString()
-    }
-
-    return null
 }
 
 export const CodeBlocks: React.FunctionComponent<CodeBlocksProps> = React.memo(function CodeBlocksContent({
