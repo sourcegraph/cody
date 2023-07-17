@@ -2,7 +2,7 @@
   "name": "cody-ai",
   "private": true,
   "displayName": "Cody AI",
-  "version": "0.4.4",
+  "version": "0.6.0",
   "publisher": "sourcegraph",
   "license": "Apache-2.0",
   "icon": "resources/cody.png",
@@ -10,26 +10,23 @@
   "scripts": {
     "dev:instance": "CODY_FOCUS_ON_STARTUP=1 NODE_ENV=development code --extensionDevelopmentPath=\"$INIT_CWD/vscode\" --disable-extension=sourcegraph.cody-ai --disable-extension=github.copilot --disable-extension=github.copilot-nightly --inspect-extensions=9333 . --goto ./src/logged-rerank.ts:16:5",
     "dev": "pnpm run build:dev && pnpm run dev:instance",
-    "generate:completions": "ts-node-transpile-only ./src/testutils/cli/run-code-completions-on-dataset.ts",
+    "generate:completions": "OUTFILE=/tmp/run-code-completions-on-dataset.js && esbuild ./test/completions/run-code-completions-on-dataset.ts --bundle --external:vscode --outfile=$OUTFILE --format=cjs --platform=node --sourcemap=inline && node --enable-source-maps $OUTFILE",
     "build": "scripts/download-rg.sh && tsc --build && pnpm run esbuild --minify && vite build --mode production",
     "build:dev": "scripts/download-rg.sh && tsc --build && concurrently \"pnpm run esbuild --sourcemap\" \"vite build --mode development\"",
     "esbuild": "esbuild ./src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node",
     "lint": "pnpm run lint:js",
     "lint:js": "eslint --cache '**/*.[tj]s?(x)'",
     "release": "ts-node ./scripts/release.ts",
-    "release:dry-run": "CODY_RELEASE_TYPE=dry-run ts-node ./scripts/release.ts",
+    "release:dry-run": "CODY_RELEASE_DRY_RUN=1 ts-node ./scripts/release.ts",
     "storybook": "storybook dev -p 6007 --no-open --no-version-updates --no-release-notes",
     "test:e2e": "pnpm exec playwright install && pnpm run --silent build:dev && playwright test",
-    "test:integration": "tsc --build ./test/integration && pnpm run --silent build:dev && node --inspect -r ts-node/register dist/test/integration/main.js",
+    "test:integration": "tsc --build ./test/integration && pnpm run --silent build:dev && node --inspect -r ts-node/register dist/tsc/test/integration/main.js",
     "test:unit": "vitest",
-    "vscode:prepublish": "scripts/download-rg.sh",
-    "vsce:package": "pnpm --silent run build && vsce package --no-dependencies -o dist/cody.vsix",
-    "vsce:prerelease": "pnpm --silent run build && vsce package patch --pre-release --no-dependencies -o dist/cody.vsix",
+    "vscode:prepublish": "scripts/download-rg.sh && pnpm --silent run build",
     "watch": "concurrently \"pnpm run watch:esbuild\" \"pnpm run watch:webview\"",
     "watch:esbuild": "pnpm run esbuild --sourcemap --watch",
     "watch:webview": "vite build --mode development --watch"
   },
-  "main": "./dist/extension.js",
   "categories": [
     "Programming Languages",
     "Machine Learning",
@@ -84,6 +81,7 @@
   "engines": {
     "vscode": "^1.79.0"
   },
+  "main": "./dist/extension.js",
   "activationEvents": [
     "onStartupFinished"
   ],
@@ -929,6 +927,11 @@
           "default": true,
           "markdownDescription": "Enables the use of embeddings as code completions context."
         },
+        "cody.autocomplete.experimental.triggerMoreEagerly": {
+          "type": "boolean",
+          "default": false,
+          "markdownDescription": "Trigger autocomplete when the cursor is at the end of a word (instead of waiting for a space or other non-word character). Share feedback at https://github.com/sourcegraph/cody/discussions/274."
+        },
         "cody.plugins.enabled": {
           "type": "boolean",
           "default": false,
@@ -999,14 +1002,14 @@
       "cody-logo": {
         "description": "Cody logo",
         "default": {
-          "fontPath": "dist/assets/cody-icons.woff",
+          "fontPath": "dist/webviews/assets/cody-icons.woff",
           "fontCharacter": "\\0041"
         }
       },
       "cody-logo-heavy": {
         "description": "Cody logo heavy",
         "default": {
-          "fontPath": "dist/assets/cody-icons.woff",
+          "fontPath": "dist/webviews/assets/cody-icons.woff",
           "fontCharacter": "\\0042"
         }
       }
@@ -1056,8 +1059,9 @@
     "envalid": "^7.3.1",
     "express": "^4.18.2",
     "mocha": "^10.2.0",
+    "ovsx": "^0.8.2",
     "playwright": "^1.33.0",
-    "semver": "^7.5.3",
+    "semver": "^7.5.4",
     "vite-plugin-static-copy": "^0.16.0"
   }
 }

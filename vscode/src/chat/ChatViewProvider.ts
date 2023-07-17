@@ -501,7 +501,11 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         if (enabledPlugins.length === 0) {
             return {}
         }
-        logEvent('CodyVSCodeExtension:getPluginsContext:enabledPlugins', { names: enabledPluginNames })
+        logEvent(
+            'CodyVSCodeExtension:getPluginsContext:enabledPlugins',
+            { names: enabledPluginNames },
+            { names: enabledPluginNames }
+        )
 
         this.transcript.addAssistantResponse('', 'Identifying applicable plugins...\n')
         this.sendTranscript()
@@ -521,7 +525,11 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 enabledPlugins,
                 previousMessages
             )
-            logEvent('CodyVSCodeExtension:getPluginsContext:descriptorsFound', { count: descriptors.length })
+            logEvent(
+                'CodyVSCodeExtension:getPluginsContext:descriptorsFound',
+                { count: descriptors.length },
+                { count: descriptors.length }
+            )
             if (descriptors.length !== 0) {
                 this.transcript.addAssistantResponse(
                     '',
@@ -531,9 +539,15 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 )
                 this.sendTranscript()
 
-                logEvent('CodyVSCodeExtension:getPluginsContext:runPluginFunctionsCalled', {
-                    count: descriptors.length,
-                })
+                logEvent(
+                    'CodyVSCodeExtension:getPluginsContext:runPluginFunctionsCalled',
+                    {
+                        count: descriptors.length,
+                    },
+                    {
+                        count: descriptors.length,
+                    }
+                )
                 return await plugins.runPluginFunctions(descriptors, this.config.pluginsConfig)
             }
         } catch (error) {
@@ -992,7 +1006,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         this.authProvider.webview = webviewView.webview
 
         const extensionPath = vscode.Uri.file(this.extensionPath)
-        const webviewPath = vscode.Uri.joinPath(extensionPath, 'dist')
+        const webviewPath = vscode.Uri.joinPath(extensionPath, 'dist', 'webviews')
 
         webviewView.webview.options = {
             enableScripts: true,

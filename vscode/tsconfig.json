@@ -3,7 +3,7 @@
   "compilerOptions": {
     "sourceMap": true,
     "rootDir": ".",
-    "outDir": "dist",
+    "outDir": "dist/tsc",
     "jsx": "react-jsx",
     "lib": ["ESNext", "DOM"],
   },
@@ -17,6 +17,7 @@
     "webpack.config.js",
     "package.json",
     ".storybook/*.ts",
+    "test/completions/completions-dataset.ts",
   ],
   "exclude": ["scripts", "dist", "test/integration"],
   "references": [{ "path": "../lib/shared" }, { "path": "../lib/ui" }],

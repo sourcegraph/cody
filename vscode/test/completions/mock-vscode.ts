@@ -4,7 +4,7 @@ mock('vscode', {})
 
 // We need to mock `vscode` first, so we use require here.
 // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-var-requires
-const { vsCodeMocks } = require('../mocks')
+const { vsCodeMocks } = require('../../src/testutils/mocks') as typeof import('../../src/testutils/mocks')
 
 const vscodeMock = {
     ...vsCodeMocks,
@@ -25,7 +25,7 @@ const vscodeMock = {
                         case 'cody.autocomplete.enabled':
                             return true
                         case 'cody.serverEndpoint':
-                            return 'https://sourcegraph.sourcegraph.com'
+                            return 'https://sourcegraph.com'
                         default:
                             return undefined
                     }
@@ -36,7 +36,12 @@ const vscodeMock = {
             return null
         },
     },
-}
+    window: {
+        ...vsCodeMocks.window,
+        visibleTextEditors: [],
+        tabGroups: { all: [] },
+    },
+} as const
 
 // This will replace any require('vscode') with our mock
 mock('vscode', vscodeMock)

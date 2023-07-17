@@ -25,12 +25,15 @@ export interface ProviderConfig {
     enableExtendedMultilineTriggers: boolean
 
     /**
-     * A string identifier used in event logs
+     * A string identifier for the provider config used in event logs.
      */
     identifier: string
 }
 
 export interface ProviderOptions {
+    /** A unique and descriptive identifier for the provider. */
+    id: string
+
     prefix: string
     suffix: string
     fileName: string
@@ -45,6 +48,7 @@ export interface ProviderOptions {
 }
 
 export abstract class Provider {
+    public readonly id: string
     protected prefix: string
     protected suffix: string
     protected fileName: string
@@ -56,6 +60,7 @@ export abstract class Provider {
     protected n: number
 
     constructor({
+        id,
         prefix,
         suffix,
         fileName,
@@ -66,6 +71,7 @@ export abstract class Provider {
         suffixPercentage,
         n = 1,
     }: ProviderOptions) {
+        this.id = id
         this.prefix = prefix
         this.suffix = suffix
         this.fileName = fileName

@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import type * as vscode from 'vscode'
+import { URI } from 'vscode-uri'
 
 import {
     CompletionParameters,
@@ -9,6 +10,7 @@ import {
 import { vsCodeMocks } from '../testutils/mocks'
 
 import { CodyCompletionItemProvider } from '.'
+import { History } from './history'
 import { createProviderConfig } from './providers/anthropic'
 
 vi.mock('vscode', () => ({
@@ -36,6 +38,11 @@ vi.mock('vscode', () => ({
         onDidChangeTextDocument() {
             return null
         },
+    },
+    window: {
+        ...vsCodeMocks.window,
+        visibleTextEditors: [],
+        tabGroups: { all: [] },
     },
 }))
 
@@ -98,9 +105,10 @@ async function complete(
     const completionProvider = new CodyCompletionItemProvider({
         providerConfig,
         statusBar: noopStatusBar,
-        history: null as any,
+        history: new History(),
         codebaseContext: null as any,
         disableTimeouts: true,
+        triggerMoreEagerly: false,
     })
 
     if (!code.includes(CURSOR_MARKER)) {
@@ -119,6 +127,7 @@ async function complete(
     }
     const document: any = {
         filename: 'test.ts',
+        uri: URI.parse('file:///test.ts'),
         languageId,
         offsetAt(): number {
             return 0
@@ -145,7 +154,7 @@ async function complete(
 
     return {
         requests,
-        completions,
+        completions: 'items' in completions ? completions.items : completions,
     }
 }
 
@@ -196,12 +205,12 @@ describe('Cody completions', () => {
             }
         `)
 
-        expect(requests).toHaveLength(3)
+        expect(requests).toHaveLength(1)
         const messages = requests[0]!.messages
         expect(messages[messages.length - 1]).toMatchInlineSnapshot(`
             {
               "speaker": "assistant",
-              "text": "Okay, here is some code: <CODE5711>constructor(startLine: number, startCharacter: number, endLine: number, endCharacter: number) {
+              "text": "Here is the code: <CODE5711>constructor(startLine: number, startCharacter: number, endLine: number, endCharacter: number) {
                     this.startLine =",
             }
         `)
@@ -214,20 +223,55 @@ describe('Cody completions', () => {
     })
 
     it('completes a single-line at the end of a sentence', async () => {
-        const { completions } = await complete(`foo = ${CURSOR_MARKER}`, [
-            createCompletionResponse("'bar'"),
-            createCompletionResponse("'baz'"),
-        ])
+        const { completions } = await complete(`foo = ${CURSOR_MARKER}`, [createCompletionResponse("'bar'")])
 
         expect(completions).toMatchInlineSnapshot(`
             [
               InlineCompletionItem {
                 "insertText": "'bar'",
               },
-              InlineCompletionItem {
-                "insertText": "'baz'",
-              },
             ]
+        `)
+    })
+
+    it('completes up to two lines in single line mode', async () => {
+        const { completions } = await complete(
+            `
+        function test() {
+            console.log(1);
+            ${CURSOR_MARKER}
+        }
+        `,
+            [createCompletionResponse('console.log(2);\n    console.log(3);\n    console.log(4);')]
+        )
+
+        expect(completions).toMatchInlineSnapshot(`
+          [
+            InlineCompletionItem {
+              "insertText": "console.log(2);
+              console.log(3);",
+            },
+          ]
+        `)
+    })
+
+    it('only complete one line if the second line is indented in single line mode', async () => {
+        const { completions } = await complete(
+            `
+        function test() {
+            console.log(1);
+            ${CURSOR_MARKER}
+        }
+        `,
+            [createCompletionResponse('if (true) {\n        console.log(3);\n    }\n    console.log(4);')]
+        )
+
+        expect(completions).toMatchInlineSnapshot(`
+          [
+            InlineCompletionItem {
+              "insertText": "if (true) {",
+            },
+          ]
         `)
     })
 
@@ -290,39 +334,62 @@ describe('Cody completions', () => {
     })
 
     it('filters out known-bad completion starts', async () => {
-        const { completions } = await complete(`one:\n  ${CURSOR_MARKER}`, [
-            createCompletionResponse('➕     1'),
-            createCompletionResponse('\u200B   2'),
-            createCompletionResponse('.      3'),
-        ])
-        expect(completions).toMatchInlineSnapshot(`
-            [
-              InlineCompletionItem {
-                "insertText": "1",
-              },
-              InlineCompletionItem {
-                "insertText": "2",
-              },
-              InlineCompletionItem {
-                "insertText": "3",
-              },
-            ]
-        `)
+        {
+            const { completions } = await complete(`one:\n  ${CURSOR_MARKER}`, [createCompletionResponse('➕     1')])
+            expect(completions).toMatchInlineSnapshot(`
+                [
+                  InlineCompletionItem {
+                    "insertText": "1",
+                  },
+                ]
+            `)
+        }
+        {
+            const { completions } = await complete(`one:\n  ${CURSOR_MARKER}`, [createCompletionResponse('\u200B   2')])
+            expect(completions).toMatchInlineSnapshot(`
+                [
+                  InlineCompletionItem {
+                    "insertText": "2",
+                  },
+                ]
+            `)
+        }
+        {
+            const { completions } = await complete(`one:\n  ${CURSOR_MARKER}`, [createCompletionResponse('.      3')])
+            expect(completions).toMatchInlineSnapshot(`
+                [
+                  InlineCompletionItem {
+                    "insertText": "3",
+                  },
+                ]
+            `)
+        }
 
-        const { completions: completions2 } = await complete(`two:\n${CURSOR_MARKER}`, [
-            createCompletionResponse('+  1'),
-            createCompletionResponse('-  2'),
-        ])
-        expect(completions2).toMatchInlineSnapshot(`
+        {
+            const { completions: completions2 } = await complete(`two:\n${CURSOR_MARKER}`, [
+                createCompletionResponse('+  1'),
+            ])
+            expect(completions2).toMatchInlineSnapshot(`
             [
               InlineCompletionItem {
                 "insertText": "1",
               },
+            ]
+        `)
+        }
+
+        {
+            const { completions: completions2 } = await complete(`two:\n${CURSOR_MARKER}`, [
+                createCompletionResponse('-  2'),
+            ])
+            expect(completions2).toMatchInlineSnapshot(`
+            [
               InlineCompletionItem {
                 "insertText": "2",
               },
             ]
         `)
+        }
     })
 
     describe('odd indentation', () => {
@@ -493,14 +560,14 @@ describe('Cody completions', () => {
         it('does not support multi-line completion on unsupported languages', async () => {
             const { requests } = await complete(`function looksLegit() {\n  ${CURSOR_MARKER}`, undefined, 'elixir')
 
-            expect(requests).toHaveLength(3)
+            expect(requests).toHaveLength(1)
             expect(requests[0]!.stopSequences).toContain('\n\n')
         })
 
         it('requires an indentation to start a block', async () => {
             const { requests } = await complete(`function bubbleSort() {\n${CURSOR_MARKER}`)
 
-            expect(requests).toHaveLength(3)
+            expect(requests).toHaveLength(1)
             expect(requests[0]!.stopSequences).toContain('\n\n')
         })
 
