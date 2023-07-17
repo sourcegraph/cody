@@ -21,7 +21,7 @@ export class Agent extends MessageHandler {
             serverEndpoint: process.env.SRC_ENDPOINT || 'https://sourcegraph.com',
         })
 
-        this.registerRequest('initialize', client => {
+        this.registerRequest('initialize', async client => {
             process.stderr.write(
                 `Cody Agent: handshake with client '${client.name}' (version '${client.version}') at workspace root path '${client.workspaceRootPath}'\n`
             )
@@ -29,9 +29,12 @@ export class Agent extends MessageHandler {
             if (client.connectionConfiguration) {
                 this.setClient(client.connectionConfiguration)
             }
-            return Promise.resolve({
+            const isCodyEnabled = await (await this.client!).isCodyEnabled()
+            return {
                 name: 'cody-agent',
-            })
+                isCodyEnabled: isCodyEnabled.enabled,
+                version: isCodyEnabled.version,
+            }
         })
         this.registerNotification('initialized', () => {})
 

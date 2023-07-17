@@ -48,6 +48,7 @@ export interface Client {
     ) => Promise<void>
     reset: () => void
     codebaseContext: CodebaseContext
+    isCodyEnabled: () => Promise<{ enabled: boolean; version: string }>
 }
 
 export async function createClient({
@@ -169,5 +170,8 @@ export async function createClient({
             sendTranscript()
         },
         codebaseContext,
+        isCodyEnabled() {
+            return graphqlClient.isCodyEnabled()
+        },
     }
 }
