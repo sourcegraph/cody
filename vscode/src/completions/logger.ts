@@ -14,6 +14,17 @@ interface CompletionEvent {
             duration: number
         }
         languageId: string
+
+        /**
+         * Whether the completion was triggered only because of the experimental settting
+         * `cody.autocomplete.experimental.triggerMoreEagerly`.
+         */
+        triggeredMoreEagerly: boolean
+
+        /** Relevant user settings. */
+        settings: {
+            'cody.autocomplete.experimental.triggerMoreEagerly': boolean
+        }
     }
     // The timestamp when the request started
     startedAt: number
@@ -57,7 +68,7 @@ export function start(params: CompletionEvent['params']): string {
     return id
 }
 
-// Suggested completions will not logged individually. Instead, we log them when
+// Suggested completions will not be logged individually. Instead, we log them when
 // we either hide them again (they are NOT accepted) or when they ARE accepted.
 // This way, we can calculate the duration they were actually visible.
 export function suggest(id: string): void {

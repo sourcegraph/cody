@@ -187,6 +187,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
         if (cursorAtWord && !this.triggerMoreEagerly) {
             return []
         }
+        const triggeredMoreEagerly = this.triggerMoreEagerly && cursorAtWord
 
         // Don't show completions if a selected completion info is present (so something is selected
         // from the completions dropdown list based on the lang server) and the returned completion
@@ -287,6 +288,10 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
             providerIdentifier: this.providerConfig.identifier,
             languageId,
             contextSummary,
+            triggeredMoreEagerly,
+            settings: {
+                'cody.autocomplete.experimental.triggerMoreEagerly': this.triggerMoreEagerly,
+            },
         })
         const stopLoading = this.statusBar.startLoading('Completions are being generated')
         this.stopLoading = stopLoading
