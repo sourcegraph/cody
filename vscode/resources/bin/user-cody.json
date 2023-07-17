@@ -1,0 +1,17 @@
+{
+  "description": "This is an example file to showcase how to build custom recipes for Cody by Sourcegraph.",
+  "recipes": {
+    "Spell Checker": {
+      "prompt": "Spell check the selected code and let me know if I have any typos or non-standard usage.",
+      "context": {
+        "none": true
+      }
+    },
+    "GH Search: Deploy Repoes not owned by Sourcegraph": {
+      "prompt": "What are the names of repositories that are used for deploying Sourcegraph but is not directly owned by Sourcegraph?",
+      "command": "gh",
+      "args": ["search", "repos", "sourcegraph", "deploy"],
+      "note": "You must have gh command installed and authenticated to use this recipe"
+    }
+  }
+}

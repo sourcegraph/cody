@@ -57,18 +57,27 @@ export const Recipes: React.FunctionComponent<{
                                     </VSCodeButton>
                                 </div>
                                 <small className={styles.recipesNotes}>
-                                    Use the + button above to create your very own recipe. To create a Workspace recipe
-                                    that is available to all users, add a recipe item to the .vscode/cody.json file in
-                                    your repository.
+                                    To create a Workspace recipe that is available to all users, add a new recipe item
+                                    to the .vscode/cody.json file located in your repository. You can also click the +
+                                    button above to create a new User recipe.
                                 </small>
                             </div>
                             {!myPrompts?.length && (
                                 <VSCodeButton
                                     className={styles.recipeButton}
                                     type="button"
-                                    onClick={() => onMyPromptClick('new-workspace-example-file')}
+                                    onClick={() => onMyPromptClick('add-workspace-file')}
                                 >
-                                    Create a cody.json file with examples
+                                    Create cody.json file for Workspace with examples
+                                </VSCodeButton>
+                            )}
+                            {!myPrompts?.length && (
+                                <VSCodeButton
+                                    className={styles.recipeButton}
+                                    type="button"
+                                    onClick={() => onMyPromptClick('add-user-file')}
+                                >
+                                    Create cody.json file for User with examples
                                 </VSCodeButton>
                             )}
                             {myPrompts?.map(promptID => (
@@ -87,7 +96,7 @@ export const Recipes: React.FunctionComponent<{
                                     type="button"
                                     onClick={() => onMyPromptClick('clear')}
                                 >
-                                    Remove all User Recipes
+                                    Remove cody.json for User Recipes
                                 </VSCodeButton>
                             )}
                             <div className={styles.recipesHeader}>

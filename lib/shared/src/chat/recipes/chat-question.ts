@@ -46,8 +46,11 @@ export class ChatQuestion implements Recipe {
         selection: ActiveTextEditorSelection | null
     ): Promise<ContextMessage[]> {
         const contextMessages: ContextMessage[] = []
-
-        const isCodebaseContextRequired = firstInteraction || (await intentDetector.isCodebaseContextRequired(text))
+        // If input is less than 2 words, it means it's most likely a statement or a follow-up question that does not require additional context
+        // e,g. "hey", "hi", "why", "explain" etc.
+        const isTextTooShort = text.split(' ').length < 2
+        const isCodebaseContextRequired =
+            !isTextTooShort && (firstInteraction || (await intentDetector.isCodebaseContextRequired(text)))
 
         this.debug('ChatQuestion:getContextMessages', 'isCodebaseContextRequired', isCodebaseContextRequired)
         if (isCodebaseContextRequired) {
