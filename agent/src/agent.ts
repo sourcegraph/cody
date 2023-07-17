@@ -7,7 +7,7 @@ import { MessageHandler } from './jsonrpc'
 import { ConnectionConfiguration, TextDocument } from './protocol'
 
 export class Agent extends MessageHandler {
-    private client?: Promise<Client>
+    private client: Promise<Client | null> = Promise.resolve(null)
     public workspaceRootPath: string | null = null
     public activeDocumentFilePath: string | null = null
     public documents: Map<string, TextDocument> = new Map()
@@ -29,11 +29,22 @@ export class Agent extends MessageHandler {
             if (client.connectionConfiguration) {
                 this.setClient(client.connectionConfiguration)
             }
-            const isCodyEnabled = await (await this.client!).isCodyEnabled()
+
+            const codyClient = await this.client
+
+            if (!codyClient) {
+                return {
+                    name: 'cody-agent',
+                    codyEnabled: false,
+                    codyVersion: null,
+                }
+            }
+
+            const codyStatus = codyClient.codyStatus
             return {
                 name: 'cody-agent',
-                isCodyEnabled: isCodyEnabled.enabled,
-                version: isCodyEnabled.version,
+                codyEnabled: codyStatus.enabled,
+                codyVersion: codyStatus.version,
             }
         })
         this.registerNotification('initialized', () => {})

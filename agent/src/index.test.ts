@@ -56,7 +56,7 @@ describe('StandardAgent', () => {
     it('initializes properly', async () => {
         const serverInfo = await client.handshake()
         assert.deepStrictEqual(serverInfo.name, 'cody-agent', 'Agent should be cody-agent')
-        assert.deepStrictEqual(serverInfo.isCodyEnabled, true, 'Cody should be enabled')
+        assert.deepStrictEqual(serverInfo.codyEnabled, true, 'Cody should be enabled')
     })
 
     it('lists recipes correctly', async () => {
