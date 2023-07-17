@@ -23,7 +23,9 @@ Tip: Enable `cody.debug.enable` and `cody.debug.verbose` in VS Code settings dur
 - Integration tests: `pnpm run test:integration`
 - End-to-end tests: `pnpm run test:e2e`
 
-## Release
+## Releases
+
+### Stable channel
 
 To publish a new release to the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai) and [Open VSX Registry](https://open-vsx.org/extension/sourcegraph/cody-ai):
 
@@ -31,6 +33,20 @@ To publish a new release to the [VS Code Marketplace](https://marketplace.visual
 1. Commit the version increment.
 1. `git tag vscode-v$(jq -r .version package.json)`
 1. `git push --tags`
-1. Wait for the [vscode-stable-release workflow](https://github.com/sourcegraph/cody/actions/workflows/vscode-stable-release.yml) to finish.
+1. Wait for the [vscode-stable-release workflow](https://github.com/sourcegraph/cody/actions/workflows/vscode-stable-release.yml) run to finish.
 
-Insiders builds are published automatically daily at 1500 UTC (see [vscode-insiders-release workflow](https://github.com/sourcegraph/cody/actions/workflows/vscode-insiders-release.yml)). You can also manually trigger an insiders release.
+### Insiders channel
+
+Insiders builds are nightly (or more frequent) builds with the latest from `main`. They're less stable but have the latest changes. Only use the insiders build if you want to test the latest changes.
+
+To use the Cody insiders build, install the extension from the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai) and then select **Switch to Prerelease Version** in the extension's page.
+
+Insiders builds are published automatically daily at 1500 UTC using the [vscode-insiders-release workflow](https://github.com/sourcegraph/cody/actions/workflows/vscode-insiders-release.yml).
+
+To manually trigger an insiders build:
+
+1. Open the [vscode-insiders-release workflow](https://github.com/sourcegraph/cody/actions/workflows/vscode-insiders-release.yml).
+1. Press the **Run workflow ▾** button.
+1. Select the branch you want to build from (usually `main`).
+1. Press the **Run workflow** button.
+1. Wait for the workflow run to finish.
