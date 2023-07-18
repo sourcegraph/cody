@@ -9,8 +9,8 @@
     "url": "https://github.com/sourcegraph/cody"
   },
   "engines": {
-    "node": "^v18.9.0",
-    "pnpm": "^8.6.6"
+    "node": "^v20.4.0",
+    "pnpm": "^8.6.7"
   },
   "scripts": {
     "build": "tsc --build",
@@ -52,15 +52,15 @@
     "stylelint-config-prettier": "^9.0.5",
     "stylelint-config-standard": "^34.0.0",
     "ts-node": "^10.9.1",
-    "typescript": "^5.0.2",
-    "vite": "^4.4.1",
+    "typescript": "^5.1.6",
+    "vite": "^4.4.3",
     "vitest": "^0.33.0"
   },
   "dependencies": {
     "react": "18.1.0",
     "react-dom": "18.1.0"
   },
-  "packageManager": "pnpm@8.6.6",
+  "packageManager": "pnpm@8.6.7",
   "resolutions": {
     "tslib": "2.1.0"
   },

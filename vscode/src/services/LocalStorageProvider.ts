@@ -12,6 +12,7 @@ export class LocalStorage {
     private ANONYMOUS_USER_ID_KEY = 'sourcegraphAnonymousUid'
     private LAST_USED_ENDPOINT = 'SOURCEGRAPH_CODY_ENDPOINT'
     private CODY_ENDPOINT_HISTORY = 'SOURCEGRAPH_CODY_ENDPOINT_HISTORY'
+    private KEY_ENABLED_PLUGINS = 'KEY_ENABLED_PLUGINS'
 
     constructor(private storage: Memento) {}
 
@@ -103,6 +104,18 @@ export class LocalStorage {
             console.error(error)
         }
         return status
+    }
+
+    public async setEnabledPlugins(plugins: string[]): Promise<void> {
+        try {
+            await this.storage.update(this.KEY_ENABLED_PLUGINS, plugins)
+        } catch (error) {
+            console.error(error)
+        }
+    }
+
+    public getEnabledPlugins(): string[] | null {
+        return this.storage.get<string[] | null>(this.KEY_ENABLED_PLUGINS, null)
     }
 
     public get(key: string): string | null {

@@ -12,9 +12,9 @@ async function main(): Promise<void> {
     // with exit status 0).
     process.env.MOCK_RG_PATH = 'true'
 
-    // When run, this script's filename is `vscode/dist/test/integration/main.js`, so
+    // When run, this script's filename is `vscode/dist/tsc/test/integration/main.js`, so
     // __dirname is derived from that path, not this file's source path.
-    const vscodeCodyRoot = path.resolve(__dirname, '..', '..', '..')
+    const vscodeCodyRoot = path.resolve(__dirname, '..', '..', '..', '..')
 
     // The test workspace is not copied to out/ during the TypeScript build, so we need to refer to
     // it in the src/ dir.
@@ -24,7 +24,7 @@ async function main(): Promise<void> {
     const extensionDevelopmentPath = vscodeCodyRoot
 
     // The path to the test runner script, passed to --extensionTestsPath.
-    const extensionTestsPath = path.resolve(vscodeCodyRoot, 'dist', 'test', 'integration', 'index')
+    const extensionTestsPath = path.resolve(vscodeCodyRoot, 'dist', 'tsc', 'test', 'integration', 'index')
 
     try {
         // Download VS Code, unzip it, and run the integration test.

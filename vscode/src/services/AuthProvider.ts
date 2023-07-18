@@ -151,6 +151,10 @@ export class AuthProvider {
 
     // Log user out of the selected endpoint (remove token from secret)
     private async signout(endpoint: string): Promise<void> {
+        // Restart appDetector if endpoint is App
+        if (isLocalApp(endpoint)) {
+            await this.appDetector.init()
+        }
         await this.secretStorage.deleteToken(endpoint)
         await this.localStorage.deleteEndpoint()
         await this.auth(endpoint, null)

@@ -86,6 +86,9 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
             case 'links':
                 void this.openExternalLinks(message.value)
                 break
+            case 'my-prompt':
+                await this.executeMyPrompt(message.title)
+                break
             case 'openFile': {
                 const rootPath = this.editor.getWorkspaceRootPath()
                 if (!rootPath) {
@@ -119,6 +122,10 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
                 }
                 break
             }
+            case 'setEnabledPlugins':
+                await this.localStorage.setEnabledPlugins(message.plugins)
+                this.handleEnabledPlugins(message.plugins)
+                break
             default:
                 this.handleError('Invalid request type from Webview')
         }
@@ -138,7 +145,7 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
 
     private async executeChatCommands(text: string): Promise<void> {
         switch (true) {
-            case /^\/r(est)?\s/i.test(text):
+            case /^\/r(est)?/i.test(text):
                 await this.clearAndRestartSession()
                 break
             case /^\/s(earch)?\s/i.test(text):
@@ -188,6 +195,17 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
      */
     public handleError(errorMsg: string): void {
         void this.webview?.postMessage({ type: 'errors', errors: errorMsg })
+    }
+
+    protected handleEnabledPlugins(plugins: string[]): void {
+        void this.webview?.postMessage({ type: 'enabled-plugins', plugins })
+    }
+
+    protected handleMyPrompts(prompts: string[]): void {
+        void this.webview?.postMessage({
+            type: 'my-prompts',
+            prompts,
+        })
     }
 
     /**
@@ -262,7 +280,7 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
         InlineChatViewProvider.webview = webviewView.webview
 
         const extensionPath = vscode.Uri.file(this.extensionPath)
-        const webviewPath = vscode.Uri.joinPath(extensionPath, 'dist')
+        const webviewPath = vscode.Uri.joinPath(extensionPath, 'dist', 'webviews')
 
         webviewView.webview.options = {
             enableScripts: true,

@@ -35,4 +35,16 @@ export const completionsDataset = [
         }
     }
 `,
+    `import { execFileSync } from 'child_process'
+
+function getOSName(): string | null {
+    if (typeof window === 'undefined') {
+      ${CURSOR}
+}
+`,
+    `
+function isDarkColorScheme(): boolean {
+    return ${CURSOR}
+}
+`,
 ].map(code => dedent(code))

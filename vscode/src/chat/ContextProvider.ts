@@ -36,16 +36,21 @@ export type Config = Pick<
     | 'useContext'
     | 'experimentalChatPredictions'
     | 'experimentalGuardrails'
+    | 'pluginsEnabled'
+    | 'pluginsConfig'
+    | 'pluginsDebugEnabled'
 >
 
 export class ContextProvider implements vscode.Disposable {
     public webview?: ChatViewProviderWebview
-    private configurationChangeEvent = new vscode.EventEmitter<void>()
 
-    protected disposables: vscode.Disposable[] = []
+    // Fire event to let subscribers know that the configuration has changed
+    public configurationChangeEvent = new vscode.EventEmitter<void>()
 
     // Codebase-context-related state
     public currentWorkspaceRoot: string
+
+    protected disposables: vscode.Disposable[] = []
 
     constructor(
         private config: Omit<Config, 'codebase'>, // should use codebaseContext.getCodebase() rather than config.codebase
@@ -59,8 +64,8 @@ export class ContextProvider implements vscode.Disposable {
     ) {
         this.disposables.push(this.configurationChangeEvent)
 
-        // listen for vscode active editor change event
         this.currentWorkspaceRoot = ''
+        // listen for vscode active editor change event
         this.disposables.push(
             vscode.window.onDidChangeActiveTextEditor(async () => {
                 await this.updateCodebaseContext()
@@ -108,6 +113,7 @@ export class ContextProvider implements vscode.Disposable {
 
         this.codebaseContext = codebaseContext
         await this.publishContextStatus()
+        this.editor.controllers.prompt.setCodebase(codebaseContext.getCodebase())
     }
 
     /**
@@ -116,15 +122,17 @@ export class ContextProvider implements vscode.Disposable {
      */
     public async syncAuthStatus(): Promise<void> {
         const authStatus = this.authProvider.getAuthStatus()
-        await this.publishConfig()
+        // Update config to the latest one and fire configure change event to update external services
+        const newConfig = await getFullConfig(this.secretStorage, this.localStorage)
         if (authStatus.siteVersion) {
             // Update codebase context
-            const codebaseContext = await getCodebaseContext(this.config, this.rgPath, this.editor, this.chat)
+            const codebaseContext = await getCodebaseContext(newConfig, this.rgPath, this.editor, this.chat)
             if (codebaseContext) {
                 this.codebaseContext = codebaseContext
-                await this.publishContextStatus()
             }
         }
+        await this.publishConfig()
+        this.onConfigurationChange(newConfig)
     }
 
     /**
@@ -145,6 +153,7 @@ export class ContextProvider implements vscode.Disposable {
                 },
             })
         }
+        this.disposables.push(this.configurationChangeEvent.event(() => send()))
         this.disposables.push(vscode.window.onDidChangeTextEditorSelection(() => send()))
         return send()
     }
@@ -163,6 +172,8 @@ export class ContextProvider implements vscode.Disposable {
                 ...localProcess,
                 debugEnable: this.config.debugEnable,
                 serverEndpoint: this.config.serverEndpoint,
+                pluginsEnabled: this.config.pluginsEnabled,
+                pluginsDebugEnabled: this.config.pluginsDebugEnabled,
             }
 
             // update codebase context on configuration change
@@ -171,7 +182,6 @@ export class ContextProvider implements vscode.Disposable {
             debug('Cody:publishConfig', 'configForWebview', { verbose: configForWebview })
         }
 
-        this.disposables.push(this.configurationChangeEvent.event(() => send()))
         await send()
     }
 

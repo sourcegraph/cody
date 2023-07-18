@@ -12,6 +12,9 @@ import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/confi
 import { annotateAttribution, Guardrails } from '@sourcegraph/cody-shared/src/guardrails'
 import { highlightTokens } from '@sourcegraph/cody-shared/src/hallucinations-detector'
 import { IntentDetector } from '@sourcegraph/cody-shared/src/intent-detector'
+import * as plugins from '@sourcegraph/cody-shared/src/plugins/api'
+import { PluginFunctionExecutionInfo } from '@sourcegraph/cody-shared/src/plugins/api/types'
+import { defaultPlugins } from '@sourcegraph/cody-shared/src/plugins/built-in'
 import { ANSWER_TOKENS, DEFAULT_MAX_TOKENS } from '@sourcegraph/cody-shared/src/prompt/constants'
 import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
 
@@ -26,7 +29,6 @@ import { TestSupport } from '../test-support'
 
 import { ContextProvider } from './ContextProvider'
 import { fastFilesExist } from './fastFileFinder'
-import { defaultAuthStatus } from './protocol'
 import { getRecipe } from './recipes'
 
 export type Config = Pick<
@@ -41,6 +43,9 @@ export type Config = Pick<
     | 'useContext'
     | 'experimentalChatPredictions'
     | 'experimentalGuardrails'
+    | 'pluginsEnabled'
+    | 'pluginsConfig'
+    | 'pluginsDebugEnabled'
 >
 
 /**
@@ -61,6 +66,8 @@ abstract class MessageHandler {
     protected abstract handleHistory(history: UserLocalHistory): void
     protected abstract handleError(errorMsg: string): void
     protected abstract handleSuggestions(suggestions: string[]): void
+    protected abstract handleEnabledPlugins(plugins: string[]): void
+    protected abstract handleMyPrompts(prompts: string[]): void
 }
 
 export interface MessageProviderOptions {
@@ -118,6 +125,11 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         this.authProvider = options.authProvider
         this.contextProvider = options.contextProvider
 
+        const myPromptsWatcher = this.editor.controllers?.prompt?.fileWatcher
+        myPromptsWatcher?.onDidCreate(() => this.sendMyPrompts())
+        myPromptsWatcher?.onDidChange(() => this.sendMyPrompts())
+        myPromptsWatcher?.onDidDelete(() => this.sendMyPrompts())
+
         // chat id is used to identify chat session
         this.createNewChatID()
     }
@@ -126,8 +138,10 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         this.loadChatHistory()
         this.sendTranscript()
         this.sendHistory()
+        this.sendEnabledPlugins(this.localStorage.getEnabledPlugins() ?? [])
         await this.loadRecentChat()
         await this.contextProvider.init()
+        await this.sendMyPrompts()
     }
 
     private idleCallbacks_: (() => void)[] = []
@@ -209,6 +223,10 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         this.sendHistory()
     }
 
+    private sendEnabledPlugins(plugins: string[]): void {
+        this.handleEnabledPlugins(plugins)
+    }
+
     private createNewChatID(): void {
         this.currentChatID = new Date(Date.now()).toUTCString()
     }
@@ -270,28 +288,17 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
                 if (isAbortError(err)) {
                     return
                 }
-                // Display error message as assistant response
-                this.transcript.addErrorAsAssistantResponse(err)
                 // Log users out on unauth error
                 if (statusCode && statusCode >= 400 && statusCode <= 410) {
-                    const authStatus = { ...defaultAuthStatus }
-                    if (statusCode === 403) {
-                        authStatus.authenticated = true
-                        authStatus.requiresVerifiedEmail = true
-                    } else {
-                        authStatus.showInvalidAccessTokenError = true
-                    }
-                    debug('ChatViewProvider:onError:unauth', err, { verbose: { authStatus } })
-                    void this.clearAndRestartSession()
-                    void this.authProvider.auth(
-                        this.config.serverEndpoint,
-                        this.config.accessToken,
-                        this.config.customHeaders
-                    )
+                    this.authProvider
+                        .auth(this.config.serverEndpoint, this.config.accessToken, this.config.customHeaders)
+                        .catch(error => console.error(error))
+                    debug('ChatViewProvider:onError:unauthUser', err, { verbose: { statusCode } })
                 }
+                // Display error message as assistant response
+                this.transcript.addErrorAsAssistantResponse(err)
                 // We ignore embeddings errors in this instance because we're already showing an
                 // error message and don't want to overwhelm the user.
-                // TODO: Make this async?
                 void this.onCompletionEnd(true)
                 console.error(`Completion request failed: ${err}`)
             },
@@ -322,7 +329,71 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         await this.onCompletionEnd()
     }
 
-    public async executeRecipe(recipeId: RecipeID, humanChatInput: string = ''): Promise<void> {
+    private async getPluginsContext(
+        humanChatInput: string
+    ): Promise<{ prompt?: Message[]; executionInfos?: PluginFunctionExecutionInfo[] }> {
+        logEvent('CodyVSCodeExtension:getPluginsContext:used')
+        const enabledPluginNames = this.localStorage.getEnabledPlugins() ?? []
+        const enabledPlugins = defaultPlugins.filter(plugin => enabledPluginNames.includes(plugin.name))
+        if (enabledPlugins.length === 0) {
+            return {}
+        }
+        logEvent(
+            'CodyVSCodeExtension:getPluginsContext:enabledPlugins',
+            { names: enabledPluginNames },
+            { names: enabledPluginNames }
+        )
+
+        this.transcript.addAssistantResponse('', 'Identifying applicable plugins...\n')
+        this.sendTranscript()
+
+        const { prompt: previousMessages } = await this.transcript.getPromptForLastInteraction(
+            [],
+            this.maxPromptTokens,
+            [],
+            true
+        )
+
+        try {
+            logEvent('CodyVSCodeExtension:getPluginsContext:chooseDataSourcesUsed')
+            const descriptors = await plugins.chooseDataSources(
+                humanChatInput,
+                this.chat,
+                enabledPlugins,
+                previousMessages
+            )
+            logEvent(
+                'CodyVSCodeExtension:getPluginsContext:descriptorsFound',
+                { count: descriptors.length },
+                { count: descriptors.length }
+            )
+            if (descriptors.length !== 0) {
+                this.transcript.addAssistantResponse(
+                    '',
+                    `Using ${descriptors
+                        .map(descriptor => descriptor.pluginName)
+                        .join(', ')} for additional context...\n`
+                )
+                this.sendTranscript()
+
+                logEvent(
+                    'CodyVSCodeExtension:getPluginsContext:runPluginFunctionsCalled',
+                    {
+                        count: descriptors.length,
+                    },
+                    {
+                        count: descriptors.length,
+                    }
+                )
+                return await plugins.runPluginFunctions(descriptors, this.config.pluginsConfig)
+            }
+        } catch (error) {
+            console.error('Error getting plugin context', error)
+        }
+        return {}
+    }
+
+    public async executeRecipe(recipeId: RecipeID, humanChatInput = ''): Promise<void> {
         debug('ChatViewProvider:executeRecipe', recipeId, { verbose: humanChatInput })
         if (this.isMessageInProgress) {
             this.handleError('Cannot execute multiple recipes. Please wait for the current recipe to finish.')
@@ -331,6 +402,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
 
         const recipe = getRecipe(recipeId)
         if (!recipe) {
+            debug('ChatViewProvider:executeRecipe', 'no recipe found')
             return
         }
 
@@ -350,6 +422,14 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         this.isMessageInProgress = true
         this.transcript.addInteraction(interaction)
 
+        let pluginsPrompt: Message[] = []
+        let pluginExecutionInfos: PluginFunctionExecutionInfo[] = []
+        if (this.config.pluginsEnabled && recipeId === 'chat-question') {
+            const result = await this.getPluginsContext(humanChatInput)
+            pluginsPrompt = result?.prompt ?? []
+            pluginExecutionInfos = result?.executionInfos ?? []
+        }
+
         // Check whether or not to connect to LLM backend for responses
         // Ex: performing fuzzy / context-search does not require responses from LLM backend
         switch (recipeId) {
@@ -359,11 +439,13 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
             default: {
                 this.sendTranscript()
 
+                const myPremade = this.editor.controllers.prompt.getMyPrompts().premade
                 const { prompt, contextFiles } = await this.transcript.getPromptForLastInteraction(
-                    getPreamble(this.codebaseContext.getCodebase()),
-                    this.maxPromptTokens
+                    myPremade || getPreamble(this.codebaseContext.getCodebase()),
+                    this.maxPromptTokens,
+                    pluginsPrompt
                 )
-                this.transcript.setUsedContextFilesForLastInteraction(contextFiles)
+                this.transcript.setUsedContextFilesForLastInteraction(contextFiles, pluginExecutionInfos)
                 this.sendPrompt(prompt, interaction.getAssistantMessage().prefix ?? '')
                 await this.saveTranscriptToChatHistory()
             }
@@ -392,8 +474,9 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         }
         transcript.addInteraction(interaction)
 
+        const myPremade = this.editor.controllers.prompt.getMyPrompts().premade
         const { prompt, contextFiles } = await transcript.getPromptForLastInteraction(
-            getPreamble(this.codebaseContext.getCodebase()),
+            myPremade || getPreamble(this.codebaseContext.getCodebase()),
             this.maxPromptTokens
         )
         transcript.setUsedContextFilesForLastInteraction(contextFiles)
@@ -458,6 +541,71 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
     private sendTranscript(): void {
         const chatTranscript = this.transcript.toChat()
         this.handleTranscript(chatTranscript, this.isMessageInProgress)
+    }
+
+    protected async executeMyPrompt(title: string): Promise<void> {
+        // Send prompt names to display as recipe options
+        if (!title || title === 'get') {
+            await this.sendMyPrompts()
+            return
+        }
+        // Create a new recipe
+        if (title === 'add') {
+            await this.editor.controllers.prompt.add()
+            await this.sendMyPrompts()
+            return
+        }
+        // Clear all recipes stored in user global storage
+        if (title === 'clear') {
+            await this.editor.controllers.prompt.clear()
+            await this.sendMyPrompts()
+            return
+        }
+        if (title === 'new-workspace-example-file') {
+            if (!this.contextProvider.currentWorkspaceRoot) {
+                void vscode.window.showErrorMessage('Could not find workspace path.')
+                return
+            }
+            try {
+                // copy the cody.json file from the extension path and move it to the workspace root directory
+                // Find the fsPath of the cody.json example file from the this.rgPath
+                const extensionPath = this.rgPath.slice(0, Math.max(0, this.rgPath.lastIndexOf('/')))
+                const extensionUri = vscode.Uri.parse(extensionPath)
+                const codyJsonPath = vscode.Uri.joinPath(extensionUri, 'cody.json')
+                const bytes = await vscode.workspace.fs.readFile(codyJsonPath)
+                const decoded = new TextDecoder('utf-8').decode(bytes)
+                const workspaceUri = vscode.Uri.parse(this.contextProvider.currentWorkspaceRoot)
+                const workspaceCodyJsonPath = vscode.Uri.joinPath(workspaceUri, '.vscode/cody.json')
+                const workspaceEditor = new vscode.WorkspaceEdit()
+                workspaceEditor.createFile(workspaceCodyJsonPath, { ignoreIfExists: false })
+                workspaceEditor.insert(workspaceCodyJsonPath, new vscode.Position(0, 0), decoded)
+                await vscode.workspace.applyEdit(workspaceEditor)
+                await vscode.window.showTextDocument(workspaceCodyJsonPath)
+            } catch (error) {
+                void vscode.window.showErrorMessage(`Could not create a new cody.json file: ${error}`)
+            }
+            return
+        }
+        // todo: showtab
+        // this.showTab('chat')
+        // Get prompt details from controller by title then execute
+        const prompt = this.editor.controllers.prompt.find(title)
+        if (!prompt) {
+            void vscode.window.showErrorMessage(`Could not find prompt for the "${title}" recipe.`)
+            debug('executeMyPrompt:noPrompt', title)
+            return
+        }
+        // todo: prev called showtab
+        await this.executeRecipe('my-prompt', prompt)
+    }
+
+    /**
+     * Send custom recipe names to webview
+     */
+    private async sendMyPrompts(): Promise<void> {
+        await this.editor.controllers.prompt.refresh()
+        const prompts = this.editor.controllers.prompt.getPromptList()
+        void this.handleMyPrompts(prompts)
     }
 
     private async saveTranscriptToChatHistory(): Promise<void> {
