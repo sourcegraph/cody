@@ -2,16 +2,15 @@
   "description": "This file is used for building custom workspace recipes for Cody by Sourcegraph.",
   "recipes": {
     "Spell Checker": {
-      "prompt": "Spell check the selected code and let me know if I have any typos or non-standard usage.",
-      "context": {
-        "none": true
-      }
+      "prompt": "Correct all typos and non-standard usage for the selected code. Make sure the revised version is consistent with the surrounding code. Do not format the answer as a code block. If you are unsure about a word, please leave it as is."
+    },
+    "Refactor Code": {
+      "prompt": "Please analyze the code and suggest constructive edits that follow best practices and improve code quality and readability. Focus your responses on being clear, thoughtful, coherent and easy for me to understand. Do not make changes that alter intended functionality without explaining why. Avoid responses that are overly complex or difficult to implement. Strive to provide helpful recommendations based on other shared code snippests."
     },
     "Generate README.md for Current Directory": {
       "prompt": "Create a README.md for this directory.",
       "context": {
-        "currentDir": true,
-        "excludeSelection": true
+        "currentDir": true
       }
     },
     "Commit Message for Current Changes": {
@@ -19,8 +18,7 @@
       "command": "git",
       "args": ["diff"],
       "context": {
-        "none": true,
-        "excludeSelection": true
+        "none": true
       },
       "note": "You must have git installed and authenticated to use this recipe"
     },
@@ -29,10 +27,15 @@
       "command": "cat",
       "args": ["~/Library/Logs/com.sourcegraph.cody/Cody.log"],
       "context": {
-        "none": true,
-        "excludeSelection": true
+        "none": true
       },
       "note": "You must have Cody app installed to use this recipe"
+    },
+    "Generate Multiple Unit Tests": {
+      "prompt": "Generate at least 3 unit tests for the selected code. Provide me with full workable and only import libraries that are also used by other test files in the directory",
+      "context": {
+        "currentDir": true
+      }
     }
   }
 }

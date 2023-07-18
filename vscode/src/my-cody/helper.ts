@@ -4,10 +4,11 @@ import { defaultCodyPromptContext } from '@sourcegraph/cody-shared/src/chat/reci
 
 import { CodyPrompt } from './MyPromptController'
 
+// Create a .vscode/cody.json file in the root directory of the workspace or user's home directory using the sample files
 export async function createJSONFile(extensionPath: string, rootDirPath: string, isUserType: boolean): Promise<void> {
     const extensionUri = vscode.Uri.parse(extensionPath)
     const refFileName = isUserType ? 'user-cody.json' : 'workspace-cody.json'
-    const codyJsonPath = vscode.Uri.joinPath(extensionUri, 'resources/bin/' + refFileName)
+    const codyJsonPath = vscode.Uri.joinPath(extensionUri, 'resources/samples/' + refFileName)
     const bytes = await vscode.workspace.fs.readFile(codyJsonPath)
     const decoded = new TextDecoder('utf-8').decode(bytes)
     if (!rootDirPath) {
@@ -17,6 +18,7 @@ export async function createJSONFile(extensionPath: string, rootDirPath: string,
     await saveJSONFile(decoded, rootDirPath)
 }
 
+// Add context from the sample files to the .vscode/cody.json file
 export async function saveJSONFile(context: string, rootDirPath: string, isSaveMode = false): Promise<void> {
     const rootDirUri = vscode.Uri.parse(rootDirPath)
     const codyJsonFilePath = vscode.Uri.joinPath(rootDirUri, '.vscode/cody.json')
@@ -34,6 +36,7 @@ export async function saveJSONFile(context: string, rootDirPath: string, isSaveM
     }
 }
 
+// Create a file watcher for each .vscode/cody.json file
 export function createFileWatch(fsPath?: string): vscode.FileSystemWatcher | null {
     if (!fsPath) {
         return null
@@ -46,6 +49,7 @@ export function createFileWatch(fsPath?: string): vscode.FileSystemWatcher | nul
 
 export const prompt_creation_title = 'Creating a new custom recipe...'
 
+// This allows users to create a new prompt via UI using the input box and quick pick without having to manually edit the cody.json file
 export async function createNewPrompt(promptName?: string): Promise<CodyPrompt | null> {
     if (!promptName) {
         return null
@@ -71,19 +75,19 @@ export async function createNewPrompt(promptName?: string): Promise<CodyPrompt |
     newPrompt.context = { ...defaultCodyPromptContext }
     // Get the context types from the user using the quick pick
     const promptContext = await vscode.window.showQuickPick(contextTypes, {
-        title: 'Select context type to share with Cody for the new recipe',
+        title: 'Select the context to include with the prompt for the new recipe',
+        placeHolder: 'TIPS: Providing limited but precise context helps Cody provide more relevant answers',
         canPickMany: true,
-        ignoreFocusOut: true,
+        ignoreFocusOut: false,
         onDidSelectItem: (item: vscode.QuickPickItem) => {
             item.picked = !item.picked
-            console.log(item)
         },
     })
     if (promptContext?.length) {
         for (const context of promptContext) {
             switch (context.id) {
                 case 'selection':
-                    newPrompt.context.excludeSelection = false
+                    newPrompt.context.excludeSelection = !context.picked
                     break
                 case 'codebase':
                     newPrompt.context.codebase = true
@@ -94,11 +98,11 @@ export async function createNewPrompt(promptName?: string): Promise<CodyPrompt |
                 case 'openTabs':
                     newPrompt.context.openTabs = true
                     break
+                case 'none':
+                    newPrompt.context.none = true
+                    break
             }
         }
-    } else {
-        newPrompt.context.none = true
-        newPrompt.context.excludeSelection = true
     }
     // Get the command to run from the user using the input box
     const promptCommand = await vscode.window.showInputBox({
@@ -121,7 +125,7 @@ const contextTypes = [
     {
         id: 'selection',
         label: 'Selected Code',
-        detail: 'The code that you are currently selected in the editor.',
+        detail: 'Code currently highlighted in the active editor.',
         picked: true,
     },
     {
@@ -133,15 +137,20 @@ const contextTypes = [
     {
         id: 'currentDir',
         label: 'Current Directory',
-        description: 'Text files only',
-        detail: 'Files in the current directory.',
+        description: 'If the prompt includes "test(s)", only test files will be included.',
+        detail: 'First 10 text files in the current directory',
         picked: false,
     },
     {
         id: 'openTabs',
         label: 'Current Open Tabs',
-        description: 'Text files only',
-        detail: 'Files in current open tabs.',
+        detail: 'First 10 text files in current open tabs',
+        picked: false,
+    },
+    {
+        id: 'none',
+        label: 'none',
+        detail: 'Exclude all types of context.',
         picked: false,
     },
 ]

@@ -43,7 +43,10 @@ export const Recipes: React.FunctionComponent<{
                     {myPromptsEnabled && (
                         <>
                             <div>
-                                <div className={styles.recipesHeader}>
+                                <div
+                                    title="Custom Recipes let you build your own reusable prompts with tailored contexts. Update the recipes field in your `.vscode/cody.json` file to add or remove a recipe."
+                                    className={styles.recipesHeader}
+                                >
                                     <span>Custom Recipes</span>
                                     <VSCodeButton
                                         type="button"
@@ -52,20 +55,13 @@ export const Recipes: React.FunctionComponent<{
                                     >
                                         <i
                                             className="codicon codicon-plus"
-                                            title="Create a new recipe with custom prompt"
+                                            title="Create a new User recipe accessible only to you across Workspaces"
                                         />
                                     </VSCodeButton>
                                 </div>
-                                {myPrompts?.length > 0 ? (
+                                {myPrompts?.length === 0 && (
                                     <small className={styles.recipesNotes}>
-                                        To create a new Workspace recipe, add a new recipe item to the
-                                        `.vscode/cody.json` file located in the repository. You can also click the `+`
-                                        icon above to create a new User recipe accessible only to you across Workspaces.
-                                    </small>
-                                ) : (
-                                    <small className={styles.recipesNotes}>
-                                        Custom Recipes let you build your own reusable prompts with tailored contexts.
-                                        To get started, choose a custom recipe type below to create a new `cody.json`
+                                        To get started, select a custom recipe type below to generate a new `cody.json`
                                         file containing sample recipes.
                                     </small>
                                 )}
@@ -102,15 +98,6 @@ export const Recipes: React.FunctionComponent<{
                                     {promptID}
                                 </VSCodeButton>
                             ))}
-                            {myPrompts?.length > 0 && (
-                                <VSCodeButton
-                                    className={styles.recipeButton}
-                                    type="button"
-                                    onClick={() => onMyPromptClick('clear')}
-                                >
-                                    Delete cody.json for User Recipes
-                                </VSCodeButton>
-                            )}
                             <div className={styles.recipesHeader}>
                                 <span>Featured Recipes</span>
                             </div>

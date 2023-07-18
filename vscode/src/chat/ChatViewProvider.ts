@@ -763,6 +763,11 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
             debug('executeMyPrompt:noPrompt', title)
             return
         }
+        if (/^\/r(est)?/i.test(prompt)) {
+            this.editor.controllers.prompt.getCommandOutput()
+            await this.clearAndRestartSession()
+            return
+        }
         await this.executeRecipe('my-prompt', prompt, true)
     }
 

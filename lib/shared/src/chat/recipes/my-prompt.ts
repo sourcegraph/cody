@@ -3,7 +3,12 @@ import * as vscode from 'vscode'
 import { CodebaseContext } from '../../codebase-context'
 import { ContextMessage, getContextMessageWithResponse } from '../../codebase-context/messages'
 import { ActiveTextEditorSelection, Editor } from '../../editor'
-import { MAX_CURRENT_FILE_TOKENS, MAX_HUMAN_INPUT_TOKENS } from '../../prompt/constants'
+import {
+    MAX_CURRENT_FILE_TOKENS,
+    MAX_HUMAN_INPUT_TOKENS,
+    NUM_CODE_RESULTS,
+    NUM_TEXT_RESULTS,
+} from '../../prompt/constants'
 import {
     populateCodeContextTemplate,
     populateCurrentEditorContextTemplate,
@@ -13,6 +18,7 @@ import { truncateText } from '../../prompt/truncation'
 import { Interaction } from '../transcript/interaction'
 
 import { ChatQuestion } from './chat-question'
+import { numResults } from './helpers'
 import { InlineTouch } from './inline-touch'
 import { Recipe, RecipeContext, RecipeID } from './recipe'
 
@@ -28,6 +34,7 @@ export interface CodyPromptContext {
     none?: boolean
 }
 
+// Default to include selection context only
 export const defaultCodyPromptContext: CodyPromptContext = {
     codebase: false,
     excludeSelection: false,
@@ -52,7 +59,7 @@ export class MyPrompt implements Recipe {
             return null
         }
         const commandOutput = context.editor.controllers?.prompt.get()
-        const note = ' Refer to the command output and code I am looking at to answer my quesiton.'
+        const note = ' Refer to the command output and shared code snippets to answer my quesiton.'
         const truncatedText = truncateText(promptText + note, MAX_HUMAN_INPUT_TOKENS)
         // Add selection file name as display when available
         const displayText = selection?.fileName ? this.getHumanDisplayText(humanInput, selection?.fileName) : humanInput
@@ -96,10 +103,7 @@ export class MyPrompt implements Recipe {
         }
         // Codebase context is not included by default
         if (isContextRequired.codebase) {
-            const codebaseContextMessages = await codebaseContext.getContextMessages(text, {
-                numCodeResults: 12,
-                numTextResults: 3,
-            })
+            const codebaseContextMessages = await codebaseContext.getContextMessages(text, numResults)
             contextMessages.push(...codebaseContextMessages)
         }
         // Create context messages from open tabs
@@ -136,7 +140,8 @@ export class MyPrompt implements Recipe {
         if (commandOutput) {
             contextMessages.push(...MyPrompt.getTerminalOutputContext(commandOutput))
         }
-        return contextMessages.slice(-15)
+        // Return the last n context messages in case there are too many
+        return contextMessages.slice(0 - NUM_CODE_RESULTS - NUM_TEXT_RESULTS)
     }
 
     // Get context from current editor open tabs
