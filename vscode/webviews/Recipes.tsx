@@ -108,7 +108,7 @@ export const Recipes: React.FunctionComponent<{
                                     type="button"
                                     onClick={() => onMyPromptClick('clear')}
                                 >
-                                    Remove cody.json for User Recipes
+                                    Delete cody.json for User Recipes
                                 </VSCodeButton>
                             )}
                             <div className={styles.recipesHeader}>
