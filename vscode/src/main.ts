@@ -204,12 +204,6 @@ const register = async (
             await chatProvider.clearAndRestartSession()
             chatProvider.setWebviewView('chat')
         }),
-        vscode.commands.registerCommand('cody.inline.insert', async (copiedText: string) => {
-            // Insert copiedText to the current cursor position
-            await vscode.commands.executeCommand('editor.action.insertSnippet', {
-                snippet: copiedText,
-            })
-        }),
         vscode.commands.registerCommand('cody.focus', () => vscode.commands.executeCommand('cody.chat.focus')),
         vscode.commands.registerCommand('cody.settings.user', () => chatProvider.setWebviewView('settings')),
         vscode.commands.registerCommand('cody.settings.extension', () =>
