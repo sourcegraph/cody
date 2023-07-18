@@ -5,7 +5,10 @@
     "rootDir": ".",
     "outDir": "dist",
     "jsx": "react-jsx",
-    "lib": ["ESNext", "DOM"],
+    "lib": [
+      "ESNext",
+      "DOM"
+    ],
   },
   "include": [
     "src",
@@ -18,7 +21,19 @@
     "package.json",
     ".eslintrc.js",
     ".storybook/*.ts",
+    "../lib/shared/src/telemetry/EventLogger.ts",
   ],
-  "exclude": ["scripts", "dist", "test/integration"],
-  "references": [{ "path": "../lib/shared" }, { "path": "../lib/ui" }],
+  "exclude": [
+    "scripts",
+    "dist",
+    "test/integration"
+  ],
+  "references": [
+    {
+      "path": "../lib/shared"
+    },
+    {
+      "path": "../lib/ui"
+    }
+  ],
 }

@@ -18,7 +18,7 @@ import { createProviderConfig as createUnstableCodeGenProviderConfig } from './c
 import { createProviderConfig as createUnstableHuggingFaceProviderConfig } from './completions/providers/unstable-huggingface'
 import { getConfiguration, getFullConfig, migrateConfiguration } from './configuration'
 import { VSCodeEditor } from './editor/vscode-editor'
-import { eventLogger, logEvent, updateEventLogger } from './event-logger'
+import { logEvent, updateEventLogger } from './event-logger'
 import { configureExternalServices } from './external-services'
 import { FixupController } from './non-stop/FixupController'
 import { showSetupNotification } from './notifications/setup-notification'
@@ -343,9 +343,7 @@ const register = async (
         onConfigurationChange: newConfig => {
             chatProvider.onConfigurationChange(newConfig)
             externalServicesOnDidConfigurationChange(newConfig)
-            if (eventLogger) {
-                eventLogger.onConfigurationChange(vscode.workspace.getConfiguration())
-            }
+            updateEventLogger(newConfig, localStorage)
         },
     }
 }

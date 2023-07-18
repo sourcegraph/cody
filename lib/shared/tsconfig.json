@@ -4,8 +4,16 @@
     "module": "ESNext",
     "rootDir": "src",
     "outDir": "dist",
-    "lib": ["ESNext", "DOM.Iterable"],
+    "lib": [
+      "ESNext",
+      "DOM.Iterable"
+    ],
   },
-  "include": ["src"],
-  "exclude": ["dist"],
+  "include": [
+    "src",
+    "src/telemetry/EventLogger.ts"
+  ],
+  "exclude": [
+    "dist"
+  ],
 }

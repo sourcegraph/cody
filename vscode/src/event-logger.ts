@@ -1,6 +1,6 @@
 import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
 import { SourcegraphGraphQLAPIClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
-import { EventLogger } from '@sourcegraph/cody-shared/src/telemetry/EventLogger'
+import { EventLogger, ExtensionDetails } from '@sourcegraph/cody-shared/src/telemetry/EventLogger'
 
 import { version as packageVersion } from '../package.json'
 
@@ -11,15 +11,27 @@ let eventLoggerGQLClient: SourcegraphGraphQLAPIClient
 export let eventLogger: EventLogger | null = null
 let anonymousUserID: string
 
+const extensionDetails: ExtensionDetails = { ide: 'VSCode', ideExtensionType: 'Cody' }
+
 export async function updateEventLogger(
-    config: Pick<ConfigurationWithAccessToken, 'serverEndpoint' | 'accessToken' | 'customHeaders'>,
+    config: Pick<ConfigurationWithAccessToken, 'serverEndpoint' | 'accessToken' | 'customHeaders' | 'useContext' | 'experimentalChatPredictions' | 'experimentalNonStop' | 'inlineChat' | 'experimentalGuardrails'>,
     localStorage: LocalStorage
 ): Promise<void> {
     const status = await localStorage.setAnonymousUserID()
     anonymousUserID = localStorage.getAnonymousUserID() || ''
+
+    const serverEndpoint = localStorage?.getEndpoint() || config.serverEndpoint
+    const configurationDetails = {
+        contextSelection: config.useContext,
+        chatPredictions: config.experimentalChatPredictions,
+        inline: config.inlineChat,
+        nonStop: config.experimentalNonStop,
+        guardrails: config.experimentalGuardrails,
+    }
+
     if (!eventLoggerGQLClient) {
         eventLoggerGQLClient = new SourcegraphGraphQLAPIClient(config)
-        eventLogger = EventLogger.create(eventLoggerGQLClient)
+        eventLogger = new EventLogger(eventLoggerGQLClient, serverEndpoint, extensionDetails, configurationDetails)
         if (status === 'installed') {
             logEvent('CodyInstalled')
         } else {
@@ -27,6 +39,7 @@ export async function updateEventLogger(
         }
     } else {
         eventLoggerGQLClient.onConfigurationChange(config)
+        eventLogger?.onConfigurationChange(serverEndpoint, extensionDetails, configurationDetails)
     }
 }
 

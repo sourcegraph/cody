@@ -1,80 +1,25 @@
-import * as vscode from 'vscode'
-
 import { SourcegraphGraphQLAPIClient } from '../sourcegraph-api/graphql'
 
-function getServerEndpointFromConfig(config: vscode.WorkspaceConfiguration): string {
-    return config.get<string>('cody.serverEndpoint', '')
+export type ExtensionDetails = {
+    ide: 'VSCode' | 'JetBrains' | 'Neovim' | 'Emacs'
+    ideExtensionType: 'Cody' | 'CodeSearch'
 }
 
-function getUseContextFromConfig(config: vscode.WorkspaceConfiguration): string {
-    if (!config) {
-        return ''
-    }
-    return config.get<string>('cody.useContext', '')
-}
-
-function getChatPredictionsFromConfig(config: vscode.WorkspaceConfiguration): boolean {
-    if (!config) {
-        return false
-    }
-    return config.get<boolean>('cody.experimental.chatPredictions', false)
-}
-
-function getInlineFromConfig(config: vscode.WorkspaceConfiguration): boolean {
-    if (!config) {
-        return false
-    }
-    return config.get<boolean>('cody.inlineChat.enabled', false)
-}
-
-function getNonStopFromConfig(config: vscode.WorkspaceConfiguration): boolean {
-    if (!config) {
-        return false
-    }
-    return config.get<boolean>('cody.experimental.nonStop', false)
-}
-
-function getSuggestionsFromConfig(config: vscode.WorkspaceConfiguration): boolean {
-    if (!config) {
-        return false
-    }
-    return config.get<boolean>('cody.experimental.suggestions', false)
-}
-
-function getGuardrailsFromConfig(config: vscode.WorkspaceConfiguration): boolean {
-    if (!config) {
-        return false
-    }
-    return config.get<boolean>('cody.experimental.guardrails', false)
+export type ConfigurationDetails = {
+    contextSelection: string
+    chatPredictions: boolean
+    inline: boolean
+    nonStop: boolean
+    guardrails: boolean
 }
 
 export class EventLogger {
-    private serverEndpoint = getServerEndpointFromConfig(vscode.workspace.getConfiguration())
-    private extensionDetails = { ide: 'VSCode', ideExtensionType: 'Cody' }
-    private constructor(private gqlAPIClient: SourcegraphGraphQLAPIClient) {}
+    public constructor(private gqlAPIClient: SourcegraphGraphQLAPIClient, private serverEndpoint: string, private extensionDetails: ExtensionDetails, private configurationDetails: ConfigurationDetails) { }
 
-    public static create(gqlAPIClient: SourcegraphGraphQLAPIClient): EventLogger {
-        return new EventLogger(gqlAPIClient)
-    }
-
-    public configurationDetails = {
-        contextSelection: getUseContextFromConfig(vscode.workspace.getConfiguration()),
-        chatPredictions: getChatPredictionsFromConfig(vscode.workspace.getConfiguration()),
-        inline: getInlineFromConfig(vscode.workspace.getConfiguration()),
-        nonStop: getNonStopFromConfig(vscode.workspace.getConfiguration()),
-        suggestions: getSuggestionsFromConfig(vscode.workspace.getConfiguration()),
-        guardrails: getGuardrailsFromConfig(vscode.workspace.getConfiguration()),
-    }
-
-    public onConfigurationChange(newconfig: vscode.WorkspaceConfiguration): void {
-        this.configurationDetails = {
-            contextSelection: getUseContextFromConfig(newconfig),
-            chatPredictions: getChatPredictionsFromConfig(newconfig),
-            inline: getInlineFromConfig(newconfig),
-            nonStop: getNonStopFromConfig(newconfig),
-            suggestions: getSuggestionsFromConfig(newconfig),
-            guardrails: getGuardrailsFromConfig(newconfig),
-        }
+    public onConfigurationChange(serverEndpoint: string, extensionDetails: ExtensionDetails, configurationDetails: ConfigurationDetails): void {
+        this.serverEndpoint = serverEndpoint
+        this.extensionDetails = extensionDetails
+        this.configurationDetails = configurationDetails
     }
 
     /**
@@ -104,6 +49,7 @@ export class EventLogger {
             configurationDetails: this.configurationDetails,
         }
         try {
+            console.log(publicArgument)
             this.gqlAPIClient
                 .logEvent({
                     event: eventName,
