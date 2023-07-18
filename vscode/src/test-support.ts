@@ -2,7 +2,7 @@ import { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messag
 import { MockReranker, Reranker } from '@sourcegraph/cody-shared/src/codebase-context/rerank'
 import { ContextResult } from '@sourcegraph/cody-shared/src/local-context'
 
-import { ChatViewProvider } from './chat/ChatViewProvider'
+import { SidebarChatViewProvider } from './chat/SidebarChatViewProvider'
 import { FixupController } from './non-stop/FixupController'
 import { FixupTask } from './non-stop/FixupTask'
 
@@ -40,7 +40,7 @@ class Rendezvous<T> {
 export class TestSupport {
     public static instance: TestSupport | undefined
 
-    public chatViewProvider = new Rendezvous<ChatViewProvider>()
+    public chatViewProvider = new Rendezvous<SidebarChatViewProvider>()
     public fixupController = new Rendezvous<FixupController>()
 
     public reranker: Reranker | undefined

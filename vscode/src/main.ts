@@ -7,11 +7,11 @@ import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
 import { Configuration, ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
 import { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/nodeClient'
 
-import { ChatViewProvider } from './chat/ChatViewProvider'
 import { ContextProvider } from './chat/ContextProvider'
 import { InlineChatViewManager } from './chat/InlineChatViewProvider'
 import { MessageProviderOptions } from './chat/MessageProvider'
 import { CODY_FEEDBACK_URL } from './chat/protocol'
+import { SidebarChatViewProvider } from './chat/SidebarChatViewProvider'
 import { CodyCompletionItemProvider } from './completions'
 import { CompletionsDocumentProvider } from './completions/docprovider'
 import { History } from './completions/history'
@@ -147,19 +147,19 @@ const register = async (
     }
 
     const inlineChatManager = new InlineChatViewManager(messageProviderOptions)
-    const chatProvider = new ChatViewProvider({
+    const sidebarChatProvider = new SidebarChatViewProvider({
         ...messageProviderOptions,
         extensionPath: context.extensionPath,
     })
 
-    disposables.push(chatProvider)
-    fixup.recipeRunner = chatProvider
+    disposables.push(sidebarChatProvider)
+    fixup.recipeRunner = sidebarChatProvider
 
     disposables.push(
-        vscode.window.registerWebviewViewProvider('cody.chat', chatProvider, {
+        vscode.window.registerWebviewViewProvider('cody.chat', sidebarChatProvider, {
             webviewOptions: { retainContextWhenHidden: true },
         }),
-        // Update external services when configurationChangeEvent is fired by chatProvider
+        // Update external services when configurationChangeEvent is fired by sidebarChatProvider
         contextProvider.configurationChangeEvent.event(async () => {
             externalServicesOnDidConfigurationChange(await getFullConfig(secretStorage, localStorage))
         })
@@ -167,10 +167,10 @@ const register = async (
 
     const executeRecipe = async (recipe: RecipeID, openChatView = true): Promise<void> => {
         if (openChatView) {
-            chatProvider.showTab('chat')
+            sidebarChatProvider.showTab('chat')
         }
 
-        await chatProvider.executeRecipe(recipe, '')
+        await sidebarChatProvider.executeRecipe(recipe, '')
     }
 
     const webviewErrorMessenger = async (error: string): Promise<void> => {
@@ -190,7 +190,7 @@ const register = async (
                 }
             }
         }
-        chatProvider.handleError(error)
+        sidebarChatProvider.handleError(error)
     }
 
     const statusBar = createStatusBar()
@@ -216,9 +216,9 @@ const register = async (
         vscode.commands.registerCommand('cody.comment.open-in-sidebar', async (thread: vscode.CommentThread) => {
             const inlineChatProvider = inlineChatManager.getProviderForThread(thread)
             // The inline chat is already saved in history, we just need to tell the sidebar chat to restore it
-            await chatProvider.restoreSession(inlineChatProvider.currentChatID)
+            await sidebarChatProvider.restoreSession(inlineChatProvider.currentChatID)
             // Ensure that the sidebar view is open if not already
-            chatProvider.setWebviewView('chat')
+            sidebarChatProvider.setWebviewView('chat')
             await vscode.commands.executeCommand('cody.chat.focus')
         }),
         vscode.commands.registerCommand('cody.inline.new', () =>
@@ -237,8 +237,8 @@ const register = async (
         vscode.commands.registerCommand('cody.auth.support', () => showFeedbackSupportQuickPick()),
         // Commands
         vscode.commands.registerCommand('cody.interactive.clear', async () => {
-            await chatProvider.clearAndRestartSession()
-            chatProvider.setWebviewView('chat')
+            await sidebarChatProvider.clearAndRestartSession()
+            sidebarChatProvider.setWebviewView('chat')
         }),
         vscode.commands.registerCommand('cody.inline.insert', async (copiedText: string) => {
             // Insert copiedText to the current cursor position
@@ -247,13 +247,13 @@ const register = async (
             })
         }),
         vscode.commands.registerCommand('cody.focus', () => vscode.commands.executeCommand('cody.chat.focus')),
-        vscode.commands.registerCommand('cody.settings.user', () => chatProvider.setWebviewView('settings')),
+        vscode.commands.registerCommand('cody.settings.user', () => sidebarChatProvider.setWebviewView('settings')),
         vscode.commands.registerCommand('cody.settings.extension', () =>
             vscode.commands.executeCommand('workbench.action.openSettings', { query: '@ext:sourcegraph.cody-ai' })
         ),
-        vscode.commands.registerCommand('cody.history', () => chatProvider.setWebviewView('history')),
+        vscode.commands.registerCommand('cody.history', () => sidebarChatProvider.setWebviewView('history')),
         vscode.commands.registerCommand('cody.history.clear', async () => {
-            await chatProvider.clearHistory()
+            await sidebarChatProvider.clearHistory()
         }),
         // Recipes
         vscode.commands.registerCommand('cody.recipe.explain-code', () => executeRecipe('explain-code-detailed')),
@@ -301,9 +301,13 @@ const register = async (
         vscode.commands.registerCommand('cody.walkthrough.showLogin', () =>
             vscode.commands.executeCommand('workbench.view.extension.cody')
         ),
-        vscode.commands.registerCommand('cody.walkthrough.showChat', () => chatProvider.setWebviewView('chat')),
-        vscode.commands.registerCommand('cody.walkthrough.showFixup', () => chatProvider.setWebviewView('recipes')),
-        vscode.commands.registerCommand('cody.walkthrough.showExplain', () => chatProvider.setWebviewView('recipes')),
+        vscode.commands.registerCommand('cody.walkthrough.showChat', () => sidebarChatProvider.setWebviewView('chat')),
+        vscode.commands.registerCommand('cody.walkthrough.showFixup', () =>
+            sidebarChatProvider.setWebviewView('recipes')
+        ),
+        vscode.commands.registerCommand('cody.walkthrough.showExplain', () =>
+            sidebarChatProvider.setWebviewView('recipes')
+        ),
         vscode.commands.registerCommand('cody.walkthrough.enableInlineChat', async () => {
             await workspaceConfig.update('cody.inlineChat', true, vscode.ConfigurationTarget.Global)
             // Open VSCode setting view. Provides visual confirmation that the setting is enabled.
