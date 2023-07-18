@@ -77,7 +77,8 @@ async function complete(
     code: string,
     responses?: CompletionResponse[],
     languageId: string = 'typescript',
-    context: vscode.InlineCompletionContext = { triggerKind: 1, selectedCompletionInfo: undefined }
+    context: vscode.InlineCompletionContext = { triggerKind: 1, selectedCompletionInfo: undefined },
+    triggerMoreEagerly = true
 ): Promise<{
     requests: CompletionParameters[]
     completions: vscode.InlineCompletionItem[]
@@ -108,7 +109,7 @@ async function complete(
         history: new History(),
         codebaseContext: null as any,
         disableTimeouts: true,
-        triggerMoreEagerly: false,
+        triggerMoreEagerly,
     })
 
     if (!code.includes(CURSOR_MARKER)) {
@@ -226,8 +227,19 @@ describe('Cody completions', () => {
         expect(requests[0].stopSequences).toEqual(['\n\nHuman:', '</CODE5711>', '\n\n'])
     })
 
-    it('does not make a request when in the middle of a word', async () => {
-        const { requests } = await complete(`foo${CURSOR_MARKER}`)
+    it('makes a request when in the middle of a word when triggerMoreEagerly is true', async () => {
+        const { requests } = await complete(
+            `foo${CURSOR_MARKER}`,
+            [createCompletionResponse('()')],
+            undefined,
+            undefined,
+            true
+        )
+        expect(requests).toHaveLength(1)
+    })
+
+    it('does not make a request when in the middle of a word when triggerMoreEagerly is false', async () => {
+        const { requests } = await complete(`foo${CURSOR_MARKER}`, undefined, undefined, undefined, false)
         expect(requests).toHaveLength(0)
     })
 
@@ -306,14 +318,16 @@ describe('Cody completions', () => {
         expect(requests).toHaveLength(0)
     })
 
-    it('trims completions that start with whitespace', async () => {
-        const { completions } = await complete(`function bubbleSort(${CURSOR_MARKER})`, [
-            createCompletionResponse('\t\t\tarray) {'),
-            createCompletionResponse('items) {'),
+    it('preserves leading whitespace when prefix has no trailing whitespace', async () => {
+        const { completions } = await complete(`const isLocalHost = window.location.host${CURSOR_MARKER}`, [
+            createCompletionResponse(" === 'localhost'"),
         ])
+        expect(completions[0].insertText).toBe(" === 'localhost'")
+    })
 
-        expect(completions[0].insertText).toBe('array) {')
-        expect(completions[1].insertText).toBe('items) {')
+    it('collapses leading whitespace when prefix has trailing whitespace', async () => {
+        const { completions } = await complete(`const x = ${CURSOR_MARKER}`, [createCompletionResponse('\t7')])
+        expect(completions[0].insertText).toBe('7')
     })
 
     it('should not trigger a request if there is text in the suffix for the same line', async () => {
@@ -410,12 +424,12 @@ describe('Cody completions', () => {
 
         it('keeps the closing bracket', async () => {
             const { completions } = await complete(`function printHello(${CURSOR_MARKER})`, [
-                createCompletionResponse(`() {
+                createCompletionResponse(` {
     console.log('Hello');
 }`),
             ])
 
-            expect(completions[0].insertText).toBe("() {\n    console.log('Hello');\n}")
+            expect(completions[0].insertText).toBe(" {\n    console.log('Hello');\n}")
         })
 
         it('triggers a multi-line completion at the start of a block', async () => {

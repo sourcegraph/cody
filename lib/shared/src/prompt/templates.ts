@@ -45,10 +45,10 @@ export function populateCurrentEditorContextTemplate(code: string, filePath: str
     )
 }
 
-const CURRENT_EDITOR_SELECTED_CODE_TEMPLATE = 'I am currently looking at this part of the code from `{filePath}`. '
+const CURRENT_EDITOR_SELECTED_CODE_TEMPLATE = 'I am currently looking at this selected code from `{filePath}`. '
 
 const CURRENT_EDITOR_SELECTED_CODE_TEMPLATE_WITH_REPO =
-    'I am currently looking at this part of the code from `{filePath}` in repository {repoName}. '
+    'I am currently looking at this selected code from `{filePath}` in the {repoName} repository. '
 
 export function populateCurrentEditorSelectedContextTemplate(
     code: string,

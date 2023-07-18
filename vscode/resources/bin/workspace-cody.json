@@ -1,10 +1,17 @@
 {
-  "description": "This file is used for building custom workspace recipes for Cody by Sourcegraph.",
+  "description": "This is an example file to showcase how to build custom recipes for Cody by Sourcegraph.",
   "recipes": {
-    "Spell Checker": {
-      "prompt": "Spell check the selected code and let me know if I have any typos or non-standard usage.",
+    "Refactor Code": {
+      "prompt": "Suggest ways to refactor the selected code to improve readability and maintainability",
       "context": {
-        "none": true
+        "currentDir": true
+      }
+    },
+    "Compare Files in Opened Tabs": {
+      "prompt": "Compare the code and explain how they are related",
+      "context": {
+        "openTabs": true,
+        "excludeSelection": true
       }
     },
     "Generate README.md for Current Directory": {
