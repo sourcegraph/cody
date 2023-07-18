@@ -22,6 +22,7 @@ export async function createCodebaseContext(
 
     const embeddingsSearch = repoId && !isError(repoId) ? new SourcegraphEmbeddingsSearchClient(client, repoId) : null
 
+    // Demo time
     const codebaseContext = new CodebaseContext(
         { useContext: contextType, serverEndpoint },
         codebase,
