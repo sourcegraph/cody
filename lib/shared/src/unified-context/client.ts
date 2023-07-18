@@ -4,7 +4,10 @@ import { SourcegraphGraphQLAPIClient } from '../sourcegraph-api/graphql'
 import { UnifiedContextFetcher, UnifiedContextFetcherResult } from '.'
 
 export class UnifiedContextFetcherClient implements UnifiedContextFetcher {
-    constructor(private client: SourcegraphGraphQLAPIClient, private repoIds: string[]) {}
+    constructor(
+        private client: SourcegraphGraphQLAPIClient,
+        private repoIds: string[]
+    ) {}
 
     public async getContext(
         query: string,

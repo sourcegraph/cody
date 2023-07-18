@@ -28,7 +28,7 @@ export const DEFAULT_CODEBASES = [
     'github.com/sourcegraph/about',
 ] as const
 
-export type CodebaseContexts = Record<typeof DEFAULT_CODEBASES[number], CodebaseContext>
+export type CodebaseContexts = Record<(typeof DEFAULT_CODEBASES)[number], CodebaseContext>
 export interface AppContext {
     codebaseContexts: CodebaseContexts
     vectorStore: HNSWLib
