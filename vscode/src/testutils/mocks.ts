@@ -94,8 +94,10 @@ class Uri {
 
 class InlineCompletionItem {
     public insertText: string
-    constructor(content: string) {
+    public range: Range | undefined
+    constructor(content: string, range?: Range) {
         this.insertText = content
+        this.range = range
     }
 }
 

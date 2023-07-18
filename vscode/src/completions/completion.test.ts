@@ -130,6 +130,15 @@ async function complete(
         filename: 'test.ts',
         uri: URI.parse('file:///test.ts'),
         languageId,
+        lineAt(position: vscode.Position) {
+            const split = codeWithoutCursor.split('\n')
+            const content = split[position.line - 1]
+            return {
+                range: {
+                    end: { line: position.line, character: content.length },
+                },
+            }
+        },
         offsetAt(): number {
             return 0
         },
@@ -207,7 +216,7 @@ describe('Cody completions', () => {
         `)
 
         expect(requests).toHaveLength(1)
-        const messages = requests[0]!.messages
+        const messages = requests[0].messages
         expect(messages[messages.length - 1]).toMatchInlineSnapshot(`
             {
               "speaker": "assistant",
@@ -215,7 +224,7 @@ describe('Cody completions', () => {
                     this.startLine =",
             }
         `)
-        expect(requests[0]!.stopSequences).toEqual(['\n\nHuman:', '</CODE5711>', '\n\n'])
+        expect(requests[0].stopSequences).toEqual(['\n\nHuman:', '</CODE5711>', '\n\n'])
     })
 
     it('makes a request when in the middle of a word when triggerMoreEagerly is true', async () => {
@@ -237,13 +246,7 @@ describe('Cody completions', () => {
     it('completes a single-line at the end of a sentence', async () => {
         const { completions } = await complete(`foo = ${CURSOR_MARKER}`, [createCompletionResponse("'bar'")])
 
-        expect(completions).toMatchInlineSnapshot(`
-            [
-              InlineCompletionItem {
-                "insertText": "'bar'",
-              },
-            ]
-        `)
+        expect(completions[0].insertText).toBe("'bar'")
     })
 
     it('completes up to two lines in single line mode', async () => {
@@ -257,14 +260,7 @@ describe('Cody completions', () => {
             [createCompletionResponse('console.log(2);\n    console.log(3);\n    console.log(4);')]
         )
 
-        expect(completions).toMatchInlineSnapshot(`
-          [
-            InlineCompletionItem {
-              "insertText": "console.log(2);
-              console.log(3);",
-            },
-          ]
-        `)
+        expect(completions[0].insertText).toBe('console.log(2);\n    console.log(3);')
     })
 
     it('only complete one line if the second line is indented in single line mode', async () => {
@@ -278,13 +274,7 @@ describe('Cody completions', () => {
             [createCompletionResponse('if (true) {\n        console.log(3);\n    }\n    console.log(4);')]
         )
 
-        expect(completions).toMatchInlineSnapshot(`
-          [
-            InlineCompletionItem {
-              "insertText": "if (true) {",
-            },
-          ]
-        `)
+        expect(completions[0].insertText).toBe('if (true) {')
     })
 
     it('completes a single-line at the middle of a sentence', async () => {
@@ -293,15 +283,26 @@ describe('Cody completions', () => {
             createCompletionResponse('items) {'),
         ])
 
-        expect(completions).toMatchInlineSnapshot(`
-            [
-              InlineCompletionItem {
-                "insertText": "array) {",
-              },
-              InlineCompletionItem {
-                "insertText": "items) {",
-              },
-            ]
+        expect(completions[0].insertText).toBe('array) {')
+        expect(completions[1].insertText).toBe('items) {')
+    })
+
+    it('marks the rest of the line as to be replaced so closing characters in the same line suffix are properly merged', async () => {
+        const { completions } = await complete(`function bubbleSort(${CURSOR_MARKER})`, [
+            createCompletionResponse('array) {'),
+        ])
+
+        expect(completions[0].range).toMatchInlineSnapshot(`
+          Range {
+            "end": {
+              "character": 21,
+              "line": 1,
+            },
+            "start": {
+              "character": 20,
+              "line": 1,
+            },
+          }
         `)
     })
 
@@ -321,23 +322,12 @@ describe('Cody completions', () => {
         const { completions } = await complete(`const isLocalHost = window.location.host${CURSOR_MARKER}`, [
             createCompletionResponse(" === 'localhost'"),
         ])
-        expect(completions[0]).toMatchInlineSnapshot(`
-          InlineCompletionItem {
-            "insertText": " === 'localhost'",
-          }
-        `)
+        expect(completions[0].insertText).toBe(" === 'localhost'")
     })
 
     it('collapses leading whitespace when prefix has trailing whitespace', async () => {
         const { completions } = await complete(`const x = ${CURSOR_MARKER}`, [createCompletionResponse('\t7')])
-
-        expect(completions).toMatchInlineSnapshot(`
-            [
-              InlineCompletionItem {
-                "insertText": "7",
-              },
-            ]
-        `)
+        expect(completions[0].insertText).toBe('7')
     })
 
     it('should not trigger a request if there is text in the suffix for the same line', async () => {
@@ -353,73 +343,30 @@ describe('Cody completions', () => {
     it('filters out known-bad completion starts', async () => {
         {
             const { completions } = await complete(`one:\n  ${CURSOR_MARKER}`, [createCompletionResponse('➕     1')])
-            expect(completions).toMatchInlineSnapshot(`
-                [
-                  InlineCompletionItem {
-                    "insertText": "1",
-                  },
-                ]
-            `)
+            expect(completions[0].insertText).toBe('1')
         }
         {
             const { completions } = await complete(`one:\n  ${CURSOR_MARKER}`, [createCompletionResponse('\u200B   2')])
-            expect(completions).toMatchInlineSnapshot(`
-                [
-                  InlineCompletionItem {
-                    "insertText": "2",
-                  },
-                ]
-            `)
+            expect(completions[0].insertText).toBe('2')
         }
         {
             const { completions } = await complete(`one:\n  ${CURSOR_MARKER}`, [createCompletionResponse('.      3')])
-            expect(completions).toMatchInlineSnapshot(`
-                [
-                  InlineCompletionItem {
-                    "insertText": "3",
-                  },
-                ]
-            `)
+            expect(completions[0].insertText).toBe('3')
         }
-
         {
-            const { completions: completions2 } = await complete(`two:\n${CURSOR_MARKER}`, [
-                createCompletionResponse('+  1'),
-            ])
-            expect(completions2).toMatchInlineSnapshot(`
-            [
-              InlineCompletionItem {
-                "insertText": "1",
-              },
-            ]
-        `)
+            const { completions } = await complete(`two:\n${CURSOR_MARKER}`, [createCompletionResponse('+  1')])
+            expect(completions[0].insertText).toBe('1')
         }
-
         {
-            const { completions: completions2 } = await complete(`two:\n${CURSOR_MARKER}`, [
-                createCompletionResponse('-  2'),
-            ])
-            expect(completions2).toMatchInlineSnapshot(`
-            [
-              InlineCompletionItem {
-                "insertText": "2",
-              },
-            ]
-        `)
+            const { completions } = await complete(`two:\n${CURSOR_MARKER}`, [createCompletionResponse('-  2')])
+            expect(completions[0].insertText).toBe('2')
         }
     })
 
     describe('odd indentation', () => {
-        it('filters our odd indentation in single-line completions', async () => {
+        it('filters out odd indentation in single-line completions', async () => {
             const { completions } = await complete(`const foo = ${CURSOR_MARKER}`, [createCompletionResponse(' 1')])
-
-            expect(completions).toMatchInlineSnapshot(`
-                [
-                  InlineCompletionItem {
-                    "insertText": "1",
-                  },
-                ]
-            `)
+            expect(completions[0].insertText).toBe('1')
         })
     })
 
@@ -442,16 +389,12 @@ describe('Cody completions', () => {
                 ]
             )
 
-            expect(completions).toMatchInlineSnapshot(`
-                            [
-                              InlineCompletionItem {
-                                "insertText": "
-                                    const unsortedArray = [4,3,78,2,0,2]
-                                    const sortedArray = bubbleSort(unsortedArray)
-                                    expect(sortedArray).toEqual([0,2,2,3,4,78])",
-                              },
-                            ]
-                    `)
+            expect(completions[0].insertText).toMatchInlineSnapshot(`
+              "
+                      const unsortedArray = [4,3,78,2,0,2]
+                      const sortedArray = bubbleSort(unsortedArray)
+                      expect(sortedArray).toEqual([0,2,2,3,4,78])"
+            `)
         })
 
         it('cuts-off redundant closing brackets on the start indent level', async () => {
@@ -472,15 +415,11 @@ describe('Cody completions', () => {
                 ]
             )
 
-            expect(completions).toMatchInlineSnapshot(`
-                            [
-                              InlineCompletionItem {
-                                "insertText": "const unsortedArray = [4,3,78,2,0,2]
-                                    const sortedArray = bubbleSort(unsortedArray)
-                                    expect(sortedArray).toEqual([0,2,2,3,4,78])",
-                              },
-                            ]
-                    `)
+            expect(completions[0].insertText).toMatchInlineSnapshot(`
+              "const unsortedArray = [4,3,78,2,0,2]
+                      const sortedArray = bubbleSort(unsortedArray)
+                      expect(sortedArray).toEqual([0,2,2,3,4,78])"
+            `)
         })
 
         it('keeps the closing bracket', async () => {
@@ -490,22 +429,14 @@ describe('Cody completions', () => {
 }`),
             ])
 
-            expect(completions).toMatchInlineSnapshot(`
-                            [
-                              InlineCompletionItem {
-                                "insertText": " {
-                                console.log('Hello');
-                            }",
-                              },
-                            ]
-                    `)
+            expect(completions[0].insertText).toBe(" {\n    console.log('Hello');\n}")
         })
 
         it('triggers a multi-line completion at the start of a block', async () => {
             const { requests } = await complete(`function bubbleSort() {\n  ${CURSOR_MARKER}`)
 
             expect(requests).toHaveLength(3)
-            expect(requests[0]!.stopSequences).not.toContain('\n')
+            expect(requests[0].stopSequences).not.toContain('\n')
         })
 
         it('uses an indentation based approach to cut-off completions', async () => {
@@ -536,18 +467,8 @@ describe('Cody completions', () => {
                 ]
             )
 
-            expect(completions).toMatchInlineSnapshot(`
-                [
-                  InlineCompletionItem {
-                    "insertText": "if (foo) {
-                            console.log('foo1');
-                        }",
-                  },
-                  InlineCompletionItem {
-                    "insertText": "console.log('foo')",
-                  },
-                ]
-            `)
+            expect(completions[0].insertText).toBe("if (foo) {\n            console.log('foo1');\n        }")
+            expect(completions[1].insertText).toBe("console.log('foo')")
         })
 
         it('cuts-off completions when the next non-empty line matches', async () => {
@@ -565,27 +486,21 @@ describe('Cody completions', () => {
                 ]
             )
 
-            expect(completions).toMatchInlineSnapshot(`
-                [
-                  InlineCompletionItem {
-                    "insertText": "console.log('foo')",
-                  },
-                ]
-            `)
+            expect(completions[0].insertText).toBe("console.log('foo')")
         })
 
         it('does not support multi-line completion on unsupported languages', async () => {
             const { requests } = await complete(`function looksLegit() {\n  ${CURSOR_MARKER}`, undefined, 'elixir')
 
             expect(requests).toHaveLength(1)
-            expect(requests[0]!.stopSequences).toContain('\n\n')
+            expect(requests[0].stopSequences).toContain('\n\n')
         })
 
         it('requires an indentation to start a block', async () => {
             const { requests } = await complete(`function bubbleSort() {\n${CURSOR_MARKER}`)
 
             expect(requests).toHaveLength(1)
-            expect(requests[0]!.stopSequences).toContain('\n\n')
+            expect(requests[0].stopSequences).toContain('\n\n')
         })
 
         it('works with python', async () => {
@@ -609,7 +524,7 @@ describe('Cody completions', () => {
             )
 
             expect(requests).toHaveLength(3)
-            expect(requests[0]!.stopSequences).not.toContain('\n')
+            expect(requests[0].stopSequences).not.toContain('\n')
             expect(completions[0].insertText).toMatchInlineSnapshot(`
                 "print(i)
                     elif i % 3 == 0:
@@ -643,7 +558,7 @@ describe('Cody completions', () => {
             )
 
             expect(requests).toHaveLength(3)
-            expect(requests[0]!.stopSequences).not.toContain('\n')
+            expect(requests[0].stopSequences).not.toContain('\n')
             expect(completions[0].insertText).toMatchInlineSnapshot(`
                 "System.out.println(i);
                     } else if (i % 3 == 0) {
@@ -686,7 +601,7 @@ describe('Cody completions', () => {
             )
 
             expect(requests).toHaveLength(3)
-            expect(requests[0]!.stopSequences).not.toContain('\n')
+            expect(requests[0].stopSequences).not.toContain('\n')
             expect(completions[0].insertText).toMatchInlineSnapshot(`
                 "Console.WriteLine(i);
                     }"
@@ -717,7 +632,7 @@ describe('Cody completions', () => {
             )
 
             expect(requests).toHaveLength(3)
-            expect(requests[0]!.stopSequences).not.toContain('\n')
+            expect(requests[0].stopSequences).not.toContain('\n')
             expect(completions[0].insertText).toMatchInlineSnapshot(`
                 "std::cout << i;
                     } else if (i % 3 == 0) {
@@ -752,7 +667,7 @@ describe('Cody completions', () => {
             )
 
             expect(requests).toHaveLength(3)
-            expect(requests[0]!.stopSequences).not.toContain('\n')
+            expect(requests[0].stopSequences).not.toContain('\n')
             expect(completions[0].insertText).toMatchInlineSnapshot(`
                 "printf(\\"%d\\", i);
                     } else if (i % 3 == 0) {
@@ -781,14 +696,12 @@ describe('Cody completions', () => {
                 ]
             )
 
-            expect(completions[0]).toMatchInlineSnapshot(`
-                InlineCompletionItem {
-                  "insertText": "console.log('foo')
+            expect(completions[0].insertText).toMatchInlineSnapshot(`
+              "console.log('foo')
 
-                        console.log('bar')
+                      console.log('bar')
 
-                        console.log('baz')",
-                }
+                      console.log('baz')"
             `)
         })
 
@@ -807,12 +720,10 @@ describe('Cody completions', () => {
                 ]
             )
 
-            expect(completions[0]).toMatchInlineSnapshot(`
-                InlineCompletionItem {
-                  "insertText": "console.log('one')
-                } else {
-                    console.log('two')",
-                }
+            expect(completions[0].insertText).toMatchInlineSnapshot(`
+              "console.log('one')
+              } else {
+                  console.log('two')"
             `)
         })
 
@@ -829,11 +740,9 @@ describe('Cody completions', () => {
                 ]
             )
 
-            expect(completions[0]).toMatchInlineSnapshot(`
-                InlineCompletionItem {
-                  "insertText": "console.log('one')
-                }",
-                }
+            expect(completions[0].insertText).toMatchInlineSnapshot(`
+              "console.log('one')
+              }"
             `)
         })
 
@@ -855,11 +764,9 @@ describe('Cody completions', () => {
                 ]
             )
 
-            expect(completions[0]).toMatchInlineSnapshot(`
-                InlineCompletionItem {
-                  "insertText": "console.log('one')
-                    console.log('two')",
-                }
+            expect(completions[0].insertText).toMatchInlineSnapshot(`
+              "console.log('one')
+                  console.log('two')"
             `)
         })
 
@@ -876,11 +783,7 @@ describe('Cody completions', () => {
                 ]
             )
 
-            expect(completions[0]).toMatchInlineSnapshot(`
-                InlineCompletionItem {
-                  "insertText": "pnpm-store",
-                }
-            `)
+            expect(completions[0].insertText).toBe('pnpm-store')
         })
 
         it('ranks results by number of lines', async () => {
@@ -905,23 +808,15 @@ describe('Cody completions', () => {
                 ]
             )
 
-            expect(completions).toMatchInlineSnapshot(`
-                [
-                  InlineCompletionItem {
-                    "insertText": "console.log('foo')
-                    console.log('foo')
-                    console.log('foo')
-                    console.log('foo')
-                    console.log('foo')",
-                  },
-                  InlineCompletionItem {
-                    "insertText": "console.log('foo')",
-                  },
-                  InlineCompletionItem {
-                    "insertText": "console.log('foo')",
-                  },
-                ]
+            expect(completions[0].insertText).toMatchInlineSnapshot(`
+              "console.log('foo')
+                  console.log('foo')
+                  console.log('foo')
+                  console.log('foo')
+                  console.log('foo')"
             `)
+            expect(completions[1].insertText).toBe("console.log('foo')")
+            expect(completions[2].insertText).toBe("console.log('foo')")
         })
 
         it('handles tab/newline interop in completion truncation', async () => {
@@ -967,11 +862,7 @@ describe('Cody completions', () => {
                 ]
             )
 
-            expect(completions[0]).toMatchInlineSnapshot(`
-                InlineCompletionItem {
-                  "insertText": "console.log('one')",
-                }
-            `)
+            expect(completions[0].insertText).toBe("console.log('one')")
         })
 
         it('normalizes Cody responses starting with an empty line and following the exact same indentation as the start line', async () => {
