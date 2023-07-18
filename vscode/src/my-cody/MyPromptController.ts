@@ -219,7 +219,10 @@ class MyRecipesBuilder {
 
     public codebase: string | null = null
 
-    constructor(private globalState: vscode.Memento, private workspaceRoot: string | null) {}
+    constructor(
+        private globalState: vscode.Memento,
+        private workspaceRoot: string | null
+    ) {}
 
     public async get(): Promise<Map<string, CodyPrompt>> {
         // reset map and set
