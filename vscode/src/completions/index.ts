@@ -206,12 +206,6 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
             return []
         }
 
-        // In this case, VS Code won't be showing suggestions anyway and we are more likely to want
-        // suggested method names from the language server instead.
-        if (context.triggerKind === vscode.InlineCompletionTriggerKind.Invoke || sameLinePrefix.endsWith('.')) {
-            return []
-        }
-
         const sharedProviderOptions = {
             prefix,
             suffix,
