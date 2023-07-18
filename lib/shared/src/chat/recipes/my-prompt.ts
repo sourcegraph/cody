@@ -42,7 +42,7 @@ export class MyPrompt implements Recipe {
     private promptStore = new Map<string, string>()
 
     public async getInteraction(humanChatInput: string, context: RecipeContext): Promise<Interaction | null> {
-        const selection = context.editor.getActiveTextEditorSelection() || context.editor.controllers?.inline.selection
+        const selection = context.editor.getActiveTextEditorSelection()
         // Make prompt text
         const humanInput = humanChatInput.trim()
         // Match human input with key from promptStore to get prompt text when there is none
@@ -136,7 +136,7 @@ export class MyPrompt implements Recipe {
         if (commandOutput) {
             contextMessages.push(...MyPrompt.getTerminalOutputContext(commandOutput))
         }
-        return contextMessages.slice(-12)
+        return contextMessages.slice(-15)
     }
 
     // Get context from current editor open tabs
