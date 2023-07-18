@@ -587,8 +587,6 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
             }
             return
         }
-        // todo: showtab
-        // this.showTab('chat')
         // Get prompt details from controller by title then execute
         const prompt = this.editor.controllers.prompt.find(title)
         if (!prompt) {
@@ -596,7 +594,6 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
             debug('executeMyPrompt:noPrompt', title)
             return
         }
-        // todo: prev called showtab
         await this.executeRecipe('my-prompt', prompt)
     }
 
