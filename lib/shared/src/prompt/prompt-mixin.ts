@@ -44,11 +44,11 @@ export class PromptMixin {
 
 /**
  * Creates a prompt mixin to get Cody to reply in the given language, for example "en-AU" for "Australian English".
- * End with "Greetings!" to redirect Cody to the next prompt. This prevents Cody from responding to the language prompt.
+ * End with a new statement to redirect Cody to the next prompt. This prevents Cody from responding to the language prompt.
  */
 export function languagePromptMixin(languageCode: string): PromptMixin {
     return new PromptMixin(
-        `Reply as Cody developed by Sourcegraph in the language with RFC5646/ISO language code "${languageCode}" unless instructed. Greetings!`
+        `(Reply as Cody developed by Sourcegraph in the language with RFC5646/ISO language code "${languageCode}" unless instructed) Hi, I need your help.`
     )
 }
 
