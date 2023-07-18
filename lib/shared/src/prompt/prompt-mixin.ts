@@ -6,6 +6,7 @@ import { InteractionMessage } from '../chat/transcript/messages'
  */
 export class PromptMixin {
     private static mixins: PromptMixin[] = []
+    private static customMixin: PromptMixin[] = []
 
     /**
      * Adds a prompt mixin to the global set.
@@ -15,14 +16,22 @@ export class PromptMixin {
     }
 
     /**
+     * Adds a custom prompt mixin but not to the global set to make sure it will not be added twice
+     * and any new change could replace the old one.
+     */
+    public static addCustom(mixin: PromptMixin): void {
+        this.customMixin = [mixin]
+    }
+
+    /**
      * Prepends all mixins to `humanMessage`. Modifies and returns `humanMessage`.
      */
     public static mixInto(humanMessage: InteractionMessage): InteractionMessage {
-        const mixins = this.mixins.map(mixin => mixin.prompt).join('\n\n')
+        const mixins = [...this.mixins, ...this.customMixin].map(mixin => mixin.prompt).join('\n\n')
         if (mixins) {
             // Stuff the prompt mixins at the start of the human text.
             // Note we do not reflect them in displayText.
-            return { ...humanMessage, text: `${mixins}\n\nConversation starts here:\n\n${humanMessage.text}` }
+            return { ...humanMessage, text: `${mixins}\n\n${humanMessage.text}` }
         }
         return humanMessage
     }
@@ -35,9 +44,14 @@ export class PromptMixin {
 
 /**
  * Creates a prompt mixin to get Cody to reply in the given language, for example "en-AU" for "Australian English".
+ * End with "Greetings!" to redirect Cody to the next prompt. This prevents Cody from responding to the language prompt.
  */
 export function languagePromptMixin(languageCode: string): PromptMixin {
     return new PromptMixin(
-        `Unless instructed otherwise, reply in the language with RFC5646/ISO language code "${languageCode}".`
+        `Reply in the language with RFC5646/ISO language code "${languageCode}" unless instructed. Greetings!`
     )
+}
+
+export function newPromptMixin(text: string): PromptMixin {
+    return new PromptMixin(text)
 }
