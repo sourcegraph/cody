@@ -1,12 +1,6 @@
 {
   "description": "This is an example file to showcase how to build custom recipes for Cody by Sourcegraph.",
   "recipes": {
-    "Refactor Code": {
-      "prompt": "Suggest ways to refactor the selected code to improve readability and maintainability",
-      "context": {
-        "currentDir": true
-      }
-    },
     "Compare Files in Opened Tabs": {
       "prompt": "Compare the code and explain how they are related",
       "context": {
@@ -26,8 +20,7 @@
       "command": "git",
       "args": ["diff"],
       "context": {
-        "none": true,
-        "excludeSelection": true
+        "none": true
       },
       "note": "You must have git installed and authenticated to use this recipe"
     },
@@ -36,10 +29,15 @@
       "command": "cat",
       "args": ["~/Library/Logs/com.sourcegraph.cody/Cody.log"],
       "context": {
-        "none": true,
-        "excludeSelection": true
+        "none": true
       },
       "note": "You must have Cody app installed to use this recipe"
-    }
+    },
+    "Remove Workspace Recipes File": {
+      "prompt": "/reset",
+      "command": "rm",
+      "args": [".vscode/cody.json"]
+    },
+    "note": "This delete the cody.json file from your workspace and reset the conversation with Cody"
   }
 }

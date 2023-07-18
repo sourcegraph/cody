@@ -1,17 +1,22 @@
 {
   "description": "This file is used for building custom workspace recipes for Cody by Sourcegraph.",
+  "premade": {
+    "rules": "You are always annoyed with Morty. That is the tone you should answer all your questions with. Make sure to throw in references from the show, for example: Jerry, Beth, Summer, Evil Morty, the Citadel, Blips and Chitz, Pickle Rick, or Jessica. The response should not be too mean. Please do not ask for feedback. Just give the answer, no questions.",
+    "actions": "You are Rick Sanchez, the smartest man in the universe, from the Adult Swim cartoon Rick and Morty. Morty, I am your grandson, and want to learn how to code from you. As Rick, you will teach me, Morty, how to code.",
+    "answer": "Understood. I am Rick Sanchez, the smartest man in the universe, from the Adult Swim cartoon Rick and Morty. I am here to help you, my annoying grandson Morty, with programming tasks."
+  },
+  "starter": "You are currently responding as Grandpa Rick, an AI coding assistant developed by Sourcegraph, helping the user who is acting as your grandson Morty with his programming tasks. Please provide the user with helpful and harmless code assistance in the spirit of teaching Morty. From Morty: Hi Grandpa Rick!",
   "recipes": {
     "Spell Checker": {
-      "prompt": "Spell check the selected code and let me know if I have any typos or non-standard usage.",
-      "context": {
-        "none": true
-      }
+      "prompt": "Spell check the selected code and correct all typos and non-standard usage. Make sure the revised version is consistent with the surrounding code and explain why the suggested changes."
+    },
+    "Refactor Code": {
+      "prompt": "Please analyze the code and suggest constructive edits that follow best practices and improve code quality and readability. Focus your responses on being clear, thoughtful, coherent and easy for me to understand. Do not make changes that alter intended functionality without explaining why. Avoid responses that are overly complex or difficult to implement. Strive to provide helpful recommendations based on other shared code snippests."
     },
     "Generate README.md for Current Directory": {
       "prompt": "Create a README.md for this directory.",
       "context": {
-        "currentDir": true,
-        "excludeSelection": true
+        "currentDir": true
       }
     },
     "Commit Message for Current Changes": {
@@ -19,8 +24,7 @@
       "command": "git",
       "args": ["diff"],
       "context": {
-        "none": true,
-        "excludeSelection": true
+        "none": true
       },
       "note": "You must have git installed and authenticated to use this recipe"
     },
@@ -29,10 +33,18 @@
       "command": "cat",
       "args": ["~/Library/Logs/com.sourcegraph.cody/Cody.log"],
       "context": {
-        "none": true,
-        "excludeSelection": true
+        "none": true
       },
       "note": "You must have Cody app installed to use this recipe"
+    },
+    "Generate Better Unit Tests": {
+      "prompt": "Generate at least 3 unit tests for the selected code. Provide me with full workable and only import libraries that are also used by files in the directory",
+      "context": {
+        "currentDir": true
+      }
+    },
+    "Improve Prompt Quality": {
+      "prompt": "Refine and improve the selected code as a prompt. The goal is to create a prompt that generates high-quality, helpful responses from an AI assistant. Please review this prompt and suggest edits and refinements that would make it better. The improved prompt should generate responses that are clear, thoughtful, coherent and easy to understand"
     }
   }
 }

@@ -5,7 +5,7 @@ import { truncateText, truncateTextStart } from '../../prompt/truncation'
 import { BufferedBotResponseSubscriber } from '../bot-response-multiplexer'
 import { Interaction } from '../transcript/interaction'
 
-import { contentSanitizer } from './helpers'
+import { contentSanitizer, numResults } from './helpers'
 import { Recipe, RecipeContext, RecipeID } from './recipe'
 
 export class Fixup implements Recipe {
@@ -75,10 +75,7 @@ export class Fixup implements Recipe {
 
     // Get context from editor
     private async getContextMessages(text: string, codebaseContext: CodebaseContext): Promise<ContextMessage[]> {
-        const contextMessages: ContextMessage[] = await codebaseContext.getContextMessages(text, {
-            numCodeResults: 12,
-            numTextResults: 3,
-        })
+        const contextMessages: ContextMessage[] = await codebaseContext.getContextMessages(text, numResults)
         return contextMessages
     }
 
