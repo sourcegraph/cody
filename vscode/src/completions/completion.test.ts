@@ -129,6 +129,13 @@ async function complete(
         filename: 'test.ts',
         uri: URI.parse('file:///test.ts'),
         languageId,
+        lineAt(line: number) {
+            return {
+                range: {
+                    end: { line, character: -1 },
+                },
+            }
+        },
         offsetAt(): number {
             return 0
         },
