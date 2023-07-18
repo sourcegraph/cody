@@ -169,14 +169,19 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
             // again
             const cachedCompletions = this.inlineCompletionsCache?.get(prefix, false)
             if (cachedCompletions?.isExactPrefix) {
-                return toInlineCompletionItems(cachedCompletions.logId, position, cachedCompletions.completions)
+                return toInlineCompletionItems(
+                    cachedCompletions.logId,
+                    document,
+                    position,
+                    cachedCompletions.completions
+                )
             }
             return []
         }
 
         const cachedCompletions = this.inlineCompletionsCache?.get(prefix)
         if (cachedCompletions) {
-            return toInlineCompletionItems(cachedCompletions.logId, position, cachedCompletions.completions)
+            return toInlineCompletionItems(cachedCompletions.logId, document, position, cachedCompletions.completions)
         }
 
         const completers: Provider[] = []
@@ -334,7 +339,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
         if (rankedResults.length > 0) {
             CompletionLogger.suggest(logId)
             this.inlineCompletionsCache?.add(logId, rankedResults)
-            return toInlineCompletionItems(logId, position, rankedResults)
+            return toInlineCompletionItems(logId, document, position, rankedResults)
         }
 
         CompletionLogger.noResponse(logId)
@@ -350,12 +355,15 @@ export interface Completion {
 
 function toInlineCompletionItems(
     logId: string,
+    document: vscode.TextDocument,
     position: vscode.Position,
     completions: Completion[]
 ): vscode.InlineCompletionItem[] {
     return completions.map(completion => {
         const lines = completion.content.split(/\r\n|\r|\n/m).length
-        return new vscode.InlineCompletionItem(completion.content, new vscode.Range(position, position), {
+        const currentLineText = document.lineAt(position)
+        const endOfLine = currentLineText.range.end
+        return new vscode.InlineCompletionItem(completion.content, new vscode.Range(position, endOfLine), {
             title: 'Completion accepted',
             command: 'cody.autocomplete.inline.accepted',
             arguments: [{ codyLogId: logId, codyLines: lines }],
