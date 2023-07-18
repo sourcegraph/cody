@@ -23,7 +23,7 @@
     "Remove User Recipes File": {
       "prompt": "/reset",
       "command": "rm",
-      "args": [".vscode/cody.json"],
+      "args": ["~/.vscode/cody.json"],
       "note": "This delete the cody.json file and reset the conversation with Cody"
     }
   }
