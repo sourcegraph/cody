@@ -1,4 +1,3 @@
 .github/PULL_REQUEST_TEMPLATE.md
-ci/
 dist/
 vscode/.vscode-test/
