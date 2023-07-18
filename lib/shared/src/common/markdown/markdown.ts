@@ -14,6 +14,124 @@ const escapeHTML = (html: string): string => {
 }
 
 /**
+ * All HTML tags in the list are treated as valid HTML that doesn't need to be escaped in markedjs.
+ * Unsafe tags like script are valid in here as they should only be removed by DOMPurify
+ */
+const HTML_TAGS_NO_ESCAPE: Set<string> = new Set([
+    'a',
+    'abbr',
+    'acronym',
+    'address',
+    'area',
+    'article',
+    'aside',
+    'audio',
+    'b',
+    'base',
+    'basefont',
+    'bdi',
+    'bdo',
+    'big',
+    'blockquote',
+    'body',
+    'br',
+    'button',
+    'canvas',
+    'caption',
+    'center',
+    'cite',
+    'code',
+    'col',
+    'colgroup',
+    'data',
+    'datalist',
+    'dd',
+    'del',
+    'details',
+    'dfn',
+    'dialog',
+    'div',
+    'dl',
+    'dt',
+    'em',
+    'embed',
+    'fieldset',
+    'figcaption',
+    'figure',
+    'footer',
+    'form',
+    'h1',
+    'h2',
+    'h3',
+    'h4',
+    'h5',
+    'h6',
+    'head',
+    'header',
+    'hr',
+    'html',
+    'i',
+    'iframe',
+    'img',
+    'input',
+    'ins',
+    'kbd',
+    'label',
+    'legend',
+    'li',
+    'link',
+    'main',
+    'map',
+    'mark',
+    'meta',
+    'meter',
+    'nav',
+    'noscript',
+    'object',
+    'ol',
+    'optgroup',
+    'option',
+    'output',
+    'p',
+    'param',
+    'picture',
+    'pre',
+    'progress',
+    'q',
+    'rp',
+    'rt',
+    'ruby',
+    's',
+    'samp',
+    'script',
+    'section',
+    'select',
+    'small',
+    'source',
+    'span',
+    'strong',
+    'style',
+    'sub',
+    'summary',
+    'sup',
+    'svg',
+    'table',
+    'tbody',
+    'td',
+    'template',
+    'textarea',
+    'tfoot',
+    'th',
+    'thead',
+    'time',
+    'title',
+    'tr',
+    'track',
+    'u',
+    'ul',
+])
+
+/**
  * Checks if a given HTML tag is a valid, non-custom HTML tag
  *
  * @example isValidHTMLTag('a') and isValidHTMLTag('svg') will return true
@@ -21,21 +139,7 @@ const escapeHTML = (html: string): string => {
  * @param tag A HTML tag (e.g. img, svg, my-custom-tag)
  * @returns If the given tag is a valid HTML tag
  */
-export const isValidHTMLTag = (tag: string): boolean => {
-    // svg is not a valid HTML tag for document.createElement but should still be treated as valid.
-    const overrides: { [key: string]: boolean } = { SVG: true }
-
-    tag = tag.toUpperCase()
-    try {
-        return (
-            overrides[tag] ||
-            // eslint-disable-next-line @typescript-eslint/no-base-to-string
-            document.createElement(tag).toString() !== '[object HTMLUnknownElement]'
-        )
-    } catch {
-        return false
-    }
-}
+export const isValidHTMLTag = (tag: string): boolean => HTML_TAGS_NO_ESCAPE.has(tag)
 
 /**
  * Extracts the name of the HTML tag of a given HTML token
