@@ -8,7 +8,6 @@ import { View } from '../../webviews/NavBar'
 import { logEvent } from '../event-logger'
 import { debug } from '../log'
 
-import { InlineChatViewProvider } from './InlineChatViewProvider'
 import { MessageProvider, MessageProviderOptions } from './MessageProvider'
 import { DOTCOM_URL, ExtensionMessage, WebviewMessage } from './protocol'
 
@@ -88,6 +87,7 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
                 break
             case 'my-prompt':
                 await this.executeMyPrompt(message.title)
+                this.showTab('chat')
                 break
             case 'openFile': {
                 const rootPath = this.editor.getWorkspaceRootPath()
@@ -245,7 +245,8 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
         const lastChatUsedEmbeddings = lastContextFiles?.some(file => file.source === 'embeddings')
 
         // We only include full chat transcript for dot com users with connected codebase
-        const chatTranscript = !isPrivateInstance && this.codebaseContext.getCodebase() ? privateChatTranscript : null
+        const chatTranscript =
+            !isPrivateInstance && this.contextProvider.context.getCodebase() ? privateChatTranscript : null
 
         return {
             chatTranscript,
@@ -277,7 +278,6 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
         this.webview = webviewView.webview
         this.authProvider.webview = webviewView.webview
         this.contextProvider.webview = webviewView.webview
-        InlineChatViewProvider.webview = webviewView.webview
 
         const extensionPath = vscode.Uri.file(this.extensionPath)
         const webviewPath = vscode.Uri.joinPath(extensionPath, 'dist', 'webviews')

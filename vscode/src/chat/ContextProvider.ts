@@ -42,6 +42,8 @@ export type Config = Pick<
 >
 
 export class ContextProvider implements vscode.Disposable {
+    // We fire messages from ContextProvider to the sidebar webview.
+    // TODO(umpox): Should we add support for showing context in other places (i.e. within inline chat)?
     public webview?: ChatViewProviderWebview
 
     // Fire event to let subscribers know that the configuration has changed
@@ -77,12 +79,16 @@ export class ContextProvider implements vscode.Disposable {
         )
     }
 
+    public get context(): CodebaseContext {
+        return this.codebaseContext
+    }
+
     public async init(): Promise<void> {
         await this.publishContextStatus()
     }
 
     public onConfigurationChange(newConfig: Config): void {
-        debug('ChatViewProvider:onConfigurationChange', '')
+        debug('ContextProvider:onConfigurationChange', '')
         this.config = newConfig
         const authStatus = this.authProvider.getAuthStatus()
         if (authStatus.endpoint) {

@@ -7,7 +7,6 @@ import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 import { Transcript } from '@sourcegraph/cody-shared/src/chat/transcript'
 import { ChatHistory, ChatMessage, UserLocalHistory } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { reformatBotMessage } from '@sourcegraph/cody-shared/src/chat/viewHelpers'
-import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
 import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
 import { annotateAttribution, Guardrails } from '@sourcegraph/cody-shared/src/guardrails'
 import { highlightTokens } from '@sourcegraph/cody-shared/src/hallucinations-detector'
@@ -61,6 +60,11 @@ export type Config = Pick<
  */
 const SAFETY_PROMPT_TOKENS = 100
 
+/**
+ * A derived class of MessageProvider must implement these handler methods.
+ * This contract ensures that MessageProvider is focused solely on building, sending and receiving messages.
+ * It does not assume anything about how those messages will be displayed to the user.
+ */
 abstract class MessageHandler {
     protected abstract handleTranscript(transcript: ChatMessage[], messageInProgress: boolean): void
     protected abstract handleHistory(history: UserLocalHistory): void
@@ -74,7 +78,6 @@ export interface MessageProviderOptions {
     config: Omit<Config, 'codebase'>
     chat: ChatClient
     intentDetector: IntentDetector
-    codebaseContext: CodebaseContext
     guardrails: Guardrails
     editor: VSCodeEditor
     localStorage: LocalStorage
@@ -103,7 +106,6 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
     protected config: Omit<Config, 'codebase'>
     protected chat: ChatClient
     protected intentDetector: IntentDetector
-    protected codebaseContext: CodebaseContext
     protected guardrails: Guardrails
     protected editor: VSCodeEditor
     protected localStorage: LocalStorage
@@ -117,7 +119,6 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         this.config = options.config
         this.chat = options.chat
         this.intentDetector = options.intentDetector
-        this.codebaseContext = options.codebaseContext
         this.guardrails = options.guardrails
         this.editor = options.editor
         this.localStorage = options.localStorage
@@ -412,7 +413,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         const interaction = await recipe.getInteraction(humanChatInput, {
             editor: this.editor,
             intentDetector: this.intentDetector,
-            codebaseContext: this.codebaseContext,
+            codebaseContext: this.contextProvider.context,
             responseMultiplexer: this.multiplexer,
             firstInteraction: this.transcript.isEmpty,
         })
@@ -441,7 +442,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
 
                 const myPremade = this.editor.controllers.prompt.getMyPrompts().premade
                 const { prompt, contextFiles } = await this.transcript.getPromptForLastInteraction(
-                    myPremade || getPreamble(this.codebaseContext.getCodebase()),
+                    myPremade || getPreamble(this.contextProvider.context.getCodebase()),
                     this.maxPromptTokens,
                     pluginsPrompt
                 )
@@ -465,7 +466,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         const interaction = await recipe.getInteraction(humanChatInput, {
             editor: this.editor,
             intentDetector: this.intentDetector,
-            codebaseContext: this.codebaseContext,
+            codebaseContext: this.contextProvider.context,
             responseMultiplexer: multiplexer,
             firstInteraction: this.transcript.isEmpty,
         })
@@ -476,7 +477,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
 
         const myPremade = this.editor.controllers.prompt.getMyPrompts().premade
         const { prompt, contextFiles } = await transcript.getPromptForLastInteraction(
-            myPremade || getPreamble(this.codebaseContext.getCodebase()),
+            myPremade || getPreamble(this.contextProvider.context.getCodebase()),
             this.maxPromptTokens
         )
         transcript.setUsedContextFilesForLastInteraction(contextFiles)
@@ -600,7 +601,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
     }
 
     /**
-     * Send custom recipe names to webview
+     * Send custom recipe names to view
      */
     private async sendMyPrompts(): Promise<void> {
         await this.editor.controllers.prompt.refresh()
@@ -679,9 +680,9 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         if (this.config.useContext !== 'embeddings') {
             return
         }
-        const searchErrors = this.codebaseContext.getEmbeddingSearchErrors()
+        const searchErrors = this.contextProvider.context.getEmbeddingSearchErrors()
         // Display error message as assistant response for users with indexed codebase but getting search errors
-        if (this.codebaseContext.checkEmbeddingsConnection() && searchErrors) {
+        if (this.contextProvider.context.checkEmbeddingsConnection() && searchErrors) {
             this.transcript.addErrorAsAssistantResponse(searchErrors)
             debug('ChatViewProvider:onLogEmbeddingsErrors', '', { verbose: searchErrors })
         }

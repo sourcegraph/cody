@@ -138,7 +138,6 @@ const register = async (
         config: initialConfig,
         chat: chatClient,
         intentDetector,
-        codebaseContext,
         guardrails,
         editor,
         localStorage,
@@ -154,9 +153,6 @@ const register = async (
     })
 
     disposables.push(chatProvider)
-
-    // TODO: Should this use inlineChatProvider?
-    // We close the inline chat
     fixup.recipeRunner = chatProvider
 
     disposables.push(
@@ -208,8 +204,7 @@ const register = async (
             logEvent(`CodyVSCodeExtension:inline-assist:${isFixMode ? 'fixup' : 'chat'}`)
         }),
         vscode.commands.registerCommand('cody.comment.delete', (thread: vscode.CommentThread) => {
-            const inlineChatProvider = inlineChatManager.getProviderForThread(thread)
-            inlineChatProvider.removeChat()
+            inlineChatManager.removeProviderForThread(thread)
         }),
         vscode.commands.registerCommand('cody.comment.stop', async (comment: Comment) => {
             const inlineChatProvider = inlineChatManager.getProviderForThread(comment.parent)

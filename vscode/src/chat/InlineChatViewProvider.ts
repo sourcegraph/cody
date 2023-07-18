@@ -1,10 +1,14 @@
 import * as vscode from 'vscode'
 
-import { ChatMessage, UserLocalHistory } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
+import { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 
-import { ChatViewProviderWebview } from './ChatViewProvider'
 import { MessageProvider, MessageProviderOptions } from './MessageProvider'
 
+/**
+ * VS Code does not provide an identifier for comment threads.
+ * We build our own key by combining the URI of the document with the
+ * range of the comment.
+ */
 const getUniqueKeyForCommentThread = (thread: vscode.CommentThread): string =>
     `${thread.uri.path}:L${thread.range.start.line}C${thread.range.start.character}-L${thread.range.end.line}C${thread.range.end.character}`
 
@@ -27,6 +31,17 @@ export class InlineChatViewManager {
 
         return provider
     }
+
+    public removeProviderForThread(thread: vscode.CommentThread): void {
+        const threadKey = getUniqueKeyForCommentThread(thread)
+        const provider = this.inlineChatThreadProviders.get(threadKey)
+
+        if (provider) {
+            this.inlineChatThreadProviders.delete(threadKey)
+            provider.removeChat()
+            provider.dispose()
+        }
+    }
 }
 
 interface InlineChatViewProviderOptions extends MessageProviderOptions {
@@ -34,7 +49,6 @@ interface InlineChatViewProviderOptions extends MessageProviderOptions {
 }
 
 export class InlineChatViewProvider extends MessageProvider {
-    public static webview?: ChatViewProviderWebview
     private thread: vscode.CommentThread
 
     constructor({ thread, ...options }: InlineChatViewProviderOptions) {
@@ -59,6 +73,7 @@ export class InlineChatViewProvider extends MessageProvider {
     public async abortChat(): Promise<void> {
         this.editor.controllers.inline.abort()
         await this.abortCompletion()
+        void vscode.commands.executeCommand('setContext', 'cody.inline.reply.pending', false)
     }
 
     /**
@@ -67,8 +82,6 @@ export class InlineChatViewProvider extends MessageProvider {
     protected handleTranscript(transcript: ChatMessage[], isMessageInProgress: boolean): void {
         const lastMessage = transcript[transcript.length - 1]
 
-        // If we have nothing to show, do nothing.
-        // Note that we only care about the assistants response.
         // The users' messages are already added through the comments API.
         if (lastMessage?.speaker !== 'assistant') {
             return
@@ -83,7 +96,7 @@ export class InlineChatViewProvider extends MessageProvider {
         }
 
         if (!isMessageInProgress) {
-            // Finished completing, we can allow users to send another inline chat message.
+            // Finished responding, we can allow users to send another inline chat message.
             void vscode.commands.executeCommand('setContext', 'cody.inline.reply.pending', false)
         }
     }
@@ -91,26 +104,18 @@ export class InlineChatViewProvider extends MessageProvider {
     /**
      * Display error message in the active inline chat thread..
      * Unlike the sidebar, this message is displayed as an assistant response.
-     * We don't yet have a good way to render errors separately in the inline chat window.
+     * TODO(umpox): Should we render these differently for inline chat? We are limited in UI options.
      */
     protected handleError(errorMsg: string): void {
         void this.editor.controllers.inline.error(errorMsg)
     }
 
-    /**
-     * Sends chat history to webview.
-     * Note: The sidebar is the only current way to navigate chat history.
-     * This is ensure that users can still find old inline chats from previous sessions.
-     */
-    protected handleHistory(history: UserLocalHistory): void {
-        void InlineChatViewProvider.webview?.postMessage({
-            type: 'history',
-            messages: history,
-        })
+    protected handleHistory(): void {
+        // navigating history not yet implemented for inline chat
     }
 
     protected handleSuggestions(): void {
-        // suggestions not yet implemented for inline chat
+        // showing suggestions not yet implemented for inline chat
     }
 
     protected handleEnabledPlugins(): void {

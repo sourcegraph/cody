@@ -13,6 +13,17 @@ import { editDocByUri, getIconPath, updateRangeOnDocChange } from './InlineAssis
 const initPost = new vscode.Position(0, 0)
 const initRange = new vscode.Range(initPost, initPost)
 
+/**
+ * We map Cody's response status to a string that is used to add context to comments.
+ * We can then use this to update the UI in VS Code accordingly (e.g. comments/comment/title set in package.json)
+ */
+enum CodyInlineStateContextValue {
+    loading = 'cody-inline-loading',
+    complete = 'cody-inline-complete',
+    streaming = 'cody-inline-loading',
+    error = 'cody-inline-complete',
+}
+
 export class InlineController {
     // Controller init
     private readonly id = 'cody-inline-chat'
@@ -188,25 +199,12 @@ export class InlineController {
     /**
      * List response from Cody as comment
      */
-    public reply(text: string, state: 'streaming' | 'complete' | 'error' | 'loading'): void {
+    public reply(text: string, state: keyof typeof CodyInlineStateContextValue): void {
         if (!this.thread || this.thread.state) {
             return
         }
 
-        let contextValue
-        switch (state) {
-            case 'loading':
-                contextValue = 'cody-inline-loading'
-                break
-            case 'streaming':
-                contextValue = 'cody-inline-streaming'
-                break
-            case 'complete':
-            case 'error':
-                contextValue = 'cody-inline-complete'
-                break
-        }
-
+        const contextValue = CodyInlineStateContextValue[state]
         const latestReply = this.getLatestReply()
         if (latestReply instanceof Comment && latestReply.author.name === 'Cody') {
             latestReply.update(text, contextValue)
@@ -472,6 +470,8 @@ export class Comment implements vscode.Comment {
     }
 
     public abort(): void {
+        // If Cody hasn't yet started streaming the response, we should just remove the comment completely.
+        // There is no useful information that the user might want to retain.
         if (this.contextValue === 'cody-inline-loading') {
             this.parent.comments = this.parent.comments.slice(0, -1)
             this.parent.canReply = true
