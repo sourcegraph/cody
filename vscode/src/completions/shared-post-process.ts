@@ -1,6 +1,6 @@
 import { Completion } from '.'
 import { truncateMultilineCompletion } from './multiline'
-import { trimUntilSuffix } from './text-processing'
+import { collapseDuplicativeWhitespace, trimUntilSuffix } from './text-processing'
 
 /**
  * This function implements post-processing logic that is applied regardless of
@@ -25,6 +25,7 @@ export function sharedPostProcess({
         content = truncateMultilineCompletion(content, prefix, suffix, languageId)
     }
     content = trimUntilSuffix(content, prefix, suffix)
+    content = collapseDuplicativeWhitespace(prefix, content)
 
     return {
         ...completion,
