@@ -13,7 +13,8 @@ Starting from `0.2.0`, Cody is using `major.EVEN_NUMBER.patch` for release versi
 
 ### Fixed
 
-- Cody should no longer reply users with response related to the language-uage instruction. [pull/279](https://github.com/sourcegraph/cody/pull/279)
+- Insert at Cusor now inserts the complete code snippets at cursor position. [pull/282](https://github.com/sourcegraph/cody/pull/282)
+- Minimizing the change of Cody replying users with response related to the language-uage prompt. [pull/279](https://github.com/sourcegraph/cody/pull/279)
 
 ### Changed
 

@@ -419,11 +419,6 @@
         "title": "Touch"
       },
       {
-        "command": "cody.inline.insert",
-        "category": "Cody",
-        "title": "Insert text at the current cursor position"
-      },
-      {
         "command": "cody.non-stop.fixup",
         "category": "Cody",
         "title": "Fixup (Experimental)",
@@ -604,10 +599,6 @@
         {
           "command": "cody.guardrails.debug",
           "when": "config.cody.experimental.guardrails && editorHasSelection"
-        },
-        {
-          "command": "cody.inline.insert",
-          "when": "false"
         },
         {
           "command": "cody.walkthrough.showLogin",
