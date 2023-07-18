@@ -247,7 +247,10 @@ class MyRecipesBuilder {
 
     public codebase: string | null = null
 
-    constructor(private workspaceRoot?: string, private homeDir?: string) {}
+    constructor(
+        private workspaceRoot?: string,
+        private homeDir?: string
+    ) {}
 
     public async get(): Promise<MyPrompts> {
         // reset map and set

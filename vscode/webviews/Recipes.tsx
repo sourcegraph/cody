@@ -44,7 +44,7 @@ export const Recipes: React.FunctionComponent<{
                         <>
                             <div>
                                 <div className={styles.recipesHeader}>
-                                    <span>My Prompts</span>
+                                    <span>Custom Recipes</span>
                                     <VSCodeButton
                                         type="button"
                                         appearance="icon"
@@ -56,29 +56,41 @@ export const Recipes: React.FunctionComponent<{
                                         />
                                     </VSCodeButton>
                                 </div>
-                                <small className={styles.recipesNotes}>
-                                    To create a Workspace recipe that is available to all users, add a new recipe item
-                                    to the .vscode/cody.json file located in your repository. You can also click the +
-                                    button above to create a new User recipe.
-                                </small>
+                                {myPrompts?.length > 0 ? (
+                                    <small className={styles.recipesNotes}>
+                                        To create a new Workspace recipe, add a new recipe item to the
+                                        `.vscode/cody.json` file located in the repository. You can also click the `+`
+                                        icon above to create a new User recipe accessible only to you across Workspaces.
+                                    </small>
+                                ) : (
+                                    <small className={styles.recipesNotes}>
+                                        Custom Recipes let you build your own reusable prompts with tailored contexts.
+                                        To get started, choose a custom recipe type below to create a new `cody.json`
+                                        file containing sample recipes.
+                                    </small>
+                                )}
                             </div>
                             {!myPrompts?.length && (
-                                <VSCodeButton
-                                    className={styles.recipeButton}
-                                    type="button"
-                                    onClick={() => onMyPromptClick('add-workspace-file')}
-                                >
-                                    Create cody.json file for Workspace with examples
-                                </VSCodeButton>
-                            )}
-                            {!myPrompts?.length && (
-                                <VSCodeButton
-                                    className={styles.recipeButton}
-                                    type="button"
-                                    onClick={() => onMyPromptClick('add-user-file')}
-                                >
-                                    Create cody.json file for User with examples
-                                </VSCodeButton>
+                                <>
+                                    <VSCodeButton
+                                        className={styles.recipeButton}
+                                        type="button"
+                                        onClick={() => onMyPromptClick('add-user-file')}
+                                        title="User Recipes are accessible only to you across
+                                        Workspaces"
+                                    >
+                                        User Recipes
+                                    </VSCodeButton>
+                                    <VSCodeButton
+                                        className={styles.recipeButton}
+                                        type="button"
+                                        onClick={() => onMyPromptClick('add-workspace-file')}
+                                        title="Workspace Recipes are available to all users in your current
+                                        repository"
+                                    >
+                                        Workspace Recipes
+                                    </VSCodeButton>
+                                </>
                             )}
                             {myPrompts?.map(promptID => (
                                 <VSCodeButton
@@ -90,7 +102,7 @@ export const Recipes: React.FunctionComponent<{
                                     {promptID}
                                 </VSCodeButton>
                             ))}
-                            {myPrompts?.length && (
+                            {myPrompts?.length > 0 && (
                                 <VSCodeButton
                                     className={styles.recipeButton}
                                     type="button"
@@ -100,7 +112,7 @@ export const Recipes: React.FunctionComponent<{
                                 </VSCodeButton>
                             )}
                             <div className={styles.recipesHeader}>
-                                <span>Featured</span>
+                                <span>Featured Recipes</span>
                             </div>
                         </>
                     )}

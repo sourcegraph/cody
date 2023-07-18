@@ -67,7 +67,7 @@ export class MyToolsProvider {
 }
 
 const outputWrapper = `
-The output is from running \`{command}\`:
+Here is the output of \`{command}\` command:
 \`\`\`sh
 {output}
 \`\`\``
