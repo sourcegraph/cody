@@ -1,5 +1,7 @@
 import path from 'path'
 
+/// <reference types="../vscode.proposed.inlineCompletionsAdditions" />
+
 import { LRUCache } from 'lru-cache'
 import * as vscode from 'vscode'
 
@@ -30,6 +32,7 @@ interface CodyCompletionItemProviderConfig {
     isCompletionsCacheEnabled?: boolean
     isEmbeddingsContextEnabled?: boolean
     triggerMoreEagerly: boolean
+    completeSuggestWidgetSelection?: boolean
 }
 
 export class CodyCompletionItemProvider implements vscode.InlineCompletionItemProvider {
@@ -52,6 +55,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
     private disableTimeouts: boolean
     private isEmbeddingsContextEnabled: boolean
     private triggerMoreEagerly: boolean
+    private completeSuggestWidgetSelection?: boolean
     public inlineCompletionsCache?: CompletionsCache
 
     constructor(config: CodyCompletionItemProviderConfig) {
@@ -67,6 +71,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
             isEmbeddingsContextEnabled = true,
             isCompletionsCacheEnabled = true,
             triggerMoreEagerly,
+            completeSuggestWidgetSelection,
         } = config
 
         this.providerConfig = providerConfig
@@ -79,6 +84,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
         this.disableTimeouts = disableTimeouts
         this.isEmbeddingsContextEnabled = isEmbeddingsContextEnabled
         this.triggerMoreEagerly = triggerMoreEagerly
+        this.completeSuggestWidgetSelection = completeSuggestWidgetSelection
 
         this.promptChars =
             providerConfig.maximumContextCharacters - providerConfig.maximumContextCharacters * responsePercentage
@@ -135,18 +141,23 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
         const abortController = new AbortController()
         if (token) {
             this.abortOpenInlineCompletions()
-            token.onCancellationRequested(() => abortController.abort())
+            token.onCancellationRequested(() => {
+                console.log('!! abort token')
+                abortController.abort()
+            })
             this.abortOpenInlineCompletions = () => abortController.abort()
         }
 
         CompletionLogger.clear()
 
         if (!vscode.window.activeTextEditor || document.uri.scheme === 'cody') {
+            console.log('<< stop completion: no active text editor or cody scheme')
             return []
         }
 
         const docContext = getCurrentDocContext(document, position, this.maxPrefixChars, this.maxSuffixChars)
         if (!docContext) {
+            console.log('<< stop completion: !docContext')
             return []
         }
 
@@ -159,6 +170,12 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
         /** Text after the cursor on the same line. */
         const sameLineSuffix = suffix.slice(0, suffix.indexOf('\n'))
 
+        console.log(
+            `>> start completion @${position.line}:${position.character} for prefix ...${JSON.stringify(
+                prefix.slice(-10)
+            )}`
+        )
+
         // Avoid showing completions when we're deleting code (Cody can only insert code at the
         // moment)
         const lastChange = this.lastContentChanges.get(document.fileName) ?? 'add'
@@ -169,6 +186,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
             // again
             const cachedCompletions = this.inlineCompletionsCache?.get(prefix, false)
             if (cachedCompletions?.isExactPrefix) {
+                console.log(`<< cached post-del completion for prefix ...${JSON.stringify(prefix.slice(-10))}`)
                 return toInlineCompletionItems(
                     cachedCompletions.logId,
                     document,
@@ -176,11 +194,13 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
                     cachedCompletions.completions
                 )
             }
+            console.log('<< stop completion: del')
             return []
         }
 
         const cachedCompletions = this.inlineCompletionsCache?.get(prefix)
         if (cachedCompletions) {
+            console.log(`<< cached completion for prefix ...${JSON.stringify(prefix.slice(-10))}`)
             return toInlineCompletionItems(cachedCompletions.logId, document, position, cachedCompletions.completions)
         }
 
@@ -190,15 +210,22 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
         // Don't show completions if we are in the process of writing a word.
         const cursorAtWord = /\w$/.test(sameLinePrefix)
         if (cursorAtWord && !this.triggerMoreEagerly) {
+            console.log('<< stop completion: cursorAtWord && !this.triggerMoreEagerly')
             return []
         }
         const triggeredMoreEagerly = this.triggerMoreEagerly && cursorAtWord
 
-        // Don't show completions if a selected completion info is present (so something is selected
-        // from the completions dropdown list based on the lang server) and the returned completion
-        // range does not contain the same selection.
+        // Don't show completions if the suggest widget's selected completion info is present (so
+        // something is selected from the completions dropdown list based on the lang server).
+        let triggeredForSuggestWidgetSelection: string | undefined
         if (context.selectedCompletionInfo) {
-            return []
+            if (this.completeSuggestWidgetSelection) {
+                triggeredForSuggestWidgetSelection = context.selectedCompletionInfo.text
+                console.log('triggeredForSuggestWidgetSelection', context.selectedCompletionInfo)
+            } else {
+                console.log('<< stop completion: context.selectedCompletionInfo')
+                return []
+            }
         }
 
         // If we have a suffix in the same line as the cursor and the suffix contains any word
@@ -208,6 +235,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
         // VS Code will attempt to merge the remainder of the current line by characters but for
         // words this will easily get very confusing.
         if (/\w/.test(sameLineSuffix)) {
+            console.log('<< stop completion: sameLineSuffix')
             return []
         }
 
@@ -264,6 +292,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
         // We don't need to make a request at all if the signal is already aborted after the
         // debounce
         if (abortController.signal.aborted) {
+            console.log('<< stop completion: aborted post-timeout')
             return []
         }
 
@@ -278,6 +307,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
             isEmbeddingsContextEnabled: this.isEmbeddingsContextEnabled,
         })
         if (abortController.signal.aborted) {
+            console.log('<< stop completion: aborted post-getContext')
             return []
         }
 
@@ -288,8 +318,10 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
             languageId,
             contextSummary,
             triggeredMoreEagerly,
+            triggeredForSuggestWidgetSelection: triggeredForSuggestWidgetSelection !== undefined,
             settings: {
-                'cody.autocomplete.experimental.triggerMoreEagerly': this.triggerMoreEagerly,
+                autocompleteExperimentalTriggerMoreEagerly: this.triggerMoreEagerly,
+                autocompleteExperimentalCompleteSuggestWidgetSelection: Boolean(this.completeSuggestWidgetSelection),
             },
         })
         const stopLoading = this.statusBar.startLoading('Completions are being generated')
@@ -337,6 +369,11 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
         }
 
         CompletionLogger.noResponse(logId)
+        console.log('<< no completion', {
+            processedCompletions: processedCompletions.length,
+            visibleResults: visibleResults.length,
+            rankedResults: rankedResults.length,
+        })
         return []
     }
 }
@@ -352,17 +389,21 @@ function toInlineCompletionItems(
     document: vscode.TextDocument,
     position: vscode.Position,
     completions: Completion[]
-): vscode.InlineCompletionItem[] {
-    return completions.map(completion => {
-        const lines = completion.content.split(/\r\n|\r|\n/m).length
-        const currentLineText = document.lineAt(position)
-        const endOfLine = currentLineText.range.end
-        return new vscode.InlineCompletionItem(completion.content, new vscode.Range(position, endOfLine), {
-            title: 'Completion accepted',
-            command: 'cody.autocomplete.inline.accepted',
-            arguments: [{ codyLogId: logId, codyLines: lines }],
-        })
-    })
+): vscode.InlineCompletionItem[] | vscode.InlineCompletionList {
+    return {
+        items: completions.map(completion => {
+            const lines = completion.content.split(/\r\n|\r|\n/m).length
+            const currentLineText = document.lineAt(position)
+            const endOfLine = currentLineText.range.end
+            return new vscode.InlineCompletionItem(completion.content, new vscode.Range(position, endOfLine), {
+                title: 'Completion accepted',
+                command: 'cody.autocomplete.inline.accepted',
+                arguments: [{ codyLogId: logId, codyLines: lines }],
+            })
+        }),
+        // enableForwardStability: true,
+        // suppressSuggestions: true,
+    }
 }
 
 function rankCompletions(completions: Completion[]): Completion[] {

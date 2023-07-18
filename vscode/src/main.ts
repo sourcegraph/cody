@@ -378,6 +378,7 @@ function createCompletionsProvider(
         isCompletionsCacheEnabled: config.autocompleteAdvancedCache,
         isEmbeddingsContextEnabled: config.autocompleteAdvancedEmbeddings,
         triggerMoreEagerly: config.autocompleteExperimentalTriggerMoreEagerly,
+        completeSuggestWidgetSelection: config.autocompleteExperimentalCompleteSuggestWidgetSelection,
     })
 
     disposables.push(
