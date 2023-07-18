@@ -15,7 +15,11 @@ import { debug } from '../log'
  * find files that are relevant based on their path or name.
  */
 export class FilenameContextFetcher {
-    constructor(private rgPath: string, private editor: Editor, private chatClient: ChatClient) {}
+    constructor(
+        private rgPath: string,
+        private editor: Editor,
+        private chatClient: ChatClient
+    ) {}
 
     /**
      * Returns pieces of context relevant for the given query. Uses a filename search approach
