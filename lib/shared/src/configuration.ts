@@ -20,6 +20,7 @@ export interface Configuration {
     autocompleteAdvancedCache: boolean
     autocompleteAdvancedEmbeddings: boolean
     autocompleteExperimentalTriggerMoreEagerly: boolean
+    autocompleteExperimentalCompleteSuggestWidgetSelection?: boolean
     pluginsEnabled?: boolean
     pluginsDebugEnabled?: boolean
     pluginsConfig?: {

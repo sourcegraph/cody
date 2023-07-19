@@ -870,6 +870,11 @@
           "default": false,
           "markdownDescription": "Trigger autocomplete when the cursor is at the end of a word (instead of waiting for a space or other non-word character). Share feedback at https://github.com/sourcegraph/cody/discussions/274."
         },
+        "cody.autocomplete.experimental.completeSuggestWidgetSelection": {
+          "type": "boolean",
+          "default": false,
+          "markdownDescription": "Autocomplete based on the currently selection in the suggest widget. Requires the VS Code user setting `editor.inlineSuggest.suppressSuggestions` set to true and will change it to true in user settings if it is not true."
+        },
         "cody.plugins.enabled": {
           "type": "boolean",
           "default": false,
