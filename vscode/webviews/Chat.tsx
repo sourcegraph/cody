@@ -85,9 +85,9 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
         (text: string, isInsert = false) => {
             if (isInsert) {
                 vscodeAPI.postMessage({ command: 'insert', text })
-            } else {
-                vscodeAPI.postMessage({ command: 'event', event: 'click', value: text })
             }
+            const event = isInsert ? 'insert' : 'click'
+            vscodeAPI.postMessage({ command: 'event', event, value: text })
         },
         [vscodeAPI]
     )

@@ -292,11 +292,6 @@
         "title": "Find Code Smells"
       },
       {
-        "command": "cody.test.token",
-        "category": "Cody",
-        "title": "Set Access Token"
-      },
-      {
         "command": "cody.settings.user",
         "category": "Cody",
         "title": "User Settings",
@@ -345,31 +340,6 @@
         "icon": "$(list-unordered)"
       },
       {
-        "command": "cody.walkthrough.showLogin",
-        "category": "Cody Walkthrough",
-        "title": "Show Login"
-      },
-      {
-        "command": "cody.walkthrough.showChat",
-        "category": "Cody Walkthrough",
-        "title": "Show Chat"
-      },
-      {
-        "command": "cody.walkthrough.showFixup",
-        "category": "Cody Walkthrough",
-        "title": "Show Fixup"
-      },
-      {
-        "command": "cody.walkthrough.showExplain",
-        "category": "Cody Walkthrough",
-        "title": "Show Explain"
-      },
-      {
-        "command": "cody.walkthrough.enableInlineChat",
-        "category": "Cody Walkthrough",
-        "title": "Show Inline Chat"
-      },
-      {
         "command": "cody.comment.add",
         "title": "Ask Cody",
         "category": "Cody Inline Chat",
@@ -402,7 +372,7 @@
       },
       {
         "command": "cody.inline.new",
-        "title": "Start a new Thread (Ctrl+Shift+C)",
+        "title": "Start New Thread",
         "category": "Cody Inline Chat",
         "when": "cody.activated && config.cody.inlineChat.enabled",
         "enablement": "editorFocus"
@@ -417,11 +387,6 @@
         "command": "cody.recipe.inline-touch",
         "category": "Cody",
         "title": "Touch"
-      },
-      {
-        "command": "cody.inline.insert",
-        "category": "Cody",
-        "title": "Insert text at the current cursor position"
       },
       {
         "command": "cody.non-stop.fixup",
@@ -497,6 +462,7 @@
       {
         "command": "cody.inline.new",
         "key": "ctrl+shift+c",
+        "mac": "cmd+shift+c",
         "when": "cody.activated && editorFocus && config.cody.inlineChat.enabled"
       }
     ],
@@ -547,10 +513,6 @@
         {
           "command": "cody.recipe.find-code-smells",
           "when": "cody.activated && editorHasSelection"
-        },
-        {
-          "command": "cody.test.token",
-          "when": "false"
         },
         {
           "command": "cody.focus",
@@ -604,30 +566,6 @@
         {
           "command": "cody.guardrails.debug",
           "when": "config.cody.experimental.guardrails && editorHasSelection"
-        },
-        {
-          "command": "cody.inline.insert",
-          "when": "false"
-        },
-        {
-          "command": "cody.walkthrough.showLogin",
-          "when": "false"
-        },
-        {
-          "command": "cody.walkthrough.showChat",
-          "when": "false"
-        },
-        {
-          "command": "cody.walkthrough.showFixup",
-          "when": "false"
-        },
-        {
-          "command": "cody.walkthrough.showExplain",
-          "when": "false"
-        },
-        {
-          "command": "cody.walkthrough.enableInlineChat",
-          "when": "false"
         }
       ],
       "editor/context": [

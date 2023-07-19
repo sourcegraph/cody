@@ -178,14 +178,30 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
             // again
             const cachedCompletions = this.inlineCompletionsCache?.get(prefix, false)
             if (cachedCompletions?.isExactPrefix) {
-                return handleCacheHit(cachedCompletions, position, prefix, suffix, multilineMode !== null, languageId)
+                return handleCacheHit(
+                    cachedCompletions,
+                    document,
+                    position,
+                    prefix,
+                    suffix,
+                    multilineMode !== null,
+                    languageId
+                )
             }
             return []
         }
 
         const cachedCompletions = this.inlineCompletionsCache?.get(prefix)
         if (cachedCompletions) {
-            return handleCacheHit(cachedCompletions, position, prefix, suffix, multilineMode !== null, languageId)
+            return handleCacheHit(
+                cachedCompletions,
+                document,
+                position,
+                prefix,
+                suffix,
+                multilineMode !== null,
+                languageId
+            )
         }
 
         const completers: Provider[] = []
@@ -212,12 +228,6 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
         // VS Code will attempt to merge the remainder of the current line by characters but for
         // words this will easily get very confusing.
         if (/\w/.test(sameLineSuffix)) {
-            return []
-        }
-
-        // In this case, VS Code won't be showing suggestions anyway and we are more likely to want
-        // suggested method names from the language server instead.
-        if (context.triggerKind === vscode.InlineCompletionTriggerKind.Invoke || sameLinePrefix.endsWith('.')) {
             return []
         }
 
@@ -259,7 +269,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
             )
         }
 
-        if (!this.disableTimeouts) {
+        if (!this.disableTimeouts && context.triggerKind !== vscode.InlineCompletionTriggerKind.Invoke) {
             await new Promise<void>(resolve => setTimeout(resolve, timeout))
         }
 
@@ -326,7 +336,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
 
         if (results.length > 0) {
             CompletionLogger.suggest(logId)
-            return toInlineCompletionItems(logId, position, results)
+            return toInlineCompletionItems(logId, document, position, results)
         }
 
         CompletionLogger.noResponse(logId)
@@ -342,6 +352,7 @@ export interface Completion {
 
 function handleCacheHit(
     cachedCompletions: CachedCompletions,
+    document: vscode.TextDocument,
     position: vscode.Position,
     prefix: string,
     suffix: string,
@@ -349,7 +360,7 @@ function handleCacheHit(
     languageId: string
 ): vscode.InlineCompletionItem[] | vscode.InlineCompletionList {
     const results = processCompletions(cachedCompletions.completions, prefix, suffix, multiline, languageId)
-    return toInlineCompletionItems(cachedCompletions.logId, position, results)
+    return toInlineCompletionItems(cachedCompletions.logId, document, position, results)
 }
 
 function processCompletions(
@@ -378,12 +389,15 @@ function processCompletions(
 
 function toInlineCompletionItems(
     logId: string,
+    document: vscode.TextDocument,
     position: vscode.Position,
     completions: Completion[]
 ): vscode.InlineCompletionItem[] {
     return completions.map(completion => {
         const lines = completion.content.split(/\r\n|\r|\n/m).length
-        return new vscode.InlineCompletionItem(completion.content, new vscode.Range(position, position), {
+        const currentLineText = document.lineAt(position)
+        const endOfLine = currentLineText.range.end
+        return new vscode.InlineCompletionItem(completion.content, new vscode.Range(position, endOfLine), {
             title: 'Completion accepted',
             command: 'cody.autocomplete.inline.accepted',
             arguments: [{ codyLogId: logId, codyLines: lines }],

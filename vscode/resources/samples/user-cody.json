@@ -1,0 +1,30 @@
+{
+  "description": "This is an example file to showcase how to build custom recipes for Cody by Sourcegraph.",
+  "recipes": {
+    "Spell Checker": {
+      "prompt": "Spell check the selected code and correct all typos and non-standard usage. Make sure the revised version is consistent with the surrounding code."
+    },
+    "Refactor Code": {
+      "prompt": "Please analyze the code and suggest constructive edits that follow best practices and improve code quality and readability. Focus your responses on being clear, thoughtful, coherent and easy for me to understand. Do not make changes that alter intended functionality without explaining why. Avoid responses that are overly complex or difficult to implement. Strive to provide helpful recommendations based on other shared code snippests."
+    },
+    "GH Search: Deploy Repoes not owned by Sourcegraph": {
+      "prompt": "What are the names of repositories that are used for deploying Sourcegraph but is not directly owned by Sourcegraph?",
+      "command": "gh",
+      "args": ["search", "repos", "sourcegraph", "deploy"],
+      "note": "You must have gh command installed and authenticated to use this recipe"
+    },
+    "Generate Unit Tests": {
+      "prompt": "Generate multiple unit tests with full workable code",
+      "context": {
+        "currentDir": true
+      },
+      "note": "Works best if there are other test files in the current directory"
+    },
+    "Remove User Recipes File": {
+      "prompt": "/reset",
+      "command": "rm",
+      "args": ["~/.vscode/cody.json"],
+      "note": "This delete the cody.json file and reset the conversation with Cody"
+    }
+  }
+}
