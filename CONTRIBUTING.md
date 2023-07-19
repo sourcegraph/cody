@@ -10,7 +10,7 @@ Unless you feel confident your change will be accepted (trivial bug fixes, code 
 
 ## Code of Conduct
 
-All interactions with the Sourcegraph open source project are governed by the
+All interactions with the Cody open source project are governed by the
 [Sourcegraph Community Code of Conduct](https://handbook.sourcegraph.com/company-info-and-process/community/code_of_conduct/).
 
 ## How to contribute
