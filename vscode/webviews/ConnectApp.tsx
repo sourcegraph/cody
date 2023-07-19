@@ -43,6 +43,7 @@ export const ConnectApp: React.FunctionComponent<ConnectAppProps> = ({
             command: 'auth',
             type: 'app',
             endpoint: url,
+            value: inDownloadMode ? 'download' : 'connect',
         })
 
     return (
