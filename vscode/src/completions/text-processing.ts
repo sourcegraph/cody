@@ -1,5 +1,7 @@
 import * as vscode from 'vscode'
 
+import { isAlmostTheSameString } from './utils/string-comparator'
+
 export const OPENING_CODE_TAG = '<CODE5711>'
 export const CLOSING_CODE_TAG = '</CODE5711>'
 
@@ -124,13 +126,6 @@ function trimSpace(s: string): TrimmedString {
     return { trimmed, leadSpace: s.slice(0, headEnd), rearSpace: s.slice(headEnd + trimmed.length) }
 }
 
-/**
- * The magic number based on intution and experimentation.
- * We do not want to match too small number of symbols to avoid false positives.
- * We do not want to match the whole string because it leads to suffix duplication.
- */
-const NUMBER_OF_CHARS_TO_MATCH_AND_CUT_SUFFIX = 15
-
 /*
  * Trims the insertion string until the first line that matches the suffix string.
  *
@@ -140,23 +135,18 @@ const NUMBER_OF_CHARS_TO_MATCH_AND_CUT_SUFFIX = 15
  */
 export function trimUntilSuffix(insertion: string, prefix: string, suffix: string): string {
     insertion = insertion.trimEnd()
-    let firstNonEmptySuffixLine = ''
-    for (const line of suffix.split('\n')) {
-        if (line.trim().length > 0) {
-            firstNonEmptySuffixLine = line
-            break
-        }
-    }
+
+    const firstNonEmptySuffixLine = getFirstNonEmptyLine(suffix)
+
+    // TODO: Handle case for inline suffix - remove same trailing sequence from insertion
+    // if we already have the same sequence in suffix
+
     if (firstNonEmptySuffixLine.length === 0) {
         return insertion
     }
 
     const insertionLines = insertion.split('\n')
     let insertionEnd = insertionLines.length
-    const firstNonEmptySuffixLinePart = getFirstNCharsPreservingLeadingSpaces(
-        firstNonEmptySuffixLine,
-        NUMBER_OF_CHARS_TO_MATCH_AND_CUT_SUFFIX
-    )
 
     for (let i = 0; i < insertionLines.length; i++) {
         let line = insertionLines[i]
@@ -165,22 +155,12 @@ export function trimUntilSuffix(insertion: string, prefix: string, suffix: strin
         if (i === 0) {
             const lastNewlineOfPrefix = prefix.lastIndexOf('\n')
             line = prefix.slice(lastNewlineOfPrefix + 1) + line
+
+            // Skip any procession for the first (inline string insertion/completion)
+            continue
         }
 
-        /**
-         * We cut the completion on the partial match of the suffix
-         *
-         * For example, if the suffix is:
-         * `  key: ${{ runner.os }}-pnpm-store-${{ hashFiles('pnpm-lock.yaml') }}`
-         *
-         * And the completions is:
-         * `pnpm-store\n  key: ${{ runner.os }}-pnpm-${{ steps.pnpm-cache.outputs.STORE_PATH }}`
-         *
-         * We cut the completion on the `  key:` part to avoid duplicating the suffix.
-         * The resulting completion will be: `pnpm-store`.
-         */
-        const linePart = getFirstNCharsPreservingLeadingSpaces(line, NUMBER_OF_CHARS_TO_MATCH_AND_CUT_SUFFIX)
-        if (linePart.length && firstNonEmptySuffixLinePart.startsWith(linePart)) {
+        if (isAlmostTheSameString(line.trim(), firstNonEmptySuffixLine.trim())) {
             insertionEnd = i
             break
         }
@@ -189,19 +169,23 @@ export function trimUntilSuffix(insertion: string, prefix: string, suffix: strin
     return insertionLines.slice(0, insertionEnd).join('\n')
 }
 
+function getFirstNonEmptyLine(suffix: string): string {
+    const sameLineSuffix = suffix.slice(suffix.indexOf('\n'))
+
+    for (const line of sameLineSuffix.split('\n')) {
+        if (line.trim().length > 0) {
+            return line
+        }
+    }
+
+    return ''
+}
+
 /**
  * Trims whitespace before the first newline (if it exists).
  */
 export function trimLeadingWhitespaceUntilNewline(str: string): string {
     return str.replace(/^\s+?(\r?\n)/, '$1')
-}
-
-const NON_WHITESPACE_REGEX = /\S|$/
-function getFirstNCharsPreservingLeadingSpaces(value: string, charsNumber: number): string {
-    const startIndex = value.search(NON_WHITESPACE_REGEX)
-
-    // Return the leading whitespaces and first N characters
-    return value.slice(0, startIndex + charsNumber)
 }
 
 /**
