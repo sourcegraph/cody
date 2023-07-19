@@ -129,7 +129,7 @@ const register = async (
     )
 
     // Re-initialize external services on configuration change
-    const onConfigChangeServices = async (): Promise<void> => {
+    const updateServices = async (): Promise<void> => {
         const newConfig = await getFullConfig(secretStorage, localStorage)
         chatProvider.onConfigurationChange(newConfig)
         externalServicesOnDidConfigurationChange(newConfig)
@@ -138,10 +138,8 @@ const register = async (
     disposables.push(
         // Update external services when configurationChangeEvent is triggered by the webview
         // This is triggered during the user authentication step
-        chatProvider.configurationChangeEvent.event(() => onConfigChangeServices),
-        vscode.workspace.onDidChangeConfiguration(
-            event => event.affectsConfiguration('cody') && onConfigChangeServices()
-        )
+        chatProvider.configurationChangeEvent.event(() => updateServices()),
+        vscode.workspace.onDidChangeConfiguration(event => event.affectsConfiguration('cody') && updateServices())
     )
 
     const executeRecipe = async (recipe: RecipeID, openChatView = true): Promise<void> => {
