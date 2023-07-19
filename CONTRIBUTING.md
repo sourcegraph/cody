@@ -26,7 +26,7 @@ All open issues are not yet solved. If the task is interesting to you, take it a
 
 ### How to write tests
 
-- [How to write tests](https://docs.sourcegraph.com/dev/how-to/testing)
+- [Tests for VS Code](https://github.com/sourcegraph/cody/tree/main/vscode/test)
 - [Testing principles](https://docs.sourcegraph.com/dev/background-information/testing_principles)
 - [Testing web code](https://docs.sourcegraph.com/dev/background-information/testing_web_code)
 
