@@ -145,7 +145,7 @@ export class MyPrompt implements Recipe {
             contextMessages.push(...ChatQuestion.getEditorContext(editor))
         }
         // Add selected text as context when available
-        if (selection?.selectedText && !isCodebaseContextRequired.excludeSelection) {
+        if (selection?.selectedText && !isContextRequired.excludeSelection) {
             contextMessages.push(...ChatQuestion.getEditorSelectionContext(document, selection))
         }
         // Create context messages from terminal output if any
