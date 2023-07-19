@@ -50,6 +50,7 @@ export class SidebarChatViewProvider extends MessageProvider implements vscode.W
                 await this.abortCompletion()
                 break
             case 'executeRecipe':
+                this.showTab('chat')
                 await this.executeRecipe(message.recipe)
                 break
             case 'auth':
@@ -86,8 +87,8 @@ export class SidebarChatViewProvider extends MessageProvider implements vscode.W
                 void this.openExternalLinks(message.value)
                 break
             case 'my-prompt':
-                await this.executeMyPrompt(message.title)
                 this.showTab('chat')
+                await this.executeMyPrompt(message.title)
                 break
             case 'openFile': {
                 const rootPath = this.editor.getWorkspaceRootPath()
