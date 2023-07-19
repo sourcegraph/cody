@@ -160,9 +160,16 @@ export function trimUntilSuffix(insertion: string, prefix: string, suffix: strin
             continue
         }
 
-        if (isAlmostTheSameString(line.trim(), firstNonEmptySuffixLine.trim())) {
+        if (line === firstNonEmptySuffixLine) {
             insertionEnd = i
             break
+        }
+
+        if (i === insertionLines.length - 1) {
+            if (isAlmostTheSameString(line.trim(), firstNonEmptySuffixLine.trim())) {
+                insertionEnd = i
+                break
+            }
         }
     }
 
