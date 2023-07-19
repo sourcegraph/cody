@@ -28,7 +28,6 @@ import { isError } from '@sourcegraph/cody-shared/src/utils'
 import { View } from '../../webviews/NavBar'
 import { getFullConfig } from '../configuration'
 import { VSCodeEditor } from '../editor/vscode-editor'
-import { logEvent } from '../event-logger'
 import { FilenameContextFetcher } from '../local-context/filename-context-fetcher'
 import { LocalKeywordContextFetcher } from '../local-context/local-keyword-context-fetcher'
 import { debug } from '../log'
@@ -36,6 +35,7 @@ import { getRerankWithLog } from '../logged-rerank'
 import { FixupTask } from '../non-stop/FixupTask'
 import { IdleRecipeRunner } from '../non-stop/roles'
 import { AuthProvider } from '../services/AuthProvider'
+import { logEvent } from '../services/EventLogger'
 import { LocalStorage } from '../services/LocalStorageProvider'
 import { SecretStorage } from '../services/SecretStorageProvider'
 import { TestSupport } from '../test-support'
@@ -904,7 +904,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         // Display error message as assistant response for users with indexed codebase but getting search errors
         if (this.codebaseContext.checkEmbeddingsConnection() && searchErrors) {
             this.transcript.addErrorAsAssistantResponse(searchErrors)
-            debug('ChatViewProvider:onLogEmbeddingsErrors', '', { verbose: searchErrors })
+            debug('ChatViewProvider:onLogEmbeddingsErrors', 'searchErrors', { verbose: searchErrors })
         }
     }
 
@@ -952,6 +952,9 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 logEvent(`CodyVSCodeExtension:Auth:${value}`, endpointUri, endpointUri)
                 break
             case 'click':
+                logEvent(`CodyVSCodeExtension:${value}:clicked`, endpointUri, endpointUri)
+                break
+            case 'insert':
                 logEvent(`CodyVSCodeExtension:${value}:clicked`, endpointUri, endpointUri)
                 break
         }

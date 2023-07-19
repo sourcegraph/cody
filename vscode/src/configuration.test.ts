@@ -21,6 +21,7 @@ describe('getConfiguration', () => {
             experimentalGuardrails: false,
             inlineChat: true,
             experimentalNonStop: false,
+            experimentalCustomRecipes: false,
             customHeaders: {},
             debugEnable: false,
             debugVerbose: false,
@@ -58,6 +59,8 @@ describe('getConfiguration', () => {
                     case 'cody.inlineChat.enabled':
                         return true
                     case 'cody.experimental.nonStop':
+                        return true
+                    case 'cody.experimental.customRecipes':
                         return true
                     case 'cody.debug.enable':
                         return true

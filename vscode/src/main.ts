@@ -20,13 +20,13 @@ import { createProviderConfig as createUnstableCodeGenProviderConfig } from './c
 import { createProviderConfig as createUnstableHuggingFaceProviderConfig } from './completions/providers/unstable-huggingface'
 import { getConfiguration, getFullConfig, migrateConfiguration } from './configuration'
 import { VSCodeEditor } from './editor/vscode-editor'
-import { eventLogger, logEvent, updateEventLogger } from './event-logger'
 import { configureExternalServices } from './external-services'
 import { MyPromptController } from './my-cody/MyPromptController'
 import { FixupController } from './non-stop/FixupController'
 import { showSetupNotification } from './notifications/setup-notification'
 import { getRgPath } from './rg'
 import { AuthProvider } from './services/AuthProvider'
+import { eventLogger, logEvent, updateEventLogger } from './services/EventLogger'
 import { showFeedbackSupportQuickPick } from './services/FeedbackOptions'
 import { GuardrailsProvider } from './services/GuardrailsProvider'
 import { InlineController } from './services/InlineController'
@@ -53,7 +53,7 @@ export async function start(context: vscode.ExtensionContext): Promise<vscode.Di
 
     const disposables: vscode.Disposable[] = []
 
-    const { disposable, onConfigurationChange } = await register(
+    const disposable = await register(
         context,
         await getFullConfig(secretStorage, localStorage),
         secretStorage,
@@ -61,15 +61,6 @@ export async function start(context: vscode.ExtensionContext): Promise<vscode.Di
         rgPath
     )
     disposables.push(disposable)
-
-    // Re-initialize when configuration
-    disposables.push(
-        vscode.workspace.onDidChangeConfiguration(async event => {
-            if (event.affectsConfiguration('cody')) {
-                onConfigurationChange(await getFullConfig(secretStorage, localStorage))
-            }
-        })
-    )
 
     return vscode.Disposable.from(...disposables)
 }
@@ -81,10 +72,7 @@ const register = async (
     secretStorage: SecretStorage,
     localStorage: LocalStorage,
     rgPath: string
-): Promise<{
-    disposable: vscode.Disposable
-    onConfigurationChange: (newConfig: ConfigurationWithAccessToken) => void
-}> => {
+): Promise<vscode.Disposable> => {
     const disposables: vscode.Disposable[] = []
 
     await updateEventLogger(initialConfig, localStorage)
@@ -132,17 +120,28 @@ const register = async (
         rgPath,
         authProvider
     )
-    disposables.push(chatProvider)
     fixup.recipeRunner = chatProvider
-
     disposables.push(
+        chatProvider,
         vscode.window.registerWebviewViewProvider('cody.chat', chatProvider, {
             webviewOptions: { retainContextWhenHidden: true },
-        }),
-        // Update external services when configurationChangeEvent is fired by chatProvider
-        chatProvider.configurationChangeEvent.event(async () => {
-            externalServicesOnDidConfigurationChange(await getFullConfig(secretStorage, localStorage))
         })
+    )
+
+    // Re-initialize external services on configuration change
+    const onConfigChangeServices = async (): Promise<void> => {
+        const newConfig = await getFullConfig(secretStorage, localStorage)
+        chatProvider.onConfigurationChange(newConfig)
+        externalServicesOnDidConfigurationChange(newConfig)
+        eventLogger?.onConfigurationChange(newConfig)
+    }
+    disposables.push(
+        // Update external services when configurationChangeEvent is triggered by the webview
+        // This is triggered during the user authentication step
+        chatProvider.configurationChangeEvent.event(() => onConfigChangeServices),
+        vscode.workspace.onDidChangeConfiguration(
+            event => event.affectsConfiguration('cody') && onConfigChangeServices()
+        )
     )
 
     const executeRecipe = async (recipe: RecipeID, openChatView = true): Promise<void> => {
@@ -337,16 +336,8 @@ const register = async (
 
     await showSetupNotification(initialConfig, localStorage)
     void vscode.commands.executeCommand('setContext', 'cody.test.inProgress', process.env.CODY_TESTING === 'true')
-    return {
-        disposable: vscode.Disposable.from(...disposables),
-        onConfigurationChange: newConfig => {
-            chatProvider.onConfigurationChange(newConfig)
-            externalServicesOnDidConfigurationChange(newConfig)
-            if (eventLogger) {
-                eventLogger.onConfigurationChange(vscode.workspace.getConfiguration())
-            }
-        },
-    }
+
+    return vscode.Disposable.from(...disposables)
 }
 
 function createCompletionsProvider(

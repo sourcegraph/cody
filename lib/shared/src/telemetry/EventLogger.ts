@@ -1,80 +1,33 @@
-import * as vscode from 'vscode'
-
+import { ConfigurationWithAccessToken, EventLoggerConfigurationDetails } from '../configuration'
 import { SourcegraphGraphQLAPIClient } from '../sourcegraph-api/graphql'
 
-function getServerEndpointFromConfig(config: vscode.WorkspaceConfiguration): string {
-    return config.get<string>('cody.serverEndpoint', '')
-}
-
-function getUseContextFromConfig(config: vscode.WorkspaceConfiguration): string {
-    if (!config) {
-        return ''
-    }
-    return config.get<string>('cody.useContext', '')
-}
-
-function getChatPredictionsFromConfig(config: vscode.WorkspaceConfiguration): boolean {
-    if (!config) {
-        return false
-    }
-    return config.get<boolean>('cody.experimental.chatPredictions', false)
-}
-
-function getInlineFromConfig(config: vscode.WorkspaceConfiguration): boolean {
-    if (!config) {
-        return false
-    }
-    return config.get<boolean>('cody.inlineChat.enabled', false)
-}
-
-function getNonStopFromConfig(config: vscode.WorkspaceConfiguration): boolean {
-    if (!config) {
-        return false
-    }
-    return config.get<boolean>('cody.experimental.nonStop', false)
-}
-
-function getSuggestionsFromConfig(config: vscode.WorkspaceConfiguration): boolean {
-    if (!config) {
-        return false
-    }
-    return config.get<boolean>('cody.experimental.suggestions', false)
-}
-
-function getGuardrailsFromConfig(config: vscode.WorkspaceConfiguration): boolean {
-    if (!config) {
-        return false
-    }
-    return config.get<boolean>('cody.experimental.guardrails', false)
-}
-
 export class EventLogger {
-    private serverEndpoint = getServerEndpointFromConfig(vscode.workspace.getConfiguration())
     private extensionDetails = { ide: 'VSCode', ideExtensionType: 'Cody' }
-    private constructor(private gqlAPIClient: SourcegraphGraphQLAPIClient) {}
-
-    public static create(gqlAPIClient: SourcegraphGraphQLAPIClient): EventLogger {
-        return new EventLogger(gqlAPIClient)
+    public configurationDetails: EventLoggerConfigurationDetails
+    constructor(
+        private gqlAPIClient: SourcegraphGraphQLAPIClient,
+        private config: ConfigurationWithAccessToken
+    ) {
+        this.configurationDetails = this.onConfigurationChange(config)
     }
 
-    public configurationDetails = {
-        contextSelection: getUseContextFromConfig(vscode.workspace.getConfiguration()),
-        chatPredictions: getChatPredictionsFromConfig(vscode.workspace.getConfiguration()),
-        inline: getInlineFromConfig(vscode.workspace.getConfiguration()),
-        nonStop: getNonStopFromConfig(vscode.workspace.getConfiguration()),
-        suggestions: getSuggestionsFromConfig(vscode.workspace.getConfiguration()),
-        guardrails: getGuardrailsFromConfig(vscode.workspace.getConfiguration()),
-    }
-
-    public onConfigurationChange(newconfig: vscode.WorkspaceConfiguration): void {
-        this.configurationDetails = {
-            contextSelection: getUseContextFromConfig(newconfig),
-            chatPredictions: getChatPredictionsFromConfig(newconfig),
-            inline: getInlineFromConfig(newconfig),
-            nonStop: getNonStopFromConfig(newconfig),
-            suggestions: getSuggestionsFromConfig(newconfig),
-            guardrails: getGuardrailsFromConfig(newconfig),
+    public onConfigurationChange(newConfig: ConfigurationWithAccessToken): EventLoggerConfigurationDetails {
+        this.config = newConfig
+        const configDetails = {
+            contextSelection: newConfig.useContext,
+            chatPredictions: newConfig.experimentalChatPredictions,
+            inline: newConfig.inlineChat,
+            nonStop: newConfig.experimentalNonStop,
+            suggestions: newConfig.autocomplete,
+            guardrails: newConfig.experimentalGuardrails,
+            customRecipes: newConfig.experimentalCustomRecipes,
         }
+        this.configurationDetails = configDetails
+        return configDetails
+    }
+
+    private get(): { endpoint: string; configurationDetails: EventLoggerConfigurationDetails } {
+        return { endpoint: this.config.serverEndpoint, configurationDetails: this.configurationDetails }
     }
 
     /**
@@ -91,32 +44,23 @@ export class EventLogger {
      * @param publicProperties Public argument information.
      */
     public log(eventName: string, anonymousUserID: string, eventProperties?: any, publicProperties?: any): void {
-        const argument = {
-            ...eventProperties,
-            serverEndpoint: this.serverEndpoint,
+        const { endpoint, configurationDetails } = this.get()
+        const logProperties = {
+            serverEndpoint: this.config.serverEndpoint,
             extensionDetails: this.extensionDetails,
-            configurationDetails: this.configurationDetails,
+            configurationDetails,
         }
-        const publicArgument = {
-            ...publicProperties,
-            serverEndpoint: this.serverEndpoint,
-            extensionDetails: this.extensionDetails,
-            configurationDetails: this.configurationDetails,
-        }
-        try {
-            this.gqlAPIClient
-                .logEvent({
-                    event: eventName,
-                    userCookieID: anonymousUserID,
-                    source: 'IDEEXTENSION',
-                    url: '',
-                    argument: JSON.stringify(argument),
-                    publicArgument: JSON.stringify(publicArgument),
-                })
-                .then(() => {})
-                .catch(() => {})
-        } catch (error) {
-            console.log(error)
-        }
+        const argument = { ...eventProperties, ...logProperties }
+        const publicArgument = { ...publicProperties, ...logProperties }
+        this.gqlAPIClient
+            .logEvent({
+                event: eventName,
+                userCookieID: anonymousUserID,
+                source: 'IDEEXTENSION',
+                url: endpoint,
+                argument: JSON.stringify(argument),
+                publicArgument: JSON.stringify(publicArgument),
+            })
+            .catch(error => console.log(error))
     }
 }

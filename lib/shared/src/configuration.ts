@@ -14,6 +14,7 @@ export interface Configuration {
     inlineChat: boolean
     experimentalGuardrails: boolean
     experimentalNonStop: boolean
+    experimentalCustomRecipes: boolean
     autocompleteAdvancedProvider: 'anthropic' | 'unstable-codegen' | 'unstable-huggingface'
     autocompleteAdvancedServerEndpoint: string | null
     autocompleteAdvancedAccessToken: string | null
@@ -43,4 +44,14 @@ export interface Configuration {
 export interface ConfigurationWithAccessToken extends Configuration {
     /** The access token, which is stored in the secret storage (not configuration). */
     accessToken: string | null
+}
+
+export interface EventLoggerConfigurationDetails {
+    contextSelection: ConfigurationUseContext
+    chatPredictions: boolean
+    inline: boolean
+    nonStop: boolean
+    suggestions: boolean
+    guardrails: boolean
+    customRecipes: boolean
 }

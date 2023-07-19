@@ -8,7 +8,7 @@ import type {
 
 import { DOTCOM_URL } from './chat/protocol'
 import { CONFIG_KEY, ConfigKeys } from './configuration-keys'
-import { logEvent } from './event-logger'
+import { logEvent } from './services/EventLogger'
 import { LocalStorage } from './services/LocalStorageProvider'
 import { getAccessToken, SecretStorage } from './services/SecretStorageProvider'
 
@@ -66,6 +66,7 @@ export function getConfiguration(config: ConfigGetter): Configuration {
         inlineChat: config.get(CONFIG_KEY.inlineChatEnabled, true),
         experimentalGuardrails: config.get(CONFIG_KEY.experimentalGuardrails, isTesting),
         experimentalNonStop: config.get('cody.experimental.nonStop' as any, isTesting),
+        experimentalCustomRecipes: config.get('cody.experimental.customRecipes' as any, isTesting),
         autocompleteAdvancedProvider,
         autocompleteAdvancedServerEndpoint: config.get<string | null>(
             CONFIG_KEY.autocompleteAdvancedServerEndpoint,
