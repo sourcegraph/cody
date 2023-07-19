@@ -5,6 +5,7 @@ import {
     collapseDuplicativeWhitespace,
     extractFromCodeBlock,
     OPENING_CODE_TAG,
+    trimEndOnLastLineIfWhitespaceOnly,
     trimLeadingWhitespaceUntilNewline,
 } from './text-processing'
 
@@ -52,4 +53,9 @@ describe('collapseDuplicativeWhitespace', () => {
     test('does not trim newlines', () => {
         expect(collapseDuplicativeWhitespace('x = ', '\n7')).toBe('\n7')
     })
+})
+
+describe('trimEndOnLastLineIfWhitespaceOnly', () => {
+    test('trims end', () => expect(trimEndOnLastLineIfWhitespaceOnly('a\n  ')).toBe('a\n'))
+    test('does not trim end', () => expect(trimEndOnLastLineIfWhitespaceOnly('a\nb  ')).toBe('a\nb  '))
 })
