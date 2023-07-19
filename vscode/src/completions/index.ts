@@ -318,6 +318,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
                 })
             )
         ).flat()
+        this.inlineCompletionsCache?.add(logId, completions)
 
         const results = processCompletions(completions, prefix, suffix, multilineMode !== null, languageId)
 
@@ -325,7 +326,6 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
 
         if (results.length > 0) {
             CompletionLogger.suggest(logId)
-            this.inlineCompletionsCache?.add(logId, results)
             return toInlineCompletionItems(logId, position, results)
         }
 
