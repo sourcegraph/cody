@@ -139,7 +139,7 @@ const HTML_TAGS_NO_ESCAPE: Set<string> = new Set([
  * @param tag A HTML tag (e.g. img, svg, my-custom-tag)
  * @returns If the given tag is a valid HTML tag
  */
-export const isValidHTMLTag = (tag: string): boolean => HTML_TAGS_NO_ESCAPE.has(tag)
+export const isValidHTMLTag = (tag: string): boolean => HTML_TAGS_NO_ESCAPE.has(tag.toLowerCase())
 
 /**
  * Extracts the name of the HTML tag of a given HTML token
@@ -147,12 +147,9 @@ export const isValidHTMLTag = (tag: string): boolean => HTML_TAGS_NO_ESCAPE.has(
  * @param htmlToken The text of the HTML token (e.g. <img> or </img> or <img someAttribute>)
  * @returns The name of the HTML tag (e.g. img)
  */
-export const extractHtmlTagName = (htmlToken: string): string => {
-    // remove the leading < or </ if present
-    htmlToken = htmlToken.replace(/<\/?/, '')
-    // matches the first word consisting of alphanumeric characters, representing the html tag name
-    return htmlToken.match(/^[\dA-Za-z]*/)?.[0] ?? ''
-}
+export const extractHtmlTagName = (htmlToken: string): string =>
+    // matches the first word after the html opening tag, representing the html tag name
+    htmlToken.match(/(?<=(<|<\/))[A-Za-z-]+/g)?.[0] ?? ''
 
 /**
  * Attempts to syntax-highlight the given code.
@@ -241,6 +238,8 @@ export const renderMarkdown = (
         headerPrefix: options.headerPrefix ?? '',
         tokenizer,
     })
+
+    console.log(rendered)
 
     const dompurifyConfig: DOMPurifyConfig & { RETURN_DOM_FRAGMENT?: false; RETURN_DOM?: false } =
         typeof options.dompurifyConfig === 'object'

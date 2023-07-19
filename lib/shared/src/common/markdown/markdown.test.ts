@@ -174,11 +174,22 @@ describe('extractHTMLTagName', () => {
     it('extracts the tag name of a closing token', () => {
         expect(extractHtmlTagName('</a someAttribute="1">')).toBe('a')
     })
+
+    it('correctly extracts custom html tags', () => {
+        expect(extractHtmlTagName('<my-custom-tag someAttribute="1">')).toBe('my-custom-tag')
+        expect(extractHtmlTagName('</my-custom-tag someAttribute="1">')).toBe('my-custom-tag')
+    })
 })
 
 describe('isValidHTMLTag', () => {
     it('treats svg tags as valid HTML', () => {
         expect(isValidHTMLTag('svg')).toBe(true)
+    })
+
+    it('is not case sensitive', () => {
+        expect(isValidHTMLTag('li')).toBe(true)
+        expect(isValidHTMLTag('LI')).toBe(true)
+        expect(isValidHTMLTag('Li')).toBe(true)
     })
 
     it('treats custom tags as invalid HTML', () => {
