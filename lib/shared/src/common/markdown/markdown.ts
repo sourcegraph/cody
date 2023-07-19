@@ -239,6 +239,8 @@ export const renderMarkdown = (
         tokenizer,
     })
 
+    console.log(rendered)
+
     const dompurifyConfig: DOMPurifyConfig & { RETURN_DOM_FRAGMENT?: false; RETURN_DOM?: false } =
         typeof options.dompurifyConfig === 'object'
             ? options.dompurifyConfig
