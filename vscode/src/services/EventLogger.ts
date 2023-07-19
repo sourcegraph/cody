@@ -17,17 +17,13 @@ export async function updateEventLogger(
 ): Promise<void> {
     const status = await localStorage.setAnonymousUserID()
     anonymousUserID = localStorage.getAnonymousUserID() || ''
-    if (!eventLoggerGQLClient) {
-        eventLoggerGQLClient = new SourcegraphGraphQLAPIClient(config)
+    if (!eventLogger || !eventLoggerGQLClient) {
         eventLogger = new EventLogger(eventLoggerGQLClient, config)
-        if (status === 'installed') {
-            logEvent('CodyInstalled')
-        } else {
-            logEvent('CodyVSCodeExtension:CodySavedLogin:executed')
-        }
-    } else {
-        eventLoggerGQLClient.onConfigurationChange(config)
+        eventLoggerGQLClient = eventLogger.gqlAPIClient
+        logEvent(status === 'installed' ? 'CodyInstalled' : 'CodyVSCodeExtension:CodySavedLogin:executed')
+        return
     }
+    eventLoggerGQLClient.onConfigurationChange(config)
 }
 
 /**

@@ -5,7 +5,7 @@ export class EventLogger {
     private extensionDetails = { ide: 'VSCode', ideExtensionType: 'Cody' }
     public configurationDetails: EventLoggerConfigurationDetails
     constructor(
-        private gqlAPIClient: SourcegraphGraphQLAPIClient,
+        public gqlAPIClient: SourcegraphGraphQLAPIClient,
         private config: ConfigurationWithAccessToken
     ) {
         this.configurationDetails = this.onConfigurationChange(config)
@@ -23,6 +23,7 @@ export class EventLogger {
             customRecipes: newConfig.experimentalCustomRecipes,
         }
         this.configurationDetails = configDetails
+        this.gqlAPIClient = new SourcegraphGraphQLAPIClient(newConfig)
         return configDetails
     }
 
