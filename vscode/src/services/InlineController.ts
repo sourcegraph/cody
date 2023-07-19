@@ -4,10 +4,10 @@ import * as vscode from 'vscode'
 import { ActiveTextEditorSelection } from '@sourcegraph/cody-shared/src/editor'
 import { SURROUNDING_LINES } from '@sourcegraph/cody-shared/src/prompt/constants'
 
-import { logEvent } from '../event-logger'
 import { CodyTaskState } from '../non-stop/utils'
 
 import { CodeLensProvider } from './CodeLensProvider'
+import { logEvent } from './EventLogger'
 import { editDocByUri, getIconPath, updateRangeOnDocChange } from './InlineAssist'
 
 const initPost = new vscode.Position(0, 0)
