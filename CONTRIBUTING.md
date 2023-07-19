@@ -2,11 +2,11 @@
 
 ## What contributions are accepted?
 
-In short, we are open to nearly all contributions! We love feedback in all forms, issues, comments, PRs, etc!
+In short, we are open to nearly all contributions! We love feedback in all forms, issues, comments, PRs, etc.
 
 ## Contributing large changes, new features, etc.
 
-Unless you feel confident your change will be accepted (trivial bug fixes, code cleanup, etc) you should first create an issue or a [Sourcegraph RFC](https://handbook.sourcegraph.com/communication/rfcs#external-contributors) (preferred for bigger changes) to discuss your change with us. This lets us all discuss the design and proposed implementation of your change, which helps ensure your time is well spent and that your contribution will be accepted.
+Unless you feel confident your change will be accepted (trivial bug fixes, code cleanup, etc.) you should first create an issue or a [Sourcegraph RFC](https://handbook.sourcegraph.com/communication/rfcs#external-contributors) (preferred for bigger changes) to discuss your change with us. This lets us all discuss the design and proposed implementation of your change, which helps ensure your time is well spent and that your contribution will be accepted.
 
 ## Code of Conduct
 
@@ -22,7 +22,7 @@ All interactions with the Sourcegraph open source project are governed by the
 
 ## Can I pick up this issue?
 
-All open issues are not yet solved. If the task is interesting to you, take it and feel free to do it. There is no need to ask for permission or get in line. Even if someone else can do the task faster than you, don't stop - your solution may be better. It is the beauty of Open Source!
+All open issues are not yet solved. If the task is interesting to you, take it and feel free to do it. There is no need to ask for permission or get in line. Even if someone else can do the task faster than you, don't stop - your solution may be better.
 
 ## Relevant development docs
 
