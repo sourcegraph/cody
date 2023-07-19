@@ -770,20 +770,48 @@ describe('Cody completions', () => {
             `)
         })
 
-        it('stops when the next non-empty line of the suffix matches partially', async () => {
-            const { completions } = await complete(
-                `path: $GITHUB_WORKSPACE/vscode/.vscod-etest/${CURSOR_MARKER}
-    key: {{ runner.os }}-pnpm-store-{{ hashFiles('**/pnpm-lock.yaml') }}
-                `,
-                [
-                    createCompletionResponse(`
-                    pnpm-store
-                        key: {{ runner.os }}-pnpm-{{ steps.pnpm-cache.outputs.STORE_PATH }}
-                    }`),
-                ]
-            )
+        describe('stops when the next non-empty line of the suffix matches partially', () => {
+            it('simple example', async () => {
+                const { completions } = await complete(
+                    `path: $GITHUB_WORKSPACE/vscode/.vscod-etest/${CURSOR_MARKER}
+                           key: {{ runner.os }}-pnpm-store-{{ hashFiles('**/pnpm-lock.yaml') }}`,
+                    [
+                        createCompletionResponse(`
+                                    pnpm-store
+                                        key: {{ runner.os }}-pnpm-{{ steps.pnpm-cache.outputs.STORE_PATH }}
+                                    }`),
+                    ]
+                )
 
-            expect(completions[0].insertText).toBe('pnpm-store')
+                expect(completions[0].insertText).toBe('pnpm-store')
+            })
+
+            it('example with return', async () => {
+                const { completions } = await complete(
+                    `console.log('<< stop completion: ${CURSOR_MARKER}')
+                           return []`,
+                    [
+                        createCompletionResponse(`
+                                    lastChange was delete')
+                                        return []`),
+                    ]
+                )
+
+                expect(completions[0].insertText).toBe("lastChange was delete')")
+            })
+
+            it('example with inline comment', async () => {
+                const { completions } = await complete(
+                    `// ${CURSOR_MARKER}
+                           const currentFilePath = path.normalize(document.fileName)`,
+                    [
+                        createCompletionResponse(`Get the file path
+                                   const filePath = document.fileName`),
+                    ]
+                )
+
+                expect(completions[0].insertText).toBe('Get the file path')
+            })
         })
 
         it('ranks results by number of lines', async () => {
