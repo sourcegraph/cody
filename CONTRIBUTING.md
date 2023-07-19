@@ -15,7 +15,6 @@ All interactions with the Cody open source project are governed by the
 
 ## How to contribute
 
-1. Clone the repo: `git clone https://github.com/sourcegraph/cody`.
 1. Once you've chosen an issue, **comment on it to announce that you will be working on it**, making it visible for others that this issue is being tackled. If you end up not creating a pull request for this issue, please delete your comment.
 1. If you have any questions, please [refer to the docs first](https://docs.sourcegraph.com/). If you don’t find any relevant information, mention the issue author.
 1. The issue author will try to provide guidance. The Sourcegraph Cody team always works in async mode. We will try to answer as soon as possible, but please keep time zones differences in mind.
