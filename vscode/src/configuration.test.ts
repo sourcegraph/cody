@@ -109,6 +109,7 @@ describe('getConfiguration', () => {
             experimentalGuardrails: true,
             inlineChat: true,
             experimentalNonStop: true,
+            experimentalCustomRecipes: true,
             debugEnable: true,
             debugVerbose: true,
             debugFilter: /.*/,
