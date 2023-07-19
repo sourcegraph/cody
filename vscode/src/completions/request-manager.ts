@@ -58,9 +58,6 @@ export class RequestManager {
         // We forward a different abort controller to the network request so we
         // can cancel the network request independently of the user cancelling
         // the completion.
-        //
-        // TODO: Cancel network requests if a subsequent retest of the cache
-        //       causes the request to be skipped?
         const networkRequestAbortController = new AbortController()
 
         this.addRequest(documentUri, request)
@@ -79,6 +76,9 @@ export class RequestManager {
         )
             .then(res => res.flat())
             .then(completions => {
+                // Add the completed results to the cache, even if the request
+                // was cancelled before or completed via a cache retest of a
+                // previous request.
                 this.completionsCache?.add(logId, completions)
 
                 if (signal.aborted) {
@@ -88,7 +88,6 @@ export class RequestManager {
                 request.resolve(completions)
             })
             .catch(error => {
-                console.error(error)
                 request.reject(error)
             })
             .finally(() => {
@@ -112,7 +111,6 @@ export class RequestManager {
             const cachedCompletions = this.completionsCache?.get(request.prefix)
             if (cachedCompletions) {
                 debug('CodyCompletionProvider:RequestManager:cacheHit', '')
-                // request.abort()
                 request.resolve(cachedCompletions.completions)
                 this.removeRequest(documentUri, request)
             }

@@ -20,6 +20,7 @@ vi.mock('vscode', () => ({
         Automatic: 1,
     },
     workspace: {
+        ...vsCodeMocks.workspace,
         asRelativePath(path: string) {
             return path
         },

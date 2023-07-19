@@ -15,6 +15,7 @@ import { History } from './history'
 import * as CompletionLogger from './logger'
 import { detectMultilineMode } from './multiline'
 import { Provider, ProviderConfig } from './providers/provider'
+import { RequestManager } from './request-manager'
 import { sharedPostProcess } from './shared-post-process'
 import { isAbortError, SNIPPET_WINDOW_SIZE } from './utils'
 
@@ -53,6 +54,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
     private isEmbeddingsContextEnabled: boolean
     private triggerMoreEagerly: boolean
     public inlineCompletionsCache?: CompletionsCache
+    private requestManager: RequestManager
 
     constructor(config: CodyCompletionItemProviderConfig) {
         const {
@@ -88,6 +90,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
         if (isCompletionsCacheEnabled) {
             this.inlineCompletionsCache = new CompletionsCache()
         }
+        this.requestManager = new RequestManager(this.inlineCompletionsCache)
 
         debug('CodyCompletionProvider:initialized', `provider: ${providerConfig.identifier}`)
 
@@ -314,22 +317,14 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
             stopLoading()
         }
 
-        const completions = (
-            await Promise.all(
-                completers.map(async c => {
-                    const generateCompletionsStart = Date.now()
-                    const completions = await c.generateCompletions(abortController.signal, similarCode)
-                    debug(
-                        'CodyCompletionProvider:inline:timing',
-                        `${Math.round(Date.now() - generateCompletionsStart)}ms`,
-                        { id: c.id }
-                    )
-                    return completions
-                })
-            )
-        ).flat()
-        this.inlineCompletionsCache?.add(logId, completions)
-
+        const completions = await this.requestManager.request(
+            document.uri.toString(),
+            logId,
+            prefix,
+            completers,
+            similarCode,
+            abortController.signal
+        )
         const results = processCompletions(completions, prefix, suffix, multilineMode !== null, languageId)
 
         stopLoading()
