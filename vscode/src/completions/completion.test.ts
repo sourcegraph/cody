@@ -10,6 +10,7 @@ import {
 import { vsCodeMocks } from '../testutils/mocks'
 
 import { CodyCompletionItemProvider } from '.'
+import { CompletionsCache } from './cache'
 import { History } from './history'
 import { createProviderConfig } from './providers/anthropic'
 
@@ -53,111 +54,6 @@ const noopStatusBar = {
 const CURSOR_MARKER = '<cursor>'
 
 /**
- * A test helper to trigger a completion request. The code example must include
- * a pipe character to denote the current cursor position.
- *
- * @example
- *   complete(`
- * async function foo() {
- *   ${CURSOR_MARKER}
- * }`)
- */
-async function complete(
-    code: string,
-    responses?: CompletionResponse[],
-    languageId: string = 'typescript',
-    context: vscode.InlineCompletionContext = { triggerKind: 1, selectedCompletionInfo: undefined },
-    triggerMoreEagerly = true
-): Promise<{
-    requests: CompletionParameters[]
-    completions: vscode.InlineCompletionItem[]
-}> {
-    code = truncateMultilineString(code)
-
-    const requests: CompletionParameters[] = []
-    let requestCounter = 0
-    const completionsClient: any = {
-        complete(params: CompletionParameters): Promise<CompletionResponse> {
-            requests.push(params)
-            const response = responses ? responses[requestCounter++] : undefined
-            return Promise.resolve(
-                response || {
-                    completion: '',
-                    stopReason: 'unknown',
-                }
-            )
-        },
-    }
-    const providerConfig = createProviderConfig({
-        completionsClient,
-        contextWindowTokens: 2048,
-    })
-    const completionProvider = new CodyCompletionItemProvider({
-        providerConfig,
-        statusBar: noopStatusBar,
-        history: new History(),
-        codebaseContext: null as any,
-        disableTimeouts: true,
-        triggerMoreEagerly,
-    })
-
-    if (!code.includes(CURSOR_MARKER)) {
-        throw new Error('The test code must include a | to denote the cursor position')
-    }
-
-    const prefix = code.slice(0, code.indexOf(CURSOR_MARKER))
-    const suffix = code.slice(code.indexOf(CURSOR_MARKER) + CURSOR_MARKER.length)
-
-    const codeWithoutCursor = prefix + suffix
-
-    const token: any = {
-        onCancellationRequested() {
-            return null
-        },
-    }
-    const document: any = {
-        filename: 'test.ts',
-        uri: URI.parse('file:///test.ts'),
-        languageId,
-        lineAt(position: vscode.Position) {
-            const split = codeWithoutCursor.split('\n')
-            const content = split[position.line - 1]
-            return {
-                range: {
-                    end: { line: position.line, character: content.length },
-                },
-            }
-        },
-        offsetAt(): number {
-            return 0
-        },
-        positionAt(): any {
-            const split = codeWithoutCursor.split('\n')
-            return { line: split.length, character: split[split.length - 1].length }
-        },
-        getText(range?: vscode.Range): string {
-            if (!range) {
-                return codeWithoutCursor
-            }
-            if (range.start.line === 0 && range.start.character === 0) {
-                return prefix
-            }
-            return suffix
-        },
-    }
-
-    const splitPrefix = prefix.split('\n')
-    const position: any = { line: splitPrefix.length, character: splitPrefix[splitPrefix.length - 1].length }
-
-    const completions = await completionProvider.provideInlineCompletionItems(document, position, context, token)
-
-    return {
-        requests,
-        completions: 'items' in completions ? completions.items : completions,
-    }
-}
-
-/**
  * A helper function used so that the below code example can be intended in code but will have their
  * prefix stripped. This is similar to what Vitest snapshots use but without the prettier hack so that
  * the starting ` is always in the same line as the function name :shrug:
@@ -183,6 +79,130 @@ function truncateMultilineString(string: string): string {
 }
 
 describe('Cody completions', () => {
+    /**
+     * A test helper to trigger a completion request. The code example must include
+     * a pipe character to denote the current cursor position.
+     *
+     * @example
+     *   complete(`
+     * async function foo() {
+     *   ${CURSOR_MARKER}
+     * }`)
+     */
+    let complete: (
+        code: string,
+        responses?: CompletionResponse[],
+        languageId?: string,
+        context?: vscode.InlineCompletionContext,
+        triggerMoreEagerly?: boolean
+    ) => Promise<{
+        requests: CompletionParameters[]
+        completions: vscode.InlineCompletionItem[]
+    }>
+    beforeEach(() => {
+        const cache = new CompletionsCache()
+        complete = async (
+            code: string,
+            responses?: CompletionResponse[],
+            languageId: string = 'typescript',
+            context: vscode.InlineCompletionContext = { triggerKind: 1, selectedCompletionInfo: undefined },
+            triggerMoreEagerly = true
+        ): Promise<{
+            requests: CompletionParameters[]
+            completions: vscode.InlineCompletionItem[]
+        }> => {
+            code = truncateMultilineString(code)
+
+            const requests: CompletionParameters[] = []
+            let requestCounter = 0
+            const completionsClient: any = {
+                complete(params: CompletionParameters): Promise<CompletionResponse> {
+                    requests.push(params)
+                    const response = responses ? responses[requestCounter++] : undefined
+                    return Promise.resolve(
+                        response || {
+                            completion: '',
+                            stopReason: 'unknown',
+                        }
+                    )
+                },
+            }
+            const providerConfig = createProviderConfig({
+                completionsClient,
+                contextWindowTokens: 2048,
+            })
+            const completionProvider = new CodyCompletionItemProvider({
+                providerConfig,
+                statusBar: noopStatusBar,
+                history: new History(),
+                codebaseContext: null as any,
+                disableTimeouts: true,
+                triggerMoreEagerly,
+                cache,
+            })
+
+            if (!code.includes(CURSOR_MARKER)) {
+                throw new Error('The test code must include a | to denote the cursor position')
+            }
+
+            const prefix = code.slice(0, code.indexOf(CURSOR_MARKER))
+            const suffix = code.slice(code.indexOf(CURSOR_MARKER) + CURSOR_MARKER.length)
+
+            const codeWithoutCursor = prefix + suffix
+
+            const token: any = {
+                onCancellationRequested() {
+                    return null
+                },
+            }
+            const document: any = {
+                filename: 'test.ts',
+                uri: URI.parse('file:///test.ts'),
+                languageId,
+                lineAt(position: vscode.Position) {
+                    const split = codeWithoutCursor.split('\n')
+                    const content = split[position.line - 1]
+                    return {
+                        range: {
+                            end: { line: position.line, character: content.length },
+                        },
+                    }
+                },
+                offsetAt(): number {
+                    return 0
+                },
+                positionAt(): any {
+                    const split = codeWithoutCursor.split('\n')
+                    return { line: split.length, character: split[split.length - 1].length }
+                },
+                getText(range?: vscode.Range): string {
+                    if (!range) {
+                        return codeWithoutCursor
+                    }
+                    if (range.start.line === 0 && range.start.character === 0) {
+                        return prefix
+                    }
+                    return suffix
+                },
+            }
+
+            const splitPrefix = prefix.split('\n')
+            const position: any = { line: splitPrefix.length, character: splitPrefix[splitPrefix.length - 1].length }
+
+            const completions = await completionProvider.provideInlineCompletionItems(
+                document,
+                position,
+                context,
+                token
+            )
+
+            return {
+                requests,
+                completions: 'items' in completions ? completions.items : completions,
+            }
+        }
+    })
+
     it('uses a more complex prompt for larger files', async () => {
         const { requests } = await complete(`
             class Range {
@@ -329,27 +349,17 @@ describe('Cody completions', () => {
         expect(requests).toHaveLength(3)
     })
 
-    it('filters out known-bad completion starts', async () => {
-        {
-            const { completions } = await complete(`one:\n  ${CURSOR_MARKER}`, [createCompletionResponse('➕     1')])
-            expect(completions[0].insertText).toBe('1')
-        }
-        {
-            const { completions } = await complete(`one:\n  ${CURSOR_MARKER}`, [createCompletionResponse('\u200B   2')])
-            expect(completions[0].insertText).toBe('2')
-        }
-        {
-            const { completions } = await complete(`one:\n  ${CURSOR_MARKER}`, [createCompletionResponse('.      3')])
-            expect(completions[0].insertText).toBe('3')
-        }
-        {
-            const { completions } = await complete(`two:\n${CURSOR_MARKER}`, [createCompletionResponse('+  1')])
-            expect(completions[0].insertText).toBe('1')
-        }
-        {
-            const { completions } = await complete(`two:\n${CURSOR_MARKER}`, [createCompletionResponse('-  2')])
-            expect(completions[0].insertText).toBe('2')
-        }
+    describe('bad completion starts', () => {
+        it.each([
+            ['➕     1', '1'],
+            ['\u200B   1', '1'],
+            ['.      1', '1'],
+            ['+  1', '1'],
+            ['-  1', '1'],
+        ])('fixes %s to %s', async (completion, expected) => {
+            const { completions } = await complete(CURSOR_MARKER, [createCompletionResponse(completion)])
+            expect(completions[0].insertText).toBe(expected)
+        })
     })
 
     describe('odd indentation', () => {

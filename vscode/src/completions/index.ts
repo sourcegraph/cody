@@ -28,16 +28,16 @@ interface CodyCompletionItemProviderConfig {
     prefixPercentage?: number
     suffixPercentage?: number
     disableTimeouts?: boolean
-    isCompletionsCacheEnabled?: boolean
     isEmbeddingsContextEnabled?: boolean
     triggerMoreEagerly: boolean
+    cache?: CompletionsCache
 }
 
 export class CodyCompletionItemProvider implements vscode.InlineCompletionItemProvider {
     private promptChars: number
     private maxPrefixChars: number
     private maxSuffixChars: number
-    private abortOpenInlineCompletions: () => void = () => {}
+    private abortOpenCompletions: () => void = () => {}
     private stopLoading: () => void = () => {}
     private lastContentChanges: LRUCache<string, 'add' | 'del'> = new LRUCache<string, 'add' | 'del'>({
         max: 10,
@@ -53,7 +53,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
     private disableTimeouts: boolean
     private isEmbeddingsContextEnabled: boolean
     private triggerMoreEagerly: boolean
-    public inlineCompletionsCache?: CompletionsCache
+    private completionsCache?: CompletionsCache
     private requestManager: RequestManager
 
     constructor(config: CodyCompletionItemProviderConfig) {
@@ -67,7 +67,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
             suffixPercentage = 0.1,
             disableTimeouts = false,
             isEmbeddingsContextEnabled = true,
-            isCompletionsCacheEnabled = true,
+            cache,
             triggerMoreEagerly,
         } = config
 
@@ -80,6 +80,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
         this.suffixPercentage = suffixPercentage
         this.disableTimeouts = disableTimeouts
         this.isEmbeddingsContextEnabled = isEmbeddingsContextEnabled
+        this.completionsCache = cache
         this.triggerMoreEagerly = triggerMoreEagerly
 
         this.promptChars =
@@ -87,10 +88,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
         this.maxPrefixChars = Math.floor(this.promptChars * this.prefixPercentage)
         this.maxSuffixChars = Math.floor(this.promptChars * this.suffixPercentage)
 
-        if (isCompletionsCacheEnabled) {
-            this.inlineCompletionsCache = new CompletionsCache()
-        }
-        this.requestManager = new RequestManager(this.inlineCompletionsCache)
+        this.requestManager = new RequestManager(this.completionsCache)
 
         debug('CodyCompletionProvider:initialized', `provider: ${providerConfig.identifier}`)
 
@@ -137,9 +135,9 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
     ): Promise<vscode.InlineCompletionItem[] | vscode.InlineCompletionList> {
         const abortController = new AbortController()
         if (token) {
-            this.abortOpenInlineCompletions()
+            this.abortOpenCompletions()
             token.onCancellationRequested(() => abortController.abort())
-            this.abortOpenInlineCompletions = () => abortController.abort()
+            this.abortOpenCompletions = () => abortController.abort()
         }
 
         CompletionLogger.clear()
@@ -179,7 +177,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
             // untruncated prefix matches. This fixes some weird issues where the completion would
             // render if you insert whitespace but not on the original place when you delete it
             // again
-            const cachedCompletions = this.inlineCompletionsCache?.get(prefix, false)
+            const cachedCompletions = this.completionsCache?.get(prefix, false)
             if (cachedCompletions?.isExactPrefix) {
                 return handleCacheHit(
                     cachedCompletions,
@@ -194,7 +192,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
             return []
         }
 
-        const cachedCompletions = this.inlineCompletionsCache?.get(prefix)
+        const cachedCompletions = this.completionsCache?.get(prefix)
         if (cachedCompletions) {
             return handleCacheHit(
                 cachedCompletions,
@@ -311,8 +309,8 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
         this.stopLoading = stopLoading
 
         // Overwrite the abort handler to also update the loading state
-        const previousAbort = this.abortOpenInlineCompletions
-        this.abortOpenInlineCompletions = () => {
+        const previousAbort = this.abortOpenCompletions
+        this.abortOpenCompletions = () => {
             previousAbort()
             stopLoading()
         }
