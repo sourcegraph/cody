@@ -88,6 +88,7 @@ export class RequestManager {
                 request.resolve(completions)
             })
             .catch(error => {
+                console.error(error)
                 request.reject(error)
             })
             .finally(() => {
@@ -129,8 +130,13 @@ export class RequestManager {
     }
 
     private removeRequest(documentUri: string, request: Request): void {
-        const requestsForDocument = this.requests.get(documentUri)!
-        const index = requestsForDocument.indexOf(request)
+        const requestsForDocument = this.requests.get(documentUri)
+        const index = requestsForDocument?.indexOf(request)
+
+        if (requestsForDocument === undefined || index === undefined || index === -1) {
+            return
+        }
+
         requestsForDocument.splice(index, 1)
 
         if (requestsForDocument.length === 0) {

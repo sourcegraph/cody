@@ -23,18 +23,6 @@ vi.mock('vscode', () => ({
         asRelativePath(path: string) {
             return path
         },
-        getConfiguration() {
-            return {
-                get(key: string) {
-                    switch (key) {
-                        case 'cody.debug.filter':
-                            return '.*'
-                        default:
-                            return ''
-                    }
-                },
-            }
-        },
         onDidChangeTextDocument() {
             return null
         },
