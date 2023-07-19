@@ -2,12 +2,12 @@ import * as assert from 'assert'
 
 import * as vscode from 'vscode'
 
-import { SidebarChatViewProvider } from '../../src/chat/SidebarChatViewProvider'
+import { MessageProvider } from '../../src/chat/MessageProvider'
 
 import { afterIntegrationTest, beforeIntegrationTest, getExtensionAPI, getTranscript } from './helpers'
 
-async function getChatViewProvider(): Promise<SidebarChatViewProvider> {
-    const chatViewProvider = await getExtensionAPI().exports.testing?.chatViewProvider.get()
+async function getChatViewProvider(): Promise<MessageProvider> {
+    const chatViewProvider = await getExtensionAPI().exports.testing?.messageProvider.get()
     assert.ok(chatViewProvider)
     return chatViewProvider
 }
