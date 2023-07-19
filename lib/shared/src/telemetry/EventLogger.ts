@@ -49,7 +49,6 @@ export class EventLogger {
             configurationDetails: this.configurationDetails,
         }
         try {
-            console.log(publicArgument)
             this.gqlAPIClient
                 .logEvent({
                     event: eventName,
