@@ -263,11 +263,8 @@ export class InlineController {
     }
 
     public async error(): Promise<void> {
-        const fixupInProgress = this.currentTaskId.length > 0
-        const requestType = fixupInProgress ? 'fix/touch request' : 'request'
-        const msg = 'Please provide Cody with more details and try again.'
-        this.reply(`Cody was unable to complete your ${requestType}. ${msg}`, 'error')
-        if (fixupInProgress) {
+        this.reply('Request failed. Please close this and try again.', 'error')
+        if (this.currentTaskId) {
             await this.stopFixMode(true)
         }
     }

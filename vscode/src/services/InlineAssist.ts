@@ -29,7 +29,7 @@ export function getSingleLineRange(line: number): vscode.Range {
  */
 export function getIconPath(speaker: string, extPath: string): vscode.Uri {
     const extensionPath = vscode.Uri.file(extPath)
-    const webviewPath = vscode.Uri.joinPath(extensionPath, 'dist/webviews')
+    const webviewPath = vscode.Uri.joinPath(extensionPath, 'dist')
     return vscode.Uri.joinPath(webviewPath, speaker === 'cody' ? 'cody.png' : 'sourcegraph.png')
 }
 
