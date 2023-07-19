@@ -337,7 +337,7 @@
         "category": "Cody",
         "title": "Chat History",
         "group": "Cody",
-        "icon": "$(list-unordered)"
+        "icon": "$(history)"
       },
       {
         "command": "cody.comment.add",
