@@ -344,7 +344,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
 
         // Shared post-processing logic
         const processedCompletions = completions.map(completion =>
-            sharedPostProcess({ prefix, suffix, multiline: multiline !== null, languageId, completion })
+            sharedPostProcess({ prefix, suffix, multiline, languageId, completion })
         )
 
         // Filter results

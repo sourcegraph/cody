@@ -128,7 +128,7 @@ export class AnthropicProvider extends Provider {
         completion = fixBadCompletionStart(completion)
 
         // Remove incomplete lines in single-line completions
-        if (this.multiline) {
+        if (!this.multiline) {
             let allowedNewlines = 2
             const lines = completion.split('\n')
             if (lines.length >= allowedNewlines) {
