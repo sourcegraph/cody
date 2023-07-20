@@ -31,6 +31,7 @@ describe('getConfiguration', () => {
             autocompleteAdvancedCache: true,
             autocompleteAdvancedEmbeddings: true,
             autocompleteExperimentalTriggerMoreEagerly: false,
+            autocompleteExperimentalCompleteSuggestWidgetSelection: false,
         })
     })
 
@@ -77,6 +78,8 @@ describe('getConfiguration', () => {
                         return false
                     case 'cody.autocomplete.experimental.triggerMoreEagerly':
                         return false
+                    case 'cody.autocomplete.experimental.completeSuggestWidgetSelection':
+                        return false
                     case 'cody.plugins.enabled':
                         return true
                     case 'cody.plugins.config':
@@ -115,6 +118,7 @@ describe('getConfiguration', () => {
             autocompleteAdvancedCache: false,
             autocompleteAdvancedEmbeddings: false,
             autocompleteExperimentalTriggerMoreEagerly: false,
+            autocompleteExperimentalCompleteSuggestWidgetSelection: false,
         })
     })
 })

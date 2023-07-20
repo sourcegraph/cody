@@ -31,6 +31,7 @@ interface CodyCompletionItemProviderConfig {
     isEmbeddingsContextEnabled?: boolean
     triggerMoreEagerly: boolean
     cache?: CompletionsCache
+    completeSuggestWidgetSelection?: boolean
 }
 
 export class CodyCompletionItemProvider implements vscode.InlineCompletionItemProvider {
@@ -55,6 +56,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
     private triggerMoreEagerly: boolean
     private completionsCache?: CompletionsCache
     private requestManager: RequestManager
+    private completeSuggestWidgetSelection?: boolean
 
     constructor(config: CodyCompletionItemProviderConfig) {
         const {
@@ -69,6 +71,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
             isEmbeddingsContextEnabled = true,
             cache,
             triggerMoreEagerly,
+            completeSuggestWidgetSelection,
         } = config
 
         this.providerConfig = providerConfig
@@ -82,6 +85,22 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
         this.isEmbeddingsContextEnabled = isEmbeddingsContextEnabled
         this.completionsCache = cache
         this.triggerMoreEagerly = triggerMoreEagerly
+        this.completeSuggestWidgetSelection = completeSuggestWidgetSelection
+
+        if (this.completeSuggestWidgetSelection) {
+            // This must be set to true, or else the suggest widget showing will suppress inline
+            // completions. Note that the VS Code proposed API inlineCompletionsAdditions contains
+            // an InlineCompletionList#suppressSuggestions field that lets an inline completion
+            // provider override this on a per-completion basis. Because that API is proposed, we
+            // can't use it and must instead resort to writing to the user's VS Code settings.
+            //
+            // The cody.autocomplete.experimental.completeSuggestWidgetSelection setting is
+            // experimental and off by default. Before turning it on by default, we need to try to
+            // find a workaround that is not silently updating the user's VS Code settings.
+            void vscode.workspace
+                .getConfiguration()
+                .update('editor.inlineSuggest.suppressSuggestions', true, vscode.ConfigurationTarget.Global)
+        }
 
         this.promptChars =
             providerConfig.maximumContextCharacters - providerConfig.maximumContextCharacters * responsePercentage
@@ -215,11 +234,15 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
         }
         const triggeredMoreEagerly = this.triggerMoreEagerly && cursorAtWord
 
-        // Don't show completions if a selected completion info is present (so something is selected
-        // from the completions dropdown list based on the lang server) and the returned completion
-        // range does not contain the same selection.
+        let triggeredForSuggestWidgetSelection: string | undefined
         if (context.selectedCompletionInfo) {
-            return []
+            if (this.completeSuggestWidgetSelection) {
+                triggeredForSuggestWidgetSelection = context.selectedCompletionInfo.text
+            } else {
+                // Don't show completions if the suggest widget (which shows language autocomplete)
+                // is showing.
+                return []
+            }
         }
 
         // If we have a suffix in the same line as the cursor and the suffix contains any word
@@ -301,8 +324,10 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
             languageId,
             contextSummary,
             triggeredMoreEagerly,
+            triggeredForSuggestWidgetSelection: triggeredForSuggestWidgetSelection !== undefined,
             settings: {
-                'cody.autocomplete.experimental.triggerMoreEagerly': this.triggerMoreEagerly,
+                autocompleteExperimentalTriggerMoreEagerly: this.triggerMoreEagerly,
+                autocompleteExperimentalCompleteSuggestWidgetSelection: Boolean(this.completeSuggestWidgetSelection),
             },
         })
         const stopLoading = this.statusBar.startLoading('Completions are being generated')
@@ -385,17 +410,19 @@ function toInlineCompletionItems(
     document: vscode.TextDocument,
     position: vscode.Position,
     completions: Completion[]
-): vscode.InlineCompletionItem[] {
-    return completions.map(completion => {
-        const lines = completion.content.split(/\r\n|\r|\n/m).length
-        const currentLineText = document.lineAt(position)
-        const endOfLine = currentLineText.range.end
-        return new vscode.InlineCompletionItem(completion.content, new vscode.Range(position, endOfLine), {
-            title: 'Completion accepted',
-            command: 'cody.autocomplete.inline.accepted',
-            arguments: [{ codyLogId: logId, codyLines: lines }],
-        })
-    })
+): vscode.InlineCompletionList {
+    return {
+        items: completions.map(completion => {
+            const lines = completion.content.split(/\r\n|\r|\n/).length
+            const currentLineText = document.lineAt(position)
+            const endOfLine = currentLineText.range.end
+            return new vscode.InlineCompletionItem(completion.content, new vscode.Range(position, endOfLine), {
+                title: 'Completion accepted',
+                command: 'cody.autocomplete.inline.accepted',
+                arguments: [{ codyLogId: logId, codyLines: lines }],
+            })
+        }),
+    }
 }
 
 function rankCompletions(completions: Completion[]): Completion[] {
