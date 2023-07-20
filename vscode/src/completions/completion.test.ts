@@ -277,6 +277,19 @@ describe('Cody completions', () => {
         expect(completions[0].insertText).toBe('if (true) {')
     })
 
+    it('only complete one line if the current line is not empty', async () => {
+        const { completions } = await complete(
+            `
+        function test() {
+            console.log(1, ${CURSOR_MARKER});
+        }
+        `,
+            [createCompletionResponse('2);\n    console.log(3);')]
+        )
+
+        expect(completions[0].insertText).toBe('2);')
+    })
+
     it('completes a single-line at the middle of a sentence', async () => {
         const { completions } = await complete(`function bubbleSort(${CURSOR_MARKER})`, [
             createCompletionResponse('array) {'),

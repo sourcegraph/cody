@@ -115,6 +115,9 @@ export class AnthropicProvider extends Provider {
         let completion = extractFromCodeBlock(rawResponse)
         const startIndentation = indentation(lastNLines(this.prefix, 1) + completion.split('\n')[0])
 
+        const sameLinePrefix = this.prefix.slice(this.prefix.lastIndexOf('\n') + 1)
+        const sameLineSuffix = this.suffix.slice(0, this.suffix.indexOf('\n'))
+
         const trimmedPrefixContainNewline = this.prefix.slice(this.prefix.trimEnd().length).includes('\n')
         if (trimmedPrefixContainNewline) {
             // The prefix already contains a `\n` that Claude was not aware of, so we remove any
@@ -131,11 +134,16 @@ export class AnthropicProvider extends Provider {
         if (this.multilineMode === null) {
             let allowedNewlines = 2
             const lines = completion.split('\n')
-            if (lines.length >= allowedNewlines) {
+            if (lines.length >= 1) {
                 // Only select two lines if they have the same indentation, otherwise only show one
                 // line. This will then most-likely trigger a multi-line completion after accepting
                 // and result in a better experience.
                 if (lines.length > 1 && startIndentation !== indentation(lines[1])) {
+                    allowedNewlines = 1
+                }
+
+                // When the current line has any content, we only allow a single line completion.
+                if (sameLinePrefix.trim() !== '' || sameLineSuffix.trim() !== '') {
                     allowedNewlines = 1
                 }
 
