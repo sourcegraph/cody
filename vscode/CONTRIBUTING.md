@@ -50,3 +50,32 @@ To manually trigger an insiders build:
 1. Select the branch you want to build from (usually `main`).
 1. Press the **Run workflow** button.
 1. Wait for the workflow run to finish.
+
+### Running a release build locally
+
+It can be helpful to build and run the packaged extension locally to replicate a typical user flow.
+
+To do this:
+
+1. Run `pnpm install` (see [repository setup instructions](../doc/dev/index.md) if you don't have `pnpm`).
+1. Run `pnpm vscode:prepublish`
+1. Uninstall any existing Cody extension from VS Code.
+1. Run `code --install-extension dist/cody.vsix`
+
+#### Simulating a fresh user install
+
+VS Code will preserve some extension state (e.g. configuration settings) even when an extension is installed. See the following steps if you want to replicate the flow of a completely new user.
+
+Note: To avoid data loss, using a separate build of VS Code (e.g. Insiders) is recommended here if VS Code is your primary editor.
+
+For Insiders:
+
+1. Clear out existing VS Code settings:
+   ```
+   rm -rf $HOME/.vscode-insiders
+   rm -rf $HOME/Library/Caches/com.microsoft.VSCodeInsiders
+   rm -rf $HOME/Library/Application\ Support/Code\ -\ Insiders
+   rm -rf $HOME/Library/Saved\ Application\ State/com.microsoft.VSCodeInsiders.savedState
+   ```
+1. Build the release build locally (see above), do not install.
+1. Install the extension for Insiders with the following command: `code-insiders --install-extension dist/cody.vsix`
