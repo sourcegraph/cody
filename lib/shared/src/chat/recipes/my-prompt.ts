@@ -161,9 +161,9 @@ export class MyPrompt implements Recipe {
             if (dirPath && doc.uri.fsPath.includes(dirPath)) {
                 continue
             }
-            const fileName = vscode.workspace.asRelativePath(doc.uri.fsPath)
             // remove workspace root path from fileName
             const fileContent = await vscode.workspace.openTextDocument(doc.uri)
+            const fileName = vscode.workspace.asRelativePath(doc.uri.fsPath)
             const truncatedContent = truncateText(fileContent.getText(), MAX_CURRENT_FILE_TOKENS)
             const docAsMessage = getContextMessageWithResponse(
                 populateCurrentEditorContextTemplate(truncatedContent, fileName),
