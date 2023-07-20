@@ -14,12 +14,6 @@
     "Refactor Code": {
       "prompt": "Analyze the code and suggest constructive edits that improve code quality and readability. Focus on providing clear, thoughtful, and coherent recommendations. Avoid altering intended functionality without explanation. Make suggestions that are easy to implement and based on shared code snippets. Provide full revised code at the end."
     },
-    "GH Search: Deployed Repositories not owned by Sourcegraph": {
-      "prompt": "Find repositories used for deploying Sourcegraph but not directly owned by Sourcegraph.",
-      "command": "gh",
-      "args": ["search", "repos", "sourcegraph", "deploy"],
-      "description": "Make sure you have the 'gh' command installed and authenticated. "
-    },
     "Compare Files in Opened Tabs": {
       "prompt": "Compare the code from opened tabs and explain their relationships.",
       "context": {

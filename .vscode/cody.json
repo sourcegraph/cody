@@ -38,6 +38,14 @@
         "currentDir": true
       },
       "note": "Works best if there are other test files in the current directory"
+    },
+    "Compare Files in Opened Tabs": {
+      "prompt": "Compare the code from opened tabs and explain their relationships.",
+      "context": {
+        "openTabs": true,
+        "excludeSelection": true
+      },
+      "description": "This recipe lets Cody analyze code from open tabs to provide insights on how they relate to each other."
     }
   }
 }

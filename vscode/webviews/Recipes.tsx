@@ -52,7 +52,7 @@ export const Recipes: React.FunctionComponent<{
                                         <VSCodeButton
                                             type="button"
                                             appearance="icon"
-                                            onClick={() => onMyPromptClick('add')}
+                                            onClick={() => onMyPromptClick('menu')}
                                         >
                                             <i className="codicon codicon-tools" title="Update your custom recipes" />
                                         </VSCodeButton>

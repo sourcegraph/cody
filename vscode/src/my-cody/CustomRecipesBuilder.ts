@@ -6,6 +6,10 @@ import { newPromptMixin, PromptMixin } from '@sourcegraph/cody-shared/src/prompt
 import { constructFileUri } from './helper'
 import { CodyPrompt, CodyPromptType, CustomRecipesFileName, MyPrompts, MyPromptsJSON } from './types'
 
+/**
+ * The CustomRecipesBuilder class is responsible for loading and building the custom prompts from the cody.json files.
+ * It has methods to get the prompts from the file system, parse the JSON, and build the prompts map.
+ */
 export class CustomRecipesBuilder {
     public myPremade: Preamble | undefined = undefined
     public myPromptsMap = new Map<string, CodyPrompt>()
@@ -30,6 +34,7 @@ export class CustomRecipesBuilder {
         }
     }
 
+    // Get the formatted context from the json config file
     public async get(): Promise<MyPrompts> {
         // reset map and set
         this.myPromptsMap = new Map<string, CodyPrompt>()
@@ -48,10 +53,12 @@ export class CustomRecipesBuilder {
         return { prompts: this.myPromptsMap, premade: this.myPremade, starter: this.myStarter }
     }
 
+    // This is use to remove duplicate prompts
     public getIDs(): string[] {
         return [...this.idSet]
     }
 
+    // Build the map of prompts from the json string
     public build(content: string | null, type: CodyPromptType): Map<string, CodyPrompt> | null {
         if (!content) {
             return null
@@ -78,6 +85,7 @@ export class CustomRecipesBuilder {
         return this.myPromptsMap
     }
 
+    // Get the context of the json file from the file system
     private async getPromptsFromFileSystem(type: CodyPromptType): Promise<string | null> {
         const codyJsonFilePath = type === 'user' ? this.jsonFileUris.user : this.jsonFileUris.workspace
         if (!codyJsonFilePath) {

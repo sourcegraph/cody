@@ -1,5 +1,6 @@
 import { exec, spawnSync } from 'child_process'
 import os from 'os'
+import { promisify } from 'util'
 
 import * as vscode from 'vscode'
 
@@ -8,8 +9,11 @@ import { getFileNameFromPath, getFileToRemove, outputWrapper } from './helper'
 const rootPath = vscode.workspace.workspaceFolders?.[0].uri.fsPath
 const currentFilePath = vscode.window.activeTextEditor?.document.uri.fsPath
 const homePath = os.homedir()
-
-// WIP: A Class that provides different tools for users to use during prompt building
+const _exec = promisify(exec)
+/**
+ * Provides utility methods and tools for working with the file system, running commands,
+ * and getting user/workspace info.
+ */
 export class MyToolsProvider {
     private tools = new Map<string, string>()
     private username: string
@@ -49,13 +53,15 @@ export class MyToolsProvider {
                     encoding: 'utf8',
                 }) || ''
             // stringify the output of the command first
-            const outputString = JSON.stringify(output.stdout.toString().trim())
+            const outputString = output.stdout?.trim()
             if (!outputString) {
                 void vscode.window.showInformationMessage(
                     `No output return from ${fullCommand}. Please make sure the command works in your terminal before trying again.`
                 )
             }
-            return outputString ? outputWrapper.replace('{command}', fullCommand).replace('{output}', outputString) : ''
+            return outputString
+                ? outputWrapper.replace('{command}', fullCommand).replace('{output}', JSON.stringify(outputString))
+                : ''
         } catch (error) {
             // handle error
             void vscode.window.showInformationMessage(
@@ -66,21 +72,21 @@ export class MyToolsProvider {
         }
     }
 
-    public exeCommand(command: string): string | undefined {
+    public async exeCommand(command: string, runFromWSRoot = true): Promise<string | undefined> {
         try {
-            const { stdout, stderr } = exec(command, {
-                cwd: this.user.homeDir,
+            const { stdout, stderr } = await _exec(command, {
+                cwd: runFromWSRoot ? rootPath : currentFilePath,
                 encoding: 'utf8',
             })
+            const output = stdout || stderr
             // stringify the output of the command first
-            const outputString = JSON.stringify(stdout?.toString().trim())
-            if (!outputString || stderr) {
-                console.error(stderr)
-                throw new Error(`No output from ${command}.`)
+            const outputString = JSON.stringify(output.trim())
+            if (!outputString) {
+                throw new Error('Empty output')
             }
             return outputWrapper.replace('{command}', command).replace('{output}', outputString)
-        } catch {
-            // handle error
+        } catch (error) {
+            console.error(error)
             void vscode.window.showErrorMessage(
                 'Failed to run command. Please make sure the command works in your terminal before trying again.'
             )

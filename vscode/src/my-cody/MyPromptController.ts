@@ -17,7 +17,11 @@ import {
 import { MyToolsProvider } from './MyToolsProvider'
 import { CodyPrompt, CodyPromptType, MyPrompts } from './types'
 
-// NOTE: Dogfooding - Internal s2 users only
+/**
+ * Utilizes CustomRecipesBuilder to get the built prompt data
+ * Provides additional prompt management and execution logic
+ * NOTE: Dogfooding - Internal s2 users only
+ */
 export class MyPromptController {
     private myPremade: Preamble | undefined = undefined
     private myStarter = ''
@@ -180,7 +184,7 @@ export class MyPromptController {
         await this.refresh()
     }
 
-    public async addJSONFile(type: string): Promise<void> {
+    public async addJSONFile(type: CodyPromptType): Promise<void> {
         const extensionPath = this.context.extensionPath
         const isUserType = type === 'user'
         const rootDirPath = isUserType ? this.tools.getUserInfo()?.homeDir : this.tools.getUserInfo()?.workspaceRoot
@@ -189,17 +193,38 @@ export class MyPromptController {
             return
         }
         await createJSONFile(extensionPath, rootDirPath, isUserType)
-        await this.refresh()
     }
 
     // Menu with an option to add a new recipe via UI and save it to user's cody.json file
-    public async add(): Promise<void> {
-        const selectedOption = await showCustomRecipeMenu()
-        if (selectedOption === 'delete') {
-            const fileType = await showRecipeTypeQuickPick(selectedOption, this.builder.promptSize)
+    public async menu(): Promise<void> {
+        const selected = await showCustomRecipeMenu()
+        if (!selected) {
+            return
+        }
+        if (selected === 'delete' || selected === 'file' || selected === 'open') {
+            const fileType = await showRecipeTypeQuickPick(selected, this.builder.promptSize)
             if (!fileType) {
                 return
             }
+            await this.fileTypeActions(selected, fileType)
+        } else if (selected === 'add') {
+            // Get the prompt name and prompt description from the user using the input box
+            const promptName = await showPromptNameInput(this.myPromptStore)
+            if (!promptName) {
+                return
+            }
+            const newPrompt = await createNewPrompt(promptName)
+            if (!newPrompt) {
+                return
+            }
+            // Save the prompt to the current Map and Extension storage
+            this.myPromptStore.set(promptName, newPrompt)
+            await this.save(promptName, newPrompt)
+        }
+    }
+
+    private async fileTypeActions(action: string, fileType: CodyPromptType): Promise<void> {
+        if (action === 'delete') {
             const confirmRemove = await showRemoveConfirmationInput()
             if (confirmRemove !== 'Yes') {
                 return
@@ -207,36 +232,13 @@ export class MyPromptController {
             await this.clear(fileType)
             return
         }
-        if (selectedOption === 'file') {
-            const fileType = await showRecipeTypeQuickPick(selectedOption, this.builder.promptSize)
-            if (!fileType) {
-                return
-            }
-            await this.addJSONFile(selectedOption)
+        if (action === 'file') {
+            await this.addJSONFile(fileType)
             return
         }
-        if (selectedOption === 'open') {
-            const fileType = await showRecipeTypeQuickPick(selectedOption, this.builder.promptSize)
-            if (!fileType) {
-                return
-            }
+        if (action === 'open') {
             await this.open(fileType)
             return
         }
-        if (!selectedOption || selectedOption !== 'add') {
-            return
-        }
-        // Get the prompt name and prompt description from the user using the input box
-        const promptName = await showPromptNameInput(this.myPromptStore)
-        if (!promptName) {
-            return
-        }
-        const newPrompt = await createNewPrompt(promptName)
-        if (!newPrompt) {
-            return
-        }
-        // Save the prompt to the current Map and Extension storage
-        this.myPromptStore.set(promptName, newPrompt)
-        await this.save(promptName, newPrompt)
     }
 }

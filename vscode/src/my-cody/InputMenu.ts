@@ -3,10 +3,9 @@ import * as vscode from 'vscode'
 import { defaultCodyPromptContext } from '@sourcegraph/cody-shared/src/chat/recipes/my-prompt'
 
 import { prompt_creation_title } from './helper'
-import { CodyPrompt } from './types'
+import { CodyPrompt, CodyPromptType } from './types'
 
 export type answerType = 'add' | 'file' | 'delete' | 'recipes' | 'open' | 'cancel'
-export type recipeType = 'user' | 'workspace'
 
 export async function showCustomRecipeMenu(): Promise<answerType | void> {
     const options = [
@@ -196,7 +195,7 @@ export async function showRecipeTypeQuickPick(
         user: number
         workspace: number
     }
-): Promise<recipeType | null> {
+): Promise<CodyPromptType | null> {
     const options: string[] = []
     if (action === 'file') {
         if (prompts.user === 0) {

@@ -120,14 +120,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         this.disposables.push(this.configurationChangeEvent)
 
         this.currentWorkspaceRoot = ''
-
-        // listen for file change event for JSON files used for building Custom Recipes
-        const myWorkspacePromptsWatcher = this.editor.controllers?.prompt?.wsFileWatcher
-        const myUserPromptsWatcher = this.editor.controllers?.prompt?.userFileWatcher
-        myWorkspacePromptsWatcher?.onDidChange(() => this.sendMyPrompts())
-        myWorkspacePromptsWatcher?.onDidDelete(() => this.sendMyPrompts())
-        myUserPromptsWatcher?.onDidChange(() => this.sendMyPrompts())
-        myUserPromptsWatcher?.onDidDelete(() => this.sendMyPrompts())
+        this.customRecipesInit()
 
         // listen for vscode active editor change event
         this.disposables.push(
@@ -738,14 +731,8 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
             return
         }
         // Create a new recipe
-        if (title === 'add') {
-            await this.editor.controllers.prompt.add()
-            await this.sendMyPrompts()
-            return
-        }
-        // Clear all recipes stored in user global storage
-        if (title === 'clear') {
-            await this.editor.controllers.prompt.clear()
+        if (title === 'menu') {
+            await this.editor.controllers.prompt.menu()
             await this.sendMyPrompts()
             return
         }
@@ -763,7 +750,6 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         const prompt = this.editor.controllers.prompt.find(title)
         this.editor.controllers.prompt.getCommandOutput()
         if (!prompt) {
-            // void vscode.window.showErrorMessage(`Could not find prompt for the "${title}" recipe.`)
             debug('executeMyPrompt:noPrompt', title)
             return
         }
@@ -771,6 +757,16 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
             this.showTab('chat')
         }
         await this.executeChatCommands(prompt, 'my-prompt')
+    }
+
+    private customRecipesInit(): void {
+        // listen for file change event for JSON files used for building Custom Recipes
+        const myWorkspacePromptsWatcher = this.editor.controllers?.prompt?.wsFileWatcher
+        const myUserPromptsWatcher = this.editor.controllers?.prompt?.userFileWatcher
+        myWorkspacePromptsWatcher?.onDidChange(() => this.sendMyPrompts())
+        myWorkspacePromptsWatcher?.onDidDelete(() => this.sendMyPrompts())
+        myUserPromptsWatcher?.onDidChange(() => this.sendMyPrompts())
+        myUserPromptsWatcher?.onDidDelete(() => this.sendMyPrompts())
     }
 
     /**
