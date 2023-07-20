@@ -77,11 +77,10 @@ export function newAuthStatus({
     version,
     configOverwrites,
 }: NewAuthStatusParameters): AuthStatus {
-    const isAuthenticated = Boolean(user.id)
     const authStatus: AuthStatus = { ...defaultAuthStatus, endpoint }
     // Set values and return early
-    authStatus.authenticated = isAuthenticated
-    authStatus.showInvalidAccessTokenError = !isAuthenticated
+    authStatus.authenticated = true
+    authStatus.showInvalidAccessTokenError = false
     authStatus.requiresVerifiedEmail = isDotComOrApp
     authStatus.hasVerifiedEmail = isDotComOrApp && isEmailVerified
     authStatus.siteHasCodyEnabled = isCodyEnabled
@@ -92,8 +91,7 @@ export function newAuthStatus({
     if (configOverwrites) {
         authStatus.configOverwrites = configOverwrites
     }
-    const isLoggedIn = authStatus.siteHasCodyEnabled && authStatus.authenticated
     const isAllowed = authStatus.requiresVerifiedEmail ? authStatus.hasVerifiedEmail : true
-    authStatus.isLoggedIn = isLoggedIn && isAllowed
+    authStatus.isLoggedIn = authStatus.siteHasCodyEnabled && isAllowed
     return authStatus
 }
