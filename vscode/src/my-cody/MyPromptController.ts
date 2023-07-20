@@ -6,7 +6,14 @@ import { newPromptMixin, PromptMixin } from '@sourcegraph/cody-shared/src/prompt
 
 import { isInternalUser } from '../chat/protocol'
 
-import { createFileWatch, createJSONFile, createNewPrompt, prompt_creation_title, saveJSONFile } from './helper'
+import {
+    createFileWatch,
+    createJSONFile,
+    createNewPrompt,
+    makeFileUri,
+    prompt_creation_title,
+    saveJSONFile,
+} from './helper'
 import { MyToolsProvider } from './MyToolsProvider'
 
 interface MyPromptsJSON {
@@ -93,7 +100,17 @@ export class MyPromptController {
             return this.myPromptInProgress?.context?.codebase ? 'codebase' : null
         }
         // return the terminal output from the last command run
-        return this.getCommandOutput() || null
+        return this.getCommandOutput()
+    }
+
+    // Open workspace file in editor
+    // TODO (bee) move this to MyToolsProvider
+    public async open(fsPath: string): Promise<void> {
+        const uri =
+            fsPath === 'user'
+                ? this.builder.jsonFileUris.user
+                : makeFileUri(fsPath, this.tools.getUserInfo()?.workspaceRoot)
+        await vscode.commands.executeCommand('vscode.open', uri)
     }
 
     // Find the prompt based on the id
@@ -245,12 +262,19 @@ class MyRecipesBuilder {
     public userPromptsJSON: MyPromptsJSON | null = null
     public userPromptsSize = 0
 
+    public jsonFileUris: { user: vscode.Uri | null; workspace: vscode.Uri | null }
+
     public codebase: string | null = null
 
     constructor(
         private workspaceRoot?: string,
         private homeDir?: string
-    ) {}
+    ) {
+        this.jsonFileUris = {
+            user: makeFileUri('.vscode/cody.json', homeDir),
+            workspace: makeFileUri('.vscode/cody.json', workspaceRoot),
+        }
+    }
 
     public async get(): Promise<MyPrompts> {
         // reset map and set
@@ -258,13 +282,13 @@ class MyRecipesBuilder {
         this.idSet = new Set<string>()
         // user prompts
         if (this.homeDir) {
-            const userPrompts = await this.getPromptsFromFileSystem(this.homeDir)
+            const userPrompts = await this.getPromptsFromFileSystem('user')
             const userPromptsMap = this.build(userPrompts, 'user')
             this.userPromptsSize = userPromptsMap?.size || 0
         }
         // workspace prompts
         if (this.workspaceRoot) {
-            const wsPrompts = await this.getPromptsFromFileSystem(this.workspaceRoot)
+            const wsPrompts = await this.getPromptsFromFileSystem('workspace')
             this.build(wsPrompts, 'workspace')
         }
         return { prompts: this.myPromptsMap, premade: this.myPremade, starter: this.myStarter }
@@ -299,12 +323,13 @@ class MyRecipesBuilder {
         return this.myPromptsMap
     }
 
-    private async getPromptsFromFileSystem(rootPath: string): Promise<string | null> {
-        const rootUri = vscode.Uri.parse(rootPath)
-        const codyJsonFilePath = vscode.Uri.joinPath(rootUri, '.vscode/cody.json')
+    private async getPromptsFromFileSystem(type: 'user' | 'workspace'): Promise<string | null> {
+        const codyJsonFilePath = type === 'user' ? this.jsonFileUris.user : this.jsonFileUris.workspace
+        if (!codyJsonFilePath) {
+            return null
+        }
         try {
-            const filePath = vscode.Uri.file(codyJsonFilePath.fsPath)
-            const bytes = await vscode.workspace.fs.readFile(filePath)
+            const bytes = await vscode.workspace.fs.readFile(codyJsonFilePath)
             const decoded = new TextDecoder('utf-8').decode(bytes) || null
             return decoded
         } catch {

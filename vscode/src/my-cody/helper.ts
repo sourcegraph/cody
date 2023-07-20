@@ -4,24 +4,34 @@ import { defaultCodyPromptContext } from '@sourcegraph/cody-shared/src/chat/reci
 
 import { CodyPrompt } from './MyPromptController'
 
+export function makeFileUri(fileName: string, rootDirPath?: string): vscode.Uri | null {
+    if (!rootDirPath) {
+        return null
+    }
+    const rootDirUri = vscode.Uri.parse(rootDirPath)
+    const codyJsonFilePath = vscode.Uri.joinPath(rootDirUri, fileName)
+    return codyJsonFilePath
+}
+
 // Create a .vscode/cody.json file in the root directory of the workspace or user's home directory using the sample files
 export async function createJSONFile(extensionPath: string, rootDirPath: string, isUserType: boolean): Promise<void> {
-    const extensionUri = vscode.Uri.parse(extensionPath)
-    const refFileName = isUserType ? 'user-cody.json' : 'workspace-cody.json'
-    const codyJsonPath = vscode.Uri.joinPath(extensionUri, 'resources/samples/' + refFileName)
-    const bytes = await vscode.workspace.fs.readFile(codyJsonPath)
-    const decoded = new TextDecoder('utf-8').decode(bytes)
-    if (!rootDirPath) {
+    const sampleFileName = isUserType ? 'user-cody.json' : 'workspace-cody.json'
+    const codyJsonPath = makeFileUri('resources/samples/' + sampleFileName, extensionPath)
+    if (!rootDirPath || !codyJsonPath) {
         void vscode.window.showErrorMessage('Failed to create cody.json file.')
         return
     }
+    const bytes = await vscode.workspace.fs.readFile(codyJsonPath)
+    const decoded = new TextDecoder('utf-8').decode(bytes)
     await saveJSONFile(decoded, rootDirPath)
 }
 
 // Add context from the sample files to the .vscode/cody.json file
 export async function saveJSONFile(context: string, rootDirPath: string, isSaveMode = false): Promise<void> {
-    const rootDirUri = vscode.Uri.parse(rootDirPath)
-    const codyJsonFilePath = vscode.Uri.joinPath(rootDirUri, '.vscode/cody.json')
+    const codyJsonFilePath = makeFileUri('.vscode/cody.json', rootDirPath)
+    if (!codyJsonFilePath) {
+        return
+    }
     const workspaceEditor = new vscode.WorkspaceEdit()
     // Clear the file before writing to it
     workspaceEditor.deleteFile(codyJsonFilePath, { ignoreIfNotExists: true })
@@ -154,3 +164,11 @@ const contextTypes = [
         picked: false,
     },
 ]
+
+export async function doesPathExist(filePath?: string): Promise<boolean> {
+    try {
+        return (filePath && !!(await vscode.workspace.fs.stat(vscode.Uri.file(filePath)))) || false
+    } catch {
+        return false
+    }
+}

@@ -1,8 +1,9 @@
 {
+  "title": "Cody Custom Recipes - User",
   "description": "This is an example file to showcase how to build custom recipes for Cody by Sourcegraph.",
   "recipes": {
     "Spell Checker": {
-      "prompt": "Spell check the selected code and correct all typos and non-standard usage. Make sure the revised version is consistent with the surrounding code."
+      "prompt": "Correct all typos and non-standard usage for the selected code."
     },
     "Refactor Code": {
       "prompt": "Please analyze the code and suggest constructive edits that follow best practices and improve code quality and readability. Focus your responses on being clear, thoughtful, coherent and easy for me to understand. Do not make changes that alter intended functionality without explaining why. Avoid responses that are overly complex or difficult to implement. Strive to provide helpful recommendations based on other shared code snippests."
@@ -13,15 +14,22 @@
       "args": ["search", "repos", "sourcegraph", "deploy"],
       "note": "You must have gh command installed and authenticated to use this recipe"
     },
-    "Generate Unit Tests": {
-      "prompt": "Generate multiple unit tests with full workable code",
+    "Compare Files in Opened Tabs": {
+      "prompt": "Compare the code and explain how they are related",
+      "context": {
+        "openTabs": true,
+        "excludeSelection": true
+      }
+    },
+    "Generate Multiple Unit Tests": {
+      "prompt": "Generate at least 3 unit tests for the selected code. Provide me with full, workable unit tests. You may import common libraries like the language's built-in test framework. If there are existing test files in the directory, try to follow similar patterns and imports used in those files. If no test files exist yet, use common best practices for unit testing this language.",
       "context": {
         "currentDir": true
       },
       "note": "Works best if there are other test files in the current directory"
     },
     "Remove User Recipes File": {
-      "prompt": "/reset",
+      "prompt": "",
       "command": "rm",
       "args": ["~/.vscode/cody.json"],
       "note": "This delete the cody.json file and reset the conversation with Cody"
