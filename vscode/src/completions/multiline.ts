@@ -8,21 +8,21 @@ const BRACKET_PAIR = {
     '{': '}',
 } as const
 const OPENING_BRACKET_REGEX = /([([{])$/
-export function detectMultilineMode(
+export function detectMultiline(
     prefix: string,
     prevNonEmptyLine: string,
     sameLinePrefix: string,
     sameLineSuffix: string,
     languageId: string,
     enableExtendedTriggers: boolean
-): null | 'block' {
+): boolean {
     const config = getLanguageConfig(languageId)
     if (!config) {
-        return null
+        return false
     }
 
     if (enableExtendedTriggers && sameLinePrefix.match(OPENING_BRACKET_REGEX)) {
-        return 'block'
+        return true
     }
 
     if (
@@ -33,10 +33,10 @@ export function detectMultilineMode(
         // Only trigger multiline suggestions when the new current line is indented
         indentation(prevNonEmptyLine) < indentation(sameLinePrefix)
     ) {
-        return 'block'
+        return true
     }
 
-    return null
+    return false
 }
 
 // Detect if completion starts with a space followed by any non-space character.
