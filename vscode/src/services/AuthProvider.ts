@@ -1,9 +1,10 @@
+import path from 'path'
+
 import fetch from 'isomorphic-fetch'
 import * as vscode from 'vscode'
 
 import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
 import { SourcegraphGraphQLAPIClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
-import { TelemetryService } from '@sourcegraph/cody-shared/src/telemetry'
 import { isError } from '@sourcegraph/cody-shared/src/utils'
 
 import { ChatViewProviderWebview } from '../chat/ChatViewProvider'
@@ -38,8 +39,7 @@ export class AuthProvider {
     constructor(
         private config: Pick<ConfigurationWithAccessToken, 'serverEndpoint' | 'accessToken' | 'customHeaders'>,
         private secretStorage: SecretStorage,
-        private localStorage: LocalStorage,
-        private telemetryService: TelemetryService
+        private localStorage: LocalStorage
     ) {
         this.authStatus.endpoint = 'init'
         this.loadEndpointHistory()
@@ -190,27 +190,29 @@ export class AuthProvider {
 
         const isDotComOrApp = this.client.isDotCom() || isLocalApp(endpoint)
         if (!isDotComOrApp) {
-            const currentUserID = await this.client.getCurrentUserId()
+            const currentUser = await this.client.getCurrentUser()
             const hasVerifiedEmail = false
 
             // check first if it's a network error
-            if (isError(currentUserID)) {
-                if (isNetworkError(currentUserID.message)) {
+            if (isError(currentUser)) {
+                if (isNetworkError(currentUser.message)) {
                     return { ...networkErrorAuthStatus, endpoint }
                 }
             }
 
-            return newAuthStatus(
-                endpoint,
-                isDotComOrApp,
-                !isError(currentUserID),
-                hasVerifiedEmail,
-                enabled,
-                version,
-                configOverwrites
-            )
+            return isError(currentUser)
+                ? { ...unauthenticatedStatus, endpoint }
+                : newAuthStatus({
+                      endpoint,
+                      isDotComOrApp,
+                      user: currentUser,
+                      isEmailVerified: hasVerifiedEmail,
+                      isCodyEnabled: enabled,
+                      version,
+                      configOverwrites,
+                  })
         }
-        const userInfo = await this.client.getCurrentUserIdAndVerifiedEmail()
+        const userInfo = await this.client.getCurrentUserVerified()
         const isCodyEnabled = true
 
         // check first if it's a network error
@@ -222,15 +224,15 @@ export class AuthProvider {
 
         return isError(userInfo)
             ? { ...unauthenticatedStatus, endpoint }
-            : newAuthStatus(
+            : newAuthStatus({
                   endpoint,
                   isDotComOrApp,
-                  !!userInfo.id,
-                  userInfo.hasVerifiedEmail,
+                  user: userInfo,
+                  isEmailVerified: userInfo.hasVerifiedEmail,
                   isCodyEnabled,
                   version,
-                  configOverwrites
-              )
+                  configOverwrites,
+              })
     }
 
     public getAuthStatus(): AuthStatus {
@@ -253,6 +255,9 @@ export class AuthProvider {
         const isLoggedIn = isAuthed(authStatus)
         authStatus.isLoggedIn = isLoggedIn
         await this.storeAuthInfo(endpoint, token)
+        if (authStatus.avatarURL) {
+            await this.storeAvatarURL(authStatus.avatarURL)
+        }
         await this.syncAuthStatus(authStatus)
         await vscode.commands.executeCommand('setContext', 'cody.activated', isLoggedIn)
         return { authStatus, isLoggedIn }
@@ -360,6 +365,14 @@ export class AuthProvider {
         }
         this.loadEndpointHistory()
         debug('AuthProvider:storeAuthInfo:stored', endpoint || '')
+    }
+
+    private async storeAvatarURL(avatarURL: string): Promise<void> {
+        const response = await fetch(avatarURL)
+        const destinationPath = path.join(this.storagePath, 'user-image-test.png')
+        const buffer = await response.arrayBuffer()
+        await vscode.workspace.fs.writeFile(vscode.Uri.parse(destinationPath), Buffer.from(buffer))
+        await this.localStorage.saveAvatarPath(destinationPath)
     }
 }
 

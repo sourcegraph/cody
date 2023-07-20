@@ -1,7 +1,17 @@
-export const CURRENT_USER_ID_QUERY = `
+export const CURRENT_USER_QUERY = `
 query CurrentUser {
     currentUser {
         id
+        avatarURL
+    }
+}`
+
+export const CURRENT_USER_VERIFIED_QUERY = `
+query CurrentUser {
+    currentUser {
+        id
+        avatarURL
+        hasVerifiedEmail
     }
 }`
 
@@ -25,14 +35,6 @@ query SiteGraphQLFields {
         fields {
             name
         }
-    }
-}`
-
-export const CURRENT_USER_ID_AND_VERIFIED_EMAIL_QUERY = `
-query CurrentUser {
-    currentUser {
-        id
-        hasVerifiedEmail
     }
 }`
 

@@ -8,8 +8,8 @@ import {
     CURRENT_SITE_GRAPHQL_FIELDS_QUERY,
     CURRENT_SITE_HAS_CODY_ENABLED_QUERY,
     CURRENT_SITE_VERSION_QUERY,
-    CURRENT_USER_ID_AND_VERIFIED_EMAIL_QUERY,
-    CURRENT_USER_ID_QUERY,
+    CURRENT_USER_QUERY,
+    CURRENT_USER_VERIFIED_QUERY,
     GET_CODY_CONTEXT_QUERY,
     IS_CONTEXT_REQUIRED_QUERY,
     LEGACY_SEARCH_EMBEDDINGS_QUERY,
@@ -40,12 +40,19 @@ interface SiteHasCodyEnabledResponse {
     site: { isCodyEnabled: boolean } | null
 }
 
-interface CurrentUserIdResponse {
-    currentUser: { id: string } | null
+export interface CurrentUserResponse {
+    currentUser: {
+        id: string
+        avatarURL: string | null
+    } | null
 }
 
-interface CurrentUserIdHasVerifiedEmailResponse {
-    currentUser: { id: string; hasVerifiedEmail: boolean } | null
+export interface CurrentUserVerifiedResponse {
+    currentUser: {
+        id: string
+        avatarURL: string | null
+        hasVerifiedEmail: boolean
+    } | null
 }
 
 interface RepositoryIdResponse {
@@ -193,22 +200,22 @@ export class SourcegraphGraphQLAPIClient {
         ).then(response => extractDataOrError(response, data => data.site?.isCodyEnabled ?? false))
     }
 
-    public async getCurrentUserId(): Promise<string | Error> {
-        return this.fetchSourcegraphAPI<APIResponse<CurrentUserIdResponse>>(CURRENT_USER_ID_QUERY, {}).then(response =>
+    public async getCurrentUser(): Promise<{ id: string; avatarURL: string | null } | Error> {
+        return this.fetchSourcegraphAPI<APIResponse<CurrentUserResponse>>(CURRENT_USER_QUERY, {}).then(response =>
             extractDataOrError(response, data =>
-                data.currentUser ? data.currentUser.id : new Error('current user not found')
+                data.currentUser ? data.currentUser : new Error('current user not found')
             )
         )
     }
 
-    public async getCurrentUserIdAndVerifiedEmail(): Promise<{ id: string; hasVerifiedEmail: boolean } | Error> {
-        return this.fetchSourcegraphAPI<APIResponse<CurrentUserIdHasVerifiedEmailResponse>>(
-            CURRENT_USER_ID_AND_VERIFIED_EMAIL_QUERY,
-            {}
-        ).then(response =>
-            extractDataOrError(response, data =>
-                data.currentUser ? { ...data.currentUser } : new Error('current user not found with verified email')
-            )
+    public async getCurrentUserVerified(): Promise<
+        { id: string; avatarURL: string | null; hasVerifiedEmail: boolean } | Error
+    > {
+        return this.fetchSourcegraphAPI<APIResponse<CurrentUserVerifiedResponse>>(CURRENT_USER_VERIFIED_QUERY, {}).then(
+            response =>
+                extractDataOrError(response, data =>
+                    data.currentUser ? { ...data.currentUser } : new Error('current user not found with verified email')
+                )
         )
     }
 

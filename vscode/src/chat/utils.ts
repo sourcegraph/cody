@@ -1,4 +1,9 @@
-import { AuthStatus, defaultAuthStatus, unauthenticatedStatus } from './protocol'
+import {
+    CurrentUserResponse,
+    CurrentUserVerifiedResponse,
+} from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
+
+import { AuthStatus, defaultAuthStatus } from './protocol'
 
 // Converts a git clone URL to the codebase name that includes the slash-separated code host, owner, and repository name
 // This should captures:
@@ -43,6 +48,16 @@ export function convertGitCloneURLToCodebaseName(cloneURL: string): string | nul
     }
 }
 
+interface NewAuthStatusParameters {
+    endpoint: string
+    isDotComOrApp: boolean
+    user: NonNullable<CurrentUserResponse['currentUser'] | CurrentUserVerifiedResponse['currentUser']>
+    isEmailVerified: boolean
+    isCodyEnabled: boolean
+    version: string
+    configOverwrites?: AuthStatus['configOverwrites']
+}
+
 /**
  * Checks a user's authentication status.
  *
@@ -53,26 +68,27 @@ export function convertGitCloneURLToCodebaseName(cloneURL: string): string | nul
  * @param version The Sourcegraph instance version.
  * @returns The user's authentication status. It's for frontend to display when instance is on unsupported version if siteHasCodyEnabled is false
  */
-export function newAuthStatus(
-    endpoint: string,
-    isDotComOrApp: boolean,
-    user: boolean,
-    isEmailVerified: boolean,
-    isCodyEnabled: boolean,
-    version: string,
-    configOverwrites?: AuthStatus['configOverwrites']
-): AuthStatus {
-    if (!user) {
-        return { ...unauthenticatedStatus, endpoint }
-    }
+export function newAuthStatus({
+    endpoint,
+    isDotComOrApp,
+    user,
+    isEmailVerified,
+    isCodyEnabled,
+    version,
+    configOverwrites,
+}: NewAuthStatusParameters): AuthStatus {
+    const isAuthenticated = Boolean(user.id)
     const authStatus: AuthStatus = { ...defaultAuthStatus, endpoint }
     // Set values and return early
-    authStatus.authenticated = user
-    authStatus.showInvalidAccessTokenError = !user
+    authStatus.authenticated = isAuthenticated
+    authStatus.showInvalidAccessTokenError = !isAuthenticated
     authStatus.requiresVerifiedEmail = isDotComOrApp
     authStatus.hasVerifiedEmail = isDotComOrApp && isEmailVerified
     authStatus.siteHasCodyEnabled = isCodyEnabled
     authStatus.siteVersion = version
+    if (user.avatarURL) {
+        authStatus.avatarURL = user.avatarURL
+    }
     if (configOverwrites) {
         authStatus.configOverwrites = configOverwrites
     }

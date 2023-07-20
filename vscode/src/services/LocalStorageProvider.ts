@@ -10,6 +10,7 @@ export class LocalStorage {
     private LAST_USED_ENDPOINT = 'SOURCEGRAPH_CODY_ENDPOINT'
     private CODY_ENDPOINT_HISTORY = 'SOURCEGRAPH_CODY_ENDPOINT_HISTORY'
     private KEY_ENABLED_PLUGINS = 'KEY_ENABLED_PLUGINS'
+    private AVATAR_PATH = 'AVATAR_PATH_TEST'
 
     constructor(private storage: Memento) {}
 
@@ -32,6 +33,18 @@ export class LocalStorage {
 
     public async deleteEndpoint(): Promise<void> {
         await this.storage.update(this.LAST_USED_ENDPOINT, null)
+    }
+
+    public async saveAvatarPath(path: string): Promise<void> {
+        try {
+            await this.storage.update(this.AVATAR_PATH, path)
+        } catch (error) {
+            console.error(error)
+        }
+    }
+
+    public getAvatarPath(): string | null {
+        return this.storage.get(this.AVATAR_PATH, null)
     }
 
     public getEndpointHistory(): string[] | null {

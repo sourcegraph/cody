@@ -36,7 +36,7 @@ export class InlineController implements VsCodeInlineController {
             'Examples: "How can I improve this?", "/fix convert tabs to spaces", "/touch Create 5 different versions of this function". "What does this regex do?"',
     }
     private readonly codyIcon: vscode.Uri
-    private readonly userIcon: vscode.Uri
+    private userIcon: vscode.Uri
     private _disposables: vscode.Disposable[] = []
     // Constroller State
     private commentController: vscode.CommentController | null = null
@@ -126,6 +126,19 @@ export class InlineController implements VsCodeInlineController {
             vscode.commands.registerCommand('cody.inline.fix.undo', id => this.undo(id))
         )
     }
+
+    public updateUserIcon(path: string): void {
+        this.userIcon = vscode.Uri.parse(path)
+        for (const thread of this.threads.values()) {
+            thread.comments = thread.comments
+                .filter(comment => comment.author.name === 'Me')
+                .map(userComment => {
+                    userComment.author.iconPath = this.userIcon
+                    return userComment
+                })
+        }
+    }
+
     /**
      * Create comment controller and set options
      */

@@ -118,7 +118,13 @@ const register = async (
         onConfigurationChange: externalServicesOnDidConfigurationChange,
     } = await configureExternalServices(initialConfig, rgPath, editor, telemetryService, platform)
 
-    const authProvider = new AuthProvider(initialConfig, secretStorage, localStorage, telemetryService)
+    const authProvider = new AuthProvider(
+        initialConfig,
+        secretStorage,
+        localStorage,
+        telemetryService,
+        context.globalStorageUri.path
+    )
     await authProvider.init()
 
     const contextProvider = new ContextProvider(

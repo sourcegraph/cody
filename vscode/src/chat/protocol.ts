@@ -81,6 +81,7 @@ export const APP_CALLBACK_URL = new URL('sourcegraph://user/settings/tokens/new/
  */
 export interface AuthStatus {
     username?: string
+    avatarURL?: string
     endpoint: string | null
     isLoggedIn: boolean
     showInvalidAccessTokenError: boolean
