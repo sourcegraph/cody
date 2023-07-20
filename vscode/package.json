@@ -309,11 +309,6 @@
         "title": "Switch Account…"
       },
       {
-        "command": "cody.manual-completions",
-        "category": "Cody",
-        "title": "Open Autocomplete Panel (Experimental)"
-      },
-      {
         "command": "cody.settings.extension",
         "category": "Cody",
         "title": "Extension Settings",
@@ -558,10 +553,6 @@
         {
           "command": "cody.fixup.open",
           "when": "false"
-        },
-        {
-          "command": "cody.manual-completions",
-          "when": "config.cody.autocomplete"
         },
         {
           "command": "cody.guardrails.debug",
