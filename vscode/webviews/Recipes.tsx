@@ -48,16 +48,15 @@ export const Recipes: React.FunctionComponent<{
                                     className={styles.recipesHeader}
                                 >
                                     <span>Custom Recipes</span>
-                                    <VSCodeButton
-                                        type="button"
-                                        appearance="icon"
-                                        onClick={() => onMyPromptClick('add')}
-                                    >
-                                        <i
-                                            className="codicon codicon-plus"
-                                            title="Create a new User recipe accessible only to you across Workspaces"
-                                        />
-                                    </VSCodeButton>
+                                    {myPrompts?.length > 0 && (
+                                        <VSCodeButton
+                                            type="button"
+                                            appearance="icon"
+                                            onClick={() => onMyPromptClick('add')}
+                                        >
+                                            <i className="codicon codicon-tools" title="Update your custom recipes" />
+                                        </VSCodeButton>
+                                    )}
                                 </div>
                                 {myPrompts?.length === 0 && (
                                     <small className={styles.recipesNotes}>

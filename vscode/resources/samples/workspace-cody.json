@@ -17,10 +17,6 @@
         "excludeSelection": true
       },
       "note": "You must have git installed and authenticated to use this recipe"
-    },
-    "Open User Recipes File": {
-      "prompt": "/open user",
-      "note": "Open the existing cody.json file for User recipes in your editor if any"
     }
   }
 }

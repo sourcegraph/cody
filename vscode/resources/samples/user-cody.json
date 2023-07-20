@@ -1,38 +1,32 @@
 {
   "title": "Cody Custom Recipes - User",
-  "description": "This is an example file to showcase how to build custom recipes for Cody by Sourcegraph.",
+  "description": "This file showcases how to build custom recipes for Cody by Sourcegraph.",
   "recipes": {
     "Spell Checker": {
-      "prompt": "Correct all typos and non-standard usage for the selected code."
+      "prompt": "Review the selected code and correct any typos and non-standard usage. Ensure the corrected code remains unchanged in its functionality and readability."
+    },
+    "Generate Multiple Unit Tests": {
+      "prompt": "Create at least 3 full, workable unit tests for the selected code. You may import common libraries for testing. Follow patterns and imports used in existing test files if available, otherwise use best practices for unit testing in this language.",
+      "context": {
+        "currentDir": true
+      }
     },
     "Refactor Code": {
-      "prompt": "Please analyze the code and suggest constructive edits that follow best practices and improve code quality and readability. Focus your responses on being clear, thoughtful, coherent and easy for me to understand. Do not make changes that alter intended functionality without explaining why. Avoid responses that are overly complex or difficult to implement. Strive to provide helpful recommendations based on other shared code snippests."
+      "prompt": "Analyze the code and suggest constructive edits that improve code quality and readability. Focus on providing clear, thoughtful, and coherent recommendations. Avoid altering intended functionality without explanation. Make suggestions that are easy to implement and based on shared code snippets. Provide full revised code at the end."
     },
-    "GH Search: Deploy Repoes not owned by Sourcegraph": {
-      "prompt": "What are the names of repositories that are used for deploying Sourcegraph but is not directly owned by Sourcegraph?",
+    "GH Search: Deployed Repositories not owned by Sourcegraph": {
+      "prompt": "Find repositories used for deploying Sourcegraph but not directly owned by Sourcegraph.",
       "command": "gh",
       "args": ["search", "repos", "sourcegraph", "deploy"],
-      "note": "You must have gh command installed and authenticated to use this recipe"
+      "description": "Make sure you have the 'gh' command installed and authenticated. "
     },
     "Compare Files in Opened Tabs": {
-      "prompt": "Compare the code and explain how they are related",
+      "prompt": "Compare the code from opened tabs and explain their relationships.",
       "context": {
         "openTabs": true,
         "excludeSelection": true
-      }
-    },
-    "Generate Multiple Unit Tests": {
-      "prompt": "Generate at least 3 unit tests for the selected code. Provide me with full, workable unit tests. You may import common libraries like the language's built-in test framework. If there are existing test files in the directory, try to follow similar patterns and imports used in those files. If no test files exist yet, use common best practices for unit testing this language.",
-      "context": {
-        "currentDir": true
       },
-      "note": "Works best if there are other test files in the current directory"
-    },
-    "Remove User Recipes File": {
-      "prompt": "",
-      "command": "rm",
-      "args": ["~/.vscode/cody.json"],
-      "note": "This delete the cody.json file and reset the conversation with Cody"
+      "description": "This recipe lets Cody analyze code from open tabs to provide insights on how they relate to each other."
     }
   }
 }
