@@ -130,10 +130,13 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         this.authProvider = options.authProvider
         this.contextProvider = options.contextProvider
 
-        const myPromptsWatcher = this.editor.controllers?.prompt?.fileWatcher
-        myPromptsWatcher?.onDidCreate(() => this.sendMyPrompts())
-        myPromptsWatcher?.onDidChange(() => this.sendMyPrompts())
-        myPromptsWatcher?.onDidDelete(() => this.sendMyPrompts())
+        // listen for file change event for JSON files used for building Custom Recipes
+        const myWorkspacePromptsWatcher = this.editor.controllers?.prompt?.wsFileWatcher
+        const myUserPromptsWatcher = this.editor.controllers?.prompt?.userFileWatcher
+        myWorkspacePromptsWatcher?.onDidChange(() => this.sendMyPrompts())
+        myWorkspacePromptsWatcher?.onDidDelete(() => this.sendMyPrompts())
+        myUserPromptsWatcher?.onDidChange(() => this.sendMyPrompts())
+        myUserPromptsWatcher?.onDidDelete(() => this.sendMyPrompts())
 
         // chat id is used to identify chat session
         this.createNewChatID()
@@ -446,7 +449,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
 
                 const myPremade = this.editor.controllers.prompt.getMyPrompts().premade
                 const { prompt, contextFiles } = await this.transcript.getPromptForLastInteraction(
-                    myPremade || getPreamble(this.contextProvider.context.getCodebase()),
+                    getPreamble(this.contextProvider.context.getCodebase(), myPremade),
                     this.maxPromptTokens,
                     pluginsPrompt
                 )
@@ -481,7 +484,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
 
         const myPremade = this.editor.controllers.prompt.getMyPrompts().premade
         const { prompt, contextFiles } = await transcript.getPromptForLastInteraction(
-            myPremade || getPreamble(this.contextProvider.context.getCodebase()),
+            getPreamble(this.contextProvider.context.getCodebase(), myPremade),
             this.maxPromptTokens
         )
         transcript.setUsedContextFilesForLastInteraction(contextFiles)
@@ -566,26 +569,11 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
             await this.sendMyPrompts()
             return
         }
-        if (title === 'new-workspace-example-file') {
-            if (!this.contextProvider.currentWorkspaceRoot) {
-                void vscode.window.showErrorMessage('Could not find workspace path.')
-                return
-            }
+        if (title === 'add-workspace-file' || title === 'add-user-file') {
+            const fileType = title === 'add-workspace-file' ? 'workspace' : 'user'
             try {
                 // copy the cody.json file from the extension path and move it to the workspace root directory
-                // Find the fsPath of the cody.json example file from the this.rgPath
-                const extensionPath = this.rgPath.slice(0, Math.max(0, this.rgPath.lastIndexOf('/')))
-                const extensionUri = vscode.Uri.parse(extensionPath)
-                const codyJsonPath = vscode.Uri.joinPath(extensionUri, 'cody.json')
-                const bytes = await vscode.workspace.fs.readFile(codyJsonPath)
-                const decoded = new TextDecoder('utf-8').decode(bytes)
-                const workspaceUri = vscode.Uri.parse(this.contextProvider.currentWorkspaceRoot)
-                const workspaceCodyJsonPath = vscode.Uri.joinPath(workspaceUri, '.vscode/cody.json')
-                const workspaceEditor = new vscode.WorkspaceEdit()
-                workspaceEditor.createFile(workspaceCodyJsonPath, { ignoreIfExists: false })
-                workspaceEditor.insert(workspaceCodyJsonPath, new vscode.Position(0, 0), decoded)
-                await vscode.workspace.applyEdit(workspaceEditor)
-                await vscode.window.showTextDocument(workspaceCodyJsonPath)
+                await this.editor.controllers.prompt.addJSONFile(fileType)
             } catch (error) {
                 void vscode.window.showErrorMessage(`Could not create a new cody.json file: ${error}`)
             }
@@ -596,6 +584,11 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         if (!prompt) {
             void vscode.window.showErrorMessage(`Could not find prompt for the "${title}" recipe.`)
             debug('executeMyPrompt:noPrompt', title)
+            return
+        }
+        if (/^\/r(est)?/i.test(prompt)) {
+            this.editor.controllers.prompt.getCommandOutput()
+            await this.clearAndRestartSession()
             return
         }
         await this.executeRecipe('my-prompt', prompt)

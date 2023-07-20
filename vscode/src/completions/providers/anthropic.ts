@@ -14,7 +14,7 @@ import {
     indentation,
     OPENING_CODE_TAG,
     PrefixComponents,
-    trimStartUntilNewline,
+    trimLeadingWhitespaceUntilNewline,
 } from '../text-processing'
 import { batchCompletions, lastNLines, messagesToText } from '../utils'
 
@@ -118,10 +118,10 @@ export class AnthropicProvider extends Provider {
         const trimmedPrefixContainNewline = this.prefix.slice(this.prefix.trimEnd().length).includes('\n')
         if (trimmedPrefixContainNewline) {
             // The prefix already contains a `\n` that Claude was not aware of, so we remove any
-            // leading `\n` that claude might add.
-            completion = completion.trimStart()
+            // leading `\n` followed by whitespace that Claude might add.
+            completion = completion.replace(/^\s*\n\s*/, '')
         } else {
-            completion = trimStartUntilNewline(completion)
+            completion = trimLeadingWhitespaceUntilNewline(completion)
         }
 
         // Remove bad symbols from the start of the completion string.

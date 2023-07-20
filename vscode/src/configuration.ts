@@ -13,7 +13,7 @@ import { LocalStorage } from './services/LocalStorageProvider'
 import { getAccessToken, SecretStorage } from './services/SecretStorageProvider'
 
 interface ConfigGetter {
-    get<T>(section: typeof CONFIG_KEY[ConfigKeys], defaultValue?: T): T
+    get<T>(section: (typeof CONFIG_KEY)[ConfigKeys], defaultValue?: T): T
 }
 
 /**
@@ -76,6 +76,10 @@ export function getConfiguration(config: ConfigGetter): Configuration {
         autocompleteAdvancedEmbeddings: config.get(CONFIG_KEY.autocompleteAdvancedEmbeddings, true),
         autocompleteExperimentalTriggerMoreEagerly: config.get(
             CONFIG_KEY.autocompleteExperimentalTriggerMoreEagerly,
+            false
+        ),
+        autocompleteExperimentalCompleteSuggestWidgetSelection: config.get(
+            CONFIG_KEY.autocompleteExperimentalCompleteSuggestWidgetSelection,
             false
         ),
         pluginsEnabled: config.get<boolean>(CONFIG_KEY.pluginsEnabled, false),
@@ -160,8 +164,8 @@ export async function migrateConfiguration(): Promise<void> {
 }
 
 async function migrateDeprecatedConfigOption(
-    oldKey: typeof CONFIG_KEY[ConfigKeys],
-    newKey: typeof CONFIG_KEY[ConfigKeys]
+    oldKey: (typeof CONFIG_KEY)[ConfigKeys],
+    newKey: (typeof CONFIG_KEY)[ConfigKeys]
 ): Promise<boolean> {
     const config = vscode.workspace.getConfiguration()
     const value = config.get(oldKey)

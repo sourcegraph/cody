@@ -2,6 +2,7 @@ import path from 'path'
 
 import { CodebaseContext } from '../../codebase-context'
 import { ContextMessage, getContextMessageWithResponse } from '../../codebase-context/messages'
+import { NUM_CODE_RESULTS, NUM_TEXT_RESULTS } from '../../prompt/constants'
 import { populateCodeContextTemplate } from '../../prompt/templates'
 
 export const MARKDOWN_FORMAT_PROMPT = 'Enclose code snippets with three backticks like so: ```.'
@@ -69,4 +70,9 @@ export function contentSanitizer(text: string): string {
         output = output.slice(tagsIndex + 6)
     }
     return output.replace(/^\s*\n/, '')
+}
+
+export const numResults = {
+    numCodeResults: NUM_CODE_RESULTS,
+    numTextResults: NUM_TEXT_RESULTS,
 }

@@ -1,6 +1,7 @@
 import { LRUCache } from 'lru-cache'
 import * as vscode from 'vscode'
 
+import { ConfigKeys } from '../configuration-keys'
 import { logEvent } from '../event-logger'
 
 interface CompletionEvent {
@@ -21,10 +22,20 @@ interface CompletionEvent {
          */
         triggeredMoreEagerly: boolean
 
+        /**
+         * Whether the completion was triggered only because of the experimental setting
+         * `cody.autocomplete.experimental.completeSuggestWidgetSelection`.
+         */
+        triggeredForSuggestWidgetSelection: boolean
+
         /** Relevant user settings. */
-        settings: {
-            'cody.autocomplete.experimental.triggerMoreEagerly': boolean
-        }
+        settings: Record<
+            Extract<
+                ConfigKeys,
+                'autocompleteExperimentalTriggerMoreEagerly' | 'autocompleteExperimentalCompleteSuggestWidgetSelection'
+            >,
+            boolean
+        >
     }
     // The timestamp when the request started
     startedAt: number

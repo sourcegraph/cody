@@ -67,7 +67,6 @@ export class ContextProvider implements vscode.Disposable {
         this.disposables.push(this.configurationChangeEvent)
 
         this.currentWorkspaceRoot = ''
-        // listen for vscode active editor change event
         this.disposables.push(
             vscode.window.onDidChangeActiveTextEditor(async () => {
                 await this.updateCodebaseContext()

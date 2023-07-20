@@ -30,26 +30,42 @@ describe('CompletionsCache', () => {
         })
     })
 
-    it('returns the cached items when the prefix has less whitespace', () => {
+    it('trims trailing whitespace on empty line', () => {
         const cache = new CompletionsCache()
         cache.add('id1', [{ prefix: 'foo \n  ', content: 'bar' }])
 
-        expect(cache.get('foo \n  ')).toEqual({
+        expect(cache.get('foo \n  ', true)).toEqual({
             logId: 'id1',
             isExactPrefix: false,
             completions: [{ prefix: 'foo \n  ', content: 'bar' }],
         })
-        expect(cache.get('foo \n ')).toEqual({
+        expect(cache.get('foo \n ', true)).toEqual({
             logId: 'id1',
             isExactPrefix: false,
             completions: [{ prefix: 'foo \n ', content: 'bar' }],
         })
-        expect(cache.get('foo \n')).toEqual({
+        expect(cache.get('foo \n', true)).toEqual({
             logId: 'id1',
             isExactPrefix: false,
             completions: [{ prefix: 'foo \n', content: 'bar' }],
         })
-        expect(cache.get('foo ')).toEqual(undefined)
+        expect(cache.get('foo ', true)).toEqual(undefined)
+    })
+
+    it('does not trim trailing whitespace on non-empty line', () => {
+        const cache = new CompletionsCache()
+        cache.add('id1', [{ prefix: 'foo', content: 'bar' }])
+
+        expect(cache.get('foo', true)).toEqual({
+            logId: 'id1',
+            isExactPrefix: true,
+            completions: [{ prefix: 'foo', content: 'bar' }],
+        })
+        expect(cache.get('foo ', true)).toEqual(undefined)
+        expect(cache.get('foo  ', true)).toEqual(undefined)
+        expect(cache.get('foo \n', true)).toEqual(undefined)
+        expect(cache.get('foo\n', true)).toEqual(undefined)
+        expect(cache.get('foo\t', true)).toEqual(undefined)
     })
 
     it('has a lookup function for untrimmed prefixes', () => {

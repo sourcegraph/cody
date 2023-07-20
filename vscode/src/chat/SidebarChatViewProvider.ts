@@ -69,7 +69,7 @@ export class SidebarChatViewProvider extends MessageProvider implements vscode.W
                 await this.authProvider.auth(message.serverEndpoint, message.accessToken, this.config.customHeaders)
                 break
             case 'insert':
-                await vscode.commands.executeCommand('cody.inline.insert', message.text)
+                await this.insertAtCursor(message.text)
                 break
             case 'event':
                 this.sendEvent(message.event, message.value)
@@ -198,6 +198,23 @@ export class SidebarChatViewProvider extends MessageProvider implements vscode.W
         void this.webview?.postMessage({ type: 'errors', errors: errorMsg })
     }
 
+    /**
+     * Insert text at cursor position
+     * Replace selection if there is one
+     * Note: Using workspaceEdit instead of 'editor.action.insertSnippet' as the later reformats the text incorrectly
+     */
+    private async insertAtCursor(text: string): Promise<void> {
+        const selectionRange = vscode.window.activeTextEditor?.selection
+        const editor = vscode.window.activeTextEditor
+        if (!editor || !selectionRange) {
+            return
+        }
+        const edit = new vscode.WorkspaceEdit()
+        // trimEnd() to remove new line added by Cody
+        edit.replace(editor.document.uri, selectionRange, text.trimEnd())
+        await vscode.workspace.applyEdit(edit)
+    }
+
     protected handleEnabledPlugins(plugins: string[]): void {
         void this.webview?.postMessage({ type: 'enabled-plugins', plugins })
     }
@@ -225,7 +242,6 @@ export class SidebarChatViewProvider extends MessageProvider implements vscode.W
             case 'auth':
                 logEvent(`CodyVSCodeExtension:Auth:${value}`, endpointUri, endpointUri)
                 break
-            // aditya combine this with above statemenet for auth or click
             case 'click':
                 logEvent(`CodyVSCodeExtension:${value}:clicked`, endpointUri, endpointUri)
                 break
