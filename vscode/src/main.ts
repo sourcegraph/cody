@@ -18,7 +18,7 @@ import { createProviderConfig as createUnstableCodeGenProviderConfig } from './c
 import { createProviderConfig as createUnstableHuggingFaceProviderConfig } from './completions/providers/unstable-huggingface'
 import { getConfiguration, getFullConfig, migrateConfiguration } from './configuration'
 import { VSCodeEditor } from './editor/vscode-editor'
-import { logEvent, updateEventLogger } from './event-logger'
+import { logEvent, createOrUpdateEventLogger } from './services/EventLogger'
 import { configureExternalServices } from './external-services'
 import { FixupController } from './non-stop/FixupController'
 import { showSetupNotification } from './notifications/setup-notification'
@@ -89,7 +89,7 @@ const register = async (
 }> => {
     const disposables: vscode.Disposable[] = []
 
-    await updateEventLogger(initialConfig, localStorage)
+    await createOrUpdateEventLogger(initialConfig, localStorage)
     // Controller for inline Chat
     const commentController = new InlineController(context.extensionPath)
 
@@ -343,7 +343,7 @@ const register = async (
         onConfigurationChange: newConfig => {
             chatProvider.onConfigurationChange(newConfig)
             externalServicesOnDidConfigurationChange(newConfig)
-            updateEventLogger(newConfig, localStorage)
+            createOrUpdateEventLogger(newConfig, localStorage)
         },
     }
 }

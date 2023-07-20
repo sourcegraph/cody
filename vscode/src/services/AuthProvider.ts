@@ -16,7 +16,7 @@ import {
     unauthenticatedStatus,
 } from '../chat/protocol'
 import { newAuthStatus } from '../chat/utils'
-import { logEvent } from '../event-logger'
+import { logEvent } from './EventLogger'
 import { debug } from '../log'
 
 import { AuthMenu, LoginStepInputBox, TokenInputBox } from './AuthMenus'

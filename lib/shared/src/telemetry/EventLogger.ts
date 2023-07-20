@@ -1,3 +1,4 @@
+import { ConfigurationWithAccessToken } from '../configuration'
 import { SourcegraphGraphQLAPIClient } from '../sourcegraph-api/graphql'
 
 export type ExtensionDetails = {
@@ -5,21 +6,18 @@ export type ExtensionDetails = {
     ideExtensionType: 'Cody' | 'CodeSearch'
 }
 
-export type ConfigurationDetails = {
-    contextSelection: string
-    chatPredictions: boolean
-    inline: boolean
-    nonStop: boolean
-    guardrails: boolean
-}
 
 export class EventLogger {
-    public constructor(private gqlAPIClient: SourcegraphGraphQLAPIClient, private serverEndpoint: string, private extensionDetails: ExtensionDetails, private configurationDetails: ConfigurationDetails) { }
+    private gqlAPIClient: SourcegraphGraphQLAPIClient
 
-    public onConfigurationChange(serverEndpoint: string, extensionDetails: ExtensionDetails, configurationDetails: ConfigurationDetails): void {
-        this.serverEndpoint = serverEndpoint
-        this.extensionDetails = extensionDetails
-        this.configurationDetails = configurationDetails
+    public constructor(private serverEndpoint: string, private extensionDetails: ExtensionDetails, private config: ConfigurationWithAccessToken) {
+        this.gqlAPIClient = new SourcegraphGraphQLAPIClient(this.config)
+    }
+
+    public onConfigurationChange(newServerEndpoint: string, newExtensionDetails: ExtensionDetails, newConfig: ConfigurationWithAccessToken): void {
+        this.serverEndpoint = newServerEndpoint
+        this.extensionDetails = newExtensionDetails
+        this.config = newConfig
     }
 
     /**
@@ -36,32 +34,35 @@ export class EventLogger {
      * @param publicProperties Public argument information.
      */
     public log(eventName: string, anonymousUserID: string, eventProperties?: any, publicProperties?: any): void {
+        const configurationDetails = {
+            contextSelection: this.config.useContext,
+            chatPredictions: this.config.experimentalChatPredictions,
+            inline: this.config.inlineChat,
+            nonStop: this.config.experimentalNonStop,
+            guardrails: this.config.experimentalGuardrails,
+        }
         const argument = {
             ...eventProperties,
             serverEndpoint: this.serverEndpoint,
             extensionDetails: this.extensionDetails,
-            configurationDetails: this.configurationDetails,
+            configurationDetails: configurationDetails,
         }
         const publicArgument = {
             ...publicProperties,
             serverEndpoint: this.serverEndpoint,
             extensionDetails: this.extensionDetails,
-            configurationDetails: this.configurationDetails,
+            configurationDetails: configurationDetails,
         }
-        try {
-            this.gqlAPIClient
-                .logEvent({
-                    event: eventName,
-                    userCookieID: anonymousUserID,
-                    source: 'IDEEXTENSION',
-                    url: '',
-                    argument: JSON.stringify(argument),
-                    publicArgument: JSON.stringify(publicArgument),
-                })
-                .then(() => {})
-                .catch(() => {})
-        } catch (error) {
-            console.log(error)
-        }
+        this.gqlAPIClient
+            .logEvent({
+                event: eventName,
+                userCookieID: anonymousUserID,
+                source: 'IDEEXTENSION',
+                url: '',
+                argument: JSON.stringify(argument),
+                publicArgument: JSON.stringify(publicArgument),
+            })
+            .then(() => {})
+            .catch(err => { console.log(err) })
     }
 }

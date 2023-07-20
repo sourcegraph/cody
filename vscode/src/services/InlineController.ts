@@ -4,7 +4,7 @@ import * as vscode from 'vscode'
 import { ActiveTextEditorSelection } from '@sourcegraph/cody-shared/src/editor'
 import { SURROUNDING_LINES } from '@sourcegraph/cody-shared/src/prompt/constants'
 
-import { logEvent } from '../event-logger'
+import { logEvent } from './EventLogger'
 import { CodyTaskState } from '../non-stop/utils'
 
 import { CodeLensProvider } from './CodeLensProvider'
