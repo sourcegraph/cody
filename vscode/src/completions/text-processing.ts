@@ -177,9 +177,9 @@ export function trimUntilSuffix(insertion: string, prefix: string, suffix: strin
 }
 
 function getFirstNonEmptyLine(suffix: string): string {
-    const sameLineSuffix = suffix.slice(suffix.indexOf('\n'))
+    const nextLineSuffix = suffix.slice(suffix.indexOf('\n'))
 
-    for (const line of sameLineSuffix.split('\n')) {
+    for (const line of nextLineSuffix.split('\n')) {
         if (line.trim().length > 0) {
             return line
         }

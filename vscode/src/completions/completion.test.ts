@@ -788,12 +788,15 @@ describe('Cody completions', () => {
 
             it('example with return', async () => {
                 const { completions } = await complete(
-                    `console.log('<< stop completion: ${CURSOR_MARKER}')
-                           return []`,
+                    `
+                    console.log('<< stop completion: ${CURSOR_MARKER}')
+                    return []
+                    `,
                     [
                         createCompletionResponse(`
                                     lastChange was delete')
-                                        return []`),
+                                        return []
+                        `),
                     ]
                 )
 
@@ -802,11 +805,14 @@ describe('Cody completions', () => {
 
             it('example with inline comment', async () => {
                 const { completions } = await complete(
-                    `// ${CURSOR_MARKER}
-                           const currentFilePath = path.normalize(document.fileName)`,
+                    `
+                    // ${CURSOR_MARKER}
+                    const currentFilePath = path.normalize(document.fileName)
+                    `,
                     [
                         createCompletionResponse(`Get the file path
-                                   const filePath = document.fileName`),
+                        const filePath = document.fileName
+                        `),
                     ]
                 )
 
