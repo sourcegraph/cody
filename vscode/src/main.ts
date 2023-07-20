@@ -342,7 +342,7 @@ const register = async (
         onConfigurationChange: newConfig => {
             chatProvider.onConfigurationChange(newConfig)
             externalServicesOnDidConfigurationChange(newConfig)
-            createOrUpdateEventLogger(newConfig, localStorage)
+            void createOrUpdateEventLogger(newConfig, localStorage)
         },
     }
 }

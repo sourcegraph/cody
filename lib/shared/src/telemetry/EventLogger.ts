@@ -1,16 +1,15 @@
 import { ConfigurationWithAccessToken } from '../configuration'
 import { SourcegraphGraphQLAPIClient } from '../sourcegraph-api/graphql'
 
-export type ExtensionDetails = {
+export interface ExtensionDetails {
     ide: 'VSCode' | 'JetBrains' | 'Neovim' | 'Emacs'
     ideExtensionType: 'Cody' | 'CodeSearch'
 }
 
-
 export class EventLogger {
     private gqlAPIClient: SourcegraphGraphQLAPIClient
 
-    public constructor(private serverEndpoint: string, private extensionDetails: ExtensionDetails, private config: ConfigurationWithAccessToken) {
+    constructor(private serverEndpoint: string, private extensionDetails: ExtensionDetails, private config: ConfigurationWithAccessToken) {
         this.gqlAPIClient = new SourcegraphGraphQLAPIClient(this.config)
     }
 
@@ -45,13 +44,13 @@ export class EventLogger {
             ...eventProperties,
             serverEndpoint: this.serverEndpoint,
             extensionDetails: this.extensionDetails,
-            configurationDetails: configurationDetails,
+            configurationDetails,
         }
         const publicArgument = {
             ...publicProperties,
             serverEndpoint: this.serverEndpoint,
             extensionDetails: this.extensionDetails,
-            configurationDetails: configurationDetails,
+            configurationDetails,
         }
         this.gqlAPIClient
             .logEvent({
@@ -63,6 +62,6 @@ export class EventLogger {
                 publicArgument: JSON.stringify(publicArgument),
             })
             .then(() => {})
-            .catch(err => { console.log(err) })
+            .catch(error => { console.log(error) })
     }
 }
