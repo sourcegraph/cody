@@ -70,12 +70,13 @@ Note: To avoid data loss, using a separate build of VS Code (e.g. Insiders) is r
 
 macOS specific instructions for VS Code Insiders:
 
-1. Clear out existing VS Code settings:
+1. Clear user and extension data from VS Code Insiders:
    ```
    rm -rf $HOME/.vscode-insiders
    rm -rf $HOME/Library/Caches/com.microsoft.VSCodeInsiders
    rm -rf $HOME/Library/Application\ Support/Code\ -\ Insiders
    rm -rf $HOME/Library/Saved\ Application\ State/com.microsoft.VSCodeInsiders.savedState
    ```
+1. Restart VS Code Insiders
 1. Build the release build locally (see above), do not install.
 1. Install the extension for Insiders with the following command: `code-insiders --install-extension dist/cody.vsix`
