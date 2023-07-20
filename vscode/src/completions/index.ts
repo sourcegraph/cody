@@ -13,7 +13,7 @@ import { getContext } from './context'
 import { getCurrentDocContext } from './document'
 import { History } from './history'
 import * as CompletionLogger from './logger'
-import { detectMultilineMode } from './multiline'
+import { detectMultiline } from './multiline'
 import { Provider, ProviderConfig } from './providers/provider'
 import { sharedPostProcess } from './shared-post-process'
 import { isAbortError, SNIPPET_WINDOW_SIZE } from './utils'
@@ -244,7 +244,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
             suffixPercentage: this.suffixPercentage,
         }
 
-        const multilineMode = detectMultilineMode(
+        const multiline = detectMultiline(
             prefix,
             prevNonEmptyLine,
             sameLinePrefix,
@@ -252,14 +252,14 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
             languageId,
             this.providerConfig.enableExtendedMultilineTriggers
         )
-        if (multilineMode === 'block') {
+        if (multiline) {
             timeout = 100
             completers.push(
                 this.providerConfig.create({
                     id: 'multiline',
                     ...sharedProviderOptions,
                     n: 3, // 3 vs. 1 does not meaningfully affect perf
-                    multilineMode,
+                    multiline: true,
                 })
             )
         } else {
@@ -275,7 +275,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
                     id: 'single-line-suffix',
                     ...sharedProviderOptions,
                     n: 1, // 1 vs. 3 improves perf
-                    multilineMode: null,
+                    multiline: false,
                 })
             )
         }
@@ -306,7 +306,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
 
         const logId = CompletionLogger.start({
             type: 'inline',
-            multilineMode,
+            multiline,
             providerIdentifier: this.providerConfig.identifier,
             languageId,
             contextSummary,
@@ -344,7 +344,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
 
         // Shared post-processing logic
         const processedCompletions = completions.map(completion =>
-            sharedPostProcess({ prefix, suffix, multiline: multilineMode !== null, languageId, completion })
+            sharedPostProcess({ prefix, suffix, multiline: multiline !== null, languageId, completion })
         )
 
         // Filter results

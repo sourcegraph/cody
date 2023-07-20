@@ -128,7 +128,7 @@ export class AnthropicProvider extends Provider {
         completion = fixBadCompletionStart(completion)
 
         // Remove incomplete lines in single-line completions
-        if (this.multilineMode === null) {
+        if (this.multiline) {
             let allowedNewlines = 2
             const lines = completion.split('\n')
             if (lines.length >= allowedNewlines) {
@@ -154,27 +154,19 @@ export class AnthropicProvider extends Provider {
             throw new Error('prompt length exceeded maximum alloted chars')
         }
 
-        let args: CompletionParameters
-        switch (this.multilineMode) {
-            case 'block': {
-                args = {
-                    temperature: 0.5,
-                    messages: prompt,
-                    maxTokensToSample: this.responseTokens,
-                    stopSequences: [anthropic.HUMAN_PROMPT, CLOSING_CODE_TAG],
-                }
-                break
-            }
-            default: {
-                args = {
-                    temperature: 0.5,
-                    messages: prompt,
-                    maxTokensToSample: Math.min(100, this.responseTokens),
-                    stopSequences: [anthropic.HUMAN_PROMPT, CLOSING_CODE_TAG, '\n\n'],
-                }
-                break
-            }
-        }
+        const args: CompletionParameters = this.multiline
+            ? {
+                  temperature: 0.5,
+                  messages: prompt,
+                  maxTokensToSample: this.responseTokens,
+                  stopSequences: [anthropic.HUMAN_PROMPT, CLOSING_CODE_TAG],
+              }
+            : {
+                  temperature: 0.5,
+                  messages: prompt,
+                  maxTokensToSample: Math.min(100, this.responseTokens),
+                  stopSequences: [anthropic.HUMAN_PROMPT, CLOSING_CODE_TAG, '\n\n'],
+              }
 
         // Issue request
         const responses = await batchCompletions(this.completionsClient, args, this.n, abortSignal)
