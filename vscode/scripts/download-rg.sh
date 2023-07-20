@@ -1,56 +1,50 @@
 #!/usr/bin/env bash
 
-VERSION="v13.0.0-8"
+set -eu
 
-# get first command line arg if it exists
-if [ -n "$1" ]; then
-  FILTER="$1"
-fi
+# Define the desired version and binaries from
+# https://github.com/microsoft/ripgrep-prebuilt/releases.
+rg_version="13.0.0-8"
+binaries=(
+ripgrep-v$rg_version-aarch64-apple-darwin
+ripgrep-v$rg_version-aarch64-pc-windows-msvc
+ripgrep-v$rg_version-aarch64-unknown-linux-gnu
+ripgrep-v$rg_version-aarch64-unknown-linux-musl
+ripgrep-v$rg_version-arm-unknown-linux-gnueabihf
+ripgrep-v$rg_version-x86_64-apple-darwin
+ripgrep-v$rg_version-x86_64-pc-windows-msvc
+ripgrep-v$rg_version-x86_64-unknown-linux-musl
+)
 
-run() {
-  RIPGREP_DIR="$(dirname "$(readlink -f "$0")")/../resources/bin"
-  mkdir -p "${RIPGREP_DIR}"
-  pushd "${RIPGREP_DIR}" > /dev/null || return
-  trap 'popd' EXIT
+RIPGREP_DIR="$(dirname "$(readlink -f "$0")")/../resources/bin"
+mkdir -p "${RIPGREP_DIR}"
+pushd "${RIPGREP_DIR}" > /dev/null || return
+trap 'popd > /dev/null' EXIT
 
-  for url in $(curl https://api.github.com/repos/microsoft/ripgrep-prebuilt/releases/tags/$VERSION 2>/dev/null | jq -r '.assets[] | .browser_download_url'); do
-    # skip obscure platforms
-    if [[ "$url" == *"powerpc64le"* ]] || [[ "$url" == *"s390x"* ]] || [[ "$url" == *"i686"* ]]; then
-      continue
+for bin in ${binaries[@]}; do
+  if [[ "$bin" == *"windows"* ]]; then
+    ext=".zip"
+  else
+    ext=".tar.gz"
+  fi
+
+  filename="${bin}${ext}"
+  url="https://github.com/microsoft/ripgrep-prebuilt/releases/download/v${rg_version}/${filename}"
+
+  if [ "$ext" = ".tar.gz" ]; then
+    if [ ! -f "$bin" ]; then
+      echo "$url -> $bin"
+      curl -sSL $url | tar xvz -C ./ && mv rg $bin
     fi
-
-    # filter out files that don't match the filter
-    if [ -n "$FILTER" ] && [[ "$url" != *"$FILTER"* ]]; then
-      continue
+  elif [ "$ext" = ".zip" ]; then
+    if [ ! -f "$bin" ]; then
+      echo "$url -> $bin"
+      curl -sSL -o $filename $url
+      unzip -q $filename
+      rm $filename
+      mv rg.exe $bin
     fi
-
-    b=$(basename "$url")
-    ext=${b##*.}
-
-    if [ "$ext" = "gz" ]; then
-      stripped=${b%.tar.gz}
-
-      if [ ! -f "$stripped" ]; then
-        echo "$url -> $stripped"
-        wget -qO- "$url" | tar xvz -C ./ && mv ./rg "./$stripped"
-      fi
-
-    elif [ "$ext" = "zip" ]; then
-      stripped=${b%.zip}
-
-      if [ ! -f "$stripped" ]; then
-        echo "$url -> $stripped"
-        wget -q "$url"
-        unzip -q "$b"
-        mv "rg.exe" "./$stripped"
-        rm "$b"
-      fi
-
-    else
-      echo "ERROR: unrecognized extension $ext"
-    fi
-
-  done
-}
-
-run
+  else
+    echo "ERROR: unable to handle binary $bin"
+  fi
+done

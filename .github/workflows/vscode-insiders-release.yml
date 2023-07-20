@@ -1,4 +1,4 @@
-name: vscode-nightly
+name: vscode-insiders-release
 
 on:
   schedule:
@@ -18,9 +18,8 @@ jobs:
       - uses: pnpm/action-setup@v2
         with:
           run_install: true
-      - run: vscode/scripts/download-rg.sh x86_64-unknown-linux
       - run: xvfb-run -a pnpm run test
-      - run: CODY_RELEASE_TYPE=nightly pnpm -C vscode run release
+      - run: CODY_RELEASE_TYPE=insiders pnpm -C vscode run release
         if: github.ref == 'refs/heads/main' && github.repository == 'sourcegraph/cody'
         env:
           VSCODE_MARKETPLACE_TOKEN: ${{ secrets.VSCODE_MARKETPLACE_TOKEN }}

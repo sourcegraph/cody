@@ -189,12 +189,11 @@ export function trimUntilSuffix(insertion: string, prefix: string, suffix: strin
     return insertionLines.slice(0, insertionEnd).join('\n')
 }
 
-export function trimStartUntilNewline(str: string): string {
-    const index = str.indexOf('\n')
-    if (index === -1) {
-        return str.trimStart()
-    }
-    return str.slice(0, index).trimStart() + str.slice(index)
+/**
+ * Trims whitespace before the first newline (if it exists).
+ */
+export function trimLeadingWhitespaceUntilNewline(str: string): string {
+    return str.replace(/^\s+?(\r?\n)/, '$1')
 }
 
 const NON_WHITESPACE_REGEX = /\S|$/
@@ -203,4 +202,26 @@ function getFirstNCharsPreservingLeadingSpaces(value: string, charsNumber: numbe
 
     // Return the leading whitespaces and first N characters
     return value.slice(0, startIndex + charsNumber)
+}
+
+/**
+ * Collapses whitespace that appears at the end of prefix and the start of completion.
+ *
+ * For example, if prefix is `const isLocalhost = window.location.host ` and completion is ` ===
+ * 'localhost'`, it trims the leading space in the completion to avoid a duplicate space.
+ *
+ * Language-specific customizations are needed here to get greater accuracy.
+ */
+export function collapseDuplicativeWhitespace(prefix: string, completion: string): string {
+    if (prefix.endsWith(' ') || prefix.endsWith('\t')) {
+        completion = completion.replace(/^[\t ]+/, '')
+    }
+    return completion
+}
+
+/**
+ * Trims trailing whitespace on the last line if the last line is whitespace-only.
+ */
+export function trimEndOnLastLineIfWhitespaceOnly(text: string): string {
+    return text.replace(/(\r?\n)\s+$/, '$1')
 }

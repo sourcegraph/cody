@@ -1,6 +1,7 @@
 import { LRUCache } from 'lru-cache'
 import * as vscode from 'vscode'
 
+import { ConfigKeys } from '../configuration-keys'
 import { logEvent } from '../services/EventLogger'
 
 interface CompletionEvent {
@@ -14,6 +15,27 @@ interface CompletionEvent {
             duration: number
         }
         languageId: string
+
+        /**
+         * Whether the completion was triggered only because of the experimental settting
+         * `cody.autocomplete.experimental.triggerMoreEagerly`.
+         */
+        triggeredMoreEagerly: boolean
+
+        /**
+         * Whether the completion was triggered only because of the experimental setting
+         * `cody.autocomplete.experimental.completeSuggestWidgetSelection`.
+         */
+        triggeredForSuggestWidgetSelection: boolean
+
+        /** Relevant user settings. */
+        settings: Record<
+            Extract<
+                ConfigKeys,
+                'autocompleteExperimentalTriggerMoreEagerly' | 'autocompleteExperimentalCompleteSuggestWidgetSelection'
+            >,
+            boolean
+        >
     }
     // The timestamp when the request started
     startedAt: number
@@ -57,7 +79,7 @@ export function start(params: CompletionEvent['params']): string {
     return id
 }
 
-// Suggested completions will not logged individually. Instead, we log them when
+// Suggested completions will not be logged individually. Instead, we log them when
 // we either hide them again (they are NOT accepted) or when they ARE accepted.
 // This way, we can calculate the duration they were actually visible.
 export function suggest(id: string): void {

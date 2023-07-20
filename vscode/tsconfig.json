@@ -3,7 +3,7 @@
   "compilerOptions": {
     "sourceMap": true,
     "rootDir": ".",
-    "outDir": "dist",
+    "outDir": "dist/tsc",
     "jsx": "react-jsx",
     "lib": [
       "ESNext",
@@ -19,9 +19,9 @@
     "vite.config.ts",
     "webpack.config.js",
     "package.json",
-    ".eslintrc.js",
     ".storybook/*.ts",
     "../lib/shared/src/telemetry/EventLogger.ts",
+    "test/completions/completions-dataset.ts",
   ],
   "exclude": [
     "scripts",

@@ -15,7 +15,7 @@ export interface ReferenceSnippet {
 }
 
 interface GetContextOptions {
-    currentEditor: vscode.TextEditor
+    document: vscode.TextDocument
     history: History
     prefix: string
     suffix: string

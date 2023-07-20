@@ -17,6 +17,9 @@ import { SourcegraphEmbeddingsSearchClient } from '@sourcegraph/cody-shared/src/
 import { annotateAttribution, Guardrails } from '@sourcegraph/cody-shared/src/guardrails'
 import { highlightTokens } from '@sourcegraph/cody-shared/src/hallucinations-detector'
 import { IntentDetector } from '@sourcegraph/cody-shared/src/intent-detector'
+import * as plugins from '@sourcegraph/cody-shared/src/plugins/api'
+import { PluginFunctionExecutionInfo } from '@sourcegraph/cody-shared/src/plugins/api/types'
+import { defaultPlugins } from '@sourcegraph/cody-shared/src/plugins/built-in'
 import { ANSWER_TOKENS, DEFAULT_MAX_TOKENS } from '@sourcegraph/cody-shared/src/prompt/constants'
 import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
 import { SourcegraphGraphQLAPIClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
@@ -38,14 +41,7 @@ import { SecretStorage } from '../services/SecretStorageProvider'
 import { TestSupport } from '../test-support'
 
 import { fastFilesExist } from './fastFileFinder'
-import {
-    ConfigurationSubsetForWebview,
-    defaultAuthStatus,
-    DOTCOM_URL,
-    ExtensionMessage,
-    LocalEnv,
-    WebviewMessage,
-} from './protocol'
+import { ConfigurationSubsetForWebview, DOTCOM_URL, ExtensionMessage, LocalEnv, WebviewMessage } from './protocol'
 import { getRecipe } from './recipes'
 import { convertGitCloneURLToCodebaseName } from './utils'
 
@@ -61,6 +57,9 @@ export type Config = Pick<
     | 'useContext'
     | 'experimentalChatPredictions'
     | 'experimentalGuardrails'
+    | 'pluginsEnabled'
+    | 'pluginsConfig'
+    | 'pluginsDebugEnabled'
 >
 
 /**
@@ -92,7 +91,8 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
     // Allows recipes to hook up subscribers to process sub-streams of bot output
     private multiplexer: BotResponseMultiplexer = new BotResponseMultiplexer()
 
-    private configurationChangeEvent = new vscode.EventEmitter<void>()
+    // Fire event to let subscribers know that the configuration has changed
+    public configurationChangeEvent = new vscode.EventEmitter<void>()
 
     private disposables: vscode.Disposable[] = []
 
@@ -119,8 +119,17 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         this.createNewChatID()
         this.disposables.push(this.configurationChangeEvent)
 
-        // listen for vscode active editor change event
         this.currentWorkspaceRoot = ''
+
+        // listen for file change event for JSON files used for building Custom Recipes
+        const myWorkspacePromptsWatcher = this.editor.controllers?.prompt?.wsFileWatcher
+        const myUserPromptsWatcher = this.editor.controllers?.prompt?.userFileWatcher
+        myWorkspacePromptsWatcher?.onDidChange(() => this.sendMyPrompts())
+        myWorkspacePromptsWatcher?.onDidDelete(() => this.sendMyPrompts())
+        myUserPromptsWatcher?.onDidChange(() => this.sendMyPrompts())
+        myUserPromptsWatcher?.onDidDelete(() => this.sendMyPrompts())
+
+        // listen for vscode active editor change event
         this.disposables.push(
             vscode.window.onDidChangeActiveTextEditor(async () => {
                 await this.updateCodebaseContext()
@@ -233,8 +242,10 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 this.loadChatHistory()
                 this.sendTranscript()
                 this.sendChatHistory()
+                this.sendEnabledPlugins(this.localStorage.getEnabledPlugins() ?? [])
                 await this.loadRecentChat()
                 await this.publishContextStatus()
+                await this.sendMyPrompts()
                 break
             case 'submit':
                 await this.onHumanMessageSubmitted(message.text, message.submitType)
@@ -267,7 +278,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 await this.authProvider.auth(message.serverEndpoint, message.accessToken, this.config.customHeaders)
                 break
             case 'insert':
-                await vscode.commands.executeCommand('cody.inline.insert', message.text)
+                await this.insertAtCursor(message.text)
                 break
             case 'event':
                 this.sendEvent(message.event, message.value)
@@ -283,6 +294,9 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 break
             case 'links':
                 void this.openExternalLinks(message.value)
+                break
+            case 'my-prompt':
+                await this.executeMyPrompt(message.title)
                 break
             case 'openFile': {
                 const rootPath = this.editor.getWorkspaceRootPath()
@@ -317,9 +331,17 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 }
                 break
             }
+            case 'setEnabledPlugins':
+                await this.localStorage.setEnabledPlugins(message.plugins)
+                this.sendEnabledPlugins(message.plugins)
+                break
             default:
                 this.sendErrorToWebview('Invalid request type from Webview')
         }
+    }
+
+    private sendEnabledPlugins(plugins: string[]): void {
+        void this.webview?.postMessage({ type: 'enabled-plugins', plugins })
     }
 
     private createNewChatID(): void {
@@ -382,29 +404,18 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
             onError: (err, statusCode) => {
                 // TODO notify the multiplexer of the error
                 debug('ChatViewProvider:onError', err)
-
                 if (isAbortError(err)) {
                     return
                 }
-                // Display error message as assistant response
-                this.transcript.addErrorAsAssistantResponse(err)
                 // Log users out on unauth error
                 if (statusCode && statusCode >= 400 && statusCode <= 410) {
-                    const authStatus = { ...defaultAuthStatus }
-                    if (statusCode === 403) {
-                        authStatus.authenticated = true
-                        authStatus.requiresVerifiedEmail = true
-                    } else {
-                        authStatus.showInvalidAccessTokenError = true
-                    }
-                    debug('ChatViewProvider:onError:unauth', err, { verbose: { authStatus } })
-                    void this.clearAndRestartSession()
-                    void this.authProvider.auth(
-                        this.config.serverEndpoint,
-                        this.config.accessToken,
-                        this.config.customHeaders
-                    )
+                    this.authProvider
+                        .auth(this.config.serverEndpoint, this.config.accessToken, this.config.customHeaders)
+                        .catch(error => console.error(error))
+                    debug('ChatViewProvider:onError:unauthUser', err, { verbose: { statusCode } })
                 }
+                // Display error message as assistant response
+                this.transcript.addErrorAsAssistantResponse(err)
                 // We ignore embeddings errors in this instance because we're already showing an
                 // error message and don't want to overwhelm the user.
                 this.onCompletionEnd(true)
@@ -447,7 +458,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
 
     private async executeChatCommands(text: string): Promise<void> {
         switch (true) {
-            case /^\/r(est)?\s/i.test(text):
+            case /^\/r(est)?/i.test(text):
                 await this.clearAndRestartSession()
                 break
             case /^\/s(earch)?\s/i.test(text):
@@ -480,9 +491,74 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
 
         this.codebaseContext = codebaseContext
         await this.publishContextStatus()
+        this.editor.controllers.prompt.setCodebase(codebaseContext.getCodebase())
     }
 
-    public async executeRecipe(recipeId: RecipeID, humanChatInput: string = '', showTab = true): Promise<void> {
+    private async getPluginsContext(
+        humanChatInput: string
+    ): Promise<{ prompt?: Message[]; executionInfos?: PluginFunctionExecutionInfo[] }> {
+        logEvent('CodyVSCodeExtension:getPluginsContext:used')
+        const enabledPluginNames = this.localStorage.getEnabledPlugins() ?? []
+        const enabledPlugins = defaultPlugins.filter(plugin => enabledPluginNames.includes(plugin.name))
+        if (enabledPlugins.length === 0) {
+            return {}
+        }
+        logEvent(
+            'CodyVSCodeExtension:getPluginsContext:enabledPlugins',
+            { names: enabledPluginNames },
+            { names: enabledPluginNames }
+        )
+
+        this.transcript.addAssistantResponse('', 'Identifying applicable plugins...\n')
+        this.sendTranscript()
+
+        const { prompt: previousMessages } = await this.transcript.getPromptForLastInteraction(
+            [],
+            this.maxPromptTokens,
+            [],
+            true
+        )
+
+        try {
+            logEvent('CodyVSCodeExtension:getPluginsContext:chooseDataSourcesUsed')
+            const descriptors = await plugins.chooseDataSources(
+                humanChatInput,
+                this.chat,
+                enabledPlugins,
+                previousMessages
+            )
+            logEvent(
+                'CodyVSCodeExtension:getPluginsContext:descriptorsFound',
+                { count: descriptors.length },
+                { count: descriptors.length }
+            )
+            if (descriptors.length !== 0) {
+                this.transcript.addAssistantResponse(
+                    '',
+                    `Using ${descriptors
+                        .map(descriptor => descriptor.pluginName)
+                        .join(', ')} for additional context...\n`
+                )
+                this.sendTranscript()
+
+                logEvent(
+                    'CodyVSCodeExtension:getPluginsContext:runPluginFunctionsCalled',
+                    {
+                        count: descriptors.length,
+                    },
+                    {
+                        count: descriptors.length,
+                    }
+                )
+                return await plugins.runPluginFunctions(descriptors, this.config.pluginsConfig)
+            }
+        } catch (error) {
+            console.error('Error getting plugin context', error)
+        }
+        return {}
+    }
+
+    public async executeRecipe(recipeId: RecipeID, humanChatInput = '', showTab = true): Promise<void> {
         debug('ChatViewProvider:executeRecipe', recipeId, { verbose: humanChatInput })
         if (this.isMessageInProgress) {
             this.sendErrorToWebview('Cannot execute multiple recipes. Please wait for the current recipe to finish.')
@@ -491,6 +567,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
 
         const recipe = getRecipe(recipeId)
         if (!recipe) {
+            debug('ChatViewProvider:executeRecipe', 'no recipe found')
             return
         }
 
@@ -514,6 +591,14 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
             this.showTab('chat')
         }
 
+        let pluginsPrompt: Message[] = []
+        let pluginExecutionInfos: PluginFunctionExecutionInfo[] = []
+        if (this.config.pluginsEnabled && recipeId === 'chat-question') {
+            const result = await this.getPluginsContext(humanChatInput)
+            pluginsPrompt = result?.prompt ?? []
+            pluginExecutionInfos = result?.executionInfos ?? []
+        }
+
         // Check whether or not to connect to LLM backend for responses
         // Ex: performing fuzzy / context-search does not require responses from LLM backend
         switch (recipeId) {
@@ -523,11 +608,13 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
             default: {
                 this.sendTranscript()
 
+                const myPremade = this.editor.controllers.prompt.getMyPrompts().premade
                 const { prompt, contextFiles } = await this.transcript.getPromptForLastInteraction(
-                    getPreamble(this.codebaseContext.getCodebase()),
-                    this.maxPromptTokens
+                    getPreamble(this.codebaseContext.getCodebase(), myPremade),
+                    this.maxPromptTokens,
+                    pluginsPrompt
                 )
-                this.transcript.setUsedContextFilesForLastInteraction(contextFiles)
+                this.transcript.setUsedContextFilesForLastInteraction(contextFiles, pluginExecutionInfos)
                 this.sendPrompt(prompt, interaction.getAssistantMessage().prefix ?? '')
                 await this.saveTranscriptToChatHistory()
             }
@@ -556,8 +643,9 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         }
         transcript.addInteraction(interaction)
 
+        const myPremade = this.editor.controllers.prompt.getMyPrompts().premade
         const { prompt, contextFiles } = await transcript.getPromptForLastInteraction(
-            getPreamble(this.codebaseContext.getCodebase()),
+            getPreamble(this.codebaseContext.getCodebase(), myPremade),
             this.maxPromptTokens
         )
         transcript.setUsedContextFilesForLastInteraction(contextFiles)
@@ -639,6 +727,62 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         })
     }
 
+    private async executeMyPrompt(title: string): Promise<void> {
+        // Send prompt names to webview to display as recipe options
+        if (!title || title === 'get') {
+            await this.sendMyPrompts()
+            return
+        }
+        // Create a new recipe
+        if (title === 'add') {
+            await this.editor.controllers.prompt.add()
+            await this.sendMyPrompts()
+            return
+        }
+        // Clear all recipes stored in user global storage
+        if (title === 'clear') {
+            await this.editor.controllers.prompt.clear()
+            await this.sendMyPrompts()
+            return
+        }
+        if (title === 'add-workspace-file' || title === 'add-user-file') {
+            const fileType = title === 'add-workspace-file' ? 'workspace' : 'user'
+            try {
+                // copy the cody.json file from the extension path and move it to the workspace root directory
+                await this.editor.controllers.prompt.addJSONFile(fileType)
+            } catch (error) {
+                void vscode.window.showErrorMessage(`Could not create a new cody.json file: ${error}`)
+            }
+            return
+        }
+        this.showTab('chat')
+        // Get prompt details from controller by title then execute
+        const prompt = this.editor.controllers.prompt.find(title)
+        if (!prompt) {
+            void vscode.window.showErrorMessage(`Could not find prompt for the "${title}" recipe.`)
+            debug('executeMyPrompt:noPrompt', title)
+            return
+        }
+        if (/^\/r(est)?/i.test(prompt)) {
+            this.editor.controllers.prompt.getCommandOutput()
+            await this.clearAndRestartSession()
+            return
+        }
+        await this.executeRecipe('my-prompt', prompt, true)
+    }
+
+    /**
+     * Send custom recipe names to webview
+     */
+    private async sendMyPrompts(): Promise<void> {
+        await this.editor.controllers.prompt.refresh()
+        const prompts = this.editor.controllers.prompt.getPromptList()
+        void this.webview?.postMessage({
+            type: 'my-prompts',
+            prompts,
+        })
+    }
+
     private async saveTranscriptToChatHistory(): Promise<void> {
         if (this.transcript.isEmpty) {
             return
@@ -664,15 +808,17 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
      */
     public async syncAuthStatus(): Promise<void> {
         const authStatus = this.authProvider.getAuthStatus()
-        await this.publishConfig()
+        // Update config to the latest one and fire configure change event to update external services
+        const newConfig = await getFullConfig(this.secretStorage, this.localStorage)
         if (authStatus.siteVersion) {
             // Update codebase context
-            const codebaseContext = await getCodebaseContext(this.config, this.rgPath, this.editor, this.chat)
+            const codebaseContext = await getCodebaseContext(newConfig, this.rgPath, this.editor, this.chat)
             if (codebaseContext) {
                 this.codebaseContext = codebaseContext
-                await this.publishContextStatus()
             }
         }
+        await this.publishConfig()
+        this.onConfigurationChange(newConfig)
     }
 
     /**
@@ -741,6 +887,8 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 },
             })
         }
+
+        this.disposables.push(this.configurationChangeEvent.event(() => send()))
         this.disposables.push(vscode.window.onDidChangeTextEditorSelection(() => send()))
         await send()
     }
@@ -774,6 +922,8 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 ...localProcess,
                 debugEnable: this.config.debugEnable,
                 serverEndpoint: this.config.serverEndpoint,
+                pluginsEnabled: this.config.pluginsEnabled,
+                pluginsDebugEnabled: this.config.pluginsDebugEnabled,
             }
 
             // update codebase context on configuration change
@@ -782,7 +932,6 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
             debug('Cody:publishConfig', 'configForWebview', { verbose: configForWebview })
         }
 
-        this.disposables.push(this.configurationChangeEvent.event(() => send()))
         await send()
     }
 
@@ -802,7 +951,6 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
             case 'auth':
                 logEvent(`CodyVSCodeExtension:Auth:${value}`, endpointUri, endpointUri)
                 break
-            // aditya combine this with above statemenet for auth or click
             case 'click':
                 logEvent(`CodyVSCodeExtension:${value}:clicked`, endpointUri, endpointUri)
                 break
@@ -840,6 +988,23 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
     }
 
     /**
+     * Insert text at cursor position
+     * Replace selection if there is one
+     * Note: Using workspaceEdit instead of 'editor.action.insertSnippet' as the later reformats the text incorrectly
+     */
+    private async insertAtCursor(text: string): Promise<void> {
+        const selectionRange = vscode.window.activeTextEditor?.selection
+        const editor = vscode.window.activeTextEditor
+        if (!editor || !selectionRange) {
+            return
+        }
+        const edit = new vscode.WorkspaceEdit()
+        // trimEnd() to remove new line added by Cody
+        edit.replace(editor.document.uri, selectionRange, text.trimEnd())
+        await vscode.workspace.applyEdit(edit)
+    }
+
+    /**
      * Set webview view
      */
     public setWebviewView(view: View): void {
@@ -864,7 +1029,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         this.authProvider.webview = webviewView.webview
 
         const extensionPath = vscode.Uri.file(this.extensionPath)
-        const webviewPath = vscode.Uri.joinPath(extensionPath, 'dist')
+        const webviewPath = vscode.Uri.joinPath(extensionPath, 'dist', 'webviews')
 
         webviewView.webview.options = {
             enableScripts: true,

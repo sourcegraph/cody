@@ -4,7 +4,6 @@ import * as vscode from 'vscode'
  * Mocks the VSCode TextDocument class required for the completion provider.
  */
 export class TextDocument implements vscode.TextDocument {
-    public fileName = ''
     public isUntitled = false
     public languageId = 'typescript'
     public version = 1
@@ -13,8 +12,15 @@ export class TextDocument implements vscode.TextDocument {
 
     private text: string
 
-    constructor(public uri: vscode.Uri, text: string) {
+    constructor(
+        public readonly uri: vscode.Uri,
+        text: string
+    ) {
         this.text = text.replace(/\r\n/gm, '\n') // normalize end of line
+    }
+
+    public get fileName(): string {
+        return this.uri.fsPath
     }
 
     public save(): Thenable<boolean> {

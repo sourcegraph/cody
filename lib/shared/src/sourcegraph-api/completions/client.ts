@@ -20,7 +20,10 @@ export type CompletionsClientConfig = Pick<
 export abstract class SourcegraphCompletionsClient {
     private errorEncountered = false
 
-    constructor(protected config: CompletionsClientConfig, protected logger?: CompletionLogger) {}
+    constructor(
+        protected config: CompletionsClientConfig,
+        protected logger?: CompletionLogger
+    ) {}
 
     public onConfigurationChange(newConfig: CompletionsClientConfig): void {
         this.config = newConfig
@@ -54,5 +57,5 @@ export abstract class SourcegraphCompletionsClient {
     }
 
     public abstract stream(params: CompletionParameters, cb: CompletionCallbacks): () => void
-    public abstract complete(params: CompletionParameters, abortSignal: AbortSignal): Promise<CompletionResponse>
+    public abstract complete(params: CompletionParameters, abortSignal?: AbortSignal): Promise<CompletionResponse>
 }

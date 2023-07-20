@@ -11,11 +11,12 @@ import {
     extractFromCodeBlock,
     fixBadCompletionStart,
     getHeadAndTail,
+    indentation,
     OPENING_CODE_TAG,
     PrefixComponents,
-    trimStartUntilNewline,
+    trimLeadingWhitespaceUntilNewline,
 } from '../text-processing'
-import { batchCompletions, messagesToText } from '../utils'
+import { batchCompletions, lastNLines, messagesToText } from '../utils'
 
 import { Provider, ProviderConfig, ProviderOptions } from './provider'
 
@@ -61,11 +62,11 @@ export class AnthropicProvider extends Provider {
         const prefixMessages: Message[] = [
             {
                 speaker: 'human',
-                text: `You are Cody, a code completion AI developed by Sourcegraph. You write code in between tags like this:${OPENING_CODE_TAG}/* Code goes here */${CLOSING_CODE_TAG}`,
+                text: `You are a code completion AI that writes high-quality code like a senior engineer. You write code in between tags like this:${OPENING_CODE_TAG}/* Code goes here */${CLOSING_CODE_TAG}`,
             },
             {
                 speaker: 'assistant',
-                text: 'I am Cody, a code completion AI developed by Sourcegraph.',
+                text: 'I am a code completion AI that writes high-quality code like a senior engineer.',
             },
             {
                 speaker: 'human',
@@ -73,7 +74,7 @@ export class AnthropicProvider extends Provider {
             },
             {
                 speaker: 'assistant',
-                text: `Okay, here is some code: ${OPENING_CODE_TAG}${tail.trimmed}`,
+                text: `Here is the code: ${OPENING_CODE_TAG}${tail.trimmed}`,
             },
         ]
         return { messages: prefixMessages, prefix: { head, tail, overlap } }
@@ -112,14 +113,15 @@ export class AnthropicProvider extends Provider {
 
     private postProcess(rawResponse: string): string {
         let completion = extractFromCodeBlock(rawResponse)
+        const startIndentation = indentation(lastNLines(this.prefix, 1) + completion.split('\n')[0])
 
         const trimmedPrefixContainNewline = this.prefix.slice(this.prefix.trimEnd().length).includes('\n')
         if (trimmedPrefixContainNewline) {
             // The prefix already contains a `\n` that Claude was not aware of, so we remove any
-            // leading `\n` that claude might add.
-            completion = completion.trimStart()
+            // leading `\n` followed by whitespace that Claude might add.
+            completion = completion.replace(/^\s*\n\s*/, '')
         } else {
-            completion = trimStartUntilNewline(completion)
+            completion = trimLeadingWhitespaceUntilNewline(completion)
         }
 
         // Remove bad symbols from the start of the completion string.
@@ -127,9 +129,16 @@ export class AnthropicProvider extends Provider {
 
         // Remove incomplete lines in single-line completions
         if (this.multilineMode === null) {
-            const allowedNewlines = 2
+            let allowedNewlines = 2
             const lines = completion.split('\n')
             if (lines.length >= allowedNewlines) {
+                // Only select two lines if they have the same indentation, otherwise only show one
+                // line. This will then most-likely trigger a multi-line completion after accepting
+                // and result in a better experience.
+                if (lines.length > 1 && startIndentation !== indentation(lines[1])) {
+                    allowedNewlines = 1
+                }
+
                 completion = lines.slice(0, allowedNewlines).join('\n')
             }
         }

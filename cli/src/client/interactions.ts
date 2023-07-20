@@ -8,8 +8,8 @@ import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
 
 async function getContextMessages(
     text: string,
-    intentDetector: IntentDetector,
-    codebaseContext: CodebaseContext
+    intentDetector: Pick<IntentDetector, 'isCodebaseContextRequired'>,
+    codebaseContext: Pick<CodebaseContext, 'getContextMessages'>
 ): Promise<ContextMessage[]> {
     const contextMessages: ContextMessage[] = []
 
@@ -29,8 +29,8 @@ async function getContextMessages(
 
 export async function interactionFromMessage(
     message: Message,
-    intentDetector: IntentDetector,
-    codebaseContext: CodebaseContext | null
+    intentDetector: Pick<IntentDetector, 'isCodebaseContextRequired'>,
+    codebaseContext: Pick<CodebaseContext, 'getContextMessages'> | null
 ): Promise<Interaction | null> {
     if (!message.text) {
         return Promise.resolve(null)

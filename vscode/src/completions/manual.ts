@@ -91,7 +91,7 @@ export class ManualCompletionService {
         const contextChars = this.tokToChar(this.promptTokens) - emptyPromptLength
 
         const { context: similarCode } = await getContext({
-            currentEditor,
+            document: currentEditor.document,
             prefix,
             suffix,
             history: this.history,
