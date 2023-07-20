@@ -35,9 +35,12 @@ In the `cody` repository, run:
 ```shell
 pnpm link $CONSUMER_REPO/node_modules/react
 
+pnpm -C lib/shared run build
 pnpm -C lib/ui run build
 pnpm run watch # keep this running
 ```
+
+Now, run your consumer repository development.
 
 (Known issue: When you change a CSS file in `@sourcegraph/cody-ui`, you need to run `pnpm -C lib/ui run build` again for your changes to be reflected in the consumer package.)
 
