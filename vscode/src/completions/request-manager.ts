@@ -3,6 +3,7 @@ import { debug } from '../log'
 import { Completion } from '.'
 import { CompletionsCache } from './cache'
 import { ReferenceSnippet } from './context'
+import { logCompletionEvent } from './logger'
 import { Provider } from './providers/provider'
 
 interface Request {
@@ -110,7 +111,8 @@ export class RequestManager {
         for (const request of requests) {
             const cachedCompletions = this.completionsCache?.get(request.prefix)
             if (cachedCompletions) {
-                debug('CodyCompletionProvider:RequestManager:cacheHit', '')
+                debug('CodyCompletionProvider:RequestManager', 'synthesizedFromParallelRequest')
+                logCompletionEvent('synthesizedFromParallelRequest')
                 request.resolve(cachedCompletions.completions)
                 this.removeRequest(documentUri, request)
             }
