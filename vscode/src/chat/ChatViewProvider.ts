@@ -41,7 +41,14 @@ import { SecretStorage } from '../services/SecretStorageProvider'
 import { TestSupport } from '../test-support'
 
 import { fastFilesExist } from './fastFileFinder'
-import { ConfigurationSubsetForWebview, DOTCOM_URL, ExtensionMessage, LocalEnv, WebviewMessage } from './protocol'
+import {
+    ConfigurationSubsetForWebview,
+    DOTCOM_URL,
+    ExtensionMessage,
+    isLocalApp,
+    LocalEnv,
+    WebviewMessage,
+} from './protocol'
 import { getRecipe } from './recipes'
 import { convertGitCloneURLToCodebaseName } from './utils'
 
@@ -265,6 +272,8 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
             case 'auth':
                 if (message.type === 'app' && message.endpoint) {
                     await this.authProvider.appAuth(message.endpoint)
+                    // Log app button click events: e.g. app:download:clicked or app:connect:clicked
+                    this.sendEvent('click', message.value === 'download' ? 'app:download' : 'app:connect')
                     break
                 }
                 if (message.type === 'callback' && message.endpoint) {
@@ -819,6 +828,12 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         }
         await this.publishConfig()
         this.onConfigurationChange(newConfig)
+        // When logged out, user's endpoint will be set to null
+        const isLoggedOut = !authStatus.isLoggedIn && !authStatus.endpoint
+        const isAppEvent = isLocalApp(authStatus.endpoint || '') ? 'app:' : ''
+        const eventValue = isLoggedOut ? 'disconnected' : authStatus.isLoggedIn ? 'connected' : 'failed'
+        // e.g. auth:app:connected, auth:app:disconnected, auth:failed
+        this.sendEvent('auth', isAppEvent + eventValue)
     }
 
     /**
