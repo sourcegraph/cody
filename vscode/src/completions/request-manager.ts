@@ -111,7 +111,6 @@ export class RequestManager {
         for (const request of requests) {
             const cachedCompletions = this.completionsCache?.get(request.prefix)
             if (cachedCompletions) {
-                debug('CodyCompletionProvider:RequestManager', 'synthesizedFromParallelRequest')
                 logCompletionEvent('synthesizedFromParallelRequest')
                 request.resolve(cachedCompletions.completions)
                 this.removeRequest(documentUri, request)
