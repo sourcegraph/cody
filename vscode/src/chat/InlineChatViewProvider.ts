@@ -4,16 +4,8 @@ import { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messag
 
 import { MessageProvider, MessageProviderOptions } from './MessageProvider'
 
-/**
- * VS Code does not provide an identifier for comment threads.
- * We build our own key by combining the URI of the document with the
- * range of the comment.
- */
-const getUniqueKeyForCommentThread = (thread: vscode.CommentThread): string =>
-    `${thread.uri.path}:L${thread.range.start.line}C${thread.range.start.character}-L${thread.range.end.line}C${thread.range.end.character}`
-
 export class InlineChatViewManager {
-    private inlineChatThreadProviders = new Map<string, InlineChatViewProvider>()
+    private inlineChatThreadProviders = new Map<vscode.CommentThread, InlineChatViewProvider>()
     private messageProviderOptions: MessageProviderOptions
 
     constructor(options: MessageProviderOptions) {
@@ -21,23 +13,21 @@ export class InlineChatViewManager {
     }
 
     public getProviderForThread(thread: vscode.CommentThread): InlineChatViewProvider {
-        const threadKey = getUniqueKeyForCommentThread(thread)
-        let provider = this.inlineChatThreadProviders.get(threadKey)
+        let provider = this.inlineChatThreadProviders.get(thread)
 
         if (!provider) {
             provider = new InlineChatViewProvider({ thread, ...this.messageProviderOptions })
-            this.inlineChatThreadProviders.set(threadKey, provider)
+            this.inlineChatThreadProviders.set(thread, provider)
         }
 
         return provider
     }
 
     public removeProviderForThread(thread: vscode.CommentThread): void {
-        const threadKey = getUniqueKeyForCommentThread(thread)
-        const provider = this.inlineChatThreadProviders.get(threadKey)
+        const provider = this.inlineChatThreadProviders.get(thread)
 
         if (provider) {
-            this.inlineChatThreadProviders.delete(threadKey)
+            this.inlineChatThreadProviders.delete(thread)
             provider.removeChat()
             provider.dispose()
         }
