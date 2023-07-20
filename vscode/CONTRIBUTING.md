@@ -64,11 +64,11 @@ To do this:
 
 #### Simulating a fresh user install
 
-VS Code will preserve some extension state (e.g. configuration settings) even when an extension is installed. See the following steps if you want to replicate the flow of a completely new user.
+VS Code will preserve some extension state (e.g. configuration settings) even when an extension is uninstalled. See the following steps if you want to replicate the flow of a completely new user.
 
 Note: To avoid data loss, using a separate build of VS Code (e.g. Insiders) is recommended here if VS Code is your primary editor.
 
-For Insiders:
+macOS specific instructions for VS Code Insiders:
 
 1. Clear out existing VS Code settings:
    ```
