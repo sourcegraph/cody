@@ -20,7 +20,7 @@ class MockProvider extends Provider {
         this.didFinishNetworkRequest = true
         this.resolve(
             completions.map(content => ({
-                prefix: this.prefix,
+                prefix: this.options.prefix,
                 content,
             }))
         )
