@@ -9,14 +9,23 @@ export interface ExtensionDetails {
 export class EventLogger {
     private gqlAPIClient: SourcegraphGraphQLAPIClient
 
-    constructor(private serverEndpoint: string, private extensionDetails: ExtensionDetails, private config: ConfigurationWithAccessToken) {
+    constructor(
+        private serverEndpoint: string,
+        private extensionDetails: ExtensionDetails,
+        private config: ConfigurationWithAccessToken
+    ) {
         this.gqlAPIClient = new SourcegraphGraphQLAPIClient(this.config)
     }
 
-    public onConfigurationChange(newServerEndpoint: string, newExtensionDetails: ExtensionDetails, newConfig: ConfigurationWithAccessToken): void {
+    public onConfigurationChange(
+        newServerEndpoint: string,
+        newExtensionDetails: ExtensionDetails,
+        newConfig: ConfigurationWithAccessToken
+    ): void {
         this.serverEndpoint = newServerEndpoint
         this.extensionDetails = newExtensionDetails
         this.config = newConfig
+        this.gqlAPIClient.onConfigurationChange(newConfig)
     }
 
     /**
@@ -62,6 +71,8 @@ export class EventLogger {
                 publicArgument: JSON.stringify(publicArgument),
             })
             .then(() => {})
-            .catch(error => { console.log(error) })
+            .catch(error => {
+                console.log(error)
+            })
     }
 }
