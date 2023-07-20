@@ -91,7 +91,7 @@ describe('Cody completions', () => {
      */
     let complete: (
         code: string,
-        responses?: CompletionResponse[],
+        responses?: CompletionResponse[] | 'stall',
         languageId?: string,
         context?: vscode.InlineCompletionContext,
         triggerMoreEagerly?: boolean
@@ -103,7 +103,7 @@ describe('Cody completions', () => {
         const cache = new CompletionsCache()
         complete = async (
             code: string,
-            responses?: CompletionResponse[],
+            responses?: CompletionResponse[] | 'stall',
             languageId: string = 'typescript',
             context: vscode.InlineCompletionContext = { triggerKind: 1, selectedCompletionInfo: undefined },
             triggerMoreEagerly = true
@@ -118,6 +118,9 @@ describe('Cody completions', () => {
             const completionsClient: any = {
                 complete(params: CompletionParameters): Promise<CompletionResponse> {
                     requests.push(params)
+                    if (responses === 'stall') {
+                        return new Promise(() => {})
+                    }
                     const response = responses ? responses[requestCounter++] : undefined
                     return Promise.resolve(
                         response || {
@@ -891,6 +894,16 @@ describe('Cody completions', () => {
             )
 
             expect(completions[0].insertText).toBe("console.log('foo')")
+        })
+    })
+
+    describe('completions cache', () => {
+        it('synthesizes a completion from a prior request', async () => {
+            await complete(`console.${CURSOR_MARKER}`, [createCompletionResponse("log('Hello, world!');")])
+
+            const { completions } = await complete(`console.log(${CURSOR_MARKER}`, 'stall')
+
+            expect(completions[0].insertText).toBe("'Hello, world!');")
         })
     })
 })
