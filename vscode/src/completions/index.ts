@@ -133,6 +133,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
     ): Promise<vscode.InlineCompletionItem[] | vscode.InlineCompletionList> {
         try {
             return await this.provideInlineCompletionItemsInner(document, position, context, token)
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (error: any) {
             this.stopLoading()
 
@@ -141,6 +142,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
             }
 
             console.error(error)
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
             debug('CodyCompletionProvider:inline:error', `${error.toString()}\n${error.stack}`)
             return []
         }
@@ -170,7 +172,6 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
             return []
         }
 
-        const languageId = document.languageId
         const { prefix, suffix, prevNonEmptyLine } = docContext
 
         // Text before the cursor on the same line.
@@ -184,7 +185,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
             prevNonEmptyLine,
             sameLinePrefix,
             sameLineSuffix,
-            languageId,
+            document.languageId,
             this.providerConfig.enableExtendedMultilineTriggers
         )
 
@@ -198,14 +199,22 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
             // again
             const cachedCompletions = this.completionsCache?.get(prefix, false)
             if (cachedCompletions?.isExactPrefix) {
-                return handleCacheHit(cachedCompletions, document, position, prefix, suffix, multiline, languageId)
+                return handleCacheHit(
+                    cachedCompletions,
+                    document,
+                    position,
+                    prefix,
+                    suffix,
+                    multiline,
+                    document.languageId
+                )
             }
             return []
         }
 
         const cachedCompletions = this.completionsCache?.get(prefix)
         if (cachedCompletions) {
-            return handleCacheHit(cachedCompletions, document, position, prefix, suffix, multiline, languageId)
+            return handleCacheHit(cachedCompletions, document, position, prefix, suffix, multiline, document.languageId)
         }
 
         const completers: Provider[] = []
@@ -243,7 +252,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
             prefix,
             suffix,
             fileName: path.normalize(vscode.workspace.asRelativePath(document.fileName ?? '')),
-            languageId,
+            languageId: document.languageId,
             responsePercentage: this.responsePercentage,
             prefixPercentage: this.prefixPercentage,
             suffixPercentage: this.suffixPercentage,
@@ -305,7 +314,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
             type: 'inline',
             multiline,
             providerIdentifier: this.providerConfig.identifier,
-            languageId,
+            languageId: document.languageId,
             contextSummary,
             triggeredMoreEagerly,
             triggeredForSuggestWidgetSelection: triggeredForSuggestWidgetSelection !== undefined,
@@ -334,7 +343,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
         )
 
         // Shared post-processing logic
-        const processedCompletions = processCompletions(completions, prefix, suffix, multiline, languageId)
+        const processedCompletions = processCompletions(completions, prefix, suffix, multiline, document.languageId)
         stopLoading()
 
         if (processedCompletions.length > 0) {
