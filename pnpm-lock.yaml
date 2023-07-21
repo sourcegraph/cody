@@ -224,9 +224,9 @@ importers:
       marked:
         specifier: ^4.0.16
         version: 4.0.16
-      xml2js:
-        specifier: ^0.6.0
-        version: 0.6.0
+      x2js:
+        specifier: ^3.4.4
+        version: 3.4.4
     devDependencies:
       '@types/dompurify':
         specifier: ^3.0.2
@@ -246,9 +246,6 @@ importers:
       '@types/vscode':
         specifier: ^1.80.0
         version: 1.80.0
-      '@types/xml2js':
-        specifier: ^0.4.11
-        version: 0.4.11
 
   lib/ui:
     dependencies:
@@ -5833,12 +5830,6 @@ packages:
       '@types/node': 20.4.0
     dev: false
 
-  /@types/xml2js@0.4.11:
-    resolution: {integrity: sha512-JdigeAKmCyoJUiQljjr7tQG3if9NkqGUgwEUqBvV0N7LM4HyQk7UXCnusRa1lnvXAEYJ8mw8GtZWioagNztOwA==}
-    dependencies:
-      '@types/node': 20.4.0
-    dev: true
-
   /@types/yargs-parser@21.0.0:
     resolution: {integrity: sha512-iO9ZQHkZxHn4mSakYV0vFHAVDyEOIJQrV2uZ06HxEPcx+mt8swXoZHIbaaJ2crJYFfErySgktuTZ3BeLz+XmFA==}
     dev: true
@@ -6276,6 +6267,11 @@ packages:
 
   /@xmldom/xmldom@0.7.11:
     resolution: {integrity: sha512-UDi3g6Jss/W5FnSzO9jCtQwEpfymt0M+sPPlmLhDH6h2TJ8j4ESE/LpmNPBij15J5NKkk4/cg/qoVMdWI3vnlQ==}
+    engines: {node: '>=10.0.0'}
+    dev: false
+
+  /@xmldom/xmldom@0.8.10:
+    resolution: {integrity: sha512-2WALfTl4xo2SkGCYRt6rDTFfk9R1czmBvUQy12gK2KuRKIpWEhcbbzy8EZXtz/jkRqHX8bFEc6FC1HjX4TUWYw==}
     engines: {node: '>=10.0.0'}
     dev: false
 
@@ -16350,6 +16346,12 @@ packages:
         optional: true
     dev: true
 
+  /x2js@3.4.4:
+    resolution: {integrity: sha512-yG/ThaBCgnsa3aoMPAe7QwDpcyU4D70hjXC4Y1lZSfD/Tgd0MpE19FnZZRAjekryw0c8cffpOt9zsPEiqktO6Q==}
+    dependencies:
+      '@xmldom/xmldom': 0.8.10
+    dev: false
+
   /xdm@2.1.0:
     resolution: {integrity: sha512-3LxxbxKcRogYY7cQSMy1tUuU1zKNK9YPqMT7/S0r7Cz2QpyF8O9yFySGD7caOZt+LWUOQioOIX+6ZzCoBCpcAA==}
     dependencies:
@@ -16392,17 +16394,10 @@ packages:
       xmlbuilder: 11.0.1
     dev: true
 
-  /xml2js@0.6.0:
-    resolution: {integrity: sha512-eLTh0kA8uHceqesPqSE+VvO1CDDJWMwlQfB6LuN6T8w6MaDJ8Txm8P7s5cHD0miF0V+GGTZrDQfxPZQVsur33w==}
-    engines: {node: '>=4.0.0'}
-    dependencies:
-      sax: 1.2.4
-      xmlbuilder: 11.0.1
-    dev: false
-
   /xmlbuilder@11.0.1:
     resolution: {integrity: sha512-fDlsI/kFEx7gLvbecc0/ohLG50fugQp8ryHzMTuW9vSa1GJ0XYWKnhsUx7oie3G98+r56aTQIUB4kht42R3JvA==}
     engines: {node: '>=4.0'}
+    dev: true
 
   /xmlchars@2.2.0:
     resolution: {integrity: sha512-JZnDKK8B0RCDw84FNdDAIpZK+JuJw+s7Lz8nksI7SIuU3UXJJslUthsi+uWBUYOwPFwW7W7PRLRfUKpxjtjFCw==}
