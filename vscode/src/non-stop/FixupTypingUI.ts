@@ -13,13 +13,6 @@ export class FixupTypingUI {
         if (!editor) {
             return
         }
-        const range = editor.selection
-
-        // TODO: Do not require any text to be selected
-        if (range.isEmpty) {
-            await vscode.window.showWarningMessage('Select some text to fix up')
-            return
-        }
 
         const CHAT_COMMAND = '/chat'
         const CHAT_RE = /^\/chat(|\s.*)$/
@@ -33,13 +26,11 @@ export class FixupTypingUI {
         }
         const match = instruction.match(CHAT_RE)
         if (match) {
-            // TODO: If we got here, we have a selection; start an inline chat
-            // with match[1].
-            void vscode.commands.executeCommand('cody.focus')
+            void vscode.commands.executeCommand('cody.inline.new-with-message', vscode.window.activeTextEditor?.document, editor.selection, match[1])
             return
         }
 
-        this.taskFactory.createTask(editor.document.uri, instruction, range)
+        this.taskFactory.createTask(editor.document.uri, instruction, editor.selection)
 
         // Return focus to the editor
         void vscode.window.showTextDocument(editor.document)

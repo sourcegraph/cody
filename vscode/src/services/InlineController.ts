@@ -137,16 +137,16 @@ export class InlineController {
     /**
      * Create a new thread (the first comment of a thread)
      */
-    public create(humanInput: string): vscode.CommentReply | null {
-        if (!this.commentController) {
+    public create(
+        document: vscode.TextDocument,
+        selection: vscode.Selection,
+        humanInput: string
+    ): vscode.CommentReply | null {
+        if (!this.commentController || !humanInput || document.uri.scheme !== 'file') {
             return null
         }
-        const editor = vscode.window.activeTextEditor
-        if (!editor || !humanInput || editor.document.uri.scheme !== 'file') {
-            return null
-        }
-        this.thread = this.commentController.createCommentThread(editor?.document.uri, editor.selection, [])
-        this.thread.collapsibleState = vscode.CommentThreadCollapsibleState.Collapsed
+        this.thread = this.commentController.createCommentThread(document.uri, selection, [])
+        this.thread.collapsibleState = vscode.CommentThreadCollapsibleState.Expanded
         const threads = {
             text: humanInput,
             thread: this.thread,
@@ -163,7 +163,6 @@ export class InlineController {
         // disable reply until the task is completed
         thread.canReply = false
         thread.label = this.threadLabel
-        thread.collapsibleState = vscode.CommentThreadCollapsibleState.Collapsed
 
         const comment = new Comment(humanInput, 'Me', this.userIcon, reply.thread)
         thread.comments = [...thread.comments, comment]

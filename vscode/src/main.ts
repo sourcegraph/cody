@@ -187,6 +187,14 @@ const register = async (
         vscode.commands.registerCommand('cody.inline.new', () =>
             vscode.commands.executeCommand('workbench.action.addComment')
         ),
+        vscode.commands.registerCommand(
+            'cody.inline.new-with-message',
+            (document: vscode.TextDocument, selection: vscode.Selection, input: string) => {
+                const comment = commentController.create(document, selection, input)
+                // TODO: just reuse the func above, better type safety
+                vscode.commands.executeCommand('cody.comment.add', comment)
+            }
+        ),
         // Tests
         // Access token - this is only used in configuration tests
         vscode.commands.registerCommand('cody.test.token', async (args: any[]) => {
