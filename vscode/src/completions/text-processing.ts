@@ -157,7 +157,9 @@ export function trimUntilSuffix(insertion: string, prefix: string, suffix: strin
             line = prefix.slice(lastNewlineOfPrefix + 1) + line
         }
 
-        if (isAlmostTheSameString(line, firstNonEmptySuffixLine)) {
+        const isSameIndentation = indentation(line) === indentation(firstNonEmptySuffixLine)
+
+        if (isSameIndentation && isAlmostTheSameString(line, firstNonEmptySuffixLine)) {
             insertionEnd = i
             break
         }
