@@ -12,10 +12,7 @@ export class TextDocument implements vscode.TextDocument {
 
     private text: string
 
-    constructor(
-        public readonly uri: vscode.Uri,
-        text: string
-    ) {
+    constructor(public readonly uri: vscode.Uri, text: string) {
         this.text = text.replace(/\r\n/gm, '\n') // normalize end of line
     }
 

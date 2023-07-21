@@ -24,11 +24,7 @@ export class DecorationProvider {
     private _onDidChange: vscode.EventEmitter<void> = new vscode.EventEmitter<void>()
     public readonly onDidChange: vscode.Event<void> = this._onDidChange.event
 
-    constructor(
-        public id: string,
-        private extPath: string,
-        private fileUri: vscode.Uri
-    ) {
+    constructor(public id: string, private extPath: string, private fileUri: vscode.Uri) {
         this.editor = vscode.window.visibleTextEditors.find(editor => editor.document.uri.fsPath === fileUri.fsPath)
         // set up icon and register decoration types
         this.iconPath = getIconPath('cody', this.extPath)

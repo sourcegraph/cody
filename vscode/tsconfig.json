@@ -5,10 +5,7 @@
     "rootDir": ".",
     "outDir": "dist/tsc",
     "jsx": "react-jsx",
-    "lib": [
-      "ESNext",
-      "DOM"
-    ],
+    "lib": ["ESNext", "DOM"],
   },
   "include": [
     "src",
@@ -23,17 +20,13 @@
     "../lib/shared/src/telemetry/EventLogger.ts",
     "test/completions/completions-dataset.ts",
   ],
-  "exclude": [
-    "scripts",
-    "dist",
-    "test/integration"
-  ],
+  "exclude": ["scripts", "dist", "test/integration"],
   "references": [
     {
-      "path": "../lib/shared"
+      "path": "../lib/shared",
     },
     {
-      "path": "../lib/ui"
-    }
+      "path": "../lib/ui",
+    },
   ],
 }

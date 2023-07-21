@@ -3,10 +3,7 @@ import { Guardrails, summariseAttribution } from '@sourcegraph/cody-shared/src/g
 
 export class GuardrailsProvider {
     // TODO(keegancsmith) this provider should create the client since the guardrails client requires a dotcom graphql connection.
-    constructor(
-        private client: Guardrails,
-        private editor: Editor
-    ) {}
+    constructor(private client: Guardrails, private editor: Editor) {}
 
     public async debugEditorSelection(): Promise<void> {
         const snippet = this.editor.getActiveTextEditorSelection()?.selectedText

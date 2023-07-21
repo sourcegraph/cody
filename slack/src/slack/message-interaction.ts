@@ -14,10 +14,7 @@ import { CodebaseContexts } from '../constants'
 class SlackInteraction {
     public contextMessages: ContextMessage[] = []
 
-    constructor(
-        private humanMessage: InteractionMessage,
-        private assistantMessage: InteractionMessage
-    ) {}
+    constructor(private humanMessage: InteractionMessage, private assistantMessage: InteractionMessage) {}
 
     public async updateContextMessagesFromVectorStore(vectorStore: HNSWLib, numResults: number) {
         const docs = await vectorStore.similaritySearch(this.humanMessage.text!, numResults)

@@ -10,8 +10,8 @@ import { ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
 import { Editor } from '@sourcegraph/cody-shared/src/editor'
 import { ContextResult, KeywordContextFetcher } from '@sourcegraph/cody-shared/src/local-context'
 
-import { logEvent } from '../services/EventLogger'
 import { debug } from '../log'
+import { logEvent } from '../services/EventLogger'
 
 /**
  * Exclude files without extensions and hidden files (starts with '.')
@@ -89,11 +89,7 @@ function longestCommonPrefix(s: string, t: string): string {
  * user query.
  */
 export class LocalKeywordContextFetcher implements KeywordContextFetcher {
-    constructor(
-        private rgPath: string,
-        private editor: Editor,
-        private chatClient: ChatClient
-    ) {}
+    constructor(private rgPath: string, private editor: Editor, private chatClient: ChatClient) {}
 
     /**
      * Returns pieces of context relevant for the given query. Uses a keyword-search-based

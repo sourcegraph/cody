@@ -13,7 +13,7 @@ import { LocalStorage } from './services/LocalStorageProvider'
 import { getAccessToken, SecretStorage } from './services/SecretStorageProvider'
 
 interface ConfigGetter {
-    get<T>(section: (typeof CONFIG_KEY)[ConfigKeys], defaultValue?: T): T
+    get<T>(section: typeof CONFIG_KEY[ConfigKeys], defaultValue?: T): T
 }
 
 /**
@@ -164,8 +164,8 @@ export async function migrateConfiguration(): Promise<void> {
 }
 
 async function migrateDeprecatedConfigOption(
-    oldKey: (typeof CONFIG_KEY)[ConfigKeys],
-    newKey: (typeof CONFIG_KEY)[ConfigKeys]
+    oldKey: typeof CONFIG_KEY[ConfigKeys],
+    newKey: typeof CONFIG_KEY[ConfigKeys]
 ): Promise<boolean> {
     const config = vscode.workspace.getConfiguration()
     const value = config.get(oldKey)

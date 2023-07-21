@@ -25,10 +25,7 @@ export class LocalAppDetector implements vscode.Disposable {
     private _watchers: vscode.Disposable[] = []
     private onChange: OnChangeCallback
 
-    constructor(
-        private secretStorage: SecretStorage,
-        options: { onChange: OnChangeCallback }
-    ) {
+    constructor(private secretStorage: SecretStorage, options: { onChange: OnChangeCallback }) {
         this.onChange = options.onChange
         this.localEnv = { ...envInit }
         this.localAppMarkers = LOCAL_APP_LOCATIONS[this.localEnv.os]

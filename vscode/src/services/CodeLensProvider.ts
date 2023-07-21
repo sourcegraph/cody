@@ -16,11 +16,7 @@ export class CodeLensProvider implements vscode.CodeLensProvider {
     private _onDidChangeCodeLenses: vscode.EventEmitter<void> = new vscode.EventEmitter<void>()
     public readonly onDidChangeCodeLenses: vscode.Event<void> = this._onDidChangeCodeLenses.event
 
-    constructor(
-        public id: string,
-        private extPath: string,
-        private thread: vscode.CommentThread
-    ) {
+    constructor(public id: string, private extPath: string, private thread: vscode.CommentThread) {
         this.provideCodeLenses = this.provideCodeLenses.bind(this)
         this.decorator = new DecorationProvider(this.id, this.extPath, this.thread.uri)
         vscode.workspace.onDidChangeTextDocument(e => {
