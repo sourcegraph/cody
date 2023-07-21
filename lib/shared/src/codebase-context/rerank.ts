@@ -57,7 +57,7 @@ export class LLMReranker implements Reranker {
         if (out.indexOf('</list>') !== out.length - '</list>'.length) {
             out = out.slice(0, out.indexOf('</list>') + '</list>'.length)
         }
-        const boostedFilenames = await parseXml(out)
+        const boostedFilenames = await parseFileExplanations(out)
 
         const resultsMap = Object.fromEntries(results.map(r => [r.fileName, r]))
         const boostedNames = new Set<string>()
@@ -81,7 +81,7 @@ export class LLMReranker implements Reranker {
     }
 }
 
-async function parseXml(xml: string): Promise<string[]> {
+export async function parseFileExplanations(xml: string): Promise<string[]> {
     const result = await parseStringPromise(xml)
     const items = result.list.item
     const files: { filename: string; explanation: string }[] = items.map((item: any) => ({
