@@ -471,7 +471,7 @@ describe('Cody completions', () => {
             expect(completions[1].insertText).toBe("console.log('foo')")
         })
 
-        it('cuts-off completions when the next non-empty line matches', async () => {
+        it('cuts-off the whole completions when suffix is very similar to suffix line', async () => {
             const { completions } = await complete(
                 `
                 function() {
@@ -486,7 +486,7 @@ describe('Cody completions', () => {
                 ]
             )
 
-            expect(completions[0].insertText).toBe("console.log('foo')")
+            expect(completions.length).toBe(0)
         })
 
         it('does not support multi-line completion on unsupported languages', async () => {
@@ -764,17 +764,34 @@ describe('Cody completions', () => {
                 ]
             )
 
-            expect(completions[0].insertText).toMatchInlineSnapshot(`
-              "console.log('one')
-                  console.log('two')"
-            `)
+            expect(completions.length).toBe(0)
+        })
+
+        it('stops when the next non-empty line of the suffix matches exactly with one line completion', async () => {
+            const { completions } = await complete(
+                `
+                function myFunction() {
+                    console.log('one')
+                    ${CURSOR_MARKER}
+                    console.log('three')
+                }
+                `,
+                [
+                    createCompletionResponse(`
+                    console.log('three')
+                    }`),
+                ]
+            )
+
+            expect(completions.length).toBe(0)
         })
 
         describe('stops when the next non-empty line of the suffix matches partially', () => {
             it('simple example', async () => {
                 const { completions } = await complete(
-                    `path: $GITHUB_WORKSPACE/vscode/.vscod-etest/${CURSOR_MARKER}
-                           key: {{ runner.os }}-pnpm-store-{{ hashFiles('**/pnpm-lock.yaml') }}`,
+                    `
+                          path: $GITHUB_WORKSPACE/vscode/.vscod-etest/${CURSOR_MARKER}
+                          key: {{ runner.os }}-pnpm-store-{{ hashFiles('**/pnpm-lock.yaml') }}`,
                     [
                         createCompletionResponse(`
                                     pnpm-store
@@ -789,13 +806,13 @@ describe('Cody completions', () => {
             it('example with return', async () => {
                 const { completions } = await complete(
                     `
-                    console.log('<< stop completion: ${CURSOR_MARKER}')
-                    return []
+                          console.log('<< stop completion: ${CURSOR_MARKER}')
+                          return []
                     `,
                     [
                         createCompletionResponse(`
                                     lastChange was delete')
-                                        return []
+                                    return []
                         `),
                     ]
                 )
@@ -810,8 +827,9 @@ describe('Cody completions', () => {
                     const currentFilePath = path.normalize(document.fileName)
                     `,
                     [
-                        createCompletionResponse(`Get the file path
-                        const filePath = document.fileName
+                        createCompletionResponse(`
+                            Get the file path
+                            const filePath = normalize(document.fileName)
                         `),
                     ]
                 )

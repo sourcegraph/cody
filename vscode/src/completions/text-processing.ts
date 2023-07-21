@@ -155,21 +155,11 @@ export function trimUntilSuffix(insertion: string, prefix: string, suffix: strin
         if (i === 0) {
             const lastNewlineOfPrefix = prefix.lastIndexOf('\n')
             line = prefix.slice(lastNewlineOfPrefix + 1) + line
-
-            // Skip any procession for the first (inline string insertion/completion)
-            continue
         }
 
-        if (line === firstNonEmptySuffixLine) {
+        if (isAlmostTheSameString(line, firstNonEmptySuffixLine)) {
             insertionEnd = i
             break
-        }
-
-        if (i === insertionLines.length - 1) {
-            if (isAlmostTheSameString(line.trim(), firstNonEmptySuffixLine.trim())) {
-                insertionEnd = i
-                break
-            }
         }
     }
 
