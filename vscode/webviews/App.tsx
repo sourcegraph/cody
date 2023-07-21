@@ -100,7 +100,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                         setEnabledPlugins(message.plugins)
                         break
                     case 'my-prompts':
-                        setMyPrompts(message.prompts)
+                        setMyPrompts(message.isEnabled ? message.prompts : null)
                         break
                 }
             }),

@@ -192,9 +192,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         if (authStatus.endpoint) {
             this.config.serverEndpoint = authStatus.endpoint
         }
-        if (newConfig.experimentalCustomRecipes) {
-            void this.sendMyPrompts()
-        }
+        void this.sendMyPrompts()
         this.configurationChangeEvent.fire()
     }
 
@@ -779,22 +777,16 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
      */
     private async sendMyPrompts(): Promise<void> {
         const send = async (): Promise<void> => {
-            console.log('sendMyPrompts', this.config.experimentalCustomRecipes)
             await this.editor.controllers.prompt.refresh()
             const prompts = this.editor.controllers.prompt.getPromptList()
             void this.webview?.postMessage({
                 type: 'my-prompts',
                 prompts,
+                isEnabled: this.config.experimentalCustomRecipes,
             })
         }
         const init = (): void => {
-            // listen for file change event for JSON files used for building Custom Recipes
-            const myWorkspacePromptsWatcher = this.editor.controllers?.prompt?.wsFileWatcher
-            const myUserPromptsWatcher = this.editor.controllers?.prompt?.userFileWatcher
-            if (myWorkspacePromptsWatcher || myUserPromptsWatcher) {
-                myWorkspacePromptsWatcher?.onDidChange(() => send())
-                myUserPromptsWatcher?.onDidChange(() => send())
-            }
+            this.editor.controllers.prompt.setMessager(send)
         }
         init()
         await send()

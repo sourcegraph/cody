@@ -29,6 +29,8 @@ export class MyPromptController {
     private builder: CustomRecipesBuilder
 
     private myPromptInProgress: CodyPrompt | null = null
+
+    private webViewMessenger: (() => Promise<void>) | null = null
     public wsFileWatcher: vscode.FileSystemWatcher | null = null
     public userFileWatcher: vscode.FileSystemWatcher | null = null
 
@@ -39,7 +41,8 @@ export class MyPromptController {
     ) {
         this.tools = new MyToolsProvider(context)
         const user = this.tools.getUserInfo()
-        this.builder = new CustomRecipesBuilder(user?.workspaceRoot, user.homeDir)
+        this.builder = new CustomRecipesBuilder(isEnabled, user?.workspaceRoot, user.homeDir)
+        this.builder.activate(this.isEnabled)
         // Toggle on Config Change
         vscode.workspace.onDidChangeConfiguration(e => {
             if (e.affectsConfiguration('cody')) {
@@ -49,16 +52,26 @@ export class MyPromptController {
         this.debug('MyPromptsProvider', 'Initialized')
     }
 
+    public setMessager(messenger: () => Promise<void>): void {
+        if (this.webViewMessenger) {
+            return
+        }
+        this.webViewMessenger = messenger
+    }
+
     // Create file watchers for cody.json files used for building custom recipes
     private watcherInit(): void {
-        this.isEnabled = true
         const user = this.tools.getUserInfo()
         this.wsFileWatcher = createFileWatch(user?.workspaceRoot)
         this.userFileWatcher = createFileWatch(user?.homeDir)
+        this.wsFileWatcher?.onDidChange(() => this.webViewMessenger?.())
+        this.userFileWatcher?.onDidChange(() => this.webViewMessenger?.())
+        return
     }
 
     public dispose(): void {
         this.isEnabled = false
+        this.builder.dispose()
         this.myPromptInProgress = null
         this.myPremade = undefined
         this.myStarter = ''
@@ -70,6 +83,8 @@ export class MyPromptController {
     private checkIsConfigEnabled(): void {
         const config = vscode.workspace.getConfiguration('cody')
         const newConfig = config.get('experimental.customRecipes') as boolean
+        this.isEnabled = newConfig
+        this.builder.activate(newConfig)
         if (newConfig && this.isEnabled) {
             this.watcherInit()
         }
@@ -176,9 +191,6 @@ export class MyPromptController {
 
     // Get the prompts from cody.json file then build the map of prompts
     public async refresh(): Promise<void> {
-        if (!this.isEnabled) {
-            return
-        }
         const { prompts, premade, starter } = await this.builder.get()
         this.myPromptStore = prompts
         this.myPremade = premade
@@ -243,7 +255,7 @@ export class MyPromptController {
 
     public async quickRecipe(): Promise<void> {
         // Get the list of prompts from the cody.json file
-        const promptList = this.getPromptList()
+        const promptList = this.getPromptList() || []
         const promptItems = promptList.map(prompt => ({
             detail: this.myPromptStore.get(prompt)?.prompt,
             label: prompt,
