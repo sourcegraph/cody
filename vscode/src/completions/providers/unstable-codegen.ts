@@ -29,7 +29,7 @@ export class UnstableCodeGenProvider extends Provider {
             suffix: this.suffix,
             top_p: 0.95,
             temperature: 0.2,
-            max_tokens: this.multilineMode === null ? 40 : 128,
+            max_tokens: this.multiline ? 40 : 128,
             // The backend expects an even number of requests since it will
             // divide it into two different batches.
             batch_size: makeEven(4),
@@ -55,7 +55,7 @@ export class UnstableCodeGenProvider extends Provider {
         try {
             const data = (await response.json()) as { completions: { completion: string }[] }
 
-            const completions: string[] = data.completions.map(c => postProcess(c.completion, this.multilineMode))
+            const completions: string[] = data.completions.map(c => postProcess(c.completion, this.multiline))
             log?.onComplete(completions)
 
             return completions.map(content => ({
@@ -72,10 +72,10 @@ export class UnstableCodeGenProvider extends Provider {
     }
 }
 
-function postProcess(content: string, multilineMode: null | 'block'): string {
+function postProcess(content: string, multiline: boolean): string {
     // The model might return multiple lines for single line completions because
     // we are only able to specify a token limit.
-    if (multilineMode === null && content.includes('\n')) {
+    if (multiline && content.includes('\n')) {
         content = content.slice(0, content.indexOf('\n'))
     }
 

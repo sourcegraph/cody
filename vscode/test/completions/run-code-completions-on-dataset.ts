@@ -85,6 +85,7 @@ interface CompletionResult {
     code: string
 }
 
+const sampleIndex = process.env.SAMPLE_INDEX ? parseInt(process.env.SAMPLE_INDEX, 10) : null
 const iterationsPerCodeSample = parseInt(process.env.ITER || '1', 10)
 
 // TODO: use VSCode mocked APIs to provide context for the completions provider
@@ -95,6 +96,10 @@ async function generateCompletionsForDataset(codeSamples: string[]): Promise<voi
     const timestamp = Date.now().toString()
     const results: CompletionResult[] = []
     for (const [index, code] of codeSamples.entries()) {
+        if (sampleIndex !== null && sampleIndex !== index) {
+            continue
+        }
+
         const { textDocument, position } = prepareTextDocument(code)
 
         const codeSampleResults: CompletionResult[] = []

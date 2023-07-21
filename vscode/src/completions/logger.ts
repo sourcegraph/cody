@@ -7,6 +7,7 @@ import { logEvent } from '../event-logger'
 interface CompletionEvent {
     params: {
         type: 'inline' | 'manual'
+        multiline: boolean
         multilineMode: null | 'block'
         providerIdentifier: string
         contextSummary: {
@@ -63,7 +64,13 @@ export function logCompletionEvent(name: string, params?: unknown): void {
     logEvent(`CodyVSCodeExtension:completion:${name}`, params, params)
 }
 
-export function start(params: CompletionEvent['params']): string {
+export function start(inputParams: Omit<CompletionEvent['params'], 'multilineMode'>): string {
+    const params: CompletionEvent['params'] = {
+        ...inputParams,
+        // Keep the legacy name for backward compatibility in analytics
+        multilineMode: inputParams.multiline ? 'block' : null,
+    }
+
     const id = createId()
     displayedCompletions.set(id, {
         params,

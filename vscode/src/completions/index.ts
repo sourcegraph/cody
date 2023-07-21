@@ -13,7 +13,7 @@ import { getContext } from './context'
 import { getCurrentDocContext } from './document'
 import { History } from './history'
 import * as CompletionLogger from './logger'
-import { detectMultilineMode } from './multiline'
+import { detectMultiline } from './multiline'
 import { Provider, ProviderConfig } from './providers/provider'
 import { RequestManager } from './request-manager'
 import { sharedPostProcess } from './shared-post-process'
@@ -179,7 +179,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
         // Text after the cursor on the same line.
         const sameLineSuffix = suffix.slice(0, suffix.indexOf('\n'))
 
-        const multilineMode = detectMultilineMode(
+        const multiline = detectMultiline(
             prefix,
             prevNonEmptyLine,
             sameLinePrefix,
@@ -198,30 +198,14 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
             // again
             const cachedCompletions = this.completionsCache?.get(prefix, false)
             if (cachedCompletions?.isExactPrefix) {
-                return handleCacheHit(
-                    cachedCompletions,
-                    document,
-                    position,
-                    prefix,
-                    suffix,
-                    multilineMode !== null,
-                    languageId
-                )
+                return handleCacheHit(cachedCompletions, document, position, prefix, suffix, multiline, languageId)
             }
             return []
         }
 
         const cachedCompletions = this.completionsCache?.get(prefix)
         if (cachedCompletions) {
-            return handleCacheHit(
-                cachedCompletions,
-                document,
-                position,
-                prefix,
-                suffix,
-                multilineMode !== null,
-                languageId
-            )
+            return handleCacheHit(cachedCompletions, document, position, prefix, suffix, multiline, languageId)
         }
 
         const completers: Provider[] = []
@@ -265,14 +249,14 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
             suffixPercentage: this.suffixPercentage,
         }
 
-        if (multilineMode === 'block') {
+        if (multiline) {
             timeout = 100
             completers.push(
                 this.providerConfig.create({
                     id: 'multiline',
                     ...sharedProviderOptions,
                     n: 3, // 3 vs. 1 does not meaningfully affect perf
-                    multilineMode,
+                    multiline: true,
                 })
             )
         } else {
@@ -288,7 +272,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
                     id: 'single-line-suffix',
                     ...sharedProviderOptions,
                     n: 1, // 1 vs. 3 improves perf
-                    multilineMode: null,
+                    multiline: false,
                 })
             )
         }
@@ -319,7 +303,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
 
         const logId = CompletionLogger.start({
             type: 'inline',
-            multilineMode,
+            multiline,
             providerIdentifier: this.providerConfig.identifier,
             languageId,
             contextSummary,
@@ -348,7 +332,11 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
             similarCode,
             abortController.signal
         )
-        const results = processCompletions(completions, prefix, suffix, multilineMode !== null, languageId)
+
+        // Shared post-processing logic
+        const results = completions.map(completion =>
+            sharedPostProcess({ prefix, suffix, multiline, languageId, completion })
+        )
 
         stopLoading()
 
