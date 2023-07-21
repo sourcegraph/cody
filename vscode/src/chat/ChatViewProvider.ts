@@ -393,6 +393,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
 
         let textConsumed = 0
 
+        console.log('Sending messages', promptMessages)
         this.cancelCompletionCallback = this.chat.chat(promptMessages, {
             onChange: text => {
                 // TODO(dpc): The multiplexer can handle incremental text. Change chat to provide incremental text.

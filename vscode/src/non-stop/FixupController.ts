@@ -295,6 +295,11 @@ export class FixupController
         }
     }
 
+    public async formatText(text: string, task: FixupTask): Promise<string> {
+        const result = await vscode.commands.executeCommand('editor.action.formatDocument', task.fixupFile.uri, task.selectionRange)
+        return result as string
+    }
+
     public async didReceiveFixupText(id: string, text: string, state: 'streaming' | 'complete'): Promise<void> {
         const task = this.tasks.get(id)
         if (!task) {
@@ -313,6 +318,8 @@ export class FixupController
                 break
             case 'complete':
                 task.inProgressReplacement = undefined
+                const formattedText = await this.formatText(text, task)
+                console.log('got formatted text', formattedText);
                 task.replacement = text
                 this.setTaskState(task, CodyTaskState.ready)
                 break
