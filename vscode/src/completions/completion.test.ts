@@ -249,21 +249,7 @@ describe('Cody completions', () => {
         expect(completions[0].insertText).toBe("'bar'")
     })
 
-    it('completes up to two lines in single line mode', async () => {
-        const { completions } = await complete(
-            `
-        function test() {
-            console.log(1);
-            ${CURSOR_MARKER}
-        }
-        `,
-            [createCompletionResponse('console.log(2);\n    console.log(3);\n    console.log(4);')]
-        )
-
-        expect(completions[0].insertText).toBe('console.log(2);\n    console.log(3);')
-    })
-
-    it('only complete one line if the second line is indented in single line mode', async () => {
+    it('only complete one line in single line mode', async () => {
         const { completions } = await complete(
             `
         function test() {
