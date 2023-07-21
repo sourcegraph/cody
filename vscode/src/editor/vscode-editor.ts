@@ -54,7 +54,7 @@ export class VSCodeEditor implements Editor {
 
     private getActiveTextEditorInstance(): vscode.TextEditor | null {
         const activeEditor = vscode.window.activeTextEditor
-        return activeEditor && activeEditor.document.uri.scheme === 'file' ? activeEditor : null
+        return activeEditor ?? null
     }
 
     public getActiveTextEditorSelection(): ActiveTextEditorSelection | null {
