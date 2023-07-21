@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { vsCodeMocks } from '../testutils/mocks'
 
@@ -40,7 +40,7 @@ function createProvider(prefix: string) {
         suffix: '',
         fileName: '',
         languageId: 'typescript',
-        multilineMode: null,
+        multiline: false,
         responsePercentage: 0,
         prefixPercentage: 0,
         suffixPercentage: 0,
