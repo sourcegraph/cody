@@ -3,14 +3,14 @@ import { LRUCache } from 'lru-cache'
 import { Completion } from '.'
 import { trimEndOnLastLineIfWhitespaceOnly } from './text-processing'
 
-interface CachedCompletion {
+export interface CachedCompletions {
     logId: string
     isExactPrefix: boolean
     completions: Completion[]
 }
 
 export class CompletionsCache {
-    private cache = new LRUCache<string, CachedCompletion>({
+    private cache = new LRUCache<string, CachedCompletions>({
         max: 500, // Maximum input prefixes in the cache.
     })
 
@@ -22,7 +22,7 @@ export class CompletionsCache {
     // account. We need to add additional information like file path or suffix
     // to make sure the cache does not return undesired results for other files
     // in the same project.
-    public get(prefix: string, trim: boolean = true): CachedCompletion | undefined {
+    public get(prefix: string, trim: boolean = true): CachedCompletions | undefined {
         const trimmedPrefix = trim ? trimEndOnLastLineIfWhitespaceOnly(prefix) : prefix
         const result = this.cache.get(trimmedPrefix)
 
@@ -84,7 +84,7 @@ export class CompletionsCache {
             existingCompletions = this.cache.get(key)!.completions
         }
 
-        const cachedCompletion: CachedCompletion = {
+        const cachedCompletion: CachedCompletions = {
             logId,
             isExactPrefix,
             completions: existingCompletions.concat(completion),

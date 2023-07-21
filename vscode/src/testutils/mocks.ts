@@ -164,7 +164,16 @@ export const vsCodeMocks = {
     },
     workspace: {
         getConfiguration() {
-            return undefined
+            return {
+                get(key: string) {
+                    switch (key) {
+                        case 'cody.debug.filter':
+                            return '.*'
+                        default:
+                            return ''
+                    }
+                },
+            }
         },
         openTextDocument: (uri: string) => ({
             getText: () => 'foo\nbar\nfoo',

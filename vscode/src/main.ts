@@ -10,6 +10,7 @@ import { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/s
 import { ChatViewProvider } from './chat/ChatViewProvider'
 import { CODY_FEEDBACK_URL } from './chat/protocol'
 import { CodyCompletionItemProvider } from './completions'
+import { CompletionsCache } from './completions/cache'
 import { CompletionsDocumentProvider } from './completions/docprovider'
 import { History } from './completions/history'
 import * as CompletionsLogger from './completions/logger'
@@ -367,7 +368,7 @@ function createCompletionsProvider(
         history,
         statusBar,
         codebaseContext,
-        isCompletionsCacheEnabled: config.autocompleteAdvancedCache,
+        cache: config.autocompleteAdvancedCache ? new CompletionsCache() : undefined,
         isEmbeddingsContextEnabled: config.autocompleteAdvancedEmbeddings,
         triggerMoreEagerly: config.autocompleteExperimentalTriggerMoreEagerly,
         completeSuggestWidgetSelection: config.autocompleteExperimentalCompleteSuggestWidgetSelection,
