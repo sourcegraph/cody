@@ -89,7 +89,11 @@ function longestCommonPrefix(s: string, t: string): string {
  * user query.
  */
 export class LocalKeywordContextFetcher implements KeywordContextFetcher {
-    constructor(private rgPath: string, private editor: Editor, private chatClient: ChatClient) {}
+    constructor(
+        private rgPath: string,
+        private editor: Editor,
+        private chatClient: ChatClient
+    ) {}
 
     /**
      * Returns pieces of context relevant for the given query. Uses a keyword-search-based
