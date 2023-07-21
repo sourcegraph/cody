@@ -17,8 +17,7 @@
     "webpack.config.js",
     "package.json",
     ".storybook/*.ts",
-    "test/completions/completions-dataset.ts",
   ],
-  "exclude": ["scripts", "dist", "test/integration"],
+  "exclude": ["scripts", "dist", "test/integration", "test/completions"],
   "references": [{ "path": "../lib/shared" }, { "path": "../lib/ui" }],
 }
