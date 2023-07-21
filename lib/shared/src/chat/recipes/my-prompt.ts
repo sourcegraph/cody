@@ -164,9 +164,9 @@ export class MyPrompt implements Recipe {
             // remove workspace root path from fileName
             const fileContent = await vscode.workspace.openTextDocument(doc.uri)
             const fileName = vscode.workspace.asRelativePath(doc.uri.fsPath)
-            const truncatedContent = truncateText(JSON.stringify(fileContent.getText()), MAX_CURRENT_FILE_TOKENS)
+            const truncatedContent = truncateText(fileContent.getText(), MAX_CURRENT_FILE_TOKENS)
             const docAsMessage = getContextMessageWithResponse(
-                populateCurrentEditorContextTemplate(truncatedContent, fileName),
+                populateCurrentEditorContextTemplate(toJSON(truncatedContent), fileName),
                 { fileName }
             )
             contextMessages.push(...docAsMessage)
@@ -189,8 +189,8 @@ export class MyPrompt implements Recipe {
         const fileName = vscode.workspace.asRelativePath(filePath)
         try {
             const content = await vscode.workspace.fs.readFile(fileUri)
-            const truncatedContent = truncateText(JSON.stringify(content), MAX_CURRENT_FILE_TOKENS)
-            return getContextMessageWithResponse(populateCodeContextTemplate(truncatedContent, fileName), {
+            const truncatedContent = truncateText(content.toString(), MAX_CURRENT_FILE_TOKENS)
+            return getContextMessageWithResponse(populateCodeContextTemplate(toJSON(truncatedContent), fileName), {
                 fileName,
             })
         } catch (error) {
@@ -255,9 +255,9 @@ async function populateVscodeDirContextMessage(
         }
         try {
             const fileContent = await vscode.workspace.openTextDocument(fileUri)
-            const truncatedContent = truncateText(JSON.stringify(fileContent.getText()), MAX_CURRENT_FILE_TOKENS)
+            const truncatedContent = truncateText(fileContent.getText(), MAX_CURRENT_FILE_TOKENS)
             const contextMessage = getContextMessageWithResponse(
-                populateCurrentEditorContextTemplate(truncatedContent, fileName),
+                populateCurrentEditorContextTemplate(toJSON(truncatedContent), fileName),
                 { fileName }
             )
             contextMessages.push(...contextMessage)
@@ -266,4 +266,11 @@ async function populateVscodeDirContextMessage(
         }
     }
     return contextMessages
+}
+
+// Clean up the string to be used as value in JSON format
+// Escape double quotes and backslashes and forward slashes
+function toJSON(context: string): string {
+    const escaped = context.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\//g, '\\/')
+    return JSON.stringify(escaped)
 }
