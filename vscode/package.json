@@ -435,8 +435,8 @@
         "command": "cody.customRecipes.list",
         "category": "Cody",
         "title": "Custom Recipes",
-        "when": "cody.activated && editorFocus",
-        "enablement": "config.cody.experimental.customRecipes && editorFocus",
+        "when": "cody.activated",
+        "enablement": "config.cody.experimental.customRecipes",
         "icon": "$(bookmark)"
       }
     ],
@@ -571,6 +571,10 @@
         {
           "command": "cody.guardrails.debug",
           "when": "config.cody.experimental.guardrails && editorHasSelection"
+        },
+        {
+          "command": "cody.customRecipes.list",
+          "when": "cody.activated && config.cody.experimental.customRecipes"
         }
       ],
       "editor/context": [
@@ -626,7 +630,11 @@
         },
         {
           "command": "cody.guardrails.debug",
-          "when": "config.cody.experimental.guardrails && editorHasSelection"
+          "when": "cody.activated && config.cody.experimental.guardrails && editorHasSelection"
+        },
+        {
+          "command": "cody.customRecipes.list",
+          "when": "cody.activated && config.cody.experimental.customRecipes"
         }
       ],
       "view/title": [

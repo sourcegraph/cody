@@ -21,7 +21,7 @@
       "context": {
         "excludeSelection": true
       },
-      "note": "You must have git installed and authenticated to use this recipe"
+      "info": "You must have git installed and authenticated to use this recipe"
     },
     "Debug last error from Cody app": {
       "prompt": "Tell me about the most recent error in log and how I can resolve it.",
@@ -30,7 +30,7 @@
       "context": {
         "excludeSelection": true
       },
-      "note": "You must have Cody app installed to use this recipe"
+      "info": "You must have Cody app installed to use this recipe"
     },
     "Generate Multiple Unit Tests": {
       "prompt": "Generate 2 or more unit tests for the selected code. Provide me with full, workable unit tests. You may import common libraries like the language's built-in test framework. If there are existing test files in the directory, try to follow similar patterns and imports used in those files. If there are no test files, use common best practices for unit testing this language.",
@@ -38,7 +38,7 @@
         "currentDir": true,
         "currentFile": true
       },
-      "note": "Works best if there are other test files in the current directory"
+      "info": "Works best if there are other test files in the current directory"
     },
     "Compare Files in Opened Tabs": {
       "prompt": "Compare the code from opened tabs and explain their relationships.",
@@ -46,7 +46,7 @@
         "openTabs": true,
         "excludeSelection": true
       },
-      "description": "This recipe lets Cody analyze code from open tabs to provide insights on how they relate to each other."
+      "info": "This recipe lets Cody analyze code from open tabs to provide insights on how they relate to each other."
     }
   }
 }

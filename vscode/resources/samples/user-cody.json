@@ -21,7 +21,7 @@
         "openTabs": true,
         "excludeSelection": true
       },
-      "description": "This recipe lets Cody analyze code from open tabs to provide insights on how they relate to each other."
+      "info": "This recipe lets Cody analyze code from open tabs to provide insights on how they relate to each other."
     }
   }
 }

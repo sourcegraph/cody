@@ -9,23 +9,27 @@ export type answerType = 'add' | 'file' | 'delete' | 'list' | 'open' | 'cancel'
 
 export async function showCustomRecipeMenu(): Promise<answerType | void> {
     const options = [
-        'Create New User Recipe',
-        'Current Recipes List',
-        'Generate Recipes Config File',
-        'Delete Recipes Config File',
-        'Open Recipes Config File',
-        'Cancel',
+        { kind: -1, label: 'recipes manager', id: 'seperator' },
+        { kind: 0, label: 'Create New User Recipe', id: 'add' },
+        { kind: 0, label: 'My Custom Recipes', id: 'list' },
+        { kind: -1, label: '.vscode/cody.json', id: 'seperator' },
+        { kind: 0, label: 'Generate Recipes Config File', id: 'file' },
+        { kind: 0, label: 'Delete Recipes Config File', id: 'delete' },
+        { kind: 0, label: 'Open Recipes Config File', id: 'open' },
     ]
-    const inputOptions = { title: 'Cody Custom Recipes - Menu', placeHolder: 'Select an option to continue...' }
+    const inputOptions = {
+        title: 'Cody Custom Recipes Main Menu',
+        placeHolder: 'Select an option to continue or ESC to cancel',
+    }
     const selectedOption = await vscode.window.showQuickPick(options, inputOptions)
     if (!selectedOption) {
         return
     }
-    switch (selectedOption) {
+    switch (selectedOption.label) {
         case 'Create New User Recipe': {
             return 'add'
         }
-        case 'Current Recipes List': {
+        case 'My Custom Recipes': {
             return 'list'
         }
         case 'Open Recipes Config File': {

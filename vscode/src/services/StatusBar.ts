@@ -86,9 +86,9 @@ export function createStatusBar(): CodyStatusBar {
                     'cody.experimental.customRecipes',
                     c => c.experimentalCustomRecipes
                 ),
-                { label: 'settings', kind: vscode.QuickPickItemKind.Separator },
+                { label: 'extension settings', kind: vscode.QuickPickItemKind.Separator },
                 {
-                    label: '$(gear) Cody Settings',
+                    label: '$(gear) Cody Extension Settings',
                     async onSelect(): Promise<void> {
                         await vscode.commands.executeCommand('cody.settings.extension')
                     },
@@ -97,6 +97,7 @@ export function createStatusBar(): CodyStatusBar {
                 ...FeedbackOptionItems,
             ],
             {
+                title: 'Cody Settings Menu',
                 placeHolder: 'Select an option',
                 matchOnDescription: true,
             }

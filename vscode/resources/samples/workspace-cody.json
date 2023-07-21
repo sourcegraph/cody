@@ -16,7 +16,7 @@
       "context": {
         "excludeSelection": true
       },
-      "note": "You must have git installed and authenticated to use this recipe"
+      "info": "You must have git installed and authenticated to use this recipe"
     }
   }
 }

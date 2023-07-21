@@ -236,18 +236,7 @@ export class MyPromptController {
             }
             await this.fileTypeActions(selected, fileType)
         } else if (selected === 'add') {
-            // Get the prompt name and prompt description from the user using the input box
-            const promptName = await showPromptNameInput(this.myPromptStore)
-            if (!promptName) {
-                return
-            }
-            const newPrompt = await createNewPrompt(promptName)
-            if (!newPrompt) {
-                return
-            }
-            // Save the prompt to the current Map and Extension storage
-            this.myPromptStore.set(promptName, newPrompt)
-            await this.save(promptName, newPrompt)
+            await this.addUserRecipeQuick()
         } else if (selected === 'list') {
             await this.quickRecipe()
         }
@@ -260,19 +249,42 @@ export class MyPromptController {
             detail: this.myPromptStore.get(prompt)?.prompt,
             label: prompt,
         }))
+        const seperator = { kind: -1, label: 'action', detail: '' }
+        const addOption = { label: 'Create a New User Recipe', detail: '' }
+        promptItems.push(seperator, addOption)
         // Show the list of prompts to the user using a quick pick
-        const options = { title: 'Current Recipes List', placeHolder: 'Select a recipe to run' }
+        const options = { title: 'My Custom Recipes', placeHolder: 'Select a recipe to run...' }
         const selectedPrompt = await vscode.window.showQuickPick(promptItems, options)
         if (!selectedPrompt) {
             return
         }
         // Find the prompt based on the selected prompt name
         const promptTitle = selectedPrompt.label
+        if (promptTitle === addOption.label) {
+            await this.addUserRecipeQuick()
+            return
+        }
         if (!promptTitle) {
             return
         }
         // Run the prompt
         await vscode.commands.executeCommand('cody.customRecipes.exec', promptTitle)
+    }
+
+    // Get the prompt name and prompt description from the user using the input box
+    // Add new recipe to user's .vscode/cody.json file
+    private async addUserRecipeQuick(): Promise<void> {
+        const promptName = await showPromptNameInput(this.myPromptStore)
+        if (!promptName) {
+            return
+        }
+        const newPrompt = await createNewPrompt(promptName)
+        if (!newPrompt) {
+            return
+        }
+        // Save the prompt to the current Map and Extension storage
+        this.myPromptStore.set(promptName, newPrompt)
+        await this.save(promptName, newPrompt)
     }
 
     private async fileTypeActions(action: string, fileType: CodyPromptType): Promise<void> {
