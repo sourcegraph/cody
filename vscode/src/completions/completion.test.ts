@@ -786,6 +786,48 @@ describe('Cody completions', () => {
             expect(completions.length).toBe(0)
         })
 
+        // We don't support smart completion cut base on multi line suffix yet
+        it.fails('multiline completion duplicate', async () => {
+            const { completions } = await complete(
+                `
+                    function bubbleSort() {
+                      ${CURSOR_MARKER}
+                        do {
+                          swapped = false;
+                            for (let i = 0; i < array.length - 1; i++) {
+                                if (array[i] > array[i + 1]) {
+                                    let temp = array[i];
+                                    array[i] = array[i + 1];
+                                    array[i + 1] = temp;
+                                    swapped = true;
+                                }
+                            }
+                       } while (swapped);
+                    }
+                `,
+                [
+                    createCompletionResponse(`
+                      let swapped;
+                        do {
+                          swapped = false;
+                            for (let i = 0; i < array.length - 1; i++) {
+                                if (array[i] > array[i + 1]) {
+                                    let temp = array[i];
+                                    array[i] = array[i + 1];
+                                    array[i + 1] = temp;
+                                    swapped = true;
+                                }
+                          }
+                     } while (swapped);
+                    `),
+                ]
+            )
+
+            expect(completions[0].insertText).toMatchInlineSnapshot(`
+                      "let swapped;"
+            `)
+        })
+
         describe('stops when the next non-empty line of the suffix matches partially', () => {
             it('simple example', async () => {
                 const { completions } = await complete(
@@ -914,7 +956,7 @@ describe('Cody completions', () => {
                 ]
             )
 
-            expect(completions[0].insertText).toBe("console.log('one')")
+            expect(completions.length).toBe(0)
         })
 
         it('normalizes Cody responses starting with an empty line and following the exact same indentation as the start line', async () => {
