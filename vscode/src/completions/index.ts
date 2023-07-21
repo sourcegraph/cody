@@ -334,15 +334,12 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
         )
 
         // Shared post-processing logic
-        const results = completions.map(completion =>
-            sharedPostProcess({ prefix, suffix, multiline, languageId, completion })
-        )
-
+        const processedCompletions = processCompletions(completions, prefix, suffix, multiline, languageId)
         stopLoading()
 
-        if (results.length > 0) {
+        if (processedCompletions.length > 0) {
             CompletionLogger.suggest(logId)
-            return toInlineCompletionItems(logId, document, position, results)
+            return toInlineCompletionItems(logId, document, position, processedCompletions)
         }
 
         CompletionLogger.noResponse(logId)
