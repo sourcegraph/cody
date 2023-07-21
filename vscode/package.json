@@ -8,7 +8,7 @@
   "icon": "resources/cody.png",
   "description": "Code AI with codebase context",
   "scripts": {
-    "dev:instance": "CODY_FOCUS_ON_STARTUP=1 NODE_ENV=development code --extensionDevelopmentPath=\"$INIT_CWD/vscode\" --disable-extension=sourcegraph.cody-ai --disable-extension=github.copilot --disable-extension=github.copilot-nightly --inspect-extensions=9333 . --goto ./src/logged-rerank.ts:16:5",
+    "dev:instance": "CODY_FOCUS_ON_STARTUP=1 NODE_ENV=development code --extensionDevelopmentPath=$PWD --disable-extension=sourcegraph.cody-ai --disable-extension=github.copilot --disable-extension=github.copilot-nightly --inspect-extensions=9333 --new-window . --goto ./src/logged-rerank.ts:16:5",
     "dev": "pnpm run build:dev && pnpm run dev:instance",
     "generate:completions": "OUTFILE=/tmp/run-code-completions-on-dataset.js && esbuild ./test/completions/run-code-completions-on-dataset.ts --bundle --external:vscode --outfile=$OUTFILE --format=cjs --platform=node --sourcemap=inline && node --enable-source-maps $OUTFILE",
     "build": "scripts/download-rg.sh && tsc --build && pnpm run esbuild --minify && vite build --mode production",
@@ -309,11 +309,6 @@
         "title": "Switch Account…"
       },
       {
-        "command": "cody.manual-completions",
-        "category": "Cody",
-        "title": "Open Autocomplete Panel (Experimental)"
-      },
-      {
         "command": "cody.settings.extension",
         "category": "Cody",
         "title": "Extension Settings",
@@ -558,10 +553,6 @@
         {
           "command": "cody.fixup.open",
           "when": "false"
-        },
-        {
-          "command": "cody.manual-completions",
-          "when": "config.cody.autocomplete"
         },
         {
           "command": "cody.guardrails.debug",

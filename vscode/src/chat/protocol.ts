@@ -23,7 +23,12 @@ export type WebviewMessage =
     | { command: 'openFile'; filePath: string }
     | { command: 'edit'; text: string }
     | { command: 'insert'; text: string }
-    | { command: 'auth'; type: 'signin' | 'signout' | 'support' | 'app' | 'callback'; endpoint?: string }
+    | {
+          command: 'auth'
+          type: 'signin' | 'signout' | 'support' | 'app' | 'callback'
+          endpoint?: string
+          value?: string
+      }
     | { command: 'abort' }
     | { command: 'chat-button'; action: string }
     | { command: 'setEnabledPlugins'; plugins: string[] }

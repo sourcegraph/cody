@@ -38,7 +38,7 @@ export interface ProviderOptions {
     suffix: string
     fileName: string
     languageId: string
-    multilineMode: null | 'block'
+    multiline: boolean
     // Relative length to `maximumContextCharacters`
     responsePercentage: number
     prefixPercentage: number
@@ -53,7 +53,7 @@ export abstract class Provider {
     protected suffix: string
     protected fileName: string
     protected languageId: string
-    protected multilineMode: null | 'block'
+    protected multiline: boolean
     protected responsePercentage: number
     protected prefixPercentage: number
     protected suffixPercentage: number
@@ -65,7 +65,7 @@ export abstract class Provider {
         suffix,
         fileName,
         languageId,
-        multilineMode,
+        multiline,
         responsePercentage,
         prefixPercentage,
         suffixPercentage,
@@ -76,7 +76,7 @@ export abstract class Provider {
         this.suffix = suffix
         this.fileName = fileName
         this.languageId = languageId
-        this.multilineMode = multilineMode
+        this.multiline = multiline
         this.responsePercentage = responsePercentage
         this.prefixPercentage = prefixPercentage
         this.suffixPercentage = suffixPercentage

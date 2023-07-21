@@ -1,56 +1,34 @@
 import * as vscode from 'vscode'
 
 import { Preamble } from '@sourcegraph/cody-shared/src/chat/preamble'
-import { CodyPromptContext, defaultCodyPromptContext } from '@sourcegraph/cody-shared/src/chat/recipes/my-prompt'
-import { newPromptMixin, PromptMixin } from '@sourcegraph/cody-shared/src/prompt/prompt-mixin'
+import { defaultCodyPromptContext } from '@sourcegraph/cody-shared/src/chat/recipes/my-prompt'
 
 import { isInternalUser } from '../chat/protocol'
 
-import { createFileWatch, createJSONFile, createNewPrompt, prompt_creation_title, saveJSONFile } from './helper'
+import { CustomRecipesBuilder } from './CustomRecipesBuilder'
+import { constructFileUri, createFileWatch, createJSONFile, deleteFile, saveJSONFile } from './helper'
+import {
+    createNewPrompt,
+    showCustomRecipeMenu,
+    showPromptNameInput,
+    showRecipeTypeQuickPick,
+    showRemoveConfirmationInput,
+} from './InputMenu'
 import { MyToolsProvider } from './MyToolsProvider'
+import { CodyPrompt, CodyPromptType, MyPrompts } from './types'
 
-interface MyPromptsJSON {
-    // A set of reusable prompts where instructions and context can be configured.
-    recipes: { [id: string]: CodyPrompt }
-    // Premade are a set of prompts that are added to the start of every new conversation.
-    // This is where we define the "persona" and "rules" to share with LLM
-    premade?: CodyPromptPremade
-    // Starter is added to the start of every human input sent to Cody.
-    starter?: string
-}
-
-export interface CodyPrompt {
-    prompt: string
-    command?: string
-    args?: string[]
-    context?: CodyPromptContext
-    type?: CodyPromptType
-}
-
-interface CodyPromptPremade {
-    actions: string
-    rules: string
-    answer: string
-}
-
-type CodyPromptType = 'workspace' | 'user'
-
-interface MyPrompts {
-    prompts: Map<string, CodyPrompt>
-    premade?: Preamble
-    starter: string
-}
-
-const MY_CODY_PROMPTS_KEY = 'my-cody-prompts'
-
-// NOTE: Dogfooding - Internal s2 users only
+/**
+ * Utilizes CustomRecipesBuilder to get the built prompt data
+ * Provides additional prompt management and execution logic
+ * NOTE: Dogfooding - Internal s2 users only
+ */
 export class MyPromptController {
     private myPremade: Preamble | undefined = undefined
     private myStarter = ''
     private myPromptStore = new Map<string, CodyPrompt>()
 
     private tools: MyToolsProvider
-    private builder: MyRecipesBuilder
+    private builder: CustomRecipesBuilder
 
     private myPromptInProgress: CodyPrompt | null = null
     private promptInProgress: string | null = null
@@ -68,12 +46,11 @@ export class MyPromptController {
 
         this.tools = new MyToolsProvider(context)
         const user = this.tools.getUserInfo()
-        this.builder = new MyRecipesBuilder(user?.workspaceRoot, user.homeDir)
+        this.builder = new CustomRecipesBuilder(user?.workspaceRoot, user.homeDir)
         // Create file watchers for cody.json files used for building custom recipes
         if (this.dev) {
             this.wsFileWatcher = createFileWatch(user?.workspaceRoot)
             this.userFileWatcher = createFileWatch(user?.homeDir)
-            void this.context.globalState.update(MY_CODY_PROMPTS_KEY, null)
         }
         this.refresh().catch(error => console.error(error))
     }
@@ -85,15 +62,24 @@ export class MyPromptController {
 
     // getter for the promptInProgress
     public get(type?: string): string | null {
-        if (type === 'context') {
-            const contextConfig = this.myPromptInProgress?.context || { ...defaultCodyPromptContext }
-            return JSON.stringify(contextConfig)
+        switch (type) {
+            case 'context':
+                return JSON.stringify(this.myPromptInProgress?.context || { ...defaultCodyPromptContext })
+            case 'codebase':
+                return this.myPromptInProgress?.context?.codebase ? 'codebase' : null
+            default:
+                // return the terminal output from the last command run
+                return this.getCommandOutput()
         }
-        if (type === 'codebase') {
-            return this.myPromptInProgress?.context?.codebase ? 'codebase' : null
+    }
+
+    // Open workspace file in editor
+    public async open(filePath: string): Promise<void> {
+        if (filePath === 'user' || filePath === 'workspace') {
+            return this.tools.openFile(this.builder.jsonFileUris[filePath])
         }
-        // return the terminal output from the last command run
-        return this.getCommandOutput() || null
+        const fileUri = constructFileUri(filePath, this.tools.getUserInfo()?.workspaceRoot)
+        return vscode.commands.executeCommand('vscode.open', fileUri)
     }
 
     // Find the prompt based on the id
@@ -105,10 +91,13 @@ export class MyPromptController {
     }
 
     public run(command: string, args?: string[]): string | null {
+        if (!args || args.length === 0) {
+            return this.tools.runCommand(command)
+        }
         // Expand the ~ to the user's home directory
         const homeDir = this.tools.getUserInfo()?.homeDir + '/' || ''
         // Replace the ~/ with the home directory if arg starts with ~/
-        const filteredArgs = args?.map(arg => arg.replace(/^~\//, homeDir))
+        const filteredArgs = args.map(arg => arg.replace(/^~\//, homeDir))
         return this.tools.runCommand(command, filteredArgs)
     }
 
@@ -165,6 +154,7 @@ export class MyPromptController {
         }
         const isSaveMode = true
         await saveJSONFile(jsonString, rootDirPath, isSaveMode)
+        await this.refresh()
     }
 
     // Get the prompts from cody.json file then build the map of prompts
@@ -181,24 +171,20 @@ export class MyPromptController {
     }
 
     // Clear the user prompts from the extension storage
-    public async clear(): Promise<void> {
-        if (!this.builder.userPromptsSize) {
+    public async clear(type: CodyPromptType = 'user'): Promise<void> {
+        const isUserType = type === 'user'
+        // delete .vscode/cody.json for user recipe using the vs code api
+        const uri = isUserType ? this.builder.jsonFileUris.user : this.builder.jsonFileUris.workspace
+        if (this.builder.promptSize[type] === 0 || !uri) {
             void vscode.window.showInformationMessage(
-                'No User Recipes to remove. If you want to remove Workspace Recipes, please remove the .vscode/cody.json file from your repository.'
+                'Recipes file not found. Try removing the .vscode/cody.json file in your repository or home directory for User Recipes manually.'
             )
         }
-        await this.deleteUserJSONFile()
+        await deleteFile(uri)
+        await this.refresh()
     }
 
-    private async deleteUserJSONFile(): Promise<void> {
-        // delete .vscode/cody.json for user recipe using the vs code api
-        const homeDir = this.tools.getUserInfo()?.homeDir
-        const userJSONFilePath = homeDir + '/.vscode/cody.json'
-        const userJSONFileUri = vscode.Uri.file(userJSONFilePath)
-        await vscode.workspace.fs.delete(userJSONFileUri)
-    }
-
-    public async addJSONFile(type: string): Promise<void> {
+    public async addJSONFile(type: CodyPromptType): Promise<void> {
         const extensionPath = this.context.extensionPath
         const isUserType = type === 'user'
         const rootDirPath = isUserType ? this.tools.getUserInfo()?.homeDir : this.tools.getUserInfo()?.workspaceRoot
@@ -209,103 +195,50 @@ export class MyPromptController {
         await createJSONFile(extensionPath, rootDirPath, isUserType)
     }
 
-    // Add a new recipe via UI and save it to extension storage
-    public async add(): Promise<void> {
-        // Get the prompt name and prompt description from the user using the input box
-        const promptName = await vscode.window.showInputBox({
-            title: prompt_creation_title,
-            prompt: 'Enter an unique name for the new recipe.',
-            placeHolder: 'e,g. Vulnerability Scanner',
-            validateInput: (input: string) => {
-                if (!input || input.split(' ').length < 2) {
-                    return 'Please enter a valid name for the recipe. A recipe name should be at least two words.'
-                }
-                if (this.myPromptStore.has(input)) {
-                    return 'A recipe with the same name already exists. Please enter a different name.'
-                }
-                return
-            },
-        })
-        const newPrompt = await createNewPrompt(promptName)
-        if (!promptName || !newPrompt) {
+    // Menu with an option to add a new recipe via UI and save it to user's cody.json file
+    public async menu(): Promise<void> {
+        const selected = await showCustomRecipeMenu()
+        if (!selected) {
             return
         }
-        // Save the prompt to the current Map and Extension storage
-        this.myPromptStore.set(promptName, newPrompt)
-        await this.save(promptName, newPrompt)
-    }
-}
-
-class MyRecipesBuilder {
-    public myPremade: Preamble | undefined = undefined
-    public myPromptsMap = new Map<string, CodyPrompt>()
-    public myStarter = ''
-    public idSet = new Set<string>()
-
-    public userPromptsJSON: MyPromptsJSON | null = null
-    public userPromptsSize = 0
-
-    public codebase: string | null = null
-
-    constructor(private workspaceRoot?: string, private homeDir?: string) {}
-
-    public async get(): Promise<MyPrompts> {
-        // reset map and set
-        this.myPromptsMap = new Map<string, CodyPrompt>()
-        this.idSet = new Set<string>()
-        // user prompts
-        if (this.homeDir) {
-            const userPrompts = await this.getPromptsFromFileSystem(this.homeDir)
-            const userPromptsMap = this.build(userPrompts, 'user')
-            this.userPromptsSize = userPromptsMap?.size || 0
-        }
-        // workspace prompts
-        if (this.workspaceRoot) {
-            const wsPrompts = await this.getPromptsFromFileSystem(this.workspaceRoot)
-            this.build(wsPrompts, 'workspace')
-        }
-        return { prompts: this.myPromptsMap, premade: this.myPremade, starter: this.myStarter }
-    }
-
-    public getIDs(): string[] {
-        return [...this.idSet]
-    }
-
-    public build(content: string | null, type: CodyPromptType): Map<string, CodyPrompt> | null {
-        if (!content) {
-            return null
-        }
-        const json = JSON.parse(content) as MyPromptsJSON
-        const prompts = json.recipes
-        for (const key in prompts) {
-            if (Object.prototype.hasOwnProperty.call(prompts, key)) {
-                const prompt = prompts[key]
-                prompt.type = type
-                this.myPromptsMap.set(key, prompt)
-                this.idSet.add(key)
+        if (selected === 'delete' || selected === 'file' || selected === 'open') {
+            const fileType = await showRecipeTypeQuickPick(selected, this.builder.promptSize)
+            if (!fileType) {
+                return
             }
+            await this.fileTypeActions(selected, fileType)
+        } else if (selected === 'add') {
+            // Get the prompt name and prompt description from the user using the input box
+            const promptName = await showPromptNameInput(this.myPromptStore)
+            if (!promptName) {
+                return
+            }
+            const newPrompt = await createNewPrompt(promptName)
+            if (!newPrompt) {
+                return
+            }
+            // Save the prompt to the current Map and Extension storage
+            this.myPromptStore.set(promptName, newPrompt)
+            await this.save(promptName, newPrompt)
         }
-        this.myPremade = json.premade
-        if (json.starter && json?.starter !== this.myStarter) {
-            PromptMixin.addCustom(newPromptMixin(json.starter))
-            this.myStarter = json.starter
-        }
-        if (type === 'user') {
-            this.userPromptsJSON = json
-        }
-        return this.myPromptsMap
     }
 
-    private async getPromptsFromFileSystem(rootPath: string): Promise<string | null> {
-        const rootUri = vscode.Uri.parse(rootPath)
-        const codyJsonFilePath = vscode.Uri.joinPath(rootUri, '.vscode/cody.json')
-        try {
-            const filePath = vscode.Uri.file(codyJsonFilePath.fsPath)
-            const bytes = await vscode.workspace.fs.readFile(filePath)
-            const decoded = new TextDecoder('utf-8').decode(bytes) || null
-            return decoded
-        } catch {
-            return null
+    private async fileTypeActions(action: string, fileType: CodyPromptType): Promise<void> {
+        if (action === 'delete') {
+            const confirmRemove = await showRemoveConfirmationInput()
+            if (confirmRemove !== 'Yes') {
+                return
+            }
+            await this.clear(fileType)
+            return
+        }
+        if (action === 'file') {
+            await this.addJSONFile(fileType)
+            return
+        }
+        if (action === 'open') {
+            await this.open(fileType)
+            return
         }
     }
 }

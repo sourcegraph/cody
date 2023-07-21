@@ -41,7 +41,14 @@ import { SecretStorage } from '../services/SecretStorageProvider'
 import { TestSupport } from '../test-support'
 
 import { fastFilesExist } from './fastFileFinder'
-import { ConfigurationSubsetForWebview, DOTCOM_URL, ExtensionMessage, LocalEnv, WebviewMessage } from './protocol'
+import {
+    ConfigurationSubsetForWebview,
+    DOTCOM_URL,
+    ExtensionMessage,
+    isLocalApp,
+    LocalEnv,
+    WebviewMessage,
+} from './protocol'
 import { getRecipe } from './recipes'
 import { convertGitCloneURLToCodebaseName } from './utils'
 
@@ -120,14 +127,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         this.disposables.push(this.configurationChangeEvent)
 
         this.currentWorkspaceRoot = ''
-
-        // listen for file change event for JSON files used for building Custom Recipes
-        const myWorkspacePromptsWatcher = this.editor.controllers?.prompt?.wsFileWatcher
-        const myUserPromptsWatcher = this.editor.controllers?.prompt?.userFileWatcher
-        myWorkspacePromptsWatcher?.onDidChange(() => this.sendMyPrompts())
-        myWorkspacePromptsWatcher?.onDidDelete(() => this.sendMyPrompts())
-        myUserPromptsWatcher?.onDidChange(() => this.sendMyPrompts())
-        myUserPromptsWatcher?.onDidDelete(() => this.sendMyPrompts())
+        this.customRecipesInit()
 
         // listen for vscode active editor change event
         this.disposables.push(
@@ -265,6 +265,8 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
             case 'auth':
                 if (message.type === 'app' && message.endpoint) {
                     await this.authProvider.appAuth(message.endpoint)
+                    // Log app button click events: e.g. app:download:clicked or app:connect:clicked
+                    this.sendEvent('click', message.value === 'download' ? 'app:download' : 'app:connect')
                     break
                 }
                 if (message.type === 'callback' && message.endpoint) {
@@ -453,19 +455,23 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         if (this.config.experimentalChatPredictions) {
             void this.runRecipeForSuggestion('next-questions', text)
         }
-        await this.executeChatCommands(text)
+        await this.executeChatCommands(text, 'chat-question')
     }
 
-    private async executeChatCommands(text: string): Promise<void> {
+    private async executeChatCommands(text: string, recipeID: RecipeID = 'chat-question'): Promise<void> {
         switch (true) {
-            case /^\/r(est)?/i.test(text):
+            case /^\/o(pen)?/i.test(text):
+                // open the user's ~/.vscode/cody.json file
+                await this.editor.controllers.prompt.open(text.split(' ')[1])
+                break
+            case /^\/r(eset)?/i.test(text):
                 await this.clearAndRestartSession()
                 break
             case /^\/s(earch)?\s/i.test(text):
                 await this.executeRecipe('context-search', text)
                 break
             default:
-                return this.executeRecipe('chat-question', text)
+                return this.executeRecipe(recipeID, text)
         }
     }
 
@@ -734,14 +740,8 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
             return
         }
         // Create a new recipe
-        if (title === 'add') {
-            await this.editor.controllers.prompt.add()
-            await this.sendMyPrompts()
-            return
-        }
-        // Clear all recipes stored in user global storage
-        if (title === 'clear') {
-            await this.editor.controllers.prompt.clear()
+        if (title === 'menu') {
+            await this.editor.controllers.prompt.menu()
             await this.sendMyPrompts()
             return
         }
@@ -755,20 +755,27 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
             }
             return
         }
-        this.showTab('chat')
-        // Get prompt details from controller by title then execute
+        // Get prompt details from controller by title then execute prompt's command
         const prompt = this.editor.controllers.prompt.find(title)
+        this.editor.controllers.prompt.getCommandOutput()
         if (!prompt) {
-            void vscode.window.showErrorMessage(`Could not find prompt for the "${title}" recipe.`)
             debug('executeMyPrompt:noPrompt', title)
             return
         }
-        if (/^\/r(est)?/i.test(prompt)) {
-            this.editor.controllers.prompt.getCommandOutput()
-            await this.clearAndRestartSession()
-            return
+        if (!prompt.startsWith('/')) {
+            this.showTab('chat')
         }
-        await this.executeRecipe('my-prompt', prompt, true)
+        await this.executeChatCommands(prompt, 'my-prompt')
+    }
+
+    private customRecipesInit(): void {
+        // listen for file change event for JSON files used for building Custom Recipes
+        const myWorkspacePromptsWatcher = this.editor.controllers?.prompt?.wsFileWatcher
+        const myUserPromptsWatcher = this.editor.controllers?.prompt?.userFileWatcher
+        myWorkspacePromptsWatcher?.onDidChange(() => this.sendMyPrompts())
+        myWorkspacePromptsWatcher?.onDidDelete(() => this.sendMyPrompts())
+        myUserPromptsWatcher?.onDidChange(() => this.sendMyPrompts())
+        myUserPromptsWatcher?.onDidDelete(() => this.sendMyPrompts())
     }
 
     /**
@@ -819,6 +826,12 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         }
         await this.publishConfig()
         this.onConfigurationChange(newConfig)
+        // When logged out, user's endpoint will be set to null
+        const isLoggedOut = !authStatus.isLoggedIn && !authStatus.endpoint
+        const isAppEvent = isLocalApp(authStatus.endpoint || '') ? 'app:' : ''
+        const eventValue = isLoggedOut ? 'disconnected' : authStatus.isLoggedIn ? 'connected' : 'failed'
+        // e.g. auth:app:connected, auth:app:disconnected, auth:failed
+        this.sendEvent('auth', isAppEvent + eventValue)
     }
 
     /**

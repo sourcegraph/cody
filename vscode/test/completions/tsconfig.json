@@ -6,5 +6,6 @@
     "outDir": "../../dist/tsc/test/completions",
   },
   "references": [{ "path": "../../" }],
-  "include": ["*", "**/*"],
+  "include": ["*.ts"],
+  "exclude": [],
 }

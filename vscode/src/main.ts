@@ -10,10 +10,10 @@ import { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/s
 import { ChatViewProvider } from './chat/ChatViewProvider'
 import { CODY_FEEDBACK_URL } from './chat/protocol'
 import { CodyCompletionItemProvider } from './completions'
+import { CompletionsCache } from './completions/cache'
 import { CompletionsDocumentProvider } from './completions/docprovider'
 import { History } from './completions/history'
 import * as CompletionsLogger from './completions/logger'
-import { ManualCompletionService } from './completions/manual'
 import { createProviderConfig as createAnthropicProviderConfig } from './completions/providers/anthropic'
 import { ProviderConfig } from './completions/providers/provider'
 import { createProviderConfig as createUnstableCodeGenProviderConfig } from './completions/providers/unstable-codegen'
@@ -362,29 +362,19 @@ function createCompletionsProvider(
     disposables.push(vscode.workspace.registerTextDocumentContentProvider('cody', documentProvider))
 
     const history = new History()
-    const manualCompletionService = new ManualCompletionService(
-        webviewErrorMessenger,
-        completionsClient,
-        documentProvider,
-        history,
-        codebaseContext
-    )
     const providerConfig = createCompletionProviderConfig(config, webviewErrorMessenger, completionsClient)
     const completionsProvider = new CodyCompletionItemProvider({
         providerConfig,
         history,
         statusBar,
         codebaseContext,
-        isCompletionsCacheEnabled: config.autocompleteAdvancedCache,
+        cache: config.autocompleteAdvancedCache ? new CompletionsCache() : undefined,
         isEmbeddingsContextEnabled: config.autocompleteAdvancedEmbeddings,
         triggerMoreEagerly: config.autocompleteExperimentalTriggerMoreEagerly,
         completeSuggestWidgetSelection: config.autocompleteExperimentalCompleteSuggestWidgetSelection,
     })
 
     disposables.push(
-        vscode.commands.registerCommand('cody.manual-completions', async () => {
-            await manualCompletionService.fetchAndShowManualCompletions()
-        }),
         vscode.commands.registerCommand('cody.autocomplete.inline.accepted', ({ codyLogId, codyLines }) => {
             CompletionsLogger.accept(codyLogId, codyLines)
         }),
