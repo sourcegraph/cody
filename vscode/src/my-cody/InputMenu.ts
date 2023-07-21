@@ -5,23 +5,28 @@ import { defaultCodyPromptContext } from '@sourcegraph/cody-shared/src/chat/reci
 import { prompt_creation_title } from './helper'
 import { CodyPrompt, CodyPromptType } from './types'
 
-export type answerType = 'add' | 'file' | 'delete' | 'recipes' | 'open' | 'cancel'
+export type answerType = 'add' | 'file' | 'delete' | 'list' | 'open' | 'cancel'
 
 export async function showCustomRecipeMenu(): Promise<answerType | void> {
     const options = [
         'Create New User Recipe',
+        'Current Recipes List',
         'Generate Recipes Config File',
         'Delete Recipes Config File',
         'Open Recipes Config File',
         'Cancel',
     ]
-    const selectedOption = await vscode.window.showQuickPick(options)
+    const inputOptions = { title: 'Cody Custom Recipes - Menu', placeHolder: 'Select an option to continue...' }
+    const selectedOption = await vscode.window.showQuickPick(options, inputOptions)
     if (!selectedOption) {
         return
     }
     switch (selectedOption) {
         case 'Create New User Recipe': {
             return 'add'
+        }
+        case 'Current Recipes List': {
+            return 'list'
         }
         case 'Open Recipes Config File': {
             return 'open'
@@ -219,9 +224,10 @@ export async function showRecipeTypeQuickPick(
                 : 'No recipe files were found...'
         options.push(msg)
     }
-    const title = 'Select recipe type to continue...'
+    const title = 'Cody Custom Recipes - Recipe Type'
+    const placeHolder = 'Select recipe type to continue...'
     // Show quick pick menu
-    const recipeType = await vscode.window.showQuickPick(options, { title })
+    const recipeType = await vscode.window.showQuickPick(options, { title, placeHolder })
     if (recipeType !== 'user' && recipeType !== 'workspace') {
         return null
     }

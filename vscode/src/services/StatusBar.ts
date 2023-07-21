@@ -71,7 +71,6 @@ export function createStatusBar(): CodyStatusBar {
                     'cody.inlineChat.enabled',
                     c => c.inlineChat
                 ),
-
                 createFeatureToggle(
                     'Chat Suggestions',
                     'Experimental',
@@ -79,6 +78,13 @@ export function createStatusBar(): CodyStatusBar {
                     'cody.experimental.chatPredictions',
                     c => c.experimentalChatPredictions,
                     true
+                ),
+                createFeatureToggle(
+                    'Custom Recipes',
+                    'Experimental',
+                    'Enable creating custom recipes with reusable prompts and context',
+                    'cody.experimental.customRecipes',
+                    c => c.experimentalCustomRecipes
                 ),
                 { label: 'settings', kind: vscode.QuickPickItemKind.Separator },
                 {

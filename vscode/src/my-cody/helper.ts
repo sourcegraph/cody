@@ -60,7 +60,7 @@ export async function deleteFile(uri?: vscode.Uri): Promise<void> {
     await vscode.workspace.fs.delete(uri)
 }
 
-export const prompt_creation_title = 'Creating a new custom recipe...'
+export const prompt_creation_title = 'Cody Custom Recipes - New Recipe'
 
 export async function doesPathExist(filePath?: string): Promise<boolean> {
     try {

@@ -99,6 +99,16 @@ export class CustomRecipesBuilder {
             return null
         }
     }
+
+    public dispose(): void {
+        this.myPromptsMap = new Map<string, CodyPrompt>()
+        this.idSet = new Set<string>()
+        this.promptSize = { ...promptSizeInit }
+        this.myPremade = undefined
+        this.myStarter = ''
+        this.userPromptsJSON = null
+        this.codebase = null
+    }
 }
 
 const promptSizeInit = {

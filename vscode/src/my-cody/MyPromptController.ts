@@ -3,8 +3,6 @@ import * as vscode from 'vscode'
 import { Preamble } from '@sourcegraph/cody-shared/src/chat/preamble'
 import { defaultCodyPromptContext } from '@sourcegraph/cody-shared/src/chat/recipes/my-prompt'
 
-import { isInternalUser } from '../chat/protocol'
-
 import { CustomRecipesBuilder } from './CustomRecipesBuilder'
 import { constructFileUri, createFileWatch, createJSONFile, deleteFile, saveJSONFile } from './helper'
 import {
@@ -31,33 +29,53 @@ export class MyPromptController {
     private builder: CustomRecipesBuilder
 
     private myPromptInProgress: CodyPrompt | null = null
-    private promptInProgress: string | null = null
-    private dev = false
     public wsFileWatcher: vscode.FileSystemWatcher | null = null
     public userFileWatcher: vscode.FileSystemWatcher | null = null
 
     constructor(
         private debug: (filterLabel: string, text: string, ...args: unknown[]) => void,
         private context: vscode.ExtensionContext,
-        endpoint: string | null
+        private isEnabled: boolean
     ) {
-        this.debug('MyPromptsProvider', 'Initialized')
-        this.isDev(endpoint)
-
         this.tools = new MyToolsProvider(context)
         const user = this.tools.getUserInfo()
         this.builder = new CustomRecipesBuilder(user?.workspaceRoot, user.homeDir)
-        // Create file watchers for cody.json files used for building custom recipes
-        if (this.dev) {
-            this.wsFileWatcher = createFileWatch(user?.workspaceRoot)
-            this.userFileWatcher = createFileWatch(user?.homeDir)
-        }
-        this.refresh().catch(error => console.error(error))
+        // Toggle on Config Change
+        vscode.workspace.onDidChangeConfiguration(e => {
+            if (e.affectsConfiguration('cody')) {
+                this.checkIsConfigEnabled()
+            }
+        })
+        this.debug('MyPromptsProvider', 'Initialized')
     }
 
-    private isDev(uri: string | null): boolean {
-        this.dev = isInternalUser(uri || '')
-        return this.dev
+    // Create file watchers for cody.json files used for building custom recipes
+    private watcherInit(): void {
+        this.isEnabled = true
+        const user = this.tools.getUserInfo()
+        this.wsFileWatcher = createFileWatch(user?.workspaceRoot)
+        this.userFileWatcher = createFileWatch(user?.homeDir)
+    }
+
+    public dispose(): void {
+        this.isEnabled = false
+        this.myPromptInProgress = null
+        this.myPremade = undefined
+        this.myStarter = ''
+        this.myPromptStore = new Map<string, CodyPrompt>()
+        this.wsFileWatcher?.dispose()
+        this.userFileWatcher?.dispose()
+    }
+
+    private checkIsConfigEnabled(): void {
+        const config = vscode.workspace.getConfiguration('cody')
+        const newConfig = config.get('experimental.customRecipes') as boolean
+        if (newConfig && this.isEnabled) {
+            this.watcherInit()
+        }
+        if (!newConfig) {
+            this.dispose()
+        }
     }
 
     // getter for the promptInProgress
@@ -86,8 +104,7 @@ export class MyPromptController {
     public find(id: string): string {
         const myPrompt = this.myPromptStore.get(id)
         this.myPromptInProgress = myPrompt || null
-        this.promptInProgress = myPrompt?.prompt || ''
-        return this.promptInProgress
+        return myPrompt?.prompt || ''
     }
 
     public run(command: string, args?: string[]): string | null {
@@ -159,14 +176,13 @@ export class MyPromptController {
 
     // Get the prompts from cody.json file then build the map of prompts
     public async refresh(): Promise<void> {
-        // NOTE: Internal s2 users only
-        if (!this.dev) {
+        if (!this.isEnabled) {
             return
         }
-        const userJSON = await this.builder.get()
-        this.myPromptStore = userJSON.prompts
-        this.myPremade = userJSON.premade
-        this.myStarter = userJSON.starter
+        const { prompts, premade, starter } = await this.builder.get()
+        this.myPromptStore = prompts
+        this.myPremade = premade
+        this.myStarter = starter
         return
     }
 
@@ -220,7 +236,31 @@ export class MyPromptController {
             // Save the prompt to the current Map and Extension storage
             this.myPromptStore.set(promptName, newPrompt)
             await this.save(promptName, newPrompt)
+        } else if (selected === 'list') {
+            await this.quickRecipe()
         }
+    }
+
+    public async quickRecipe(): Promise<void> {
+        // Get the list of prompts from the cody.json file
+        const promptList = this.getPromptList()
+        const promptItems = promptList.map(prompt => ({
+            detail: this.myPromptStore.get(prompt)?.prompt,
+            label: prompt,
+        }))
+        // Show the list of prompts to the user using a quick pick
+        const options = { title: 'Current Recipes List', placeHolder: 'Select a recipe to run' }
+        const selectedPrompt = await vscode.window.showQuickPick(promptItems, options)
+        if (!selectedPrompt) {
+            return
+        }
+        // Find the prompt based on the selected prompt name
+        const promptTitle = selectedPrompt.label
+        if (!promptTitle) {
+            return
+        }
+        // Run the prompt
+        await vscode.commands.executeCommand('cody.customRecipes.exec', promptTitle)
     }
 
     private async fileTypeActions(action: string, fileType: CodyPromptType): Promise<void> {

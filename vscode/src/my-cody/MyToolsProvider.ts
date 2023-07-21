@@ -16,20 +16,17 @@ const _exec = promisify(exec)
  */
 export class MyToolsProvider {
     private tools = new Map<string, string>()
-    private username: string
-    private user: { name: string; homeDir: string; workspaceRoot?: string; currentFilePath?: string }
+    private user: { homeDir: string; workspaceRoot?: string; currentFilePath?: string }
 
     constructor(public context: vscode.ExtensionContext) {
-        this.username = this.runCommand('git', ['config', 'user.name'])
         this.user = this.getUserInfo()
     }
 
-    public getUserInfo(): { name: string; homeDir: string; workspaceRoot?: string; currentFilePath?: string } {
+    public getUserInfo(): { homeDir: string; workspaceRoot?: string; currentFilePath?: string } {
         if (this.user?.workspaceRoot) {
             return this.user
         }
         return {
-            name: this.username,
             homeDir: homePath,
             workspaceRoot: rootPath,
             currentFilePath,
@@ -94,7 +91,7 @@ export class MyToolsProvider {
         }
     }
 
-    // A tool that allows the user to interact with the the file system
+    // WIP: A tool that allows the user to interact with the the file system
     public async runFileSystemCommand(command: string): Promise<void> {
         switch (command) {
             case 'add': {

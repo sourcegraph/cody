@@ -164,7 +164,7 @@ export class MyPrompt implements Recipe {
             // remove workspace root path from fileName
             const fileContent = await vscode.workspace.openTextDocument(doc.uri)
             const fileName = vscode.workspace.asRelativePath(doc.uri.fsPath)
-            const truncatedContent = truncateText(fileContent.getText(), MAX_CURRENT_FILE_TOKENS)
+            const truncatedContent = truncateText(JSON.stringify(fileContent.getText()), MAX_CURRENT_FILE_TOKENS)
             const docAsMessage = getContextMessageWithResponse(
                 populateCurrentEditorContextTemplate(truncatedContent, fileName),
                 { fileName }
@@ -189,7 +189,7 @@ export class MyPrompt implements Recipe {
         const fileName = vscode.workspace.asRelativePath(filePath)
         try {
             const content = await vscode.workspace.fs.readFile(fileUri)
-            const truncatedContent = truncateText(content.toString(), MAX_CURRENT_FILE_TOKENS)
+            const truncatedContent = truncateText(JSON.stringify(content), MAX_CURRENT_FILE_TOKENS)
             return getContextMessageWithResponse(populateCodeContextTemplate(truncatedContent, fileName), {
                 fileName,
             })
@@ -212,25 +212,29 @@ export class MyPrompt implements Recipe {
     // Create Context from Current Directory of the Active Document
     // Return tests files only if testOnly is true
     public static async getEditorDirContext(dirPath: string, testOnly?: boolean): Promise<ContextMessage[]> {
-        // get a list of files from the current directory path
-        const dirUri = vscode.Uri.file(dirPath)
-        // Get the list of files in the current directory then filter out:
-        // directories, non-test files, and dot files
-        // then returns the first 10 results
-        if (testOnly) {
-            const filesInDir = (await vscode.workspace.fs.readDirectory(dirUri)).filter(
-                file => file[1] === 1 && !file[0].startsWith('.') && (testOnly ? file[0].includes('test') : true)
-            )
-            // If there are no test files in the directory, use first 10 files instead
-            if (filesInDir.length > 0) {
-                return populateVscodeDirContextMessage(dirUri, filesInDir.slice(0, 10))
+        try {
+            // get a list of files from the current directory path
+            const dirUri = vscode.Uri.file(dirPath)
+            // Get the list of files in the current directory then filter out:
+            // directories, non-test files, and dot files
+            // then returns the first 10 results
+            if (testOnly) {
+                const filesInDir = (await vscode.workspace.fs.readDirectory(dirUri)).filter(
+                    file => file[1] === 1 && !file[0].startsWith('.') && (testOnly ? file[0].includes('test') : true)
+                )
+                // If there are no test files in the directory, use first 10 files instead
+                if (filesInDir.length > 0) {
+                    return await populateVscodeDirContextMessage(dirUri, filesInDir.slice(0, 10))
+                }
             }
+            // Get first 10 files in the directory
+            const filesInDir = (await vscode.workspace.fs.readDirectory(dirUri))
+                .filter(file => file[1] === 1 && !file[0].startsWith('.'))
+                .slice(0, 10)
+            return await populateVscodeDirContextMessage(dirUri, filesInDir)
+        } catch {
+            return []
         }
-        // Get first 10 files in the directory
-        const filesInDir = (await vscode.workspace.fs.readDirectory(dirUri))
-            .filter(file => file[1] === 1 && !file[0].startsWith('.'))
-            .slice(0, 10)
-        return populateVscodeDirContextMessage(dirUri, filesInDir)
     }
 }
 
@@ -251,7 +255,7 @@ async function populateVscodeDirContextMessage(
         }
         try {
             const fileContent = await vscode.workspace.openTextDocument(fileUri)
-            const truncatedContent = truncateText(fileContent.getText(), MAX_CURRENT_FILE_TOKENS)
+            const truncatedContent = truncateText(JSON.stringify(fileContent.getText()), MAX_CURRENT_FILE_TOKENS)
             const contextMessage = getContextMessageWithResponse(
                 populateCurrentEditorContextTemplate(truncatedContent, fileName),
                 { fileName }

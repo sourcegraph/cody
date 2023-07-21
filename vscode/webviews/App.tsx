@@ -42,7 +42,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     const [suggestions, setSuggestions] = useState<string[] | undefined>()
     const [isAppInstalled, setIsAppInstalled] = useState<boolean>(false)
     const [enabledPlugins, setEnabledPlugins] = useState<string[]>([])
-    const [myPrompts, setMyPrompts] = useState<string[]>([])
+    const [myPrompts, setMyPrompts] = useState<string[] | null>(null)
 
     useEffect(
         () =>
@@ -184,9 +184,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                             vscodeAPI={vscodeAPI}
                         />
                     )}
-                    {view === 'recipes' && endpoint && (
-                        <Recipes vscodeAPI={vscodeAPI} myPrompts={myPrompts} endpoint={endpoint} />
-                    )}
+                    {view === 'recipes' && endpoint && <Recipes vscodeAPI={vscodeAPI} myPrompts={myPrompts} />}
                     {view === 'settings' && endpoint && (
                         <Settings onLogout={onLogout} endpoint={endpoint} version={config?.extensionVersion} />
                     )}

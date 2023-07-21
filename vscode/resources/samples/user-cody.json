@@ -8,7 +8,8 @@
     "Generate Multiple Unit Tests": {
       "prompt": "Create at least 3 full, workable unit tests for the selected code. You may import common libraries for testing. Follow patterns and imports used in existing test files if available, otherwise use best practices for unit testing in this language.",
       "context": {
-        "currentDir": true
+        "currentDir": true,
+        "currentFile": true
       }
     },
     "Refactor Code": {

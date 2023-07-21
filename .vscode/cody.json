@@ -33,9 +33,10 @@
       "note": "You must have Cody app installed to use this recipe"
     },
     "Generate Multiple Unit Tests": {
-      "prompt": "Generate at least 3 unit tests for the selected code. Provide me with full, workable unit tests. You may import common libraries like the language's built-in test framework. If there are existing test files in the directory, try to follow similar patterns and imports used in those files. If no test files exist yet, use common best practices for unit testing this language.",
+      "prompt": "Generate 2 or more unit tests for the selected code. Provide me with full, workable unit tests. You may import common libraries like the language's built-in test framework. If there are existing test files in the directory, try to follow similar patterns and imports used in those files. If there are no test files, use common best practices for unit testing this language.",
       "context": {
-        "currentDir": true
+        "currentDir": true,
+        "currentFile": true
       },
       "note": "Works best if there are other test files in the current directory"
     },

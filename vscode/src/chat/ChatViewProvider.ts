@@ -64,6 +64,7 @@ export type Config = Pick<
     | 'useContext'
     | 'experimentalChatPredictions'
     | 'experimentalGuardrails'
+    | 'experimentalCustomRecipes'
     | 'pluginsEnabled'
     | 'pluginsConfig'
     | 'pluginsDebugEnabled'
@@ -127,7 +128,6 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         this.disposables.push(this.configurationChangeEvent)
 
         this.currentWorkspaceRoot = ''
-        this.customRecipesInit()
 
         // listen for vscode active editor change event
         this.disposables.push(
@@ -191,6 +191,9 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         const authStatus = this.authProvider.getAuthStatus()
         if (authStatus.endpoint) {
             this.config.serverEndpoint = authStatus.endpoint
+        }
+        if (newConfig.experimentalCustomRecipes) {
+            void this.sendMyPrompts()
         }
         this.configurationChangeEvent.fire()
     }
@@ -298,7 +301,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 void this.openExternalLinks(message.value)
                 break
             case 'my-prompt':
-                await this.executeMyPrompt(message.title)
+                await this.executeCustomRecipe(message.title)
                 break
             case 'openFile': {
                 const rootPath = this.editor.getWorkspaceRootPath()
@@ -733,7 +736,10 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         })
     }
 
-    private async executeMyPrompt(title: string): Promise<void> {
+    public async executeCustomRecipe(title: string): Promise<void> {
+        if (!this.config.experimentalCustomRecipes) {
+            return
+        }
         // Send prompt names to webview to display as recipe options
         if (!title || title === 'get') {
             await this.sendMyPrompts()
@@ -759,7 +765,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         const prompt = this.editor.controllers.prompt.find(title)
         this.editor.controllers.prompt.getCommandOutput()
         if (!prompt) {
-            debug('executeMyPrompt:noPrompt', title)
+            debug('executeCustomRecipe:noPrompt', title)
             return
         }
         if (!prompt.startsWith('/')) {
@@ -768,26 +774,30 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         await this.executeChatCommands(prompt, 'my-prompt')
     }
 
-    private customRecipesInit(): void {
-        // listen for file change event for JSON files used for building Custom Recipes
-        const myWorkspacePromptsWatcher = this.editor.controllers?.prompt?.wsFileWatcher
-        const myUserPromptsWatcher = this.editor.controllers?.prompt?.userFileWatcher
-        myWorkspacePromptsWatcher?.onDidChange(() => this.sendMyPrompts())
-        myWorkspacePromptsWatcher?.onDidDelete(() => this.sendMyPrompts())
-        myUserPromptsWatcher?.onDidChange(() => this.sendMyPrompts())
-        myUserPromptsWatcher?.onDidDelete(() => this.sendMyPrompts())
-    }
-
     /**
      * Send custom recipe names to webview
      */
     private async sendMyPrompts(): Promise<void> {
-        await this.editor.controllers.prompt.refresh()
-        const prompts = this.editor.controllers.prompt.getPromptList()
-        void this.webview?.postMessage({
-            type: 'my-prompts',
-            prompts,
-        })
+        const send = async (): Promise<void> => {
+            console.log('sendMyPrompts', this.config.experimentalCustomRecipes)
+            await this.editor.controllers.prompt.refresh()
+            const prompts = this.editor.controllers.prompt.getPromptList()
+            void this.webview?.postMessage({
+                type: 'my-prompts',
+                prompts,
+            })
+        }
+        const init = (): void => {
+            // listen for file change event for JSON files used for building Custom Recipes
+            const myWorkspacePromptsWatcher = this.editor.controllers?.prompt?.wsFileWatcher
+            const myUserPromptsWatcher = this.editor.controllers?.prompt?.userFileWatcher
+            if (myWorkspacePromptsWatcher || myUserPromptsWatcher) {
+                myWorkspacePromptsWatcher?.onDidChange(() => send())
+                myUserPromptsWatcher?.onDidChange(() => send())
+            }
+        }
+        init()
+        await send()
     }
 
     private async saveTranscriptToChatHistory(): Promise<void> {

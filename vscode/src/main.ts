@@ -87,17 +87,16 @@ const register = async (
     const disposables: vscode.Disposable[] = []
 
     await updateEventLogger(initialConfig, localStorage)
-    // Controller for inline Chat
+    // Controller for Inline Chat
     const commentController = new InlineController(context.extensionPath)
-
+    // Controller for Non-Stop Cody
     const fixup = new FixupController()
     disposables.push(fixup)
     if (TestSupport.instance) {
         TestSupport.instance.fixupController.set(fixup)
     }
-
-    const prompt = new MyPromptController(debug, context, initialConfig.serverEndpoint)
-
+    // Controller for Custom Recipes
+    const prompt = new MyPromptController(debug, context, initialConfig.experimentalCustomRecipes)
     const controllers = { inline: commentController, fixups: fixup, prompt }
 
     const editor = new VSCodeEditor(controllers)
@@ -213,6 +212,8 @@ const register = async (
             await chatProvider.clearHistory()
         }),
         // Recipes
+        vscode.commands.registerCommand('cody.customRecipes.exec', title => chatProvider.executeCustomRecipe(title)),
+        vscode.commands.registerCommand('cody.customRecipes.list', () => prompt.quickRecipe()),
         vscode.commands.registerCommand('cody.recipe.explain-code', () => executeRecipe('explain-code-detailed')),
         vscode.commands.registerCommand('cody.recipe.explain-code-high-level', () =>
             executeRecipe('explain-code-high-level')
