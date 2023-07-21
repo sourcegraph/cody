@@ -33,12 +33,12 @@ export interface ActiveTextEditorVisibleContent {
     revision?: string
 }
 
-interface VsCodeInlineController {
+export interface VsCodeInlineController {
     selection: ActiveTextEditorSelection | null
     error(): Promise<void>
 }
 
-interface VsCodeFixupController {
+export interface VsCodeFixupController {
     getTaskRecipeData(taskId: string): Promise<
         | {
               instruction: string
@@ -51,19 +51,27 @@ interface VsCodeFixupController {
     >
 }
 
-interface VsCodeMyPromptController {
+export interface VsCodeMyPromptController {
     get(type?: string): Promise<string | null>
     menu(): Promise<void>
 }
 
-export interface ActiveTextEditorViewControllers {
-    inline: VsCodeInlineController
-    fixups: VsCodeFixupController
-    prompt: VsCodeMyPromptController
+export interface ActiveTextEditorViewControllers<
+    I extends VsCodeInlineController = VsCodeInlineController,
+    F extends VsCodeFixupController = VsCodeFixupController,
+    P extends VsCodeMyPromptController = VsCodeMyPromptController,
+> {
+    readonly inline?: I
+    readonly fixups?: F
+    readonly prompt?: P
 }
 
-export interface Editor {
-    controllers?: ActiveTextEditorViewControllers
+export interface Editor<
+    I extends VsCodeInlineController = VsCodeInlineController,
+    F extends VsCodeFixupController = VsCodeFixupController,
+    P extends VsCodeMyPromptController = VsCodeMyPromptController,
+> {
+    controllers?: ActiveTextEditorViewControllers<I, F, P>
     getWorkspaceRootPath(): string | null
     getActiveTextEditor(): ActiveTextEditor | null
     getActiveTextEditorSelection(): ActiveTextEditorSelection | null

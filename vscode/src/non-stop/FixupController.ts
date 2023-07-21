@@ -1,5 +1,7 @@
 import * as vscode from 'vscode'
 
+import { VsCodeFixupController } from '@sourcegraph/cody-shared/src/editor'
+
 import { computeDiff, Diff } from './diff'
 import { FixupCodeLenses } from './FixupCodeLenses'
 import { ContentProvider } from './FixupContentStore'
@@ -16,7 +18,13 @@ import { CodyTaskState } from './utils'
 
 // This class acts as the factory for Fixup Tasks and handles communication between the Tree View and editor
 export class FixupController
-    implements FixupFileCollection, FixupIdleTaskRunner, FixupTaskFactory, FixupTextChanged, vscode.Disposable
+    implements
+        VsCodeFixupController,
+        FixupFileCollection,
+        FixupIdleTaskRunner,
+        FixupTaskFactory,
+        FixupTextChanged,
+        vscode.Disposable
 {
     private tasks = new Map<taskID, FixupTask>()
     private readonly taskViewProvider: TaskViewProvider
