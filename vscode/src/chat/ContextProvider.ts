@@ -21,7 +21,7 @@ import { LocalStorage } from '../services/LocalStorageProvider'
 import { SecretStorage } from '../services/SecretStorageProvider'
 
 import { ConfigurationSubsetForWebview, LocalEnv } from './protocol'
-import { SidebarChatViewProviderWebview } from './SidebarChatViewProvider'
+import { ChatViewProviderWebview } from './ChatViewProvider'
 import { convertGitCloneURLToCodebaseName } from './utils'
 
 export type Config = Pick<
@@ -44,7 +44,7 @@ export type Config = Pick<
 export class ContextProvider implements vscode.Disposable {
     // We fire messages from ContextProvider to the sidebar webview.
     // TODO(umpox): Should we add support for showing context in other places (i.e. within inline chat)?
-    public webview?: SidebarChatViewProviderWebview
+    public webview?: ChatViewProviderWebview
 
     // Fire event to let subscribers know that the configuration has changed
     public configurationChangeEvent = new vscode.EventEmitter<void>()

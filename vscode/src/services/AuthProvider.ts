@@ -5,6 +5,7 @@ import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/confi
 import { SourcegraphGraphQLAPIClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
 import { isError } from '@sourcegraph/cody-shared/src/utils'
 
+import { ChatViewProviderWebview } from '../chat/ChatViewProvider'
 import {
     AuthStatus,
     defaultAuthStatus,
@@ -14,7 +15,6 @@ import {
     LOCAL_APP_URL,
     unauthenticatedStatus,
 } from '../chat/protocol'
-import { SidebarChatViewProviderWebview } from '../chat/SidebarChatViewProvider'
 import { newAuthStatus } from '../chat/utils'
 import { logEvent } from '../event-logger'
 import { debug } from '../log'
@@ -32,7 +32,7 @@ export class AuthProvider {
     public appDetector: LocalAppDetector
 
     private authStatus: AuthStatus = defaultAuthStatus
-    public webview?: SidebarChatViewProviderWebview
+    public webview?: ChatViewProviderWebview
 
     constructor(
         private config: Pick<ConfigurationWithAccessToken, 'serverEndpoint' | 'accessToken' | 'customHeaders'>,

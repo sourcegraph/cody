@@ -7,11 +7,11 @@ import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
 import { Configuration, ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
 import { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/nodeClient'
 
+import { ChatViewProvider } from './chat/ChatViewProvider'
 import { ContextProvider } from './chat/ContextProvider'
 import { InlineChatViewManager } from './chat/InlineChatViewProvider'
 import { MessageProviderOptions } from './chat/MessageProvider'
 import { CODY_FEEDBACK_URL } from './chat/protocol'
-import { SidebarChatViewProvider } from './chat/SidebarChatViewProvider'
 import { CodyCompletionItemProvider } from './completions'
 import { CompletionsDocumentProvider } from './completions/docprovider'
 import { History } from './completions/history'
@@ -146,7 +146,7 @@ const register = async (
     }
 
     const inlineChatManager = new InlineChatViewManager(messageProviderOptions)
-    const sidebarChatProvider = new SidebarChatViewProvider({
+    const sidebarChatProvider = new ChatViewProvider({
         ...messageProviderOptions,
         extensionPath: context.extensionPath,
     })

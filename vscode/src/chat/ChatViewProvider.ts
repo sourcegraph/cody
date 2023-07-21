@@ -11,19 +11,19 @@ import { debug } from '../log'
 import { MessageProvider, MessageProviderOptions } from './MessageProvider'
 import { DOTCOM_URL, ExtensionMessage, WebviewMessage } from './protocol'
 
-export interface SidebarChatViewProviderWebview extends Omit<vscode.Webview, 'postMessage'> {
+export interface ChatViewProviderWebview extends Omit<vscode.Webview, 'postMessage'> {
     postMessage(message: ExtensionMessage): Thenable<boolean>
 }
 
-interface SidebarChatViewProviderOptions extends MessageProviderOptions {
+interface ChatViewProviderOptions extends MessageProviderOptions {
     extensionPath: string
 }
 
-export class SidebarChatViewProvider extends MessageProvider implements vscode.WebviewViewProvider {
+export class ChatViewProvider extends MessageProvider implements vscode.WebviewViewProvider {
     private extensionPath: string
-    public webview?: SidebarChatViewProviderWebview
+    public webview?: ChatViewProviderWebview
 
-    constructor({ extensionPath, ...options }: SidebarChatViewProviderOptions) {
+    constructor({ extensionPath, ...options }: ChatViewProviderOptions) {
         super(options)
         this.extensionPath = extensionPath
     }
