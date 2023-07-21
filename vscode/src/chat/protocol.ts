@@ -6,13 +6,19 @@ import { CodyLLMSiteConfiguration } from '@sourcegraph/cody-shared/src/sourcegra
 
 import { View } from '../../webviews/NavBar'
 
+export enum WebviewEvent {
+    Feedback = 'feedback',
+    Click = 'click',
+    Auth = 'auth',
+}
+
 /**
  * A message sent from the webview to the extension host.
  */
 export type WebviewMessage =
     | { command: 'ready' }
     | { command: 'initialized' }
-    | { command: 'event'; event: string; value: string }
+    | { command: 'event'; event: WebviewEvent; value: string }
     | { command: 'submit'; text: string; submitType: 'user' | 'suggestion' }
     | { command: 'executeRecipe'; recipe: RecipeID }
     | { command: 'settings'; serverEndpoint: string; accessToken: string }

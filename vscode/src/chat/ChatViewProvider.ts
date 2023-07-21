@@ -47,6 +47,7 @@ import {
     ExtensionMessage,
     isLocalApp,
     LocalEnv,
+    WebviewEvent,
     WebviewMessage,
 } from './protocol'
 import { getRecipe } from './recipes'
@@ -266,7 +267,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 if (message.type === 'app' && message.endpoint) {
                     await this.authProvider.appAuth(message.endpoint)
                     // Log app button click events: e.g. app:download:clicked or app:connect:clicked
-                    this.sendEvent('click', message.value === 'download' ? 'app:download' : 'app:connect')
+                    this.sendEvent(WebviewEvent.Click, message.value === 'download' ? 'app:download' : 'app:connect')
                     break
                 }
                 if (message.type === 'callback' && message.endpoint) {
@@ -831,7 +832,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         const isAppEvent = isLocalApp(authStatus.endpoint || '') ? 'app:' : ''
         const eventValue = isLoggedOut ? 'disconnected' : authStatus.isLoggedIn ? 'connected' : 'failed'
         // e.g. auth:app:connected, auth:app:disconnected, auth:failed
-        this.sendEvent('auth', isAppEvent + eventValue)
+        this.sendEvent(WebviewEvent.Auth, isAppEvent + eventValue)
     }
 
     /**
@@ -951,15 +952,12 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
     /**
      * Log Events - naming convention: source:feature:action
      */
-    public sendEvent(event: string, value: string): void {
+    public sendEvent(event: WebviewEvent, value: string): void {
         const endpoint = this.config.serverEndpoint || DOTCOM_URL.href
         const endpointUri = { serverEndpoint: endpoint }
         switch (event) {
             case 'feedback':
                 logEvent(`CodyVSCodeExtension:codyFeedback:${value}`, null, this.codyFeedbackPayload())
-                break
-            case 'token':
-                logEvent(`CodyVSCodeExtension:cody${value}AccessToken:clicked`, endpointUri, endpointUri)
                 break
             case 'auth':
                 logEvent(`CodyVSCodeExtension:Auth:${value}`, endpointUri, endpointUri)
