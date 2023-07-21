@@ -1,5 +1,3 @@
-import { debug } from '../log'
-
 import { Completion } from '.'
 import { CompletionsCache } from './cache'
 import { ReferenceSnippet } from './context'
@@ -63,18 +61,7 @@ export class RequestManager {
 
         this.addRequest(documentUri, request)
 
-        Promise.all(
-            providers.map(async c => {
-                const generateCompletionsStart = Date.now()
-                const completions = await c.generateCompletions(networkRequestAbortController.signal, context)
-                debug(
-                    'CodyCompletionProvider:inline:timing',
-                    `${Math.round(Date.now() - generateCompletionsStart)}ms`,
-                    { id: c.id }
-                )
-                return completions
-            })
-        )
+        Promise.all(providers.map(c => c.generateCompletions(networkRequestAbortController.signal, context)))
             .then(res => res.flat())
             .then(completions => {
                 // Add the completed results to the cache, even if the request

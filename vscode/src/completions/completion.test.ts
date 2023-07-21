@@ -119,15 +119,10 @@ describe('Cody completions', () => {
                 complete(params: CompletionParameters): Promise<CompletionResponse> {
                     requests.push(params)
                     if (responses === 'stall') {
+                        // Creates a stalling request that never responds
                         return new Promise(() => {})
                     }
-                    const response = responses ? responses[requestCounter++] : undefined
-                    return Promise.resolve(
-                        response || {
-                            completion: '',
-                            stopReason: 'unknown',
-                        }
-                    )
+                    return Promise.resolve(responses?.[requestCounter++] || { completion: '', stopReason: 'unknown' })
                 },
             }
             const providerConfig = createProviderConfig({
@@ -148,8 +143,9 @@ describe('Cody completions', () => {
                 throw new Error('The test code must include a | to denote the cursor position')
             }
 
-            const prefix = code.slice(0, code.indexOf(CURSOR_MARKER))
-            const suffix = code.slice(code.indexOf(CURSOR_MARKER) + CURSOR_MARKER.length)
+            const cursorIndex = code.indexOf(CURSOR_MARKER)
+            const prefix = code.slice(0, cursorIndex)
+            const suffix = code.slice(cursorIndex + CURSOR_MARKER.length)
 
             const codeWithoutCursor = prefix + suffix
 
