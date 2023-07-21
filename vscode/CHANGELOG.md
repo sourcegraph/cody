@@ -22,6 +22,7 @@ Starting from `0.2.0`, Cody is using `major.EVEN_NUMBER.patch` for release versi
 
 - Exclude context for chat input with only one word. [pull/279](https://github.com/sourcegraph/cody/pull/279)
 - [Internal Only] `Custom Recipe`: Store `cody.json` file for user recipes within the `.vscode` folder located in the $HOME directory. [pull/279](https://github.com/sourcegraph/cody/pull/279)
+- Various autocomplete improvements. [pull/344](https://github.com/sourcegraph/cody/pull/344)
 
 ## [0.4.4]
 
