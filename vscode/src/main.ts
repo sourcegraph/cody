@@ -20,13 +20,13 @@ import { createProviderConfig as createUnstableCodeGenProviderConfig } from './c
 import { createProviderConfig as createUnstableHuggingFaceProviderConfig } from './completions/providers/unstable-huggingface'
 import { getConfiguration, getFullConfig, migrateConfiguration } from './configuration'
 import { VSCodeEditor } from './editor/vscode-editor'
-import { logEvent, createOrUpdateEventLogger } from './services/EventLogger'
 import { configureExternalServices } from './external-services'
 import { MyPromptController } from './my-cody/MyPromptController'
 import { FixupController } from './non-stop/FixupController'
 import { showSetupNotification } from './notifications/setup-notification'
 import { getRgPath } from './rg'
 import { AuthProvider } from './services/AuthProvider'
+import { createOrUpdateEventLogger, logEvent } from './services/EventLogger'
 import { showFeedbackSupportQuickPick } from './services/FeedbackOptions'
 import { GuardrailsProvider } from './services/GuardrailsProvider'
 import { InlineController } from './services/InlineController'
@@ -141,7 +141,9 @@ const register = async (
         }),
         // Update external services when configurationChangeEvent is fired by chatProvider
         chatProvider.configurationChangeEvent.event(async () => {
-            externalServicesOnDidConfigurationChange(await getFullConfig(secretStorage, localStorage))
+            const newConfig = await getFullConfig(secretStorage, localStorage)
+            externalServicesOnDidConfigurationChange(newConfig)
+            createOrUpdateEventLogger(newConfig)
         })
     )
 
