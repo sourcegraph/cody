@@ -17,7 +17,7 @@ interface HighlightTokensResult {
 
 export async function highlightTokens(
     text: string,
-    filesExist: (filePaths: string[]) => Promise<{ [filePath: string]: boolean }>,
+    filesExist: (filePaths: string[]) => Promise<{ [filePath: string]: boolean } | null>,
     workspaceRootPath?: string
 ): Promise<HighlightTokensResult> {
     const markdownTokens = parseMarkdown(text)
@@ -40,7 +40,7 @@ export async function highlightTokens(
 
 async function detectTokens(
     tokens: marked.Token[],
-    filesExist: (filePaths: string[]) => Promise<{ [filePath: string]: boolean }>
+    filesExist: (filePaths: string[]) => Promise<{ [filePath: string]: boolean } | null>
 ): Promise<HighlightedToken[]> {
     // mapping from file path to full match
     const filePathToFullMatch: { [filePath: string]: Set<string> } = {}
@@ -64,6 +64,10 @@ async function detectTokens(
     }
 
     const filePathsExist = await filesExist([...Object.keys(filePathToFullMatch)])
+    if (filePathsExist === null) {
+        // If filesExist is unable to determine results, do not highlight any tokens.
+        return []
+    }
     const highlightedTokens: HighlightedToken[] = []
     for (const [filePath, fullMatches] of Object.entries(filePathToFullMatch)) {
         const exists = filePathsExist[filePath]

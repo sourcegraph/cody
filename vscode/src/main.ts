@@ -79,7 +79,7 @@ const register = async (
     initialConfig: ConfigurationWithAccessToken,
     secretStorage: SecretStorage,
     localStorage: LocalStorage,
-    rgPath: string
+    rgPath: string | null
 ): Promise<{
     disposable: vscode.Disposable
     onConfigurationChange: (newConfig: ConfigurationWithAccessToken) => void
