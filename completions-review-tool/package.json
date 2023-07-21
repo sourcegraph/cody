@@ -16,7 +16,9 @@
     "@remix-run/node": "^1.17.0",
     "@remix-run/react": "^1.17.0",
     "@remix-run/server-runtime": "^1.17.0",
+    "compression": "^1.7.4",
     "isbot": "^3.6.8",
+    "marked": "^4.0.16",
     "morgan": "^1.10.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
@@ -27,7 +29,9 @@
     "@types/compression": "^1.7.2",
     "@types/morgan": "^1.9.4",
     "@types/react-table": "^7.7.14",
+    "cross-env": "^7.0.3",
     "dotenv": "^16.0.3",
+    "nodemon": "^3.0.1",
     "npm-run-all": "^4.1.5"
   },
   "engines": {
