@@ -11,10 +11,9 @@
     },
     "Commit Message for Current Changes": {
       "prompt": "Suggest a commit message based on current diff changes.",
-      "command": "git",
-      "args": ["diff"],
       "context": {
-        "excludeSelection": true
+        "excludeSelection": true,
+        "command": "git diff"
       },
       "info": "You must have git installed and authenticated to use this recipe"
     }

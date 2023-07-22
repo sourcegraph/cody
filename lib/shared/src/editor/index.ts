@@ -52,8 +52,7 @@ interface VsCodeFixupController {
 }
 
 interface VsCodeMyPromptController {
-    get(type?: string): string | null
-    run(command: string): string | null
+    get(type?: string): Promise<string | null>
     menu(): Promise<void>
 }
 

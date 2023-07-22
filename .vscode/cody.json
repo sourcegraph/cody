@@ -16,19 +16,17 @@
     },
     "Commit Message for Current Changes": {
       "prompt": "Suggest a commit message based on current diff changes.",
-      "command": "git",
-      "args": ["diff"],
       "context": {
-        "excludeSelection": true
+        "excludeSelection": true,
+        "command": "git diff"
       },
       "info": "You must have git installed and authenticated to use this recipe"
     },
     "Debug last error from Cody app": {
       "prompt": "Tell me about the most recent error in log and how I can resolve it.",
-      "command": "cat",
-      "args": ["~/Library/Logs/com.sourcegraph.cody/Cody.log"],
       "context": {
-        "excludeSelection": true
+        "excludeSelection": true,
+        "command": "cat ~/Library/Logs/com.sourcegraph.cody/Cody.log"
       },
       "info": "You must have Cody app installed to use this recipe"
     },

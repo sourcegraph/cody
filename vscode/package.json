@@ -118,7 +118,7 @@
           },
           {
             "id": "inline-assist",
-            "title": "Inline Chat (Experimental)",
+            "title": "Inline Chat (Beta)",
             "description": "Chat with Cody without leaving your file. Click the + button next to any line number in a file to bring up Inline Chat.\n[Enable in Settings](command:cody.walkthrough.enableInlineChat)",
             "media": {
               "markdown": "walkthroughs/inline-assist.md"
@@ -434,7 +434,7 @@
       {
         "command": "cody.customRecipes.list",
         "category": "Cody",
-        "title": "Custom Recipes",
+        "title": "Custom Recipes (Experimental)",
         "when": "cody.activated",
         "enablement": "config.cody.experimental.customRecipes",
         "icon": "$(bookmark)"
@@ -584,10 +584,6 @@
         }
       ],
       "cody.submenu": [
-        {
-          "command": "cody.customRecipes.list",
-          "when": "cody.activated"
-        },
         {
           "command": "cody.recipe.explain-code",
           "when": "cody.activated"

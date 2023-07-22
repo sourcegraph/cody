@@ -4,6 +4,8 @@ import { promisify } from 'util'
 
 import * as vscode from 'vscode'
 
+import { debug } from '../log'
+
 import { getFileNameFromPath, getFileToRemove, outputWrapper } from './helper'
 
 const rootPath = vscode.workspace.workspaceFolders?.[0].uri.fsPath
@@ -41,11 +43,16 @@ export class MyToolsProvider {
         await vscode.commands.executeCommand('vscode.openFolder', rootPath)
     }
 
+    // TODO migrate to exeCommand then remove
     public runCommand(command: string, args: string[] = [], runFromWSRoot = true): string {
+        // Expand the ~ to the user's home directory
+        const homeDir = this.user.homeDir + '/' || ''
+        // Replace the ~/ with the home directory if arg starts with ~/
+        const filteredArgs = args.map(arg => arg.replace(/^~\//, homeDir))
         const fullCommand = `${command} ${args.join(' ')}`
         try {
             const output =
-                spawnSync(command, args, {
+                spawnSync(command, filteredArgs, {
                     cwd: runFromWSRoot ? rootPath : currentFilePath,
                     encoding: 'utf8',
                 }) || ''
@@ -64,17 +71,21 @@ export class MyToolsProvider {
             void vscode.window.showInformationMessage(
                 `Failed to run ${fullCommand}. Please make sure the command works in your terminal before trying again.`
             )
-            console.error(error)
+            debug('MyToolsProvider:runCommand', 'failed', { verbose: error })
             return ''
         }
     }
 
     public async exeCommand(command: string, runFromWSRoot = true): Promise<string | undefined> {
+        // Expand the ~/ in command with the home directory if any of the substring starts with ~/ with a space before it
+        const homeDir = this.user.homeDir + '/' || ''
+        const filteredCommand = command.replace(/(\s~\/)/g, ` ${homeDir}`)
         try {
-            const { stdout, stderr } = await _exec(command, {
+            const { stdout, stderr } = await _exec(filteredCommand, {
                 cwd: runFromWSRoot ? rootPath : currentFilePath,
                 encoding: 'utf8',
             })
+
             const output = stdout || stderr
             // stringify the output of the command first
             const outputString = JSON.stringify(output.trim())
@@ -83,7 +94,7 @@ export class MyToolsProvider {
             }
             return outputWrapper.replace('{command}', command).replace('{output}', outputString)
         } catch (error) {
-            console.error(error)
+            debug('MyToolsProvider:exeCommand', 'failed', { verbose: error })
             void vscode.window.showErrorMessage(
                 'Failed to run command. Please make sure the command works in your terminal before trying again.'
             )

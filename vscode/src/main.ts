@@ -1,5 +1,3 @@
-import { debug } from 'console'
-
 import * as vscode from 'vscode'
 
 import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
@@ -96,7 +94,7 @@ const register = async (
         TestSupport.instance.fixupController.set(fixup)
     }
     // Controller for Custom Recipes
-    const prompt = new MyPromptController(debug, context, initialConfig.experimentalCustomRecipes)
+    const prompt = new MyPromptController(context, initialConfig.experimentalCustomRecipes)
     const controllers = { inline: commentController, fixups: fixup, prompt }
 
     const editor = new VSCodeEditor(controllers)

@@ -3,6 +3,8 @@ import * as vscode from 'vscode'
 import { Preamble } from '@sourcegraph/cody-shared/src/chat/preamble'
 import { defaultCodyPromptContext } from '@sourcegraph/cody-shared/src/chat/recipes/my-prompt'
 
+import { debug } from '../log'
+
 import { CustomRecipesBuilder } from './CustomRecipesBuilder'
 import { constructFileUri, createFileWatch, createJSONFile, deleteFile, saveJSONFile } from './helper'
 import {
@@ -35,10 +37,10 @@ export class MyPromptController {
     public userFileWatcher: vscode.FileSystemWatcher | null = null
 
     constructor(
-        private debug: (filterLabel: string, text: string, ...args: unknown[]) => void,
         private context: vscode.ExtensionContext,
         private isEnabled: boolean
     ) {
+        debug('MyPromptsProvider', 'initializing')
         this.tools = new MyToolsProvider(context)
         const user = this.tools.getUserInfo()
         this.builder = new CustomRecipesBuilder(isEnabled, user?.workspaceRoot, user.homeDir)
@@ -49,7 +51,7 @@ export class MyPromptController {
                 this.checkIsConfigEnabled()
             }
         })
-        this.debug('MyPromptsProvider', 'Initialized')
+        this.watcherInit()
     }
 
     public setMessager(messenger: () => Promise<void>): void {
@@ -61,6 +63,9 @@ export class MyPromptController {
 
     // Create file watchers for cody.json files used for building custom recipes
     private watcherInit(): void {
+        if (!this.isEnabled) {
+            return
+        }
         const user = this.tools.getUserInfo()
         this.wsFileWatcher = createFileWatch(user?.workspaceRoot)
         this.userFileWatcher = createFileWatch(user?.homeDir)
@@ -94,15 +99,19 @@ export class MyPromptController {
     }
 
     // getter for the promptInProgress
-    public get(type?: string): string | null {
+    public async get(type?: string, id?: string): Promise<string | null> {
         switch (type) {
+            case 'prompt':
+                return id ? this.myPromptStore.get(id)?.prompt || null : null
             case 'context':
                 return JSON.stringify(this.myPromptInProgress?.context || { ...defaultCodyPromptContext })
             case 'codebase':
                 return this.myPromptInProgress?.context?.codebase ? 'codebase' : null
-            default:
-                // return the terminal output from the last command run
+            case 'output':
+                // return the terminal output from the command for the prompt if any
                 return this.getCommandOutput()
+            default:
+                return null
         }
     }
 
@@ -122,17 +131,6 @@ export class MyPromptController {
         return myPrompt?.prompt || ''
     }
 
-    public run(command: string, args?: string[]): string | null {
-        if (!args || args.length === 0) {
-            return this.tools.runCommand(command)
-        }
-        // Expand the ~ to the user's home directory
-        const homeDir = this.tools.getUserInfo()?.homeDir + '/' || ''
-        // Replace the ~/ with the home directory if arg starts with ~/
-        const filteredArgs = args.map(arg => arg.replace(/^~\//, homeDir))
-        return this.tools.runCommand(command, filteredArgs)
-    }
-
     public setCodebase(codebase?: string): void {
         this.builder.codebase = codebase || null
     }
@@ -148,15 +146,21 @@ export class MyPromptController {
         return { prompts: this.myPromptStore, premade: this.myPremade, starter: this.myStarter }
     }
 
-    public getCommandOutput(): string | null {
+    public async getCommandOutput(): Promise<string | null> {
         if (!this.myPromptInProgress) {
             return null
         }
+        const fullCommand = this.myPromptInProgress.context?.command
+        if (fullCommand) {
+            const output = await this.tools.exeCommand(fullCommand)
+            return output || null
+        }
+        // TODO: remove this after we remove old command fields
         const { command, args } = this.myPromptInProgress
         if (!command) {
             return null
         }
-        return this.run(command, args)
+        return this.tools.runCommand(command, args)
     }
 
     // Save the user prompts to the extension storage
@@ -248,12 +252,13 @@ export class MyPromptController {
         const promptItems = promptList.map(prompt => ({
             detail: this.myPromptStore.get(prompt)?.prompt,
             label: prompt,
-        }))
-        const seperator = { kind: -1, label: 'action', detail: '' }
-        const addOption = { label: 'Create a New User Recipe', detail: '' }
+            description: this.myPromptStore.get(prompt)?.type,
+        })) as vscode.QuickPickItem[]
+        const seperator: vscode.QuickPickItem = { kind: -1, label: 'action', detail: '' }
+        const addOption: vscode.QuickPickItem = { label: 'Create a New User Recipe', detail: '', alwaysShow: true }
         promptItems.push(seperator, addOption)
         // Show the list of prompts to the user using a quick pick
-        const options = { title: 'My Custom Recipes', placeHolder: 'Select a recipe to run...' }
+        const options = { title: 'Cody: My Custom Recipes', placeHolder: 'Select a recipe to run...' }
         const selectedPrompt = await vscode.window.showQuickPick(promptItems, options)
         if (!selectedPrompt) {
             return

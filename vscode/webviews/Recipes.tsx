@@ -44,7 +44,7 @@ export const Recipes: React.FunctionComponent<{
                                     title="Custom Recipes let you build your own reusable prompts with tailored contexts. Update the recipes field in your `.vscode/cody.json` file to add or remove a recipe."
                                     className={styles.recipesHeader}
                                 >
-                                    <span>Custom Recipes</span>
+                                    <span>Custom Recipes - Experimental</span>
                                     {myPrompts?.length > 0 && (
                                         <VSCodeButton
                                             type="button"

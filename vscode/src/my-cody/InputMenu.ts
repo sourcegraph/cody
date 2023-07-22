@@ -18,7 +18,7 @@ export async function showCustomRecipeMenu(): Promise<answerType | void> {
         { kind: 0, label: 'Open Recipes Config File', id: 'open' },
     ]
     const inputOptions = {
-        title: 'Cody Custom Recipes Main Menu',
+        title: 'Cody: Custom Recipes (Experimental)',
         placeHolder: 'Select an option to continue or ESC to cancel',
     }
     const selectedOption = await vscode.window.showQuickPick(options, inputOptions)
@@ -106,13 +106,9 @@ export async function createNewPrompt(promptName?: string): Promise<CodyPrompt |
                 case 'command': {
                     const promptCommand = await showPromptCommandInput()
                     if (promptCommand) {
-                        const commandParts = promptCommand.split(' ')
-                        if (commandParts.length) {
-                            newPrompt.command = commandParts.shift()
-                            newPrompt.args = commandParts
-                        }
-                        break
+                        newPrompt.context.command = promptCommand
                     }
+                    break
                 }
             }
         }

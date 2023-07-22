@@ -29,6 +29,7 @@ export interface CodyPromptContext {
     currentDir?: boolean
     currentFile?: boolean
     excludeSelection?: boolean
+    command?: string
     filePath?: string
     directoryPath?: string
     none?: boolean
@@ -58,7 +59,7 @@ export class MyPrompt implements Recipe {
             await vscode.window.showErrorMessage('Please enter a valid prompt for the recipe.')
             return null
         }
-        const commandOutput = context.editor.controllers?.prompt.get()
+        const commandOutput = await context.editor.controllers?.prompt.get('output')
         const note = ' Refer to the command output and shared code snippets to answer my quesiton.'
         const truncatedText = truncateText(promptText + note, MAX_HUMAN_INPUT_TOKENS)
         // Add selection file name as display when available
@@ -93,7 +94,7 @@ export class MyPrompt implements Recipe {
         commandOutput?: string | null
     ): Promise<ContextMessage[]> {
         const contextMessages: ContextMessage[] = []
-        const contextConfig = editor.controllers?.prompt.get('context')
+        const contextConfig = await editor.controllers?.prompt.get('context')
         const isContextRequired = contextConfig
             ? (JSON.parse(contextConfig) as CodyPromptContext)
             : defaultCodyPromptContext
@@ -116,6 +117,11 @@ export class MyPrompt implements Recipe {
             // Select test files from the directory only if the prompt text includes 'test'
             const isTestRequest = text.includes('test')
             const currentDirContext = await MyPrompt.getCurrentDirContext(isTestRequest)
+            // Add package.json context if it's available for test requests
+            if (isTestRequest) {
+                const packageJSONContextMessage = await MyPrompt.getPackageJsonContext()
+                currentDirContext.push(...packageJSONContextMessage)
+            }
             contextMessages.push(...currentDirContext)
         }
         // Create context messages from a fsPath of a workspace directory
@@ -137,7 +143,7 @@ export class MyPrompt implements Recipe {
             contextMessages.push(...ChatQuestion.getEditorSelectionContext(selection))
         }
         // Create context messages from terminal output if any
-        if (commandOutput) {
+        if (isContextRequired.command?.length && commandOutput) {
             contextMessages.push(...MyPrompt.getTerminalOutputContext(commandOutput))
         }
         // Return the last n context messages in case there are too many
@@ -226,12 +232,60 @@ export class MyPrompt implements Recipe {
                 if (filesInDir.length > 0) {
                     return await populateVscodeDirContextMessage(dirUri, filesInDir.slice(0, 10))
                 }
+                // Find other test file in the workspace if there are no test files in the directory
+                // search for the test file cloest to the current directory in the same language
+                // only need 1 file
+                const dirPathUp = dirPath.split('/')
+                dirPathUp.pop()
+                const testFile = await vscode.workspace.findFiles(
+                    `**/${dirPathUp.pop()}/**/*test.*`,
+                    '**/node_modules/**',
+                    1
+                )
+                if (testFile.length) {
+                    return await MyPrompt.getFilePathContext(testFile[0].fsPath)
+                }
             }
             // Get first 10 files in the directory
             const filesInDir = (await vscode.workspace.fs.readDirectory(dirUri))
                 .filter(file => file[1] === 1 && !file[0].startsWith('.'))
                 .slice(0, 10)
+            // When there is no test files, Try to add the package.json context if it's available
             return await populateVscodeDirContextMessage(dirUri, filesInDir)
+        } catch {
+            return []
+        }
+    }
+
+    // Get context from the last package.json in the current file path
+    public static async getPackageJsonContext(): Promise<ContextMessage[]> {
+        const currentFilePath = vscode.window.activeTextEditor?.document.uri.fsPath
+        if (!currentFilePath) {
+            return []
+        }
+        // Search for the last package.json in the current file path
+        const packageJsonPath = await vscode.workspace.findFiles('**/package.json', '**/node_modules/**', 1)
+        if (!packageJsonPath.length) {
+            return []
+        }
+        try {
+            const packageJsonUri = packageJsonPath[0]
+            const packageJsonContent = await vscode.workspace.fs.readFile(packageJsonUri)
+            // Turn the content into a json and get the scripts object only
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+            const packageJson = JSON.parse(packageJsonContent.toString())
+            const scripts = packageJson.scripts
+            const devDependencies = packageJson.devDependencies
+            // stringify the scripts object with devDependencies
+            const context = JSON.stringify({ scripts, devDependencies })
+            const truncatedContent = truncateText(
+                context.toString() || packageJsonContent.toString(),
+                MAX_CURRENT_FILE_TOKENS
+            )
+            const fileName = vscode.workspace.asRelativePath(packageJsonUri.fsPath)
+            return getContextMessageWithResponse(populateCodeContextTemplate(toJSON(truncatedContent), fileName), {
+                fileName,
+            })
         } catch {
             return []
         }

@@ -761,7 +761,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         }
         // Get prompt details from controller by title then execute prompt's command
         const prompt = this.editor.controllers.prompt.find(title)
-        this.editor.controllers.prompt.getCommandOutput()
+        await this.editor.controllers.prompt.get('command')
         if (!prompt) {
             debug('executeCustomRecipe:noPrompt', title)
             return
