@@ -8,6 +8,7 @@ import { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/s
 import { ChatViewProvider } from './chat/ChatViewProvider'
 import { CODY_FEEDBACK_URL } from './chat/protocol'
 import { CodyCompletionItemProvider } from './completions'
+import { CompletionsCache } from './completions/cache'
 import { CompletionsDocumentProvider } from './completions/docprovider'
 import { History } from './completions/history'
 import * as CompletionsLogger from './completions/logger'
@@ -17,13 +18,13 @@ import { createProviderConfig as createUnstableCodeGenProviderConfig } from './c
 import { createProviderConfig as createUnstableHuggingFaceProviderConfig } from './completions/providers/unstable-huggingface'
 import { getConfiguration, getFullConfig, migrateConfiguration } from './configuration'
 import { VSCodeEditor } from './editor/vscode-editor'
-import { eventLogger, logEvent, updateEventLogger } from './event-logger'
 import { configureExternalServices } from './external-services'
 import { MyPromptController } from './my-cody/MyPromptController'
 import { FixupController } from './non-stop/FixupController'
 import { showSetupNotification } from './notifications/setup-notification'
 import { getRgPath } from './rg'
 import { AuthProvider } from './services/AuthProvider'
+import { createOrUpdateEventLogger, logEvent } from './services/EventLogger'
 import { showFeedbackSupportQuickPick } from './services/FeedbackOptions'
 import { GuardrailsProvider } from './services/GuardrailsProvider'
 import { InlineController } from './services/InlineController'
@@ -84,8 +85,9 @@ const register = async (
 }> => {
     const disposables: vscode.Disposable[] = []
 
-    await updateEventLogger(initialConfig, localStorage)
     // Controller for Inline Chat
+    await createOrUpdateEventLogger(initialConfig, localStorage)
+    // Controller for inline Chat
     const commentController = new InlineController(context.extensionPath)
     // Controller for Non-Stop Cody
     const fixup = new FixupController()
@@ -137,7 +139,9 @@ const register = async (
         }),
         // Update external services when configurationChangeEvent is fired by chatProvider
         chatProvider.configurationChangeEvent.event(async () => {
-            externalServicesOnDidConfigurationChange(await getFullConfig(secretStorage, localStorage))
+            const newConfig = await getFullConfig(secretStorage, localStorage)
+            externalServicesOnDidConfigurationChange(newConfig)
+            createOrUpdateEventLogger(newConfig, localStorage).catch(error => console.error(error))
         })
     )
 
@@ -340,9 +344,7 @@ const register = async (
         onConfigurationChange: newConfig => {
             chatProvider.onConfigurationChange(newConfig)
             externalServicesOnDidConfigurationChange(newConfig)
-            if (eventLogger) {
-                eventLogger.onConfigurationChange(vscode.workspace.getConfiguration())
-            }
+            void createOrUpdateEventLogger(newConfig, localStorage)
         },
     }
 }
@@ -366,7 +368,7 @@ function createCompletionsProvider(
         history,
         statusBar,
         codebaseContext,
-        isCompletionsCacheEnabled: config.autocompleteAdvancedCache,
+        cache: config.autocompleteAdvancedCache ? new CompletionsCache() : undefined,
         isEmbeddingsContextEnabled: config.autocompleteAdvancedEmbeddings,
         triggerMoreEagerly: config.autocompleteExperimentalTriggerMoreEagerly,
         completeSuggestWidgetSelection: config.autocompleteExperimentalCompleteSuggestWidgetSelection,

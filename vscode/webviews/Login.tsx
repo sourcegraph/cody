@@ -87,7 +87,7 @@ export const Login: React.FunctionComponent<React.PropsWithChildren<LoginProps>>
             <h2 className={styles.sectionHeader}>Cody App for {appOS} coming soon</h2>
             <p className={styles.openMessage}>{APP_DESC.comingSoon}</p>
             <VSCodeButton className={styles.button} type="button" onClick={() => onLoginRedirect(DOTCOM_URL.href)}>
-                Signin with Sourcegraph.com
+                Sign in with Sourcegraph.com
             </VSCodeButton>
         </section>
     )

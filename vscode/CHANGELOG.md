@@ -8,10 +8,19 @@ Starting from `0.2.0`, Cody is using `major.EVEN_NUMBER.patch` for release versi
 
 ### Added
 
+- `Custom Recipes`: A new experimental feature now available behind the `cody.experimental.customRecipes` feature flag. [pull/348](https://github.com/sourcegraph/cody/pull/348)
+
+### Fixed
+
+### Changed
+
+## [0.6.1]
+
+### Added
+
 - A new experimental user setting `cody.autocomplete.experimental.triggerMoreEagerly` causes autocomplete to trigger earlier, before you type a space or other non-word character.
 - [Internal Only] `Custom Recipe`: Support context type selection when creating a new recipe via UI. [pull/279](https://github.com/sourcegraph/cody/pull/279)
 - New `/open` command for opening workspace files from chat box. [pull/327](https://github.com/sourcegraph/cody/pull/327)
-- `Custom Recipes`: A new experimental feature now available behind the `cody.experimental.customRecipes` feature flag. [pull/348](https://github.com/sourcegraph/cody/pull/348)
 
 ### Fixed
 
@@ -24,6 +33,7 @@ Starting from `0.2.0`, Cody is using `major.EVEN_NUMBER.patch` for release versi
 
 - Exclude context for chat input with only one word. [pull/279](https://github.com/sourcegraph/cody/pull/279)
 - [Internal Only] `Custom Recipe`: Store `cody.json` file for user recipes within the `.vscode` folder located in the $HOME directory. [pull/279](https://github.com/sourcegraph/cody/pull/279)
+- Various autocomplete improvements. [pull/344](https://github.com/sourcegraph/cody/pull/344)
 
 ## [0.4.4]
 

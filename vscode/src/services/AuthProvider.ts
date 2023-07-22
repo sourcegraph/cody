@@ -16,10 +16,10 @@ import {
     unauthenticatedStatus,
 } from '../chat/protocol'
 import { newAuthStatus } from '../chat/utils'
-import { logEvent } from '../event-logger'
 import { debug } from '../log'
 
 import { AuthMenu, LoginStepInputBox, TokenInputBox } from './AuthMenus'
+import { logEvent } from './EventLogger'
 import { LocalAppDetector } from './LocalAppDetector'
 import { LocalStorage } from './LocalStorageProvider'
 import { SecretStorage } from './SecretStorageProvider'

@@ -2,7 +2,8 @@ import { LRUCache } from 'lru-cache'
 import * as vscode from 'vscode'
 
 import { ConfigKeys } from '../configuration-keys'
-import { logEvent } from '../event-logger'
+import { debug } from '../log'
+import { logEvent } from '../services/EventLogger'
 
 interface CompletionEvent {
     params: {
@@ -74,7 +75,7 @@ export function start(inputParams: Omit<CompletionEvent['params'], 'multilineMod
     const id = createId()
     displayedCompletions.set(id, {
         params,
-        startedAt: Date.now(),
+        startedAt: performance.now(),
         suggestedAt: null,
         suggestionLoggedAt: null,
         acceptedAt: null,
@@ -92,7 +93,10 @@ export function start(inputParams: Omit<CompletionEvent['params'], 'multilineMod
 export function suggest(id: string): void {
     const event = displayedCompletions.get(id)
     if (event) {
-        event.suggestedAt = Date.now()
+        event.suggestedAt = performance.now()
+
+        // Emit a debug event to print timing information to the console eagerly
+        debug('CodyCompletionProvider:inline:timing', `${Math.round(event.suggestedAt - event.startedAt)}ms`, id)
     }
 }
 
@@ -102,7 +106,7 @@ export function accept(id: string, lines: number): void {
         return
     }
     completionEvent.forceRead = true
-    completionEvent.acceptedAt = Date.now()
+    completionEvent.acceptedAt = performance.now()
 
     logSuggestionEvent()
     logCompletionEvent('accepted', {
@@ -131,7 +135,7 @@ function createId(): string {
 }
 
 function logSuggestionEvent(): void {
-    const now = Date.now()
+    const now = performance.now()
     // eslint-disable-next-line ban/ban
     displayedCompletions.forEach(completionEvent => {
         const { suggestedAt, suggestionLoggedAt, startedAt, params, forceRead } = completionEvent
