@@ -119,7 +119,7 @@ export class MyPrompt implements Recipe {
             const currentDirContext = await MyPrompt.getCurrentDirContext(isTestRequest)
             // Add package.json context if it's available for test requests
             if (isTestRequest) {
-                const packageJSONContextMessage = await MyPrompt.getPackageJsonContext()
+                const packageJSONContextMessage = await MyPrompt.getPackageJsonContext(selection?.fileName)
                 currentDirContext.push(...packageJSONContextMessage)
             }
             contextMessages.push(...currentDirContext)
@@ -208,10 +208,11 @@ export class MyPrompt implements Recipe {
     // Create Context from files within a directory
     public static async getCurrentDirContext(isTestRequest: boolean): Promise<ContextMessage[]> {
         // Get current document file path
-        const currentDirPath = vscode.window.activeTextEditor?.document?.fileName.replace(/\/[^/]+$/, '')
-        if (!currentDirPath) {
+        const currentFileName = vscode.window.activeTextEditor?.document?.fileName
+        if (!currentFileName) {
             return []
         }
+        const currentDirPath = getCurrentDirPath(currentFileName)
         return MyPrompt.getEditorDirContext(currentDirPath, isTestRequest)
     }
 
@@ -232,13 +233,10 @@ export class MyPrompt implements Recipe {
                 if (filesInDir.length > 0) {
                     return await populateVscodeDirContextMessage(dirUri, filesInDir.slice(0, 10))
                 }
-                // Find other test file in the workspace if there are no test files in the directory
-                // search for the test file cloest to the current directory in the same language
-                // only need 1 file
-                const dirPathUp = dirPath.split('/')
-                dirPathUp.pop()
+                const parentDirName = getParentDirName(dirPath)
+                // Search for a test file in the parent directory
                 const testFile = await vscode.workspace.findFiles(
-                    `**/${dirPathUp.pop()}/**/*test.*`,
+                    `**/${parentDirName}/**/*test.*`,
                     '**/node_modules/**',
                     1
                 )
@@ -247,9 +245,7 @@ export class MyPrompt implements Recipe {
                 }
             }
             // Get first 10 files in the directory
-            const filesInDir = (await vscode.workspace.fs.readDirectory(dirUri))
-                .filter(file => file[1] === 1 && !file[0].startsWith('.'))
-                .slice(0, 10)
+            const filesInDir = await getFirstNFilesFromDir(dirUri, 10)
             // When there is no test files, Try to add the package.json context if it's available
             return await populateVscodeDirContextMessage(dirUri, filesInDir)
         } catch {
@@ -258,12 +254,12 @@ export class MyPrompt implements Recipe {
     }
 
     // Get context from the last package.json in the current file path
-    public static async getPackageJsonContext(): Promise<ContextMessage[]> {
-        const currentFilePath = vscode.window.activeTextEditor?.document.uri.fsPath
+    public static async getPackageJsonContext(filePath?: string): Promise<ContextMessage[]> {
+        const currentFilePath = filePath || vscode.window.activeTextEditor?.document.uri.fsPath
         if (!currentFilePath) {
             return []
         }
-        // Search for the last package.json in the current file path
+        // Search for the package.json from the root of the repository
         const packageJsonPath = await vscode.workspace.findFiles('**/package.json', '**/node_modules/**', 1)
         if (!packageJsonPath.length) {
             return []
@@ -272,8 +268,7 @@ export class MyPrompt implements Recipe {
             const packageJsonUri = packageJsonPath[0]
             const packageJsonContent = await vscode.workspace.fs.readFile(packageJsonUri)
             // Turn the content into a json and get the scripts object only
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-            const packageJson = JSON.parse(packageJsonContent.toString())
+            const packageJson = JSON.parse(packageJsonContent.toString()) as Record<string, unknown>
             const scripts = packageJson.scripts
             const devDependencies = packageJson.devDependencies
             // stringify the scripts object with devDependencies
@@ -291,6 +286,14 @@ export class MyPrompt implements Recipe {
         }
     }
 }
+
+/**
+ * Populates context messages for files in a VS Code directory.
+ *
+ * @param dirUri - The VS Code Uri of the directory to get files from.
+ * @param filesInDir - An array of file name and file type tuples for the files in the director
+ *
+ */
 
 async function populateVscodeDirContextMessage(
     dirUri: vscode.Uri,
@@ -328,3 +331,19 @@ function toJSON(context: string): string {
     const escaped = context.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\//g, '\\/')
     return JSON.stringify(escaped)
 }
+
+// Split the directory path into parts and remove the last part to get the parent directory path
+const getParentDirName = (dirPath: string): string => {
+    const pathParts = dirPath.split('/')
+    pathParts.pop()
+    return pathParts.pop() || ''
+}
+
+// Get the current directory path from the file path
+const getCurrentDirPath = (filePath: string): string => filePath?.replace(/\/[^/]+$/, '')
+
+// Get the first n files from a directory Uri
+const getFirstNFilesFromDir = async (dirUri: vscode.Uri, n: number): Promise<[string, vscode.FileType][]> =>
+    (await vscode.workspace.fs.readDirectory(dirUri))
+        .filter(file => file[1] === 1 && !file[0].startsWith('.'))
+        .slice(0, n)

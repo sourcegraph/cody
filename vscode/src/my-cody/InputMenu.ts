@@ -224,7 +224,7 @@ export async function showRecipeTypeQuickPick(
                 : 'No recipe files were found...'
         options.push(msg)
     }
-    const title = 'Cody Custom Recipes - Recipe Type'
+    const title = 'Cody: Custom Recipes - Recipe Type'
     const placeHolder = 'Select recipe type to continue...'
     // Show quick pick menu
     const recipeType = await vscode.window.showQuickPick(options, { title, placeHolder })

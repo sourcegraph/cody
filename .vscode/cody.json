@@ -5,7 +5,10 @@
       "prompt": "Correct all typos and non-standard usage for the selected code."
     },
     "Refactor Code": {
-      "prompt": "Please analyze the code and suggest constructive edits that follow best practices and improve code quality and readability. Focus your responses on being clear, thoughtful, coherent and easy for me to understand. Do not make changes that alter intended functionality without explaining why. Avoid responses that are overly complex or difficult to implement. Strive to provide helpful recommendations based on other shared code snippests."
+      "prompt": "Please analyze the code and suggest constructive edits that follow best practices and improve code quality and readability. Focus your responses on being clear, thoughtful, coherent and easy for me to understand. Do not make changes that alter intended functionality without explaining why. Avoid responses that are overly complex or difficult to implement. Strive to provide helpful recommendations based on other shared code snippests.",
+      "context": {
+        "currentFile": true
+      }
     },
     "Generate README.md for Current Directory": {
       "prompt": "Write a detailed README.md introduction for this project. If possible, briefly explain what the directory is and its key features. Use Markdown formatting. Focus on clarity and being beginner-friendly. Surround the answer with a code block to indicate that it is code.",
