@@ -18,7 +18,7 @@ import { truncateText } from '../../prompt/truncation'
 import { Interaction } from '../transcript/interaction'
 
 import { ChatQuestion } from './chat-question'
-import { numResults } from './helpers'
+import { getFileExtension, numResults } from './helpers'
 import { InlineTouch } from './inline-touch'
 import { Recipe, RecipeContext, RecipeID } from './recipe'
 
@@ -126,7 +126,7 @@ export class MyPrompt implements Recipe {
         }
         // Create context messages from a fsPath of a workspace directory
         if (isContextRequired.directoryPath?.length) {
-            const fileContext = await MyPrompt.getEditorDirContext(isContextRequired.directoryPath)
+            const fileContext = await MyPrompt.getEditorDirContext(isContextRequired.directoryPath, selection?.fileName)
             contextMessages.push(...fileContext)
         }
         // Create context messages from a fsPath of a file
@@ -213,12 +213,16 @@ export class MyPrompt implements Recipe {
             return []
         }
         const currentDirPath = getCurrentDirPath(currentFileName)
-        return MyPrompt.getEditorDirContext(currentDirPath, isTestRequest)
+        return MyPrompt.getEditorDirContext(currentDirPath, currentFileName, isTestRequest)
     }
 
     // Create Context from Current Directory of the Active Document
     // Return tests files only if testOnly is true
-    public static async getEditorDirContext(dirPath: string, testOnly?: boolean): Promise<ContextMessage[]> {
+    public static async getEditorDirContext(
+        dirPath: string,
+        currentFileName?: string,
+        testOnly?: boolean
+    ): Promise<ContextMessage[]> {
         try {
             // get a list of files from the current directory path
             const dirUri = vscode.Uri.file(dirPath)
@@ -234,11 +238,12 @@ export class MyPrompt implements Recipe {
                     return await populateVscodeDirContextMessage(dirUri, filesInDir.slice(0, 10))
                 }
                 const parentDirName = getParentDirName(dirPath)
-                // Search for a test file in the parent directory
+                const fileExt = currentFileName ? getFileExtension(currentFileName) : '*'
+                // Search for test files from the parent directory
                 const testFile = await vscode.workspace.findFiles(
-                    `**/${parentDirName}/**/*test.*`,
+                    `**/${parentDirName}/**/*test.${fileExt}}`,
                     '**/node_modules/**',
-                    1
+                    5
                 )
                 if (testFile.length) {
                     return await MyPrompt.getFilePathContext(testFile[0].fsPath)
