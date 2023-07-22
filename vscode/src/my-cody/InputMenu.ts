@@ -18,7 +18,7 @@ export async function showCustomRecipeMenu(): Promise<answerType | void> {
         { kind: 0, label: 'Open Recipes Config File', id: 'open' },
     ]
     const inputOptions = {
-        title: 'Cody: Custom Recipes (Experimental)',
+        title: 'Cody: Custom Recipes (Internal Experimental)',
         placeHolder: 'Select an option to continue or ESC to cancel',
     }
     const selectedOption = await vscode.window.showQuickPick(options, inputOptions)

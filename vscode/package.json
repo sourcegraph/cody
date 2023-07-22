@@ -434,7 +434,7 @@
       {
         "command": "cody.customRecipes.list",
         "category": "Cody",
-        "title": "Custom Recipes (Experimental)",
+        "title": "Custom Recipes (Internal Experimental)",
         "when": "cody.activated",
         "enablement": "config.cody.experimental.customRecipes",
         "icon": "$(bookmark)"
