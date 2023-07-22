@@ -3,7 +3,7 @@ import * as vscode from 'vscode'
 import { Preamble } from '@sourcegraph/cody-shared/src/chat/preamble'
 import { defaultCodyPromptContext } from '@sourcegraph/cody-shared/src/chat/recipes/my-prompt'
 
-import { isInternalUser } from '../chat/protocol'
+import { debug } from '../log'
 
 import { CustomRecipesBuilder } from './CustomRecipesBuilder'
 import { constructFileUri, createFileWatch, createJSONFile, deleteFile, saveJSONFile } from './helper'
@@ -31,45 +31,87 @@ export class MyPromptController {
     private builder: CustomRecipesBuilder
 
     private myPromptInProgress: CodyPrompt | null = null
-    private promptInProgress: string | null = null
-    private dev = false
+
+    private webViewMessenger: (() => Promise<void>) | null = null
     public wsFileWatcher: vscode.FileSystemWatcher | null = null
     public userFileWatcher: vscode.FileSystemWatcher | null = null
 
     constructor(
-        private debug: (filterLabel: string, text: string, ...args: unknown[]) => void,
         private context: vscode.ExtensionContext,
-        endpoint: string | null
+        private isEnabled: boolean
     ) {
-        this.debug('MyPromptsProvider', 'Initialized')
-        this.isDev(endpoint)
-
+        debug('MyPromptsProvider', 'initializing')
         this.tools = new MyToolsProvider(context)
         const user = this.tools.getUserInfo()
-        this.builder = new CustomRecipesBuilder(user?.workspaceRoot, user.homeDir)
-        // Create file watchers for cody.json files used for building custom recipes
-        if (this.dev) {
-            this.wsFileWatcher = createFileWatch(user?.workspaceRoot)
-            this.userFileWatcher = createFileWatch(user?.homeDir)
-        }
-        this.refresh().catch(error => console.error(error))
+        this.builder = new CustomRecipesBuilder(isEnabled, user?.workspaceRoot, user.homeDir)
+        this.builder.activate(this.isEnabled)
+        // Toggle on Config Change
+        vscode.workspace.onDidChangeConfiguration(e => {
+            if (e.affectsConfiguration('cody')) {
+                this.checkIsConfigEnabled()
+            }
+        })
+        this.watcherInit()
     }
 
-    private isDev(uri: string | null): boolean {
-        this.dev = isInternalUser(uri || '')
-        return this.dev
+    public setMessager(messenger: () => Promise<void>): void {
+        if (this.webViewMessenger) {
+            return
+        }
+        this.webViewMessenger = messenger
+    }
+
+    // Create file watchers for cody.json files used for building custom recipes
+    private watcherInit(): void {
+        if (!this.isEnabled) {
+            return
+        }
+        const user = this.tools.getUserInfo()
+        this.wsFileWatcher = createFileWatch(user?.workspaceRoot)
+        this.userFileWatcher = createFileWatch(user?.homeDir)
+        this.wsFileWatcher?.onDidChange(() => this.webViewMessenger?.())
+        this.userFileWatcher?.onDidChange(() => this.webViewMessenger?.())
+        return
+    }
+
+    public dispose(): void {
+        this.isEnabled = false
+        this.builder.dispose()
+        this.myPromptInProgress = null
+        this.myPremade = undefined
+        this.myStarter = ''
+        this.myPromptStore = new Map<string, CodyPrompt>()
+        this.wsFileWatcher?.dispose()
+        this.userFileWatcher?.dispose()
+    }
+
+    private checkIsConfigEnabled(): void {
+        const config = vscode.workspace.getConfiguration('cody')
+        const newConfig = config.get('experimental.customRecipes') as boolean
+        this.isEnabled = newConfig
+        this.builder.activate(newConfig)
+        if (newConfig && this.isEnabled) {
+            this.watcherInit()
+        }
+        if (!newConfig) {
+            this.dispose()
+        }
     }
 
     // getter for the promptInProgress
-    public get(type?: string): string | null {
+    public async get(type?: string, id?: string): Promise<string | null> {
         switch (type) {
+            case 'prompt':
+                return id ? this.myPromptStore.get(id)?.prompt || null : null
             case 'context':
                 return JSON.stringify(this.myPromptInProgress?.context || { ...defaultCodyPromptContext })
             case 'codebase':
                 return this.myPromptInProgress?.context?.codebase ? 'codebase' : null
-            default:
-                // return the terminal output from the last command run
+            case 'output':
+                // return the terminal output from the command for the prompt if any
                 return this.getCommandOutput()
+            default:
+                return null
         }
     }
 
@@ -86,19 +128,7 @@ export class MyPromptController {
     public find(id: string): string {
         const myPrompt = this.myPromptStore.get(id)
         this.myPromptInProgress = myPrompt || null
-        this.promptInProgress = myPrompt?.prompt || ''
-        return this.promptInProgress
-    }
-
-    public run(command: string, args?: string[]): string | null {
-        if (!args || args.length === 0) {
-            return this.tools.runCommand(command)
-        }
-        // Expand the ~ to the user's home directory
-        const homeDir = this.tools.getUserInfo()?.homeDir + '/' || ''
-        // Replace the ~/ with the home directory if arg starts with ~/
-        const filteredArgs = args.map(arg => arg.replace(/^~\//, homeDir))
-        return this.tools.runCommand(command, filteredArgs)
+        return myPrompt?.prompt || ''
     }
 
     public setCodebase(codebase?: string): void {
@@ -116,15 +146,21 @@ export class MyPromptController {
         return { prompts: this.myPromptStore, premade: this.myPremade, starter: this.myStarter }
     }
 
-    public getCommandOutput(): string | null {
+    public async getCommandOutput(): Promise<string | null> {
         if (!this.myPromptInProgress) {
             return null
         }
+        const fullCommand = this.myPromptInProgress.context?.command
+        if (fullCommand) {
+            const output = await this.tools.exeCommand(fullCommand)
+            return output || null
+        }
+        // TODO: remove this after we remove old command fields
         const { command, args } = this.myPromptInProgress
         if (!command) {
             return null
         }
-        return this.run(command, args)
+        return this.tools.runCommand(command, args)
     }
 
     // Save the user prompts to the extension storage
@@ -159,14 +195,10 @@ export class MyPromptController {
 
     // Get the prompts from cody.json file then build the map of prompts
     public async refresh(): Promise<void> {
-        // NOTE: Internal s2 users only
-        if (!this.dev) {
-            return
-        }
-        const userJSON = await this.builder.get()
-        this.myPromptStore = userJSON.prompts
-        this.myPremade = userJSON.premade
-        this.myStarter = userJSON.starter
+        const { prompts, premade, starter } = await this.builder.get()
+        this.myPromptStore = prompts
+        this.myPremade = premade
+        this.myStarter = starter
         return
     }
 
@@ -208,19 +240,56 @@ export class MyPromptController {
             }
             await this.fileTypeActions(selected, fileType)
         } else if (selected === 'add') {
-            // Get the prompt name and prompt description from the user using the input box
-            const promptName = await showPromptNameInput(this.myPromptStore)
-            if (!promptName) {
-                return
-            }
-            const newPrompt = await createNewPrompt(promptName)
-            if (!newPrompt) {
-                return
-            }
-            // Save the prompt to the current Map and Extension storage
-            this.myPromptStore.set(promptName, newPrompt)
-            await this.save(promptName, newPrompt)
+            await this.addUserRecipeQuick()
+        } else if (selected === 'list') {
+            await this.quickRecipe()
         }
+    }
+
+    public async quickRecipe(): Promise<void> {
+        // Get the list of prompts from the cody.json file
+        const promptList = this.getPromptList() || []
+        const promptItems = promptList.map(prompt => ({
+            detail: this.myPromptStore.get(prompt)?.prompt,
+            label: prompt,
+            description: this.myPromptStore.get(prompt)?.type,
+        })) as vscode.QuickPickItem[]
+        const seperator: vscode.QuickPickItem = { kind: -1, label: 'action', detail: '' }
+        const addOption: vscode.QuickPickItem = { label: 'Create a New User Recipe', detail: '', alwaysShow: true }
+        promptItems.push(seperator, addOption)
+        // Show the list of prompts to the user using a quick pick
+        const options = { title: 'Cody: My Custom Recipes', placeHolder: 'Select a recipe to run...' }
+        const selectedPrompt = await vscode.window.showQuickPick(promptItems, options)
+        if (!selectedPrompt) {
+            return
+        }
+        // Find the prompt based on the selected prompt name
+        const promptTitle = selectedPrompt.label
+        if (promptTitle === addOption.label) {
+            await this.addUserRecipeQuick()
+            return
+        }
+        if (!promptTitle) {
+            return
+        }
+        // Run the prompt
+        await vscode.commands.executeCommand('cody.customRecipes.exec', promptTitle)
+    }
+
+    // Get the prompt name and prompt description from the user using the input box
+    // Add new recipe to user's .vscode/cody.json file
+    private async addUserRecipeQuick(): Promise<void> {
+        const promptName = await showPromptNameInput(this.myPromptStore)
+        if (!promptName) {
+            return
+        }
+        const newPrompt = await createNewPrompt(promptName)
+        if (!newPrompt) {
+            return
+        }
+        // Save the prompt to the current Map and Extension storage
+        this.myPromptStore.set(promptName, newPrompt)
+        await this.save(promptName, newPrompt)
     }
 
     private async fileTypeActions(action: string, fileType: CodyPromptType): Promise<void> {

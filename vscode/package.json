@@ -118,7 +118,7 @@
           },
           {
             "id": "inline-assist",
-            "title": "Inline Chat (Experimental)",
+            "title": "Inline Chat (Beta)",
             "description": "Chat with Cody without leaving your file. Click the + button next to any line number in a file to bring up Inline Chat.\n[Enable in Settings](command:cody.walkthrough.enableInlineChat)",
             "media": {
               "markdown": "walkthroughs/inline-assist.md"
@@ -430,6 +430,14 @@
         "when": "cody.nonstop.fixups.enabled",
         "enablement": "!cody.fixup.view.isEmpty",
         "icon": "$(diff)"
+      },
+      {
+        "command": "cody.customRecipes.list",
+        "category": "Cody",
+        "title": "Custom Recipes (Internal Experimental)",
+        "when": "cody.activated",
+        "enablement": "config.cody.experimental.customRecipes",
+        "icon": "$(bookmark)"
       }
     ],
     "keybindings": [
@@ -459,6 +467,12 @@
         "key": "ctrl+shift+c",
         "mac": "cmd+shift+c",
         "when": "cody.activated && editorFocus && config.cody.inlineChat.enabled"
+      },
+      {
+        "command": "cody.customRecipes.list",
+        "key": "ctrl+shift+v",
+        "mac": "cmd+shift+v",
+        "when": "cody.activated && editorFocus"
       }
     ],
     "submenus": [
@@ -557,6 +571,10 @@
         {
           "command": "cody.guardrails.debug",
           "when": "config.cody.experimental.guardrails && editorHasSelection"
+        },
+        {
+          "command": "cody.customRecipes.list",
+          "when": "cody.activated && config.cody.experimental.customRecipes"
         }
       ],
       "editor/context": [
@@ -608,7 +626,11 @@
         },
         {
           "command": "cody.guardrails.debug",
-          "when": "config.cody.experimental.guardrails && editorHasSelection"
+          "when": "cody.activated && config.cody.experimental.guardrails && editorHasSelection"
+        },
+        {
+          "command": "cody.customRecipes.list",
+          "when": "cody.activated && config.cody.experimental.customRecipes"
         }
       ],
       "view/title": [
@@ -792,6 +814,12 @@
           "order": 8,
           "type": "boolean",
           "markdownDescription": "Experimental feature for internal use.",
+          "default": false
+        },
+        "cody.experimental.customRecipes": {
+          "order": 9,
+          "type": "boolean",
+          "markdownDescription": "[Internal Experimental] Create reusable recipes with customized prompts and context tailored to your workflow.",
           "default": false
         },
         "cody.debug.enable": {
