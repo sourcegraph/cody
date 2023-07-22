@@ -8,7 +8,7 @@ Starting from `0.2.0`, Cody is using `major.EVEN_NUMBER.patch` for release versi
 
 ### Added
 
-- `Custom Recipes`: A new experimental feature now available behind the `cody.experimental.customRecipes` feature flag. [pull/348](https://github.com/sourcegraph/cody/pull/348)
+- [Internal] `Custom Recipes`: An experimental feature now available behind the `cody.experimental.customRecipes` feature flag for internal testing purpose. [pull/348](https://github.com/sourcegraph/cody/pull/348)
 
 ### Fixed
 
