@@ -24,17 +24,17 @@ export class UnstableCodeGenProvider extends Provider {
     public async generateCompletions(abortSignal: AbortSignal, snippets: ReferenceSnippet[]): Promise<Completion[]> {
         const params = {
             debug_ext_path: 'cody',
-            lang_prefix: `<|${mapVSCodeLanguageIdToModelId(this.languageId)}|>`,
-            prefix: this.prefix,
-            suffix: this.suffix,
+            lang_prefix: `<|${mapVSCodeLanguageIdToModelId(this.options.languageId)}|>`,
+            prefix: this.options.prefix,
+            suffix: this.options.suffix,
             top_p: 0.95,
             temperature: 0.2,
-            max_tokens: this.multiline ? 40 : 128,
+            max_tokens: this.options.multiline ? 40 : 128,
             // The backend expects an even number of requests since it will
             // divide it into two different batches.
             batch_size: makeEven(4),
             // TODO: Figure out the exact format to attach context
-            context: JSON.stringify(prepareContext(snippets, this.fileName)),
+            context: JSON.stringify(prepareContext(snippets, this.options.fileName)),
             completion_type: 'automatic',
         }
 
@@ -55,11 +55,11 @@ export class UnstableCodeGenProvider extends Provider {
         try {
             const data = (await response.json()) as { completions: { completion: string }[] }
 
-            const completions: string[] = data.completions.map(c => postProcess(c.completion, this.multiline))
+            const completions: string[] = data.completions.map(c => postProcess(c.completion, this.options.multiline))
             log?.onComplete(completions)
 
             return completions.map(content => ({
-                prefix: this.prefix,
+                prefix: this.options.prefix,
                 content,
             }))
         } catch (error: any) {

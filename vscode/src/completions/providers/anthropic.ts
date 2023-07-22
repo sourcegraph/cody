@@ -52,12 +52,12 @@ export class AnthropicProvider extends Provider {
 
     private createPromptPrefix(): { messages: Message[]; prefix: PrefixComponents } {
         // TODO(beyang): escape 'Human:' and 'Assistant:'
-        const prefixLines = this.prefix.split('\n')
+        const prefixLines = this.options.prefix.split('\n')
         if (prefixLines.length === 0) {
             throw new Error('no prefix lines')
         }
 
-        const { head, tail, overlap } = getHeadAndTail(this.prefix)
+        const { head, tail, overlap } = getHeadAndTail(this.options.prefix)
         const prefixMessages: Message[] = [
             {
                 speaker: 'human',
@@ -113,7 +113,9 @@ export class AnthropicProvider extends Provider {
     private postProcess(rawResponse: string): string {
         let completion = extractFromCodeBlock(rawResponse)
 
-        const trimmedPrefixContainNewline = this.prefix.slice(this.prefix.trimEnd().length).includes('\n')
+        const trimmedPrefixContainNewline = this.options.prefix
+            .slice(this.options.prefix.trimEnd().length)
+            .includes('\n')
         if (trimmedPrefixContainNewline) {
             // The prefix already contains a `\n` that Claude was not aware of, so we remove any
             // leading `\n` followed by whitespace that Claude might add.
@@ -126,7 +128,7 @@ export class AnthropicProvider extends Provider {
         completion = fixBadCompletionStart(completion)
 
         // Only keep a single line in single-line completions mode
-        if (!this.multiline) {
+        if (!this.options.multiline) {
             const lines = completion.split('\n')
             completion = lines[0]
         }
@@ -142,7 +144,7 @@ export class AnthropicProvider extends Provider {
             throw new Error('prompt length exceeded maximum alloted chars')
         }
 
-        const args: CompletionParameters = this.multiline
+        const args: CompletionParameters = this.options.multiline
             ? {
                   temperature: 0.5,
                   messages: prompt,
@@ -157,7 +159,7 @@ export class AnthropicProvider extends Provider {
               }
 
         // Issue request
-        const responses = await batchCompletions(this.completionsClient, args, this.n, abortSignal)
+        const responses = await batchCompletions(this.completionsClient, args, this.options.n, abortSignal)
 
         // Post-process
         const ret = responses.map(resp => {
@@ -169,7 +171,7 @@ export class AnthropicProvider extends Provider {
 
             return [
                 {
-                    prefix: this.prefix,
+                    prefix: this.options.prefix,
                     messages: prompt,
                     content,
                     stopReason: resp.stopReason,
