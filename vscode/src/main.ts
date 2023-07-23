@@ -16,6 +16,7 @@ import { createProviderConfig as createAnthropicProviderConfig } from './complet
 import { ProviderConfig } from './completions/providers/provider'
 import { createProviderConfig as createUnstableCodeGenProviderConfig } from './completions/providers/unstable-codegen'
 import { createProviderConfig as createUnstableHuggingFaceProviderConfig } from './completions/providers/unstable-huggingface'
+import { registerAutocompleteTraceView } from './completions/tracer/traceView'
 import { getConfiguration, getFullConfig, migrateConfiguration } from './configuration'
 import { VSCodeEditor } from './editor/vscode-editor'
 import { configureExternalServices } from './external-services'
@@ -378,7 +379,8 @@ function createCompletionsProvider(
         vscode.commands.registerCommand('cody.autocomplete.inline.accepted', ({ codyLogId, codyLines }) => {
             CompletionsLogger.accept(codyLogId, codyLines)
         }),
-        vscode.languages.registerInlineCompletionItemProvider('*', completionsProvider)
+        vscode.languages.registerInlineCompletionItemProvider('*', completionsProvider),
+        registerAutocompleteTraceView(completionsProvider)
     )
     return {
         dispose: () => {

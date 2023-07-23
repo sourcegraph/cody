@@ -438,6 +438,12 @@
         "when": "cody.activated",
         "enablement": "config.cody.experimental.customRecipes",
         "icon": "$(bookmark)"
+      },
+      {
+        "command": "cody.autocomplete.openTraceView",
+        "category": "Cody",
+        "title": "Open Autocomplete Trace View",
+        "when": "cody.activated && config.cody.autocomplete && config.cody.debug.enable && editorHasFocus && !editorReadonly"
       }
     ],
     "keybindings": [
