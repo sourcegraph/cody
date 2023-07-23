@@ -12,6 +12,10 @@ import styles from './Recipes.module.css'
 
 type RecipeListType = Record<string, string>
 
+interface State {
+    reorderedRecipes: RecipeListType
+}
+
 export const recipesList = {
     'explain-code-detailed': 'Explain selected code (detailed)',
     'explain-code-high-level': 'Explain selected code (high level)',
@@ -32,7 +36,9 @@ export const Recipes: React.FunctionComponent<{
     myPrompts: string[]
     endpoint: string
 }> = ({ vscodeAPI, myPrompts, endpoint }) => {
-    const [recipes, setRecipes] = useState<RecipeListType>(recipesList)
+    const initalState = vscodeAPI.getState() as State | undefined
+    const reorderedRecipeList: RecipeListType = initalState?.reorderedRecipes ?? recipesList
+    const [recipes, setRecipes] = useState<RecipeListType>(reorderedRecipeList)
     const [draggedIndex, setDraggedIndex] = useState<number | null>(null)
     const onRecipeClick = (recipeID: RecipeID): void => {
         vscodeAPI.postMessage({ command: 'executeRecipe', recipe: recipeID })
@@ -61,11 +67,12 @@ export const Recipes: React.FunctionComponent<{
             }
 
             setRecipes(reorderedRecipes)
+            vscodeAPI.setState({ reorderedRecipes })
             setDraggedIndex(index)
         }
     }
 
-    const handleDragEnd = (event: React.DragEvent<HTMLElement>): void => {
+    const handleDragEnd = (): void => {
         setDraggedIndex(null)
     }
 
@@ -147,7 +154,7 @@ export const Recipes: React.FunctionComponent<{
                             draggable={true}
                             onDragStart={e => handleDragStart(e, index)}
                             onDragOver={e => handleDragOver(e, index)}
-                            onDragEnd={e => handleDragEnd(e)}
+                            onDragEnd={handleDragEnd}
                         >
                             {value}
                         </VSCodeButton>
