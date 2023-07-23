@@ -2,13 +2,13 @@
   "name": "cody-ai",
   "private": true,
   "displayName": "Cody AI",
-  "version": "0.6.0",
+  "version": "0.6.1",
   "publisher": "sourcegraph",
   "license": "Apache-2.0",
   "icon": "resources/cody.png",
   "description": "Code AI with codebase context",
   "scripts": {
-    "dev:instance": "CODY_FOCUS_ON_STARTUP=1 NODE_ENV=development code --extensionDevelopmentPath=\"$INIT_CWD/vscode\" --disable-extension=sourcegraph.cody-ai --disable-extension=github.copilot --disable-extension=github.copilot-nightly --inspect-extensions=9333 . --goto ./src/logged-rerank.ts:16:5",
+    "dev:instance": "CODY_FOCUS_ON_STARTUP=1 NODE_ENV=development code --extensionDevelopmentPath=$PWD --disable-extension=sourcegraph.cody-ai --disable-extension=github.copilot --disable-extension=github.copilot-nightly --inspect-extensions=9333 --new-window . --goto ./src/logged-rerank.ts:16:5",
     "dev": "pnpm run build:dev && pnpm run dev:instance",
     "generate:completions": "OUTFILE=/tmp/run-code-completions-on-dataset.js && esbuild ./test/completions/run-code-completions-on-dataset.ts --bundle --external:vscode --outfile=$OUTFILE --format=cjs --platform=node --sourcemap=inline && node --enable-source-maps $OUTFILE",
     "build": "scripts/download-rg.sh && tsc --build && pnpm run esbuild --minify && vite build --mode production",
@@ -118,7 +118,7 @@
           },
           {
             "id": "inline-assist",
-            "title": "Inline Chat (Experimental)",
+            "title": "Inline Chat (Beta)",
             "description": "Chat with Cody without leaving your file. Click the + button next to any line number in a file to bring up Inline Chat.\n[Enable in Settings](command:cody.walkthrough.enableInlineChat)",
             "media": {
               "markdown": "walkthroughs/inline-assist.md"
@@ -292,11 +292,6 @@
         "title": "Find Code Smells"
       },
       {
-        "command": "cody.test.token",
-        "category": "Cody",
-        "title": "Set Access Token"
-      },
-      {
         "command": "cody.settings.user",
         "category": "Cody",
         "title": "User Settings",
@@ -312,11 +307,6 @@
         "command": "cody.auth.signin",
         "category": "Cody",
         "title": "Switch Account…"
-      },
-      {
-        "command": "cody.manual-completions",
-        "category": "Cody",
-        "title": "Open Autocomplete Panel (Experimental)"
       },
       {
         "command": "cody.settings.extension",
@@ -343,31 +333,6 @@
         "title": "Chat History",
         "group": "Cody",
         "icon": "$(list-unordered)"
-      },
-      {
-        "command": "cody.walkthrough.showLogin",
-        "category": "Cody Walkthrough",
-        "title": "Show Login"
-      },
-      {
-        "command": "cody.walkthrough.showChat",
-        "category": "Cody Walkthrough",
-        "title": "Show Chat"
-      },
-      {
-        "command": "cody.walkthrough.showFixup",
-        "category": "Cody Walkthrough",
-        "title": "Show Fixup"
-      },
-      {
-        "command": "cody.walkthrough.showExplain",
-        "category": "Cody Walkthrough",
-        "title": "Show Explain"
-      },
-      {
-        "command": "cody.walkthrough.enableInlineChat",
-        "category": "Cody Walkthrough",
-        "title": "Show Inline Chat"
       },
       {
         "command": "cody.comment.add",
@@ -402,7 +367,7 @@
       },
       {
         "command": "cody.inline.new",
-        "title": "Start a new Thread (Ctrl+Shift+C)",
+        "title": "Start New Thread",
         "category": "Cody Inline Chat",
         "when": "cody.activated && config.cody.inlineChat.enabled",
         "enablement": "editorFocus"
@@ -465,6 +430,14 @@
         "when": "cody.nonstop.fixups.enabled",
         "enablement": "!cody.fixup.view.isEmpty",
         "icon": "$(diff)"
+      },
+      {
+        "command": "cody.customRecipes.list",
+        "category": "Cody",
+        "title": "Custom Recipes (Internal Experimental)",
+        "when": "cody.activated",
+        "enablement": "config.cody.experimental.customRecipes",
+        "icon": "$(bookmark)"
       }
     ],
     "keybindings": [
@@ -492,7 +465,14 @@
       {
         "command": "cody.inline.new",
         "key": "ctrl+shift+c",
+        "mac": "cmd+shift+c",
         "when": "cody.activated && editorFocus && config.cody.inlineChat.enabled"
+      },
+      {
+        "command": "cody.customRecipes.list",
+        "key": "ctrl+shift+v",
+        "mac": "cmd+shift+v",
+        "when": "cody.activated && editorFocus"
       }
     ],
     "submenus": [
@@ -544,10 +524,6 @@
           "when": "cody.activated && editorHasSelection"
         },
         {
-          "command": "cody.test.token",
-          "when": "false"
-        },
-        {
           "command": "cody.focus",
           "title": "Cody: Sign In",
           "when": "!cody.activated"
@@ -593,32 +569,12 @@
           "when": "false"
         },
         {
-          "command": "cody.manual-completions",
-          "when": "config.cody.autocomplete"
-        },
-        {
           "command": "cody.guardrails.debug",
           "when": "config.cody.experimental.guardrails && editorHasSelection"
         },
         {
-          "command": "cody.walkthrough.showLogin",
-          "when": "false"
-        },
-        {
-          "command": "cody.walkthrough.showChat",
-          "when": "false"
-        },
-        {
-          "command": "cody.walkthrough.showFixup",
-          "when": "false"
-        },
-        {
-          "command": "cody.walkthrough.showExplain",
-          "when": "false"
-        },
-        {
-          "command": "cody.walkthrough.enableInlineChat",
-          "when": "false"
+          "command": "cody.customRecipes.list",
+          "when": "cody.activated && config.cody.experimental.customRecipes"
         }
       ],
       "editor/context": [
@@ -670,7 +626,11 @@
         },
         {
           "command": "cody.guardrails.debug",
-          "when": "config.cody.experimental.guardrails && editorHasSelection"
+          "when": "cody.activated && config.cody.experimental.guardrails && editorHasSelection"
+        },
+        {
+          "command": "cody.customRecipes.list",
+          "when": "cody.activated && config.cody.experimental.customRecipes"
         }
       ],
       "view/title": [
@@ -856,6 +816,12 @@
           "markdownDescription": "Experimental feature for internal use.",
           "default": false
         },
+        "cody.experimental.customRecipes": {
+          "order": 9,
+          "type": "boolean",
+          "markdownDescription": "[Internal Experimental] Create reusable recipes with customized prompts and context tailored to your workflow.",
+          "default": false
+        },
         "cody.debug.enable": {
           "order": 99,
           "type": "boolean",
@@ -922,6 +888,11 @@
           "type": "boolean",
           "default": false,
           "markdownDescription": "Trigger autocomplete when the cursor is at the end of a word (instead of waiting for a space or other non-word character). Share feedback at https://github.com/sourcegraph/cody/discussions/274."
+        },
+        "cody.autocomplete.experimental.completeSuggestWidgetSelection": {
+          "type": "boolean",
+          "default": false,
+          "markdownDescription": "Autocomplete based on the currently selection in the suggest widget. Requires the VS Code user setting `editor.inlineSuggest.suppressSuggestions` set to true and will change it to true in user settings if it is not true."
         },
         "cody.plugins.enabled": {
           "type": "boolean",

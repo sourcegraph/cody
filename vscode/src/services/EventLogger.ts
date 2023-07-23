@@ -1,33 +1,34 @@
 import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
-import { SourcegraphGraphQLAPIClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
-import { EventLogger } from '@sourcegraph/cody-shared/src/telemetry/EventLogger'
+import { EventLogger, ExtensionDetails } from '@sourcegraph/cody-shared/src/telemetry/EventLogger'
 
-import { version as packageVersion } from '../package.json'
+import { version as packageVersion } from '../../package.json'
+import { debug } from '../log'
 
-import { debug } from './log'
-import { LocalStorage } from './services/LocalStorageProvider'
+import { LocalStorage } from './LocalStorageProvider'
 
-let eventLoggerGQLClient: SourcegraphGraphQLAPIClient
 export let eventLogger: EventLogger | null = null
 let anonymousUserID: string
 
-export async function updateEventLogger(
-    config: Pick<ConfigurationWithAccessToken, 'serverEndpoint' | 'accessToken' | 'customHeaders'>,
+const extensionDetails: ExtensionDetails = { ide: 'VSCode', ideExtensionType: 'Cody' }
+
+export async function createOrUpdateEventLogger(
+    config: ConfigurationWithAccessToken,
     localStorage: LocalStorage
 ): Promise<void> {
     const status = await localStorage.setAnonymousUserID()
     anonymousUserID = localStorage.getAnonymousUserID() || ''
-    if (!eventLoggerGQLClient) {
-        eventLoggerGQLClient = new SourcegraphGraphQLAPIClient(config)
-        eventLogger = EventLogger.create(eventLoggerGQLClient)
+    const serverEndpoint = localStorage?.getEndpoint() || config.serverEndpoint
+
+    if (!eventLogger) {
+        eventLogger = new EventLogger(serverEndpoint, extensionDetails, config)
         if (status === 'installed') {
             logEvent('CodyInstalled')
         } else {
             logEvent('CodyVSCodeExtension:CodySavedLogin:executed')
         }
-    } else {
-        eventLoggerGQLClient.onConfigurationChange(config)
+        return
     }
+    eventLogger?.onConfigurationChange(serverEndpoint, extensionDetails, config)
 }
 
 /**

@@ -5,3 +5,4 @@ packages:
   - slack
   - vscode
   - web
+  - completions-review-tool

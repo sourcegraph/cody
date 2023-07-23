@@ -28,7 +28,6 @@ import { isError } from '@sourcegraph/cody-shared/src/utils'
 import { View } from '../../webviews/NavBar'
 import { getFullConfig } from '../configuration'
 import { VSCodeEditor } from '../editor/vscode-editor'
-import { logEvent } from '../event-logger'
 import { FilenameContextFetcher } from '../local-context/filename-context-fetcher'
 import { LocalKeywordContextFetcher } from '../local-context/local-keyword-context-fetcher'
 import { debug } from '../log'
@@ -36,12 +35,20 @@ import { getRerankWithLog } from '../logged-rerank'
 import { FixupTask } from '../non-stop/FixupTask'
 import { IdleRecipeRunner } from '../non-stop/roles'
 import { AuthProvider } from '../services/AuthProvider'
+import { logEvent } from '../services/EventLogger'
 import { LocalStorage } from '../services/LocalStorageProvider'
 import { SecretStorage } from '../services/SecretStorageProvider'
 import { TestSupport } from '../test-support'
 
 import { fastFilesExist } from './fastFileFinder'
-import { ConfigurationSubsetForWebview, DOTCOM_URL, ExtensionMessage, LocalEnv, WebviewMessage } from './protocol'
+import {
+    ConfigurationSubsetForWebview,
+    DOTCOM_URL,
+    ExtensionMessage,
+    isLocalApp,
+    LocalEnv,
+    WebviewMessage,
+} from './protocol'
 import { getRecipe } from './recipes'
 import { convertGitCloneURLToCodebaseName } from './utils'
 
@@ -57,6 +64,7 @@ export type Config = Pick<
     | 'useContext'
     | 'experimentalChatPredictions'
     | 'experimentalGuardrails'
+    | 'experimentalCustomRecipes'
     | 'pluginsEnabled'
     | 'pluginsConfig'
     | 'pluginsDebugEnabled'
@@ -121,14 +129,6 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
 
         this.currentWorkspaceRoot = ''
 
-        // listen for file change event for JSON files used for building Custom Recipes
-        const myWorkspacePromptsWatcher = this.editor.controllers?.prompt?.wsFileWatcher
-        const myUserPromptsWatcher = this.editor.controllers?.prompt?.userFileWatcher
-        myWorkspacePromptsWatcher?.onDidChange(() => this.sendMyPrompts())
-        myWorkspacePromptsWatcher?.onDidDelete(() => this.sendMyPrompts())
-        myUserPromptsWatcher?.onDidChange(() => this.sendMyPrompts())
-        myUserPromptsWatcher?.onDidDelete(() => this.sendMyPrompts())
-
         // listen for vscode active editor change event
         this.disposables.push(
             vscode.window.onDidChangeActiveTextEditor(async () => {
@@ -192,6 +192,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         if (authStatus.endpoint) {
             this.config.serverEndpoint = authStatus.endpoint
         }
+        void this.sendMyPrompts()
         this.configurationChangeEvent.fire()
     }
 
@@ -265,6 +266,8 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
             case 'auth':
                 if (message.type === 'app' && message.endpoint) {
                     await this.authProvider.appAuth(message.endpoint)
+                    // Log app button click events: e.g. app:download:clicked or app:connect:clicked
+                    this.sendEvent('click', message.value === 'download' ? 'app:download' : 'app:connect')
                     break
                 }
                 if (message.type === 'callback' && message.endpoint) {
@@ -296,7 +299,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 void this.openExternalLinks(message.value)
                 break
             case 'my-prompt':
-                await this.executeMyPrompt(message.title)
+                await this.executeCustomRecipe(message.title)
                 break
             case 'openFile': {
                 const rootPath = this.editor.getWorkspaceRootPath()
@@ -453,19 +456,23 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         if (this.config.experimentalChatPredictions) {
             void this.runRecipeForSuggestion('next-questions', text)
         }
-        await this.executeChatCommands(text)
+        await this.executeChatCommands(text, 'chat-question')
     }
 
-    private async executeChatCommands(text: string): Promise<void> {
+    private async executeChatCommands(text: string, recipeID: RecipeID = 'chat-question'): Promise<void> {
         switch (true) {
-            case /^\/r(est)?/i.test(text):
+            case /^\/o(pen)?/i.test(text):
+                // open the user's ~/.vscode/cody.json file
+                await this.editor.controllers.prompt.open(text.split(' ')[1])
+                break
+            case /^\/r(eset)?/i.test(text):
                 await this.clearAndRestartSession()
                 break
             case /^\/s(earch)?\s/i.test(text):
                 await this.executeRecipe('context-search', text)
                 break
             default:
-                return this.executeRecipe('chat-question', text)
+                return this.executeRecipe(recipeID, text)
         }
     }
 
@@ -727,21 +734,18 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         })
     }
 
-    private async executeMyPrompt(title: string): Promise<void> {
+    public async executeCustomRecipe(title: string): Promise<void> {
+        if (!this.config.experimentalCustomRecipes) {
+            return
+        }
         // Send prompt names to webview to display as recipe options
         if (!title || title === 'get') {
             await this.sendMyPrompts()
             return
         }
         // Create a new recipe
-        if (title === 'add') {
-            await this.editor.controllers.prompt.add()
-            await this.sendMyPrompts()
-            return
-        }
-        // Clear all recipes stored in user global storage
-        if (title === 'clear') {
-            await this.editor.controllers.prompt.clear()
+        if (title === 'menu') {
+            await this.editor.controllers.prompt.menu()
             await this.sendMyPrompts()
             return
         }
@@ -755,32 +759,37 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
             }
             return
         }
-        this.showTab('chat')
-        // Get prompt details from controller by title then execute
+        // Get prompt details from controller by title then execute prompt's command
         const prompt = this.editor.controllers.prompt.find(title)
+        await this.editor.controllers.prompt.get('command')
         if (!prompt) {
-            void vscode.window.showErrorMessage(`Could not find prompt for the "${title}" recipe.`)
-            debug('executeMyPrompt:noPrompt', title)
+            debug('executeCustomRecipe:noPrompt', title)
             return
         }
-        if (/^\/r(est)?/i.test(prompt)) {
-            this.editor.controllers.prompt.getCommandOutput()
-            await this.clearAndRestartSession()
-            return
+        if (!prompt.startsWith('/')) {
+            this.showTab('chat')
         }
-        await this.executeRecipe('my-prompt', prompt, true)
+        await this.executeChatCommands(prompt, 'my-prompt')
     }
 
     /**
      * Send custom recipe names to webview
      */
     private async sendMyPrompts(): Promise<void> {
-        await this.editor.controllers.prompt.refresh()
-        const prompts = this.editor.controllers.prompt.getPromptList()
-        void this.webview?.postMessage({
-            type: 'my-prompts',
-            prompts,
-        })
+        const send = async (): Promise<void> => {
+            await this.editor.controllers.prompt.refresh()
+            const prompts = this.editor.controllers.prompt.getPromptList()
+            void this.webview?.postMessage({
+                type: 'my-prompts',
+                prompts,
+                isEnabled: this.config.experimentalCustomRecipes,
+            })
+        }
+        const init = (): void => {
+            this.editor.controllers.prompt.setMessager(send)
+        }
+        init()
+        await send()
     }
 
     private async saveTranscriptToChatHistory(): Promise<void> {
@@ -819,6 +828,12 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         }
         await this.publishConfig()
         this.onConfigurationChange(newConfig)
+        // When logged out, user's endpoint will be set to null
+        const isLoggedOut = !authStatus.isLoggedIn && !authStatus.endpoint
+        const isAppEvent = isLocalApp(authStatus.endpoint || '') ? 'app:' : ''
+        const eventValue = isLoggedOut ? 'disconnected' : authStatus.isLoggedIn ? 'connected' : 'failed'
+        // e.g. auth:app:connected, auth:app:disconnected, auth:failed
+        this.sendEvent('auth', isAppEvent + eventValue)
     }
 
     /**
@@ -951,14 +966,13 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
             case 'auth':
                 logEvent(`CodyVSCodeExtension:Auth:${value}`, endpointUri, endpointUri)
                 break
-            // aditya combine this with above statemenet for auth or click
             case 'click':
                 logEvent(`CodyVSCodeExtension:${value}:clicked`, endpointUri, endpointUri)
                 break
         }
     }
 
-    private codyFeedbackPayload(): any {
+    private codyFeedbackPayload(): { chatTranscript: ChatMessage[] | null; lastChatUsedEmbeddings: boolean } | null {
         const endpoint = this.config.serverEndpoint || DOTCOM_URL.href
         const isPrivateInstance = new URL(endpoint).href !== DOTCOM_URL.href
 
@@ -969,7 +983,9 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         }
 
         const lastContextFiles = privateChatTranscript.at(-1)?.contextFiles
-        const lastChatUsedEmbeddings = lastContextFiles?.some(file => file.source === 'embeddings')
+        const lastChatUsedEmbeddings = lastContextFiles
+            ? lastContextFiles.some(file => file.source === 'embeddings')
+            : false
 
         // We only include full chat transcript for dot com users with connected codebase
         const chatTranscript = !isPrivateInstance && this.codebaseContext.getCodebase() ? privateChatTranscript : null

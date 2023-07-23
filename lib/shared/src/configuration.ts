@@ -12,6 +12,7 @@ export interface Configuration {
     autocomplete: boolean
     experimentalChatPredictions: boolean
     inlineChat: boolean
+    experimentalCustomRecipes: boolean
     experimentalGuardrails: boolean
     experimentalNonStop: boolean
     autocompleteAdvancedProvider: 'anthropic' | 'unstable-codegen' | 'unstable-huggingface'
@@ -20,6 +21,7 @@ export interface Configuration {
     autocompleteAdvancedCache: boolean
     autocompleteAdvancedEmbeddings: boolean
     autocompleteExperimentalTriggerMoreEagerly: boolean
+    autocompleteExperimentalCompleteSuggestWidgetSelection?: boolean
     pluginsEnabled?: boolean
     pluginsDebugEnabled?: boolean
     pluginsConfig?: {

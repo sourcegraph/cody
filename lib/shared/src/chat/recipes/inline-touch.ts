@@ -163,7 +163,7 @@ export class InlineTouch implements Recipe {
         const contextMessages: ContextMessage[] = []
         // Add selected text and current file as context and create context messages from current directory
         const selectedContext = ChatQuestion.getEditorSelectionContext(selection)
-        const currentDirContext = await MyPrompt.getEditorDirContext(currentDir, true)
+        const currentDirContext = await MyPrompt.getEditorDirContext(currentDir, selection.fileName, true)
         contextMessages.push(...selectedContext, ...currentDirContext)
         // Create context messages from open tabs
         if (contextMessages.length < 10) {

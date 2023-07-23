@@ -4,10 +4,10 @@ import * as vscode from 'vscode'
 import { ActiveTextEditorSelection } from '@sourcegraph/cody-shared/src/editor'
 import { SURROUNDING_LINES } from '@sourcegraph/cody-shared/src/prompt/constants'
 
-import { logEvent } from '../event-logger'
 import { CodyTaskState } from '../non-stop/utils'
 
 import { CodeLensProvider } from './CodeLensProvider'
+import { logEvent } from './EventLogger'
 import { editDocByUri, getIconPath, updateRangeOnDocChange } from './InlineAssist'
 
 const initPost = new vscode.Position(0, 0)
@@ -261,10 +261,15 @@ export class InlineController {
         this.selectionRange = initRange
         this.thread = null
     }
-
+    /**
+     * Display error message when Cody is unable to complete a request
+     */
     public async error(): Promise<void> {
-        this.reply('Request failed. Please close this and try again.', 'error')
-        if (this.currentTaskId) {
+        const fixupInProgress = this.currentTaskId.length > 0
+        const requestType = fixupInProgress ? 'fix/touch request' : 'request'
+        const msg = 'Please provide Cody with more details and try again.'
+        this.reply(`Cody was unable to complete your ${requestType}. ${msg}`, 'error')
+        if (fixupInProgress) {
             await this.stopFixMode(true)
         }
     }

@@ -11,12 +11,11 @@ import {
     extractFromCodeBlock,
     fixBadCompletionStart,
     getHeadAndTail,
-    indentation,
     OPENING_CODE_TAG,
     PrefixComponents,
     trimLeadingWhitespaceUntilNewline,
 } from '../text-processing'
-import { batchCompletions, lastNLines, messagesToText } from '../utils'
+import { batchCompletions, messagesToText } from '../utils'
 
 import { Provider, ProviderConfig, ProviderOptions } from './provider'
 
@@ -53,12 +52,12 @@ export class AnthropicProvider extends Provider {
 
     private createPromptPrefix(): { messages: Message[]; prefix: PrefixComponents } {
         // TODO(beyang): escape 'Human:' and 'Assistant:'
-        const prefixLines = this.prefix.split('\n')
+        const prefixLines = this.options.prefix.split('\n')
         if (prefixLines.length === 0) {
             throw new Error('no prefix lines')
         }
 
-        const { head, tail, overlap } = getHeadAndTail(this.prefix)
+        const { head, tail, overlap } = getHeadAndTail(this.options.prefix)
         const prefixMessages: Message[] = [
             {
                 speaker: 'human',
@@ -113,9 +112,10 @@ export class AnthropicProvider extends Provider {
 
     private postProcess(rawResponse: string): string {
         let completion = extractFromCodeBlock(rawResponse)
-        const startIndentation = indentation(lastNLines(this.prefix, 1) + completion.split('\n')[0])
 
-        const trimmedPrefixContainNewline = this.prefix.slice(this.prefix.trimEnd().length).includes('\n')
+        const trimmedPrefixContainNewline = this.options.prefix
+            .slice(this.options.prefix.trimEnd().length)
+            .includes('\n')
         if (trimmedPrefixContainNewline) {
             // The prefix already contains a `\n` that Claude was not aware of, so we remove any
             // leading `\n` followed by whitespace that Claude might add.
@@ -127,20 +127,10 @@ export class AnthropicProvider extends Provider {
         // Remove bad symbols from the start of the completion string.
         completion = fixBadCompletionStart(completion)
 
-        // Remove incomplete lines in single-line completions
-        if (this.multilineMode === null) {
-            let allowedNewlines = 2
+        // Only keep a single line in single-line completions mode
+        if (!this.options.multiline) {
             const lines = completion.split('\n')
-            if (lines.length >= allowedNewlines) {
-                // Only select two lines if they have the same indentation, otherwise only show one
-                // line. This will then most-likely trigger a multi-line completion after accepting
-                // and result in a better experience.
-                if (lines.length > 1 && startIndentation !== indentation(lines[1])) {
-                    allowedNewlines = 1
-                }
-
-                completion = lines.slice(0, allowedNewlines).join('\n')
-            }
+            completion = lines[0]
         }
 
         // Trim start and end of the completion to remove all trailing whitespace.
@@ -154,30 +144,22 @@ export class AnthropicProvider extends Provider {
             throw new Error('prompt length exceeded maximum alloted chars')
         }
 
-        let args: CompletionParameters
-        switch (this.multilineMode) {
-            case 'block': {
-                args = {
-                    temperature: 0.5,
-                    messages: prompt,
-                    maxTokensToSample: this.responseTokens,
-                    stopSequences: [anthropic.HUMAN_PROMPT, CLOSING_CODE_TAG],
-                }
-                break
-            }
-            default: {
-                args = {
-                    temperature: 0.5,
-                    messages: prompt,
-                    maxTokensToSample: Math.min(100, this.responseTokens),
-                    stopSequences: [anthropic.HUMAN_PROMPT, CLOSING_CODE_TAG, '\n\n'],
-                }
-                break
-            }
-        }
+        const args: CompletionParameters = this.options.multiline
+            ? {
+                  temperature: 0.5,
+                  messages: prompt,
+                  maxTokensToSample: this.responseTokens,
+                  stopSequences: [anthropic.HUMAN_PROMPT, CLOSING_CODE_TAG],
+              }
+            : {
+                  temperature: 0.5,
+                  messages: prompt,
+                  maxTokensToSample: Math.min(50, this.responseTokens),
+                  stopSequences: [anthropic.HUMAN_PROMPT, CLOSING_CODE_TAG, '\n\n'],
+              }
 
         // Issue request
-        const responses = await batchCompletions(this.completionsClient, args, this.n, abortSignal)
+        const responses = await batchCompletions(this.completionsClient, args, this.options.n, abortSignal)
 
         // Post-process
         const ret = responses.map(resp => {
@@ -189,7 +171,7 @@ export class AnthropicProvider extends Provider {
 
             return [
                 {
-                    prefix: this.prefix,
+                    prefix: this.options.prefix,
                     messages: prompt,
                     content,
                     stopReason: resp.stopReason,

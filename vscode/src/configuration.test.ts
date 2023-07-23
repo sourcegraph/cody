@@ -17,6 +17,7 @@ describe('getConfiguration', () => {
             codebase: '',
             useContext: 'embeddings',
             autocomplete: true,
+            experimentalCustomRecipes: false,
             experimentalChatPredictions: false,
             experimentalGuardrails: false,
             inlineChat: true,
@@ -31,6 +32,7 @@ describe('getConfiguration', () => {
             autocompleteAdvancedCache: true,
             autocompleteAdvancedEmbeddings: true,
             autocompleteExperimentalTriggerMoreEagerly: false,
+            autocompleteExperimentalCompleteSuggestWidgetSelection: false,
         })
     })
 
@@ -52,6 +54,8 @@ describe('getConfiguration', () => {
                     case 'cody.autocomplete.enabled':
                         return false
                     case 'cody.experimental.chatPredictions':
+                        return true
+                    case 'cody.experimental.customRecipes':
                         return true
                     case 'cody.experimental.guardrails':
                         return true
@@ -76,6 +80,8 @@ describe('getConfiguration', () => {
                     case 'cody.autocomplete.advanced.embeddings':
                         return false
                     case 'cody.autocomplete.experimental.triggerMoreEagerly':
+                        return false
+                    case 'cody.autocomplete.experimental.completeSuggestWidgetSelection':
                         return false
                     case 'cody.plugins.enabled':
                         return true
@@ -103,6 +109,7 @@ describe('getConfiguration', () => {
             },
             autocomplete: false,
             experimentalChatPredictions: true,
+            experimentalCustomRecipes: true,
             experimentalGuardrails: true,
             inlineChat: true,
             experimentalNonStop: true,
@@ -115,6 +122,7 @@ describe('getConfiguration', () => {
             autocompleteAdvancedCache: false,
             autocompleteAdvancedEmbeddings: false,
             autocompleteExperimentalTriggerMoreEagerly: false,
+            autocompleteExperimentalCompleteSuggestWidgetSelection: false,
         })
     })
 })

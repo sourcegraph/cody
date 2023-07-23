@@ -23,7 +23,12 @@ export type WebviewMessage =
     | { command: 'openFile'; filePath: string }
     | { command: 'edit'; text: string }
     | { command: 'insert'; text: string }
-    | { command: 'auth'; type: 'signin' | 'signout' | 'support' | 'app' | 'callback'; endpoint?: string }
+    | {
+          command: 'auth'
+          type: 'signin' | 'signout' | 'support' | 'app' | 'callback'
+          endpoint?: string
+          value?: string
+      }
     | { command: 'abort' }
     | { command: 'chat-button'; action: string }
     | { command: 'setEnabledPlugins'; plugins: string[] }
@@ -45,7 +50,7 @@ export type ExtensionMessage =
     | { type: 'suggestions'; suggestions: string[] }
     | { type: 'app-state'; isInstalled: boolean }
     | { type: 'enabled-plugins'; plugins: string[] }
-    | { type: 'my-prompts'; prompts: string[] }
+    | { type: 'my-prompts'; prompts: string[]; isEnabled: boolean }
 
 /**
  * The subset of configuration that is visible to the webview.

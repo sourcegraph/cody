@@ -44,7 +44,12 @@ function getOSName(): string | null {
 `,
     `
 function isDarkColorScheme(): boolean {
-    return ${CURSOR}
+    return window.match${CURSOR}
+}
+`,
+    `
+function isLocalhost(): boolean {
+    return window.location.host${CURSOR}
 }
 `,
 ].map(code => dedent(code))

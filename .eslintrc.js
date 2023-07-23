@@ -27,6 +27,7 @@ const config = {
       __dirname + '/vscode/scripts/tsconfig.json',
       __dirname + '/web/tsconfig.json',
       __dirname + '/tsconfig.json',
+      __dirname + '/completions-review-tool/tsconfig.json',
     ],
   },
   settings: {

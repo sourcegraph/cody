@@ -231,9 +231,11 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                     setHistoryIndex(newIndex)
                     setFormInput(inputHistory[newIndex])
                 } else if (event.key === 'ArrowDown' && caretPosition === formInput.length) {
-                    const newIndex = historyIndex + 1 >= inputHistory.length ? 0 : historyIndex + 1
-                    setHistoryIndex(newIndex)
-                    setFormInput(inputHistory[newIndex])
+                    if (historyIndex + 1 < inputHistory.length) {
+                        const newIndex = historyIndex + 1
+                        setHistoryIndex(newIndex)
+                        setFormInput(inputHistory[newIndex])
+                    }
                 }
             }
         },
