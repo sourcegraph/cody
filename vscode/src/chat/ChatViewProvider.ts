@@ -972,7 +972,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         }
     }
 
-    private codyFeedbackPayload(): any {
+    private codyFeedbackPayload(): { chatTranscript: ChatMessage[] | null; lastChatUsedEmbeddings: boolean } | null {
         const endpoint = this.config.serverEndpoint || DOTCOM_URL.href
         const isPrivateInstance = new URL(endpoint).href !== DOTCOM_URL.href
 
@@ -983,7 +983,9 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         }
 
         const lastContextFiles = privateChatTranscript.at(-1)?.contextFiles
-        const lastChatUsedEmbeddings = lastContextFiles?.some(file => file.source === 'embeddings')
+        const lastChatUsedEmbeddings = lastContextFiles
+            ? lastContextFiles.some(file => file.source === 'embeddings')
+            : false
 
         // We only include full chat transcript for dot com users with connected codebase
         const chatTranscript = !isPrivateInstance && this.codebaseContext.getCodebase() ? privateChatTranscript : null
