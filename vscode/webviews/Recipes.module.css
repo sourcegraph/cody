@@ -11,6 +11,11 @@
     padding-bottom: 0.5rem;
 }
 
+.recipe-button-drag {
+    border-top: 2px solid var(--vscode-activityBar-activeBorder
+    );
+}
+
 .recipes-header {
     display: flex;
     justify-content: space-between;

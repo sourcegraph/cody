@@ -65,7 +65,7 @@ export const Recipes: React.FunctionComponent<{
         }
     }
 
-    const handleDragEnd = (): void => {
+    const handleDragEnd = (event: React.DragEvent<HTMLElement>): void => {
         setDraggedIndex(null)
     }
 
@@ -139,13 +139,15 @@ export const Recipes: React.FunctionComponent<{
                     {Object.entries(recipes).map(([key, value], index) => (
                         <VSCodeButton
                             key={key}
-                            className={styles.recipeButton}
+                            className={`${styles.recipeButton} ${
+                                draggedIndex === index ? styles.recipeButtonDrag : ''
+                            }`}
                             type="button"
                             onClick={() => onRecipeClick(key as RecipeID)}
                             draggable={true}
                             onDragStart={e => handleDragStart(e, index)}
                             onDragOver={e => handleDragOver(e, index)}
-                            onDragEnd={handleDragEnd}
+                            onDragEnd={e => handleDragEnd(e)}
                         >
                             {value}
                         </VSCodeButton>
