@@ -30,7 +30,7 @@ interface CodyCompletionItemProviderConfig {
     disableTimeouts?: boolean
     isEmbeddingsContextEnabled?: boolean
     triggerMoreEagerly: boolean
-    cache?: CompletionsCache
+    cache: CompletionsCache | null
     completeSuggestWidgetSelection?: boolean
 }
 
@@ -44,50 +44,30 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
         max: 10,
     })
 
-    private providerConfig: ProviderConfig
-    private history: History
-    private statusBar: CodyStatusBar
-    private codebaseContext: CodebaseContext
-    private responsePercentage: number
-    private prefixPercentage: number
-    private suffixPercentage: number
-    private disableTimeouts: boolean
-    private isEmbeddingsContextEnabled: boolean
-    private triggerMoreEagerly: boolean
-    private completionsCache?: CompletionsCache
+    private readonly config: Required<CodyCompletionItemProviderConfig>
+
     private requestManager: RequestManager
-    private completeSuggestWidgetSelection?: boolean
 
-    constructor(config: CodyCompletionItemProviderConfig) {
-        const {
-            providerConfig,
-            history,
-            statusBar,
-            codebaseContext,
-            responsePercentage = 0.1,
-            prefixPercentage = 0.6,
-            suffixPercentage = 0.1,
-            disableTimeouts = false,
-            isEmbeddingsContextEnabled = true,
-            cache,
-            triggerMoreEagerly,
+    constructor({
+        responsePercentage = 0.1,
+        prefixPercentage = 0.6,
+        suffixPercentage = 0.1,
+        disableTimeouts = false,
+        isEmbeddingsContextEnabled = true,
+        completeSuggestWidgetSelection = false,
+        ...config
+    }: CodyCompletionItemProviderConfig) {
+        this.config = {
+            ...config,
+            responsePercentage,
+            prefixPercentage,
+            suffixPercentage,
+            disableTimeouts,
+            isEmbeddingsContextEnabled,
             completeSuggestWidgetSelection,
-        } = config
+        }
 
-        this.providerConfig = providerConfig
-        this.history = history
-        this.statusBar = statusBar
-        this.codebaseContext = codebaseContext
-        this.responsePercentage = responsePercentage
-        this.prefixPercentage = prefixPercentage
-        this.suffixPercentage = suffixPercentage
-        this.disableTimeouts = disableTimeouts
-        this.isEmbeddingsContextEnabled = isEmbeddingsContextEnabled
-        this.completionsCache = cache
-        this.triggerMoreEagerly = triggerMoreEagerly
-        this.completeSuggestWidgetSelection = completeSuggestWidgetSelection
-
-        if (this.completeSuggestWidgetSelection) {
+        if (this.config.completeSuggestWidgetSelection) {
             // This must be set to true, or else the suggest widget showing will suppress inline
             // completions. Note that the VS Code proposed API inlineCompletionsAdditions contains
             // an InlineCompletionList#suppressSuggestions field that lets an inline completion
@@ -103,13 +83,14 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
         }
 
         this.promptChars =
-            providerConfig.maximumContextCharacters - providerConfig.maximumContextCharacters * responsePercentage
-        this.maxPrefixChars = Math.floor(this.promptChars * this.prefixPercentage)
-        this.maxSuffixChars = Math.floor(this.promptChars * this.suffixPercentage)
+            this.config.providerConfig.maximumContextCharacters -
+            this.config.providerConfig.maximumContextCharacters * responsePercentage
+        this.maxPrefixChars = Math.floor(this.promptChars * this.config.prefixPercentage)
+        this.maxSuffixChars = Math.floor(this.promptChars * this.config.suffixPercentage)
 
-        this.requestManager = new RequestManager(this.completionsCache)
+        this.requestManager = new RequestManager(this.config.cache)
 
-        debug('CodyCompletionProvider:initialized', `provider: ${providerConfig.identifier}`)
+        debug('CodyCompletionProvider:initialized', `provider: ${this.config.providerConfig.identifier}`)
 
         vscode.workspace.onDidChangeTextDocument(event => {
             const document = event.document
@@ -186,7 +167,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
             sameLinePrefix,
             sameLineSuffix,
             document.languageId,
-            this.providerConfig.enableExtendedMultilineTriggers
+            this.config.providerConfig.enableExtendedMultilineTriggers
         )
 
         // Avoid showing completions when we're deleting code (Cody can only insert code at the
@@ -197,7 +178,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
             // untruncated prefix matches. This fixes some weird issues where the completion would
             // render if you insert whitespace but not on the original place when you delete it
             // again
-            const cachedCompletions = this.completionsCache?.get(prefix, false)
+            const cachedCompletions = this.config.cache?.get(prefix, false)
             if (cachedCompletions?.isExactPrefix) {
                 return handleCacheHit(
                     cachedCompletions,
@@ -212,7 +193,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
             return { items: [] }
         }
 
-        const cachedCompletions = this.completionsCache?.get(prefix)
+        const cachedCompletions = this.config.cache?.get(prefix)
         if (cachedCompletions) {
             return handleCacheHit(cachedCompletions, document, position, prefix, suffix, multiline, document.languageId)
         }
@@ -222,14 +203,14 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
 
         // Don't show completions if we are in the process of writing a word.
         const cursorAtWord = /\w$/.test(sameLinePrefix)
-        if (cursorAtWord && !this.triggerMoreEagerly) {
+        if (cursorAtWord && !this.config.triggerMoreEagerly) {
             return { items: [] }
         }
-        const triggeredMoreEagerly = this.triggerMoreEagerly && cursorAtWord
+        const triggeredMoreEagerly = this.config.triggerMoreEagerly && cursorAtWord
 
         let triggeredForSuggestWidgetSelection: string | undefined
         if (context.selectedCompletionInfo) {
-            if (this.completeSuggestWidgetSelection) {
+            if (this.config.completeSuggestWidgetSelection) {
                 triggeredForSuggestWidgetSelection = context.selectedCompletionInfo.text
             } else {
                 // Don't show completions if the suggest widget (which shows language autocomplete)
@@ -253,15 +234,15 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
             suffix,
             fileName: path.normalize(vscode.workspace.asRelativePath(document.fileName ?? '')),
             languageId: document.languageId,
-            responsePercentage: this.responsePercentage,
-            prefixPercentage: this.prefixPercentage,
-            suffixPercentage: this.suffixPercentage,
+            responsePercentage: this.config.responsePercentage,
+            prefixPercentage: this.config.prefixPercentage,
+            suffixPercentage: this.config.suffixPercentage,
         }
 
         if (multiline) {
             timeout = 100
             completers.push(
-                this.providerConfig.create({
+                this.config.providerConfig.create({
                     id: 'multiline',
                     ...sharedProviderOptions,
                     n: 3, // 3 vs. 1 does not meaningfully affect perf
@@ -277,7 +258,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
                 timeout = 20
             }
             completers.push(
-                this.providerConfig.create({
+                this.config.providerConfig.create({
                     id: 'single-line-suffix',
                     ...sharedProviderOptions,
                     n: 1, // 1 vs. 3 improves perf
@@ -286,7 +267,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
             )
         }
 
-        if (!this.disableTimeouts && context.triggerKind !== vscode.InlineCompletionTriggerKind.Invoke) {
+        if (!this.config.disableTimeouts && context.triggerKind !== vscode.InlineCompletionTriggerKind.Invoke) {
             await new Promise<void>(resolve => setTimeout(resolve, timeout))
         }
 
@@ -300,11 +281,11 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
             document,
             prefix,
             suffix,
-            history: this.history,
+            history: this.config.history,
             jaccardDistanceWindowSize: SNIPPET_WINDOW_SIZE,
             maxChars: this.promptChars,
-            codebaseContext: this.codebaseContext,
-            isEmbeddingsContextEnabled: this.isEmbeddingsContextEnabled,
+            codebaseContext: this.config.codebaseContext,
+            isEmbeddingsContextEnabled: this.config.isEmbeddingsContextEnabled,
         })
         if (abortController.signal.aborted) {
             return { items: [] }
@@ -313,17 +294,19 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
         const logId = CompletionLogger.start({
             type: 'inline',
             multiline,
-            providerIdentifier: this.providerConfig.identifier,
+            providerIdentifier: this.config.providerConfig.identifier,
             languageId: document.languageId,
             contextSummary,
             triggeredMoreEagerly,
             triggeredForSuggestWidgetSelection: triggeredForSuggestWidgetSelection !== undefined,
             settings: {
-                autocompleteExperimentalTriggerMoreEagerly: this.triggerMoreEagerly,
-                autocompleteExperimentalCompleteSuggestWidgetSelection: Boolean(this.completeSuggestWidgetSelection),
+                autocompleteExperimentalTriggerMoreEagerly: this.config.triggerMoreEagerly,
+                autocompleteExperimentalCompleteSuggestWidgetSelection: Boolean(
+                    this.config.completeSuggestWidgetSelection
+                ),
             },
         })
-        const stopLoading = this.statusBar.startLoading('Completions are being generated')
+        const stopLoading = this.config.statusBar.startLoading('Completions are being generated')
         this.stopLoading = stopLoading
 
         // Overwrite the abort handler to also update the loading state

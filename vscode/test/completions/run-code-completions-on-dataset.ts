@@ -54,7 +54,7 @@ async function initCompletionsProvider(): Promise<CodyCompletionItemProvider> {
         codebaseContext,
         disableTimeouts: true,
         triggerMoreEagerly: false,
-        cache: undefined,
+        cache: null,
         isEmbeddingsContextEnabled: true,
     })
 
