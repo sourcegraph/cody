@@ -220,6 +220,8 @@ const register = async (
             // Ensure that the sidebar view is open if not already
             sidebarChatProvider.setWebviewView('chat')
             await vscode.commands.executeCommand('cody.chat.focus')
+            // Remove the inline chat
+            inlineChatManager.removeProviderForThread(thread)
         }),
         vscode.commands.registerCommand('cody.inline.new', () =>
             vscode.commands.executeCommand('workbench.action.addComment')
