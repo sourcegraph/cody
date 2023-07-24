@@ -6,7 +6,7 @@
     "outDir": "dist",
     "baseUrl": "./src",
   },
-  "include": ["src", "package.json", ".eslintrc.js"],
+  "include": ["src", "package.json"],
   "exclude": ["dist"],
   "references": [
     {

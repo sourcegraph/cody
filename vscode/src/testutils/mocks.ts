@@ -94,8 +94,10 @@ class Uri {
 
 class InlineCompletionItem {
     public insertText: string
-    constructor(content: string) {
+    public range: Range | undefined
+    constructor(content: string, range?: Range) {
         this.insertText = content
+        this.range = range
     }
 }
 
@@ -162,7 +164,16 @@ export const vsCodeMocks = {
     },
     workspace: {
         getConfiguration() {
-            return undefined
+            return {
+                get(key: string) {
+                    switch (key) {
+                        case 'cody.debug.filter':
+                            return '.*'
+                        default:
+                            return ''
+                    }
+                },
+            }
         },
         openTextDocument: (uri: string) => ({
             getText: () => 'foo\nbar\nfoo',

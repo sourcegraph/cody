@@ -8,22 +8,24 @@ import { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/s
 import { ChatViewProvider } from './chat/ChatViewProvider'
 import { CODY_FEEDBACK_URL } from './chat/protocol'
 import { CodyCompletionItemProvider } from './completions'
+import { CompletionsCache } from './completions/cache'
 import { CompletionsDocumentProvider } from './completions/docprovider'
 import { History } from './completions/history'
 import * as CompletionsLogger from './completions/logger'
-import { ManualCompletionService } from './completions/manual'
 import { createProviderConfig as createAnthropicProviderConfig } from './completions/providers/anthropic'
 import { ProviderConfig } from './completions/providers/provider'
 import { createProviderConfig as createUnstableCodeGenProviderConfig } from './completions/providers/unstable-codegen'
 import { createProviderConfig as createUnstableHuggingFaceProviderConfig } from './completions/providers/unstable-huggingface'
+import { registerAutocompleteTraceView } from './completions/tracer/traceView'
 import { getConfiguration, getFullConfig, migrateConfiguration } from './configuration'
 import { VSCodeEditor } from './editor/vscode-editor'
-import { eventLogger, logEvent, updateEventLogger } from './event-logger'
 import { configureExternalServices } from './external-services'
+import { MyPromptController } from './my-cody/MyPromptController'
 import { FixupController } from './non-stop/FixupController'
 import { showSetupNotification } from './notifications/setup-notification'
 import { getRgPath } from './rg'
 import { AuthProvider } from './services/AuthProvider'
+import { createOrUpdateEventLogger, logEvent } from './services/EventLogger'
 import { showFeedbackSupportQuickPick } from './services/FeedbackOptions'
 import { GuardrailsProvider } from './services/GuardrailsProvider'
 import { InlineController } from './services/InlineController'
@@ -59,13 +61,8 @@ export async function start(context: vscode.ExtensionContext): Promise<vscode.Di
     )
     disposables.push(disposable)
 
-    // Re-initialize when configuration or secrets change.
+    // Re-initialize when configuration
     disposables.push(
-        secretStorage.onDidChange(async key => {
-            if (key === CODY_ACCESS_TOKEN_SECRET) {
-                onConfigurationChange(await getFullConfig(secretStorage, localStorage))
-            }
-        }),
         vscode.workspace.onDidChangeConfiguration(async event => {
             if (event.affectsConfiguration('cody')) {
                 onConfigurationChange(await getFullConfig(secretStorage, localStorage))
@@ -89,16 +86,19 @@ const register = async (
 }> => {
     const disposables: vscode.Disposable[] = []
 
-    await updateEventLogger(initialConfig, localStorage)
+    // Controller for Inline Chat
+    await createOrUpdateEventLogger(initialConfig, localStorage)
     // Controller for inline Chat
     const commentController = new InlineController(context.extensionPath)
-
+    // Controller for Non-Stop Cody
     const fixup = new FixupController()
     disposables.push(fixup)
     if (TestSupport.instance) {
         TestSupport.instance.fixupController.set(fixup)
     }
-    const controllers = { inline: commentController, fixups: fixup }
+    // Controller for Custom Recipes
+    const prompt = new MyPromptController(context, initialConfig.experimentalCustomRecipes)
+    const controllers = { inline: commentController, fixups: fixup, prompt }
 
     const editor = new VSCodeEditor(controllers)
     // Could we use the `initialConfig` instead?
@@ -137,6 +137,12 @@ const register = async (
     disposables.push(
         vscode.window.registerWebviewViewProvider('cody.chat', chatProvider, {
             webviewOptions: { retainContextWhenHidden: true },
+        }),
+        // Update external services when configurationChangeEvent is fired by chatProvider
+        chatProvider.configurationChangeEvent.event(async () => {
+            const newConfig = await getFullConfig(secretStorage, localStorage)
+            externalServicesOnDidConfigurationChange(newConfig)
+            createOrUpdateEventLogger(newConfig, localStorage).catch(error => console.error(error))
         })
     )
 
@@ -199,12 +205,6 @@ const register = async (
             await chatProvider.clearAndRestartSession()
             chatProvider.setWebviewView('chat')
         }),
-        vscode.commands.registerCommand('cody.inline.insert', async (copiedText: string) => {
-            // Insert copiedText to the current cursor position
-            await vscode.commands.executeCommand('editor.action.insertSnippet', {
-                snippet: copiedText,
-            })
-        }),
         vscode.commands.registerCommand('cody.focus', () => vscode.commands.executeCommand('cody.chat.focus')),
         vscode.commands.registerCommand('cody.settings.user', () => chatProvider.setWebviewView('settings')),
         vscode.commands.registerCommand('cody.settings.extension', () =>
@@ -215,6 +215,8 @@ const register = async (
             await chatProvider.clearHistory()
         }),
         // Recipes
+        vscode.commands.registerCommand('cody.customRecipes.exec', title => chatProvider.executeCustomRecipe(title)),
+        vscode.commands.registerCommand('cody.customRecipes.list', () => prompt.quickRecipe()),
         vscode.commands.registerCommand('cody.recipe.explain-code', () => executeRecipe('explain-code-detailed')),
         vscode.commands.registerCommand('cody.recipe.explain-code-high-level', () =>
             executeRecipe('explain-code-high-level')
@@ -343,9 +345,7 @@ const register = async (
         onConfigurationChange: newConfig => {
             chatProvider.onConfigurationChange(newConfig)
             externalServicesOnDidConfigurationChange(newConfig)
-            if (eventLogger) {
-                eventLogger.onConfigurationChange(vscode.workspace.getConfiguration())
-            }
+            void createOrUpdateEventLogger(newConfig, localStorage)
         },
     }
 }
@@ -363,31 +363,24 @@ function createCompletionsProvider(
     disposables.push(vscode.workspace.registerTextDocumentContentProvider('cody', documentProvider))
 
     const history = new History()
-    const manualCompletionService = new ManualCompletionService(
-        webviewErrorMessenger,
-        completionsClient,
-        documentProvider,
-        history,
-        codebaseContext
-    )
     const providerConfig = createCompletionProviderConfig(config, webviewErrorMessenger, completionsClient)
     const completionsProvider = new CodyCompletionItemProvider({
         providerConfig,
         history,
         statusBar,
         codebaseContext,
-        isCompletionsCacheEnabled: config.autocompleteAdvancedCache,
+        cache: config.autocompleteAdvancedCache ? new CompletionsCache() : null,
         isEmbeddingsContextEnabled: config.autocompleteAdvancedEmbeddings,
+        triggerMoreEagerly: config.autocompleteExperimentalTriggerMoreEagerly,
+        completeSuggestWidgetSelection: config.autocompleteExperimentalCompleteSuggestWidgetSelection,
     })
 
     disposables.push(
-        vscode.commands.registerCommand('cody.manual-completions', async () => {
-            await manualCompletionService.fetchAndShowManualCompletions()
-        }),
         vscode.commands.registerCommand('cody.autocomplete.inline.accepted', ({ codyLogId, codyLines }) => {
             CompletionsLogger.accept(codyLogId, codyLines)
         }),
-        vscode.languages.registerInlineCompletionItemProvider('*', completionsProvider)
+        vscode.languages.registerInlineCompletionItemProvider('*', completionsProvider),
+        registerAutocompleteTraceView(completionsProvider)
     )
     return {
         dispose: () => {

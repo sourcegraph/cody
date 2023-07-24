@@ -124,6 +124,13 @@ function trimSpace(s: string): TrimmedString {
     return { trimmed, leadSpace: s.slice(0, headEnd), rearSpace: s.slice(headEnd + trimmed.length) }
 }
 
+/**
+ * The magic number based on intution and experimentation.
+ * We do not want to match too small number of symbols to avoid false positives.
+ * We do not want to match the whole string because it leads to suffix duplication.
+ */
+const NUMBER_OF_CHARS_TO_MATCH_AND_CUT_SUFFIX = 15
+
 /*
  * Trims the insertion string until the first line that matches the suffix string.
  *
@@ -146,6 +153,11 @@ export function trimUntilSuffix(insertion: string, prefix: string, suffix: strin
 
     const insertionLines = insertion.split('\n')
     let insertionEnd = insertionLines.length
+    const firstNonEmptySuffixLinePart = getFirstNCharsPreservingLeadingSpaces(
+        firstNonEmptySuffixLine,
+        NUMBER_OF_CHARS_TO_MATCH_AND_CUT_SUFFIX
+    )
+
     for (let i = 0; i < insertionLines.length; i++) {
         let line = insertionLines[i]
 
@@ -155,19 +167,61 @@ export function trimUntilSuffix(insertion: string, prefix: string, suffix: strin
             line = prefix.slice(lastNewlineOfPrefix + 1) + line
         }
 
-        // Trim the end of the lines to avoid trailing whitespace causing issues
-        if (line.trimEnd() === firstNonEmptySuffixLine.trimEnd()) {
+        /**
+         * We cut the completion on the partial match of the suffix
+         *
+         * For example, if the suffix is:
+         * `  key: ${{ runner.os }}-pnpm-store-${{ hashFiles('pnpm-lock.yaml') }}`
+         *
+         * And the completions is:
+         * `pnpm-store\n  key: ${{ runner.os }}-pnpm-${{ steps.pnpm-cache.outputs.STORE_PATH }}`
+         *
+         * We cut the completion on the `  key:` part to avoid duplicating the suffix.
+         * The resulting completion will be: `pnpm-store`.
+         */
+        const linePart = getFirstNCharsPreservingLeadingSpaces(line, NUMBER_OF_CHARS_TO_MATCH_AND_CUT_SUFFIX)
+        if (linePart.length && firstNonEmptySuffixLinePart.startsWith(linePart)) {
             insertionEnd = i
             break
         }
     }
+
     return insertionLines.slice(0, insertionEnd).join('\n')
 }
 
-export function trimStartUntilNewline(str: string): string {
-    const index = str.indexOf('\n')
-    if (index === -1) {
-        return str.trimStart()
+/**
+ * Trims whitespace before the first newline (if it exists).
+ */
+export function trimLeadingWhitespaceUntilNewline(str: string): string {
+    return str.replace(/^\s+?(\r?\n)/, '$1')
+}
+
+const NON_WHITESPACE_REGEX = /\S|$/
+function getFirstNCharsPreservingLeadingSpaces(value: string, charsNumber: number): string {
+    const startIndex = value.search(NON_WHITESPACE_REGEX)
+
+    // Return the leading whitespaces and first N characters
+    return value.slice(0, startIndex + charsNumber)
+}
+
+/**
+ * Collapses whitespace that appears at the end of prefix and the start of completion.
+ *
+ * For example, if prefix is `const isLocalhost = window.location.host ` and completion is ` ===
+ * 'localhost'`, it trims the leading space in the completion to avoid a duplicate space.
+ *
+ * Language-specific customizations are needed here to get greater accuracy.
+ */
+export function collapseDuplicativeWhitespace(prefix: string, completion: string): string {
+    if (prefix.endsWith(' ') || prefix.endsWith('\t')) {
+        completion = completion.replace(/^[\t ]+/, '')
     }
-    return str.slice(0, index).trimStart() + str.slice(index)
+    return completion
+}
+
+/**
+ * Trims trailing whitespace on the last line if the last line is whitespace-only.
+ */
+export function trimEndOnLastLineIfWhitespaceOnly(text: string): string {
+    return text.replace(/(\r?\n)\s+$/, '$1')
 }

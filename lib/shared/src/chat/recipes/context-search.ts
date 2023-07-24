@@ -5,7 +5,7 @@ import { MAX_HUMAN_INPUT_TOKENS } from '../../prompt/constants'
 import { truncateText } from '../../prompt/truncation'
 import { Interaction } from '../transcript/interaction'
 
-import { getFileExtension } from './helpers'
+import { getFileExtension, numResults } from './helpers'
 import { Recipe, RecipeContext, RecipeID } from './recipe'
 
 /*
@@ -56,10 +56,7 @@ export class ContextSearch implements Recipe {
         codebaseContext: CodebaseContext,
         wsRootPath: string | null
     ): Promise<string> {
-        const resultContext = await codebaseContext.getSearchResults(text, {
-            numCodeResults: 12,
-            numTextResults: 3,
-        })
+        const resultContext = await codebaseContext.getSearchResults(text, numResults)
         const endpointUri = resultContext.endpoint
 
         let snippets = `Here are the code snippets for: ${text}\n\n`

@@ -2,34 +2,31 @@
   "name": "cody-ai",
   "private": true,
   "displayName": "Cody AI",
-  "version": "0.4.3",
+  "version": "0.6.1",
   "publisher": "sourcegraph",
   "license": "Apache-2.0",
   "icon": "resources/cody.png",
   "description": "Code AI with codebase context",
   "scripts": {
-    "dev": "pnpm run build:dev && CODY_FOCUS_ON_STARTUP=1 NODE_ENV=development code --extensionDevelopmentPath=\"$INIT_CWD/vscode\" --disable-extension=sourcegraph.cody-ai --disable-extension=github.copilot --disable-extension=github.copilot-nightly --inspect-extensions=9333 . --goto ./src/logged-rerank.ts:16:5",
-    "generate:completions": "ts-node-transpile-only ./src/testutils/cli/run-code-completions-on-dataset.ts",
-    "build": "tsc --build && pnpm run esbuild --minify && vite build --mode production",
-    "build:dev": "tsc --build && concurrently \"pnpm run esbuild --sourcemap\" \"vite build --mode development\"",
-    "prepare": "scripts/download-rg.sh",
+    "dev:instance": "CODY_FOCUS_ON_STARTUP=1 NODE_ENV=development code --extensionDevelopmentPath=$PWD --disable-extension=sourcegraph.cody-ai --disable-extension=github.copilot --disable-extension=github.copilot-nightly --inspect-extensions=9333 --new-window . --goto ./src/logged-rerank.ts:16:5",
+    "dev": "pnpm run build:dev && pnpm run dev:instance",
+    "generate:completions": "OUTFILE=/tmp/run-code-completions-on-dataset.js && esbuild ./test/completions/run-code-completions-on-dataset.ts --bundle --external:vscode --outfile=$OUTFILE --format=cjs --platform=node --sourcemap=inline && node --enable-source-maps $OUTFILE",
+    "build": "scripts/download-rg.sh && tsc --build && pnpm run esbuild --minify && vite build --mode production",
+    "build:dev": "scripts/download-rg.sh && tsc --build && concurrently \"pnpm run esbuild --sourcemap\" \"vite build --mode development\"",
     "esbuild": "esbuild ./src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node",
     "lint": "pnpm run lint:js",
     "lint:js": "eslint --cache '**/*.[tj]s?(x)'",
     "release": "ts-node ./scripts/release.ts",
-    "release:dry-run": "CODY_RELEASE_TYPE=dry-run ts-node ./scripts/release.ts",
+    "release:dry-run": "CODY_RELEASE_DRY_RUN=1 ts-node ./scripts/release.ts",
     "storybook": "storybook dev -p 6007 --no-open --no-version-updates --no-release-notes",
     "test:e2e": "pnpm exec playwright install && pnpm run --silent build:dev && playwright test",
-    "test:integration": "tsc --build ./test/integration && pnpm run --silent build:dev && node --inspect -r ts-node/register dist/test/integration/main.js",
+    "test:integration": "tsc --build ./test/integration && pnpm run --silent build:dev && node --inspect -r ts-node/register dist/tsc/test/integration/main.js",
     "test:unit": "vitest",
-    "vscode:prepublish": "scripts/check-rg.sh",
-    "vsce:package": "pnpm --silent build && vsce package --no-dependencies -o dist/cody.vsix",
-    "vsce:prerelease": "pnpm --silent build && vsce package patch --pre-release --no-dependencies -o dist/cody.vsix",
-    "watch": "concurrently \"pnpm watch:esbuild\" \"pnpm watch:webview\"",
-    "watch:esbuild": "pnpm esbuild --sourcemap --watch",
+    "vscode:prepublish": "scripts/download-rg.sh && pnpm --silent run build",
+    "watch": "concurrently \"pnpm run watch:esbuild\" \"pnpm run watch:webview\"",
+    "watch:esbuild": "pnpm run esbuild --sourcemap --watch",
     "watch:webview": "vite build --mode development --watch"
   },
-  "main": "./dist/extension.js",
   "categories": [
     "Programming Languages",
     "Machine Learning",
@@ -84,6 +81,7 @@
   "engines": {
     "vscode": "^1.79.0"
   },
+  "main": "./dist/extension.js",
   "activationEvents": [
     "onStartupFinished"
   ],
@@ -120,7 +118,7 @@
           },
           {
             "id": "inline-assist",
-            "title": "Inline Chat (Experimental)",
+            "title": "Inline Chat (Beta)",
             "description": "Chat with Cody without leaving your file. Click the + button next to any line number in a file to bring up Inline Chat.\n[Enable in Settings](command:cody.walkthrough.enableInlineChat)",
             "media": {
               "markdown": "walkthroughs/inline-assist.md"
@@ -294,11 +292,6 @@
         "title": "Find Code Smells"
       },
       {
-        "command": "cody.test.token",
-        "category": "Cody",
-        "title": "Set Access Token"
-      },
-      {
         "command": "cody.settings.user",
         "category": "Cody",
         "title": "User Settings",
@@ -314,11 +307,6 @@
         "command": "cody.auth.signin",
         "category": "Cody",
         "title": "Switch Account…"
-      },
-      {
-        "command": "cody.manual-completions",
-        "category": "Cody",
-        "title": "Open Autocomplete Panel (Experimental)"
       },
       {
         "command": "cody.settings.extension",
@@ -345,31 +333,6 @@
         "title": "Chat History",
         "group": "Cody",
         "icon": "$(list-unordered)"
-      },
-      {
-        "command": "cody.walkthrough.showLogin",
-        "category": "Cody Walkthrough",
-        "title": "Show Login"
-      },
-      {
-        "command": "cody.walkthrough.showChat",
-        "category": "Cody Walkthrough",
-        "title": "Show Chat"
-      },
-      {
-        "command": "cody.walkthrough.showFixup",
-        "category": "Cody Walkthrough",
-        "title": "Show Fixup"
-      },
-      {
-        "command": "cody.walkthrough.showExplain",
-        "category": "Cody Walkthrough",
-        "title": "Show Explain"
-      },
-      {
-        "command": "cody.walkthrough.enableInlineChat",
-        "category": "Cody Walkthrough",
-        "title": "Show Inline Chat"
       },
       {
         "command": "cody.comment.add",
@@ -404,7 +367,7 @@
       },
       {
         "command": "cody.inline.new",
-        "title": "Start a new Thread (Ctrl+Shift+C)",
+        "title": "Start New Thread",
         "category": "Cody Inline Chat",
         "when": "cody.activated && config.cody.inlineChat.enabled",
         "enablement": "editorFocus"
@@ -419,11 +382,6 @@
         "command": "cody.recipe.inline-touch",
         "category": "Cody",
         "title": "Touch"
-      },
-      {
-        "command": "cody.inline.insert",
-        "category": "Cody",
-        "title": "Insert text at the current cursor position"
       },
       {
         "command": "cody.non-stop.fixup",
@@ -472,6 +430,20 @@
         "when": "cody.nonstop.fixups.enabled",
         "enablement": "!cody.fixup.view.isEmpty",
         "icon": "$(diff)"
+      },
+      {
+        "command": "cody.customRecipes.list",
+        "category": "Cody",
+        "title": "Custom Recipes (Internal Experimental)",
+        "when": "cody.activated",
+        "enablement": "config.cody.experimental.customRecipes",
+        "icon": "$(bookmark)"
+      },
+      {
+        "command": "cody.autocomplete.openTraceView",
+        "category": "Cody",
+        "title": "Open Autocomplete Trace View",
+        "when": "cody.activated && config.cody.autocomplete && config.cody.debug.enable && editorHasFocus && !editorReadonly"
       }
     ],
     "keybindings": [
@@ -499,7 +471,14 @@
       {
         "command": "cody.inline.new",
         "key": "ctrl+shift+c",
+        "mac": "cmd+shift+c",
         "when": "cody.activated && editorFocus && config.cody.inlineChat.enabled"
+      },
+      {
+        "command": "cody.customRecipes.list",
+        "key": "ctrl+shift+v",
+        "mac": "cmd+shift+v",
+        "when": "cody.activated && editorFocus"
       }
     ],
     "submenus": [
@@ -551,10 +530,6 @@
           "when": "cody.activated && editorHasSelection"
         },
         {
-          "command": "cody.test.token",
-          "when": "false"
-        },
-        {
           "command": "cody.focus",
           "title": "Cody: Sign In",
           "when": "!cody.activated"
@@ -600,36 +575,12 @@
           "when": "false"
         },
         {
-          "command": "cody.manual-completions",
-          "when": "config.cody.autocomplete"
-        },
-        {
           "command": "cody.guardrails.debug",
           "when": "config.cody.experimental.guardrails && editorHasSelection"
         },
         {
-          "command": "cody.inline.insert",
-          "when": "false"
-        },
-        {
-          "command": "cody.walkthrough.showLogin",
-          "when": "false"
-        },
-        {
-          "command": "cody.walkthrough.showChat",
-          "when": "false"
-        },
-        {
-          "command": "cody.walkthrough.showFixup",
-          "when": "false"
-        },
-        {
-          "command": "cody.walkthrough.showExplain",
-          "when": "false"
-        },
-        {
-          "command": "cody.walkthrough.enableInlineChat",
-          "when": "false"
+          "command": "cody.customRecipes.list",
+          "when": "cody.activated && config.cody.experimental.customRecipes"
         }
       ],
       "editor/context": [
@@ -681,7 +632,11 @@
         },
         {
           "command": "cody.guardrails.debug",
-          "when": "config.cody.experimental.guardrails && editorHasSelection"
+          "when": "cody.activated && config.cody.experimental.guardrails && editorHasSelection"
+        },
+        {
+          "command": "cody.customRecipes.list",
+          "when": "cody.activated && config.cody.experimental.customRecipes"
         }
       ],
       "view/title": [
@@ -867,6 +822,12 @@
           "markdownDescription": "Experimental feature for internal use.",
           "default": false
         },
+        "cody.experimental.customRecipes": {
+          "order": 9,
+          "type": "boolean",
+          "markdownDescription": "[Internal Experimental] Create reusable recipes with customized prompts and context tailored to your workflow.",
+          "default": false
+        },
         "cody.debug.enable": {
           "order": 99,
           "type": "boolean",
@@ -928,6 +889,80 @@
           "type": "boolean",
           "default": true,
           "markdownDescription": "Enables the use of embeddings as code completions context."
+        },
+        "cody.autocomplete.experimental.triggerMoreEagerly": {
+          "type": "boolean",
+          "default": false,
+          "markdownDescription": "Trigger autocomplete when the cursor is at the end of a word (instead of waiting for a space or other non-word character). Share feedback at https://github.com/sourcegraph/cody/discussions/274."
+        },
+        "cody.autocomplete.experimental.completeSuggestWidgetSelection": {
+          "type": "boolean",
+          "default": false,
+          "markdownDescription": "Autocomplete based on the currently selection in the suggest widget. Requires the VS Code user setting `editor.inlineSuggest.suppressSuggestions` set to true and will change it to true in user settings if it is not true."
+        },
+        "cody.plugins.enabled": {
+          "type": "boolean",
+          "default": false,
+          "markdownDescription": "Enables the use of built-in experimental plugins."
+        },
+        "cody.plugins.config": {
+          "type": "object",
+          "default": {},
+          "properties": {
+            "confluence": {
+              "type": "object",
+              "properties": {
+                "baseUrl": {
+                  "type": "string",
+                  "description": "Confluence instance base url."
+                },
+                "email": {
+                  "type": "string",
+                  "description": "Confluence Email."
+                },
+                "apiToken": {
+                  "type": "string",
+                  "description": "Confluence API Token."
+                }
+              }
+            },
+            "github": {
+              "type": "object",
+              "properties": {
+                "apiToken": {
+                  "type": "string",
+                  "description": "GitHub API Token."
+                },
+                "baseUrl": {
+                  "type": "string",
+                  "description": "Github API URL.",
+                  "default": "https://api.github.com/"
+                },
+                "org": {
+                  "type": "string",
+                  "description": "GitHub organization to limit results to."
+                },
+                "repo": {
+                  "type": "string",
+                  "description": "GitHub repo to limit results to."
+                }
+              }
+            },
+            "apiNinjas": {
+              "type": "object",
+              "properties": {
+                "apiKey": {
+                  "type": "string",
+                  "description": "API Ninjas Key. Use https://api-ninjas.com to get one."
+                }
+              }
+            }
+          }
+        },
+        "cody.plugins.debug.enabled": {
+          "type": "boolean",
+          "default": true,
+          "markdownDescription": "Enables debug output for plugins."
         }
       }
     },
@@ -935,14 +970,14 @@
       "cody-logo": {
         "description": "Cody logo",
         "default": {
-          "fontPath": "dist/assets/cody-icons.woff",
+          "fontPath": "dist/webviews/assets/cody-icons.woff",
           "fontCharacter": "\\0041"
         }
       },
       "cody-logo-heavy": {
         "description": "Cody logo heavy",
         "default": {
-          "fontPath": "dist/assets/cody-icons.woff",
+          "fontPath": "dist/webviews/assets/cody-icons.woff",
           "fontCharacter": "\\0042"
         }
       }
@@ -992,8 +1027,9 @@
     "envalid": "^7.3.1",
     "express": "^4.18.2",
     "mocha": "^10.2.0",
+    "ovsx": "^0.8.2",
     "playwright": "^1.33.0",
-    "semver": "^7.5.3",
+    "semver": "^7.5.4",
     "vite-plugin-static-copy": "^0.16.0"
   }
 }

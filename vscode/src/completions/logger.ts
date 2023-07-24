@@ -1,11 +1,14 @@
 import { LRUCache } from 'lru-cache'
 import * as vscode from 'vscode'
 
-import { logEvent } from '../event-logger'
+import { ConfigKeys } from '../configuration-keys'
+import { debug } from '../log'
+import { logEvent } from '../services/EventLogger'
 
 interface CompletionEvent {
     params: {
         type: 'inline' | 'manual'
+        multiline: boolean
         multilineMode: null | 'block'
         providerIdentifier: string
         contextSummary: {
@@ -14,6 +17,27 @@ interface CompletionEvent {
             duration: number
         }
         languageId: string
+
+        /**
+         * Whether the completion was triggered only because of the experimental settting
+         * `cody.autocomplete.experimental.triggerMoreEagerly`.
+         */
+        triggeredMoreEagerly: boolean
+
+        /**
+         * Whether the completion was triggered only because of the experimental setting
+         * `cody.autocomplete.experimental.completeSuggestWidgetSelection`.
+         */
+        triggeredForSuggestWidgetSelection: boolean
+
+        /** Relevant user settings. */
+        settings: Record<
+            Extract<
+                ConfigKeys,
+                'autocompleteExperimentalTriggerMoreEagerly' | 'autocompleteExperimentalCompleteSuggestWidgetSelection'
+            >,
+            boolean
+        >
     }
     // The timestamp when the request started
     startedAt: number
@@ -41,11 +65,17 @@ export function logCompletionEvent(name: string, params?: unknown): void {
     logEvent(`CodyVSCodeExtension:completion:${name}`, params, params)
 }
 
-export function start(params: CompletionEvent['params']): string {
+export function start(inputParams: Omit<CompletionEvent['params'], 'multilineMode'>): string {
+    const params: CompletionEvent['params'] = {
+        ...inputParams,
+        // Keep the legacy name for backward compatibility in analytics
+        multilineMode: inputParams.multiline ? 'block' : null,
+    }
+
     const id = createId()
     displayedCompletions.set(id, {
         params,
-        startedAt: Date.now(),
+        startedAt: performance.now(),
         suggestedAt: null,
         suggestionLoggedAt: null,
         acceptedAt: null,
@@ -57,13 +87,16 @@ export function start(params: CompletionEvent['params']): string {
     return id
 }
 
-// Suggested completions will not logged individually. Instead, we log them when
+// Suggested completions will not be logged individually. Instead, we log them when
 // we either hide them again (they are NOT accepted) or when they ARE accepted.
 // This way, we can calculate the duration they were actually visible.
 export function suggest(id: string): void {
     const event = displayedCompletions.get(id)
     if (event) {
-        event.suggestedAt = Date.now()
+        event.suggestedAt = performance.now()
+
+        // Emit a debug event to print timing information to the console eagerly
+        debug('CodyCompletionProvider:inline:timing', `${Math.round(event.suggestedAt - event.startedAt)}ms`, id)
     }
 }
 
@@ -73,7 +106,7 @@ export function accept(id: string, lines: number): void {
         return
     }
     completionEvent.forceRead = true
-    completionEvent.acceptedAt = Date.now()
+    completionEvent.acceptedAt = performance.now()
 
     logSuggestionEvent()
     logCompletionEvent('accepted', {
@@ -102,7 +135,7 @@ function createId(): string {
 }
 
 function logSuggestionEvent(): void {
-    const now = Date.now()
+    const now = performance.now()
     // eslint-disable-next-line ban/ban
     displayedCompletions.forEach(completionEvent => {
         const { suggestedAt, suggestionLoggedAt, startedAt, params, forceRead } = completionEvent

@@ -16,6 +16,8 @@ import {
 } from '@sourcegraph/cody-ui/src/Chat'
 import { SubmitSvg } from '@sourcegraph/cody-ui/src/utils/icons'
 
+import { WebviewEvent } from '../src/chat/protocol'
+
 import { FileLink } from './FileLink'
 import { VSCodeWrapper } from './utils/VSCodeApi'
 
@@ -34,6 +36,7 @@ interface ChatboxProps {
     vscodeAPI: VSCodeWrapper
     suggestions?: string[]
     setSuggestions?: (suggestions: undefined | string[]) => void
+    pluginsDevMode?: boolean
 }
 
 export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>> = ({
@@ -49,6 +52,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     vscodeAPI,
     suggestions,
     setSuggestions,
+    pluginsDevMode,
 }) => {
     const [abortMessageInProgressInternal, setAbortMessageInProgress] = useState<() => void>(() => () => undefined)
 
@@ -74,7 +78,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
 
     const onFeedbackBtnClick = useCallback(
         (text: string) => {
-            vscodeAPI.postMessage({ command: 'event', event: 'feedback', value: text })
+            vscodeAPI.postMessage({ command: 'event', event: WebviewEvent.Feedback, value: text })
         },
         [vscodeAPI]
     )
@@ -83,9 +87,9 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
         (text: string, isInsert = false) => {
             if (isInsert) {
                 vscodeAPI.postMessage({ command: 'insert', text })
-            } else {
-                vscodeAPI.postMessage({ command: 'event', event: 'click', value: text })
             }
+            const eventName = isInsert ? 'insert' : 'copy'
+            vscodeAPI.postMessage({ command: 'event', event: WebviewEvent.Click, value: eventName + 'Button' })
         },
         [vscodeAPI]
     )
@@ -145,6 +149,7 @@ To get started, select some code and run one of Cody's recipes:"
                 { label: 'Generate a unit test', action: 'generate-unit-test', onClick: onChatButtonClick },
             ]}
             ChatButtonComponent={ChatButton}
+            pluginsDevMode={pluginsDevMode}
         />
     )
 }

@@ -1,20 +1,15 @@
 import * as vscode from 'vscode'
 
-import { ContextMessage, getContextMessageWithResponse } from '../../codebase-context/messages'
+import { ContextMessage } from '../../codebase-context/messages'
 import { ActiveTextEditorSelection } from '../../editor'
-import {
-    MAX_CURRENT_FILE_TOKENS,
-    MAX_HUMAN_INPUT_TOKENS,
-    MAX_RECIPE_INPUT_TOKENS,
-    MAX_RECIPE_SURROUNDING_TOKENS,
-} from '../../prompt/constants'
-import { populateCurrentEditorContextTemplate } from '../../prompt/templates'
+import { MAX_HUMAN_INPUT_TOKENS, MAX_RECIPE_INPUT_TOKENS, MAX_RECIPE_SURROUNDING_TOKENS } from '../../prompt/constants'
 import { truncateText } from '../../prompt/truncation'
 import { BufferedBotResponseSubscriber } from '../bot-response-multiplexer'
 import { Interaction } from '../transcript/interaction'
 
 import { ChatQuestion } from './chat-question'
 import { commandRegex, contentSanitizer } from './helpers'
+import { MyPrompt } from './my-prompt'
 import { Recipe, RecipeContext, RecipeID } from './recipe'
 
 /** ======================================================
@@ -56,11 +51,6 @@ export class InlineTouch implements Recipe {
 
         // create vscode uri for the new file from the newFilePath which includes the workspacePath
         const fileUri = vscode.Uri.file(newFsPath)
-        const workspaceEditor = new vscode.WorkspaceEdit()
-        // Create file if it doesn't exist
-        workspaceEditor.createFile(fileUri, { ignoreIfExists: true })
-        await vscode.workspace.applyEdit(workspaceEditor)
-        this.debug('InlineTouch:workspaceEditor', 'createFile', fileUri)
 
         const truncatedText = truncateText(humanInput, MAX_HUMAN_INPUT_TOKENS)
         const MAX_RECIPE_CONTENT_TOKENS = MAX_RECIPE_INPUT_TOKENS + MAX_RECIPE_SURROUNDING_TOKENS * 2
@@ -87,6 +77,11 @@ export class InlineTouch implements Recipe {
                     )
                     return
                 }
+                // Create a new file if it doesn't exist
+                const workspaceEditor = new vscode.WorkspaceEdit()
+                workspaceEditor.createFile(fileUri, { ignoreIfExists: true })
+                await vscode.workspace.applyEdit(workspaceEditor)
+                this.debug('InlineTouch:workspaceEditor', 'createFile', fileUri)
                 await this.addContentToNewFile(workspaceEditor, fileUri, content)
                 this.debug('InlineTouch:responseMultiplexer', 'BufferedBotResponseSubscriber', content)
             })
@@ -168,68 +163,14 @@ export class InlineTouch implements Recipe {
         const contextMessages: ContextMessage[] = []
         // Add selected text and current file as context and create context messages from current directory
         const selectedContext = ChatQuestion.getEditorSelectionContext(selection)
-        const currentDirContext = await InlineTouch.getEditorDirContext(currentDir)
+        const currentDirContext = await MyPrompt.getEditorDirContext(currentDir, selection.fileName, true)
         contextMessages.push(...selectedContext, ...currentDirContext)
         // Create context messages from open tabs
         if (contextMessages.length < 10) {
-            contextMessages.push(...InlineTouch.getEditorOpenTabsContext(currentDir))
+            const tabsContext = await MyPrompt.getEditorOpenTabsContext(currentDir)
+            contextMessages.push(...tabsContext)
         }
         return contextMessages.slice(-10)
-    }
-
-    // Create Context from Current Directory of Active Document //
-    public static async getEditorDirContext(currentDir: string): Promise<ContextMessage[]> {
-        // get a list of files from the current directory path
-        const currentDirUri = vscode.Uri.file(currentDir)
-        // Get the list of files in the current directory then filter out directories and get the first 10 files
-        const filesInDir = (await vscode.workspace.fs.readDirectory(currentDirUri))
-            .filter(file => file[1] === 1)
-            .slice(0, 10)
-        const contextMessages: ContextMessage[] = []
-        for (const file of filesInDir) {
-            // Get the context from each file
-            const fileName = vscode.Uri.joinPath(currentDirUri, file[0]).fsPath
-            const fileUri = vscode.Uri.joinPath(currentDirUri, file[0])
-            try {
-                const fileContent = await vscode.workspace.openTextDocument(fileUri)
-                const truncatedContent = truncateText(fileContent.getText(), MAX_CURRENT_FILE_TOKENS)
-                const contextMessage = getContextMessageWithResponse(
-                    populateCurrentEditorContextTemplate(truncatedContent, fileName),
-                    { fileName }
-                )
-                contextMessages.push(...contextMessage)
-            } catch (error) {
-                console.error(error)
-            }
-        }
-
-        return contextMessages
-    }
-
-    // Get context from current editor open tabs
-    public static getEditorOpenTabsContext(currentDir: string): ContextMessage[] {
-        const contextMessages: ContextMessage[] = []
-        // Skip the current active tab (which is already included in selection context), files in currentDir, and non-file tabs
-        const openTabs = vscode.window.visibleTextEditors
-        for (const tab of openTabs) {
-            if (
-                tab === vscode.window.activeTextEditor ||
-                tab.document.fileName.includes(currentDir) ||
-                tab.document.uri.scheme !== 'file'
-            ) {
-                continue
-            }
-            const fileName = tab.document.fileName
-            const truncatedContent = truncateText(tab.document.getText(), MAX_CURRENT_FILE_TOKENS)
-            const contextMessage = getContextMessageWithResponse(
-                populateCurrentEditorContextTemplate(truncatedContent, fileName),
-                {
-                    fileName,
-                }
-            )
-            contextMessages.push(...contextMessage)
-        }
-        return contextMessages
     }
 
     // ======================================================== //

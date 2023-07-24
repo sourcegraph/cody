@@ -8,12 +8,12 @@ import type {
 
 import { DOTCOM_URL } from './chat/protocol'
 import { CONFIG_KEY, ConfigKeys } from './configuration-keys'
-import { logEvent } from './event-logger'
+import { logEvent } from './services/EventLogger'
 import { LocalStorage } from './services/LocalStorageProvider'
 import { getAccessToken, SecretStorage } from './services/SecretStorageProvider'
 
 interface ConfigGetter {
-    get<T>(section: typeof CONFIG_KEY[ConfigKeys], defaultValue?: T): T
+    get<T>(section: (typeof CONFIG_KEY)[ConfigKeys], defaultValue?: T): T
 }
 
 /**
@@ -66,6 +66,7 @@ export function getConfiguration(config: ConfigGetter): Configuration {
         inlineChat: config.get(CONFIG_KEY.inlineChatEnabled, true),
         experimentalGuardrails: config.get(CONFIG_KEY.experimentalGuardrails, isTesting),
         experimentalNonStop: config.get('cody.experimental.nonStop' as any, isTesting),
+        experimentalCustomRecipes: config.get(CONFIG_KEY.experimentalCustomRecipes, false),
         autocompleteAdvancedProvider,
         autocompleteAdvancedServerEndpoint: config.get<string | null>(
             CONFIG_KEY.autocompleteAdvancedServerEndpoint,
@@ -74,6 +75,17 @@ export function getConfiguration(config: ConfigGetter): Configuration {
         autocompleteAdvancedAccessToken: config.get<string | null>(CONFIG_KEY.autocompleteAdvancedAccessToken, null),
         autocompleteAdvancedCache: config.get(CONFIG_KEY.autocompleteAdvancedCache, true),
         autocompleteAdvancedEmbeddings: config.get(CONFIG_KEY.autocompleteAdvancedEmbeddings, true),
+        autocompleteExperimentalTriggerMoreEagerly: config.get(
+            CONFIG_KEY.autocompleteExperimentalTriggerMoreEagerly,
+            false
+        ),
+        autocompleteExperimentalCompleteSuggestWidgetSelection: config.get(
+            CONFIG_KEY.autocompleteExperimentalCompleteSuggestWidgetSelection,
+            false
+        ),
+        pluginsEnabled: config.get<boolean>(CONFIG_KEY.pluginsEnabled, false),
+        pluginsDebugEnabled: config.get<boolean>(CONFIG_KEY.pluginsDebugEnabled, true),
+        pluginsConfig: config.get(CONFIG_KEY.pluginsConfig, {}),
     }
 }
 
@@ -153,8 +165,8 @@ export async function migrateConfiguration(): Promise<void> {
 }
 
 async function migrateDeprecatedConfigOption(
-    oldKey: typeof CONFIG_KEY[ConfigKeys],
-    newKey: typeof CONFIG_KEY[ConfigKeys]
+    oldKey: (typeof CONFIG_KEY)[ConfigKeys],
+    newKey: (typeof CONFIG_KEY)[ConfigKeys]
 ): Promise<boolean> {
     const config = vscode.workspace.getConfiguration()
     const value = config.get(oldKey)

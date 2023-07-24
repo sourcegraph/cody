@@ -4,6 +4,7 @@ import { MAX_CURRENT_FILE_TOKENS, MAX_HUMAN_INPUT_TOKENS } from '../../prompt/co
 import { truncateText, truncateTextStart } from '../../prompt/truncation'
 import { Interaction } from '../transcript/interaction'
 
+import { numResults } from './helpers'
 import { Recipe, RecipeContext, RecipeID } from './recipe'
 
 // TODO: Disconnect recipe from chat
@@ -71,10 +72,7 @@ export class NonStop implements Recipe {
 
     // Get context from editor
     private async getContextMessages(text: string, codebaseContext: CodebaseContext): Promise<ContextMessage[]> {
-        const contextMessages: ContextMessage[] = await codebaseContext.getContextMessages(text, {
-            numCodeResults: 12,
-            numTextResults: 3,
-        })
+        const contextMessages: ContextMessage[] = await codebaseContext.getContextMessages(text, numResults)
         return contextMessages
     }
 

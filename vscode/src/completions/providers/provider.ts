@@ -25,17 +25,20 @@ export interface ProviderConfig {
     enableExtendedMultilineTriggers: boolean
 
     /**
-     * A string identifier used in event logs
+     * A string identifier for the provider config used in event logs.
      */
     identifier: string
 }
 
 export interface ProviderOptions {
+    /** A unique and descriptive identifier for the provider. */
+    id: string
+
     prefix: string
     suffix: string
     fileName: string
     languageId: string
-    multilineMode: null | 'block'
+    multiline: boolean
     // Relative length to `maximumContextCharacters`
     responsePercentage: number
     prefixPercentage: number
@@ -45,37 +48,7 @@ export interface ProviderOptions {
 }
 
 export abstract class Provider {
-    protected prefix: string
-    protected suffix: string
-    protected fileName: string
-    protected languageId: string
-    protected multilineMode: null | 'block'
-    protected responsePercentage: number
-    protected prefixPercentage: number
-    protected suffixPercentage: number
-    protected n: number
-
-    constructor({
-        prefix,
-        suffix,
-        fileName,
-        languageId,
-        multilineMode,
-        responsePercentage,
-        prefixPercentage,
-        suffixPercentage,
-        n = 1,
-    }: ProviderOptions) {
-        this.prefix = prefix
-        this.suffix = suffix
-        this.fileName = fileName
-        this.languageId = languageId
-        this.multilineMode = multilineMode
-        this.responsePercentage = responsePercentage
-        this.prefixPercentage = prefixPercentage
-        this.suffixPercentage = suffixPercentage
-        this.n = n
-    }
+    constructor(public readonly options: Readonly<ProviderOptions>) {}
 
     public abstract generateCompletions(abortSignal: AbortSignal, snippets: ReferenceSnippet[]): Promise<Completion[]>
 }

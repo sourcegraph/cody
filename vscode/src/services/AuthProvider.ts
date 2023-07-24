@@ -17,10 +17,10 @@ import {
     unauthenticatedStatus,
 } from '../chat/protocol'
 import { newAuthStatus } from '../chat/utils'
-import { logEvent } from '../event-logger'
 import { debug } from '../log'
 
 import { AuthMenu, LoginStepInputBox, TokenInputBox } from './AuthMenus'
+import { logEvent } from './EventLogger'
 import { LocalAppDetector } from './LocalAppDetector'
 import { LocalStorage } from './LocalStorageProvider'
 import { SecretStorage } from './SecretStorageProvider'
@@ -152,6 +152,10 @@ export class AuthProvider {
 
     // Log user out of the selected endpoint (remove token from secret)
     private async signout(endpoint: string): Promise<void> {
+        // Restart appDetector if endpoint is App
+        if (isLocalApp(endpoint)) {
+            await this.appDetector.init()
+        }
         await this.secretStorage.deleteToken(endpoint)
         await this.localStorage.deleteEndpoint()
         await this.auth(endpoint, null)
