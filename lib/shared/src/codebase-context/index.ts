@@ -221,13 +221,12 @@ export class CodebaseContext {
 
         const contextMessages: ContextMessage[] = []
         const preciseContext = await this.graph.getContext()
-
         for (const context of preciseContext) {
             contextMessages.push({
                 speaker: 'human',
                 file: {
                     fileName: context.filepath,
-                    repoName: context.repository,
+                    repoName: context.repositoryName,
                 },
                 text: `
                 As my coding assistant, use this context to help me answer the question asked:

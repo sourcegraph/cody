@@ -14,13 +14,13 @@ import {
     IS_CONTEXT_REQUIRED_QUERY,
     LEGACY_SEARCH_EMBEDDINGS_QUERY,
     LOG_EVENT_MUTATION,
+    PRECISE_CONTEXT,
     REPOSITORY_EMBEDDING_EXISTS_QUERY,
     REPOSITORY_ID_QUERY,
     REPOSITORY_IDS_QUERY,
     REPOSITORY_NAMES_QUERY,
     SEARCH_ATTRIBUTION_QUERY,
     SEARCH_EMBEDDINGS_QUERY,
-    PRECISE_CONTEXT,
 } from './queries'
 import { buildGraphQLUrl } from './url'
 
@@ -98,11 +98,9 @@ interface GetCodyContextResponse {
 }
 
 export interface PreciseContextResult {
-    symbol: string
-    syntectDescriptor: string
-    repository: string
-    symbolRole: number
-    confidence: string
+    scipSymbolName: string
+    fuzzySymbolName: string
+    repositoryName: string
     text: string
     filepath: string
 }
@@ -115,13 +113,18 @@ interface PreciseContext {
 }
 
 interface PreciseDataContext {
-    symbol: string
-    syntectDescriptor: string
-    repository: string
-    symbolRole: number
-    confidence: string
+    scipSymbolName: string
+    fuzzySymbolName: string
+    repositoryName: string
     text: string
     filepath: string
+}
+
+export interface ActiveFileSelectionRange {
+    startLine: number
+    startCharacter: number
+    endLine: number
+    endCharacter: number
 }
 
 interface SearchAttributionResponse {
@@ -230,18 +233,19 @@ export class SourcegraphGraphQLAPIClient {
     }
 
     public async getPreciseContext(
-        repository: string,
-        commitID: string,
+        repositoryName: string,
+        closestRemoteCommitSHA: string,
         activeFile: string,
-        activeFileContent: string
+        activeFileContent: string,
+        activeFileSelectionRange: ActiveFileSelectionRange | null
     ): Promise<PreciseContextResult[] | Error> {
         return this.fetchSourcegraphAPI<APIResponse<PreciseContextResponse>>(PRECISE_CONTEXT, {
             input: {
-                symbols: [],
-                repository,
-                commitID,
+                repositoryName,
+                closestRemoteCommitSHA,
                 activeFile,
                 activeFileContent,
+                ...(activeFileSelectionRange && { activeFileSelectionRange }),
             },
         }).then(response => extractDataOrError(response, data => data.getPreciseContext.context))
     }

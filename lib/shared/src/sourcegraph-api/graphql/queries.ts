@@ -181,12 +181,10 @@ export const PRECISE_CONTEXT = `
 query GetPreciseContext($input: PreciseContextInput!) {
     getPreciseContext(input: $input) {
         context {
-            symbol
-            symbolRole
-            syntectDescriptor
-            repository
+            scipSymbolName
+            fuzzySymbolName
+            repositoryName
             text
-            confidence
             filepath
         }
     }

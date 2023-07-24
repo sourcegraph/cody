@@ -1,6 +1,10 @@
 import { isErrorLike } from '../common'
-import { Editor } from '../editor'
-import { PreciseContextResult, SourcegraphGraphQLAPIClient } from '../sourcegraph-api/graphql/client'
+import { ActiveTextEditorSelectionRange, Editor } from '../editor'
+import {
+    ActiveFileSelectionRange,
+    PreciseContextResult,
+    SourcegraphGraphQLAPIClient,
+} from '../sourcegraph-api/graphql/client'
 
 export interface GitInfo {
     repo: string
@@ -18,7 +22,6 @@ export abstract class GraphContextFetcher {
         if (!editorContext) {
             return []
         }
-
         const workspaceRoot = this.editor.getWorkspaceRootPath()
         if (!workspaceRoot) {
             return []
@@ -31,13 +34,29 @@ export abstract class GraphContextFetcher {
             repository,
             commitID,
             activeFile,
-            editorContext.content
+            editorContext.content,
+            getActiveSelectionRange(editorContext.selection)
         )
         if (isErrorLike(response)) {
             return []
         }
 
         return response
+    }
+}
+
+function getActiveSelectionRange(
+    selection: ActiveTextEditorSelectionRange | undefined
+): ActiveFileSelectionRange | null {
+    if (!selection) {
+        return null
+    }
+
+    return {
+        startLine: selection.start.line,
+        startCharacter: selection.start.character,
+        endLine: selection.end.line,
+        endCharacter: selection.end.character,
     }
 }
 
