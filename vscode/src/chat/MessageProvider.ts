@@ -26,6 +26,7 @@ import { AuthProvider, isNetworkError } from '../services/AuthProvider'
 import { LocalStorage } from '../services/LocalStorageProvider'
 import { TestSupport } from '../test-support'
 
+import { ConfigProvider } from './ConfigProvider'
 import { ContextProvider } from './ContextProvider'
 
 /**
@@ -65,6 +66,7 @@ export interface MessageProviderOptions {
     contextProvider: ContextProvider
     telemetryService: TelemetryService
     platform: Pick<PlatformContext, 'recipes'>
+    configProvider: ConfigProvider
 }
 
 export abstract class MessageProvider extends MessageHandler implements vscode.Disposable, IdleRecipeRunner {
@@ -92,6 +94,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
     protected contextProvider: ContextProvider
     protected telemetryService: TelemetryService
     protected platform: Pick<PlatformContext, 'recipes'>
+    protected configProvider: ConfigProvider
 
     constructor(options: MessageProviderOptions) {
         super()
@@ -109,12 +112,15 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         this.contextProvider = options.contextProvider
         this.telemetryService = options.telemetryService
         this.platform = options.platform
+        this.configProvider = options.configProvider
 
         // chat id is used to identify chat session
         this.createNewChatID()
 
-        // Listen to configuration changes to possibly enable custom recipes
-        this.contextProvider.configurationChangeEvent.event(() => this.sendMyPrompts())
+        this.configProvider.configurationChangeEvent.event(async () =>
+            // Listen to configuration changes to possibly enable custom recipes
+            this.sendMyPrompts()
+        )
     }
 
     protected async init(): Promise<void> {
@@ -258,9 +264,9 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
                 if (statusCode && statusCode >= 400 && statusCode <= 410) {
                     this.authProvider
                         .auth(
-                            this.contextProvider.config.serverEndpoint,
-                            this.contextProvider.config.accessToken,
-                            this.contextProvider.config.customHeaders
+                            this.configProvider.config.serverEndpoint,
+                            this.configProvider.config.accessToken,
+                            this.configProvider.config.customHeaders
                         )
                         .catch(error => console.error(error))
                     debug('ChatViewProvider:onError:unauthUser', err, { verbose: { statusCode } })
@@ -390,7 +396,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
 
         let pluginsPrompt: Message[] = []
         let pluginExecutionInfos: PluginFunctionExecutionInfo[] = []
-        if (this.contextProvider.config.pluginsEnabled && recipeId === 'chat-question') {
+        if (this.configProvider.config.pluginsEnabled && recipeId === 'chat-question') {
             const result = await this.getPluginsContext(humanChatInput)
             pluginsPrompt = result?.prompt ?? []
             pluginExecutionInfos = result?.executionInfos ?? []
@@ -483,7 +489,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
     }
 
     private async guardrailsAnnotateAttributions(text: string): Promise<string> {
-        if (!this.contextProvider.config.experimentalGuardrails) {
+        if (!this.configProvider.config.experimentalGuardrails) {
             return text
         }
 
@@ -572,7 +578,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         const send = async (): Promise<void> => {
             await this.editor.controllers.prompt?.refresh()
             const prompts = this.editor.controllers.prompt?.getPromptList() ?? []
-            void this.handleMyPrompts(prompts, this.contextProvider.config.experimentalCustomRecipes)
+            void this.handleMyPrompts(prompts, this.configProvider.config.experimentalCustomRecipes)
         }
         this.editor.controllers.prompt?.setMessenger(send)
         await send()
@@ -646,7 +652,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
      * Send embedding connections or results error to output
      */
     private logEmbeddingsSearchErrors(): void {
-        if (this.contextProvider.config.useContext !== 'embeddings') {
+        if (this.configProvider.config.useContext !== 'embeddings') {
             return
         }
         const searchErrors = this.contextProvider.context.getEmbeddingSearchErrors()

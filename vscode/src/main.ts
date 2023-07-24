@@ -121,19 +121,9 @@ const register = async (
     const authProvider = new AuthProvider(initialConfig, secretStorage, localStorage, telemetryService)
     await authProvider.init()
 
-    const contextProvider = new ContextProvider(
-        initialConfig,
-        chatClient,
-        codebaseContext,
-        editor,
-        secretStorage,
-        localStorage,
-        rgPath,
-        authProvider,
-        telemetryService,
-        platform
-    )
-    disposables.push(contextProvider)
+    const configProvider = new ConfigProvider(initialConfig, secretStorage, localStorage, authProvider)
+    const contextProvider = new ContextProvider(chatClient, codebaseContext, editor, rgPath, configProvider, platform)
+    disposables.push(configProvider, contextProvider)
 
     // Shared configuration that is required for chat views to send and receive messages
     const messageProviderOptions: MessageProviderOptions = {
@@ -146,6 +136,7 @@ const register = async (
         contextProvider,
         telemetryService,
         platform,
+        configProvider,
     }
 
     const inlineChatManager = new InlineChatViewManager(messageProviderOptions)
@@ -162,7 +153,7 @@ const register = async (
             webviewOptions: { retainContextWhenHidden: true },
         }),
         // Update external services when configurationChangeEvent is fired by chatProvider
-        contextProvider.configurationChangeEvent.event(async () => {
+        configProvider.configurationChangeEvent.event(async () => {
             const newConfig = await getFullConfig(secretStorage, localStorage)
             externalServicesOnDidConfigurationChange(newConfig)
             await createOrUpdateEventLogger(newConfig, localStorage)

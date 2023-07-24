@@ -9,10 +9,8 @@ import { SourcegraphGraphQLAPIClient } from '@sourcegraph/cody-shared/src/source
 import { TelemetryService } from '@sourcegraph/cody-shared/src/telemetry'
 import { isError } from '@sourcegraph/cody-shared/src/utils'
 
-import { getFullConfig } from '../configuration'
 import { VSCodeEditor } from '../editor/vscode-editor'
 import { PlatformContext } from '../extension.common'
-import { debug } from '../log'
 import { getRerankWithLog } from '../logged-rerank'
 import { repositoryRemoteUrl } from '../repository/repositoryHelpers'
 import { AuthProvider } from '../services/AuthProvider'
@@ -20,7 +18,7 @@ import { LocalStorage } from '../services/LocalStorageProvider'
 import { SecretStorage } from '../services/SecretStorageProvider'
 
 import { ChatViewProviderWebview } from './ChatViewProvider'
-import { ConfigurationSubsetForWebview, isLocalApp, LocalEnv } from './protocol'
+import { isLocalApp } from './protocol'
 import { convertGitCloneURLToCodebaseName } from './utils'
 
 export type Config = Pick<
@@ -50,16 +48,14 @@ export class ContextProvider implements vscode.Disposable {
     // TODO(umpox): Should we add support for showing context in other places (i.e. within inline chat)?
     public webview?: ChatViewProviderWebview
 
-    // Fire event to let subscribers know that the configuration has changed
-    public configurationChangeEvent = new vscode.EventEmitter<void>()
+    // Fire event to let subscribers know that the context has changed
+    public contextChangeEvent = new vscode.EventEmitter<void>()
 
-    // Codebase-context-related state
     public currentWorkspaceRoot: string
 
     protected disposables: vscode.Disposable[] = []
 
     constructor(
-        public config: Omit<Config, 'codebase'>, // should use codebaseContext.getCodebase() rather than config.codebase
         private chat: ChatClient,
         private codebaseContext: CodebaseContext,
         private editor: VSCodeEditor,
@@ -70,8 +66,7 @@ export class ContextProvider implements vscode.Disposable {
         private telemetryService: TelemetryService,
         private platform: PlatformContext
     ) {
-        this.disposables.push(this.configurationChangeEvent)
-
+        this.disposables.push(this.contextChangeEvent)
         this.currentWorkspaceRoot = ''
         this.disposables.push(
             vscode.window.onDidChangeActiveTextEditor(async () => {
@@ -80,7 +75,9 @@ export class ContextProvider implements vscode.Disposable {
             vscode.workspace.onDidChangeWorkspaceFolders(async () => {
                 await this.updateCodebaseContext()
             }),
-            vscode.commands.registerCommand('cody.auth.sync', () => this.syncAuthStatus())
+            configProvider.configurationChangeEvent.event(async () => {
+                await this.updateCodebaseContext()
+            })
         )
     }
 
@@ -90,16 +87,6 @@ export class ContextProvider implements vscode.Disposable {
 
     public async init(): Promise<void> {
         await this.publishContextStatus()
-    }
-
-    public onConfigurationChange(newConfig: Config): void {
-        debug('ContextProvider:onConfigurationChange', '')
-        this.config = newConfig
-        const authStatus = this.authProvider.getAuthStatus()
-        if (authStatus.endpoint) {
-            this.config.serverEndpoint = authStatus.endpoint
-        }
-        this.configurationChangeEvent.fire()
     }
 
     private async updateCodebaseContext(): Promise<void> {
@@ -175,7 +162,7 @@ export class ContextProvider implements vscode.Disposable {
             await this.webview?.postMessage({
                 type: 'contextStatus',
                 contextStatus: {
-                    mode: this.config.useContext,
+                    mode: this.configProvider.config.useContext,
                     connection: this.codebaseContext.checkEmbeddingsConnection(),
                     codebase: this.codebaseContext.getCodebase(),
                     filePath: editorContext ? vscode.workspace.asRelativePath(editorContext.filePath) : undefined,
@@ -184,36 +171,8 @@ export class ContextProvider implements vscode.Disposable {
                 },
             })
         }
-        this.disposables.push(this.configurationChangeEvent.event(() => send()))
         this.disposables.push(vscode.window.onDidChangeTextEditorSelection(() => send()))
         return send()
-    }
-
-    /**
-     * Publish the config to the webview.
-     */
-    private async publishConfig(): Promise<void> {
-        const send = async (): Promise<void> => {
-            this.config = await getFullConfig(this.secretStorage, this.localStorage)
-
-            // check if the new configuration change is valid or not
-            const authStatus = this.authProvider.getAuthStatus()
-            const localProcess = await this.authProvider.appDetector.getProcessInfo(authStatus.isLoggedIn)
-            const configForWebview: ConfigurationSubsetForWebview & LocalEnv = {
-                ...localProcess,
-                debugEnable: this.config.debugEnable,
-                serverEndpoint: this.config.serverEndpoint,
-                pluginsEnabled: this.config.pluginsEnabled,
-                pluginsDebugEnabled: this.config.pluginsDebugEnabled,
-            }
-
-            // update codebase context on configuration change
-            await this.updateCodebaseContext()
-            await this.webview?.postMessage({ type: 'config', config: configForWebview, authStatus })
-            debug('Cody:publishConfig', 'configForWebview', { verbose: configForWebview })
-        }
-
-        await send()
     }
 
     /**
