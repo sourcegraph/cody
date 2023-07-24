@@ -54,7 +54,7 @@ async function initCompletionsProvider(): Promise<CodyCompletionItemProvider> {
         codebaseContext,
         disableTimeouts: true,
         triggerMoreEagerly: false,
-        cache: undefined,
+        cache: null,
         isEmbeddingsContextEnabled: true,
     })
 
@@ -105,10 +105,15 @@ async function generateCompletionsForDataset(codeSamples: string[]): Promise<voi
         const codeSampleResults: CompletionResult[] = []
         for (let i = 0; i < iterationsPerCodeSample; i++) {
             const start = Date.now()
-            const completionItems = await completionsProvider.provideInlineCompletionItems(textDocument, position, {
-                triggerKind: 1,
-                selectedCompletionInfo: undefined,
-            })
+            const completionItems = await completionsProvider.provideInlineCompletionItems(
+                textDocument,
+                position,
+                {
+                    triggerKind: 1,
+                    selectedCompletionInfo: undefined,
+                },
+                undefined
+            )
 
             const completions = ('items' in completionItems ? completionItems.items : completionItems).map(item =>
                 typeof item.insertText === 'string' ? item.insertText : ''

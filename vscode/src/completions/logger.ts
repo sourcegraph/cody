@@ -2,8 +2,8 @@ import { LRUCache } from 'lru-cache'
 import * as vscode from 'vscode'
 
 import { ConfigKeys } from '../configuration-keys'
-import { logEvent } from '../event-logger'
 import { debug } from '../log'
+import { logEvent } from '../services/EventLogger'
 
 interface CompletionEvent {
     params: {

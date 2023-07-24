@@ -19,7 +19,7 @@ interface Request {
 export class RequestManager {
     private readonly requests: Map<string, Request[]> = new Map()
 
-    constructor(private completionsCache: CompletionsCache | undefined) {}
+    constructor(private completionsCache: CompletionsCache | null) {}
 
     public async request(
         documentUri: string,

@@ -17,7 +17,16 @@
     "webpack.config.js",
     "package.json",
     ".storybook/*.ts",
+    "../lib/shared/src/telemetry/EventLogger.ts",
+    "test/completions/completions-dataset.ts",
   ],
-  "exclude": ["scripts", "dist", "test/integration", "test/completions"],
-  "references": [{ "path": "../lib/shared" }, { "path": "../lib/ui" }],
+  "exclude": ["scripts", "dist", "test/integration"],
+  "references": [
+    {
+      "path": "../lib/shared",
+    },
+    {
+      "path": "../lib/ui",
+    },
+  ],
 }

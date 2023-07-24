@@ -25,7 +25,7 @@ interface GetContextOptions {
     isEmbeddingsContextEnabled?: boolean
 }
 
-interface GetContextResult {
+export interface GetContextResult {
     context: ReferenceSnippet[]
     logSummary: {
         embeddings?: number

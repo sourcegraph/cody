@@ -2,8 +2,6 @@ import { VSCodeButton } from '@vscode/webview-ui-toolkit/react'
 
 import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 
-import { isInternalUser } from '../src/chat/protocol'
-
 import { VSCodeWrapper } from './utils/VSCodeApi'
 
 import styles from './Recipes.module.css'
@@ -25,16 +23,15 @@ export const recipesList = {
 
 export const Recipes: React.FunctionComponent<{
     vscodeAPI: VSCodeWrapper
-    myPrompts: string[]
-    endpoint: string
-}> = ({ vscodeAPI, myPrompts, endpoint }) => {
+    myPrompts: string[] | null
+}> = ({ vscodeAPI, myPrompts }) => {
     const onRecipeClick = (recipeID: RecipeID): void => {
         vscodeAPI.postMessage({ command: 'executeRecipe', recipe: recipeID })
     }
     const onMyPromptClick = (promptID: string): void => {
         vscodeAPI.postMessage({ command: 'my-prompt', title: promptID })
     }
-    const myPromptsEnabled = isInternalUser(endpoint)
+    const myPromptsEnabled = myPrompts !== null
 
     return (
         <div className="inner-container">
@@ -47,7 +44,7 @@ export const Recipes: React.FunctionComponent<{
                                     title="Custom Recipes let you build your own reusable prompts with tailored contexts. Update the recipes field in your `.vscode/cody.json` file to add or remove a recipe."
                                     className={styles.recipesHeader}
                                 >
-                                    <span>Custom Recipes</span>
+                                    <span>Custom Recipes - Experimental</span>
                                     {myPrompts?.length > 0 && (
                                         <VSCodeButton
                                             type="button"

@@ -28,7 +28,6 @@ import { isError } from '@sourcegraph/cody-shared/src/utils'
 import { View } from '../../webviews/NavBar'
 import { getFullConfig } from '../configuration'
 import { VSCodeEditor } from '../editor/vscode-editor'
-import { logEvent } from '../event-logger'
 import { FilenameContextFetcher } from '../local-context/filename-context-fetcher'
 import { LocalKeywordContextFetcher } from '../local-context/local-keyword-context-fetcher'
 import { debug } from '../log'
@@ -36,6 +35,7 @@ import { getRerankWithLog } from '../logged-rerank'
 import { FixupTask } from '../non-stop/FixupTask'
 import { IdleRecipeRunner } from '../non-stop/roles'
 import { AuthProvider } from '../services/AuthProvider'
+import { logEvent } from '../services/EventLogger'
 import { LocalStorage } from '../services/LocalStorageProvider'
 import { SecretStorage } from '../services/SecretStorageProvider'
 import { TestSupport } from '../test-support'
@@ -65,6 +65,7 @@ export type Config = Pick<
     | 'useContext'
     | 'experimentalChatPredictions'
     | 'experimentalGuardrails'
+    | 'experimentalCustomRecipes'
     | 'pluginsEnabled'
     | 'pluginsConfig'
     | 'pluginsDebugEnabled'
@@ -128,7 +129,6 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         this.disposables.push(this.configurationChangeEvent)
 
         this.currentWorkspaceRoot = ''
-        this.customRecipesInit()
 
         // listen for vscode active editor change event
         this.disposables.push(
@@ -193,6 +193,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         if (authStatus.endpoint) {
             this.config.serverEndpoint = authStatus.endpoint
         }
+        void this.sendMyPrompts()
         this.configurationChangeEvent.fire()
     }
 
@@ -299,7 +300,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 void this.openExternalLinks(message.value)
                 break
             case 'my-prompt':
-                await this.executeMyPrompt(message.title)
+                await this.executeCustomRecipe(message.title)
                 break
             case 'openFile': {
                 const rootPath = this.editor.getWorkspaceRootPath()
@@ -734,7 +735,10 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         })
     }
 
-    private async executeMyPrompt(title: string): Promise<void> {
+    public async executeCustomRecipe(title: string): Promise<void> {
+        if (!this.config.experimentalCustomRecipes) {
+            return
+        }
         // Send prompt names to webview to display as recipe options
         if (!title || title === 'get') {
             await this.sendMyPrompts()
@@ -758,9 +762,9 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         }
         // Get prompt details from controller by title then execute prompt's command
         const prompt = this.editor.controllers.prompt.find(title)
-        this.editor.controllers.prompt.getCommandOutput()
+        await this.editor.controllers.prompt.get('command')
         if (!prompt) {
-            debug('executeMyPrompt:noPrompt', title)
+            debug('executeCustomRecipe:noPrompt', title)
             return
         }
         if (!prompt.startsWith('/')) {
@@ -769,26 +773,24 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         await this.executeChatCommands(prompt, 'my-prompt')
     }
 
-    private customRecipesInit(): void {
-        // listen for file change event for JSON files used for building Custom Recipes
-        const myWorkspacePromptsWatcher = this.editor.controllers?.prompt?.wsFileWatcher
-        const myUserPromptsWatcher = this.editor.controllers?.prompt?.userFileWatcher
-        myWorkspacePromptsWatcher?.onDidChange(() => this.sendMyPrompts())
-        myWorkspacePromptsWatcher?.onDidDelete(() => this.sendMyPrompts())
-        myUserPromptsWatcher?.onDidChange(() => this.sendMyPrompts())
-        myUserPromptsWatcher?.onDidDelete(() => this.sendMyPrompts())
-    }
-
     /**
      * Send custom recipe names to webview
      */
     private async sendMyPrompts(): Promise<void> {
-        await this.editor.controllers.prompt.refresh()
-        const prompts = this.editor.controllers.prompt.getPromptList()
-        void this.webview?.postMessage({
-            type: 'my-prompts',
-            prompts,
-        })
+        const send = async (): Promise<void> => {
+            await this.editor.controllers.prompt.refresh()
+            const prompts = this.editor.controllers.prompt.getPromptList()
+            void this.webview?.postMessage({
+                type: 'my-prompts',
+                prompts,
+                isEnabled: this.config.experimentalCustomRecipes,
+            })
+        }
+        const init = (): void => {
+            this.editor.controllers.prompt.setMessager(send)
+        }
+        init()
+        await send()
     }
 
     private async saveTranscriptToChatHistory(): Promise<void> {
@@ -968,7 +970,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         }
     }
 
-    private codyFeedbackPayload(): any {
+    private codyFeedbackPayload(): { chatTranscript: ChatMessage[] | null; lastChatUsedEmbeddings: boolean } | null {
         const endpoint = this.config.serverEndpoint || DOTCOM_URL.href
         const isPrivateInstance = new URL(endpoint).href !== DOTCOM_URL.href
 
@@ -979,7 +981,9 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         }
 
         const lastContextFiles = privateChatTranscript.at(-1)?.contextFiles
-        const lastChatUsedEmbeddings = lastContextFiles?.some(file => file.source === 'embeddings')
+        const lastChatUsedEmbeddings = lastContextFiles
+            ? lastContextFiles.some(file => file.source === 'embeddings')
+            : false
 
         // We only include full chat transcript for dot com users with connected codebase
         const chatTranscript = !isPrivateInstance && this.codebaseContext.getCodebase() ? privateChatTranscript : null

@@ -8,11 +8,15 @@
     "Generate Multiple Unit Tests": {
       "prompt": "Create at least 3 full, workable unit tests for the selected code. You may import common libraries for testing. Follow patterns and imports used in existing test files if available, otherwise use best practices for unit testing in this language.",
       "context": {
-        "currentDir": true
+        "currentDir": true,
+        "currentFile": true
       }
     },
     "Refactor Code": {
-      "prompt": "Analyze the code and suggest constructive edits that improve code quality and readability. Focus on providing clear, thoughtful, and coherent recommendations. Avoid altering intended functionality without explanation. Make suggestions that are easy to implement and based on shared code snippets. Provide full revised code at the end."
+      "prompt": "Please analyze the code and suggest constructive edits that follow best practices and improve code quality and readability. Focus your responses on being clear, thoughtful, coherent and easy for me to understand. Do not make changes that alter intended functionality without explaining why. Avoid responses that are overly complex or difficult to implement. Strive to provide helpful recommendations based on other shared code snippests.",
+      "context": {
+        "currentFile": true
+      }
     },
     "Compare Files in Opened Tabs": {
       "prompt": "Compare the code from opened tabs and explain their relationships.",
@@ -20,7 +24,7 @@
         "openTabs": true,
         "excludeSelection": true
       },
-      "description": "This recipe lets Cody analyze code from open tabs to provide insights on how they relate to each other."
+      "info": "This recipe lets Cody analyze code from open tabs to provide insights on how they relate to each other."
     }
   }
 }

@@ -27,7 +27,7 @@ export class UnstableHuggingFaceProvider extends Provider {
     public async generateCompletions(abortSignal: AbortSignal): Promise<Completion[]> {
         // TODO: Add context and language
         // Prompt format is taken form https://huggingface.co/bigcode/starcoder#fill-in-the-middle
-        const prompt = `<fim_prefix>${this.prefix}<fim_suffix>${this.suffix}<fim_middle>`
+        const prompt = `<fim_prefix>${this.options.prefix}<fim_suffix>${this.options.suffix}<fim_middle>`
 
         const request = {
             inputs: prompt,
@@ -35,7 +35,7 @@ export class UnstableHuggingFaceProvider extends Provider {
                 num_return_sequences: 1,
                 // To speed up sample generation in single-line case, we request a lower token limit
                 // since we can't terminate on the first `\n`.
-                max_new_tokens: this.multiline ? 64 : 256,
+                max_new_tokens: this.options.multiline ? 64 : 256,
             },
         }
 
@@ -62,11 +62,11 @@ export class UnstableHuggingFaceProvider extends Provider {
                 throw new Error(data.error)
             }
 
-            const completions: string[] = data.map(c => postProcess(c.generated_text, this.multiline))
+            const completions: string[] = data.map(c => postProcess(c.generated_text, this.options.multiline))
             log?.onComplete(completions)
 
             return completions.map(content => ({
-                prefix: this.prefix,
+                prefix: this.options.prefix,
                 content,
             }))
         } catch (error: any) {

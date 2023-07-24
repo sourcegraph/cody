@@ -25,6 +25,7 @@ export class CustomRecipesBuilder {
     public codebase: string | null = null
 
     constructor(
+        private isActive: boolean,
         private workspaceRoot?: string,
         private homeDir?: string
     ) {
@@ -34,8 +35,18 @@ export class CustomRecipesBuilder {
         }
     }
 
+    public activate(state: boolean): void {
+        if (this.isActive && !state) {
+            this.dispose()
+        }
+        this.isActive = state
+    }
+
     // Get the formatted context from the json config file
     public async get(): Promise<MyPrompts> {
+        if (!this.isActive) {
+            return { prompts: this.myPromptsMap, premade: this.myPremade, starter: this.myStarter }
+        }
         // reset map and set
         this.myPromptsMap = new Map<string, CodyPrompt>()
         this.idSet = new Set<string>()
@@ -98,6 +109,18 @@ export class CustomRecipesBuilder {
         } catch {
             return null
         }
+    }
+
+    // Reset the class
+    public dispose(): void {
+        this.isActive = false
+        this.myPromptsMap = new Map<string, CodyPrompt>()
+        this.idSet = new Set<string>()
+        this.promptSize = { ...promptSizeInit }
+        this.myPremade = undefined
+        this.myStarter = ''
+        this.userPromptsJSON = null
+        this.codebase = null
     }
 }
 
