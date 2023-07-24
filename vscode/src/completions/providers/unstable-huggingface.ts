@@ -54,8 +54,6 @@ export class UnstableHuggingFaceProvider extends Provider {
                 .map(line => (languageConfig ? languageConfig.commentStart + line : ''))
                 .join('\n')
 
-            console.log({ introString })
-
             // Prompt format is taken form https://huggingface.co/bigcode/starcoder#fill-in-the-middle
             prompt = `<fim_prefix>${introString}${this.options.prefix}<fim_suffix>${this.options.suffix}<fim_middle>`
         }
