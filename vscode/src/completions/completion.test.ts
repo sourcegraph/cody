@@ -786,46 +786,43 @@ describe('Cody completions', () => {
             expect(completions.length).toBe(0)
         })
 
-        // We don't support smart completion cut base on multi line suffix yet
-        it.fails('multiline completion duplicate', async () => {
+        it('cuts off a matching line with the next line even if the completion is longer', async () => {
             const { completions } = await complete(
                 `
-                    function bubbleSort() {
-                      ${CURSOR_MARKER}
-                        do {
-                          swapped = false;
-                            for (let i = 0; i < array.length - 1; i++) {
-                                if (array[i] > array[i + 1]) {
-                                    let temp = array[i];
-                                    array[i] = array[i + 1];
-                                    array[i + 1] = temp;
-                                    swapped = true;
-                                }
-                            }
-                       } while (swapped);
+            function bubbleSort() {
+                ${CURSOR_MARKER}
+                do {
+                    swapped = false;
+                    for (let i = 0; i < array.length - 1; i++) {
+                        if (array[i] > array[i + 1]) {
+                            let temp = array[i];
+                            array[i] = array[i + 1];
+                            array[i + 1] = temp;
+                            swapped = true;
+                        }
                     }
-                `,
+                } while (swapped);
+            }
+            `,
                 [
                     createCompletionResponse(`
-                      let swapped;
-                        do {
-                          swapped = false;
-                            for (let i = 0; i < array.length - 1; i++) {
-                                if (array[i] > array[i + 1]) {
-                                    let temp = array[i];
-                                    array[i] = array[i + 1];
-                                    array[i + 1] = temp;
-                                    swapped = true;
-                                }
-                          }
-                     } while (swapped);
-                    `),
+                    let swapped;
+                    do {
+                        swapped = false;
+                        for (let i = 0; i < array.length - 1; i++) {
+                            if (array[i] > array[i + 1]) {
+                                let temp = array[i];
+                                array[i] = array[i + 1];
+                                array[i + 1] = temp;
+                                swapped = true;
+                            }
+                        }
+                    } while (swapped);
+                `),
                 ]
             )
 
-            expect(completions[0].insertText).toMatchInlineSnapshot(`
-                      "let swapped;"
-            `)
+            expect(completions[0].insertText).toBe('let swapped;')
         })
 
         describe('stops when the next non-empty line of the suffix matches partially', () => {
