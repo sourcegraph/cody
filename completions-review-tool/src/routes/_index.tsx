@@ -95,6 +95,7 @@ export default function Index() {
                                     return (
                                         <td
                                             {...cell.getCellProps()}
+                                            style={{ maxWidth: 800, overflow: 'auto' }}
                                             dangerouslySetInnerHTML={{
                                                 __html: cell.value,
                                             }}
@@ -111,9 +112,30 @@ export default function Index() {
 }
 
 function renderMarkdown(code: string) {
+    const cursor = code.indexOf('🔥')
+
+    let truncatedCode = code
+    if (cursor !== -1) {
+        const prefix = code.slice(0, cursor)
+        const suffix = code.slice(cursor + 2)
+
+        const splitPrefix = prefix.split('\n')
+        const truncatedPrefix = splitPrefix.slice(Math.max(0, splitPrefix.length - 15)).join('\n')
+
+        const splitSuffix = suffix.split('\n')
+        const truncatedSuffix = splitSuffix.slice(0, 15).join('\n')
+
+        truncatedCode =
+            (truncatedPrefix !== prefix ? '// Prefix truncated\n' : '') +
+            truncatedPrefix +
+            '🔥' +
+            truncatedSuffix +
+            (truncatedSuffix !== suffix ? '\n// Suffix truncated' : '')
+    }
+
     return marked(
         `\`\`\`javascript
-${code.replace(/\\/g, '\\\\')}
+${truncatedCode.replace(/\\/g, '\\\\')}
 \`\`\``,
         { gfm: true }
     )
