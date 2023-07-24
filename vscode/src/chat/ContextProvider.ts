@@ -17,11 +17,12 @@ import { LocalKeywordContextFetcher } from '../local-context/local-keyword-conte
 import { debug } from '../log'
 import { getRerankWithLog } from '../logged-rerank'
 import { AuthProvider } from '../services/AuthProvider'
+import { logEvent } from '../services/EventLogger'
 import { LocalStorage } from '../services/LocalStorageProvider'
 import { SecretStorage } from '../services/SecretStorageProvider'
 
-import { ConfigurationSubsetForWebview, LocalEnv } from './protocol'
 import { ChatViewProviderWebview } from './ChatViewProvider'
+import { ConfigurationSubsetForWebview, DOTCOM_URL, isLocalApp, LocalEnv } from './protocol'
 import { convertGitCloneURLToCodebaseName } from './utils'
 
 export type Config = Pick<
@@ -36,10 +37,15 @@ export type Config = Pick<
     | 'useContext'
     | 'experimentalChatPredictions'
     | 'experimentalGuardrails'
+    | 'experimentalCustomRecipes'
     | 'pluginsEnabled'
     | 'pluginsConfig'
     | 'pluginsDebugEnabled'
 >
+
+export enum ContextEvent {
+    Auth = 'auth',
+}
 
 export class ContextProvider implements vscode.Disposable {
     // We fire messages from ContextProvider to the sidebar webview.
@@ -55,7 +61,7 @@ export class ContextProvider implements vscode.Disposable {
     protected disposables: vscode.Disposable[] = []
 
     constructor(
-        private config: Omit<Config, 'codebase'>, // should use codebaseContext.getCodebase() rather than config.codebase
+        public config: Omit<Config, 'codebase'>, // should use codebaseContext.getCodebase() rather than config.codebase
         private chat: ChatClient,
         private codebaseContext: CodebaseContext,
         private editor: VSCodeEditor,
@@ -138,6 +144,12 @@ export class ContextProvider implements vscode.Disposable {
         }
         await this.publishConfig()
         this.onConfigurationChange(newConfig)
+        // When logged out, user's endpoint will be set to null
+        const isLoggedOut = !authStatus.isLoggedIn && !authStatus.endpoint
+        const isAppEvent = isLocalApp(authStatus.endpoint || '') ? 'app:' : ''
+        const eventValue = isLoggedOut ? 'disconnected' : authStatus.isLoggedIn ? 'connected' : 'failed'
+        // e.g. auth:app:connected, auth:app:disconnected, auth:failed
+        this.sendEvent(ContextEvent.Auth, isAppEvent + eventValue)
     }
 
     /**
@@ -188,6 +200,19 @@ export class ContextProvider implements vscode.Disposable {
         }
 
         await send()
+    }
+
+    /**
+     * Log Events - naming convention: source:feature:action
+     */
+    public sendEvent(event: ContextEvent, value: string): void {
+        const endpoint = this.config.serverEndpoint || DOTCOM_URL.href
+        const endpointUri = { serverEndpoint: endpoint }
+        switch (event) {
+            case 'auth':
+                logEvent(`CodyVSCodeExtension:Auth:${value}`, endpointUri, endpointUri)
+                break
+        }
     }
 
     public dispose(): void {

@@ -38,7 +38,7 @@ export interface ProviderOptions {
     suffix: string
     fileName: string
     languageId: string
-    multilineMode: null | 'block'
+    multiline: boolean
     // Relative length to `maximumContextCharacters`
     responsePercentage: number
     prefixPercentage: number
@@ -48,40 +48,7 @@ export interface ProviderOptions {
 }
 
 export abstract class Provider {
-    public readonly id: string
-    protected prefix: string
-    protected suffix: string
-    protected fileName: string
-    protected languageId: string
-    protected multilineMode: null | 'block'
-    protected responsePercentage: number
-    protected prefixPercentage: number
-    protected suffixPercentage: number
-    protected n: number
-
-    constructor({
-        id,
-        prefix,
-        suffix,
-        fileName,
-        languageId,
-        multilineMode,
-        responsePercentage,
-        prefixPercentage,
-        suffixPercentage,
-        n = 1,
-    }: ProviderOptions) {
-        this.id = id
-        this.prefix = prefix
-        this.suffix = suffix
-        this.fileName = fileName
-        this.languageId = languageId
-        this.multilineMode = multilineMode
-        this.responsePercentage = responsePercentage
-        this.prefixPercentage = prefixPercentage
-        this.suffixPercentage = suffixPercentage
-        this.n = n
-    }
+    constructor(public readonly options: Readonly<ProviderOptions>) {}
 
     public abstract generateCompletions(abortSignal: AbortSignal, snippets: ReferenceSnippet[]): Promise<Completion[]>
 }

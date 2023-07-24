@@ -16,6 +16,8 @@ import {
 } from '@sourcegraph/cody-ui/src/Chat'
 import { SubmitSvg } from '@sourcegraph/cody-ui/src/utils/icons'
 
+import { WebviewEvent } from '../src/chat/protocol'
+
 import { FileLink } from './FileLink'
 import { VSCodeWrapper } from './utils/VSCodeApi'
 
@@ -76,7 +78,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
 
     const onFeedbackBtnClick = useCallback(
         (text: string) => {
-            vscodeAPI.postMessage({ command: 'event', event: 'feedback', value: text })
+            vscodeAPI.postMessage({ command: 'event', event: WebviewEvent.Feedback, value: text })
         },
         [vscodeAPI]
     )
@@ -86,8 +88,8 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             if (isInsert) {
                 vscodeAPI.postMessage({ command: 'insert', text })
             }
-            const event = isInsert ? 'insert' : 'click'
-            vscodeAPI.postMessage({ command: 'event', event, value: text })
+            const eventName = isInsert ? 'insert' : 'copy'
+            vscodeAPI.postMessage({ command: 'event', event: WebviewEvent.Click, value: eventName + 'Button' })
         },
         [vscodeAPI]
     )

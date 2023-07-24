@@ -10,8 +10,8 @@ import { ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
 import { Editor } from '@sourcegraph/cody-shared/src/editor'
 import { ContextResult, KeywordContextFetcher } from '@sourcegraph/cody-shared/src/local-context'
 
-import { logEvent } from '../event-logger'
 import { debug } from '../log'
+import { logEvent } from '../services/EventLogger'
 
 /**
  * Exclude files without extensions and hidden files (starts with '.')

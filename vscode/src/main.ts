@@ -1,5 +1,3 @@
-import { debug } from 'console'
-
 import * as vscode from 'vscode'
 
 import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
@@ -13,6 +11,7 @@ import { InlineChatViewManager } from './chat/InlineChatViewProvider'
 import { MessageProviderOptions } from './chat/MessageProvider'
 import { CODY_FEEDBACK_URL } from './chat/protocol'
 import { CodyCompletionItemProvider } from './completions'
+import { CompletionsCache } from './completions/cache'
 import { CompletionsDocumentProvider } from './completions/docprovider'
 import { History } from './completions/history'
 import * as CompletionsLogger from './completions/logger'
@@ -20,15 +19,16 @@ import { createProviderConfig as createAnthropicProviderConfig } from './complet
 import { ProviderConfig } from './completions/providers/provider'
 import { createProviderConfig as createUnstableCodeGenProviderConfig } from './completions/providers/unstable-codegen'
 import { createProviderConfig as createUnstableHuggingFaceProviderConfig } from './completions/providers/unstable-huggingface'
+import { registerAutocompleteTraceView } from './completions/tracer/traceView'
 import { getConfiguration, getFullConfig, migrateConfiguration } from './configuration'
 import { VSCodeEditor } from './editor/vscode-editor'
-import { eventLogger, logEvent, updateEventLogger } from './event-logger'
 import { configureExternalServices } from './external-services'
 import { MyPromptController } from './my-cody/MyPromptController'
 import { FixupController } from './non-stop/FixupController'
 import { showSetupNotification } from './notifications/setup-notification'
 import { getRgPath } from './rg'
 import { AuthProvider } from './services/AuthProvider'
+import { createOrUpdateEventLogger, logEvent } from './services/EventLogger'
 import { showFeedbackSupportQuickPick } from './services/FeedbackOptions'
 import { GuardrailsProvider } from './services/GuardrailsProvider'
 import { Comment, InlineController } from './services/InlineController'
@@ -89,18 +89,18 @@ const register = async (
 }> => {
     const disposables: vscode.Disposable[] = []
 
-    await updateEventLogger(initialConfig, localStorage)
+    // Controller for Inline Chat
+    await createOrUpdateEventLogger(initialConfig, localStorage)
     // Controller for inline Chat
     const commentController = new InlineController(context.extensionPath)
-
+    // Controller for Non-Stop Cody
     const fixup = new FixupController()
     disposables.push(fixup)
     if (TestSupport.instance) {
         TestSupport.instance.fixupController.set(fixup)
     }
-
-    const prompt = new MyPromptController(debug, context, initialConfig.serverEndpoint)
-
+    // Controller for Custom Recipes
+    const prompt = new MyPromptController(context, initialConfig.experimentalCustomRecipes)
     const controllers = { inline: commentController, fixups: fixup, prompt }
 
     const editor = new VSCodeEditor(controllers)
@@ -134,7 +134,6 @@ const register = async (
 
     // Shared configuration that is required for chat views to send and receive messages
     const messageProviderOptions: MessageProviderOptions = {
-        config: initialConfig,
         chat: chatClient,
         intentDetector,
         guardrails,
@@ -158,13 +157,15 @@ const register = async (
         vscode.window.registerWebviewViewProvider('cody.chat', sidebarChatProvider, {
             webviewOptions: { retainContextWhenHidden: true },
         }),
-        // Update external services when configurationChangeEvent is fired by sidebarChatProvider
+        // Update external services when configurationChangeEvent is fired by chatProvider
         contextProvider.configurationChangeEvent.event(async () => {
-            externalServicesOnDidConfigurationChange(await getFullConfig(secretStorage, localStorage))
+            const newConfig = await getFullConfig(secretStorage, localStorage)
+            externalServicesOnDidConfigurationChange(newConfig)
+            createOrUpdateEventLogger(newConfig, localStorage).catch(error => console.error(error))
         })
     )
 
-    const executeRecipe = async (recipe: RecipeID, openChatView = true): Promise<void> => {
+    const executeRecipeInSidebar = async (recipe: RecipeID, openChatView = true): Promise<void> => {
         if (openChatView) {
             sidebarChatProvider.showTab('chat')
         }
@@ -249,23 +250,41 @@ const register = async (
             await sidebarChatProvider.clearHistory()
         }),
         // Recipes
-        vscode.commands.registerCommand('cody.recipe.explain-code', () => executeRecipe('explain-code-detailed')),
+        vscode.commands.registerCommand('cody.customRecipes.exec', title => {
+            const recipePrompt = prompt.find(title)
+            if (!recipePrompt.startsWith('/')) {
+                sidebarChatProvider.showTab('chat')
+            }
+            return sidebarChatProvider.executeCustomRecipe(title)
+        }),
+        vscode.commands.registerCommand('cody.customRecipes.list', () => prompt.quickRecipe()),
+        vscode.commands.registerCommand('cody.recipe.explain-code', () =>
+            executeRecipeInSidebar('explain-code-detailed')
+        ),
         vscode.commands.registerCommand('cody.recipe.explain-code-high-level', () =>
-            executeRecipe('explain-code-high-level')
+            executeRecipeInSidebar('explain-code-high-level')
         ),
-        vscode.commands.registerCommand('cody.recipe.generate-unit-test', () => executeRecipe('generate-unit-test')),
-        vscode.commands.registerCommand('cody.recipe.generate-docstring', () => executeRecipe('generate-docstring')),
-        vscode.commands.registerCommand('cody.recipe.fixup', () => executeRecipe('fixup')),
+        vscode.commands.registerCommand('cody.recipe.generate-unit-test', () =>
+            executeRecipeInSidebar('generate-unit-test')
+        ),
+        vscode.commands.registerCommand('cody.recipe.generate-docstring', () =>
+            executeRecipeInSidebar('generate-docstring')
+        ),
+        vscode.commands.registerCommand('cody.recipe.fixup', () => executeRecipeInSidebar('fixup')),
         vscode.commands.registerCommand('cody.recipe.translate-to-language', () =>
-            executeRecipe('translate-to-language')
+            executeRecipeInSidebar('translate-to-language')
         ),
-        vscode.commands.registerCommand('cody.recipe.git-history', () => executeRecipe('git-history')),
+        vscode.commands.registerCommand('cody.recipe.git-history', () => executeRecipeInSidebar('git-history')),
         vscode.commands.registerCommand('cody.recipe.improve-variable-names', () =>
-            executeRecipe('improve-variable-names')
+            executeRecipeInSidebar('improve-variable-names')
         ),
-        vscode.commands.registerCommand('cody.recipe.inline-touch', () => executeRecipe('inline-touch', false)),
-        vscode.commands.registerCommand('cody.recipe.find-code-smells', () => executeRecipe('find-code-smells')),
-        vscode.commands.registerCommand('cody.recipe.context-search', () => executeRecipe('context-search')),
+        vscode.commands.registerCommand('cody.recipe.inline-touch', () =>
+            executeRecipeInSidebar('inline-touch', false)
+        ),
+        vscode.commands.registerCommand('cody.recipe.find-code-smells', () =>
+            executeRecipeInSidebar('find-code-smells')
+        ),
+        vscode.commands.registerCommand('cody.recipe.context-search', () => executeRecipeInSidebar('context-search')),
 
         // Register URI Handler (vscode://sourcegraph.cody-ai)
         vscode.window.registerUriHandler({
@@ -381,9 +400,7 @@ const register = async (
         onConfigurationChange: newConfig => {
             contextProvider.onConfigurationChange(newConfig)
             externalServicesOnDidConfigurationChange(newConfig)
-            if (eventLogger) {
-                eventLogger.onConfigurationChange(vscode.workspace.getConfiguration())
-            }
+            void createOrUpdateEventLogger(newConfig, localStorage)
         },
     }
 }
@@ -407,7 +424,7 @@ function createCompletionsProvider(
         history,
         statusBar,
         codebaseContext,
-        isCompletionsCacheEnabled: config.autocompleteAdvancedCache,
+        cache: config.autocompleteAdvancedCache ? new CompletionsCache() : null,
         isEmbeddingsContextEnabled: config.autocompleteAdvancedEmbeddings,
         triggerMoreEagerly: config.autocompleteExperimentalTriggerMoreEagerly,
         completeSuggestWidgetSelection: config.autocompleteExperimentalCompleteSuggestWidgetSelection,
@@ -417,7 +434,8 @@ function createCompletionsProvider(
         vscode.commands.registerCommand('cody.autocomplete.inline.accepted', ({ codyLogId, codyLines }) => {
             CompletionsLogger.accept(codyLogId, codyLines)
         }),
-        vscode.languages.registerInlineCompletionItemProvider('*', completionsProvider)
+        vscode.languages.registerInlineCompletionItemProvider('*', completionsProvider),
+        registerAutocompleteTraceView(completionsProvider)
     )
     return {
         dispose: () => {

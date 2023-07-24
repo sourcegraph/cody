@@ -7,7 +7,6 @@ import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 import { Transcript } from '@sourcegraph/cody-shared/src/chat/transcript'
 import { ChatHistory, ChatMessage, UserLocalHistory } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { reformatBotMessage } from '@sourcegraph/cody-shared/src/chat/viewHelpers'
-import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
 import { annotateAttribution, Guardrails } from '@sourcegraph/cody-shared/src/guardrails'
 import { highlightTokens } from '@sourcegraph/cody-shared/src/hallucinations-detector'
 import { IntentDetector } from '@sourcegraph/cody-shared/src/intent-detector'
@@ -18,34 +17,17 @@ import { ANSWER_TOKENS, DEFAULT_MAX_TOKENS } from '@sourcegraph/cody-shared/src/
 import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
 
 import { VSCodeEditor } from '../editor/vscode-editor'
-import { logEvent } from '../event-logger'
 import { debug } from '../log'
 import { FixupTask } from '../non-stop/FixupTask'
 import { IdleRecipeRunner } from '../non-stop/roles'
 import { AuthProvider } from '../services/AuthProvider'
+import { logEvent } from '../services/EventLogger'
 import { LocalStorage } from '../services/LocalStorageProvider'
 import { TestSupport } from '../test-support'
 
 import { ContextProvider } from './ContextProvider'
 import { fastFilesExist } from './fastFileFinder'
 import { getRecipe } from './recipes'
-
-export type Config = Pick<
-    ConfigurationWithAccessToken,
-    | 'codebase'
-    | 'serverEndpoint'
-    | 'debugEnable'
-    | 'debugFilter'
-    | 'debugVerbose'
-    | 'customHeaders'
-    | 'accessToken'
-    | 'useContext'
-    | 'experimentalChatPredictions'
-    | 'experimentalGuardrails'
-    | 'pluginsEnabled'
-    | 'pluginsConfig'
-    | 'pluginsDebugEnabled'
->
 
 /**
  * The problem with a token limit for the prompt is that we can only
@@ -71,11 +53,10 @@ abstract class MessageHandler {
     protected abstract handleError(errorMsg: string): void
     protected abstract handleSuggestions(suggestions: string[]): void
     protected abstract handleEnabledPlugins(plugins: string[]): void
-    protected abstract handleMyPrompts(prompts: string[]): void
+    protected abstract handleMyPrompts(prompts: string[], isEnabled: boolean): void
 }
 
 export interface MessageProviderOptions {
-    config: Omit<Config, 'codebase'>
     chat: ChatClient
     intentDetector: IntentDetector
     guardrails: Guardrails
@@ -102,8 +83,6 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
     protected transcript: Transcript = new Transcript()
     protected disposables: vscode.Disposable[] = []
 
-    // Provided configuration to the MessageProvider
-    protected config: Omit<Config, 'codebase'>
     protected chat: ChatClient
     protected intentDetector: IntentDetector
     protected guardrails: Guardrails
@@ -120,7 +99,6 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
             TestSupport.instance.messageProvider.set(this)
         }
 
-        this.config = options.config
         this.chat = options.chat
         this.intentDetector = options.intentDetector
         this.guardrails = options.guardrails
@@ -130,16 +108,11 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         this.authProvider = options.authProvider
         this.contextProvider = options.contextProvider
 
-        // listen for file change event for JSON files used for building Custom Recipes
-        const myWorkspacePromptsWatcher = this.editor.controllers?.prompt?.wsFileWatcher
-        const myUserPromptsWatcher = this.editor.controllers?.prompt?.userFileWatcher
-        myWorkspacePromptsWatcher?.onDidChange(() => this.sendMyPrompts())
-        myWorkspacePromptsWatcher?.onDidDelete(() => this.sendMyPrompts())
-        myUserPromptsWatcher?.onDidChange(() => this.sendMyPrompts())
-        myUserPromptsWatcher?.onDidDelete(() => this.sendMyPrompts())
-
         // chat id is used to identify chat session
         this.createNewChatID()
+
+        // Listen to configuration changes to possibly enable custom recipes
+        this.contextProvider.configurationChangeEvent.event(() => this.sendMyPrompts())
     }
 
     protected async init(): Promise<void> {
@@ -299,7 +272,11 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
                 // Log users out on unauth error
                 if (statusCode && statusCode >= 400 && statusCode <= 410) {
                     this.authProvider
-                        .auth(this.config.serverEndpoint, this.config.accessToken, this.config.customHeaders)
+                        .auth(
+                            this.contextProvider.config.serverEndpoint,
+                            this.contextProvider.config.accessToken,
+                            this.contextProvider.config.customHeaders
+                        )
                         .catch(error => console.error(error))
                     debug('ChatViewProvider:onError:unauthUser', err, { verbose: { statusCode } })
                 }
@@ -393,7 +370,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
                         count: descriptors.length,
                     }
                 )
-                return await plugins.runPluginFunctions(descriptors, this.config.pluginsConfig)
+                return await plugins.runPluginFunctions(descriptors, this.contextProvider.config.pluginsConfig)
             }
         } catch (error) {
             console.error('Error getting plugin context', error)
@@ -432,7 +409,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
 
         let pluginsPrompt: Message[] = []
         let pluginExecutionInfos: PluginFunctionExecutionInfo[] = []
-        if (this.config.pluginsEnabled && recipeId === 'chat-question') {
+        if (this.contextProvider.config.pluginsEnabled && recipeId === 'chat-question') {
             const result = await this.getPluginsContext(humanChatInput)
             pluginsPrompt = result?.prompt ?? []
             pluginExecutionInfos = result?.executionInfos ?? []
@@ -525,7 +502,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
     }
 
     private async guardrailsAnnotateAttributions(text: string): Promise<string> {
-        if (!this.config.experimentalGuardrails) {
+        if (!this.contextProvider.config.experimentalGuardrails) {
             return text
         }
 
@@ -551,21 +528,18 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         this.handleTranscript(chatTranscript, this.isMessageInProgress)
     }
 
-    protected async executeMyPrompt(title: string): Promise<void> {
+    public async executeCustomRecipe(title: string): Promise<void> {
+        if (!this.contextProvider.config.experimentalCustomRecipes) {
+            return
+        }
         // Send prompt names to display as recipe options
         if (!title || title === 'get') {
             await this.sendMyPrompts()
             return
         }
         // Create a new recipe
-        if (title === 'add') {
-            await this.editor.controllers.prompt.add()
-            await this.sendMyPrompts()
-            return
-        }
-        // Clear all recipes stored in user global storage
-        if (title === 'clear') {
-            await this.editor.controllers.prompt.clear()
+        if (title === 'menu') {
+            await this.editor.controllers.prompt.menu()
             await this.sendMyPrompts()
             return
         }
@@ -579,28 +553,44 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
             }
             return
         }
-        // Get prompt details from controller by title then execute
+        // Get prompt details from controller by title then execute prompt's command
         const prompt = this.editor.controllers.prompt.find(title)
+        await this.editor.controllers.prompt.get('command')
         if (!prompt) {
-            void vscode.window.showErrorMessage(`Could not find prompt for the "${title}" recipe.`)
-            debug('executeMyPrompt:noPrompt', title)
+            debug('executeCustomRecipe:noPrompt', title)
             return
         }
-        if (/^\/r(est)?/i.test(prompt)) {
-            this.editor.controllers.prompt.getCommandOutput()
-            await this.clearAndRestartSession()
-            return
+        await this.executeCommands(prompt, 'my-prompt')
+    }
+
+    protected async executeCommands(text: string, recipeID: RecipeID = 'chat-question'): Promise<void> {
+        switch (true) {
+            case /^\/o(pen)?/i.test(text):
+                // open the user's ~/.vscode/cody.json file
+                await this.editor.controllers.prompt.open(text.split(' ')[1])
+                break
+            case /^\/r(eset)?/i.test(text):
+                await this.clearAndRestartSession()
+                break
+            case /^\/s(earch)?\s/i.test(text):
+                await this.executeRecipe('context-search', text)
+                break
+            default:
+                return this.executeRecipe(recipeID, text)
         }
-        await this.executeRecipe('my-prompt', prompt)
     }
 
     /**
      * Send custom recipe names to view
      */
     private async sendMyPrompts(): Promise<void> {
-        await this.editor.controllers.prompt.refresh()
-        const prompts = this.editor.controllers.prompt.getPromptList()
-        void this.handleMyPrompts(prompts)
+        const send = async (): Promise<void> => {
+            await this.editor.controllers.prompt.refresh()
+            const prompts = this.editor.controllers.prompt.getPromptList()
+            void this.handleMyPrompts(prompts, this.contextProvider.config.experimentalCustomRecipes)
+        }
+        this.editor.controllers.prompt.setMessenger(send)
+        await send()
     }
 
     private async saveTranscriptToChatHistory(): Promise<void> {
@@ -671,7 +661,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
      * Send embedding connections or results error to output
      */
     private logEmbeddingsSearchErrors(): void {
-        if (this.config.useContext !== 'embeddings') {
+        if (this.contextProvider.config.useContext !== 'embeddings') {
             return
         }
         const searchErrors = this.contextProvider.context.getEmbeddingSearchErrors()

@@ -12,6 +12,7 @@ export interface Configuration {
     autocomplete: boolean
     experimentalChatPredictions: boolean
     inlineChat: boolean
+    experimentalCustomRecipes: boolean
     experimentalGuardrails: boolean
     experimentalNonStop: boolean
     autocompleteAdvancedProvider: 'anthropic' | 'unstable-codegen' | 'unstable-huggingface'

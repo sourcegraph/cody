@@ -1,15 +1,9 @@
 {
+  "title": "Cody Custom Recipes - Workspace",
   "description": "This is an example file to showcase how to build custom recipes for Cody by Sourcegraph.",
   "recipes": {
-    "Compare Files in Opened Tabs": {
-      "prompt": "Compare the code and explain how they are related",
-      "context": {
-        "openTabs": true,
-        "excludeSelection": true
-      }
-    },
     "Generate README.md for Current Directory": {
-      "prompt": "Create a README.md for this directory.",
+      "prompt": "Write a detailed README.md introduction for this project. If possible, briefly explain what the directory is and its key features. Use Markdown formatting. Focus on clarity and being beginner-friendly. Surround the answer with a code block to indicate that it is code.",
       "context": {
         "currentDir": true,
         "excludeSelection": true
@@ -17,27 +11,11 @@
     },
     "Commit Message for Current Changes": {
       "prompt": "Suggest a commit message based on current diff changes.",
-      "command": "git",
-      "args": ["diff"],
       "context": {
-        "none": true
+        "excludeSelection": true,
+        "command": "git diff"
       },
-      "note": "You must have git installed and authenticated to use this recipe"
-    },
-    "Debug latest error from Cody app": {
-      "prompt": "Tell me about the most recent error in log and how I can resolve it.",
-      "command": "cat",
-      "args": ["~/Library/Logs/com.sourcegraph.cody/Cody.log"],
-      "context": {
-        "none": true
-      },
-      "note": "You must have Cody app installed to use this recipe"
-    },
-    "Remove Workspace Recipes File": {
-      "prompt": "/reset",
-      "command": "rm",
-      "args": [".vscode/cody.json"]
-    },
-    "note": "This delete the cody.json file from your workspace and reset the conversation with Cody"
+      "info": "You must have git installed and authenticated to use this recipe"
+    }
   }
 }
