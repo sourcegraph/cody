@@ -12,7 +12,7 @@ import { NoopEditor } from '@sourcegraph/cody-shared/src/editor'
 import { CodyCompletionItemProvider } from '../../src/completions'
 import { GetContextResult } from '../../src/completions/context'
 import { History } from '../../src/completions/history'
-import { createProviderConfig } from '../../src/completions/providers/anthropic'
+import { createProviderConfig } from '../../src/completions/providers/createProvider'
 import { getFullConfig } from '../../src/configuration'
 import { configureExternalServices } from '../../src/external-services'
 import { InMemorySecretStorage } from '../../src/services/SecretStorageProvider'
@@ -41,10 +41,8 @@ async function initCompletionsProvider(context: GetContextResult): Promise<CodyC
 
     const history = new History()
 
-    const providerConfig = createProviderConfig({
-        completionsClient,
-        contextWindowTokens: 2048,
-    })
+    const providerConfig = createProviderConfig(initialConfig, console.error, completionsClient)
+
     const completionsProvider = new CodyCompletionItemProvider({
         providerConfig,
         statusBar: {
