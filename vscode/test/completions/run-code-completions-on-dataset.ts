@@ -77,7 +77,7 @@ function prepareTextDocument(
 
     // Remove CURSOR marks from the code before processing it further.
     const completionReadyCode = code.replaceAll(CURSOR, '')
-    const textDocument = new TextDocument(URI.parse('file://' + fileName), languageId, completionReadyCode)
+    const textDocument = new TextDocument(URI.parse('file:///' + fileName), languageId, completionReadyCode)
 
     return { textDocument, position }
 }
