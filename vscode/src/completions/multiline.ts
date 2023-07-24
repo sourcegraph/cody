@@ -1,5 +1,6 @@
 import detectIndent from 'detect-indent'
 
+import { getLanguageConfig } from './language'
 import { getEditorTabSize, indentation, PrefixComponents } from './text-processing'
 
 const BRACKET_PAIR = {
@@ -192,37 +193,4 @@ export function truncateMultilineCompletion(
     }
 
     return lines.slice(0, cutOffIndex).join('\n')
-}
-
-interface LanguageConfig {
-    blockStart: string
-    blockElseTest: RegExp
-    blockEnd: string | null
-}
-function getLanguageConfig(languageId: string): LanguageConfig | null {
-    switch (languageId) {
-        case 'c':
-        case 'cpp':
-        case 'csharp':
-        case 'go':
-        case 'java':
-        case 'javascript':
-        case 'javascriptreact':
-        case 'typescript':
-        case 'typescriptreact':
-            return {
-                blockStart: '{',
-                blockElseTest: /^[\t ]*} else/,
-                blockEnd: '}',
-            }
-        case 'python': {
-            return {
-                blockStart: ':',
-                blockElseTest: /^[\t ]*(elif |else:)/,
-                blockEnd: null,
-            }
-        }
-        default:
-            return null
-    }
 }
