@@ -76,6 +76,14 @@ export class ContextProvider implements vscode.Disposable {
                 await this.updateCodebaseContext()
             }),
             configProvider.configurationChangeEvent.event(async () => {
+                // TODO: Still needed?
+                // if (authStatus.siteVersion) {
+                //     // Update codebase context
+                //     const codebaseContext = await getCodebaseContext(newConfig, this.rgPath, this.editor, this.chat)
+                //     if (codebaseContext) {
+                //         this.codebaseContext = codebaseContext
+                //     }
+                // }
                 await this.updateCodebaseContext()
             })
         )
@@ -171,6 +179,7 @@ export class ContextProvider implements vscode.Disposable {
                 },
             })
         }
+        this.disposables.push(this.configProvider.configurationChangeEvent.event(() => send()))
         this.disposables.push(vscode.window.onDidChangeTextEditorSelection(() => send()))
         return send()
     }
