@@ -414,10 +414,6 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 if (isAbortError(err)) {
                     return
                 }
-
-                // Display error message as assistant response
-                this.transcript.addErrorAsAssistantResponse(err)
-
                 // Log users out on unauth error
                 if (statusCode && statusCode >= 400 && statusCode <= 410) {
                     this.authProvider

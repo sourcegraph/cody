@@ -62,9 +62,8 @@ export const ErrorContainer: React.FunctionComponent<{
         return (
             <>
                 <div className={styles.error}>
-                    <p>
-                        You are signed in with ${endpoint} endpoint. {AUTH_ERRORS.NETWORK_ERROR}
-                    </p>
+                    <p>Current endpoint: {endpoint}</p>
+                    <p>{AUTH_ERRORS.NETWORK_ERROR}</p>
                     <VSCodeButton className={styles.button} type="button" onClick={handleReload}>
                         Reload
                     </VSCodeButton>
