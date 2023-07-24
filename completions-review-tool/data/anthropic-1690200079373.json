@@ -1,0 +1,111 @@
+[
+  {
+    "completions": [
+      "signale.info(message)\n}"
+    ],
+    "elapsed": 974,
+    "timestamp": "1690200079373",
+    "sample": {
+      "context": [],
+      "fileName": "logger.ts",
+      "languageId": "typescript",
+      "content": "import signale from 'signale'\n\nfunction logMessage(message: string) {\n    ️🔥\n}"
+    }
+  },
+  {
+    "completions": [
+      "const dateString = new Date().toDateString()  \n    const filePath = path.join(__dirname, 'date.txt')  \n    fs.writeFileSync(filePath, dateString)\n}",
+      "const date = new Date()  \n    const filename = path.join(__dirname, 'date.txt')\n    fs.writeFileSync(filename, date.toISOString())\n}",
+      "const date = new Date()  \n    const filePath = path.join(__dirname, 'date.txt')  \n    fs.writeFileSync(filePath, date.toString())\n}"
+    ],
+    "elapsed": 2375,
+    "timestamp": "1690200079373",
+    "sample": {
+      "context": [],
+      "fileName": "writer.ts",
+      "languageId": "typescript",
+      "content": "import path from 'path'\n\nfunction writeDateToDisk() {\n    ️🔥\n}"
+    }
+  },
+  {
+    "completions": [
+      "const lineNumber = position instanceof vscode.Position ? position.line : Math.floor(position / this.lineLength(position))\n        const start = this.getLineStartPosition(lineNumber)\n        const end = this.getLineEndPosition(lineNumber)\n        return {\n            text: this.text.substring(start, end),\n            range: new vscode.Range(start, end)\n        }\n    }",
+      "const lineNo = position.line || this.lineAt(position).line\n        return {\n            text: this.text.split('",
+      "const lineNo = position.line\n        return new vscode.TextLine(this.lines[lineNo], lineNo)\n    }"
+    ],
+    "elapsed": 4654,
+    "timestamp": "1690200079373",
+    "sample": {
+      "context": [],
+      "fileName": "text-document.ts",
+      "languageId": "typescript",
+      "content": "class TextDocument implements vscode.TextDocument {\n    private text: string\n\n    constructor(public uri: vscode.Uri, text: string) {\n        this.text = text.replace(/\r\n/gm, '\n') // normalize end of line\n    }\n\n    private get lines(): string[] {\n        return this.text.split('\n')\n    }\n\n    lineAt(position: number | vscode.Position): vscode.TextLine {\n        ️🔥\n    }\n}"
+    }
+  },
+  {
+    "completions": [
+      "try {"
+    ],
+    "elapsed": 2480,
+    "timestamp": "1690200079373",
+    "sample": {
+      "context": [],
+      "fileName": "getOs.ts",
+      "languageId": "typescript",
+      "content": "import { execFileSync } from 'child_process'\n\nfunction getOSName(): string | null {\n    if (typeof window === 'undefined') {\n    ️🔥\n}"
+    }
+  },
+  {
+    "completions": [],
+    "elapsed": 1,
+    "timestamp": "1690200079373",
+    "sample": {
+      "context": [],
+      "fileName": "isDarkColorScheme.ts",
+      "languageId": "typescript",
+      "content": "function isDarkColorScheme(): boolean {\n    return window.match️🔥\n}"
+    }
+  },
+  {
+    "completions": [],
+    "elapsed": 1,
+    "timestamp": "1690200079373",
+    "sample": {
+      "context": [],
+      "fileName": "isLocalhost.ts",
+      "languageId": "typescript",
+      "content": "function isLocalhost(): boolean {\n    return window.location.host️🔥\n}"
+    }
+  },
+  {
+    "completions": [
+      "return text.toLowerCase().replace(/\\W/g, \"-\");\n}",
+      "return text.toLowerCase().replace(/[^a-z0-9]+/g, \"-\");\n}"
+    ],
+    "elapsed": 1512,
+    "timestamp": "1690200079373",
+    "sample": {
+      "context": [
+        {
+          "fileName": "lib/parser/excerpt.ts",
+          "content": "export function excerpt(text: string, limit: number = 144) {\n  let result = \"\";\n\n  for (const word of text.split(\" \")) {\n    if (result.length + word.length + 1 <= limit) {\n      result += \" \" + word;\n    } else {\n      // Fix trailing comma. Might need a more generic solution at some point :D\n      if (result.endsWith(\",\")) {\n        result = result.slice(0, -1);\n      }\n      result += \"…\";\n      break;\n    }\n  }\n\n  return result;\n}\n"
+        },
+        {
+          "fileName": "lib/parser/post.ts",
+          "content": "\nimport format from \"date-fns/format\";\nimport fs from \"fs/promises\";\nimport path from \"path\";\nimport { parseMarkdown } from \"./markdown\";\n\ninterface ExternalPost {\n  type: \"external\";\n  id: string;\n  title: string;\n  excerpt: string;\n  formattedDate: string;\n  readingTime: string;\n  contentHtml: string;\n  external: string;\n  date: string;\n}\nexport interface BlogPost {\n  type: \"blog\";\n  id: string;\n  title: string;\n  excerpt: string;\n  formattedDate: string;\n  readingTime: string;\n  contentHtml: string;\n  date: string;\n}\n\nexport type Post = ExternalPost | BlogPost;\n\nexport async function getPost(id: string): Promise<Post> {\n  // Read markdown file as string\n  const fullPath = path.join(postsDirectory, id + \".md\");\n  const fileContents = await fs.readFile(fullPath, \"utf8\");\n\n  const { data, readingTime, contentHtml, excerpt } = await parseMarkdown(\n    fileContents\n  );\n\n  return {\n    id,\n    ...data,\n    type: data.external ? \"external\" : \"blog\",\n    excerpt,\n    formattedDate: format(new Date(data.date), \"LLLL d, Y\"),\n    readingTime,\n    contentHtml,\n  } as Post;\n}\n"
+        },
+        {
+          "fileName": "lib/parser/posts.ts",
+          "content": "import fs from \"fs/promises\";\nimport path from \"path\";\nimport { getPost, Post } from \"./post\";\n\nexport const postsDirectory = path.join(process.cwd(), \"posts\");\n\nexport async function getPosts(): Promise<Post[]> {\n  // Get file names under /posts\n  const dirs = await fs.readdir(postsDirectory);\n\n  let allPostsData: Post[] = [];\n  for (const fileName of dirs) {\n    if (fileName.indexOf(\".md\") === -1) {\n      continue;\n    }\n    const stat = await fs.stat(path.join(postsDirectory, fileName));\n    if (stat.isDirectory()) {\n      continue;\n    }\n\n    // Remove \".md\" from file name to get the page slug\n    const id = fileName.replace(/\\.md$/, \"\");\n\n    allPostsData.push(await getPost(id));\n  }\n\n  // Sort posts by date\n  return allPostsData.sort(({ date: a }, { date: b }) => {\n    if (a < b) {\n      return 1;\n    } else if (a > b) {\n      return -1;\n    } else {\n      return 0;\n    }\n  });\n}\n"
+        },
+        {
+          "fileName": "lib/parser/markdown.ts",
+          "content": "import { remark } from \"remark\";\n\nimport html from \"remark-html\";\nimport prism from \"remark-prism\";\nimport matter from \"gray-matter\";\nimport remarkFootnotes from \"remark-footnotes\";\nimport { excerpt } from \"./excerpt\";\nimport readingTime from \"reading-time\";\n\nexport async function parseMarkdown(markdown: string): Promise<{\n  data: any;\n  excerpt: string;\n  contentHtml: string;\n  readingTime: string;\n}> {\n  // Use gray-matter to parse the post metadata section\n  const matterResult = matter(markdown);\n  let { content, data } = matterResult;\n\n  content = content\n    .replaceAll(/\\[x\\]/g, \"<input type='checkbox' checked disabled />\")\n    .replaceAll(/\\[.?\\]/g, \"<input type='checkbox' disabled />\");\n\n  const processedContent = await remark()\n    .use(html, { sanitize: false })\n    .use(prism)\n    .use(remarkFootnotes)\n    .process(content);\n  const contentHtml = processedContent.toString();\n\n  return {\n    data,\n    contentHtml,\n    excerpt: excerpt(content),\n    readingTime: readingTime(content).text,\n  };\n}\n"
+        }
+      ],
+      "fileName": "lib/parser/notes.ts",
+      "languageId": "typescript",
+      "content": "import format from \"date-fns/format\";\nimport { parseMarkdown } from \"./markdown\";\n\nexport interface Note {\n    title: string;\n    id: string;\n    formattedDate: string;\n    date: string;\n    category: string[];\n    contentHtml: string;\n}\n\nconst TOKEN = process.env.GITHUB_TOKEN;\nconst GRAPHQL_URL = \"https://api.github.com/graphql\";\nconst HIDDEN_FILES = new Set([\"README.md\"]);\nconst HIDDEN_DIRS = new Set([\"Unlisted\"]);\n\n// No-op, used only for syntax highlighting in the IDE\nfunction gql(strings: TemplateStringsArray) {\n    return strings.raw.join(\"\");\n}\n\nconst headers = {\n    Authorization: `Bearer ${TOKEN}`,\n};\n\nconst CONTENTS_QUERY = gql`\n{\n    repository(name: \"philipp-spiess\", owner: \"philipp-spiess\") {\n        ref(qualifiedName: \"main\") {\n            target {\n                ... on Commit {\n                    tree {\n                        entries {\n                            ...MyTreeEntry\n                            object {\n                                ... on Tree {\n                                    entries {\n                                    ...MyTreeEntry\n                                        object {\n                                            ... on Tree {\n                                                entries {\n                                                    ...MyTreeEntry\n                                                }\n                                            }\n                                        }\n                                    }\n                                }\n                            }\n                        }\n                    }\n                }\n            }\n        }\n    }\n}\n\nfragment MyTreeEntry on TreeEntry {\n        path\n        type\n        blob: object {\n        ... on Blob {\n            text\n        }\n    }\n}\n`;\n\nexport async function getNotes(): Promise<Note[]> {\n    let notes: Note[] = [];\n    const rawNotes = (await fetchNotes()) as any;\n\n    for (const rawNote of rawNotes) {\n        const { data, contentHtml } = await parseMarkdown(rawNote.content);\n\n        const date = data.date instanceof Date ? data.date.toISOString() : null;\n\n        notes.push({\n            title: rawNote.path.split(\"/\").pop().replace(\".md\", \"\"),\n            id: getId(rawNote.path),\n            date,\n            formattedDate: format(new Date(date), \"LLLL d, Y\"),\n            category: rawNote.path.split(\"/\").slice(0, -1),\n            contentHtml,\n        });\n    }\n\n    // Sort posts by date\n    return notes.sort(({ date: a }, { date: b }) => {\n        if (a < b) {\n            return 1;\n        } else if (a > b) {\n            return -1;\n        } else {\n            return 0;\n        }\n    });\n}\n\ninterface RawNote {\n    path: string;\n    content: string;\n}\nasync function fetchNotes(dir: string = \"\"): Promise<RawNote[]> {\n    const res = await fetch(GRAPHQL_URL, {\n        method: \"POST\",\n        headers,\n        body: JSON.stringify({ query: CONTENTS_QUERY }),\n    }).then((r) => r.json());\n\n    return recursivelyResolveEntries(res.data.repository.ref.target.tree);\n}\n\ninterface GitHubTree {\n    entries: Array<\n        | {\n            path: string;\n            type: \"blob\";\n            blob: {\n            text: string;\n            };\n        }\n        | {\n            path: string;\n            type: \"tree\";\n            object: GitHubTree;\n        }\n    >;\n}\nfunction recursivelyResolveEntries(tree: GitHubTree): RawNote[] {\n    let result: RawNote[] = [];\n    for (let entry of tree.entries) {\n        if (entry.type == \"blob\") {\n            if (!entry.path.endsWith(\".md\") || HIDDEN_FILES.has(entry.path)) {\n                continue;\n            }\n\n            result.push({\n                path: entry.path,\n                content: entry.blob.text,\n            });\n        } else {\n            if (HIDDEN_DIRS.has(entry.path)) {\n                continue;\n            }\n\n            result = result.concat(recursivelyResolveEntries(entry.object));\n        }\n    }\n    return result;\n}\n\nfunction getId(text: string): string {\n    return text.replace(\".md\", \"\").split(\"/\").map(getSlug).join(\"/\");\n}\n\nfunction getSlug(text: string): string {\n    ️🔥\n}"
+    }
+  }
+]

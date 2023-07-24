@@ -44,14 +44,14 @@ export default function Index() {
     const formatData = (inputData: typeof completions) => {
         const rows: Row[] = []
 
-        Object.entries(inputData).forEach(([code, entries]) => {
+        Object.entries(inputData).forEach(([code, entries]: any) => {
             const row: Row = {
                 code: renderMarkdown(code),
                 bgColor: '#f7f7f7',
             }
 
-            entries.forEach(({ timestamp, completions }) => {
-                const columnKey = `completion-${timestamp}`
+            entries.forEach(({ completions, snapshotFileName }: any) => {
+                const columnKey = snapshotFileName
 
                 extraColumns.add(columnKey)
 

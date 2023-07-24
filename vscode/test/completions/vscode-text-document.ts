@@ -5,7 +5,6 @@ import * as vscode from 'vscode'
  */
 export class TextDocument implements vscode.TextDocument {
     public isUntitled = false
-    public languageId = 'typescript'
     public version = 1
     public isDirty = false
     public isClosed = false
@@ -14,6 +13,7 @@ export class TextDocument implements vscode.TextDocument {
 
     constructor(
         public readonly uri: vscode.Uri,
+        public readonly languageId: string,
         text: string
     ) {
         this.text = text.replace(/\r\n/gm, '\n') // normalize end of line
