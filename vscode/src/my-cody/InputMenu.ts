@@ -7,45 +7,29 @@ import { CodyPrompt, CodyPromptType } from './types'
 
 export type answerType = 'add' | 'file' | 'delete' | 'list' | 'open' | 'cancel'
 
+// Main menu for the Custom Recipes in Quick Pick
 export async function showCustomRecipeMenu(): Promise<answerType | void> {
     const options = [
         { kind: -1, label: 'recipes manager', id: 'seperator' },
-        { kind: 0, label: 'Create New User Recipe', id: 'add' },
+        { kind: 0, label: 'Create a New User Recipe', id: 'add' },
         { kind: 0, label: 'My Custom Recipes', id: 'list' },
         { kind: -1, label: '.vscode/cody.json', id: 'seperator' },
-        { kind: 0, label: 'Generate Recipes Config File', id: 'file' },
-        { kind: 0, label: 'Delete Recipes Config File', id: 'delete' },
-        { kind: 0, label: 'Open Recipes Config File', id: 'open' },
+        { kind: 0, label: 'Open Recipes Settings (JSON)', id: 'open' },
+        { kind: 0, label: 'Generate Recipes Settings', id: 'file' },
+        { kind: 0, label: 'Delete Recipes Settings', id: 'delete' },
     ]
     const inputOptions = {
         title: 'Cody: Custom Recipes (Internal Experimental)',
         placeHolder: 'Select an option to continue or ESC to cancel',
     }
     const selectedOption = await vscode.window.showQuickPick(options, inputOptions)
-    if (!selectedOption) {
+    if (!selectedOption?.id || selectedOption.id === 'seperator' || selectedOption.id === 'cancel') {
         return
     }
-    switch (selectedOption.label) {
-        case 'Create New User Recipe': {
-            return 'add'
-        }
-        case 'My Custom Recipes': {
-            return 'list'
-        }
-        case 'Open Recipes Config File': {
-            return 'open'
-        }
-        case 'Generate Recipes Config File': {
-            return 'file'
-        }
-        case 'Delete Recipes Config File': {
-            return 'delete'
-        }
-        default:
-            return
-    }
+    return selectedOption.id as answerType
 }
 
+// Quick pick menu to select a recipe from the list of available custom recipes
 export async function recipePicker(promptList: string[] = []): Promise<string> {
     const selectedRecipe = (await vscode.window.showQuickPick(promptList)) || ''
     return selectedRecipe
@@ -116,6 +100,7 @@ export async function createNewPrompt(promptName?: string): Promise<CodyPrompt |
     return newPrompt
 }
 
+// List of context types to include with the prompt
 export const contextTypes = [
     {
         id: 'selection',
@@ -156,6 +141,7 @@ export const contextTypes = [
     },
 ]
 
+// Input box for the user to enter a new prompt command during the UI prompt building process
 export async function showPromptCommandInput(): Promise<string | void> {
     // Get the command to run from the user using the input box
     const promptCommand = await vscode.window.showInputBox({
@@ -166,6 +152,7 @@ export async function showPromptCommandInput(): Promise<string | void> {
     return promptCommand
 }
 
+// Input box for the user to name the recipe during the UI prompt building process
 export async function showPromptNameInput(myPromptStore: Map<string, CodyPrompt>): Promise<string | void> {
     const promptName = await vscode.window.showInputBox({
         title: prompt_creation_title,
@@ -184,9 +171,10 @@ export async function showPromptNameInput(myPromptStore: Map<string, CodyPrompt>
     return promptName
 }
 
+// Ask user to confirm before trying to delete the cody.json file
 export async function showRemoveConfirmationInput(): Promise<string | void> {
     const confirmRemove = await vscode.window.showWarningMessage(
-        'Are you sure you want to remove .vscode/cody.json from your home directory?',
+        'Are you sure you want to remove the .vscode/cody.json file from your file system?',
         { modal: true },
         'Yes',
         'No'
@@ -194,6 +182,7 @@ export async function showRemoveConfirmationInput(): Promise<string | void> {
     return confirmRemove
 }
 
+// Quick pick menu with the correct recipe type (user or workspace) selections based on existing JSON files
 export async function showRecipeTypeQuickPick(
     action: 'file' | 'delete' | 'open',
     prompts: {
