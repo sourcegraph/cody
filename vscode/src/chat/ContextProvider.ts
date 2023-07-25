@@ -2,7 +2,6 @@ import * as vscode from 'vscode'
 
 import { ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
 import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
-import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
 import { Editor } from '@sourcegraph/cody-shared/src/editor'
 import { SourcegraphEmbeddingsSearchClient } from '@sourcegraph/cody-shared/src/embeddings/client'
 import { SourcegraphGraphQLAPIClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
@@ -21,35 +20,10 @@ import { ChatViewProviderWebview } from './ChatViewProvider'
 import { isLocalApp } from './protocol'
 import { convertGitCloneURLToCodebaseName } from './utils'
 
-export type Config = Pick<
-    ConfigurationWithAccessToken,
-    | 'codebase'
-    | 'serverEndpoint'
-    | 'debugEnable'
-    | 'debugFilter'
-    | 'debugVerbose'
-    | 'customHeaders'
-    | 'accessToken'
-    | 'useContext'
-    | 'experimentalChatPredictions'
-    | 'experimentalGuardrails'
-    | 'experimentalCustomRecipes'
-    | 'pluginsEnabled'
-    | 'pluginsConfig'
-    | 'pluginsDebugEnabled'
->
-
-export enum ContextEvent {
-    Auth = 'auth',
-}
-
 export class ContextProvider implements vscode.Disposable {
     // We fire messages from ContextProvider to the sidebar webview.
     // TODO(umpox): Should we add support for showing context in other places (i.e. within inline chat)?
     public webview?: ChatViewProviderWebview
-
-    // Fire event to let subscribers know that the context has changed
-    public contextChangeEvent = new vscode.EventEmitter<void>()
 
     public currentWorkspaceRoot: string
 
@@ -66,7 +40,6 @@ export class ContextProvider implements vscode.Disposable {
         private telemetryService: TelemetryService,
         private platform: PlatformContext
     ) {
-        this.disposables.push(this.contextChangeEvent)
         this.currentWorkspaceRoot = ''
         this.disposables.push(
             vscode.window.onDidChangeActiveTextEditor(async () => {
@@ -76,14 +49,6 @@ export class ContextProvider implements vscode.Disposable {
                 await this.updateCodebaseContext()
             }),
             configProvider.configurationChangeEvent.event(async () => {
-                // TODO: Still needed?
-                // if (authStatus.siteVersion) {
-                //     // Update codebase context
-                //     const codebaseContext = await getCodebaseContext(newConfig, this.rgPath, this.editor, this.chat)
-                //     if (codebaseContext) {
-                //         this.codebaseContext = codebaseContext
-                //     }
-                // }
                 await this.updateCodebaseContext()
             })
         )

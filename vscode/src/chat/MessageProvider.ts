@@ -117,10 +117,8 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         // chat id is used to identify chat session
         this.createNewChatID()
 
-        this.configProvider.configurationChangeEvent.event(async () =>
-            // Listen to configuration changes to possibly enable custom recipes
-            this.sendMyPrompts()
-        )
+        // Listen to configuration changes to possibly enable custom recipes
+        this.configProvider.configurationChangeEvent.event(() => this.sendMyPrompts())
     }
 
     protected async init(): Promise<void> {

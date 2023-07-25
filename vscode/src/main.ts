@@ -388,7 +388,7 @@ const register = async (
     return {
         disposable: vscode.Disposable.from(...disposables),
         onConfigurationChange: newConfig => {
-            contextProvider.onConfigurationChange(newConfig)
+            configProvider.onConfigurationChange(newConfig)
             externalServicesOnDidConfigurationChange(newConfig)
             void createOrUpdateEventLogger(newConfig, localStorage)
         },

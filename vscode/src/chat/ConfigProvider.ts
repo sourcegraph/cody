@@ -30,13 +30,13 @@ export type Config = Pick<
     | 'pluginsDebugEnabled'
 >
 
-export enum ContextEvent {
+enum ConfigEvent {
     Auth = 'auth',
 }
 
 export class ConfigProvider implements vscode.Disposable {
-    // We fire messages from ContextProvider to the sidebar webview.
-    // TODO(umpox): Should we add support for showing context in other places (i.e. within inline chat)?
+    // We fire messages from ConfigProvider to the sidebar webview.
+    // TODO(umpox): Should we add support for showing config in other places (i.e. within inline chat)?
     public webview?: ChatViewProviderWebview
 
     // Fire event to let subscribers know that the configuration has changed
@@ -55,7 +55,7 @@ export class ConfigProvider implements vscode.Disposable {
     }
 
     public onConfigurationChange(newConfig: Config): void {
-        debug('ContextProvider:onConfigurationChange', '')
+        debug('ConfigProvider:onConfigurationChange', '')
         this.config = newConfig
         const authStatus = this.authProvider.getAuthStatus()
         if (authStatus.endpoint) {
@@ -79,7 +79,7 @@ export class ConfigProvider implements vscode.Disposable {
         const isAppEvent = isLocalApp(authStatus.endpoint || '') ? 'app:' : ''
         const eventValue = isLoggedOut ? 'disconnected' : authStatus.isLoggedIn ? 'connected' : 'failed'
         // e.g. auth:app:connected, auth:app:disconnected, auth:failed
-        this.sendEvent(ContextEvent.Auth, isAppEvent + eventValue)
+        this.sendEvent(ConfigEvent.Auth, isAppEvent + eventValue)
     }
 
     /**
@@ -111,7 +111,7 @@ export class ConfigProvider implements vscode.Disposable {
     /**
      * Log Events - naming convention: source:feature:action
      */
-    public sendEvent(event: ContextEvent, value: string): void {
+    public sendEvent(event: ConfigEvent, value: string): void {
         const endpoint = this.config.serverEndpoint || DOTCOM_URL.href
         const endpointUri = { serverEndpoint: endpoint }
         switch (event) {

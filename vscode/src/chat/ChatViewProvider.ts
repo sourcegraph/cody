@@ -285,6 +285,7 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
         this.webview = webviewView.webview
         this.authProvider.webview = webviewView.webview
         this.contextProvider.webview = webviewView.webview
+        this.configProvider.webview = webviewView.webview
 
         const webviewPath = vscode.Uri.joinPath(this.extensionUri, 'dist', 'webviews')
 
