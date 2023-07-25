@@ -118,7 +118,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         private editor: VSCodeEditor,
         private secretStorage: SecretStorage,
         private localStorage: LocalStorage,
-        private rgPath: string,
+        private rgPath: string | null,
         private authProvider: AuthProvider
     ) {
         if (TestSupport.instance) {
@@ -372,10 +372,10 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 const lastInteraction = this.transcript.getLastInteraction()
                 if (lastInteraction) {
                     const displayText = reformatBotMessage(text, responsePrefix)
-                    const fileExistFunc = (filePaths: string[]): Promise<{ [filePath: string]: boolean }> => {
+                    const fileExistFunc = (filePaths: string[]): Promise<{ [filePath: string]: boolean } | null> => {
                         const rootPath = this.editor.getWorkspaceRootPath()
-                        if (!rootPath) {
-                            return Promise.resolve({})
+                        if (!rootPath || !this.rgPath) {
+                            return Promise.resolve(null)
                         }
                         return fastFilesExist(this.rgPath, rootPath, filePaths)
                     }
@@ -1136,7 +1136,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
  */
 export async function getCodebaseContext(
     config: Config,
-    rgPath: string,
+    rgPath: string | null,
     editor: Editor,
     chatClient: ChatClient
 ): Promise<CodebaseContext | null> {
@@ -1165,8 +1165,8 @@ export async function getCodebaseContext(
         config,
         codebase,
         embeddingsSearch,
-        new LocalKeywordContextFetcher(rgPath, editor, chatClient),
-        new FilenameContextFetcher(rgPath, editor, chatClient),
+        rgPath ? new LocalKeywordContextFetcher(rgPath, editor, chatClient) : null,
+        rgPath ? new FilenameContextFetcher(rgPath, editor, chatClient) : null,
         undefined,
         getRerankWithLog(chatClient)
     )
