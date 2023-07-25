@@ -49,9 +49,12 @@ export const Recipes: React.FunctionComponent<{
                                         type="button"
                                         appearance="icon"
                                         onClick={() => onMyPromptClick('menu')}
-                                        disabled={!myPrompts?.length}
                                     >
-                                        <i className="codicon codicon-tools" title="Custom Recipes Quick Pick Menu" />
+                                        {!myPrompts?.length ? (
+                                            <i className="codicon codicon-info" title="More information" />
+                                        ) : (
+                                            <i className="codicon codicon-tools" title="Open Custom Recipes Menu" />
+                                        )}
                                     </VSCodeButton>
                                 </div>
                             </div>

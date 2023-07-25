@@ -10,35 +10,35 @@ export function constructFileUri(fileName: string, rootDirPath?: string): vscode
 }
 
 // Create a .vscode/cody.json file in the root directory of the workspace or user's home directory using the sample files
-export async function createJSONFile(extensionPath: string, rootDirPath: string, isUserType: boolean): Promise<void> {
+export async function createJSONFile(
+    extensionPath: string,
+    configFileUri: vscode.Uri,
+    isUserType: boolean
+): Promise<void> {
     const sampleFileName = isUserType ? 'user-cody.json' : 'workspace-cody.json'
     const codyJsonPath = constructFileUri('resources/samples/' + sampleFileName, extensionPath)
-    if (!rootDirPath || !codyJsonPath) {
+    if (!configFileUri || !codyJsonPath) {
         void vscode.window.showErrorMessage('Failed to create cody.json file.')
         return
     }
     const bytes = await vscode.workspace.fs.readFile(codyJsonPath)
     const decoded = new TextDecoder('utf-8').decode(bytes)
-    await saveJSONFile(decoded, rootDirPath)
+    await saveJSONFile(decoded, configFileUri)
 }
 
 // Add context from the sample files to the .vscode/cody.json file
-export async function saveJSONFile(context: string, rootDirPath: string, isSaveMode = false): Promise<void> {
-    const codyJsonFilePath = constructFileUri('.vscode/cody.json', rootDirPath)
-    if (!codyJsonFilePath) {
-        return
-    }
+export async function saveJSONFile(context: string, filePath: vscode.Uri, isSaveMode = false): Promise<void> {
     const workspaceEditor = new vscode.WorkspaceEdit()
     // Clear the file before writing to it
-    workspaceEditor.deleteFile(codyJsonFilePath, { ignoreIfNotExists: true })
-    workspaceEditor.createFile(codyJsonFilePath, { ignoreIfExists: isSaveMode })
-    workspaceEditor.insert(codyJsonFilePath, new vscode.Position(0, 0), context)
+    workspaceEditor.deleteFile(filePath, { ignoreIfNotExists: true })
+    workspaceEditor.createFile(filePath, { ignoreIfExists: isSaveMode })
+    workspaceEditor.insert(filePath, new vscode.Position(0, 0), context)
     await vscode.workspace.applyEdit(workspaceEditor)
     // Save the file
-    const doc = await vscode.workspace.openTextDocument(codyJsonFilePath)
+    const doc = await vscode.workspace.openTextDocument(filePath)
     await doc.save()
     if (!isSaveMode) {
-        await vscode.window.showTextDocument(codyJsonFilePath)
+        await vscode.window.showTextDocument(filePath)
     }
 }
 

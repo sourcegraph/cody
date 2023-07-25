@@ -60,7 +60,8 @@ export class MyPrompt implements Recipe {
             return null
         }
         const commandOutput = await context.editor.controllers?.prompt.get('output')
-        const note = ' Refer to the command output and shared code snippets to answer my quesiton.'
+        const note =
+            ' Refer to the command output, my selected code, and shared code snippets to answer my quesiton when available.'
         const truncatedText = truncateText(promptText + note, MAX_HUMAN_INPUT_TOKENS)
         // Add selection file name as display when available
         const displayText = selection?.fileName ? this.getHumanDisplayText(humanInput, selection?.fileName) : humanInput

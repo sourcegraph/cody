@@ -175,8 +175,13 @@ export class MyPromptController {
         return this.tools.runCommand(command, args)
     }
 
-    // Save the user prompts to the extension storage
-    public async save(id: string, prompt: CodyPrompt, deletePrompt = false): Promise<void> {
+    // Save the user prompts to the user json file
+    public async save(
+        id: string,
+        prompt: CodyPrompt,
+        deletePrompt = false,
+        type: CodyPromptType = 'user'
+    ): Promise<void> {
         if (deletePrompt) {
             this.myPromptStore.delete(id)
         } else {
@@ -195,7 +200,7 @@ export class MyPromptController {
         const jsonContext = { ...this.builder.userPromptsJSON }
         jsonContext.recipes = Object.fromEntries(filtered)
         const jsonString = JSON.stringify(jsonContext)
-        const rootDirPath = this.tools.getUserInfo()?.homeDir
+        const rootDirPath = type === 'user' ? this.builder.jsonFileUris.user : this.builder.jsonFileUris.workspace
         if (!rootDirPath || !jsonString) {
             void vscode.window.showErrorMessage('Failed to save to cody.json file.')
             return
@@ -233,24 +238,25 @@ export class MyPromptController {
     public async addJSONFile(type: CodyPromptType): Promise<void> {
         const extensionPath = this.context.extensionPath
         const isUserType = type === 'user'
-        const rootDirPath = isUserType ? this.tools.getUserInfo()?.homeDir : this.tools.getUserInfo()?.workspaceRoot
-        if (!rootDirPath) {
+        const configFileUri = type === 'user' ? this.builder.jsonFileUris.user : this.builder.jsonFileUris.workspace
+        if (!configFileUri) {
             debug('MyPromptController:addJSONFile:error:', 'Failed to create cody.json file.')
             void vscode.window.showErrorMessage(
                 'Failed to create cody.json file. Please make sure you have a repository opened in your workspace.'
             )
             return
         }
-        await createJSONFile(extensionPath, rootDirPath, isUserType)
+        await createJSONFile(extensionPath, configFileUri, isUserType)
     }
 
     // Menu with an option to add a new recipe via UI and save it to user's cody.json file
     public async menu(): Promise<void> {
-        const selected = await showCustomRecipeMenu()
+        const promptSize = this.builder.promptSize.user + this.builder.promptSize.workspace
+        const selected = promptSize === 0 ? 'file' : await showCustomRecipeMenu()
         if (!selected) {
             return
         }
-        debug('MyPromptController:customRecipes:menu:selected', selected)
+        debug('MyPromptController:customRecipes:menu', selected)
         if (selected === 'delete' || selected === 'file' || selected === 'open') {
             const fileType = await showRecipeTypeQuickPick(selected, this.builder.promptSize)
             if (!fileType) {

@@ -190,20 +190,28 @@ export async function showRecipeTypeQuickPick(
         workspace: number
     }
 ): Promise<CodyPromptType | null> {
-    const options: string[] = []
+    const options: vscode.QuickPickItem[] = []
+    const userItem = {
+        label: 'User',
+        detail: 'User Recipes are accessible only to you across Workspaces',
+    }
+    const workspaceItem = {
+        label: 'Workspace',
+        detail: 'Workspace Recipes are available to all users in your current repository',
+    }
     if (action === 'file') {
         if (prompts.user === 0) {
-            options.push('user')
+            options.push(userItem)
         }
         if (prompts.workspace === 0) {
-            options.push('workspace')
+            options.push(workspaceItem)
         }
     } else {
         if (prompts.user > 0) {
-            options.push('user')
+            options.push(userItem)
         }
         if (prompts.workspace > 0) {
-            options.push('workspace')
+            options.push(workspaceItem)
         }
     }
     if (options.length === 0) {
@@ -211,14 +219,14 @@ export async function showRecipeTypeQuickPick(
             action === 'file'
                 ? 'File for both User and Workspace Recipes already exists...'
                 : 'No recipe files were found...'
-        options.push(msg)
+        options.push({ label: msg })
     }
-    const title = 'Cody: Custom Recipes - Recipe Type'
-    const placeHolder = 'Select recipe type to continue...'
+    const title = `Cody: Custom Recipes - ${action === 'file' ? 'Creating Config File' : 'Recipe Type'}`
+    const placeHolder = 'Select recipe type to continue or ESC to cancel'
     // Show quick pick menu
     const recipeType = await vscode.window.showQuickPick(options, { title, placeHolder })
-    if (recipeType !== 'user' && recipeType !== 'workspace') {
+    if (!recipeType?.label) {
         return null
     }
-    return recipeType
+    return recipeType.label.toLowerCase() as CodyPromptType
 }
