@@ -6,16 +6,16 @@ import { Configuration, ConfigurationWithAccessToken } from '@sourcegraph/cody-s
 import { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/nodeClient'
 
 import { ChatViewProvider } from './chat/ChatViewProvider'
+import { ContextProvider } from './chat/ContextProvider'
+import { InlineChatViewManager } from './chat/InlineChatViewProvider'
+import { MessageProviderOptions } from './chat/MessageProvider'
 import { CODY_FEEDBACK_URL } from './chat/protocol'
 import { CodyCompletionItemProvider } from './completions'
 import { CompletionsCache } from './completions/cache'
 import { CompletionsDocumentProvider } from './completions/docprovider'
 import { History } from './completions/history'
 import * as CompletionsLogger from './completions/logger'
-import { createProviderConfig as createAnthropicProviderConfig } from './completions/providers/anthropic'
-import { ProviderConfig } from './completions/providers/provider'
-import { createProviderConfig as createUnstableCodeGenProviderConfig } from './completions/providers/unstable-codegen'
-import { createProviderConfig as createUnstableHuggingFaceProviderConfig } from './completions/providers/unstable-huggingface'
+import { createProviderConfig } from './completions/providers/createProvider'
 import { registerAutocompleteTraceView } from './completions/tracer/traceView'
 import { getConfiguration, getFullConfig, migrateConfiguration } from './configuration'
 import { VSCodeEditor } from './editor/vscode-editor'
@@ -28,7 +28,7 @@ import { AuthProvider } from './services/AuthProvider'
 import { createOrUpdateEventLogger, logEvent } from './services/EventLogger'
 import { showFeedbackSupportQuickPick } from './services/FeedbackOptions'
 import { GuardrailsProvider } from './services/GuardrailsProvider'
-import { InlineController } from './services/InlineController'
+import { Comment, InlineController } from './services/InlineController'
 import { LocalStorage } from './services/LocalStorageProvider'
 import {
     CODY_ACCESS_TOKEN_SECRET,
@@ -79,7 +79,7 @@ const register = async (
     initialConfig: ConfigurationWithAccessToken,
     secretStorage: SecretStorage,
     localStorage: LocalStorage,
-    rgPath: string
+    rgPath: string | null
 ): Promise<{
     disposable: vscode.Disposable
     onConfigurationChange: (newConfig: ConfigurationWithAccessToken) => void
@@ -98,9 +98,8 @@ const register = async (
     }
     // Controller for Custom Recipes
     const prompt = new MyPromptController(context, initialConfig.experimentalCustomRecipes)
-    const controllers = { inline: commentController, fixups: fixup, prompt }
 
-    const editor = new VSCodeEditor(controllers)
+    const editor = new VSCodeEditor({ inline: commentController, fixups: fixup, prompt })
     // Could we use the `initialConfig` instead?
     const workspaceConfig = vscode.workspace.getConfiguration()
     const config = getConfiguration(workspaceConfig)
@@ -117,37 +116,57 @@ const register = async (
     const authProvider = new AuthProvider(initialConfig, secretStorage, localStorage)
     await authProvider.init()
 
-    // Create chat webview
-    const chatProvider = new ChatViewProvider(
-        context.extensionPath,
+    const contextProvider = new ContextProvider(
         initialConfig,
         chatClient,
-        intentDetector,
         codebaseContext,
-        guardrails,
         editor,
         secretStorage,
         localStorage,
         rgPath,
         authProvider
     )
-    disposables.push(chatProvider)
-    fixup.recipeRunner = chatProvider
+    disposables.push(contextProvider)
+
+    // Shared configuration that is required for chat views to send and receive messages
+    const messageProviderOptions: MessageProviderOptions = {
+        chat: chatClient,
+        intentDetector,
+        guardrails,
+        editor,
+        localStorage,
+        rgPath,
+        authProvider,
+        contextProvider,
+    }
+
+    const inlineChatManager = new InlineChatViewManager(messageProviderOptions)
+    const sidebarChatProvider = new ChatViewProvider({
+        ...messageProviderOptions,
+        extensionPath: context.extensionPath,
+    })
+
+    disposables.push(sidebarChatProvider)
+    fixup.recipeRunner = sidebarChatProvider
 
     disposables.push(
-        vscode.window.registerWebviewViewProvider('cody.chat', chatProvider, {
+        vscode.window.registerWebviewViewProvider('cody.chat', sidebarChatProvider, {
             webviewOptions: { retainContextWhenHidden: true },
         }),
         // Update external services when configurationChangeEvent is fired by chatProvider
-        chatProvider.configurationChangeEvent.event(async () => {
+        contextProvider.configurationChangeEvent.event(async () => {
             const newConfig = await getFullConfig(secretStorage, localStorage)
             externalServicesOnDidConfigurationChange(newConfig)
             createOrUpdateEventLogger(newConfig, localStorage).catch(error => console.error(error))
         })
     )
 
-    const executeRecipe = async (recipe: RecipeID, openChatView = true): Promise<void> => {
-        await chatProvider.executeRecipe(recipe, '', openChatView)
+    const executeRecipeInSidebar = async (recipe: RecipeID, openChatView = true): Promise<void> => {
+        if (openChatView) {
+            sidebarChatProvider.showTab('chat')
+        }
+
+        await sidebarChatProvider.executeRecipe(recipe, '')
     }
 
     const webviewErrorMessenger = async (error: string): Promise<void> => {
@@ -167,7 +186,7 @@ const register = async (
                 }
             }
         }
-        chatProvider.sendErrorToWebview(error)
+        sidebarChatProvider.handleError(error)
     }
 
     const statusBar = createStatusBar()
@@ -176,16 +195,30 @@ const register = async (
         // Inline Chat Provider
         vscode.commands.registerCommand('cody.comment.add', async (comment: vscode.CommentReply) => {
             const isFixMode = /^\/f(ix)?\s/i.test(comment.text.trimStart())
-            await commentController.chat(comment, isFixMode)
-            await chatProvider.executeRecipe('inline-chat', comment.text.trimStart(), false)
+            const inlineChatProvider = inlineChatManager.getProviderForThread(comment.thread)
+            await inlineChatProvider.addChat(comment.text, isFixMode)
             logEvent(`CodyVSCodeExtension:inline-assist:${isFixMode ? 'fixup' : 'chat'}`)
         }),
         vscode.commands.registerCommand('cody.comment.delete', (thread: vscode.CommentThread) => {
-            commentController.delete(thread)
+            inlineChatManager.removeProviderForThread(thread)
+        }),
+        vscode.commands.registerCommand('cody.comment.stop', async (comment: Comment) => {
+            const inlineChatProvider = inlineChatManager.getProviderForThread(comment.parent)
+            await inlineChatProvider.abortChat()
         }),
         vscode.commands.registerCommand('cody.comment.collapse-all', () =>
             vscode.commands.executeCommand('workbench.action.collapseAllComments')
         ),
+        vscode.commands.registerCommand('cody.comment.open-in-sidebar', async (thread: vscode.CommentThread) => {
+            const inlineChatProvider = inlineChatManager.getProviderForThread(thread)
+            // The inline chat is already saved in history, we just need to tell the sidebar chat to restore it
+            await sidebarChatProvider.restoreSession(inlineChatProvider.currentChatID)
+            // Ensure that the sidebar view is open if not already
+            sidebarChatProvider.setWebviewView('chat')
+            await vscode.commands.executeCommand('cody.chat.focus')
+            // Remove the inline chat
+            inlineChatManager.removeProviderForThread(thread)
+        }),
         vscode.commands.registerCommand('cody.inline.new', () =>
             vscode.commands.executeCommand('workbench.action.addComment')
         ),
@@ -202,38 +235,53 @@ const register = async (
         vscode.commands.registerCommand('cody.auth.support', () => showFeedbackSupportQuickPick()),
         // Commands
         vscode.commands.registerCommand('cody.interactive.clear', async () => {
-            await chatProvider.clearAndRestartSession()
-            chatProvider.setWebviewView('chat')
+            await sidebarChatProvider.clearAndRestartSession()
+            sidebarChatProvider.setWebviewView('chat')
         }),
         vscode.commands.registerCommand('cody.focus', () => vscode.commands.executeCommand('cody.chat.focus')),
-        vscode.commands.registerCommand('cody.settings.user', () => chatProvider.setWebviewView('settings')),
+        vscode.commands.registerCommand('cody.settings.user', () => sidebarChatProvider.setWebviewView('settings')),
         vscode.commands.registerCommand('cody.settings.extension', () =>
             vscode.commands.executeCommand('workbench.action.openSettings', { query: '@ext:sourcegraph.cody-ai' })
         ),
-        vscode.commands.registerCommand('cody.history', () => chatProvider.setWebviewView('history')),
+        vscode.commands.registerCommand('cody.history', () => sidebarChatProvider.setWebviewView('history')),
         vscode.commands.registerCommand('cody.history.clear', async () => {
-            await chatProvider.clearHistory()
+            await sidebarChatProvider.clearHistory()
         }),
         // Recipes
-        vscode.commands.registerCommand('cody.customRecipes.exec', title => chatProvider.executeCustomRecipe(title)),
+        vscode.commands.registerCommand('cody.customRecipes.exec', async title => {
+            if (!sidebarChatProvider.isCustomRecipeAction(title)) {
+                sidebarChatProvider.showTab('chat')
+            }
+            await sidebarChatProvider.executeCustomRecipe(title)
+        }),
         vscode.commands.registerCommand('cody.customRecipes.list', () => prompt.quickRecipe()),
-        vscode.commands.registerCommand('cody.recipe.explain-code', () => executeRecipe('explain-code-detailed')),
+        vscode.commands.registerCommand('cody.recipe.explain-code', () =>
+            executeRecipeInSidebar('explain-code-detailed')
+        ),
         vscode.commands.registerCommand('cody.recipe.explain-code-high-level', () =>
-            executeRecipe('explain-code-high-level')
+            executeRecipeInSidebar('explain-code-high-level')
         ),
-        vscode.commands.registerCommand('cody.recipe.generate-unit-test', () => executeRecipe('generate-unit-test')),
-        vscode.commands.registerCommand('cody.recipe.generate-docstring', () => executeRecipe('generate-docstring')),
-        vscode.commands.registerCommand('cody.recipe.fixup', () => executeRecipe('fixup')),
+        vscode.commands.registerCommand('cody.recipe.generate-unit-test', () =>
+            executeRecipeInSidebar('generate-unit-test')
+        ),
+        vscode.commands.registerCommand('cody.recipe.generate-docstring', () =>
+            executeRecipeInSidebar('generate-docstring')
+        ),
+        vscode.commands.registerCommand('cody.recipe.fixup', () => executeRecipeInSidebar('fixup')),
         vscode.commands.registerCommand('cody.recipe.translate-to-language', () =>
-            executeRecipe('translate-to-language')
+            executeRecipeInSidebar('translate-to-language')
         ),
-        vscode.commands.registerCommand('cody.recipe.git-history', () => executeRecipe('git-history')),
+        vscode.commands.registerCommand('cody.recipe.git-history', () => executeRecipeInSidebar('git-history')),
         vscode.commands.registerCommand('cody.recipe.improve-variable-names', () =>
-            executeRecipe('improve-variable-names')
+            executeRecipeInSidebar('improve-variable-names')
         ),
-        vscode.commands.registerCommand('cody.recipe.inline-touch', () => executeRecipe('inline-touch', false)),
-        vscode.commands.registerCommand('cody.recipe.find-code-smells', () => executeRecipe('find-code-smells')),
-        vscode.commands.registerCommand('cody.recipe.context-search', () => executeRecipe('context-search')),
+        vscode.commands.registerCommand('cody.recipe.inline-touch', () =>
+            executeRecipeInSidebar('inline-touch', false)
+        ),
+        vscode.commands.registerCommand('cody.recipe.find-code-smells', () =>
+            executeRecipeInSidebar('find-code-smells')
+        ),
+        vscode.commands.registerCommand('cody.recipe.context-search', () => executeRecipeInSidebar('context-search')),
 
         // Register URI Handler (vscode://sourcegraph.cody-ai)
         vscode.window.registerUriHandler({
@@ -262,9 +310,13 @@ const register = async (
         vscode.commands.registerCommand('cody.walkthrough.showLogin', () =>
             vscode.commands.executeCommand('workbench.view.extension.cody')
         ),
-        vscode.commands.registerCommand('cody.walkthrough.showChat', () => chatProvider.setWebviewView('chat')),
-        vscode.commands.registerCommand('cody.walkthrough.showFixup', () => chatProvider.setWebviewView('recipes')),
-        vscode.commands.registerCommand('cody.walkthrough.showExplain', () => chatProvider.setWebviewView('recipes')),
+        vscode.commands.registerCommand('cody.walkthrough.showChat', () => sidebarChatProvider.setWebviewView('chat')),
+        vscode.commands.registerCommand('cody.walkthrough.showFixup', () =>
+            sidebarChatProvider.setWebviewView('recipes')
+        ),
+        vscode.commands.registerCommand('cody.walkthrough.showExplain', () =>
+            sidebarChatProvider.setWebviewView('recipes')
+        ),
         vscode.commands.registerCommand('cody.walkthrough.enableInlineChat', async () => {
             await workspaceConfig.update('cody.inlineChat', true, vscode.ConfigurationTarget.Global)
             // Open VSCode setting view. Provides visual confirmation that the setting is enabled.
@@ -343,7 +395,7 @@ const register = async (
     return {
         disposable: vscode.Disposable.from(...disposables),
         onConfigurationChange: newConfig => {
-            chatProvider.onConfigurationChange(newConfig)
+            contextProvider.onConfigurationChange(newConfig)
             externalServicesOnDidConfigurationChange(newConfig)
             void createOrUpdateEventLogger(newConfig, localStorage)
         },
@@ -363,7 +415,7 @@ function createCompletionsProvider(
     disposables.push(vscode.workspace.registerTextDocumentContentProvider('cody', documentProvider))
 
     const history = new History()
-    const providerConfig = createCompletionProviderConfig(config, webviewErrorMessenger, completionsClient)
+    const providerConfig = createProviderConfig(config, webviewErrorMessenger, completionsClient)
     const completionsProvider = new CodyCompletionItemProvider({
         providerConfig,
         history,
@@ -389,49 +441,4 @@ function createCompletionsProvider(
             }
         },
     }
-}
-
-function createCompletionProviderConfig(
-    config: Configuration,
-    webviewErrorMessenger: (error: string) => Promise<void>,
-    completionsClient: SourcegraphNodeCompletionsClient
-): ProviderConfig {
-    let providerConfig: null | ProviderConfig = null
-    switch (config.autocompleteAdvancedProvider) {
-        case 'unstable-codegen': {
-            if (config.autocompleteAdvancedServerEndpoint !== null) {
-                providerConfig = createUnstableCodeGenProviderConfig({
-                    serverEndpoint: config.autocompleteAdvancedServerEndpoint,
-                })
-            }
-
-            // eslint-disable-next-line @typescript-eslint/no-floating-promises
-            webviewErrorMessenger(
-                'Provider `unstable-codegen` can not be used without configuring `cody.autocomplete.advanced.serverEndpoint`. Falling back to `anthropic`.'
-            )
-            break
-        }
-        case 'unstable-huggingface': {
-            if (config.autocompleteAdvancedServerEndpoint !== null) {
-                providerConfig = createUnstableHuggingFaceProviderConfig({
-                    serverEndpoint: config.autocompleteAdvancedServerEndpoint,
-                    accessToken: config.autocompleteAdvancedAccessToken,
-                })
-            }
-
-            // eslint-disable-next-line @typescript-eslint/no-floating-promises
-            webviewErrorMessenger(
-                'Provider `unstable-huggingface` can not be used without configuring `cody.autocomplete.advanced.serverEndpoint`. Falling back to `anthropic`.'
-            )
-            break
-        }
-    }
-    if (providerConfig) {
-        return providerConfig
-    }
-
-    return createAnthropicProviderConfig({
-        completionsClient,
-        contextWindowTokens: 2048,
-    })
 }

@@ -6,7 +6,7 @@ import { promisify } from 'util'
 
 const exec = promisify(exec_)
 
-export async function getRgPath(extensionPath: string): Promise<string> {
+export async function getRgPath(extensionPath: string): Promise<string | null> {
     if (process.env.MOCK_RG_PATH) {
         return process.env.MOCK_RG_PATH
     }
@@ -34,7 +34,7 @@ export async function getRgPath(extensionPath: string): Promise<string> {
         return 'rg'
     } catch (error) {
         console.error(error)
-        return 'rg'
+        return null
     }
 }
 

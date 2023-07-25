@@ -80,7 +80,7 @@ export async function getFileToRemove(keys: string[]): Promise<string | undefine
 }
 
 export const outputWrapper = `
-Here is the output of \`{command}\` command:
+Output of \`{command}\` command:
 \`\`\`sh
 {output}
 \`\`\``

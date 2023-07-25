@@ -455,7 +455,7 @@ describe('Cody completions', () => {
             expect(completions[1].insertText).toBe("console.log('foo')")
         })
 
-        it('cuts-off completions when the next non-empty line matches', async () => {
+        it('cuts-off the whole completions when suffix is very similar to suffix line', async () => {
             const { completions } = await complete(
                 `
                 function() {
@@ -470,7 +470,7 @@ describe('Cody completions', () => {
                 ]
             )
 
-            expect(completions[0].insertText).toBe("console.log('foo')")
+            expect(completions.length).toBe(0)
         })
 
         it('does not support multi-line completion on unsupported languages', async () => {
@@ -748,26 +748,117 @@ describe('Cody completions', () => {
                 ]
             )
 
-            expect(completions[0].insertText).toMatchInlineSnapshot(`
-              "console.log('one')
-                  console.log('two')"
-            `)
+            expect(completions.length).toBe(0)
         })
 
-        it('stops when the next non-empty line of the suffix matches partially', async () => {
+        it('stops when the next non-empty line of the suffix matches exactly with one line completion', async () => {
             const { completions } = await complete(
-                `path: $GITHUB_WORKSPACE/vscode/.vscod-etest/${CURSOR_MARKER}
-    key: {{ runner.os }}-pnpm-store-{{ hashFiles('**/pnpm-lock.yaml') }}
+                `
+                function myFunction() {
+                    console.log('one')
+                    ${CURSOR_MARKER}
+                    console.log('three')
+                }
                 `,
                 [
                     createCompletionResponse(`
-                    pnpm-store
-                        key: {{ runner.os }}-pnpm-{{ steps.pnpm-cache.outputs.STORE_PATH }}
+                    console.log('three')
                     }`),
                 ]
             )
 
-            expect(completions[0].insertText).toBe('pnpm-store')
+            expect(completions.length).toBe(0)
+        })
+
+        it('cuts off a matching line with the next line even if the completion is longer', async () => {
+            const { completions } = await complete(
+                `
+            function bubbleSort() {
+                ${CURSOR_MARKER}
+                do {
+                    swapped = false;
+                    for (let i = 0; i < array.length - 1; i++) {
+                        if (array[i] > array[i + 1]) {
+                            let temp = array[i];
+                            array[i] = array[i + 1];
+                            array[i + 1] = temp;
+                            swapped = true;
+                        }
+                    }
+                } while (swapped);
+            }
+            `,
+                [
+                    createCompletionResponse(`
+                    let swapped;
+                    do {
+                        swapped = false;
+                        for (let i = 0; i < array.length - 1; i++) {
+                            if (array[i] > array[i + 1]) {
+                                let temp = array[i];
+                                array[i] = array[i + 1];
+                                array[i + 1] = temp;
+                                swapped = true;
+                            }
+                        }
+                    } while (swapped);
+                `),
+                ]
+            )
+
+            expect(completions[0].insertText).toBe('let swapped;')
+        })
+
+        describe('stops when the next non-empty line of the suffix matches partially', () => {
+            it('simple example', async () => {
+                const { completions } = await complete(
+                    `
+                          path: $GITHUB_WORKSPACE/vscode/.vscod-etest/${CURSOR_MARKER}
+                          key: {{ runner.os }}-pnpm-store-{{ hashFiles('**/pnpm-lock.yaml') }}`,
+                    [
+                        createCompletionResponse(`
+                                    pnpm-store
+                                        key: {{ runner.os }}-pnpm-{{ steps.pnpm-cache.outputs.STORE_PATH }}
+                                    }`),
+                    ]
+                )
+
+                expect(completions[0].insertText).toBe('pnpm-store')
+            })
+
+            it('example with return', async () => {
+                const { completions } = await complete(
+                    `
+                          console.log('<< stop completion: ${CURSOR_MARKER}')
+                          return []
+                    `,
+                    [
+                        createCompletionResponse(`
+                                    lastChange was delete')
+                                    return []
+                        `),
+                    ]
+                )
+
+                expect(completions[0].insertText).toBe("lastChange was delete')")
+            })
+
+            it('example with inline comment', async () => {
+                const { completions } = await complete(
+                    `
+                    // ${CURSOR_MARKER}
+                    const currentFilePath = path.normalize(document.fileName)
+                    `,
+                    [
+                        createCompletionResponse(`
+                            Get the file path
+                            const filePath = normalize(document.fileName)
+                        `),
+                    ]
+                )
+
+                expect(completions[0].insertText).toBe('Get the file path')
+            })
         })
 
         it('ranks results by number of lines', async () => {
@@ -865,7 +956,7 @@ describe('Cody completions', () => {
                 ]
             )
 
-            expect(completions[0].insertText).toBe("console.log('one')")
+            expect(completions.length).toBe(0)
         })
 
         it('normalizes Cody responses starting with an empty line and following the exact same indentation as the start line', async () => {

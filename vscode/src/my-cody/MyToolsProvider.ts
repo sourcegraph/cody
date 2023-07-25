@@ -63,7 +63,7 @@ export class MyToolsProvider {
                 void vscode.window.showInformationMessage(`No output return from ${fullCommand}. ${terminalWarning}`)
                 return outputString
             }
-            debug('MyToolsProvider:runCommand', 'outputString', { verbose: outputString })
+            debug('MyToolsProvider:runCommand', command, { verbose: JSON.stringify(outputString) })
             return outputWrapper.replace('{command}', fullCommand).replace('{output}', JSON.stringify(outputString))
         } catch (error) {
             // handle error
@@ -89,8 +89,8 @@ export class MyToolsProvider {
             if (!outputString) {
                 throw new Error('Empty output')
             }
-            debug('MyToolsProvider:exeCommand', 'outputString', { verbose: outputString })
-            return outputWrapper.replace('{command}', command).replace('{output}', outputString)
+            debug('MyToolsProvider:exeCommand', command, { verbose: JSON.stringify(outputString) })
+            return outputWrapper.replace('{command}', command).replace('{output}', JSON.stringify(outputString))
         } catch (error) {
             debug('MyToolsProvider:exeCommand', 'failed', { verbose: error })
             void vscode.window.showErrorMessage(
