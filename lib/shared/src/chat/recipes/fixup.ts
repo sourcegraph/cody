@@ -1,11 +1,9 @@
-import { CodebaseContext } from '../../codebase-context'
-import { ContextMessage } from '../../codebase-context/messages'
 import { MAX_CURRENT_FILE_TOKENS, MAX_HUMAN_INPUT_TOKENS } from '../../prompt/constants'
 import { truncateText, truncateTextStart } from '../../prompt/truncation'
 import { BufferedBotResponseSubscriber } from '../bot-response-multiplexer'
 import { Interaction } from '../transcript/interaction'
 
-import { contentSanitizer } from './helpers'
+import { contentSanitizer, getContextMessagesFromSelection } from './helpers'
 import { Recipe, RecipeContext, RecipeID } from './recipe'
 
 export class Fixup implements Recipe {
@@ -27,14 +25,17 @@ export class Fixup implements Recipe {
             return null
         }
 
+        const truncatedPrecedingText = truncateTextStart(selection.precedingText, quarterFileContext)
+        const truncatedFollowingText = truncateText(selection.followingText, quarterFileContext)
+
         // Reconstruct Cody's prompt using user's context
         // Replace placeholders in reverse order to avoid collisions if a placeholder occurs in the input
         // TODO: Move prompt suffix from recipe to chat view. It has other subscribers.
         const promptText = Fixup.prompt
             .replace('{humanInput}', truncateText(humanChatInput, MAX_HUMAN_INPUT_TOKENS))
-            .replace('{truncateFollowingText}', truncateText(selection.followingText, quarterFileContext))
+            .replace('{truncateTextStart}', truncatedPrecedingText)
             .replace('{selectedText}', selection.selectedText)
-            .replace('{truncateTextStart}', truncateTextStart(selection.precedingText, quarterFileContext))
+            .replace('{truncateFollowingText}', truncatedFollowingText)
             .replace('{fileName}', selection.fileName)
 
         context.responseMultiplexer.sub(
@@ -66,16 +67,16 @@ export class Fixup implements Recipe {
                     speaker: 'assistant',
                     prefix: 'Check your document for updates from Cody.\n',
                 },
-                this.getContextMessages(selection.selectedText, context.codebaseContext),
+                getContextMessagesFromSelection(
+                    selection.selectedText,
+                    truncatedPrecedingText,
+                    truncatedFollowingText,
+                    selection,
+                    context.codebaseContext
+                ),
                 []
             )
         )
-    }
-
-    // Get context from editor
-    private async getContextMessages(text: string, codebaseContext: CodebaseContext): Promise<ContextMessage[]> {
-        // const contextMessages: ContextMessage[] = await codebaseContext.getContextMessages(text, numResults)
-        return Promise.resolve([])
     }
 
     // Prompt Templates
