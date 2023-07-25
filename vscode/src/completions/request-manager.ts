@@ -114,6 +114,7 @@ export class RequestManager {
     private addRequest(documentUri: string, request: Request): void {
         let requestsForDocument: Request[] = []
         if (this.requests.has(documentUri)) {
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
             requestsForDocument = this.requests.get(documentUri)!
         } else {
             this.requests.set(documentUri, requestsForDocument)

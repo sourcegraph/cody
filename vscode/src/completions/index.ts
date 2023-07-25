@@ -130,6 +130,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
             tracer?.({ result })
             return result
         } catch (unknownError: unknown) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const error = unknownError instanceof Error ? unknownError : new Error(unknownError as any)
             tracer?.({ error: error.toString() })
             this.stopLoading()
