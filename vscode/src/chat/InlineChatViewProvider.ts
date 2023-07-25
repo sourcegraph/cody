@@ -51,17 +51,17 @@ export class InlineChatViewProvider extends MessageProvider {
         // We need to update the comment controller to support more than one active thread at a time.
         void vscode.commands.executeCommand('setContext', 'cody.inline.reply.pending', true)
 
-        await this.editor.controllers.inline.chat(reply, this.thread, isFixMode)
-        this.editor.controllers.inline.setResponsePending(true)
+        await this.editor.controllers.inline?.chat(reply, this.thread, isFixMode)
+        this.editor.controllers.inline?.setResponsePending(true)
         await this.executeRecipe('inline-chat', reply.trimStart())
     }
 
     public removeChat(): void {
-        this.editor.controllers.inline.delete(this.thread)
+        this.editor.controllers.inline?.delete(this.thread)
     }
 
     public async abortChat(): Promise<void> {
-        this.editor.controllers.inline.abort()
+        this.editor.controllers.inline?.abort()
         await this.abortCompletion()
         void vscode.commands.executeCommand('setContext', 'cody.inline.reply.pending', false)
     }
@@ -78,8 +78,8 @@ export class InlineChatViewProvider extends MessageProvider {
         }
 
         if (lastMessage.displayText) {
-            this.editor.controllers.inline.setResponsePending(false)
-            this.editor.controllers.inline.reply(
+            this.editor.controllers.inline?.setResponsePending(false)
+            this.editor.controllers.inline?.reply(
                 lastMessage.displayText,
                 isMessageInProgress ? 'streaming' : 'complete'
             )
@@ -97,7 +97,7 @@ export class InlineChatViewProvider extends MessageProvider {
      * TODO(umpox): Should we render these differently for inline chat? We are limited in UI options.
      */
     protected handleError(errorMsg: string): void {
-        void this.editor.controllers.inline.error(errorMsg)
+        void this.editor.controllers.inline?.error(errorMsg)
     }
 
     protected handleHistory(): void {

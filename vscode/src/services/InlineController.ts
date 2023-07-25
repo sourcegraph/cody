@@ -1,7 +1,7 @@
 import { DebouncedFunc, throttle } from 'lodash'
 import * as vscode from 'vscode'
 
-import { ActiveTextEditorSelection } from '@sourcegraph/cody-shared/src/editor'
+import { ActiveTextEditorSelection, VsCodeInlineController } from '@sourcegraph/cody-shared/src/editor'
 import { SURROUNDING_LINES } from '@sourcegraph/cody-shared/src/prompt/constants'
 
 import { CodyTaskState } from '../non-stop/utils'
@@ -24,7 +24,7 @@ enum CodyInlineStateContextValue {
     error = 'cody-inline-complete',
 }
 
-export class InlineController {
+export class InlineController implements VsCodeInlineController {
     // Controller init
     private readonly id = 'cody-inline-chat'
     private readonly label = 'Cody: Inline Chat'

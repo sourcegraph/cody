@@ -59,7 +59,11 @@ export class MyPrompt implements Recipe {
             await vscode.window.showErrorMessage('Please enter a valid prompt for the recipe.')
             return null
         }
-        const commandOutput = await context.editor.controllers?.prompt.get('output')
+        const commandOutput = (await context.editor.controllers?.prompt?.get('output')) ?? null
+        if (commandOutput === null) {
+            await vscode.window.showErrorMessage('No command output.')
+            return null
+        }
         const note = ' Refer to the command output and shared code snippets to answer my quesiton.'
         const truncatedText = truncateText(promptText + note, MAX_HUMAN_INPUT_TOKENS)
         // Add selection file name as display when available
@@ -94,7 +98,7 @@ export class MyPrompt implements Recipe {
         commandOutput?: string | null
     ): Promise<ContextMessage[]> {
         const contextMessages: ContextMessage[] = []
-        const contextConfig = await editor.controllers?.prompt.get('context')
+        const contextConfig = await editor.controllers?.prompt?.get('context')
         const isContextRequired = contextConfig
             ? (JSON.parse(contextConfig) as CodyPromptContext)
             : defaultCodyPromptContext

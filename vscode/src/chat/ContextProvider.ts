@@ -67,7 +67,7 @@ export class ContextProvider implements vscode.Disposable {
         private editor: VSCodeEditor,
         private secretStorage: SecretStorage,
         private localStorage: LocalStorage,
-        private rgPath: string,
+        private rgPath: string | null,
         private authProvider: AuthProvider
     ) {
         this.disposables.push(this.configurationChangeEvent)
@@ -124,7 +124,7 @@ export class ContextProvider implements vscode.Disposable {
 
         this.codebaseContext = codebaseContext
         await this.publishContextStatus()
-        this.editor.controllers.prompt.setCodebase(codebaseContext.getCodebase())
+        this.editor.controllers.prompt?.setCodebase(codebaseContext.getCodebase())
     }
 
     /**
@@ -233,7 +233,7 @@ export class ContextProvider implements vscode.Disposable {
  */
 export async function getCodebaseContext(
     config: Config,
-    rgPath: string,
+    rgPath: string | null,
     editor: Editor,
     chatClient: ChatClient
 ): Promise<CodebaseContext | null> {
@@ -262,8 +262,8 @@ export async function getCodebaseContext(
         config,
         codebase,
         embeddingsSearch,
-        new LocalKeywordContextFetcher(rgPath, editor, chatClient),
-        new FilenameContextFetcher(rgPath, editor, chatClient),
+        rgPath ? new LocalKeywordContextFetcher(rgPath, editor, chatClient) : null,
+        rgPath ? new FilenameContextFetcher(rgPath, editor, chatClient) : null,
         undefined,
         getRerankWithLog(chatClient)
     )

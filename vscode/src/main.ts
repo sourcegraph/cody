@@ -79,7 +79,7 @@ const register = async (
     initialConfig: ConfigurationWithAccessToken,
     secretStorage: SecretStorage,
     localStorage: LocalStorage,
-    rgPath: string
+    rgPath: string | null
 ): Promise<{
     disposable: vscode.Disposable
     onConfigurationChange: (newConfig: ConfigurationWithAccessToken) => void
@@ -98,9 +98,8 @@ const register = async (
     }
     // Controller for Custom Recipes
     const prompt = new MyPromptController(context, initialConfig.experimentalCustomRecipes)
-    const controllers = { inline: commentController, fixups: fixup, prompt }
 
-    const editor = new VSCodeEditor(controllers)
+    const editor = new VSCodeEditor({ inline: commentController, fixups: fixup, prompt })
     // Could we use the `initialConfig` instead?
     const workspaceConfig = vscode.workspace.getConfiguration()
     const config = getConfiguration(workspaceConfig)

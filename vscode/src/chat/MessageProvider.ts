@@ -62,7 +62,7 @@ export interface MessageProviderOptions {
     guardrails: Guardrails
     editor: VSCodeEditor
     localStorage: LocalStorage
-    rgPath: string
+    rgPath: string | null
     authProvider: AuthProvider
     contextProvider: ContextProvider
 }
@@ -86,9 +86,9 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
     protected chat: ChatClient
     protected intentDetector: IntentDetector
     protected guardrails: Guardrails
-    protected editor: VSCodeEditor
+    protected readonly editor: VSCodeEditor
     protected localStorage: LocalStorage
-    protected rgPath: string
+    protected rgPath: string | null
     protected authProvider: AuthProvider
     protected contextProvider: ContextProvider
 
@@ -230,10 +230,10 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
                 const lastInteraction = this.transcript.getLastInteraction()
                 if (lastInteraction) {
                     const displayText = reformatBotMessage(text, responsePrefix)
-                    const fileExistFunc = (filePaths: string[]): Promise<{ [filePath: string]: boolean }> => {
+                    const fileExistFunc = (filePaths: string[]): Promise<{ [filePath: string]: boolean } | null> => {
                         const rootPath = this.editor.getWorkspaceRootPath()
-                        if (!rootPath) {
-                            return Promise.resolve({})
+                        if (!rootPath || !this.rgPath) {
+                            return Promise.resolve(null)
                         }
                         return fastFilesExist(this.rgPath, rootPath, filePaths)
                     }
@@ -424,7 +424,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
             default: {
                 this.sendTranscript()
 
-                const myPremade = this.editor.controllers.prompt.getMyPrompts().premade
+                const myPremade = this.editor.controllers.prompt?.getMyPrompts().premade
                 const { prompt, contextFiles } = await this.transcript.getPromptForLastInteraction(
                     getPreamble(this.contextProvider.context.getCodebase(), myPremade),
                     this.maxPromptTokens,
@@ -459,7 +459,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         }
         transcript.addInteraction(interaction)
 
-        const myPremade = this.editor.controllers.prompt.getMyPrompts().premade
+        const myPremade = this.editor.controllers.prompt?.getMyPrompts().premade
         const { prompt, contextFiles } = await transcript.getPromptForLastInteraction(
             getPreamble(this.contextProvider.context.getCodebase(), myPremade),
             this.maxPromptTokens
@@ -544,7 +544,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         }
         // Create a new recipe
         if (title === 'menu') {
-            await this.editor.controllers.prompt.menu()
+            await this.editor.controllers.prompt?.menu()
             await this.sendMyPrompts()
             return
         }
@@ -552,15 +552,15 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
             const fileType = title === 'add-workspace-file' ? 'workspace' : 'user'
             try {
                 // copy the cody.json file from the extension path and move it to the workspace root directory
-                await this.editor.controllers.prompt.addJSONFile(fileType)
+                await this.editor.controllers.prompt?.addJSONFile(fileType)
             } catch (error) {
                 void vscode.window.showErrorMessage(`Could not create a new cody.json file: ${error}`)
             }
             return
         }
         // Get prompt details from controller by title then execute prompt's command
-        const promptText = this.editor.controllers.prompt.find(title)
-        await this.editor.controllers.prompt.get('command')
+        const promptText = this.editor.controllers.prompt?.find(title)
+        await this.editor.controllers.prompt?.get('command')
         if (!promptText) {
             debug('executeCustomRecipe:noPrompt', title)
             return
@@ -571,9 +571,9 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
 
     protected async executeCommands(text: string, recipeID: RecipeID = 'chat-question'): Promise<void> {
         switch (true) {
-            case /^\/o(pen)?/i.test(text):
+            case /^\/o(pen)?/i.test(text) && this.editor.controllers.prompt !== undefined:
                 // open the user's ~/.vscode/cody.json file
-                await this.editor.controllers.prompt.open(text.split(' ')[1])
+                await this.editor.controllers.prompt?.open(text.split(' ')[1])
                 break
             case /^\/r(eset)?/i.test(text):
                 await this.clearAndRestartSession()
@@ -591,11 +591,11 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
      */
     private async sendMyPrompts(): Promise<void> {
         const send = async (): Promise<void> => {
-            await this.editor.controllers.prompt.refresh()
-            const prompts = this.editor.controllers.prompt.getPromptList()
+            await this.editor.controllers.prompt?.refresh()
+            const prompts = this.editor.controllers.prompt?.getPromptList() ?? []
             void this.handleMyPrompts(prompts, this.contextProvider.config.experimentalCustomRecipes)
         }
-        this.editor.controllers.prompt.setMessenger(send)
+        this.editor.controllers.prompt?.setMessenger(send)
         await send()
     }
 
@@ -690,6 +690,9 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         if (!testing) {
             console.error('used ForTesting method without test support object')
             return []
+        }
+        if (!this.editor.controllers.fixups) {
+            throw new Error('no fixup controller')
         }
         return this.editor.controllers.fixups.getTasks()
     }
