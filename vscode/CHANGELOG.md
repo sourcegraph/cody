@@ -17,6 +17,8 @@ Starting from `0.2.0`, Cody is using `major.EVEN_NUMBER.patch` for release versi
 
 ### Changed
 
+- If you run the `Trigger Inline Suggestion` VS Code action, 3 suggestions instead of just 1 will be shown.
+
 ## [0.6.1]
 
 ### Added
