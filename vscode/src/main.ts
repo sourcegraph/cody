@@ -250,11 +250,10 @@ const register = async (
         }),
         // Recipes
         vscode.commands.registerCommand('cody.customRecipes.exec', async title => {
-            await sidebarChatProvider.executeCustomRecipe(title)
-            const recipePrompt = prompt.find(title)
-            if (!recipePrompt.startsWith('/')) {
+            if (!sidebarChatProvider.isCustomRecipeAction(title)) {
                 sidebarChatProvider.showTab('chat')
             }
+            await sidebarChatProvider.executeCustomRecipe(title)
         }),
         vscode.commands.registerCommand('cody.customRecipes.list', () => prompt.quickRecipe()),
         vscode.commands.registerCommand('cody.recipe.explain-code', () =>

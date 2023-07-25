@@ -528,7 +528,12 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         this.handleTranscript(chatTranscript, this.isMessageInProgress)
     }
 
-    public async executeCustomRecipe(title: string): Promise<void> {
+    public isCustomRecipeAction(title: string): boolean {
+        const customRecipeActions = ['add-workspace-file', 'add-user-file', 'get', 'menu']
+        return customRecipeActions.includes(title)
+    }
+
+    public async executeCustomRecipe(title: string): Promise<string | void> {
         if (!this.contextProvider.config.experimentalCustomRecipes) {
             return
         }
@@ -554,13 +559,14 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
             return
         }
         // Get prompt details from controller by title then execute prompt's command
-        const prompt = this.editor.controllers.prompt.find(title)
+        const promptText = this.editor.controllers.prompt.find(title)
         await this.editor.controllers.prompt.get('command')
-        if (!prompt) {
+        if (!promptText) {
             debug('executeCustomRecipe:noPrompt', title)
             return
         }
-        await this.executeCommands(prompt, 'my-prompt')
+        await this.executeCommands(promptText, 'chat-question')
+        return promptText
     }
 
     protected async executeCommands(text: string, recipeID: RecipeID = 'chat-question'): Promise<void> {
