@@ -48,11 +48,12 @@ export class UnstableHuggingFaceProvider extends Provider {
                 intro.push(`Here is a reference snippet of code from ${snippet.fileName}:\n${snippet.content}`)
             }
 
-            const introString = intro
-                .join('\n\n')
-                .split('\n')
-                .map(line => (languageConfig ? languageConfig.commentStart + line : ''))
-                .join('\n')
+            const introString =
+                intro
+                    .join('\n\n')
+                    .split('\n')
+                    .map(line => (languageConfig ? languageConfig.commentStart + line : ''))
+                    .join('\n') + '\n'
 
             // Prompt format is taken form https://huggingface.co/bigcode/starcoder#fill-in-the-middle
             prompt = `<fim_prefix>${introString}${this.options.prefix}<fim_suffix>${this.options.suffix}<fim_middle>`
@@ -67,10 +68,10 @@ export class UnstableHuggingFaceProvider extends Provider {
         const request = {
             inputs: prompt,
             parameters: {
-                num_return_sequences: 1,
+                num_return_sequences: this.options.n,
                 // To speed up sample generation in single-line case, we request a lower token limit
                 // since we can't terminate on the first `\n`.
-                max_new_tokens: this.options.multiline ? 50 : 256,
+                max_new_tokens: this.options.multiline ? 40 : 256,
             },
         }
 
@@ -119,7 +120,7 @@ function postProcess(content: string, multiline: boolean): string {
 
     // The model might return multiple lines for single line completions because
     // we are only able to specify a token limit.
-    if (multiline && content.includes('\n')) {
+    if (!multiline && content.includes('\n')) {
         content = content.slice(0, content.indexOf('\n'))
     }
 
