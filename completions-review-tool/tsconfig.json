@@ -3,10 +3,11 @@
   "compilerOptions": {
     "jsx": "react-jsx",
     "module": "commonjs",
-    "sourceRoot": "src",
     "rootDir": ".",
-    "outDir": "./out",
+    "outDir": "dist",
     "baseUrl": "./src",
+    "lib": ["DOM"],
   },
+  "exclude": ["dist"],
   "include": ["globals.d.ts", "remix.env.d.ts", "**/*.ts", "**/*.tsx", "*.js"],
 }

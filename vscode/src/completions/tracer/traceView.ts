@@ -127,6 +127,12 @@ ${
 
 ${markdownCodeBlock(data.error)}
 `,
+        `
+## Advanced tools
+
+${codeDetailsWithSummary('JSON for dataset', jsonForDataset(data), 'start')}
+
+`,
     ]
         .filter(isDefined)
         .map(s => s.trim())
@@ -205,4 +211,19 @@ function rangeDescriptionWithCurrentText(range: vscode.Range, document?: vscode.
 
 function withVisibleWhitespace(text: string): string {
     return text.replace(/ /g, '·').replace(/\t/g, '⇥').replace(/\r?\n/g, '↵')
+}
+
+function jsonForDataset(data: ProvideInlineCompletionsItemTraceData | undefined): string {
+    const completer = data?.completers?.[0]
+
+    if (!completer) {
+        return ''
+    }
+
+    return `{
+        context: ${JSON.stringify(data?.context?.context.map(c => ({ fileName: c.fileName, content: c.content })))},
+        fileName: ${JSON.stringify(completer.fileName)},
+        languageId: ${JSON.stringify(completer.languageId)},
+        content: \`${completer.prefix}$\{CURSOR}${completer.suffix}\`,
+    }`
 }
