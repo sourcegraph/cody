@@ -17,3 +17,13 @@ export class VSCodeGraphContextFetcher extends GraphContextFetcher {
 function runGitCommand(args: string[], workspaceRoot: string): string {
     return spawnSync('git', args, { cwd: workspaceRoot }).stdout.toString().trim()
 }
+
+export class WebGraphContextFetcher extends GraphContextFetcher {
+    public getGitInfo(workspaceRoot: string): Promise<GitInfo> {
+        // const remote = runGitCommand(['remote', 'get-url', 'origin'], workspaceRoot)
+        // const commitID = runGitCommand(['rev-parse', 'HEAD'], workspaceRoot)
+        // const repo = convertGitCloneURLToCodebaseName(remote) || ''
+
+        return Promise.resolve({ repo: '', commitID: '' })
+    }
+}
