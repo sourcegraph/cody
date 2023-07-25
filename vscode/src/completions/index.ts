@@ -185,14 +185,10 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
             // moment). When a line was deleted, only look up cached items and only include them if the
             // untruncated prefix matches. This fixes some weird issues where the completion would
             // render if you insert whitespace but not on the original place when you delete it again.
-            trim: !lastChangeIsDeletion,
+            isExactPrefixOnly: lastChangeIsDeletion,
         }
         const cachedCompletions = this.config.cache?.get(cacheRequest)
         if (cachedCompletions) {
-            if (lastChangeIsDeletion && !cachedCompletions.isExactPrefix) {
-                return { items: [] }
-            }
-
             tracer?.({ cacheHit: true })
             return this.handleCacheHit(
                 cachedCompletions,

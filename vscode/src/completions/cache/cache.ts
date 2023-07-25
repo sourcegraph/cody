@@ -16,9 +16,11 @@ export interface CacheRequest {
     prefix: string
 
     /**
-     * Whether to trim trailing whitespace on the last line of the prefix.
+     * Only return a cache entry if the prefix matches exactly (without trimming whitespace).
+     *
+     * @default false
      */
-    trim: boolean
+    isExactPrefixOnly?: boolean
 }
 
 export class CompletionsCache {
@@ -34,8 +36,8 @@ export class CompletionsCache {
     // account. We need to add additional information like file path or suffix
     // to make sure the cache does not return undesired results for other files
     // in the same project.
-    public get({ prefix, trim }: CacheRequest): CachedCompletions | undefined {
-        const trimmedPrefix = trim ? trimEndOnLastLineIfWhitespaceOnly(prefix) : prefix
+    public get({ prefix, isExactPrefixOnly }: CacheRequest): CachedCompletions | undefined {
+        const trimmedPrefix = isExactPrefixOnly ? prefix : trimEndOnLastLineIfWhitespaceOnly(prefix)
         const result = this.cache.get(trimmedPrefix)
 
         if (!result) {
