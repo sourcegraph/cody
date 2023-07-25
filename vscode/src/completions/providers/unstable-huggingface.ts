@@ -15,7 +15,7 @@ interface UnstableHuggingFaceOptions {
 
 const PROVIDER_IDENTIFIER = 'huggingface'
 const STOP_WORD = '<|endoftext|>'
-const CONTEXT_WINDOW_CHARS = 4000 // ~ 1280 token limit
+const CONTEXT_WINDOW_CHARS = 3500 // ~ 1280 token limit
 
 export class UnstableHuggingFaceProvider extends Provider {
     private serverEndpoint: string
@@ -39,13 +39,9 @@ export class UnstableHuggingFaceProvider extends Provider {
         }
 
         for (let snippetsToInclude = 0; snippetsToInclude < snippets.length + 1; snippetsToInclude++) {
-            if (prompt.length >= maxPromptChars) {
-                return prompt
-            }
-
             if (snippetsToInclude > 0) {
                 const snippet = snippets[snippetsToInclude - 1]
-                intro.push(`Here is a reference snippet of code from ${snippet.fileName}:\n${snippet.content}`)
+                intro.push(`Here is a reference snippet of code from ${snippet.fileName}:\n\n${snippet.content}`)
             }
 
             const introString =
@@ -56,7 +52,13 @@ export class UnstableHuggingFaceProvider extends Provider {
                     .join('\n') + '\n'
 
             // Prompt format is taken form https://huggingface.co/bigcode/starcoder#fill-in-the-middle
-            prompt = `<fim_prefix>${introString}${this.options.prefix}<fim_suffix>${this.options.suffix}<fim_middle>`
+            const nextPrompt = `<fim_prefix>${introString}${this.options.prefix}<fim_suffix>${this.options.suffix}<fim_middle>`
+
+            if (nextPrompt.length >= maxPromptChars) {
+                return prompt
+            }
+
+            prompt = nextPrompt
         }
 
         return prompt
@@ -68,10 +70,13 @@ export class UnstableHuggingFaceProvider extends Provider {
         const request = {
             inputs: prompt,
             parameters: {
-                num_return_sequences: this.options.n,
                 // To speed up sample generation in single-line case, we request a lower token limit
                 // since we can't terminate on the first `\n`.
                 max_new_tokens: this.options.multiline ? 256 : 40,
+
+                // TODO: Figure out how to generate more than one suggestion. Right now, even doing
+                // parallel HTTP requests will result in the same completion. I tried disabling the
+                // cache on HF and tweaking top_k and temperature with no success.
             },
         }
 

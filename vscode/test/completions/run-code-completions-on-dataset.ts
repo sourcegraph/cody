@@ -22,12 +22,17 @@ import { ENVIRONMENT_CONFIG } from './environment-config'
 import { findSubstringPosition } from './utils'
 import { TextDocument } from './vscode-text-document'
 
+let didLogConfig = false
+
 async function initCompletionsProvider(context: GetContextResult): Promise<CodyCompletionItemProvider> {
     const secretStorage = new InMemorySecretStorage()
     await secretStorage.store('cody.access-token', ENVIRONMENT_CONFIG.SOURCEGRAPH_ACCESS_TOKEN)
 
     const initialConfig = await getFullConfig(secretStorage)
-    console.error('Running `initCompletionsProvider` with config:', initialConfig)
+    if (!didLogConfig) {
+        console.error('Running `initCompletionsProvider` with config:', initialConfig)
+        didLogConfig = true
+    }
 
     if (!initialConfig.autocomplete) {
         throw new Error('`cody.autocomplete` is not true!')
@@ -52,7 +57,7 @@ async function initCompletionsProvider(context: GetContextResult): Promise<CodyC
         history,
         codebaseContext,
         disableTimeouts: true,
-        triggerMoreEagerly: false,
+        triggerMoreEagerly: true,
         cache: null,
         isEmbeddingsContextEnabled: true,
         contextFetcher: () => Promise.resolve(context),

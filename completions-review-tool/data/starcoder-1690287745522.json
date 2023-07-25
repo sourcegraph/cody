@@ -3,8 +3,8 @@
     "completions": [
       "signale.info(message)"
     ],
-    "elapsed": 1500,
-    "timestamp": "1690279713433",
+    "elapsed": 1499,
+    "timestamp": "1690287745522",
     "sample": {
       "context": [],
       "fileName": "logger.ts",
@@ -16,8 +16,8 @@
     "completions": [
       "const date = new Date()\n    const dateString = date.toISOString()\n    const filePath = path.join(__dirname, 'date.txt')\n    fs.writeFileSync(filePath, dateString)"
     ],
-    "elapsed": 4910,
-    "timestamp": "1690279713433",
+    "elapsed": 4389,
+    "timestamp": "1690287745522",
     "sample": {
       "context": [],
       "fileName": "writer.ts",
@@ -27,10 +27,10 @@
   },
   {
     "completions": [
-      "if (typeof position === 'number') {\n            position = new Position(position, 0)\n        }\n\n        let lineText = this.lines[position.line]\n        let lineEnd = this.positionAt(new vscode.Position(position.line + 1, 0))\n\n        return new TextLine(this, position, lineText, lineEnd)"
+      "if (typeof position === 'number') {\n            position = new vscode.Position(position, 0)\n        }\n        let lineText = this.lines[position.line]\n        return new TextLine(this, position, lineText)"
     ],
-    "elapsed": 27751,
-    "timestamp": "1690279713433",
+    "elapsed": 15840,
+    "timestamp": "1690287745522",
     "sample": {
       "context": [],
       "fileName": "text-document.ts",
@@ -40,21 +40,23 @@
   },
   {
     "completions": [
-      "return null"
+      "return null\n    }"
     ],
-    "elapsed": 4709,
-    "timestamp": "1690279713433",
+    "elapsed": 25022,
+    "timestamp": "1690287745522",
     "sample": {
       "context": [],
       "fileName": "getOs.ts",
       "languageId": "typescript",
-      "content": "import { execFileSync } from 'child_process'\n\nfunction getOSName(): string | null {\n    if (typeof window === 'undefined') {\n    ️🔥\n}"
+      "content": "import { execFileSync } from 'child_process'\n\nfunction getOSName(): string | null {\n    if (typeof window === 'undefined') {\n        ️🔥\n}"
     }
   },
   {
-    "completions": [],
-    "elapsed": 2,
-    "timestamp": "1690279713433",
+    "completions": [
+      "Media('(prefers-color-scheme: dark)').matches;"
+    ],
+    "elapsed": 1968,
+    "timestamp": "1690287745522",
     "sample": {
       "context": [],
       "fileName": "isDarkColorScheme.ts",
@@ -63,9 +65,11 @@
     }
   },
   {
-    "completions": [],
-    "elapsed": 1,
-    "timestamp": "1690279713433",
+    "completions": [
+      ".includes(\"localhost\")"
+    ],
+    "elapsed": 1019,
+    "timestamp": "1690287745522",
     "sample": {
       "context": [],
       "fileName": "isLocalhost.ts",
@@ -74,9 +78,11 @@
     }
   },
   {
-    "completions": [],
-    "elapsed": 508,
-    "timestamp": "1690279713433",
+    "completions": [
+      "return text.replace(/[^\\w-]+/g, \"-\").replace(/(^-+|-+$)/g, \"\");"
+    ],
+    "elapsed": 7792,
+    "timestamp": "1690287745522",
     "sample": {
       "context": [
         {
@@ -102,9 +108,11 @@
     }
   },
   {
-    "completions": [],
-    "elapsed": 415,
-    "timestamp": "1690279713433",
+    "completions": [
+      "var mockAnthropicValidResponseLines = []string{`{\"result\": {\"completions\": [{\"label\": \"foo\", \"detail\": \"bar\", \"textEdit\": {\"newText\": \"foo\", \"range\": {\"start\": {\"line\": 0, \"character\": 0}, \"end\": {\"line\": 0, \"character\": 0}}}}]}}`, `{\"result\": {\"completions\": [{\"label\": \"foo\", \"detail\": \"bar\", \"textEdit\": {\"newText\": \"foo\", \"range\": {\"start\": {\"line\": 0, \"character\": 0}, \"end\": {\"line\": 0, \"character\": 0}}}}]}}`}\n\n    mockClient := getMockClient(linesToResponse(mockAnthropicValidResponseLines))\n\n    completions, err := mockClient.GetCompletions(context.Background(), \"foo.go\", 0, 0)\n    require.NoError(t, err)\n    assert.Equal(t, []types.CompletionItem{{Label: \"foo\", Detail: \"bar\", TextEdit: types.TextEdit{NewText: \"foo\", Range: types.Range{Start: types.Position{Line: 0,"
+    ],
+    "elapsed": 25153,
+    "timestamp": "1690287745522",
     "sample": {
       "context": [
         {
@@ -130,9 +138,11 @@
     }
   },
   {
-    "completions": [],
-    "elapsed": 412,
-    "timestamp": "1690279713433",
+    "completions": [
+      "\"\"\"Test get open issues.\"\"\"\n    issues = api_client.get_open_issues()\n    assert isinstance(issues, list)\n    assert len(issues) > 0\n    assert isinstance(issues[0], Issue)"
+    ],
+    "elapsed": 5137,
+    "timestamp": "1690287745522",
     "sample": {
       "context": [
         {
@@ -162,9 +172,11 @@
     }
   },
   {
-    "completions": [],
-    "elapsed": 405,
-    "timestamp": "1690279713433",
+    "completions": [
+      "from_browser("
+    ],
+    "elapsed": 3369,
+    "timestamp": "1690287745522",
     "sample": {
       "context": [
         {
@@ -189,8 +201,8 @@
     "completions": [
       "cache,\n                providerConfig,\n                triggerMoreEagerly,"
     ],
-    "elapsed": 28673,
-    "timestamp": "1690279713433",
+    "elapsed": 24921,
+    "timestamp": "1690287745522",
     "sample": {
       "context": [
         {
