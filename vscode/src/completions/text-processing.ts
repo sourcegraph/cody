@@ -1,6 +1,6 @@
-import * as vscode from 'vscode'
-
+import { getLanguageConfig } from './language'
 import { isAlmostTheSameString } from './utils/string-comparator'
+import { getEditorTabSize, shouldIncludeClosingLine } from './utils/text-utils'
 
 export const OPENING_CODE_TAG = '<CODE5711>'
 export const CLOSING_CODE_TAG = '</CODE5711>'
@@ -27,10 +27,6 @@ export function extractFromCodeBlock(completion: string): string {
     const [result] = completion.split(CLOSING_CODE_TAG)
 
     return result.trimEnd()
-}
-
-export function getEditorTabSize(): number {
-    return vscode.window.activeTextEditor ? (vscode.window.activeTextEditor.options.tabSize as number) : 2
 }
 
 const INDENTATION_REGEX = /^[\t ]*/
@@ -133,7 +129,13 @@ function trimSpace(s: string): TrimmedString {
  * Oftentimes, the last couple of lines of the completion may match against the suffix
  * (the code following the cursor).
  */
-export function trimUntilSuffix(insertion: string, prefix: string, suffix: string): string {
+export function trimUntilSuffix(insertion: string, prefix: string, suffix: string, languageId: string): string {
+    const config = getLanguageConfig(languageId)
+
+    if (!config) {
+        return insertion
+    }
+
     insertion = insertion.trimEnd()
 
     const firstNonEmptySuffixLine = getFirstNonEmptyLine(suffix)
@@ -145,27 +147,43 @@ export function trimUntilSuffix(insertion: string, prefix: string, suffix: strin
         return insertion
     }
 
+    const prefixLastNewLine = prefix.lastIndexOf('\n')
+    const prefixIndentationWithFirstCompletionLine = prefix.slice(prefixLastNewLine + 1)
+    const suffixIndent = indentation(firstNonEmptySuffixLine)
+    const hasEmptyCompletionLine = prefixIndentationWithFirstCompletionLine.trim() === ''
+
+    const includeClosingLine = shouldIncludeClosingLine(prefixIndentationWithFirstCompletionLine, suffix)
     const insertionLines = insertion.split('\n')
-    let insertionEnd = insertionLines.length
+    let cutOffIndex = insertionLines.length
 
     for (let i = 0; i < insertionLines.length; i++) {
         let line = insertionLines[i]
 
         // Include the current indentation of the prefix in the first line
         if (i === 0) {
-            const lastNewlineOfPrefix = prefix.lastIndexOf('\n')
-            line = prefix.slice(lastNewlineOfPrefix + 1) + line
+            line = prefixIndentationWithFirstCompletionLine + line
         }
 
-        const isSameIndentation = indentation(line) <= indentation(firstNonEmptySuffixLine)
+        const lineIndentation = indentation(line)
+        const isSameIndentation = lineIndentation <= suffixIndent
+
+        if (
+            hasEmptyCompletionLine &&
+            includeClosingLine &&
+            config.blockEnd &&
+            line.trim().startsWith(config.blockEnd)
+        ) {
+            cutOffIndex = i
+            break
+        }
 
         if (isSameIndentation && isAlmostTheSameString(line, firstNonEmptySuffixLine)) {
-            insertionEnd = i
+            cutOffIndex = i
             break
         }
     }
 
-    return insertionLines.slice(0, insertionEnd).join('\n')
+    return insertionLines.slice(0, cutOffIndex).join('\n')
 }
 
 function getFirstNonEmptyLine(suffix: string): string {

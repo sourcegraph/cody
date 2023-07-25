@@ -947,13 +947,48 @@ describe('Cody completions', () => {
                 `
                 if (check) {
                     ${CURSOR_MARKER}
-                    console.log('two')
+                    const d = 5;
                 `,
                 [
                     createCompletionResponse(`
                     console.log('one')
                     }`),
                 ]
+            )
+
+            expect(completions[0].insertText).toBe("console.log('one')")
+        })
+
+        it('does not include block end character if there is already closed bracket', async () => {
+            const { completions } = await complete(
+                `
+                if (check) {
+                    ${CURSOR_MARKER}
+                }`,
+                [createCompletionResponse('}')]
+            )
+
+            expect(completions.length).toBe(0)
+        })
+
+        it('does not include block end character if there is already closed bracket [sort example]', async () => {
+            const { completions } = await complete(
+                `
+                 function bubbleSort(arr: number[]): number[] {
+                   for (let i = 0; i < arr.length; i++) {
+                     for (let j = 0; j < (arr.length - i - 1); j++) {
+                       if (arr[j] > arr[j + 1]) {
+                         // swap elements
+                         let temp = arr[j];
+                         arr[j] = arr[j + 1];
+                         arr[j + 1] = temp;
+                       }
+                       ${CURSOR_MARKER}
+                     }
+                   }
+                   return arr;
+                 }`,
+                [createCompletionResponse('}')]
             )
 
             expect(completions.length).toBe(0)
