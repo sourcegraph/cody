@@ -115,7 +115,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         private intentDetector: IntentDetector,
         private codebaseContext: CodebaseContext,
         private guardrails: Guardrails,
-        private editor: VSCodeEditor,
+        private readonly editor: VSCodeEditor,
         private secretStorage: SecretStorage,
         private localStorage: LocalStorage,
         private rgPath: string | null,
@@ -355,7 +355,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
     private sendPrompt(promptMessages: Message[], responsePrefix = ''): void {
         this.cancelCompletion()
         void vscode.commands.executeCommand('setContext', 'cody.reply.pending', true)
-        this.editor.controllers.inline.setResponsePending(true)
+        this.editor.controllers.inline?.setResponsePending(true)
 
         let text = ''
 
@@ -364,7 +364,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 text += content
                 const displayText = reformatBotMessage(text, responsePrefix)
                 this.transcript.addAssistantResponse(displayText)
-                this.editor.controllers.inline.reply(displayText, 'streaming')
+                this.editor.controllers.inline?.reply(displayText, 'streaming')
                 this.sendTranscript()
                 return Promise.resolve()
             },
@@ -387,7 +387,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                     // TODO(keegancsmith) guardrails may be slow, we need to make this async update the interaction.
                     highlightedDisplayText = await this.guardrailsAnnotateAttributions(highlightedDisplayText)
                     this.transcript.addAssistantResponse(text || '', highlightedDisplayText)
-                    this.editor.controllers.inline.reply(highlightedDisplayText, 'complete')
+                    this.editor.controllers.inline?.reply(highlightedDisplayText, 'complete')
                 }
                 void this.onCompletionEnd()
             },
@@ -423,7 +423,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 // We ignore embeddings errors in this instance because we're already showing an
                 // error message and don't want to overwhelm the user.
                 this.onCompletionEnd(true)
-                void this.editor.controllers.inline.error()
+                void this.editor.controllers.inline?.error()
                 console.error(`Completion request failed: ${err}`)
             },
         })
@@ -441,7 +441,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         void this.saveTranscriptToChatHistory()
         this.sendChatHistory()
         void vscode.commands.executeCommand('setContext', 'cody.reply.pending', false)
-        this.editor.controllers.inline.setResponsePending(false)
+        this.editor.controllers.inline?.setResponsePending(false)
         if (!ignoreEmbeddingsError) {
             this.logEmbeddingsSearchErrors()
         }
@@ -462,9 +462,9 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
 
     private async executeChatCommands(text: string, recipeID: RecipeID = 'chat-question'): Promise<void> {
         switch (true) {
-            case /^\/o(pen)?/i.test(text):
+            case /^\/o(pen)?/i.test(text) && this.editor.controllers.prompt !== undefined:
                 // open the user's ~/.vscode/cody.json file
-                await this.editor.controllers.prompt.open(text.split(' ')[1])
+                await this.editor.controllers.prompt?.open(text.split(' ')[1])
                 break
             case /^\/r(eset)?/i.test(text):
                 await this.clearAndRestartSession()
@@ -499,7 +499,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
 
         this.codebaseContext = codebaseContext
         await this.publishContextStatus()
-        this.editor.controllers.prompt.setCodebase(codebaseContext.getCodebase())
+        this.editor.controllers.prompt?.setCodebase(codebaseContext.getCodebase())
     }
 
     private async getPluginsContext(
@@ -616,7 +616,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
             default: {
                 this.sendTranscript()
 
-                const myPremade = this.editor.controllers.prompt.getMyPrompts().premade
+                const myPremade = this.editor.controllers.prompt?.getMyPrompts().premade
                 const { prompt, contextFiles } = await this.transcript.getPromptForLastInteraction(
                     getPreamble(this.codebaseContext.getCodebase(), myPremade),
                     this.maxPromptTokens,
@@ -651,7 +651,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         }
         transcript.addInteraction(interaction)
 
-        const myPremade = this.editor.controllers.prompt.getMyPrompts().premade
+        const myPremade = this.editor.controllers.prompt?.getMyPrompts().premade
         const { prompt, contextFiles } = await transcript.getPromptForLastInteraction(
             getPreamble(this.codebaseContext.getCodebase(), myPremade),
             this.maxPromptTokens
@@ -746,7 +746,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         }
         // Create a new recipe
         if (title === 'menu') {
-            await this.editor.controllers.prompt.menu()
+            await this.editor.controllers.prompt?.menu()
             await this.sendMyPrompts()
             return
         }
@@ -754,15 +754,15 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
             const fileType = title === 'add-workspace-file' ? 'workspace' : 'user'
             try {
                 // copy the cody.json file from the extension path and move it to the workspace root directory
-                await this.editor.controllers.prompt.addJSONFile(fileType)
+                await this.editor.controllers.prompt?.addJSONFile(fileType)
             } catch (error) {
                 void vscode.window.showErrorMessage(`Could not create a new cody.json file: ${error}`)
             }
             return
         }
         // Get prompt details from controller by title then execute prompt's command
-        const prompt = this.editor.controllers.prompt.find(title)
-        await this.editor.controllers.prompt.get('command')
+        const prompt = this.editor.controllers.prompt?.find(title)
+        await this.editor.controllers.prompt?.get('command')
         if (!prompt) {
             debug('executeCustomRecipe:noPrompt', title)
             return
@@ -778,8 +778,8 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
      */
     private async sendMyPrompts(): Promise<void> {
         const send = async (): Promise<void> => {
-            await this.editor.controllers.prompt.refresh()
-            const prompts = this.editor.controllers.prompt.getPromptList()
+            await this.editor.controllers.prompt?.refresh()
+            const prompts = this.editor.controllers.prompt?.getPromptList() ?? []
             void this.webview?.postMessage({
                 type: 'my-prompts',
                 prompts,
@@ -787,7 +787,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
             })
         }
         const init = (): void => {
-            this.editor.controllers.prompt.setMessager(send)
+            this.editor.controllers.prompt?.setMessager(send)
         }
         init()
         await send()
@@ -1093,6 +1093,9 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         if (!testing) {
             console.error('used ForTesting method without test support object')
             return []
+        }
+        if (!this.editor.controllers.fixups) {
+            throw new Error('no fixup controller')
         }
         return this.editor.controllers.fixups.getTasks()
     }

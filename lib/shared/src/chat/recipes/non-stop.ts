@@ -16,7 +16,7 @@ export class NonStop implements Recipe {
         if (!controllers) {
             return null
         }
-        const taskParameters = await controllers.fixups.getTaskRecipeData(taskId)
+        const taskParameters = await controllers.fixups?.getTaskRecipeData(taskId)
         if (!taskParameters) {
             // Nothing to do.
             return null

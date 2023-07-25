@@ -2,6 +2,7 @@ import * as vscode from 'vscode'
 
 import { Preamble } from '@sourcegraph/cody-shared/src/chat/preamble'
 import { defaultCodyPromptContext } from '@sourcegraph/cody-shared/src/chat/recipes/my-prompt'
+import { VsCodeMyPromptController } from '@sourcegraph/cody-shared/src/editor'
 
 import { debug } from '../log'
 
@@ -22,7 +23,7 @@ import { CodyPrompt, CodyPromptType, MyPrompts } from './types'
  * Provides additional prompt management and execution logic
  * NOTE: Dogfooding - Internal s2 users only
  */
-export class MyPromptController {
+export class MyPromptController implements VsCodeMyPromptController {
     private myPremade: Preamble | undefined = undefined
     private myStarter = ''
     private myPromptStore = new Map<string, CodyPrompt>()
