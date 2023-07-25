@@ -117,12 +117,12 @@ export class MyPrompt implements Recipe {
             // Select test files from the directory only if the prompt text includes 'test'
             const isTestRequest = text.includes('test')
             const currentDirContext = await MyPrompt.getCurrentDirContext(isTestRequest)
+            contextMessages.push(...currentDirContext)
             // Add package.json context if it's available for test requests
             if (isTestRequest) {
                 const packageJSONContextMessage = await MyPrompt.getPackageJsonContext(selection?.fileName)
-                currentDirContext.push(...packageJSONContextMessage)
+                contextMessages.push(...packageJSONContextMessage)
             }
-            contextMessages.push(...currentDirContext)
         }
         // Create context messages from a fsPath of a workspace directory
         if (isContextRequired.directoryPath?.length) {
@@ -147,7 +147,9 @@ export class MyPrompt implements Recipe {
             contextMessages.push(...MyPrompt.getTerminalOutputContext(commandOutput))
         }
         // Return the last n context messages in case there are too many
-        return contextMessages.slice(0 - NUM_CODE_RESULTS - NUM_TEXT_RESULTS)
+        // Make sure numResults is an even number and times 2 again to get the last n pairs
+        const maxResults = Math.floor((NUM_CODE_RESULTS + NUM_TEXT_RESULTS) / 2) * 2
+        return contextMessages.slice(-maxResults * 2)
     }
 
     // Get context from current editor open tabs
@@ -236,7 +238,7 @@ export class MyPrompt implements Recipe {
                 const filesInDir = (await vscode.workspace.fs.readDirectory(dirUri)).filter(
                     file => file[1] === 1 && !file[0].startsWith('.') && (testOnly ? file[0].includes('test') : true)
                 )
-                contextMessages.push(...(await populateVscodeDirContextMessage(dirUri, filesInDir.slice(0, 10))))
+                contextMessages.push(...(await populateVscodeDirContextMessage(dirUri, filesInDir)))
                 if (filesInDir.length > 1) {
                     return contextMessages
                 }
@@ -340,11 +342,7 @@ async function populateVscodeDirContextMessage(
 // Clean up the string to be used as value in JSON format
 // Escape double quotes and backslashes and forward slashes
 function toJSON(context: string): string {
-    const escaped = context
-        .replace(/\\/g, '\\\\')
-        .replace(/"/g, '\\"')
-        .replace(/\//g, '\\/')
-        .replace(/\n\/\//g, '\n')
+    const escaped = context.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\//g, '\\/').replace('/\n//', '\n')
     return JSON.stringify(escaped)
 }
 
