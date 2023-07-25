@@ -14,8 +14,7 @@ const AUTH_ERRORS = {
     EMAIL_NOT_VERIFIED: 'Email not verified. Please add a verified email to your Sourcegraph.com account.',
     APP_NOT_RUNNING: 'Cody App is not running. Please open the Cody App to continue.',
     INVALID_URL: 'Connection failed due to invalid URL. Please enter a valid Sourcegraph instance URL.',
-    NETWORK_ERROR:
-        'Due to network-related problems, Cody cannot be reached. Try again after checking it! Once your connection is restored, attempt a reload.',
+    NETWORK_ERROR: 'Connection failed due to a network problem. Please check your internet connection and try again.',
 }
 export const ErrorContainer: React.FunctionComponent<{
     authStatus: AuthStatus
@@ -54,7 +53,7 @@ export const ErrorContainer: React.FunctionComponent<{
     const prefix = `Failed: ${isApp.isRunning ? 'Cody App' : endpoint}`
 
     const handleReload = (): void => {
-        getVSCodeAPI().postMessage({ command: 'settings', serverEndpoint: '', accessToken: '' })
+        getVSCodeAPI().postMessage({ command: 'reload' })
     }
 
     // When there's a network error

@@ -39,6 +39,7 @@ export type WebviewMessage =
     | { command: 'chat-button'; action: string }
     | { command: 'setEnabledPlugins'; plugins: string[] }
     | { command: 'my-prompt'; title: string }
+    | { command: 'reload' }
 
 /**
  * A message sent from the extension host to the webview.

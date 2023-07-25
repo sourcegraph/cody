@@ -34,7 +34,7 @@ import { debug } from '../log'
 import { getRerankWithLog } from '../logged-rerank'
 import { FixupTask } from '../non-stop/FixupTask'
 import { IdleRecipeRunner } from '../non-stop/roles'
-import { AuthProvider } from '../services/AuthProvider'
+import { AuthProvider, isNetworkError } from '../services/AuthProvider'
 import { logEvent } from '../services/EventLogger'
 import { LocalStorage } from '../services/LocalStorageProvider'
 import { SecretStorage } from '../services/SecretStorageProvider'
@@ -278,12 +278,16 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 // cody.auth.signin or cody.auth.signout
                 await vscode.commands.executeCommand(`cody.auth.${message.type}`)
                 break
-            case 'settings': {
-                const endpoint = message.serverEndpoint.length ? message.serverEndpoint : this.config.serverEndpoint
-                const token = message.accessToken.length ? message.accessToken : this.config.accessToken
-                await this.authProvider.auth(endpoint, token, this.config.customHeaders)
+            case 'settings':
+                await this.authProvider.auth(message.serverEndpoint, message.accessToken, this.config.customHeaders)
                 break
-            }
+            case 'reload':
+                await this.authProvider.auth(
+                    this.config.serverEndpoint,
+                    this.config.accessToken,
+                    this.config.customHeaders
+                )
+                break
             case 'insert':
                 await this.insertAtCursor(message.text)
                 break
@@ -420,6 +424,9 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                         .auth(this.config.serverEndpoint, this.config.accessToken, this.config.customHeaders)
                         .catch(error => console.error(error))
                     debug('ChatViewProvider:onError:unauthUser', err, { verbose: { statusCode } })
+                }
+                if (isNetworkError(err)) {
+                    err = 'Cody could not respond due to a network error.'
                 }
                 // Display error message as assistant response
                 this.transcript.addErrorAsAssistantResponse(err)
