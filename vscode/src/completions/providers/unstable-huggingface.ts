@@ -2,6 +2,8 @@ import fetch from 'isomorphic-fetch'
 
 import { Completion } from '..'
 import { logger } from '../../log'
+import { ReferenceSnippet } from '../context'
+import { getLanguageConfig } from '../language'
 import { isAbortError } from '../utils'
 
 import { Provider, ProviderConfig, ProviderOptions } from './provider'
@@ -13,6 +15,7 @@ interface UnstableHuggingFaceOptions {
 
 const PROVIDER_IDENTIFIER = 'huggingface'
 const STOP_WORD = '<|endoftext|>'
+const CONTEXT_WINDOW_CHARS = 4000 // ~ 1280 token limit
 
 export class UnstableHuggingFaceProvider extends Provider {
     private serverEndpoint: string
@@ -24,10 +27,42 @@ export class UnstableHuggingFaceProvider extends Provider {
         this.accessToken = unstableHuggingFaceOptions.accessToken
     }
 
-    public async generateCompletions(abortSignal: AbortSignal): Promise<Completion[]> {
-        // TODO: Add context and language
-        // Prompt format is taken form https://huggingface.co/bigcode/starcoder#fill-in-the-middle
-        const prompt = `<fim_prefix>${this.options.prefix}<fim_suffix>${this.options.suffix}<fim_middle>`
+    private createPrompt(snippets: ReferenceSnippet[]): string {
+        const maxPromptChars = CONTEXT_WINDOW_CHARS - CONTEXT_WINDOW_CHARS * this.options.responsePercentage
+
+        const intro: string[] = []
+        let prompt = ''
+
+        const languageConfig = getLanguageConfig(this.options.languageId)
+        if (languageConfig) {
+            intro.push(`Path: ${this.options.fileName}`)
+        }
+
+        for (let snippetsToInclude = 0; snippetsToInclude < snippets.length + 1; snippetsToInclude++) {
+            if (prompt.length >= maxPromptChars) {
+                return prompt
+            }
+
+            if (snippetsToInclude > 0) {
+                const snippet = snippets[snippetsToInclude - 1]
+                intro.push(`Here is a reference snippet of code from ${snippet.fileName}:\n${snippet.content}`)
+            }
+
+            const introString = intro
+                .join('\n\n')
+                .split('\n')
+                .map(line => (languageConfig ? languageConfig.commentStart + line : ''))
+                .join('\n')
+
+            // Prompt format is taken form https://huggingface.co/bigcode/starcoder#fill-in-the-middle
+            prompt = `<fim_prefix>${introString}${this.options.prefix}<fim_suffix>${this.options.suffix}<fim_middle>`
+        }
+
+        return prompt
+    }
+
+    public async generateCompletions(abortSignal: AbortSignal, snippets: ReferenceSnippet[]): Promise<Completion[]> {
+        const prompt = this.createPrompt(snippets)
 
         const request = {
             inputs: prompt,
@@ -35,7 +70,7 @@ export class UnstableHuggingFaceProvider extends Provider {
                 num_return_sequences: 1,
                 // To speed up sample generation in single-line case, we request a lower token limit
                 // since we can't terminate on the first `\n`.
-                max_new_tokens: this.options.multiline ? 64 : 256,
+                max_new_tokens: this.options.multiline ? 50 : 256,
             },
         }
 
@@ -92,12 +127,11 @@ function postProcess(content: string, multiline: boolean): string {
 }
 
 export function createProviderConfig(unstableHuggingFaceOptions: UnstableHuggingFaceOptions): ProviderConfig {
-    const contextWindowChars = 8_000 // ~ 2k token limit
     return {
         create(options: ProviderOptions) {
             return new UnstableHuggingFaceProvider(options, unstableHuggingFaceOptions)
         },
-        maximumContextCharacters: contextWindowChars,
+        maximumContextCharacters: CONTEXT_WINDOW_CHARS,
         enableExtendedMultilineTriggers: true,
         identifier: PROVIDER_IDENTIFIER,
     }

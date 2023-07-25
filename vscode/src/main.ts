@@ -15,10 +15,7 @@ import { CompletionsCache } from './completions/cache'
 import { CompletionsDocumentProvider } from './completions/docprovider'
 import { History } from './completions/history'
 import * as CompletionsLogger from './completions/logger'
-import { createProviderConfig as createAnthropicProviderConfig } from './completions/providers/anthropic'
-import { ProviderConfig } from './completions/providers/provider'
-import { createProviderConfig as createUnstableCodeGenProviderConfig } from './completions/providers/unstable-codegen'
-import { createProviderConfig as createUnstableHuggingFaceProviderConfig } from './completions/providers/unstable-huggingface'
+import { createProviderConfig } from './completions/providers/createProvider'
 import { registerAutocompleteTraceView } from './completions/tracer/traceView'
 import { getConfiguration, getFullConfig, migrateConfiguration } from './configuration'
 import { VSCodeEditor } from './editor/vscode-editor'
@@ -420,7 +417,7 @@ function createCompletionsProvider(
     disposables.push(vscode.workspace.registerTextDocumentContentProvider('cody', documentProvider))
 
     const history = new History()
-    const providerConfig = createCompletionProviderConfig(config, webviewErrorMessenger, completionsClient)
+    const providerConfig = createProviderConfig(config, webviewErrorMessenger, completionsClient)
     const completionsProvider = new CodyCompletionItemProvider({
         providerConfig,
         history,
@@ -446,49 +443,4 @@ function createCompletionsProvider(
             }
         },
     }
-}
-
-function createCompletionProviderConfig(
-    config: Configuration,
-    webviewErrorMessenger: (error: string) => Promise<void>,
-    completionsClient: SourcegraphNodeCompletionsClient
-): ProviderConfig {
-    let providerConfig: null | ProviderConfig = null
-    switch (config.autocompleteAdvancedProvider) {
-        case 'unstable-codegen': {
-            if (config.autocompleteAdvancedServerEndpoint !== null) {
-                providerConfig = createUnstableCodeGenProviderConfig({
-                    serverEndpoint: config.autocompleteAdvancedServerEndpoint,
-                })
-            }
-
-            // eslint-disable-next-line @typescript-eslint/no-floating-promises
-            webviewErrorMessenger(
-                'Provider `unstable-codegen` can not be used without configuring `cody.autocomplete.advanced.serverEndpoint`. Falling back to `anthropic`.'
-            )
-            break
-        }
-        case 'unstable-huggingface': {
-            if (config.autocompleteAdvancedServerEndpoint !== null) {
-                providerConfig = createUnstableHuggingFaceProviderConfig({
-                    serverEndpoint: config.autocompleteAdvancedServerEndpoint,
-                    accessToken: config.autocompleteAdvancedAccessToken,
-                })
-            }
-
-            // eslint-disable-next-line @typescript-eslint/no-floating-promises
-            webviewErrorMessenger(
-                'Provider `unstable-huggingface` can not be used without configuring `cody.autocomplete.advanced.serverEndpoint`. Falling back to `anthropic`.'
-            )
-            break
-        }
-    }
-    if (providerConfig) {
-        return providerConfig
-    }
-
-    return createAnthropicProviderConfig({
-        completionsClient,
-        contextWindowTokens: 2048,
-    })
 }
