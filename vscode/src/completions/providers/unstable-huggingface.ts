@@ -71,7 +71,7 @@ export class UnstableHuggingFaceProvider extends Provider {
                 num_return_sequences: this.options.n,
                 // To speed up sample generation in single-line case, we request a lower token limit
                 // since we can't terminate on the first `\n`.
-                max_new_tokens: this.options.multiline ? 40 : 256,
+                max_new_tokens: this.options.multiline ? 256 : 40,
             },
         }
 
