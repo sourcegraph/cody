@@ -45,25 +45,23 @@ export const Recipes: React.FunctionComponent<{
                                     className={styles.recipesHeader}
                                 >
                                     <span>Custom Recipes - Experimental</span>
-                                    {myPrompts?.length > 0 && (
-                                        <VSCodeButton
-                                            type="button"
-                                            appearance="icon"
-                                            onClick={() => onMyPromptClick('menu')}
-                                        >
-                                            <i className="codicon codicon-tools" title="Custom Recipes Menu" />
-                                        </VSCodeButton>
-                                    )}
+                                    <VSCodeButton
+                                        type="button"
+                                        appearance="icon"
+                                        onClick={() => onMyPromptClick('menu')}
+                                        disabled={!myPrompts?.length}
+                                    >
+                                        <i className="codicon codicon-tools" title="Custom Recipes Quick Pick Menu" />
+                                    </VSCodeButton>
                                 </div>
-                                {myPrompts?.length === 0 && (
-                                    <small className={styles.recipesNotes}>
-                                        To get started, select a custom recipe type below to generate a new `cody.json`
-                                        file containing sample recipes.
-                                    </small>
-                                )}
                             </div>
                             {!myPrompts?.length && (
                                 <>
+                                    {myPrompts?.length === 0 && (
+                                        <small className={styles.recipesNotes}>
+                                            Select a recipe type below to get started:
+                                        </small>
+                                    )}
                                     <VSCodeButton
                                         className={styles.recipeButton}
                                         type="button"
