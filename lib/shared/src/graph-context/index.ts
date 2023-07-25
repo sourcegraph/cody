@@ -15,7 +15,9 @@ export abstract class GraphContextFetcher {
     // TODO - move into editor interface
     public abstract getGitInfo(workspaceRoot: string): Promise<GitInfo>
 
-    constructor(private graphqlClient: SourcegraphGraphQLAPIClient, private editor: Editor) {}
+    constructor(private graphqlClient: SourcegraphGraphQLAPIClient, private editor: Editor) {
+        console.log('🚀 ~ file: index.ts:36 ~ GraphContextFetcher ~ constructor ~ editor:', editor)
+    }
 
     public async getContext(): Promise<PreciseContextResult[]> {
         const editorContext = this.editor.getActiveTextEditor()
