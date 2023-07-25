@@ -81,7 +81,7 @@ export function createStatusBar(): CodyStatusBar {
                 ),
                 createFeatureToggle(
                     'Custom Recipes',
-                    'Internal Experimental',
+                    'Experimental',
                     'Enable creating custom recipes with reusable prompts and context',
                     'cody.experimental.customRecipes',
                     c => c.experimentalCustomRecipes

@@ -50,6 +50,7 @@ export class MyToolsProvider {
         // Replace the ~/ with the home directory if arg starts with ~/
         const filteredArgs = args.map(arg => arg.replace(/^~\//, homeDir))
         const fullCommand = `${command} ${args.join(' ')}`
+        const terminalWarning = 'Please make sure the command works in your terminal before trying again.'
         try {
             const output =
                 spawnSync(command, filteredArgs, {
@@ -57,20 +58,16 @@ export class MyToolsProvider {
                     encoding: 'utf8',
                 }) || ''
             // stringify the output of the command first
-            const outputString = output.stdout?.trim()
+            const outputString = output.stdout?.trim() || ''
             if (!outputString) {
-                void vscode.window.showInformationMessage(
-                    `No output return from ${fullCommand}. Please make sure the command works in your terminal before trying again.`
-                )
+                void vscode.window.showInformationMessage(`No output return from ${fullCommand}. ${terminalWarning}`)
+                return outputString
             }
-            return outputString
-                ? outputWrapper.replace('{command}', fullCommand).replace('{output}', JSON.stringify(outputString))
-                : ''
+            debug('MyToolsProvider:runCommand', command, { verbose: JSON.stringify(outputString) })
+            return outputWrapper.replace('{command}', fullCommand).replace('{output}', JSON.stringify(outputString))
         } catch (error) {
             // handle error
-            void vscode.window.showInformationMessage(
-                `Failed to run ${fullCommand}. Please make sure the command works in your terminal before trying again.`
-            )
+            void vscode.window.showInformationMessage(`Failed to run ${fullCommand}. ${terminalWarning}`)
             debug('MyToolsProvider:runCommand', 'failed', { verbose: error })
             return ''
         }
@@ -92,7 +89,8 @@ export class MyToolsProvider {
             if (!outputString) {
                 throw new Error('Empty output')
             }
-            return outputWrapper.replace('{command}', command).replace('{output}', outputString)
+            debug('MyToolsProvider:exeCommand', command, { verbose: JSON.stringify(outputString) })
+            return outputWrapper.replace('{command}', command).replace('{output}', JSON.stringify(outputString))
         } catch (error) {
             debug('MyToolsProvider:exeCommand', 'failed', { verbose: error })
             void vscode.window.showErrorMessage(

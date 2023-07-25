@@ -442,7 +442,7 @@
       {
         "command": "cody.customRecipes.list",
         "category": "Cody",
-        "title": "Custom Recipes (Internal Experimental)",
+        "title": "Custom Recipes (Experimental)",
         "when": "cody.activated",
         "enablement": "config.cody.experimental.customRecipes",
         "icon": "$(bookmark)"
@@ -844,7 +844,7 @@
         "cody.experimental.customRecipes": {
           "order": 9,
           "type": "boolean",
-          "markdownDescription": "[Internal Experimental] Create reusable recipes with customized prompts and context tailored to your workflow.",
+          "markdownDescription": "[Experimental] Create reusable recipes with customized prompts and context tailored to your workflow.",
           "default": false
         },
         "cody.debug.enable": {
