@@ -4,8 +4,9 @@ export function constructFileUri(fileName: string, rootDirPath?: string): vscode
     if (!rootDirPath) {
         return undefined
     }
-    const rootDirUri = vscode.Uri.parse(rootDirPath)
-    const codyJsonFilePath = vscode.Uri.joinPath(rootDirUri, fileName)
+    const fileNamePaths = fileName.split('/')
+    const rootDirUri = vscode.Uri.file(rootDirPath)
+    const codyJsonFilePath = vscode.Uri.joinPath(rootDirUri, ...fileNamePaths)
     return codyJsonFilePath
 }
 
