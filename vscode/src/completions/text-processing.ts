@@ -1,6 +1,6 @@
 import { getLanguageConfig } from './language'
 import { isAlmostTheSameString } from './utils/string-comparator'
-import { getEditorTabSize, shouldIncludeClosingLine } from './utils/text-utils'
+import { getEditorTabSize } from './utils/text-utils'
 
 export const OPENING_CODE_TAG = '<CODE5711>'
 export const CLOSING_CODE_TAG = '</CODE5711>'
@@ -152,7 +152,6 @@ export function trimUntilSuffix(insertion: string, prefix: string, suffix: strin
     const suffixIndent = indentation(firstNonEmptySuffixLine)
     const hasEmptyCompletionLine = prefixIndentationWithFirstCompletionLine.trim() === ''
 
-    const includeClosingLine = shouldIncludeClosingLine(prefixIndentationWithFirstCompletionLine, suffix)
     const insertionLines = insertion.split('\n')
     let cutOffIndex = insertionLines.length
 
@@ -167,12 +166,7 @@ export function trimUntilSuffix(insertion: string, prefix: string, suffix: strin
         const lineIndentation = indentation(line)
         const isSameIndentation = lineIndentation <= suffixIndent
 
-        if (
-            hasEmptyCompletionLine &&
-            includeClosingLine &&
-            config.blockEnd &&
-            line.trim().startsWith(config.blockEnd)
-        ) {
+        if (hasEmptyCompletionLine && config.blockEnd && line.trim().startsWith(config.blockEnd)) {
             cutOffIndex = i
             break
         }
