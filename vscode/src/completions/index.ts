@@ -9,6 +9,7 @@ import { debug } from '../log'
 import { CodyStatusBar } from '../services/StatusBar'
 
 import { CachedCompletions, CompletionsCache } from './cache'
+import { CacheRequest } from './cache/cache'
 import { getContext, GetContextOptions, GetContextResult } from './context'
 import { getCurrentDocContext } from './document'
 import { History } from './history'
@@ -176,34 +177,22 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
             this.config.providerConfig.enableExtendedMultilineTriggers
         )
 
-        // Avoid showing completions when we're deleting code (Cody can only insert code at the
-        // moment)
-        const lastChange = this.lastContentChanges.get(document.fileName) ?? 'add'
-        if (lastChange === 'del') {
-            // When a line was deleted, only look up cached items and only include them if the
-            // untruncated prefix matches. This fixes some weird issues where the completion would
-            // render if you insert whitespace but not on the original place when you delete it
-            // again
-            const cachedCompletions = this.config.cache?.get(docContext.prefix, false)
-            if (cachedCompletions?.isExactPrefix) {
-                tracer?.({ cacheHit: true })
-                return this.handleCacheHit(
-                    cachedCompletions,
-                    document,
-                    context,
-                    position,
-                    docContext.prefix,
-                    docContext.suffix,
-                    multiline,
-                    document.languageId,
-                    abortController.signal
-                )
-            }
-            return { items: [] }
-        }
+        const lastChangeIsDeletion = this.lastContentChanges.get(document.fileName) === 'del'
+        const cacheRequest: CacheRequest = {
+            prefix: docContext.prefix,
 
-        const cachedCompletions = this.config.cache?.get(docContext.prefix)
+            // Avoid showing completions when we're deleting code (Cody can only insert code at the
+            // moment). When a line was deleted, only look up cached items and only include them if the
+            // untruncated prefix matches. This fixes some weird issues where the completion would
+            // render if you insert whitespace but not on the original place when you delete it again.
+            trim: !lastChangeIsDeletion,
+        }
+        const cachedCompletions = this.config.cache?.get(cacheRequest)
         if (cachedCompletions) {
+            if (lastChangeIsDeletion && !cachedCompletions.isExactPrefix) {
+                return { items: [] }
+            }
+
             tracer?.({ cacheHit: true })
             return this.handleCacheHit(
                 cachedCompletions,

@@ -9,6 +9,18 @@ export interface CachedCompletions {
     completions: Completion[]
 }
 
+export interface CacheRequest {
+    /**
+     * The prefix (up to the cursor) of the source file where the completion request was triggered.
+     */
+    prefix: string
+
+    /**
+     * Whether to trim trailing whitespace on the last line of the prefix.
+     */
+    trim: boolean
+}
+
 export class CompletionsCache {
     private cache = new LRUCache<string, CachedCompletions>({
         max: 500, // Maximum input prefixes in the cache.
@@ -22,7 +34,7 @@ export class CompletionsCache {
     // account. We need to add additional information like file path or suffix
     // to make sure the cache does not return undesired results for other files
     // in the same project.
-    public get(prefix: string, trim: boolean = true): CachedCompletions | undefined {
+    public get({ prefix, trim }: CacheRequest): CachedCompletions | undefined {
         const trimmedPrefix = trim ? trimEndOnLastLineIfWhitespaceOnly(prefix) : prefix
         const result = this.cache.get(trimmedPrefix)
 

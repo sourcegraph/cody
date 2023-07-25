@@ -101,7 +101,7 @@ export class RequestManager {
         }
 
         for (const request of requests) {
-            const cachedCompletions = this.completionsCache?.get(request.prefix)
+            const cachedCompletions = this.completionsCache?.get({ prefix: request.prefix, trim: true })
             if (cachedCompletions) {
                 logCompletionEvent('synthesizedFromParallelRequest')
                 request.resolve(cachedCompletions.completions)

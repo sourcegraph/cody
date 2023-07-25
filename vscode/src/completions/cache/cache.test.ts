@@ -7,7 +7,7 @@ describe('CompletionsCache', () => {
         const cache = new CompletionsCache()
         cache.add('id1', [{ prefix: 'foo\n', content: 'bar' }])
 
-        expect(cache.get('foo\n')).toEqual({
+        expect(cache.get({ prefix: 'foo\n', trim: true })).toEqual({
             logId: 'id1',
             isExactPrefix: true,
             completions: [{ prefix: 'foo\n', content: 'bar' }],
@@ -18,12 +18,12 @@ describe('CompletionsCache', () => {
         const cache = new CompletionsCache()
         cache.add('id1', [{ prefix: 'foo\n', content: 'bar' }])
 
-        expect(cache.get('foo\nb')).toEqual({
+        expect(cache.get({ prefix: 'foo\nb', trim: true })).toEqual({
             logId: 'id1',
             isExactPrefix: false,
             completions: [{ prefix: 'foo\nb', content: 'ar' }],
         })
-        expect(cache.get('foo\nba')).toEqual({
+        expect(cache.get({ prefix: 'foo\nba', trim: true })).toEqual({
             logId: 'id1',
             isExactPrefix: false,
             completions: [{ prefix: 'foo\nba', content: 'r' }],
@@ -34,45 +34,45 @@ describe('CompletionsCache', () => {
         const cache = new CompletionsCache()
         cache.add('id1', [{ prefix: 'foo \n  ', content: 'bar' }])
 
-        expect(cache.get('foo \n  ', true)).toEqual({
+        expect(cache.get({ prefix: 'foo \n  ', trim: true })).toEqual({
             logId: 'id1',
             isExactPrefix: false,
             completions: [{ prefix: 'foo \n  ', content: 'bar' }],
         })
-        expect(cache.get('foo \n ', true)).toEqual({
+        expect(cache.get({ prefix: 'foo \n ', trim: true })).toEqual({
             logId: 'id1',
             isExactPrefix: false,
             completions: [{ prefix: 'foo \n ', content: 'bar' }],
         })
-        expect(cache.get('foo \n', true)).toEqual({
+        expect(cache.get({ prefix: 'foo \n', trim: true })).toEqual({
             logId: 'id1',
             isExactPrefix: false,
             completions: [{ prefix: 'foo \n', content: 'bar' }],
         })
-        expect(cache.get('foo ', true)).toEqual(undefined)
+        expect(cache.get({ prefix: 'foo ', trim: true })).toEqual(undefined)
     })
 
     it('does not trim trailing whitespace on non-empty line', () => {
         const cache = new CompletionsCache()
         cache.add('id1', [{ prefix: 'foo', content: 'bar' }])
 
-        expect(cache.get('foo', true)).toEqual({
+        expect(cache.get({ prefix: 'foo', trim: true })).toEqual({
             logId: 'id1',
             isExactPrefix: true,
             completions: [{ prefix: 'foo', content: 'bar' }],
         })
-        expect(cache.get('foo ', true)).toEqual(undefined)
-        expect(cache.get('foo  ', true)).toEqual(undefined)
-        expect(cache.get('foo \n', true)).toEqual(undefined)
-        expect(cache.get('foo\n', true)).toEqual(undefined)
-        expect(cache.get('foo\t', true)).toEqual(undefined)
+        expect(cache.get({ prefix: 'foo ', trim: true })).toEqual(undefined)
+        expect(cache.get({ prefix: 'foo  ', trim: true })).toEqual(undefined)
+        expect(cache.get({ prefix: 'foo \n', trim: true })).toEqual(undefined)
+        expect(cache.get({ prefix: 'foo\n', trim: true })).toEqual(undefined)
+        expect(cache.get({ prefix: 'foo\t', trim: true })).toEqual(undefined)
     })
 
     it('has a lookup function for untrimmed prefixes', () => {
         const cache = new CompletionsCache()
         cache.add('id1', [{ prefix: 'foo\n  ', content: 'baz' }])
 
-        expect(cache.get('foo\n  ', false)).toEqual({
+        expect(cache.get({ prefix: 'foo\n  ', trim: false })).toEqual({
             logId: 'id1',
             isExactPrefix: true,
             completions: [
@@ -82,6 +82,6 @@ describe('CompletionsCache', () => {
                 },
             ],
         })
-        expect(cache.get('foo\n ', false)).toEqual(undefined)
+        expect(cache.get({ prefix: 'foo\n ', trim: false })).toEqual(undefined)
     })
 })
