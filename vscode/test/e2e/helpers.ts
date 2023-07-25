@@ -13,7 +13,7 @@ export const test = base
         page: async ({ page: _page }, use, testInfo) => {
             void _page
 
-            const codyRoot = path.resolve(__dirname, '..', '..')
+            const codyRoot = path.resolve(__dirname, '..', '..', '..')
 
             const vscodeExecutablePath = await downloadAndUnzipVSCode('1.79.2')
             const extensionDevelopmentPath = codyRoot
