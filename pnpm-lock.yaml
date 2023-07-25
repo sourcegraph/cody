@@ -182,6 +182,9 @@ importers:
       '@types/compression':
         specifier: ^1.7.2
         version: 1.7.2
+      '@types/marked':
+        specifier: ^4.0.3
+        version: 4.0.3
       '@types/morgan':
         specifier: ^1.9.4
         version: 1.9.4

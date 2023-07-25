@@ -28,6 +28,7 @@
   "devDependencies": {
     "@remix-run/dev": "^1.17.0",
     "@types/compression": "^1.7.2",
+    "@types/marked": "^4.0.3",
     "@types/morgan": "^1.9.4",
     "@types/react-table": "^7.7.14",
     "cross-env": "^7.0.3",
