@@ -19,7 +19,7 @@ export async function showCustomRecipeMenu(): Promise<answerType | void> {
         { kind: 0, label: 'Delete Recipes Settings', id: 'delete' },
     ]
     const inputOptions = {
-        title: 'Cody: Custom Recipes (Internal Experimental)',
+        title: 'Cody: Custom Recipes (Experimental)',
         placeHolder: 'Select an option to continue or ESC to cancel',
     }
     const selectedOption = await vscode.window.showQuickPick(options, inputOptions)

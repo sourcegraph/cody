@@ -243,16 +243,12 @@ export class MyPrompt implements Recipe {
                 const parentDirName = getParentDirName(dirPath)
                 const fileExt = currentFileName ? getFileExtension(currentFileName) : '*'
                 // Search foe files in directory with test in the name
-                const testDirFiles = await vscode.workspace.findFiles(
-                    `**/${parentDirName}/test*/**/*.${fileExt}`,
-                    '**/node_modules/**',
-                    5
-                )
+                const testDirFiles = await vscode.workspace.findFiles(`**/test*/**/*.${fileExt}`, undefined, 5)
                 contextMessages.push(...(await getContextMessageFromFiles(testDirFiles)))
                 // Search for test files from the parent directory
                 const testFile = await vscode.workspace.findFiles(
-                    `**/${parentDirName}/**/*test.${fileExt}}`,
-                    '**/node_modules/**',
+                    `**/${parentDirName}/**/*test*.${fileExt}}`,
+                    undefined,
                     5
                 )
                 contextMessages.push(...(await getContextMessageFromFiles(testFile)))

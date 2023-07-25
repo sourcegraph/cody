@@ -51,7 +51,7 @@ export const Recipes: React.FunctionComponent<{
                                             appearance="icon"
                                             onClick={() => onMyPromptClick('menu')}
                                         >
-                                            <i className="codicon codicon-tools" title="Update your custom recipes" />
+                                            <i className="codicon codicon-tools" title="Custom Recipes Menu" />
                                         </VSCodeButton>
                                     )}
                                 </div>
