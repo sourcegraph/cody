@@ -5,7 +5,7 @@ import { truncateText, truncateTextStart } from '../../prompt/truncation'
 import { BufferedBotResponseSubscriber } from '../bot-response-multiplexer'
 import { Interaction } from '../transcript/interaction'
 
-import { contentSanitizer, numResults } from './helpers'
+import { contentSanitizer } from './helpers'
 import { Recipe, RecipeContext, RecipeID } from './recipe'
 
 export class Fixup implements Recipe {
@@ -32,7 +32,6 @@ export class Fixup implements Recipe {
         // TODO: Move prompt suffix from recipe to chat view. It has other subscribers.
         const promptText = Fixup.prompt
             .replace('{humanInput}', truncateText(humanChatInput, MAX_HUMAN_INPUT_TOKENS))
-            .replace('{responseMultiplexerPrompt}', context.responseMultiplexer.prompt())
             .replace('{truncateFollowingText}', truncateText(selection.followingText, quarterFileContext))
             .replace('{selectedText}', selection.selectedText)
             .replace('{truncateTextStart}', truncateTextStart(selection.precedingText, quarterFileContext))
@@ -75,28 +74,42 @@ export class Fixup implements Recipe {
 
     // Get context from editor
     private async getContextMessages(text: string, codebaseContext: CodebaseContext): Promise<ContextMessage[]> {
-        const contextMessages: ContextMessage[] = await codebaseContext.getContextMessages(text, numResults)
-        return contextMessages
+        // const contextMessages: ContextMessage[] = await codebaseContext.getContextMessages(text, numResults)
+        return Promise.resolve([])
     }
+
+    public static readonly promptPreamble = ''
 
     // Prompt Templates
     public static readonly prompt = `
-    This is part of the file {fileName}. The part of the file I have selected is highlighted with <selection> tags. You are helping me to work on that part as my coding assistant.
-    Follow the instructions in the selected part plus the additional instructions to produce a rewritten replacement for only the selected part.
-    Put the rewritten replacement inside <selection> tags. I only want to see the code within <selection>.
-    Do not move code from outside the selection into the selection in your reply.
-    Do not remove code inside the <selection> tags that might be being used by the code outside the <selection> tags.
-    It is OK to provide some commentary within the replacement <selection>.
-    It is not acceptable to enclose the rewritten replacement with markdowns.
-    Only provide me with the replacement <selection> and nothing else.
-    If it doesn't make sense, you do not need to provide <selection>. Instead, tell me how I can help you to understand my request.
+    - You are an AI programming assistant who is an expert in rewriting code to meet given instructions.
+    - You should think step-by-step to plan your rewritten code before producing the final output.
+    - You should use code above and below the selection to help you plan your rewritten code.
+    - You should use code below the selection to help you plan your rewritten code.
+    - Unless you have reason to believe otherwise, you should assume that the user wants you to edit the code in their selection.
+    - It is not acceptable to use Markdown in your response. You should not produce Markdown-formatted code blocks.
+    - Enclose your response in <selection></selection> XML tags. Do not provide anything else.
 
-    \`\`\`
-    {truncateTextStart}<selection>{selectedText}</selection>{truncateFollowingText}
-    \`\`\`
+    This is part of the file {fileName}.
 
-    Additional Instruction:
-    - {humanInput}
-    - {responseMultiplexerPrompt}
+    I have the following code above my selection:
+    <aboveCode>
+    {truncateTextStart}
+    </aboveCode>
+
+    I have the following code below my selection:
+    <belowCode>
+    {truncateFollowingText}
+    </belowCode>
+
+    I have the following code in my selection:
+    <selectedCode>
+    {selectedText}
+    </selectedCode>
+
+    I'd like you to rewrite it using the following instructions
+    <instructions>
+    {humanInput}
+    </instructions>
 `
 }
