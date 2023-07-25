@@ -5,40 +5,34 @@ import { defaultCodyPromptContext } from '@sourcegraph/cody-shared/src/chat/reci
 import { prompt_creation_title } from './helper'
 import { CodyPrompt, CodyPromptType } from './types'
 
-export type answerType = 'add' | 'file' | 'delete' | 'list' | 'open' | 'cancel'
+export type answerType = 'add' | 'open-workspace' | 'open-user' | 'delete'
 
 export async function showCustomRecipeMenu(): Promise<answerType | void> {
     const options = [
-        { kind: -1, label: 'recipes manager', id: 'seperator' },
-        { kind: 0, label: 'Create New User Recipe', id: 'add' },
-        { kind: 0, label: 'My Custom Recipes', id: 'list' },
-        { kind: -1, label: '.vscode/cody.json', id: 'seperator' },
-        { kind: 0, label: 'Generate Recipes Config File', id: 'file' },
-        { kind: 0, label: 'Delete Recipes Config File', id: 'delete' },
-        { kind: 0, label: 'Open Recipes Config File', id: 'open' },
+        { kind: 0, label: 'Create New Recipe...', id: 'add' },
+        { kind: 0, label: 'Open Workspace Recipe Settings (JSON)', description: '.vscode/cody.json', id: 'open-workspace' },
+        { kind: 0, label: 'Open User Recipe Settings (JSON)', description: '~/.vscode/cody.json', id: 'open-user' },
+        { kind: 0, label: 'Open Recipe Examples (JSON)', id: 'open-examples' },
     ]
     const inputOptions = {
-        title: 'Cody: Custom Recipes (Internal Experimental)',
-        placeHolder: 'Select an option to continue or ESC to cancel',
+        title: 'Configure Custom Cody Recipes',
+        placeHolder: 'Select an option',
     }
     const selectedOption = await vscode.window.showQuickPick(options, inputOptions)
     if (!selectedOption) {
         return
     }
     switch (selectedOption.label) {
-        case 'Create New User Recipe': {
+        case 'Create New Recipe...': {
             return 'add'
         }
-        case 'My Custom Recipes': {
-            return 'list'
+        case 'Open Workspace Recipe Settings (JSON)': {
+            return 'open-workspace'
         }
-        case 'Open Recipes Config File': {
-            return 'open'
+        case 'Open User Recipe Settings (JSON)': {
+            return 'open-user'
         }
-        case 'Generate Recipes Config File': {
-            return 'file'
-        }
-        case 'Delete Recipes Config File': {
+        case 'Open Recipe Examples (JSON)': {
             return 'delete'
         }
         default:
@@ -51,7 +45,7 @@ export async function recipePicker(promptList: string[] = []): Promise<string> {
     return selectedRecipe
 }
 
-// This allows users to create a new prompt via UI using the input box and quick pick without having to manually edit the cody.json file
+// This allows users to create a new recipe via UI using the input box and quick pick without having to manually edit the cody.json file
 export async function createNewPrompt(promptName?: string): Promise<CodyPrompt | null> {
     if (!promptName) {
         return null

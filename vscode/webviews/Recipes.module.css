@@ -1,28 +1,35 @@
-.recipes {
+.container {
     padding: 1rem;
     display: flex;
     flex-direction: column;
+}
+
+.heading {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: var(--vscode-editor-font-size);
+    font-weight: bold;
+    margin-bottom: 0.5rem;
+}
+
+.tag {
+    font-weight: normal;
+    margin-left: 0.25rem;
+}
+
+.recipes-container {
+    display: flex;
+    flex-direction: column;
     gap: 1rem;
+}
+
+.recipes-container + .heading {
+    margin-top: 1rem;
 }
 
 /* Extra styles for the big buttons */
 .recipe-button {
     padding-top: 0.5rem;
     padding-bottom: 0.5rem;
-}
-
-.recipes-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-
-    font-size: 0.8rem;
-    font-weight: bold;
-}
-
-.recipes-notes {
-    display: flex;
-    align-items: center;
-    margin: 0.1rem 0;
-    font-size: small;
 }
