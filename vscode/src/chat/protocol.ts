@@ -9,7 +9,6 @@ import { View } from '../../webviews/NavBar'
 export enum WebviewEvent {
     Feedback = 'feedback',
     Click = 'click',
-    Auth = 'auth',
 }
 
 /**

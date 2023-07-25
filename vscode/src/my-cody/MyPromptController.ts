@@ -55,7 +55,7 @@ export class MyPromptController implements VsCodeMyPromptController {
         this.watcherInit()
     }
 
-    public setMessager(messenger: () => Promise<void>): void {
+    public setMessenger(messenger: () => Promise<void>): void {
         if (this.webViewMessenger) {
             return
         }

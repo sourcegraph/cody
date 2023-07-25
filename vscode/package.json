@@ -339,7 +339,15 @@
         "title": "Ask Cody",
         "category": "Cody Inline Chat",
         "when": "cody.activated && config.cody.inlineChat.enabled",
-        "enablement": "!commentIsEmpty"
+        "enablement": "!commentIsEmpty && !cody.inline.reply.pending"
+      },
+      {
+        "command": "cody.comment.stop",
+        "title": "Stop generating",
+        "category": "Cody Inline Chat",
+        "when": "cody.activated && config.cody.inlineChat.enabled",
+        "enablement": "!commentThreadIsEmpty",
+        "icon": "$(debug-stop)"
       },
       {
         "command": "cody.comment.delete",
@@ -350,12 +358,12 @@
         "icon": "$(trash)"
       },
       {
-        "command": "cody.comment.load",
-        "title": "Loading",
+        "command": "cody.comment.open-in-sidebar",
+        "title": "Open this chat in the sidebar",
         "category": "Cody Inline Chat",
         "when": "cody.activated && config.cody.inlineChat.enabled",
         "enablement": "!commentThreadIsEmpty",
-        "icon": "$(sync~spin)"
+        "icon": "$(comment-discussion)"
       },
       {
         "command": "cody.comment.collapse-all",
@@ -547,7 +555,11 @@
           "when": "false"
         },
         {
-          "command": "cody.comment.load",
+          "command": "cody.comment.stop",
+          "when": "false"
+        },
+        {
+          "command": "cody.comment.open-in-sidebar",
           "when": "false"
         },
         {
@@ -718,14 +730,21 @@
           "when": "cody.activated && commentController =~ /^cody-inline/ && cody.replied && !commentThreadIsEmpty && config.cody.inlineChat.enabled"
         },
         {
-          "command": "cody.comment.load",
+          "command": "cody.comment.open-in-sidebar",
           "group": "inline@2",
-          "when": "cody.activated && commentController =~ /^cody-inline/ && cody.reply.pending && config.cody.inlineChat.enabled"
+          "when": "cody.activated && commentController =~ /^cody-inline/ && cody.replied && config.cody.inlineChat.enabled"
         },
         {
           "command": "cody.comment.collapse-all",
           "group": "inline@3",
           "when": "cody.activated && commentController =~ /^cody-inline/ && config.cody.inlineChat.enabled"
+        }
+      ],
+      "comments/comment/title": [
+        {
+          "command": "cody.comment.stop",
+          "group": "inline@1",
+          "when": "cody.activated && commentController =~ /^cody-inline/ && comment =~ /^cody-inline-(streaming|loading)/ && config.cody.inlineChat.enabled"
         }
       ],
       "view/item/context": [
