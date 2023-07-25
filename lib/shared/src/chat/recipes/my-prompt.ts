@@ -322,8 +322,9 @@ async function populateVscodeDirContextMessage(
             continue
         }
         try {
-            const fileContent = await vscode.workspace.openTextDocument(fileUri)
-            const truncatedContent = truncateText(fileContent.getText(), MAX_CURRENT_FILE_TOKENS)
+            const fileContent = await vscode.workspace.fs.readFile(fileUri)
+            const decoded = new TextDecoder('utf-8').decode(fileContent)
+            const truncatedContent = truncateText(decoded, MAX_CURRENT_FILE_TOKENS)
             const contextMessage = getContextMessageWithResponse(
                 populateCurrentEditorContextTemplate(toJSON(truncatedContent), fileName),
                 { fileName }
@@ -339,7 +340,11 @@ async function populateVscodeDirContextMessage(
 // Clean up the string to be used as value in JSON format
 // Escape double quotes and backslashes and forward slashes
 function toJSON(context: string): string {
-    const escaped = context.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\//g, '\\/')
+    const escaped = context
+        .replace(/\\/g, '\\\\')
+        .replace(/"/g, '\\"')
+        .replace(/\//g, '\\/')
+        .replace(/\n\/\//g, '\n')
     return JSON.stringify(escaped)
 }
 

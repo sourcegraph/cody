@@ -136,7 +136,7 @@ export class MyPromptController implements VsCodeMyPromptController {
     public find(id: string): string {
         const myPrompt = this.myPromptStore.get(id)
         this.myPromptInProgress = myPrompt || null
-        debug('MyPromptController:find:promptId', id, { verbose: myPrompt })
+        debug('MyPromptController:find:promptId', id)
         return myPrompt?.prompt || ''
     }
 
@@ -299,7 +299,7 @@ export class MyPromptController implements VsCodeMyPromptController {
         if (!promptTitle) {
             return
         }
-        debug('MyPromptController:quickRecipe:selectedPrompt:', promptTitle, { verbose: selectedPrompt })
+        debug('MyPromptController:quickRecipe:selectedPrompt', promptTitle)
         // Run the prompt
         await vscode.commands.executeCommand('cody.customRecipes.exec', promptTitle)
     }
