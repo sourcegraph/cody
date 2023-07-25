@@ -78,15 +78,13 @@ export class Fixup implements Recipe {
         return Promise.resolve([])
     }
 
-    public static readonly promptPreamble = ''
-
     // Prompt Templates
     public static readonly prompt = `
     - You are an AI programming assistant who is an expert in rewriting code to meet given instructions.
     - You should think step-by-step to plan your rewritten code before producing the final output.
     - You should use code above and below the selection to help you plan your rewritten code.
-    - You should use code below the selection to help you plan your rewritten code.
     - Unless you have reason to believe otherwise, you should assume that the user wants you to edit the code in their selection.
+    - You should ensure the rewritten code matches the indentation and whitespace of the code in the users selection.
     - It is not acceptable to use Markdown in your response. You should not produce Markdown-formatted code blocks.
     - Enclose your response in <selection></selection> XML tags. Do not provide anything else.
 
@@ -107,7 +105,7 @@ export class Fixup implements Recipe {
     {selectedText}
     </selectedCode>
 
-    I'd like you to rewrite it using the following instructions
+    I'd like you to rewrite it using the following instructions:
     <instructions>
     {humanInput}
     </instructions>
