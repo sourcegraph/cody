@@ -28,8 +28,8 @@ export const Recipes: React.FunctionComponent<{
     const onRecipeClick = (recipeID: RecipeID): void => {
         vscodeAPI.postMessage({ command: 'executeRecipe', recipe: recipeID })
     }
-    const onMyPromptClick = (promptID: string): void => {
-        vscodeAPI.postMessage({ command: 'my-prompt', title: promptID })
+    const onMyPromptClick = (promptID: string, value?: 'user' | 'workspace'): void => {
+        vscodeAPI.postMessage({ command: 'my-prompt', title: promptID, value })
     }
     const myPromptsEnabled = myPrompts !== null
 
@@ -68,7 +68,7 @@ export const Recipes: React.FunctionComponent<{
                                     <VSCodeButton
                                         className={styles.recipeButton}
                                         type="button"
-                                        onClick={() => onMyPromptClick('add-user-file')}
+                                        onClick={() => onMyPromptClick('add', 'user')}
                                         title="User Recipes are accessible only to you across
                                         Workspaces"
                                     >
@@ -77,7 +77,7 @@ export const Recipes: React.FunctionComponent<{
                                     <VSCodeButton
                                         className={styles.recipeButton}
                                         type="button"
-                                        onClick={() => onMyPromptClick('add-workspace-file')}
+                                        onClick={() => onMyPromptClick('add', 'workspace')}
                                         title="Workspace Recipes are available to all users in your current
                                         repository"
                                     >

@@ -18,6 +18,7 @@ import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
 
 import { VSCodeEditor } from '../editor/vscode-editor'
 import { debug } from '../log'
+import { CodyPromptType } from '../my-cody/types'
 import { FixupTask } from '../non-stop/FixupTask'
 import { IdleRecipeRunner } from '../non-stop/roles'
 import { AuthProvider } from '../services/AuthProvider'
@@ -529,11 +530,11 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
     }
 
     public isCustomRecipeAction(title: string): boolean {
-        const customRecipeActions = ['add-workspace-file', 'add-user-file', 'get', 'menu']
+        const customRecipeActions = ['add', 'get', 'menu']
         return customRecipeActions.includes(title)
     }
 
-    public async executeCustomRecipe(title: string): Promise<string | void> {
+    public async executeCustomRecipe(title: string, type?: CodyPromptType): Promise<string | void> {
         if (!this.contextProvider.config.experimentalCustomRecipes) {
             return
         }
@@ -548,11 +549,10 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
             await this.sendMyPrompts()
             return
         }
-        if (title === 'add-workspace-file' || title === 'add-user-file') {
-            const fileType = title === 'add-workspace-file' ? 'workspace' : 'user'
+        if (title === 'add' && type) {
             try {
                 // copy the cody.json file from the extension path and move it to the workspace root directory
-                await this.editor.controllers.prompt?.addJSONFile(fileType)
+                await this.editor.controllers.prompt?.addJSONFile(type)
             } catch (error) {
                 void vscode.window.showErrorMessage(`Could not create a new cody.json file: ${error}`)
             }

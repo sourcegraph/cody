@@ -5,6 +5,7 @@ import { Configuration } from '@sourcegraph/cody-shared/src/configuration'
 import { CodyLLMSiteConfiguration } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
 
 import { View } from '../../webviews/NavBar'
+import { CodyPromptType } from '../my-cody/types'
 
 export enum WebviewEvent {
     Feedback = 'feedback',
@@ -37,7 +38,7 @@ export type WebviewMessage =
     | { command: 'abort' }
     | { command: 'chat-button'; action: string }
     | { command: 'setEnabledPlugins'; plugins: string[] }
-    | { command: 'my-prompt'; title: string }
+    | { command: 'my-prompt'; title: string; value?: CodyPromptType }
 
 /**
  * A message sent from the extension host to the webview.
