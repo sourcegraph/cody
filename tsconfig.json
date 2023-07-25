@@ -11,7 +11,7 @@
     "lib/shared/vitest.config.ts",
     "cli/vitest.config.ts"
   ],
-  "exclude": ["dist", "node_modules"],
+  "exclude": ["**/dist", "**/node_modules"],
   "references": [
     { "path": "agent" },
     { "path": "completions-review-tool" },
