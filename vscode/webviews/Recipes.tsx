@@ -28,8 +28,8 @@ export const Recipes: React.FunctionComponent<{
     const onRecipeClick = (recipeID: RecipeID): void => {
         vscodeAPI.postMessage({ command: 'executeRecipe', recipe: recipeID })
     }
-    const onMyPromptClick = (promptID: string): void => {
-        vscodeAPI.postMessage({ command: 'my-prompt', title: promptID })
+    const onMyPromptClick = (promptID: string, value?: 'user' | 'workspace'): void => {
+        vscodeAPI.postMessage({ command: 'my-prompt', title: promptID, value })
     }
     const myPromptsEnabled = myPrompts !== null
 
@@ -45,29 +45,30 @@ export const Recipes: React.FunctionComponent<{
                                     className={styles.recipesHeader}
                                 >
                                     <span>Custom Recipes - Experimental</span>
-                                    {myPrompts?.length > 0 && (
-                                        <VSCodeButton
-                                            type="button"
-                                            appearance="icon"
-                                            onClick={() => onMyPromptClick('menu')}
-                                        >
-                                            <i className="codicon codicon-tools" title="Update your custom recipes" />
-                                        </VSCodeButton>
-                                    )}
+                                    <VSCodeButton
+                                        type="button"
+                                        appearance="icon"
+                                        onClick={() => onMyPromptClick('menu')}
+                                    >
+                                        {!myPrompts?.length ? (
+                                            <i className="codicon codicon-info" title="More information" />
+                                        ) : (
+                                            <i className="codicon codicon-tools" title="Open Custom Recipes Menu" />
+                                        )}
+                                    </VSCodeButton>
                                 </div>
-                                {myPrompts?.length === 0 && (
-                                    <small className={styles.recipesNotes}>
-                                        To get started, select a custom recipe type below to generate a new `cody.json`
-                                        file containing sample recipes.
-                                    </small>
-                                )}
                             </div>
                             {!myPrompts?.length && (
                                 <>
+                                    {myPrompts?.length === 0 && (
+                                        <small className={styles.recipesNotes}>
+                                            Select a recipe type below to get started:
+                                        </small>
+                                    )}
                                     <VSCodeButton
                                         className={styles.recipeButton}
                                         type="button"
-                                        onClick={() => onMyPromptClick('add-user-file')}
+                                        onClick={() => onMyPromptClick('add', 'user')}
                                         title="User Recipes are accessible only to you across
                                         Workspaces"
                                     >
@@ -76,7 +77,7 @@ export const Recipes: React.FunctionComponent<{
                                     <VSCodeButton
                                         className={styles.recipeButton}
                                         type="button"
-                                        onClick={() => onMyPromptClick('add-workspace-file')}
+                                        onClick={() => onMyPromptClick('add', 'workspace')}
                                         title="Workspace Recipes are available to all users in your current
                                         repository"
                                     >

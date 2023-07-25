@@ -6,6 +6,7 @@ import { ChatMessage, UserLocalHistory } from '@sourcegraph/cody-shared/src/chat
 
 import { View } from '../../webviews/NavBar'
 import { debug } from '../log'
+import { CodyPromptType } from '../my-cody/types'
 import { logEvent } from '../services/EventLogger'
 
 import { MessageProvider, MessageProviderOptions } from './MessageProvider'
@@ -93,7 +94,7 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
                 void this.openExternalLinks(message.value)
                 break
             case 'my-prompt':
-                await this.onCustomRecipeClicked(message.title)
+                await this.onCustomRecipeClicked(message.title, message.value)
                 break
             case 'openFile': {
                 const rootPath = this.editor.getWorkspaceRootPath()
@@ -152,13 +153,13 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
     /**
      * Process custom recipe click
      */
-    private async onCustomRecipeClicked(title: string): Promise<void> {
+    private async onCustomRecipeClicked(title: string, recipeType: CodyPromptType = 'user'): Promise<void> {
         this.sendEvent(WebviewEvent.Click, 'custom-recipe')
         debug('ChatViewProvider:onCustomRecipeClicked', title)
         if (!this.isCustomRecipeAction(title)) {
             this.showTab('chat')
         }
-        await this.executeCustomRecipe(title)
+        await this.executeCustomRecipe(title, recipeType)
     }
 
     public showTab(tab: string): void {
