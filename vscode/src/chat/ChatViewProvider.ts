@@ -50,8 +50,8 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
                 await this.abortCompletion()
                 break
             case 'executeRecipe':
-                this.showTab('chat')
                 await this.executeRecipe(message.recipe)
+                this.showTab('chat')
                 break
             case 'auth':
                 if (message.type === 'app' && message.endpoint) {
@@ -93,8 +93,8 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
                 void this.openExternalLinks(message.value)
                 break
             case 'my-prompt':
-                this.showTab('chat')
                 await this.executeCustomRecipe(message.title)
+                this.showTab('chat')
                 break
             case 'openFile': {
                 const rootPath = this.editor.getWorkspaceRootPath()

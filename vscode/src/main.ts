@@ -249,12 +249,12 @@ const register = async (
             await sidebarChatProvider.clearHistory()
         }),
         // Recipes
-        vscode.commands.registerCommand('cody.customRecipes.exec', title => {
+        vscode.commands.registerCommand('cody.customRecipes.exec', async title => {
+            await sidebarChatProvider.executeCustomRecipe(title)
             const recipePrompt = prompt.find(title)
             if (!recipePrompt.startsWith('/')) {
                 sidebarChatProvider.showTab('chat')
             }
-            return sidebarChatProvider.executeCustomRecipe(title)
         }),
         vscode.commands.registerCommand('cody.customRecipes.list', () => prompt.quickRecipe()),
         vscode.commands.registerCommand('cody.recipe.explain-code', () =>
