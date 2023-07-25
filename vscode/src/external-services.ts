@@ -35,7 +35,7 @@ type ExternalServicesConfiguration = Pick<
 
 export async function configureExternalServices(
     initialConfig: ExternalServicesConfiguration,
-    rgPath: string,
+    rgPath: string | null,
     editor: Editor
 ): Promise<ExternalServices> {
     const client = new SourcegraphGraphQLAPIClient(initialConfig)
@@ -55,8 +55,8 @@ export async function configureExternalServices(
         initialConfig,
         initialConfig.codebase,
         embeddingsSearch,
-        new LocalKeywordContextFetcher(rgPath, editor, chatClient),
-        new FilenameContextFetcher(rgPath, editor, chatClient),
+        rgPath ? new LocalKeywordContextFetcher(rgPath, editor, chatClient) : null,
+        rgPath ? new FilenameContextFetcher(rgPath, editor, chatClient) : null,
         undefined,
         getRerankWithLog(chatClient)
     )
