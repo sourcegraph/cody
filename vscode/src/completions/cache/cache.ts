@@ -9,11 +9,19 @@ export interface CachedCompletions {
     completions: Completion[]
 }
 
-export interface CacheRequest {
+/**
+ * The document state information used by {@link CompletionsCache}.
+ */
+export interface CompletionsCacheDocumentState {
     /**
      * The prefix (up to the cursor) of the source file where the completion request was triggered.
      */
     prefix: string
+}
+
+export interface CacheRequest {
+    /** The representation of the document and cursor. */
+    documentState: CompletionsCacheDocumentState
 
     /**
      * Only return a cache entry if the prefix matches exactly (without trimming whitespace).
@@ -21,6 +29,10 @@ export interface CacheRequest {
      * @default false
      */
     isExactPrefixOnly?: boolean
+}
+
+function cacheKey({ prefix }: CompletionsCacheDocumentState): string {
+    return prefix
 }
 
 export class CompletionsCache {
@@ -36,9 +48,10 @@ export class CompletionsCache {
     // account. We need to add additional information like file path or suffix
     // to make sure the cache does not return undesired results for other files
     // in the same project.
-    public get({ prefix, isExactPrefixOnly }: CacheRequest): CachedCompletions | undefined {
+    public get({ documentState: { prefix }, isExactPrefixOnly }: CacheRequest): CachedCompletions | undefined {
         const trimmedPrefix = isExactPrefixOnly ? prefix : trimEndOnLastLineIfWhitespaceOnly(prefix)
-        const result = this.cache.get(trimmedPrefix)
+        const key = cacheKey({ prefix: trimmedPrefix })
+        const result = this.cache.get(key)
 
         if (!result) {
             return undefined
@@ -82,11 +95,13 @@ export class CompletionsCache {
             // We also cache the completion with the exact (= untrimmed) prefix
             // for the separate lookup mode used for deletions
             if (trimEndOnLastLineIfWhitespaceOnly(completion.prefix) !== completion.prefix) {
-                this.insertCompletion(completion.prefix, logId, completion, true)
+                this.insertCompletion(cacheKey({ prefix: completion.prefix }), logId, completion, true)
             }
 
             for (let i = 0; i <= maxCharsAppended; i++) {
-                const key = trimEndOnLastLineIfWhitespaceOnly(completion.prefix) + completion.content.slice(0, i)
+                const key = cacheKey({
+                    prefix: trimEndOnLastLineIfWhitespaceOnly(completion.prefix) + completion.content.slice(0, i),
+                })
                 this.insertCompletion(key, logId, completion, key === completion.prefix)
             }
         }

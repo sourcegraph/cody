@@ -55,7 +55,7 @@ describe('RequestManager', () => {
         const requestManager = new RequestManager(cache)
 
         createRequest = (prefix: string, provider: Provider) =>
-            requestManager.request(DOCUMENT_URI, LOG_ID, prefix, [provider], [], new AbortController().signal)
+            requestManager.request(DOCUMENT_URI, LOG_ID, { prefix }, [provider], [], new AbortController().signal)
     })
 
     it('resolves a single request', async () => {

@@ -179,7 +179,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
 
         const lastChangeIsDeletion = this.lastContentChanges.get(document.fileName) === 'del'
         const cacheRequest: CacheRequest = {
-            prefix: docContext.prefix,
+            documentState: { prefix: docContext.prefix },
 
             // Avoid showing completions when we're deleting code (Cody can only insert code at the
             // moment). When a line was deleted, only look up cached items and only include them if the
@@ -314,7 +314,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
         const completions = await this.requestManager.request(
             document.uri.toString(),
             logId,
-            docContext.prefix,
+            { prefix: docContext.prefix },
             completers,
             contextResult.context,
             abortController.signal,

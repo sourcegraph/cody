@@ -1,11 +1,12 @@
 import { Completion } from '.'
 import { CompletionsCache } from './cache'
+import { CompletionsCacheDocumentState } from './cache/cache'
 import { ReferenceSnippet } from './context'
 import { logCompletionEvent } from './logger'
 import { CompletionProviderTracer, Provider } from './providers/provider'
 
 interface Request {
-    prefix: string
+    documentState: CompletionsCacheDocumentState
     tracer?: CompletionProviderTracer
     resolve(completions: Completion[]): void
     reject(error: Error): void
@@ -25,7 +26,7 @@ export class RequestManager {
     public async request(
         documentUri: string,
         logId: string,
-        prefix: string,
+        documentState: CompletionsCacheDocumentState,
         providers: Provider[],
         context: ReferenceSnippet[],
         signal: AbortSignal,
@@ -39,7 +40,7 @@ export class RequestManager {
         })
 
         const request: Request = {
-            prefix,
+            documentState,
             resolve,
             reject,
             tracer,
@@ -101,7 +102,7 @@ export class RequestManager {
         }
 
         for (const request of requests) {
-            const cachedCompletions = this.completionsCache?.get({ prefix: request.prefix })
+            const cachedCompletions = this.completionsCache?.get({ documentState: request.documentState })
             if (cachedCompletions) {
                 logCompletionEvent('synthesizedFromParallelRequest')
                 request.resolve(cachedCompletions.completions)
