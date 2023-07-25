@@ -232,14 +232,14 @@ export class MyPrompt implements Recipe {
             // directories, non-test files, and dot files
             // then returns the first 10 results
             if (testOnly) {
+                const contextMessages: ContextMessage[] = []
                 const filesInDir = (await vscode.workspace.fs.readDirectory(dirUri)).filter(
                     file => file[1] === 1 && !file[0].startsWith('.') && (testOnly ? file[0].includes('test') : true)
                 )
-                // If there are no test files in the directory, use first 10 files instead
-                if (filesInDir.length > 0) {
-                    return await populateVscodeDirContextMessage(dirUri, filesInDir.slice(0, 10))
+                contextMessages.push(...(await populateVscodeDirContextMessage(dirUri, filesInDir.slice(0, 10))))
+                if (filesInDir.length > 1) {
+                    return contextMessages
                 }
-                const contextMessages: ContextMessage[] = []
                 const parentDirName = getParentDirName(dirPath)
                 const fileExt = currentFileName ? getFileExtension(currentFileName) : '*'
                 // Search for files in directory with test(s) in the name
