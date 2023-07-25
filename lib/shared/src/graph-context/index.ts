@@ -37,6 +37,11 @@ export abstract class GraphContextFetcher {
             editorContext.content,
             getActiveSelectionRange(editorContext.selection)
         )
+        console.log(
+            '🚀 ~ file: index.ts:39 ~ GraphContextFetcher ~ getContext ~ getActiveSelectionRange(editorContext.selection):',
+            getActiveSelectionRange(editorContext.selection)
+        )
+        console.log('🚀 ~ file: index.ts:40 ~ GraphContextFetcher ~ getContext ~ response:', response)
         if (isErrorLike(response)) {
             return []
         }
