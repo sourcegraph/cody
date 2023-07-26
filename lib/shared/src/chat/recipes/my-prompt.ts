@@ -30,6 +30,7 @@ export interface CodyPromptContext {
     currentFile?: boolean
     excludeSelection?: boolean
     command?: string
+    output?: string
     filePath?: string
     directoryPath?: string
     none?: boolean

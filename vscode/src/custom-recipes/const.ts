@@ -14,8 +14,6 @@ export interface MyPromptsJSON {
 export interface CodyPrompt {
     name?: string
     prompt: string
-    command?: string
-    args?: string[]
     context?: CodyPromptContext
     type?: CodyPromptType
 }

@@ -120,6 +120,7 @@ export class MyPromptController implements VsCodeMyPromptController {
             case 'codebase':
                 return this.myPromptInProgress?.context?.codebase ? 'codebase' : null
             case 'output':
+                return this.myPromptInProgress?.context?.output || null
             case 'command':
                 // return the terminal output from the command for the prompt if any
                 return this.getCommandOutput()
@@ -161,12 +162,15 @@ export class MyPromptController implements VsCodeMyPromptController {
     }
 
     public async getCommandOutput(): Promise<string | null> {
-        const fullCommand = this.myPromptInProgress?.context?.command
-        if (!this.myPromptInProgress || !fullCommand) {
+        const currentContext = this.myPromptInProgress?.context
+        if (!this.myPromptInProgress || !currentContext?.command) {
             return null
         }
-        const output = await this.tools.exeCommand(fullCommand)
-        return output || null
+        const fullCommand = currentContext.command
+        const commandOutput = await this.tools.exeCommand(fullCommand)
+        currentContext.output = commandOutput
+        this.myPromptInProgress.context = currentContext
+        return commandOutput || null
     }
 
     // Save the user prompts to the user json file
