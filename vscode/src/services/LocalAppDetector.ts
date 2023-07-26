@@ -32,7 +32,6 @@ export class LocalAppDetector implements vscode.Disposable {
         this.onChange = options.onChange
         this.localEnv = { ...envInit }
         this.localAppMarkers = LOCAL_APP_LOCATIONS[this.localEnv.os]
-        // Only Mac is supported for now
         this.isSupported =
             isOsSupportedByApp(this.localEnv.os, this.localEnv.arch) && this.localEnv.homeDir !== undefined
     }
@@ -49,7 +48,6 @@ export class LocalAppDetector implements vscode.Disposable {
         // Start with init state
         this.dispose()
         this.localEnv = { ...envInit }
-        debug('LocalAppDetector:init', 'initializing')
         const homeDir = this.localEnv.homeDir
         // if conditions are not met, this will be a noop
         if (!this.isSupported || !homeDir) {
@@ -79,16 +77,13 @@ export class LocalAppDetector implements vscode.Disposable {
         if (this.localEnv.isAppInstalled || !this.appFsPaths) {
             return
         }
-        debug('LocalAppDetector:fetchApp', 'initializing')
         if (await Promise.any(this.appFsPaths.map(file => pathExists(file)))) {
-            debug('LocalAppDetector:fetchApp', 'found')
             this.localEnv.isAppInstalled = true
             this.appFsPaths = []
             await this.found('app')
             await this.fetchToken()
             return
         }
-        debug('LocalAppDetector:detect:fetchApp', 'failed')
     }
 
     // Get token from app.json if it exists
@@ -98,7 +93,6 @@ export class LocalAppDetector implements vscode.Disposable {
         }
         const appJson = await loadAppJson(this.tokenFsPath)
         if (!appJson) {
-            debug('LocalAppDetector:fetchToken:loadAppJson', 'failed')
             return
         }
         const token = appJson.token
@@ -110,7 +104,6 @@ export class LocalAppDetector implements vscode.Disposable {
             await this.secretStorage.storeToken(LOCAL_APP_URL.href, token)
             await this.fetchServer()
         }
-        debug('LocalAppDetector:fetchToken', 'found')
     }
 
     // Check if App is running
@@ -118,11 +111,9 @@ export class LocalAppDetector implements vscode.Disposable {
         if (this.localEnv.isAppRunning) {
             return
         }
-        debug('LocalAppDetector:fetchServer', 'initializing')
         try {
             const response = await fetch(`${LOCAL_APP_URL.href}__version`)
             if (response.status === 200) {
-                debug('LocalAppDetector:fetchServer', 'found')
                 this.localEnv.isAppRunning = true
                 await this.found('server')
             }
@@ -130,7 +121,6 @@ export class LocalAppDetector implements vscode.Disposable {
                 await this.fetchToken()
             }
         } catch {
-            debug('LocalAppDetector:fetchServer', 'failed')
             return
         }
     }

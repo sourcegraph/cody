@@ -22,7 +22,6 @@ test('open the custom recipes in sidebar and add new user recipe', async ({ page
     await sidebar.getByTitle('Open Custom Recipes Menu').click()
     await page.getByText('Cody: Custom Recipes (Experimental)').click()
     await page.locator('a').filter({ hasText: 'Add User Recipe' }).click()
-    await page.getByPlaceholder('e,g. Vulnerability Scanner').click()
     await page.getByPlaceholder('e,g. Vulnerability Scanner').fill('Test Recipes')
     await page.getByPlaceholder('e,g. Vulnerability Scanner').press('Enter')
     await page.getByPlaceholder("e,g. 'Create five different test cases for the selected code''").fill('this is a test')
