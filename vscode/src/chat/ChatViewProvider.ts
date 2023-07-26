@@ -7,10 +7,9 @@ import { ChatMessage, UserLocalHistory } from '@sourcegraph/cody-shared/src/chat
 import { View } from '../../webviews/NavBar'
 import { debug } from '../log'
 import { CodyPromptType } from '../my-cody/types'
-import { logEvent } from '../services/EventLogger'
 
 import { MessageProvider, MessageProviderOptions } from './MessageProvider'
-import { DOTCOM_URL, ExtensionMessage, WebviewEvent, WebviewMessage } from './protocol'
+import { ExtensionMessage, WebviewMessage } from './protocol'
 
 export interface ChatViewProviderWebview extends Omit<vscode.Webview, 'postMessage'> {
     postMessage(message: ExtensionMessage): Thenable<boolean>
@@ -58,7 +57,8 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
                 if (message.type === 'app' && message.endpoint) {
                     await this.authProvider.appAuth(message.endpoint)
                     // Log app button click events: e.g. app:download:clicked or app:connect:clicked
-                    this.sendEvent(WebviewEvent.Click, message.value === 'download' ? 'app:download' : 'app:connect')
+                    const value = message.value === 'download' ? 'app:download' : 'app:connect'
+                    this.telemetryService.log(`CodyVSCodeExtension:${value}:clicked`) // TODO(sqs): remove when new events are working
                     break
                 }
                 if (message.type === 'callback' && message.endpoint) {
@@ -72,7 +72,7 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
                 await this.insertAtCursor(message.text)
                 break
             case 'event':
-                this.sendEvent(message.event, message.value)
+                this.telemetryService.log(message.eventName, message.properties)
                 break
             case 'removeHistory':
                 await this.clearHistory()
@@ -134,7 +134,7 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
     private async onHumanMessageSubmitted(text: string, submitType: 'user' | 'suggestion'): Promise<void> {
         debug('ChatViewProvider:onHumanMessageSubmitted', '', { verbose: { text, submitType } })
         if (submitType === 'suggestion') {
-            logEvent('CodyVSCodeExtension:chatPredictions:used')
+            this.telemetryService.log('CodyVSCodeExtension:chatPredictions:used')
         }
         MessageProvider.inputHistory.push(text)
         if (this.contextProvider.config.experimentalChatPredictions) {
@@ -147,7 +147,7 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
      * Process custom recipe click
      */
     private async onCustomRecipeClicked(title: string, recipeType: CodyPromptType = 'user'): Promise<void> {
-        this.sendEvent(WebviewEvent.Click, 'custom-recipe')
+        this.telemetryService.log('CodyVSCodeExtension:custom-recipe:clicked')
         debug('ChatViewProvider:onCustomRecipeClicked', title)
         if (!this.isCustomRecipeAction(title)) {
             this.showTab('chat')
@@ -223,47 +223,6 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
             prompts,
             isEnabled,
         })
-    }
-
-    /**
-     * Log Events - naming convention: source:feature:action
-     */
-    public sendEvent(event: WebviewEvent, value: string): void {
-        const endpoint = this.contextProvider.config.serverEndpoint || DOTCOM_URL.href
-        const endpointUri = { serverEndpoint: endpoint }
-        switch (event) {
-            case 'feedback':
-                logEvent(`CodyVSCodeExtension:codyFeedback:${value}`, null, this.codyFeedbackPayload())
-                break
-            case 'click':
-                logEvent(`CodyVSCodeExtension:${value}:clicked`, endpointUri, endpointUri)
-                break
-        }
-    }
-
-    private codyFeedbackPayload(): { chatTranscript: ChatMessage[] | null; lastChatUsedEmbeddings: boolean } | null {
-        const endpoint = this.contextProvider.config.serverEndpoint || DOTCOM_URL.href
-        const isPrivateInstance = new URL(endpoint).href !== DOTCOM_URL.href
-
-        // The user should only be able to submit feedback on transcripts, but just in case we guard against this happening.
-        const privateChatTranscript = this.transcript.toChat()
-        if (privateChatTranscript.length === 0) {
-            return null
-        }
-
-        const lastContextFiles = privateChatTranscript.at(-1)?.contextFiles
-        const lastChatUsedEmbeddings = lastContextFiles
-            ? lastContextFiles.some(file => file.source === 'embeddings')
-            : false
-
-        // We only include full chat transcript for dot com users with connected codebase
-        const chatTranscript =
-            !isPrivateInstance && this.contextProvider.context.getCodebase() ? privateChatTranscript : null
-
-        return {
-            chatTranscript,
-            lastChatUsedEmbeddings,
-        }
     }
 
     /**
