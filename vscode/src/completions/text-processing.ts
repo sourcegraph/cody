@@ -1,6 +1,5 @@
-import * as vscode from 'vscode'
-
 import { isAlmostTheSameString } from './utils/string-comparator'
+import { ide } from '@sourcegraph/cody-shared/src/ide'
 
 export const OPENING_CODE_TAG = '<CODE5711>'
 export const CLOSING_CODE_TAG = '</CODE5711>'
@@ -30,7 +29,7 @@ export function extractFromCodeBlock(completion: string): string {
 }
 
 export function getEditorTabSize(): number {
-    return vscode.window.activeTextEditor ? (vscode.window.activeTextEditor.options.tabSize as number) : 2
+    return ide.window.activeTextEditor ? (ide.window.activeTextEditor.options.tabSize as number) : 2
 }
 
 const INDENTATION_REGEX = /^[\t ]*/

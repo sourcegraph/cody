@@ -38,6 +38,7 @@ import {
 } from './services/SecretStorageProvider'
 import { CodyStatusBar, createStatusBar } from './services/StatusBar'
 import { TestSupport } from './test-support'
+import { setIDE } from '@sourcegraph/cody-shared/src/ide'
 
 /**
  * Start the extension, watching all relevant configuration and secrets for changes.
@@ -86,6 +87,7 @@ const register = async (
     disposable: vscode.Disposable
     onConfigurationChange: (newConfig: ConfigurationWithAccessToken) => void
 }> => {
+    setIDE(vscode)
     const disposables: vscode.Disposable[] = []
 
     // Controller for Inline Chat

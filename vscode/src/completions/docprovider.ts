@@ -1,6 +1,7 @@
-import * as vscode from 'vscode'
+import type * as vscode from 'vscode'
 
 import { Completion } from '.'
+import { ide } from '@sourcegraph/cody-shared/src/ide'
 
 // FIXME: When OpenAI's logit_bias uses a more precise type than 'object',
 // specify JSON-able objects as { [prop: string]: JSONSerialiable | undefined }
@@ -43,7 +44,7 @@ export class CompletionsDocumentProvider implements vscode.TextDocumentContentPr
         this.fireDocumentChanged(uri)
     }
 
-    public onDidChangeEmitter = new vscode.EventEmitter<vscode.Uri>()
+    public onDidChangeEmitter = new ide.EventEmitter<vscode.Uri>()
     public onDidChange = this.onDidChangeEmitter.event
 
     public provideTextDocumentContent(uri: vscode.Uri): string {

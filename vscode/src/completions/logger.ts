@@ -1,9 +1,9 @@
 import { LRUCache } from 'lru-cache'
-import * as vscode from 'vscode'
 
 import { ConfigKeys } from '../configuration-keys'
 import { debug } from '../log'
 import { logEvent } from '../services/EventLogger'
+import { ide } from '@sourcegraph/cody-shared/src/ide'
 
 interface CompletionEvent {
     params: {
@@ -178,5 +178,5 @@ const otherCompletionProviders = [
     'TabbyML.vscode-tabby',
 ]
 function otherCompletionProviderEnabled(): boolean {
-    return !!otherCompletionProviders.find(id => vscode.extensions.getExtension(id)?.isActive)
+    return !!otherCompletionProviders.find(id => ide.extensions.getExtension(id)?.isActive)
 }

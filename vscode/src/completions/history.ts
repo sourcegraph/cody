@@ -1,4 +1,5 @@
-import * as vscode from 'vscode'
+import { ide } from '@sourcegraph/cody-shared/src/ide'
+import type * as vscode from 'vscode'
 
 export interface HistoryItem {
     document: Pick<vscode.TextDocument, 'uri' | 'languageId'>
@@ -14,7 +15,7 @@ export class History implements vscode.Disposable {
 
     constructor(
         register: () => vscode.Disposable | null = () =>
-            vscode.window.onDidChangeActiveTextEditor(event => {
+            ide.window.onDidChangeActiveTextEditor(event => {
                 if (!event?.document.uri) {
                     return
                 }
@@ -33,7 +34,7 @@ export class History implements vscode.Disposable {
     }
 
     public dispose(): void {
-        vscode.Disposable.from(...this.subscriptions).dispose()
+        ide.Disposable.from(...this.subscriptions).dispose()
     }
 
     public addItem(newItem: HistoryItem): void {

@@ -1,4 +1,5 @@
-import * as vscode from 'vscode'
+import { ide } from '@sourcegraph/cody-shared/src/ide'
+import type * as vscode from 'vscode'
 
 /**
  * Get the current document context based on the cursor position in the current document.
@@ -31,7 +32,7 @@ export function getCurrentDocContext(
 } | null {
     const offset = document.offsetAt(position)
 
-    const prefixLines = document.getText(new vscode.Range(new vscode.Position(0, 0), position)).split('\n')
+    const prefixLines = document.getText(new ide.Range(new ide.Position(0, 0), position)).split('\n')
 
     if (prefixLines.length === 0) {
         console.error('no lines')
@@ -39,7 +40,7 @@ export function getCurrentDocContext(
     }
 
     const suffixLines = document
-        .getText(new vscode.Range(position, document.positionAt(document.getText().length)))
+        .getText(new ide.Range(position, document.positionAt(document.getText().length)))
         .split('\n')
 
     let nextNonEmptyLine = ''
@@ -76,7 +77,7 @@ export function getCurrentDocContext(
         }
         prefix = prefixLines.slice(startLine).join('\n')
     } else {
-        prefix = document.getText(new vscode.Range(new vscode.Position(0, 0), position))
+        prefix = document.getText(new ide.Range(new ide.Position(0, 0), position))
     }
 
     let totalSuffix = 0

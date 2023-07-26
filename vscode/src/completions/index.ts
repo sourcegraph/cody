@@ -1,7 +1,7 @@
 import path from 'path'
 
 import { LRUCache } from 'lru-cache'
-import * as vscode from 'vscode'
+import type * as vscode from 'vscode'
 
 import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
 
@@ -19,6 +19,7 @@ import { RequestManager } from './request-manager'
 import { sharedPostProcess } from './shared-post-process'
 import { ProvideInlineCompletionItemsTracer, ProvideInlineCompletionsItemTraceData } from './tracer'
 import { isAbortError, SNIPPET_WINDOW_SIZE } from './utils'
+import { ide } from '@sourcegraph/cody-shared/src/ide'
 
 interface CodyCompletionItemProviderConfig {
     providerConfig: ProviderConfig
@@ -61,6 +62,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
         tracer = null,
         ...config
     }: CodyCompletionItemProviderConfig) {
+
         this.config = {
             ...config,
             responsePercentage,
@@ -83,9 +85,9 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
             // The cody.autocomplete.experimental.completeSuggestWidgetSelection setting is
             // experimental and off by default. Before turning it on by default, we need to try to
             // find a workaround that is not silently updating the user's VS Code settings.
-            void vscode.workspace
+            void ide.workspace
                 .getConfiguration()
-                .update('editor.inlineSuggest.suppressSuggestions', true, vscode.ConfigurationTarget.Global)
+                .update('editor.inlineSuggest.suppressSuggestions', true, ide.ConfigurationTarget.Global)
         }
 
         this.promptChars =
@@ -98,7 +100,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
 
         debug('CodyCompletionProvider:initialized', `provider: ${this.config.providerConfig.identifier}`)
 
-        vscode.workspace.onDidChangeTextDocument(event => {
+        ide.workspace.onDidChangeTextDocument(event => {
             const document = event.document
             const changes = event.contentChanges
 
@@ -162,7 +164,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
 
         CompletionLogger.clear()
 
-        if (!vscode.window.activeTextEditor || document.uri.scheme === 'cody') {
+        if (!ide.window.activeTextEditor || document.uri.scheme === 'cody') {
             return { items: [] }
         }
 
@@ -253,7 +255,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
         const sharedProviderOptions: Omit<ProviderOptions, 'id' | 'n' | 'multiline'> = {
             prefix,
             suffix,
-            fileName: path.normalize(vscode.workspace.asRelativePath(document.fileName ?? '')),
+            fileName: path.normalize(ide.workspace.asRelativePath(document.fileName ?? '')),
             languageId: document.languageId,
             responsePercentage: this.config.responsePercentage,
             prefixPercentage: this.config.prefixPercentage,
@@ -284,14 +286,14 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
                     ...sharedProviderOptions,
                     // Show more if manually triggered (but only showing 1 is faster, so we use it
                     // in the automatic trigger case).
-                    n: context.triggerKind === vscode.InlineCompletionTriggerKind.Automatic ? 1 : 3,
+                    n: context.triggerKind === ide.InlineCompletionTriggerKind.Automatic ? 1 : 3,
                     multiline: false,
                 })
             )
         }
         tracer?.({ completers: completers.map(({ options }) => options) })
 
-        if (!this.config.disableTimeouts && context.triggerKind !== vscode.InlineCompletionTriggerKind.Invoke) {
+        if (!this.config.disableTimeouts && context.triggerKind !== ide.InlineCompletionTriggerKind.Invoke) {
             await new Promise<void>(resolve => setTimeout(resolve, timeout))
         }
 
@@ -418,7 +420,7 @@ function toInlineCompletionItems(
             const lines = completion.content.split(/\r\n|\r|\n/).length
             const currentLineText = document.lineAt(position)
             const endOfLine = currentLineText.range.end
-            return new vscode.InlineCompletionItem(completion.content, new vscode.Range(position, endOfLine), {
+            return new ide.InlineCompletionItem(completion.content, new ide.Range(position, endOfLine), {
                 title: 'Completion accepted',
                 command: 'cody.autocomplete.inline.accepted',
                 arguments: [{ codyLogId: logId, codyLines: lines }],

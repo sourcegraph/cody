@@ -1,6 +1,7 @@
 import path from 'path'
 
-import * as vscode from 'vscode'
+import type * as vscode from 'vscode'
+import { ide } from '@sourcegraph/cody-shared/src/ide'
 
 import { bestJaccardMatch, JaccardMatch } from './bestJaccardMatch'
 import type { ReferenceSnippet } from './context'
@@ -33,7 +34,7 @@ export async function getContextFromCurrentEditor(options: Options): Promise<Ref
         matches.push({
             // Use relative path to remove redundant information from the prompts and
             // keep in sync with embeddings search resutls which use relatve to repo root paths.
-            fileName: path.normalize(vscode.workspace.asRelativePath(uri.fsPath)),
+            fileName: path.normalize(ide.workspace.asRelativePath(uri.fsPath)),
             ...match,
         })
     }
@@ -84,7 +85,7 @@ async function getRelevantFiles(currentDocument: vscode.TextDocument, history: H
 
         // TODO(philipp-spiess): Find out if we have a better approach to truncate very large files.
         const endLine = Math.min(document.lineCount, 10_000)
-        const range = new vscode.Range(0, 0, endLine, 0)
+        const range = new ide.Range(0, 0, endLine, 0)
 
         files.push({
             uri: document.uri,
@@ -92,14 +93,14 @@ async function getRelevantFiles(currentDocument: vscode.TextDocument, history: H
         })
     }
 
-    const visibleUris = vscode.window.visibleTextEditors.flatMap(e =>
+    const visibleUris = ide.window.visibleTextEditors.flatMap(e =>
         e.document.uri.scheme === 'file' ? [e.document.uri] : []
     )
 
     // Use tabs API to get current docs instead of `vscode.workspace.textDocuments`.
     // See related discussion: https://github.com/microsoft/vscode/issues/15178
     // See more info about the API: https://code.visualstudio.com/api/references/vscode-api#Tab
-    const allUris: vscode.Uri[] = vscode.window.tabGroups.all
+    const allUris: vscode.Uri[] = ide.window.tabGroups.all
         .flatMap(({ tabs }) => tabs.map(tab => (tab.input as any)?.uri))
         .filter(Boolean)
 
@@ -135,7 +136,7 @@ async function getRelevantFiles(currentDocument: vscode.TextDocument, history: H
                 }
 
                 try {
-                    return [await vscode.workspace.openTextDocument(uri)]
+                    return [await ide.workspace.openTextDocument(uri)]
                 } catch (error) {
                     console.error(error)
                     return []
@@ -155,7 +156,7 @@ async function getRelevantFiles(currentDocument: vscode.TextDocument, history: H
     await Promise.all(
         history.lastN(10, curLang, [currentDocument.uri, ...files.map(f => f.uri)]).map(async item => {
             try {
-                const document = await vscode.workspace.openTextDocument(item.document.uri)
+                const document = await ide.workspace.openTextDocument(item.document.uri)
                 addDocument(document)
             } catch (error) {
                 console.error(error)

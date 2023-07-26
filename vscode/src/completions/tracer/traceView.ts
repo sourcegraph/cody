@@ -1,4 +1,4 @@
-import * as vscode from 'vscode'
+import type * as vscode from 'vscode'
 
 import { isDefined } from '@sourcegraph/cody-shared'
 import { renderMarkdown } from '@sourcegraph/cody-shared/src/common/markdown'
@@ -6,6 +6,7 @@ import { renderMarkdown } from '@sourcegraph/cody-shared/src/common/markdown'
 import { CodyCompletionItemProvider } from '..'
 
 import { ProvideInlineCompletionsItemTraceData } from '.'
+import { ide } from '@sourcegraph/cody-shared/src/ide'
 
 /**
  * Registers a command `Cody: Open Autocomplete Trace View` that shows the context and prompt used
@@ -15,12 +16,12 @@ export function registerAutocompleteTraceView(completionsProvider: CodyCompletio
     let panel: vscode.WebviewPanel | null = null
     let latestInvocationSequence = 0
 
-    return vscode.Disposable.from(
-        vscode.commands.registerCommand('cody.autocomplete.openTraceView', () => {
-            panel = vscode.window.createWebviewPanel(
+    return ide.Disposable.from(
+        ide.commands.registerCommand('cody.autocomplete.openTraceView', () => {
+            panel = ide.window.createWebviewPanel(
                 'codyAutocompleteTraceView',
                 'Cody Autocomplete Trace View',
-                vscode.ViewColumn.Two,
+                ide.ViewColumn.Two,
                 {
                     enableFindWidget: true,
                 }
