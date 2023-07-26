@@ -89,6 +89,9 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
             case 'my-prompt':
                 await this.onCustomRecipeClicked(message.title, message.value)
                 break
+            case 'reload':
+                await this.authProvider.reloadAuthStatus()
+                break
             case 'openFile': {
                 const rootPath = this.editor.getWorkspaceRootPath()
                 if (!rootPath) {

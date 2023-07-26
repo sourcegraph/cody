@@ -253,6 +253,11 @@ export class AuthProvider {
         return { authStatus, isLoggedIn }
     }
 
+    // Set auth status in case of reload
+    public async reloadAuthStatus(): Promise<void> {
+        await this.auth(this.config.serverEndpoint, this.config.accessToken, this.config.customHeaders)
+    }
+
     // Set auth status and share it with chatview
     private async syncAuthStatus(authStatus: AuthStatus): Promise<void> {
         if (this.authStatus === authStatus) {
