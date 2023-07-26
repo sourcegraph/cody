@@ -1,7 +1,4 @@
-// VS Code Docs https://code.visualstudio.com/api/references/vscode-api#Memento
-// A memento represents a storage utility. It can store and retrieve values.
 import * as uuid from 'uuid'
-// import * as vscode from 'vscode'
 import { Memento } from 'vscode'
 
 import { UserLocalHistory } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
