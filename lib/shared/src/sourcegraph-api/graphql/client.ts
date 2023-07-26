@@ -35,7 +35,7 @@ interface SiteVersionResponse {
 }
 
 interface SiteIdentificationResponse {
-    site: { siteID: string, productSubscription: { license: { hashedKey: string } } } | null
+    site: { siteID: string; productSubscription: { license: { hashedKey: string } } } | null
 }
 
 interface SiteGraphqlFieldsResponse {
@@ -195,13 +195,18 @@ export class SourcegraphGraphQLAPIClient {
         )
     }
 
-    public async getSiteIdentification(): Promise<{ siteid: string, hashedLicenseKey: string } | Error> {
+    public async getSiteIdentification(): Promise<{ siteid: string; hashedLicenseKey: string } | Error> {
         return this.fetchSourcegraphAPI<APIResponse<SiteIdentificationResponse>>(CURRENT_SITE_IDENTIFICATION, {}).then(
             response =>
                 extractDataOrError(response, data =>
-                    data.site?.siteID ? (
-                        data.site?.productSubscription?.license?.hashedKey ? { siteid: data.site?.siteID, hashedLicenseKey: data.site?.productSubscription?.license?.hashedKey } : new Error('site hashed license key not found')
-                    ) : new Error('site ID not found')
+                    data.site?.siteID
+                        ? data.site?.productSubscription?.license?.hashedKey
+                            ? {
+                                  siteid: data.site?.siteID,
+                                  hashedLicenseKey: data.site?.productSubscription?.license?.hashedKey,
+                              }
+                            : new Error('site hashed license key not found')
+                        : new Error('site ID not found')
                 )
         )
     }
@@ -349,17 +354,22 @@ export class SourcegraphGraphQLAPIClient {
         })
     }
 
-    private async sendEventLogRequestToAPI(dotcom: boolean, event: event): Promise<LogEventResponse | Error > {
+    private async sendEventLogRequestToAPI(dotcom: boolean, event: event): Promise<LogEventResponse | Error> {
         if (dotcom) {
-            return this.fetchSourcegraphDotcomAPI<APIResponse<LogEventResponse>>(LOG_EVENT_MUTATION, event).then(response => extractDataOrError(response, data => data))
+            return this.fetchSourcegraphDotcomAPI<APIResponse<LogEventResponse>>(LOG_EVENT_MUTATION, event).then(
+                response => extractDataOrError(response, data => data)
+            )
         }
 
-        const initialAttempt = await this.fetchSourcegraphAPI<APIResponse<LogEventResponse>>(LOG_EVENT_MUTATION, event)
-            .then(response => extractDataOrError(response, data => data))
+        const initialAttempt = await this.fetchSourcegraphAPI<APIResponse<LogEventResponse>>(
+            LOG_EVENT_MUTATION,
+            event
+        ).then(response => extractDataOrError(response, data => data))
 
         if (isError(initialAttempt)) {
-            return this.fetchSourcegraphAPI<APIResponse<LogEventResponse>>(LOG_EVENT_MUTATION_DEPRECATED, event)
-                .then(response => extractDataOrError(response, data => data))
+            return this.fetchSourcegraphAPI<APIResponse<LogEventResponse>>(LOG_EVENT_MUTATION_DEPRECATED, event).then(
+                response => extractDataOrError(response, data => data)
+            )
         }
 
         return initialAttempt

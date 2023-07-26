@@ -1,5 +1,4 @@
 import { ConfigurationWithAccessToken } from '../configuration'
-
 import { SourcegraphGraphQLAPIClient } from '../sourcegraph-api/graphql'
 import { isError } from '../utils'
 
@@ -16,7 +15,7 @@ export interface ExtensionDetails {
 export class EventLogger {
     private gqlAPIClient: SourcegraphGraphQLAPIClient
     private client: string
-    private siteIdentification?: { siteid: string, hashedLicenseKey: string }
+    private siteIdentification?: { siteid: string; hashedLicenseKey: string }
 
     constructor(
         private serverEndpoint: string,
