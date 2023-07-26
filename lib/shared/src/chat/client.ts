@@ -3,7 +3,7 @@ import { ConfigurationWithAccessToken } from '../configuration'
 import { Editor } from '../editor'
 import { PrefilledOptions, withPreselectedOptions } from '../editor/withPreselectedOptions'
 import { SourcegraphEmbeddingsSearchClient } from '../embeddings/client'
-import { WebGraphContextFetcher } from '../graph-context/graph-context-fetcher'
+import { VSCodeGraphContextFetcher } from '../graph-context/graph-context-fetcher'
 import { SourcegraphIntentDetectorClient } from '../intent-detector/client'
 import { SourcegraphBrowserCompletionsClient } from '../sourcegraph-api/completions/browserClient'
 import { CompletionsClientConfig, SourcegraphCompletionsClient } from '../sourcegraph-api/completions/client'
@@ -74,7 +74,8 @@ export async function createClient({
     }
 
     const embeddingsSearch = repoId ? new SourcegraphEmbeddingsSearchClient(graphqlClient, repoId, true) : null
-    const graphContext = new WebGraphContextFetcher(graphqlClient, editor)
+    // const graphContext = new WebGraphContextFetcher(graphqlClient, editor)
+    const graphContext = new VSCodeGraphContextFetcher(graphqlClient, editor)
     const codebaseContext = new CodebaseContext(config, config.codebase, embeddingsSearch, null, null, graphContext)
     console.log('am i working?')
 
