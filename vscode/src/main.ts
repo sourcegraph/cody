@@ -97,7 +97,7 @@ const register = async (
         TestSupport.instance.fixupController.set(fixup)
     }
     // Controller for Custom Recipes
-    const prompt = new MyPromptController(context, initialConfig.experimentalCustomRecipes)
+    const prompt = new MyPromptController(context, initialConfig.experimentalCustomRecipes, localStorage)
 
     const editor = new VSCodeEditor({ inline: commentController, fixups: fixup, prompt })
     // Could we use the `initialConfig` instead?
@@ -254,7 +254,7 @@ const register = async (
             }
             await sidebarChatProvider.executeCustomRecipe(title)
         }),
-        vscode.commands.registerCommand('cody.customRecipes.list', () => prompt.quickRecipe()),
+        vscode.commands.registerCommand('cody.customRecipes.list', () => prompt.quickRecipePicker()),
         vscode.commands.registerCommand('cody.recipe.explain-code', () =>
             executeRecipeInSidebar('explain-code-detailed')
         ),

@@ -13,6 +13,8 @@ import { MyPromptController } from '../my-cody/MyPromptController'
 import { FixupController } from '../non-stop/FixupController'
 import { InlineController } from '../services/InlineController'
 
+import { EditorCodeLenses } from './EditorCodeLenses'
+
 export class VSCodeEditor implements Editor<InlineController, FixupController, MyPromptController> {
     constructor(
         public readonly controllers: ActiveTextEditorViewControllers<
@@ -20,7 +22,9 @@ export class VSCodeEditor implements Editor<InlineController, FixupController, M
             FixupController,
             MyPromptController
         >
-    ) {}
+    ) {
+        new EditorCodeLenses()
+    }
 
     public get fileName(): string {
         return vscode.window.activeTextEditor?.document.fileName ?? ''
@@ -59,6 +63,7 @@ export class VSCodeEditor implements Editor<InlineController, FixupController, M
     }
 
     public getActiveTextEditorSelection(): ActiveTextEditorSelection | null {
+        // Skip this for Inline Chat tasks as the replace method uses selection tracked by the Inline Controller
         if (this.controllers.inline?.isInProgress) {
             return null
         }
@@ -134,6 +139,7 @@ export class VSCodeEditor implements Editor<InlineController, FixupController, M
 
     public async replaceSelection(fileName: string, selectedText: string, replacement: string): Promise<void> {
         const activeEditor = this.getActiveTextEditorInstance()
+        // Use the replace method from inline controller if there is a Inline Fixsup in progress
         if (this.controllers.inline?.isInProgress) {
             await this.controllers.inline.replace(fileName, replacement, selectedText)
             return

@@ -5,7 +5,7 @@ import { Configuration } from '@sourcegraph/cody-shared/src/configuration'
 import { CodyLLMSiteConfiguration } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
 
 import { View } from '../../webviews/NavBar'
-import { CodyPromptType } from '../my-cody/types'
+import { CodyPrompt, CodyPromptType } from '../my-cody/const'
 
 export enum WebviewEvent {
     Feedback = 'feedback',
@@ -56,7 +56,7 @@ export type ExtensionMessage =
     | { type: 'suggestions'; suggestions: string[] }
     | { type: 'app-state'; isInstalled: boolean }
     | { type: 'enabled-plugins'; plugins: string[] }
-    | { type: 'my-prompts'; prompts: string[]; isEnabled: boolean }
+    | { type: 'my-prompts'; prompts: [string, CodyPrompt][]; isEnabled: boolean }
 
 /**
  * The subset of configuration that is visible to the webview.

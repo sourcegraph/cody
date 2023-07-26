@@ -9,6 +9,7 @@ import { ChatHistory, ChatMessage } from '@sourcegraph/cody-shared/src/chat/tran
 import { Configuration } from '@sourcegraph/cody-shared/src/configuration'
 
 import { AuthStatus, defaultAuthStatus, LocalEnv } from '../src/chat/protocol'
+import { CodyPrompt } from '../src/my-cody/const'
 
 import { Chat } from './Chat'
 import { Debug } from './Debug'
@@ -42,7 +43,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     const [suggestions, setSuggestions] = useState<string[] | undefined>()
     const [isAppInstalled, setIsAppInstalled] = useState<boolean>(false)
     const [enabledPlugins, setEnabledPlugins] = useState<string[]>([])
-    const [myPrompts, setMyPrompts] = useState<string[] | null>(null)
+    const [myPrompts, setMyPrompts] = useState<[string, CodyPrompt][] | null>(null)
 
     useEffect(
         () =>

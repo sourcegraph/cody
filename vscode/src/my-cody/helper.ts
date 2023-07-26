@@ -1,5 +1,7 @@
 import * as vscode from 'vscode'
 
+import { CodyPrompt } from './const'
+
 export function constructFileUri(fileName: string, rootDirPath?: string): vscode.Uri | undefined {
     if (!rootDirPath) {
         return undefined
@@ -85,3 +87,7 @@ Output of \`{command}\` command:
 \`\`\`sh
 {output}
 \`\`\``
+
+export const lastUsedRecipesSeperator: [string, CodyPrompt][] = [
+    ['seperator', { prompt: 'seperator', type: 'last used' }],
+]

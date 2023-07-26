@@ -6,7 +6,7 @@ import { ChatMessage, UserLocalHistory } from '@sourcegraph/cody-shared/src/chat
 
 import { View } from '../../webviews/NavBar'
 import { debug } from '../log'
-import { CodyPromptType } from '../my-cody/types'
+import { CodyPrompt, CodyPromptType } from '../my-cody/const'
 import { logEvent } from '../services/EventLogger'
 
 import { MessageProvider, MessageProviderOptions } from './MessageProvider'
@@ -224,7 +224,7 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
         void this.webview?.postMessage({ type: 'enabled-plugins', plugins })
     }
 
-    protected handleMyPrompts(prompts: string[], isEnabled: boolean): void {
+    protected handleMyPrompts(prompts: [string, CodyPrompt][], isEnabled: boolean): void {
         void this.webview?.postMessage({
             type: 'my-prompts',
             prompts,

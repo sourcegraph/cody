@@ -18,7 +18,7 @@ import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
 
 import { VSCodeEditor } from '../editor/vscode-editor'
 import { debug } from '../log'
-import { CodyPromptType } from '../my-cody/types'
+import { CodyPrompt, CodyPromptType } from '../my-cody/const'
 import { FixupTask } from '../non-stop/FixupTask'
 import { IdleRecipeRunner } from '../non-stop/roles'
 import { AuthProvider } from '../services/AuthProvider'
@@ -54,7 +54,7 @@ abstract class MessageHandler {
     protected abstract handleError(errorMsg: string): void
     protected abstract handleSuggestions(suggestions: string[]): void
     protected abstract handleEnabledPlugins(plugins: string[]): void
-    protected abstract handleMyPrompts(prompts: string[], isEnabled: boolean): void
+    protected abstract handleMyPrompts(prompts: [string, CodyPrompt][], isEnabled: boolean): void
 }
 
 export interface MessageProviderOptions {
@@ -425,7 +425,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
             default: {
                 this.sendTranscript()
 
-                const myPremade = this.editor.controllers.prompt?.getMyPrompts().premade
+                const myPremade = (await this.editor.controllers.prompt?.getMyPrompts())?.premade
                 const { prompt, contextFiles } = await this.transcript.getPromptForLastInteraction(
                     getPreamble(this.contextProvider.context.getCodebase(), myPremade),
                     this.maxPromptTokens,
@@ -460,7 +460,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         }
         transcript.addInteraction(interaction)
 
-        const myPremade = this.editor.controllers.prompt?.getMyPrompts().premade
+        const myPremade = (await this.editor.controllers.prompt?.getMyPrompts())?.premade
         const { prompt, contextFiles } = await transcript.getPromptForLastInteraction(
             getPreamble(this.contextProvider.context.getCodebase(), myPremade),
             this.maxPromptTokens
@@ -592,8 +592,8 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
     private async sendMyPrompts(): Promise<void> {
         const send = async (): Promise<void> => {
             await this.editor.controllers.prompt?.refresh()
-            const prompts = this.editor.controllers.prompt?.getPromptList() ?? []
-            void this.handleMyPrompts(prompts, this.contextProvider.config.experimentalCustomRecipes)
+            const recipes = this.editor.controllers.prompt?.getRecipes() || []
+            void this.handleMyPrompts(recipes, this.contextProvider.config.experimentalCustomRecipes)
         }
         this.editor.controllers.prompt?.setMessenger(send)
         await send()

@@ -2,31 +2,29 @@ import * as vscode from 'vscode'
 
 import { defaultCodyPromptContext } from '@sourcegraph/cody-shared/src/chat/recipes/my-prompt'
 
+import { CodyPrompt, CodyPromptType, CustomRecipesContextOptions, CustomRecipesMainMenuOptions } from './const'
 import { prompt_creation_title } from './helper'
-import { CodyPrompt, CodyPromptType } from './types'
 
-export type answerType = 'add' | 'file' | 'delete' | 'list' | 'open' | 'cancel'
+export type CustomRecipesMenuAnswerType = 'add' | 'file' | 'delete' | 'list' | 'open' | 'cancel'
+
+export interface CustomRecipesMenuAnswer {
+    actionID: CustomRecipesMenuAnswerType
+    recipeType: CodyPromptType
+}
 
 // Main menu for the Custom Recipes in Quick Pick
-export async function showCustomRecipeMenu(): Promise<answerType | void> {
-    const options = [
-        { kind: -1, label: 'recipes manager', id: 'seperator' },
-        { kind: 0, label: 'Create a New User Recipe', id: 'add' },
-        { kind: 0, label: 'My Custom Recipes', id: 'list' },
-        { kind: -1, label: '.vscode/cody.json', id: 'seperator' },
-        { kind: 0, label: 'Open Recipes Settings (JSON)', id: 'open' },
-        { kind: 0, label: 'Generate Recipes Settings', id: 'file' },
-        { kind: 0, label: 'Delete Recipes Settings', id: 'delete' },
-    ]
+export async function showCustomRecipeMenu(): Promise<CustomRecipesMenuAnswer | void> {
     const inputOptions = {
         title: 'Cody: Custom Recipes (Experimental)',
         placeHolder: 'Select an option to continue or ESC to cancel',
     }
-    const selectedOption = await vscode.window.showQuickPick(options, inputOptions)
+    const selectedOption = await vscode.window.showQuickPick(CustomRecipesMainMenuOptions, inputOptions)
     if (!selectedOption?.id || selectedOption.id === 'seperator' || selectedOption.id === 'cancel') {
         return
     }
-    return selectedOption.id as answerType
+    const actionID = selectedOption.id as CustomRecipesMenuAnswerType
+    const recipeType = selectedOption.type as CodyPromptType
+    return { actionID, recipeType }
 }
 
 // Quick pick menu to select a recipe from the list of available custom recipes
@@ -60,7 +58,7 @@ export async function createNewPrompt(promptName?: string): Promise<CodyPrompt |
     const newPrompt: CodyPrompt = { prompt: promptDescription }
     newPrompt.context = { ...defaultCodyPromptContext }
     // Get the context types from the user using the quick pick
-    const promptContext = await vscode.window.showQuickPick(contextTypes, {
+    const promptContext = await vscode.window.showQuickPick(CustomRecipesContextOptions, {
         title: 'Select the context to include with the prompt for the new recipe',
         placeHolder: 'TIPS: Providing limited but precise context helps Cody provide more relevant answers',
         canPickMany: true,
@@ -69,84 +67,35 @@ export async function createNewPrompt(promptName?: string): Promise<CodyPrompt |
             item.picked = !item.picked
         },
     })
-    if (promptContext?.length) {
-        for (const context of promptContext) {
-            switch (context.id) {
-                case 'selection':
-                    newPrompt.context.excludeSelection = !context.picked
-                    break
-                case 'codebase':
-                    newPrompt.context.codebase = true
-                    break
-                case 'currentDir':
-                    newPrompt.context.currentDir = true
-                    break
-                case 'openTabs':
-                    newPrompt.context.openTabs = true
-                    break
-                case 'none':
-                    newPrompt.context.none = true
-                    break
-                case 'command': {
-                    const promptCommand = await showPromptCommandInput()
-                    if (promptCommand) {
-                        newPrompt.context.command = promptCommand
-                    }
-                    break
-                }
+    if (!promptContext?.length) {
+        return newPrompt
+    }
+    for (const context of promptContext) {
+        switch (context.id) {
+            case 'selection':
+                newPrompt.context.excludeSelection = !context.picked
+                break
+            case 'codebase':
+            case 'currentDir':
+            case 'openTabs':
+            case 'none':
+                newPrompt.context[context.id] = true
+                break
+            case 'command': {
+                newPrompt.context.command = (await showPromptCommandInput()) || ''
+                break
             }
         }
     }
     return newPrompt
 }
 
-// List of context types to include with the prompt
-export const contextTypes = [
-    {
-        id: 'selection',
-        label: 'Selected Code',
-        detail: 'Code currently highlighted in the active editor.',
-        picked: true,
-    },
-    {
-        id: 'codebase',
-        label: 'Codebase',
-        detail: 'Code snippets retrieved from the available source for codebase context (embeddings or local keyword search).',
-        picked: false,
-    },
-    {
-        id: 'currentDir',
-        label: 'Current Directory',
-        description: 'If the prompt includes "test(s)", only test files will be included.',
-        detail: 'First 10 text files in the current directory',
-        picked: false,
-    },
-    {
-        id: 'openTabs',
-        label: 'Current Open Tabs',
-        detail: 'First 10 text files in current open tabs',
-        picked: false,
-    },
-    {
-        id: 'command',
-        label: 'Command Output',
-        detail: 'The output returned from a terminal command run from your local workspace. E.g. git describe --long',
-        picked: false,
-    },
-    {
-        id: 'none',
-        label: 'None',
-        detail: 'Exclude all types of context.',
-        picked: false,
-    },
-]
-
 // Input box for the user to enter a new prompt command during the UI prompt building process
 export async function showPromptCommandInput(): Promise<string | void> {
     // Get the command to run from the user using the input box
     const promptCommand = await vscode.window.showInputBox({
         title: prompt_creation_title,
-        prompt: '[Optional] Add a terminal command for the recipe to run from your current workspace. The output will be shared with Cody as context for the prompt. (The added command must work on your local machine.)',
+        prompt: 'Add a terminal command to run the recipe locally and share the output with Cody as prompt context.',
         placeHolder: 'e,g. node your-script.js, git describe --long, cat src/file-name.js etc.',
     })
     return promptCommand
@@ -194,10 +143,12 @@ export async function showRecipeTypeQuickPick(
     const userItem = {
         label: 'User',
         detail: 'User Recipes are accessible only to you across Workspaces',
+        description: '~/.vscode/cody.json',
     }
     const workspaceItem = {
         label: 'Workspace',
         detail: 'Workspace Recipes are available to all users in your current repository',
+        description: '.vscode/cody.json',
     }
     if (action === 'file') {
         if (prompts.user === 0) {
