@@ -390,7 +390,6 @@ const register = async (
     }
 
     await showSetupNotification(initialConfig, localStorage)
-    void vscode.commands.executeCommand('setContext', 'cody.test.inProgress', process.env.CODY_TESTING === 'true')
     return {
         disposable: vscode.Disposable.from(...disposables),
         onConfigurationChange: newConfig => {
