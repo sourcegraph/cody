@@ -25,7 +25,7 @@ import { FixupController } from './non-stop/FixupController'
 import { showSetupNotification } from './notifications/setup-notification'
 import { getRgPath } from './rg'
 import { AuthProvider } from './services/AuthProvider'
-import { createOrUpdateEventLogger, logEvent } from './services/EventLogger'
+import { createOrUpdateEventLogger } from './services/EventLogger'
 import { showFeedbackSupportQuickPick } from './services/FeedbackOptions'
 import { GuardrailsProvider } from './services/GuardrailsProvider'
 import { Comment, InlineController } from './services/InlineController'
@@ -37,6 +37,7 @@ import {
     VSCodeSecretStorage,
 } from './services/SecretStorageProvider'
 import { CodyStatusBar, createStatusBar } from './services/StatusBar'
+import { createVSCodeTelemetryService } from './services/telemetry'
 import { TestSupport } from './test-support'
 
 /**
@@ -86,10 +87,11 @@ const register = async (
 }> => {
     const disposables: vscode.Disposable[] = []
 
-    // Controller for Inline Chat
     await createOrUpdateEventLogger(initialConfig, localStorage)
+    const telemetryService = createVSCodeTelemetryService()
+
     // Controller for inline Chat
-    const commentController = new InlineController(context.extensionPath)
+    const commentController = new InlineController(context.extensionPath, telemetryService)
     // Controller for Non-Stop Cody
     const fixup = new FixupController()
     disposables.push(fixup)
@@ -111,9 +113,9 @@ const register = async (
         completionsClient,
         guardrails,
         onConfigurationChange: externalServicesOnDidConfigurationChange,
-    } = await configureExternalServices(initialConfig, rgPath, editor)
+    } = await configureExternalServices(initialConfig, rgPath, editor, telemetryService)
 
-    const authProvider = new AuthProvider(initialConfig, secretStorage, localStorage)
+    const authProvider = new AuthProvider(initialConfig, secretStorage, localStorage, telemetryService)
     await authProvider.init()
 
     const contextProvider = new ContextProvider(
@@ -124,7 +126,8 @@ const register = async (
         secretStorage,
         localStorage,
         rgPath,
-        authProvider
+        authProvider,
+        telemetryService
     )
     disposables.push(contextProvider)
 
@@ -138,6 +141,7 @@ const register = async (
         rgPath,
         authProvider,
         contextProvider,
+        telemetryService,
     }
 
     const inlineChatManager = new InlineChatViewManager(messageProviderOptions)
@@ -197,7 +201,7 @@ const register = async (
             const isFixMode = /^\/f(ix)?\s/i.test(comment.text.trimStart())
             const inlineChatProvider = inlineChatManager.getProviderForThread(comment.thread)
             await inlineChatProvider.addChat(comment.text, isFixMode)
-            logEvent(`CodyVSCodeExtension:inline-assist:${isFixMode ? 'fixup' : 'chat'}`)
+            telemetryService.log(`CodyVSCodeExtension:inline-assist:${isFixMode ? 'fixup' : 'chat'}`)
         }),
         vscode.commands.registerCommand('cody.comment.delete', (thread: vscode.CommentThread) => {
             inlineChatManager.removeProviderForThread(thread)

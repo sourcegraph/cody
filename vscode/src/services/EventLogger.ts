@@ -1,9 +1,6 @@
 import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
-import {
-    EventLogger,
-    ExtensionDetails,
-    TelemetryEventProperties,
-} from '@sourcegraph/cody-shared/src/telemetry/EventLogger'
+import { TelemetryEventProperties } from '@sourcegraph/cody-shared/src/telemetry'
+import { EventLogger, ExtensionDetails } from '@sourcegraph/cody-shared/src/telemetry/EventLogger'
 
 import { version as packageVersion } from '../../package.json'
 import { debug } from '../log'
@@ -39,13 +36,15 @@ export async function createOrUpdateEventLogger(
 /**
  * Log a telemetry event.
  *
- * PRIVACY: Do NOT include any potentially private information in `eventProperties`. These
- * properties may get sent to analytics tools, so must not include private information, such as
- * search queries or repository names.
+ * PRIVACY: Do NOT include any potentially private information in `properties`. These properties may
+ * get sent to analytics tools, so must not include private information, such as search queries or
+ * repository names.
  *
  * @param eventName The name of the event.
  * @param properties Event properties. Do NOT include any private information, such as full URLs
  * that may contain private repository names or search queries.
+ *
+ * @deprecated Use TelemetryService instead.
  */
 export function logEvent(eventName: string, properties?: TelemetryEventProperties): void {
     if (!eventLogger || !globalAnonymousUserID) {

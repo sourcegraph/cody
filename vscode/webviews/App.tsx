@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import './App.css'
 
@@ -19,6 +19,7 @@ import { NavBar, View } from './NavBar'
 import { Plugins } from './Plugins'
 import { Recipes } from './Recipes'
 import { UserHistory } from './UserHistory'
+import { createWebviewTelemetryService } from './utils/telemetry'
 import type { VSCodeWrapper } from './utils/VSCodeApi'
 
 export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vscodeAPI }) => {
@@ -137,6 +138,8 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
         [enabledPlugins, vscodeAPI]
     )
 
+    const telemetryService = useMemo(() => createWebviewTelemetryService(vscodeAPI), [vscodeAPI])
+
     if (!view || !authStatus || !config) {
         return <LoadingPage />
     }
@@ -151,6 +154,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                     isAppInstalled={isAppInstalled}
                     isAppRunning={config?.isAppRunning}
                     vscodeAPI={vscodeAPI}
+                    telemetryService={telemetryService}
                     appOS={config?.os}
                     appArch={config?.arch}
                     callbackScheme={config?.uriScheme}
@@ -191,6 +195,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                             suggestions={suggestions}
                             pluginsDevMode={Boolean(config?.pluginsDebugEnabled)}
                             setSuggestions={setSuggestions}
+                            telemetryService={telemetryService}
                         />
                     )}
                 </>

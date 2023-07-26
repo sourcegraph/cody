@@ -8,6 +8,7 @@ import * as vscode from 'vscode'
 import { URI } from 'vscode-uri'
 
 import { NoopEditor } from '@sourcegraph/cody-shared/src/editor'
+import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/cody-shared/src/telemetry'
 
 import { CodyCompletionItemProvider } from '../../src/completions'
 import { GetContextResult } from '../../src/completions/context'
@@ -36,7 +37,8 @@ async function initCompletionsProvider(context: GetContextResult): Promise<CodyC
     const { completionsClient, codebaseContext } = await configureExternalServices(
         initialConfig,
         'rg',
-        new NoopEditor()
+        new NoopEditor(),
+        NOOP_TELEMETRY_SERVICE
     )
 
     const history = new History()

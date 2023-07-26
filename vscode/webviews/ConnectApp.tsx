@@ -1,5 +1,7 @@
 import { VSCodeButton } from '@vscode/webview-ui-toolkit/react'
 
+import { TelemetryService } from '@sourcegraph/cody-shared/src/telemetry'
+
 import { APP_CALLBACK_URL, APP_LANDING_URL, archConvertor } from '../src/chat/protocol'
 
 import { VSCodeWrapper } from './utils/VSCodeApi'
@@ -8,6 +10,7 @@ import styles from './ConnectApp.module.css'
 
 interface ConnectAppProps {
     vscodeAPI: VSCodeWrapper
+    telemetryService: TelemetryService
     isAppInstalled: boolean
     isOSSupported: boolean
     appOS?: string
@@ -18,6 +21,7 @@ interface ConnectAppProps {
 
 export const ConnectApp: React.FunctionComponent<ConnectAppProps> = ({
     vscodeAPI,
+    telemetryService,
     isAppInstalled,
     isAppRunning = false,
     isOSSupported,
@@ -38,20 +42,29 @@ export const ConnectApp: React.FunctionComponent<ConnectAppProps> = ({
     callbackUri.searchParams.append('requestFrom', callbackScheme === 'vscode-insiders' ? 'CODY_INSIDERS' : 'CODY')
 
     // Use postMessage to open because it won't open otherwise due to the sourcegraph:// scheme.
-    const authApp = (url: string): void =>
+    const authApp = (url: string): void => {
         vscodeAPI.postMessage({
             command: 'auth',
             type: 'app',
             endpoint: url,
             value: inDownloadMode ? 'download' : 'connect',
         })
+    }
 
     return (
         <div className={styles.buttonContainer}>
             <VSCodeButton
                 type="button"
                 disabled={!isOSSupported}
-                onClick={() => authApp(isAppInstalled ? callbackUri.href : DOWNLOAD_URL)}
+                onClick={() => {
+                    telemetryService.log('CodyVSCodeExtension:auth:clickConnectApp', {
+                        isAppInstalled,
+                        isAppRunning,
+                        isOSSupported,
+                        buttonText,
+                    })
+                    authApp(isAppInstalled ? callbackUri.href : DOWNLOAD_URL)
+                }}
             >
                 <i className={'codicon codicon-' + buttonIcon} slot="start" />
                 {buttonText}

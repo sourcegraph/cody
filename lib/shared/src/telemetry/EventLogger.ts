@@ -1,26 +1,14 @@
 import { ConfigurationWithAccessToken } from '../configuration'
 import { SourcegraphGraphQLAPIClient } from '../sourcegraph-api/graphql'
 
+import { TelemetryEventProperties } from '.'
+
 export interface ExtensionDetails {
     ide: 'VSCode' | 'JetBrains' | 'Neovim' | 'Emacs'
     ideExtensionType: 'Cody' | 'CodeSearch'
 
     /** Version number for the extension. */
     version: string
-}
-
-/**
- * An event's properties.
- */
-export interface TelemetryEventProperties {
-    [key: string]:
-        | string
-        | number
-        | boolean
-        | null
-        | undefined
-        | string[]
-        | { [key: string]: string | number | boolean | null | undefined }
 }
 
 export class EventLogger {

@@ -1,7 +1,7 @@
 import { LRUCache } from 'lru-cache'
 import * as vscode from 'vscode'
 
-import { TelemetryEventProperties } from '@sourcegraph/cody-shared/src/telemetry/EventLogger'
+import { TelemetryEventProperties } from '@sourcegraph/cody-shared/src/telemetry'
 
 import { ConfigKeys } from '../configuration-keys'
 import { debug } from '../log'
