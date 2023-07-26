@@ -6,7 +6,9 @@ import { VSCodeWrapper } from './utils/VSCodeApi'
 
 import styles from './Recipes.module.css'
 
-export const recipesList = {
+type ClickableRecipeID = Exclude<RecipeID, 'chat-question' | 'inline-touch' | 'inline-chat' | 'my-prompt' | 'next-questions' | 'non-stop'>
+
+export const recipesList: Record<ClickableRecipeID, string> = {
     'explain-code-detailed': 'Explain selected code (detailed)',
     'explain-code-high-level': 'Explain selected code (high level)',
     'generate-unit-test': 'Generate a unit test',
@@ -104,7 +106,7 @@ export const Recipes: React.FunctionComponent<{
                             key={key}
                             className={styles.recipeButton}
                             type="button"
-                            onClick={() => onRecipeClick(key as RecipeID)}
+                            onClick={() => onRecipeClick(key as ClickableRecipeID)}
                         >
                             {value}
                         </VSCodeButton>
