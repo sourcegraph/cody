@@ -5,11 +5,11 @@ import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/confi
 import { SourcegraphGraphQLAPIClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
 import { isError } from '@sourcegraph/cody-shared/src/utils'
 
+import { ChatViewProviderWebview } from '../chat/ChatViewProvider'
 import {
     AuthStatus,
     defaultAuthStatus,
     DOTCOM_URL,
-    ExtensionMessage,
     isLoggedIn as isAuthed,
     isLocalApp,
     LOCAL_APP_URL,
@@ -33,9 +33,7 @@ export class AuthProvider {
     public appDetector: LocalAppDetector
 
     private authStatus: AuthStatus = defaultAuthStatus
-    public webview?: Omit<vscode.Webview, 'postMessage'> & {
-        postMessage(message: ExtensionMessage): Thenable<boolean>
-    }
+    public webview?: ChatViewProviderWebview
 
     constructor(
         private config: Pick<ConfigurationWithAccessToken, 'serverEndpoint' | 'accessToken' | 'customHeaders'>,

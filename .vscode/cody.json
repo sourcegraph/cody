@@ -1,15 +1,6 @@
 {
   "description": "This file is used for building custom workspace recipes for Cody by Sourcegraph.",
   "recipes": {
-    "Spell Checker": {
-      "prompt": "Correct all typos and non-standard usage for the selected code."
-    },
-    "Refactor Code": {
-      "prompt": "Please analyze the code and suggest constructive edits that follow best practices and improve code quality and readability. Focus your responses on being clear, thoughtful, coherent and easy for me to understand. Do not make changes that alter intended functionality without explaining why. Avoid responses that are overly complex or difficult to implement. Strive to provide helpful recommendations based on other shared code snippests.",
-      "context": {
-        "currentFile": true
-      }
-    },
     "Generate README.md for Current Directory": {
       "prompt": "Write a detailed README.md introduction for this project. If possible, briefly explain what the directory is and its key features. Use Markdown formatting. Focus on clarity and being beginner-friendly. Surround the answer with a code block to indicate that it is code.",
       "context": {
@@ -34,7 +25,7 @@
       "info": "You must have Cody app installed to use this recipe"
     },
     "Generate Multiple Unit Tests": {
-      "prompt": "Generate 2 or more unit tests for the selected code. Provide me with full, workable unit tests. You may import common libraries like the language's built-in test framework. If there are existing test files in the directory, try to follow similar patterns and imports used in those files. If there are no test files, use common best practices for unit testing this language.",
+      "prompt": "Generate 2 or more unit tests for the selected code. Provide me with full, workable unit tests. If there are existing test files in the directory, try to follow similar patterns and imports used in those files. You may import common libraries like the language's built-in test framework. If there are no test files, use common best practices for unit testing this language. Make sure to include all the imports needed to run the tests.",
       "context": {
         "currentDir": true,
         "currentFile": true

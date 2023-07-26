@@ -2,6 +2,7 @@ import * as vscode from 'vscode'
 
 import { Preamble } from '@sourcegraph/cody-shared/src/chat/preamble'
 import { defaultCodyPromptContext } from '@sourcegraph/cody-shared/src/chat/recipes/my-prompt'
+import { VsCodeMyPromptController } from '@sourcegraph/cody-shared/src/editor'
 
 import { debug } from '../log'
 
@@ -22,7 +23,7 @@ import { CodyPrompt, CodyPromptType, MyPrompts } from './types'
  * Provides additional prompt management and execution logic
  * NOTE: Dogfooding - Internal s2 users only
  */
-export class MyPromptController {
+export class MyPromptController implements VsCodeMyPromptController {
     private myPremade: Preamble | undefined = undefined
     private myStarter = ''
     private myPromptStore = new Map<string, CodyPrompt>()
@@ -54,7 +55,7 @@ export class MyPromptController {
         this.watcherInit()
     }
 
-    public setMessager(messenger: () => Promise<void>): void {
+    public setMessenger(messenger: () => Promise<void>): void {
         if (this.webViewMessenger) {
             return
         }
@@ -71,9 +72,10 @@ export class MyPromptController {
         this.userFileWatcher = createFileWatch(user?.homeDir)
         this.wsFileWatcher?.onDidChange(() => this.webViewMessenger?.())
         this.userFileWatcher?.onDidChange(() => this.webViewMessenger?.())
-        return
+        debug('MyPromptController:watcherInit', 'watchers created')
     }
 
+    // dispose and reset the controller and builder
     public dispose(): void {
         this.isEnabled = false
         this.builder.dispose()
@@ -83,8 +85,10 @@ export class MyPromptController {
         this.myPromptStore = new Map<string, CodyPrompt>()
         this.wsFileWatcher?.dispose()
         this.userFileWatcher?.dispose()
+        debug('MyPromptController:dispose', 'disposed')
     }
 
+    // Check if the config is enabled on config change, and toggle the builder
     private checkIsConfigEnabled(): void {
         const config = vscode.workspace.getConfiguration('cody')
         const newConfig = config.get('experimental.customRecipes') as boolean
@@ -96,10 +100,12 @@ export class MyPromptController {
         if (!newConfig) {
             this.dispose()
         }
+        debug('MyPromptController:checkIsConfigEnabled', 'config changed', { verbose: newConfig })
     }
 
     // getter for the promptInProgress
     public async get(type?: string, id?: string): Promise<string | null> {
+        debug('MyPromptController:get', type || '')
         switch (type) {
             case 'prompt':
                 return id ? this.myPromptStore.get(id)?.prompt || null : null
@@ -108,6 +114,7 @@ export class MyPromptController {
             case 'codebase':
                 return this.myPromptInProgress?.context?.codebase ? 'codebase' : null
             case 'output':
+            case 'command':
                 // return the terminal output from the command for the prompt if any
                 return this.getCommandOutput()
             default:
@@ -117,6 +124,7 @@ export class MyPromptController {
 
     // Open workspace file in editor
     public async open(filePath: string): Promise<void> {
+        debug('MyPromptController:open:filePath', filePath)
         if (filePath === 'user' || filePath === 'workspace') {
             return this.tools.openFile(this.builder.jsonFileUris[filePath])
         }
@@ -128,11 +136,17 @@ export class MyPromptController {
     public find(id: string): string {
         const myPrompt = this.myPromptStore.get(id)
         this.myPromptInProgress = myPrompt || null
+        debug('MyPromptController:find:promptId', id)
         return myPrompt?.prompt || ''
     }
 
+    // Set the codebase for the builder to build the prompt
     public setCodebase(codebase?: string): void {
+        if (this.builder.codebase === codebase) {
+            return
+        }
         this.builder.codebase = codebase || null
+        debug('MyPromptController:', 'setCodebase', { verbose: codebase })
     }
 
     // get the list of recipe names to share with the webview to display
@@ -163,8 +177,13 @@ export class MyPromptController {
         return this.tools.runCommand(command, args)
     }
 
-    // Save the user prompts to the extension storage
-    public async save(id: string, prompt: CodyPrompt, deletePrompt = false): Promise<void> {
+    // Save the user prompts to the user json file
+    public async save(
+        id: string,
+        prompt: CodyPrompt,
+        deletePrompt = false,
+        type: CodyPromptType = 'user'
+    ): Promise<void> {
         if (deletePrompt) {
             this.myPromptStore.delete(id)
         } else {
@@ -183,7 +202,7 @@ export class MyPromptController {
         const jsonContext = { ...this.builder.userPromptsJSON }
         jsonContext.recipes = Object.fromEntries(filtered)
         const jsonString = JSON.stringify(jsonContext)
-        const rootDirPath = this.tools.getUserInfo()?.homeDir
+        const rootDirPath = type === 'user' ? this.builder.jsonFileUris.user : this.builder.jsonFileUris.workspace
         if (!rootDirPath || !jsonString) {
             void vscode.window.showErrorMessage('Failed to save to cody.json file.')
             return
@@ -211,28 +230,35 @@ export class MyPromptController {
             void vscode.window.showInformationMessage(
                 'Recipes file not found. Try removing the .vscode/cody.json file in your repository or home directory for User Recipes manually.'
             )
+            debug('MyPromptController:clear:error:', 'Failed to remove cody.json file for' + type)
         }
         await deleteFile(uri)
         await this.refresh()
     }
 
+    // Add a new cody.json file to the user's workspace or home directory
     public async addJSONFile(type: CodyPromptType): Promise<void> {
         const extensionPath = this.context.extensionPath
         const isUserType = type === 'user'
-        const rootDirPath = isUserType ? this.tools.getUserInfo()?.homeDir : this.tools.getUserInfo()?.workspaceRoot
-        if (!rootDirPath) {
-            void vscode.window.showErrorMessage('Failed to create cody.json file.')
+        const configFileUri = type === 'user' ? this.builder.jsonFileUris.user : this.builder.jsonFileUris.workspace
+        if (!configFileUri) {
+            debug('MyPromptController:addJSONFile:error:', 'Failed to create cody.json file.')
+            void vscode.window.showErrorMessage(
+                'Failed to create cody.json file. Please make sure you have a repository opened in your workspace.'
+            )
             return
         }
-        await createJSONFile(extensionPath, rootDirPath, isUserType)
+        await createJSONFile(extensionPath, configFileUri, isUserType)
     }
 
     // Menu with an option to add a new recipe via UI and save it to user's cody.json file
     public async menu(): Promise<void> {
-        const selected = await showCustomRecipeMenu()
+        const promptSize = this.builder.promptSize.user + this.builder.promptSize.workspace
+        const selected = promptSize === 0 ? 'file' : await showCustomRecipeMenu()
         if (!selected) {
             return
         }
+        debug('MyPromptController:customRecipes:menu', selected)
         if (selected === 'delete' || selected === 'file' || selected === 'open') {
             const fileType = await showRecipeTypeQuickPick(selected, this.builder.promptSize)
             if (!fileType) {
@@ -246,6 +272,7 @@ export class MyPromptController {
         }
     }
 
+    // Menu with a list of user recipes to run
     public async quickRecipe(): Promise<void> {
         // Get the list of prompts from the cody.json file
         const promptList = this.getPromptList() || []
@@ -258,7 +285,7 @@ export class MyPromptController {
         const addOption: vscode.QuickPickItem = { label: 'Create a New User Recipe', detail: '', alwaysShow: true }
         promptItems.push(seperator, addOption)
         // Show the list of prompts to the user using a quick pick
-        const options = { title: 'Cody: My Custom Recipes', placeHolder: 'Select a recipe to run...' }
+        const options = { title: 'Cody: My Recipes', placeHolder: 'Search recipe to run...' }
         const selectedPrompt = await vscode.window.showQuickPick(promptItems, options)
         if (!selectedPrompt) {
             return
@@ -272,6 +299,7 @@ export class MyPromptController {
         if (!promptTitle) {
             return
         }
+        debug('MyPromptController:quickRecipe:selectedPrompt', promptTitle)
         // Run the prompt
         await vscode.commands.executeCommand('cody.customRecipes.exec', promptTitle)
     }
@@ -281,6 +309,9 @@ export class MyPromptController {
     private async addUserRecipeQuick(): Promise<void> {
         const promptName = await showPromptNameInput(this.myPromptStore)
         if (!promptName) {
+            debug('MyPromptController:addUserRecipeQuick:cancel', 'Request cancelled with missing prompt name', {
+                verbose: promptName,
+            })
             return
         }
         const newPrompt = await createNewPrompt(promptName)
@@ -290,8 +321,10 @@ export class MyPromptController {
         // Save the prompt to the current Map and Extension storage
         this.myPromptStore.set(promptName, newPrompt)
         await this.save(promptName, newPrompt)
+        debug('MyPromptController:addUserRecipeQuick:newPrompt:', 'saved', { verbose: newPrompt })
     }
 
+    // Show the menu for the actions that require file type selection
     private async fileTypeActions(action: string, fileType: CodyPromptType): Promise<void> {
         if (action === 'delete') {
             const confirmRemove = await showRemoveConfirmationInput()

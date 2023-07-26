@@ -9,7 +9,7 @@ import { debug } from '../log'
 import { CodyStatusBar } from '../services/StatusBar'
 
 import { CachedCompletions, CompletionsCache } from './cache'
-import { getContext } from './context'
+import { getContext, GetContextOptions, GetContextResult } from './context'
 import { getCurrentDocContext } from './document'
 import { History } from './history'
 import * as CompletionLogger from './logger'
@@ -34,6 +34,7 @@ interface CodyCompletionItemProviderConfig {
     cache: CompletionsCache | null
     completeSuggestWidgetSelection?: boolean
     tracer?: ProvideInlineCompletionItemsTracer | null
+    contextFetcher?: (options: GetContextOptions) => Promise<GetContextResult>
 }
 
 export class CodyCompletionItemProvider implements vscode.InlineCompletionItemProvider {
@@ -69,6 +70,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
             isEmbeddingsContextEnabled,
             completeSuggestWidgetSelection,
             tracer,
+            contextFetcher: config.contextFetcher ?? getContext,
         }
 
         if (this.config.completeSuggestWidgetSelection) {
@@ -280,7 +282,9 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
                 this.config.providerConfig.create({
                     id: 'single-line-suffix',
                     ...sharedProviderOptions,
-                    n: 1, // 1 vs. 3 improves perf
+                    // Show more if manually triggered (but only showing 1 is faster, so we use it
+                    // in the automatic trigger case).
+                    n: context.triggerKind === vscode.InlineCompletionTriggerKind.Automatic ? 1 : 3,
                     multiline: false,
                 })
             )
@@ -297,7 +301,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
             return { items: [] }
         }
 
-        const contextResult = await getContext({
+        const contextResult = await this.config.contextFetcher({
             document,
             prefix,
             suffix,

@@ -5,11 +5,11 @@ import { Configuration } from '@sourcegraph/cody-shared/src/configuration'
 import { CodyLLMSiteConfiguration } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
 
 import { View } from '../../webviews/NavBar'
+import { CodyPromptType } from '../my-cody/types'
 
 export enum WebviewEvent {
     Feedback = 'feedback',
     Click = 'click',
-    Auth = 'auth',
 }
 
 /**
@@ -21,7 +21,6 @@ export type WebviewMessage =
     | { command: 'event'; event: WebviewEvent; value: string }
     | { command: 'submit'; text: string; submitType: 'user' | 'suggestion' }
     | { command: 'executeRecipe'; recipe: RecipeID }
-    | { command: 'settings'; serverEndpoint: string; accessToken: string }
     | { command: 'removeHistory' }
     | { command: 'restoreHistory'; chatID: string }
     | { command: 'deleteHistory'; chatID: string }
@@ -38,8 +37,7 @@ export type WebviewMessage =
     | { command: 'abort' }
     | { command: 'chat-button'; action: string }
     | { command: 'setEnabledPlugins'; plugins: string[] }
-    | { command: 'my-prompt'; title: string }
-    | { command: 'reload' }
+    | { command: 'my-prompt'; title: string; value?: CodyPromptType }
 
 /**
  * A message sent from the extension host to the webview.

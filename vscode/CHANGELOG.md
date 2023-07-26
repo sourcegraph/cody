@@ -8,11 +8,25 @@ Starting from `0.2.0`, Cody is using `major.EVEN_NUMBER.patch` for release versi
 
 ### Added
 
+### Fixed
+
+### Changed
+
+## [0.6.2]
+
+### Added
+
 - [Internal] `Custom Recipes`: An experimental feature now available behind the `cody.experimental.customRecipes` feature flag for internal testing purpose. [pull/348](https://github.com/sourcegraph/cody/pull/348)
+- Inline Chat: Improved response quality by ensuring each inline chat maintains its own unique context, and doesn't share with the sidebar and other inline chats. This should also benefit response quality for inline /fix and /touch commands.
+- Inline Chat: Added the option to 'Stop generating' from within the inline chat window.
+- Inline Chat: Added the option to transfer a chat from the inline window to the Cody sidebar.
 
 ### Fixed
 
 ### Changed
+
+- The setting `cody.autocomplete.experimental.triggerMoreEagerly` (which causes autocomplete to trigger earlier, before you type a space or other non-word character) now defaults to `true`.
+- If you run the `Trigger Inline Suggestion` VS Code action, 3 suggestions instead of just 1 will be shown.
 
 ## [0.6.1]
 
