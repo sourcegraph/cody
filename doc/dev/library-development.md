@@ -23,7 +23,7 @@ For your local changes to `@sourcegraph/cody-{shared,ui}` to be immediately refl
 
 ### Linking
 
-In the consumer package (such as the `sourcegraph` repository's `client/web` directory), run:
+In the consumer package (such as the `sourcegraph` repository's `client/web` directory), _after_ you've run `sg start`, run:
 
 ```shell
 pnpm link $CODY_REPO/lib/ui
@@ -34,12 +34,18 @@ In the `cody` repository, run:
 
 ```shell
 pnpm link $CONSUMER_REPO/node_modules/react
-
-pnpm -C lib/ui run build
-pnpm run watch # keep this running
 ```
 
-(Known issue: When you change a CSS file in `@sourcegraph/cody-ui`, you need to run `pnpm -C lib/ui run build` again for your changes to be reflected in the consumer package.)
+After each change in the `cody` repository, run:
+
+```shell
+pnpm -C lib/ui run build && pnpm -C lib/shared run build
+```
+
+Known issues:
+
+1. When working with the `sourcegraph` repository, if you run the `pnpm link $CODY_REPO/lib/...` commands above _before_ running `sg start`, Bazel will complain. You need to run those commands after `sg start` and any Bazel commands you must run. If you need to get back to a clean slate to run Bazel, just revert the `sourcegraph` repository's `/pnpm-lock.yaml` file.
+1. You should be able to just run `pnpm run watch` from the `cody` repository, but that is not currently working.
 
 ### Unlinking
 
