@@ -26,7 +26,7 @@ test('open the custom recipes in sidebar and add new user recipe', async ({ page
     await page.keyboard.press('Enter')
     await page.keyboard.type('this is a test')
     await page.keyboard.press('Enter')
-    await page.getByLabel('NoneExclude all types of context.').check()
+    await page.getByLabel('None').check()
     await page.keyboard.press('Enter')
     await sidebar.getByRole('button', { name: 'A Test Recipes' }).click()
 })
