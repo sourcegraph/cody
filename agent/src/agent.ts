@@ -35,6 +35,7 @@ export class Agent extends MessageHandler {
             if (!codyClient) {
                 return {
                     name: 'cody-agent',
+                    authenticated: false,
                     codyEnabled: false,
                     codyVersion: null,
                 }
@@ -43,6 +44,7 @@ export class Agent extends MessageHandler {
             const codyStatus = codyClient.codyStatus
             return {
                 name: 'cody-agent',
+                authenticated: codyClient.sourcegraphStatus.authenticated,
                 codyEnabled: codyStatus.enabled,
                 codyVersion: codyStatus.version,
             }

@@ -48,6 +48,7 @@ export interface Client {
     ) => Promise<void>
     reset: () => void
     codebaseContext: CodebaseContext
+    sourcegraphStatus: { authenticated: boolean; version: string }
     codyStatus: { enabled: boolean; version: string }
 }
 
@@ -62,9 +63,17 @@ export async function createClient({
     const fullConfig = { debugEnable: false, ...config }
 
     const graphqlClient = new SourcegraphGraphQLAPIClient(fullConfig)
+    const sourcegraphVersion = await graphqlClient.getSiteVersion()
+
+    const sourcegraphStatus = { authenticated: false, version: '' }
+    if (!isError(sourcegraphVersion)) {
+        sourcegraphStatus.authenticated = true
+        sourcegraphStatus.version = sourcegraphVersion
+    }
+
     const codyStatus = await graphqlClient.isCodyEnabled()
 
-    if (codyStatus.enabled) {
+    if (sourcegraphStatus.authenticated && codyStatus.enabled) {
         const completionsClient = createCompletionsClient(fullConfig)
         const chatClient = new ChatClient(completionsClient)
 
@@ -172,6 +181,7 @@ export async function createClient({
                 sendTranscript()
             },
             codebaseContext,
+            sourcegraphStatus,
             codyStatus,
         }
     }

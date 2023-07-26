@@ -95,6 +95,7 @@ export interface ClientCapabilities {
 
 export interface ServerInfo {
     name: string
+    authenticated: boolean
     codyEnabled: boolean
     codyVersion: string | null
     capabilities?: ServerCapabilities
