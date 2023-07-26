@@ -46,7 +46,9 @@ export async function start(context: vscode.ExtensionContext): Promise<vscode.Di
     await migrateConfiguration()
 
     const secretStorage =
-        process.env.CODY_TESTING === 'true' ? new InMemorySecretStorage() : new VSCodeSecretStorage(context.secrets)
+        process.env.CODY_TESTING === 'true' || process.env.CODY_PROFILE_TEMP === 'true'
+            ? new InMemorySecretStorage()
+            : new VSCodeSecretStorage(context.secrets)
     const localStorage = new LocalStorage(context.globalState)
     const rgPath = await getRgPath(context.extensionPath)
 
