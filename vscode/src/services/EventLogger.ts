@@ -1,5 +1,9 @@
 import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
-import { EventLogger, ExtensionDetails } from '@sourcegraph/cody-shared/src/telemetry/EventLogger'
+import {
+    EventLogger,
+    ExtensionDetails,
+    TelemetryEventProperties,
+} from '@sourcegraph/cody-shared/src/telemetry/EventLogger'
 
 import { version as packageVersion } from '../../package.json'
 import { debug } from '../log'
@@ -33,31 +37,39 @@ export async function createOrUpdateEventLogger(
 }
 
 /**
- * Logs an event.
+ * Log a telemetry event.
  *
- * PRIVACY: Do NOT include any potentially private information in this field.
- * These properties get sent to our analytics tools for Cloud, so must not
- * include private information, such as search queries or repository names.
+ * PRIVACY: Do NOT include any potentially private information in `eventProperties`. These
+ * properties may get sent to analytics tools, so must not include private information, such as
+ * search queries or repository names.
  *
  * @param eventName The name of the event.
- * @param eventProperties The additional argument information.
- * @param publicProperties Public argument information.
+ * @param eventProperties Event properties. This may contain private info such as repository
+ * names or search queries. If audit logging is enabled, this data is stored on the associated
+ * Sourcegraph instance.
+ * @param publicProperties Event properties that include only public information. Do NOT include
+ * any private information, such as full URLs that may contain private repository names or
+ * search queries.
  */
-export function logEvent(eventName: string, eventProperties?: any, publicProperties?: any): void {
+export function logEvent(
+    eventName: string,
+    eventProperties?: TelemetryEventProperties,
+    publicProperties?: TelemetryEventProperties
+): void {
     if (!eventLogger || !globalAnonymousUserID) {
         return
     }
-    const argument = {
-        ...eventProperties,
-        version: packageVersion,
-    }
-    const publicArgument = {
-        ...publicProperties,
-        version: packageVersion,
-    }
     try {
-        debug('EventLogger', eventName, JSON.stringify(argument, null, 2))
-        eventLogger.log(eventName, globalAnonymousUserID, argument, publicArgument)
+        debug('EventLogger', eventName, eventProperties, publicProperties)
+        eventLogger.log(
+            eventName,
+            globalAnonymousUserID,
+            { ...eventProperties, version: packageVersion },
+            {
+                ...publicProperties,
+                version: packageVersion,
+            }
+        )
     } catch (error) {
         console.error(error)
     }

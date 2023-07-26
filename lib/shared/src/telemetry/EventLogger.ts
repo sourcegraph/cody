@@ -6,6 +6,20 @@ export interface ExtensionDetails {
     ideExtensionType: 'Cody' | 'CodeSearch'
 }
 
+/**
+ * An event's properties.
+ */
+export interface TelemetryEventProperties {
+    [key: string]:
+        | string
+        | number
+        | boolean
+        | null
+        | undefined
+        | string[]
+        | { [key: string]: string | number | boolean | null | undefined }
+}
+
 export class EventLogger {
     private gqlAPIClient: SourcegraphGraphQLAPIClient
 
@@ -29,19 +43,27 @@ export class EventLogger {
     }
 
     /**
-     * Logs an event.
+     * Log a telemetry event.
      *
-     * PRIVACY: Do NOT include any potentially private information in this
-     * field. These properties get sent to our analytics tools for Cloud, so
-     * must not include private information, such as search queries or
-     * repository names.
+     * PRIVACY: Do NOT include any potentially private information in `eventProperties`. These
+     * properties may get sent to analytics tools, so must not include private information, such as
+     * search queries or repository names.
      *
      * @param eventName The name of the event.
      * @param anonymousUserID The randomly generated unique user ID.
-     * @param eventProperties The additional argument information.
-     * @param publicProperties Public argument information.
+     * @param eventProperties Event properties. This may contain private info such as repository
+     * names or search queries. If audit logging is enabled, this data is stored on the associated
+     * Sourcegraph instance.
+     * @param publicProperties Event properties that include only public information. Do NOT include
+     * any private information, such as full URLs that may contain private repository names or
+     * search queries.
      */
-    public log(eventName: string, anonymousUserID: string, eventProperties?: any, publicProperties?: any): void {
+    public log(
+        eventName: string,
+        anonymousUserID: string,
+        eventProperties?: TelemetryEventProperties,
+        publicProperties?: TelemetryEventProperties
+    ): void {
         const configurationDetails = {
             contextSelection: this.config.useContext,
             chatPredictions: this.config.experimentalChatPredictions,

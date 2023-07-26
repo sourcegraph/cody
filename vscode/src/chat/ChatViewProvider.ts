@@ -233,36 +233,16 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
         const endpointUri = { serverEndpoint: endpoint }
         switch (event) {
             case 'feedback':
-                logEvent(`CodyVSCodeExtension:codyFeedback:${value}`, null, this.codyFeedbackPayload())
+                logEvent(`CodyVSCodeExtension:codyFeedback:${value}`, undefined, {
+                    lastChatUsedEmbeddings: this.transcript
+                        .toChat()
+                        .at(-1)
+                        ?.contextFiles?.some(file => file.source === 'embeddings'),
+                })
                 break
             case 'click':
                 logEvent(`CodyVSCodeExtension:${value}:clicked`, endpointUri, endpointUri)
                 break
-        }
-    }
-
-    private codyFeedbackPayload(): { chatTranscript: ChatMessage[] | null; lastChatUsedEmbeddings: boolean } | null {
-        const endpoint = this.contextProvider.config.serverEndpoint || DOTCOM_URL.href
-        const isPrivateInstance = new URL(endpoint).href !== DOTCOM_URL.href
-
-        // The user should only be able to submit feedback on transcripts, but just in case we guard against this happening.
-        const privateChatTranscript = this.transcript.toChat()
-        if (privateChatTranscript.length === 0) {
-            return null
-        }
-
-        const lastContextFiles = privateChatTranscript.at(-1)?.contextFiles
-        const lastChatUsedEmbeddings = lastContextFiles
-            ? lastContextFiles.some(file => file.source === 'embeddings')
-            : false
-
-        // We only include full chat transcript for dot com users with connected codebase
-        const chatTranscript =
-            !isPrivateInstance && this.contextProvider.context.getCodebase() ? privateChatTranscript : null
-
-        return {
-            chatTranscript,
-            lastChatUsedEmbeddings,
         }
     }
 

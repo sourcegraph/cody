@@ -128,7 +128,7 @@ export class LocalKeywordContextFetcher implements KeywordContextFetcher {
             })
         )
         const searchDuration = performance.now() - startTime
-        logEvent('CodyVSCodeExtension:keywordContext:searchDuration', searchDuration, searchDuration)
+        logEvent('CodyVSCodeExtension:keywordContext:searchDuration', undefined, { searchDuration })
         debug('LocalKeywordContextFetcher:getContext', JSON.stringify({ searchDuration }))
 
         return messagePairs.reverse().flat()
