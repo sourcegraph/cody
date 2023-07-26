@@ -17,7 +17,7 @@ import { History } from './completions/history'
 import * as CompletionsLogger from './completions/logger'
 import { createProviderConfig } from './completions/providers/createProvider'
 import { registerAutocompleteTraceView } from './completions/tracer/traceView'
-import { getConfiguration, getFullConfig, migrateConfiguration } from './configuration'
+import { getConfiguration, getFullConfig } from './configuration'
 import { VSCodeEditor } from './editor/vscode-editor'
 import { configureExternalServices } from './external-services'
 import { MyPromptController } from './my-cody/MyPromptController'
@@ -43,8 +43,6 @@ import { TestSupport } from './test-support'
  * Start the extension, watching all relevant configuration and secrets for changes.
  */
 export async function start(context: vscode.ExtensionContext): Promise<vscode.Disposable> {
-    await migrateConfiguration()
-
     const secretStorage =
         process.env.CODY_TESTING === 'true' || process.env.CODY_PROFILE_TEMP === 'true'
             ? new InMemorySecretStorage()
