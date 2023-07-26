@@ -15,9 +15,7 @@ export abstract class GraphContextFetcher {
     // TODO - move into editor interface
     public abstract getGitInfo(workspaceRoot: string): Promise<GitInfo>
 
-    constructor(private graphqlClient: SourcegraphGraphQLAPIClient, private editor: Editor) {
-        console.log('🚀 ~ file: index.ts:36 ~ GraphContextFetcher ~ constructor ~ editor:', editor)
-    }
+    constructor(private graphqlClient: SourcegraphGraphQLAPIClient, private editor: Editor) {}
 
     public async getContext(): Promise<PreciseContextResult[]> {
         console.log('🚀 ~ file: index.ts:39 ~ GraphContextFetcher ~ getContext ~ this.editor:', this.editor)
@@ -26,18 +24,9 @@ export abstract class GraphContextFetcher {
             return []
         }
         const workspaceRoot = this.editor.getWorkspaceRootPath() || ""
-        // if (!workspaceRoot) {
-        //     return []
-        // }
-        let repository = ''
-        let commitID = editorContext.revision || 'HEAD'
-        if (editorContext.repoName) {
-            repository = editorContext.repoName
-        } else {
-            const { repo, commitID: cid } = await this.getGitInfo(workspaceRoot)
-            repository = repo
-            commitID = cid
-        }
+        const { repo, commitID: cid } = await this.getGitInfo(workspaceRoot)
+        let repository = editorContext.repoName ?? repo
+        let commitID = editorContext.revision || cid || 'HEAD'
         console.log("🚀 ~ file: index.ts:34 ~ GraphContextFetcher ~ getContext ~ repository, commitID:", repository, commitID)
         const activeFile = pathRelativeToRoot(editorContext.filePath, workspaceRoot)
 
