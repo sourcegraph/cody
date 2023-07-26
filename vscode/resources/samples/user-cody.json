@@ -22,7 +22,7 @@
       "prompt": "Tell me about the most recent error in log and how I can resolve it.",
       "context": {
         "excludeSelection": true,
-        "command": "cat ~/Library/Logs/com.sourcegraph.cody/Cody.log"
+        "command": "tail -n 30 ~/Library/Logs/com.sourcegraph.cody/Cody.log"
       },
       "info": "You must have Cody app installed to use this recipe"
     }

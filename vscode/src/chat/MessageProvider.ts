@@ -16,9 +16,9 @@ import { defaultPlugins } from '@sourcegraph/cody-shared/src/plugins/built-in'
 import { ANSWER_TOKENS, DEFAULT_MAX_TOKENS } from '@sourcegraph/cody-shared/src/prompt/constants'
 import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
 
+import { CodyPrompt, CodyPromptType } from '../custom-recipes/const'
 import { VSCodeEditor } from '../editor/vscode-editor'
 import { debug } from '../log'
-import { CodyPrompt, CodyPromptType } from '../my-cody/const'
 import { FixupTask } from '../non-stop/FixupTask'
 import { IdleRecipeRunner } from '../non-stop/roles'
 import { AuthProvider } from '../services/AuthProvider'
@@ -539,24 +539,19 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
             return
         }
         // Send prompt names to display as recipe options
-        if (!title || title === 'get') {
-            await this.sendMyPrompts()
-            return
-        }
-        // Create a new recipe
-        if (title === 'menu') {
-            await this.editor.controllers.prompt?.menu()
-            await this.sendMyPrompts()
-            return
-        }
-        if (title === 'add' && type) {
-            try {
-                // copy the cody.json file from the extension path and move it to the workspace root directory
-                await this.editor.controllers.prompt?.addJSONFile(type)
-            } catch (error) {
-                void vscode.window.showErrorMessage(`Could not create a new cody.json file: ${error}`)
-            }
-            return
+        switch (title) {
+            case 'get':
+                await this.sendMyPrompts()
+                break
+            case 'menu':
+                await this.editor.controllers.prompt?.menu()
+                await this.sendMyPrompts()
+                break
+            case 'add':
+                if (!type) {
+                    break
+                }
+                return this.editor.controllers.prompt?.addJSONFile(type)
         }
         // Get prompt details from controller by title then execute prompt's command
         const promptText = this.editor.controllers.prompt?.find(title)

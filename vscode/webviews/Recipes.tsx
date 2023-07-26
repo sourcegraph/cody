@@ -2,7 +2,7 @@ import { VSCodeButton } from '@vscode/webview-ui-toolkit/react'
 
 import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 
-import { CodyPrompt } from '../src/my-cody/const'
+import { CodyPrompt } from '../src/custom-recipes/const'
 
 import { VSCodeWrapper } from './utils/VSCodeApi'
 

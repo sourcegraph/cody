@@ -5,7 +5,7 @@ import { Configuration } from '@sourcegraph/cody-shared/src/configuration'
 import { CodyLLMSiteConfiguration } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
 
 import { View } from '../../webviews/NavBar'
-import { CodyPrompt, CodyPromptType } from '../my-cody/const'
+import { CodyPrompt, CodyPromptType } from '../custom-recipes/const'
 
 export enum WebviewEvent {
     Feedback = 'feedback',

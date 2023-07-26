@@ -9,7 +9,7 @@ import {
 } from '@sourcegraph/cody-shared/src/editor'
 import { SURROUNDING_LINES } from '@sourcegraph/cody-shared/src/prompt/constants'
 
-import { MyPromptController } from '../my-cody/MyPromptController'
+import { MyPromptController } from '../custom-recipes/MyPromptController'
 import { FixupController } from '../non-stop/FixupController'
 import { InlineController } from '../services/InlineController'
 

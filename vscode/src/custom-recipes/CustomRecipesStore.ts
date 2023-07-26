@@ -3,16 +3,21 @@ import * as vscode from 'vscode'
 import { Preamble } from '@sourcegraph/cody-shared/src/chat/preamble'
 import { newPromptMixin, PromptMixin } from '@sourcegraph/cody-shared/src/prompt/prompt-mixin'
 
-import { CodyPrompt, CodyPromptType, CustomRecipesFileName, MyPrompts, MyPromptsJSON } from './const'
-import { constructFileUri } from './helper'
+import {
+    CodyPrompt,
+    CodyPromptType,
+    CustomRecipesConfigFileName,
+    MyPrompts,
+    MyPromptsJSON,
+    promptSizeInit,
+} from './const'
+import { constructFileUri, getFileContentText } from './helper'
 
 /**
  * The CustomRecipesStore class is responsible for loading and building the custom prompts from the cody.json files.
  * It has methods to get the prompts from the file system, parse the JSON, and build the prompts map.
  */
 export class CustomRecipesStore {
-    public codebase: string | null = null
-
     public myPremade: Preamble | undefined = undefined
     public myPromptsMap = new Map<string, CodyPrompt>()
     public myStarter = ''
@@ -24,34 +29,16 @@ export class CustomRecipesStore {
 
     constructor(
         private isActive: boolean,
+        extensionPath: vscode.Uri,
         private workspaceRoot?: string,
         private homeDir?: string
     ) {
         this.jsonFileUris = {
-            user: constructFileUri(CustomRecipesFileName, homeDir),
-            workspace: constructFileUri(CustomRecipesFileName, workspaceRoot),
+            user: constructFileUri(CustomRecipesConfigFileName, homeDir),
+            workspace: constructFileUri(CustomRecipesConfigFileName, workspaceRoot),
+            default: vscode.Uri.joinPath(extensionPath, 'resources', 'samples', 'default-recipes.json'),
         }
-    }
-
-    private async getDefaultRecipes(): Promise<void> {
-        if (this.promptSize.default > 0) {
-            return
-        }
-        const extension = vscode.extensions.getExtension('sourcegraph.cody-ai')
-        // get the premade prompts from the extension path resources directory
-        if (!extension?.extensionUri) {
-            return
-        }
-        const defaultRecipesJSONUri = vscode.Uri.joinPath(
-            extension.extensionUri,
-            'resources',
-            'samples',
-            'default-recipes.json'
-        )
-        if (defaultRecipesJSONUri) {
-            this.jsonFileUris.default = defaultRecipesJSONUri
-            await this.build('default')
-        }
+        this.activate(isActive)
     }
 
     public activate(state: boolean): void {
@@ -62,7 +49,7 @@ export class CustomRecipesStore {
     }
 
     // Get the formatted context from the json config file
-    public async get(): Promise<MyPrompts> {
+    public async refresh(): Promise<MyPrompts> {
         if (!this.isActive) {
             return { prompts: this.myPromptsMap, premade: this.myPremade, starter: this.myStarter }
         }
@@ -77,8 +64,15 @@ export class CustomRecipesStore {
         if (this.workspaceRoot) {
             await this.build('workspace')
         }
-        await this.getDefaultRecipes()
+        await this.buildDefaultRecipes()
         return { prompts: this.myPromptsMap, premade: this.myPremade, starter: this.myStarter }
+    }
+
+    private async buildDefaultRecipes(): Promise<void> {
+        if (this.promptSize.default > 0) {
+            return
+        }
+        await this.build('default')
     }
 
     // Return myPromptsMap as an array with keys as the id
@@ -118,23 +112,11 @@ export class CustomRecipesStore {
 
     // Get the context of the json file from the file system
     private async getPromptsFromFileSystem(type: CodyPromptType): Promise<string | null> {
-        const extensionUri = vscode.extensions.getExtension('sourcegraph.cody-ai')?.extensionUri
-        // get the default prompts from the extension path resources directory
-        const defaultRecipesJSONUri = extensionUri
-            ? vscode.Uri.joinPath(extensionUri, 'resources', 'samples', 'default-recipes.json')
-            : undefined
-
-        const codyJsonFilePathUri =
-            type === 'default'
-                ? defaultRecipesJSONUri
-                : type === 'user'
-                ? this.jsonFileUris.user
-                : this.jsonFileUris.workspace
-
-        if (!codyJsonFilePathUri) {
+        if (type === 'last used') {
             return null
         }
-        return getFileContent(codyJsonFilePathUri)
+        const codyJsonFilePathUri = this.jsonFileUris[type]
+        return codyJsonFilePathUri ? getFileContentText(codyJsonFilePathUri) : null
     }
 
     // Reset the class
@@ -145,23 +127,5 @@ export class CustomRecipesStore {
         this.myPremade = undefined
         this.myStarter = ''
         this.userPromptsJSON = null
-        this.codebase = null
-    }
-}
-
-const promptSizeInit = {
-    user: 0,
-    workspace: 0,
-    default: 0,
-    'last used': 0,
-}
-
-const getFileContent = async (uri: vscode.Uri): Promise<string | null> => {
-    try {
-        const bytes = await vscode.workspace.fs.readFile(uri)
-        const decoded = new TextDecoder('utf-8').decode(bytes) || null
-        return decoded
-    } catch {
-        return null
     }
 }

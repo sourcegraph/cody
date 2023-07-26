@@ -124,7 +124,6 @@ export class ContextProvider implements vscode.Disposable {
 
         this.codebaseContext = codebaseContext
         await this.publishContextStatus()
-        this.editor.controllers.prompt?.setCodebase(codebaseContext.getCodebase())
     }
 
     /**

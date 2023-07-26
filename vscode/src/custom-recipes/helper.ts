@@ -91,3 +91,13 @@ Output of \`{command}\` command:
 export const lastUsedRecipesSeperator: [string, CodyPrompt][] = [
     ['seperator', { prompt: 'seperator', type: 'last used' }],
 ]
+
+export const getFileContentText = async (uri: vscode.Uri): Promise<string | null> => {
+    try {
+        const bytes = await vscode.workspace.fs.readFile(uri)
+        const decoded = new TextDecoder('utf-8').decode(bytes) || null
+        return decoded
+    } catch {
+        return null
+    }
+}

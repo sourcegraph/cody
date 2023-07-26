@@ -34,7 +34,7 @@ export interface MyPrompts {
     starter: string
 }
 
-export const CustomRecipesFileName = '.vscode/cody.json'
+export const CustomRecipesConfigFileName = '.vscode/cody.json'
 
 // List of context types to include with the prompt
 export const CustomRecipesContextOptions = [
@@ -95,6 +95,18 @@ export const CustomRecipesMainMenuOptions = [
     },
     { kind: 0, label: '$(output) My Recipes', id: 'list', detail: 'List of available recipes' },
     { kind: -1, label: '.vscode/cody.json', id: 'seperator' },
-    { kind: 0, label: '$(go-to-file) Open Recipes File (JSON)', id: 'open' },
-    { kind: 0, label: '$(trash) Delete Recipes File (JSON)', id: 'delete' },
+    { kind: 0, label: '$(trash) Delete Recipes Settings (JSON)', id: 'delete' },
 ]
+
+export interface UserWorkspaceInfo {
+    homeDir: string
+    workspaceRoot?: string
+    currentFilePath?: string
+}
+
+export const promptSizeInit = {
+    user: 0,
+    workspace: 0,
+    default: 0,
+    'last used': 0,
+}

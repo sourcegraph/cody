@@ -5,8 +5,8 @@ import * as vscode from 'vscode'
 import { ChatMessage, UserLocalHistory } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 
 import { View } from '../../webviews/NavBar'
+import { CodyPrompt, CodyPromptType } from '../custom-recipes/const'
 import { debug } from '../log'
-import { CodyPrompt, CodyPromptType } from '../my-cody/const'
 import { logEvent } from '../services/EventLogger'
 
 import { MessageProvider, MessageProviderOptions } from './MessageProvider'

@@ -50,13 +50,9 @@ export class MyPromptController implements VsCodeMyPromptController {
     ) {
         this.tools = new MyToolsProvider(context)
         const user = this.tools.getUserInfo()
-        this.store = new CustomRecipesStore(isEnabled, user?.workspaceRoot, user.homeDir)
-        this.store.activate(this.isEnabled)
+        this.store = new CustomRecipesStore(isEnabled, context.extensionUri, user?.workspaceRoot, user.homeDir)
+        this.lastUsedRecipes = new Set(this.localStorage.getLastUsedRecipes())
         this.watcherInit()
-        const lastUsedRecipes = this.localStorage.getLastUsedRecipes()
-        if (lastUsedRecipes) {
-            this.lastUsedRecipes = new Set(lastUsedRecipes)
-        }
         // Toggle on Config Change
         vscode.workspace.onDidChangeConfiguration(e => {
             if (e.affectsConfiguration('cody')) {
@@ -115,6 +111,7 @@ export class MyPromptController implements VsCodeMyPromptController {
 
     // getter for the promptInProgress
     public async get(type?: string, id?: string): Promise<string | null> {
+        await this.refresh()
         switch (type) {
             case 'prompt':
                 return id ? this.myPromptsMap.get(id)?.prompt || null : null
@@ -152,14 +149,6 @@ export class MyPromptController implements VsCodeMyPromptController {
         return myPrompt?.prompt
     }
 
-    // Set the codebase for the builder to build the prompt
-    public setCodebase(codebase?: string): void {
-        if (this.store.codebase === codebase) {
-            return
-        }
-        this.store.codebase = codebase || null
-    }
-
     // get the list of recipe names to share with the webview to display
     public getRecipes(): [string, CodyPrompt][] {
         return this.store.getRecipes().filter(recipe => recipe[1].prompt !== 'seperator')
@@ -167,7 +156,7 @@ export class MyPromptController implements VsCodeMyPromptController {
 
     // Get the prompts and premade for client to use
     public async getMyPrompts(): Promise<MyPrompts> {
-        const myPromptsConfig = await this.store.get()
+        const myPromptsConfig = await this.store.refresh()
         return myPromptsConfig
     }
 
@@ -218,7 +207,7 @@ export class MyPromptController implements VsCodeMyPromptController {
     // Get the prompts from cody.json file then build the map of prompts
     public async refresh(): Promise<void> {
         await this.saveLastUsedRecipes()
-        const { prompts } = await this.store.get()
+        const { prompts } = await this.store.refresh()
         this.myPromptsMap = prompts
     }
 
@@ -248,17 +237,19 @@ export class MyPromptController implements VsCodeMyPromptController {
 
     // Add a new cody.json file to the user's workspace or home directory
     public async addJSONFile(type: CodyPromptType): Promise<void> {
-        const extensionPath = this.context.extensionPath
-        const isUserType = type === 'user'
-        const configFileUri = isUserType ? this.store.jsonFileUris.user : this.store.jsonFileUris.workspace
-        if (!configFileUri) {
-            debug('MyPromptController:addJSONFile:create', 'failed')
-            void vscode.window.showErrorMessage(
-                'Failed to create cody.json file. Please make sure you have a repository opened in your workspace.'
-            )
-            return
+        try {
+            const extensionPath = this.context.extensionPath
+            const isUserType = type === 'user'
+            const configFileUri = isUserType ? this.store.jsonFileUris.user : this.store.jsonFileUris.workspace
+            if (!configFileUri) {
+                throw new Error('Please make sure you have a repository opened in your workspace.')
+            }
+            await createJSONFile(extensionPath, configFileUri, isUserType)
+        } catch (error) {
+            const errorMessage = 'Failed to create cody.json file: '
+            void vscode.window.showErrorMessage(`${errorMessage} ${error}`)
+            debug('MyPromptController:addJSONFile:create', 'failed', { verbose: error })
         }
-        await createJSONFile(extensionPath, configFileUri, isUserType)
     }
 
     // Menu with an option to add a new recipe via UI and save it to user's cody.json file
@@ -286,6 +277,7 @@ export class MyPromptController implements VsCodeMyPromptController {
         } else if (selected === 'list') {
             await this.quickRecipePicker()
         }
+        await this.refresh()
     }
 
     // Menu with a list of user recipes to run

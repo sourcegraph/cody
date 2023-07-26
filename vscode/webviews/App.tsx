@@ -9,7 +9,7 @@ import { ChatHistory, ChatMessage } from '@sourcegraph/cody-shared/src/chat/tran
 import { Configuration } from '@sourcegraph/cody-shared/src/configuration'
 
 import { AuthStatus, defaultAuthStatus, LocalEnv } from '../src/chat/protocol'
-import { CodyPrompt } from '../src/my-cody/const'
+import { CodyPrompt } from '../src/custom-recipes/const'
 
 import { Chat } from './Chat'
 import { Debug } from './Debug'
