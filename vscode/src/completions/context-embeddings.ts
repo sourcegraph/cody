@@ -2,7 +2,7 @@ import path from 'path'
 
 import { differenceInMinutes } from 'date-fns'
 import { LRUCache } from 'lru-cache'
-import * as vscode from 'vscode'
+import type * as vscode from 'vscode'
 
 import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
 

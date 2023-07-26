@@ -1,4 +1,4 @@
-import * as vscode from 'vscode'
+import type * as vscode from 'vscode'
 
 import { GetContextResult } from '../context'
 import { Provider } from '../providers/provider'
