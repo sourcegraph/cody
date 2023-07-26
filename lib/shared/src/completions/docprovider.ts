@@ -1,6 +1,6 @@
 import type * as vscode from 'vscode'
 
-import { ide } from '../../ide'
+import { ide } from '../ide'
 
 import { Completion } from '.'
 

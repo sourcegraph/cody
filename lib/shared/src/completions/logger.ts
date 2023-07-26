@@ -1,7 +1,7 @@
 import { LRUCache } from 'lru-cache'
 
-import { ide } from '../../ide'
 import { ConfigKeys } from '../configuration-keys'
+import { ide } from '../ide'
 import { debug } from '../log'
 import { logEvent } from '../services/EventLogger'
 

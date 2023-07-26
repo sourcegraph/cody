@@ -1,6 +1,6 @@
 import type * as vscode from 'vscode'
 
-import { ide } from '../../ide'
+import { ide } from '../ide'
 
 /**
  * Get the current document context based on the cursor position in the current document.

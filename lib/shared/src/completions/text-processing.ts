@@ -1,4 +1,4 @@
-import { ide } from '../../ide'
+import { ide } from '../ide'
 
 import { isAlmostTheSameString } from './utils/string-comparator'
 

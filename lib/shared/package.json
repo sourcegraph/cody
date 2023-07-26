@@ -38,7 +38,8 @@
     "wink-nlp": "^1.13.1",
     "wink-nlp-utils": "^2.1.0",
     "vscode-uri": "^3.0.7",
-    "date-fns": "^2.30.0"
+    "date-fns": "^2.30.0",
+    "detect-indent": "7.0.1"
   },
   "devDependencies": {
     "@types/dompurify": "^3.0.2",

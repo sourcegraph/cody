@@ -4,7 +4,7 @@ import { LRUCache } from 'lru-cache'
 import type * as vscode from 'vscode'
 
 import { CodebaseContext } from '../../codebase-context'
-import { ide } from '../../ide'
+import { ide } from '../ide'
 import { debug } from '../log'
 import { CodyStatusBar } from '../services/StatusBar'
 
