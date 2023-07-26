@@ -70,7 +70,7 @@ export class AnthropicProvider extends Provider {
             },
             {
                 speaker: 'human',
-                text: `Replace the code at ${INSERT_TAG} with your completion: ${OPENING_CODE_TAG}${head.trimmed}${INSERT_TAG}${this.options.suffix}${CLOSING_CODE_TAG}.`,
+                text: `Replace ${INSERT_TAG} with your code completion: ${OPENING_CODE_TAG}${head.leadSpace}${head.trimmed}${INSERT_TAG}${this.options.suffix}${CLOSING_CODE_TAG}.`,
             },
             {
                 speaker: 'assistant',
