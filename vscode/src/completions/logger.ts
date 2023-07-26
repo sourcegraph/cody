@@ -64,7 +64,7 @@ const displayedCompletions = new LRUCache<string, CompletionEvent>({
 })
 
 export function logCompletionEvent(name: string, params?: TelemetryEventProperties): void {
-    logEvent(`CodyVSCodeExtension:completion:${name}`, params, params)
+    logEvent(`CodyVSCodeExtension:completion:${name}`, params)
 }
 
 export function start(inputParams: Omit<CompletionEvent['params'], 'multilineMode'>): string {

@@ -4,6 +4,9 @@ import { SourcegraphGraphQLAPIClient } from '../sourcegraph-api/graphql'
 export interface ExtensionDetails {
     ide: 'VSCode' | 'JetBrains' | 'Neovim' | 'Emacs'
     ideExtensionType: 'Cody' | 'CodeSearch'
+
+    /** Version number for the extension. */
+    version: string
 }
 
 /**
@@ -51,37 +54,22 @@ export class EventLogger {
      *
      * @param eventName The name of the event.
      * @param anonymousUserID The randomly generated unique user ID.
-     * @param eventProperties Event properties. This may contain private info such as repository
-     * names or search queries. If audit logging is enabled, this data is stored on the associated
-     * Sourcegraph instance.
-     * @param publicProperties Event properties that include only public information. Do NOT include
-     * any private information, such as full URLs that may contain private repository names or
-     * search queries.
+     * @param properties Event properties. Do NOT include any private information, such as full
+     * URLs that may contain private repository names or search queries.
      */
-    public log(
-        eventName: string,
-        anonymousUserID: string,
-        eventProperties?: TelemetryEventProperties,
-        publicProperties?: TelemetryEventProperties
-    ): void {
-        const configurationDetails = {
-            contextSelection: this.config.useContext,
-            chatPredictions: this.config.experimentalChatPredictions,
-            inline: this.config.inlineChat,
-            nonStop: this.config.experimentalNonStop,
-            guardrails: this.config.experimentalGuardrails,
-        }
-        const argument = {
-            ...eventProperties,
-            serverEndpoint: this.serverEndpoint,
-            extensionDetails: this.extensionDetails,
-            configurationDetails,
-        }
+    public log(eventName: string, anonymousUserID: string, properties?: TelemetryEventProperties): void {
         const publicArgument = {
-            ...publicProperties,
+            ...properties,
             serverEndpoint: this.serverEndpoint,
             extensionDetails: this.extensionDetails,
-            configurationDetails,
+            configurationDetails: {
+                contextSelection: this.config.useContext,
+                chatPredictions: this.config.experimentalChatPredictions,
+                inline: this.config.inlineChat,
+                nonStop: this.config.experimentalNonStop,
+                guardrails: this.config.experimentalGuardrails,
+            },
+            version: this.extensionDetails.version, // for backcompat
         }
         this.gqlAPIClient
             .logEvent({
@@ -89,10 +77,9 @@ export class EventLogger {
                 userCookieID: anonymousUserID,
                 source: 'IDEEXTENSION',
                 url: '',
-                argument: JSON.stringify(argument),
+                argument: '{}',
                 publicArgument: JSON.stringify(publicArgument),
             })
-            .then(() => {})
             .catch(error => {
                 console.log(error)
             })

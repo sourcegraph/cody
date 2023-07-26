@@ -22,7 +22,7 @@ import { LocalStorage } from '../services/LocalStorageProvider'
 import { SecretStorage } from '../services/SecretStorageProvider'
 
 import { ChatViewProviderWebview } from './ChatViewProvider'
-import { ConfigurationSubsetForWebview, DOTCOM_URL, isLocalApp, LocalEnv } from './protocol'
+import { ConfigurationSubsetForWebview, isLocalApp, LocalEnv } from './protocol'
 import { convertGitCloneURLToCodebaseName } from './utils'
 
 export type Config = Pick<
@@ -206,11 +206,9 @@ export class ContextProvider implements vscode.Disposable {
      * Log Events - naming convention: source:feature:action
      */
     public sendEvent(event: ContextEvent, value: string): void {
-        const endpoint = this.config.serverEndpoint || DOTCOM_URL.href
-        const endpointUri = { serverEndpoint: endpoint }
         switch (event) {
             case 'auth':
-                logEvent(`CodyVSCodeExtension:Auth:${value}`, endpointUri, endpointUri)
+                logEvent(`CodyVSCodeExtension:Auth:${value}`)
                 break
         }
     }

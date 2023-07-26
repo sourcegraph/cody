@@ -10,7 +10,7 @@ import { CodyPromptType } from '../my-cody/types'
 import { logEvent } from '../services/EventLogger'
 
 import { MessageProvider, MessageProviderOptions } from './MessageProvider'
-import { DOTCOM_URL, ExtensionMessage, WebviewEvent, WebviewMessage } from './protocol'
+import { ExtensionMessage, WebviewEvent, WebviewMessage } from './protocol'
 
 export interface ChatViewProviderWebview extends Omit<vscode.Webview, 'postMessage'> {
     postMessage(message: ExtensionMessage): Thenable<boolean>
@@ -229,11 +229,9 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
      * Log Events - naming convention: source:feature:action
      */
     public sendEvent(event: WebviewEvent, value: string): void {
-        const endpoint = this.contextProvider.config.serverEndpoint || DOTCOM_URL.href
-        const endpointUri = { serverEndpoint: endpoint }
         switch (event) {
             case 'feedback':
-                logEvent(`CodyVSCodeExtension:codyFeedback:${value}`, undefined, {
+                logEvent(`CodyVSCodeExtension:codyFeedback:${value}`, {
                     lastChatUsedEmbeddings: this.transcript
                         .toChat()
                         .at(-1)
@@ -241,7 +239,7 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
                 })
                 break
             case 'click':
-                logEvent(`CodyVSCodeExtension:${value}:clicked`, endpointUri, endpointUri)
+                logEvent(`CodyVSCodeExtension:${value}:clicked`)
                 break
         }
     }

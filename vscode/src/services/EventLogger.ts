@@ -13,7 +13,7 @@ import { LocalStorage } from './LocalStorageProvider'
 export let eventLogger: EventLogger | null = null
 let globalAnonymousUserID: string
 
-const extensionDetails: ExtensionDetails = { ide: 'VSCode', ideExtensionType: 'Cody' }
+const extensionDetails: ExtensionDetails = { ide: 'VSCode', ideExtensionType: 'Cody', version: packageVersion }
 
 export async function createOrUpdateEventLogger(
     config: ConfigurationWithAccessToken,
@@ -44,32 +44,16 @@ export async function createOrUpdateEventLogger(
  * search queries or repository names.
  *
  * @param eventName The name of the event.
- * @param eventProperties Event properties. This may contain private info such as repository
- * names or search queries. If audit logging is enabled, this data is stored on the associated
- * Sourcegraph instance.
- * @param publicProperties Event properties that include only public information. Do NOT include
- * any private information, such as full URLs that may contain private repository names or
- * search queries.
+ * @param properties Event properties. Do NOT include any private information, such as full URLs
+ * that may contain private repository names or search queries.
  */
-export function logEvent(
-    eventName: string,
-    eventProperties?: TelemetryEventProperties,
-    publicProperties?: TelemetryEventProperties
-): void {
+export function logEvent(eventName: string, properties?: TelemetryEventProperties): void {
     if (!eventLogger || !globalAnonymousUserID) {
         return
     }
     try {
-        debug('EventLogger', eventName, eventProperties, publicProperties)
-        eventLogger.log(
-            eventName,
-            globalAnonymousUserID,
-            { ...eventProperties, version: packageVersion },
-            {
-                ...publicProperties,
-                version: packageVersion,
-            }
-        )
+        debug('EventLogger', eventName, properties)
+        eventLogger.log(eventName, globalAnonymousUserID, properties)
     } catch (error) {
         console.error(error)
     }

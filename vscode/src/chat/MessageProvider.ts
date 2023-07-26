@@ -319,11 +319,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         if (enabledPlugins.length === 0) {
             return {}
         }
-        logEvent(
-            'CodyVSCodeExtension:getPluginsContext:enabledPlugins',
-            { names: enabledPluginNames },
-            { names: enabledPluginNames }
-        )
+        logEvent('CodyVSCodeExtension:getPluginsContext:enabledPlugins', { names: enabledPluginNames })
 
         this.transcript.addAssistantResponse('', 'Identifying applicable plugins...\n')
         this.sendTranscript()
@@ -343,11 +339,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
                 enabledPlugins,
                 previousMessages
             )
-            logEvent(
-                'CodyVSCodeExtension:getPluginsContext:descriptorsFound',
-                { count: descriptors.length },
-                { count: descriptors.length }
-            )
+            logEvent('CodyVSCodeExtension:getPluginsContext:descriptorsFound', { count: descriptors.length })
             if (descriptors.length !== 0) {
                 this.transcript.addAssistantResponse(
                     '',
@@ -357,15 +349,9 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
                 )
                 this.sendTranscript()
 
-                logEvent(
-                    'CodyVSCodeExtension:getPluginsContext:runPluginFunctionsCalled',
-                    {
-                        count: descriptors.length,
-                    },
-                    {
-                        count: descriptors.length,
-                    }
-                )
+                logEvent('CodyVSCodeExtension:getPluginsContext:runPluginFunctionsCalled', {
+                    count: descriptors.length,
+                })
                 return await plugins.runPluginFunctions(descriptors, this.contextProvider.config.pluginsConfig)
             }
         } catch (error) {
@@ -506,11 +492,10 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
 
         // Only log telemetry if we did work (ie had to annotate something).
         if (result.codeBlocks > 0) {
-            const event = {
+            logEvent('CodyVSCodeExtension:guardrails:annotate', {
                 codeBlocks: result.codeBlocks,
                 duration: result.duration,
-            }
-            logEvent('CodyVSCodeExtension:guardrails:annotate', event, event)
+            })
         }
 
         return result.text
