@@ -16,7 +16,7 @@ export interface CustomRecipesMenuAnswer {
 export async function showCustomRecipeMenu(): Promise<CustomRecipesMenuAnswer | void> {
     const inputOptions = {
         title: 'Cody: Custom Recipes (Experimental)',
-        placeHolder: 'Select an option to continue or ESC to cancel',
+        placeHolder: 'Select an option to continue, ESC to cancel',
     }
     const selectedOption = await vscode.window.showQuickPick(CustomRecipesMainMenuOptions, inputOptions)
     if (!selectedOption?.id || selectedOption.id === 'seperator' || selectedOption.id === 'cancel') {
@@ -42,11 +42,11 @@ export async function createNewPrompt(promptName?: string): Promise<CodyPrompt |
     const minPromptLength = 3
     const promptDescription = await vscode.window.showInputBox({
         title: prompt_creation_title,
-        prompt: 'Enter a prompt for the recipe. A prompt is a set of instructions/questions for Cody to follow and answer.',
+        prompt: 'Enter a prompt --a set of instructions/questions for Cody to follow and answer.',
         placeHolder: "e,g. 'Create five different test cases for the selected code''",
         validateInput: (input: string) => {
             if (!input || input.split(' ').length < minPromptLength) {
-                return `Prompt cannot be empty and should be as detailed as possible. Please enter a prompt with at least ${minPromptLength} words.`
+                return `Please enter a prompt with min ${minPromptLength} words`
             }
             return null
         },
@@ -165,15 +165,8 @@ export async function showRecipeTypeQuickPick(
             options.push(workspaceItem)
         }
     }
-    if (options.length === 0) {
-        const msg =
-            action === 'file'
-                ? 'File for both User and Workspace Recipes already exists...'
-                : 'No recipe files were found...'
-        options.push({ label: msg })
-    }
     const title = `Cody: Custom Recipes - ${action === 'file' ? 'Creating Config File' : 'Recipe Type'}`
-    const placeHolder = 'Select recipe type to continue or ESC to cancel'
+    const placeHolder = 'Select recipe type (when available) to continue, or ESC to cancel'
     // Show quick pick menu
     const recipeType = await vscode.window.showQuickPick(options, { title, placeHolder })
     if (!recipeType?.label) {

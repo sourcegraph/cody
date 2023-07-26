@@ -11,18 +11,16 @@ import { constructFileUri } from './helper'
  * It has methods to get the prompts from the file system, parse the JSON, and build the prompts map.
  */
 export class CustomRecipesStore {
+    public codebase: string | null = null
+
     public myPremade: Preamble | undefined = undefined
     public myPromptsMap = new Map<string, CodyPrompt>()
-    public defaultPromptsMap = new Map<string, CodyPrompt>()
     public myStarter = ''
 
     public userPromptsJSON: MyPromptsJSON | null = null
 
     public promptSize = promptSizeInit
-
-    public jsonFileUris: { user?: vscode.Uri; workspace?: vscode.Uri }
-
-    public codebase: string | null = null
+    public jsonFileUris: { user?: vscode.Uri; workspace?: vscode.Uri; default?: vscode.Uri }
 
     constructor(
         private isActive: boolean,
@@ -35,7 +33,7 @@ export class CustomRecipesStore {
         }
     }
 
-    private async init(): Promise<void> {
+    private async getDefaultRecipes(): Promise<void> {
         if (this.promptSize.default > 0) {
             return
         }
@@ -45,26 +43,14 @@ export class CustomRecipesStore {
             return
         }
         const defaultRecipesJSONUri = vscode.Uri.joinPath(
-            extension?.extensionUri,
+            extension.extensionUri,
             'resources',
             'samples',
             'default-recipes.json'
         )
-        try {
-            const bytes = await vscode.workspace.fs.readFile(defaultRecipesJSONUri)
-            const decoded = new TextDecoder('utf-8').decode(bytes)
-            const json = JSON.parse(decoded) as MyPromptsJSON
-            const prompts = json.recipes
-            this.defaultPromptsMap.set('default', { prompt: 'seperator', type: 'default' })
-            for (const key in prompts) {
-                if (Object.prototype.hasOwnProperty.call(prompts, key)) {
-                    const prompt = prompts[key]
-                    prompt.type = 'default'
-                    this.defaultPromptsMap.set(key, prompt)
-                }
-            }
-        } catch {
-            return
+        if (defaultRecipesJSONUri) {
+            this.jsonFileUris.default = defaultRecipesJSONUri
+            await this.build('default')
         }
     }
 
@@ -77,29 +63,21 @@ export class CustomRecipesStore {
 
     // Get the formatted context from the json config file
     public async get(): Promise<MyPrompts> {
-        await this.init()
         if (!this.isActive) {
             return { prompts: this.myPromptsMap, premade: this.myPremade, starter: this.myStarter }
         }
         // reset map and set
         this.myPromptsMap = new Map<string, CodyPrompt>()
         this.promptSize = { ...promptSizeInit }
-        this.promptSize.default = this.defaultPromptsMap.size
         // user prompts
         if (this.homeDir) {
-            const recipeType = 'user'
-            const userPrompts = await this.getPromptsFromFileSystem(recipeType)
-            this.myPromptsMap.set(recipeType, { prompt: 'seperator', type: recipeType })
-            this.build(userPrompts, recipeType)
+            await this.build('user')
         }
         // workspace prompts
         if (this.workspaceRoot) {
-            const recipeType = 'workspace'
-            const wsPrompts = await this.getPromptsFromFileSystem(recipeType)
-            this.myPromptsMap.set(recipeType, { prompt: 'seperator', type: recipeType })
-            this.build(wsPrompts, recipeType)
+            await this.build('workspace')
         }
-        this.myPromptsMap = new Map([...this.myPromptsMap, ...this.defaultPromptsMap])
+        await this.getDefaultRecipes()
         return { prompts: this.myPromptsMap, premade: this.myPremade, starter: this.myStarter }
     }
 
@@ -109,10 +87,12 @@ export class CustomRecipesStore {
     }
 
     // Build the map of prompts from the json string
-    public build(content: string | null, type: CodyPromptType): Map<string, CodyPrompt> | null {
+    public async build(type: CodyPromptType): Promise<Map<string, CodyPrompt> | null> {
+        const content = await this.getPromptsFromFileSystem(type)
         if (!content) {
             return null
         }
+        this.myPromptsMap.set(type, { prompt: 'seperator', type })
         const json = JSON.parse(content) as MyPromptsJSON
         const prompts = json.recipes
         for (const key in prompts) {
@@ -124,6 +104,7 @@ export class CustomRecipesStore {
             }
         }
         this.myPremade = json.premade
+        // avoid duplicate starter prompts
         if (json.starter && json?.starter !== this.myStarter) {
             PromptMixin.addCustom(newPromptMixin(json.starter))
             this.myStarter = json.starter
@@ -137,17 +118,23 @@ export class CustomRecipesStore {
 
     // Get the context of the json file from the file system
     private async getPromptsFromFileSystem(type: CodyPromptType): Promise<string | null> {
-        const codyJsonFilePath = type === 'user' ? this.jsonFileUris.user : this.jsonFileUris.workspace
-        if (!codyJsonFilePath) {
+        const extensionUri = vscode.extensions.getExtension('sourcegraph.cody-ai')?.extensionUri
+        // get the default prompts from the extension path resources directory
+        const defaultRecipesJSONUri = extensionUri
+            ? vscode.Uri.joinPath(extensionUri, 'resources', 'samples', 'default-recipes.json')
+            : undefined
+
+        const codyJsonFilePathUri =
+            type === 'default'
+                ? defaultRecipesJSONUri
+                : type === 'user'
+                ? this.jsonFileUris.user
+                : this.jsonFileUris.workspace
+
+        if (!codyJsonFilePathUri) {
             return null
         }
-        try {
-            const bytes = await vscode.workspace.fs.readFile(codyJsonFilePath)
-            const decoded = new TextDecoder('utf-8').decode(bytes) || null
-            return decoded
-        } catch {
-            return null
-        }
+        return getFileContent(codyJsonFilePathUri)
     }
 
     // Reset the class
@@ -167,4 +154,14 @@ const promptSizeInit = {
     workspace: 0,
     default: 0,
     'last used': 0,
+}
+
+const getFileContent = async (uri: vscode.Uri): Promise<string | null> => {
+    try {
+        const bytes = await vscode.workspace.fs.readFile(uri)
+        const decoded = new TextDecoder('utf-8').decode(bytes) || null
+        return decoded
+    } catch {
+        return null
+    }
 }

@@ -46,7 +46,7 @@ export async function saveJSONFile(context: string, filePath: vscode.Uri, isSave
 }
 
 // Create a file watcher for each .vscode/cody.json file
-export function createFileWatch(fsPath?: string): vscode.FileSystemWatcher | null {
+export function createFileWatchers(fsPath?: string): vscode.FileSystemWatcher | null {
     if (!fsPath) {
         return null
     }

@@ -6,27 +6,56 @@ interface EditorCodeLens {
 }
 
 /**
- * Adds Code lenses to the functions in the document
+ * Adds Code lenses for triggering Recipes Menu and inline Chat (when enabled)
+ * on top of all the functions in active documents
  */
 export class EditorCodeLenses implements vscode.CodeLensProvider {
+    private isEnabled = false
+    private isInlineChatEnabled = true
+
     private _disposables: vscode.Disposable[] = []
     private _onDidChangeCodeLenses: vscode.EventEmitter<void> = new vscode.EventEmitter<void>()
     public readonly onDidChangeCodeLenses: vscode.Event<void> = this._onDidChangeCodeLenses.event
-    /**
-     * Create a code lens provider
-     */
     constructor() {
-        // new EditorDecorator()
         this.provideCodeLenses = this.provideCodeLenses.bind(this)
+        this.updateConfig()
+        vscode.workspace.onDidChangeConfiguration(e => {
+            if (e.affectsConfiguration('cody')) {
+                this.updateConfig()
+            }
+        })
+    }
+    /**
+     * init
+     */
+    private init(): void {
+        if (!this.isEnabled) {
+            return
+        }
         this._disposables.push(vscode.languages.registerCodeLensProvider('*', this))
         this._disposables.push(
             vscode.commands.registerCommand('cody.editor.codelens.click', async lens => {
                 const clickedLens = lens as EditorCodeLens
                 await this.onCodeLensClick(clickedLens)
-            }),
+            })
+        )
+        // on change events for toggling
+        this._disposables.push(
+            vscode.window.onDidChangeVisibleTextEditors(() => this.fire()),
             vscode.window.onDidChangeActiveTextEditor(() => this.fire()),
             vscode.window.onDidChangeTextEditorVisibleRanges(() => this.fire())
         )
+    }
+    /**
+     * Update the configurations
+     */
+    private updateConfig(): void {
+        const config = vscode.workspace.getConfiguration('cody')
+        this.isEnabled = config.get('experimental.customRecipes') as boolean
+        this.isInlineChatEnabled = config.get('inlineChat.enabled') as boolean
+        if (this.isEnabled && !this._disposables.length) {
+            this.init()
+        }
         this.fire()
     }
     /**
@@ -47,13 +76,17 @@ export class EditorCodeLenses implements vscode.CodeLensProvider {
         document: vscode.TextDocument,
         token: vscode.CancellationToken
     ): vscode.CodeLens[] | Thenable<vscode.CodeLens[]> {
-        token.onCancellationRequested(() => [])
-        const codeLenses = []
-        const codeLensesMap = new Map<string, vscode.Range>()
-        const editor = vscode.window.activeTextEditor
-        if (!editor || editor.document !== document) {
+        if (!this.isEnabled) {
             return []
         }
+        token.onCancellationRequested(() => [])
+        const editor = vscode.window.activeTextEditor
+        if (!editor || editor.document !== document || document.uri.scheme !== 'file') {
+            return []
+        }
+        // Generate code lenses for the document.
+        const codeLenses = []
+        const codeLensesMap = new Map<string, vscode.Range>()
         // Create codelens for visible functions only
         // Add n lines before and after the visible range as buffer to avoid flickering / line jumping
         const nBufferLines = 50
@@ -63,26 +96,30 @@ export class EditorCodeLenses implements vscode.CodeLensProvider {
         // Iterate over each function in the document
         for (let i = startLine; i < lineCount; i++) {
             const line = document.lineAt(i)
-            const isStartOfFunction = checkIfLineStartsWith(line.text)
+            const isStartOfFunction = checkIsStartOfFunction(line.text)
             if (isStartOfFunction) {
                 // Create a CodeLens object for the function
-                const range = new vscode.Range(i, 0, i, line.range.end.character)
-                const functionRange = this.getFunctionCodeRange(editor, range.start.line)
+                const firstLineOfFunction = new vscode.Range(i, 0, i, line.range.end.character)
+                const functionRange = this.getFunctionCodeRange(editor, firstLineOfFunction.start.line)
                 const selection = new vscode.Selection(functionRange.start, functionRange.end)
-                const ask = new vscode.CodeLens(range, {
-                    title: '$(cody-logo) Cody',
-                    command: 'cody.editor.codelens.click',
-                    tooltip: 'Ask Cody for help with below method',
-                    arguments: [{ name: 'cody.customRecipes.list', selection }],
-                })
-                const inline = new vscode.CodeLens(range, {
-                    title: 'Inline',
-                    command: 'cody.editor.codelens.click',
-                    tooltip: 'Ask Cody inline',
-                    arguments: [{ name: 'cody.inline.new', selection }],
-                })
-                codeLensesMap.set(i.toString(), range)
-                codeLenses.push(ask, inline)
+
+                codeLenses.push(
+                    new vscode.CodeLens(firstLineOfFunction, {
+                        ...editorCodeLenses.cody,
+                        arguments: [{ name: 'cody.customRecipes.list', selection }],
+                    })
+                )
+
+                if (this.isInlineChatEnabled) {
+                    codeLenses.push(
+                        new vscode.CodeLens(firstLineOfFunction, {
+                            ...editorCodeLenses.inline,
+                            arguments: [{ name: 'cody.inline.new', selection }],
+                        })
+                    )
+                }
+
+                codeLensesMap.set(i.toString(), firstLineOfFunction)
             }
         }
         return codeLenses
@@ -109,7 +146,7 @@ export class EditorCodeLenses implements vscode.CodeLensProvider {
             return 0
         }
         const startLineText = document.lineAt(startLine).text
-        const startLineStartsWithWord = checkIfLineStartsWithWord(startLineText)
+        const isStartLineStartedWithWord = startsWithWord(startLineText)
         // Iterate forwards util we find the line that:
         // - starts with a } or
         // - is start of a new function
@@ -117,20 +154,23 @@ export class EditorCodeLenses implements vscode.CodeLensProvider {
             const text = document.lineAt(i).text
             // If the start line text does not start with space or tab
             // then the end line should start with word without space or tab
-            if (startLineStartsWithWord) {
-                if (checkIfLineStartsWithWord(text)) {
+            if (isStartLineStartedWithWord) {
+                if (startsWithWord(text)) {
                     return i - 1
                 }
             } else {
                 // if start line end with opening curly bracket and end line starts with closing curly bracket
-                const startLineEndsWithOpeningCurlyBracket = startLineText.match(/^\s*{$/)
-                const lineStartWithClosingCurlyBracket = text.match(/^\s*}$/)
-                if (startLineEndsWithOpeningCurlyBracket && lineStartWithClosingCurlyBracket) {
+                const isStartLineEndedWithOpeningCurlyBracket = startLineText.match(/^\s*{$/)
+                const isEndLineStartedWithClosingCurlyBracket = text.match(/^\s*}$/)
+                if (isStartLineEndedWithOpeningCurlyBracket && isEndLineStartedWithClosingCurlyBracket) {
                     return i + 1
                 }
                 // if line is the start of a new function
-                const isStartOfFunction = checkIfLineStartsWith(text)
+                const isStartOfFunction = checkIsStartOfFunction(text)
                 if (isStartOfFunction && text.length > 0) {
+                    return i - 1
+                }
+                if (checkHasSameNumberOfSpacesAsStartLine(startLineText, text)) {
                     return i - 1
                 }
             }
@@ -141,36 +181,50 @@ export class EditorCodeLenses implements vscode.CodeLensProvider {
      * Fire an event to notify VS Code that the code lenses have changed.
      */
     public fire(): void {
+        if (!this.isEnabled) {
+            this.dispose()
+            return
+        }
         this._onDidChangeCodeLenses.fire()
     }
     /**
      * Dispose the disposables
      */
     public dispose(): void {
-        // this.codeLenses = []
+        if (!this._disposables.length) {
+            return
+        }
         for (const disposable of this._disposables) {
             disposable.dispose()
         }
         this._disposables = []
     }
 }
-
-// Use regex to check if the line
-// - a function that starts with a word followed by a {
-// - a python def function that starts with or without async
-// - a class
-const checkIfLineStartsWith = (text: string): boolean => {
-    //  || !!line.text.match(/^\s*def\s.*$/)
-    // Check if line contains if, for, while, =
-    const isArrowFunction = !!text.match(/^\s*.*=>.*$/)
-    // Check for line that starts with if, for, while or
-    // contains = but not => (arrow function) and ends with {
-    const isNotFunction = !!text.match(/^\s*(if|for|while).*$/) || (!!text.match(/.*=.*$/) && !isArrowFunction)
+/**
+ * Use regex to check if the line starts with a word character
+ * or if it is a functions or class
+ */
+const checkIsStartOfFunction = (text: string): boolean => {
+    const isEmptyLine = /^\s*$/.test(text)
+    const isArrowFunction = /=.*=>.*$/.test(text)
+    const isNotFunction =
+        !!text.match(/^\s*(if|for|while|switch|case|return|try|catch).*$/) ||
+        (!!text.match(/.*=.*({)?$/) && !isArrowFunction)
     const isFunction = !!text.match(/^(\s*)?\w.*{$/) && !isNotFunction
-    const isPython = !!text.match(/^\s*(async\s*)?def\s.*$/)
-    const isClass = !!text.match(/^(export\s*)?class\s.*$/)
-    return isFunction || isPython || isClass
+    const isPythonFunction = /^\s*(async\s*)?def\s/.test(text)
+    const isClass = /^(export\s*)?class\s/.test(text)
+    const isComment = /^\s*\/(\/|\*)?/.test(text)
+    return !isEmptyLine && !isComment && (isFunction || isPythonFunction || isClass || isArrowFunction)
 }
 
 // Check if the line starts with a word
-const checkIfLineStartsWithWord = (text: string): boolean => text.length > 0 && !!text.match(/^\w.*$/)
+const startsWithWord = (text: string): boolean => /^\w/.test(text)
+
+// Check if the end line text starts with the same number of spaces as the start line text
+const checkHasSameNumberOfSpacesAsStartLine = (startLineText: string, endLineText: string): boolean =>
+    endLineText.length > 0 && !!endLineText.match(new RegExp(`^\\s{${startLineText.length}}.*$`))
+
+const editorCodeLenses = {
+    cody: { title: '$(cody-logo) Cody', command: 'cody.editor.codelens.click', tooltip: 'Open recipes menu' },
+    inline: { title: 'Inline', command: 'cody.editor.codelens.click', tooltip: 'Ask Cody inline' },
+}
