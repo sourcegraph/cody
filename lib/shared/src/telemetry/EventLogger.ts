@@ -24,8 +24,8 @@ export class EventLogger {
         private config: ConfigurationWithAccessToken
     ) {
         this.gqlAPIClient = new SourcegraphGraphQLAPIClient(this.config)
-        void this.setSiteIdentification()
-        if (this.extensionDetails.ide == 'VSCode' && this.extensionDetails.ideExtensionType == 'Cody') {
+        this.setSiteIdentification().catch(error => console.error(error))
+        if (this.extensionDetails.ide === 'VSCode' && this.extensionDetails.ideExtensionType === 'Cody') {
             this.client = 'VSCODE_CODY_EXTENSION'
         } else {
             throw new Error('new extension type not yet accounted for')
@@ -41,7 +41,7 @@ export class EventLogger {
         this.extensionDetails = newExtensionDetails
         this.config = newConfig
         this.gqlAPIClient.onConfigurationChange(newConfig)
-        void this.setSiteIdentification()
+        this.setSiteIdentification().catch(error => console.error(error))
     }
 
     private async setSiteIdentification(): Promise<void> {
@@ -96,8 +96,9 @@ export class EventLogger {
             })
             .then(response => {
                 if (isError(response)) {
-                    console.error("Error logging event", response)
+                    console.error('Error logging event', response)
                 }
             })
+            .catch(error => console.error('Error logging event', error))
     }
 }

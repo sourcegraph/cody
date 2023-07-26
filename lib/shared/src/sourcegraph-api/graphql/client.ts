@@ -156,7 +156,7 @@ function extractDataOrError<T, R>(response: APIResponse<T> | Error, extract: (da
     return extract(response.data)
 }
 
-type event = {
+interface event {
     event: string
     userCookieID: string
     url: string
@@ -330,25 +330,23 @@ export class SourcegraphGraphQLAPIClient {
             return {}
         }
         if (this.config.serverEndpoint === this.dotcomUrl) {
-            return await this.sendEventLogRequestToAPI(false, event)
-        } else {
-            return await Promise.all([
-                this.sendEventLogRequestToAPI(false, event),
-                this.sendEventLogRequestToAPI(true, event),
-            ]).then(responses => {
-                console.log("responses", responses)
-                if (isError(responses[0]) && isError(responses[1])) {
-                    return new Error("Errors logging events: " + responses[0].toString() + ", " + responses[1].toString())
-                }
-                if (isError(responses[0])) {
-                    return responses[0]
-                }
-                if (isError(responses[1])) {
-                    return responses[1]
-                }
-                return {}
-            })
+            return this.sendEventLogRequestToAPI(false, event)
         }
+        return Promise.all([
+            this.sendEventLogRequestToAPI(false, event),
+            this.sendEventLogRequestToAPI(true, event),
+        ]).then(responses => {
+            if (isError(responses[0]) && isError(responses[1])) {
+                return new Error('Errors logging events: ' + responses[0].toString() + ', ' + responses[1].toString())
+            }
+            if (isError(responses[0])) {
+                return responses[0]
+            }
+            if (isError(responses[1])) {
+                return responses[1]
+            }
+            return {}
+        })
     }
 
     private async sendEventLogRequestToAPI(dotcom: boolean, event: event): Promise<LogEventResponse | Error > {
@@ -360,7 +358,7 @@ export class SourcegraphGraphQLAPIClient {
             .then(response => extractDataOrError(response, data => data))
 
         if (isError(initialAttempt)) {
-            return await this.fetchSourcegraphAPI<APIResponse<LogEventResponse>>(LOG_EVENT_MUTATION_DEPRECATED, event)
+            return this.fetchSourcegraphAPI<APIResponse<LogEventResponse>>(LOG_EVENT_MUTATION_DEPRECATED, event)
                 .then(response => extractDataOrError(response, data => data))
         }
 
