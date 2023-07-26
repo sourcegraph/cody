@@ -287,10 +287,12 @@ export class MyPromptController implements VsCodeMyPromptController {
     // Menu with a list of user recipes to run
     public async quickRecipePicker(): Promise<void> {
         try {
-            const lastUsedRecipes = [...this.lastUsedRecipes]?.map(id => {
-                const recipe = this.myPromptsMap.get(id)
-                return recipe ? [id, recipe] : null
-            })
+            const lastUsedRecipes = [...this.lastUsedRecipes]
+                ?.map(id => {
+                    const recipe = this.myPromptsMap.get(id)
+                    return recipe ? [id, recipe] : null
+                })
+                ?.reverse()
             const lastUsedRecipesList = [...lastUsedRecipesSeperator, ...lastUsedRecipes] as [string, CodyPrompt][]
             // Get the list of prompts from the cody.json file
             const recipesFromStore = this.store.getRecipes()
