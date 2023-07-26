@@ -48,7 +48,7 @@ export const Recipes: React.FunctionComponent<{
     const RecipeSection = (type: 'user' | 'workspace' | 'default'): JSX.Element => (
         <>
             <div className={styles.recipesHeader}>
-                <span>{type} recipes</span>
+                <span className={styles.recipesSubHeader}>{type} Recipes</span>
             </div>
             {myRecipesList[type]?.map(recipe => (
                 <VSCodeButton
@@ -77,7 +77,7 @@ export const Recipes: React.FunctionComponent<{
         <div className="inner-container">
             <div className="non-transcript-container">
                 <div className={styles.recipes}>
-                    {myPromptsEnabled ? (
+                    {myPromptsEnabled && (
                         <>
                             <div>
                                 <div
@@ -97,24 +97,21 @@ export const Recipes: React.FunctionComponent<{
                             {RecipeSection('user')}
                             {RecipeSection('workspace')}
                             {RecipeSection('default')}
-                        </>
-                    ) : (
-                        <>
                             <div className={styles.recipesHeader}>
                                 <span>Featured Recipes</span>
                             </div>
-                            {Object.entries(recipesList).map(([key, value]) => (
-                                <VSCodeButton
-                                    key={key}
-                                    className={styles.recipeButton}
-                                    type="button"
-                                    onClick={() => onRecipeClick(key as RecipeID)}
-                                >
-                                    {value}
-                                </VSCodeButton>
-                            ))}
                         </>
                     )}
+                    {Object.entries(recipesList).map(([key, value]) => (
+                        <VSCodeButton
+                            key={key}
+                            className={styles.recipeButton}
+                            type="button"
+                            onClick={() => onRecipeClick(key as RecipeID)}
+                        >
+                            {value}
+                        </VSCodeButton>
+                    ))}
                 </div>
             </div>
         </div>

@@ -20,6 +20,10 @@
     font-weight: bold;
 }
 
+.recipes-header {
+    text-transform: capitalize;
+}
+
 .recipes-notes {
     display: flex;
     align-items: center;
