@@ -282,7 +282,9 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
                 this.config.providerConfig.create({
                     id: 'single-line-suffix',
                     ...sharedProviderOptions,
-                    n: 1, // 1 vs. 3 improves perf
+                    // Show more if manually triggered (but only showing 1 is faster, so we use it
+                    // in the automatic trigger case).
+                    n: context.triggerKind === vscode.InlineCompletionTriggerKind.Automatic ? 1 : 3,
                     multiline: false,
                 })
             )

@@ -2,7 +2,7 @@ import React, { useMemo } from 'react'
 
 import styles from './NavBar.module.css'
 
-export type View = 'chat' | 'recipes' | 'login' | 'settings' | 'debug' | 'history' | 'plugins'
+export type View = 'chat' | 'recipes' | 'login' | 'debug' | 'history' | 'plugins'
 
 interface NavBarProps {
     setView: (selectedView: View) => void

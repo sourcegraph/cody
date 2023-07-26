@@ -3,14 +3,10 @@ import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 import { ChatMessage, UserLocalHistory } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { Configuration } from '@sourcegraph/cody-shared/src/configuration'
 import { CodyLLMSiteConfiguration } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
+import type { TelemetryEventProperties } from '@sourcegraph/cody-shared/src/telemetry'
 
 import { View } from '../../webviews/NavBar'
 import { CodyPrompt, CodyPromptType } from '../custom-recipes/const'
-
-export enum WebviewEvent {
-    Feedback = 'feedback',
-    Click = 'click',
-}
 
 /**
  * A message sent from the webview to the extension host.
@@ -18,10 +14,9 @@ export enum WebviewEvent {
 export type WebviewMessage =
     | { command: 'ready' }
     | { command: 'initialized' }
-    | { command: 'event'; event: WebviewEvent; value: string }
+    | { command: 'event'; eventName: string; properties: TelemetryEventProperties | undefined } // new event log internal API (use createWebviewTelemetryService wrapper)
     | { command: 'submit'; text: string; submitType: 'user' | 'suggestion' }
     | { command: 'executeRecipe'; recipe: RecipeID }
-    | { command: 'settings'; serverEndpoint: string; accessToken: string }
     | { command: 'removeHistory' }
     | { command: 'restoreHistory'; chatID: string }
     | { command: 'deleteHistory'; chatID: string }

@@ -1,6 +1,8 @@
 import { LRUCache } from 'lru-cache'
 import * as vscode from 'vscode'
 
+import { TelemetryEventProperties } from '@sourcegraph/cody-shared/src/telemetry'
+
 import { ConfigKeys } from '../configuration-keys'
 import { debug } from '../log'
 import { logEvent } from '../services/EventLogger'
@@ -61,8 +63,8 @@ const displayedCompletions = new LRUCache<string, CompletionEvent>({
     max: 100, // Maximum number of completions that we are keeping track of
 })
 
-export function logCompletionEvent(name: string, params?: unknown): void {
-    logEvent(`CodyVSCodeExtension:completion:${name}`, params, params)
+export function logCompletionEvent(name: string, params?: TelemetryEventProperties): void {
+    logEvent(`CodyVSCodeExtension:completion:${name}`, params)
 }
 
 export function start(inputParams: Omit<CompletionEvent['params'], 'multilineMode'>): string {

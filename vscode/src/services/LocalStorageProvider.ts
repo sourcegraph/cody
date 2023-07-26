@@ -1,7 +1,4 @@
-// VS Code Docs https://code.visualstudio.com/api/references/vscode-api#Memento
-// A memento represents a storage utility. It can store and retrieve values.
 import * as uuid from 'uuid'
-// import * as vscode from 'vscode'
 import { Memento } from 'vscode'
 
 import { UserLocalHistory } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
@@ -87,22 +84,23 @@ export class LocalStorage {
         }
     }
 
-    public getAnonymousUserID(): string | null {
-        const anonUserID = this.storage.get(this.ANONYMOUS_USER_ID_KEY, null)
-        return anonUserID
-    }
-
-    public async setAnonymousUserID(): Promise<string | null> {
-        if (this.getAnonymousUserID()) {
-            return null
+    /**
+     * Return the anonymous user ID stored in local storage or create one if none exists (which
+     * occurs on a fresh installation).
+     */
+    public async anonymousUserID(): Promise<{ anonymousUserID: string; created: boolean }> {
+        let id = this.storage.get<string>(this.ANONYMOUS_USER_ID_KEY)
+        let created = false
+        if (!id) {
+            created = true
+            id = uuid.v4()
+            try {
+                await this.storage.update(this.ANONYMOUS_USER_ID_KEY, id)
+            } catch (error) {
+                console.error(error)
+            }
         }
-        const anonUserID = uuid.v4()
-        try {
-            await this.storage.update(this.ANONYMOUS_USER_ID_KEY, anonUserID)
-        } catch (error) {
-            console.error(error)
-        }
-        return 'installed'
+        return { anonymousUserID: id, created }
     }
 
     public async setEnabledPlugins(plugins: string[]): Promise<void> {

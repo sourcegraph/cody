@@ -27,7 +27,6 @@ export function createProviderConfig(
             break
         }
         case 'unstable-huggingface': {
-            console.log({ config: config.autocompleteAdvancedServerEndpoint })
             if (config.autocompleteAdvancedServerEndpoint !== null) {
                 providerConfig = createUnstableHuggingFaceProviderConfig({
                     serverEndpoint: config.autocompleteAdvancedServerEndpoint,
