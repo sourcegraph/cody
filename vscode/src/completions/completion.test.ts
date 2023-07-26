@@ -451,7 +451,7 @@ describe('Cody completions', () => {
                 ]
             )
 
-            expect(completions[0].insertText).toBe("if (foo) {\n            console.log('foo1');\n        }")
+            expect(completions[0].insertText).toBe("if (foo) {\n            console.log('foo1');")
             expect(completions[1].insertText).toBe("console.log('foo')")
         })
 

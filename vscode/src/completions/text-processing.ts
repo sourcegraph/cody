@@ -150,6 +150,7 @@ export function trimUntilSuffix(insertion: string, prefix: string, suffix: strin
     const prefixLastNewLine = prefix.lastIndexOf('\n')
     const prefixIndentationWithFirstCompletionLine = prefix.slice(prefixLastNewLine + 1)
     const suffixIndent = indentation(firstNonEmptySuffixLine)
+    const startIndent = indentation(prefixIndentationWithFirstCompletionLine)
     const hasEmptyCompletionLine = prefixIndentationWithFirstCompletionLine.trim() === ''
 
     const insertionLines = insertion.split('\n')
@@ -166,7 +167,12 @@ export function trimUntilSuffix(insertion: string, prefix: string, suffix: strin
         const lineIndentation = indentation(line)
         const isSameIndentation = lineIndentation <= suffixIndent
 
-        if (hasEmptyCompletionLine && config.blockEnd && line.trim().startsWith(config.blockEnd)) {
+        if (
+            hasEmptyCompletionLine &&
+            config.blockEnd &&
+            line.trim().startsWith(config.blockEnd) &&
+            startIndent === lineIndentation
+        ) {
             cutOffIndex = i
             break
         }
