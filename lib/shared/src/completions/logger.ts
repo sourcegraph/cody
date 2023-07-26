@@ -1,7 +1,6 @@
 import { LRUCache } from 'lru-cache'
 
-import { ide } from '@sourcegraph/cody-shared/src/ide'
-
+import { ide } from '../../ide'
 import { ConfigKeys } from '../configuration-keys'
 import { debug } from '../log'
 import { logEvent } from '../services/EventLogger'

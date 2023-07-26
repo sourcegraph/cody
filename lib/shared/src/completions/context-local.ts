@@ -2,7 +2,7 @@ import path from 'path'
 
 import type * as vscode from 'vscode'
 
-import { ide } from '@sourcegraph/cody-shared/src/ide'
+import { ide } from '../../ide'
 
 import { bestJaccardMatch, JaccardMatch } from './bestJaccardMatch'
 import type { ReferenceSnippet } from './context'
@@ -102,7 +102,7 @@ async function getRelevantFiles(currentDocument: vscode.TextDocument, history: H
     // See related discussion: https://github.com/microsoft/vscode/issues/15178
     // See more info about the API: https://code.visualstudio.com/api/references/vscode-api#Tab
     const allUris: vscode.Uri[] = ide.window.tabGroups.all
-        .flatMap(({ tabs }) => tabs.map(tab => (tab.input as any)?.uri))
+        .flatMap(({ tabs }) => tabs.map(tab => tab.input?.uri))
         .filter(Boolean)
 
     // To define an upper-bound for the number of files to take into consideration, we consider all

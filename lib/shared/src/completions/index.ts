@@ -3,9 +3,8 @@ import path from 'path'
 import { LRUCache } from 'lru-cache'
 import type * as vscode from 'vscode'
 
-import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
-import { ide } from '@sourcegraph/cody-shared/src/ide'
-
+import { CodebaseContext } from '../../codebase-context'
+import { ide } from '../../ide'
 import { debug } from '../log'
 import { CodyStatusBar } from '../services/StatusBar'
 

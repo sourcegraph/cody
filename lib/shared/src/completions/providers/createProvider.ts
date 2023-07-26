@@ -1,5 +1,5 @@
-import { Configuration } from '@sourcegraph/cody-shared/src/configuration'
-import { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/nodeClient'
+import { Configuration } from '../../configuration'
+import { SourcegraphNodeCompletionsClient } from '../../sourcegraph-api/completions/nodeClient'
 
 import { createProviderConfig as createAnthropicProviderConfig } from './anthropic'
 import { ProviderConfig } from './provider'

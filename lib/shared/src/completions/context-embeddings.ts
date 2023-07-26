@@ -4,7 +4,7 @@ import { differenceInMinutes } from 'date-fns'
 import { LRUCache } from 'lru-cache'
 import type * as vscode from 'vscode'
 
-import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
+import { CodebaseContext } from '../../codebase-context'
 
 import type { ReferenceSnippet } from './context'
 import { logCompletionEvent } from './logger'

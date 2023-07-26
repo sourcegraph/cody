@@ -1,4 +1,4 @@
-import { ide } from '@sourcegraph/cody-shared/src/ide'
+import { ide } from '../../ide'
 
 import { isAlmostTheSameString } from './utils/string-comparator'
 

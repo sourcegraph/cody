@@ -1,6 +1,6 @@
 import type * as vscode from 'vscode'
 
-import { ide } from '@sourcegraph/cody-shared/src/ide'
+import { ide } from '../../ide'
 
 /**
  * Get the current document context based on the cursor position in the current document.

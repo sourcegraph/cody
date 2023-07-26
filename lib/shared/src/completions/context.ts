@@ -1,6 +1,6 @@
 import type * as vscode from 'vscode'
 
-import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
+import { CodebaseContext } from '../../codebase-context'
 
 import { getContextFromEmbeddings } from './context-embeddings'
 import { getContextFromCurrentEditor } from './context-local'
