@@ -76,7 +76,7 @@ export async function createClient({
 
     const codebaseContext = new CodebaseContext(config, config.codebase, embeddingsSearch, null, null)
 
-    const intentDetector = new SourcegraphIntentDetectorClient(graphqlClient)
+    const intentDetector = new SourcegraphIntentDetectorClient(graphqlClient, completionsClient)
 
     const transcript = initialTranscript || new Transcript()
 

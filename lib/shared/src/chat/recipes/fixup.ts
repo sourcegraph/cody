@@ -1,10 +1,55 @@
+import { ContextMessage } from '../../codebase-context/messages'
+import { IntentClassificationOption } from '../../intent-detector'
 import { MAX_CURRENT_FILE_TOKENS, MAX_HUMAN_INPUT_TOKENS } from '../../prompt/constants'
 import { truncateText, truncateTextStart } from '../../prompt/truncation'
 import { BufferedBotResponseSubscriber } from '../bot-response-multiplexer'
 import { Interaction } from '../transcript/interaction'
 
-import { contentSanitizer, getContextMessagesFromSelection } from './helpers'
+import { contentSanitizer, getContextMessagesFromSelection, numResults } from './helpers'
 import { Recipe, RecipeContext, RecipeID } from './recipe'
+
+const FixupIntentClassification: IntentClassificationOption[] = [
+    {
+        /**
+         * Context:
+         * - preceding text, selected text, following text
+         * - maximum embeddings from code files and text files
+         */
+        id: 'explain',
+        description: 'Explain the selected code',
+        examplePrompts: ['What does this code do?', 'How does this code work?'],
+    },
+    {
+        /**
+         * Context:
+         * - preceding text, selected text, following text
+         * - limited embeddings from code files
+         */
+        id: 'fix', // mostly context from current file, code files
+        description: 'Fix a problem in the selected code',
+        examplePrompts: ['Update this code to use async/await', 'Fix this code'],
+    },
+    {
+        /**
+         * Context:
+         * - selected text
+         * - limited embeddings from code files
+         */
+        id: 'document', // only the current selection, context
+        description: 'Generate documentation for the selected code.',
+        examplePrompts: ['Add a docstring for this function', 'Write comments to explain this code'],
+    },
+    {
+        /**
+         * Context:
+         * - preceding text, selected text, following text
+         * - limited embeddings from code files
+         */
+        id: 'test',
+        description: 'Generate tests for the selected code',
+        examplePrompts: ['Write a test for this function', 'Add a test for this code'],
+    },
+]
 
 export class Fixup implements Recipe {
     public id: RecipeID = 'fixup'
@@ -56,6 +101,40 @@ export class Fixup implements Recipe {
             })
         )
 
+        let dynamicContext: Promise<ContextMessage[]>
+        const intent = await context.intentDetector.classifyIntentFromOptions(humanChatInput, FixupIntentClassification)
+        console.log('INLINE FIXUP INTENT', intent)
+        switch (intent) {
+            case 'explain':
+                dynamicContext = context.codebaseContext.getContextMessages(selection.selectedText, numResults)
+                break
+            case 'fix':
+                dynamicContext = getContextMessagesFromSelection(
+                    selection.selectedText,
+                    truncatedPrecedingText,
+                    truncatedFollowingText,
+                    selection,
+                    context.codebaseContext
+                )
+                break
+            case 'document':
+                // todo: better context gather for documenting? currently just using selection - no context
+                dynamicContext = Promise.resolve([])
+                break
+            case 'test':
+                // todo: better context gathering for tests
+                dynamicContext = context.codebaseContext.getContextMessages(selection.selectedText, numResults)
+                break
+            default:
+                dynamicContext = getContextMessagesFromSelection(
+                    selection.selectedText,
+                    truncatedPrecedingText,
+                    truncatedFollowingText,
+                    selection,
+                    context.codebaseContext
+                )
+        }
+
         return Promise.resolve(
             new Interaction(
                 {
@@ -67,13 +146,7 @@ export class Fixup implements Recipe {
                     speaker: 'assistant',
                     prefix: 'Check your document for updates from Cody.\n',
                 },
-                getContextMessagesFromSelection(
-                    selection.selectedText,
-                    truncatedPrecedingText,
-                    truncatedFollowingText,
-                    selection,
-                    context.codebaseContext
-                ),
+                dynamicContext,
                 []
             )
         )
