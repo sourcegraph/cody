@@ -6,77 +6,49 @@ import {
     SourcegraphGraphQLAPIClient,
 } from '../sourcegraph-api/graphql/client'
 
-export interface GitInfo {
-    repo: string
-    commitID: string
-}
-
-export abstract class GraphContextFetcher {
-    // TODO - move into editor interface
-    public abstract getGitInfo(workspaceRoot: string): Promise<GitInfo>
-
-    constructor(private graphqlClient: SourcegraphGraphQLAPIClient, private editor: Editor) {
-        console.log('🚀 ~ file: index.ts:36 ~ GraphContextFetcher ~ constructor ~ editor:', editor)
-    }
+export class GraphContextFetcher {
+    constructor(private graphqlClient: SourcegraphGraphQLAPIClient, private editor: Editor) {}
 
     public async getContext(): Promise<PreciseContextResult[]> {
-        console.log('🚀 ~ file: index.ts:39 ~ GraphContextFetcher ~ getContext ~ this.editor:', this.editor)
         const editorContext = this.editor.getActiveTextEditor()
-        if (!editorContext) {
+        if (!editorContext?.repoName) {
             return []
         }
-        const workspaceRoot = this.editor.getWorkspaceRootPath() || ""
-        // if (!workspaceRoot) {
-        //     return []
-        // }
-        let repository = ''
-        let commitID = editorContext.revision || 'HEAD'
-        if (editorContext.repoName) {
-            repository = editorContext.repoName
-        } else {
-            const { repo, commitID: cid } = await this.getGitInfo(workspaceRoot)
-            repository = repo
-            commitID = cid
-        }
-        console.log("🚀 ~ file: index.ts:34 ~ GraphContextFetcher ~ getContext ~ repository, commitID:", repository, commitID)
+        const workspaceRoot = this.editor.getWorkspaceRootPath() || ''
+        const repository = editorContext.repoName
+        const commitID = editorContext.revision || 'HEAD'
         const activeFile = pathRelativeToRoot(editorContext.filePath, workspaceRoot)
+        const content = editorContext.content
+        const selection = getActiveSelectionRange(editorContext.selection)
 
+        console.log('🚀 ~ file: index.ts:24 ~ GraphContextFetcher ~ getContext ~ args:', {
+            repository,
+            commitID,
+            activeFile,
+            content,
+            selection,
+        })
         const response = await this.graphqlClient.getPreciseContext(
             repository,
             commitID,
             activeFile,
-            editorContext.content,
-            getActiveSelectionRange(editorContext.selection)
+            content,
+            selection
         )
-        console.log("🚀 ~ file: index.ts:50 ~ GraphContextFetcher ~ getContext ~ repository",
-            commitID,
-            activeFile,
-            editorContext.content,
-            getActiveSelectionRange(editorContext.selection),
-            repository,
-        )
-        console.log('🚀 ~ file: index.ts:40 ~ GraphContextFetcher ~ getContext ~ response:', response)
-        if (isErrorLike(response)) {
-            return []
-        }
-
-        return response
+        console.log('🚀 ~ file: index.ts:38 ~ GraphContextFetcher ~ getContext ~ response:', response)
+        return isErrorLike(response) ? [] : response
     }
 }
 
-function getActiveSelectionRange(
-    selection: ActiveTextEditorSelectionRange | undefined
-): ActiveFileSelectionRange | null {
-    if (!selection) {
-        return null
-    }
-
-    return {
-        startLine: selection.start.line,
-        startCharacter: selection.start.character,
-        endLine: selection.end.line,
-        endCharacter: selection.end.character,
-    }
+function getActiveSelectionRange(selection?: ActiveTextEditorSelectionRange): ActiveFileSelectionRange | null {
+    return selection
+        ? {
+              startLine: selection.start.line,
+              startCharacter: selection.start.character,
+              endLine: selection.end.line,
+              endCharacter: selection.end.character,
+          }
+        : null
 }
 
 function pathRelativeToRoot(path: string, workspaceRoot: string): string {
