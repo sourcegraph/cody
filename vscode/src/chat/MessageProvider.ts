@@ -172,7 +172,6 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
 
     public async clearAndRestartSession(): Promise<void> {
         await this.saveTranscriptToChatHistory()
-        await this.setAnonymousUserID()
         this.createNewChatID()
         this.cancelCompletion()
         this.isMessageInProgress = false
@@ -186,10 +185,6 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         MessageProvider.chatHistory = {}
         MessageProvider.inputHistory = []
         await this.localStorage.removeChatHistory()
-    }
-
-    public async setAnonymousUserID(): Promise<void> {
-        await this.localStorage.setAnonymousUserID()
     }
 
     /**
