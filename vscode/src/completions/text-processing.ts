@@ -46,7 +46,6 @@ export function indentation(line: string): number {
     const regex = line.match(INDENTATION_REGEX)
     if (regex) {
         const whitespace = regex[0]
-        console.log({ whitespace })
         return [...whitespace].reduce((p, c) => p + (c === '\t' ? tabSize : 1), 0)
     }
 

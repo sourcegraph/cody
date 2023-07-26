@@ -169,7 +169,6 @@ export function truncateMultilineCompletion(
 
     const includeClosingLine = shouldIncludeClosingLine(prefixIndentationWithFirstCompletionLine, suffix)
 
-    console.log({ lines })
     let cutOffIndex = lines.length
     for (let i = 0; i < lines.length; i++) {
         const line = lines[i]
@@ -177,9 +176,6 @@ export function truncateMultilineCompletion(
         if (i === 0 || line === '' || config.blockElseTest.test(line)) {
             continue
         }
-
-        console.log('il', indentation(line), line, i)
-        console.log('si', startIndent)
 
         if (
             (indentation(line) <= startIndent && !hasEmptyCompletionLine) ||
