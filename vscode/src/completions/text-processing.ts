@@ -4,6 +4,7 @@ import { isAlmostTheSameString } from './utils/string-comparator'
 
 export const OPENING_CODE_TAG = '<CODE5711>'
 export const CLOSING_CODE_TAG = '</CODE5711>'
+export const INSERT_TAG = '<INSERT5711/>'
 
 /**
  * This extracts the generated code from the response from Anthropic. The generated code is

@@ -11,6 +11,7 @@ import {
     extractFromCodeBlock,
     fixBadCompletionStart,
     getHeadAndTail,
+    INSERT_TAG,
     OPENING_CODE_TAG,
     PrefixComponents,
     trimLeadingWhitespaceUntilNewline,
@@ -69,11 +70,11 @@ export class AnthropicProvider extends Provider {
             },
             {
                 speaker: 'human',
-                text: `Complete this code: ${OPENING_CODE_TAG}${head.trimmed}${CLOSING_CODE_TAG}.`,
+                text: `Replace the code at ${INSERT_TAG} with your completion: ${OPENING_CODE_TAG}${head.trimmed}${INSERT_TAG}${this.options.suffix}${CLOSING_CODE_TAG}.`,
             },
             {
                 speaker: 'assistant',
-                text: `Here is the code: ${OPENING_CODE_TAG}${tail.trimmed}`,
+                text: `Here is the completed code: ${OPENING_CODE_TAG}${tail.trimmed}`,
             },
         ]
         return { messages: prefixMessages, prefix: { head, tail, overlap } }
