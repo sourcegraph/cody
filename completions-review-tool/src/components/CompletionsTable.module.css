@@ -2,10 +2,11 @@
     overflow: scroll;
     flex-grow: 1;
     width: 100vw;
+    height: 100vh;
 }
 
 .table {
-    /*  */
+    position: relative;
 }
 
 .table thead tr > th {
