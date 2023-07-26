@@ -171,7 +171,8 @@ export function trimUntilSuffix(insertion: string, prefix: string, suffix: strin
             hasEmptyCompletionLine &&
             config.blockEnd &&
             line.trim().startsWith(config.blockEnd) &&
-            startIndent === lineIndentation
+            startIndent === lineIndentation &&
+            insertionLines.length === 1
         ) {
             cutOffIndex = i
             break
