@@ -20,7 +20,6 @@ export class ChatQuestion implements Recipe {
 
     public async getInteraction(humanChatInput: string, context: RecipeContext): Promise<Interaction | null> {
         const truncatedText = truncateText(humanChatInput, MAX_HUMAN_INPUT_TOKENS)
-        console.log('lalalalallalalalala')
         return Promise.resolve(
             new Interaction(
                 { speaker: 'human', text: truncatedText, displayText: humanChatInput },
@@ -52,7 +51,6 @@ export class ChatQuestion implements Recipe {
         const isTextTooShort = text.split(' ').length < 2
         const isCodebaseContextRequired =
             !isTextTooShort && (firstInteraction || (await intentDetector.isCodebaseContextRequired(text)))
-        console.log('does this work?')
         this.debug('ChatQuestion:getContextMessages', 'isCodebaseContextRequired', isCodebaseContextRequired)
         if (isCodebaseContextRequired) {
             const codebaseContextMessages = await codebaseContext.getContextMessages(text, numResults)

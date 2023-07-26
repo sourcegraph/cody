@@ -221,6 +221,7 @@ export class CodebaseContext {
 
         const contextMessages: ContextMessage[] = []
         const preciseContext = await this.graph.getContext()
+        console.log("🚀 ~ file: index.ts:224 ~ CodebaseContext ~ getGraphContextMessages ~ preciseContext:", preciseContext)
         for (const context of preciseContext) {
             contextMessages.push({
                 speaker: 'human',

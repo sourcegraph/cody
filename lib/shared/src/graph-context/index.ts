@@ -20,16 +20,25 @@ export abstract class GraphContextFetcher {
     }
 
     public async getContext(): Promise<PreciseContextResult[]> {
+        console.log('🚀 ~ file: index.ts:39 ~ GraphContextFetcher ~ getContext ~ this.editor:', this.editor)
         const editorContext = this.editor.getActiveTextEditor()
         if (!editorContext) {
             return []
         }
-        const workspaceRoot = this.editor.getWorkspaceRootPath()
-        if (!workspaceRoot) {
-            return []
+        const workspaceRoot = this.editor.getWorkspaceRootPath() || ""
+        // if (!workspaceRoot) {
+        //     return []
+        // }
+        let repository = ''
+        let commitID = editorContext.revision || 'HEAD'
+        if (editorContext.repoName) {
+            repository = editorContext.repoName
+        } else {
+            const { repo, commitID: cid } = await this.getGitInfo(workspaceRoot)
+            repository = repo
+            commitID = cid
         }
-
-        const { repo: repository, commitID } = await this.getGitInfo(workspaceRoot)
+        console.log("🚀 ~ file: index.ts:34 ~ GraphContextFetcher ~ getContext ~ repository, commitID:", repository, commitID)
         const activeFile = pathRelativeToRoot(editorContext.filePath, workspaceRoot)
 
         const response = await this.graphqlClient.getPreciseContext(
@@ -39,9 +48,12 @@ export abstract class GraphContextFetcher {
             editorContext.content,
             getActiveSelectionRange(editorContext.selection)
         )
-        console.log(
-            '🚀 ~ file: index.ts:39 ~ GraphContextFetcher ~ getContext ~ getActiveSelectionRange(editorContext.selection):',
-            getActiveSelectionRange(editorContext.selection)
+        console.log("🚀 ~ file: index.ts:50 ~ GraphContextFetcher ~ getContext ~ repository",
+            commitID,
+            activeFile,
+            editorContext.content,
+            getActiveSelectionRange(editorContext.selection),
+            repository,
         )
         console.log('🚀 ~ file: index.ts:40 ~ GraphContextFetcher ~ getContext ~ response:', response)
         if (isErrorLike(response)) {
@@ -68,6 +80,10 @@ function getActiveSelectionRange(
 }
 
 function pathRelativeToRoot(path: string, workspaceRoot: string): string {
+    if (!workspaceRoot) {
+        return path
+    }
+
     if (path.startsWith(workspaceRoot)) {
         // +1 for the slash so we produce a relative path
         return path.slice(workspaceRoot.length + 1)
