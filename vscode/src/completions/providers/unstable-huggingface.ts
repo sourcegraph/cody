@@ -2,6 +2,8 @@ import fetch from 'isomorphic-fetch'
 
 import { Completion } from '..'
 import { logger } from '../../log'
+import { ReferenceSnippet } from '../context'
+import { getLanguageConfig } from '../language'
 import { isAbortError } from '../utils'
 
 import { Provider, ProviderConfig, ProviderOptions } from './provider'
@@ -13,6 +15,7 @@ interface UnstableHuggingFaceOptions {
 
 const PROVIDER_IDENTIFIER = 'huggingface'
 const STOP_WORD = '<|endoftext|>'
+const CONTEXT_WINDOW_CHARS = 3500 // ~ 1280 token limit
 
 export class UnstableHuggingFaceProvider extends Provider {
     private serverEndpoint: string
@@ -24,18 +27,56 @@ export class UnstableHuggingFaceProvider extends Provider {
         this.accessToken = unstableHuggingFaceOptions.accessToken
     }
 
-    public async generateCompletions(abortSignal: AbortSignal): Promise<Completion[]> {
-        // TODO: Add context and language
-        // Prompt format is taken form https://huggingface.co/bigcode/starcoder#fill-in-the-middle
-        const prompt = `<fim_prefix>${this.prefix}<fim_suffix>${this.suffix}<fim_middle>`
+    private createPrompt(snippets: ReferenceSnippet[]): string {
+        const maxPromptChars = CONTEXT_WINDOW_CHARS - CONTEXT_WINDOW_CHARS * this.options.responsePercentage
+
+        const intro: string[] = []
+        let prompt = ''
+
+        const languageConfig = getLanguageConfig(this.options.languageId)
+        if (languageConfig) {
+            intro.push(`Path: ${this.options.fileName}`)
+        }
+
+        for (let snippetsToInclude = 0; snippetsToInclude < snippets.length + 1; snippetsToInclude++) {
+            if (snippetsToInclude > 0) {
+                const snippet = snippets[snippetsToInclude - 1]
+                intro.push(`Here is a reference snippet of code from ${snippet.fileName}:\n\n${snippet.content}`)
+            }
+
+            const introString =
+                intro
+                    .join('\n\n')
+                    .split('\n')
+                    .map(line => (languageConfig ? languageConfig.commentStart + line : ''))
+                    .join('\n') + '\n'
+
+            // Prompt format is taken form https://huggingface.co/bigcode/starcoder#fill-in-the-middle
+            const nextPrompt = `<fim_prefix>${introString}${this.options.prefix}<fim_suffix>${this.options.suffix}<fim_middle>`
+
+            if (nextPrompt.length >= maxPromptChars) {
+                return prompt
+            }
+
+            prompt = nextPrompt
+        }
+
+        return prompt
+    }
+
+    public async generateCompletions(abortSignal: AbortSignal, snippets: ReferenceSnippet[]): Promise<Completion[]> {
+        const prompt = this.createPrompt(snippets)
 
         const request = {
             inputs: prompt,
             parameters: {
-                num_return_sequences: 1,
                 // To speed up sample generation in single-line case, we request a lower token limit
                 // since we can't terminate on the first `\n`.
-                max_new_tokens: this.multilineMode === null ? 64 : 256,
+                max_new_tokens: this.options.multiline ? 256 : 40,
+
+                // TODO: Figure out how to generate more than one suggestion. Right now, even doing
+                // parallel HTTP requests will result in the same completion. I tried disabling the
+                // cache on HF and tweaking top_k and temperature with no success.
             },
         }
 
@@ -62,11 +103,11 @@ export class UnstableHuggingFaceProvider extends Provider {
                 throw new Error(data.error)
             }
 
-            const completions: string[] = data.map(c => postProcess(c.generated_text, this.multilineMode))
+            const completions: string[] = data.map(c => postProcess(c.generated_text, this.options.multiline))
             log?.onComplete(completions)
 
             return completions.map(content => ({
-                prefix: this.prefix,
+                prefix: this.options.prefix,
                 content,
             }))
         } catch (error: any) {
@@ -79,12 +120,12 @@ export class UnstableHuggingFaceProvider extends Provider {
     }
 }
 
-function postProcess(content: string, multilineMode: null | 'block'): string {
+function postProcess(content: string, multiline: boolean): string {
     content = content.replace(STOP_WORD, '')
 
     // The model might return multiple lines for single line completions because
     // we are only able to specify a token limit.
-    if (multilineMode === null && content.includes('\n')) {
+    if (!multiline && content.includes('\n')) {
         content = content.slice(0, content.indexOf('\n'))
     }
 
@@ -92,12 +133,11 @@ function postProcess(content: string, multilineMode: null | 'block'): string {
 }
 
 export function createProviderConfig(unstableHuggingFaceOptions: UnstableHuggingFaceOptions): ProviderConfig {
-    const contextWindowChars = 8_000 // ~ 2k token limit
     return {
         create(options: ProviderOptions) {
             return new UnstableHuggingFaceProvider(options, unstableHuggingFaceOptions)
         },
-        maximumContextCharacters: contextWindowChars,
+        maximumContextCharacters: CONTEXT_WINDOW_CHARS,
         enableExtendedMultilineTriggers: true,
         identifier: PROVIDER_IDENTIFIER,
     }

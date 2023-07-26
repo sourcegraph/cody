@@ -12,6 +12,7 @@ export class LocalStorage {
     private ANONYMOUS_USER_ID_KEY = 'sourcegraphAnonymousUid'
     private LAST_USED_ENDPOINT = 'SOURCEGRAPH_CODY_ENDPOINT'
     private CODY_ENDPOINT_HISTORY = 'SOURCEGRAPH_CODY_ENDPOINT_HISTORY'
+    private KEY_ENABLED_PLUGINS = 'KEY_ENABLED_PLUGINS'
 
     constructor(private storage: Memento) {}
 
@@ -91,18 +92,28 @@ export class LocalStorage {
     }
 
     public async setAnonymousUserID(): Promise<string | null> {
-        let status: string | null = null
-        let anonUserID = this.storage.get(this.ANONYMOUS_USER_ID_KEY)
-        if (!anonUserID) {
-            anonUserID = uuid.v4()
-            status = 'installed'
+        if (this.getAnonymousUserID()) {
+            return null
         }
+        const anonUserID = uuid.v4()
         try {
             await this.storage.update(this.ANONYMOUS_USER_ID_KEY, anonUserID)
         } catch (error) {
             console.error(error)
         }
-        return status
+        return 'installed'
+    }
+
+    public async setEnabledPlugins(plugins: string[]): Promise<void> {
+        try {
+            await this.storage.update(this.KEY_ENABLED_PLUGINS, plugins)
+        } catch (error) {
+            console.error(error)
+        }
+    }
+
+    public getEnabledPlugins(): string[] | null {
+        return this.storage.get<string[] | null>(this.KEY_ENABLED_PLUGINS, null)
     }
 
     public get(key: string): string | null {

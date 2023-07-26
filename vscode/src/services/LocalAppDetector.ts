@@ -25,9 +25,12 @@ export class LocalAppDetector implements vscode.Disposable {
     private _watchers: vscode.Disposable[] = []
     private onChange: OnChangeCallback
 
-    constructor(private secretStorage: SecretStorage, options: { onChange: OnChangeCallback }) {
+    constructor(
+        private secretStorage: SecretStorage,
+        options: { onChange: OnChangeCallback }
+    ) {
         this.onChange = options.onChange
-        this.localEnv = envInit
+        this.localEnv = { ...envInit }
         this.localAppMarkers = LOCAL_APP_LOCATIONS[this.localEnv.os]
         // Only Mac is supported for now
         this.isSupported =
@@ -43,7 +46,9 @@ export class LocalAppDetector implements vscode.Disposable {
     }
 
     public async init(): Promise<void> {
+        // Start with init state
         this.dispose()
+        this.localEnv = { ...envInit }
         debug('LocalAppDetector:init', 'initializing')
         const homeDir = this.localEnv.homeDir
         // if conditions are not met, this will be a noop

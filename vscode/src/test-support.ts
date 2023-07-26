@@ -2,7 +2,7 @@ import { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messag
 import { MockReranker, Reranker } from '@sourcegraph/cody-shared/src/codebase-context/rerank'
 import { ContextResult } from '@sourcegraph/cody-shared/src/local-context'
 
-import { ChatViewProvider } from './chat/ChatViewProvider'
+import { MessageProvider } from './chat/MessageProvider'
 import { FixupController } from './non-stop/FixupController'
 import { FixupTask } from './non-stop/FixupTask'
 
@@ -40,7 +40,7 @@ class Rendezvous<T> {
 export class TestSupport {
     public static instance: TestSupport | undefined
 
-    public chatViewProvider = new Rendezvous<ChatViewProvider>()
+    public messageProvider = new Rendezvous<MessageProvider>()
     public fixupController = new Rendezvous<FixupController>()
 
     public reranker: Reranker | undefined
@@ -55,10 +55,10 @@ export class TestSupport {
     }
 
     public async chatTranscript(): Promise<ChatMessage[]> {
-        return (await this.chatViewProvider.get()).transcriptForTesting(this)
+        return (await this.messageProvider.get()).transcriptForTesting(this)
     }
 
     public async fixupTasks(): Promise<FixupTask[]> {
-        return (await this.chatViewProvider.get()).fixupTasksForTesting(this)
+        return (await this.messageProvider.get()).fixupTasksForTesting(this)
     }
 }

@@ -5,7 +5,10 @@ import * as vscode from 'vscode'
  * construct them directly.
  */
 export class FixupFile {
-    constructor(private id_: number, public uri_: vscode.Uri) {}
+    constructor(
+        private id_: number,
+        public uri_: vscode.Uri
+    ) {}
 
     public deleted_ = false
 

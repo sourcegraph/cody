@@ -3,20 +3,23 @@ import * as vscode from 'vscode'
 import {
     ActiveTextEditor,
     ActiveTextEditorSelection,
+    ActiveTextEditorViewControllers,
     ActiveTextEditorVisibleContent,
     Editor,
 } from '@sourcegraph/cody-shared/src/editor'
 import { SURROUNDING_LINES } from '@sourcegraph/cody-shared/src/prompt/constants'
 
+import { MyPromptController } from '../my-cody/MyPromptController'
 import { FixupController } from '../non-stop/FixupController'
 import { InlineController } from '../services/InlineController'
 
-export class VSCodeEditor implements Editor {
+export class VSCodeEditor implements Editor<InlineController, FixupController, MyPromptController> {
     constructor(
-        public controllers: {
-            inline: InlineController
-            fixups: FixupController
-        }
+        public readonly controllers: ActiveTextEditorViewControllers<
+            InlineController,
+            FixupController,
+            MyPromptController
+        >
     ) {}
 
     public get fileName(): string {
@@ -52,11 +55,11 @@ export class VSCodeEditor implements Editor {
 
     private getActiveTextEditorInstance(): vscode.TextEditor | null {
         const activeEditor = vscode.window.activeTextEditor
-        return activeEditor && activeEditor.document.uri.scheme === 'file' ? activeEditor : null
+        return activeEditor ?? null
     }
 
     public getActiveTextEditorSelection(): ActiveTextEditorSelection | null {
-        if (this.controllers.inline.isInProgress) {
+        if (this.controllers.inline?.isInProgress) {
             return null
         }
         const activeEditor = this.getActiveTextEditorInstance()
@@ -131,7 +134,7 @@ export class VSCodeEditor implements Editor {
 
     public async replaceSelection(fileName: string, selectedText: string, replacement: string): Promise<void> {
         const activeEditor = this.getActiveTextEditorInstance()
-        if (this.controllers.inline.isInProgress) {
+        if (this.controllers.inline?.isInProgress) {
             await this.controllers.inline.replace(fileName, replacement, selectedText)
             return
         }
@@ -179,6 +182,9 @@ export class VSCodeEditor implements Editor {
     // TODO: When Non-Stop Fixup doesn't depend directly on the chat view,
     // move the recipe to vscode and remove this entrypoint.
     public async didReceiveFixupText(id: string, text: string, state: 'streaming' | 'complete'): Promise<void> {
+        if (!this.controllers.fixups) {
+            throw new Error('no fixup controller')
+        }
         await this.controllers.fixups.didReceiveFixupText(id, text, state)
     }
 }

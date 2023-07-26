@@ -5,6 +5,12 @@ import { Configuration } from '@sourcegraph/cody-shared/src/configuration'
 import { CodyLLMSiteConfiguration } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
 
 import { View } from '../../webviews/NavBar'
+import { CodyPromptType } from '../my-cody/types'
+
+export enum WebviewEvent {
+    Feedback = 'feedback',
+    Click = 'click',
+}
 
 /**
  * A message sent from the webview to the extension host.
@@ -12,10 +18,9 @@ import { View } from '../../webviews/NavBar'
 export type WebviewMessage =
     | { command: 'ready' }
     | { command: 'initialized' }
-    | { command: 'event'; event: string; value: string }
+    | { command: 'event'; event: WebviewEvent; value: string }
     | { command: 'submit'; text: string; submitType: 'user' | 'suggestion' }
     | { command: 'executeRecipe'; recipe: RecipeID }
-    | { command: 'settings'; serverEndpoint: string; accessToken: string }
     | { command: 'removeHistory' }
     | { command: 'restoreHistory'; chatID: string }
     | { command: 'deleteHistory'; chatID: string }
@@ -23,9 +28,16 @@ export type WebviewMessage =
     | { command: 'openFile'; filePath: string }
     | { command: 'edit'; text: string }
     | { command: 'insert'; text: string }
-    | { command: 'auth'; type: 'signin' | 'signout' | 'support' | 'app' | 'callback'; endpoint?: string }
+    | {
+          command: 'auth'
+          type: 'signin' | 'signout' | 'support' | 'app' | 'callback'
+          endpoint?: string
+          value?: string
+      }
     | { command: 'abort' }
     | { command: 'chat-button'; action: string }
+    | { command: 'setEnabledPlugins'; plugins: string[] }
+    | { command: 'my-prompt'; title: string; value?: CodyPromptType }
 
 /**
  * A message sent from the extension host to the webview.
@@ -42,11 +54,14 @@ export type ExtensionMessage =
     | { type: 'errors'; errors: string }
     | { type: 'suggestions'; suggestions: string[] }
     | { type: 'app-state'; isInstalled: boolean }
+    | { type: 'enabled-plugins'; plugins: string[] }
+    | { type: 'my-prompts'; prompts: string[]; isEnabled: boolean }
 
 /**
  * The subset of configuration that is visible to the webview.
  */
-export interface ConfigurationSubsetForWebview extends Pick<Configuration, 'debugEnable' | 'serverEndpoint'> {}
+export interface ConfigurationSubsetForWebview
+    extends Pick<Configuration, 'debugEnable' | 'serverEndpoint' | 'pluginsEnabled' | 'pluginsDebugEnabled'> {}
 
 /**
  * URLs for the Sourcegraph instance and app.
@@ -54,6 +69,7 @@ export interface ConfigurationSubsetForWebview extends Pick<Configuration, 'debu
 export const DOTCOM_URL = new URL('https://sourcegraph.com')
 export const DOTCOM_CALLBACK_URL = new URL('https://sourcegraph.com/user/settings/tokens/new/callback')
 export const CODY_DOC_URL = new URL('https://docs.sourcegraph.com/cody')
+export const INTERNAL_S2_URL = new URL('https://sourcegraph.sourcegraph.com/')
 // Community and support
 export const DISCORD_URL = new URL('https://discord.gg/s2qDtYGnAE')
 export const CODY_FEEDBACK_URL = new URL(
@@ -140,6 +156,14 @@ export function isLocalApp(url: string): boolean {
 export function isDotCom(url: string): boolean {
     try {
         return new URL(url).origin === DOTCOM_URL.origin
+    } catch {
+        return false
+    }
+}
+
+export function isInternalUser(url: string): boolean {
+    try {
+        return new URL(url).origin === INTERNAL_S2_URL.origin
     } catch {
         return false
     }

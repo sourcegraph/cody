@@ -2,6 +2,8 @@ import { useCallback, useEffect, useState } from 'react'
 
 import './App.css'
 
+import { uniq, without } from 'lodash'
+
 import { ChatContextStatus } from '@sourcegraph/cody-shared/src/chat/context'
 import { ChatHistory, ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { Configuration } from '@sourcegraph/cody-shared/src/configuration'
@@ -14,15 +16,16 @@ import { Header } from './Header'
 import { LoadingPage } from './LoadingPage'
 import { Login } from './Login'
 import { NavBar, View } from './NavBar'
+import { Plugins } from './Plugins'
 import { Recipes } from './Recipes'
-import { Settings } from './Settings'
 import { UserHistory } from './UserHistory'
 import type { VSCodeWrapper } from './utils/VSCodeApi'
 
 export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vscodeAPI }) => {
-    const [config, setConfig] = useState<(Pick<Configuration, 'debugEnable' | 'serverEndpoint'> & LocalEnv) | null>(
-        null
-    )
+    const [config, setConfig] = useState<
+        | (Pick<Configuration, 'debugEnable' | 'serverEndpoint' | 'pluginsEnabled' | 'pluginsDebugEnabled'> & LocalEnv)
+        | null
+    >(null)
     const [endpoint, setEndpoint] = useState<string | null>(null)
     const [debugLog, setDebugLog] = useState<string[]>([])
     const [view, setView] = useState<View | undefined>()
@@ -37,6 +40,8 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     const [errorMessages, setErrorMessages] = useState<string[]>([])
     const [suggestions, setSuggestions] = useState<string[] | undefined>()
     const [isAppInstalled, setIsAppInstalled] = useState<boolean>(false)
+    const [enabledPlugins, setEnabledPlugins] = useState<string[]>([])
+    const [myPrompts, setMyPrompts] = useState<string[] | null>(null)
 
     useEffect(
         () =>
@@ -90,6 +95,12 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                     case 'app-state':
                         setIsAppInstalled(message.isInstalled)
                         break
+                    case 'enabled-plugins':
+                        setEnabledPlugins(message.plugins)
+                        break
+                    case 'my-prompts':
+                        setMyPrompts(message.isEnabled ? message.prompts : null)
+                        break
                 }
             }),
         [debugLog, errorMessages, view, vscodeAPI]
@@ -106,14 +117,6 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
         }
     }, [view, vscodeAPI])
 
-    const onLogout = useCallback(() => {
-        setConfig(null)
-        setEndpoint(null)
-        setAuthStatus(defaultAuthStatus)
-        setView('login')
-        vscodeAPI.postMessage({ command: 'auth', type: 'signout' })
-    }, [vscodeAPI])
-
     const onLoginRedirect = useCallback(
         (uri: string) => {
             setConfig(null)
@@ -123,6 +126,15 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
             vscodeAPI.postMessage({ command: 'auth', type: 'callback', endpoint: uri })
         },
         [setEndpoint, vscodeAPI]
+    )
+
+    const onPluginToggle = useCallback(
+        (pluginName: string, enabled: boolean) => {
+            const newPlugins = enabled ? uniq([...enabledPlugins, pluginName]) : without(enabledPlugins, pluginName)
+            vscodeAPI.postMessage({ command: 'setEnabledPlugins', plugins: newPlugins })
+            setEnabledPlugins(newPlugins)
+        },
+        [enabledPlugins, vscodeAPI]
     )
 
     if (!view || !authStatus || !config) {
@@ -146,7 +158,12 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                 />
             ) : (
                 <>
-                    <NavBar view={view} setView={setView} devMode={Boolean(config?.debugEnable)} />
+                    <NavBar
+                        view={view}
+                        setView={setView}
+                        devMode={Boolean(config?.debugEnable)}
+                        pluginsEnabled={Boolean(config?.pluginsEnabled)}
+                    />
                     {errorMessages && <ErrorBanner errors={errorMessages} setErrors={setErrorMessages} />}
                     {view === 'debug' && config?.debugEnable && <Debug debugLog={debugLog} />}
                     {view === 'history' && (
@@ -158,10 +175,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                             vscodeAPI={vscodeAPI}
                         />
                     )}
-                    {view === 'recipes' && <Recipes vscodeAPI={vscodeAPI} />}
-                    {view === 'settings' && endpoint && (
-                        <Settings onLogout={onLogout} endpoint={endpoint} version={config?.extensionVersion} />
-                    )}
+                    {view === 'recipes' && endpoint && <Recipes vscodeAPI={vscodeAPI} myPrompts={myPrompts} />}
                     {view === 'chat' && (
                         <Chat
                             messageInProgress={messageInProgress}
@@ -175,10 +189,15 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                             setInputHistory={setInputHistory}
                             vscodeAPI={vscodeAPI}
                             suggestions={suggestions}
+                            pluginsDevMode={Boolean(config?.pluginsDebugEnabled)}
                             setSuggestions={setSuggestions}
                         />
                     )}
                 </>
+            )}
+
+            {config.pluginsEnabled && view === 'plugins' && (
+                <Plugins plugins={enabledPlugins} onPluginToggle={onPluginToggle} />
             )}
         </div>
     )

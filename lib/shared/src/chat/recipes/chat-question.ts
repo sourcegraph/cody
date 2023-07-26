@@ -10,6 +10,7 @@ import {
 import { truncateText } from '../../prompt/truncation'
 import { Interaction } from '../transcript/interaction'
 
+import { numResults } from './helpers'
 import { Recipe, RecipeContext, RecipeID } from './recipe'
 
 export class ChatQuestion implements Recipe {
@@ -19,7 +20,7 @@ export class ChatQuestion implements Recipe {
 
     public async getInteraction(humanChatInput: string, context: RecipeContext): Promise<Interaction | null> {
         const truncatedText = truncateText(humanChatInput, MAX_HUMAN_INPUT_TOKENS)
-
+        console.log('lalalalallalalalala')
         return Promise.resolve(
             new Interaction(
                 { speaker: 'human', text: truncatedText, displayText: humanChatInput },
@@ -46,20 +47,15 @@ export class ChatQuestion implements Recipe {
         selection: ActiveTextEditorSelection | null
     ): Promise<ContextMessage[]> {
         const contextMessages: ContextMessage[] = []
-
-        // Add selected text as context when available
-        if (selection?.selectedText) {
-            contextMessages.push(...ChatQuestion.getEditorSelectionContext(selection))
-        }
-
-        const isCodebaseContextRequired = firstInteraction || (await intentDetector.isCodebaseContextRequired(text))
-
+        // If input is less than 2 words, it means it's most likely a statement or a follow-up question that does not require additional context
+        // e,g. "hey", "hi", "why", "explain" etc.
+        const isTextTooShort = text.split(' ').length < 2
+        const isCodebaseContextRequired =
+            !isTextTooShort && (firstInteraction || (await intentDetector.isCodebaseContextRequired(text)))
+        console.log('does this work?')
         this.debug('ChatQuestion:getContextMessages', 'isCodebaseContextRequired', isCodebaseContextRequired)
         if (isCodebaseContextRequired) {
-            const codebaseContextMessages = await codebaseContext.getContextMessages(text, {
-                numCodeResults: 12,
-                numTextResults: 3,
-            })
+            const codebaseContextMessages = await codebaseContext.getContextMessages(text, numResults)
             contextMessages.push(...codebaseContextMessages)
             // TODO: Put this in getContextMessages?
             // Let's leave this here for now :)

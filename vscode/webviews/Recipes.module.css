@@ -7,6 +7,22 @@
 
 /* Extra styles for the big buttons */
 .recipe-button {
-    padding-top: .5rem;
-    padding-bottom: .5rem;
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+}
+
+.recipes-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    font-size: 0.8rem;
+    font-weight: bold;
+}
+
+.recipes-notes {
+    display: flex;
+    align-items: center;
+    margin: 0.1rem 0;
+    font-size: small;
 }

@@ -71,7 +71,6 @@ export function createStatusBar(): CodyStatusBar {
                     'cody.inlineChat.enabled',
                     c => c.inlineChat
                 ),
-
                 createFeatureToggle(
                     'Chat Suggestions',
                     'Experimental',
@@ -80,9 +79,16 @@ export function createStatusBar(): CodyStatusBar {
                     c => c.experimentalChatPredictions,
                     true
                 ),
-                { label: 'settings', kind: vscode.QuickPickItemKind.Separator },
+                createFeatureToggle(
+                    'Custom Recipes',
+                    'Experimental',
+                    'Enable creating custom recipes with reusable prompts and context',
+                    'cody.experimental.customRecipes',
+                    c => c.experimentalCustomRecipes
+                ),
+                { label: 'extension settings', kind: vscode.QuickPickItemKind.Separator },
                 {
-                    label: '$(gear) Cody Settings',
+                    label: '$(gear) Cody Extension Settings',
                     async onSelect(): Promise<void> {
                         await vscode.commands.executeCommand('cody.settings.extension')
                     },
@@ -91,6 +97,7 @@ export function createStatusBar(): CodyStatusBar {
                 ...FeedbackOptionItems,
             ],
             {
+                title: 'Cody Settings Menu',
                 placeHolder: 'Select an option',
                 matchOnDescription: true,
             }

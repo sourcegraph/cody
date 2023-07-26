@@ -28,7 +28,7 @@ export default defineConfig({
     logLevel: 'warn',
     build: {
         emptyOutDir: false,
-        outDir: 'dist',
+        outDir: 'dist/webviews',
         target: 'esnext',
         minify: false,
         sourcemap: 'inline',
@@ -41,7 +41,7 @@ export default defineConfig({
                 exclude: ['node_modules', 'src'],
             },
             input: {
-                main: resolve(__dirname, 'index.html'),
+                index: resolve(__dirname, 'index.html'),
             },
             output: {
                 entryFileNames: '[name].js',
@@ -49,7 +49,6 @@ export default defineConfig({
         },
     },
     test: {
-        globals: true,
         include: ['src/**/*.test.ts?(x)'],
         setupFiles: ['src/testutils/vscode.ts'],
     },

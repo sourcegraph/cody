@@ -25,7 +25,8 @@ suite('Local search', function () {
         assert.ok(workspaceFolders)
         assert.ok(workspaceFolders.length >= 1)
 
-        const rgPath = await getRgPath(path.join(__dirname, '..', '..', '..'))
+        const rgPath = await getRgPath(path.join(__dirname, '..', '..', '..', '..'))
+        assert.ok(rgPath)
         const filesExistMap = await fastFilesExist(rgPath, workspaceFolders[0].uri.fsPath, [
             'lib',
             'batches',

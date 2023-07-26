@@ -1,4 +1,4 @@
-import { describe, expect } from 'vitest'
+import { describe, expect, test } from 'vitest'
 
 import { defaultAuthStatus, unauthenticatedStatus } from './protocol'
 import { newAuthStatus } from './utils'

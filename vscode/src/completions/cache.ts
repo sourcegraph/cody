@@ -1,15 +1,16 @@
 import { LRUCache } from 'lru-cache'
 
 import { Completion } from '.'
+import { trimEndOnLastLineIfWhitespaceOnly } from './text-processing'
 
-interface CachedCompletion {
+export interface CachedCompletions {
     logId: string
     isExactPrefix: boolean
     completions: Completion[]
 }
 
 export class CompletionsCache {
-    private cache = new LRUCache<string, CachedCompletion>({
+    private cache = new LRUCache<string, CachedCompletions>({
         max: 500, // Maximum input prefixes in the cache.
     })
 
@@ -21,8 +22,8 @@ export class CompletionsCache {
     // account. We need to add additional information like file path or suffix
     // to make sure the cache does not return undesired results for other files
     // in the same project.
-    public get(prefix: string, trim: boolean = true): CachedCompletion | undefined {
-        const trimmedPrefix = trim ? trimEndAfterLastNewline(prefix) : prefix
+    public get(prefix: string, trim: boolean = true): CachedCompletions | undefined {
+        const trimmedPrefix = trim ? trimEndOnLastLineIfWhitespaceOnly(prefix) : prefix
         const result = this.cache.get(trimmedPrefix)
 
         if (!result) {
@@ -30,7 +31,7 @@ export class CompletionsCache {
         }
 
         const completions = result.completions.map(completion => {
-            if (trimmedPrefix.length === trimEndAfterLastNewline(completion.prefix).length) {
+            if (trimmedPrefix.length === trimEndOnLastLineIfWhitespaceOnly(completion.prefix).length) {
                 return { ...completion, prefix, content: completion.content }
             }
 
@@ -66,12 +67,12 @@ export class CompletionsCache {
 
             // We also cache the completion with the exact (= untrimmed) prefix
             // for the separate lookup mode used for deletions
-            if (trimEndAfterLastNewline(completion.prefix) !== completion.prefix) {
+            if (trimEndOnLastLineIfWhitespaceOnly(completion.prefix) !== completion.prefix) {
                 this.insertCompletion(completion.prefix, logId, completion, true)
             }
 
             for (let i = 0; i <= maxCharsAppended; i++) {
-                const key = trimEndAfterLastNewline(completion.prefix) + completion.content.slice(0, i)
+                const key = trimEndOnLastLineIfWhitespaceOnly(completion.prefix) + completion.content.slice(0, i)
                 this.insertCompletion(key, logId, completion, key === completion.prefix)
             }
         }
@@ -83,7 +84,7 @@ export class CompletionsCache {
             existingCompletions = this.cache.get(key)!.completions
         }
 
-        const cachedCompletion: CachedCompletion = {
+        const cachedCompletion: CachedCompletions = {
             logId,
             isExactPrefix,
             completions: existingCompletions.concat(completion),
@@ -91,10 +92,4 @@ export class CompletionsCache {
 
         this.cache.set(key, cachedCompletion)
     }
-}
-
-function trimEndAfterLastNewline(text: string): string {
-    const lastNewlineIndex = text.lastIndexOf('\n')
-    const before = text.slice(0, lastNewlineIndex + 1)
-    return before + text.slice(lastNewlineIndex + 1).trimEnd()
 }

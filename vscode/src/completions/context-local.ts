@@ -11,17 +11,17 @@ interface JaccardMatchWithFilename extends JaccardMatch {
 }
 
 interface Options {
-    currentEditor: vscode.TextEditor
+    document: vscode.TextDocument
     history: History
     prefix: string
     jaccardDistanceWindowSize: number
 }
 
 export async function getContextFromCurrentEditor(options: Options): Promise<ReferenceSnippet[]> {
-    const { currentEditor, history, prefix, jaccardDistanceWindowSize } = options
+    const { document, history, prefix, jaccardDistanceWindowSize } = options
 
     const targetText = lastNLines(prefix, jaccardDistanceWindowSize)
-    const files = await getRelevantFiles(currentEditor, history)
+    const files = await getRelevantFiles(document, history)
 
     const matches: JaccardMatchWithFilename[] = []
     for (const { uri, contents } of files) {
@@ -57,16 +57,16 @@ interface FileContents {
  * For every file, we will load up to 10.000 lines to avoid OOMing when working with very large
  * files.
  */
-async function getRelevantFiles(currentEditor: vscode.TextEditor, history: History): Promise<FileContents[]> {
+async function getRelevantFiles(currentDocument: vscode.TextDocument, history: History): Promise<FileContents[]> {
     const files: FileContents[] = []
 
-    const curLang = currentEditor.document.languageId
+    const curLang = currentDocument.languageId
     if (!curLang) {
         return []
     }
 
     function addDocument(document: vscode.TextDocument): void {
-        if (document.uri === currentEditor.document.uri) {
+        if (document.uri === currentDocument.uri) {
             // omit current file
             return
         }
@@ -153,7 +153,7 @@ async function getRelevantFiles(currentEditor: vscode.TextEditor, history: Histo
     }
 
     await Promise.all(
-        history.lastN(10, curLang, [currentEditor.document.uri, ...files.map(f => f.uri)]).map(async item => {
+        history.lastN(10, curLang, [currentDocument.uri, ...files.map(f => f.uri)]).map(async item => {
             try {
                 const document = await vscode.workspace.openTextDocument(item.document.uri)
                 addDocument(document)

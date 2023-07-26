@@ -1,5 +1,7 @@
 import * as vscode from 'vscode'
 
+import { isAlmostTheSameString } from './utils/string-comparator'
+
 export const OPENING_CODE_TAG = '<CODE5711>'
 export const CLOSING_CODE_TAG = '</CODE5711>'
 
@@ -133,19 +135,19 @@ function trimSpace(s: string): TrimmedString {
  */
 export function trimUntilSuffix(insertion: string, prefix: string, suffix: string): string {
     insertion = insertion.trimEnd()
-    let firstNonEmptySuffixLine = ''
-    for (const line of suffix.split('\n')) {
-        if (line.trim().length > 0) {
-            firstNonEmptySuffixLine = line
-            break
-        }
-    }
+
+    const firstNonEmptySuffixLine = getFirstNonEmptyLine(suffix)
+
+    // TODO: Handle case for inline suffix - remove same trailing sequence from insertion
+    // if we already have the same sequence in suffix
+
     if (firstNonEmptySuffixLine.length === 0) {
         return insertion
     }
 
     const insertionLines = insertion.split('\n')
     let insertionEnd = insertionLines.length
+
     for (let i = 0; i < insertionLines.length; i++) {
         let line = insertionLines[i]
 
@@ -155,19 +157,54 @@ export function trimUntilSuffix(insertion: string, prefix: string, suffix: strin
             line = prefix.slice(lastNewlineOfPrefix + 1) + line
         }
 
-        // Trim the end of the lines to avoid trailing whitespace causing issues
-        if (line.trimEnd() === firstNonEmptySuffixLine.trimEnd()) {
+        const isSameIndentation = indentation(line) <= indentation(firstNonEmptySuffixLine)
+
+        if (isSameIndentation && isAlmostTheSameString(line, firstNonEmptySuffixLine)) {
             insertionEnd = i
             break
         }
     }
+
     return insertionLines.slice(0, insertionEnd).join('\n')
 }
 
-export function trimStartUntilNewline(str: string): string {
-    const index = str.indexOf('\n')
-    if (index === -1) {
-        return str.trimStart()
+function getFirstNonEmptyLine(suffix: string): string {
+    const nextLineSuffix = suffix.slice(suffix.indexOf('\n'))
+
+    for (const line of nextLineSuffix.split('\n')) {
+        if (line.trim().length > 0) {
+            return line
+        }
     }
-    return str.slice(0, index).trimStart() + str.slice(index)
+
+    return ''
+}
+
+/**
+ * Trims whitespace before the first newline (if it exists).
+ */
+export function trimLeadingWhitespaceUntilNewline(str: string): string {
+    return str.replace(/^\s+?(\r?\n)/, '$1')
+}
+
+/**
+ * Collapses whitespace that appears at the end of prefix and the start of completion.
+ *
+ * For example, if prefix is `const isLocalhost = window.location.host ` and completion is ` ===
+ * 'localhost'`, it trims the leading space in the completion to avoid a duplicate space.
+ *
+ * Language-specific customizations are needed here to get greater accuracy.
+ */
+export function collapseDuplicativeWhitespace(prefix: string, completion: string): string {
+    if (prefix.endsWith(' ') || prefix.endsWith('\t')) {
+        completion = completion.replace(/^[\t ]+/, '')
+    }
+    return completion
+}
+
+/**
+ * Trims trailing whitespace on the last line if the last line is whitespace-only.
+ */
+export function trimEndOnLastLineIfWhitespaceOnly(text: string): string {
+    return text.replace(/(\r?\n)\s+$/, '$1')
 }

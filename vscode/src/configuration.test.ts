@@ -10,10 +10,14 @@ describe('getConfiguration', () => {
             get: <T>(_key: string, defaultValue?: T): typeof defaultValue | undefined => defaultValue,
         }
         expect(getConfiguration(config)).toEqual({
+            pluginsConfig: {},
+            pluginsDebugEnabled: true,
+            pluginsEnabled: false,
             serverEndpoint: DOTCOM_URL.href,
             codebase: '',
             useContext: 'embeddings',
             autocomplete: true,
+            experimentalCustomRecipes: false,
             experimentalChatPredictions: false,
             experimentalGuardrails: false,
             inlineChat: true,
@@ -27,6 +31,8 @@ describe('getConfiguration', () => {
             autocompleteAdvancedAccessToken: null,
             autocompleteAdvancedCache: true,
             autocompleteAdvancedEmbeddings: true,
+            autocompleteExperimentalTriggerMoreEagerly: false,
+            autocompleteExperimentalCompleteSuggestWidgetSelection: false,
         })
     })
 
@@ -48,6 +54,8 @@ describe('getConfiguration', () => {
                     case 'cody.autocomplete.enabled':
                         return false
                     case 'cody.experimental.chatPredictions':
+                        return true
+                    case 'cody.experimental.customRecipes':
                         return true
                     case 'cody.experimental.guardrails':
                         return true
@@ -71,12 +79,27 @@ describe('getConfiguration', () => {
                         return false
                     case 'cody.autocomplete.advanced.embeddings':
                         return false
+                    case 'cody.autocomplete.experimental.triggerMoreEagerly':
+                        return false
+                    case 'cody.autocomplete.experimental.completeSuggestWidgetSelection':
+                        return false
+                    case 'cody.plugins.enabled':
+                        return true
+                    case 'cody.plugins.config':
+                        return {
+                            foo: 'bar',
+                        }
+                    case 'cody.plugins.debug.enabled':
+                        return false
                     default:
                         throw new Error(`unexpected key: ${key}`)
                 }
             },
         }
         expect(getConfiguration(config)).toEqual({
+            pluginsEnabled: true,
+            pluginsConfig: { foo: 'bar' },
+            pluginsDebugEnabled: false,
             serverEndpoint: 'http://example.com',
             codebase: 'my/codebase',
             useContext: 'keyword',
@@ -86,6 +109,7 @@ describe('getConfiguration', () => {
             },
             autocomplete: false,
             experimentalChatPredictions: true,
+            experimentalCustomRecipes: true,
             experimentalGuardrails: true,
             inlineChat: true,
             experimentalNonStop: true,
@@ -97,6 +121,8 @@ describe('getConfiguration', () => {
             autocompleteAdvancedAccessToken: 'foobar',
             autocompleteAdvancedCache: false,
             autocompleteAdvancedEmbeddings: false,
+            autocompleteExperimentalTriggerMoreEagerly: false,
+            autocompleteExperimentalCompleteSuggestWidgetSelection: false,
         })
     })
 })
