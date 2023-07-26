@@ -239,7 +239,6 @@ const register = async (
             sidebarChatProvider.setWebviewView('chat')
         }),
         vscode.commands.registerCommand('cody.focus', () => vscode.commands.executeCommand('cody.chat.focus')),
-        vscode.commands.registerCommand('cody.settings.user', () => sidebarChatProvider.setWebviewView('settings')),
         vscode.commands.registerCommand('cody.settings.extension', () =>
             vscode.commands.executeCommand('workbench.action.openSettings', { query: '@ext:sourcegraph.cody-ai' })
         ),

@@ -18,7 +18,6 @@ import { Login } from './Login'
 import { NavBar, View } from './NavBar'
 import { Plugins } from './Plugins'
 import { Recipes } from './Recipes'
-import { Settings } from './Settings'
 import { UserHistory } from './UserHistory'
 import type { VSCodeWrapper } from './utils/VSCodeApi'
 
@@ -118,14 +117,6 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
         }
     }, [view, vscodeAPI])
 
-    const onLogout = useCallback(() => {
-        setConfig(null)
-        setEndpoint(null)
-        setAuthStatus(defaultAuthStatus)
-        setView('login')
-        vscodeAPI.postMessage({ command: 'auth', type: 'signout' })
-    }, [vscodeAPI])
-
     const onLoginRedirect = useCallback(
         (uri: string) => {
             setConfig(null)
@@ -185,9 +176,6 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                         />
                     )}
                     {view === 'recipes' && endpoint && <Recipes vscodeAPI={vscodeAPI} myPrompts={myPrompts} />}
-                    {view === 'settings' && endpoint && (
-                        <Settings onLogout={onLogout} endpoint={endpoint} version={config?.extensionVersion} />
-                    )}
                     {view === 'chat' && (
                         <Chat
                             messageInProgress={messageInProgress}
