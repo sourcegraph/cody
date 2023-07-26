@@ -212,6 +212,9 @@ importers:
 
   lib/shared:
     dependencies:
+      '@anthropic-ai/sdk':
+        specifier: ^0.4.2
+        version: 0.4.3
       '@microsoft/fetch-event-source':
         specifier: ^2.0.1
         version: 2.0.1
@@ -227,9 +230,27 @@ importers:
       lodash:
         specifier: ^4.17.21
         version: 4.17.21
+      lru-cache:
+        specifier: ^9.1.1
+        version: 9.1.1
       marked:
         specifier: ^4.0.16
         version: 4.0.16
+      openai:
+        specifier: ^3.2.1
+        version: 3.2.1
+      vscode-uri:
+        specifier: ^3.0.7
+        version: 3.0.7
+      wink-eng-lite-web-model:
+        specifier: ^1.5.0
+        version: 1.5.0(wink-nlp@1.13.1)
+      wink-nlp:
+        specifier: ^1.13.1
+        version: 1.13.1
+      wink-nlp-utils:
+        specifier: ^2.1.0
+        version: 2.1.0
       x2js:
         specifier: ^3.4.4
         version: 3.4.4
