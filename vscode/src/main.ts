@@ -137,7 +137,6 @@ const register = async (
         guardrails,
         editor,
         localStorage,
-        rgPath,
         authProvider,
         contextProvider,
         telemetryService,

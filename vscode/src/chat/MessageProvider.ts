@@ -8,7 +8,6 @@ import { Transcript } from '@sourcegraph/cody-shared/src/chat/transcript'
 import { ChatHistory, ChatMessage, UserLocalHistory } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { reformatBotMessage } from '@sourcegraph/cody-shared/src/chat/viewHelpers'
 import { annotateAttribution, Guardrails } from '@sourcegraph/cody-shared/src/guardrails'
-import { highlightTokens } from '@sourcegraph/cody-shared/src/hallucinations-detector'
 import { IntentDetector } from '@sourcegraph/cody-shared/src/intent-detector'
 import * as plugins from '@sourcegraph/cody-shared/src/plugins/api'
 import { PluginFunctionExecutionInfo } from '@sourcegraph/cody-shared/src/plugins/api/types'
@@ -27,7 +26,6 @@ import { LocalStorage } from '../services/LocalStorageProvider'
 import { TestSupport } from '../test-support'
 
 import { ContextProvider } from './ContextProvider'
-import { fastFilesExist } from './fastFileFinder'
 import { getRecipe } from './recipes'
 
 /**
@@ -63,7 +61,6 @@ export interface MessageProviderOptions {
     guardrails: Guardrails
     editor: VSCodeEditor
     localStorage: LocalStorage
-    rgPath: string | null
     authProvider: AuthProvider
     contextProvider: ContextProvider
     telemetryService: TelemetryService
@@ -90,7 +87,6 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
     protected guardrails: Guardrails
     protected readonly editor: VSCodeEditor
     protected localStorage: LocalStorage
-    protected rgPath: string | null
     protected authProvider: AuthProvider
     protected contextProvider: ContextProvider
     protected telemetryService: TelemetryService
@@ -107,7 +103,6 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         this.guardrails = options.guardrails
         this.editor = options.editor
         this.localStorage = options.localStorage
-        this.rgPath = options.rgPath
         this.authProvider = options.authProvider
         this.contextProvider = options.contextProvider
         this.telemetryService = options.telemetryService
@@ -228,22 +223,10 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
             onTurnComplete: async () => {
                 const lastInteraction = this.transcript.getLastInteraction()
                 if (lastInteraction) {
-                    const displayText = reformatBotMessage(text, responsePrefix)
-                    const fileExistFunc = (filePaths: string[]): Promise<{ [filePath: string]: boolean } | null> => {
-                        const rootPath = this.editor.getWorkspaceRootPath()
-                        if (!rootPath || !this.rgPath) {
-                            return Promise.resolve(null)
-                        }
-                        return fastFilesExist(this.rgPath, rootPath, filePaths)
-                    }
-                    let { text: highlightedDisplayText } = await highlightTokens(
-                        displayText || '',
-                        fileExistFunc,
-                        this.contextProvider.currentWorkspaceRoot
-                    )
+                    let displayText = reformatBotMessage(text, responsePrefix)
                     // TODO(keegancsmith) guardrails may be slow, we need to make this async update the interaction.
-                    highlightedDisplayText = await this.guardrailsAnnotateAttributions(highlightedDisplayText)
-                    this.transcript.addAssistantResponse(text || '', highlightedDisplayText)
+                    displayText = await this.guardrailsAnnotateAttributions(displayText)
+                    this.transcript.addAssistantResponse(text || '', displayText)
                 }
                 await this.onCompletionEnd()
             },
