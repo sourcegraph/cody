@@ -255,9 +255,9 @@ export async function getCodebaseContext(
         return null
     }
     const gitCommand = spawnSync('git', ['remote', 'get-url', 'origin'], { cwd: workspaceRoot })
-    const gitOutput = gitCommand.stdout.toString().trim()
+    const gitOutput = gitCommand.stdout?.toString().trim() || null
     // Get codebase from config or fallback to getting repository name from git clone URL
-    const codebase = config.codebase || convertGitCloneURLToCodebaseName(gitOutput)
+    const codebase = config.codebase || (gitOutput && convertGitCloneURLToCodebaseName(gitOutput))
     if (!codebase) {
         return null
     }

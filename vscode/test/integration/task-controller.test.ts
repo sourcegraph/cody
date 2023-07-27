@@ -72,7 +72,7 @@ suite('Cody Fixup Task Controller', function () {
         assert.ok(tasks.length > 0)
 
         // Switch to a different file
-        const mainJavaUri = vscode.Uri.parse(`${vscode.workspace.workspaceFolders?.[0].uri.toString()}/Main.java`)
+        const mainJavaUri = vscode.Uri.parse(`${vscode.workspace.workspaceFolders?.[0]?.uri.toString()}/Main.java`)
         await vscode.workspace.openTextDocument(mainJavaUri)
 
         // Run show command to open fixup file with range selected
