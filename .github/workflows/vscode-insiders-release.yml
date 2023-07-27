@@ -18,7 +18,9 @@ jobs:
       - uses: pnpm/action-setup@v2
         with:
           run_install: true
-      - run: xvfb-run -a pnpm run test
+      - run: pnpm run test
+      - run: xvfb-run -a pnpm -C vscode run test:integration
+      - run: xvfb-run -a pnpm -C vscode run test:e2e
       - run: CODY_RELEASE_TYPE=insiders pnpm -C vscode run release
         if: github.ref == 'refs/heads/main' && github.repository == 'sourcegraph/cody'
         env:
