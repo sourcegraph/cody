@@ -41,7 +41,7 @@ const PromptIntentInstruction: Record<FixupIntent, string> = {
     add: 'The user wants you to add new code to the selected code by following their instructions.',
     edit: 'The user wants you to replace code inside the selected code by following their instructions.',
     fix: 'The user wants you to correct a problem in the selected code by following their instructions.',
-    document: 'The user wants you to generate overall documentation for the selected code.',
+    document: 'The user wants you to add documentation or comments to the selected code.',
     test: 'The user wants you to generate a test or multiple tests for the selected code.',
 }
 
@@ -107,6 +107,10 @@ export class Fixup implements Recipe {
             case 'add':
             case 'edit':
             case 'fix':
+                /**
+                 * Fetch a small window of code context for the current selection.
+                 * Include preceding and following text as additional context
+                 */
                 dynamicContext = getContextMessagesFromSelection(
                     selection.selectedText,
                     truncatedPrecedingText,
@@ -116,8 +120,11 @@ export class Fixup implements Recipe {
                 )
                 break
             case 'document':
-                // TODO: Is this the best way to get the context for documentation?
-                dynamicContext = Promise.resolve([])
+                /**
+                 * Fetch a small window of mixed code and text context for the current selection.
+                 * We do not include preceding and following text as they may not be relevant here.
+                 */
+                dynamicContext = context.codebaseContext.getContextMessages(selection.selectedText, { numCodeResults: 2, numTextResults: 2 })
                 break
             case 'test':
                 // TODO: Better retrieval of test context. E.g. test files, dependencies, etc.
@@ -149,23 +156,11 @@ export class Fixup implements Recipe {
     - Unless you have reason to believe otherwise, you should assume that the user wants you to edit the code in their selection.
     - You should ensure the rewritten code matches the indentation and whitespace of the code in the users' selection.
     - It is not acceptable to use Markdown in your response. You should not produce Markdown-formatted code blocks.
-    - You will be provided with code that is above the users' selection, enclosed in <aboveCode></aboveCode> XML tags. You can use this code, if relevant, to help you plan your rewritten code.
-    - You will be provided with code that is below the users' selection, enclosed in <belowCode></belowCode> XML tags. You can use this code, if relevant, to help you plan your rewritten code.
     - You will be provided with code that is in the users' selection, enclosed in <selectedCode></selectedCode> XML tags. You must use this code to help you plan your rewritten code.
     - You will be provided with instructions on how to modify this code, enclosed in <instructions></instructions> XML tags. You must follow these instructions carefully and to the letter.
     - Enclose your response in <selection></selection> XML tags. Do not provide anything else.
 
     This is part of the file {fileName}.
-
-    The user has the following code above their selection:
-    <aboveCode>
-    {truncateTextStart}
-    </aboveCode>
-
-    The user has the following code below their selection:
-    <belowCode>
-    {truncateFollowingText}
-    </belowCode>
 
     The user has the following code within their selection:
     <selectedCode>
