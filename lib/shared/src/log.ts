@@ -1,13 +1,8 @@
 import * as vscode from 'vscode'
 
-import { CompletionLogger } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/client'
-import {
-    CompletionParameters,
-    CompletionResponse,
-    Event,
-} from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
-
 import { getConfiguration } from './configuration'
+import { CompletionLogger } from './sourcegraph-api/completions/client'
+import { CompletionParameters, CompletionResponse, Event } from './sourcegraph-api/completions/types'
 
 const outputChannel: vscode.OutputChannel = vscode.window.createOutputChannel('Cody by Sourcegraph', 'json')
 

@@ -1,8 +1,8 @@
 import * as anthropic from '@anthropic-ai/sdk'
 
-import { Message } from '../../sourcegraph-api'
-import { SourcegraphNodeCompletionsClient } from '../../sourcegraph-api/completions/nodeClient'
-import { CompletionParameters, CompletionResponse } from '../../sourcegraph-api/completions/types'
+import { Message } from '../sourcegraph-api'
+import { SourcegraphNodeCompletionsClient } from '../sourcegraph-api/completions/nodeClient'
+import { CompletionParameters, CompletionResponse } from '../sourcegraph-api/completions/types'
 
 export function messagesToText(messages: Message[]): string {
     return messages
