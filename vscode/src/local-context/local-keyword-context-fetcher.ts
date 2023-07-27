@@ -55,14 +55,14 @@ interface RipgrepStreamData {
  * For example, if the original is "cody" and the stem is "codi", the prefix is "cod"
  * - The count is the number of times the keyword appears in the document/query.
  */
-export interface Term {
+interface Term {
     stem: string
     originals: string[]
     prefix: string
     count: number
 }
 
-export function regexForTerms(...terms: Term[]): string {
+function regexForTerms(...terms: Term[]): string {
     const inner = terms.map(t => {
         if (t.prefix.length >= 4) {
             return escapeRegex(t.prefix)
