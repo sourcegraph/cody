@@ -64,19 +64,8 @@ To do this:
 
 #### Simulating a fresh user install
 
-VS Code will preserve some extension state (e.g. configuration settings) even when an extension is uninstalled. See the following steps if you want to replicate the flow of a completely new user.
+VS Code will preserve some extension state (e.g., configuration settings) even when an extension is uninstalled. To replicate the flow of a completely new user, run a separate instance of VS Code:
 
-Note: To avoid data loss, using a separate build of VS Code (e.g. Insiders) is recommended here if VS Code is your primary editor.
-
-macOS specific instructions for VS Code Insiders:
-
-1. Clear user and extension data from VS Code Insiders:
-   ```
-   rm -rf $HOME/.vscode-insiders
-   rm -rf $HOME/Library/Caches/com.microsoft.VSCodeInsiders
-   rm -rf $HOME/Library/Application\ Support/Code\ -\ Insiders
-   rm -rf $HOME/Library/Saved\ Application\ State/com.microsoft.VSCodeInsiders.savedState
-   ```
-1. Restart VS Code Insiders
-1. Build the release build locally (see above), do not install.
-1. Install the extension for Insiders with the following command: `code-insiders --install-extension dist/cody.vsix`
+```shell
+code --user-data-dir=/tmp/separate-vscode-instance --profile-temp
+```
