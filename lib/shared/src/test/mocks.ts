@@ -57,8 +57,12 @@ export class MockIntentDetector implements IntentDetector {
         return this.mocks.isEditorContextRequired?.(input) ?? false
     }
 
-    public classifyIntentFromOptions(input: string, options: IntentClassificationOption[]): Promise<string | null> {
-        return Promise.resolve(null)
+    public classifyIntentFromOptions<Intent extends string>(
+        input: string,
+        options: IntentClassificationOption<Intent>[],
+        fallback: Intent
+    ): Promise<Intent> {
+        return Promise.resolve(fallback)
     }
 }
 

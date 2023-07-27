@@ -1,9 +1,9 @@
-export interface IntentClassificationOption {
+export interface IntentClassificationOption<Intent = string> {
     /**
      * An identifier for this intent.
      * This is what will be returned by the classifier.
      */
-    id: string
+    id: Intent
     /**
      * A description for this intent.
      * Be specific in order to help the LLM understand the intent.
@@ -19,5 +19,9 @@ export interface IntentClassificationOption {
 export interface IntentDetector {
     isCodebaseContextRequired(input: string): Promise<boolean | Error>
     isEditorContextRequired(input: string): boolean | Error
-    classifyIntentFromOptions(input: string, options: IntentClassificationOption[]): Promise<string | null>
+    classifyIntentFromOptions<Intent extends string>(
+        input: string,
+        options: IntentClassificationOption<Intent>[],
+        fallback: Intent
+    ): Promise<Intent>
 }

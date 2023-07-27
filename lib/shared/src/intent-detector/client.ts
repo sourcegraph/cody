@@ -62,10 +62,11 @@ Function Description: ${description}
         return messages
     }
 
-    public async classifyIntentFromOptions(
+    public async classifyIntentFromOptions<Intent extends string>(
         input: string,
-        options: IntentClassificationOption[]
-    ): Promise<string | null> {
+        options: IntentClassificationOption<Intent>[],
+        fallback: Intent
+    ): Promise<Intent> {
         const initialPrompt = this.buildInitialPrompt(options)
         const exampleTranscript = this.buildExampleTranscript(options)
 
@@ -98,10 +99,10 @@ Function Description: ${description}
         const responseClassification = result.completion.match(/<classification>(.*?)<\/classification>/)?.[1]
 
         if (!responseClassification) {
-            return null
+            return fallback
         }
 
-        return options.find(option => option.id === responseClassification)?.id ?? null
+        return options.find(option => option.id === responseClassification)?.id ?? fallback
     }
 }
 

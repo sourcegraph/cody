@@ -1,7 +1,6 @@
 import { CodebaseContext } from '../../codebase-context'
 import { ContextMessage } from '../../codebase-context/messages'
 import { ActiveTextEditorSelection, Editor } from '../../editor'
-import { IntentClassificationOption } from '../../intent-detector'
 import { MAX_HUMAN_INPUT_TOKENS, MAX_RECIPE_INPUT_TOKENS, MAX_RECIPE_SURROUNDING_TOKENS } from '../../prompt/constants'
 import { truncateText } from '../../prompt/truncation'
 import { Interaction } from '../transcript/interaction'
@@ -12,29 +11,29 @@ import { commandRegex } from './helpers'
 import { InlineTouch } from './inline-touch'
 import { Recipe, RecipeContext, RecipeID } from './recipe'
 
-const InlineChatClassification: IntentClassificationOption[] = [
-    {
-        id: 'chat',
-        description: 'Discuss the selected code',
-        examplePrompts: ['What does this do?', 'How does this work?', 'How would I improve this?'],
-    },
-    {
-        id: 'fix',
-        description: 'Fix a problem in the selected code',
-        examplePrompts: [
-            'Update this code',
-            'Fix this code',
-            'Change this code',
-            'Rewrite this code',
-            'Add to this code',
-        ],
-    },
-    {
-        id: 'touch',
-        description: 'Generate a new file from the selected code',
-        examplePrompts: ['Write a test for this code', 'Create a new file from this code'],
-    },
-]
+// const InlineChatClassification: IntentClassificationOption[] = [
+//     {
+//         id: 'chat',
+//         description: 'Discuss the selected code',
+//         examplePrompts: ['What does this do?', 'How does this work?', 'How would I improve this?'],
+//     },
+//     {
+//         id: 'fix',
+//         description: 'Fix a problem in the selected code',
+//         examplePrompts: [
+//             'Update this code',
+//             'Fix this code',
+//             'Change this code',
+//             'Rewrite this code',
+//             'Add to this code',
+//         ],
+//     },
+//     {
+//         id: 'touch',
+//         description: 'Generate a new file from the selected code',
+//         examplePrompts: ['Write a test for this code', 'Create a new file from this code'],
+//     },
+// ]
 
 export class InlineChat implements Recipe {
     public id: RecipeID = 'inline-chat'
@@ -52,8 +51,8 @@ export class InlineChat implements Recipe {
             return new Fixup().getInteraction(humanChatInput.replace(commandRegex.fix, ''), context)
         }
 
-        const intent = await context.intentDetector.classifyIntentFromOptions(humanChatInput, InlineChatClassification)
-        console.log('INLINE CHAT INTENT:', intent)
+        // const intent = await context.intentDetector.classifyIntentFromOptions(humanChatInput, InlineChatClassification)
+        // console.log('INLINE CHAT INTENT:', intent)
         // TODO: We currently check intent in two places for inline chat. Do it in one place.
         // if (intent === 'touch') {
         //     return new InlineTouch(this.debug).getInteraction(humanChatInput.replace(commandRegex.touch, ''), context)

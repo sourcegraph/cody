@@ -8,48 +8,42 @@ import { Interaction } from '../transcript/interaction'
 import { contentSanitizer, getContextMessagesFromSelection, numResults } from './helpers'
 import { Recipe, RecipeContext, RecipeID } from './recipe'
 
-const FixupIntentClassification: IntentClassificationOption[] = [
+type FixupIntent = 'add' | 'edit' | 'fix' | 'document' | 'test'
+const FixupIntentClassification: IntentClassificationOption<FixupIntent>[] = [
     {
-        /**
-         * Context:
-         * - preceding text, selected text, following text
-         * - maximum embeddings from code files and text files
-         */
-        id: 'explain',
-        description: 'Explain the selected code',
-        examplePrompts: ['What does this code do?', 'How does this code work?'],
+        id: 'add',
+        description: 'Add new code to complement the selected code',
+        examplePrompts: ['Add a new function', 'Add a new class'],
     },
     {
-        /**
-         * Context:
-         * - preceding text, selected text, following text
-         * - limited embeddings from code files
-         */
-        id: 'fix', // mostly context from current file, code files
+        id: 'edit',
+        description: 'Edit the selected code',
+        examplePrompts: ['Edit this code', 'Change this code', 'Update this code'],
+    },
+    {
+        id: 'fix',
         description: 'Fix a problem in the selected code',
-        examplePrompts: ['Update this code to use async/await', 'Fix this code'],
+        examplePrompts: ['Implement this TODO', 'Fix this code'],
     },
     {
-        /**
-         * Context:
-         * - selected text
-         * - limited embeddings from code files
-         */
-        id: 'document', // only the current selection, context
+        id: 'document',
         description: 'Generate documentation for the selected code.',
         examplePrompts: ['Add a docstring for this function', 'Write comments to explain this code'],
     },
     {
-        /**
-         * Context:
-         * - preceding text, selected text, following text
-         * - limited embeddings from code files
-         */
         id: 'test',
         description: 'Generate tests for the selected code',
         examplePrompts: ['Write a test for this function', 'Add a test for this code'],
     },
 ]
+
+const PromptIntentInstruction: Record<FixupIntent, string> = {
+    add: 'The user wants you to add new code to the selected code by following their instructions.',
+    edit: 'The user wants you to replace code inside the selected code by following their instructions.',
+    fix: 'The user wants you to correct a problem in the selected code by following their instructions.',
+    document: 'The user wants you to generate overall documentation for the selected code.',
+    test: 'The user wants you to generate a test or multiple tests for the selected code.',
+}
 
 export class Fixup implements Recipe {
     public id: RecipeID = 'fixup'
@@ -70,6 +64,11 @@ export class Fixup implements Recipe {
             return null
         }
 
+        const intent = await context.intentDetector.classifyIntentFromOptions(
+            humanChatInput,
+            FixupIntentClassification,
+            'fix'
+        )
         const truncatedPrecedingText = truncateTextStart(selection.precedingText, quarterFileContext)
         const truncatedFollowingText = truncateText(selection.followingText, quarterFileContext)
 
@@ -82,6 +81,7 @@ export class Fixup implements Recipe {
             .replace('{selectedText}', selection.selectedText)
             .replace('{truncateFollowingText}', truncatedFollowingText)
             .replace('{fileName}', selection.fileName)
+            .replace('{intent}', PromptIntentInstruction[intent])
 
         context.responseMultiplexer.sub(
             'selection',
@@ -102,12 +102,10 @@ export class Fixup implements Recipe {
         )
 
         let dynamicContext: Promise<ContextMessage[]>
-        const intent = await context.intentDetector.classifyIntentFromOptions(humanChatInput, FixupIntentClassification)
         console.log('INLINE FIXUP INTENT', intent)
         switch (intent) {
-            case 'explain':
-                dynamicContext = context.codebaseContext.getContextMessages(selection.selectedText, numResults)
-                break
+            case 'add':
+            case 'edit':
             case 'fix':
                 dynamicContext = getContextMessagesFromSelection(
                     selection.selectedText,
@@ -118,21 +116,13 @@ export class Fixup implements Recipe {
                 )
                 break
             case 'document':
-                // todo: better context gather for documenting? currently just using selection - no context
+                // TODO: Is this the best way to get the context for documentation?
                 dynamicContext = Promise.resolve([])
                 break
             case 'test':
-                // todo: better context gathering for tests
+                // TODO: Better retrieval of test context. E.g. test files, dependencies, etc.
                 dynamicContext = context.codebaseContext.getContextMessages(selection.selectedText, numResults)
                 break
-            default:
-                dynamicContext = getContextMessagesFromSelection(
-                    selection.selectedText,
-                    truncatedPrecedingText,
-                    truncatedFollowingText,
-                    selection,
-                    context.codebaseContext
-                )
         }
 
         return Promise.resolve(
@@ -182,7 +172,8 @@ export class Fixup implements Recipe {
     {selectedText}
     </selectedCode>
 
-    You should rewrite this code using the following instructions:
+    The user wants you to {intent}
+    Provide your generated code using the following instructions:
     <instructions>
     {humanInput}
     </instructions>`
