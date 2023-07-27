@@ -12,6 +12,16 @@ Starting from `0.2.0`, Cody is using `major.EVEN_NUMBER.patch` for release versi
 
 ### Changed
 
+## [0.6.3]
+
+### Added
+
+### Fixed
+
+### Changed
+
+- Removed the experimental hallucination detection that highlighted nonexistent file paths.
+
 ## [0.6.2]
 
 ### Added

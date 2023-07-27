@@ -8,13 +8,13 @@ import { Transcript } from '@sourcegraph/cody-shared/src/chat/transcript'
 import { ChatHistory, ChatMessage, UserLocalHistory } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { reformatBotMessage } from '@sourcegraph/cody-shared/src/chat/viewHelpers'
 import { annotateAttribution, Guardrails } from '@sourcegraph/cody-shared/src/guardrails'
-import { highlightTokens } from '@sourcegraph/cody-shared/src/hallucinations-detector'
 import { IntentDetector } from '@sourcegraph/cody-shared/src/intent-detector'
 import * as plugins from '@sourcegraph/cody-shared/src/plugins/api'
 import { PluginFunctionExecutionInfo } from '@sourcegraph/cody-shared/src/plugins/api/types'
 import { defaultPlugins } from '@sourcegraph/cody-shared/src/plugins/built-in'
 import { ANSWER_TOKENS, DEFAULT_MAX_TOKENS } from '@sourcegraph/cody-shared/src/prompt/constants'
 import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
+import { TelemetryService } from '@sourcegraph/cody-shared/src/telemetry'
 
 import { VSCodeEditor } from '../editor/vscode-editor'
 import { debug } from '../log'
@@ -22,12 +22,10 @@ import { CodyPromptType } from '../my-cody/types'
 import { FixupTask } from '../non-stop/FixupTask'
 import { IdleRecipeRunner } from '../non-stop/roles'
 import { AuthProvider, isNetworkError } from '../services/AuthProvider'
-import { logEvent } from '../services/EventLogger'
 import { LocalStorage } from '../services/LocalStorageProvider'
 import { TestSupport } from '../test-support'
 
 import { ContextProvider } from './ContextProvider'
-import { fastFilesExist } from './fastFileFinder'
 import { getRecipe } from './recipes'
 
 /**
@@ -63,9 +61,9 @@ export interface MessageProviderOptions {
     guardrails: Guardrails
     editor: VSCodeEditor
     localStorage: LocalStorage
-    rgPath: string | null
     authProvider: AuthProvider
     contextProvider: ContextProvider
+    telemetryService: TelemetryService
 }
 
 export abstract class MessageProvider extends MessageHandler implements vscode.Disposable, IdleRecipeRunner {
@@ -89,9 +87,9 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
     protected guardrails: Guardrails
     protected readonly editor: VSCodeEditor
     protected localStorage: LocalStorage
-    protected rgPath: string | null
     protected authProvider: AuthProvider
     protected contextProvider: ContextProvider
+    protected telemetryService: TelemetryService
 
     constructor(options: MessageProviderOptions) {
         super()
@@ -105,9 +103,9 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         this.guardrails = options.guardrails
         this.editor = options.editor
         this.localStorage = options.localStorage
-        this.rgPath = options.rgPath
         this.authProvider = options.authProvider
         this.contextProvider = options.contextProvider
+        this.telemetryService = options.telemetryService
 
         // chat id is used to identify chat session
         this.createNewChatID()
@@ -172,7 +170,6 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
 
     public async clearAndRestartSession(): Promise<void> {
         await this.saveTranscriptToChatHistory()
-        await this.setAnonymousUserID()
         this.createNewChatID()
         this.cancelCompletion()
         this.isMessageInProgress = false
@@ -186,10 +183,6 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         MessageProvider.chatHistory = {}
         MessageProvider.inputHistory = []
         await this.localStorage.removeChatHistory()
-    }
-
-    public async setAnonymousUserID(): Promise<void> {
-        await this.localStorage.setAnonymousUserID()
     }
 
     /**
@@ -230,22 +223,10 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
             onTurnComplete: async () => {
                 const lastInteraction = this.transcript.getLastInteraction()
                 if (lastInteraction) {
-                    const displayText = reformatBotMessage(text, responsePrefix)
-                    const fileExistFunc = (filePaths: string[]): Promise<{ [filePath: string]: boolean } | null> => {
-                        const rootPath = this.editor.getWorkspaceRootPath()
-                        if (!rootPath || !this.rgPath) {
-                            return Promise.resolve(null)
-                        }
-                        return fastFilesExist(this.rgPath, rootPath, filePaths)
-                    }
-                    let { text: highlightedDisplayText } = await highlightTokens(
-                        displayText || '',
-                        fileExistFunc,
-                        this.contextProvider.currentWorkspaceRoot
-                    )
+                    let displayText = reformatBotMessage(text, responsePrefix)
                     // TODO(keegancsmith) guardrails may be slow, we need to make this async update the interaction.
-                    highlightedDisplayText = await this.guardrailsAnnotateAttributions(highlightedDisplayText)
-                    this.transcript.addAssistantResponse(text || '', highlightedDisplayText)
+                    displayText = await this.guardrailsAnnotateAttributions(displayText)
+                    this.transcript.addAssistantResponse(text || '', displayText)
                 }
                 await this.onCompletionEnd()
             },
@@ -322,17 +303,13 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
     private async getPluginsContext(
         humanChatInput: string
     ): Promise<{ prompt?: Message[]; executionInfos?: PluginFunctionExecutionInfo[] }> {
-        logEvent('CodyVSCodeExtension:getPluginsContext:used')
+        this.telemetryService.log('CodyVSCodeExtension:getPluginsContext:used')
         const enabledPluginNames = this.localStorage.getEnabledPlugins() ?? []
         const enabledPlugins = defaultPlugins.filter(plugin => enabledPluginNames.includes(plugin.name))
         if (enabledPlugins.length === 0) {
             return {}
         }
-        logEvent(
-            'CodyVSCodeExtension:getPluginsContext:enabledPlugins',
-            { names: enabledPluginNames },
-            { names: enabledPluginNames }
-        )
+        this.telemetryService.log('CodyVSCodeExtension:getPluginsContext:enabledPlugins', { names: enabledPluginNames })
 
         this.transcript.addAssistantResponse('', 'Identifying applicable plugins...\n')
         this.sendTranscript()
@@ -345,18 +322,16 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         )
 
         try {
-            logEvent('CodyVSCodeExtension:getPluginsContext:chooseDataSourcesUsed')
+            this.telemetryService.log('CodyVSCodeExtension:getPluginsContext:chooseDataSourcesUsed')
             const descriptors = await plugins.chooseDataSources(
                 humanChatInput,
                 this.chat,
                 enabledPlugins,
                 previousMessages
             )
-            logEvent(
-                'CodyVSCodeExtension:getPluginsContext:descriptorsFound',
-                { count: descriptors.length },
-                { count: descriptors.length }
-            )
+            this.telemetryService.log('CodyVSCodeExtension:getPluginsContext:descriptorsFound', {
+                count: descriptors.length,
+            })
             if (descriptors.length !== 0) {
                 this.transcript.addAssistantResponse(
                     '',
@@ -366,15 +341,9 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
                 )
                 this.sendTranscript()
 
-                logEvent(
-                    'CodyVSCodeExtension:getPluginsContext:runPluginFunctionsCalled',
-                    {
-                        count: descriptors.length,
-                    },
-                    {
-                        count: descriptors.length,
-                    }
-                )
+                this.telemetryService.log('CodyVSCodeExtension:getPluginsContext:runPluginFunctionsCalled', {
+                    count: descriptors.length,
+                })
                 return await plugins.runPluginFunctions(descriptors, this.contextProvider.config.pluginsConfig)
             }
         } catch (error) {
@@ -440,7 +409,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
                 await this.saveTranscriptToChatHistory()
             }
         }
-        logEvent(`CodyVSCodeExtension:recipe:${recipe.id}:executed`)
+        this.telemetryService.log(`CodyVSCodeExtension:recipe:${recipe.id}:executed`)
     }
 
     protected async runRecipeForSuggestion(recipeId: RecipeID, humanChatInput: string = ''): Promise<void> {
@@ -471,7 +440,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         )
         transcript.setUsedContextFilesForLastInteraction(contextFiles)
 
-        logEvent(`CodyVSCodeExtension:recipe:${recipe.id}:executed`)
+        this.telemetryService.log(`CodyVSCodeExtension:recipe:${recipe.id}:executed`)
 
         let text = ''
         multiplexer.sub(BotResponseMultiplexer.DEFAULT_TOPIC, {
@@ -515,11 +484,10 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
 
         // Only log telemetry if we did work (ie had to annotate something).
         if (result.codeBlocks > 0) {
-            const event = {
+            this.telemetryService.log('CodyVSCodeExtension:guardrails:annotate', {
                 codeBlocks: result.codeBlocks,
                 duration: result.duration,
-            }
-            logEvent('CodyVSCodeExtension:guardrails:annotate', event, event)
+            })
         }
 
         return result.text

@@ -63,7 +63,7 @@ export const completionsDataset: Sample[] = [
 
             function getOSName(): string | null {
                 if (typeof window === 'undefined') {
-                ${CURSOR}
+                    ${CURSOR}
             }`,
     },
     {

@@ -7,7 +7,7 @@ import { MessageHandler } from './jsonrpc'
 import { ConnectionConfiguration, TextDocument } from './protocol'
 
 export class Agent extends MessageHandler {
-    private client?: Promise<Client>
+    private client: Promise<Client | null> = Promise.resolve(null)
     public workspaceRootPath: string | null = null
     public activeDocumentFilePath: string | null = null
     public documents: Map<string, TextDocument> = new Map()
@@ -21,7 +21,7 @@ export class Agent extends MessageHandler {
             serverEndpoint: process.env.SRC_ENDPOINT || 'https://sourcegraph.com',
         })
 
-        this.registerRequest('initialize', client => {
+        this.registerRequest('initialize', async client => {
             process.stderr.write(
                 `Cody Agent: handshake with client '${client.name}' (version '${client.version}') at workspace root path '${client.workspaceRootPath}'\n`
             )
@@ -29,9 +29,25 @@ export class Agent extends MessageHandler {
             if (client.connectionConfiguration) {
                 this.setClient(client.connectionConfiguration)
             }
-            return Promise.resolve({
+
+            const codyClient = await this.client
+
+            if (!codyClient) {
+                return {
+                    name: 'cody-agent',
+                    authenticated: false,
+                    codyEnabled: false,
+                    codyVersion: null,
+                }
+            }
+
+            const codyStatus = codyClient.codyStatus
+            return {
                 name: 'cody-agent',
-            })
+                authenticated: codyClient.sourcegraphStatus.authenticated,
+                codyEnabled: codyStatus.enabled,
+                codyVersion: codyStatus.version,
+            }
         })
         this.registerNotification('initialized', () => {})
 

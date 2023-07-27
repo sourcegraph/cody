@@ -3,6 +3,7 @@ import * as vscode from 'vscode'
 
 import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
 import { SourcegraphGraphQLAPIClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
+import { TelemetryService } from '@sourcegraph/cody-shared/src/telemetry'
 import { isError } from '@sourcegraph/cody-shared/src/utils'
 
 import { ChatViewProviderWebview } from '../chat/ChatViewProvider'
@@ -20,7 +21,6 @@ import { newAuthStatus } from '../chat/utils'
 import { debug } from '../log'
 
 import { AuthMenu, LoginStepInputBox, TokenInputBox } from './AuthMenus'
-import { logEvent } from './EventLogger'
 import { LocalAppDetector } from './LocalAppDetector'
 import { LocalStorage } from './LocalStorageProvider'
 import { SecretStorage } from './SecretStorageProvider'
@@ -38,7 +38,8 @@ export class AuthProvider {
     constructor(
         private config: Pick<ConfigurationWithAccessToken, 'serverEndpoint' | 'accessToken' | 'customHeaders'>,
         private secretStorage: SecretStorage,
-        private localStorage: LocalStorage
+        private localStorage: LocalStorage,
+        private telemetryService: TelemetryService
     ) {
         this.authStatus.endpoint = 'init'
         this.loadEndpointHistory()
@@ -62,12 +63,13 @@ export class AuthProvider {
     public async signinMenu(type?: 'enterprise' | 'dotcom' | 'token' | 'app', uri?: string): Promise<void> {
         const mode = this.authStatus.isLoggedIn ? 'switch' : 'signin'
         debug('AuthProvider:signinMenu', mode)
-        logEvent('CodyVSCodeExtension:login:clicked')
+        this.telemetryService.log('CodyVSCodeExtension:login:clicked')
         const item = await AuthMenu(mode, this.endpointHistory)
         if (!item) {
             return
         }
         const menuID = type || item?.id
+        this.telemetryService.log('CodyVSCodeExtension:auth:selectSigninMenu', { menuID })
         switch (menuID) {
             case 'enterprise': {
                 const input = await LoginStepInputBox(item.uri, 1, false)
@@ -87,7 +89,10 @@ export class AuthProvider {
                 if (!input?.endpoint || !input?.token) {
                     return
                 }
-                await this.auth(input.endpoint, input.token)
+                const authState = await this.auth(input.endpoint, input.token)
+                this.telemetryService.log('CodyVSCodeExtension:auth:fromToken', {
+                    success: Boolean(authState?.isLoggedIn),
+                })
                 break
             }
             case 'app': {
@@ -138,7 +143,7 @@ export class AuthProvider {
 
     // Display quickpick to select endpoint to sign out of
     public async signoutMenu(): Promise<void> {
-        logEvent('CodyVSCodeExtension:logout:clicked')
+        this.telemetryService.log('CodyVSCodeExtension:logout:clicked')
         const endpointQuickPickItem = this.authStatus.endpoint ? [this.authStatus.endpoint] : []
         const endpoint = await AuthMenu('signout', endpointQuickPickItem)
         if (!endpoint?.uri) {
@@ -300,6 +305,11 @@ export class AuthProvider {
             return
         }
         const authState = await this.auth(endpoint, token, customHeaders)
+        this.telemetryService.log('CodyVSCodeExtension:auth:fromCallback', {
+            type: 'callback',
+            from: isApp ? 'app' : 'web',
+            success: Boolean(authState?.isLoggedIn),
+        })
         if (authState?.isLoggedIn) {
             const successMessage = isApp ? 'Connected to Cody App' : `Signed in to ${endpoint}`
             await vscode.window.showInformationMessage(successMessage)
