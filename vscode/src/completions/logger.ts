@@ -177,7 +177,7 @@ function logSuggestionEvent(): void {
     const now = performance.now()
     // eslint-disable-next-line ban/ban
     displayedCompletions.forEach(completionEvent => {
-        const { loadedAt, suggestedAt, suggestionLoggedAt, startedAt, params, forceRead, acceptedAt, startLoggedAt } =
+        const { loadedAt, suggestedAt, suggestionLoggedAt, startedAt, params, forceRead, startLoggedAt } =
             completionEvent
 
         // Only log suggestion events that were already shown to the user and
@@ -196,7 +196,6 @@ function logSuggestionEvent(): void {
             latency,
             displayDuration,
             read: forceRead || read,
-            accepted: acceptedAt !== null,
             otherCompletionProviderEnabled: otherCompletionProviderEnabled(),
         })
     })

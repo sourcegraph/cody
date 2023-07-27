@@ -164,7 +164,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
             return emptyCompletions()
         }
 
-        const docContext = getCurrentDocContext(document, position, context, this.maxPrefixChars, this.maxSuffixChars)
+        const docContext = getCurrentDocContext(document, position, this.maxPrefixChars, this.maxSuffixChars)
         if (!docContext) {
             return emptyCompletions()
         }
@@ -261,7 +261,6 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
                       ),
                   },
               })
-        console.log({ logId, prev: this.previousCompletionLogId, cachedCompletions })
         this.previousCompletionLogId = logId
 
         if (cachedCompletions) {
