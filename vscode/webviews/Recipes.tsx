@@ -1,6 +1,7 @@
 import { useState } from 'react'
 
 import { VSCodeButton } from '@vscode/webview-ui-toolkit/react'
+import classNames from 'classnames'
 
 import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 
@@ -33,8 +34,8 @@ export const Recipes: React.FunctionComponent<{
     vscodeAPI: VSCodeWrapper
     myPrompts: string[] | null
 }> = ({ vscodeAPI, myPrompts }) => {
-    const initalState = vscodeAPI.getState() as State | undefined
-    const reorderedRecipeList: RecipeListType = initalState?.reorderedRecipes ?? recipesList
+    const initialState = vscodeAPI.getState() as State | undefined
+    const reorderedRecipeList: RecipeListType = initialState?.reorderedRecipes ?? recipesList
     const [recipes, setRecipes] = useState<RecipeListType>(reorderedRecipeList)
     const [draggedIndex, setDraggedIndex] = useState<number | null>(null)
     const onRecipeClick = (recipeID: RecipeID): void => {
@@ -143,9 +144,10 @@ export const Recipes: React.FunctionComponent<{
                     {Object.entries(recipes).map(([key, value], index) => (
                         <VSCodeButton
                             key={key}
-                            className={`${styles.recipeButton} ${
-                                draggedIndex === index ? styles.recipeButtonDrag : ''
-                            }`}
+                            className={classNames(
+                                styles.recipeButton,
+                                index === draggedIndex && styles.recipeButtonDrag
+                            )}
                             type="button"
                             onClick={() => onRecipeClick(key as RecipeID)}
                             draggable={true}

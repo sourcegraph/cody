@@ -12,8 +12,7 @@
 }
 
 .recipe-button-drag {
-    border-top: 2px solid var(--vscode-activityBar-activeBorder
-    );
+    border-top: 2px solid var(--vscode-activityBar-activeBorder);
 }
 
 .recipes-header {
