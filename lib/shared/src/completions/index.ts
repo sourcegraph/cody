@@ -6,7 +6,8 @@ import type * as vscode from 'vscode'
 import { CodebaseContext } from '../codebase-context'
 import { ide } from '../ide'
 import { debug } from '../log'
-import { CodyStatusBar } from '../services/StatusBar'
+
+// import { CodyStatusBar } from '../services/StatusBar'
 
 import { CachedCompletions, CompletionsCache } from './cache'
 import { getContext, GetContextOptions, GetContextResult } from './context'
@@ -23,7 +24,7 @@ import { isAbortError, SNIPPET_WINDOW_SIZE } from './utils'
 interface CodyCompletionItemProviderConfig {
     providerConfig: ProviderConfig
     history: History
-    statusBar: CodyStatusBar
+    // statusBar: CodyStatusBar
     codebaseContext: CodebaseContext
     responsePercentage?: number
     prefixPercentage?: number

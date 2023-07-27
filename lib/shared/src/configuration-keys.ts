@@ -1,6 +1,6 @@
 import { camelCase } from 'lodash'
 
-import packageJson from '../package.json'
+import packageJson from './vscode-package.json'
 
 const { properties } = packageJson.contributes.configuration
 

@@ -4,6 +4,9 @@
     "module": "commonjs",
     "rootDir": ".",
     "outDir": "dist",
+    "paths": {
+      "vscode": ["./vscode-shim"],
+    },
   },
   "include": ["**/*", ".*", "package.json"],
   "exclude": ["dist"],

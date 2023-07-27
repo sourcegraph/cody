@@ -6,6 +6,6 @@
     "outDir": "dist",
     "lib": ["ESNext", "DOM.Iterable"],
   },
-  "include": ["src", "src/telemetry/EventLogger.ts"],
+  "include": ["src/vscode-package.json", "src", "src/telemetry/EventLogger.ts"],
   "exclude": ["dist"],
 }

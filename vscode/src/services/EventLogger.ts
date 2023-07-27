@@ -1,8 +1,8 @@
 import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
+import { debug } from '@sourcegraph/cody-shared/src/log'
 import { EventLogger, ExtensionDetails } from '@sourcegraph/cody-shared/src/telemetry/EventLogger'
 
 import { version as packageVersion } from '../../package.json'
-import { debug } from '../log'
 
 import { LocalStorage } from './LocalStorageProvider'
 
