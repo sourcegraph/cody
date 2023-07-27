@@ -29,6 +29,9 @@ const editor: Editor = {
     getWorkspaceRootPath() {
         return null
     },
+    getWorkspaceRootUri() {
+        return null
+    },
     replaceSelection(_fileName, _selectedText, _replacement) {
         return Promise.resolve()
     },

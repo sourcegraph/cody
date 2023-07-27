@@ -11,8 +11,8 @@
     "dev:instance": "CODY_FOCUS_ON_STARTUP=1 NODE_ENV=development code --extensionDevelopmentPath=$PWD --disable-extension=sourcegraph.cody-ai --disable-extension=github.copilot --disable-extension=github.copilot-nightly --inspect-extensions=9333 --new-window . --goto ./src/logged-rerank.ts:16:5",
     "dev": "pnpm run build:dev && pnpm run dev:instance",
     "generate:completions": "OUTFILE=/tmp/run-code-completions-on-dataset.js && esbuild ./test/completions/run-code-completions-on-dataset.ts --bundle --external:vscode --outfile=$OUTFILE --format=cjs --platform=node --sourcemap=inline && node --enable-source-maps $OUTFILE",
-    "build": "scripts/download-rg.sh && tsc --build && pnpm run esbuild --minify && vite build --mode production",
-    "build:dev": "scripts/download-rg.sh && tsc --build && concurrently \"pnpm run esbuild --sourcemap\" \"vite build --mode development\"",
+    "build": "tsc --build && pnpm run esbuild --minify && vite -c webviews/vite.config.ts build --mode production",
+    "build:dev": "tsc --build && concurrently \"pnpm run esbuild --sourcemap\" \"vite -c webviews/vite.config.ts build --mode development\"",
     "esbuild": "esbuild ./src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node",
     "lint": "pnpm run lint:js",
     "lint:js": "eslint --cache '**/*.[tj]s?(x)'",
@@ -22,7 +22,7 @@
     "test:e2e": "pnpm exec playwright install && pnpm run --silent build:dev && playwright test",
     "test:integration": "tsc --build ./test/integration && pnpm run --silent build:dev && node --inspect -r ts-node/register dist/tsc/test/integration/main.js",
     "test:unit": "vitest",
-    "vscode:prepublish": "scripts/download-rg.sh && pnpm --silent run build"
+    "vscode:prepublish": "pnpm --silent run build"
   },
   "categories": [
     "Programming Languages",
@@ -793,11 +793,6 @@
             }
           ]
         },
-        "cody.experimental.suggestions": {
-          "type": "boolean",
-          "default": false,
-          "deprecationMessage": "Use `cody.autocomplete` instead"
-        },
         "cody.autocomplete.enabled": {
           "order": 5,
           "type": "boolean",
@@ -844,46 +839,37 @@
           "type": "string",
           "markdownDescription": "Regular expression to filter debug output. If empty, defaults to '.*', which prints all messages."
         },
-        "cody.completions.advanced.provider": {
+        "cody.telemetry.level": {
+          "order": 99,
           "type": "string",
-          "default": "anthropic",
-          "deprecationMessage": "Use `cody.autocomplete.advanced.provider` instead"
+          "enum": [
+            "all",
+            "off"
+          ],
+          "enumDescriptions": [
+            "Sends usage data and errors.",
+            "Disables all extension telemetry."
+          ],
+          "markdownDescription": "Controls the telemetry about Cody usage and errors. See [Cody usage and privacy notice](https://about.sourcegraph.com/terms/cody-notice).",
+          "default": "all"
         },
         "cody.autocomplete.advanced.provider": {
           "type": "string",
           "default": "anthropic",
           "markdownDescription": "Overwrite the provider used for code autocomplete. Only supported values at the moment are `anthropic` (default), `unstable-codegen`, or `unstable-huggingface`."
         },
-        "cody.completions.advanced.serverEndpoint": {
-          "type": "string",
-          "deprecationMessage": "Use `cody.autocomplete.advanced.serverEndpoint` instead"
-        },
         "cody.autocomplete.advanced.serverEndpoint": {
           "type": "string",
           "markdownDescription": "Overwrite the server endpoint used for code autocomplete. This is only supported with the `unstable-codegen` or `unstable-huggingface` provider."
-        },
-        "cody.completions.advanced.accessToken": {
-          "type": "string",
-          "deprecationMessage": "Use `cody.autocomplete.advanced.accessToken` instead"
         },
         "cody.autocomplete.advanced.accessToken": {
           "type": "string",
           "markdownDescription": "Overwrite the access token used for code autocomplete. This is only supported with the `unstable-huggingface` provider."
         },
-        "cody.completions.advanced.cache": {
-          "type": "boolean",
-          "default": true,
-          "deprecationMessage": "Use `cody.autocomplete.advanced.cache` instead"
-        },
         "cody.autocomplete.advanced.cache": {
           "type": "boolean",
           "default": true,
           "markdownDescription": "Enables caching of code autocomplete."
-        },
-        "cody.completions.advanced.embeddings": {
-          "type": "boolean",
-          "default": true,
-          "deprecationMessage": "Use `cody.autocomplete.advanced.embeddings` instead"
         },
         "cody.autocomplete.advanced.embeddings": {
           "order": 99,
@@ -971,14 +957,14 @@
       "cody-logo": {
         "description": "Cody logo",
         "default": {
-          "fontPath": "dist/webviews/assets/cody-icons.woff",
+          "fontPath": "node_modules/cody-icons-font/font/cody-icons.woff",
           "fontCharacter": "\\0041"
         }
       },
       "cody-logo-heavy": {
         "description": "Cody logo heavy",
         "default": {
-          "fontPath": "dist/webviews/assets/cody-icons.woff",
+          "fontPath": "node_modules/cody-icons-font/font/cody-icons.woff",
           "fontCharacter": "\\0042"
         }
       }
@@ -1030,7 +1016,6 @@
     "mocha": "^10.2.0",
     "ovsx": "^0.8.2",
     "playwright": "^1.33.0",
-    "semver": "^7.5.4",
-    "vite-plugin-static-copy": "^0.16.0"
+    "semver": "^7.5.4"
   }
 }

@@ -8,6 +8,7 @@ playwright.config.ts
 vite.config.ts
 pnpm-lock.yaml
 node_modules/
+!node_modules/cody-icons-font/font/cody-icons.woff
 tsconfig.json
 .eslintignore
 scripts/

@@ -1,3 +1,4 @@
+import dedent from 'dedent'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type * as vscode from 'vscode'
 import { URI } from 'vscode-uri'
@@ -42,7 +43,7 @@ vi.mock('./context-embeddings.ts', () => ({
 
 function createCompletionResponse(completion: string): CompletionResponse {
     return {
-        completion: truncateMultilineString(completion),
+        completion,
         stopReason: 'unknown',
     }
 }
@@ -51,32 +52,7 @@ const noopStatusBar = {
     startLoading: () => () => {},
 } as any
 
-const CURSOR_MARKER = '<cursor>'
-
-/**
- * A helper function used so that the below code example can be intended in code but will have their
- * prefix stripped. This is similar to what Vitest snapshots use but without the prettier hack so that
- * the starting ` is always in the same line as the function name :shrug:
- */
-function truncateMultilineString(string: string): string {
-    const lines = string.split('\n')
-
-    if (lines.length <= 1) {
-        return string
-    }
-
-    if (lines[0] !== '') {
-        return string
-    }
-
-    const regex = lines[1].match(/^ */)
-
-    const indentation = regex ? regex[0] : ''
-    return lines
-        .map(line => (line.startsWith(indentation) ? line.replace(indentation, '') : line))
-        .slice(1)
-        .join('\n')
-}
+const CURSOR_MARKER = '🔥'
 
 describe('Cody completions', () => {
     /**
@@ -111,8 +87,6 @@ describe('Cody completions', () => {
             requests: CompletionParameters[]
             completions: vscode.InlineCompletionItem[]
         }> => {
-            code = truncateMultilineString(code)
-
             const requests: CompletionParameters[] = []
             let requestCounter = 0
             const completionsClient: any = {
@@ -203,7 +177,7 @@ describe('Cody completions', () => {
     })
 
     it('uses a more complex prompt for larger files', async () => {
-        const { requests } = await complete(`
+        const { requests } = await complete(dedent`
             class Range {
                 public startLine: number
                 public startCharacter: number
@@ -357,7 +331,7 @@ describe('Cody completions', () => {
     describe('multi-line completions', () => {
         it('honors a leading new line in the completion', async () => {
             const { completions } = await complete(
-                `
+                dedent`
             describe('bubbleSort', () => {
                 it('bubbleSort test case', () => {${CURSOR_MARKER}
 
@@ -383,7 +357,7 @@ describe('Cody completions', () => {
 
         it('cuts-off redundant closing brackets on the start indent level', async () => {
             const { completions } = await complete(
-                `
+                dedent`
             describe('bubbleSort', () => {
                 it('bubbleSort test case', () => {${CURSOR_MARKER}
 
@@ -391,11 +365,12 @@ describe('Cody completions', () => {
             })
             `,
                 [
-                    createCompletionResponse(`const unsortedArray = [4,3,78,2,0,2]
-        const sortedArray = bubbleSort(unsortedArray)
-        expect(sortedArray).toEqual([0,2,2,3,4,78])
-    })
-})`),
+                    createCompletionResponse(dedent`
+                    const unsortedArray = [4,3,78,2,0,2]
+                            const sortedArray = bubbleSort(unsortedArray)
+                            expect(sortedArray).toEqual([0,2,2,3,4,78])
+                        })
+                    })`),
                 ]
             )
 
@@ -408,9 +383,7 @@ describe('Cody completions', () => {
 
         it('keeps the closing bracket', async () => {
             const { completions } = await complete(`function printHello(${CURSOR_MARKER})`, [
-                createCompletionResponse(` {
-    console.log('Hello');
-}`),
+                createCompletionResponse(" {\n    console.log('Hello');\n}"),
             ])
 
             expect(completions[0].insertText).toBe(" {\n    console.log('Hello');\n}")
@@ -425,21 +398,21 @@ describe('Cody completions', () => {
 
         it('uses an indentation based approach to cut-off completions', async () => {
             const { completions } = await complete(
-                `
+                dedent`
                 class Foo {
                     constructor() {
                         ${CURSOR_MARKER}
                     }
                 }`,
                 [
-                    createCompletionResponse(`
+                    createCompletionResponse(dedent`
                     console.log('foo')
                         }
 
                         add() {
                             console.log('bar')
                         }`),
-                    createCompletionResponse(`
+                    createCompletionResponse(dedent`
                     if (foo) {
                                 console.log('foo1');
                             }
@@ -457,13 +430,13 @@ describe('Cody completions', () => {
 
         it('cuts-off the whole completions when suffix is very similar to suffix line', async () => {
             const { completions } = await complete(
-                `
+                dedent`
                 function() {
                     ${CURSOR_MARKER}
                     console.log('bar')
                 }`,
                 [
-                    createCompletionResponse(`
+                    createCompletionResponse(dedent`
                     console.log('foo')
                         console.log('bar')
                     }`),
@@ -489,12 +462,12 @@ describe('Cody completions', () => {
 
         it('works with python', async () => {
             const { completions, requests } = await complete(
-                `
+                dedent`
                 for i in range(11):
                     if i % 2 == 0:
                         ${CURSOR_MARKER}`,
                 [
-                    createCompletionResponse(`
+                    createCompletionResponse(dedent`
                     print(i)
                         elif i % 3 == 0:
                             print(f"Multiple of 3: {i}")
@@ -520,12 +493,12 @@ describe('Cody completions', () => {
 
         it('works with java', async () => {
             const { completions, requests } = await complete(
-                `
+                dedent`
                 for (int i = 0; i < 11; i++) {
                     if (i % 2 == 0) {
                         ${CURSOR_MARKER}`,
                 [
-                    createCompletionResponse(`
+                    createCompletionResponse(dedent`
                     System.out.println(i);
                         } else if (i % 3 == 0) {
                             System.out.println("Multiple of 3: " + i);
@@ -556,13 +529,13 @@ describe('Cody completions', () => {
         // TODO: Detect `}\nelse\n{` pattern for else skip logic
         it('works with csharp', async () => {
             const { completions, requests } = await complete(
-                `
+                dedent`
                 for (int i = 0; i < 11; i++) {
                     if (i % 2 == 0)
                     {
                         ${CURSOR_MARKER}`,
                 [
-                    createCompletionResponse(`
+                    createCompletionResponse(dedent`
                     Console.WriteLine(i);
                         }
                         else if (i % 3 == 0)
@@ -594,12 +567,12 @@ describe('Cody completions', () => {
 
         it('works with c++', async () => {
             const { completions, requests } = await complete(
-                `
+                dedent`
                 for (int i = 0; i < 11; i++) {
                     if (i % 2 == 0) {
                         ${CURSOR_MARKER}`,
                 [
-                    createCompletionResponse(`
+                    createCompletionResponse(dedent`
                     std::cout << i;
                         } else if (i % 3 == 0) {
                             std::cout << "Multiple of 3: " << i;
@@ -629,12 +602,12 @@ describe('Cody completions', () => {
 
         it('works with c', async () => {
             const { completions, requests } = await complete(
-                `
+                dedent`
                 for (int i = 0; i < 11; i++) {
                     if (i % 2 == 0) {
                         ${CURSOR_MARKER}`,
                 [
-                    createCompletionResponse(`
+                    createCompletionResponse(dedent`
                     printf("%d", i);
                         } else if (i % 3 == 0) {
                             printf("Multiple of 3: %d", i);
@@ -664,14 +637,14 @@ describe('Cody completions', () => {
 
         it('skips over empty lines', async () => {
             const { completions } = await complete(
-                `
+                dedent`
                 class Foo {
                     constructor() {
                         ${CURSOR_MARKER}
                     }
                 }`,
                 [
-                    createCompletionResponse(`
+                    createCompletionResponse(dedent`
                     console.log('foo')
 
                             console.log('bar')
@@ -691,12 +664,12 @@ describe('Cody completions', () => {
 
         it('skips over else blocks', async () => {
             const { completions } = await complete(
-                `
+                dedent`
                 if (check) {
                     ${CURSOR_MARKER}
                 }`,
                 [
-                    createCompletionResponse(`
+                    createCompletionResponse(dedent`
                     console.log('one')
                     } else {
                         console.log('two')
@@ -713,12 +686,12 @@ describe('Cody completions', () => {
 
         it('includes closing parentheses in the completion', async () => {
             const { completions } = await complete(
-                `
+                dedent`
                 if (check) {
                     ${CURSOR_MARKER}
                 `,
                 [
-                    createCompletionResponse(`
+                    createCompletionResponse(dedent`
                     console.log('one')
                     }`),
                 ]
@@ -732,14 +705,14 @@ describe('Cody completions', () => {
 
         it('stops when the next non-empty line of the suffix matches', async () => {
             const { completions } = await complete(
-                `
+                dedent`
                 function myFunction() {
                     ${CURSOR_MARKER}
                     console.log('three')
                 }
                 `,
                 [
-                    createCompletionResponse(`
+                    createCompletionResponse(dedent`
                     console.log('one')
                         console.log('two')
                         console.log('three')
@@ -753,7 +726,7 @@ describe('Cody completions', () => {
 
         it('stops when the next non-empty line of the suffix matches exactly with one line completion', async () => {
             const { completions } = await complete(
-                `
+                dedent`
                 function myFunction() {
                     console.log('one')
                     ${CURSOR_MARKER}
@@ -761,7 +734,7 @@ describe('Cody completions', () => {
                 }
                 `,
                 [
-                    createCompletionResponse(`
+                    createCompletionResponse(dedent`
                     console.log('three')
                     }`),
                 ]
@@ -772,7 +745,7 @@ describe('Cody completions', () => {
 
         it('cuts off a matching line with the next line even if the completion is longer', async () => {
             const { completions } = await complete(
-                `
+                dedent`
             function bubbleSort() {
                 ${CURSOR_MARKER}
                 do {
@@ -789,7 +762,7 @@ describe('Cody completions', () => {
             }
             `,
                 [
-                    createCompletionResponse(`
+                    createCompletionResponse(dedent`
                     let swapped;
                     do {
                         swapped = false;
@@ -812,11 +785,11 @@ describe('Cody completions', () => {
         describe('stops when the next non-empty line of the suffix matches partially', () => {
             it('simple example', async () => {
                 const { completions } = await complete(
-                    `
+                    dedent`
                           path: $GITHUB_WORKSPACE/vscode/.vscod-etest/${CURSOR_MARKER}
                           key: {{ runner.os }}-pnpm-store-{{ hashFiles('**/pnpm-lock.yaml') }}`,
                     [
-                        createCompletionResponse(`
+                        createCompletionResponse(dedent`
                                     pnpm-store
                                         key: {{ runner.os }}-pnpm-{{ steps.pnpm-cache.outputs.STORE_PATH }}
                                     }`),
@@ -828,12 +801,12 @@ describe('Cody completions', () => {
 
             it('example with return', async () => {
                 const { completions } = await complete(
-                    `
+                    dedent`
                           console.log('<< stop completion: ${CURSOR_MARKER}')
                           return []
                     `,
                     [
-                        createCompletionResponse(`
+                        createCompletionResponse(dedent`
                                     lastChange was delete')
                                     return []
                         `),
@@ -845,12 +818,12 @@ describe('Cody completions', () => {
 
             it('example with inline comment', async () => {
                 const { completions } = await complete(
-                    `
+                    dedent`
                     // ${CURSOR_MARKER}
                     const currentFilePath = path.normalize(document.fileName)
                     `,
                     [
-                        createCompletionResponse(`
+                        createCompletionResponse(dedent`
                             Get the file path
                             const filePath = normalize(document.fileName)
                         `),
@@ -863,21 +836,21 @@ describe('Cody completions', () => {
 
         it('ranks results by number of lines', async () => {
             const { completions } = await complete(
-                `
+                dedent`
                 function test() {
                     ${CURSOR_MARKER}`,
                 [
-                    createCompletionResponse(`
+                    createCompletionResponse(dedent`
                     console.log('foo')
                         console.log('foo')
                     `),
-                    createCompletionResponse(`
+                    createCompletionResponse(dedent`
                     console.log('foo')
                         console.log('foo')
                         console.log('foo')
                         console.log('foo')
                         console.log('foo')`),
-                    createCompletionResponse(`
+                    createCompletionResponse(dedent`
                     console.log('foo')
                     `),
                 ]
@@ -899,7 +872,7 @@ describe('Cody completions', () => {
 
         it('dedupes duplicate results', async () => {
             const { completions } = await complete(
-                `
+                dedent`
                 function test() {
                     ${CURSOR_MARKER}`,
                 [
@@ -915,21 +888,14 @@ describe('Cody completions', () => {
 
         it('handles tab/newline interop in completion truncation', async () => {
             const { completions } = await complete(
-                `
+                dedent`
                 class Foo {
                     constructor() {
                         ${CURSOR_MARKER}`,
                 [
-                    createCompletionResponse(`
-                    console.log('foo')
-                    \t\tif (yes) {
-                    \t\t    sure()
-                    \t\t}
-                    \t}
-
-                    \tadd() {
-                        \tconsole.log('bar')
-                        }`),
+                    createCompletionResponse(
+                        "console.log('foo')\n\t\tif (yes) {\n\t\t    sure()\n\t\t}\n\t}\n\n\tadd() {\n"
+                    ),
                 ]
             )
 
@@ -944,13 +910,13 @@ describe('Cody completions', () => {
 
         it('does not include block end character if there is already content in the block', async () => {
             const { completions } = await complete(
-                `
+                dedent`
                 if (check) {
                     ${CURSOR_MARKER}
                     console.log('two')
                 `,
                 [
-                    createCompletionResponse(`
+                    createCompletionResponse(dedent`
                     console.log('one')
                     }`),
                 ]

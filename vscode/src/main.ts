@@ -48,7 +48,7 @@ export async function start(context: vscode.ExtensionContext): Promise<vscode.Di
             ? new InMemorySecretStorage()
             : new VSCodeSecretStorage(context.secrets)
     const localStorage = new LocalStorage(context.globalState)
-    const rgPath = await getRgPath(context.extensionPath)
+    const rgPath = await getRgPath()
 
     const disposables: vscode.Disposable[] = []
 
@@ -145,7 +145,7 @@ const register = async (
     const inlineChatManager = new InlineChatViewManager(messageProviderOptions)
     const sidebarChatProvider = new ChatViewProvider({
         ...messageProviderOptions,
-        extensionPath: context.extensionPath,
+        extensionUri: context.extensionUri,
     })
 
     disposables.push(sidebarChatProvider)

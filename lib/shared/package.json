@@ -30,6 +30,7 @@
     "isomorphic-fetch": "^3.0.0",
     "lodash": "^4.17.21",
     "marked": "^4.0.16",
+    "vscode-uri": "^3.0.7",
     "x2js": "^3.4.4"
   },
   "devDependencies": {
