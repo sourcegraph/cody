@@ -1,3 +1,5 @@
+import { URI } from 'vscode-uri'
+
 import {
     ActiveTextEditor,
     ActiveTextEditorSelection,
@@ -19,8 +21,14 @@ export class AgentEditor implements Editor {
         throw new Error('Method not implemented.')
     }
 
+    /** @deprecated Use {@link AgentEditor.getWorkspaceRootUri} instead. */
     public getWorkspaceRootPath(): string | null {
-        return this.agent.workspaceRootPath
+        const uri = this.getWorkspaceRootUri()
+        return uri?.scheme === 'file' ? uri.fsPath : null
+    }
+
+    public getWorkspaceRootUri(): URI | null {
+        return this.agent.workspaceRootUri
     }
 
     private activeDocument(): TextDocument | undefined {

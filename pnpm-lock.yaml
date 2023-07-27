@@ -113,6 +113,9 @@ importers:
       '@sourcegraph/cody-shared':
         specifier: workspace:*
         version: link:../lib/shared
+      vscode-uri:
+        specifier: ^3.0.7
+        version: 3.0.7
     devDependencies:
       pkg:
         specifier: ^5.8.1
@@ -230,6 +233,9 @@ importers:
       marked:
         specifier: ^4.0.16
         version: 4.0.16
+      vscode-uri:
+        specifier: ^3.0.7
+        version: 3.0.7
       x2js:
         specifier: ^3.4.4
         version: 3.4.4
@@ -440,9 +446,6 @@ importers:
       semver:
         specifier: ^7.5.4
         version: 7.5.4
-      vite-plugin-static-copy:
-        specifier: ^0.16.0
-        version: 0.16.0(vite@4.4.3)
 
   web:
     dependencies:
@@ -15945,19 +15948,6 @@ packages:
       - sugarss
       - supports-color
       - terser
-    dev: true
-
-  /vite-plugin-static-copy@0.16.0(vite@4.4.3):
-    resolution: {integrity: sha512-dMVEg5Z2SwYRgQnHZaeokvSKB4p/TOTf65JU4sP3U6ccSBsukqdtDOjpmT+xzTFHAA8WJjcS31RMLjUdWQCBzw==}
-    engines: {node: ^14.18.0 || >=16.0.0}
-    peerDependencies:
-      vite: ^3.0.0 || ^4.0.0
-    dependencies:
-      chokidar: 3.5.3
-      fast-glob: 3.2.11
-      fs-extra: 11.1.0
-      picocolors: 1.0.0
-      vite: 4.4.3(@types/node@20.4.0)
     dev: true
 
   /vite@4.4.3(@types/node@20.4.0):

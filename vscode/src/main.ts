@@ -145,7 +145,7 @@ const register = async (
     const inlineChatManager = new InlineChatViewManager(messageProviderOptions)
     const sidebarChatProvider = new ChatViewProvider({
         ...messageProviderOptions,
-        extensionPath: context.extensionPath,
+        extensionUri: context.extensionUri,
     })
 
     disposables.push(sidebarChatProvider)

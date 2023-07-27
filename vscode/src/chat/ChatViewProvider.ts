@@ -1,5 +1,3 @@
-import path from 'path'
-
 import * as vscode from 'vscode'
 
 import { ChatMessage, UserLocalHistory } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
@@ -16,16 +14,16 @@ export interface ChatViewProviderWebview extends Omit<vscode.Webview, 'postMessa
 }
 
 interface ChatViewProviderOptions extends MessageProviderOptions {
-    extensionPath: string
+    extensionUri: vscode.Uri
 }
 
 export class ChatViewProvider extends MessageProvider implements vscode.WebviewViewProvider {
-    private extensionPath: string
+    private extensionUri: vscode.Uri
     public webview?: ChatViewProviderWebview
 
-    constructor({ extensionPath, ...options }: ChatViewProviderOptions) {
+    constructor({ extensionUri, ...options }: ChatViewProviderOptions) {
         super(options)
-        this.extensionPath = extensionPath
+        this.extensionUri = extensionUri
     }
 
     private async onDidReceiveMessage(message: WebviewMessage): Promise<void> {
@@ -90,15 +88,14 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
                 await this.onCustomRecipeClicked(message.title, message.value)
                 break
             case 'openFile': {
-                const rootPath = this.editor.getWorkspaceRootPath()
-                if (!rootPath) {
-                    this.handleError('Failed to open file: missing rootPath')
+                const rootUri = this.editor.getWorkspaceRootUri()
+                if (!rootUri) {
+                    this.handleError('Failed to open file: missing rootUri')
                     return
                 }
                 try {
                     // This opens the file in the active column.
-                    const uri = vscode.Uri.file(path.join(rootPath, message.filePath))
-                    const doc = await vscode.workspace.openTextDocument(uri)
+                    const doc = await vscode.workspace.openTextDocument(vscode.Uri.joinPath(rootUri, message.filePath))
                     await vscode.window.showTextDocument(doc)
                 } catch {
                     // Try to open the file in the sourcegraph view
@@ -250,8 +247,7 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
         this.authProvider.webview = webviewView.webview
         this.contextProvider.webview = webviewView.webview
 
-        const extensionPath = vscode.Uri.file(this.extensionPath)
-        const webviewPath = vscode.Uri.joinPath(extensionPath, 'dist', 'webviews')
+        const webviewPath = vscode.Uri.joinPath(this.extensionUri, 'dist', 'webviews')
 
         webviewView.webview.options = {
             enableScripts: true,
