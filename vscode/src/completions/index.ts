@@ -50,6 +50,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
     private readonly config: Required<CodyCompletionItemProviderConfig>
 
     private requestManager: RequestManager
+    private previousCompletionLogId?: string
 
     constructor({
         responsePercentage = 0.1,
@@ -134,13 +135,12 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
             tracer?.({ error: error.toString() })
             this.stopLoading()
 
-            if (isAbortError(error)) {
-                return { items: [] }
+            if (!isAbortError(error)) {
+                console.error(error)
+                debug('CodyCompletionProvider:inline:error', `${error.toString()}\n${error.stack}`)
             }
 
-            console.error(error)
-            debug('CodyCompletionProvider:inline:error', `${error.toString()}\n${error.stack}`)
-            return { items: [] }
+            return emptyCompletions()
         }
     }
 
@@ -160,15 +160,13 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
             this.abortOpenCompletions = () => abortController.abort()
         }
 
-        CompletionLogger.clear()
-
         if (!vscode.window.activeTextEditor || document.uri.scheme === 'cody') {
-            return { items: [] }
+            return emptyCompletions()
         }
 
-        const docContext = getCurrentDocContext(document, position, this.maxPrefixChars, this.maxSuffixChars)
+        const docContext = getCurrentDocContext(document, position, context, this.maxPrefixChars, this.maxSuffixChars)
         if (!docContext) {
-            return { items: [] }
+            return emptyCompletions()
         }
 
         const { prefix, suffix, prevNonEmptyLine } = docContext
@@ -188,44 +186,10 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
             this.config.providerConfig.enableExtendedMultilineTriggers
         )
 
-        // Avoid showing completions when we're deleting code (Cody can only insert code at the
-        // moment)
-        const lastChange = this.lastContentChanges.get(document.fileName) ?? 'add'
-        if (lastChange === 'del') {
-            // When a line was deleted, only look up cached items and only include them if the
-            // untruncated prefix matches. This fixes some weird issues where the completion would
-            // render if you insert whitespace but not on the original place when you delete it
-            // again
-            const cachedCompletions = this.config.cache?.get(prefix, false)
-            if (cachedCompletions?.isExactPrefix) {
-                tracer?.({ cacheHit: true })
-                return handleCacheHit(
-                    cachedCompletions,
-                    document,
-                    position,
-                    prefix,
-                    suffix,
-                    multiline,
-                    document.languageId
-                )
-            }
-            return { items: [] }
-        }
-
-        const cachedCompletions = this.config.cache?.get(prefix)
-        if (cachedCompletions) {
-            tracer?.({ cacheHit: true })
-            return handleCacheHit(cachedCompletions, document, position, prefix, suffix, multiline, document.languageId)
-        }
-        tracer?.({ cacheHit: false })
-
-        const completers: Provider[] = []
-        let timeout: number
-
         // Don't show completions if we are in the process of writing a word.
         const cursorAtWord = /\w$/.test(sameLinePrefix)
         if (cursorAtWord && !this.config.triggerMoreEagerly) {
-            return { items: [] }
+            return emptyCompletions()
         }
         const triggeredMoreEagerly = this.config.triggerMoreEagerly && cursorAtWord
 
@@ -236,7 +200,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
             } else {
                 // Don't show completions if the suggest widget (which shows language autocomplete)
                 // is showing.
-                return { items: [] }
+                return emptyCompletions()
             }
         }
 
@@ -247,8 +211,88 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
         // VS Code will attempt to merge the remainder of the current line by characters but for
         // words this will easily get very confusing.
         if (/\w/.test(sameLineSuffix)) {
-            return { items: [] }
+            return emptyCompletions()
         }
+
+        let cachedCompletions: CachedCompletions | undefined
+
+        // Avoid showing completions when we're deleting code (Cody can only insert code at the
+        // moment)
+        const lastChange = this.lastContentChanges.get(document.fileName) ?? 'add'
+        if (lastChange === 'del') {
+            // When a line was deleted, only look up cached items and only include them if the
+            // untruncated prefix matches. This fixes some weird issues where the completion would
+            // render if you insert whitespace but not on the original place when you delete it
+            // again
+            cachedCompletions = this.config.cache?.get(prefix, false)
+            if (cachedCompletions && !cachedCompletions.isExactPrefix) {
+                return emptyCompletions()
+            }
+        }
+
+        // If cachedCompletions was already set by the above logic, we don't have to query the cache
+        // again.
+        cachedCompletions = cachedCompletions ?? this.config.cache?.get(prefix)
+
+        // We create a log entry after determining if we have a potential cache hit. This is
+        // necessary to make sure that typing text of a displayed completion will not log a new
+        // completion on every keystroke
+        //
+        // However we only log a completion as started if it's either served from cache _or_ the
+        // debounce interval has passed to ensure we don't log too many start events where we end up
+        // not doing any work at all
+        const useLogIdFromPreviousCompletion =
+            cachedCompletions?.logId && cachedCompletions?.logId === this.previousCompletionLogId
+        if (!useLogIdFromPreviousCompletion) {
+            CompletionLogger.clear()
+        }
+        const logId = useLogIdFromPreviousCompletion
+            ? cachedCompletions!.logId
+            : CompletionLogger.create({
+                  multiline,
+                  providerIdentifier: this.config.providerConfig.identifier,
+                  languageId: document.languageId,
+                  triggeredMoreEagerly,
+                  triggeredForSuggestWidgetSelection: triggeredForSuggestWidgetSelection !== undefined,
+                  settings: {
+                      autocompleteExperimentalTriggerMoreEagerly: this.config.triggerMoreEagerly,
+                      autocompleteExperimentalCompleteSuggestWidgetSelection: Boolean(
+                          this.config.completeSuggestWidgetSelection
+                      ),
+                  },
+              })
+        console.log({ logId, prev: this.previousCompletionLogId, cachedCompletions })
+        this.previousCompletionLogId = logId
+
+        if (cachedCompletions) {
+            // When we serve a completion from the cache and create a new log
+            // id, we want to ensure to only refer to the new id for future
+            // cache retrievals. If we don't do this, every subsequent cache hit
+            // would otherwise no longer match the previous completion ID and we
+            // would log a new completion each time, even if the user just
+            // continues typing on the currently displayed completion.
+            if (logId !== cachedCompletions.logId) {
+                this.config.cache?.updateLogId(cachedCompletions.logId, logId)
+            }
+
+            tracer?.({ cacheHit: true })
+            CompletionLogger.start(logId)
+            return prepareCompletions(
+                logId,
+                cachedCompletions.completions,
+                document,
+                position,
+                prefix,
+                suffix,
+                multiline,
+                document.languageId,
+                context
+            )
+        }
+        tracer?.({ cacheHit: false })
+
+        const completers: Provider[] = []
+        let timeout: number
 
         const sharedProviderOptions: Omit<ProviderOptions, 'id' | 'n' | 'multiline'> = {
             prefix,
@@ -298,8 +342,10 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
         // We don't need to make a request at all if the signal is already aborted after the
         // debounce
         if (abortController.signal.aborted) {
-            return { items: [] }
+            return emptyCompletions()
         }
+
+        CompletionLogger.start(logId)
 
         const contextResult = await this.config.contextFetcher({
             document,
@@ -312,25 +358,12 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
             isEmbeddingsContextEnabled: this.config.isEmbeddingsContextEnabled,
         })
         if (abortController.signal.aborted) {
-            return { items: [] }
+            return emptyCompletions()
         }
         tracer?.({ context: contextResult })
 
-        const logId = CompletionLogger.start({
-            type: 'inline',
-            multiline,
-            providerIdentifier: this.config.providerConfig.identifier,
-            languageId: document.languageId,
-            contextSummary: contextResult.logSummary,
-            triggeredMoreEagerly,
-            triggeredForSuggestWidgetSelection: triggeredForSuggestWidgetSelection !== undefined,
-            settings: {
-                autocompleteExperimentalTriggerMoreEagerly: this.config.triggerMoreEagerly,
-                autocompleteExperimentalCompleteSuggestWidgetSelection: Boolean(
-                    this.config.completeSuggestWidgetSelection
-                ),
-            },
-        })
+        CompletionLogger.networkRequestStarted(logId, contextResult.logSummary)
+
         const stopLoading = this.config.statusBar.startLoading('Completions are being generated')
         this.stopLoading = stopLoading
 
@@ -350,17 +383,18 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
             abortController.signal
         )
 
-        // Shared post-processing logic
-        const processedCompletions = processCompletions(completions, prefix, suffix, multiline, document.languageId)
         stopLoading()
-
-        if (processedCompletions.length > 0) {
-            CompletionLogger.suggest(logId)
-            return toInlineCompletionItems(logId, document, position, processedCompletions)
-        }
-
-        CompletionLogger.noResponse(logId)
-        return { items: [] }
+        return prepareCompletions(
+            logId,
+            completions,
+            document,
+            position,
+            prefix,
+            suffix,
+            multiline,
+            document.languageId,
+            context
+        )
     }
 }
 
@@ -370,17 +404,43 @@ export interface Completion {
     stopReason?: string
 }
 
-function handleCacheHit(
-    cachedCompletions: CachedCompletions,
+function prepareCompletions(
+    logId: string,
+    completions: Completion[],
     document: vscode.TextDocument,
     position: vscode.Position,
     prefix: string,
     suffix: string,
     multiline: boolean,
-    languageId: string
+    languageId: string,
+    context: vscode.InlineCompletionContext
 ): vscode.InlineCompletionList {
-    const results = processCompletions(cachedCompletions.completions, prefix, suffix, multiline, languageId)
-    return toInlineCompletionItems(cachedCompletions.logId, document, position, results)
+    const results = processCompletions(completions, prefix, suffix, multiline, languageId)
+
+    if (results.length > 0) {
+        // When the VS Code completion popup is open and we suggest a completion that does not match
+        // the currently selected completion, VS Code won't display it. For now we make sure to not
+        // log these completions as displayed.
+        //
+        // TODO: Take this into account when creating the completion prefix.
+        let isCompletionVisible = true
+        if (context.selectedCompletionInfo) {
+            const currentText = document.getText(context.selectedCompletionInfo.range)
+            const selectedText = context.selectedCompletionInfo.text
+            if (!(currentText + results[0].content).startsWith(selectedText)) {
+                isCompletionVisible = false
+            }
+        }
+
+        if (isCompletionVisible) {
+            CompletionLogger.suggest(logId, isCompletionVisible)
+        }
+
+        return toInlineCompletionItems(logId, document, position, results)
+    }
+
+    CompletionLogger.noResponse(logId)
+    return emptyCompletions()
 }
 
 function processCompletions(
@@ -451,4 +511,9 @@ function createTracerForInvocation(tracer: ProvideInlineCompletionItemsTracer): 
         data = { ...data, ...update }
         tracer(data)
     }
+}
+
+function emptyCompletions(): vscode.InlineCompletionList {
+    CompletionLogger.clear()
+    return { items: [] }
 }

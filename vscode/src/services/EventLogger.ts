@@ -51,7 +51,7 @@ export function logEvent(eventName: string, properties?: TelemetryEventPropertie
         return
     }
     try {
-        debug('EventLogger', eventName, properties)
+        debug('EventLogger', eventName, JSON.stringify(properties))
         eventLogger.log(eventName, globalAnonymousUserID, properties)
     } catch (error) {
         console.error(error)

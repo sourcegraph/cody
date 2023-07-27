@@ -97,15 +97,15 @@ export const logger: CompletionLogger = {
             }
             hasFinished = true
 
-            debug(
-                'CompletionLogger:onComplete',
-                JSON.stringify({
-                    type,
-                    status: 'success',
-                    duration: Date.now() - start,
-                }),
-                { verbose: { result, params } }
-            )
+            // debug(
+            //     'CompletionLogger:onComplete',
+            //     JSON.stringify({
+            //         type,
+            //         status: 'success',
+            //         duration: Date.now() - start,
+            //     }),
+            //     { verbose: { result, params } }
+            // )
         }
 
         function onEvents(events: Event[]): void {
