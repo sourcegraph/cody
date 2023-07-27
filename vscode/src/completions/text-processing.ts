@@ -132,10 +132,6 @@ function trimSpace(s: string): TrimmedString {
 export function trimUntilSuffix(insertion: string, prefix: string, suffix: string, languageId: string): string {
     const config = getLanguageConfig(languageId)
 
-    if (!config) {
-        return insertion
-    }
-
     insertion = insertion.trimEnd()
 
     const firstNonEmptySuffixLine = getFirstNonEmptyLine(suffix)
@@ -169,7 +165,7 @@ export function trimUntilSuffix(insertion: string, prefix: string, suffix: strin
 
         if (
             hasEmptyCompletionLine &&
-            config.blockEnd &&
+            config?.blockEnd &&
             line.trim().startsWith(config.blockEnd) &&
             startIndent === lineIndentation &&
             insertionLines.length === 1
