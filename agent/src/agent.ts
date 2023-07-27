@@ -1,3 +1,5 @@
+import { URI } from 'vscode-uri'
+
 import { Client, createClient } from '@sourcegraph/cody-shared/src/chat/client'
 import { registeredRecipes } from '@sourcegraph/cody-shared/src/chat/recipes/agent-recipes'
 import { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/nodeClient'
@@ -8,7 +10,7 @@ import { ConnectionConfiguration, TextDocument } from './protocol'
 
 export class Agent extends MessageHandler {
     private client: Promise<Client | null> = Promise.resolve(null)
-    public workspaceRootPath: string | null = null
+    public workspaceRootUri: URI | null = null
     public activeDocumentFilePath: string | null = null
     public documents: Map<string, TextDocument> = new Map()
 
@@ -23,9 +25,9 @@ export class Agent extends MessageHandler {
 
         this.registerRequest('initialize', async client => {
             process.stderr.write(
-                `Cody Agent: handshake with client '${client.name}' (version '${client.version}') at workspace root path '${client.workspaceRootPath}'\n`
+                `Cody Agent: handshake with client '${client.name}' (version '${client.version}') at workspace root path '${client.workspaceRootUri}'\n`
             )
-            this.workspaceRootPath = client.workspaceRootPath
+            this.workspaceRootUri = URI.parse(client.workspaceRootUri || `file://${client.workspaceRootPath}`)
             if (client.connectionConfiguration) {
                 this.setClient(client.connectionConfiguration)
             }

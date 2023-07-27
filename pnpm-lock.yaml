@@ -113,6 +113,9 @@ importers:
       '@sourcegraph/cody-shared':
         specifier: workspace:*
         version: link:../lib/shared
+      vscode-uri:
+        specifier: ^3.0.7
+        version: 3.0.7
     devDependencies:
       pkg:
         specifier: ^5.8.1
@@ -230,6 +233,9 @@ importers:
       marked:
         specifier: ^4.0.16
         version: 4.0.16
+      vscode-uri:
+        specifier: ^3.0.7
+        version: 3.0.7
       x2js:
         specifier: ^3.4.4
         version: 3.4.4

@@ -82,7 +82,11 @@ export type Notifications = {
 export interface ClientInfo {
     name: string
     version: string
+    workspaceRootUri: string
+
+    /** @deprecated Use `workspaceRootUri` instead. */
     workspaceRootPath: string
+
     connectionConfiguration?: ConnectionConfiguration
     capabilities?: ClientCapabilities
 }
