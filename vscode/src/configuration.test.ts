@@ -31,7 +31,7 @@ describe('getConfiguration', () => {
             autocompleteAdvancedAccessToken: null,
             autocompleteAdvancedCache: true,
             autocompleteAdvancedEmbeddings: true,
-            autocompleteExperimentalTriggerMoreEagerly: false,
+            autocompleteExperimentalTriggerMoreEagerly: true,
             autocompleteExperimentalCompleteSuggestWidgetSelection: false,
         })
     })
