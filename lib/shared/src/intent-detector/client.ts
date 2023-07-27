@@ -98,6 +98,7 @@ Function Description: ${description}
 
         const responseClassification = result.completion.match(/<classification>(.*?)<\/classification>/)?.[1]
 
+        console.log('LLM CLASSIFICATION', responseClassification)
         if (!responseClassification) {
             return fallback
         }

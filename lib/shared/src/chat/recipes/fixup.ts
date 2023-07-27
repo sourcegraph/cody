@@ -5,16 +5,11 @@ import { truncateText, truncateTextStart } from '../../prompt/truncation'
 import { BufferedBotResponseSubscriber } from '../bot-response-multiplexer'
 import { Interaction } from '../transcript/interaction'
 
-import { contentSanitizer, getContextMessagesFromSelection, numResults } from './helpers'
+import { contentSanitizer, getContextMessagesFromSelection } from './helpers'
 import { Recipe, RecipeContext, RecipeID } from './recipe'
 
-type FixupIntent = 'add' | 'edit' | 'fix' | 'document' | 'test'
+type FixupIntent = 'edit' | 'fix' | 'document'
 const FixupIntentClassification: IntentClassificationOption<FixupIntent>[] = [
-    {
-        id: 'add',
-        description: 'Add new code to complement the selected code',
-        examplePrompts: ['Add a new function', 'Add a new class'],
-    },
     {
         id: 'edit',
         description: 'Edit the selected code',
@@ -30,19 +25,12 @@ const FixupIntentClassification: IntentClassificationOption<FixupIntent>[] = [
         description: 'Generate documentation for the selected code.',
         examplePrompts: ['Add a docstring for this function', 'Write comments to explain this code'],
     },
-    {
-        id: 'test',
-        description: 'Generate tests for the selected code',
-        examplePrompts: ['Write a test for this function', 'Add a test for this code'],
-    },
 ]
 
 const PromptIntentInstruction: Record<FixupIntent, string> = {
-    add: 'The user wants you to add new code to the selected code by following their instructions.',
     edit: 'The user wants you to replace code inside the selected code by following their instructions.',
     fix: 'The user wants you to correct a problem in the selected code by following their instructions.',
     document: 'The user wants you to add documentation or comments to the selected code.',
-    test: 'The user wants you to generate a test or multiple tests for the selected code.',
 }
 
 export class Fixup implements Recipe {
@@ -104,12 +92,11 @@ export class Fixup implements Recipe {
         let dynamicContext: Promise<ContextMessage[]>
         console.log('INLINE FIXUP INTENT', intent)
         switch (intent) {
-            case 'add':
             case 'edit':
-            case 'fix':
+            case 'fix': // TODO(umpox): For fixing code, can we extract warnings + errors from within the selection?
                 /**
                  * Fetch a small window of code context for the current selection.
-                 * Include preceding and following text as additional context
+                 * Include preceding and following text as additional context.
                  */
                 dynamicContext = getContextMessagesFromSelection(
                     selection.selectedText,
@@ -121,14 +108,13 @@ export class Fixup implements Recipe {
                 break
             case 'document':
                 /**
-                 * Fetch a small window of mixed code and text context for the current selection.
+                 * Fetch a small window of code context for the current selection.
                  * We do not include preceding and following text as they may not be relevant here.
                  */
-                dynamicContext = context.codebaseContext.getContextMessages(selection.selectedText, { numCodeResults: 2, numTextResults: 2 })
-                break
-            case 'test':
-                // TODO: Better retrieval of test context. E.g. test files, dependencies, etc.
-                dynamicContext = context.codebaseContext.getContextMessages(selection.selectedText, numResults)
+                dynamicContext = context.codebaseContext.getContextMessages(selection.selectedText, {
+                    numCodeResults: 2,
+                    numTextResults: 0,
+                })
                 break
         }
 
@@ -151,10 +137,10 @@ export class Fixup implements Recipe {
 
     // Prompt Templates
     public static readonly prompt = `
-    - You are an AI programming assistant who is an expert in rewriting code to meet given instructions.
-    - You should think step-by-step to plan your rewritten code before producing the final output.
-    - Unless you have reason to believe otherwise, you should assume that the user wants you to edit the code in their selection.
+    - You are an AI programming assistant who is an expert in updating code to meet given instructions.
+    - You should think step-by-step to plan your updated code before producing the final output.
     - You should ensure the rewritten code matches the indentation and whitespace of the code in the users' selection.
+    - Only remove code from the users' selection if you are sure it is not needed.
     - It is not acceptable to use Markdown in your response. You should not produce Markdown-formatted code blocks.
     - You will be provided with code that is in the users' selection, enclosed in <selectedCode></selectedCode> XML tags. You must use this code to help you plan your rewritten code.
     - You will be provided with instructions on how to modify this code, enclosed in <instructions></instructions> XML tags. You must follow these instructions carefully and to the letter.
@@ -167,7 +153,7 @@ export class Fixup implements Recipe {
     {selectedText}
     </selectedCode>
 
-    The user wants you to {intent}
+    {intent}
     Provide your generated code using the following instructions:
     <instructions>
     {humanInput}
