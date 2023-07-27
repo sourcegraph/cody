@@ -48,7 +48,7 @@ export async function start(context: vscode.ExtensionContext): Promise<vscode.Di
             ? new InMemorySecretStorage()
             : new VSCodeSecretStorage(context.secrets)
     const localStorage = new LocalStorage(context.globalState)
-    const rgPath = await getRgPath(context.extensionPath)
+    const rgPath = await getRgPath()
 
     const disposables: vscode.Disposable[] = []
 
