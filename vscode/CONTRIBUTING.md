@@ -10,7 +10,7 @@ Tip: Enable `cody.debug.enable` and `cody.debug.verbose` in VS Code settings dur
 ## File structure
 
 - `src`: source code of the components for the extension host
-- `webviews`: source code of the extension UI (webviews), build with Vite and rollup.js using the `vite.config.ts` file at directory root
+- `webviews`: source code of the extension sidebar webviews, built with Vite
 - `test/integration`: code for integration tests
 - `test/e2e`: code for playwright UI tests
 - `dist`: build outputs from both webpack and vite
