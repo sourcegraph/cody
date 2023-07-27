@@ -159,15 +159,14 @@ const register = async (
         contextProvider.configurationChangeEvent.event(async () => {
             const newConfig = await getFullConfig(secretStorage, localStorage)
             externalServicesOnDidConfigurationChange(newConfig)
-            createOrUpdateEventLogger(newConfig, localStorage).catch(error => console.error(error))
+            await createOrUpdateEventLogger(newConfig, localStorage)
         })
     )
 
     const executeRecipeInSidebar = async (recipe: RecipeID, openChatView = true): Promise<void> => {
         if (openChatView) {
-            sidebarChatProvider.showTab('chat')
+            await sidebarChatProvider.setWebviewView('chat')
         }
-
         await sidebarChatProvider.executeRecipe(recipe, '')
     }
 
@@ -216,8 +215,7 @@ const register = async (
             // The inline chat is already saved in history, we just need to tell the sidebar chat to restore it
             await sidebarChatProvider.restoreSession(inlineChatProvider.currentChatID)
             // Ensure that the sidebar view is open if not already
-            sidebarChatProvider.setWebviewView('chat')
-            await vscode.commands.executeCommand('cody.chat.focus')
+            await sidebarChatProvider.setWebviewView('chat')
             // Remove the inline chat
             inlineChatManager.removeProviderForThread(thread)
         }),
@@ -226,11 +224,9 @@ const register = async (
         ),
         // Tests
         // Access token - this is only used in configuration tests
-        vscode.commands.registerCommand('cody.test.token', async (args: any[]) => {
-            if (args?.length && (args[0] as string)) {
-                await secretStorage.store(CODY_ACCESS_TOKEN_SECRET, args[0])
-            }
-        }),
+        vscode.commands.registerCommand('cody.test.token', async token =>
+            secretStorage.store(CODY_ACCESS_TOKEN_SECRET, token)
+        ),
         // Auth
         vscode.commands.registerCommand('cody.auth.signin', () => authProvider.signinMenu()),
         vscode.commands.registerCommand('cody.auth.signout', () => authProvider.signoutMenu()),
@@ -238,20 +234,20 @@ const register = async (
         // Commands
         vscode.commands.registerCommand('cody.interactive.clear', async () => {
             await sidebarChatProvider.clearAndRestartSession()
-            sidebarChatProvider.setWebviewView('chat')
+            await sidebarChatProvider.setWebviewView('chat')
         }),
         vscode.commands.registerCommand('cody.focus', () => vscode.commands.executeCommand('cody.chat.focus')),
         vscode.commands.registerCommand('cody.settings.extension', () =>
             vscode.commands.executeCommand('workbench.action.openSettings', { query: '@ext:sourcegraph.cody-ai' })
         ),
-        vscode.commands.registerCommand('cody.history', () => sidebarChatProvider.setWebviewView('history')),
+        vscode.commands.registerCommand('cody.history', async () => sidebarChatProvider.setWebviewView('history')),
         vscode.commands.registerCommand('cody.history.clear', async () => {
             await sidebarChatProvider.clearHistory()
         }),
         // Recipes
         vscode.commands.registerCommand('cody.customRecipes.exec', async title => {
             if (!sidebarChatProvider.isCustomRecipeAction(title)) {
-                sidebarChatProvider.showTab('chat')
+                await sidebarChatProvider.setWebviewView('chat')
             }
             await sidebarChatProvider.executeCustomRecipe(title)
         }),
