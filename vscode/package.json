@@ -2,7 +2,7 @@
   "name": "cody-ai",
   "private": true,
   "displayName": "Cody AI",
-  "version": "0.6.1",
+  "version": "0.6.3",
   "publisher": "sourcegraph",
   "license": "Apache-2.0",
   "icon": "resources/cody.png",
@@ -292,12 +292,6 @@
         "title": "Find Code Smells"
       },
       {
-        "command": "cody.settings.user",
-        "category": "Cody",
-        "title": "User Settings",
-        "icon": "$(account)"
-      },
-      {
         "command": "cody.auth.signout",
         "category": "Cody",
         "title": "Sign Out…",
@@ -332,14 +326,22 @@
         "category": "Cody",
         "title": "Chat History",
         "group": "Cody",
-        "icon": "$(list-unordered)"
+        "icon": "$(history)"
       },
       {
         "command": "cody.comment.add",
         "title": "Ask Cody",
         "category": "Cody Inline Chat",
         "when": "cody.activated && config.cody.inlineChat.enabled",
-        "enablement": "!commentIsEmpty"
+        "enablement": "!commentIsEmpty && !cody.inline.reply.pending"
+      },
+      {
+        "command": "cody.comment.stop",
+        "title": "Stop generating",
+        "category": "Cody Inline Chat",
+        "when": "cody.activated && config.cody.inlineChat.enabled",
+        "enablement": "!commentThreadIsEmpty",
+        "icon": "$(debug-stop)"
       },
       {
         "command": "cody.comment.delete",
@@ -350,12 +352,12 @@
         "icon": "$(trash)"
       },
       {
-        "command": "cody.comment.load",
-        "title": "Loading",
+        "command": "cody.comment.open-in-sidebar",
+        "title": "Open this chat in the sidebar",
         "category": "Cody Inline Chat",
         "when": "cody.activated && config.cody.inlineChat.enabled",
         "enablement": "!commentThreadIsEmpty",
-        "icon": "$(sync~spin)"
+        "icon": "$(comment-discussion)"
       },
       {
         "command": "cody.comment.collapse-all",
@@ -434,10 +436,16 @@
       {
         "command": "cody.customRecipes.list",
         "category": "Cody",
-        "title": "Custom Recipes (Internal Experimental)",
+        "title": "Custom Recipes (Experimental)",
         "when": "cody.activated",
         "enablement": "config.cody.experimental.customRecipes",
         "icon": "$(bookmark)"
+      },
+      {
+        "command": "cody.autocomplete.openTraceView",
+        "category": "Cody",
+        "title": "Open Autocomplete Trace View",
+        "when": "cody.activated && config.cody.autocomplete && config.cody.debug.enable && editorHasFocus && !editorReadonly"
       }
     ],
     "keybindings": [
@@ -529,10 +537,6 @@
           "when": "!cody.activated"
         },
         {
-          "command": "cody.settings.user",
-          "when": "cody.activated && cody.test.inProgress"
-        },
-        {
           "command": "cody.comment.add",
           "when": "false"
         },
@@ -541,7 +545,11 @@
           "when": "false"
         },
         {
-          "command": "cody.comment.load",
+          "command": "cody.comment.stop",
+          "when": "false"
+        },
+        {
+          "command": "cody.comment.open-in-sidebar",
           "when": "false"
         },
         {
@@ -665,11 +673,6 @@
           "group": "9_cody@0"
         },
         {
-          "command": "cody.settings.user",
-          "when": "view == cody.chat && cody.activated && cody.test.inProgress",
-          "group": "navigation@3"
-        },
-        {
           "command": "cody.settings.extension",
           "when": "view == cody.chat",
           "group": "8_cody@1"
@@ -712,14 +715,21 @@
           "when": "cody.activated && commentController =~ /^cody-inline/ && cody.replied && !commentThreadIsEmpty && config.cody.inlineChat.enabled"
         },
         {
-          "command": "cody.comment.load",
+          "command": "cody.comment.open-in-sidebar",
           "group": "inline@2",
-          "when": "cody.activated && commentController =~ /^cody-inline/ && cody.reply.pending && config.cody.inlineChat.enabled"
+          "when": "cody.activated && commentController =~ /^cody-inline/ && cody.replied && config.cody.inlineChat.enabled"
         },
         {
           "command": "cody.comment.collapse-all",
           "group": "inline@3",
           "when": "cody.activated && commentController =~ /^cody-inline/ && config.cody.inlineChat.enabled"
+        }
+      ],
+      "comments/comment/title": [
+        {
+          "command": "cody.comment.stop",
+          "group": "inline@1",
+          "when": "cody.activated && commentController =~ /^cody-inline/ && comment =~ /^cody-inline-(streaming|loading)/ && config.cody.inlineChat.enabled"
         }
       ],
       "view/item/context": [
@@ -819,7 +829,7 @@
         "cody.experimental.customRecipes": {
           "order": 9,
           "type": "boolean",
-          "markdownDescription": "[Internal Experimental] Create reusable recipes with customized prompts and context tailored to your workflow.",
+          "markdownDescription": "[Experimental] Create reusable recipes with customized prompts and context tailored to your workflow.",
           "default": false
         },
         "cody.debug.enable": {
@@ -886,7 +896,7 @@
         },
         "cody.autocomplete.experimental.triggerMoreEagerly": {
           "type": "boolean",
-          "default": false,
+          "default": true,
           "markdownDescription": "Trigger autocomplete when the cursor is at the end of a word (instead of waiting for a space or other non-word character). Share feedback at https://github.com/sourcegraph/cody/discussions/274."
         },
         "cody.autocomplete.experimental.completeSuggestWidgetSelection": {

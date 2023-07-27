@@ -9,9 +9,9 @@ import winkUtils from 'wink-nlp-utils'
 import { ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
 import { Editor } from '@sourcegraph/cody-shared/src/editor'
 import { ContextResult, KeywordContextFetcher } from '@sourcegraph/cody-shared/src/local-context'
+import { TelemetryService } from '@sourcegraph/cody-shared/src/telemetry'
 
 import { debug } from '../log'
-import { logEvent } from '../services/EventLogger'
 
 /**
  * Exclude files without extensions and hidden files (starts with '.')
@@ -92,7 +92,8 @@ export class LocalKeywordContextFetcher implements KeywordContextFetcher {
     constructor(
         private rgPath: string,
         private editor: Editor,
-        private chatClient: ChatClient
+        private chatClient: ChatClient,
+        private telemetryService: TelemetryService
     ) {}
 
     /**
@@ -128,7 +129,7 @@ export class LocalKeywordContextFetcher implements KeywordContextFetcher {
             })
         )
         const searchDuration = performance.now() - startTime
-        logEvent('CodyVSCodeExtension:keywordContext:searchDuration', searchDuration, searchDuration)
+        this.telemetryService.log('CodyVSCodeExtension:keywordContext:searchDuration', { searchDuration })
         debug('LocalKeywordContextFetcher:getContext', JSON.stringify({ searchDuration }))
 
         return messagePairs.reverse().flat()
@@ -152,7 +153,7 @@ export class LocalKeywordContextFetcher implements KeywordContextFetcher {
                     onComplete: () => {
                         resolve(responseText.split(/\s+/).filter(e => e.length > 0))
                     },
-                    onError: (message: string, statusCode?: number) => {
+                    onError: (message: string) => {
                         reject(new Error(message))
                     },
                 },

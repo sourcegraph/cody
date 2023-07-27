@@ -14,7 +14,7 @@ export interface ReferenceSnippet {
     content: string
 }
 
-interface GetContextOptions {
+export interface GetContextOptions {
     document: vscode.TextDocument
     history: History
     prefix: string
@@ -25,7 +25,7 @@ interface GetContextOptions {
     isEmbeddingsContextEnabled?: boolean
 }
 
-interface GetContextResult {
+export interface GetContextResult {
     context: ReferenceSnippet[]
     logSummary: {
         embeddings?: number

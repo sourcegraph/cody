@@ -1,5 +1,7 @@
 import { ComponentMeta, ComponentStoryObj } from '@storybook/react'
 
+import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/cody-shared/src/telemetry'
+
 import { AuthStatus, defaultAuthStatus, unauthenticatedStatus } from '../src/chat/protocol'
 
 import { Login } from './Login'
@@ -53,6 +55,7 @@ export const Simple: ComponentStoryObj<typeof Login> = {
                 authStatus={validAuthStatus}
                 isAppInstalled={false}
                 vscodeAPI={vscodeAPI}
+                telemetryService={NOOP_TELEMETRY_SERVICE}
                 onLoginRedirect={() => {}}
                 endpoint={endpoint}
                 appOS={supportedAppOS}
@@ -69,6 +72,7 @@ export const InvalidLogin: ComponentStoryObj<typeof Login> = {
                 authStatus={invalidAccessTokenAuthStatus}
                 isAppInstalled={false}
                 vscodeAPI={vscodeAPI}
+                telemetryService={NOOP_TELEMETRY_SERVICE}
                 onLoginRedirect={() => {}}
                 endpoint={endpoint}
                 appOS={supportedAppOS}
@@ -85,6 +89,7 @@ export const UnverifiedEmailLogin: ComponentStoryObj<typeof Login> = {
                 authStatus={requiresVerifiedEmailAuthStatus}
                 isAppInstalled={false}
                 vscodeAPI={vscodeAPI}
+                telemetryService={NOOP_TELEMETRY_SERVICE}
                 onLoginRedirect={() => {}}
                 endpoint={endpoint}
                 appOS={supportedAppOS}
@@ -101,6 +106,7 @@ export const LoginWithAppInstalled: ComponentStoryObj<typeof Login> = {
                 authStatus={validAuthStatus}
                 isAppInstalled={true}
                 vscodeAPI={vscodeAPI}
+                telemetryService={NOOP_TELEMETRY_SERVICE}
                 onLoginRedirect={() => {}}
                 endpoint={endpoint}
                 appOS={supportedAppOS}
@@ -117,6 +123,7 @@ export const UnsupportedAppOS: ComponentStoryObj<typeof Login> = {
                 authStatus={validAuthStatus}
                 isAppInstalled={false}
                 vscodeAPI={vscodeAPI}
+                telemetryService={NOOP_TELEMETRY_SERVICE}
                 onLoginRedirect={() => {}}
                 endpoint={endpoint}
                 appOS={unsupportedAppOS}

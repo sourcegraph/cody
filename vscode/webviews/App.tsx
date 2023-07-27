@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import './App.css'
 
@@ -18,8 +18,8 @@ import { Login } from './Login'
 import { NavBar, View } from './NavBar'
 import { Plugins } from './Plugins'
 import { Recipes } from './Recipes'
-import { Settings } from './Settings'
 import { UserHistory } from './UserHistory'
+import { createWebviewTelemetryService } from './utils/telemetry'
 import type { VSCodeWrapper } from './utils/VSCodeApi'
 
 export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vscodeAPI }) => {
@@ -118,14 +118,6 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
         }
     }, [view, vscodeAPI])
 
-    const onLogout = useCallback(() => {
-        setConfig(null)
-        setEndpoint(null)
-        setAuthStatus(defaultAuthStatus)
-        setView('login')
-        vscodeAPI.postMessage({ command: 'auth', type: 'signout' })
-    }, [vscodeAPI])
-
     const onLoginRedirect = useCallback(
         (uri: string) => {
             setConfig(null)
@@ -146,6 +138,8 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
         [enabledPlugins, vscodeAPI]
     )
 
+    const telemetryService = useMemo(() => createWebviewTelemetryService(vscodeAPI), [vscodeAPI])
+
     if (!view || !authStatus || !config) {
         return <LoadingPage />
     }
@@ -160,6 +154,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                     isAppInstalled={isAppInstalled}
                     isAppRunning={config?.isAppRunning}
                     vscodeAPI={vscodeAPI}
+                    telemetryService={telemetryService}
                     appOS={config?.os}
                     appArch={config?.arch}
                     callbackScheme={config?.uriScheme}
@@ -185,9 +180,6 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                         />
                     )}
                     {view === 'recipes' && endpoint && <Recipes vscodeAPI={vscodeAPI} myPrompts={myPrompts} />}
-                    {view === 'settings' && endpoint && (
-                        <Settings onLogout={onLogout} endpoint={endpoint} version={config?.extensionVersion} />
-                    )}
                     {view === 'chat' && (
                         <Chat
                             messageInProgress={messageInProgress}
@@ -203,6 +195,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                             suggestions={suggestions}
                             pluginsDevMode={Boolean(config?.pluginsDebugEnabled)}
                             setSuggestions={setSuggestions}
+                            telemetryService={telemetryService}
                         />
                     )}
                 </>

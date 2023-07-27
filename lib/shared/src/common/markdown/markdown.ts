@@ -58,6 +58,7 @@ export const renderMarkdown = (
         /** Strip off any HTML and return a plain text string, useful for previews */
         plainText?: boolean
         dompurifyConfig?: DOMPurifyConfig & { RETURN_DOM_FRAGMENT?: false; RETURN_DOM?: false }
+        noDomPurify?: boolean
 
         /**
          * Add target="_blank" and rel="noopener" to all <a> links that have a
@@ -113,7 +114,7 @@ export const renderMarkdown = (
         })
     }
 
-    const result = DOMPurify.sanitize(rendered, dompurifyConfig).trim()
+    const result = options.noDomPurify ? rendered : DOMPurify.sanitize(rendered, dompurifyConfig).trim()
 
     if (options.addTargetBlankToAllLinks) {
         // Because DOMPurify doesn't have a way to set hooks per individual call

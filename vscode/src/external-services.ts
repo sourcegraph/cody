@@ -10,6 +10,7 @@ import { SourcegraphIntentDetectorClient } from '@sourcegraph/cody-shared/src/in
 import { SourcegraphCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/client'
 import { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/nodeClient'
 import { SourcegraphGraphQLAPIClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
+import { TelemetryService } from '@sourcegraph/cody-shared/src/telemetry'
 import { isError } from '@sourcegraph/cody-shared/src/utils'
 
 import { FilenameContextFetcher } from './local-context/filename-context-fetcher'
@@ -35,8 +36,9 @@ type ExternalServicesConfiguration = Pick<
 
 export async function configureExternalServices(
     initialConfig: ExternalServicesConfiguration,
-    rgPath: string,
-    editor: Editor
+    rgPath: string | null,
+    editor: Editor,
+    telemetryService: TelemetryService
 ): Promise<ExternalServices> {
     const client = new SourcegraphGraphQLAPIClient(initialConfig)
     const completions = new SourcegraphNodeCompletionsClient(initialConfig, logger)
@@ -55,8 +57,8 @@ export async function configureExternalServices(
         initialConfig,
         initialConfig.codebase,
         embeddingsSearch,
-        new LocalKeywordContextFetcher(rgPath, editor, chatClient),
-        new FilenameContextFetcher(rgPath, editor, chatClient),
+        rgPath ? new LocalKeywordContextFetcher(rgPath, editor, chatClient, telemetryService) : null,
+        rgPath ? new FilenameContextFetcher(rgPath, editor, chatClient) : null,
         undefined,
         getRerankWithLog(chatClient)
     )

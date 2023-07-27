@@ -5,6 +5,7 @@ import classNames from 'classnames'
 
 import { ChatContextStatus } from '@sourcegraph/cody-shared/src/chat/context'
 import { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
+import { TelemetryService } from '@sourcegraph/cody-shared/src/telemetry'
 import {
     ChatButtonProps,
     Chat as ChatUI,
@@ -32,6 +33,7 @@ interface ChatboxProps {
     inputHistory: string[]
     setInputHistory: (history: string[]) => void
     vscodeAPI: VSCodeWrapper
+    telemetryService: TelemetryService
     suggestions?: string[]
     setSuggestions?: (suggestions: undefined | string[]) => void
     pluginsDevMode?: boolean
@@ -48,6 +50,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     inputHistory,
     setInputHistory,
     vscodeAPI,
+    telemetryService,
     suggestions,
     setSuggestions,
     pluginsDevMode,
@@ -76,9 +79,14 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
 
     const onFeedbackBtnClick = useCallback(
         (text: string) => {
-            vscodeAPI.postMessage({ command: 'event', event: 'feedback', value: text })
+            telemetryService.log(`CodyVSCodeExtension:codyFeedback:${text}`, {
+                value: text,
+                lastChatUsedEmbeddings: Boolean(
+                    transcript.at(-1)?.contextFiles?.some(file => file.source === 'embeddings')
+                ),
+            })
         },
-        [vscodeAPI]
+        [telemetryService, transcript]
     )
 
     const onCopyBtnClick = useCallback(
@@ -86,10 +94,13 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             if (isInsert) {
                 vscodeAPI.postMessage({ command: 'insert', text })
             }
-            const eventName = isInsert ? 'insert' : 'copy'
-            vscodeAPI.postMessage({ command: 'event', event: 'click', value: eventName + 'Button' })
+            const op = isInsert ? 'insert' : 'copy'
+            telemetryService.log(`CodyVSCodeExtension:${op}Button:clicked`, {
+                op,
+                textLength: text.length,
+            })
         },
-        [vscodeAPI]
+        [telemetryService, vscodeAPI]
     )
 
     const onChatButtonClick = useCallback(

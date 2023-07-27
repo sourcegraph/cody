@@ -59,8 +59,8 @@ export class MyPrompt implements Recipe {
             await vscode.window.showErrorMessage('Please enter a valid prompt for the recipe.')
             return null
         }
-        const commandOutput = await context.editor.controllers?.prompt.get('output')
-        const note = ' Refer to the command output and shared code snippets to answer my quesiton.'
+        const commandOutput = await context.editor.controllers?.prompt?.get('output')
+        const note = 'Refer to the command output, my selected code, and shared code snippets to answer my quesiton.'
         const truncatedText = truncateText(promptText + note, MAX_HUMAN_INPUT_TOKENS)
         // Add selection file name as display when available
         const displayText = selection?.fileName ? this.getHumanDisplayText(humanInput, selection?.fileName) : humanInput
@@ -94,7 +94,7 @@ export class MyPrompt implements Recipe {
         commandOutput?: string | null
     ): Promise<ContextMessage[]> {
         const contextMessages: ContextMessage[] = []
-        const contextConfig = await editor.controllers?.prompt.get('context')
+        const contextConfig = await editor.controllers?.prompt?.get('context')
         const isContextRequired = contextConfig
             ? (JSON.parse(contextConfig) as CodyPromptContext)
             : defaultCodyPromptContext
@@ -117,12 +117,12 @@ export class MyPrompt implements Recipe {
             // Select test files from the directory only if the prompt text includes 'test'
             const isTestRequest = text.includes('test')
             const currentDirContext = await MyPrompt.getCurrentDirContext(isTestRequest)
+            contextMessages.push(...currentDirContext)
             // Add package.json context if it's available for test requests
             if (isTestRequest) {
                 const packageJSONContextMessage = await MyPrompt.getPackageJsonContext(selection?.fileName)
-                currentDirContext.push(...packageJSONContextMessage)
+                contextMessages.push(...packageJSONContextMessage)
             }
-            contextMessages.push(...currentDirContext)
         }
         // Create context messages from a fsPath of a workspace directory
         if (isContextRequired.directoryPath?.length) {
@@ -147,7 +147,9 @@ export class MyPrompt implements Recipe {
             contextMessages.push(...MyPrompt.getTerminalOutputContext(commandOutput))
         }
         // Return the last n context messages in case there are too many
-        return contextMessages.slice(0 - NUM_CODE_RESULTS - NUM_TEXT_RESULTS)
+        // Make sure numResults is an even number and times 2 again to get the last n pairs
+        const maxResults = Math.floor((NUM_CODE_RESULTS + NUM_TEXT_RESULTS) / 2) * 2
+        return contextMessages.slice(-maxResults * 2)
     }
 
     // Get context from current editor open tabs
@@ -194,9 +196,11 @@ export class MyPrompt implements Recipe {
         const fileUri = vscode.Uri.file(filePath)
         const fileName = vscode.workspace.asRelativePath(filePath)
         try {
-            const content = await vscode.workspace.fs.readFile(fileUri)
-            const truncatedContent = truncateText(content.toString(), MAX_CURRENT_FILE_TOKENS)
-            return getContextMessageWithResponse(populateCodeContextTemplate(toJSON(truncatedContent), fileName), {
+            const bytes = await vscode.workspace.fs.readFile(fileUri)
+            const decoded = new TextDecoder('utf-8').decode(bytes)
+            const truncatedContent = truncateText(decoded, MAX_CURRENT_FILE_TOKENS)
+            // Make sure the truncatedContent is in JSON format
+            return getContextMessageWithResponse(populateCodeContextTemplate(truncatedContent, fileName), {
                 fileName,
             })
         } catch (error) {
@@ -230,23 +234,29 @@ export class MyPrompt implements Recipe {
             // directories, non-test files, and dot files
             // then returns the first 10 results
             if (testOnly) {
+                const contextMessages: ContextMessage[] = []
                 const filesInDir = (await vscode.workspace.fs.readDirectory(dirUri)).filter(
                     file => file[1] === 1 && !file[0].startsWith('.') && (testOnly ? file[0].includes('test') : true)
                 )
-                // If there are no test files in the directory, use first 10 files instead
-                if (filesInDir.length > 0) {
-                    return await populateVscodeDirContextMessage(dirUri, filesInDir.slice(0, 10))
+                contextMessages.push(...(await populateVscodeDirContextMessage(dirUri, filesInDir)))
+                if (filesInDir.length > 1) {
+                    return contextMessages
                 }
                 const parentDirName = getParentDirName(dirPath)
                 const fileExt = currentFileName ? getFileExtension(currentFileName) : '*'
+                // Search for files in directory with test(s) in the name
+                const testDirFiles = await vscode.workspace.findFiles(`**/test*/**/*.${fileExt}`, undefined, 2)
+                contextMessages.push(...(await getContextMessageFromFiles(testDirFiles)))
                 // Search for test files from the parent directory
                 const testFile = await vscode.workspace.findFiles(
-                    `**/${parentDirName}/**/*test.${fileExt}}`,
-                    '**/node_modules/**',
-                    5
+                    `**/${parentDirName}/**/*test*.${fileExt}}`,
+                    undefined,
+                    2
                 )
-                if (testFile.length) {
-                    return await MyPrompt.getFilePathContext(testFile[0].fsPath)
+                contextMessages.push(...(await getContextMessageFromFiles(testFile)))
+                // Return the context messages if there are any
+                if (contextMessages.length) {
+                    return contextMessages
                 }
             }
             // Get first 10 files in the directory
@@ -272,18 +282,16 @@ export class MyPrompt implements Recipe {
         try {
             const packageJsonUri = packageJsonPath[0]
             const packageJsonContent = await vscode.workspace.fs.readFile(packageJsonUri)
+            const decoded = new TextDecoder('utf-8').decode(packageJsonContent)
             // Turn the content into a json and get the scripts object only
-            const packageJson = JSON.parse(packageJsonContent.toString()) as Record<string, unknown>
+            const packageJson = JSON.parse(decoded) as Record<string, unknown>
             const scripts = packageJson.scripts
             const devDependencies = packageJson.devDependencies
             // stringify the scripts object with devDependencies
             const context = JSON.stringify({ scripts, devDependencies })
-            const truncatedContent = truncateText(
-                context.toString() || packageJsonContent.toString(),
-                MAX_CURRENT_FILE_TOKENS
-            )
+            const truncatedContent = truncateText(context.toString() || decoded.toString(), MAX_CURRENT_FILE_TOKENS)
             const fileName = vscode.workspace.asRelativePath(packageJsonUri.fsPath)
-            return getContextMessageWithResponse(populateCodeContextTemplate(toJSON(truncatedContent), fileName), {
+            return getContextMessageWithResponse(populateCodeContextTemplate(truncatedContent, fileName), {
                 fileName,
             })
         } catch {
@@ -316,8 +324,9 @@ async function populateVscodeDirContextMessage(
             continue
         }
         try {
-            const fileContent = await vscode.workspace.openTextDocument(fileUri)
-            const truncatedContent = truncateText(fileContent.getText(), MAX_CURRENT_FILE_TOKENS)
+            const fileContent = await vscode.workspace.fs.readFile(fileUri)
+            const decoded = new TextDecoder('utf-8').decode(fileContent)
+            const truncatedContent = truncateText(decoded, MAX_CURRENT_FILE_TOKENS)
             const contextMessage = getContextMessageWithResponse(
                 populateCurrentEditorContextTemplate(toJSON(truncatedContent), fileName),
                 { fileName }
@@ -333,7 +342,7 @@ async function populateVscodeDirContextMessage(
 // Clean up the string to be used as value in JSON format
 // Escape double quotes and backslashes and forward slashes
 function toJSON(context: string): string {
-    const escaped = context.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\//g, '\\/')
+    const escaped = context.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\//g, '\\/').replace('/\n//', '\n')
     return JSON.stringify(escaped)
 }
 
@@ -352,3 +361,12 @@ const getFirstNFilesFromDir = async (dirUri: vscode.Uri, n: number): Promise<[st
     (await vscode.workspace.fs.readDirectory(dirUri))
         .filter(file => file[1] === 1 && !file[0].startsWith('.'))
         .slice(0, n)
+
+async function getContextMessageFromFiles(files: vscode.Uri[]): Promise<ContextMessage[]> {
+    const contextMessages: ContextMessage[] = []
+    for (const file of files) {
+        const contextMessage = await MyPrompt.getFilePathContext(file.fsPath)
+        contextMessages.push(...contextMessage)
+    }
+    return contextMessages
+}

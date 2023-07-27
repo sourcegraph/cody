@@ -5,7 +5,6 @@ import * as vscode from 'vscode'
  */
 export class TextDocument implements vscode.TextDocument {
     public isUntitled = false
-    public languageId = 'typescript'
     public version = 1
     public isDirty = false
     public isClosed = false
@@ -14,6 +13,7 @@ export class TextDocument implements vscode.TextDocument {
 
     constructor(
         public readonly uri: vscode.Uri,
+        public readonly languageId: string,
         text: string
     ) {
         this.text = text.replace(/\r\n/gm, '\n') // normalize end of line
@@ -81,9 +81,10 @@ export class TextDocument implements vscode.TextDocument {
             return this.text
         }
 
-        const offset = this.offsetAt(range.start)
-        const length = this.offsetAt(range.end) - offset
-        return this.text.slice(offset, length)
+        const start = this.offsetAt(range.start)
+        const end = this.offsetAt(range.end)
+
+        return this.text.slice(start, end)
     }
     public getWordRangeAtPosition(position: vscode.Position, regex?: RegExp): vscode.Range {
         throw new Error('Method not implemented.')
