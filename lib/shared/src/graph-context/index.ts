@@ -15,19 +15,20 @@ export abstract class GraphContextFetcher {
     // TODO - move into editor interface
     public abstract getGitInfo(workspaceRoot: string): Promise<GitInfo>
 
-    constructor(private graphqlClient: SourcegraphGraphQLAPIClient, private editor: Editor) {}
+    constructor(
+        private graphqlClient: SourcegraphGraphQLAPIClient,
+        private editor: Editor
+    ) {}
 
     public async getContext(): Promise<PreciseContextResult[]> {
-        console.log('🚀 ~ file: index.ts:39 ~ GraphContextFetcher ~ getContext ~ this.editor:', this.editor)
         const editorContext = this.editor.getActiveTextEditor()
         if (!editorContext) {
             return []
         }
-        const workspaceRoot = this.editor.getWorkspaceRootPath() || ""
+        const workspaceRoot = this.editor.getWorkspaceRootPath() || ''
         const { repo, commitID: cid } = await this.getGitInfo(workspaceRoot)
-        let repository = editorContext.repoName ?? repo
-        let commitID = editorContext.revision || cid || 'HEAD'
-        console.log("🚀 ~ file: index.ts:34 ~ GraphContextFetcher ~ getContext ~ repository, commitID:", repository, commitID)
+        const repository = editorContext.repoName ?? repo
+        const commitID = editorContext.revision || cid || 'HEAD'
         const activeFile = pathRelativeToRoot(editorContext.filePath, workspaceRoot)
 
         const response = await this.graphqlClient.getPreciseContext(
@@ -37,14 +38,7 @@ export abstract class GraphContextFetcher {
             editorContext.content,
             getActiveSelectionRange(editorContext.selection)
         )
-        console.log("🚀 ~ file: index.ts:50 ~ GraphContextFetcher ~ getContext ~ repository",
-            commitID,
-            activeFile,
-            editorContext.content,
-            getActiveSelectionRange(editorContext.selection),
-            repository,
-        )
-        console.log('🚀 ~ file: index.ts:40 ~ GraphContextFetcher ~ getContext ~ response:', response)
+
         if (isErrorLike(response)) {
             return []
         }
