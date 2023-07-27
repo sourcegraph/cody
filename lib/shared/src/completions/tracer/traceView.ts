@@ -3,7 +3,7 @@ import type * as vscode from 'vscode'
 import { CodyCompletionItemProvider } from '..'
 import { isDefined } from '../../common'
 import { renderMarkdown } from '../../common/markdown'
-import { ide } from '../ide'
+import { ide } from '../../ide'
 
 import { ProvideInlineCompletionsItemTraceData } from '.'
 

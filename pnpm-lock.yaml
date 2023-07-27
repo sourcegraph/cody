@@ -221,6 +221,9 @@ importers:
       date-fns:
         specifier: ^2.30.0
         version: 2.30.0
+      detect-indent:
+        specifier: 7.0.1
+        version: 7.0.1
       dompurify:
         specifier: ^3.0.4
         version: 3.0.4
