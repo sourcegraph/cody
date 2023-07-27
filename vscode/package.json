@@ -793,11 +793,6 @@
             }
           ]
         },
-        "cody.experimental.suggestions": {
-          "type": "boolean",
-          "default": false,
-          "deprecationMessage": "Use `cody.autocomplete` instead"
-        },
         "cody.autocomplete.enabled": {
           "order": 5,
           "type": "boolean",
@@ -844,46 +839,23 @@
           "type": "string",
           "markdownDescription": "Regular expression to filter debug output. If empty, defaults to '.*', which prints all messages."
         },
-        "cody.completions.advanced.provider": {
-          "type": "string",
-          "default": "anthropic",
-          "deprecationMessage": "Use `cody.autocomplete.advanced.provider` instead"
-        },
         "cody.autocomplete.advanced.provider": {
           "type": "string",
           "default": "anthropic",
           "markdownDescription": "Overwrite the provider used for code autocomplete. Only supported values at the moment are `anthropic` (default), `unstable-codegen`, or `unstable-huggingface`."
         },
-        "cody.completions.advanced.serverEndpoint": {
-          "type": "string",
-          "deprecationMessage": "Use `cody.autocomplete.advanced.serverEndpoint` instead"
-        },
         "cody.autocomplete.advanced.serverEndpoint": {
           "type": "string",
           "markdownDescription": "Overwrite the server endpoint used for code autocomplete. This is only supported with the `unstable-codegen` or `unstable-huggingface` provider."
-        },
-        "cody.completions.advanced.accessToken": {
-          "type": "string",
-          "deprecationMessage": "Use `cody.autocomplete.advanced.accessToken` instead"
         },
         "cody.autocomplete.advanced.accessToken": {
           "type": "string",
           "markdownDescription": "Overwrite the access token used for code autocomplete. This is only supported with the `unstable-huggingface` provider."
         },
-        "cody.completions.advanced.cache": {
-          "type": "boolean",
-          "default": true,
-          "deprecationMessage": "Use `cody.autocomplete.advanced.cache` instead"
-        },
         "cody.autocomplete.advanced.cache": {
           "type": "boolean",
           "default": true,
           "markdownDescription": "Enables caching of code autocomplete."
-        },
-        "cody.completions.advanced.embeddings": {
-          "type": "boolean",
-          "default": true,
-          "deprecationMessage": "Use `cody.autocomplete.advanced.embeddings` instead"
         },
         "cody.autocomplete.advanced.embeddings": {
           "order": 99,
