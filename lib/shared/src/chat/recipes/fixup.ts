@@ -31,7 +31,8 @@ const FixupIntentClassification: IntentClassificationOption<FixupIntent>[] = [
 const PromptIntentInstruction: Record<FixupIntent, string> = {
     edit: 'The user wants you to replace code inside the selected code by following their instructions.',
     fix: 'The user wants you to correct a problem in the selected code by following their instructions.',
-    document: 'The user wants you to add documentation or comments to the selected code.',
+    document:
+        'The user wants you to add documentation or comments to the selected code by following their instructions.',
 }
 
 export class Fixup implements Recipe {
@@ -53,22 +54,20 @@ export class Fixup implements Recipe {
             return null
         }
 
+        const truncatedPrecedingText = truncateTextStart(selection.precedingText, quarterFileContext)
+        const truncatedFollowingText = truncateText(selection.followingText, quarterFileContext)
         const intent = await context.intentDetector.classifyIntentFromOptions(
             humanChatInput,
             FixupIntentClassification,
             'fix'
         )
-        const truncatedPrecedingText = truncateTextStart(selection.precedingText, quarterFileContext)
-        const truncatedFollowingText = truncateText(selection.followingText, quarterFileContext)
 
         // Reconstruct Cody's prompt using user's context
         // Replace placeholders in reverse order to avoid collisions if a placeholder occurs in the input
         // TODO: Move prompt suffix from recipe to chat view. It has other subscribers.
         const promptText = Fixup.prompt
             .replace('{humanInput}', truncateText(humanChatInput, MAX_HUMAN_INPUT_TOKENS))
-            .replace('{truncateTextStart}', truncatedPrecedingText)
             .replace('{selectedText}', selection.selectedText)
-            .replace('{truncateFollowingText}', truncatedFollowingText)
             .replace('{fileName}', selection.fileName)
             .replace('{intent}', PromptIntentInstruction[intent])
 
@@ -91,7 +90,6 @@ export class Fixup implements Recipe {
         )
 
         let dynamicContext: Promise<ContextMessage[]>
-        console.log('INLINE FIXUP INTENT', intent)
         switch (intent) {
             case 'edit':
             case 'fix': // TODO(umpox): For fixing code, can we extract warnings + errors from within the selection?
@@ -144,11 +142,11 @@ export class Fixup implements Recipe {
     public static readonly prompt = `
     - You are an AI programming assistant who is an expert in updating code to meet given instructions.
     - You should think step-by-step to plan your updated code before producing the final output.
-    - You should ensure the rewritten code matches the indentation and whitespace of the code in the users' selection.
+    - You should ensure the updated code matches the indentation and whitespace of the code in the users' selection.
     - Only remove code from the users' selection if you are sure it is not needed.
     - It is not acceptable to use Markdown in your response. You should not produce Markdown-formatted code blocks.
-    - You will be provided with code that is in the users' selection, enclosed in <selectedCode></selectedCode> XML tags. You must use this code to help you plan your rewritten code.
-    - You will be provided with instructions on how to modify this code, enclosed in <instructions></instructions> XML tags. You must follow these instructions carefully and to the letter.
+    - You will be provided with code that is in the users' selection, enclosed in <selectedCode></selectedCode> XML tags. You must use this code to help you plan your updated code.
+    - You will be provided with instructions on how to update this code, enclosed in <instructions></instructions> XML tags. You must follow these instructions carefully and to the letter.
     - Enclose your response in <selection></selection> XML tags. Do not provide anything else.
 
     This is part of the file {fileName}.
