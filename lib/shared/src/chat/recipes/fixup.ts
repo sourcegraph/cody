@@ -1,6 +1,7 @@
-import { ContextMessage } from '../../codebase-context/messages'
+import { ContextMessage, getContextMessageWithResponse } from '../../codebase-context/messages'
 import { IntentClassificationOption } from '../../intent-detector'
 import { MAX_CURRENT_FILE_TOKENS, MAX_HUMAN_INPUT_TOKENS } from '../../prompt/constants'
+import { populateCodeContextTemplate } from '../../prompt/templates'
 import { truncateText, truncateTextStart } from '../../prompt/truncation'
 import { BufferedBotResponseSubscriber } from '../bot-response-multiplexer'
 import { Interaction } from '../transcript/interaction'
@@ -96,7 +97,7 @@ export class Fixup implements Recipe {
             case 'fix': // TODO(umpox): For fixing code, can we extract warnings + errors from within the selection?
                 /**
                  * Fetch a small window of code context for the current selection.
-                 * Include preceding and following text as additional context.
+                 * Includes preceding and following text as additional context.
                  */
                 dynamicContext = getContextMessagesFromSelection(
                     selection.selectedText,
@@ -108,13 +109,17 @@ export class Fixup implements Recipe {
                 break
             case 'document':
                 /**
-                 * Fetch a small window of code context for the current selection.
-                 * We do not include preceding and following text as they may not be relevant here.
+                 * Includes code context from the current file only.
+                 * Including context from other files is unlikely to be useful, and seems to reduce response quality.
                  */
-                dynamicContext = context.codebaseContext.getContextMessages(selection.selectedText, {
-                    numCodeResults: 2,
-                    numTextResults: 0,
-                })
+                dynamicContext = Promise.resolve(
+                    [truncatedPrecedingText, truncatedFollowingText].flatMap(text =>
+                        getContextMessageWithResponse(
+                            populateCodeContextTemplate(text, selection.fileName, selection.repoName),
+                            selection
+                        )
+                    )
+                )
                 break
         }
 
