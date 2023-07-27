@@ -48,7 +48,7 @@ export class InlineController implements VsCodeInlineController {
 
     private currentTaskId = ''
     // Workspace State
-    private workspacePath = vscode.workspace.workspaceFolders?.[0].uri
+    private workspacePath = vscode.workspace.workspaceFolders?.[0]?.uri
     public selection: ActiveTextEditorSelection | null = null
     public selectionRange = initRange
     // Inline Tasks States
