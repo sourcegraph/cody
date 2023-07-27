@@ -3,6 +3,7 @@ import { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/s
 
 import { createProviderConfig as createAnthropicProviderConfig } from './anthropic'
 import { ProviderConfig } from './provider'
+import { createProviderConfig as createUnstableAzureOpenAiProviderConfig } from './unstable-azure-openai'
 import { createProviderConfig as createUnstableCodeGenProviderConfig } from './unstable-codegen'
 import { createProviderConfig as createUnstableHuggingFaceProviderConfig } from './unstable-huggingface'
 
@@ -40,6 +41,26 @@ export function createProviderConfig(
             )
             break
         }
+        case 'unstable-azure-openai':
+            if (config.autocompleteAdvancedServerEndpoint === null) {
+                onError(
+                    'Provider `unstable-azure-openai` can not be used without configuring `cody.autocomplete.advanced.serverEndpoint`. Falling back to `anthropic`.'
+                )
+                break
+            }
+
+            if (config.autocompleteAdvancedAccessToken === null) {
+                onError(
+                    'Provider `unstable-azure-openai` can not be used without configuring `cody.autocomplete.advanced.accessToken`. Falling back to `anthropic`.'
+                )
+                break
+            }
+
+            providerConfig = createUnstableAzureOpenAiProviderConfig({
+                serverEndpoint: config.autocompleteAdvancedServerEndpoint,
+                accessToken: config.autocompleteAdvancedAccessToken,
+            })
+            break
     }
     if (providerConfig) {
         return providerConfig

@@ -856,15 +856,15 @@
         "cody.autocomplete.advanced.provider": {
           "type": "string",
           "default": "anthropic",
-          "markdownDescription": "Overwrite the provider used for code autocomplete. Only supported values at the moment are `anthropic` (default), `unstable-codegen`, or `unstable-huggingface`."
+          "markdownDescription": "Overwrite the provider used for code autocomplete. Only supported values at the moment are `anthropic` (default), `unstable-codegen`, `unstable-huggingface`, or `unstable-azure-openai`."
         },
         "cody.autocomplete.advanced.serverEndpoint": {
           "type": "string",
-          "markdownDescription": "Overwrite the server endpoint used for code autocomplete. This is only supported with the `unstable-codegen` or `unstable-huggingface` provider."
+          "markdownDescription": "Overwrite the server endpoint used for code autocomplete. This is only supported with the `unstable-codegen`, `unstable-huggingface`, or `unstable-azure-openai` provider."
         },
         "cody.autocomplete.advanced.accessToken": {
           "type": "string",
-          "markdownDescription": "Overwrite the access token used for code autocomplete. This is only supported with the `unstable-huggingface` provider."
+          "markdownDescription": "Overwrite the access token used for code autocomplete. This is only supported with the `unstable-huggingface`, or `unstable-azure-openai` provider."
         },
         "cody.autocomplete.advanced.cache": {
           "type": "boolean",
