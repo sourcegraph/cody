@@ -8,9 +8,9 @@ import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/confi
 import { Editor } from '@sourcegraph/cody-shared/src/editor'
 import { SourcegraphEmbeddingsSearchClient } from '@sourcegraph/cody-shared/src/embeddings/client'
 import { SourcegraphGraphQLAPIClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
-import { VSCodeGraphContextFetcher } from '@sourcegraph/cody-shared/src/graph-context/graph-context-fetcher'
-import { isError, convertGitCloneURLToCodebaseName } from '@sourcegraph/cody-shared/src/utils'
+import { convertGitCloneURLToCodebaseName, isError } from '@sourcegraph/cody-shared/src/utils'
 
+import { GraphContextFetcher } from '../../lib/shared/src/graph-context'
 import { getFullConfig } from '../configuration'
 import { VSCodeEditor } from '../editor/vscode-editor'
 import { FilenameContextFetcher } from '../local-context/filename-context-fetcher'
@@ -264,7 +264,7 @@ export async function getCodebaseContext(
         embeddingsSearch,
         rgPath ? new LocalKeywordContextFetcher(rgPath, editor, chatClient) : null,
         rgPath ? new FilenameContextFetcher(rgPath, editor, chatClient) : null,
-        new VSCodeGraphContextFetcher(client, editor),
+        new GraphContextFetcher(client, editor),
         undefined,
         getRerankWithLog(chatClient)
     )

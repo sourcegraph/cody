@@ -6,60 +6,41 @@ import {
     SourcegraphGraphQLAPIClient,
 } from '../sourcegraph-api/graphql/client'
 
-export interface GitInfo {
-    repo: string
-    commitID: string
-}
-
-export abstract class GraphContextFetcher {
-    // TODO - move into editor interface
-    public abstract getGitInfo(workspaceRoot: string): Promise<GitInfo>
-
-    constructor(
-        private graphqlClient: SourcegraphGraphQLAPIClient,
-        private editor: Editor
-    ) {}
+export class GraphContextFetcher {
+    constructor(private graphqlClient: SourcegraphGraphQLAPIClient, private editor: Editor) {}
 
     public async getContext(): Promise<PreciseContextResult[]> {
         const editorContext = this.editor.getActiveTextEditor()
-        if (!editorContext) {
+        if (!editorContext?.repoName) {
             return []
         }
         const workspaceRoot = this.editor.getWorkspaceRootPath() || ''
-        const { repo, commitID: cid } = await this.getGitInfo(workspaceRoot)
-        const repository = editorContext.repoName ?? repo
-        const commitID = editorContext.revision || cid || 'HEAD'
+        const repository = editorContext.repoName
+        const commitID = editorContext.revision || 'HEAD'
         const activeFile = pathRelativeToRoot(editorContext.filePath, workspaceRoot)
+        const content = editorContext.content
+        const selection = getActiveSelectionRange(editorContext.selection)
 
         const response = await this.graphqlClient.getPreciseContext(
             repository,
             commitID,
             activeFile,
-            editorContext.content,
-            getActiveSelectionRange(editorContext.selection)
+            content,
+            selection
         )
-
-        if (isErrorLike(response)) {
-            return []
-        }
-
-        return response
+        return isErrorLike(response) ? [] : response
     }
 }
 
-function getActiveSelectionRange(
-    selection: ActiveTextEditorSelectionRange | undefined
-): ActiveFileSelectionRange | null {
-    if (!selection) {
-        return null
-    }
-
-    return {
-        startLine: selection.start.line,
-        startCharacter: selection.start.character,
-        endLine: selection.end.line,
-        endCharacter: selection.end.character,
-    }
+function getActiveSelectionRange(selection?: ActiveTextEditorSelectionRange): ActiveFileSelectionRange | null {
+    return selection
+        ? {
+              startLine: selection.start.line,
+              startCharacter: selection.start.character,
+              endLine: selection.end.line,
+              endCharacter: selection.end.character,
+          }
+        : null
 }
 
 function pathRelativeToRoot(path: string, workspaceRoot: string): string {
