@@ -76,7 +76,7 @@ export function getConfiguration(config: ConfigGetter): Configuration {
         autocompleteAdvancedEmbeddings: config.get(CONFIG_KEY.autocompleteAdvancedEmbeddings, true),
         autocompleteExperimentalTriggerMoreEagerly: config.get(
             CONFIG_KEY.autocompleteExperimentalTriggerMoreEagerly,
-            false
+            true
         ),
         autocompleteExperimentalCompleteSuggestWidgetSelection: config.get(
             CONFIG_KEY.autocompleteExperimentalCompleteSuggestWidgetSelection,
