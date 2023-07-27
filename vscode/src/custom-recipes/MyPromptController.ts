@@ -314,7 +314,7 @@ export class MyPromptController implements VsCodeMyPromptController {
                           }
                 }) as vscode.QuickPickItem[]
             const seperator: vscode.QuickPickItem = { kind: -1, label: 'action' }
-            const addOption: vscode.QuickPickItem = { label: 'Create a New User Recipe', alwaysShow: true }
+            const addOption: vscode.QuickPickItem = { label: 'New Custom Recipe...', alwaysShow: true }
             promptItems.push(seperator, addOption)
             // Show the list of prompts to the user using a quick pick
             const options = { title: 'Cody: My Recipes', placeHolder: 'Search recipe to run...' }

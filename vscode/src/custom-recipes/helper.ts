@@ -89,7 +89,7 @@ Output of \`{command}\` command:
 \`\`\``
 
 export const lastUsedRecipesSeperator: [string, CodyPrompt][] = [
-    ['seperator', { prompt: 'seperator', type: 'last used' }],
+    ['seperator', { prompt: 'seperator', type: 'recently used' }],
 ]
 
 export const getFileContentText = async (uri: vscode.Uri): Promise<string | null> => {
