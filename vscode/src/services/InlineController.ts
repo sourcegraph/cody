@@ -494,10 +494,18 @@ export class Comment implements vscode.Comment {
     }
 
     /**
+     * Naive Html Escape, only does brackets for now, but works well enough to get tags showing up in inline
+     * comments that make reference to them.
+     */
+    private naiveHtmlEscape(text: string): string {
+        return text.replaceAll('<', '&lt;').replaceAll('>', '&gt;')
+    }
+
+    /**
      * Turns string into Markdown string
      */
     private markdown(text: string): vscode.MarkdownString {
-        const markdownText = new vscode.MarkdownString(text)
+        const markdownText = new vscode.MarkdownString(this.naiveHtmlEscape(text))
         markdownText.isTrusted = true
         markdownText.supportHtml = true
         return markdownText

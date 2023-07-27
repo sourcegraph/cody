@@ -4,6 +4,7 @@ interface LanguageConfig {
     blockEnd: string | null
     commentStart: string
 }
+
 export function getLanguageConfig(languageId: string): LanguageConfig | null {
     switch (languageId) {
         case 'c':

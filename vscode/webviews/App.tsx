@@ -66,11 +66,6 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                         break
                     case 'login':
                         break
-                    case 'showTab':
-                        if (message.tab === 'chat') {
-                            setView('chat')
-                        }
-                        break
                     case 'history':
                         setInputHistory(message.messages?.input ?? [])
                         setUserHistory(message.messages?.chat ?? null)

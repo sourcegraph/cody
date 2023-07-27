@@ -14,6 +14,7 @@ import {
     isLoggedIn as isAuthed,
     isLocalApp,
     LOCAL_APP_URL,
+    networkErrorAuthStatus,
     unauthenticatedStatus,
 } from '../chat/protocol'
 import { newAuthStatus } from '../chat/utils'
@@ -191,6 +192,14 @@ export class AuthProvider {
         if (!isDotComOrApp) {
             const currentUserID = await this.client.getCurrentUserId()
             const hasVerifiedEmail = false
+
+            // check first if it's a network error
+            if (isError(currentUserID)) {
+                if (isNetworkError(currentUserID.message)) {
+                    return { ...networkErrorAuthStatus, endpoint }
+                }
+            }
+
             return newAuthStatus(
                 endpoint,
                 isDotComOrApp,
@@ -203,6 +212,14 @@ export class AuthProvider {
         }
         const userInfo = await this.client.getCurrentUserIdAndVerifiedEmail()
         const isCodyEnabled = true
+
+        // check first if it's a network error
+        if (isError(userInfo)) {
+            if (isNetworkError(userInfo.message)) {
+                return { ...networkErrorAuthStatus, endpoint }
+            }
+        }
+
         return isError(userInfo)
             ? { ...unauthenticatedStatus, endpoint }
             : newAuthStatus(
@@ -239,6 +256,11 @@ export class AuthProvider {
         await this.syncAuthStatus(authStatus)
         await vscode.commands.executeCommand('setContext', 'cody.activated', isLoggedIn)
         return { authStatus, isLoggedIn }
+    }
+
+    // Set auth status in case of reload
+    public async reloadAuthStatus(): Promise<void> {
+        await this.auth(this.config.serverEndpoint, this.config.accessToken, this.config.customHeaders)
     }
 
     // Set auth status and share it with chatview
@@ -339,6 +361,15 @@ export class AuthProvider {
         this.loadEndpointHistory()
         debug('AuthProvider:storeAuthInfo:stored', endpoint || '')
     }
+}
+
+export function isNetworkError(error: string): boolean {
+    return (
+        error.includes('ENOTFOUND') ||
+        error.includes('ECONNREFUSED') ||
+        error.includes('ECONNRESET') ||
+        error.includes('EHOSTUNREACH')
+    )
 }
 
 function formatURL(uri: string): string | null {
