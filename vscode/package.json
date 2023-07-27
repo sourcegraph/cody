@@ -14,7 +14,7 @@
     "dev-insiders": "pnpm run build:dev && pnpm run dev:instance-insiders",
     "generate:completions": "OUTFILE=/tmp/run-code-completions-on-dataset.js && esbuild ./test/completions/run-code-completions-on-dataset.ts --bundle --external:vscode --outfile=$OUTFILE --format=cjs --platform=node --sourcemap=inline && node --enable-source-maps $OUTFILE",
     "build": "scripts/download-rg.sh && tsc --build && pnpm run esbuild --minify && vite build --mode production",
-    "build:dev": "scripts/download-rg.sh && TSC_COMPILE_ON_ERROR=true tsc --build && concurrently \"pnpm run esbuild --sourcemap\" \"vite build --mode development\"",
+    "build:dev": "scripts/download-rg.sh && tsc --build && concurrently \"pnpm run esbuild --sourcemap\" \"vite build --mode development\"",
     "esbuild": "esbuild ./src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node",
     "lint": "pnpm run lint:js",
     "lint:js": "eslint --cache '**/*.[tj]s?(x)'",
