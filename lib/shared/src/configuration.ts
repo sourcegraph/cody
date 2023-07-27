@@ -7,6 +7,7 @@ export interface Configuration {
     debugEnable: boolean
     debugFilter: RegExp | null
     debugVerbose: boolean
+    telemetryLevel: 'all' | 'off'
     useContext: ConfigurationUseContext
     customHeaders: Record<string, string>
     autocomplete: boolean

@@ -26,6 +26,7 @@ describe('getConfiguration', () => {
             debugEnable: false,
             debugVerbose: false,
             debugFilter: null,
+            telemetryLevel: 'all',
             autocompleteAdvancedProvider: 'anthropic',
             autocompleteAdvancedServerEndpoint: null,
             autocompleteAdvancedAccessToken: null,
@@ -69,6 +70,8 @@ describe('getConfiguration', () => {
                         return true
                     case 'cody.debug.filter':
                         return /.*/
+                    case 'cody.telemetry.level':
+                        return 'off'
                     case 'cody.autocomplete.advanced.provider':
                         return 'unstable-codegen'
                     case 'cody.autocomplete.advanced.serverEndpoint':
@@ -116,6 +119,7 @@ describe('getConfiguration', () => {
             debugEnable: true,
             debugVerbose: true,
             debugFilter: /.*/,
+            telemetryLevel: 'off',
             autocompleteAdvancedProvider: 'unstable-codegen',
             autocompleteAdvancedServerEndpoint: 'https://example.com/llm',
             autocompleteAdvancedAccessToken: 'foobar',

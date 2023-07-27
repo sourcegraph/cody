@@ -839,6 +839,20 @@
           "type": "string",
           "markdownDescription": "Regular expression to filter debug output. If empty, defaults to '.*', which prints all messages."
         },
+        "cody.telemetry.level": {
+          "order": 99,
+          "type": "string",
+          "enum": [
+            "all",
+            "off"
+          ],
+          "enumDescriptions": [
+            "Sends usage data and errors.",
+            "Disables all extension telemetry."
+          ],
+          "markdownDescription": "Controls the telemetry about Cody usage and errors. See [Cody usage and privacy notice](https://about.sourcegraph.com/terms/cody-notice).",
+          "default": "all"
+        },
         "cody.autocomplete.advanced.provider": {
           "type": "string",
           "default": "anthropic",
