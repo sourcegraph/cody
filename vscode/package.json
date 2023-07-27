@@ -22,10 +22,7 @@
     "test:e2e": "pnpm exec playwright install && pnpm run --silent build:dev && playwright test",
     "test:integration": "tsc --build ./test/integration && pnpm run --silent build:dev && node --inspect -r ts-node/register dist/tsc/test/integration/main.js",
     "test:unit": "vitest",
-    "vscode:prepublish": "scripts/download-rg.sh && pnpm --silent run build",
-    "watch": "concurrently \"pnpm run watch:esbuild\" \"pnpm run watch:webview\"",
-    "watch:esbuild": "pnpm run esbuild --sourcemap --watch",
-    "watch:webview": "vite build --mode development --watch"
+    "vscode:prepublish": "scripts/download-rg.sh && pnpm --silent run build"
   },
   "categories": [
     "Programming Languages",
