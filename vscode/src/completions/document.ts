@@ -20,7 +20,6 @@ import * as vscode from 'vscode'
 export function getCurrentDocContext(
     document: vscode.TextDocument,
     position: vscode.Position,
-    context: vscode.InlineCompletionContext,
     maxPrefixLength: number,
     maxSuffixLength: number
 ): {
