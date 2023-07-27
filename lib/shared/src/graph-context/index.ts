@@ -21,13 +21,6 @@ export class GraphContextFetcher {
         const content = editorContext.content
         const selection = getActiveSelectionRange(editorContext.selection)
 
-        console.log('🚀 ~ file: index.ts:24 ~ GraphContextFetcher ~ getContext ~ args:', {
-            repository,
-            commitID,
-            activeFile,
-            content,
-            selection,
-        })
         const response = await this.graphqlClient.getPreciseContext(
             repository,
             commitID,
@@ -35,7 +28,6 @@ export class GraphContextFetcher {
             content,
             selection
         )
-        console.log('🚀 ~ file: index.ts:38 ~ GraphContextFetcher ~ getContext ~ response:', response)
         return isErrorLike(response) ? [] : response
     }
 }
