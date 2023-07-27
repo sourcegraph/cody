@@ -31,12 +31,7 @@ export class SourcegraphIntentDetectorClient implements IntentDetector {
 
     private buildInitialPrompt(options: IntentClassificationOption[]): string {
         const functions = options
-            .map(
-                ({ id, description }) => `
-Function Id: ${id}
-Function Description: ${description}
-`
-            )
+            .map(({ id, description }) => `Function ID: ${id}\nFunction Description: ${description}`)
             .join('\n')
 
         return prompt.replace('{functions}', functions)
@@ -72,7 +67,7 @@ Function Description: ${description}
 
         const result = await this.completionsClient.complete({
             fast: true,
-            temperature: 0.2,
+            temperature: 0,
             maxTokensToSample: ANSWER_TOKENS,
             topK: -1,
             topP: -1,
@@ -97,7 +92,6 @@ Function Description: ${description}
         })
 
         const responseClassification = result.completion.match(/<classification>(.*?)<\/classification>/)?.[1]
-
         console.log('LLM CLASSIFICATION', responseClassification)
         if (!responseClassification) {
             return fallback
@@ -110,7 +104,7 @@ Function Description: ${description}
 const prompt = `
 You are an AI chatbot in a code editor. You are at expert at understanding the request of a software developer and selecting an available function to perform that request.
 Think step-by-step to understand the request.
-Only provide your response if you know the answer or can make a well-informed guess, respond with "unknown".
+Only provide your response if you know the answer or can make a well-informed guess, otherwise respond with "unknown".
 Enclose your response in <classification></classification> XML tags. Do not provide anything else.
 
 Available functions:
