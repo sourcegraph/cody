@@ -21,7 +21,7 @@ import { debug } from '../log'
 import { CodyPromptType } from '../my-cody/types'
 import { FixupTask } from '../non-stop/FixupTask'
 import { IdleRecipeRunner } from '../non-stop/roles'
-import { AuthProvider } from '../services/AuthProvider'
+import { AuthProvider, isNetworkError } from '../services/AuthProvider'
 import { LocalStorage } from '../services/LocalStorageProvider'
 import { TestSupport } from '../test-support'
 
@@ -261,6 +261,10 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
                         )
                         .catch(error => console.error(error))
                     debug('ChatViewProvider:onError:unauthUser', err, { verbose: { statusCode } })
+                }
+
+                if (isNetworkError(err)) {
+                    err = 'Cody could not respond due to network error.'
                 }
                 // Display error message as assistant response
                 this.transcript.addErrorAsAssistantResponse(err)

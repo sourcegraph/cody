@@ -34,6 +34,7 @@ export type WebviewMessage =
     | { command: 'chat-button'; action: string }
     | { command: 'setEnabledPlugins'; plugins: string[] }
     | { command: 'my-prompt'; title: string; value?: CodyPromptType }
+    | { command: 'reload' }
 
 /**
  * A message sent from the extension host to the webview.
@@ -90,6 +91,7 @@ export interface AuthStatus {
     siteHasCodyEnabled: boolean
     siteVersion: string
     configOverwrites?: CodyLLMSiteConfiguration
+    showNetworkError?: boolean
 }
 
 export const defaultAuthStatus = {
@@ -109,6 +111,17 @@ export const unauthenticatedStatus = {
     showInvalidAccessTokenError: true,
     authenticated: false,
     hasVerifiedEmail: false,
+    requiresVerifiedEmail: false,
+    siteHasCodyEnabled: false,
+    siteVersion: '',
+}
+
+export const networkErrorAuthStatus = {
+    showInvalidAccessTokenError: false,
+    authenticated: false,
+    isLoggedIn: false,
+    hasVerifiedEmail: false,
+    showNetworkError: true,
     requiresVerifiedEmail: false,
     siteHasCodyEnabled: false,
     siteVersion: '',
