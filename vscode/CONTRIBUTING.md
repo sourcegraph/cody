@@ -17,6 +17,20 @@ Tip: Enable `cody.debug.enable` and `cody.debug.verbose` in VS Code settings dur
 - `resources`: everything in this directory will be move to the ./dist directory automatically during build time for easy packaging
 - `index.html`: the entry file that Vite looks for to build the webviews. The extension host reads this file at run time and replace the variables inside the file with webview specific uri and info
 
+## Reporting autocomplete issues
+
+The best way to help us improve code completions is by contributing your examples in the [Unhelpful Completions](https://github.com/sourcegraph/cody/discussions/358) discussion together with some context of how the autocomplete request was build.
+
+### Accessing autocomplete logs
+
+1. Enable `cody.debug.enable` and `cody.debug.verbose` in VS Code settings
+   - Make sure to restart or reload VS Code after changing these settings
+1. Open the Cody debug panel via "View > Output" and selecting the "Cody by Sourcegraph" option in the dropdown.
+
+### Realtime autocomplete tracing
+
+We also have some build-in UI to help during the development of autocomplete requests. To access this, run the `Cody > Open Autocomplete Trace View` action. This will open a new panel that will show all requests in real time.
+
 ## Testing
 
 - Unit tests: `pnpm run test:unit`
