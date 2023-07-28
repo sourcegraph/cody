@@ -58,7 +58,7 @@ describe('RequestManager', () => {
             requestManager.request(
                 DOCUMENT_URI,
                 LOG_ID,
-                { prefix, languageId: 'javascript' },
+                { prefix, suffix: 'x', languageId: 'javascript' },
                 [provider],
                 [],
                 new AbortController().signal

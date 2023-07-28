@@ -18,6 +18,11 @@ export interface CompletionsCacheDocumentState {
     prefix: string
 
     /**
+     * The suffix (after the cursor) of the source file where the completion request was triggered.
+     */
+    suffix: string
+
+    /**
      * The language of the document, used to ensure that completions are cached separately for
      * different languages (even if the files have the same prefix).
      */
@@ -36,8 +41,20 @@ export interface CacheRequest {
     isExactPrefixOnly?: boolean
 }
 
-function cacheKey({ prefix, languageId }: CompletionsCacheDocumentState): string {
-    return `${languageId}<|>${prefix}`
+const CACHE_KEY_DOCUMENT_CONTENT_PREFIX_SUFFIX_LENGTH = 200
+
+/*
+ * Return the cache key used for a given document state.
+ *
+ * Only the first {@link CACHE_KEY_DOCUMENT_CONTENT_SUFFIX_LENGTH} characters of the prefix and
+ * suffix are used to distinguish cache keys (because an edit that is sufficiently far away from the
+ * cursor can be considered to not invalidate the relevant cache entries).
+ **/
+function cacheKey({ prefix, suffix, languageId }: CompletionsCacheDocumentState): string {
+    return `${languageId}<|>${prefix.slice(-CACHE_KEY_DOCUMENT_CONTENT_PREFIX_SUFFIX_LENGTH)}<|>${suffix.slice(
+        0,
+        CACHE_KEY_DOCUMENT_CONTENT_PREFIX_SUFFIX_LENGTH
+    )}`
 }
 
 export class CompletionsCache {
@@ -49,16 +66,12 @@ export class CompletionsCache {
         this.cache.clear()
     }
 
-    // TODO: The caching strategy only takes the file content prefix into
-    // account. We need to add additional information like file path or suffix
-    // to make sure the cache does not return undesired results for other files
-    // in the same project.
     public get({
-        documentState: { prefix, languageId },
+        documentState: { prefix, suffix, languageId },
         isExactPrefixOnly,
     }: CacheRequest): CachedCompletions | undefined {
         const trimmedPrefix = isExactPrefixOnly ? prefix : trimEndOnLastLineIfWhitespaceOnly(prefix)
-        const key = cacheKey({ prefix: trimmedPrefix, languageId })
+        const key = cacheKey({ prefix: trimmedPrefix, suffix, languageId })
         return this.cache.get(key)
     }
 
@@ -80,11 +93,7 @@ export class CompletionsCache {
             // lookup mode used for deletions.
             const prefixHasTrailingWhitespaceOnLastLine = trimmedPrefix !== documentState.prefix
             if (prefixHasTrailingWhitespaceOnLastLine) {
-                this.insertCompletion(
-                    cacheKey({ prefix: documentState.prefix, languageId: documentState.languageId }),
-                    logId,
-                    completion
-                )
+                this.insertCompletion(cacheKey(documentState), logId, completion)
             }
 
             for (let i = 0; i <= maxCharsAppended; i++) {
@@ -92,8 +101,8 @@ export class CompletionsCache {
                 const partialCompletionContent = completion.content.slice(i)
                 const appendedPrefix = trimmedPrefix + completionPrefixToAppend
                 const key = cacheKey({
+                    ...documentState,
                     prefix: appendedPrefix,
-                    languageId: documentState.languageId,
                 })
                 this.insertCompletion(key, logId, { content: partialCompletionContent })
             }
