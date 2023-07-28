@@ -93,14 +93,14 @@ ${codeDetailsWithSummary('Suffix', suffix, 'start')}
 ${markdownList(otherOptions)}
 `
 )}`,
-        data?.context &&
-            `
+        data?.context !== undefined
+            ? `
 ## Context
 
-${markdownList(data.context.logSummary)}
+${data.context ? markdownList(data.context.logSummary) : ''}
 
 ${
-    data.context.context.length === 0
+    data.context === null || data.context.context.length === 0
         ? 'No context.'
         : data.context.context
               .map(({ content, fileName }) =>
@@ -108,7 +108,8 @@ ${
               )
               .join('\n\n')
 }
-`,
+`
+            : '',
         data?.completionProviderCallParams &&
             `
 ## Completion provider calls
@@ -122,17 +123,18 @@ ${
 }
 
 `,
-        data?.result &&
-            `
+        data?.result !== undefined
+            ? `
 ## Completions (cache ${data.cacheHit === true ? 'hit' : data.cacheHit === false ? 'miss' : 'unknown'})
 
 ${
-    data.result.items.length === 0
+    data.result === null || data.result.items.length === 0
         ? 'No completions.'
         : data.result.items
               .map(item => inlineCompletionItemDescription(item, data.params?.document))
               .join('\n\n---\n\n')
-}`,
+}`
+            : '',
 
         data?.error &&
             `
@@ -148,6 +150,7 @@ ${codeDetailsWithSummary('JSON for dataset', jsonForDataset(data))}
 `,
     ]
         .filter(isDefined)
+        .filter(s => s !== '')
         .map(s => s.trim())
         .join('\n\n---\n\n')
 

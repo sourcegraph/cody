@@ -36,8 +36,8 @@ export interface ProvideInlineCompletionsItemTraceData {
     completionProviderCallParams?: CompletionParameters
     completionProviderCallResult?: CompletionProviderTracerResultData
 
-    context?: GetContextResult
-    result?: vscode.InlineCompletionList
+    context?: GetContextResult | null
+    result?: vscode.InlineCompletionList | null
     cacheHit?: boolean
     error?: string
 }
