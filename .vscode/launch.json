@@ -7,12 +7,7 @@
       "request": "launch",
       "runtimeExecutable": "${execPath}",
       "preLaunchTask": "Build VS Code Extension (Desktop)",
-      "args": [
-        "--extensionDevelopmentPath=${workspaceRoot}/vscode",
-        "--disable-extension=sourcegraph.cody-ai",
-        "--disable-extension=github.copilot",
-        "--disable-extension=github.copilot-nightly"
-      ],
+      "args": ["--extensionDevelopmentPath=${workspaceRoot}/vscode"],
       "sourceMaps": true,
       "outFiles": ["${workspaceRoot}/vscode/dist/**/*.js"],
       "env": {
@@ -29,10 +24,7 @@
       "args": [
         "--user-data-dir=/tmp/vscode-cody-extension-dev-host",
         "--profile-temp",
-        "--extensionDevelopmentPath=${workspaceRoot}/vscode",
-        "--disable-extension=sourcegraph.cody-ai",
-        "--disable-extension=github.copilot",
-        "--disable-extension=github.copilot-nightly"
+        "--extensionDevelopmentPath=${workspaceRoot}/vscode"
       ],
       "sourceMaps": true,
       "outFiles": ["${workspaceRoot}/vscode/dist/**/*.js"],
@@ -59,13 +51,7 @@
       "request": "launch",
       "preLaunchTask": "Build VS Code Extension (Web)",
       "outFiles": ["${workspaceFolder}/vscode/dist/**/*.js"],
-      "args": [
-        "--extensionDevelopmentPath=${workspaceRoot}/vscode",
-        "--extensionDevelopmentKind=web",
-        "--disable-extension=sourcegraph.cody-ai",
-        "--disable-extension=github.copilot",
-        "--disable-extension=github.copilot-nightly"
-      ]
+      "args": ["--extensionDevelopmentPath=${workspaceRoot}/vscode", "--extensionDevelopmentKind=web"]
     }
   ]
 }
