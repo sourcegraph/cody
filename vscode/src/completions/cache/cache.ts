@@ -118,7 +118,8 @@ class DocumentCompletionsCache {
                 // Find completions that start with the addedText and would still be valid.
                 const validCompletions = e.completions.filter(c => c.content.startsWith(addedText))
 
-                // Trim the addedText from the valid completions because the addedText is already present in the document.
+                // Trim the addedText from the valid completions because the addedText is already
+                // present in the document.
                 const trimmedCompletions = validCompletions.map(c => ({
                     ...c,
                     content: c.content.slice(addedText.length),
@@ -127,12 +128,16 @@ class DocumentCompletionsCache {
                 if (trimmedCompletions.length > 0) {
                     return { logId: e.logId, completions: trimmedCompletions }
                 }
-
-                // TODO(sqs): check suffix?
             }
             if (offset < 0) {
                 // Request is before the cached position.
                 const deletedText = e.documentState.prefix.slice(offset)
+
+                // Ensure the current document and cached document share a common prefix.
+                const isPrefix = e.documentState.prefix.startsWith(req.documentState.prefix)
+                if (!isPrefix) {
+                    continue
+                }
 
                 // Do not reuse cache entries across starting lines.
                 if (deletedText.includes('\n')) {

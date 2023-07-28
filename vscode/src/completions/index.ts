@@ -162,13 +162,13 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
 
         const lastChangeIsDeletion = this.config.lastChangeTracker.lastChange(document.uri) === 'del'
         const cacheRequest: CacheRequest = {
-            documentState: { prefix: docContext.prefix, suffix: docContext.suffix, languageId: document.languageId },
-
-            // Avoid showing completions when we're deleting code (Cody can only insert code at the
-            // moment). When a line was deleted, only look up cached items and only include them if the
-            // untruncated prefix matches. This fixes some weird issues where the completion would
-            // render if you insert whitespace but not on the original place when you delete it again.
-            isExactPrefixOnly: lastChangeIsDeletion,
+            documentState: {
+                uri: document.uri.toString(),
+                prefix: docContext.prefix,
+                position: document.offsetAt(position),
+                suffix: docContext.suffix,
+                languageId: document.languageId,
+            },
         }
         const cachedCompletions = this.config.cache?.get(cacheRequest)
         if (cachedCompletions) {
@@ -343,15 +343,18 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
         //
         // The duration we wait is longer than the debounce time for new requests because we do not
         // have network latency for cache completion
-        const visibleResult = results[0]
-        if (
-            visibleResult?.content.includes('\n') &&
-            !this.config.disableTimeouts &&
-            context.triggerKind !== vscode.InlineCompletionTriggerKind.Invoke
-        ) {
-            await delay(400)
-            if (abortSignal.aborted) {
-                return { items: [] }
+        const sqsdisable = true // TODO(sqs)
+        if (!sqsdisable) {
+            const visibleResult = results[0]
+            if (
+                visibleResult?.content.includes('\n') &&
+                !this.config.disableTimeouts &&
+                context.triggerKind !== vscode.InlineCompletionTriggerKind.Invoke
+            ) {
+                await delay(400)
+                if (abortSignal.aborted) {
+                    return { items: [] }
+                }
             }
         }
 
@@ -397,13 +400,18 @@ function toInlineCompletionItems(
     return {
         items: completions.map(completion => {
             const lines = completion.content.split(/\r\n|\r|\n/).length
-            const currentLineText = document.lineAt(position)
-            const endOfLine = currentLineText.range.end
-            return new vscode.InlineCompletionItem(completion.content, new vscode.Range(position, endOfLine), {
-                title: 'Completion accepted',
-                command: 'cody.autocomplete.inline.accepted',
-                arguments: [{ codyLogId: logId, codyLines: lines }],
-            })
+            const currentLine = document.lineAt(position)
+            const endOfLine = currentLine.range.end
+
+            return new vscode.InlineCompletionItem(
+                document.getText(currentLine.range.with({ end: position })) + completion.content,
+                new vscode.Range(currentLine.range.start, endOfLine),
+                {
+                    title: 'Completion accepted',
+                    command: 'cody.autocomplete.inline.accepted',
+                    arguments: [{ codyLogId: logId, codyLines: lines }],
+                }
+            )
         }),
     }
 }

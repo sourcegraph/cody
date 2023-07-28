@@ -84,7 +84,10 @@ describe('CompletionsCache', () => {
             completions: [{ content: 'bc d' }],
         })
 
-        // But stop serving from cache when the user deletes the newline.
+        // Prefixes diverge, so don't serve from cache.
+        expect(cache.get({ documentState: docState('a\nx') })).toEqual(undefined)
+
+        // When the user deletes the newline, don't serve from cache.
         expect(cache.get({ documentState: docState('a') })).toEqual(undefined)
     })
 
