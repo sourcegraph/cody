@@ -168,6 +168,11 @@ interface event {
     hashedLicenseKey?: string
 }
 
+private enum apiDestination {
+    DOTCOM,
+    LOCAL,
+}
+
 export class SourcegraphGraphQLAPIClient {
     private dotcomUrl = 'https://sourcegraph.com'
 
@@ -335,11 +340,11 @@ export class SourcegraphGraphQLAPIClient {
             return {}
         }
         if (this.config.serverEndpoint === this.dotcomUrl) {
-            return this.sendEventLogRequestToDotComAPI(event)
+            return this.sendEventLogRequestToAPI(apiDestination.DOTCOM, event)
         }
         return Promise.all([
-            this.sendEventLogRequestToAPI(event),
-            this.sendEventLogRequestToDotComAPI(event),
+            this.sendEventLogRequestToAPI(apiDestination.LOCAL, event),
+            this.sendEventLogRequestToAPI(apiDestination.DOTCOM, event),
         ]).then(responses => {
             if (isError(responses[0]) && isError(responses[1])) {
                 return new Error('Errors logging events: ' + responses[0].toString() + ', ' + responses[1].toString())
@@ -354,25 +359,24 @@ export class SourcegraphGraphQLAPIClient {
         })
     }
 
-    private async sendEventLogRequestToDotComAPI(event: event): Promise<LogEventResponse | Error> {
-        return this.fetchSourcegraphDotcomAPI<APIResponse<LogEventResponse>>(LOG_EVENT_MUTATION, event).then(
-            response => extractDataOrError(response, data => data)
-        )
+    private async sendEventLogRequestToAPI(destination: apiDestination, event: event): Promise<LogEventResponse | Error> {
+        // retryOnFail is set to TRUE if this is sent to a local database, since we can't guarantee a matching version in a self-hosted Sourcegraph deployment.
+        return this.sendEventLogRequestToAPIWithRetry(destination, event, LOG_EVENT_MUTATION, destination == apiDestination.LOCAL)
     }
 
-    private async sendEventLogRequestToAPI(event: event): Promise<LogEventResponse | Error> {
-        const initialAttempt = await this.fetchSourcegraphAPI<APIResponse<LogEventResponse>>(
-            LOG_EVENT_MUTATION,
+    private async sendEventLogRequestToAPIWithRetry(destination: apiDestination, event: event, mutation: string, retryOnFail: boolean): Promise<LogEventResponse | Error> {
+        const api = destination == apiDestination.DOTCOM ? this.fetchSourcegraphDotcomAPI : this.fetchSourcegraphAPI
+
+        const response = await api<APIResponse<LogEventResponse>>(
+            mutation,
             event
         ).then(response => extractDataOrError(response, data => data))
 
-        if (isError(initialAttempt)) {
-            return this.fetchSourcegraphAPI<APIResponse<LogEventResponse>>(LOG_EVENT_MUTATION_DEPRECATED, event).then(
-                response => extractDataOrError(response, data => data)
-            )
+        if (retryOnFail && isError(response)) {
+            return this.sendEventLogRequestToAPIWithRetry(destination, event, LOG_EVENT_MUTATION_DEPRECATED, false)
         }
 
-        return initialAttempt
+        return response
     }
 
     public async getCodyContext(
