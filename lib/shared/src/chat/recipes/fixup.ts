@@ -1,4 +1,5 @@
 import { ContextMessage, getContextMessageWithResponse } from '../../codebase-context/messages'
+import { ActiveTextEditorSelection } from '../../editor'
 import { IntentClassificationOption } from '../../intent-detector'
 import { MAX_CURRENT_FILE_TOKENS, MAX_HUMAN_INPUT_TOKENS } from '../../prompt/constants'
 import { populateCodeContextTemplate } from '../../prompt/templates'
@@ -9,34 +10,119 @@ import { Interaction } from '../transcript/interaction'
 import { contentSanitizer, getContextMessagesFromSelection } from './helpers'
 import { Recipe, RecipeContext, RecipeID } from './recipe'
 
-type FixupIntent = 'edit' | 'fix' | 'document'
+type FixupIntent = 'add' | 'edit' | 'delete' | 'fix' | 'test' | 'document'
 const FixupIntentClassification: IntentClassificationOption<FixupIntent>[] = [
     {
+        id: 'add',
+        description: 'Add to the selected code',
+        examplePrompts: ['Add a function that concatonates two strings', 'Add error handling'],
+    },
+    {
         id: 'edit',
-        description: 'Edit the selected code',
+        description: 'Edit part of the selected code',
         examplePrompts: ['Edit this code', 'Change this code', 'Update this code'],
     },
     {
+        id: 'delete',
+        description: 'Delete a part of the selection code',
+        examplePrompts: ['Delete these comments', 'Remove log statements'],
+    },
+    {
         id: 'fix',
-        description: 'Fix a problem in the selected code',
+        description: 'Fix a problem in a part of the selected code',
         examplePrompts: ['Implement this TODO', 'Fix this code'],
     },
     {
         id: 'document',
-        description: 'Generate documentation for the selected code.',
+        description: 'Generate documentation for parts of the selected code.',
         examplePrompts: ['Add a docstring for this function', 'Write comments to explain this code'],
     },
 ]
 
 const PromptIntentInstruction: Record<FixupIntent, string> = {
-    edit: 'The user wants you to replace code inside the selected code by following their instructions.',
+    add: 'The user wants you to add to the selected code by following their instructions.',
+    edit: 'The user wants you to replace parts of the selected code by following their instructions.',
+    delete: 'The user wants you to remove parts of the selected code by following their instructions.',
     fix: 'The user wants you to correct a problem in the selected code by following their instructions.',
     document:
         'The user wants you to add documentation or comments to the selected code by following their instructions.',
+    test: 'The user wants you to add, update or fix a test by following their instructions',
 }
 
 export class Fixup implements Recipe {
     public id: RecipeID = 'fixup'
+
+    private async getIntent(humanChatInput: string, context: RecipeContext): Promise<FixupIntent> {
+        // TODO(umpox): Implement a basic intent detection check that can return before reaching for the LLM.
+        // E.g. Current file is a test -> Test intent. Current selection is only a comment -> Documentation.
+
+        const intent = await context.intentDetector.classifyIntentFromOptions(
+            humanChatInput,
+            FixupIntentClassification,
+            'fix'
+        )
+        return intent
+    }
+
+    private async getContextFromIntent(
+        intent: FixupIntent,
+        selection: ActiveTextEditorSelection,
+        quarterFileContext: number,
+        context: RecipeContext
+    ): Promise<ContextMessage[]> {
+        const truncatedPrecedingText = truncateTextStart(selection.precedingText, quarterFileContext)
+        const truncatedFollowingText = truncateText(selection.followingText, quarterFileContext)
+        switch (intent) {
+            /**
+             * Intents that are focused on producing new code.
+             * They have a broad set of possible instructions, so we fetch a broad amount of code context files.
+             * Non-code files are not considered as including Markdown syntax seems to lead to more hallucinations and poorer output quality.
+             *
+             * TODO(umpox): We fetch similar context for all three cases here.
+             * We should investigate how we can improve each individual case.
+             * E.g.:
+             * - fix -> Can we extract warnings + errors from within the selection?
+             * - add/edit -> Are these fundamentally the same? Is the primary benefit here that we can provide more specific instructions to Cody?
+             */
+            case 'add':
+            case 'edit':
+            case 'fix':
+                return getContextMessagesFromSelection(
+                    selection.selectedText,
+                    truncatedPrecedingText,
+                    truncatedFollowingText,
+                    selection,
+                    context.codebaseContext
+                )
+            /**
+             * The test intent is unique in that we likely want to be much more specific in that context that we retrieve.
+             * TODO(umpox): How can infer the current testing dependencies, etc?
+             */
+            case 'test':
+                // Currently the same as add|edit|fix
+                return getContextMessagesFromSelection(
+                    selection.selectedText,
+                    truncatedPrecedingText,
+                    truncatedFollowingText,
+                    selection,
+                    context.codebaseContext
+                )
+            /**
+             * Intents that are focused primarily on updating code within the current file and selection.
+             * Providing a much more focused context window here seems to provide better quality responses.
+             */
+            case 'delete':
+            case 'document':
+                return Promise.resolve(
+                    [truncatedPrecedingText, truncatedFollowingText].flatMap(text =>
+                        getContextMessageWithResponse(
+                            populateCodeContextTemplate(text, selection.fileName, selection.repoName),
+                            selection
+                        )
+                    )
+                )
+        }
+    }
 
     public async getInteraction(humanChatInput: string, context: RecipeContext): Promise<Interaction | null> {
         // TODO: Prompt the user for additional direction.
@@ -54,15 +140,9 @@ export class Fixup implements Recipe {
             return null
         }
 
-        const truncatedPrecedingText = truncateTextStart(selection.precedingText, quarterFileContext)
-        const truncatedFollowingText = truncateText(selection.followingText, quarterFileContext)
-        const intent = await context.intentDetector.classifyIntentFromOptions(
-            humanChatInput,
-            FixupIntentClassification,
-            'fix'
-        )
+        const intent = await this.getIntent(humanChatInput, context)
 
-        // Reconstruct Cody's prompt using user's context
+        // Reconstruct Cody's prompt using user's context and intent
         // Replace placeholders in reverse order to avoid collisions if a placeholder occurs in the input
         // TODO: Move prompt suffix from recipe to chat view. It has other subscribers.
         const promptText = Fixup.prompt
@@ -89,38 +169,6 @@ export class Fixup implements Recipe {
             })
         )
 
-        let dynamicContext: Promise<ContextMessage[]>
-        switch (intent) {
-            case 'edit':
-            case 'fix': // TODO(umpox): For fixing code, can we extract warnings + errors from within the selection?
-                /**
-                 * Fetch a small window of code context for the current selection.
-                 * Includes preceding and following text as additional context.
-                 */
-                dynamicContext = getContextMessagesFromSelection(
-                    selection.selectedText,
-                    truncatedPrecedingText,
-                    truncatedFollowingText,
-                    selection,
-                    context.codebaseContext
-                )
-                break
-            case 'document':
-                /**
-                 * Includes code context from the current file only.
-                 * Including context from other files is unlikely to be useful, and seems to reduce response quality.
-                 */
-                dynamicContext = Promise.resolve(
-                    [truncatedPrecedingText, truncatedFollowingText].flatMap(text =>
-                        getContextMessageWithResponse(
-                            populateCodeContextTemplate(text, selection.fileName, selection.repoName),
-                            selection
-                        )
-                    )
-                )
-                break
-        }
-
         return Promise.resolve(
             new Interaction(
                 {
@@ -132,7 +180,7 @@ export class Fixup implements Recipe {
                     speaker: 'assistant',
                     prefix: 'Check your document for updates from Cody.\n',
                 },
-                dynamicContext,
+                this.getContextFromIntent(intent, selection, quarterFileContext, context),
                 []
             )
         )
