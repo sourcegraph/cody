@@ -866,6 +866,11 @@
         "cody.autocomplete.advanced.provider": {
           "type": "string",
           "default": "anthropic",
+          "enum": [
+            "anthropic",
+            "unstable-codegen",
+            "unstable-huggingface"
+          ],
           "markdownDescription": "Overwrite the provider used for code autocomplete. Only supported values at the moment are `anthropic` (default), `unstable-codegen`, or `unstable-huggingface`."
         },
         "cody.autocomplete.advanced.serverEndpoint": {
