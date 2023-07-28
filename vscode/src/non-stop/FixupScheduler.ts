@@ -5,11 +5,11 @@ import { FixupIdleTaskRunner } from './roles'
  */
 export class FixupScheduler implements FixupIdleTaskRunner {
     private work_: (() => void)[] = []
-    private timeout_: NodeJS.Timeout
+    private timeout_: TimerCompat
     private scheduled_ = false
 
     constructor(delayMsec: number) {
-        this.timeout_ = setTimeout(this.doWorkNow.bind(this), delayMsec).unref()
+        this.timeout_ = setTimeoutCompat(this.doWorkNow.bind(this), delayMsec).unref()
     }
 
     // TODO: Consider making this disposable and not running tasks after
@@ -57,4 +57,34 @@ export class FixupScheduler implements FixupIdleTaskRunner {
         }
         item()
     }
+}
+
+/**
+ * No-op wrapper for a Node.js timer, or a compatibility wrapper for a DOM timeout handle.
+ */
+interface TimerCompat {
+    refresh(): void
+    unref(): TimerCompat
+}
+
+/**
+ * No-op wrapper for Node.js `setTimeout` or a compatibility wrapper for DOM `setTimeout`.
+ */
+function setTimeoutCompat(callback: () => unknown, delayMsec: number): TimerCompat {
+    const handle = setTimeout(callback, delayMsec) as NodeJS.Timeout | number
+    if (typeof handle === 'number') {
+        let latestHandle = handle
+        const compatHandle: TimerCompat = {
+            refresh() {
+                clearTimeout(latestHandle)
+                latestHandle = setTimeout(callback, delayMsec) as unknown as number
+            },
+            unref() {
+                // noop
+                return compatHandle
+            },
+        }
+        return compatHandle
+    }
+    return handle
 }
