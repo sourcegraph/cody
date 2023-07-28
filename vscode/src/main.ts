@@ -12,7 +12,7 @@ import { MessageProviderOptions } from './chat/MessageProvider'
 import { CODY_FEEDBACK_URL } from './chat/protocol'
 import { CodyCompletionItemProvider } from './completions'
 import { CompletionsCache } from './completions/cache'
-import { History } from './completions/history'
+import { VSCodeDocumentHistory } from './completions/history'
 import * as CompletionsLogger from './completions/logger'
 import { createProviderConfig } from './completions/providers/createProvider'
 import { registerAutocompleteTraceView } from './completions/tracer/traceView'
@@ -413,7 +413,7 @@ function createCompletionsProvider(
 ): vscode.Disposable {
     const disposables: vscode.Disposable[] = []
 
-    const history = new History()
+    const history = new VSCodeDocumentHistory()
     const providerConfig = createProviderConfig(config, webviewErrorMessenger, completionsClient)
     const completionsProvider = new CodyCompletionItemProvider({
         providerConfig,
