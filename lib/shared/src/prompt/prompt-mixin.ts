@@ -1,11 +1,14 @@
 import { InteractionMessage } from '../chat/transcript/messages'
 
+const rules =
+    "Rules: Provide full workable code as code snippets. Reference only verified file names/paths. Don't make assumptions or fabricate information. Think step-by-step. Answer only if certain or tell me you don't know."
+
 /**
  * Prompt mixins elaborate every prompt presented to the LLM.
  * Add a prompt mixin to prompt for cross-cutting concerns relevant to multiple recipes.
  */
 export class PromptMixin {
-    private static mixins: PromptMixin[] = []
+    private static mixins: PromptMixin[] = [newPromptMixin(rules)]
     private static customMixin: PromptMixin[] = []
 
     /**
@@ -39,9 +42,7 @@ export class PromptMixin {
     /**
      * Creates a mixin with the given, fixed prompt to insert.
      */
-    constructor(private readonly prompt: string) {
-        PromptMixin.mixins.push(new PromptMixin(rules))
-    }
+    constructor(private readonly prompt: string) {}
 }
 
 /**
@@ -57,6 +58,3 @@ export function languagePromptMixin(languageCode: string): PromptMixin {
 export function newPromptMixin(text: string): PromptMixin {
     return new PromptMixin(text)
 }
-
-const rules =
-    "Rules: Provide full workable code as code snippets. Reference only verified file names/paths. Don't make assumptions or fabricate information. Answer only if certain or tell me you don't know. Think step-by-step."
