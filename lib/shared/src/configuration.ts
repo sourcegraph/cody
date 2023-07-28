@@ -21,7 +21,6 @@ export interface Configuration {
     autocompleteAdvancedAccessToken: string | null
     autocompleteAdvancedCache: boolean
     autocompleteAdvancedEmbeddings: boolean
-    autocompleteExperimentalTriggerMoreEagerly: boolean
     autocompleteExperimentalCompleteSuggestWidgetSelection?: boolean
     pluginsEnabled?: boolean
     pluginsDebugEnabled?: boolean
