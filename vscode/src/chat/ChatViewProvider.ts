@@ -1,5 +1,3 @@
-import path from 'path'
-
 import * as vscode from 'vscode'
 
 import { ChatMessage, UserLocalHistory } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
@@ -7,26 +5,25 @@ import { ChatMessage, UserLocalHistory } from '@sourcegraph/cody-shared/src/chat
 import { View } from '../../webviews/NavBar'
 import { debug } from '../log'
 import { CodyPromptType } from '../my-cody/types'
-import { logEvent } from '../services/EventLogger'
 
 import { MessageProvider, MessageProviderOptions } from './MessageProvider'
-import { DOTCOM_URL, ExtensionMessage, WebviewEvent, WebviewMessage } from './protocol'
+import { ExtensionMessage, WebviewMessage } from './protocol'
 
 export interface ChatViewProviderWebview extends Omit<vscode.Webview, 'postMessage'> {
     postMessage(message: ExtensionMessage): Thenable<boolean>
 }
 
 interface ChatViewProviderOptions extends MessageProviderOptions {
-    extensionPath: string
+    extensionUri: vscode.Uri
 }
 
 export class ChatViewProvider extends MessageProvider implements vscode.WebviewViewProvider {
-    private extensionPath: string
+    private extensionUri: vscode.Uri
     public webview?: ChatViewProviderWebview
 
-    constructor({ extensionPath, ...options }: ChatViewProviderOptions) {
+    constructor({ extensionUri, ...options }: ChatViewProviderOptions) {
         super(options)
-        this.extensionPath = extensionPath
+        this.extensionUri = extensionUri
     }
 
     private async onDidReceiveMessage(message: WebviewMessage): Promise<void> {
@@ -51,14 +48,15 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
                 await this.abortCompletion()
                 break
             case 'executeRecipe':
-                this.showTab('chat')
+                await this.setWebviewView('chat')
                 await this.executeRecipe(message.recipe)
                 break
             case 'auth':
                 if (message.type === 'app' && message.endpoint) {
                     await this.authProvider.appAuth(message.endpoint)
                     // Log app button click events: e.g. app:download:clicked or app:connect:clicked
-                    this.sendEvent(WebviewEvent.Click, message.value === 'download' ? 'app:download' : 'app:connect')
+                    const value = message.value === 'download' ? 'app:download' : 'app:connect'
+                    this.telemetryService.log(`CodyVSCodeExtension:${value}:clicked`) // TODO(sqs): remove when new events are working
                     break
                 }
                 if (message.type === 'callback' && message.endpoint) {
@@ -72,7 +70,7 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
                 await this.insertAtCursor(message.text)
                 break
             case 'event':
-                this.sendEvent(message.event, message.value)
+                this.telemetryService.log(message.eventName, message.properties)
                 break
             case 'removeHistory':
                 await this.clearHistory()
@@ -89,16 +87,18 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
             case 'my-prompt':
                 await this.onCustomRecipeClicked(message.title, message.value)
                 break
+            case 'reload':
+                await this.authProvider.reloadAuthStatus()
+                break
             case 'openFile': {
-                const rootPath = this.editor.getWorkspaceRootPath()
-                if (!rootPath) {
-                    this.handleError('Failed to open file: missing rootPath')
+                const rootUri = this.editor.getWorkspaceRootUri()
+                if (!rootUri) {
+                    this.handleError('Failed to open file: missing rootUri')
                     return
                 }
                 try {
                     // This opens the file in the active column.
-                    const uri = vscode.Uri.file(path.join(rootPath, message.filePath))
-                    const doc = await vscode.workspace.openTextDocument(uri)
+                    const doc = await vscode.workspace.openTextDocument(vscode.Uri.joinPath(rootUri, message.filePath))
                     await vscode.window.showTextDocument(doc)
                 } catch {
                     // Try to open the file in the sourcegraph view
@@ -134,7 +134,7 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
     private async onHumanMessageSubmitted(text: string, submitType: 'user' | 'suggestion'): Promise<void> {
         debug('ChatViewProvider:onHumanMessageSubmitted', '', { verbose: { text, submitType } })
         if (submitType === 'suggestion') {
-            logEvent('CodyVSCodeExtension:chatPredictions:used')
+            this.telemetryService.log('CodyVSCodeExtension:chatPredictions:used')
         }
         MessageProvider.inputHistory.push(text)
         if (this.contextProvider.config.experimentalChatPredictions) {
@@ -147,17 +147,12 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
      * Process custom recipe click
      */
     private async onCustomRecipeClicked(title: string, recipeType: CodyPromptType = 'user'): Promise<void> {
-        this.sendEvent(WebviewEvent.Click, 'custom-recipe')
+        this.telemetryService.log('CodyVSCodeExtension:custom-recipe:clicked')
         debug('ChatViewProvider:onCustomRecipeClicked', title)
         if (!this.isCustomRecipeAction(title)) {
-            this.showTab('chat')
+            await this.setWebviewView('chat')
         }
         await this.executeCustomRecipe(title, recipeType)
-    }
-
-    public showTab(tab: string): void {
-        void vscode.commands.executeCommand('cody.chat.focus')
-        void this.webview?.postMessage({ type: 'showTab', tab })
     }
 
     /**
@@ -226,52 +221,11 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
     }
 
     /**
-     * Log Events - naming convention: source:feature:action
-     */
-    public sendEvent(event: WebviewEvent, value: string): void {
-        const endpoint = this.contextProvider.config.serverEndpoint || DOTCOM_URL.href
-        const endpointUri = { serverEndpoint: endpoint }
-        switch (event) {
-            case 'feedback':
-                logEvent(`CodyVSCodeExtension:codyFeedback:${value}`, null, this.codyFeedbackPayload())
-                break
-            case 'click':
-                logEvent(`CodyVSCodeExtension:${value}:clicked`, endpointUri, endpointUri)
-                break
-        }
-    }
-
-    private codyFeedbackPayload(): { chatTranscript: ChatMessage[] | null; lastChatUsedEmbeddings: boolean } | null {
-        const endpoint = this.contextProvider.config.serverEndpoint || DOTCOM_URL.href
-        const isPrivateInstance = new URL(endpoint).href !== DOTCOM_URL.href
-
-        // The user should only be able to submit feedback on transcripts, but just in case we guard against this happening.
-        const privateChatTranscript = this.transcript.toChat()
-        if (privateChatTranscript.length === 0) {
-            return null
-        }
-
-        const lastContextFiles = privateChatTranscript.at(-1)?.contextFiles
-        const lastChatUsedEmbeddings = lastContextFiles
-            ? lastContextFiles.some(file => file.source === 'embeddings')
-            : false
-
-        // We only include full chat transcript for dot com users with connected codebase
-        const chatTranscript =
-            !isPrivateInstance && this.contextProvider.context.getCodebase() ? privateChatTranscript : null
-
-        return {
-            chatTranscript,
-            lastChatUsedEmbeddings,
-        }
-    }
-
-    /**
      * Set webview view
      */
-    public setWebviewView(view: View): void {
-        void vscode.commands.executeCommand('cody.chat.focus')
-        void this.webview?.postMessage({
+    public async setWebviewView(view: View): Promise<void> {
+        await vscode.commands.executeCommand('cody.chat.focus')
+        await this.webview?.postMessage({
             type: 'view',
             messages: view,
         })
@@ -291,8 +245,7 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
         this.authProvider.webview = webviewView.webview
         this.contextProvider.webview = webviewView.webview
 
-        const extensionPath = vscode.Uri.file(this.extensionPath)
-        const webviewPath = vscode.Uri.joinPath(extensionPath, 'dist', 'webviews')
+        const webviewPath = vscode.Uri.joinPath(this.extensionUri, 'dist', 'webviews')
 
         webviewView.webview.options = {
             enableScripts: true,

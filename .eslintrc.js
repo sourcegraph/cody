@@ -38,6 +38,7 @@ const config = {
   rules: {
     'import/order': 'off',
     'id-length': 'off',
+    'etc/no-deprecated': 'off', // slow
   },
   overrides: [
     {
@@ -55,7 +56,7 @@ const config = {
       },
     },
     {
-      files: ['vitest.workspace.js', 'vite.config.ts', 'vitest.config.ts', 'vitest.config.ts', 'playwright.config.ts'],
+      files: ['vitest.workspace.js', 'vite.config.ts', 'vitest.config.ts', 'playwright.config.ts'],
       rules: {
         'import/no-default-export': 'off',
       },

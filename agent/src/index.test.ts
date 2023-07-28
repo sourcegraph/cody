@@ -13,6 +13,7 @@ export class TestClient extends MessageHandler {
         const info = await this.request('initialize', {
             name: 'test-client',
             version: 'v1',
+            workspaceRootUri: 'file:///path/to/foo',
             workspaceRootPath: '/path/to/foo',
         })
         this.notify('initialized', null)
@@ -54,7 +55,9 @@ describe('StandardAgent', () => {
     })
 
     it('initializes properly', async () => {
-        assert.deepStrictEqual(await client.handshake(), { name: 'cody-agent' }, 'Agent should be cody-agent')
+        const serverInfo = await client.handshake()
+        assert.deepStrictEqual(serverInfo.name, 'cody-agent', 'Agent should be cody-agent')
+        assert.deepStrictEqual(serverInfo.codyEnabled, true, 'Cody should be enabled')
     })
 
     it('lists recipes correctly', async () => {

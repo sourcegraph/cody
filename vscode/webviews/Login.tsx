@@ -1,7 +1,7 @@
-import { useCallback } from 'react'
-
 import { VSCodeButton } from '@vscode/webview-ui-toolkit/react'
 import classNames from 'classnames'
+
+import { TelemetryService } from '@sourcegraph/cody-shared/src/telemetry'
 
 import { AuthStatus, DOTCOM_URL, isOsSupportedByApp, LOCAL_APP_URL } from '../src/chat/protocol'
 
@@ -17,6 +17,7 @@ interface LoginProps {
     isAppInstalled: boolean
     isAppRunning?: boolean
     vscodeAPI: VSCodeWrapper
+    telemetryService: TelemetryService
     callbackScheme?: string
     appOS?: string
     appArch?: string
@@ -42,6 +43,7 @@ export const Login: React.FunctionComponent<React.PropsWithChildren<LoginProps>>
     authStatus,
     endpoint,
     vscodeAPI,
+    telemetryService,
     callbackScheme,
     appOS,
     appArch,
@@ -50,13 +52,6 @@ export const Login: React.FunctionComponent<React.PropsWithChildren<LoginProps>>
     onLoginRedirect,
 }) => {
     const isOSSupported = isOsSupportedByApp(appOS, appArch)
-
-    const onFooterButtonClick = useCallback(
-        (title: 'signin' | 'support') => {
-            vscodeAPI.postMessage({ command: 'auth', type: title })
-        },
-        [vscodeAPI]
-    )
 
     const title = isAppInstalled ? (isAppRunning ? 'Connect with Cody App' : 'Cody App Not Running') : 'Get Started'
     const openMsg = !isAppInstalled ? APP_DESC.getStarted : !isAppRunning ? APP_DESC.notRunning : APP_DESC.connectApp
@@ -68,6 +63,7 @@ export const Login: React.FunctionComponent<React.PropsWithChildren<LoginProps>>
             <ConnectApp
                 isAppInstalled={isAppInstalled}
                 vscodeAPI={vscodeAPI}
+                telemetryService={telemetryService}
                 isOSSupported={isOSSupported}
                 appOS={appOS}
                 appArch={appArch}
@@ -86,7 +82,14 @@ export const Login: React.FunctionComponent<React.PropsWithChildren<LoginProps>>
         <section className={classNames(styles.section, styles.codyGradient)}>
             <h2 className={styles.sectionHeader}>Cody App for {appOS} coming soon</h2>
             <p className={styles.openMessage}>{APP_DESC.comingSoon}</p>
-            <VSCodeButton className={styles.button} type="button" onClick={() => onLoginRedirect(DOTCOM_URL.href)}>
+            <VSCodeButton
+                className={styles.button}
+                type="button"
+                onClick={() => {
+                    telemetryService.log('CodyVSCodeExtension:auth:clickSignInWithDotcom')
+                    onLoginRedirect(DOTCOM_URL.href)
+                }}
+            >
                 Sign in with Sourcegraph.com
             </VSCodeButton>
         </section>
@@ -104,14 +107,28 @@ export const Login: React.FunctionComponent<React.PropsWithChildren<LoginProps>>
                 <AppConnect />
                 {!isOSSupported && <NoAppConnect />}
                 <div className={styles.otherSignInOptions}>
-                    <VSCodeButton className={styles.button} type="button" onClick={() => onFooterButtonClick('signin')}>
+                    <VSCodeButton
+                        className={styles.button}
+                        type="button"
+                        onClick={() => {
+                            telemetryService.log('CodyVSCodeExtension:auth:clickOtherSignInOptions')
+                            vscodeAPI.postMessage({ command: 'auth', type: 'signin' })
+                        }}
+                    >
                         Other Sign In Options…
                     </VSCodeButton>
                 </div>
             </div>
             {/* Footer */}
             <footer className={styles.footer}>
-                <VSCodeButton className={styles.button} type="button" onClick={() => onFooterButtonClick('support')}>
+                <VSCodeButton
+                    className={styles.button}
+                    type="button"
+                    onClick={() => {
+                        telemetryService.log('CodyVSCodeExtension:auth:clickFeedbackAndSupport')
+                        vscodeAPI.postMessage({ command: 'auth', type: 'support' })
+                    }}
+                >
                     Feedback & Support
                 </VSCodeButton>
             </footer>

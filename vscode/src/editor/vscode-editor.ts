@@ -2,7 +2,7 @@ import { spawnSync } from 'child_process'
 
 import * as vscode from 'vscode'
 
-import {
+import type {
     ActiveTextEditor,
     ActiveTextEditorSelection,
     ActiveTextEditorViewControllers,
@@ -12,9 +12,9 @@ import {
 import { SURROUNDING_LINES } from '@sourcegraph/cody-shared/src/prompt/constants'
 import { convertGitCloneURLToCodebaseName } from '@sourcegraph/cody-shared/src/utils'
 
-import { MyPromptController } from '../my-cody/MyPromptController'
-import { FixupController } from '../non-stop/FixupController'
-import { InlineController } from '../services/InlineController'
+import type { MyPromptController } from '../my-cody/MyPromptController'
+import type { FixupController } from '../non-stop/FixupController'
+import type { InlineController } from '../services/InlineController'
 
 export class VSCodeEditor implements Editor<InlineController, FixupController, MyPromptController> {
     constructor(
@@ -29,15 +29,21 @@ export class VSCodeEditor implements Editor<InlineController, FixupController, M
         return vscode.window.activeTextEditor?.document.fileName ?? ''
     }
 
+    /** @deprecated Use {@link VSCodeEditor.getWorkspaceRootUri} instead. */
     public getWorkspaceRootPath(): string | null {
+        const uri = this.getWorkspaceRootUri()
+        return uri?.scheme === 'file' ? uri.fsPath : null
+    }
+
+    public getWorkspaceRootUri(): vscode.Uri | null {
         const uri = vscode.window.activeTextEditor?.document?.uri
         if (uri) {
             const wsFolder = vscode.workspace.getWorkspaceFolder(uri)
             if (wsFolder) {
-                return wsFolder.uri.fsPath
+                return wsFolder.uri
             }
         }
-        return vscode.workspace.workspaceFolders?.[0]?.uri?.fsPath ?? null
+        return vscode.workspace.workspaceFolders?.[0]?.uri ?? null
     }
 
     public getActiveTextEditor(): ActiveTextEditor | null {

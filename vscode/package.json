@@ -2,30 +2,36 @@
   "name": "cody-ai",
   "private": true,
   "displayName": "Cody AI",
-  "version": "0.6.2",
+  "version": "0.6.3",
   "publisher": "sourcegraph",
   "license": "Apache-2.0",
   "icon": "resources/cody.png",
   "description": "Code AI with codebase context",
   "scripts": {
-    "dev:instance": "CODY_FOCUS_ON_STARTUP=1 NODE_ENV=development code --extensionDevelopmentPath=$PWD --disable-extension=sourcegraph.cody-ai --disable-extension=github.copilot --disable-extension=github.copilot-nightly --inspect-extensions=9333 --new-window . --goto ./src/logged-rerank.ts:16:5",
-    "dev": "pnpm run build:dev && pnpm run dev:instance",
-    "generate:completions": "OUTFILE=/tmp/run-code-completions-on-dataset.js && esbuild ./test/completions/run-code-completions-on-dataset.ts --bundle --external:vscode --outfile=$OUTFILE --format=cjs --platform=node --sourcemap=inline && node --enable-source-maps $OUTFILE",
-    "build": "scripts/download-rg.sh && tsc --build && pnpm run esbuild --minify && vite build --mode production",
-    "build:dev": "scripts/download-rg.sh && tsc --build && concurrently \"pnpm run esbuild --sourcemap\" \"vite build --mode development\"",
-    "esbuild": "esbuild ./src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node",
+    "dev": "pnpm run -s dev:desktop",
+    "dev:desktop": "pnpm run -s build:dev:desktop && CODY_FOCUS_SIDEBAR_ON_STARTUP=1 NODE_ENV=development code --extensionDevelopmentPath=. --disable-extension=sourcegraph.cody-ai --disable-extension=github.copilot --disable-extension=github.copilot-nightly --inspect-extensions=9333 --new-window . --goto ./src/logged-rerank.ts:16:5",
+    "dev:web": "pnpm run -s build:dev:web && pnpm run -s _dev:vscode-test-web --browserType none",
+    "watch:dev:web": "concurrently \"pnpm run -s watch:build:dev:web\" \"pnpm run -s _dev:vscode-test-web --browserType none\"",
+    "_dev:vscode-test-web": "vscode-test-web --extensionDevelopmentPath=. ${WORKSPACE-test/fixtures/workspace}",
+    "build": "tsc --build && pnpm run -s _build:esbuild:desktop && pnpm run -s _build:esbuild:web && pnpm run -s _build:webviews --mode production",
+    "_build:desktop": "pnpm run -s _build:esbuild:desktop && pnpm run -s _build:webviews --mode production",
+    "_build:web": "pnpm run -s _build:esbuild:web && pnpm run -s _build:webviews --mode production",
+    "build:dev:desktop": "concurrently \"pnpm run -s _build:esbuild:desktop\" \"pnpm run -s _build:webviews --mode development\"",
+    "build:dev:web": "concurrently \"pnpm run -s _build:esbuild:web\" \"pnpm run -s _build:webviews --mode development\"",
+    "watch:build:dev:web": "concurrently \"pnpm run -s _build:esbuild:web --watch\" \"pnpm run -s _build:webviews --mode development --watch\"",
+    "_build:esbuild:desktop": "esbuild ./src/extension.node.ts --bundle --outfile=dist/extension.node.js --external:vscode --format=cjs --platform=node --sourcemap",
+    "_build:esbuild:web": "esbuild ./src/extension.web.ts --platform=browser --bundle --outfile=dist/extension.web.js --alias:path=path-browserify --external:vscode --define:process='{\"env\":{}}' --define:window=self --format=cjs --sourcemap",
+    "_build:webviews": "vite -c webviews/vite.config.ts build",
     "lint": "pnpm run lint:js",
     "lint:js": "eslint --cache '**/*.[tj]s?(x)'",
     "release": "ts-node ./scripts/release.ts",
     "release:dry-run": "CODY_RELEASE_DRY_RUN=1 ts-node ./scripts/release.ts",
     "storybook": "storybook dev -p 6007 --no-open --no-version-updates --no-release-notes",
-    "test:e2e": "pnpm exec playwright install && pnpm run --silent build:dev && playwright test",
-    "test:integration": "tsc --build ./test/integration && pnpm run --silent build:dev && node --inspect -r ts-node/register dist/tsc/test/integration/main.js",
+    "test:e2e": "pnpm exec playwright install && tsc --build && pnpm run -s build:dev:desktop && playwright test",
+    "test:integration": "tsc --build ./test/integration && pnpm run -s build:dev:desktop && node --inspect -r ts-node/register dist/tsc/test/integration/main.js",
     "test:unit": "vitest",
-    "vscode:prepublish": "scripts/download-rg.sh && pnpm --silent run build",
-    "watch": "concurrently \"pnpm run watch:esbuild\" \"pnpm run watch:webview\"",
-    "watch:esbuild": "pnpm run esbuild --sourcemap --watch",
-    "watch:webview": "vite build --mode development --watch"
+    "vscode:prepublish": "pnpm -s run build",
+    "generate:completions": "OUTFILE=/tmp/run-code-completions-on-dataset.js && esbuild ./test/completions/run-code-completions-on-dataset.ts --bundle --external:vscode --outfile=$OUTFILE --format=cjs --platform=node --sourcemap=inline && node --enable-source-maps $OUTFILE"
   },
   "categories": [
     "Programming Languages",
@@ -81,7 +87,8 @@
   "engines": {
     "vscode": "^1.79.0"
   },
-  "main": "./dist/extension.js",
+  "main": "./dist/extension.node.js",
+  "browser": "./dist/extension.web.js",
   "activationEvents": [
     "onStartupFinished"
   ],
@@ -796,11 +803,6 @@
             }
           ]
         },
-        "cody.experimental.suggestions": {
-          "type": "boolean",
-          "default": false,
-          "deprecationMessage": "Use `cody.autocomplete` instead"
-        },
         "cody.autocomplete.enabled": {
           "order": 5,
           "type": "boolean",
@@ -847,46 +849,43 @@
           "type": "string",
           "markdownDescription": "Regular expression to filter debug output. If empty, defaults to '.*', which prints all messages."
         },
-        "cody.completions.advanced.provider": {
+        "cody.telemetry.level": {
+          "order": 99,
           "type": "string",
-          "default": "anthropic",
-          "deprecationMessage": "Use `cody.autocomplete.advanced.provider` instead"
+          "enum": [
+            "all",
+            "off"
+          ],
+          "enumDescriptions": [
+            "Sends usage data and errors.",
+            "Disables all extension telemetry."
+          ],
+          "markdownDescription": "Controls the telemetry about Cody usage and errors. See [Cody usage and privacy notice](https://about.sourcegraph.com/terms/cody-notice).",
+          "default": "all"
         },
         "cody.autocomplete.advanced.provider": {
           "type": "string",
           "default": "anthropic",
-          "markdownDescription": "Overwrite the provider used for code autocomplete. Only supported values at the moment are `anthropic` (default), `unstable-codegen`, or `unstable-huggingface`."
-        },
-        "cody.completions.advanced.serverEndpoint": {
-          "type": "string",
-          "deprecationMessage": "Use `cody.autocomplete.advanced.serverEndpoint` instead"
+          "enum": [
+            "anthropic",
+            "unstable-codegen",
+            "unstable-huggingface",
+            "unstable-fireworks"
+          ],
+          "markdownDescription": "Overwrite the provider used for code autocomplete."
         },
         "cody.autocomplete.advanced.serverEndpoint": {
           "type": "string",
-          "markdownDescription": "Overwrite the server endpoint used for code autocomplete. This is only supported with the `unstable-codegen` or `unstable-huggingface` provider."
-        },
-        "cody.completions.advanced.accessToken": {
-          "type": "string",
-          "deprecationMessage": "Use `cody.autocomplete.advanced.accessToken` instead"
+          "markdownDescription": "Overwrite the server endpoint used for code autocomplete. This is only supported with a provider other than `anthropic`."
         },
         "cody.autocomplete.advanced.accessToken": {
           "type": "string",
-          "markdownDescription": "Overwrite the access token used for code autocomplete. This is only supported with the `unstable-huggingface` provider."
-        },
-        "cody.completions.advanced.cache": {
-          "type": "boolean",
-          "default": true,
-          "deprecationMessage": "Use `cody.autocomplete.advanced.cache` instead"
+          "markdownDescription": "Overwrite the access token used for code autocomplete. This is only supported with a provider other than `anthropic`."
         },
         "cody.autocomplete.advanced.cache": {
           "type": "boolean",
           "default": true,
           "markdownDescription": "Enables caching of code autocomplete."
-        },
-        "cody.completions.advanced.embeddings": {
-          "type": "boolean",
-          "default": true,
-          "deprecationMessage": "Use `cody.autocomplete.advanced.embeddings` instead"
         },
         "cody.autocomplete.advanced.embeddings": {
           "order": 99,
@@ -974,14 +973,14 @@
       "cody-logo": {
         "description": "Cody logo",
         "default": {
-          "fontPath": "dist/webviews/assets/cody-icons.woff",
+          "fontPath": "resources/cody-icons.woff",
           "fontCharacter": "\\0041"
         }
       },
       "cody-logo-heavy": {
         "description": "Cody logo heavy",
         "default": {
-          "fontPath": "dist/webviews/assets/cody-icons.woff",
+          "fontPath": "resources/cody-icons.woff",
           "fontCharacter": "\\0042"
         }
       }
@@ -1024,6 +1023,7 @@
     "@types/vscode": "^1.79.0",
     "@types/vscode-webview": "^1.57.1",
     "@vscode/test-electron": "^2.3.2",
+    "@vscode/test-web": "^0.0.44",
     "@vscode/vsce": "^2.19.0",
     "cody-icons-font": "workspace:^",
     "concurrently": "^8.2.0",
@@ -1032,8 +1032,8 @@
     "express": "^4.18.2",
     "mocha": "^10.2.0",
     "ovsx": "^0.8.2",
+    "path-browserify": "^1.0.1",
     "playwright": "^1.33.0",
-    "semver": "^7.5.4",
-    "vite-plugin-static-copy": "^0.16.0"
+    "semver": "^7.5.4"
   }
 }

@@ -21,7 +21,8 @@
     "test": "pnpm run build && vitest"
   },
   "dependencies": {
-    "@sourcegraph/cody-shared": "workspace:*"
+    "@sourcegraph/cody-shared": "workspace:*",
+    "vscode-uri": "^3.0.7"
   },
   "devDependencies": {
     "pkg": "^5.8.1"

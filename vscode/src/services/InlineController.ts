@@ -3,11 +3,11 @@ import * as vscode from 'vscode'
 
 import { ActiveTextEditorSelection, VsCodeInlineController } from '@sourcegraph/cody-shared/src/editor'
 import { SURROUNDING_LINES } from '@sourcegraph/cody-shared/src/prompt/constants'
+import { TelemetryService } from '@sourcegraph/cody-shared/src/telemetry'
 
 import { CodyTaskState } from '../non-stop/utils'
 
 import { CodeLensProvider } from './CodeLensProvider'
-import { logEvent } from './EventLogger'
 import { editDocByUri, getIconPath, updateRangeOnDocChange } from './InlineAssist'
 
 const initPost = new vscode.Position(0, 0)
@@ -48,14 +48,17 @@ export class InlineController implements VsCodeInlineController {
 
     private currentTaskId = ''
     // Workspace State
-    private workspacePath = vscode.workspace.workspaceFolders?.[0].uri
+    private workspacePath = vscode.workspace.workspaceFolders?.[0]?.uri
     public selection: ActiveTextEditorSelection | null = null
     public selectionRange = initRange
     // Inline Tasks States
     public isInProgress = false
     private codeLenses: Map<string, CodeLensProvider> = new Map()
 
-    constructor(private extensionPath: string) {
+    constructor(
+        private extensionPath: string,
+        private telemetryService: TelemetryService
+    ) {
         this.codyIcon = getIconPath('cody', this.extensionPath)
         this.userIcon = getIconPath('user', this.extensionPath)
         this.commentController = this.init()
@@ -322,7 +325,7 @@ export class InlineController implements VsCodeInlineController {
             this.thread.state = error ? 1 : 0
         }
         this.currentTaskId = ''
-        logEvent('CodyVSCodeExtension:inline-assist:stopFixup')
+        this.telemetryService.log('CodyVSCodeExtension:inline-assist:stopFixup')
         if (!error) {
             await vscode.commands.executeCommand('workbench.action.collapseAllComments')
         }
@@ -409,7 +412,7 @@ export class InlineController implements VsCodeInlineController {
             lens?.storeContext(this.currentTaskId, documentUri, original, replacement)
 
             await this.stopFixMode(false, newRange)
-            logEvent('CodyVSCodeExtension:inline-assist:replaced')
+            this.telemetryService.log('CodyVSCodeExtension:inline-assist:replaced')
         } catch (error) {
             await this.stopFixMode(true)
             console.error(error)
@@ -491,10 +494,18 @@ export class Comment implements vscode.Comment {
     }
 
     /**
+     * Naive Html Escape, only does brackets for now, but works well enough to get tags showing up in inline
+     * comments that make reference to them.
+     */
+    private naiveHtmlEscape(text: string): string {
+        return text.replaceAll('<', '&lt;').replaceAll('>', '&gt;')
+    }
+
+    /**
      * Turns string into Markdown string
      */
     private markdown(text: string): vscode.MarkdownString {
-        const markdownText = new vscode.MarkdownString(text)
+        const markdownText = new vscode.MarkdownString(this.naiveHtmlEscape(text))
         markdownText.isTrusted = true
         markdownText.supportHtml = true
         return markdownText
