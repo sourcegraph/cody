@@ -44,6 +44,7 @@ export interface Client {
         options?: {
             prefilledOptions?: PrefilledOptions
             humanChatInput?: string
+            data?: any // returned as is
         }
     ) => Promise<void>
     reset: () => void
