@@ -28,7 +28,7 @@ export class PromptMixin {
      */
     public static mixInto(humanMessage: InteractionMessage): InteractionMessage {
         const rules =
-            "Rules: Provide full workable code as code snippets. Reference only verified file names/paths. Don't make assumptions or fabricate information. Think step-by-step. Answer only if certain or tell me you don't know."
+            "Answer questions using the shared context without making assumptions or fabricating additional details. If my request requires you to generate new code snippets, make sure to include complete workable code, not fragments. If you do not have enough information to answer, tell me you don't know."
         const mixins = [...this.mixins, ...this.customMixin].map(mixin => mixin.prompt).join('\n\n')
         if (mixins) {
             // Stuff the prompt mixins at the start of the human text.
