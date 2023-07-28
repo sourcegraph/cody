@@ -5,7 +5,6 @@ import { trimEndOnLastLineIfWhitespaceOnly } from '../text-processing'
 
 export interface CachedCompletions {
     logId: string
-    isExactPrefix: boolean
     completions: Completion[]
 }
 
@@ -84,8 +83,7 @@ export class CompletionsCache {
                 this.insertCompletion(
                     cacheKey({ prefix: documentState.prefix, languageId: documentState.languageId }),
                     logId,
-                    completion,
-                    true
+                    completion
                 )
             }
 
@@ -97,17 +95,12 @@ export class CompletionsCache {
                     prefix: appendedPrefix,
                     languageId: documentState.languageId,
                 })
-                this.insertCompletion(
-                    key,
-                    logId,
-                    { content: partialCompletionContent },
-                    appendedPrefix === documentState.prefix
-                )
+                this.insertCompletion(key, logId, { content: partialCompletionContent })
             }
         }
     }
 
-    private insertCompletion(key: string, logId: string, completion: Completion, isExactPrefix: boolean): void {
+    private insertCompletion(key: string, logId: string, completion: Completion): void {
         let existingCompletions: Completion[] = []
         if (this.cache.has(key)) {
             existingCompletions = this.cache.get(key)!.completions
@@ -115,7 +108,6 @@ export class CompletionsCache {
 
         const cachedCompletion: CachedCompletions = {
             logId,
-            isExactPrefix,
             completions: existingCompletions.concat(completion),
         }
 
