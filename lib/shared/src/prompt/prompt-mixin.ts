@@ -27,8 +27,7 @@ export class PromptMixin {
      * Prepends all mixins to `humanMessage`. Modifies and returns `humanMessage`.
      */
     public static mixInto(humanMessage: InteractionMessage): InteractionMessage {
-        const rule = newPromptMixin(rules)
-        const mixins = [rule, ...this.customMixin, ...this.mixins].map(mixin => mixin.prompt).join('\n\n')
+        const mixins = [...this.mixins, ...this.customMixin].map(mixin => mixin.prompt).join('\n\n')
         if (mixins) {
             // Stuff the prompt mixins at the start of the human text.
             // Note we do not reflect them in displayText.
@@ -40,7 +39,9 @@ export class PromptMixin {
     /**
      * Creates a mixin with the given, fixed prompt to insert.
      */
-    constructor(private readonly prompt: string) {}
+    constructor(private readonly prompt: string) {
+        PromptMixin.mixins.push(new PromptMixin(rules))
+    }
 }
 
 /**
@@ -49,7 +50,7 @@ export class PromptMixin {
  */
 export function languagePromptMixin(languageCode: string): PromptMixin {
     return new PromptMixin(
-        `(Reply as Cody created and developed by Sourcegraph in the language with RFC5646/ISO language code "${languageCode}".)Hi, I need your help.`
+        `(Reply as Cody created by Sourcegraph in the language with RFC5646/ISO language code "${languageCode}".)Hi, I need your help.`
     )
 }
 
@@ -58,4 +59,4 @@ export function newPromptMixin(text: string): PromptMixin {
 }
 
 const rules =
-    'Rules: Answer questions only if certain. Reference only verified file names/paths. Provide full code where applicable. State if unsure. Do not guess or fabricate information. Think step-by-step.'
+    'Rules: Answer questions only if certain. Reference only verified file names/paths. Provide full workable code where applicable. State if unsure. Do not guess or fabricate information. Think step-by-step.'
