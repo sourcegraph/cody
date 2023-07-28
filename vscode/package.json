@@ -999,6 +999,7 @@
     "openai": "^3.2.1",
     "stream-json": "^1.8.0",
     "uuid": "^9.0.0",
+    "vscode-languageserver-textdocument": "^1.0.8",
     "vscode-uri": "^3.0.7",
     "wink-eng-lite-web-model": "^1.5.0",
     "wink-nlp": "^1.13.1",
