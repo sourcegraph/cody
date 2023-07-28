@@ -7,7 +7,7 @@ import { Interaction } from '../transcript/interaction'
 
 import { Recipe, RecipeContext, RecipeID } from './recipe'
 
-export class GitHistory implements Recipe {
+export class GitHistory extends Recipe {
     public id: RecipeID = 'git-history'
 
     public async getInteraction(_humanChatInput: string, context: RecipeContext): Promise<Interaction | null> {

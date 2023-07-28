@@ -2,11 +2,10 @@
 
 import { generatePreambleGetter } from '@sourcegraph/cody-shared/src/chat/preamble'
 
-const getCodebasePreamble = (codebase: string): { preamble: string; answer: string } => ({
+const getCodebasePreamble = ([codebase]: string[]): { preamble: string; answer: string } => ({
     preamble:
         `You have access to the \`${codebase}\` repository. You are able to answer questions about the \`${codebase}\` repository. ` +
-        `I will provide the relevant code snippets from the \`${codebase}\` repository when necessary to answer my questions. ` +
-        `If I ask you a question about a repository other than \`${codebase}\`, tell me to add additional repositories to the chat context using the repositories selector below the input box to help you answer the question.`,
+        `I will provide the relevant code snippets from the \`${codebase}\` repository when necessary to answer my questions. `,
     answer: `I have access to the \`${codebase}\` repository and can answer questions about its files.`,
 })
 
@@ -33,7 +32,7 @@ export const getChatPreamble = generatePreambleGetter({
     actions: CHAT_ACTIONS_PREAMBLE,
     rules: CHAT_RULES_PREAMBLE,
     answer: CHAT_ANSWER_PREAMBLE,
-    options: { getCodebasePreamble },
+    getCodebasePreamble,
 })
 
 // TODO: What if someone transitions from a chat to an edit flow?
@@ -56,5 +55,5 @@ export const getEditPreamble = generatePreambleGetter({
     actions: EDIT_ACTIONS_PREAMBLE,
     rules: EDIT_RULES_PREAMBLE,
     answer: EDIT_ANSWER_PREAMBLE,
-    options: { getCodebasePreamble },
+    getCodebasePreamble,
 })

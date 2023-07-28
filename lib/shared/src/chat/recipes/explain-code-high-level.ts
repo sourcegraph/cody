@@ -5,7 +5,7 @@ import { Interaction } from '../transcript/interaction'
 import { getContextMessagesFromSelection, getNormalizedLanguageName, MARKDOWN_FORMAT_PROMPT } from './helpers'
 import { Recipe, RecipeContext, RecipeID } from './recipe'
 
-export class ExplainCodeHighLevel implements Recipe {
+export class ExplainCodeHighLevel extends Recipe {
     public id: RecipeID = 'explain-code-high-level'
 
     public async getInteraction(_humanChatInput: string, context: RecipeContext): Promise<Interaction | null> {

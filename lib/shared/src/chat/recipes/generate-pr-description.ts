@@ -8,7 +8,7 @@ import { Interaction } from '../transcript/interaction'
 
 import { Recipe, RecipeContext, RecipeID } from './recipe'
 
-export class PrDescription implements Recipe {
+export class PrDescription extends Recipe {
     public id: RecipeID = 'pr-description'
 
     public async getInteraction(_humanChatInput: string, context: RecipeContext): Promise<Interaction | null> {

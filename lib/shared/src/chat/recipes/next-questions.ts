@@ -10,7 +10,7 @@ import { Interaction } from '../transcript/interaction'
 import { numResults } from './helpers'
 import { Recipe, RecipeContext, RecipeID } from './recipe'
 
-export class NextQuestions implements Recipe {
+export class NextQuestions extends Recipe {
     public id: RecipeID = 'next-questions'
 
     public async getInteraction(humanChatInput: string, context: RecipeContext): Promise<Interaction | null> {

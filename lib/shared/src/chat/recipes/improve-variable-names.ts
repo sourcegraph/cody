@@ -10,7 +10,7 @@ import {
 } from './helpers'
 import { Recipe, RecipeContext, RecipeID } from './recipe'
 
-export class ImproveVariableNames implements Recipe {
+export class ImproveVariableNames extends Recipe {
     public id: RecipeID = 'improve-variable-names'
 
     public async getInteraction(_humanChatInput: string, context: RecipeContext): Promise<Interaction | null> {

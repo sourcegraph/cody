@@ -6,7 +6,7 @@ import { Interaction } from '../transcript/interaction'
 
 import { Recipe, RecipeContext, RecipeID } from './recipe'
 
-export class ReleaseNotes implements Recipe {
+export class ReleaseNotes extends Recipe {
     public id: RecipeID = 'release-notes'
 
     public async getInteraction(_humanChatInput: string, context: RecipeContext): Promise<Interaction | null> {

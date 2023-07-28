@@ -21,6 +21,7 @@ import { debug } from '../log'
 import { CodyPromptType } from '../my-cody/types'
 import { FixupTask } from '../non-stop/FixupTask'
 import { IdleRecipeRunner } from '../non-stop/roles'
+import { getChatPreamble } from '../preamble'
 import { AuthProvider } from '../services/AuthProvider'
 import { LocalStorage } from '../services/LocalStorageProvider'
 import { TestSupport } from '../test-support'
@@ -431,7 +432,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
 
         const myPremade = this.editor.controllers.prompt?.getMyPrompts().premade
         const { prompt, contextFiles } = await transcript.getPromptForLastInteraction(
-            getPreamble(this.contextProvider.context.getCodebase(), myPremade),
+            getChatPreamble(this.contextProvider.context.getCodebase(), myPremade),
             this.maxPromptTokens
         )
         transcript.setUsedContextFilesForLastInteraction(contextFiles)

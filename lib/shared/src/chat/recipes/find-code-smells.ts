@@ -5,7 +5,7 @@ import { Interaction } from '../transcript/interaction'
 import { getNormalizedLanguageName } from './helpers'
 import { Recipe, RecipeContext, RecipeID } from './recipe'
 
-export class FindCodeSmells implements Recipe {
+export class FindCodeSmells extends Recipe {
     public id: RecipeID = 'find-code-smells'
 
     public async getInteraction(_humanChatInput: string, context: RecipeContext): Promise<Interaction | null> {

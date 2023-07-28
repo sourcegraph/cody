@@ -15,7 +15,7 @@ import { Recipe, RecipeContext, RecipeID } from './recipe'
 /** ======================================================
  * Recipe for Generating a New File
 ====================================================== **/
-export class InlineTouch implements Recipe {
+export class InlineTouch extends Recipe {
     public id: RecipeID = 'inline-touch'
     private workspacePath = vscode.workspace.workspaceFolders?.[0].uri
 

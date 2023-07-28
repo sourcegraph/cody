@@ -10,7 +10,7 @@ import {
 } from './helpers'
 import { Recipe, RecipeContext, RecipeID } from './recipe'
 
-export class GenerateDocstring implements Recipe {
+export class GenerateDocstring extends Recipe {
     public id: RecipeID = 'generate-docstring'
 
     public async getInteraction(_humanChatInput: string, context: RecipeContext): Promise<Interaction | null> {

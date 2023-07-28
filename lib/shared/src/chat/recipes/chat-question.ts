@@ -13,7 +13,7 @@ import { Interaction } from '../transcript/interaction'
 import { numResults } from './helpers'
 import { Recipe, RecipeContext, RecipeID } from './recipe'
 
-export class ChatQuestion implements Recipe {
+export class ChatQuestion extends Recipe {
     public id: RecipeID = 'chat-question'
 
     constructor(private debug: (filterLabel: string, text: string, ...args: unknown[]) => void) {}

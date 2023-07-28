@@ -1,4 +1,3 @@
-import { ChatQuestion } from '@sourcegraph/cody-shared/src/chat/recipes/chat-question'
 import { ContextSearch } from '@sourcegraph/cody-shared/src/chat/recipes/context-search'
 import { ExplainCodeDetailed } from '@sourcegraph/cody-shared/src/chat/recipes/explain-code-detailed'
 import { ExplainCodeHighLevel } from '@sourcegraph/cody-shared/src/chat/recipes/explain-code-high-level'
@@ -19,6 +18,7 @@ import { Recipe, RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/reci
 import { TranslateToLanguage } from '@sourcegraph/cody-shared/src/chat/recipes/translate'
 
 import { debug } from '../log'
+import { getChatPreamble, getEditPreamble } from '../preamble'
 
 const registeredRecipes: { [id in RecipeID]?: Recipe } = {}
 
@@ -35,25 +35,27 @@ function init(): void {
         return
     }
 
+    const fixup = new Fixup(getEditPreamble)
+
     const recipes: Recipe[] = [
-        new ChatQuestion(debug),
-        new ContextSearch(),
-        new ExplainCodeDetailed(),
-        new ExplainCodeHighLevel(),
-        new FindCodeSmells(),
-        new Fixup(),
-        new GenerateDocstring(),
-        new GenerateTest(),
-        new GitHistory(),
-        new ImproveVariableNames(),
-        new MyPrompt(),
+        // new ChatQuestion(debug),
+        new ContextSearch(getChatPreamble),
+        new ExplainCodeDetailed(getChatPreamble),
+        new ExplainCodeHighLevel(getChatPreamble),
+        new FindCodeSmells(getChatPreamble),
+        new Fixup(getChatPreamble),
+        new GenerateDocstring(getEditPreamble),
+        new GenerateTest(getEditPreamble),
+        new GitHistory(getChatPreamble),
+        new ImproveVariableNames(getEditPreamble),
+        new MyPrompt(getChatPreamble),
         new InlineChat(debug),
         new InlineTouch(debug),
-        new NextQuestions(),
-        new NonStop(),
-        new ReleaseNotes(),
-        new PrDescription(),
-        new TranslateToLanguage(),
+        new NextQuestions(getChatPreamble),
+        new NonStop(getEditPreamble),
+        new ReleaseNotes(getChatPreamble),
+        new PrDescription(getChatPreamble),
+        new TranslateToLanguage(getChatPreamble),
     ]
 
     for (const recipe of recipes) {

@@ -11,7 +11,7 @@ import { commandRegex } from './helpers'
 import { InlineTouch } from './inline-touch'
 import { Recipe, RecipeContext, RecipeID } from './recipe'
 
-export class InlineChat implements Recipe {
+export class InlineChat extends Recipe {
     public id: RecipeID = 'inline-chat'
 
     constructor(private debug: (filterLabel: string, text: string, ...args: unknown[]) => void) {}

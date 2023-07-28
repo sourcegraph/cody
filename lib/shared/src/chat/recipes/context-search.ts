@@ -25,7 +25,7 @@ Functionality:
 - Sanitizes the content by removing newlines, tabs and backticks before displaying.
 */
 
-export class ContextSearch implements Recipe {
+export class ContextSearch extends Recipe {
     public id: RecipeID = 'context-search'
 
     public async getInteraction(humanChatInput: string, context: RecipeContext): Promise<Interaction | null> {

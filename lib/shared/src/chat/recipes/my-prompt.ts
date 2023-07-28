@@ -45,7 +45,7 @@ export const defaultCodyPromptContext: CodyPromptContext = {
  * Recipe for running custom prompts from the cody.json files
  * Works with VS Code only
 ====================================================== **/
-export class MyPrompt implements Recipe {
+export class MyPrompt extends Recipe {
     public id: RecipeID = 'my-prompt'
     private promptStore = new Map<string, string>()
 

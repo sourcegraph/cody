@@ -8,7 +8,7 @@ import { numResults } from './helpers'
 import { Recipe, RecipeContext, RecipeID } from './recipe'
 
 // TODO: Disconnect recipe from chat
-export class NonStop implements Recipe {
+export class NonStop extends Recipe {
     public id: RecipeID = 'non-stop'
 
     public async getInteraction(taskId: string, context: RecipeContext): Promise<Interaction | null> {

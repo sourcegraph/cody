@@ -5,7 +5,7 @@ import { Interaction } from '../transcript/interaction'
 import { languageMarkdownID, languageNames } from './langs'
 import { Recipe, RecipeContext, RecipeID } from './recipe'
 
-export class TranslateToLanguage implements Recipe {
+export class TranslateToLanguage extends Recipe {
     public id: RecipeID = 'translate-to-language'
 
     public static options = languageNames

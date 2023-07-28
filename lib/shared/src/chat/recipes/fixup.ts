@@ -8,7 +8,7 @@ import { Interaction } from '../transcript/interaction'
 import { contentSanitizer, numResults } from './helpers'
 import { Recipe, RecipeContext, RecipeID } from './recipe'
 
-export class Fixup implements Recipe {
+export class Fixup extends Recipe {
     public id: RecipeID = 'fixup'
 
     public async getInteraction(humanChatInput: string, context: RecipeContext): Promise<Interaction | null> {

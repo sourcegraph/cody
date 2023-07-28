@@ -10,7 +10,7 @@ import {
 } from './helpers'
 import { Recipe, RecipeContext, RecipeID } from './recipe'
 
-export class GenerateTest implements Recipe {
+export class GenerateTest extends Recipe {
     public id: RecipeID = 'generate-unit-test'
 
     public async getInteraction(_humanChatInput: string, context: RecipeContext): Promise<Interaction | null> {
