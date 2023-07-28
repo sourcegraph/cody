@@ -109,3 +109,40 @@ export function getMultiRepoPreamble(codebases: string[], customPreamble?: Pream
         },
     ]
 }
+
+interface GeneratePreambleParameters {
+    actions: string
+    rules: string
+    answer: string
+    options: {
+        /** A callback to provide a codebase specific example to help guide Cody's context */
+        getCodebasePreamble: (codebase: string) => { preamble: string; answer: string }
+    }
+}
+
+export function generatePreambleGetter({ actions, rules, answer, options }: GeneratePreambleParameters) {
+    return function (codebase: string | undefined, customPreamble?: Preamble): Message[] {
+        const actionsText = customPreamble?.actions ?? actions
+        const rulesText = customPreamble?.rules ?? rules
+        const answerText = customPreamble?.answer ?? answer
+        const preamble = [actionsText, rulesText]
+        const preambleResponse = [answerText]
+
+        if (codebase) {
+            const codebasePreamble = options.getCodebasePreamble(codebase)
+            preamble.push(codebasePreamble.preamble)
+            preambleResponse.push(codebasePreamble.answer)
+        }
+
+        return [
+            {
+                speaker: 'human',
+                text: preamble.join('\n\n'),
+            },
+            {
+                speaker: 'assistant',
+                text: preambleResponse.join('\n'),
+            },
+        ]
+    }
+}
