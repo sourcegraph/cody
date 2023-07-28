@@ -27,11 +27,13 @@ export class PromptMixin {
      * Prepends all mixins to `humanMessage`. Modifies and returns `humanMessage`.
      */
     public static mixInto(humanMessage: InteractionMessage): InteractionMessage {
+        const rules =
+            "Rules: Provide full workable code as code snippets. Reference only verified file names/paths. Don't make assumptions or fabricate information. Think step-by-step. Answer only if certain or tell me you don't know."
         const mixins = [...this.mixins, ...this.customMixin].map(mixin => mixin.prompt).join('\n\n')
         if (mixins) {
             // Stuff the prompt mixins at the start of the human text.
             // Note we do not reflect them in displayText.
-            return { ...humanMessage, text: `${mixins}\n\n${humanMessage.text}` }
+            return { ...humanMessage, text: `${rules}\n\n${mixins}\n\n${humanMessage.text}` }
         }
         return humanMessage
     }
@@ -47,10 +49,8 @@ export class PromptMixin {
  * End with a new statement to redirect Cody to the next prompt. This prevents Cody from responding to the language prompt.
  */
 export function languagePromptMixin(languageCode: string): PromptMixin {
-    const rules =
-        "Rules: Provide full workable code as code snippets. Reference only verified file names/paths. Don't make assumptions or fabricate information. Think step-by-step. Answer only if certain or tell me you don't know."
     return new PromptMixin(
-        `${rules} (Reply as Cody created by Sourcegraph in the language with RFC5646/ISO language code "${languageCode}") Hi, I need your help.`
+        `(Reply as Cody created by Sourcegraph in the language with RFC5646/ISO language code "${languageCode}") Hi, I need your help.`
     )
 }
 
