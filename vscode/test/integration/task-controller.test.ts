@@ -36,6 +36,7 @@ suite('Cody Fixup Task Controller', function () {
         fixups.createTask(textEditor.document.uri, 'Replace hello with goodbye', textEditor.selection)
 
         // Check the chat transcript contains markdown
+        await new Promise(resolve => setTimeout(resolve, 250)) // HACK: fix flakiness
         const humanMessage = await getTranscript(0)
 
         assert.match(humanMessage.displayText || '', /^Cody Fixups: Replace hello with goodbye/)
