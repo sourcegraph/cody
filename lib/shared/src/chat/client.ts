@@ -107,7 +107,7 @@ export async function createClient({
             } else {
                 setTranscript(transcript)
                 if (data) {
-                    setMessageInProgress(data)
+                    setMessageInProgress({ data, speaker: 'assistant' })
                 } else {
                     setMessageInProgress(null)
                 }

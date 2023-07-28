@@ -76,7 +76,7 @@ export type Notifications = {
     // The server received new messages for the ongoing 'chat/executeRecipe'
     // request. The server should never send this notification outside of a
     // 'chat/executeRecipe' request.
-    'chat/updateMessageInProgress': [ChatMessage | null | { data?: any }]
+    'chat/updateMessageInProgress': [ChatMessage | null]
 }
 
 export interface ClientInfo {
