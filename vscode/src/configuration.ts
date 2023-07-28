@@ -36,14 +36,14 @@ export function getConfiguration(config: ConfigGetter): Configuration {
         debugRegex = new RegExp('.*')
     }
 
-    let autocompleteAdvancedProvider = config.get<'anthropic' | 'unstable-codegen' | 'unstable-huggingface'>(
-        CONFIG_KEY.autocompleteAdvancedProvider,
-        'anthropic'
-    )
+    let autocompleteAdvancedProvider = config.get<
+        'anthropic' | 'unstable-codegen' | 'unstable-huggingface' | 'unstable-fireworks'
+    >(CONFIG_KEY.autocompleteAdvancedProvider, 'anthropic')
     if (
         autocompleteAdvancedProvider !== 'anthropic' &&
         autocompleteAdvancedProvider !== 'unstable-codegen' &&
-        autocompleteAdvancedProvider !== 'unstable-huggingface'
+        autocompleteAdvancedProvider !== 'unstable-huggingface' &&
+        autocompleteAdvancedProvider !== 'unstable-fireworks'
     ) {
         autocompleteAdvancedProvider = 'anthropic'
         void vscode.window.showInformationMessage(

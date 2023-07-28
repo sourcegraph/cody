@@ -16,7 +16,7 @@ export interface Configuration {
     experimentalCustomRecipes: boolean
     experimentalGuardrails: boolean
     experimentalNonStop: boolean
-    autocompleteAdvancedProvider: 'anthropic' | 'unstable-codegen' | 'unstable-huggingface'
+    autocompleteAdvancedProvider: 'anthropic' | 'unstable-codegen' | 'unstable-huggingface' | 'unstable-fireworks'
     autocompleteAdvancedServerEndpoint: string | null
     autocompleteAdvancedAccessToken: string | null
     autocompleteAdvancedCache: boolean
