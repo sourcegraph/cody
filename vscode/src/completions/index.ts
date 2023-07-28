@@ -162,10 +162,6 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
 
         CompletionLogger.clear()
 
-        if (!vscode.window.activeTextEditor || document.uri.scheme === 'cody') {
-            return { items: [] }
-        }
-
         const docContext = getCurrentDocContext(document, position, this.maxPrefixChars, this.maxSuffixChars)
         if (!docContext) {
             return { items: [] }
