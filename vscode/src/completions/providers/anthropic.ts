@@ -1,7 +1,7 @@
 import * as anthropic from '@anthropic-ai/sdk'
 
 import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
-import { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/nodeClient'
+import { SourcegraphCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/client'
 import { CompletionParameters } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
 
 import { Completion } from '..'
@@ -27,13 +27,13 @@ function tokensToChars(tokens: number): number {
 
 interface AnthropicOptions {
     contextWindowTokens: number
-    completionsClient: SourcegraphNodeCompletionsClient
+    completionsClient: SourcegraphCompletionsClient
 }
 
 export class AnthropicProvider extends Provider {
     private promptChars: number
     private responseTokens: number
-    private completionsClient: SourcegraphNodeCompletionsClient
+    private completionsClient: SourcegraphCompletionsClient
 
     constructor(options: ProviderOptions, anthropicOptions: AnthropicOptions) {
         super(options)
