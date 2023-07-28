@@ -1,5 +1,3 @@
-import { spawnSync } from 'child_process'
-
 import * as vscode from 'vscode'
 
 import { ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
@@ -17,6 +15,7 @@ import { FilenameContextFetcher } from '../local-context/filename-context-fetche
 import { LocalKeywordContextFetcher } from '../local-context/local-keyword-context-fetcher'
 import { debug } from '../log'
 import { getRerankWithLog } from '../logged-rerank'
+import { repositoryRemoteUrl } from '../repository/repositoryHelpers'
 import { AuthProvider } from '../services/AuthProvider'
 import { LocalStorage } from '../services/LocalStorageProvider'
 import { SecretStorage } from '../services/SecretStorageProvider'
@@ -250,14 +249,13 @@ export async function getCodebaseContext(
     telemetryService: TelemetryService
 ): Promise<CodebaseContext | null> {
     const client = new SourcegraphGraphQLAPIClient(config)
-    const workspaceRoot = editor.getWorkspaceRootPath()
+    const workspaceRoot = editor.getWorkspaceRootUri()
     if (!workspaceRoot) {
         return null
     }
-    const gitCommand = spawnSync('git', ['remote', 'get-url', 'origin'], { cwd: workspaceRoot })
-    const gitOutput = gitCommand.stdout?.toString().trim() || null
+    const remoteUrl = repositoryRemoteUrl(workspaceRoot)
     // Get codebase from config or fallback to getting repository name from git clone URL
-    const codebase = config.codebase || (gitOutput && convertGitCloneURLToCodebaseName(gitOutput))
+    const codebase = config.codebase || (remoteUrl ? convertGitCloneURLToCodebaseName(remoteUrl) : null)
     if (!codebase) {
         return null
     }
