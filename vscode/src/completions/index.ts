@@ -14,7 +14,7 @@ import { getCurrentDocContext } from './document'
 import { History } from './history'
 import * as CompletionLogger from './logger'
 import { detectMultiline } from './multiline'
-import { Provider, ProviderConfig, ProviderOptions } from './providers/provider'
+import { CompletionProviderTracer, Provider, ProviderConfig, ProviderOptions } from './providers/provider'
 import { RequestManager } from './request-manager'
 import { sharedPostProcess } from './shared-post-process'
 import { ProvideInlineCompletionItemsTracer, ProvideInlineCompletionsItemTraceData } from './tracer'
@@ -359,7 +359,8 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
             prefix,
             completers,
             contextResult.context,
-            abortController.signal
+            abortController.signal,
+            tracer ? createCompletionProviderTracer(tracer) : undefined
         )
 
         // Shared post-processing logic
@@ -484,6 +485,13 @@ function createTracerForInvocation(tracer: ProvideInlineCompletionItemsTracer): 
     return (update: Partial<ProvideInlineCompletionsItemTraceData>) => {
         data = { ...data, ...update }
         tracer(data)
+    }
+}
+
+function createCompletionProviderTracer(tracer: SingleInvocationTracer): CompletionProviderTracer {
+    return {
+        params: data => tracer({ completionProviderCallParams: data }),
+        result: data => tracer({ completionProviderCallResult: data }),
     }
 }
 
