@@ -140,7 +140,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
 
             console.error(error)
             debug('CodyCompletionProvider:inline:error', `${error.toString()}\n${error.stack}`)
-            return { items: [] }
+            throw error
         }
     }
 
