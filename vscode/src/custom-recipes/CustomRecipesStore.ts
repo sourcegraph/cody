@@ -20,6 +20,7 @@ import { constructFileUri, getFileContentText } from './helper'
 export class CustomRecipesStore {
     public myPremade: Preamble | undefined = undefined
     public myPromptsMap = new Map<string, CodyPrompt>()
+    public mySlashCommands = new Map<string, CodyPrompt>()
     public myStarter = ''
 
     public userPromptsJSON: MyPromptsJSON | null = null
@@ -94,6 +95,9 @@ export class CustomRecipesStore {
                 const prompt = prompts[key]
                 prompt.name = key
                 prompt.type = type
+                if (prompt.slashCommand) {
+                    this.mySlashCommands.set(`/${prompt.slashCommand}`, prompt)
+                }
                 this.myPromptsMap.set(key, prompt)
             }
         }
@@ -112,7 +116,7 @@ export class CustomRecipesStore {
 
     // Get the context of the json file from the file system
     private async getPromptsFromFileSystem(type: CodyPromptType): Promise<string | null> {
-        if (type === 'last used') {
+        if (type === 'recently used') {
             return null
         }
         const codyJsonFilePathUri = this.jsonFileUris[type]

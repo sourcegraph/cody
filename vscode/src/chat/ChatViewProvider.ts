@@ -136,6 +136,11 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
         if (submitType === 'suggestion') {
             this.telemetryService.log('CodyVSCodeExtension:chatPredictions:used')
         }
+        if (text === '/') {
+            this.telemetryService.log('CodyVSCodeExtension:custom-recipe-command-menu:clicked')
+            void vscode.commands.executeCommand('cody.action.menu', true)
+            return
+        }
         MessageProvider.inputHistory.push(text)
         if (this.contextProvider.config.experimentalChatPredictions) {
             void this.runRecipeForSuggestion('next-questions', text)

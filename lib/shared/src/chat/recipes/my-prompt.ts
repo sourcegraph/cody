@@ -28,7 +28,7 @@ export interface CodyPromptContext {
     openTabs?: boolean
     currentDir?: boolean
     currentFile?: boolean
-    excludeSelection?: boolean
+    selection?: boolean
     command?: string
     output?: string
     filePath?: string
@@ -39,7 +39,7 @@ export interface CodyPromptContext {
 // Default to include selection context only
 export const defaultCodyPromptContext: CodyPromptContext = {
     codebase: false,
-    excludeSelection: false,
+    selection: true,
 }
 
 /** ======================================================
@@ -48,14 +48,22 @@ export const defaultCodyPromptContext: CodyPromptContext = {
 ====================================================== **/
 export class MyPrompt implements Recipe {
     public id: RecipeID = 'my-prompt'
-    private promptStore = new Map<string, string>()
 
     public async getInteraction(humanChatInput: string, context: RecipeContext): Promise<Interaction | null> {
+        const contextConfig = await context.editor.controllers?.prompt?.get('context')
+        const isContextRequired = contextConfig
+            ? (JSON.parse(contextConfig) as CodyPromptContext)
+            : defaultCodyPromptContext
+        // Check if selection is required
         const selection = context.editor.getActiveTextEditorSelection()
+        if (isContextRequired?.selection && !selection?.selectedText) {
+            await vscode.window.showErrorMessage('This recipe requires text to be selected in the editor.')
+            return null
+        }
         // Make prompt text
         const humanInput = humanChatInput.trim()
         // Match human input with key from promptStore to get prompt text when there is none
-        const promptText = humanInput || this.promptStore.get(humanInput) || null
+        const promptText = humanInput || (await context.editor.controllers?.prompt?.get()) || null
         if (!promptText) {
             await vscode.window.showErrorMessage('Please enter a valid prompt for the recipe.')
             return null
@@ -74,6 +82,7 @@ export class MyPrompt implements Recipe {
                     truncatedText,
                     context.editor,
                     context.codebaseContext,
+                    isContextRequired,
                     selection,
                     commandOutput
                 ),
@@ -91,14 +100,11 @@ export class MyPrompt implements Recipe {
         text: string,
         editor: Editor,
         codebaseContext: CodebaseContext,
+        isContextRequired: CodyPromptContext,
         selection?: ActiveTextEditorSelection | null,
         commandOutput?: string | null
     ): Promise<ContextMessage[]> {
         const contextMessages: ContextMessage[] = []
-        const contextConfig = await editor.controllers?.prompt?.get('context')
-        const isContextRequired = contextConfig
-            ? (JSON.parse(contextConfig) as CodyPromptContext)
-            : defaultCodyPromptContext
         // Return empty array if no context is required
         if (isContextRequired.none) {
             return []
@@ -140,7 +146,7 @@ export class MyPrompt implements Recipe {
             contextMessages.push(...ChatQuestion.getEditorContext(editor))
         }
         // Add selected text as context when available
-        if (selection?.selectedText && !isContextRequired.excludeSelection) {
+        if (selection?.selectedText && !isContextRequired.selection) {
             contextMessages.push(...ChatQuestion.getEditorSelectionContext(selection))
         }
         // Create context messages from terminal output if any

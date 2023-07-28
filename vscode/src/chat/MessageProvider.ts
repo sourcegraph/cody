@@ -536,20 +536,28 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
                 if (!type) {
                     break
                 }
-                return this.editor.controllers.prompt?.addJSONFile(type)
+                await this.editor.controllers.prompt?.addJSONFile(type)
+                break
         }
         // Get prompt details from controller by title then execute prompt's command
         const promptText = this.editor.controllers.prompt?.find(title)
         await this.editor.controllers.prompt?.get('command')
         if (!promptText) {
             debug('executeCustomRecipe:noPrompt', title)
-            return
+            return this.executeCommands(title, 'chat-question')
         }
         await this.executeCommands(promptText, 'my-prompt')
         return promptText
     }
 
     protected async executeCommands(text: string, recipeID: RecipeID = 'chat-question'): Promise<void> {
+        text = text.trim()
+        if (!text?.startsWith('/')) {
+            return this.executeRecipe(recipeID, text)
+        }
+        if (text === '/') {
+            return vscode.commands.executeCommand('cody.action.menu')
+        }
         switch (true) {
             case /^\/o(pen)?/i.test(text) && this.editor.controllers.prompt !== undefined:
                 // open the user's ~/.vscode/cody.json file
@@ -558,12 +566,17 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
             case /^\/r(eset)?/i.test(text):
                 await this.clearAndRestartSession()
                 break
-            case /^\/s(earch)?\s/i.test(text):
+            case /^\/s(earch)?(\s)?/i.test(text):
                 await this.executeRecipe('context-search', text)
                 break
-            default:
-                return this.executeRecipe(recipeID, text)
+            case /^\/(explain|docstring|tests|smell)/i.test(text):
+                return this.executeRecipe('my-prompt', this.editor.controllers.prompt?.find(text, true))
         }
+        const customCommand = this.editor.controllers.prompt?.find(text, true)
+        if (customCommand) {
+            return this.executeRecipe('my-prompt', customCommand)
+        }
+        return this.executeRecipe(recipeID, text)
     }
 
     /**

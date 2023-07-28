@@ -442,6 +442,13 @@
         "icon": "$(bookmark)"
       },
       {
+        "command": "cody.action.menu",
+        "category": "Cody",
+        "title": "Cody Commands (Experimental)",
+        "when": "cody.activated",
+        "enablement": "config.cody.experimental.customRecipes"
+      },
+      {
         "command": "cody.autocomplete.openTraceView",
         "category": "Cody",
         "title": "Open Autocomplete Trace View",
@@ -477,7 +484,7 @@
         "when": "cody.activated && editorFocus && config.cody.inlineChat.enabled"
       },
       {
-        "command": "cody.customRecipes.list",
+        "command": "cody.action.menu",
         "key": "ctrl+shift+v",
         "mac": "cmd+shift+v",
         "when": "cody.activated && editorFocus"

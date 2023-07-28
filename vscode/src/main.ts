@@ -164,12 +164,16 @@ const register = async (
         })
     )
 
-    const executeRecipeInSidebar = async (recipe: RecipeID, openChatView = true): Promise<void> => {
+    const executeRecipeInSidebar = async (
+        recipe: RecipeID,
+        openChatView = true,
+        humanInput?: string
+    ): Promise<void> => {
         if (openChatView) {
             sidebarChatProvider.showTab('chat')
         }
 
-        await sidebarChatProvider.executeRecipe(recipe, '')
+        await sidebarChatProvider.executeRecipe(recipe, humanInput)
     }
 
     const webviewErrorMessenger = async (error: string): Promise<void> => {
@@ -222,9 +226,11 @@ const register = async (
             // Remove the inline chat
             inlineChatManager.removeProviderForThread(thread)
         }),
-        vscode.commands.registerCommand('cody.inline.new', () =>
-            vscode.commands.executeCommand('workbench.action.addComment')
-        ),
+        vscode.commands.registerCommand('cody.inline.new', async () => {
+            // move focus line to the end of the current selection
+            await vscode.commands.executeCommand('cursorLineEndSelect')
+            await vscode.commands.executeCommand('workbench.action.addComment')
+        }),
         // Tests
         // Access token - this is only used in configuration tests
         vscode.commands.registerCommand('cody.test.token', async (args: any[]) => {
@@ -250,13 +256,15 @@ const register = async (
             await sidebarChatProvider.clearHistory()
         }),
         // Recipes
+        vscode.commands.registerCommand('cody.action.chat', input => executeRecipeInSidebar('chat-question', input)),
+        vscode.commands.registerCommand('cody.action.menu', showDesc => prompt.commandQuickPicker(showDesc)),
         vscode.commands.registerCommand('cody.customRecipes.exec', async title => {
             if (!sidebarChatProvider.isCustomRecipeAction(title)) {
                 sidebarChatProvider.showTab('chat')
             }
             await sidebarChatProvider.executeCustomRecipe(title)
         }),
-        vscode.commands.registerCommand('cody.customRecipes.list', () => prompt.quickRecipePicker()),
+        vscode.commands.registerCommand('cody.customRecipes.list', () => prompt.recipesQuickPicker()),
         vscode.commands.registerCommand('cody.recipe.explain-code', () =>
             executeRecipeInSidebar('explain-code-detailed')
         ),

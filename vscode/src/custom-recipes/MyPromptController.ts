@@ -125,7 +125,7 @@ export class MyPromptController implements VsCodeMyPromptController {
                 // return the terminal output from the command for the prompt if any
                 return this.getCommandOutput()
             default:
-                return null
+                return this.myPromptInProgress?.prompt || null
         }
     }
 
@@ -139,8 +139,8 @@ export class MyPromptController implements VsCodeMyPromptController {
     }
 
     // Find the prompt based on the id
-    public find(id: string): string {
-        const myPrompt = this.myPromptsMap.get(id)
+    public find(id: string, isSlashCommand = false): string {
+        const myPrompt = isSlashCommand ? this.store.mySlashCommands.get(id) : this.myPromptsMap.get(id)
         if (!myPrompt) {
             return ''
         }
@@ -279,13 +279,13 @@ export class MyPromptController implements VsCodeMyPromptController {
                 await this.fileTypeActionProcessor(wsFileAction, 'workspace')
             }
         } else if (selected === 'list') {
-            await this.quickRecipePicker()
+            await this.recipesQuickPicker()
         }
         await this.refresh()
     }
 
     // Menu with a list of user recipes to run
-    public async quickRecipePicker(): Promise<void> {
+    public async recipesQuickPicker(): Promise<void> {
         try {
             const lastUsedRecipes = [...this.lastUsedRecipes]
                 ?.map(id => {
@@ -298,9 +298,10 @@ export class MyPromptController implements VsCodeMyPromptController {
             const recipesFromStore = this.store.getRecipes()
             const promptList = lastUsedRecipes.length ? [...lastUsedRecipesList, ...recipesFromStore] : recipesFromStore
             const promptItems = promptList
-                ?.filter(recipe => recipe !== null)
+                ?.filter(recipe => recipe !== null && recipe?.[1]?.type !== 'default')
                 .map(recipeItem => {
                     const recipe = recipeItem[1]
+                    const description = recipe.slashCommand ? '/' + recipe.slashCommand : ''
                     return recipe.prompt === 'seperator'
                         ? {
                               kind: -1,
@@ -308,16 +309,15 @@ export class MyPromptController implements VsCodeMyPromptController {
                               detail: recipe.prompt,
                           }
                         : {
-                              detail: recipe.prompt,
-                              label: recipeItem[0],
-                              description: recipe.type,
+                              label: recipe.name || recipeItem[0],
+                              description,
                           }
                 }) as vscode.QuickPickItem[]
             const seperator: vscode.QuickPickItem = { kind: -1, label: 'action' }
             const addOption: vscode.QuickPickItem = { label: 'New Custom Recipe...', alwaysShow: true }
             promptItems.push(seperator, addOption)
             // Show the list of prompts to the user using a quick pick
-            const options = { title: 'Cody: My Recipes', placeHolder: 'Search recipe to run...' }
+            const options = { title: 'Cody Custom Recipes', placeHolder: 'Search recipe to run...' }
             const selectedPrompt = await vscode.window.showQuickPick([...promptItems], options)
             if (!selectedPrompt) {
                 return
@@ -331,11 +331,11 @@ export class MyPromptController implements VsCodeMyPromptController {
             if (!promptTitle) {
                 return
             }
-            debug('MyPromptController:quickRecipePicker:selectedPrompt', promptTitle)
+            debug('MyPromptController:recipesQuickPicker:selectedPrompt', promptTitle)
             // Run the prompt
             await vscode.commands.executeCommand('cody.customRecipes.exec', promptTitle)
         } catch (error) {
-            debug('MyPromptController:quickRecipePicker', 'error', { verbose: error })
+            debug('MyPromptController:recipesQuickPicker', 'error', { verbose: error })
         }
     }
 
@@ -370,6 +370,68 @@ export class MyPromptController implements VsCodeMyPromptController {
                 break
             default:
                 break
+        }
+    }
+
+    public async commandQuickPicker(showDesc = false): Promise<void> {
+        try {
+            // Get the list of prompts from the cody.json file
+            const commandsFromStore = this.store.mySlashCommands
+            const commandItems: vscode.QuickPickItem[] = [{ kind: -1, label: 'commands' }]
+            const defaultCommandItems = [...commandsFromStore]
+                ?.filter(command => command[1].type === 'default')
+                .map(recipeItem => {
+                    const recipe = recipeItem[1]
+                    const description = showDesc && recipe.slashCommand ? '/' + recipe.slashCommand : ''
+                    return {
+                        label: recipe.name || recipeItem[0],
+                        description,
+                    }
+                }) as vscode.QuickPickItem[]
+            commandItems.push(...defaultCommandItems)
+            // TODO (bee) replace recipes with commands
+            const recipesSeperator: vscode.QuickPickItem = { kind: -1, label: 'custom recipes' }
+            // TODO (bee) replace with 'Configure Custom Commands...'
+            const recipesOption: vscode.QuickPickItem = { label: 'Use a Custom Recipe...' }
+            const chatSeperator: vscode.QuickPickItem = { kind: -1, label: 'chat' }
+            const chatOption: vscode.QuickPickItem = { label: 'Ask a Question', alwaysShow: true }
+            commandItems.push(recipesSeperator, recipesOption, chatSeperator, chatOption)
+            // Show the list of prompts to the user using a quick pick
+            const options = {
+                title: 'Cody Commands',
+                placeHolder: 'Search for a command',
+            }
+            const selectedPrompt = await vscode.window.showQuickPick([...commandItems], options)
+            if (!selectedPrompt) {
+                return
+            }
+            const promptTitle = selectedPrompt.label
+            if (!promptTitle) {
+                return
+            }
+            if (promptTitle === recipesOption.label) {
+                const recipesFromStore = this.store.getRecipes()
+                return recipesFromStore?.length > 0 ? await this.recipesQuickPicker() : await this.menu()
+            }
+            if (promptTitle === chatOption.label) {
+                // start new inline chat
+                return await vscode.commands.executeCommand('cody.inline.new')
+            }
+            // Run the prompt
+            await vscode.commands.executeCommand('cody.customRecipes.exec', promptTitle)
+        } catch (error) {
+            debug('MyPromptController:commandQuickPicker', 'error', { verbose: error })
+        }
+    }
+
+    public async quickChatInput(): Promise<void> {
+        const humanInput = await vscode.window.showInputBox({
+            prompt: 'Ask Cody a question...',
+            placeHolder: 'ex. What is a class in Typescript?',
+            validateInput: (input: string) => (input ? null : 'Please enter a question.'),
+        })
+        if (humanInput) {
+            await vscode.commands.executeCommand('cody.action.chat', humanInput)
         }
     }
 }

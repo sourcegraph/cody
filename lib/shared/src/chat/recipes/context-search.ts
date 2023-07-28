@@ -29,7 +29,10 @@ export class ContextSearch implements Recipe {
     public id: RecipeID = 'context-search'
 
     public async getInteraction(humanChatInput: string, context: RecipeContext): Promise<Interaction | null> {
-        const query = humanChatInput || (await context.editor.showInputBox('Enter your search query here...')) || ''
+        const query =
+            humanChatInput?.replace(/^\/s(earch)?(\s)?/i, '') ||
+            (await context.editor.showInputBox('Enter your search query here...')) ||
+            ''
         if (!query) {
             return null
         }

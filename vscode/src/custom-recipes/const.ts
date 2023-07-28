@@ -16,6 +16,7 @@ export interface CodyPrompt {
     prompt: string
     context?: CodyPromptContext
     type?: CodyPromptType
+    slashCommand?: string
 }
 
 export interface CodyPromptPremade {
@@ -24,7 +25,7 @@ export interface CodyPromptPremade {
     answer: string
 }
 
-export type CodyPromptType = 'workspace' | 'user' | 'default' | 'last used'
+export type CodyPromptType = 'workspace' | 'user' | 'default' | 'recently used'
 
 export interface MyPrompts {
     prompts: Map<string, CodyPrompt>
@@ -106,5 +107,5 @@ export const promptSizeInit = {
     user: 0,
     workspace: 0,
     default: 0,
-    'last used': 0,
+    'recently used': 0,
 }

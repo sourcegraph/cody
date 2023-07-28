@@ -48,16 +48,20 @@ export const Recipes: React.FunctionComponent<{
     const RecipeSection = (type: 'user' | 'workspace' | 'default'): JSX.Element => (
         <>
             <div className={styles.recipesHeader}>
-                <span className={styles.recipesSubHeader}>{type} Recipes</span>
+                {type === 'default' ? (
+                    <span className={styles.recipesSubHeader}>Commands</span>
+                ) : (
+                    <span className={styles.recipesSubHeader}>{type} Recipes</span>
+                )}
             </div>
             {myRecipesList[type]?.map(recipe => (
                 <VSCodeButton
                     key={recipe[0]}
                     className={styles.recipeButton}
                     type="button"
-                    onClick={() => onMyPromptClick(recipe[0])}
+                    onClick={() => onMyPromptClick(recipe[1].prompt)}
                 >
-                    {recipe[0]}
+                    {recipe[1].name || recipe[0]}
                 </VSCodeButton>
             ))}
             {!myRecipesList[type]?.length && type !== 'default' && (
@@ -77,7 +81,7 @@ export const Recipes: React.FunctionComponent<{
         <div className="inner-container">
             <div className="non-transcript-container">
                 <div className={styles.recipes}>
-                    {myPromptsEnabled && (
+                    {myPromptsEnabled ? (
                         <>
                             <div>
                                 <div
@@ -97,21 +101,21 @@ export const Recipes: React.FunctionComponent<{
                             {RecipeSection('user')}
                             {RecipeSection('workspace')}
                             {RecipeSection('default')}
-                            <div className={styles.recipesHeader}>
-                                <span>Featured Recipes</span>
-                            </div>
+                        </>
+                    ) : (
+                        <>
+                            {Object.entries(recipesList).map(([key, value]) => (
+                                <VSCodeButton
+                                    key={key}
+                                    className={styles.recipeButton}
+                                    type="button"
+                                    onClick={() => onRecipeClick(key as RecipeID)}
+                                >
+                                    {value}
+                                </VSCodeButton>
+                            ))}
                         </>
                     )}
-                    {Object.entries(recipesList).map(([key, value]) => (
-                        <VSCodeButton
-                            key={key}
-                            className={styles.recipeButton}
-                            type="button"
-                            onClick={() => onRecipeClick(key as RecipeID)}
-                        >
-                            {value}
-                        </VSCodeButton>
-                    ))}
                 </div>
             </div>
         </div>

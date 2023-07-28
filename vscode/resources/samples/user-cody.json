@@ -2,26 +2,18 @@
   "title": "Cody Custom Recipes - User",
   "description": "This file showcases how to build custom recipes for Cody by Sourcegraph.",
   "recipes": {
-    "Generate Multiple Unit Tests": {
-      "prompt": "Generate 2 or more unit tests for the selected code. Provide me with full, workable unit tests. If there are existing test files in the directory, try to follow similar patterns and imports used in those files. You may import common libraries like the language's built-in test framework. If there are no test files, use common best practices for unit testing this language. Make sure to include all the imports needed to run the tests.",
-      "context": {
-        "currentDir": true,
-        "currentFile": true
-      },
-      "info": "Works best if there are other test files in the current directory"
-    },
-    "Compare Files in Opened Tabs": {
+    "[Example] Compare Files in Opened Tabs": {
       "prompt": "Compare the code from opened tabs and explain their relationships.",
       "context": {
         "openTabs": true,
-        "excludeSelection": true
+        "selection": false
       },
       "info": "This recipe lets Cody analyze code from open tabs to provide insights on how they relate to each other."
     },
-    "Debug last error from Cody app": {
+    "[Example] Debug last error from Cody app": {
       "prompt": "Tell me about the most recent error in log and how I can resolve it.",
       "context": {
-        "excludeSelection": true,
+        "selection": false,
         "command": "tail -n 30 ~/Library/Logs/com.sourcegraph.cody/Cody.log"
       },
       "info": "You must have Cody app installed to use this recipe"

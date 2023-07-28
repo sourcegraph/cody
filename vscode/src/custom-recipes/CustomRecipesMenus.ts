@@ -73,13 +73,11 @@ export async function createNewPrompt(promptName?: string): Promise<CodyPrompt |
     for (const context of promptContext) {
         switch (context.id) {
             case 'selection':
-                newPrompt.context.excludeSelection = !context.picked
-                break
             case 'codebase':
             case 'currentDir':
             case 'openTabs':
             case 'none':
-                newPrompt.context[context.id] = true
+                newPrompt.context[context.id] = context.picked
                 break
             case 'command': {
                 newPrompt.context.command = (await showPromptCommandInput()) || ''
@@ -108,11 +106,11 @@ export async function showPromptNameInput(myPromptStore: Map<string, CodyPrompt>
         prompt: 'Enter an unique name for the new recipe.',
         placeHolder: 'e,g. Vulnerability Scanner',
         validateInput: (input: string) => {
-            if (!input || input.split(' ').length < 2) {
-                return 'Please enter a valid name for the recipe. A recipe name should be at least two words.'
+            if (!input) {
+                return 'Recipe name cannot be empty. Please enter a unique name.'
             }
             if (myPromptStore.has(input)) {
-                return 'A recipe with the same name already exists. Please enter a different name.'
+                return 'A recipe with the same name exists. Please enter a different name.'
             }
             return
         },
