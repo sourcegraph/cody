@@ -99,7 +99,7 @@ export async function createClient({
             if (isMessageInProgress) {
                 const messages = transcript.toChat()
                 setTranscript(transcript)
-                let message = messages[messages.length - 1]
+                const message = messages[messages.length - 1]
                 if (data) {
                     message.data = data
                 }
