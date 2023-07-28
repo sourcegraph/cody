@@ -12,7 +12,7 @@ import { vsCodeMocks } from '../testutils/mocks'
 
 import { CodyCompletionItemProvider } from '.'
 import { CompletionsCache } from './cache'
-import { History } from './history'
+import { VSCodeDocumentHistory } from './history'
 import { createProviderConfig } from './providers/anthropic'
 
 const CURSOR_MARKER = '█'
@@ -124,7 +124,7 @@ describe('Cody completions', () => {
             const completionProvider = new CodyCompletionItemProvider({
                 providerConfig,
                 statusBar: noopStatusBar,
-                history: new History(),
+                history: new VSCodeDocumentHistory(),
                 codebaseContext: null as any,
                 disableTimeouts: true,
                 cache,
