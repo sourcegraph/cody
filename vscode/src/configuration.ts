@@ -77,10 +77,6 @@ export function getConfiguration(config: ConfigGetter): Configuration {
         autocompleteAdvancedAccessToken: config.get<string | null>(CONFIG_KEY.autocompleteAdvancedAccessToken, null),
         autocompleteAdvancedCache: config.get(CONFIG_KEY.autocompleteAdvancedCache, true),
         autocompleteAdvancedEmbeddings: config.get(CONFIG_KEY.autocompleteAdvancedEmbeddings, true),
-        autocompleteExperimentalTriggerMoreEagerly: config.get(
-            CONFIG_KEY.autocompleteExperimentalTriggerMoreEagerly,
-            true
-        ),
         autocompleteExperimentalCompleteSuggestWidgetSelection: config.get(
             CONFIG_KEY.autocompleteExperimentalCompleteSuggestWidgetSelection,
             false

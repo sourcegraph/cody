@@ -32,7 +32,6 @@ describe('getConfiguration', () => {
             autocompleteAdvancedAccessToken: null,
             autocompleteAdvancedCache: true,
             autocompleteAdvancedEmbeddings: true,
-            autocompleteExperimentalTriggerMoreEagerly: true,
             autocompleteExperimentalCompleteSuggestWidgetSelection: false,
         })
     })
@@ -82,8 +81,6 @@ describe('getConfiguration', () => {
                         return false
                     case 'cody.autocomplete.advanced.embeddings':
                         return false
-                    case 'cody.autocomplete.experimental.triggerMoreEagerly':
-                        return false
                     case 'cody.autocomplete.experimental.completeSuggestWidgetSelection':
                         return false
                     case 'cody.plugins.enabled':
@@ -125,7 +122,6 @@ describe('getConfiguration', () => {
             autocompleteAdvancedAccessToken: 'foobar',
             autocompleteAdvancedCache: false,
             autocompleteAdvancedEmbeddings: false,
-            autocompleteExperimentalTriggerMoreEagerly: false,
             autocompleteExperimentalCompleteSuggestWidgetSelection: false,
         })
     })

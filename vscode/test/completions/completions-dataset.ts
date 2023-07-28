@@ -560,7 +560,6 @@ export const completionsDataset: Sample[] = [
                 responses?: CompletionResponse[] | 'stall',
                 languageId?: string,
                 context?: vscode.InlineCompletionContext,
-                triggerMoreEagerly?: boolean
             ) => Promise<{
                 requests: CompletionParameters[]
                 completions: vscode.InlineCompletionItem[]
@@ -572,7 +571,6 @@ export const completionsDataset: Sample[] = [
                     responses?: CompletionResponse[] | 'stall',
                     languageId: string = 'typescript',
                     context: vscode.InlineCompletionContext = { triggerKind: 1, selectedCompletionInfo: undefined },
-                    triggerMoreEagerly = true
                 ): Promise<{
                     requests: CompletionParameters[]
                     completions: vscode.InlineCompletionItem[]

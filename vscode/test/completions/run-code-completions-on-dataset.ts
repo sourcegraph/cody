@@ -63,7 +63,6 @@ async function initCompletionsProvider(context: GetContextResult): Promise<CodyC
         history,
         codebaseContext,
         disableTimeouts: true,
-        triggerMoreEagerly: true,
         cache: null,
         isEmbeddingsContextEnabled: true,
         contextFetcher: () => Promise.resolve(context),
