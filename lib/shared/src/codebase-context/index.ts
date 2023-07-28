@@ -221,17 +221,22 @@ export class CodebaseContext {
 
         const contextMessages: ContextMessage[] = []
         const preciseContext = await this.graph.getContext()
-        console.log("🚀 ~ file: index.ts:224 ~ CodebaseContext ~ getGraphContextMessages ~ preciseContext:", preciseContext)
-        for (const context of preciseContext) {
+        for (const {
+            filepath: fileName,
+            repositoryName: repoName,
+            fuzzyDescriptorSuffix,
+            scipDescriptorSuffix,
+            text,
+        } of preciseContext) {
             contextMessages.push({
                 speaker: 'human',
-                file: {
-                    fileName: context.filepath,
-                    repoName: context.repositoryName,
+                file: { fileName, repoName },
+                preciseContext: {
+                    scipSymbolName: `${fuzzyDescriptorSuffix} -> ${scipDescriptorSuffix}`,
                 },
                 text: `
                 As my coding assistant, use this context to help me answer the question asked:
-                Here is the precise snippet of code that is relevant to the current active file: ${context.text}
+                Here is the precise snippet of code that is relevant to the current active file: ${text}
                 ## Instruction
                 - Do not enclose your answer with tags.
                 - Do not remove code that might be being used by the other part of the code that was not shared.
@@ -245,26 +250,6 @@ export class CodebaseContext {
         }
 
         return contextMessages
-
-        // contextMessages.push({
-        //     speaker: 'human',
-        //     file: {
-        //         fileName: 'filename',
-        //         repoName: 'repoName',
-        //         revision: 'revision',
-        //     },
-        //     text: `
-        //         Here is the path to the file ${test.data.search.results.results[0].file.path}.
-        //         The kind of the symbol is a ${test.data.search.results.results[0].symbols.kind}.
-        //         The name of the symbol is a ${test.data.search.results.results[0].symbols.name}.
-        //         It is located in ${test.data.search.results.results[0].symbols.url}
-        //         This is the content of the file ${test.data.search.results.results[0].file.content}.
-        //     `,
-        // })
-        // contextMessages.push({
-        //     speaker: 'assistant',
-        //     text: 'okay',
-        // })
     }
 }
 

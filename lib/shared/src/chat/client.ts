@@ -122,8 +122,10 @@ export async function createClient({
 
         sendTranscript()
 
-        const { prompt, contextFiles } = await transcript.getPromptForLastInteraction(getPreamble(config.codebase))
-        transcript.setUsedContextFilesForLastInteraction(contextFiles)
+        const { prompt, contextFiles, preciseContexts } = await transcript.getPromptForLastInteraction(
+            getPreamble(config.codebase)
+        )
+        transcript.setUsedContextFilesForLastInteraction(contextFiles, preciseContexts)
 
         const responsePrefix = interaction.getAssistantMessage().prefix ?? ''
         let rawText = ''

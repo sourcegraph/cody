@@ -17,6 +17,7 @@ import { BlinkingCursor } from './BlinkingCursor'
 import { CodeBlocks } from './CodeBlocks'
 import { ContextFiles, FileLinkProps } from './ContextFiles'
 import { PluginExecutionInfos } from './PluginExecutionInfos'
+import { PreciseContexts } from './PreciseContext'
 
 import styles from './TranscriptItem.module.css'
 
@@ -152,6 +153,11 @@ export const TranscriptItem: React.FunctionComponent<
                         fileLinkComponent={fileLinkComponent}
                         className={transcriptActionClassName}
                     />
+                </div>
+            )}
+            {message.preciseContext && message.preciseContext.length > 0 && (
+                <div className={styles.actions}>
+                    <PreciseContexts preciseContexts={message.preciseContext} className={transcriptActionClassName} />
                 </div>
             )}
             {message.pluginExecutionInfos && message.pluginExecutionInfos.length > 0 && (

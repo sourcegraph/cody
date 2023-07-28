@@ -304,10 +304,10 @@ export const useClient = ({
             setIsMessageInProgressState(true)
             onEvent?.('submit')
 
-            const { prompt, contextFiles } = await transcript.getPromptForLastInteraction(
+            const { prompt, contextFiles, preciseContexts } = await transcript.getPromptForLastInteraction(
                 getMultiRepoPreamble(repoNames)
             )
-            transcript.setUsedContextFilesForLastInteraction(contextFiles)
+            transcript.setUsedContextFilesForLastInteraction(contextFiles, preciseContexts)
 
             const responsePrefix = interaction.getAssistantMessage().prefix ?? ''
             let rawText = ''

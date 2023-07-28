@@ -7,9 +7,13 @@ import {
 } from '../sourcegraph-api/graphql/client'
 
 export class GraphContextFetcher {
-    constructor(private graphqlClient: SourcegraphGraphQLAPIClient, private editor: Editor) {}
+    constructor(
+        private graphqlClient: SourcegraphGraphQLAPIClient,
+        private editor: Editor
+    ) {}
 
     public async getContext(): Promise<PreciseContextResult[]> {
+        // TODO: Deconstruct this puppy
         const editorContext = this.editor.getActiveTextEditor()
         if (!editorContext?.repoName) {
             return []
@@ -28,12 +32,13 @@ export class GraphContextFetcher {
             content,
             selection
         )
+        console.log('🚀 ~ file: index.ts:34 ~ GraphContextFetcher ~ getContext ~ response:', response)
         return isErrorLike(response) ? [] : response
     }
 }
 
-function getActiveSelectionRange(selection?: ActiveTextEditorSelectionRange): ActiveFileSelectionRange | null {
-    return selection
+const getActiveSelectionRange = (selection?: ActiveTextEditorSelectionRange): ActiveFileSelectionRange | null =>
+    selection
         ? {
               startLine: selection.start.line,
               startCharacter: selection.start.character,
@@ -41,7 +46,6 @@ function getActiveSelectionRange(selection?: ActiveTextEditorSelectionRange): Ac
               endCharacter: selection.end.character,
           }
         : null
-}
 
 function pathRelativeToRoot(path: string, workspaceRoot: string): string {
     if (!workspaceRoot) {

@@ -183,6 +183,8 @@ query GetPreciseContext($input: PreciseContextInput!) {
         context {
             scipSymbolName
             fuzzySymbolName
+            scipDescriptorSuffix
+            fuzzyDescriptorSuffix
             repositoryName
             text
             filepath
