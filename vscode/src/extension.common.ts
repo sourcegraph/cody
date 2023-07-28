@@ -5,6 +5,7 @@ import { languagePromptMixin, PromptMixin } from '@sourcegraph/cody-shared/src/p
 import type { SourcegraphBrowserCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/browserClient'
 import type { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/nodeClient'
 
+import { onActivationDevelopmentHelpers } from './dev/helpers'
 import { ExtensionApi } from './extension-api'
 import type { FilenameContextFetcher } from './local-context/filename-context-fetcher'
 import type { LocalKeywordContextFetcher } from './local-context/local-keyword-context-fetcher'
@@ -32,18 +33,16 @@ export function activate(context: vscode.ExtensionContext, platformContext: Plat
     const api = new ExtensionApi()
     PromptMixin.add(languagePromptMixin(vscode.env.language))
 
-    if (process.env.CODY_FOCUS_ON_STARTUP) {
-        setTimeout(() => {
-            void vscode.commands.executeCommand('cody.chat.focus')
-        }, 250)
-    }
-
     start(context, platformContext)
         .then(disposable => {
             if (!context.globalState.get('extension.hasActivatedPreviously')) {
                 void context.globalState.update('extension.hasActivatedPreviously', 'true')
             }
             context.subscriptions.push(disposable)
+
+            if (process.env.NODE_ENV === 'development') {
+                onActivationDevelopmentHelpers()
+            }
         })
         .catch(error => console.error(error))
 

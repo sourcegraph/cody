@@ -77,3 +77,9 @@ VS Code will preserve some extension state (e.g., configuration settings) even w
 ```shell
 code --user-data-dir=/tmp/separate-vscode-instance --profile-temp
 ```
+
+## Development tips
+
+To open the Cody sidebar, autocomplete trace view, etc., when debugging starts, you can set hidden
+VS Code user settings. See [`src/dev/helpers.ts`](src/dev/helpers.ts) for a list of available
+options.

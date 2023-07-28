@@ -17,7 +17,7 @@
       "outFiles": ["${workspaceRoot}/vscode/dist/**/*.js"],
       "env": {
         "NODE_ENV": "development",
-        "CODY_FOCUS_ON_STARTUP": "1"
+        "CODY_DEBUG_ENABLE": "true"
       }
     },
     {
@@ -39,8 +39,7 @@
       "env": {
         "NODE_ENV": "development",
         "CODY_PROFILE_TEMP": "true",
-        "CODY_DEBUG_ENABLE": "true",
-        "CODY_FOCUS_ON_STARTUP": "1"
+        "CODY_DEBUG_ENABLE": "true"
       }
     },
     {
