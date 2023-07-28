@@ -11,8 +11,7 @@ import { isError } from '@sourcegraph/cody-shared/src/utils'
 
 import { getFullConfig } from '../configuration'
 import { VSCodeEditor } from '../editor/vscode-editor'
-import { FilenameContextFetcher } from '../local-context/filename-context-fetcher'
-import { LocalKeywordContextFetcher } from '../local-context/local-keyword-context-fetcher'
+import { PlatformContext } from '../extension.common'
 import { debug } from '../log'
 import { getRerankWithLog } from '../logged-rerank'
 import { repositoryRemoteUrl } from '../repository/repositoryHelpers'
@@ -68,7 +67,8 @@ export class ContextProvider implements vscode.Disposable {
         private localStorage: LocalStorage,
         private rgPath: string | null,
         private authProvider: AuthProvider,
-        private telemetryService: TelemetryService
+        private telemetryService: TelemetryService,
+        private platform: PlatformContext
     ) {
         this.disposables.push(this.configurationChangeEvent)
 
@@ -118,7 +118,8 @@ export class ContextProvider implements vscode.Disposable {
             this.rgPath,
             this.editor,
             this.chat,
-            this.telemetryService
+            this.telemetryService,
+            this.platform
         )
         if (!codebaseContext) {
             return
@@ -148,7 +149,8 @@ export class ContextProvider implements vscode.Disposable {
                 this.rgPath,
                 this.editor,
                 this.chat,
-                this.telemetryService
+                this.telemetryService,
+                this.platform
             )
             if (codebaseContext) {
                 this.codebaseContext = codebaseContext
@@ -246,7 +248,8 @@ export async function getCodebaseContext(
     rgPath: string | null,
     editor: Editor,
     chatClient: ChatClient,
-    telemetryService: TelemetryService
+    telemetryService: TelemetryService,
+    platform: PlatformContext
 ): Promise<CodebaseContext | null> {
     const client = new SourcegraphGraphQLAPIClient(config)
     const workspaceRoot = editor.getWorkspaceRootUri()
@@ -272,8 +275,10 @@ export async function getCodebaseContext(
         config,
         codebase,
         embeddingsSearch,
-        rgPath ? new LocalKeywordContextFetcher(rgPath, editor, chatClient, telemetryService) : null,
-        rgPath ? new FilenameContextFetcher(rgPath, editor, chatClient) : null,
+        rgPath
+            ? platform.createLocalKeywordContextFetcher?.(rgPath, editor, chatClient, telemetryService) ?? null
+            : null,
+        rgPath ? platform.createFilenameContextFetcher?.(rgPath, editor, chatClient) ?? null : null,
         undefined,
         getRerankWithLog(chatClient)
     )

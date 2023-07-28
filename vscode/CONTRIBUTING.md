@@ -3,7 +3,7 @@
 ## Getting started
 
 1. Run `pnpm install` (see [repository setup instructions](../doc/dev/index.md) if you don't have `pnpm`).
-1. Open this repository in VS Code and run the `Launch VS Code Extension` build/debug task (or run `cd vscode && pnpm run dev`).
+1. Open this repository in VS Code and run the `Launch VS Code Extension (Desktop)` build/debug task (or run `cd vscode && pnpm run dev`).
 
 Tip: Enable `cody.debug.enable` and `cody.debug.verbose` in VS Code settings during extension development.
 
