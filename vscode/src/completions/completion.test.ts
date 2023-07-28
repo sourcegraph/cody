@@ -13,6 +13,7 @@ import { vsCodeMocks } from '../testutils/mocks'
 import { CodyCompletionItemProvider } from '.'
 import { CompletionsCache } from './cache'
 import { VSCodeDocumentHistory } from './history'
+import { NOOP_LAST_CHANGE_TRACKER } from './lastChangeTracker'
 import { createProviderConfig } from './providers/anthropic'
 
 const CURSOR_MARKER = '█'
@@ -128,6 +129,7 @@ describe('Cody completions', () => {
                 codebaseContext: null as any,
                 disableTimeouts: true,
                 cache,
+                lastChangeTracker: NOOP_LAST_CHANGE_TRACKER,
             })
 
             if (!code.includes(CURSOR_MARKER)) {

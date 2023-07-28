@@ -1,6 +1,5 @@
 import path from 'path'
 
-import { LRUCache } from 'lru-cache'
 import * as vscode from 'vscode'
 
 import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
@@ -13,6 +12,7 @@ import { CacheRequest } from './cache/cache'
 import { getContext, GetContextOptions, GetContextResult } from './context'
 import { getCurrentDocContext } from './document'
 import { DocumentHistory } from './history'
+import { LastChangeTracker } from './lastChangeTracker'
 import * as CompletionLogger from './logger'
 import { detectMultiline } from './multiline'
 import { CompletionProviderTracer, Provider, ProviderConfig, ProviderOptions } from './providers/provider'
@@ -35,6 +35,7 @@ interface CodyCompletionItemProviderConfig {
     completeSuggestWidgetSelection?: boolean
     tracer?: ProvideInlineCompletionItemsTracer | null
     contextFetcher?: (options: GetContextOptions) => Promise<GetContextResult>
+    lastChangeTracker: LastChangeTracker
 }
 
 export class CodyCompletionItemProvider implements vscode.InlineCompletionItemProvider {
@@ -43,9 +44,6 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
     private maxSuffixChars: number
     private abortOpenCompletions: () => void = () => {}
     private stopLoading: () => void = () => {}
-    private lastContentChanges: LRUCache<string, 'add' | 'del'> = new LRUCache<string, 'add' | 'del'>({
-        max: 10,
-    })
 
     private readonly config: Required<CodyCompletionItemProviderConfig>
 
@@ -97,18 +95,6 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
         this.requestManager = new RequestManager(this.config.cache)
 
         debug('CodyCompletionProvider:initialized', `provider: ${this.config.providerConfig.identifier}`)
-
-        vscode.workspace.onDidChangeTextDocument(event => {
-            const document = event.document
-            const changes = event.contentChanges
-
-            if (changes.length <= 0) {
-                return
-            }
-
-            const text = changes[0].text
-            this.lastContentChanges.set(document.fileName, text.length > 0 ? 'add' : 'del')
-        })
     }
 
     /** Set the tracer (or unset it with `null`). */
@@ -178,7 +164,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
             this.config.providerConfig.enableExtendedMultilineTriggers
         )
 
-        const lastChangeIsDeletion = this.lastContentChanges.get(document.fileName) === 'del'
+        const lastChangeIsDeletion = this.config.lastChangeTracker.lastChange(document.uri) === 'del'
         const cacheRequest: CacheRequest = {
             documentState: { prefix: docContext.prefix, suffix: docContext.suffix, languageId: document.languageId },
 
