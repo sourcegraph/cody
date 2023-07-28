@@ -967,14 +967,14 @@
       "cody-logo": {
         "description": "Cody logo",
         "default": {
-          "fontPath": "node_modules/cody-icons-font/font/cody-icons.woff",
+          "fontPath": "resources/cody-icons.woff",
           "fontCharacter": "\\0041"
         }
       },
       "cody-logo-heavy": {
         "description": "Cody logo heavy",
         "default": {
-          "fontPath": "node_modules/cody-icons-font/font/cody-icons.woff",
+          "fontPath": "resources/cody-icons.woff",
           "fontCharacter": "\\0042"
         }
       }
