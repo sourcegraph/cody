@@ -15,12 +15,12 @@ import { CompletionsCache } from './cache'
 import { History } from './history'
 import { createProviderConfig } from './providers/anthropic'
 
-const CURSOR_MARKER = '║'
+const CURSOR_MARKER = '█'
 
-// The dedent package seems to replace `\t` to `\\t` so in order to insert a tab
-// character, we have to use interpolation. We abbreviate this to `T` because
-// ${T} is exactly 4 characters, mimicking the default indentation of four
-// spaces
+// The dedent package seems to replace `\t` with `\\t` so in order to insert a
+// tab character, we have to use interpolation. We abbreviate this to `T`
+// because ${T} is exactly 4 characters, mimicking the default indentation of
+// four spaces
 const T = '\t'
 
 vi.mock('vscode', () => ({
@@ -56,11 +56,12 @@ function completion(string: TemplateStringsArray, ...values: any): CompletionRes
     const raw = dedent(string, ...values)
     let completion = raw
 
-    const start = raw.lastIndexOf('┤')
+    const start = raw.indexOf('├')
     const end = raw.lastIndexOf('┤')
 
-    if (start >= 0 && end >= 0) {
-        completion = raw.slice(raw.indexOf('├') + 1, raw.lastIndexOf('┤'))
+    // eslint-disable-next-line yoda
+    if (0 <= start && start <= end) {
+        completion = raw.slice(start + 1, end)
     }
 
     return {
@@ -81,7 +82,7 @@ describe('Cody completions', () => {
      * @example
      *   complete(`
      * async function foo() {
-     *   ║
+     *   █
      * }`)
      */
     let complete: (
@@ -133,7 +134,7 @@ describe('Cody completions', () => {
             })
 
             if (!code.includes(CURSOR_MARKER)) {
-                throw new Error('The test code must include a ║ to denote the cursor position')
+                throw new Error(`The test code must include a ${CURSOR_MARKER} to denote the cursor position`)
             }
 
             const cursorIndex = code.indexOf(CURSOR_MARKER)
@@ -206,7 +207,7 @@ describe('Cody completions', () => {
                 public end: Position
 
                 constructor(startLine: number, startCharacter: number, endLine: number, endCharacter: number) {
-                    this.startLine = ║
+                    this.startLine = █
                     this.startCharacter = startCharacter
                     this.endLine = endLine
                     this.endCharacter = endCharacter
@@ -229,17 +230,17 @@ describe('Cody completions', () => {
     })
 
     it('makes a request when in the middle of a word when triggerMoreEagerly is true', async () => {
-        const { requests } = await complete('foo║', [completion`()`], undefined, undefined, true)
+        const { requests } = await complete('foo█', [completion`()`], undefined, undefined, true)
         expect(requests).toHaveLength(1)
     })
 
     it('does not make a request when in the middle of a word when triggerMoreEagerly is false', async () => {
-        const { requests } = await complete('foo║', undefined, undefined, undefined, false)
+        const { requests } = await complete('foo█', undefined, undefined, undefined, false)
         expect(requests).toHaveLength(0)
     })
 
     it('completes a single-line at the end of a sentence', async () => {
-        const { completions } = await complete('foo = ║', [completion`'bar'`])
+        const { completions } = await complete('foo = █', [completion`'bar'`])
 
         expect(completions[0].insertText).toBe("'bar'")
     })
@@ -249,7 +250,7 @@ describe('Cody completions', () => {
             `
         function test() {
             console.log(1);
-            ║
+            █
         }
         `,
             [
@@ -266,14 +267,14 @@ describe('Cody completions', () => {
     })
 
     it('completes a single-line at the middle of a sentence', async () => {
-        const { completions } = await complete('function bubbleSort(║)', [completion`array) {`, completion`items) {`])
+        const { completions } = await complete('function bubbleSort(█)', [completion`array) {`, completion`items) {`])
 
         expect(completions[0].insertText).toBe('array) {')
         expect(completions[1].insertText).toBe('items) {')
     })
 
     it('marks the rest of the line as to be replaced so closing characters in the same line suffix are properly merged', async () => {
-        const { completions } = await complete('function bubbleSort(║)', [completion`array) {`])
+        const { completions } = await complete('function bubbleSort(█)', [completion`array) {`])
 
         expect(completions[0].range).toMatchInlineSnapshot(`
           Range {
@@ -290,7 +291,7 @@ describe('Cody completions', () => {
     })
 
     it('does not make a request when context has a selectedCompletionInfo', async () => {
-        const { requests } = await complete('foo = ║', undefined, undefined, {
+        const { requests } = await complete('foo = █', undefined, undefined, {
             selectedCompletionInfo: {
                 range: {} as any,
                 text: 'something',
@@ -302,24 +303,24 @@ describe('Cody completions', () => {
     })
 
     it('preserves leading whitespace when prefix has no trailing whitespace', async () => {
-        const { completions } = await complete('const isLocalHost = window.location.host║', [
+        const { completions } = await complete('const isLocalHost = window.location.host█', [
             completion`├ === 'localhost'┤`,
         ])
         expect(completions[0].insertText).toBe(" === 'localhost'")
     })
 
     it('collapses leading whitespace when prefix has trailing whitespace', async () => {
-        const { completions } = await complete('const x = ║', [completion`├${T}7┤`])
+        const { completions } = await complete('const x = █', [completion`├${T}7┤`])
         expect(completions[0].insertText).toBe('7')
     })
 
     it('should not trigger a request if there is text in the suffix for the same line', async () => {
-        const { requests } = await complete('foo: ║ = 123;')
+        const { requests } = await complete('foo: █ = 123;')
         expect(requests).toHaveLength(0)
     })
 
     it('should trigger a request if the suffix of the same line is only special tags', async () => {
-        const { requests } = await complete('if(║) {')
+        const { requests } = await complete('if(█) {')
         expect(requests).toHaveLength(3)
     })
 
@@ -338,7 +339,7 @@ describe('Cody completions', () => {
 
     describe('odd indentation', () => {
         it('filters out odd indentation in single-line completions', async () => {
-            const { completions } = await complete('const foo = ║', [completion`├ 1┤`])
+            const { completions } = await complete('const foo = █', [completion`├ 1┤`])
             expect(completions[0].insertText).toBe('1')
         })
     })
@@ -348,7 +349,7 @@ describe('Cody completions', () => {
             const { completions } = await complete(
                 dedent`
                     describe('bubbleSort', () => {
-                        it('bubbleSort test case', () => {║
+                        it('bubbleSort test case', () => {█
 
                         })
                     })`,
@@ -375,7 +376,7 @@ describe('Cody completions', () => {
             const { completions } = await complete(
                 dedent`
                     describe('bubbleSort', () => {
-                        it('bubbleSort test case', () => {║
+                        it('bubbleSort test case', () => {█
 
                         })
                     })`,
@@ -397,7 +398,7 @@ describe('Cody completions', () => {
         })
 
         it('keeps the closing bracket', async () => {
-            const { completions } = await complete('function printHello(║)', [
+            const { completions } = await complete('function printHello(█)', [
                 completion`
                 ├) {
                     console.log('Hello');
@@ -412,7 +413,7 @@ describe('Cody completions', () => {
         })
 
         it('triggers a multi-line completion at the start of a block', async () => {
-            const { requests } = await complete('function bubbleSort() {\n  ║')
+            const { requests } = await complete('function bubbleSort() {\n  █')
 
             expect(requests).toHaveLength(3)
             expect(requests[0].stopSequences).not.toContain('\n')
@@ -423,7 +424,7 @@ describe('Cody completions', () => {
                 dedent`
                     class Foo {
                         constructor() {
-                            ║
+                            █
                         }
                     }
                 `,
@@ -457,7 +458,7 @@ describe('Cody completions', () => {
             const { completions } = await complete(
                 dedent`
                     function() {
-                        ║
+                        █
                         console.log('bar')
                     }
                 `,
@@ -473,14 +474,14 @@ describe('Cody completions', () => {
         })
 
         it('does not support multi-line completion on unsupported languages', async () => {
-            const { requests } = await complete('function looksLegit() {\n  ║', undefined, 'elixir')
+            const { requests } = await complete('function looksLegit() {\n  █', undefined, 'elixir')
 
             expect(requests).toHaveLength(1)
             expect(requests[0].stopSequences).toContain('\n\n')
         })
 
         it('requires an indentation to start a block', async () => {
-            const { requests } = await complete('function bubbleSort() {\n║')
+            const { requests } = await complete('function bubbleSort() {\n█')
 
             expect(requests).toHaveLength(1)
             expect(requests[0].stopSequences).toContain('\n\n')
@@ -491,7 +492,7 @@ describe('Cody completions', () => {
                 dedent`
                     for i in range(11):
                         if i % 2 == 0:
-                            ║
+                            █
                 `,
                 [
                     completion`
@@ -523,7 +524,7 @@ describe('Cody completions', () => {
                 dedent`
                     for (int i = 0; i < 11; i++) {
                         if (i % 2 == 0) {
-                            ║
+                            █
                 `,
                 [
                     completion`
@@ -561,7 +562,7 @@ describe('Cody completions', () => {
                     for (int i = 0; i < 11; i++) {
                         if (i % 2 == 0)
                         {
-                            ║
+                            █
                 `,
                 [
                     completion`
@@ -599,7 +600,7 @@ describe('Cody completions', () => {
                 dedent`
                     for (int i = 0; i < 11; i++) {
                         if (i % 2 == 0) {
-                            ║
+                            █
                 `,
                 [
                     completion`
@@ -635,7 +636,7 @@ describe('Cody completions', () => {
                 dedent`
                     for (int i = 0; i < 11; i++) {
                         if (i % 2 == 0) {
-                            ║
+                            █
                 `,
                 [
                     completion`
@@ -671,7 +672,7 @@ describe('Cody completions', () => {
                 dedent`
                     class Foo {
                         constructor() {
-                            ║
+                            █
                         }
                     }
                 `,
@@ -699,7 +700,7 @@ describe('Cody completions', () => {
             const { completions } = await complete(
                 dedent`
                     if (check) {
-                        ║
+                        █
                     }
                 `,
                 [
@@ -722,7 +723,7 @@ describe('Cody completions', () => {
             const { completions } = await complete(
                 dedent`
                 if (check) {
-                    ║
+                    █
                 `,
                 [
                     completion`
@@ -741,7 +742,7 @@ describe('Cody completions', () => {
             const { completions } = await complete(
                 dedent`
                 function myFunction() {
-                    ║
+                    █
                     console.log('three')
                 }
                 `,
@@ -763,7 +764,7 @@ describe('Cody completions', () => {
                 dedent`
                     function myFunction() {
                         console.log('one')
-                        ║
+                        █
                         console.log('three')
                     }
                 `,
@@ -781,7 +782,7 @@ describe('Cody completions', () => {
             const { completions } = await complete(
                 dedent`
                     function bubbleSort() {
-                        ║
+                        █
                         do {
                             swapped = false;
                             for (let i = 0; i < array.length - 1; i++) {
@@ -819,7 +820,7 @@ describe('Cody completions', () => {
             it('simple example', async () => {
                 const { completions } = await complete(
                     dedent`
-                        path: $GITHUB_WORKSPACE/vscode/.vscode-test/║
+                        path: $GITHUB_WORKSPACE/vscode/.vscode-test/█
                         key: {{ runner.os }}-pnpm-store-{{ hashFiles('**/pnpm-lock.yaml') }}`,
                     [
                         completion`
@@ -834,7 +835,7 @@ describe('Cody completions', () => {
             it('example with return', async () => {
                 const { completions } = await complete(
                     dedent`
-                        console.log('<< stop completion: ║')
+                        console.log('<< stop completion: █')
                         return []
                     `,
                     [
@@ -851,7 +852,7 @@ describe('Cody completions', () => {
             it('example with inline comment', async () => {
                 const { completions } = await complete(
                     dedent`
-                        // ║
+                        // █
                         const currentFilePath = path.normalize(document.fileName)
                     `,
                     [
@@ -870,7 +871,7 @@ describe('Cody completions', () => {
             const { completions } = await complete(
                 dedent`
                     function test() {
-                        ║
+                        █
                 `,
                 [
                     completion`
@@ -909,7 +910,7 @@ describe('Cody completions', () => {
             const { completions } = await complete(
                 dedent`
                     function test() {
-                        ║
+                        █
                 `,
                 [completion`return true`, completion`return true`, completion`return true`]
             )
@@ -923,7 +924,7 @@ describe('Cody completions', () => {
                 dedent`
                     class Foo {
                         constructor() {
-                            ║
+                            █
                 `,
                 [
                     completion`
@@ -951,7 +952,7 @@ describe('Cody completions', () => {
             const { completions } = await complete(
                 dedent`
                     if (check) {
-                        ║
+                        █
                         const d = 5;
                 `,
                 [
@@ -1003,7 +1004,7 @@ describe('Cody completions', () => {
             const { completions } = await complete(
                 dedent`
                     function test() {
-                        ║
+                        █
                 `,
                 [
                     completion`
@@ -1019,9 +1020,9 @@ describe('Cody completions', () => {
 
     describe('completions cache', () => {
         it('synthesizes a completion from a prior request', async () => {
-            await complete('console.║', [completion`log('Hello, world!');`])
+            await complete('console.█', [completion`log('Hello, world!');`])
 
-            const { completions } = await complete('console.log(║', 'stall')
+            const { completions } = await complete('console.log(█', 'stall')
 
             expect(completions[0].insertText).toBe("'Hello, world!');")
         })
