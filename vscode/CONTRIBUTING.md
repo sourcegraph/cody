@@ -27,6 +27,10 @@ The best way to help us improve code completions is by contributing your example
    - Make sure to restart or reload VS Code after changing these settings
 1. Open the Cody debug panel via "View > Output" and selecting the "Cody by Sourcegraph" option in the dropdown.
 
+### Realtime autocomplete tracing
+
+We also have some build-in UI to help during the development of autocomplete requests. To access this, run the `Cody > Open Autocomplete Trace View` action. This will open a new panel that will show all requests in real time.
+
 ## Testing
 
 - Unit tests: `pnpm run test:unit`
