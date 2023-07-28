@@ -1,5 +1,3 @@
-import { spawnSync } from 'child_process'
-
 import * as vscode from 'vscode'
 
 import { ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
@@ -13,10 +11,10 @@ import { isError } from '@sourcegraph/cody-shared/src/utils'
 
 import { getFullConfig } from '../configuration'
 import { VSCodeEditor } from '../editor/vscode-editor'
-import { FilenameContextFetcher } from '../local-context/filename-context-fetcher'
-import { LocalKeywordContextFetcher } from '../local-context/local-keyword-context-fetcher'
+import { PlatformContext } from '../extension.common'
 import { debug } from '../log'
 import { getRerankWithLog } from '../logged-rerank'
+import { repositoryRemoteUrl } from '../repository/repositoryHelpers'
 import { AuthProvider } from '../services/AuthProvider'
 import { LocalStorage } from '../services/LocalStorageProvider'
 import { SecretStorage } from '../services/SecretStorageProvider'
@@ -69,7 +67,8 @@ export class ContextProvider implements vscode.Disposable {
         private localStorage: LocalStorage,
         private rgPath: string | null,
         private authProvider: AuthProvider,
-        private telemetryService: TelemetryService
+        private telemetryService: TelemetryService,
+        private platform: PlatformContext
     ) {
         this.disposables.push(this.configurationChangeEvent)
 
@@ -119,7 +118,8 @@ export class ContextProvider implements vscode.Disposable {
             this.rgPath,
             this.editor,
             this.chat,
-            this.telemetryService
+            this.telemetryService,
+            this.platform
         )
         if (!codebaseContext) {
             return
@@ -149,7 +149,8 @@ export class ContextProvider implements vscode.Disposable {
                 this.rgPath,
                 this.editor,
                 this.chat,
-                this.telemetryService
+                this.telemetryService,
+                this.platform
             )
             if (codebaseContext) {
                 this.codebaseContext = codebaseContext
@@ -247,17 +248,17 @@ export async function getCodebaseContext(
     rgPath: string | null,
     editor: Editor,
     chatClient: ChatClient,
-    telemetryService: TelemetryService
+    telemetryService: TelemetryService,
+    platform: PlatformContext
 ): Promise<CodebaseContext | null> {
     const client = new SourcegraphGraphQLAPIClient(config)
-    const workspaceRoot = editor.getWorkspaceRootPath()
+    const workspaceRoot = editor.getWorkspaceRootUri()
     if (!workspaceRoot) {
         return null
     }
-    const gitCommand = spawnSync('git', ['remote', 'get-url', 'origin'], { cwd: workspaceRoot })
-    const gitOutput = gitCommand.stdout.toString().trim()
+    const remoteUrl = repositoryRemoteUrl(workspaceRoot)
     // Get codebase from config or fallback to getting repository name from git clone URL
-    const codebase = config.codebase || convertGitCloneURLToCodebaseName(gitOutput)
+    const codebase = config.codebase || (remoteUrl ? convertGitCloneURLToCodebaseName(remoteUrl) : null)
     if (!codebase) {
         return null
     }
@@ -274,8 +275,10 @@ export async function getCodebaseContext(
         config,
         codebase,
         embeddingsSearch,
-        rgPath ? new LocalKeywordContextFetcher(rgPath, editor, chatClient, telemetryService) : null,
-        rgPath ? new FilenameContextFetcher(rgPath, editor, chatClient) : null,
+        rgPath
+            ? platform.createLocalKeywordContextFetcher?.(rgPath, editor, chatClient, telemetryService) ?? null
+            : null,
+        rgPath ? platform.createFilenameContextFetcher?.(rgPath, editor, chatClient) ?? null : null,
         undefined,
         getRerankWithLog(chatClient)
     )

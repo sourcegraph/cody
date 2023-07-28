@@ -48,7 +48,7 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
                 await this.abortCompletion()
                 break
             case 'executeRecipe':
-                this.showTab('chat')
+                await this.setWebviewView('chat')
                 await this.executeRecipe(message.recipe)
                 break
             case 'auth':
@@ -86,6 +86,9 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
                 break
             case 'my-prompt':
                 await this.onCustomRecipeClicked(message.title, message.value)
+                break
+            case 'reload':
+                await this.authProvider.reloadAuthStatus()
                 break
             case 'openFile': {
                 const rootUri = this.editor.getWorkspaceRootUri()
@@ -147,14 +150,9 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
         this.telemetryService.log('CodyVSCodeExtension:custom-recipe:clicked')
         debug('ChatViewProvider:onCustomRecipeClicked', title)
         if (!this.isCustomRecipeAction(title)) {
-            this.showTab('chat')
+            await this.setWebviewView('chat')
         }
         await this.executeCustomRecipe(title, recipeType)
-    }
-
-    public showTab(tab: string): void {
-        void vscode.commands.executeCommand('cody.chat.focus')
-        void this.webview?.postMessage({ type: 'showTab', tab })
     }
 
     /**
@@ -225,9 +223,9 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
     /**
      * Set webview view
      */
-    public setWebviewView(view: View): void {
-        void vscode.commands.executeCommand('cody.chat.focus')
-        void this.webview?.postMessage({
+    public async setWebviewView(view: View): Promise<void> {
+        await vscode.commands.executeCommand('cody.chat.focus')
+        await this.webview?.postMessage({
             type: 'view',
             messages: view,
         })

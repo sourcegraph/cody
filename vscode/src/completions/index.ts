@@ -14,7 +14,7 @@ import { getCurrentDocContext } from './document'
 import { History } from './history'
 import * as CompletionLogger from './logger'
 import { detectMultiline } from './multiline'
-import { Provider, ProviderConfig, ProviderOptions } from './providers/provider'
+import { CompletionProviderTracer, Provider, ProviderConfig, ProviderOptions } from './providers/provider'
 import { RequestManager } from './request-manager'
 import { sharedPostProcess } from './shared-post-process'
 import { ProvideInlineCompletionItemsTracer, ProvideInlineCompletionsItemTraceData } from './tracer'
@@ -276,16 +276,18 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
 
             tracer?.({ cacheHit: true })
             CompletionLogger.start(logId)
-            return prepareCompletions(
+            return this.prepareCompletions(
                 logId,
                 cachedCompletions.completions,
                 document,
+                context,
                 position,
                 prefix,
                 suffix,
                 multiline,
                 document.languageId,
-                context
+                true,
+                abortController.signal
             )
         }
         tracer?.({ cacheHit: false })
@@ -335,7 +337,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
         tracer?.({ completers: completers.map(({ options }) => options) })
 
         if (!this.config.disableTimeouts && context.triggerKind !== vscode.InlineCompletionTriggerKind.Invoke) {
-            await new Promise<void>(resolve => setTimeout(resolve, timeout))
+            await delay(timeout)
         }
 
         // We don't need to make a request at all if the signal is already aborted after the
@@ -379,21 +381,85 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
             prefix,
             completers,
             contextResult.context,
-            abortController.signal
+            abortController.signal,
+            tracer ? createCompletionProviderTracer(tracer) : undefined
         )
 
         stopLoading()
-        return prepareCompletions(
+        return this.prepareCompletions(
             logId,
             completions,
             document,
+            context,
             position,
             prefix,
             suffix,
             multiline,
             document.languageId,
-            context
+            false,
+            abortController.signal
         )
+    }
+
+    private async prepareCompletions(
+        logId: string,
+        completions: Completion[],
+        document: vscode.TextDocument,
+        context: vscode.InlineCompletionContext,
+        position: vscode.Position,
+        prefix: string,
+        suffix: string,
+        multiline: boolean,
+        languageId: string,
+        isCacheHit: boolean,
+        abortSignal: AbortSignal
+    ): Promise<vscode.InlineCompletionList> {
+        const results = processCompletions(completions, prefix, suffix, multiline, languageId)
+
+        // We usually resolve cached results instantly. However, if the inserted completion would
+        // include more than one line, this can create a lot of visible UI churn. To avoid this, we
+        // debounce these results and wait for the user to stop typing for a bit before applying
+        // them.
+        //
+        // The duration we wait is longer than the debounce time for new requests because we do not
+        // have network latency for cache completion
+        const visibleResult = results[0]
+        if (
+            isCacheHit &&
+            visibleResult?.content.includes('\n') &&
+            !this.config.disableTimeouts &&
+            context.triggerKind !== vscode.InlineCompletionTriggerKind.Invoke
+        ) {
+            await delay(400)
+            if (abortSignal.aborted) {
+                return { items: [] }
+            }
+        }
+
+        if (results.length > 0) {
+            // When the VS Code completion popup is open and we suggest a completion that does not match
+            // the currently selected completion, VS Code won't display it. For now we make sure to not
+            // log these completions as displayed.
+            //
+            // TODO: Take this into account when creating the completion prefix.
+            let isCompletionVisible = true
+            if (context.selectedCompletionInfo) {
+                const currentText = document.getText(context.selectedCompletionInfo.range)
+                const selectedText = context.selectedCompletionInfo.text
+                if (!(currentText + results[0].content).startsWith(selectedText)) {
+                    isCompletionVisible = false
+                }
+            }
+
+            if (isCompletionVisible) {
+                CompletionLogger.suggest(logId, isCompletionVisible)
+            }
+
+            return toInlineCompletionItems(logId, document, position, results)
+        }
+
+        CompletionLogger.noResponse(logId)
+        return emptyCompletions()
     }
 }
 
@@ -401,45 +467,6 @@ export interface Completion {
     prefix: string
     content: string
     stopReason?: string
-}
-
-function prepareCompletions(
-    logId: string,
-    completions: Completion[],
-    document: vscode.TextDocument,
-    position: vscode.Position,
-    prefix: string,
-    suffix: string,
-    multiline: boolean,
-    languageId: string,
-    context: vscode.InlineCompletionContext
-): vscode.InlineCompletionList {
-    const results = processCompletions(completions, prefix, suffix, multiline, languageId)
-
-    if (results.length > 0) {
-        // When the VS Code completion popup is open and we suggest a completion that does not match
-        // the currently selected completion, VS Code won't display it. For now we make sure to not
-        // log these completions as displayed.
-        //
-        // TODO: Take this into account when creating the completion prefix.
-        let isCompletionVisible = true
-        if (context.selectedCompletionInfo) {
-            const currentText = document.getText(context.selectedCompletionInfo.range)
-            const selectedText = context.selectedCompletionInfo.text
-            if (!(currentText + results[0].content).startsWith(selectedText)) {
-                isCompletionVisible = false
-            }
-        }
-
-        if (isCompletionVisible) {
-            CompletionLogger.suggest(logId, isCompletionVisible)
-        }
-
-        return toInlineCompletionItems(logId, document, position, results)
-    }
-
-    CompletionLogger.noResponse(logId)
-    return emptyCompletions()
 }
 
 function processCompletions(
@@ -515,4 +542,15 @@ function createTracerForInvocation(tracer: ProvideInlineCompletionItemsTracer): 
 function emptyCompletions(): vscode.InlineCompletionList {
     CompletionLogger.clear()
     return { items: [] }
+}
+
+function createCompletionProviderTracer(tracer: SingleInvocationTracer): CompletionProviderTracer {
+    return {
+        params: data => tracer({ completionProviderCallParams: data }),
+        result: data => tracer({ completionProviderCallResult: data }),
+    }
+}
+
+function delay(milliseconds: number): Promise<void> {
+    return new Promise<void>(resolve => setTimeout(resolve, milliseconds))
 }
