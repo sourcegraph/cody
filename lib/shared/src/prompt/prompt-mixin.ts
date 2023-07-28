@@ -8,7 +8,7 @@ const rules =
  * Add a prompt mixin to prompt for cross-cutting concerns relevant to multiple recipes.
  */
 export class PromptMixin {
-    private static mixins: PromptMixin[] = [newPromptMixin(rules)]
+    private static mixins: PromptMixin[] = []
     private static customMixin: PromptMixin[] = []
 
     /**
@@ -30,6 +30,7 @@ export class PromptMixin {
      * Prepends all mixins to `humanMessage`. Modifies and returns `humanMessage`.
      */
     public static mixInto(humanMessage: InteractionMessage): InteractionMessage {
+        this.mixins.push(newPromptMixin(rules))
         const mixins = [...this.mixins, ...this.customMixin].map(mixin => mixin.prompt).join('\n\n')
         if (mixins) {
             // Stuff the prompt mixins at the start of the human text.
