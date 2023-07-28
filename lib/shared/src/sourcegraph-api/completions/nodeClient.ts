@@ -6,49 +6,9 @@ import { toPartialUtf8String } from '../utils'
 
 import { SourcegraphCompletionsClient } from './client'
 import { parseEvents } from './parse'
-import { CompletionCallbacks, CompletionParameters, CompletionResponse } from './types'
+import { CompletionCallbacks, CompletionParameters } from './types'
 
 export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClient {
-    public async complete(params: CompletionParameters, abortSignal?: AbortSignal): Promise<CompletionResponse> {
-        const log = this.logger?.startCompletion(params)
-
-        const headers = new Headers(this.config.customHeaders as HeadersInit)
-        if (this.config.accessToken) {
-            headers.set('Authorization', `token ${this.config.accessToken}`)
-        }
-
-        const response = await fetch(this.codeCompletionsEndpoint, {
-            method: 'POST',
-            body: JSON.stringify(params),
-            headers,
-            signal: abortSignal,
-        })
-
-        const result = await response.text()
-
-        // When rate-limiting occurs, the response is an error message
-        if (response.status === 429) {
-            throw new Error(result)
-        }
-
-        try {
-            const response = JSON.parse(result) as CompletionResponse
-
-            if (typeof response.completion !== 'string' || typeof response.stopReason !== 'string') {
-                const message = `response does not satisfy CodeCompletionResponse: ${result}`
-                log?.onError(message)
-                throw new Error(message)
-            } else {
-                log?.onComplete(response)
-                return response
-            }
-        } catch (error) {
-            const message = `error parsing response CodeCompletionResponse: ${error}, response text: ${result}`
-            log?.onError(message)
-            throw new Error(message)
-        }
-    }
-
     public stream(params: CompletionParameters, cb: CompletionCallbacks): () => void {
         const log = this.logger?.startCompletion(params)
 
