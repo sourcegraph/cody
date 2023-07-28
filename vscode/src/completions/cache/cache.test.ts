@@ -7,7 +7,9 @@ function docState(
     other?: Partial<Omit<CompletionsCacheDocumentState, 'prefix'>>
 ): CompletionsCacheDocumentState {
     return {
+        uri: 'file:///f',
         prefix,
+        position: prefix.length,
         suffix: ';',
         languageId: 'javascript',
         ...other,
@@ -29,11 +31,6 @@ describe('CompletionsCache', () => {
         const cache = new CompletionsCache()
         cache.add('id1', docState('foo\n'), [{ content: 'bar' }])
 
-        expect(cache.__stateForTestsOnly).toEqual<CompletionsCache['__stateForTestsOnly']>({
-            'javascript<|>foo\n<|>;': { logId: 'id1', completions: [{ content: 'bar' }] },
-            'javascript<|>foo\nb<|>;': { logId: 'id1', completions: [{ content: 'ar' }] },
-            'javascript<|>foo\nba<|>;': { logId: 'id1', completions: [{ content: 'r' }] },
-        })
         expect(cache.get({ documentState: docState('foo\nb') })).toEqual({
             logId: 'id1',
             completions: [{ content: 'ar' }],
@@ -48,46 +45,13 @@ describe('CompletionsCache', () => {
         const cache = new CompletionsCache()
         cache.add('id1', docState('p', { suffix: 's' }), [{ content: 'c' }])
 
-        expect(cache.__stateForTestsOnly).toEqual<CompletionsCache['__stateForTestsOnly']>({
-            'javascript<|>p<|>s': { logId: 'id1', completions: [{ content: 'c' }] },
-        })
         expect(cache.get({ documentState: docState('foo\nb', { suffix: 's2' }) })).toEqual(undefined)
-    })
-
-    it('trims trailing whitespace on empty line', () => {
-        const cache = new CompletionsCache()
-        cache.add('id1', docState('foo \n  '), [{ content: 'bar' }])
-
-        expect(cache.__stateForTestsOnly).toEqual<CompletionsCache['__stateForTestsOnly']>({
-            'javascript<|>foo \n<|>;': { logId: 'id1', completions: [{ content: 'bar' }] },
-            'javascript<|>foo \n  <|>;': { logId: 'id1', completions: [{ content: 'bar' }] },
-            'javascript<|>foo \nb<|>;': { logId: 'id1', completions: [{ content: 'ar' }] },
-            'javascript<|>foo \nba<|>;': { logId: 'id1', completions: [{ content: 'r' }] },
-        })
-        expect(cache.get({ documentState: docState('foo \n  ') })).toEqual({
-            logId: 'id1',
-            completions: [{ content: 'bar' }],
-        })
-        expect(cache.get({ documentState: docState('foo \n ') })).toEqual({
-            logId: 'id1',
-            completions: [{ content: 'bar' }],
-        })
-        expect(cache.get({ documentState: docState('foo \n') })).toEqual({
-            logId: 'id1',
-            completions: [{ content: 'bar' }],
-        })
-        expect(cache.get({ documentState: docState('foo ') })).toEqual(undefined)
     })
 
     it('does not trim trailing whitespace on non-empty line', () => {
         const cache = new CompletionsCache()
         cache.add('id1', docState('foo'), [{ content: 'bar' }])
 
-        expect(cache.__stateForTestsOnly).toEqual<CompletionsCache['__stateForTestsOnly']>({
-            'javascript<|>foo<|>;': { logId: 'id1', completions: [{ content: 'bar' }] },
-            'javascript<|>foob<|>;': { logId: 'id1', completions: [{ content: 'ar' }] },
-            'javascript<|>fooba<|>;': { logId: 'id1', completions: [{ content: 'r' }] },
-        })
         expect(cache.get({ documentState: docState('foo') })).toEqual({
             logId: 'id1',
             completions: [{ content: 'bar' }],
@@ -97,6 +61,31 @@ describe('CompletionsCache', () => {
         expect(cache.get({ documentState: docState('foo \n') })).toEqual(undefined)
         expect(cache.get({ documentState: docState('foo\n') })).toEqual(undefined)
         expect(cache.get({ documentState: docState('foo\t') })).toEqual(undefined)
+    })
+
+    it('caches through deletions of prefix', () => {
+        const cache = new CompletionsCache()
+        cache.add('1', docState('a\nbc '), [{ content: 'd' }])
+
+        expect(cache.get({ documentState: docState('a\nbc ') })).toEqual({
+            logId: '1',
+            completions: [{ content: 'd' }],
+        })
+        expect(cache.get({ documentState: docState('a\nbc') })).toEqual({
+            logId: '1',
+            completions: [{ content: ' d' }],
+        })
+        expect(cache.get({ documentState: docState('a\nb') })).toEqual({
+            logId: '1',
+            completions: [{ content: 'c d' }],
+        })
+        expect(cache.get({ documentState: docState('a\n') })).toEqual({
+            logId: '1',
+            completions: [{ content: 'bc d' }],
+        })
+
+        // But stop serving from cache when the user deletes the newline.
+        expect(cache.get({ documentState: docState('a') })).toEqual(undefined)
     })
 
     it('has a lookup function for untrimmed prefixes', () => {
