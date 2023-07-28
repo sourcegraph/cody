@@ -72,7 +72,8 @@ export class UnstableFireworksProvider extends Provider {
             // To speed up sample generation in single-line case, we request a lower token limit
             // since we can't terminate on the first `\n`.
             max_tokens: this.options.multiline ? 256 : 30,
-
+            temperature: 0.4,
+            top_p: 0.95,
             min_tokens: 1,
             n: this.options.n,
             echo: false,
