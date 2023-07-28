@@ -25,7 +25,7 @@ Tip: Enable `cody.debug.enable` and `cody.debug.verbose` in VS Code settings dur
 
 ## Releases
 
-### Stable channel
+### Stable builds
 
 To publish a new release to the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai) and [Open VSX Registry](https://open-vsx.org/extension/sourcegraph/cody-ai):
 
@@ -35,11 +35,19 @@ To publish a new release to the [VS Code Marketplace](https://marketplace.visual
 1. `git push --tags`
 1. Wait for the [vscode-stable-release workflow](https://github.com/sourcegraph/cody/actions/workflows/vscode-stable-release.yml) run to finish.
 
-### Insiders channel
+### Insiders builds
 
 Insiders builds are nightly (or more frequent) builds with the latest from `main`. They're less stable but have the latest changes. Only use the insiders build if you want to test the latest changes.
 
-To use the Cody insiders build, install the extension from the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai) and then select **Switch to Prerelease Version** in the extension's page.
+#### Using the insiders build
+
+To use the Cody insiders build in VS Code:
+
+1. Install the extension from the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai).
+1. Select **Switch to Pre-release Version** in the extension's page in VS Code.
+1. Wait for it to download and install, and then reload (by pressing **Reload Required**).
+
+#### Publishing a new insiders build
 
 Insiders builds are published automatically daily at 1500 UTC using the [vscode-insiders-release workflow](https://github.com/sourcegraph/cody/actions/workflows/vscode-insiders-release.yml).
 
