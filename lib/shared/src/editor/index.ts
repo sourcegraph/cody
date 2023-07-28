@@ -29,9 +29,10 @@ export interface ActiveTextEditorSelection {
 export type ActiveTextEditorDiagnosticType = 'error' | 'warning' | 'information' | 'hint'
 
 export interface ActiveTextEditorDiagnostic {
-    range: ActiveTextEditorSelectionRange
-    message: string
     type: ActiveTextEditorDiagnosticType
+    range: ActiveTextEditorSelectionRange
+    text: string
+    message: string
 }
 
 export interface ActiveTextEditorVisibleContent {

@@ -52,105 +52,6 @@ const PromptIntentInstruction: Record<FixupIntent, string> = {
 export class Fixup implements Recipe {
     public id: RecipeID = 'fixup'
 
-    private async getIntent(humanChatInput: string, context: RecipeContext): Promise<FixupIntent> {
-        // TODO(umpox): Implement a basic intent detection check that can return before reaching for the LLM.
-        // E.g. Current file is a test -> Test intent. Current selection is only a comment -> Documentation.
-
-        const intent = await context.intentDetector.classifyIntentFromOptions(
-            humanChatInput,
-            FixupIntentClassification,
-            'fix'
-        )
-        return intent
-    }
-
-    private async getContextFromIntent(
-        intent: FixupIntent,
-        selection: ActiveTextEditorSelection,
-        quarterFileContext: number,
-        context: RecipeContext
-    ): Promise<ContextMessage[]> {
-        const truncatedPrecedingText = truncateTextStart(selection.precedingText, quarterFileContext)
-        const truncatedFollowingText = truncateText(selection.followingText, quarterFileContext)
-
-        // Disable no case declarations because we get better type checking with a switch case
-        /* eslint-disable no-case-declarations */
-        switch (intent) {
-            /**
-             * Intents that are focused on producing new code.
-             * They have a broad set of possible instructions, so we fetch a broad amount of code context files.
-             * Non-code files are not considered as including Markdown syntax seems to lead to more hallucinations and poorer output quality.
-             *
-             * TODO(umpox): We fetch similar context for both cases here
-             * We should investigate how we can improve each individual case.
-             * Are these fundamentally the same? Is the primary benefit here that we can provide more specific instructions to Cody?
-             */
-            case 'add':
-            case 'edit':
-                return getContextMessagesFromSelection(
-                    selection.selectedText,
-                    truncatedPrecedingText,
-                    truncatedFollowingText,
-                    selection,
-                    context.codebaseContext
-                )
-            /**
-             * The fix intent is similar to adding or editing code, but with additional context that we can include from the editor.
-             */
-            case 'fix':
-                // Get diagnostics (errors, warnings) for the current range
-                const range =
-                    context.editor.getActiveTextEditor()?.selectionRange ||
-                    context.editor.controllers?.inline?.selectionRange
-                const diagnostics = range ? context.editor.getActiveTextEditorDiagnosticsForRange(range) || [] : []
-
-                return getContextMessagesFromSelection(
-                    selection.selectedText,
-                    truncatedPrecedingText,
-                    truncatedFollowingText,
-                    selection,
-                    context.codebaseContext
-                ).then(messages =>
-                    messages.concat(
-                        diagnostics.flatMap(diagnostic =>
-                            getContextMessageWithResponse(
-                                populateCurrentEditorDiagnosticsTemplate(diagnostic, selection.fileName),
-                                selection
-                            )
-                        )
-                    )
-                )
-            /**
-             * The test intent is unique in that we likely want to be much more specific in that context that we retrieve.
-             * TODO(umpox): How can infer the current testing dependencies, etc?
-             */
-            case 'test':
-                // Currently the same as add|edit|fix
-                return getContextMessagesFromSelection(
-                    selection.selectedText,
-                    truncatedPrecedingText,
-                    truncatedFollowingText,
-                    selection,
-                    context.codebaseContext
-                )
-            /**
-             * Intents that are focused primarily on updating code within the current file and selection.
-             * Providing a much more focused context window here seems to provide better quality responses.
-             */
-            case 'delete':
-            case 'document':
-                return Promise.resolve(
-                    [truncatedPrecedingText, truncatedFollowingText].flatMap(text =>
-                        getContextMessageWithResponse(
-                            populateCodeContextTemplate(text, selection.fileName, selection.repoName),
-                            selection
-                        )
-                    )
-                )
-        }
-        /* eslint-enable no-case-declarations */
-    }
-
     public async getInteraction(humanChatInput: string, context: RecipeContext): Promise<Interaction | null> {
         // TODO: Prompt the user for additional direction.
         const selection = context.editor.getActiveTextEditorSelection() || context.editor.controllers?.inline?.selection
@@ -213,6 +114,108 @@ export class Fixup implements Recipe {
         )
     }
 
+    private async getIntent(humanChatInput: string, context: RecipeContext): Promise<FixupIntent> {
+        /**
+         * TODO(umpox): We should probably find a shorter way of detecting intent when possible.
+         * Possible methods:
+         * - Input -> Match first word against update|fix|add|delete verbs
+         * - Context -> Infer intent from context, e.g. Current file is a test -> Test intent, Current selection is a comment symbol -> Documentation intent
+         */
+        const intent = await context.intentDetector.classifyIntentFromOptions(
+            humanChatInput,
+            FixupIntentClassification,
+            'fix'
+        )
+        return intent
+    }
+
+    private async getContextFromIntent(
+        intent: FixupIntent,
+        selection: ActiveTextEditorSelection,
+        quarterFileContext: number,
+        context: RecipeContext
+    ): Promise<ContextMessage[]> {
+        const truncatedPrecedingText = truncateTextStart(selection.precedingText, quarterFileContext)
+        const truncatedFollowingText = truncateText(selection.followingText, quarterFileContext)
+
+        // Disable no case declarations because we get better type checking with a switch case
+        /* eslint-disable no-case-declarations */
+        switch (intent) {
+            /**
+             * Intents that are focused on producing new code.
+             * They have a broad set of possible instructions, so we fetch a broad amount of code context files.
+             * Non-code files are not considered as including Markdown syntax seems to lead to more hallucinations and poorer output quality.
+             *
+             * TODO(umpox): We fetch similar context for both cases here
+             * We should investigate how we can improve each individual case.
+             * Are these fundamentally the same? Is the primary benefit here that we can provide more specific instructions to Cody?
+             */
+            case 'add':
+            case 'edit':
+                return getContextMessagesFromSelection(
+                    selection.selectedText,
+                    truncatedPrecedingText,
+                    truncatedFollowingText,
+                    selection,
+                    context.codebaseContext
+                )
+            /**
+             * The fix intent is similar to adding or editing code, but with additional context that we can include from the editor.
+             */
+            case 'fix':
+                const range =
+                    context.editor.getActiveTextEditor()?.selectionRange ||
+                    context.editor.controllers?.inline?.selectionRange
+                const diagnostics = range ? context.editor.getActiveTextEditorDiagnosticsForRange(range) || [] : []
+                const errorsAndWarnings = diagnostics.filter(({ type }) => type === 'error' || type === 'warning')
+
+                return getContextMessagesFromSelection(
+                    selection.selectedText,
+                    truncatedPrecedingText,
+                    truncatedFollowingText,
+                    selection,
+                    context.codebaseContext
+                ).then(messages =>
+                    messages.concat(
+                        errorsAndWarnings.flatMap(diagnostic =>
+                            getContextMessageWithResponse(
+                                populateCurrentEditorDiagnosticsTemplate(diagnostic, selection.fileName),
+                                selection
+                            )
+                        )
+                    )
+                )
+            /**
+             * The test intent is unique in that we likely want to be much more specific in that context that we retrieve.
+             * TODO(umpox): How can infer the current testing dependencies, etc?
+             */
+            case 'test':
+                // Currently the same as add|edit|fix
+                return getContextMessagesFromSelection(
+                    selection.selectedText,
+                    truncatedPrecedingText,
+                    truncatedFollowingText,
+                    selection,
+                    context.codebaseContext
+                )
+            /**
+             * Intents that are focused primarily on updating code within the current file and selection.
+             * Providing a much more focused context window here seems to provide better quality responses.
+             */
+            case 'delete':
+            case 'document':
+                return Promise.resolve(
+                    [truncatedPrecedingText, truncatedFollowingText].flatMap(text =>
+                        getContextMessageWithResponse(
+                            populateCodeContextTemplate(text, selection.fileName, selection.repoName),
+                            selection
+                        )
+                    )
+                )
+        }
+        /* eslint-enable no-case-declarations */
+    }
+
     // Prompt Templates
     public static readonly prompt = `
     - You are an AI programming assistant who is an expert in updating code to meet given instructions.
@@ -226,7 +229,7 @@ export class Fixup implements Recipe {
 
     This is part of the file {fileName}.
 
-    The user has the following code within their selection:
+    The user has the following code in their selection:
     <selectedCode>
     {selectedText}
     </selectedCode>

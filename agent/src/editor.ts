@@ -72,7 +72,7 @@ export class AgentEditor implements Editor {
     }
 
     public getActiveTextEditorDiagnosticsForRange(): ActiveTextEditorDiagnostic[] | null {
-        return null
+        throw new Error('Method not implemented.')
     }
 
     public getActiveTextEditorVisibleContent(): ActiveTextEditorVisibleContent | null {

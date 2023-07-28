@@ -68,15 +68,24 @@ export function populateCurrentEditorSelectedContextTemplate(
     )
 }
 
-const DIAGNOSTICS_CONTEXT_TEMPLATE = 'Use the following {type} from file `{filePath}`:\n{message}'
+const DIAGNOSTICS_CONTEXT_TEMPLATE = `Use the following {type} from the code snippet in the file \`{filePath}\`
+{prefix}: {message}
+Code snippet:
+\`\`\`{language}
+{code}
+\`\`\``
 
 export function populateCurrentEditorDiagnosticsTemplate(
-    { message, type }: ActiveTextEditorDiagnostic,
+    { message, type, text }: ActiveTextEditorDiagnostic,
     filePath: string
 ): string {
+    const language = getExtension(filePath)
     return DIAGNOSTICS_CONTEXT_TEMPLATE.replace('{type}', type)
         .replace('{filePath}', filePath)
+        .replace('{prefix}', type)
         .replace('{message}', message)
+        .replace('{language}', language)
+        .replace('{code}', text)
 }
 
 const COMMAND_OUTPUT_TEMPLATE = 'Here is the output returned from the terminal.\n'

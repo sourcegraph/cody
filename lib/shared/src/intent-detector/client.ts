@@ -29,12 +29,21 @@ export class SourcegraphIntentDetectorClient implements IntentDetector {
         return false
     }
 
-    private buildInitialPrompt(options: IntentClassificationOption[]): string {
+    private buildInitialTranscript(options: IntentClassificationOption[]): Message[] {
         const functions = options
             .map(({ id, description }) => `Function ID: ${id}\nFunction Description: ${description}`)
             .join('\n')
 
-        return prompt.replace('{functions}', functions)
+        return [
+            {
+                speaker: 'human',
+                text: prompt.replace('{functions}', functions),
+            },
+            {
+                speaker: 'assistant',
+                text: 'Ok.',
+            },
+        ]
     }
 
     private buildExampleTranscript(options: IntentClassificationOption[]): Message[] {
@@ -62,8 +71,8 @@ export class SourcegraphIntentDetectorClient implements IntentDetector {
         options: IntentClassificationOption<Intent>[],
         fallback: Intent
     ): Promise<Intent> {
-        const initialPrompt = this.buildInitialPrompt(options)
-        const exampleTranscript = this.buildExampleTranscript(options)
+        const preamble = this.buildInitialTranscript(options)
+        const examples = this.buildExampleTranscript(options)
 
         const result = await this.completionsClient.complete({
             fast: true,
@@ -72,15 +81,8 @@ export class SourcegraphIntentDetectorClient implements IntentDetector {
             topK: -1,
             topP: -1,
             messages: [
-                {
-                    speaker: 'human',
-                    text: initialPrompt,
-                },
-                {
-                    speaker: 'assistant',
-                    text: 'Ok.',
-                },
-                ...exampleTranscript,
+                ...preamble,
+                ...examples,
                 {
                     speaker: 'human',
                     text: input,
@@ -92,7 +94,6 @@ export class SourcegraphIntentDetectorClient implements IntentDetector {
         })
 
         const responseClassification = result.completion.match(/<classification>(.*?)<\/classification>/)?.[1]
-        console.log('LLM CLASSIFICATION', responseClassification)
         if (!responseClassification) {
             return fallback
         }

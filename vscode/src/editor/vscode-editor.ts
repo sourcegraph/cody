@@ -23,7 +23,7 @@ export class VSCodeEditor implements Editor<InlineController, FixupController, M
             FixupController,
             MyPromptController
         >
-    ) { }
+    ) {}
 
     public get fileName(): string {
         return vscode.window.activeTextEditor?.document.fileName ?? ''
@@ -101,9 +101,10 @@ export class VSCodeEditor implements Editor<InlineController, FixupController, M
         }
     }
 
-    public getActiveTextEditorDiagnosticsForRange(
-        { start, end }: ActiveTextEditorSelectionRange
-    ): ActiveTextEditorDiagnostic[] | null {
+    public getActiveTextEditorDiagnosticsForRange({
+        start,
+        end,
+    }: ActiveTextEditorSelectionRange): ActiveTextEditorDiagnostic[] | null {
         const activeEditor = this.getActiveTextEditorInstance()
         if (!activeEditor) {
             return null
@@ -117,9 +118,10 @@ export class VSCodeEditor implements Editor<InlineController, FixupController, M
         return diagnostics
             .filter(diagnostic => selectionRange.contains(diagnostic.range))
             .map(({ message, range, severity }) => ({
-                range,
-                message,
                 type: this.getActiveTextEditorDiagnosticType(severity),
+                range,
+                text: activeEditor.document.getText(range),
+                message,
             }))
     }
 
