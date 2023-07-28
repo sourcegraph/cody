@@ -160,7 +160,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
             this.config.providerConfig.enableExtendedMultilineTriggers
         )
 
-        const lastChangeIsDeletion = this.config.lastChangeTracker.lastChange(document.uri) === 'del'
+        // const lastChangeIsDeletion = this.config.lastChangeTracker.lastChange(document.uri) === 'del'
         const cacheRequest: CacheRequest = {
             documentState: {
                 uri: document.uri.toString(),
@@ -391,6 +391,7 @@ function processCompletions(
     return rankedResults
 }
 
+let seq = 0
 function toInlineCompletionItems(
     logId: string,
     document: vscode.TextDocument,
@@ -404,7 +405,7 @@ function toInlineCompletionItems(
             const endOfLine = currentLine.range.end
 
             return new vscode.InlineCompletionItem(
-                document.getText(currentLine.range.with({ end: position })) + completion.content,
+                document.getText(currentLine.range.with({ end: position })) + completion.content + ++seq,
                 new vscode.Range(currentLine.range.start, endOfLine),
                 {
                     title: 'Completion accepted',

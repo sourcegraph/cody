@@ -58,7 +58,7 @@ describe('RequestManager', () => {
             requestManager.request(
                 DOCUMENT_URI,
                 LOG_ID,
-                { prefix, suffix: 'x', languageId: 'javascript' },
+                { prefix, suffix: 'x', uri: 'xTODO remove', position: 123, languageId: 'javascript' },
                 [provider],
                 [],
                 new AbortController().signal

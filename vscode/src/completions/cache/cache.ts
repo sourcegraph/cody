@@ -50,13 +50,6 @@ export interface CacheRequest {
     isExactPrefixOnly?: boolean
 }
 
-/*
- * Only the first {@link CACHE_KEY_DOCUMENT_CONTENT_SUFFIX_LENGTH} characters of the prefix and
- * suffix are used to distinguish cache keys (because an edit that is sufficiently far away from the
- * cursor can be considered to not invalidate the relevant cache entries).
- **/
-const CACHE_KEY_DOCUMENT_CONTENT_PREFIX_SUFFIX_LENGTH = 200
-
 /**
  * A completions cache for multiple documents.
  */
@@ -98,6 +91,9 @@ class DocumentCompletionsCache {
     private cache = new LRUCache<number, CacheEntry>({ max: 50 })
 
     public get(req: CacheRequest): Pick<CachedCompletions, 'logId' | 'completions'> | undefined {
+        if (process.env.FOO !== 'a') {
+            return undefined
+        }
         for (const e of this.cache.values() as Generator<CacheEntry>) {
             const exactMatch =
                 req.documentState.position === e.documentState.position &&
