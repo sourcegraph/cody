@@ -100,7 +100,7 @@ export class UnstableFireworksProvider extends Provider {
             const data = (await response.json()) as
                 | { choices: { text: string; finish_reason: string }[] }
                 | { error: string }
-            console.log(data)
+
             if ('error' in data) {
                 throw new Error(data.error)
             }
