@@ -5,6 +5,7 @@ import {
     ActiveTextEditorDiagnostic,
     ActiveTextEditorDiagnosticType,
     ActiveTextEditorSelection,
+    ActiveTextEditorSelectionRange,
     ActiveTextEditorViewControllers,
     ActiveTextEditorVisibleContent,
     Editor,
@@ -22,7 +23,7 @@ export class VSCodeEditor implements Editor<InlineController, FixupController, M
             FixupController,
             MyPromptController
         >
-    ) {}
+    ) { }
 
     public get fileName(): string {
         return vscode.window.activeTextEditor?.document.fileName ?? ''
@@ -51,7 +52,7 @@ export class VSCodeEditor implements Editor<InlineController, FixupController, M
         return {
             content: documentText,
             filePath: documentUri.fsPath,
-            selection: !documentSelection.isEmpty ? documentSelection : undefined,
+            selectionRange: !documentSelection.isEmpty ? documentSelection : undefined,
         }
     }
 
@@ -100,25 +101,26 @@ export class VSCodeEditor implements Editor<InlineController, FixupController, M
         }
     }
 
-    public getActiveTextEditorDiagnosticsForSelectionOrEntireFile(): ActiveTextEditorDiagnostic[] | null {
+    public getActiveTextEditorDiagnosticsForRange(
+        { start, end }: ActiveTextEditorSelectionRange
+    ): ActiveTextEditorDiagnostic[] | null {
         const activeEditor = this.getActiveTextEditorInstance()
         if (!activeEditor) {
             return null
         }
-
         const diagnostics = vscode.languages.getDiagnostics(activeEditor.document.uri)
-        // TODO(umpox): Inline edits currently don't use the active editor selection
-        // Need to fix this so inline edits only consume diagnostics for the current line
-        // if (activeEditor.selection) {
-        //     console.log('Filtering for selection!', diagnostics, activeEditor.selection)
-        //     diagnostics = diagnostics.filter(({ range }) => range.contains(activeEditor.selection))
-        // }
+        const selectionRange = new vscode.Range(
+            new vscode.Position(start.line, start.character),
+            new vscode.Position(end.line, end.character)
+        )
 
-        return diagnostics.map(({ message, range, severity }) => ({
-            range,
-            message,
-            type: this.getActiveTextEditorDiagnosticType(severity),
-        }))
+        return diagnostics
+            .filter(diagnostic => selectionRange.contains(diagnostic.range))
+            .map(({ message, range, severity }) => ({
+                range,
+                message,
+                type: this.getActiveTextEditorDiagnosticType(severity),
+            }))
     }
 
     private createActiveTextEditorSelection(

@@ -3,7 +3,7 @@ export interface ActiveTextEditor {
     filePath: string
     repoName?: string
     revision?: string
-    selection?: ActiveTextEditorSelectionRange
+    selectionRange?: ActiveTextEditorSelectionRange
 }
 
 export interface ActiveTextEditorSelectionRange {
@@ -43,6 +43,7 @@ export interface ActiveTextEditorVisibleContent {
 
 export interface VsCodeInlineController {
     selection: ActiveTextEditorSelection | null
+    selectionRange: ActiveTextEditorSelectionRange | null
     error(): Promise<void>
 }
 
@@ -91,7 +92,7 @@ export interface Editor<
     /**
      * Get diagnostics (errors, warnings) for the active text editor's selection, or the entire file if the selected range is empty.
      */
-    getActiveTextEditorDiagnosticsForSelectionOrEntireFile(): ActiveTextEditorDiagnostic[] | null
+    getActiveTextEditorDiagnosticsForRange(range: ActiveTextEditorSelectionRange): ActiveTextEditorDiagnostic[] | null
 
     getActiveTextEditorVisibleContent(): ActiveTextEditorVisibleContent | null
     replaceSelection(fileName: string, selectedText: string, replacement: string): Promise<void>
@@ -121,7 +122,7 @@ export class NoopEditor implements Editor {
         return null
     }
 
-    public getActiveTextEditorDiagnosticsForSelectionOrEntireFile(): ActiveTextEditorDiagnostic[] | null {
+    public getActiveTextEditorDiagnosticsForRange(): ActiveTextEditorDiagnostic[] | null {
         return null
     }
 

@@ -73,6 +73,8 @@ export class Fixup implements Recipe {
         const truncatedPrecedingText = truncateTextStart(selection.precedingText, quarterFileContext)
         const truncatedFollowingText = truncateText(selection.followingText, quarterFileContext)
 
+        // Disable no case declarations because we get better type checking with a switch case
+        /* eslint-disable no-case-declarations */
         switch (intent) {
             /**
              * Intents that are focused on producing new code.
@@ -96,8 +98,12 @@ export class Fixup implements Recipe {
              * The fix intent is similar to adding or editing code, but with additional context that we can include from the editor.
              */
             case 'fix':
-                // eslint-disable-next-line no-case-declarations
-                const diagnostics = context.editor.getActiveTextEditorDiagnosticsForSelectionOrEntireFile() || []
+                // Get diagnostics (errors, warnings) for the current range
+                const range =
+                    context.editor.getActiveTextEditor()?.selectionRange ||
+                    context.editor.controllers?.inline?.selectionRange
+                const diagnostics = range ? context.editor.getActiveTextEditorDiagnosticsForRange(range) || [] : []
+
                 return getContextMessagesFromSelection(
                     selection.selectedText,
                     truncatedPrecedingText,
@@ -142,6 +148,7 @@ export class Fixup implements Recipe {
                     )
                 )
         }
+        /* eslint-enable no-case-declarations */
     }
 
     public async getInteraction(humanChatInput: string, context: RecipeContext): Promise<Interaction | null> {

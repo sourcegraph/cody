@@ -5,6 +5,7 @@ import {
     ActiveTextEditor,
     ActiveTextEditorDiagnostic,
     ActiveTextEditorSelection,
+    ActiveTextEditorSelectionRange,
     ActiveTextEditorVisibleContent,
     Editor,
 } from '../editor'
@@ -101,8 +102,10 @@ export class MockEditor implements Editor {
         return this.mocks.getActiveTextEditorSelection?.() ?? null
     }
 
-    public getActiveTextEditorDiagnosticsForSelectionOrEntireFile(): ActiveTextEditorDiagnostic[] | null {
-        return this.mocks.getActiveTextEditorDiagnosticsForSelectionOrEntireFile?.() ?? null
+    public getActiveTextEditorDiagnosticsForRange(
+        range: ActiveTextEditorSelectionRange
+    ): ActiveTextEditorDiagnostic[] | null {
+        return this.mocks.getActiveTextEditorDiagnosticsForRange?.(range) ?? null
     }
 
     public getActiveTextEditor(): ActiveTextEditor | null {

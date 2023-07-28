@@ -71,7 +71,7 @@ export class AgentEditor implements Editor {
         return this.getActiveTextEditorSelection()
     }
 
-    public getActiveTextEditorDiagnosticsForSelectionOrEntireFile(): ActiveTextEditorDiagnostic[] | null {
+    public getActiveTextEditorDiagnosticsForRange(): ActiveTextEditorDiagnostic[] | null {
         return null
     }
 
