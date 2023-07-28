@@ -335,11 +335,11 @@ export class SourcegraphGraphQLAPIClient {
             return {}
         }
         if (this.config.serverEndpoint === this.dotcomUrl) {
-            return this.sendEventLogRequestToAPI(false, event)
+            return this.sendEventLogRequestToDotComAPI(event)
         }
         return Promise.all([
-            this.sendEventLogRequestToAPI(false, event),
-            this.sendEventLogRequestToAPI(true, event),
+            this.sendEventLogRequestToAPI(event),
+            this.sendEventLogRequestToDotComAPI(event),
         ]).then(responses => {
             if (isError(responses[0]) && isError(responses[1])) {
                 return new Error('Errors logging events: ' + responses[0].toString() + ', ' + responses[1].toString())
@@ -354,13 +354,13 @@ export class SourcegraphGraphQLAPIClient {
         })
     }
 
-    private async sendEventLogRequestToAPI(dotcom: boolean, event: event): Promise<LogEventResponse | Error> {
-        if (dotcom) {
-            return this.fetchSourcegraphDotcomAPI<APIResponse<LogEventResponse>>(LOG_EVENT_MUTATION, event).then(
-                response => extractDataOrError(response, data => data)
-            )
-        }
+    private async sendEventLogRequestToDotComAPI(event: event): Promise<LogEventResponse | Error> {
+        return this.fetchSourcegraphDotcomAPI<APIResponse<LogEventResponse>>(LOG_EVENT_MUTATION, event).then(
+            response => extractDataOrError(response, data => data)
+        )
+    }
 
+    private async sendEventLogRequestToAPI(event: event): Promise<LogEventResponse | Error> {
         const initialAttempt = await this.fetchSourcegraphAPI<APIResponse<LogEventResponse>>(
             LOG_EVENT_MUTATION,
             event
