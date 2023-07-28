@@ -11,7 +11,7 @@ import { CodyStatusBar } from '../services/StatusBar'
 import { CachedCompletions, CompletionsCache } from './cache'
 import { getContext, GetContextOptions, GetContextResult } from './context'
 import { getCurrentDocContext } from './document'
-import { History } from './history'
+import { DocumentHistory } from './history'
 import * as CompletionLogger from './logger'
 import { detectMultiline } from './multiline'
 import { CompletionProviderTracer, Provider, ProviderConfig, ProviderOptions } from './providers/provider'
@@ -22,7 +22,7 @@ import { isAbortError, SNIPPET_WINDOW_SIZE } from './utils'
 
 interface CodyCompletionItemProviderConfig {
     providerConfig: ProviderConfig
-    history: History
+    history: DocumentHistory
     statusBar: CodyStatusBar
     codebaseContext: CodebaseContext
     responsePercentage?: number

@@ -4,7 +4,12 @@ export interface HistoryItem {
     document: Pick<vscode.TextDocument, 'uri' | 'languageId'>
 }
 
-export class History implements vscode.Disposable {
+export interface DocumentHistory {
+    addItem(newItem: HistoryItem): void
+    lastN(n: number, languageId?: string, ignoreUris?: vscode.Uri[]): HistoryItem[]
+}
+
+export class VSCodeDocumentHistory implements DocumentHistory, vscode.Disposable {
     private window = 50
 
     // tracks history in chronological order (latest at the end of the array)
