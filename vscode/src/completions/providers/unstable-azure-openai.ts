@@ -53,7 +53,7 @@ export class UnstableAzureOpenAIProvider extends Provider {
             top_p: 0.5,
             frequency_penalty: 0,
             presence_penalty: 0,
-            max_tokens: 100,
+            max_tokens: this.config.multiline ? 256 : 50,
             stop: ['\n'],
         }
 
