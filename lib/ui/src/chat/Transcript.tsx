@@ -14,7 +14,7 @@ import {
 } from '../Chat'
 
 import { FileLinkProps } from './ContextFiles'
-import { TranscriptItem, TranscriptItemClassNames } from './TranscriptItem'
+import { CodyRecipeWidgetWrapper, TranscriptItem, TranscriptItemClassNames } from './TranscriptItem'
 
 import styles from './Transcript.module.css'
 
@@ -35,6 +35,7 @@ export const Transcript: React.FunctionComponent<
         submitButtonComponent?: React.FunctionComponent<ChatUISubmitButtonProps>
         ChatButtonComponent?: React.FunctionComponent<ChatButtonProps>
         pluginsDevMode?: boolean
+        RecipeWidgetWrapper?: CodyRecipeWidgetWrapper
     } & TranscriptItemClassNames
 > = React.memo(function TranscriptContent({
     transcript,
@@ -59,6 +60,7 @@ export const Transcript: React.FunctionComponent<
     chatInputClassName,
     ChatButtonComponent,
     pluginsDevMode,
+    RecipeWidgetWrapper,
 }) {
     const transcriptContainerRef = useRef<HTMLDivElement>(null)
     useEffect(() => {
@@ -123,6 +125,7 @@ export const Transcript: React.FunctionComponent<
                             chatInputClassName={chatInputClassName}
                             ChatButtonComponent={ChatButtonComponent}
                             pluginsDevMode={pluginsDevMode}
+                            RecipeWidgetWrapper={RecipeWidgetWrapper}
                         />
                     )
             )}
@@ -144,6 +147,7 @@ export const Transcript: React.FunctionComponent<
                     submitButtonComponent={submitButtonComponent}
                     chatInputClassName={chatInputClassName}
                     ChatButtonComponent={ChatButtonComponent}
+                    RecipeWidgetWrapper={RecipeWidgetWrapper}
                 />
             )}
         </div>

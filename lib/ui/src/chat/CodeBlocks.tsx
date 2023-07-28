@@ -8,6 +8,8 @@ import { CopyButtonProps } from '../Chat'
 
 import styles from './CodeBlocks.module.css'
 
+export type CodyRecipeWidgetWrapper = React.ComponentType<{ targetRef: any; children: any }> | null
+
 interface CodeBlocksProps {
     displayText: string
 
@@ -15,6 +17,7 @@ interface CodeBlocksProps {
     insertButtonClassName?: string
 
     CopyButtonProps?: CopyButtonProps['copyButtonOnSubmit']
+    RecipeWidgetWrapper?: CodyRecipeWidgetWrapper
 }
 
 function wrapElement(element: HTMLElement, wrapperElement: HTMLElement): void {
@@ -97,6 +100,7 @@ export const CodeBlocks: React.FunctionComponent<CodeBlocksProps> = React.memo(f
     copyButtonClassName,
     insertButtonClassName,
     CopyButtonProps,
+    RecipeWidgetWrapper,
 }) {
     const rootRef = useRef<HTMLDivElement>(null)
 
@@ -119,8 +123,21 @@ export const CodeBlocks: React.FunctionComponent<CodeBlocksProps> = React.memo(f
         }
     }, [displayText, CopyButtonProps, copyButtonClassName, insertButtonClassName, rootRef])
 
-    return useMemo(
-        () => <div ref={rootRef} dangerouslySetInnerHTML={{ __html: renderCodyMarkdown(displayText) }} />,
-        [displayText]
-    )
+    return useMemo(() => {
+        if (RecipeWidgetWrapper) {
+            return (
+                <RecipeWidgetWrapper targetRef={rootRef}>
+                    Hello from naman wrapped
+                    <div ref={rootRef} dangerouslySetInnerHTML={{ __html: renderCodyMarkdown(displayText) }} />
+                </RecipeWidgetWrapper>
+            )
+        }
+
+        return (
+            <>
+                Hello from naman not wrapped
+                <div ref={rootRef} dangerouslySetInnerHTML={{ __html: renderCodyMarkdown(displayText) }} />
+            </>
+        )
+    }, [displayText, RecipeWidgetWrapper])
 })
