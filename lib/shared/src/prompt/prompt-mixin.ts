@@ -50,7 +50,7 @@ export class PromptMixin {
  */
 export function languagePromptMixin(languageCode: string): PromptMixin {
     return new PromptMixin(
-        `(Reply as Cody created by Sourcegraph in the language with RFC5646/ISO language code "${languageCode}".)Hi, I need your help.`
+        `(Reply as Cody created by Sourcegraph in the language with RFC5646/ISO language code "${languageCode}") Hi, I need your help.`
     )
 }
 
@@ -59,4 +59,4 @@ export function newPromptMixin(text: string): PromptMixin {
 }
 
 const rules =
-    'Rules: Answer questions only if certain. Reference only verified file names/paths. Provide full workable code where applicable. State if unsure. Do not guess or fabricate information. Think step-by-step.'
+    "Rules: Provide full workable code as code snippets. Reference only verified file names/paths. Don't make assumptions or fabricate information. Answer only if certain or tell me you don't know. Think step-by-step."
