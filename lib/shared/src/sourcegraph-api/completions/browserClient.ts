@@ -1,13 +1,9 @@
 import { fetchEventSource } from '@microsoft/fetch-event-source'
 
 import { SourcegraphCompletionsClient } from './client'
-import type { CompletionCallbacks, CompletionParameters, CompletionResponse, Event } from './types'
+import type { CompletionCallbacks, CompletionParameters, Event } from './types'
 
 export class SourcegraphBrowserCompletionsClient extends SourcegraphCompletionsClient {
-    public complete(): Promise<CompletionResponse> {
-        throw new Error('SourcegraphBrowserCompletionsClient.complete not implemented')
-    }
-
     public stream(params: CompletionParameters, cb: CompletionCallbacks): () => void {
         const abort = new AbortController()
         const headersInstance = new Headers(this.config.customHeaders as HeadersInit)
@@ -25,6 +21,7 @@ export class SourcegraphBrowserCompletionsClient extends SourcegraphCompletionsC
             headers: Object.fromEntries(headersInstance.entries()),
             body: JSON.stringify(params),
             signal: abort.signal,
+            openWhenHidden: isRunningInWebWorker, // otherwise tries to call document.addEventListener
             async onopen(response) {
                 if (!response.ok && response.headers.get('content-type') !== 'text/event-stream') {
                     let errorMessage: null | string = null
@@ -62,4 +59,13 @@ export class SourcegraphBrowserCompletionsClient extends SourcegraphCompletionsC
             abort.abort()
         }
     }
+}
+
+declare const WorkerGlobalScope: never
+const isRunningInWebWorker = typeof WorkerGlobalScope !== 'undefined' && self instanceof WorkerGlobalScope
+
+if (isRunningInWebWorker) {
+    // HACK: @microsoft/fetch-event-source tries to call document.removeEventListener, which is not
+    // available in a worker.
+    ;(self as any).document = { removeEventListener: () => {} }
 }

@@ -8,6 +8,7 @@ import * as vscode from 'vscode'
 import { URI } from 'vscode-uri'
 
 import { NoopEditor } from '@sourcegraph/cody-shared/src/editor'
+import { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/nodeClient'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/cody-shared/src/telemetry'
 
 import { CodyCompletionItemProvider } from '../../src/completions'
@@ -43,7 +44,8 @@ async function initCompletionsProvider(context: GetContextResult): Promise<CodyC
         initialConfig,
         'rg',
         new NoopEditor(),
-        NOOP_TELEMETRY_SERVICE
+        NOOP_TELEMETRY_SERVICE,
+        { createCompletionsClient: (...args) => new SourcegraphNodeCompletionsClient(...args) }
     )
 
     const history = new History()

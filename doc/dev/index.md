@@ -8,7 +8,7 @@
 
 ### Build and run the VS Code extension
 
-Open this repository in VS Code and run the `Launch VS Code Extension` build/debug task (or run `pnpm -C vscode run dev`).
+Open this repository in VS Code and run the `Launch VS Code Extension (Desktop)` build/debug task (or run `pnpm -C vscode run dev`).
 
 See [vscode/CONTRIBUTING.md](../../vscode/CONTRIBUTING.md) for more information.
 

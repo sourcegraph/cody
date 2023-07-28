@@ -38,6 +38,7 @@ const config = {
   rules: {
     'import/order': 'off',
     'id-length': 'off',
+    'etc/no-deprecated': 'off', // slow
   },
   overrides: [
     {

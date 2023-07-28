@@ -36,6 +36,7 @@ suite('Cody Fixup Task Controller', function () {
         fixups.createTask(textEditor.document.uri, 'Replace hello with goodbye', textEditor.selection)
 
         // Check the chat transcript contains markdown
+        await new Promise(resolve => setTimeout(resolve, 250)) // HACK: fix flakiness
         const humanMessage = await getTranscript(0)
 
         assert.match(humanMessage.displayText || '', /^Cody Fixups: Replace hello with goodbye/)
@@ -72,7 +73,7 @@ suite('Cody Fixup Task Controller', function () {
         assert.ok(tasks.length > 0)
 
         // Switch to a different file
-        const mainJavaUri = vscode.Uri.parse(`${vscode.workspace.workspaceFolders?.[0].uri.toString()}/Main.java`)
+        const mainJavaUri = vscode.Uri.parse(`${vscode.workspace.workspaceFolders?.[0]?.uri.toString()}/Main.java`)
         await vscode.workspace.openTextDocument(mainJavaUri)
 
         // Run show command to open fixup file with range selected

@@ -14,7 +14,7 @@ import { getCurrentDocContext } from './document'
 import { History } from './history'
 import * as CompletionLogger from './logger'
 import { detectMultiline } from './multiline'
-import { Provider, ProviderConfig, ProviderOptions } from './providers/provider'
+import { CompletionProviderTracer, Provider, ProviderConfig, ProviderOptions } from './providers/provider'
 import { RequestManager } from './request-manager'
 import { sharedPostProcess } from './shared-post-process'
 import { ProvideInlineCompletionItemsTracer, ProvideInlineCompletionsItemTraceData } from './tracer'
@@ -199,14 +199,16 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
             const cachedCompletions = this.config.cache?.get(prefix, false)
             if (cachedCompletions?.isExactPrefix) {
                 tracer?.({ cacheHit: true })
-                return handleCacheHit(
+                return this.handleCacheHit(
                     cachedCompletions,
                     document,
+                    context,
                     position,
                     prefix,
                     suffix,
                     multiline,
-                    document.languageId
+                    document.languageId,
+                    abortController.signal
                 )
             }
             return { items: [] }
@@ -215,7 +217,17 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
         const cachedCompletions = this.config.cache?.get(prefix)
         if (cachedCompletions) {
             tracer?.({ cacheHit: true })
-            return handleCacheHit(cachedCompletions, document, position, prefix, suffix, multiline, document.languageId)
+            return this.handleCacheHit(
+                cachedCompletions,
+                document,
+                context,
+                position,
+                prefix,
+                suffix,
+                multiline,
+                document.languageId,
+                abortController.signal
+            )
         }
         tracer?.({ cacheHit: false })
 
@@ -292,7 +304,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
         tracer?.({ completers: completers.map(({ options }) => options) })
 
         if (!this.config.disableTimeouts && context.triggerKind !== vscode.InlineCompletionTriggerKind.Invoke) {
-            await new Promise<void>(resolve => setTimeout(resolve, timeout))
+            await delay(timeout)
         }
 
         // We don't need to make a request at all if the signal is already aborted after the
@@ -347,7 +359,8 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
             prefix,
             completers,
             contextResult.context,
-            abortController.signal
+            abortController.signal,
+            tracer ? createCompletionProviderTracer(tracer) : undefined
         )
 
         // Shared post-processing logic
@@ -362,25 +375,47 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
         CompletionLogger.noResponse(logId)
         return { items: [] }
     }
+
+    private async handleCacheHit(
+        cachedCompletions: CachedCompletions,
+        document: vscode.TextDocument,
+        context: vscode.InlineCompletionContext,
+        position: vscode.Position,
+        prefix: string,
+        suffix: string,
+        multiline: boolean,
+        languageId: string,
+        abortSignal: AbortSignal
+    ): Promise<vscode.InlineCompletionList> {
+        const results = processCompletions(cachedCompletions.completions, prefix, suffix, multiline, languageId)
+
+        // We usually resolve cached results instantly. However, if the inserted completion would
+        // include more than one line, this can create a lot of visible UI churn. To avoid this, we
+        // debounce these results and wait for the user to stop typing for a bit before applying
+        // them.
+        //
+        // The duration we wait is longer than the debounce time for new requests because we do not
+        // have network latency for cache completion
+        const visibleResult = results[0]
+        if (
+            visibleResult?.content.includes('\n') &&
+            !this.config.disableTimeouts &&
+            context.triggerKind !== vscode.InlineCompletionTriggerKind.Invoke
+        ) {
+            await delay(400)
+            if (abortSignal.aborted) {
+                return { items: [] }
+            }
+        }
+
+        return toInlineCompletionItems(cachedCompletions.logId, document, position, results)
+    }
 }
 
 export interface Completion {
     prefix: string
     content: string
     stopReason?: string
-}
-
-function handleCacheHit(
-    cachedCompletions: CachedCompletions,
-    document: vscode.TextDocument,
-    position: vscode.Position,
-    prefix: string,
-    suffix: string,
-    multiline: boolean,
-    languageId: string
-): vscode.InlineCompletionList {
-    const results = processCompletions(cachedCompletions.completions, prefix, suffix, multiline, languageId)
-    return toInlineCompletionItems(cachedCompletions.logId, document, position, results)
 }
 
 function processCompletions(
@@ -451,4 +486,15 @@ function createTracerForInvocation(tracer: ProvideInlineCompletionItemsTracer): 
         data = { ...data, ...update }
         tracer(data)
     }
+}
+
+function createCompletionProviderTracer(tracer: SingleInvocationTracer): CompletionProviderTracer {
+    return {
+        params: data => tracer({ completionProviderCallParams: data }),
+        result: data => tracer({ completionProviderCallResult: data }),
+    }
+}
+
+function delay(milliseconds: number): Promise<void> {
+    return new Promise<void>(resolve => setTimeout(resolve, milliseconds))
 }

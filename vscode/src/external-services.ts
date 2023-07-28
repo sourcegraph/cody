@@ -8,13 +8,11 @@ import { SourcegraphGuardrailsClient } from '@sourcegraph/cody-shared/src/guardr
 import { IntentDetector } from '@sourcegraph/cody-shared/src/intent-detector'
 import { SourcegraphIntentDetectorClient } from '@sourcegraph/cody-shared/src/intent-detector/client'
 import { SourcegraphCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/client'
-import { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/nodeClient'
 import { SourcegraphGraphQLAPIClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
 import { TelemetryService } from '@sourcegraph/cody-shared/src/telemetry'
 import { isError } from '@sourcegraph/cody-shared/src/utils'
 
-import { FilenameContextFetcher } from './local-context/filename-context-fetcher'
-import { LocalKeywordContextFetcher } from './local-context/local-keyword-context-fetcher'
+import { PlatformContext } from './extension.common'
 import { logger } from './log'
 import { getRerankWithLog } from './logged-rerank'
 
@@ -38,10 +36,14 @@ export async function configureExternalServices(
     initialConfig: ExternalServicesConfiguration,
     rgPath: string | null,
     editor: Editor,
-    telemetryService: TelemetryService
+    telemetryService: TelemetryService,
+    platform: Pick<
+        PlatformContext,
+        'createLocalKeywordContextFetcher' | 'createFilenameContextFetcher' | 'createCompletionsClient'
+    >
 ): Promise<ExternalServices> {
     const client = new SourcegraphGraphQLAPIClient(initialConfig)
-    const completions = new SourcegraphNodeCompletionsClient(initialConfig, logger)
+    const completions = platform.createCompletionsClient(initialConfig, logger)
 
     const repoId = initialConfig.codebase ? await client.getRepoId(initialConfig.codebase) : null
     if (isError(repoId)) {
@@ -57,8 +59,10 @@ export async function configureExternalServices(
         initialConfig,
         initialConfig.codebase,
         embeddingsSearch,
-        rgPath ? new LocalKeywordContextFetcher(rgPath, editor, chatClient, telemetryService) : null,
-        rgPath ? new FilenameContextFetcher(rgPath, editor, chatClient) : null,
+        rgPath
+            ? platform.createLocalKeywordContextFetcher?.(rgPath, editor, chatClient, telemetryService) ?? null
+            : null,
+        rgPath ? platform.createFilenameContextFetcher?.(rgPath, editor, chatClient) ?? null : null,
         undefined,
         getRerankWithLog(chatClient)
     )

@@ -8,7 +8,7 @@ import { debug } from '../log'
 
 import { getFileNameFromPath, getFileToRemove, outputWrapper } from './helper'
 
-const rootPath = vscode.workspace.workspaceFolders?.[0].uri.fsPath
+const rootPath = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath
 const currentFilePath = vscode.window.activeTextEditor?.document.uri.fsPath
 const homePath = os.homedir()
 const _exec = promisify(exec)
@@ -50,7 +50,7 @@ export class MyToolsProvider {
         // Replace the ~/ with the home directory if arg starts with ~/
         const filteredArgs = args.map(arg => arg.replace(/^~\//, homeDir))
         const fullCommand = `${command} ${args.join(' ')}`
-        const terminalWarning = 'Please make sure the command works in your terminal before trying again.'
+        const terminalWarning = 'Please make sure the command works in the VS Code terminal before trying again.'
         try {
             const output =
                 spawnSync(command, filteredArgs, {
@@ -60,7 +60,9 @@ export class MyToolsProvider {
             // stringify the output of the command first
             const outputString = output.stdout?.trim() || ''
             if (!outputString) {
-                void vscode.window.showInformationMessage(`No output return from ${fullCommand}. ${terminalWarning}`)
+                void vscode.window.showInformationMessage(
+                    `No output returned from ${JSON.stringify(fullCommand)}. ${terminalWarning}`
+                )
                 return outputString
             }
             debug('MyToolsProvider:runCommand', command, { verbose: JSON.stringify(outputString) })

@@ -3,7 +3,7 @@ import * as vscode from 'vscode'
 import { BotResponseMultiplexer } from '@sourcegraph/cody-shared/src/chat/bot-response-multiplexer'
 import { ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
 import { getPreamble } from '@sourcegraph/cody-shared/src/chat/preamble'
-import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
+import { Recipe, RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 import { Transcript } from '@sourcegraph/cody-shared/src/chat/transcript'
 import { ChatHistory, ChatMessage, UserLocalHistory } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { reformatBotMessage } from '@sourcegraph/cody-shared/src/chat/viewHelpers'
@@ -17,6 +17,7 @@ import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
 import { TelemetryService } from '@sourcegraph/cody-shared/src/telemetry'
 
 import { VSCodeEditor } from '../editor/vscode-editor'
+import { PlatformContext } from '../extension.common'
 import { debug } from '../log'
 import { CodyPromptType } from '../my-cody/types'
 import { FixupTask } from '../non-stop/FixupTask'
@@ -26,7 +27,6 @@ import { LocalStorage } from '../services/LocalStorageProvider'
 import { TestSupport } from '../test-support'
 
 import { ContextProvider } from './ContextProvider'
-import { getRecipe } from './recipes'
 
 /**
  * The problem with a token limit for the prompt is that we can only
@@ -64,6 +64,7 @@ export interface MessageProviderOptions {
     authProvider: AuthProvider
     contextProvider: ContextProvider
     telemetryService: TelemetryService
+    platform: Pick<PlatformContext, 'recipes'>
 }
 
 export abstract class MessageProvider extends MessageHandler implements vscode.Disposable, IdleRecipeRunner {
@@ -90,6 +91,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
     protected authProvider: AuthProvider
     protected contextProvider: ContextProvider
     protected telemetryService: TelemetryService
+    protected platform: Pick<PlatformContext, 'recipes'>
 
     constructor(options: MessageProviderOptions) {
         super()
@@ -106,6 +108,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         this.authProvider = options.authProvider
         this.contextProvider = options.contextProvider
         this.telemetryService = options.telemetryService
+        this.platform = options.platform
 
         // chat id is used to identify chat session
         this.createNewChatID()
@@ -352,6 +355,10 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         return {}
     }
 
+    private getRecipe(id: RecipeID): Recipe | undefined {
+        return this.platform.recipes.find(recipe => recipe.id === id)
+    }
+
     public async executeRecipe(recipeId: RecipeID, humanChatInput = ''): Promise<void> {
         debug('ChatViewProvider:executeRecipe', recipeId, { verbose: humanChatInput })
         if (this.isMessageInProgress) {
@@ -359,7 +366,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
             return
         }
 
-        const recipe = getRecipe(recipeId)
+        const recipe = this.getRecipe(recipeId)
         if (!recipe) {
             debug('ChatViewProvider:executeRecipe', 'no recipe found')
             return
@@ -413,7 +420,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
     }
 
     protected async runRecipeForSuggestion(recipeId: RecipeID, humanChatInput: string = ''): Promise<void> {
-        const recipe = getRecipe(recipeId)
+        const recipe = this.getRecipe(recipeId)
         if (!recipe) {
             return
         }
