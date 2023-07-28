@@ -1,87 +1,106 @@
 import { describe, expect, it } from 'vitest'
 
-import { CompletionsCache } from './cache'
+import { CompletionsCache, CompletionsCacheDocumentState } from './cache'
+
+const DOC_STATE_FIXTURE: Omit<CompletionsCacheDocumentState, 'prefix'> = {
+    languageId: 'javascript',
+}
 
 describe('CompletionsCache', () => {
     it('returns the cached completion items', () => {
         const cache = new CompletionsCache()
-        cache.add('id1', [{ prefix: 'foo\n', content: 'bar' }])
+        cache.add('id1', { prefix: 'foo\n', ...DOC_STATE_FIXTURE }, [{ content: 'bar' }])
 
-        expect(cache.get({ documentState: { prefix: 'foo\n' } })).toEqual({
+        expect(cache.get({ documentState: { prefix: 'foo\n', ...DOC_STATE_FIXTURE } })).toEqual({
             logId: 'id1',
             isExactPrefix: true,
-            completions: [{ prefix: 'foo\n', content: 'bar' }],
+            completions: [{ content: 'bar' }],
         })
     })
 
     it('returns the cached items when the prefix includes characters from the completion', () => {
         const cache = new CompletionsCache()
-        cache.add('id1', [{ prefix: 'foo\n', content: 'bar' }])
+        cache.add('id1', { prefix: 'foo\n', ...DOC_STATE_FIXTURE }, [{ content: 'bar' }])
 
-        expect(cache.get({ documentState: { prefix: 'foo\nb' } })).toEqual({
-            logId: 'id1',
-            isExactPrefix: false,
-            completions: [{ prefix: 'foo\nb', content: 'ar' }],
+        expect(cache.__stateForTestsOnly).toEqual<CompletionsCache['__stateForTestsOnly']>({
+            'javascript<|>foo\n': { logId: 'id1', isExactPrefix: true, completions: [{ content: 'bar' }] },
+            'javascript<|>foo\nb': { logId: 'id1', isExactPrefix: false, completions: [{ content: 'ar' }] },
+            'javascript<|>foo\nba': { logId: 'id1', isExactPrefix: false, completions: [{ content: 'r' }] },
         })
-        expect(cache.get({ documentState: { prefix: 'foo\nba' } })).toEqual({
+        expect(cache.get({ documentState: { prefix: 'foo\nb', ...DOC_STATE_FIXTURE } })).toEqual({
             logId: 'id1',
             isExactPrefix: false,
-            completions: [{ prefix: 'foo\nba', content: 'r' }],
+            completions: [{ content: 'ar' }],
+        })
+        expect(cache.get({ documentState: { prefix: 'foo\nba', ...DOC_STATE_FIXTURE } })).toEqual({
+            logId: 'id1',
+            isExactPrefix: false,
+            completions: [{ content: 'r' }],
         })
     })
 
     it('trims trailing whitespace on empty line', () => {
         const cache = new CompletionsCache()
-        cache.add('id1', [{ prefix: 'foo \n  ', content: 'bar' }])
+        cache.add('id1', { prefix: 'foo \n  ', ...DOC_STATE_FIXTURE }, [{ content: 'bar' }])
 
-        expect(cache.get({ documentState: { prefix: 'foo \n  ' } })).toEqual({
+        expect(cache.__stateForTestsOnly).toEqual<CompletionsCache['__stateForTestsOnly']>({
+            'javascript<|>foo \n': { logId: 'id1', isExactPrefix: false, completions: [{ content: 'bar' }] },
+            'javascript<|>foo \n  ': { logId: 'id1', isExactPrefix: true, completions: [{ content: 'bar' }] },
+            'javascript<|>foo \nb': { logId: 'id1', isExactPrefix: false, completions: [{ content: 'ar' }] },
+            'javascript<|>foo \nba': { logId: 'id1', isExactPrefix: false, completions: [{ content: 'r' }] },
+        })
+        expect(cache.get({ documentState: { prefix: 'foo \n  ', ...DOC_STATE_FIXTURE } })).toEqual({
             logId: 'id1',
             isExactPrefix: false,
-            completions: [{ prefix: 'foo \n  ', content: 'bar' }],
+            completions: [{ content: 'bar' }],
         })
-        expect(cache.get({ documentState: { prefix: 'foo \n ' } })).toEqual({
+        expect(cache.get({ documentState: { prefix: 'foo \n ', ...DOC_STATE_FIXTURE } })).toEqual({
             logId: 'id1',
             isExactPrefix: false,
-            completions: [{ prefix: 'foo \n ', content: 'bar' }],
+            completions: [{ content: 'bar' }],
         })
-        expect(cache.get({ documentState: { prefix: 'foo \n' } })).toEqual({
+        expect(cache.get({ documentState: { prefix: 'foo \n', ...DOC_STATE_FIXTURE } })).toEqual({
             logId: 'id1',
             isExactPrefix: false,
-            completions: [{ prefix: 'foo \n', content: 'bar' }],
+            completions: [{ content: 'bar' }],
         })
-        expect(cache.get({ documentState: { prefix: 'foo ' } })).toEqual(undefined)
+        expect(cache.get({ documentState: { prefix: 'foo ', ...DOC_STATE_FIXTURE } })).toEqual(undefined)
     })
 
     it('does not trim trailing whitespace on non-empty line', () => {
         const cache = new CompletionsCache()
-        cache.add('id1', [{ prefix: 'foo', content: 'bar' }])
+        cache.add('id1', { prefix: 'foo', ...DOC_STATE_FIXTURE }, [{ content: 'bar' }])
 
-        expect(cache.get({ documentState: { prefix: 'foo' } })).toEqual({
+        expect(cache.__stateForTestsOnly).toEqual<CompletionsCache['__stateForTestsOnly']>({
+            'javascript<|>foo': { logId: 'id1', isExactPrefix: true, completions: [{ content: 'bar' }] },
+            'javascript<|>foob': { logId: 'id1', isExactPrefix: false, completions: [{ content: 'ar' }] },
+            'javascript<|>fooba': { logId: 'id1', isExactPrefix: false, completions: [{ content: 'r' }] },
+        })
+        expect(cache.get({ documentState: { prefix: 'foo', ...DOC_STATE_FIXTURE } })).toEqual({
             logId: 'id1',
             isExactPrefix: true,
-            completions: [{ prefix: 'foo', content: 'bar' }],
+            completions: [{ content: 'bar' }],
         })
-        expect(cache.get({ documentState: { prefix: 'foo ' } })).toEqual(undefined)
-        expect(cache.get({ documentState: { prefix: 'foo  ' } })).toEqual(undefined)
-        expect(cache.get({ documentState: { prefix: 'foo \n' } })).toEqual(undefined)
-        expect(cache.get({ documentState: { prefix: 'foo\n' } })).toEqual(undefined)
-        expect(cache.get({ documentState: { prefix: 'foo\t' } })).toEqual(undefined)
+        expect(cache.get({ documentState: { prefix: 'foo ', ...DOC_STATE_FIXTURE } })).toEqual(undefined)
+        expect(cache.get({ documentState: { prefix: 'foo  ', ...DOC_STATE_FIXTURE } })).toEqual(undefined)
+        expect(cache.get({ documentState: { prefix: 'foo \n', ...DOC_STATE_FIXTURE } })).toEqual(undefined)
+        expect(cache.get({ documentState: { prefix: 'foo\n', ...DOC_STATE_FIXTURE } })).toEqual(undefined)
+        expect(cache.get({ documentState: { prefix: 'foo\t', ...DOC_STATE_FIXTURE } })).toEqual(undefined)
     })
 
     it('has a lookup function for untrimmed prefixes', () => {
         const cache = new CompletionsCache()
-        cache.add('id1', [{ prefix: 'foo\n  ', content: 'baz' }])
+        cache.add('id1', { prefix: 'foo\n  ', ...DOC_STATE_FIXTURE }, [{ content: 'baz' }])
 
-        expect(cache.get({ documentState: { prefix: 'foo\n  ' }, isExactPrefixOnly: true })).toEqual({
+        expect(
+            cache.get({ documentState: { prefix: 'foo\n  ', ...DOC_STATE_FIXTURE }, isExactPrefixOnly: true })
+        ).toEqual({
             logId: 'id1',
             isExactPrefix: true,
-            completions: [
-                {
-                    prefix: 'foo\n  ',
-                    content: 'baz',
-                },
-            ],
+            completions: [{ content: 'baz' }],
         })
-        expect(cache.get({ documentState: { prefix: 'foo\n ' }, isExactPrefixOnly: true })).toEqual(undefined)
+        expect(
+            cache.get({ documentState: { prefix: 'foo\n ', ...DOC_STATE_FIXTURE }, isExactPrefixOnly: true })
+        ).toEqual(undefined)
     })
 })

@@ -17,6 +17,12 @@ export interface CompletionsCacheDocumentState {
      * The prefix (up to the cursor) of the source file where the completion request was triggered.
      */
     prefix: string
+
+    /**
+     * The language of the document, used to ensure that completions are cached separately for
+     * different languages (even if the files have the same prefix).
+     */
+    languageId: string
 }
 
 export interface CacheRequest {
@@ -31,8 +37,8 @@ export interface CacheRequest {
     isExactPrefixOnly?: boolean
 }
 
-function cacheKey({ prefix }: CompletionsCacheDocumentState): string {
-    return prefix
+function cacheKey({ prefix, languageId }: CompletionsCacheDocumentState): string {
+    return `${languageId}<|>${prefix}`
 }
 
 export class CompletionsCache {
@@ -48,39 +54,18 @@ export class CompletionsCache {
     // account. We need to add additional information like file path or suffix
     // to make sure the cache does not return undesired results for other files
     // in the same project.
-    public get({ documentState: { prefix }, isExactPrefixOnly }: CacheRequest): CachedCompletions | undefined {
+    public get({
+        documentState: { prefix, languageId },
+        isExactPrefixOnly,
+    }: CacheRequest): CachedCompletions | undefined {
         const trimmedPrefix = isExactPrefixOnly ? prefix : trimEndOnLastLineIfWhitespaceOnly(prefix)
-        const key = cacheKey({ prefix: trimmedPrefix })
-        const result = this.cache.get(key)
-
-        if (!result) {
-            return undefined
-        }
-
-        const completions = result.completions.map(completion => {
-            if (trimmedPrefix.length === trimEndOnLastLineIfWhitespaceOnly(completion.prefix).length) {
-                return { ...completion, prefix, content: completion.content }
-            }
-
-            // Cached results can be created by appending characters from a
-            // recommendation from a smaller input prompt. If that's the
-            // case, we need to slightly change the content and remove
-            // characters that are now part of the prefix.
-            const sliceChars = prefix.length - completion.prefix.length
-            return {
-                ...completion,
-                prefix,
-                content: completion.content.slice(sliceChars),
-            }
-        })
-
-        return {
-            ...result,
-            completions,
-        }
+        const key = cacheKey({ prefix: trimmedPrefix, languageId })
+        return this.cache.get(key)
     }
 
-    public add(logId: string, completions: Completion[]): void {
+    public add(logId: string, documentState: CompletionsCacheDocumentState, completions: Completion[]): void {
+        const trimmedPrefix = trimEndOnLastLineIfWhitespaceOnly(documentState.prefix)
+
         for (const completion of completions) {
             // Cache the exact prefix first and then append characters from the
             // completion one after the other until the first line is exceeded.
@@ -89,20 +74,35 @@ export class CompletionsCache {
             // second line instead.
             let maxCharsAppended = completion.content.indexOf('\n', completion.content.at(0) === '\n' ? 1 : 0)
             if (maxCharsAppended === -1) {
-                maxCharsAppended = completion.content.length
+                maxCharsAppended = completion.content.length - 1
             }
 
-            // We also cache the completion with the exact (= untrimmed) prefix
-            // for the separate lookup mode used for deletions
-            if (trimEndOnLastLineIfWhitespaceOnly(completion.prefix) !== completion.prefix) {
-                this.insertCompletion(cacheKey({ prefix: completion.prefix }), logId, completion, true)
+            // We also cache the completion with the exact (= untrimmed) prefix for the separate
+            // lookup mode used for deletions.
+            const prefixHasTrailingWhitespaceOnLastLine = trimmedPrefix !== documentState.prefix
+            if (prefixHasTrailingWhitespaceOnLastLine) {
+                this.insertCompletion(
+                    cacheKey({ prefix: documentState.prefix, languageId: documentState.languageId }),
+                    logId,
+                    completion,
+                    true
+                )
             }
 
             for (let i = 0; i <= maxCharsAppended; i++) {
+                const completionPrefixToAppend = completion.content.slice(0, i)
+                const partialCompletionContent = completion.content.slice(i)
+                const appendedPrefix = trimmedPrefix + completionPrefixToAppend
                 const key = cacheKey({
-                    prefix: trimEndOnLastLineIfWhitespaceOnly(completion.prefix) + completion.content.slice(0, i),
+                    prefix: appendedPrefix,
+                    languageId: documentState.languageId,
                 })
-                this.insertCompletion(key, logId, completion, key === completion.prefix)
+                this.insertCompletion(
+                    key,
+                    logId,
+                    { content: partialCompletionContent },
+                    appendedPrefix === documentState.prefix
+                )
             }
         }
     }
@@ -120,5 +120,12 @@ export class CompletionsCache {
         }
 
         this.cache.set(key, cachedCompletion)
+    }
+
+    /**
+     * For use by tests only.
+     */
+    public get __stateForTestsOnly(): { [key: string]: CachedCompletions } {
+        return Object.fromEntries(this.cache.entries())
     }
 }

@@ -73,7 +73,7 @@ export class RequestManager {
                 // Add the completed results to the cache, even if the request
                 // was cancelled before or completed via a cache retest of a
                 // previous request.
-                this.completionsCache?.add(logId, completions)
+                this.completionsCache?.add(logId, request.documentState, completions)
 
                 if (signal.aborted) {
                     throw new Error('aborted')
