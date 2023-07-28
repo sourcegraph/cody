@@ -2,7 +2,7 @@ import { ContextMessage, getContextMessageWithResponse } from '../../codebase-co
 import { ActiveTextEditorSelection } from '../../editor'
 import { IntentClassificationOption } from '../../intent-detector'
 import { MAX_CURRENT_FILE_TOKENS, MAX_HUMAN_INPUT_TOKENS } from '../../prompt/constants'
-import { populateCodeContextTemplate } from '../../prompt/templates'
+import { populateCodeContextTemplate, populateCurrentEditorDiagnosticsTemplate } from '../../prompt/templates'
 import { truncateText, truncateTextStart } from '../../prompt/truncation'
 import { BufferedBotResponseSubscriber } from '../bot-response-multiplexer'
 import { Interaction } from '../transcript/interaction'
@@ -72,27 +72,47 @@ export class Fixup implements Recipe {
     ): Promise<ContextMessage[]> {
         const truncatedPrecedingText = truncateTextStart(selection.precedingText, quarterFileContext)
         const truncatedFollowingText = truncateText(selection.followingText, quarterFileContext)
+
         switch (intent) {
             /**
              * Intents that are focused on producing new code.
              * They have a broad set of possible instructions, so we fetch a broad amount of code context files.
              * Non-code files are not considered as including Markdown syntax seems to lead to more hallucinations and poorer output quality.
              *
-             * TODO(umpox): We fetch similar context for all three cases here.
+             * TODO(umpox): We fetch similar context for both cases here
              * We should investigate how we can improve each individual case.
-             * E.g.:
-             * - fix -> Can we extract warnings + errors from within the selection?
-             * - add/edit -> Are these fundamentally the same? Is the primary benefit here that we can provide more specific instructions to Cody?
+             * Are these fundamentally the same? Is the primary benefit here that we can provide more specific instructions to Cody?
              */
             case 'add':
             case 'edit':
-            case 'fix':
                 return getContextMessagesFromSelection(
                     selection.selectedText,
                     truncatedPrecedingText,
                     truncatedFollowingText,
                     selection,
                     context.codebaseContext
+                )
+            /**
+             * The fix intent is similar to adding or editing code, but with additional context that we can include from the editor.
+             */
+            case 'fix':
+                // eslint-disable-next-line no-case-declarations
+                const diagnostics = context.editor.getActiveTextEditorDiagnosticsForSelectionOrEntireFile() || []
+                return getContextMessagesFromSelection(
+                    selection.selectedText,
+                    truncatedPrecedingText,
+                    truncatedFollowingText,
+                    selection,
+                    context.codebaseContext
+                ).then(messages =>
+                    messages.concat(
+                        diagnostics.flatMap(diagnostic =>
+                            getContextMessageWithResponse(
+                                populateCurrentEditorDiagnosticsTemplate(diagnostic, selection.fileName),
+                                selection
+                            )
+                        )
+                    )
                 )
             /**
              * The test intent is unique in that we likely want to be much more specific in that context that we retrieve.

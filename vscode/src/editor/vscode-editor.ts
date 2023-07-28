@@ -2,6 +2,8 @@ import * as vscode from 'vscode'
 
 import {
     ActiveTextEditor,
+    ActiveTextEditorDiagnostic,
+    ActiveTextEditorDiagnosticType,
     ActiveTextEditorSelection,
     ActiveTextEditorViewControllers,
     ActiveTextEditorVisibleContent,
@@ -83,6 +85,40 @@ export class VSCodeEditor implements Editor<InlineController, FixupController, M
             selection = new vscode.Selection(0, 0, activeEditor.document.lineCount, 0)
         }
         return this.createActiveTextEditorSelection(activeEditor, selection)
+    }
+
+    private getActiveTextEditorDiagnosticType(severity: vscode.DiagnosticSeverity): ActiveTextEditorDiagnosticType {
+        switch (severity) {
+            case vscode.DiagnosticSeverity.Error:
+                return 'error'
+            case vscode.DiagnosticSeverity.Warning:
+                return 'warning'
+            case vscode.DiagnosticSeverity.Information:
+                return 'information'
+            case vscode.DiagnosticSeverity.Hint:
+                return 'hint'
+        }
+    }
+
+    public getActiveTextEditorDiagnosticsForSelectionOrEntireFile(): ActiveTextEditorDiagnostic[] | null {
+        const activeEditor = this.getActiveTextEditorInstance()
+        if (!activeEditor) {
+            return null
+        }
+
+        const diagnostics = vscode.languages.getDiagnostics(activeEditor.document.uri)
+        // TODO(umpox): Inline edits currently don't use the active editor selection
+        // Need to fix this so inline edits only consume diagnostics for the current line
+        // if (activeEditor.selection) {
+        //     console.log('Filtering for selection!', diagnostics, activeEditor.selection)
+        //     diagnostics = diagnostics.filter(({ range }) => range.contains(activeEditor.selection))
+        // }
+
+        return diagnostics.map(({ message, range, severity }) => ({
+            range,
+            message,
+            type: this.getActiveTextEditorDiagnosticType(severity),
+        }))
     }
 
     private createActiveTextEditorSelection(

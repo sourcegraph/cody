@@ -1,5 +1,7 @@
 import path from 'path'
 
+import { ActiveTextEditorDiagnostic } from '../editor'
+
 const CODE_CONTEXT_TEMPLATE = `Use following code snippet from file \`{filePath}\`:
 \`\`\`{language}
 {text}
@@ -64,6 +66,17 @@ export function populateCurrentEditorSelectedContextTemplate(
             : CURRENT_EDITOR_SELECTED_CODE_TEMPLATE
         ).replace(/{filePath}/g, filePath) + context
     )
+}
+
+const DIAGNOSTICS_CONTEXT_TEMPLATE = 'Use the following {type} from file `{filePath}`:\n{message}'
+
+export function populateCurrentEditorDiagnosticsTemplate(
+    { message, type }: ActiveTextEditorDiagnostic,
+    filePath: string
+): string {
+    return DIAGNOSTICS_CONTEXT_TEMPLATE.replace('{type}', type)
+        .replace('{filePath}', filePath)
+        .replace('{message}', message)
 }
 
 const COMMAND_OUTPUT_TEMPLATE = 'Here is the output returned from the terminal.\n'

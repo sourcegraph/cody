@@ -1,5 +1,6 @@
 import {
     ActiveTextEditor,
+    ActiveTextEditorDiagnostic,
     ActiveTextEditorSelection,
     ActiveTextEditorViewControllers,
     ActiveTextEditorVisibleContent,
@@ -68,6 +69,10 @@ export class AgentEditor implements Editor {
             }
         }
         return this.getActiveTextEditorSelection()
+    }
+
+    public getActiveTextEditorDiagnosticsForSelectionOrEntireFile(): ActiveTextEditorDiagnostic[] | null {
+        return null
     }
 
     public getActiveTextEditorVisibleContent(): ActiveTextEditorVisibleContent | null {

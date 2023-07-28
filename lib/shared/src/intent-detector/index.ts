@@ -1,4 +1,4 @@
-export interface IntentClassificationOption<Intent extends string> {
+export interface IntentClassificationOption<Intent = string> {
     /**
      * An identifier for this intent.
      * This is what will be returned by the classifier.

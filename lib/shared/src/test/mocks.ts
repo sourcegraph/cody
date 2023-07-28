@@ -1,7 +1,13 @@
 import { BotResponseMultiplexer } from '../chat/bot-response-multiplexer'
 import { RecipeContext } from '../chat/recipes/recipe'
 import { CodebaseContext } from '../codebase-context'
-import { ActiveTextEditor, ActiveTextEditorSelection, ActiveTextEditorVisibleContent, Editor } from '../editor'
+import {
+    ActiveTextEditor,
+    ActiveTextEditorDiagnostic,
+    ActiveTextEditorSelection,
+    ActiveTextEditorVisibleContent,
+    Editor,
+} from '../editor'
 import { EmbeddingsSearch } from '../embeddings'
 import { IntentClassificationOption, IntentDetector } from '../intent-detector'
 import { ContextResult, KeywordContextFetcher } from '../local-context'
@@ -93,6 +99,10 @@ export class MockEditor implements Editor {
 
     public getActiveTextEditorSelectionOrEntireFile(): ActiveTextEditorSelection | null {
         return this.mocks.getActiveTextEditorSelection?.() ?? null
+    }
+
+    public getActiveTextEditorDiagnosticsForSelectionOrEntireFile(): ActiveTextEditorDiagnostic[] | null {
+        return this.mocks.getActiveTextEditorDiagnosticsForSelectionOrEntireFile?.() ?? null
     }
 
     public getActiveTextEditor(): ActiveTextEditor | null {
