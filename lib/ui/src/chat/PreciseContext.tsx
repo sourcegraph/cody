@@ -10,11 +10,14 @@ export const PreciseContexts: FunctionComponent<{
     preciseContexts: PreciseContext[]
     className?: string
 }> = memo(function PreciseContextsContent({ preciseContexts, className }) {
-    const unique = new Set<string>()
-    for (const { scipSymbolName } of preciseContexts) {
-        unique.add(scipSymbolName)
+    const unique = new Map<string, string>()
+    for (const { scipSymbolName, fuzzyToScipPair } of preciseContexts) {
+        unique.set(scipSymbolName, fuzzyToScipPair)
     }
-    const uniqueContext = Array.from(unique)
+    const uniqueContext = Array.from(unique, ([scipSymbolName, fuzzyToScipPair]) => ({
+        object: fuzzyToScipPair,
+        hoverText: scipSymbolName,
+    }))
 
     return (
         <TranscriptAction
@@ -24,10 +27,11 @@ export const PreciseContexts: FunctionComponent<{
             }}
             steps={[
                 { verb: 'Searched', object: 'entire codebase for relevant symbols', icon: mdiMagnify },
-                ...uniqueContext.map(name => ({
+                ...uniqueContext.map(({ object, hoverText }) => ({
                     verb: '',
-                    object: name,
+                    object,
                     icon: mdiGraphOutline,
+                    hoverText,
                 })),
             ]}
             className={className}

@@ -224,6 +224,7 @@ export class CodebaseContext {
         for (const {
             filepath: fileName,
             repositoryName: repoName,
+            scipSymbolName,
             fuzzyDescriptorSuffix,
             scipDescriptorSuffix,
             text,
@@ -232,7 +233,8 @@ export class CodebaseContext {
                 speaker: 'human',
                 file: { fileName, repoName },
                 preciseContext: {
-                    scipSymbolName: `${fuzzyDescriptorSuffix} -> ${scipDescriptorSuffix}`,
+                    fuzzyToScipPair: `${fuzzyDescriptorSuffix} -> ${scipDescriptorSuffix}`,
+                    scipSymbolName,
                 },
                 text: `
                 As my coding assistant, use this context to help me answer the question asked:

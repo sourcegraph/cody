@@ -32,7 +32,6 @@ export class GraphContextFetcher {
             content,
             selection
         )
-        console.log('🚀 ~ file: index.ts:34 ~ GraphContextFetcher ~ getContext ~ response:', response)
         return isErrorLike(response) ? [] : response
     }
 }
