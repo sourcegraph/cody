@@ -1,12 +1,21 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 // TODO: use implements vscode.XXX on mocked classes to ensure they match the real vscode API.
-import type { Position as VSCodePosition, Range as VSCodeRange } from 'vscode'
+import type {
+    InlineCompletionTriggerKind as VSCodeInlineCompletionTriggerKind,
+    Position as VSCodePosition,
+    Range as VSCodeRange,
+} from 'vscode'
 
 /**
  * This module defines shared VSCode mocks for use in every Vitest test.
  * Tests requiring no custom mocks will automatically apply the mocks defined in this file.
  * This is made possible via the `setupFiles` property in the Vitest configuration.
  */
+
+enum InlineCompletionTriggerKind {
+    Invoke = 0 satisfies VSCodeInlineCompletionTriggerKind.Invoke,
+    Automatic = 1 satisfies VSCodeInlineCompletionTriggerKind.Automatic,
+}
 
 class Position implements VSCodePosition {
     public line: number
@@ -237,4 +246,5 @@ export const vsCodeMocks = {
             return undefined
         },
     },
+    InlineCompletionTriggerKind,
 } as const
