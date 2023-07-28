@@ -3,7 +3,7 @@ import * as vscode from 'vscode'
 import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
 import { Configuration, ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
-import { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/nodeClient'
+import { SourcegraphCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/client'
 
 import { ChatViewProvider } from './chat/ChatViewProvider'
 import { ContextProvider } from './chat/ContextProvider'
@@ -401,7 +401,7 @@ const register = async (
 function createCompletionsProvider(
     config: Configuration,
     webviewErrorMessenger: (error: string) => Promise<void>,
-    completionsClient: SourcegraphNodeCompletionsClient,
+    completionsClient: SourcegraphCompletionsClient,
     statusBar: CodyStatusBar,
     codebaseContext: CodebaseContext
 ): vscode.Disposable {
