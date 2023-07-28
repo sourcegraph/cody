@@ -13,24 +13,23 @@ export class GraphContextFetcher {
     ) {}
 
     public async getContext(): Promise<PreciseContextResult[]> {
-        // TODO: Deconstruct this puppy
-        const editorContext = this.editor.getActiveTextEditor()
-        if (!editorContext?.repoName) {
+        const {
+            repoName: repository = '',
+            revision: commitID = 'HEAD',
+            filePath = '',
+            content = '',
+            selection,
+        } = this.editor.getActiveTextEditor() || {}
+        if (!repository) {
             return []
         }
-        const workspaceRoot = this.editor.getWorkspaceRootPath() || ''
-        const repository = editorContext.repoName
-        const commitID = editorContext.revision || 'HEAD'
-        const activeFile = pathRelativeToRoot(editorContext.filePath, workspaceRoot)
-        const content = editorContext.content
-        const selection = getActiveSelectionRange(editorContext.selection)
 
         const response = await this.graphqlClient.getPreciseContext(
             repository,
             commitID,
-            activeFile,
+            pathRelativeToRoot(filePath, this.editor.getWorkspaceRootPath() || ''),
             content,
-            selection
+            getActiveSelectionRange(selection)
         )
         return isErrorLike(response) ? [] : response
     }
