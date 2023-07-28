@@ -5,6 +5,7 @@ import { FindCodeSmells } from './find-code-smells'
 import { GenerateDocstring } from './generate-docstring'
 import { GenerateTest } from './generate-test'
 import { ImproveVariableNames } from './improve-variable-names'
+import { OptimizeCode } from './optimize-code'
 import { Recipe, RecipeID } from './recipe'
 import { TranslateToLanguage } from './translate'
 
@@ -36,6 +37,7 @@ function init(): void {
         new ImproveVariableNames(),
         new TranslateToLanguage(),
         new FindCodeSmells(),
+        new OptimizeCode(),
     ]
 
     for (const recipe of recipes) {

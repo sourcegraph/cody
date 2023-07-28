@@ -284,6 +284,7 @@ const register = async (
         vscode.commands.registerCommand('cody.recipe.find-code-smells', () =>
             executeRecipeInSidebar('find-code-smells')
         ),
+        vscode.commands.registerCommand('cody.recipe.optimize-code', () => executeRecipeInSidebar('optimize-code')),
         vscode.commands.registerCommand('cody.recipe.context-search', () => executeRecipeInSidebar('context-search')),
 
         // Register URI Handler (vscode://sourcegraph.cody-ai)

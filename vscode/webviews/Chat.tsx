@@ -155,6 +155,7 @@ To get started, select some code and run one of Cody's recipes:"
             gettingStartedButtons={[
                 { label: 'Explain code (high level)', action: 'explain-code-high-level', onClick: onChatButtonClick },
                 { label: 'Smell code', action: 'find-code-smells', onClick: onChatButtonClick },
+                { label: 'Optimize code', action: 'optimize-code', onClick: onChatButtonClick },
                 { label: 'Generate a unit test', action: 'generate-unit-test', onClick: onChatButtonClick },
             ]}
             ChatButtonComponent={ChatButton}
