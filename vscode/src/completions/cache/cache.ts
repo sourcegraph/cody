@@ -111,8 +111,19 @@ class DocumentCompletionsCache {
             }
 
             const offset = req.documentState.position - e.documentState.position
+            if (offset === 0) {
+                // Request is at the cached position.
+            }
             if (offset > 0) {
                 // Request is after the cached position.
+
+                // Ensure the current document and cached document share a common prefix.
+                const isPrefix = req.documentState.prefix.startsWith(e.documentState.prefix)
+                if (!isPrefix) {
+                    continue
+                }
+
+                // Text has been added before the cursor vs. the cache entry.
                 const addedText = req.documentState.prefix.slice(-offset)
 
                 // Find completions that start with the addedText and would still be valid.
@@ -131,13 +142,15 @@ class DocumentCompletionsCache {
             }
             if (offset < 0) {
                 // Request is before the cached position.
-                const deletedText = e.documentState.prefix.slice(offset)
 
                 // Ensure the current document and cached document share a common prefix.
                 const isPrefix = e.documentState.prefix.startsWith(req.documentState.prefix)
                 if (!isPrefix) {
                     continue
                 }
+
+                // Text has been removed before the cursor vs. the cache entry.
+                const deletedText = e.documentState.prefix.slice(offset)
 
                 // Do not reuse cache entries across starting lines.
                 if (deletedText.includes('\n')) {

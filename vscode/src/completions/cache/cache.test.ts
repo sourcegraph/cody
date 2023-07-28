@@ -41,11 +41,22 @@ describe('CompletionsCache', () => {
         })
     })
 
+    it('does not return the cached item when the prefix differs', () => {
+        const cache = new CompletionsCache()
+        cache.add('id1', docState('let '), [{ content: 'x = 1' }])
+        expect(cache.get({ documentState: docState('zzz x = ') })).toEqual(undefined)
+        expect(cache.get({ documentState: docState('zz x = ') })).toEqual(undefined)
+        expect(cache.get({ documentState: docState('letz x = ') })).toEqual(undefined)
+    })
+
     it('does not return the cached item when the suffix differs', () => {
         const cache = new CompletionsCache()
-        cache.add('id1', docState('p', { suffix: 's' }), [{ content: 'c' }])
+        cache.add('id1', docState('pp', { suffix: 's' }), [{ content: 'c' }])
 
-        expect(cache.get({ documentState: docState('foo\nb', { suffix: 's2' }) })).toEqual(undefined)
+        expect(cache.get({ documentState: docState('ppp', { suffix: 's2' }) })).toEqual(undefined)
+        expect(cache.get({ documentState: docState('pp', { suffix: 's2' }) })).toEqual(undefined)
+        expect(cache.get({ documentState: docState('p', { suffix: 's2' }) })).toEqual(undefined)
+        expect(cache.get({ documentState: docState('', { suffix: 's2' }) })).toEqual(undefined)
     })
 
     it('does not trim trailing whitespace on non-empty line', () => {
