@@ -1,8 +1,5 @@
 import { InteractionMessage } from '../chat/transcript/messages'
 
-const rules =
-    "Rules: Provide full workable code as code snippets. Reference only verified file names/paths. Don't make assumptions or fabricate information. Think step-by-step. Answer only if certain or tell me you don't know."
-
 /**
  * Prompt mixins elaborate every prompt presented to the LLM.
  * Add a prompt mixin to prompt for cross-cutting concerns relevant to multiple recipes.
@@ -30,7 +27,6 @@ export class PromptMixin {
      * Prepends all mixins to `humanMessage`. Modifies and returns `humanMessage`.
      */
     public static mixInto(humanMessage: InteractionMessage): InteractionMessage {
-        this.mixins.push(newPromptMixin(rules))
         const mixins = [...this.mixins, ...this.customMixin].map(mixin => mixin.prompt).join('\n\n')
         if (mixins) {
             // Stuff the prompt mixins at the start of the human text.
@@ -51,8 +47,10 @@ export class PromptMixin {
  * End with a new statement to redirect Cody to the next prompt. This prevents Cody from responding to the language prompt.
  */
 export function languagePromptMixin(languageCode: string): PromptMixin {
+    const rules =
+        "Rules: Provide full workable code as code snippets. Reference only verified file names/paths. Don't make assumptions or fabricate information. Think step-by-step. Answer only if certain or tell me you don't know."
     return new PromptMixin(
-        `(Reply as Cody created by Sourcegraph in the language with RFC5646/ISO language code "${languageCode}") Hi, I need your help.`
+        `${rules} (Reply as Cody created by Sourcegraph in the language with RFC5646/ISO language code "${languageCode}") Hi, I need your help.`
     )
 }
 
