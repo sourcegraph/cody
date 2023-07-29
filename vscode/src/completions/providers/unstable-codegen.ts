@@ -1,8 +1,8 @@
 import fetch from 'isomorphic-fetch'
 
-import { Completion } from '..'
 import { logger } from '../../log'
 import { ReferenceSnippet } from '../context'
+import { Completion } from '../types'
 import { isAbortError } from '../utils'
 
 import { Provider, ProviderConfig, ProviderOptions } from './provider'

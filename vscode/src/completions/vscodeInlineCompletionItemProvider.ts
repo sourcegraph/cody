@@ -8,7 +8,6 @@ import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
 import { debug } from '../log'
 import { CodyStatusBar } from '../services/StatusBar'
 
-import { Completion } from '.'
 import { CachedCompletions, CompletionsCache } from './cache'
 import { getContext, GetContextOptions, GetContextResult } from './context'
 import { getCurrentDocContext } from './document'
@@ -19,6 +18,7 @@ import { CompletionProviderTracer, Provider, ProviderConfig, ProviderOptions } f
 import { RequestManager } from './request-manager'
 import { sharedPostProcess } from './shared-post-process'
 import { ProvideInlineCompletionItemsTracer, ProvideInlineCompletionsItemTraceData } from './tracer'
+import { Completion } from './types'
 import { isAbortError, SNIPPET_WINDOW_SIZE } from './utils'
 
 interface InlineCompletionItemProviderConfig {
