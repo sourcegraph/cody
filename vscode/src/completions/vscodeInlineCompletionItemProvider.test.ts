@@ -1,7 +1,6 @@
 import dedent from 'dedent'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type * as vscode from 'vscode'
-import { TextDocument } from 'vscode-languageserver-textdocument'
 
 import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
 import { SourcegraphCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/client'
@@ -12,11 +11,10 @@ import {
 
 import { CodyStatusBar } from '../services/StatusBar'
 import { vsCodeMocks } from '../testutils/mocks'
-import { wrapVSCodeTextDocument } from '../testutils/textDocument'
 
 import { DocumentHistory } from './history'
 import { createProviderConfig } from './providers/anthropic'
-import { completion } from './testHelpers'
+import { completion, documentAndPosition } from './testHelpers'
 import { InlineCompletionItemProvider } from './vscodeInlineCompletionItemProvider'
 
 const CURSOR_MARKER = '█'
@@ -124,16 +122,7 @@ describe('Cody completions', () => {
                 throw new Error(`The test code must include a ${CURSOR_MARKER} to denote the cursor position`)
             }
 
-            const cursorIndex = code.indexOf(CURSOR_MARKER)
-            const prefix = code.slice(0, cursorIndex)
-            const suffix = code.slice(cursorIndex + CURSOR_MARKER.length)
-
-            const codeWithoutCursor = prefix + suffix
-
-            const document = wrapVSCodeTextDocument(
-                TextDocument.create('file:///test.ts', languageId, 0, codeWithoutCursor)
-            )
-            const position = document.positionAt(cursorIndex)
+            const { document, position } = documentAndPosition(code, languageId)
 
             const result = await completionProvider.provideInlineCompletionItems(document, position, context)
             const completions = 'items' in result ? result.items : result
