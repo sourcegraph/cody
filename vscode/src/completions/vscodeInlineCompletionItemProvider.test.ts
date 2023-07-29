@@ -153,11 +153,7 @@ describe('Cody completions', () => {
             const document = wrapVSCodeTextDocument(
                 TextDocument.create('file:///test.ts', languageId, 0, codeWithoutCursor)
             )
-
-            const splitPrefix = prefix.split('\n')
-            const line = splitPrefix.length - 1
-            const character = splitPrefix[splitPrefix.length - 1].length
-            const position = new vsCodeMocks.Position(line, character)
+            const position = document.positionAt(cursorIndex)
 
             const result = await completionProvider.provideInlineCompletionItems(document, position, context)
             const completions = 'items' in result ? result.items : result
@@ -167,7 +163,7 @@ describe('Cody completions', () => {
             // omit that prefix.
             const completionsWithCurrentLinePrefixRemoved = completions.map(c => ({
                 ...c,
-                insertText: (c.insertText as string).slice(character),
+                insertText: (c.insertText as string).slice(position.character),
                 range: c.range?.with({ start: position }),
             }))
 
