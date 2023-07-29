@@ -3,7 +3,7 @@ import * as vscode from 'vscode'
 import { isDefined } from '@sourcegraph/cody-shared'
 import { renderMarkdown } from '@sourcegraph/cody-shared/src/common/markdown'
 
-import { CodyCompletionItemProvider } from '..'
+import { InlineCompletionItemProvider } from '../vscodeInlineCompletionItemProvider'
 
 import { ProvideInlineCompletionsItemTraceData } from '.'
 
@@ -11,7 +11,7 @@ import { ProvideInlineCompletionsItemTraceData } from '.'
  * Registers a command `Cody: Open Autocomplete Trace View` that shows the context and prompt used
  * for autocomplete.
  */
-export function registerAutocompleteTraceView(provider: CodyCompletionItemProvider): vscode.Disposable {
+export function registerAutocompleteTraceView(provider: InlineCompletionItemProvider): vscode.Disposable {
     let panel: vscode.WebviewPanel | null = null
     let latestInvocationSequence = 0
 
