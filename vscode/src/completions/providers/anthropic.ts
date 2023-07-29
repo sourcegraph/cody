@@ -4,7 +4,6 @@ import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
 import { SourcegraphCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/client'
 import { CompletionParameters } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
 
-import { Completion } from '..'
 import { ReferenceSnippet } from '../context'
 import {
     CLOSING_CODE_TAG,
@@ -16,6 +15,7 @@ import {
     trimLeadingWhitespaceUntilNewline,
 } from '../text-processing'
 import { batchCompletions, messagesToText } from '../utils'
+import { Completion } from '../vscodeInlineCompletionItemProvider'
 
 import { CompletionProviderTracer, Provider, ProviderConfig, ProviderOptions } from './provider'
 

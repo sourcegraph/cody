@@ -11,10 +11,10 @@ import { NoopEditor } from '@sourcegraph/cody-shared/src/editor'
 import { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/nodeClient'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/cody-shared/src/telemetry'
 
-import { CodyCompletionItemProvider } from '../../src/completions'
 import { GetContextResult } from '../../src/completions/context'
 import { VSCodeDocumentHistory } from '../../src/completions/history'
 import { createProviderConfig } from '../../src/completions/providers/createProvider'
+import { InlineCompletionItemProvider } from '../../src/completions/vscodeInlineCompletionItemProvider'
 import { getFullConfig } from '../../src/configuration'
 import { configureExternalServices } from '../../src/external-services'
 import { InMemorySecretStorage } from '../../src/services/SecretStorageProvider'
@@ -27,7 +27,7 @@ import { findSubstringPosition } from './utils'
 let didLogConfig = false
 let providerName: string
 
-async function initCompletionsProvider(context: GetContextResult): Promise<CodyCompletionItemProvider> {
+async function initCompletionsProvider(context: GetContextResult): Promise<InlineCompletionItemProvider> {
     const secretStorage = new InMemorySecretStorage()
     await secretStorage.store('cody.access-token', ENVIRONMENT_CONFIG.SOURCEGRAPH_ACCESS_TOKEN)
 
@@ -54,7 +54,7 @@ async function initCompletionsProvider(context: GetContextResult): Promise<CodyC
 
     const providerConfig = createProviderConfig(initialConfig, console.error, completionsClient)
 
-    const completionsProvider = new CodyCompletionItemProvider({
+    const completionsProvider = new InlineCompletionItemProvider({
         providerConfig,
         statusBar: {
             startLoading: () => () => {},
