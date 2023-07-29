@@ -172,17 +172,6 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
             this.config.providerConfig.enableExtendedMultilineTriggers
         )
 
-        let triggeredForSuggestWidgetSelection: string | undefined
-        if (context.selectedCompletionInfo) {
-            if (this.config.completeSuggestWidgetSelection) {
-                triggeredForSuggestWidgetSelection = context.selectedCompletionInfo.text
-            } else {
-                // Don't show completions if the suggest widget (which shows language autocomplete)
-                // is showing.
-                return emptyCompletions()
-            }
-        }
-
         // If we have a suffix in the same line as the cursor and the suffix contains any word
         // characters, do not attempt to make a completion. This means we only make completions if
         // we have a suffix in the same line for special characters like `)]}` etc.
@@ -231,12 +220,6 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
                   multiline,
                   providerIdentifier: this.config.providerConfig.identifier,
                   languageId: document.languageId,
-                  triggeredForSuggestWidgetSelection: triggeredForSuggestWidgetSelection !== undefined,
-                  settings: {
-                      autocompleteExperimentalCompleteSuggestWidgetSelection: Boolean(
-                          this.config.completeSuggestWidgetSelection
-                      ),
-                  },
               })
         this.previousCompletionLogId = logId
 
