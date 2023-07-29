@@ -16,6 +16,7 @@ import { wrapVSCodeTextDocument } from '../testutils/textDocument'
 
 import { DocumentHistory } from './history'
 import { createProviderConfig } from './providers/anthropic'
+import { completion } from './testHelpers'
 import { InlineCompletionItemProvider } from './vscodeInlineCompletionItemProvider'
 
 const CURSOR_MARKER = '█'
@@ -47,27 +48,6 @@ vi.mock('vscode', () => ({
 vi.mock('./context-embeddings.ts', () => ({
     getContextFromEmbeddings: () => [],
 }))
-
-// `├` start of the inline completion to insert
-// `┤` end of the inline completion to insert
-// `┴` use for indent placeholder, should be placed at last line after `┤`
-function completion(string: TemplateStringsArray, ...values: any): CompletionResponse {
-    const raw = dedent(string, ...values)
-    let completion = raw
-
-    const start = raw.indexOf('├')
-    const end = raw.lastIndexOf('┤')
-
-    // eslint-disable-next-line yoda
-    if (0 <= start && start <= end) {
-        completion = raw.slice(start + 1, end)
-    }
-
-    return {
-        completion,
-        stopReason: 'unknown',
-    }
-}
 
 const NOOP_STATUS_BAR: CodyStatusBar = {
     dispose: () => {},
