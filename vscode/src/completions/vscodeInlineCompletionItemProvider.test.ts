@@ -274,16 +274,15 @@ describe('Cody completions', () => {
         `)
     })
 
-    it('does not make a request when context has a selectedCompletionInfo', async () => {
-        const { requests } = await complete('foo = █', undefined, undefined, {
+    it('makes a request when context has a selectedCompletionInfo', async () => {
+        const { completions } = await complete('foo█', [completion`123`], undefined, {
             selectedCompletionInfo: {
                 range: new vsCodeMocks.Range(0, 0, 0, 3),
-                text: 'something',
+                text: 'foo123',
             },
             triggerKind: vsCodeMocks.InlineCompletionTriggerKind.Invoke,
         })
-
-        expect(requests).toHaveLength(0)
+        expect(completions[0].insertText).toBe('123')
     })
 
     it('preserves leading whitespace when prefix has no trailing whitespace', async () => {

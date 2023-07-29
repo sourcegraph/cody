@@ -219,17 +219,6 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
         const completers: Provider[] = []
         let timeout: number
 
-        let triggeredForSuggestWidgetSelection: string | undefined
-        if (context.selectedCompletionInfo) {
-            if (this.config.completeSuggestWidgetSelection) {
-                triggeredForSuggestWidgetSelection = context.selectedCompletionInfo.text
-            } else {
-                // Don't show completions if the suggest widget (which shows language autocomplete)
-                // is showing.
-                return { items: [] }
-            }
-        }
-
         // If we have a suffix in the same line as the cursor and the suffix contains any word
         // characters, do not attempt to make a completion. This means we only make completions if
         // we have a suffix in the same line for special characters like `)]}` etc.
@@ -306,12 +295,6 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
             providerIdentifier: this.config.providerConfig.identifier,
             languageId: document.languageId,
             contextSummary: contextResult.logSummary,
-            triggeredForSuggestWidgetSelection: triggeredForSuggestWidgetSelection !== undefined,
-            settings: {
-                autocompleteExperimentalCompleteSuggestWidgetSelection: Boolean(
-                    this.config.completeSuggestWidgetSelection
-                ),
-            },
         })
         const stopLoading = this.config.statusBar.startLoading('Completions are being generated')
         this.stopLoading = stopLoading
