@@ -434,19 +434,19 @@
         "icon": "$(diff)"
       },
       {
-        "command": "cody.customRecipes.list",
+        "command": "cody.action.custom-prompts.menu",
         "category": "Cody",
-        "title": "Custom Recipes (Experimental)",
+        "title": "Custom Commands (Experimental)",
         "when": "cody.activated",
-        "enablement": "config.cody.experimental.customRecipes",
+        "enablement": "config.cody.experimental.customPrompts",
         "icon": "$(bookmark)"
       },
       {
-        "command": "cody.action.menu",
+        "command": "cody.action.commands.menu",
         "category": "Cody",
         "title": "Cody Commands (Experimental)",
         "when": "cody.activated",
-        "enablement": "config.cody.experimental.customRecipes"
+        "enablement": "config.cody.experimental.customPrompts"
       },
       {
         "command": "cody.autocomplete.openTraceView",
@@ -484,7 +484,7 @@
         "when": "cody.activated && editorFocus && config.cody.inlineChat.enabled"
       },
       {
-        "command": "cody.action.menu",
+        "command": "cody.action.commands.menu",
         "key": "ctrl+shift+v",
         "mac": "cmd+shift+v",
         "when": "cody.activated && editorFocus"
@@ -588,8 +588,8 @@
           "when": "config.cody.experimental.guardrails && editorHasSelection"
         },
         {
-          "command": "cody.customRecipes.list",
-          "when": "cody.activated && config.cody.experimental.customRecipes"
+          "command": "cody.action.custom-prompts.menu",
+          "when": "cody.activated && config.cody.experimental.customPrompts"
         }
       ],
       "editor/context": [
@@ -644,8 +644,8 @@
           "when": "cody.activated && config.cody.experimental.guardrails && editorHasSelection"
         },
         {
-          "command": "cody.customRecipes.list",
-          "when": "cody.activated && config.cody.experimental.customRecipes"
+          "command": "cody.action.custom-prompts.menu",
+          "when": "cody.activated && config.cody.experimental.customPrompts"
         }
       ],
       "view/title": [
@@ -833,10 +833,10 @@
           "markdownDescription": "Experimental feature for internal use.",
           "default": false
         },
-        "cody.experimental.customRecipes": {
+        "cody.experimental.customPrompts": {
           "order": 9,
           "type": "boolean",
-          "markdownDescription": "[Experimental] Create reusable recipes with customized prompts and context tailored to your workflow.",
+          "markdownDescription": "[Experimental] Create reusable and customizable prompts and context tailored to your workflow.",
           "default": false
         },
         "cody.debug.enable": {

@@ -1,5 +1,6 @@
 import { ChatQuestion } from '@sourcegraph/cody-shared/src/chat/recipes/chat-question'
 import { ContextSearch } from '@sourcegraph/cody-shared/src/chat/recipes/context-search'
+import { CustomPrompt } from '@sourcegraph/cody-shared/src/chat/recipes/custom-prompt'
 import { ExplainCodeDetailed } from '@sourcegraph/cody-shared/src/chat/recipes/explain-code-detailed'
 import { ExplainCodeHighLevel } from '@sourcegraph/cody-shared/src/chat/recipes/explain-code-high-level'
 import { FindCodeSmells } from '@sourcegraph/cody-shared/src/chat/recipes/find-code-smells'
@@ -12,7 +13,6 @@ import { GitHistory } from '@sourcegraph/cody-shared/src/chat/recipes/git-log'
 import { ImproveVariableNames } from '@sourcegraph/cody-shared/src/chat/recipes/improve-variable-names'
 import { InlineChat } from '@sourcegraph/cody-shared/src/chat/recipes/inline-chat'
 import { InlineTouch } from '@sourcegraph/cody-shared/src/chat/recipes/inline-touch'
-import { MyPrompt } from '@sourcegraph/cody-shared/src/chat/recipes/my-prompt'
 import { NextQuestions } from '@sourcegraph/cody-shared/src/chat/recipes/next-questions'
 import { NonStop } from '@sourcegraph/cody-shared/src/chat/recipes/non-stop'
 import { Recipe, RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
@@ -38,6 +38,7 @@ function init(): void {
     const recipes: Recipe[] = [
         new ChatQuestion(debug),
         new ContextSearch(),
+        new CustomPrompt(),
         new ExplainCodeDetailed(),
         new ExplainCodeHighLevel(),
         new FindCodeSmells(),
@@ -46,7 +47,6 @@ function init(): void {
         new GenerateTest(),
         new GitHistory(),
         new ImproveVariableNames(),
-        new MyPrompt(),
         new InlineChat(debug),
         new InlineTouch(debug),
         new NextQuestions(),

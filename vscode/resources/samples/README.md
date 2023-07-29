@@ -1,3 +1,3 @@
-# File Samples for Custom Recipes
+# File Samples for Custom Commands
 
-This directory contains files used for generating Custom Recipes samples
+This directory contains files used for generating Custom Commands samples

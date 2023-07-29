@@ -1,8 +1,7 @@
 import { VSCodeButton } from '@vscode/webview-ui-toolkit/react'
 
+import { CodyPrompt } from '@sourcegraph/cody-shared/src/chat/recipes/cody-prompts'
 import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
-
-import { CodyPrompt } from '../src/custom-recipes/const'
 
 import { VSCodeWrapper } from './utils/VSCodeApi'
 
@@ -36,7 +35,7 @@ export const Recipes: React.FunctionComponent<{
         vscodeAPI.postMessage({ command: 'executeRecipe', recipe: recipeID })
     }
     const onMyPromptClick = (promptID: string, value?: 'user' | 'workspace'): void => {
-        vscodeAPI.postMessage({ command: 'my-prompt', title: promptID, value })
+        vscodeAPI.postMessage({ command: 'custom-prompt', title: promptID, value })
     }
     const myPromptsEnabled = myPrompts !== null
     const myRecipesList = {
@@ -85,16 +84,16 @@ export const Recipes: React.FunctionComponent<{
                         <>
                             <div>
                                 <div
-                                    title="Custom Recipes let you build your own reusable prompts with tailored contexts."
+                                    title="Custom Commands let you build your own reusable prompts with tailored contexts."
                                     className={styles.recipesHeader}
                                 >
-                                    <span>Custom Recipes - Experimental</span>
+                                    <span>Custom Commands - Experimental</span>
                                     <VSCodeButton
                                         type="button"
                                         appearance="icon"
                                         onClick={() => onMyPromptClick('menu')}
                                     >
-                                        <i className="codicon codicon-settings" title="Open Custom Recipes Menu" />
+                                        <i className="codicon codicon-settings" title="Open Custom Commands Menu" />
                                     </VSCodeButton>
                                 </div>
                             </div>

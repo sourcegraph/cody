@@ -17,7 +17,7 @@ import * as CompletionsLogger from './completions/logger'
 import { createProviderConfig } from './completions/providers/createProvider'
 import { registerAutocompleteTraceView } from './completions/tracer/traceView'
 import { getConfiguration, getFullConfig } from './configuration'
-import { MyPromptController } from './custom-recipes/MyPromptController'
+import { CustomPromptsController } from './custom-prompts/CustomPromptsController'
 import { VSCodeEditor } from './editor/vscode-editor'
 import { configureExternalServices } from './external-services'
 import { FixupController } from './non-stop/FixupController'
@@ -97,8 +97,8 @@ const register = async (
     if (TestSupport.instance) {
         TestSupport.instance.fixupController.set(fixup)
     }
-    // Controller for Custom Recipes
-    const prompt = new MyPromptController(context, initialConfig.experimentalCustomRecipes, localStorage)
+    // Controller for Custom Commands
+    const prompt = new CustomPromptsController(context, initialConfig.experimentalCustomPrompts, localStorage)
 
     const editor = new VSCodeEditor({ inline: commentController, fixups: fixup, prompt })
     // Could we use the `initialConfig` instead?
@@ -257,14 +257,14 @@ const register = async (
         }),
         // Recipes
         vscode.commands.registerCommand('cody.action.chat', input => executeRecipeInSidebar('chat-question', input)),
-        vscode.commands.registerCommand('cody.action.menu', showDesc => prompt.commandQuickPicker(showDesc)),
-        vscode.commands.registerCommand('cody.customRecipes.exec', async title => {
-            if (!sidebarChatProvider.isCustomRecipeAction(title)) {
+        vscode.commands.registerCommand('cody.action.commands.menu', showDesc => prompt.default.menu(showDesc)),
+        vscode.commands.registerCommand('cody.customPrompts.exec', async title => {
+            if (!sidebarChatProvider.isCustomPromptAction(title)) {
                 sidebarChatProvider.showTab('chat')
             }
-            await sidebarChatProvider.executeCustomRecipe(title)
+            await sidebarChatProvider.executeCustomPrompt(title)
         }),
-        vscode.commands.registerCommand('cody.customRecipes.list', () => prompt.recipesQuickPicker()),
+        vscode.commands.registerCommand('cody.action.custom-prompts.menu', () => prompt.promptsQuickPicker()),
         vscode.commands.registerCommand('cody.recipe.explain-code', () =>
             executeRecipeInSidebar('explain-code-detailed')
         ),

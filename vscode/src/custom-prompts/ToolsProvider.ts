@@ -7,7 +7,7 @@ import * as vscode from 'vscode'
 import { debug } from '../log'
 
 import { UserWorkspaceInfo } from './const'
-import { outputWrapper } from './helper'
+import { outputWrapper } from './utils'
 
 const rootPath = vscode.workspace.workspaceFolders?.[0].uri.fsPath
 const currentFilePath = vscode.window.activeTextEditor?.document.uri.fsPath
@@ -17,7 +17,7 @@ const _exec = promisify(exec)
  * Provides utility methods and tools for working with the file system, running commands,
  * and getting user/workspace info.
  */
-export class MyToolsProvider {
+export class ToolsProvider {
     private user: UserWorkspaceInfo
 
     constructor(public context: vscode.ExtensionContext) {
@@ -61,10 +61,10 @@ export class MyToolsProvider {
             if (!outputString) {
                 throw new Error('Empty output')
             }
-            debug('MyToolsProvider:exeCommand', command, { verbose: outputString })
+            debug('ToolsProvider:exeCommand', command, { verbose: outputString })
             return outputWrapper.replace('{command}', command).replace('{output}', outputString)
         } catch (error) {
-            debug('MyToolsProvider:exeCommand', 'failed', { verbose: error })
+            debug('ToolsProvider:exeCommand', 'failed', { verbose: error })
             void vscode.window.showErrorMessage(
                 'Failed to run command. Please make sure the command works in your terminal before trying again.'
             )

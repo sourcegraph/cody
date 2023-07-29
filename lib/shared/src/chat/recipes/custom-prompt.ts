@@ -18,36 +18,17 @@ import { truncateText } from '../../prompt/truncation'
 import { Interaction } from '../transcript/interaction'
 
 import { ChatQuestion } from './chat-question'
+import { CodyPromptContext, defaultCodyPromptContext } from './cody-prompts'
 import { getFileExtension, numResults } from './helpers'
 import { InlineTouch } from './inline-touch'
 import { Recipe, RecipeContext, RecipeID } from './recipe'
-
-// Type of context available for prompt building
-export interface CodyPromptContext {
-    codebase: boolean
-    openTabs?: boolean
-    currentDir?: boolean
-    currentFile?: boolean
-    selection?: boolean
-    command?: string
-    output?: string
-    filePath?: string
-    directoryPath?: string
-    none?: boolean
-}
-
-// Default to include selection context only
-export const defaultCodyPromptContext: CodyPromptContext = {
-    codebase: false,
-    selection: true,
-}
 
 /** ======================================================
  * Recipe for running custom prompts from the cody.json files
  * Works with VS Code only
 ====================================================== **/
-export class MyPrompt implements Recipe {
-    public id: RecipeID = 'my-prompt'
+export class CustomPrompt implements Recipe {
+    public id: RecipeID = 'custom-prompt'
 
     public async getInteraction(humanChatInput: string, context: RecipeContext): Promise<Interaction | null> {
         const contextConfig = await context.editor.controllers?.prompt?.get('context')
@@ -57,7 +38,7 @@ export class MyPrompt implements Recipe {
         // Check if selection is required
         const selection = context.editor.getActiveTextEditorSelection()
         if (isContextRequired?.selection && !selection?.selectedText) {
-            await vscode.window.showErrorMessage('This recipe requires text to be selected in the editor.')
+            await vscode.window.showErrorMessage('This command requires text to be selected in the editor.')
             return null
         }
         // Make prompt text
@@ -65,7 +46,7 @@ export class MyPrompt implements Recipe {
         // Match human input with key from promptStore to get prompt text when there is none
         const promptText = humanInput || (await context.editor.controllers?.prompt?.get()) || null
         if (!promptText) {
-            await vscode.window.showErrorMessage('Please enter a valid prompt for the recipe.')
+            await vscode.window.showErrorMessage('Please enter a valid prompt for the custom command.')
             return null
         }
         const commandOutput = await context.editor.controllers?.prompt?.get('output')
@@ -116,29 +97,32 @@ export class MyPrompt implements Recipe {
         }
         // Create context messages from open tabs
         if (isContextRequired.openTabs) {
-            const openTabsContext = await MyPrompt.getEditorOpenTabsContext()
+            const openTabsContext = await CustomPrompt.getEditorOpenTabsContext()
             contextMessages.push(...openTabsContext)
         }
         // Create context messages from current directory
         if (isContextRequired.currentDir) {
             // Select test files from the directory only if the prompt text includes 'test'
             const isTestRequest = text.includes('test')
-            const currentDirContext = await MyPrompt.getCurrentDirContext(isTestRequest)
+            const currentDirContext = await CustomPrompt.getCurrentDirContext(isTestRequest)
             contextMessages.push(...currentDirContext)
             // Add package.json context if it's available for test requests
             if (isTestRequest) {
-                const packageJSONContextMessage = await MyPrompt.getPackageJsonContext(selection?.fileName)
+                const packageJSONContextMessage = await CustomPrompt.getPackageJsonContext(selection?.fileName)
                 contextMessages.push(...packageJSONContextMessage)
             }
         }
         // Create context messages from a fsPath of a workspace directory
         if (isContextRequired.directoryPath?.length) {
-            const fileContext = await MyPrompt.getEditorDirContext(isContextRequired.directoryPath, selection?.fileName)
+            const fileContext = await CustomPrompt.getEditorDirContext(
+                isContextRequired.directoryPath,
+                selection?.fileName
+            )
             contextMessages.push(...fileContext)
         }
         // Create context messages from a fsPath of a file
         if (isContextRequired.filePath?.length) {
-            const fileContext = await MyPrompt.getFilePathContext(isContextRequired.filePath)
+            const fileContext = await CustomPrompt.getFilePathContext(isContextRequired.filePath)
             contextMessages.push(...fileContext)
         }
         // Create context messages from current file
@@ -151,7 +135,7 @@ export class MyPrompt implements Recipe {
         }
         // Create context messages from terminal output if any
         if (isContextRequired.command?.length && commandOutput) {
-            contextMessages.push(...MyPrompt.getTerminalOutputContext(commandOutput))
+            contextMessages.push(...CustomPrompt.getTerminalOutputContext(commandOutput))
         }
         // Return the last n context messages in case there are too many
         // Make sure numResults is an even number and times 2 again to get the last n pairs
@@ -224,7 +208,7 @@ export class MyPrompt implements Recipe {
             return []
         }
         const currentDirPath = getCurrentDirPath(currentFileName)
-        return MyPrompt.getEditorDirContext(currentDirPath, currentFileName, isTestRequest)
+        return CustomPrompt.getEditorDirContext(currentDirPath, currentFileName, isTestRequest)
     }
 
     // Create Context from Current Directory of the Active Document
@@ -372,7 +356,7 @@ const getFirstNFilesFromDir = async (dirUri: vscode.Uri, n: number): Promise<[st
 async function getContextMessageFromFiles(files: vscode.Uri[]): Promise<ContextMessage[]> {
     const contextMessages: ContextMessage[] = []
     for (const file of files) {
-        const contextMessage = await MyPrompt.getFilePathContext(file.fsPath)
+        const contextMessage = await CustomPrompt.getFilePathContext(file.fsPath)
         contextMessages.push(...contextMessage)
     }
     return contextMessages

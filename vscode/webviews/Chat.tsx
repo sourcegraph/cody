@@ -4,6 +4,7 @@ import { VSCodeButton, VSCodeTextArea } from '@vscode/webview-ui-toolkit/react'
 import classNames from 'classnames'
 
 import { ChatContextStatus } from '@sourcegraph/cody-shared/src/chat/context'
+import { CodyPrompt } from '@sourcegraph/cody-shared/src/chat/recipes/cody-prompts'
 import { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { TelemetryService } from '@sourcegraph/cody-shared/src/telemetry'
 import {
@@ -17,6 +18,7 @@ import {
 } from '@sourcegraph/cody-ui/src/Chat'
 import { SubmitSvg } from '@sourcegraph/cody-ui/src/utils/icons'
 
+import { ChatCommandsComponent } from './ChatCommands'
 import { FileLink } from './FileLink'
 import { VSCodeWrapper } from './utils/VSCodeApi'
 
@@ -37,6 +39,7 @@ interface ChatboxProps {
     suggestions?: string[]
     setSuggestions?: (suggestions: undefined | string[]) => void
     pluginsDevMode?: boolean
+    chatCommands?: [string, CodyPrompt][]
 }
 
 export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>> = ({
@@ -54,6 +57,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     suggestions,
     setSuggestions,
     pluginsDevMode,
+    chatCommands,
 }) => {
     const [abortMessageInProgressInternal, setAbortMessageInProgress] = useState<() => void>(() => () => undefined)
 
@@ -159,6 +163,8 @@ To get started, select some code and run one of Cody's recipes:"
             ]}
             ChatButtonComponent={ChatButton}
             pluginsDevMode={pluginsDevMode}
+            chatCommands={chatCommands}
+            ChatCommandsComponent={ChatCommandsComponent}
         />
     )
 }

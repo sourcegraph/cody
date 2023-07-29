@@ -1,7 +1,7 @@
 {
-  "title": "Cody Custom Recipes - User",
-  "description": "This file showcases how to build custom recipes for Cody by Sourcegraph.",
-  "recipes": {
+  "title": "Cody by Sourcegraph : Custom Commands Config File - User",
+  "description": "This file showcases how to build custom commandss for Cody by Sourcegraph.",
+  "prompts": {
     "[Example] Compare Files in Opened Tabs": {
       "prompt": "Compare the code from opened tabs and explain their relationships.",
       "context": {

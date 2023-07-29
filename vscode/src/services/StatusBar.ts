@@ -80,11 +80,11 @@ export function createStatusBar(): CodyStatusBar {
                     true
                 ),
                 createFeatureToggle(
-                    'Custom Recipes',
+                    'Custom Commands',
                     'Experimental',
-                    'Enable creating custom recipes with reusable prompts and context with access through code lenses',
-                    'cody.experimental.customRecipes',
-                    c => c.experimentalCustomRecipes
+                    'Enable creating Custom Commands with reusable prompts and context with access through code lenses',
+                    'cody.experimental.customPrompts',
+                    c => c.experimentalCustomPrompts
                 ),
                 { label: 'extension settings', kind: vscode.QuickPickItemKind.Separator },
                 {

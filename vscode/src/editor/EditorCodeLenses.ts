@@ -57,7 +57,7 @@ export class EditorCodeLenses implements vscode.CodeLensProvider {
      */
     private updateConfig(): void {
         const config = vscode.workspace.getConfiguration('cody')
-        this.isEnabled = config.get('experimental.customRecipes') as boolean
+        this.isEnabled = config.get('experimental.customPrompts') as boolean
         this.isInlineChatEnabled =
             (config.get('inlineChat.enabled') as boolean) && (config.get('inlineChat.codeLens') as boolean)
         if (this.isEnabled && !this._disposables.length) {
@@ -113,7 +113,7 @@ export class EditorCodeLenses implements vscode.CodeLensProvider {
                 codeLenses.push(
                     new vscode.CodeLens(firstLineOfFunction, {
                         ...editorCodeLenses.cody,
-                        arguments: [{ name: 'cody.action.menu', selection }],
+                        arguments: [{ name: 'cody.action.commands.menu', selection }],
                     })
                 )
 

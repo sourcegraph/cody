@@ -9,18 +9,18 @@ import {
 } from '@sourcegraph/cody-shared/src/editor'
 import { SURROUNDING_LINES } from '@sourcegraph/cody-shared/src/prompt/constants'
 
-import { MyPromptController } from '../custom-recipes/MyPromptController'
+import { CustomPromptsController } from '../custom-prompts/CustomPromptsController'
 import { FixupController } from '../non-stop/FixupController'
 import { InlineController } from '../services/InlineController'
 
 import { EditorCodeLenses } from './EditorCodeLenses'
 
-export class VSCodeEditor implements Editor<InlineController, FixupController, MyPromptController> {
+export class VSCodeEditor implements Editor<InlineController, FixupController, CustomPromptsController> {
     constructor(
         public readonly controllers: ActiveTextEditorViewControllers<
             InlineController,
             FixupController,
-            MyPromptController
+            CustomPromptsController
         >
     ) {
         new EditorCodeLenses()

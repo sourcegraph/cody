@@ -2,7 +2,7 @@ import React, { useCallback, useMemo, useState } from 'react'
 
 import classNames from 'classnames'
 
-import { ChatButton, ChatContextStatus, ChatMessage, isDefined } from '@sourcegraph/cody-shared'
+import { ChatButton, ChatContextStatus, ChatMessage, CodyPrompt, isDefined } from '@sourcegraph/cody-shared'
 
 import { FileLinkProps } from './chat/ContextFiles'
 import { ChatInputContext } from './chat/inputContext/ChatInputContext'
@@ -47,6 +47,8 @@ interface ChatProps extends ChatClassNames {
     isCodyEnabled: boolean
     ChatButtonComponent?: React.FunctionComponent<ChatButtonProps>
     pluginsDevMode?: boolean
+    chatCommands?: [string, CodyPrompt][] | null
+    ChatCommandsComponent?: React.FunctionComponent<ChatCommandsProps>
 }
 
 interface ChatClassNames extends TranscriptItemClassNames {
@@ -100,6 +102,12 @@ export interface FeedbackButtonsProps {
 export interface CopyButtonProps {
     copyButtonOnSubmit: (text: string, insert?: boolean) => void
 }
+
+export interface ChatCommandsProps {
+    chatCommands?: [string, CodyPrompt][]
+    selectedChatCommand?: number
+    formInput?: string
+}
 /**
  * The Cody chat interface, with a transcript of all messages and a message form.
  */
@@ -148,12 +156,37 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
     isCodyEnabled,
     ChatButtonComponent,
     pluginsDevMode,
+    chatCommands,
+    ChatCommandsComponent,
 }) => {
     const [inputRows, setInputRows] = useState(5)
+    const [selectedChatCommand, setSelectedChatCommand] = useState(-1)
     const [historyIndex, setHistoryIndex] = useState(inputHistory.length)
+
+    // TODO (bee) WIP
+    // Handles selecting a chat command when the user types a slash in the chat input.
+    const chatCommentSelectionHandler = useCallback(
+        (inputValue: string): void => {
+            if (!chatCommands || !ChatCommandsComponent) {
+                return
+            }
+            if (inputValue === '/') {
+                setSelectedChatCommand(0)
+                return
+            }
+            if (inputValue.startsWith('/')) {
+                const command = inputValue.replace('/', '')
+                const index = chatCommands.findIndex(([_, prompt]) => prompt.slashCommand === command)
+                setSelectedChatCommand(index >= 0 ? index : -1)
+            }
+            setSelectedChatCommand(-1)
+        },
+        [ChatCommandsComponent, chatCommands]
+    )
 
     const inputHandler = useCallback(
         (inputValue: string): void => {
+            chatCommentSelectionHandler(inputValue)
             const rowsCount = inputValue.match(/\n/g)?.length
             if (rowsCount) {
                 setInputRows(rowsCount < 5 ? 5 : rowsCount > 25 ? 25 : rowsCount)
@@ -165,7 +198,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                 setHistoryIndex(inputHistory.length)
             }
         },
-        [historyIndex, inputHistory, setFormInput]
+        [chatCommentSelectionHandler, historyIndex, inputHistory, setFormInput]
     )
 
     const submitInput = useCallback(
@@ -207,12 +240,32 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                 !event.shiftKey &&
                 !event.nativeEvent.isComposing &&
                 formInput &&
-                formInput.trim()
+                formInput.trim() &&
+                selectedChatCommand < 0
             ) {
                 event.preventDefault()
                 event.stopPropagation()
                 setMessageBeingEdited(false)
                 onChatSubmit()
+            }
+
+            // Handles cycling through chat command suggestions using the up and down arrow keys
+            if (chatCommands && selectedChatCommand > -1 && formInput === '/') {
+                event.preventDefault()
+                event.stopPropagation()
+                if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
+                    const commandsLength = chatCommands.length - 2
+                    const newIndex = event.key === 'ArrowUp' ? selectedChatCommand - 1 : selectedChatCommand + 1
+                    const newCommandIndex = newIndex < 0 ? commandsLength : newIndex >= commandsLength ? 0 : newIndex
+                    setSelectedChatCommand(newCommandIndex)
+                }
+                if (event.key === 'Enter' && !event.shiftKey) {
+                    const newInput = chatCommands?.[selectedChatCommand]?.[1]?.slashCommand
+                    if (newInput) {
+                        setFormInput(`/${newInput}`)
+                        setSelectedChatCommand(-1)
+                    }
+                }
             }
 
             // Loop through input history on up arrow press
@@ -239,7 +292,17 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                 }
             }
         },
-        [inputHistory, historyIndex, setFormInput, onChatSubmit, onSubmit, formInput, setMessageBeingEdited]
+        [
+            formInput,
+            selectedChatCommand,
+            inputHistory,
+            historyIndex,
+            setMessageBeingEdited,
+            onChatSubmit,
+            setFormInput,
+            chatCommands,
+            onSubmit,
+        ]
     )
 
     const transcriptWithWelcome = useMemo<ChatMessage[]>(
@@ -305,6 +368,9 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                         )}
                     </div>
                 ) : null}
+                {chatCommands && ChatCommandsComponent && selectedChatCommand > -1 && (
+                    <ChatCommandsComponent chatCommands={chatCommands} selectedChatCommand={selectedChatCommand} />
+                )}
                 {messageInProgress && AbortMessageInProgressButton && (
                     <div className={classNames(styles.abortButtonContainer)}>
                         <AbortMessageInProgressButton onAbortMessageInProgress={onAbortMessageInProgress} />

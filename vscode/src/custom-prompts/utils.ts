@@ -1,6 +1,6 @@
 import * as vscode from 'vscode'
 
-import { CodyPrompt } from './const'
+import { CodyPrompt } from '@sourcegraph/cody-shared/src/chat/recipes/cody-prompts'
 
 export function constructFileUri(fileName: string, rootDirPath?: string): vscode.Uri | undefined {
     if (!rootDirPath) {
@@ -63,7 +63,7 @@ export async function deleteFile(uri?: vscode.Uri): Promise<void> {
     await vscode.workspace.fs.delete(uri)
 }
 
-export const prompt_creation_title = 'Cody Custom Recipes - New Recipe'
+export const prompt_creation_title = 'Cody Custom Commands - New Recipe'
 
 export async function doesPathExist(filePath?: string): Promise<boolean> {
     try {
@@ -88,7 +88,7 @@ Output of \`{command}\` command:
 {output}
 \`\`\``
 
-export const lastUsedRecipesSeperator: [string, CodyPrompt][] = [
+export const lastUsedCommandsSeperator: [string, CodyPrompt][] = [
     ['seperator', { prompt: 'seperator', type: 'recently used' }],
 ]
 

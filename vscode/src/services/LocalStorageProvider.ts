@@ -115,7 +115,7 @@ export class LocalStorage {
         return this.storage.get<string[] | null>(this.KEY_ENABLED_PLUGINS, null)
     }
 
-    public async setLastUsedRecipes(recipes: string[]): Promise<void> {
+    public async setLastUsedCommands(recipes: string[]): Promise<void> {
         if (recipes.length === 0) {
             return
         }
@@ -126,7 +126,7 @@ export class LocalStorage {
         }
     }
 
-    public getLastUsedRecipes(): string[] | null {
+    public getLastUsedCommands(): string[] | null {
         return this.storage.get<string[] | null>(this.KEY_LAST_USED_RECIPES, null)
     }
 

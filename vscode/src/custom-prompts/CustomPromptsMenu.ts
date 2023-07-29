@@ -1,33 +1,35 @@
 import * as vscode from 'vscode'
 
-import { defaultCodyPromptContext } from '@sourcegraph/cody-shared/src/chat/recipes/my-prompt'
+import {
+    CodyPrompt,
+    CodyPromptType,
+    defaultCodyPromptContext,
+} from '@sourcegraph/cody-shared/src/chat/recipes/cody-prompts'
 
-import { CodyPrompt, CodyPromptType, CustomRecipesContextOptions, CustomRecipesMainMenuOptions } from './const'
-import { prompt_creation_title } from './helper'
+import {
+    CustomPromptsContextOptions,
+    CustomPromptsMainMenuOptions,
+    CustomPromptsMenuAnswer,
+    CustomPromptsMenuAnswerType,
+} from './const'
+import { prompt_creation_title } from './utils'
 
-export type CustomRecipesMenuAnswerType = 'add' | 'file' | 'delete' | 'list' | 'open' | 'cancel'
-
-export interface CustomRecipesMenuAnswer {
-    actionID: CustomRecipesMenuAnswerType
-    recipeType: CodyPromptType
-}
-
-// Main menu for the Custom Recipes in Quick Pick
-export async function showCustomRecipeMenu(): Promise<CustomRecipesMenuAnswer | void> {
+// Main menu for the Custom Commands in Quick Pick
+export async function showCustomPromptMenu(): Promise<CustomPromptsMenuAnswer | void> {
     const inputOptions = {
-        title: 'Cody: Custom Recipes (Experimental)',
-        placeHolder: 'Select an option to continue, ESC to cancel',
+        title: 'Configure Custom Commands (Experimental)',
+        placeHolder: 'Choose an option',
     }
-    const selectedOption = await vscode.window.showQuickPick(CustomRecipesMainMenuOptions, inputOptions)
-    if (!selectedOption?.id || selectedOption.id === 'seperator' || selectedOption.id === 'cancel') {
+    const selectedOption = await vscode.window.showQuickPick(CustomPromptsMainMenuOptions, inputOptions)
+    if (!selectedOption?.id) {
         return
     }
-    const actionID = selectedOption.id as CustomRecipesMenuAnswerType
+    const actionID = selectedOption.id as CustomPromptsMenuAnswerType
     const recipeType = selectedOption.type as CodyPromptType
     return { actionID, recipeType }
 }
 
-// Quick pick menu to select a recipe from the list of available custom recipes
+// Quick pick menu to select a recipe from the list of available Custom Commands
 export async function recipePicker(promptList: string[] = []): Promise<string> {
     const selectedRecipe = (await vscode.window.showQuickPick(promptList)) || ''
     return selectedRecipe
@@ -58,7 +60,7 @@ export async function createNewPrompt(promptName?: string): Promise<CodyPrompt |
     const newPrompt: CodyPrompt = { prompt: promptDescription }
     newPrompt.context = { ...defaultCodyPromptContext }
     // Get the context types from the user using the quick pick
-    const promptContext = await vscode.window.showQuickPick(CustomRecipesContextOptions, {
+    const promptContext = await vscode.window.showQuickPick(CustomPromptsContextOptions, {
         title: 'Select the context to include with the prompt for the new recipe',
         placeHolder: 'TIPS: Providing limited but precise context helps Cody provide more relevant answers',
         canPickMany: true,
@@ -140,12 +142,12 @@ export async function showRecipeTypeQuickPick(
     const options: vscode.QuickPickItem[] = []
     const userItem = {
         label: 'User',
-        detail: 'User Recipes are accessible only to you across Workspaces',
+        detail: 'User Commands are accessible only to you across Workspaces',
         description: '~/.vscode/cody.json',
     }
     const workspaceItem = {
         label: 'Workspace',
-        detail: 'Workspace Recipes are available to all users in your current repository',
+        detail: 'Workspace Commands are available to all users in your current repository',
         description: '.vscode/cody.json',
     }
     if (action === 'file') {
@@ -163,7 +165,7 @@ export async function showRecipeTypeQuickPick(
             options.push(workspaceItem)
         }
     }
-    const title = `Cody: Custom Recipes - ${action === 'file' ? 'Creating Config File' : 'Recipe Type'}`
+    const title = `Cody: Custom Commands - ${action === 'file' ? 'Creating Config File' : 'Recipe Type'}`
     const placeHolder = 'Select recipe type (when available) to continue, or ESC to cancel'
     // Show quick pick menu
     const recipeType = await vscode.window.showQuickPick(options, { title, placeHolder })

@@ -5,11 +5,11 @@ import './App.css'
 import { uniq, without } from 'lodash'
 
 import { ChatContextStatus } from '@sourcegraph/cody-shared/src/chat/context'
+import { CodyPrompt } from '@sourcegraph/cody-shared/src/chat/recipes/cody-prompts'
 import { ChatHistory, ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { Configuration } from '@sourcegraph/cody-shared/src/configuration'
 
 import { AuthStatus, defaultAuthStatus, LocalEnv } from '../src/chat/protocol'
-import { CodyPrompt } from '../src/custom-recipes/const'
 
 import { Chat } from './Chat'
 import { Debug } from './Debug'
@@ -100,7 +100,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                     case 'enabled-plugins':
                         setEnabledPlugins(message.plugins)
                         break
-                    case 'my-prompts':
+                    case 'custom-prompts':
                         setMyPrompts(message.isEnabled ? message.prompts : null)
                         break
                 }
@@ -197,6 +197,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                             pluginsDevMode={Boolean(config?.pluginsDebugEnabled)}
                             setSuggestions={setSuggestions}
                             telemetryService={telemetryService}
+                            chatCommands={myPrompts || undefined}
                         />
                     )}
                 </>

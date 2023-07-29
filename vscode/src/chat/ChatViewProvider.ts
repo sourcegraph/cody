@@ -2,10 +2,10 @@ import path from 'path'
 
 import * as vscode from 'vscode'
 
+import { CodyPrompt, CodyPromptType } from '@sourcegraph/cody-shared/src/chat/recipes/cody-prompts'
 import { ChatMessage, UserLocalHistory } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 
 import { View } from '../../webviews/NavBar'
-import { CodyPrompt, CodyPromptType } from '../custom-recipes/const'
 import { debug } from '../log'
 
 import { MessageProvider, MessageProviderOptions } from './MessageProvider'
@@ -86,8 +86,8 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
             case 'links':
                 void this.openExternalLinks(message.value)
                 break
-            case 'my-prompt':
-                await this.onCustomRecipeClicked(message.title, message.value)
+            case 'custom-prompt':
+                await this.onCustomPromptClicked(message.title, message.value)
                 break
             case 'openFile': {
                 const rootPath = this.editor.getWorkspaceRootPath()
@@ -138,7 +138,7 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
         }
         if (text === '/') {
             this.telemetryService.log('CodyVSCodeExtension:custom-recipe-command-menu:clicked')
-            void vscode.commands.executeCommand('cody.action.menu', true)
+            void vscode.commands.executeCommand('cody.action.commands.menu', true)
             return
         }
         MessageProvider.inputHistory.push(text)
@@ -149,15 +149,15 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
     }
 
     /**
-     * Process custom recipe click
+     * Process custom command click
      */
-    private async onCustomRecipeClicked(title: string, recipeType: CodyPromptType = 'user'): Promise<void> {
+    private async onCustomPromptClicked(title: string, recipeType: CodyPromptType = 'user'): Promise<void> {
         this.telemetryService.log('CodyVSCodeExtension:custom-recipe:clicked')
-        debug('ChatViewProvider:onCustomRecipeClicked', title)
-        if (!this.isCustomRecipeAction(title)) {
+        debug('ChatViewProvider:onCustomPromptClicked', title)
+        if (!this.isCustomPromptAction(title)) {
             this.showTab('chat')
         }
-        await this.executeCustomRecipe(title, recipeType)
+        await this.executeCustomPrompt(title, recipeType)
     }
 
     public showTab(tab: string): void {
@@ -224,7 +224,7 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
 
     protected handleMyPrompts(prompts: [string, CodyPrompt][], isEnabled: boolean): void {
         void this.webview?.postMessage({
-            type: 'my-prompts',
+            type: 'custom-prompts',
             prompts,
             isEnabled,
         })

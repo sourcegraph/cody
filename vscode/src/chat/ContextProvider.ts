@@ -37,7 +37,7 @@ export type Config = Pick<
     | 'useContext'
     | 'experimentalChatPredictions'
     | 'experimentalGuardrails'
-    | 'experimentalCustomRecipes'
+    | 'experimentalCustomPrompts'
     | 'pluginsEnabled'
     | 'pluginsConfig'
     | 'pluginsDebugEnabled'
