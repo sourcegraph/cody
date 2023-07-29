@@ -14,7 +14,6 @@ import { CodyStatusBar } from '../services/StatusBar'
 import { vsCodeMocks } from '../testutils/mocks'
 import { wrapVSCodeTextDocument } from '../testutils/textDocument'
 
-import { CompletionsCache } from './cache'
 import { DocumentHistory } from './history'
 import { createProviderConfig } from './providers/anthropic'
 import { InlineCompletionItemProvider } from './vscodeInlineCompletionItemProvider'
@@ -109,7 +108,6 @@ describe('Cody completions', () => {
         completions: vscode.InlineCompletionItem[]
     }>
     beforeEach(() => {
-        const cache = new CompletionsCache()
         complete = async (
             code: string,
             responses?: CompletionResponse[] | 'stall',
@@ -143,8 +141,6 @@ describe('Cody completions', () => {
                 statusBar: NOOP_STATUS_BAR,
                 history: DUMMY_DOCUMENT_HISTORY,
                 codebaseContext: DUMMY_CODEBASE_CONTEXT,
-                disableTimeouts: true,
-                cache,
             })
 
             if (!code.includes(CURSOR_MARKER)) {

@@ -3,7 +3,6 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { vsCodeMocks } from '../testutils/mocks'
 
 import { Completion } from '.'
-import { CompletionsCache } from './cache'
 import { Provider } from './providers/provider'
 import { RequestManager } from './request-manager'
 
@@ -51,11 +50,10 @@ function createProvider(prefix: string) {
 describe('RequestManager', () => {
     let createRequest: (prefix: string, provider: Provider) => Promise<Completion[]>
     beforeEach(() => {
-        const cache = new CompletionsCache()
-        const requestManager = new RequestManager(cache)
+        const requestManager = new RequestManager()
 
         createRequest = (prefix: string, provider: Provider) =>
-            requestManager.request(DOCUMENT_URI, LOG_ID, prefix, [provider], [], new AbortController().signal)
+            requestManager.request(DOCUMENT_URI, LOG_ID, { prefix }, [provider], [], new AbortController().signal)
     })
 
     it('resolves a single request', async () => {
