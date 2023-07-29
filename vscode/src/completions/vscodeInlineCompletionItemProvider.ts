@@ -8,7 +8,6 @@ import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
 import { debug } from '../log'
 import { CodyStatusBar } from '../services/StatusBar'
 
-import { CachedCompletions, CompletionsCache } from './cache'
 import { getContext, GetContextOptions, GetContextResult } from './context'
 import { getCurrentDocContext } from './document'
 import { DocumentHistory } from './history'
@@ -30,7 +29,6 @@ interface CodyCompletionItemProviderConfig {
     suffixPercentage?: number
     disableTimeouts?: boolean
     isEmbeddingsContextEnabled?: boolean
-    cache: CompletionsCache | null
     completeSuggestWidgetSelection?: boolean
     tracer?: ProvideInlineCompletionItemsTracer | null
     contextFetcher?: (options: GetContextOptions) => Promise<GetContextResult>
@@ -49,7 +47,6 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
     private readonly config: Required<CodyCompletionItemProviderConfig>
 
     private requestManager: RequestManager
-    private previousCompletionLogId?: string
 
     constructor({
         responsePercentage = 0.1,
@@ -94,7 +91,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
         this.maxPrefixChars = Math.floor(this.promptChars * this.config.prefixPercentage)
         this.maxSuffixChars = Math.floor(this.promptChars * this.config.suffixPercentage)
 
-        this.requestManager = new RequestManager(this.config.cache)
+        this.requestManager = new RequestManager()
 
         debug('CodyCompletionProvider:initialized', `provider: ${this.config.providerConfig.identifier}`)
 
@@ -180,74 +177,11 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
             return emptyCompletions()
         }
 
-        let cachedCompletions: CachedCompletions | undefined
-
-        // Avoid showing completions when we're deleting code (Cody can only insert code at the
-        // moment)
-        const lastChange = this.lastContentChanges.get(document.fileName) ?? 'add'
-        if (lastChange === 'del') {
-            // When a line was deleted, only look up cached items and only include them if the
-            // untruncated prefix matches. This fixes some weird issues where the completion would
-            // render if you insert whitespace but not on the original place when you delete it
-            // again
-            cachedCompletions = this.config.cache?.get(docContext.prefix, false)
-            if (!cachedCompletions?.isExactPrefix) {
-                return emptyCompletions()
-            }
-        }
-
-        // If cachedCompletions was already set by the above logic, we don't have to query the cache
-        // again.
-        cachedCompletions = cachedCompletions ?? this.config.cache?.get(docContext.prefix)
-
-        // We create a log entry after determining if we have a potential cache hit. This is
-        // necessary to make sure that typing text of a displayed completion will not log a new
-        // completion on every keystroke
-        //
-        // However we only log a completion as started if it's either served from cache _or_ the
-        // debounce interval has passed to ensure we don't log too many start events where we end up
-        // not doing any work at all
-        const useLogIdFromPreviousCompletion =
-            cachedCompletions?.logId && cachedCompletions?.logId === this.previousCompletionLogId
-        if (!useLogIdFromPreviousCompletion) {
-            CompletionLogger.clear()
-        }
-        const logId = useLogIdFromPreviousCompletion
-            ? cachedCompletions!.logId
-            : CompletionLogger.create({
-                  multiline,
-                  providerIdentifier: this.config.providerConfig.identifier,
-                  languageId: document.languageId,
-              })
-        this.previousCompletionLogId = logId
-
-        if (cachedCompletions) {
-            // When we serve a completion from the cache and create a new log
-            // id, we want to ensure to only refer to the new id for future
-            // cache retrievals. If we don't do this, every subsequent cache hit
-            // would otherwise no longer match the previous completion ID and we
-            // would log a new completion each time, even if the user just
-            // continues typing on the currently displayed completion.
-            if (logId !== cachedCompletions.logId) {
-                this.config.cache?.updateLogId(cachedCompletions.logId, logId)
-            }
-
-            tracer?.({ cacheHit: true })
-            CompletionLogger.start(logId)
-            return this.prepareCompletions(
-                logId,
-                cachedCompletions.completions,
-                document,
-                context,
-                position,
-                docContext.prefix,
-                docContext.suffix,
-                multiline,
-                document.languageId,
-                true,
-                abortController.signal
-            )
-        }
+        const logId = CompletionLogger.create({
+            multiline,
+            providerIdentifier: this.config.providerConfig.identifier,
+            languageId: document.languageId,
+        })
         tracer?.({ cacheHit: false })
 
         const completers: Provider[] = []

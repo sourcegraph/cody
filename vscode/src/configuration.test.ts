@@ -30,7 +30,6 @@ describe('getConfiguration', () => {
             autocompleteAdvancedProvider: 'anthropic',
             autocompleteAdvancedServerEndpoint: null,
             autocompleteAdvancedAccessToken: null,
-            autocompleteAdvancedCache: true,
             autocompleteAdvancedEmbeddings: true,
             autocompleteExperimentalCompleteSuggestWidgetSelection: false,
         })
@@ -77,8 +76,6 @@ describe('getConfiguration', () => {
                         return 'https://example.com/llm'
                     case 'cody.autocomplete.advanced.accessToken':
                         return 'foobar'
-                    case 'cody.autocomplete.advanced.cache':
-                        return false
                     case 'cody.autocomplete.advanced.embeddings':
                         return false
                     case 'cody.autocomplete.experimental.completeSuggestWidgetSelection':
@@ -120,7 +117,6 @@ describe('getConfiguration', () => {
             autocompleteAdvancedProvider: 'unstable-codegen',
             autocompleteAdvancedServerEndpoint: 'https://example.com/llm',
             autocompleteAdvancedAccessToken: 'foobar',
-            autocompleteAdvancedCache: false,
             autocompleteAdvancedEmbeddings: false,
             autocompleteExperimentalCompleteSuggestWidgetSelection: false,
         })
