@@ -60,7 +60,6 @@ async function initCompletionsProvider(context: GetContextResult): Promise<Inlin
         },
         history,
         codebaseContext,
-        disableTimeouts: true,
         isEmbeddingsContextEnabled: true,
         contextFetcher: () => Promise.resolve(context),
     })

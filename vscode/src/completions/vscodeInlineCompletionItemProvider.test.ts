@@ -115,7 +115,6 @@ describe('Cody completions', () => {
                 statusBar: NOOP_STATUS_BAR,
                 history: DUMMY_DOCUMENT_HISTORY,
                 codebaseContext: DUMMY_CODEBASE_CONTEXT,
-                disableTimeouts: true,
             })
 
             if (!code.includes(CURSOR_MARKER)) {
@@ -176,17 +175,20 @@ describe('Cody completions', () => {
         expect(requests[0].stopSequences).toEqual(['\n\nHuman:', '</CODE5711>', '\n\n'])
     })
 
+    // XXXXXXXXXX
     it('makes a request when in the middle of a word', async () => {
         const { requests } = await complete('foo█', [completion`()`], undefined, undefined)
         expect(requests).toHaveLength(1)
     })
 
+    // XXXXXXXXXX
     it('completes a single-line at the end of a sentence', async () => {
         const { completions } = await complete('foo = █', [completion`'bar'`])
 
         expect(completions[0].insertText).toBe("'bar'")
     })
 
+    // XXXXXXXXXX
     it('only complete one line in single line mode', async () => {
         const { completions } = await complete(
             `
@@ -208,6 +210,7 @@ describe('Cody completions', () => {
         expect(completions[0].insertText).toBe('if (true) {')
     })
 
+    // XXXXXXXXXX
     it('completes a single-line at the middle of a sentence', async () => {
         const { completions } = await complete('function bubbleSort(█)', [completion`array) {`, completion`items) {`])
 

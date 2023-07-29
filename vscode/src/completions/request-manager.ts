@@ -1,9 +1,17 @@
+import { LRUCache } from 'lru-cache'
+
+import { debug } from '../log'
+
 import { ReferenceSnippet } from './context'
 import { CompletionProviderTracer, Provider } from './providers/provider'
 import { Completion } from './types'
 
-interface Request {
+export interface RequestParams {
     prefix: string
+}
+
+interface Request {
+    params: RequestParams
     tracer?: CompletionProviderTracer
     resolve(completions: Completion[]): void
     reject(error: Error): void
@@ -18,15 +26,24 @@ interface Request {
 export class RequestManager {
     private readonly requests: Map<string, Request[]> = new Map()
 
+    private cache = new RequestCache()
+
     public async request(
         documentUri: string,
         logId: string,
-        prefix: string,
+        params: RequestParams,
         providers: Provider[],
         context: ReferenceSnippet[],
-        signal: AbortSignal,
+        signal?: AbortSignal,
         tracer?: CompletionProviderTracer
     ): Promise<Completion[]> {
+        const existing = this.cache.get({ params })
+        if (existing) {
+            debug('RequestManager', 'cache hit', { verbose: { params, existing } })
+            return existing.result // TODO(sqs): fixup logId
+        }
+        debug('RequestManager', 'cache miss', { verbose: { params } })
+
         let resolve: Request['resolve'] = () => {}
         let reject: Request['reject'] = () => {}
         const requestPromise = new Promise<Completion[]>((res, rej) => {
@@ -35,7 +52,7 @@ export class RequestManager {
         })
 
         const request: Request = {
-            prefix,
+            params,
             resolve,
             reject,
             tracer,
@@ -51,7 +68,7 @@ export class RequestManager {
         logId: string,
         providers: Provider[],
         context: ReferenceSnippet[],
-        signal: AbortSignal
+        signal?: AbortSignal
     ): void {
         // We forward a different abort controller to the network request so we
         // can cancel the network request independently of the user cancelling
@@ -65,7 +82,9 @@ export class RequestManager {
         )
             .then(res => res.flat())
             .then(completions => {
-                if (signal.aborted) {
+                this.cache.set({ params: request.params }, { logId, result: completions })
+
+                if (signal?.aborted) {
                     throw new Error('aborted')
                 }
 
@@ -82,6 +101,7 @@ export class RequestManager {
     private addRequest(documentUri: string, request: Request): void {
         let requestsForDocument: Request[] = []
         if (this.requests.has(documentUri)) {
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
             requestsForDocument = this.requests.get(documentUri)!
         } else {
             this.requests.set(documentUri, requestsForDocument)
@@ -102,5 +122,30 @@ export class RequestManager {
         if (requestsForDocument.length === 0) {
             this.requests.delete(documentUri)
         }
+    }
+}
+
+interface RequestCacheKey {
+    params: RequestParams
+}
+
+interface RequestCacheEntry {
+    logId: string
+    result: Completion[]
+}
+
+class RequestCache {
+    private cache = new LRUCache<string, RequestCacheEntry>({ max: 50 })
+
+    private toCacheKey(key: RequestCacheKey): string {
+        return key.params.prefix
+    }
+
+    public get(key: RequestCacheKey): RequestCacheEntry | undefined {
+        return this.cache.get(this.toCacheKey(key))
+    }
+
+    public set(key: RequestCacheKey, entry: RequestCacheEntry): void {
+        this.cache.set(this.toCacheKey(key), entry)
     }
 }
