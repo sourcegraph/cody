@@ -2,7 +2,6 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { vsCodeMocks } from '../testutils/mocks'
 
-import { CompletionsCache } from './cache'
 import { Provider } from './providers/provider'
 import { RequestManager } from './request-manager'
 import { Completion } from './types'
@@ -51,8 +50,7 @@ function createProvider(prefix: string) {
 describe('RequestManager', () => {
     let createRequest: (prefix: string, provider: Provider) => Promise<Completion[]>
     beforeEach(() => {
-        const cache = new CompletionsCache()
-        const requestManager = new RequestManager(cache)
+        const requestManager = new RequestManager()
 
         createRequest = (prefix: string, provider: Provider) =>
             requestManager.request(DOCUMENT_URI, LOG_ID, prefix, [provider], [], new AbortController().signal)
@@ -97,26 +95,5 @@ describe('RequestManager', () => {
 
         expect((await promise1)[0].content).toBe('log();')
         expect(provider1.didFinishNetworkRequest).toBe(true)
-    })
-
-    it('serves request from cache when a prior request resolves', async () => {
-        const prefix1 = 'console.'
-        const provider1 = createProvider(prefix1)
-        const promise1 = createRequest(prefix1, provider1)
-
-        const prefix2 = 'console.log('
-        const provider2 = createProvider(prefix2)
-        const promise2 = createRequest(prefix2, provider2)
-
-        provider1.resolveRequest(["log('hello')"])
-
-        expect((await promise1)[0].content).toBe("log('hello')")
-        expect((await promise2)[0].content).toBe("'hello')")
-
-        expect(provider1.didFinishNetworkRequest).toBe(true)
-        expect(provider2.didFinishNetworkRequest).toBe(false)
-
-        // Ensure that the completed network request does not cause issues
-        provider2.resolveRequest(["'world')"])
     })
 })

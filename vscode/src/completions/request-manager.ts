@@ -1,6 +1,4 @@
-import { CompletionsCache } from './cache'
 import { ReferenceSnippet } from './context'
-import { logCompletionEvent } from './logger'
 import { CompletionProviderTracer, Provider } from './providers/provider'
 import { Completion } from './types'
 
@@ -19,8 +17,6 @@ interface Request {
  */
 export class RequestManager {
     private readonly requests: Map<string, Request[]> = new Map()
-
-    constructor(private completionsCache: CompletionsCache | null) {}
 
     public async request(
         documentUri: string,
@@ -69,11 +65,6 @@ export class RequestManager {
         )
             .then(res => res.flat())
             .then(completions => {
-                // Add the completed results to the cache, even if the request
-                // was cancelled before or completed via a cache retest of a
-                // previous request.
-                this.completionsCache?.add(logId, completions)
-
                 if (signal.aborted) {
                     throw new Error('aborted')
                 }
@@ -85,29 +76,7 @@ export class RequestManager {
             })
             .finally(() => {
                 this.removeRequest(documentUri, request)
-                this.retestCaches(documentUri)
             })
-    }
-
-    /**
-     * When one network request completes and the item is being added to the
-     * completion cache, we check all pending requests for the same document to
-     * see if we can synthesize a completion response from the new cache.
-     */
-    private retestCaches(documentUri: string): void {
-        const requests = this.requests.get(documentUri)
-        if (!requests) {
-            return
-        }
-
-        for (const request of requests) {
-            const cachedCompletions = this.completionsCache?.get(request.prefix)
-            if (cachedCompletions) {
-                logCompletionEvent('synthesizedFromParallelRequest')
-                request.resolve(cachedCompletions.completions)
-                this.removeRequest(documentUri, request)
-            }
-        }
     }
 
     private addRequest(documentUri: string, request: Request): void {

@@ -8,7 +8,6 @@ import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
 import { debug } from '../log'
 import { CodyStatusBar } from '../services/StatusBar'
 
-import { CachedCompletions, CompletionsCache } from './cache'
 import { getContext, GetContextOptions, GetContextResult } from './context'
 import { getCurrentDocContext } from './document'
 import { DocumentHistory } from './history'
@@ -31,7 +30,6 @@ interface InlineCompletionItemProviderConfig {
     suffixPercentage?: number
     disableTimeouts?: boolean
     isEmbeddingsContextEnabled?: boolean
-    cache: CompletionsCache | null
     completeSuggestWidgetSelection?: boolean
     tracer?: ProvideInlineCompletionItemsTracer | null
     contextFetcher?: (options: GetContextOptions) => Promise<GetContextResult>
@@ -94,7 +92,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
         this.maxPrefixChars = Math.floor(this.promptChars * this.config.prefixPercentage)
         this.maxSuffixChars = Math.floor(this.promptChars * this.config.suffixPercentage)
 
-        this.requestManager = new RequestManager(this.config.cache)
+        this.requestManager = new RequestManager()
 
         debug('CodyCompletionProvider:initialized', `provider: ${this.config.providerConfig.identifier}`)
 
@@ -173,47 +171,6 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
             this.config.providerConfig.enableExtendedMultilineTriggers
         )
 
-        // Avoid showing completions when we're deleting code (Cody can only insert code at the
-        // moment)
-        const lastChange = this.lastContentChanges.get(document.fileName) ?? 'add'
-        if (lastChange === 'del') {
-            // When a line was deleted, only look up cached items and only include them if the
-            // untruncated prefix matches. This fixes some weird issues where the completion would
-            // render if you insert whitespace but not on the original place when you delete it
-            // again
-            const cachedCompletions = this.config.cache?.get(docContext.prefix, false)
-            if (cachedCompletions?.isExactPrefix) {
-                tracer?.({ cacheHit: true })
-                return this.handleCacheHit(
-                    cachedCompletions,
-                    document,
-                    context,
-                    position,
-                    docContext.prefix,
-                    docContext.suffix,
-                    multiline,
-                    document.languageId,
-                    abortController.signal
-                )
-            }
-            return { items: [] }
-        }
-
-        const cachedCompletions = this.config.cache?.get(docContext.prefix)
-        if (cachedCompletions) {
-            tracer?.({ cacheHit: true })
-            return this.handleCacheHit(
-                cachedCompletions,
-                document,
-                context,
-                position,
-                docContext.prefix,
-                docContext.suffix,
-                multiline,
-                document.languageId,
-                abortController.signal
-            )
-        }
         tracer?.({ cacheHit: false })
 
         const completers: Provider[] = []
@@ -333,41 +290,6 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
 
         CompletionLogger.noResponse(logId)
         return { items: [] }
-    }
-
-    private async handleCacheHit(
-        cachedCompletions: CachedCompletions,
-        document: vscode.TextDocument,
-        context: vscode.InlineCompletionContext,
-        position: vscode.Position,
-        prefix: string,
-        suffix: string,
-        multiline: boolean,
-        languageId: string,
-        abortSignal: AbortSignal
-    ): Promise<vscode.InlineCompletionList> {
-        const results = processCompletions(cachedCompletions.completions, prefix, suffix, multiline, languageId)
-
-        // We usually resolve cached results instantly. However, if the inserted completion would
-        // include more than one line, this can create a lot of visible UI churn. To avoid this, we
-        // debounce these results and wait for the user to stop typing for a bit before applying
-        // them.
-        //
-        // The duration we wait is longer than the debounce time for new requests because we do not
-        // have network latency for cache completion
-        const visibleResult = results[0]
-        if (
-            visibleResult?.content.includes('\n') &&
-            !this.config.disableTimeouts &&
-            context.triggerKind !== vscode.InlineCompletionTriggerKind.Invoke
-        ) {
-            await delay(400)
-            if (abortSignal.aborted) {
-                return { items: [] }
-            }
-        }
-
-        return toInlineCompletionItems(cachedCompletions.logId, document, position, results)
     }
 }
 

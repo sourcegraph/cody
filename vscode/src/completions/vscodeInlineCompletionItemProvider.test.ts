@@ -14,7 +14,6 @@ import { CodyStatusBar } from '../services/StatusBar'
 import { vsCodeMocks } from '../testutils/mocks'
 import { wrapVSCodeTextDocument } from '../testutils/textDocument'
 
-import { CompletionsCache } from './cache'
 import { DocumentHistory } from './history'
 import { createProviderConfig } from './providers/anthropic'
 import { InlineCompletionItemProvider } from './vscodeInlineCompletionItemProvider'
@@ -101,7 +100,7 @@ describe('Cody completions', () => {
      */
     let complete: (
         code: string,
-        responses?: CompletionResponse[] | 'stall',
+        responses?: CompletionResponse[],
         languageId?: string,
         context?: vscode.InlineCompletionContext
     ) => Promise<{
@@ -109,10 +108,9 @@ describe('Cody completions', () => {
         completions: vscode.InlineCompletionItem[]
     }>
     beforeEach(() => {
-        const cache = new CompletionsCache()
         complete = async (
             code: string,
-            responses?: CompletionResponse[] | 'stall',
+            responses?: CompletionResponse[],
             languageId: string = 'typescript',
             context: vscode.InlineCompletionContext = {
                 triggerKind: vsCodeMocks.InlineCompletionTriggerKind.Automatic,
@@ -127,10 +125,6 @@ describe('Cody completions', () => {
             const completionsClient: Pick<SourcegraphCompletionsClient, 'complete'> = {
                 complete(params: CompletionParameters): Promise<CompletionResponse> {
                     requests.push(params)
-                    if (responses === 'stall') {
-                        // Creates a stalling request that never responds
-                        return new Promise(() => {})
-                    }
                     return Promise.resolve(responses?.[requestCounter++] || { completion: '', stopReason: 'unknown' })
                 },
             }
@@ -144,7 +138,6 @@ describe('Cody completions', () => {
                 history: DUMMY_DOCUMENT_HISTORY,
                 codebaseContext: DUMMY_CODEBASE_CONTEXT,
                 disableTimeouts: true,
-                cache,
             })
 
             if (!code.includes(CURSOR_MARKER)) {
@@ -998,16 +991,6 @@ describe('Cody completions', () => {
             )
 
             expect(completions[0].insertText).toBe("console.log('foo')")
-        })
-    })
-
-    describe('completions cache', () => {
-        it('synthesizes a completion from a prior request', async () => {
-            await complete('console.█', [completion`log('Hello, world!');`])
-
-            const { completions } = await complete('console.log(█', 'stall')
-
-            expect(completions[0].insertText).toBe("'Hello, world!');")
         })
     })
 })
