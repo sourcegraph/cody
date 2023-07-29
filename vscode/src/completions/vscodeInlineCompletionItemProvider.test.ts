@@ -140,11 +140,7 @@ describe('Cody completions', () => {
             const document = wrapVSCodeTextDocument(
                 TextDocument.create('file:///test.ts', languageId, 0, codeWithoutCursor)
             )
-
-            const splitPrefix = prefix.split('\n')
-            const line = splitPrefix.length - 1
-            const character = splitPrefix[splitPrefix.length - 1].length
-            const position = new vsCodeMocks.Position(line, character)
+            const position = document.positionAt(cursorIndex)
 
             const completions = await completionProvider.provideInlineCompletionItems(document, position, context)
 
