@@ -15,9 +15,7 @@ import { vsCodeMocks } from '../testutils/mocks'
 import { wrapVSCodeTextDocument } from '../testutils/textDocument'
 
 import { CodyCompletionItemProvider } from '.'
-import { CompletionsCache } from './cache'
 import { DocumentHistory } from './history'
-import { NOOP_LAST_CHANGE_TRACKER } from './lastChangeTracker'
 import { createProviderConfig } from './providers/anthropic'
 
 const CURSOR_MARKER = '█'
@@ -110,7 +108,6 @@ describe('Cody completions', () => {
         completions: vscode.InlineCompletionItem[]
     }>
     beforeEach(() => {
-        const cache = new CompletionsCache()
         complete = async (
             code: string,
             responses?: CompletionResponse[] | 'stall',
@@ -144,9 +141,6 @@ describe('Cody completions', () => {
                 statusBar: NOOP_STATUS_BAR,
                 history: DUMMY_DOCUMENT_HISTORY,
                 codebaseContext: DUMMY_CODEBASE_CONTEXT,
-                disableTimeouts: true,
-                cache,
-                lastChangeTracker: NOOP_LAST_CHANGE_TRACKER,
             })
 
             if (!code.includes(CURSOR_MARKER)) {

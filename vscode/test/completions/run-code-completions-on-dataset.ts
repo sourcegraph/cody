@@ -14,7 +14,6 @@ import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/cody-shared/src/telemetry'
 import { CodyCompletionItemProvider } from '../../src/completions'
 import { GetContextResult } from '../../src/completions/context'
 import { VSCodeDocumentHistory } from '../../src/completions/history'
-import { NOOP_LAST_CHANGE_TRACKER } from '../../src/completions/lastChangeTracker'
 import { createProviderConfig } from '../../src/completions/providers/createProvider'
 import { getFullConfig } from '../../src/configuration'
 import { configureExternalServices } from '../../src/external-services'
@@ -61,11 +60,8 @@ async function initCompletionsProvider(context: GetContextResult): Promise<CodyC
         },
         history,
         codebaseContext,
-        disableTimeouts: true,
-        cache: null,
         isEmbeddingsContextEnabled: true,
         contextFetcher: () => Promise.resolve(context),
-        lastChangeTracker: NOOP_LAST_CHANGE_TRACKER,
     })
 
     return completionsProvider

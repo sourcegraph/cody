@@ -11,9 +11,7 @@ import { InlineChatViewManager } from './chat/InlineChatViewProvider'
 import { MessageProviderOptions } from './chat/MessageProvider'
 import { CODY_FEEDBACK_URL } from './chat/protocol'
 import { CodyCompletionItemProvider } from './completions'
-import { CompletionsCache } from './completions/cache'
 import { VSCodeDocumentHistory } from './completions/history'
-import { createLastChangeTracker } from './completions/lastChangeTracker'
 import * as CompletionsLogger from './completions/logger'
 import { createProviderConfig } from './completions/providers/createProvider'
 import { registerAutocompleteTraceView } from './completions/tracer/traceView'
@@ -418,18 +416,14 @@ function createCompletionsProvider(
     const disposables: vscode.Disposable[] = []
 
     const history = new VSCodeDocumentHistory()
-    const lastChangeTracker = createLastChangeTracker()
-    disposables.push(lastChangeTracker)
     const providerConfig = createProviderConfig(config, webviewErrorMessenger, completionsClient)
     const completionsProvider = new CodyCompletionItemProvider({
         providerConfig,
         history,
         statusBar,
         codebaseContext,
-        cache: config.autocompleteAdvancedCache ? new CompletionsCache() : null,
         isEmbeddingsContextEnabled: config.autocompleteAdvancedEmbeddings,
         completeSuggestWidgetSelection: config.autocompleteExperimentalCompleteSuggestWidgetSelection,
-        lastChangeTracker,
     })
 
     disposables.push(
