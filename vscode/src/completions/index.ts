@@ -170,19 +170,8 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
             return { items: [] }
         }
 
-        const { prefix, suffix, prevNonEmptyLine } = docContext
-
-        // Text before the cursor on the same line.
-        const sameLinePrefix = docContext.prevLine
-
-        // Text after the cursor on the same line.
-        const sameLineSuffix = suffix.slice(0, suffix.indexOf('\n'))
-
         const multiline = detectMultiline(
-            prefix,
-            prevNonEmptyLine,
-            sameLinePrefix,
-            sameLineSuffix,
+            docContext,
             document.languageId,
             this.config.providerConfig.enableExtendedMultilineTriggers
         )
@@ -195,7 +184,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
             // untruncated prefix matches. This fixes some weird issues where the completion would
             // render if you insert whitespace but not on the original place when you delete it
             // again
-            const cachedCompletions = this.config.cache?.get(prefix, false)
+            const cachedCompletions = this.config.cache?.get(docContext.prefix, false)
             if (cachedCompletions?.isExactPrefix) {
                 tracer?.({ cacheHit: true })
                 return this.handleCacheHit(
@@ -203,8 +192,8 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
                     document,
                     context,
                     position,
-                    prefix,
-                    suffix,
+                    docContext.prefix,
+                    docContext.suffix,
                     multiline,
                     document.languageId,
                     abortController.signal
@@ -213,7 +202,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
             return { items: [] }
         }
 
-        const cachedCompletions = this.config.cache?.get(prefix)
+        const cachedCompletions = this.config.cache?.get(docContext.prefix)
         if (cachedCompletions) {
             tracer?.({ cacheHit: true })
             return this.handleCacheHit(
@@ -221,8 +210,8 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
                 document,
                 context,
                 position,
-                prefix,
-                suffix,
+                docContext.prefix,
+                docContext.suffix,
                 multiline,
                 document.languageId,
                 abortController.signal
@@ -250,13 +239,13 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
         //
         // VS Code will attempt to merge the remainder of the current line by characters but for
         // words this will easily get very confusing.
-        if (/\w/.test(sameLineSuffix)) {
+        if (/\w/.test(docContext.currentLineSuffix)) {
             return { items: [] }
         }
 
         const sharedProviderOptions: Omit<ProviderOptions, 'id' | 'n' | 'multiline'> = {
-            prefix,
-            suffix,
+            prefix: docContext.prefix,
+            suffix: docContext.suffix,
             fileName: path.normalize(vscode.workspace.asRelativePath(document.fileName ?? '')),
             languageId: document.languageId,
             responsePercentage: this.config.responsePercentage,
@@ -301,8 +290,8 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
 
         const contextResult = await this.config.contextFetcher({
             document,
-            prefix,
-            suffix,
+            prefix: docContext.prefix,
+            suffix: docContext.suffix,
             history: this.config.history,
             jaccardDistanceWindowSize: SNIPPET_WINDOW_SIZE,
             maxChars: this.promptChars,
@@ -340,7 +329,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
         const completions = await this.requestManager.request(
             document.uri.toString(),
             logId,
-            prefix,
+            docContext.prefix,
             completers,
             contextResult.context,
             abortController.signal,
@@ -348,7 +337,13 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
         )
 
         // Shared post-processing logic
-        const processedCompletions = processCompletions(completions, prefix, suffix, multiline, document.languageId)
+        const processedCompletions = processCompletions(
+            completions,
+            docContext.prefix,
+            docContext.suffix,
+            multiline,
+            document.languageId
+        )
         stopLoading()
 
         if (processedCompletions.length > 0) {
