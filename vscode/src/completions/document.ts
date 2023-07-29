@@ -1,5 +1,19 @@
 import * as vscode from 'vscode'
 
+export interface DocumentContext {
+    prefix: string
+    suffix: string
+
+    /** Text before the cursor on the same line. */
+    currentLinePrefix: string
+
+    /** Text after the cursor on the same line. */
+    currentLineSuffix: string
+
+    prevNonEmptyLine: string
+    nextNonEmptyLine: string
+}
+
 /**
  * Get the current document context based on the cursor position in the current document.
  *
@@ -22,13 +36,7 @@ export function getCurrentDocContext(
     position: vscode.Position,
     maxPrefixLength: number,
     maxSuffixLength: number
-): {
-    prefix: string
-    suffix: string
-    prevLine: string
-    prevNonEmptyLine: string
-    nextNonEmptyLine: string
-} | null {
+): DocumentContext | null {
     const offset = document.offsetAt(position)
 
     const prefixLines = document.getText(new vscode.Range(new vscode.Position(0, 0), position)).split('\n')
@@ -61,7 +69,7 @@ export function getCurrentDocContext(
         }
     }
 
-    const prevLine = prefixLines[prefixLines.length - 1]
+    const currentLinePrefix = prefixLines[prefixLines.length - 1]
 
     let prefix: string
     if (offset > maxPrefixLength) {
@@ -90,10 +98,13 @@ export function getCurrentDocContext(
     }
     const suffix = suffixLines.slice(0, endLine).join('\n')
 
+    const currentLineSuffix = suffix.slice(0, suffix.indexOf('\n'))
+
     return {
         prefix,
         suffix,
-        prevLine,
+        currentLinePrefix,
+        currentLineSuffix,
         prevNonEmptyLine,
         nextNonEmptyLine,
     }
