@@ -36,7 +36,8 @@ interface ChatboxProps {
     telemetryService: TelemetryService
     suggestions?: string[]
     setSuggestions?: (suggestions: undefined | string[]) => void
-    pluginsDevMode?: boolean
+    pluginsDevMode?: boolean,
+    isFirstChat?: boolean
 }
 
 export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>> = ({
@@ -54,6 +55,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     suggestions,
     setSuggestions,
     pluginsDevMode,
+    isFirstChat,
 }) => {
     const [abortMessageInProgressInternal, setAbortMessageInProgress] = useState<() => void>(() => () => undefined)
 
@@ -149,14 +151,17 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             // down here to render cody is disabled on the instance nicely.
             isCodyEnabled={true}
             codyNotEnabledNotice={undefined}
-            helpMarkdown="See [Getting Started](command:cody.welcome) for help and tips.
+            helpMarkdown={isFirstChat ? (
+                `See [Getting Started](command:cody.welcome) for help and tips.
 
-To get started, select some code and run one of Cody's recipes:"
-            gettingStartedButtons={[
+To get started, select some code and run one of Cody's recipes:`) : (
+                "See [Getting Started](command:cody.welcome) for help and tips."
+            )}
+            gettingStartedButtons={isFirstChat ? [
                 { label: 'Explain code (high level)', action: 'explain-code-high-level', onClick: onChatButtonClick },
                 { label: 'Smell code', action: 'find-code-smells', onClick: onChatButtonClick },
                 { label: 'Generate a unit test', action: 'generate-unit-test', onClick: onChatButtonClick },
-            ]}
+            ] : undefined}
             ChatButtonComponent={ChatButton}
             pluginsDevMode={pluginsDevMode}
         />
