@@ -149,17 +149,13 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
     ChatButtonComponent,
     pluginsDevMode,
 }) => {
-    const [inputRows, setInputRows] = useState(5)
+    const [inputRows, setInputRows] = useState(1)
     const [historyIndex, setHistoryIndex] = useState(inputHistory.length)
 
     const inputHandler = useCallback(
         (inputValue: string): void => {
-            const rowsCount = inputValue.match(/\n/g)?.length
-            if (rowsCount) {
-                setInputRows(rowsCount < 5 ? 5 : rowsCount > 25 ? 25 : rowsCount)
-            } else {
-                setInputRows(5)
-            }
+            const rowsCount = (inputValue.match(/\n/g)?.length || 0) + 1
+            setInputRows(rowsCount > 25 ? 25 : rowsCount)
             setFormInput(inputValue)
             if (inputValue !== inputHistory[historyIndex]) {
                 setHistoryIndex(inputHistory.length)
@@ -192,7 +188,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
     const onChatSubmit = useCallback((): void => {
         // Submit chat only when input is not empty and not in progress
         if (formInput.trim() && !messageInProgress) {
-            setInputRows(5)
+            setInputRows(1)
             setFormInput('')
             submitInput(formInput, 'user')
         }
