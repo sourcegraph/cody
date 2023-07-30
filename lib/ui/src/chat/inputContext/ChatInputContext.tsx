@@ -59,6 +59,10 @@ export const ChatInputContext: React.FunctionComponent<{
                 <p className={styles.file} title={contextStatus.filePath}>
                     {formatFilePath(contextStatus.filePath, contextStatus.selection)}
                 </p>
+            ) || (
+                <p className={styles.file} title={contextStatus.filePath}>
+                    No file selected
+                </p>
             )}
         </div>
     )
