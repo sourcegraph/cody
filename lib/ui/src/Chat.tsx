@@ -47,6 +47,7 @@ interface ChatProps extends ChatClassNames {
     isCodyEnabled: boolean
     ChatButtonComponent?: React.FunctionComponent<ChatButtonProps>
     pluginsDevMode?: boolean
+    isTranscriptError?: boolean
 }
 
 interface ChatClassNames extends TranscriptItemClassNames {
@@ -148,6 +149,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
     isCodyEnabled,
     ChatButtonComponent,
     pluginsDevMode,
+    isTranscriptError,
 }) => {
     const [inputRows, setInputRows] = useState(5)
     const [historyIndex, setHistoryIndex] = useState(inputHistory.length)
@@ -288,6 +290,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                     chatInputClassName={chatInputClassName}
                     ChatButtonComponent={ChatButtonComponent}
                     pluginsDevMode={pluginsDevMode}
+                    isTranscriptError={isTranscriptError}
                 />
             )}
 

@@ -41,6 +41,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     const [isAppInstalled, setIsAppInstalled] = useState<boolean>(false)
     const [enabledPlugins, setEnabledPlugins] = useState<string[]>([])
     const [myPrompts, setMyPrompts] = useState<string[] | null>(null)
+    const [isTranscriptError, setIsTranscriptError] = useState<boolean>(false)
 
     useEffect(
         () =>
@@ -51,6 +52,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                             const msgLength = message.messages.length - 1
                             setTranscript(message.messages.slice(0, msgLength))
                             setMessageInProgress(message.messages[msgLength])
+                            setIsTranscriptError(false)
                         } else {
                             setTranscript(message.messages)
                             setMessageInProgress(null)
@@ -90,6 +92,9 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                         break
                     case 'my-prompts':
                         setMyPrompts(message.isEnabled ? message.prompts : null)
+                        break
+                    case 'transcript-errors':
+                        setIsTranscriptError(message.isTranscriptError)
                         break
                 }
             }),
@@ -179,6 +184,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                             pluginsDevMode={Boolean(config?.pluginsDebugEnabled)}
                             setSuggestions={setSuggestions}
                             telemetryService={telemetryService}
+                            isTranscriptError={isTranscriptError}
                         />
                     )}
                 </>
