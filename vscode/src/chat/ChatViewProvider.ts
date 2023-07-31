@@ -114,6 +114,7 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
                 switch (message.action) {
                     case 'explain-code-high-level':
                     case 'find-code-smells':
+                    case 'optimize-code':
                     case 'generate-unit-test':
                         void this.executeRecipe(message.action)
                         break

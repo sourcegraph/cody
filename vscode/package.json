@@ -301,6 +301,11 @@
         "title": "Find Code Smells"
       },
       {
+        "command": "cody.recipe.optimize-code",
+        "category": "Ask Cody",
+        "title": "Optimize Code"
+      },
+      {
         "command": "cody.auth.signout",
         "category": "Cody",
         "title": "Sign Out…",
@@ -541,6 +546,10 @@
           "when": "cody.activated && editorHasSelection"
         },
         {
+          "command": "cody.recipe.optimize-code",
+          "when": "cody.activated && editorHasSelection"
+        },
+        {
           "command": "cody.focus",
           "title": "Cody: Sign In",
           "when": "!cody.activated"
@@ -635,6 +644,10 @@
         },
         {
           "command": "cody.recipe.find-code-smells",
+          "when": "cody.activated"
+        },
+        {
+          "command": "cody.recipe.optimize-code",
           "when": "cody.activated"
         },
         {

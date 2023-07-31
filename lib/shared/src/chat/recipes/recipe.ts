@@ -32,6 +32,7 @@ export type RecipeID =
     | 'pr-description'
     | 'release-notes'
     | 'translate-to-language'
+    | 'optimize-code'
 
 export interface Recipe {
     id: RecipeID
