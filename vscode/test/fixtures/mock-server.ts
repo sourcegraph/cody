@@ -32,7 +32,8 @@ export async function run<T>(around: () => Promise<T>): Promise<T> {
 
     // endpoint which will accept the data that you want to send in that you will add your pubsub code
     app.post('/.api/testLogging', (req, res) => {
-        logTestingData(JSON.stringify(req.body))
+        // ignore return value
+        void logTestingData(JSON.stringify(req.body))
         res.send('eventLogged')
     })
 
@@ -88,7 +89,7 @@ export async function run<T>(around: () => Promise<T>): Promise<T> {
     return result
 }
 
-export function logTestingData(data: string): void {
+export async function logTestingData(data: string): Promise<void> {
     // create a pubsub client
     const pubSubClient = new PubSub()
 
@@ -97,8 +98,9 @@ export function logTestingData(data: string): void {
 
     console.log('Publishing message to pubsub')
     try {
+        await
         pubSubClient
-            .topic('topicName')
+            .topic('projects/telligentsourcegraph/topics/aditya-test-topic')
             .publishMessage({ data: dataBuffer })
     } catch {
         console.error('Received error while publishing')
