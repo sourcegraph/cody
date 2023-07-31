@@ -134,6 +134,13 @@ body[data-vscode-theme-kind='vscode-high-contrast'] .transcript-item:not(.human-
     transition: all 0.5s linear;
 }
 
+.feedback-button[disabled] {
+    /* VSCodeButton's default cursor is not-allowed, but that's different to
+        native VS Code and feels off, especially when it quickly changes to not-allowed
+        after you submit feedback. So we reset it back to the default cursor to fit in
+        nicer with standard VS Code native behaviour */
+    cursor: default;
+}
 @keyframes fadeInSlideUp {
     from {
         opacity: 0;
