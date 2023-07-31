@@ -304,8 +304,12 @@ export class SourcegraphGraphQLAPIClient {
         publicArgument?: string | {}
     }): Promise<void | Error> {
         if (process.env.CODY_TESTING === 'true') {
-            console.log(`not logging ${event.event} in test mode`)
-            return
+            console.log('Testing Cody Logging')
+            await this.fetchSourcegraphTestingAPI<APIResponse<LogEventResponse>>(LOG_EVENT_MUTATION, event).then(
+                response => {
+                    extractDataOrError(response, data => {})
+                }
+            )
         }
         try {
             if (this.config.serverEndpoint === this.dotcomUrl) {
@@ -409,6 +413,19 @@ export class SourcegraphGraphQLAPIClient {
     // make an anonymous request to the dotcom API
     private fetchSourcegraphDotcomAPI<T>(query: string, variables: Record<string, any>): Promise<T | Error> {
         const url = buildGraphQLUrl({ request: query, baseUrl: this.dotcomUrl })
+        return fetch(url, {
+            method: 'POST',
+            body: JSON.stringify({ query, variables }),
+        })
+            .then(verifyResponseCode)
+            .then(response => response.json() as T)
+            .catch(error => new Error(`error fetching Sourcegraph GraphQL API: ${error} (${url})`))
+    }
+
+    // make an anonymous request to the Testing API
+    private fetchSourcegraphTestingAPI<T>(query: string, variables: Record<string, any>): Promise<T | Error> {
+        const url = buildGraphQLUrl({ request: query, baseUrl: 'http://localhost:49300/.api/testLogging' })
+        // Figure out the URL for the mock server /.api/graphql or /api/graphql
         return fetch(url, {
             method: 'POST',
             body: JSON.stringify({ query, variables }),
