@@ -320,7 +320,8 @@ const FeedbackButtons: React.FunctionComponent<FeedbackButtonsProps> = ({ classN
                     disabled={true}
                     title="Thanks for your feedback"
                 >
-                    <i className="codicon codicon-thumbsup" /> {' Thanks!'}
+                    <i className="codicon codicon-thumbsup" />
+                    <i className="codicon codicon-check" />
                 </VSCodeButton>
             )}
             {feedbackSubmitted === 'thumbsDown' && (
@@ -332,12 +333,14 @@ const FeedbackButtons: React.FunctionComponent<FeedbackButtonsProps> = ({ classN
                         disabled={true}
                         title="Thanks for your feedback"
                     >
-                        <i className="codicon codicon-thumbsdown" /> {' Thanks!'}
+                        <i className="codicon codicon-thumbsdown" />
+                        <i className="codicon codicon-check" />
                     </VSCodeButton>
                     <VSCodeButton
                         className={classNames(styles.feedbackButton)}
                         appearance="icon"
                         type="button"
+                        title="Help improve Cody and give us feedback about this response"
                         onClick={() => console.log(`TODO: Open ${CODY_FEEDBACK_URL}`)}
                     >
                         <i className="codicon codicon-feedback" /> {' Give Feedback'}
