@@ -109,9 +109,7 @@ export async function logTestingData(data: string): Promise<void> {
 
     console.log('Publishing message to pubsub')
     try {
-        await pubSubClient
-            .topic('topic_name')
-            .publishMessage({ data: JSON.stringify(message) })
+        await pubSubClient.topic('topic_name').publishMessage({ data: JSON.stringify(message) })
     } catch {
         console.error('Received error while publishing')
     }
