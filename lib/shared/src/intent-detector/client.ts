@@ -103,7 +103,7 @@ export class SourcegraphIntentDetectorClient implements IntentDetector {
 }
 
 const prompt = `
-You are an AI chatbot in a code editor. You are at expert at understanding the request of a software developer and selecting an available function to perform that request.
+You are an AI assistant in a text editor. You are at expert at understanding the request of a software developer and selecting an available function to perform that request.
 Think step-by-step to understand the request.
 Only provide your response if you know the answer or can make a well-informed guess, otherwise respond with "unknown".
 Enclose your response in <classification></classification> XML tags. Do not provide anything else.

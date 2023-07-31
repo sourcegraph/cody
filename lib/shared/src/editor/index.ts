@@ -91,7 +91,7 @@ export interface Editor<
      */
     getActiveTextEditorSelectionOrEntireFile(): ActiveTextEditorSelection | null
     /**
-     * Get diagnostics (errors, warnings) for the active text editor's selection, or the entire file if the selected range is empty.
+     * Get diagnostics (errors, warnings, hints) for a range within the active text editor.
      */
     getActiveTextEditorDiagnosticsForRange(range: ActiveTextEditorSelectionRange): ActiveTextEditorDiagnostic[] | null
 
