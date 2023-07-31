@@ -29,10 +29,15 @@ export const ChatCommandsComponent: React.FunctionComponent<React.PropsWithChild
         setSelectedChatCommand(-1)
     }
 
+    if (!commandList || selectedChatCommand === undefined || selectedChatCommand < 0) {
+        return null
+    }
+
     return (
         <div className={classNames(styles.container)}>
             <div className={classNames(styles.commandsContainer)}>
                 {chatCommands &&
+                    selectedChatCommand >= 0 &&
                     commandList?.map(([command, prompt], i) => (
                         <button
                             className={classNames(styles.commandItem, selectedChatCommand === i && styles.selected)}
