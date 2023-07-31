@@ -364,6 +364,9 @@ importers:
       uuid:
         specifier: ^9.0.0
         version: 9.0.0
+      vscode-languageserver-textdocument:
+        specifier: ^1.0.8
+        version: 1.0.8
       vscode-uri:
         specifier: ^3.0.7
         version: 3.0.7
@@ -16318,6 +16321,10 @@ packages:
     dependencies:
       acorn: 8.10.0
       acorn-walk: 8.2.0
+
+  /vscode-languageserver-textdocument@1.0.8:
+    resolution: {integrity: sha512-1bonkGqQs5/fxGT5UchTgjGVnfysL0O8v1AYMBjqTbWQTFn721zaPGDYFkOKtfDgFiSgXM3KwaG3FMGfW4Ed9Q==}
+    dev: false
 
   /vscode-uri@3.0.7:
     resolution: {integrity: sha512-eOpPHogvorZRobNqJGhapa0JdwaxpjVvyBp0QIUMRMSf8ZAlqOdEquKuRmw9Qwu0qXtJIWqFtMkmvJjUZmMjVA==}

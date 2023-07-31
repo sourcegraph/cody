@@ -27,13 +27,13 @@ function tokensToChars(tokens: number): number {
 
 interface AnthropicOptions {
     contextWindowTokens: number
-    completionsClient: SourcegraphCompletionsClient
+    completionsClient: Pick<SourcegraphCompletionsClient, 'complete'>
 }
 
 export class AnthropicProvider extends Provider {
     private promptChars: number
     private responseTokens: number
-    private completionsClient: SourcegraphCompletionsClient
+    private completionsClient: Pick<SourcegraphCompletionsClient, 'complete'>
 
     constructor(options: ProviderOptions, anthropicOptions: AnthropicOptions) {
         super(options)
