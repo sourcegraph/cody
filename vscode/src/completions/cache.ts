@@ -81,7 +81,7 @@ export class CompletionsCache {
     public updateLogId(oldLogId: string, newLogId: string): void {
         const entries = this.cache.values()
         for (const value of entries) {
-            if (value && typeof value !== 'string' && 'logId' in value && value.logId === oldLogId) {
+            if (value && 'logId' in value && value.logId === oldLogId) {
                 value.logId = newLogId
             }
         }
