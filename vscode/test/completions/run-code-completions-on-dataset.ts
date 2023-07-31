@@ -25,12 +25,14 @@ import { findSubstringPosition } from './utils'
 import { TextDocument } from './vscode-text-document'
 
 let didLogConfig = false
+let providerName: string
 
 async function initCompletionsProvider(context: GetContextResult): Promise<CodyCompletionItemProvider> {
     const secretStorage = new InMemorySecretStorage()
     await secretStorage.store('cody.access-token', ENVIRONMENT_CONFIG.SOURCEGRAPH_ACCESS_TOKEN)
 
     const initialConfig = await getFullConfig(secretStorage)
+    providerName = initialConfig.autocompleteAdvancedProvider
     if (!didLogConfig) {
         console.error('Running `initCompletionsProvider` with config:', initialConfig)
         didLogConfig = true
@@ -159,8 +161,10 @@ async function generateCompletionsForDataset(codeSamples: Sample[]): Promise<voi
     // TODO: prettify path management
     // Save results to a JSON file in the completions-review-tool/data folder to be used by the review tool:
     // pnpm --filter @sourcegraph/completions-review-tool run dev
-    fs.mkdirSync(ENVIRONMENT_CONFIG.OUTPUT_PATH, { recursive: true })
-    const filename = path.join(ENVIRONMENT_CONFIG.OUTPUT_PATH, `anthropic-${timestamp}.json`)
+    if (!providerName) {
+        throw new Error('No provider name')
+    }
+    const filename = path.join(ENVIRONMENT_CONFIG.OUTPUT_PATH, `${providerName}-${timestamp}.json`)
     fs.writeFileSync(filename, JSON.stringify(results, null, 2))
     console.log('\n✅ Completions saved to:', filename)
 }
