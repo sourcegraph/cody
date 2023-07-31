@@ -75,9 +75,9 @@ export class Fixup implements Recipe {
         // TODO: Move prompt suffix from recipe to chat view. It has other subscribers.
         const promptText = Fixup.prompt
             .replace('{humanInput}', truncateText(humanChatInput, MAX_HUMAN_INPUT_TOKENS))
+            .replace('{intent}', PromptIntentInstruction[intent])
             .replace('{selectedText}', selection.selectedText)
             .replace('{fileName}', selection.fileName)
-            .replace('{intent}', PromptIntentInstruction[intent])
 
         context.responseMultiplexer.sub(
             'selection',
@@ -124,7 +124,7 @@ export class Fixup implements Recipe {
         const intent = await context.intentDetector.classifyIntentFromOptions(
             humanChatInput,
             FixupIntentClassification,
-            'fix'
+            'edit'
         )
         return intent
     }
@@ -218,25 +218,23 @@ export class Fixup implements Recipe {
 
     // Prompt Templates
     public static readonly prompt = `
-    - You are an AI programming assistant who is an expert in updating code to meet given instructions.
-    - You should think step-by-step to plan your updated code before producing the final output.
-    - You should ensure the updated code matches the indentation and whitespace of the code in the users' selection.
-    - Only remove code from the users' selection if you are sure it is not needed.
-    - It is not acceptable to use Markdown in your response. You should not produce Markdown-formatted code blocks.
-    - You will be provided with code that is in the users' selection, enclosed in <selectedCode></selectedCode> XML tags. You must use this code to help you plan your updated code.
-    - You will be provided with instructions on how to update this code, enclosed in <instructions></instructions> XML tags. You must follow these instructions carefully and to the letter.
-    - Enclose your response in <selection></selection> XML tags. Do not provide anything else.
+- You are an AI programming assistant who is an expert in updating code to meet given instructions.
+- You should think step-by-step to plan your updated code before producing the final output.
+- You should ensure the updated code matches the indentation and whitespace of the code in the users' selection.
+- Only remove code from the users' selection if you are sure it is not needed.
+- It is not acceptable to use Markdown in your response. You should not produce Markdown-formatted code blocks.
+- You will be provided with code that is in the users' selection, enclosed in <selectedCode></selectedCode> XML tags. You must use this code to help you plan your updated code.
+- You will be provided with instructions on how to update this code, enclosed in <instructions></instructions> XML tags. You must follow these instructions carefully and to the letter.
+- Enclose your response in <selection></selection> XML tags. Do not provide anything else.
 
-    This is part of the file {fileName}.
+This is part of the file {fileName}.
 
-    The user has the following code in their selection:
-    <selectedCode>
-    {selectedText}
-    </selectedCode>
+The user has the following code in their selection:
+<selectedCode>{selectedText}</selectedCode>
 
-    {intent}
-    Provide your generated code using the following instructions:
-    <instructions>
-    {humanInput}
-    </instructions>`
+{intent}
+Provide your generated code using the following instructions:
+<instructions>
+{humanInput}
+</instructions>`
 }
