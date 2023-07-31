@@ -1,5 +1,6 @@
 import { PubSub } from '@google-cloud/pubsub'
 import express from 'express'
+import * as uuid from 'uuid'
 
 // create interface for the request
 interface MockRequest {
@@ -93,14 +94,24 @@ export async function logTestingData(data: string): Promise<void> {
     // create a pubsub client
     const pubSubClient = new PubSub()
 
-    // Publishes the message as a string, e.g. "Hello, world!" or JSON.stringify(someObject)
+    // Publishes the message as a string
     const dataBuffer = Buffer.from(data)
+
+    const timestamp = new Date().toUTCString()
+
+    const message = {
+        event: dataBuffer,
+        timestamp,
+        // aditya todo: pass in the E2E test nama
+        test_name: 'test_name',
+        UID: uuid.v4(),
+    }
 
     console.log('Publishing message to pubsub')
     try {
         await pubSubClient
-            .topic('projects/telligentsourcegraph/topics/aditya-test-topic')
-            .publishMessage({ data: dataBuffer })
+            .topic('topic_name')
+            .publishMessage({ data: JSON.stringify(message) })
     } catch {
         console.error('Received error while publishing')
     }
