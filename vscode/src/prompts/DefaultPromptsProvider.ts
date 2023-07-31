@@ -18,6 +18,9 @@ export class DefaultPromptsProvider {
                 const prompt = prompts[key] as CodyPrompt
                 prompt.name = key
                 prompt.type = 'default'
+                if (prompt.slashCommand) {
+                    prompt.slashCommand = '/' + prompt.slashCommand
+                }
                 this.defaultPromptsMap.set(key, prompt)
                 this.slashCommandsMap.set(prompt.slashCommand || key, prompt)
             }

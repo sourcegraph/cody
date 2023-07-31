@@ -567,6 +567,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
             case /^\/s(earch)?(\s)?/i.test(text):
                 return this.executeRecipe('context-search', text)
             case /^\/(explain|docstring|tests|smell)/i.test(text):
+                console.log('executeCommands:explain', text)
                 return this.executeRecipe('custom-prompt', this.editor.controllers.prompt?.find(text, true))
             default: {
                 const customCommand = this.editor.controllers.prompt?.find(text, true)

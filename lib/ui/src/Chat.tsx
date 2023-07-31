@@ -104,7 +104,8 @@ export interface CopyButtonProps {
 }
 
 export interface ChatCommandsProps {
-    formInput: string
+    setFormInput: (input: string) => void
+    setSelectedChatCommand: (index: number) => void
     chatCommands?: [string, CodyPrompt][] | null
     selectedChatCommand?: number
 }
@@ -177,8 +178,9 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                 return
             }
             if (inputValue.startsWith('/')) {
-                const command = inputValue.replace('/', '')
-                const filteredCommands = commandList.filter(([_, prompt]) => prompt.slashCommand?.startsWith(command))
+                const filteredCommands = commandList.filter(
+                    ([_, prompt]) => prompt.slashCommand?.startsWith(inputValue)
+                )
                 setDisplayCommands(filteredCommands)
                 setSelectedChatCommand(0)
                 return
@@ -231,8 +233,8 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
         // Submit chat only when input is not empty and not in progress
         if (formInput.trim() && !messageInProgress) {
             setInputRows(5)
+            submitInput(formInput.trim(), 'user')
             setFormInput('')
-            submitInput(formInput, 'user')
         }
     }, [formInput, messageInProgress, setFormInput, submitInput])
 
@@ -261,7 +263,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                     const newCommandIndex = newIndex < 0 ? 0 : newIndex > commandsLength ? 0 : newIndex
                     setSelectedChatCommand(newCommandIndex)
                     const newInput = displayCommands?.[newCommandIndex]?.[1]?.slashCommand
-                    setFormInput(`/${newInput}`)
+                    setFormInput(newInput || formInput)
                 }
             }
 
@@ -369,7 +371,8 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                     <ChatCommandsComponent
                         chatCommands={displayCommands}
                         selectedChatCommand={selectedChatCommand}
-                        formInput={formInput}
+                        setFormInput={setFormInput}
+                        setSelectedChatCommand={setSelectedChatCommand}
                     />
                 )}
                 {messageInProgress && AbortMessageInProgressButton && (

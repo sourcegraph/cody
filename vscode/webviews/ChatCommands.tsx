@@ -9,6 +9,8 @@ import styles from './ChatCommands.module.css'
 export const ChatCommandsComponent: React.FunctionComponent<React.PropsWithChildren<ChatCommandsProps>> = ({
     chatCommands,
     selectedChatCommand,
+    setFormInput,
+    setSelectedChatCommand,
 }) => {
     const commandList = chatCommands?.filter(command => command[1]?.slashCommand)
     const selectionRef = useRef<HTMLButtonElement>(null)
@@ -19,6 +21,14 @@ export const ChatCommandsComponent: React.FunctionComponent<React.PropsWithChild
         }
     }, [commandList, selectedChatCommand])
 
+    const onClick = (slashCommand?: string): void => {
+        if (!slashCommand) {
+            return
+        }
+        setFormInput(slashCommand + ' ')
+        setSelectedChatCommand(-1)
+    }
+
     return (
         <div className={classNames(styles.container)}>
             <div className={classNames(styles.commandsContainer)}>
@@ -27,11 +37,11 @@ export const ChatCommandsComponent: React.FunctionComponent<React.PropsWithChild
                         <button
                             className={classNames(styles.commandItem, selectedChatCommand === i && styles.selected)}
                             key={prompt.slashCommand}
-                            onClick={() => {}}
+                            onClick={() => onClick(prompt.slashCommand)}
                             type="button"
                             ref={i === selectedChatCommand ? selectionRef : null}
                         >
-                            <p className={styles.commandTitle}>{`/${prompt.slashCommand}`}</p>
+                            <p className={styles.commandTitle}>{prompt.slashCommand}</p>
                             <p className={styles.commandDescription}>{command}</p>
                         </button>
                     ))}
