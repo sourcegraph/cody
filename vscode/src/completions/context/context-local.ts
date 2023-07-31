@@ -2,9 +2,10 @@ import path from 'path'
 
 import * as vscode from 'vscode'
 
-import { bestJaccardMatch, JaccardMatch } from './bestJaccardMatch'
+import { bestJaccardMatch, JaccardMatch } from '../bestJaccardMatch'
+import { History } from '../history'
+
 import type { ReferenceSnippet } from './context'
-import { History } from './history'
 
 interface JaccardMatchWithFilename extends JaccardMatch {
     fileName: string

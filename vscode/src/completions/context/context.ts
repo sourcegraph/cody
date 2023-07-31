@@ -2,9 +2,11 @@ import * as vscode from 'vscode'
 
 import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
 
+import { History } from '../history'
+
 import { getContextFromEmbeddings } from './context-embeddings'
 import { getContextFromCurrentEditor } from './context-local'
-import { History } from './history'
+import { getContextFromCodeNav } from './context-vscode-nav'
 
 /**
  * Keep property names in sync with the `EmbeddingsSearchResult` type.
@@ -17,6 +19,7 @@ export interface ReferenceSnippet {
 export interface GetContextOptions {
     document: vscode.TextDocument
     history: History
+    position: vscode.Position
     prefix: string
     suffix: string
     jaccardDistanceWindowSize: number
@@ -36,14 +39,18 @@ export interface GetContextResult {
 
 export async function getContext(options: GetContextOptions): Promise<GetContextResult> {
     const { maxChars, isEmbeddingsContextEnabled } = options
-    const start = Date.now()
+    const start = performance.now()
 
     /**
      * The embeddings context is sync to retrieve to keep the completions latency minimal. If it's
      * not available in cache yet, we'll retrieve it in the background and cache it for future use.
      */
     const embeddingsMatches = isEmbeddingsContextEnabled ? getContextFromEmbeddings(options) : []
-    const localMatches = await getContextFromCurrentEditor(options)
+
+    const [localMatches, codeNavMatches] = await Promise.all([
+        getContextFromCurrentEditor(options),
+        getContextFromCodeNav(options),
+    ])
 
     /**
      * Iterate over matches and add them to the context.
@@ -66,12 +73,20 @@ export async function getContext(options: GetContextOptions): Promise<GetContext
         return true
     }
 
+    let includedCodeNavMatches = 0
+    for (const match of codeNavMatches) {
+        if (addMatch(match)) {
+            includedCodeNavMatches++
+        }
+    }
+
     let includedEmbeddingsMatches = 0
     for (const match of embeddingsMatches) {
         if (addMatch(match)) {
             includedEmbeddingsMatches++
         }
     }
+
     let includedLocalMatches = 0
     for (const match of localMatches) {
         if (addMatch(match)) {
@@ -84,7 +99,8 @@ export async function getContext(options: GetContextOptions): Promise<GetContext
         logSummary: {
             ...(includedEmbeddingsMatches ? { embeddings: includedEmbeddingsMatches } : {}),
             ...(includedLocalMatches ? { local: includedLocalMatches } : {}),
-            duration: Date.now() - start,
+            ...(includedCodeNavMatches ? { codeNav: includedCodeNavMatches } : {}),
+            duration: performance.now() - start,
         },
     }
 }

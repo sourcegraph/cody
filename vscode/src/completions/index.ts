@@ -9,7 +9,7 @@ import { debug } from '../log'
 import { CodyStatusBar } from '../services/StatusBar'
 
 import { CachedCompletions, CompletionsCache } from './cache'
-import { getContext, GetContextOptions, GetContextResult } from './context'
+import { getContext, GetContextOptions, GetContextResult } from './context/context'
 import { getCurrentDocContext } from './document'
 import { History } from './history'
 import * as CompletionLogger from './logger'
@@ -350,6 +350,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
 
         const contextResult = await this.config.contextFetcher({
             document,
+            position,
             prefix,
             suffix,
             history: this.config.history,

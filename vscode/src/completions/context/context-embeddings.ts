@@ -6,8 +6,9 @@ import * as vscode from 'vscode'
 
 import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
 
+import { logCompletionEvent } from '../logger'
+
 import type { ReferenceSnippet } from './context'
-import { logCompletionEvent } from './logger'
 
 interface Options {
     document: vscode.TextDocument
@@ -84,6 +85,8 @@ async function fetchAndSaveEmbeddings(options: FetchEmbeddingsOptions): Promise<
             fileName: path.normalize(result.fileName),
         }))
         .filter(result => !currentFilePath.endsWith(result.fileName))
+
+    console.log({ embeddingResultsWithoutCurrentFile })
 
     embeddingsPerFile.set(currentFilePath, {
         embeddings: embeddingResultsWithoutCurrentFile.slice(0, NUM_CODE_RESULTS + NUM_TEXT_RESULTS - 1),
