@@ -16,25 +16,13 @@ interface CompletionEvent {
         languageId: string
 
         /**
-         * Whether the completion was triggered only because of the experimental settting
-         * `cody.autocomplete.experimental.triggerMoreEagerly`.
-         */
-        triggeredMoreEagerly: boolean
-
-        /**
          * Whether the completion was triggered only because of the experimental setting
          * `cody.autocomplete.experimental.completeSuggestWidgetSelection`.
          */
         triggeredForSuggestWidgetSelection: boolean
 
         /** Relevant user settings. */
-        settings: Record<
-            Extract<
-                ConfigKeys,
-                'autocompleteExperimentalTriggerMoreEagerly' | 'autocompleteExperimentalCompleteSuggestWidgetSelection'
-            >,
-            boolean
-        >
+        settings: Record<Extract<ConfigKeys, 'autocompleteExperimentalCompleteSuggestWidgetSelection'>, boolean>
     }
     // The timestamp when the request started
     startedAt: number

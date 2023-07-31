@@ -422,7 +422,6 @@ function createCompletionsProvider(
         codebaseContext,
         cache: config.autocompleteAdvancedCache ? new CompletionsCache() : null,
         isEmbeddingsContextEnabled: config.autocompleteAdvancedEmbeddings,
-        triggerMoreEagerly: config.autocompleteExperimentalTriggerMoreEagerly,
         completeSuggestWidgetSelection: config.autocompleteExperimentalCompleteSuggestWidgetSelection,
     })
 

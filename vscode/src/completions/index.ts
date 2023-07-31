@@ -30,7 +30,6 @@ interface CodyCompletionItemProviderConfig {
     suffixPercentage?: number
     disableTimeouts?: boolean
     isEmbeddingsContextEnabled?: boolean
-    triggerMoreEagerly: boolean
     cache: CompletionsCache | null
     completeSuggestWidgetSelection?: boolean
     tracer?: ProvideInlineCompletionItemsTracer | null
@@ -186,13 +185,6 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
             this.config.providerConfig.enableExtendedMultilineTriggers
         )
 
-        // Don't show completions if we are in the process of writing a word.
-        const cursorAtWord = /\w$/.test(sameLinePrefix)
-        if (cursorAtWord && !this.config.triggerMoreEagerly) {
-            return emptyCompletions()
-        }
-        const triggeredMoreEagerly = this.config.triggerMoreEagerly && cursorAtWord
-
         let triggeredForSuggestWidgetSelection: string | undefined
         if (context.selectedCompletionInfo) {
             if (this.config.completeSuggestWidgetSelection) {
@@ -252,10 +244,8 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
                   multiline,
                   providerIdentifier: this.config.providerConfig.identifier,
                   languageId: document.languageId,
-                  triggeredMoreEagerly,
                   triggeredForSuggestWidgetSelection: triggeredForSuggestWidgetSelection !== undefined,
                   settings: {
-                      autocompleteExperimentalTriggerMoreEagerly: this.config.triggerMoreEagerly,
                       autocompleteExperimentalCompleteSuggestWidgetSelection: Boolean(
                           this.config.completeSuggestWidgetSelection
                       ),
@@ -316,13 +306,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
                 })
             )
         } else {
-            if (cursorAtWord) {
-                // The cursor is at a word and the user might still be typing it, so wait for longer.
-                timeout = 200
-            } else {
-                // The current line has a suffix.
-                timeout = 20
-            }
+            timeout = 20
             completers.push(
                 this.config.providerConfig.create({
                     id: 'single-line-suffix',

@@ -89,8 +89,7 @@ describe('Cody completions', () => {
         code: string,
         responses?: CompletionResponse[] | 'stall',
         languageId?: string,
-        context?: vscode.InlineCompletionContext,
-        triggerMoreEagerly?: boolean
+        context?: vscode.InlineCompletionContext
     ) => Promise<{
         requests: CompletionParameters[]
         completions: vscode.InlineCompletionItem[]
@@ -101,8 +100,7 @@ describe('Cody completions', () => {
             code: string,
             responses?: CompletionResponse[] | 'stall',
             languageId: string = 'typescript',
-            context: vscode.InlineCompletionContext = { triggerKind: 1, selectedCompletionInfo: undefined },
-            triggerMoreEagerly = true
+            context: vscode.InlineCompletionContext = { triggerKind: 1, selectedCompletionInfo: undefined }
         ): Promise<{
             requests: CompletionParameters[]
             completions: vscode.InlineCompletionItem[]
@@ -129,7 +127,6 @@ describe('Cody completions', () => {
                 history: new History(),
                 codebaseContext: null as any,
                 disableTimeouts: true,
-                triggerMoreEagerly,
                 cache,
             })
 
@@ -229,14 +226,9 @@ describe('Cody completions', () => {
         expect(requests[0].stopSequences).toEqual(['\n\nHuman:', '</CODE5711>', '\n\n'])
     })
 
-    it('makes a request when in the middle of a word when triggerMoreEagerly is true', async () => {
-        const { requests } = await complete('foo█', [completion`()`], undefined, undefined, true)
+    it('makes a request when in the middle of a word', async () => {
+        const { requests } = await complete('foo█', [completion`()`], undefined, undefined)
         expect(requests).toHaveLength(1)
-    })
-
-    it('does not make a request when in the middle of a word when triggerMoreEagerly is false', async () => {
-        const { requests } = await complete('foo█', undefined, undefined, undefined, false)
-        expect(requests).toHaveLength(0)
     })
 
     it('completes a single-line at the end of a sentence', async () => {
