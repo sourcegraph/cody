@@ -1,6 +1,7 @@
 import * as vscode from 'vscode'
 
 import { isLocalApp } from '../chat/protocol'
+import { debug } from '../log'
 
 export const CODY_ACCESS_TOKEN_SECRET = 'cody.access-token'
 
@@ -26,9 +27,18 @@ export interface SecretStorage {
 }
 
 export class VSCodeSecretStorage implements SecretStorage {
-    constructor(private secretStorage: vscode.SecretStorage) {}
+    private fsPath: string | null = null
+    constructor(private secretStorage: vscode.SecretStorage) {
+        const config = vscode.workspace.getConfiguration('cody')
+        // For user that does not have secret storage implemented in their sever
+        this.fsPath = config.get('experimental.LocalTokenPath') || null
+    }
     // Catch corrupted token in secret storage
     public async get(key: string): Promise<string | undefined> {
+        // If fsPath is provided, get token from fsPath instead of secret storage
+        if (this.fsPath && this.fsPath?.length > 0) {
+            return this.getFromFsPath(this.fsPath)
+        }
         try {
             if (key) {
                 return await this.secretStorage.get(key)
@@ -37,6 +47,11 @@ export class VSCodeSecretStorage implements SecretStorage {
             console.error('Failed to get token from Secret Storage', error)
         }
         return undefined
+    }
+
+    private async getFromFsPath(fsPath: string): Promise<string | undefined> {
+        debug('VSCodeSecretStorage:getAccessTokenFromFsPath', fsPath)
+        return (await getAccessTokenFromFsPath(fsPath)) || undefined
     }
 
     public async store(key: string, value: string): Promise<void> {
@@ -133,4 +148,19 @@ export class InMemorySecretStorage implements SecretStorage {
             this.callbacks.splice(callbackIndex, 1)
         })
     }
+}
+
+async function getAccessTokenFromFsPath(fsPath: string): Promise<string | null> {
+    try {
+        const fsPathUri = vscode.Uri.file(fsPath)
+        const data = await vscode.workspace.fs.readFile(fsPathUri)
+        const json = JSON.parse(data.toString()) as ConfigJson
+        return json.token
+    } catch {
+        debug('VSCodeSecretStorage:getAccessTokenFromFsPath', 'failed to get token from fsPath')
+        return null
+    }
+}
+interface ConfigJson {
+    token: string
 }
