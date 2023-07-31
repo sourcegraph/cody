@@ -14,7 +14,7 @@ test('task tree view for non-stop cody', async ({ page, sidebar }) => {
     await page.getByRole('treeitem', { name: 'index.html' }).locator('a').dblclick()
 
     // Bring the cody sidebar to the foreground
-    await page.click('[aria-label="Sourcegraph Cody"]')
+    await page.click('[aria-label="Cody"]')
 
     // Expand the task tree view
     await page.getByRole('button', { name: 'Fixups Section' }).click()
