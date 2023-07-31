@@ -1,3 +1,4 @@
+import { PubSub } from '@google-cloud/pubsub'
 import express from 'express'
 
 // create interface for the request
@@ -28,6 +29,12 @@ const FIXUP_PROMPT_TAG = '<selection>'
 export async function run<T>(around: () => Promise<T>): Promise<T> {
     const app = express()
     app.use(express.json())
+
+    // endpoint which will accept the data that you want to send in that you will add your pubsub code
+    app.post('/.api/testLogging', (req, res) => {
+        logTestingData(JSON.stringify(req.body))
+        res.send('eventLogged')
+    })
 
     app.post('/.api/completions/stream', (req, res) => {
         // TODO: Filter streaming response
@@ -79,4 +86,21 @@ export async function run<T>(around: () => Promise<T>): Promise<T> {
     server.close()
 
     return result
+}
+
+export function logTestingData(data: string): void {
+    // create a pubsub client
+    const pubSubClient = new PubSub()
+
+    // Publishes the message as a string, e.g. "Hello, world!" or JSON.stringify(someObject)
+    const dataBuffer = Buffer.from(data)
+
+    console.log('Publishing message to pubsub')
+    try {
+        pubSubClient
+            .topic('topicName')
+            .publishMessage({ data: dataBuffer })
+    } catch {
+        console.error('Received error while publishing')
+    }
 }
