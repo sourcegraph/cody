@@ -40,8 +40,10 @@ export function debug(filterLabel: string, text: string, ...args: unknown[]): vo
         return
     }
 
+    const PREFIX = '█ '
+
     if (args.length === 0) {
-        outputChannel.appendLine(`${filterLabel}: ${text}`)
+        outputChannel.appendLine(`${PREFIX}${filterLabel}: ${text}`)
         return
     }
 
@@ -49,15 +51,19 @@ export function debug(filterLabel: string, text: string, ...args: unknown[]): vo
     if (lastArg && typeof lastArg === 'object' && 'verbose' in lastArg) {
         if (config.debugVerbose) {
             outputChannel.appendLine(
-                `${filterLabel}: ${text} ${args.slice(0, -1).join(' ')} ${JSON.stringify(lastArg.verbose, null, 2)}`
+                `${PREFIX}${filterLabel}: ${text} ${args.slice(0, -1).join(' ')} ${JSON.stringify(
+                    lastArg.verbose,
+                    null,
+                    2
+                )}`
             )
         } else {
-            outputChannel.appendLine(`${filterLabel}: ${text} ${args.slice(0, -1).join(' ')}`)
+            outputChannel.appendLine(`${PREFIX}${filterLabel}: ${text} ${args.slice(0, -1).join(' ')}`)
         }
         return
     }
 
-    outputChannel.appendLine(`${filterLabel}: ${text} ${args.join(' ')}`)
+    outputChannel.appendLine(`${PREFIX}${filterLabel}: ${text} ${args.join(' ')}`)
 }
 
 export const logger: CompletionLogger = {
