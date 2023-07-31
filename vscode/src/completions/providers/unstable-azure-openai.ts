@@ -10,6 +10,9 @@ interface UnstableAzureOpenAIOptions {
     accessToken: string
 }
 
+const OPENING_CODE_TAG = '```'
+const CLOSING_CODE_TAG = '```'
+
 interface AzureOpenAIApiResponse {
     id: string
     object: 'text_completion'
@@ -44,7 +47,20 @@ export class UnstableAzureOpenAIProvider extends Provider {
         const { head, tail } = getHeadAndTail(this.options.prefix)
 
         // Create prompt
-        const prompt = `Human: You are a senior engineer assistant working on a codebase. Complete the following code:\n\n${head.trimmed}\n\nAssistant:\n${tail.trimmed}`
+        // Although we are using gpt-35-turbo in text completion
+        // mode, and not in chat completion mode, it turns out that the model
+        // still seems to work well in a conversational style.
+        const introSection = 'Human: You are a senior engineer assistant working on a codebase.\n\n'
+        const referenceSnippetsSection = snippets
+            .map(s => `File: ${s.fileName}\n${OPENING_CODE_TAG}\n${s.content}\n${CLOSING_CODE_TAG}\n\n`)
+            .join('')
+        const finalSection = `Complete the following code:\n\n${head.trimmed}\n\nAssistant:\n${tail.trimmed}`
+        const prompt = introSection + referenceSnippetsSection + finalSection
+
+        const stopSequences = ['Human:', 'Assistant:']
+        if (!this.options.multiline) {
+            stopSequences.push('\n')
+        }
 
         // Issue request
         const request = {
@@ -53,8 +69,8 @@ export class UnstableAzureOpenAIProvider extends Provider {
             top_p: 0.5,
             frequency_penalty: 0,
             presence_penalty: 0,
-            max_tokens: this.config.multiline ? 256 : 50,
-            stop: ['\n'],
+            max_tokens: this.options.multiline ? 256 : 50,
+            stop: stopSequences,
         }
 
         const log = logger.startCompletion({
@@ -76,12 +92,14 @@ export class UnstableAzureOpenAIProvider extends Provider {
         const json = (await response.json()) as AzureOpenAIApiResponse
 
         // Post-process
-
-        const results = json.choices.map(choice => ({
-            messages: prompt,
-            prefix: this.options.prefix,
-            content: postProcess(choice.text),
-        }))
+        const results = json.choices
+            .map(choice => ({
+                messages: prompt,
+                prefix: this.options.prefix,
+                content: postProcess(choice.text),
+            }))
+            // Omit any empty completion
+            .filter(result => result.content.trim() !== '')
 
         log?.onComplete(results.map(r => r.content))
 
@@ -90,8 +108,7 @@ export class UnstableAzureOpenAIProvider extends Provider {
 }
 
 function postProcess(content: string): string {
-    // TODO
-    return content
+    return content.trimEnd()
 }
 
 export function createProviderConfig(unstableAzureOpenAIOptions: UnstableAzureOpenAIOptions): ProviderConfig {
