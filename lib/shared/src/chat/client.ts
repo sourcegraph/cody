@@ -141,8 +141,6 @@ export async function createClient({
             isMessageInProgress = true
             transcript.addInteraction(interaction)
 
-            sendTranscript(options?.data)
-
             const { prompt, contextFiles } = await transcript.getPromptForLastInteraction(getPreamble(config.codebase))
             transcript.setUsedContextFilesForLastInteraction(contextFiles)
 
