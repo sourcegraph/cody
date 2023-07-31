@@ -134,6 +134,10 @@ body[data-vscode-theme-kind='vscode-high-contrast'] .transcript-item:not(.human-
     margin-right: 3px;
 }
 
+.submit-button {
+    bottom: 0;
+}
+
 .submit-button-disabled {
     cursor: not-allowed;
 }

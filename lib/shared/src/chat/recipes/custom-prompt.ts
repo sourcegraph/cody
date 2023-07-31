@@ -130,7 +130,7 @@ export class CustomPrompt implements Recipe {
             contextMessages.push(...ChatQuestion.getEditorContext(editor))
         }
         // Add selected text as context when available
-        if (selection?.selectedText && !isContextRequired.selection) {
+        if (selection?.selectedText && isContextRequired.selection) {
             contextMessages.push(...ChatQuestion.getEditorSelectionContext(selection))
         }
         // Create context messages from terminal output if any

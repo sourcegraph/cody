@@ -9,7 +9,6 @@ import {
 import { VsCodeCustomPromptsController } from '@sourcegraph/cody-shared/src/editor'
 
 import { debug } from '../log'
-import { DefaultPromptsProvider } from '../prompts/DefaultPromptsProvider'
 import { LocalStorage } from '../services/LocalStorageProvider'
 
 import {
@@ -20,6 +19,7 @@ import {
     showRemoveConfirmationInput,
 } from './CustomPromptsMenu'
 import { CustomPromptsStore } from './CustomPromptsStore'
+import { DefaultPromptsProvider } from './DefaultPromptsProvider'
 import { ToolsProvider } from './ToolsProvider'
 import {
     constructFileUri,
@@ -390,17 +390,6 @@ export class CustomPromptsController implements VsCodeCustomPromptsController {
                 break
             default:
                 break
-        }
-    }
-
-    public async quickChatInput(): Promise<void> {
-        const humanInput = await vscode.window.showInputBox({
-            prompt: 'Ask Cody a question...',
-            placeHolder: 'ex. What is a class in Typescript?',
-            validateInput: (input: string) => (input ? null : 'Please enter a question.'),
-        })
-        if (humanInput) {
-            await vscode.commands.executeCommand('cody.action.chat', humanInput)
         }
     }
 }

@@ -16,6 +16,14 @@ const EXTENSION_TO_LANGUAGE: { [key: string]: string } = {
     ts: 'Typescript',
     jsx: 'JSX',
     tsx: 'TSX',
+    go: 'Go',
+    java: 'Java',
+    c: 'C',
+    cpp: 'C++',
+    cs: 'C#',
+    css: 'CSS',
+    html: 'HTML',
+    json: 'JSON',
 }
 
 export const commandRegex = {

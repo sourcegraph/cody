@@ -2,7 +2,7 @@ import React, { useMemo } from 'react'
 
 import styles from './NavBar.module.css'
 
-export type View = 'chat' | 'recipes' | 'login' | 'debug' | 'history' | 'plugins'
+export type View = 'chat' | 'login' | 'debug' | 'history' | 'plugins'
 
 interface NavBarProps {
     setView: (selectedView: View) => void
@@ -16,10 +16,7 @@ interface NavBarItem {
     tab: View
 }
 
-const navBarItems: NavBarItem[] = [
-    { tab: 'chat', title: 'Chat' },
-    { tab: 'recipes', title: 'Recipes' },
-]
+const navBarItems: NavBarItem[] = [{ tab: 'chat', title: 'Chat' }]
 
 export const NavBar: React.FunctionComponent<React.PropsWithChildren<NavBarProps>> = ({
     setView,

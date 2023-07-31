@@ -107,13 +107,6 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
         [telemetryService, vscodeAPI]
     )
 
-    const onChatButtonClick = useCallback(
-        (which: string) => {
-            vscodeAPI.postMessage({ command: 'chat-button', action: which })
-        },
-        [vscodeAPI]
-    )
-
     return (
         <ChatUI
             messageInProgress={messageInProgress}
@@ -153,14 +146,8 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             // down here to render cody is disabled on the instance nicely.
             isCodyEnabled={true}
             codyNotEnabledNotice={undefined}
-            helpMarkdown="See [Getting Started](command:cody.welcome) for help and tips.
-
-To get started, select some code and run one of Cody's recipes:"
-            gettingStartedButtons={[
-                { label: 'Explain code (high level)', action: 'explain-code-high-level', onClick: onChatButtonClick },
-                { label: 'Smell code', action: 'find-code-smells', onClick: onChatButtonClick },
-                { label: 'Generate a unit test', action: 'generate-unit-test', onClick: onChatButtonClick },
-            ]}
+            helpMarkdown=""
+            afterMarkdown="To get started, open a file right click on some code, or enter '/' for a list of commands."
             ChatButtonComponent={ChatButton}
             pluginsDevMode={pluginsDevMode}
             chatCommands={chatCommands}
@@ -193,7 +180,6 @@ const ChatButton: React.FunctionComponent<ChatButtonProps> = ({ label, action, o
 
 const TextArea: React.FunctionComponent<ChatUITextAreaProps> = ({
     className,
-    rows,
     autoFocus,
     value,
     required,
@@ -232,7 +218,7 @@ const TextArea: React.FunctionComponent<ChatUITextAreaProps> = ({
     return (
         <VSCodeTextArea
             className={classNames(styles.chatInput, className)}
-            rows={rows}
+            rows={1}
             ref={
                 // VSCodeTextArea has a very complex type.
                 //
@@ -243,6 +229,7 @@ const TextArea: React.FunctionComponent<ChatUITextAreaProps> = ({
             autofocus={autoFocus}
             required={required}
             onInput={e => onInput(e as React.FormEvent<HTMLTextAreaElement>)}
+            placeholder='Type "/" for a list of commands.'
             onKeyDown={handleKeyDown}
         />
     )

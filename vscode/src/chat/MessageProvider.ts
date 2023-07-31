@@ -365,12 +365,14 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         return {}
     }
 
-    public async executeRecipe(recipeId: RecipeID, humanChatInput = ''): Promise<void> {
-        debug('ChatViewProvider:executeRecipe', recipeId, { verbose: humanChatInput })
+    public async executeRecipe(recipeId: RecipeID, humanInput = ''): Promise<void> {
+        debug('ChatViewProvider:executeRecipe', recipeId, { verbose: humanInput })
         if (this.isMessageInProgress) {
             this.handleError('Cannot execute multiple recipes. Please wait for the current recipe to finish.')
             return
         }
+
+        const humanChatInput = (await this.executeCommands(humanInput)) || humanInput
 
         const recipe = getRecipe(recipeId)
         if (!recipe) {
@@ -547,33 +549,32 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
             debug('executeCustomPrompt:noPrompt', title)
             return
         }
-        await this.executeCommands(promptText, 'custom-prompt')
+        await this.executeRecipe('custom-prompt', promptText)
         return promptText
     }
 
-    protected async executeCommands(text: string, recipeID: RecipeID = 'chat-question'): Promise<void> {
+    protected async executeCommands(text: string): Promise<string | null> {
         text = text.trim()
         if (!text?.startsWith('/')) {
-            return this.executeRecipe(recipeID, text)
+            return text
         }
         switch (true) {
             case text === '/':
                 return vscode.commands.executeCommand('cody.action.commands.menu')
             case /^\/o(pen)?/i.test(text) && this.editor.controllers.prompt !== undefined:
                 // open the user's ~/.vscode/cody.json file
-                return this.editor.controllers.prompt?.open(text.split(' ')[1])
+                await this.editor.controllers.prompt?.open(text.split(' ')[1])
+                return null
             case /^\/r(eset)?/i.test(text):
-                return this.clearAndRestartSession()
+                await this.clearAndRestartSession()
+                return null
             case /^\/s(earch)?(\s)?/i.test(text):
-                return this.executeRecipe('context-search', text)
+                return text
             case /^\/(explain|docstring|tests|smell)/i.test(text):
-                console.log('executeCommands:explain', text)
-                return this.executeRecipe('custom-prompt', this.editor.controllers.prompt?.find(text, true))
+                return this.editor.controllers.prompt?.find(text, true) || null
             default: {
                 const customCommand = this.editor.controllers.prompt?.find(text, true)
-                if (customCommand) {
-                    return this.executeRecipe('custom-prompt', customCommand)
-                }
+                return customCommand || text
             }
         }
     }

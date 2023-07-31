@@ -145,7 +145,7 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
         if (this.contextProvider.config.experimentalChatPredictions) {
             void this.runRecipeForSuggestion('next-questions', text)
         }
-        await this.executeCommands(text, 'chat-question')
+        await this.executeRecipe('chat-question', text)
     }
 
     /**

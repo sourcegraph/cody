@@ -84,7 +84,6 @@ export class DefaultPromptsProvider {
                 return
             }
             const selectedCommandID = selectedPrompt.label
-            console.log(selectedCommandID, selectedPrompt, [...this.allCommands])
             switch (true) {
                 case !selectedCommandID:
                     break

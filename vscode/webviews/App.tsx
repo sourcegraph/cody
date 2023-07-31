@@ -13,12 +13,10 @@ import { AuthStatus, defaultAuthStatus, LocalEnv } from '../src/chat/protocol'
 
 import { Chat } from './Chat'
 import { Debug } from './Debug'
-import { Header } from './Header'
 import { LoadingPage } from './LoadingPage'
 import { Login } from './Login'
-import { NavBar, View } from './NavBar'
+import { View } from './NavBar'
 import { Plugins } from './Plugins'
-import { Recipes } from './Recipes'
 import { UserHistory } from './UserHistory'
 import { createWebviewTelemetryService } from './utils/telemetry'
 import type { VSCodeWrapper } from './utils/VSCodeApi'
@@ -147,7 +145,6 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
 
     return (
         <div className="outer-container">
-            <Header endpoint={authStatus.isLoggedIn ? endpoint : null} />
             {view === 'login' || !authStatus.isLoggedIn ? (
                 <Login
                     authStatus={authStatus}
@@ -163,12 +160,6 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                 />
             ) : (
                 <>
-                    <NavBar
-                        view={view}
-                        setView={setView}
-                        devMode={Boolean(config?.debugEnable)}
-                        pluginsEnabled={Boolean(config?.pluginsEnabled)}
-                    />
                     {errorMessages && <ErrorBanner errors={errorMessages} setErrors={setErrorMessages} />}
                     {view === 'debug' && config?.debugEnable && <Debug debugLog={debugLog} />}
                     {view === 'history' && (
@@ -180,7 +171,6 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                             vscodeAPI={vscodeAPI}
                         />
                     )}
-                    {view === 'recipes' && endpoint && <Recipes vscodeAPI={vscodeAPI} myPrompts={myPrompts} />}
                     {view === 'chat' && (
                         <Chat
                             messageInProgress={messageInProgress}

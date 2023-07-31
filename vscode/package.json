@@ -242,54 +242,34 @@
         "icon": "$(feedback)"
       },
       {
-        "command": "cody.recipe.explain-code",
+        "command": "cody.command.explain-code",
         "category": "Ask Cody",
-        "title": "Explain Code in Detail"
+        "title": "Explain Code"
       },
       {
-        "command": "cody.recipe.explain-code-high-level",
-        "category": "Ask Cody",
-        "title": "Explain Code at a High Level"
-      },
-      {
-        "command": "cody.recipe.generate-unit-test",
+        "command": "cody.command.generate-unit-test",
         "category": "Ask Cody",
         "title": "Generate Unit Test"
       },
       {
-        "command": "cody.recipe.generate-docstring",
+        "command": "cody.command.generate-docstring",
         "category": "Ask Cody",
         "title": "Generate Docstring"
       },
       {
-        "command": "cody.recipe.translate-to-language",
-        "category": "Ask Cody",
-        "title": "Translate to Language"
-      },
-      {
-        "command": "cody.recipe.git-history",
-        "category": "Ask Cody",
-        "title": "Summarize Recent Code Changes"
-      },
-      {
-        "command": "cody.recipe.improve-variable-names",
-        "category": "Ask Cody",
-        "title": "Improve Variable Names"
-      },
-      {
-        "command": "cody.recipe.fixup",
+        "command": "cody.command.fixup",
         "category": "Cody",
         "title": "Inline Fixup"
       },
       {
-        "command": "cody.recipe.context-search",
+        "command": "cody.command.context-search",
         "category": "Ask Cody",
         "title": "Codebase Context Search"
       },
       {
-        "command": "cody.recipe.find-code-smells",
+        "command": "cody.command.find-code-smells",
         "category": "Ask Cody",
-        "title": "Find Code Smells"
+        "title": "Smell Code"
       },
       {
         "command": "cody.auth.signout",
@@ -381,7 +361,7 @@
         "enablement": "config.cody.experimental.guardrails && editorHasSelection"
       },
       {
-        "command": "cody.recipe.inline-touch",
+        "command": "cody.command.inline-touch",
         "category": "Cody",
         "title": "Touch"
       },
@@ -462,7 +442,7 @@
         "mac": "alt+/"
       },
       {
-        "command": "cody.recipe.fixup",
+        "command": "cody.command.fixup",
         "when": "cody.activated && editorTextFocus && !editorReadonly"
       },
       {
@@ -472,7 +452,7 @@
         "when": "cody.activated && editorHasSelection && !editorReadonly"
       },
       {
-        "command": "cody.recipe.inline-touch",
+        "command": "cody.command.inline-touch",
         "key": "ctrl+alt+/",
         "mac": "cmd+alt+/",
         "when": "cody.activated && editorTextFocus && editorHasSelection && config.cody.inlineChat.enabled"
@@ -499,43 +479,31 @@
     "menus": {
       "commandPalette": [
         {
-          "command": "cody.recipe.explain-code",
+          "command": "cody.command.explain-code",
           "when": "cody.activated && editorHasSelection"
         },
         {
-          "command": "cody.recipe.context-search",
+          "command": "cody.command.context-search",
           "when": "cody.activated"
         },
         {
-          "command": "cody.recipe.explain-code-high-level",
-          "when": "cody.activated && editorHasSelection"
-        },
-        {
-          "command": "cody.recipe.inline-touch",
+          "command": "cody.command.inline-touch",
           "when": "false"
         },
         {
-          "command": "cody.recipe.generate-unit-test",
+          "command": "cody.command.generate-unit-test",
           "when": "cody.activated && editorHasSelection"
         },
         {
-          "command": "cody.recipe.generate-docstring",
+          "command": "cody.command.generate-docstring",
           "when": "cody.activated && editorHasSelection"
         },
         {
-          "command": "cody.recipe.translate-to-language",
+          "command": "cody.command.fixup",
           "when": "cody.activated && editorHasSelection"
         },
         {
-          "command": "cody.recipe.git-history",
-          "when": "cody.activated"
-        },
-        {
-          "command": "cody.recipe.fixup",
-          "when": "cody.activated && editorHasSelection"
-        },
-        {
-          "command": "cody.recipe.find-code-smells",
+          "command": "cody.command.find-code-smells",
           "when": "cody.activated && editorHasSelection"
         },
         {
@@ -600,39 +568,23 @@
       ],
       "cody.submenu": [
         {
-          "command": "cody.recipe.explain-code",
+          "command": "cody.command.explain-code",
           "when": "cody.activated"
         },
         {
-          "command": "cody.recipe.explain-code-high-level",
+          "command": "cody.command.generate-unit-test",
           "when": "cody.activated"
         },
         {
-          "command": "cody.recipe.inline-touch",
-          "when": "cody.activated && config.cody.inlineChat.enabled"
-        },
-        {
-          "command": "cody.recipe.generate-unit-test",
+          "command": "cody.command.generate-docstring",
           "when": "cody.activated"
         },
         {
-          "command": "cody.recipe.generate-docstring",
+          "command": "cody.command.fixup",
           "when": "cody.activated"
         },
         {
-          "command": "cody.recipe.improve-variable-names",
-          "when": "cody.activated"
-        },
-        {
-          "command": "cody.recipe.translate-to-language",
-          "when": "cody.activated"
-        },
-        {
-          "command": "cody.recipe.fixup",
-          "when": "cody.activated"
-        },
-        {
-          "command": "cody.recipe.find-code-smells",
+          "command": "cody.command.find-code-smells",
           "when": "cody.activated"
         },
         {

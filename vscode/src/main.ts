@@ -265,33 +265,23 @@ const register = async (
             await sidebarChatProvider.executeCustomPrompt(title)
         }),
         vscode.commands.registerCommand('cody.action.custom-prompts.menu', () => prompt.promptsQuickPicker()),
-        vscode.commands.registerCommand('cody.recipe.explain-code', () =>
-            executeRecipeInSidebar('explain-code-detailed')
+        vscode.commands.registerCommand('cody.command.explain-code', () =>
+            executeRecipeInSidebar('custom-prompt', true, '/explain')
         ),
-        vscode.commands.registerCommand('cody.recipe.explain-code-high-level', () =>
-            executeRecipeInSidebar('explain-code-high-level')
+        vscode.commands.registerCommand('cody.command.generate-unit-test', () =>
+            executeRecipeInSidebar('custom-prompt', true, '/tests')
         ),
-        vscode.commands.registerCommand('cody.recipe.generate-unit-test', () =>
-            executeRecipeInSidebar('generate-unit-test')
+        vscode.commands.registerCommand('cody.command.generate-docstring', () =>
+            executeRecipeInSidebar('custom-prompt', true, '/docstring')
         ),
-        vscode.commands.registerCommand('cody.recipe.generate-docstring', () =>
-            executeRecipeInSidebar('generate-docstring')
-        ),
-        vscode.commands.registerCommand('cody.recipe.fixup', () => executeRecipeInSidebar('fixup')),
-        vscode.commands.registerCommand('cody.recipe.translate-to-language', () =>
-            executeRecipeInSidebar('translate-to-language')
-        ),
-        vscode.commands.registerCommand('cody.recipe.git-history', () => executeRecipeInSidebar('git-history')),
-        vscode.commands.registerCommand('cody.recipe.improve-variable-names', () =>
-            executeRecipeInSidebar('improve-variable-names')
-        ),
-        vscode.commands.registerCommand('cody.recipe.inline-touch', () =>
+        vscode.commands.registerCommand('cody.command.fixup', () => executeRecipeInSidebar('fixup')),
+        vscode.commands.registerCommand('cody.command.inline-touch', () =>
             executeRecipeInSidebar('inline-touch', false)
         ),
-        vscode.commands.registerCommand('cody.recipe.find-code-smells', () =>
-            executeRecipeInSidebar('find-code-smells')
+        vscode.commands.registerCommand('cody.command.find-code-smells', () =>
+            executeRecipeInSidebar('custom-prompt', true, '/smell')
         ),
-        vscode.commands.registerCommand('cody.recipe.context-search', () => executeRecipeInSidebar('context-search')),
+        vscode.commands.registerCommand('cody.command.context-search', () => executeRecipeInSidebar('context-search')),
 
         // Register URI Handler (vscode://sourcegraph.cody-ai)
         vscode.window.registerUriHandler({
@@ -321,11 +311,9 @@ const register = async (
             vscode.commands.executeCommand('workbench.view.extension.cody')
         ),
         vscode.commands.registerCommand('cody.walkthrough.showChat', () => sidebarChatProvider.setWebviewView('chat')),
-        vscode.commands.registerCommand('cody.walkthrough.showFixup', () =>
-            sidebarChatProvider.setWebviewView('recipes')
-        ),
+        vscode.commands.registerCommand('cody.walkthrough.showFixup', () => sidebarChatProvider.setWebviewView('chat')),
         vscode.commands.registerCommand('cody.walkthrough.showExplain', () =>
-            sidebarChatProvider.setWebviewView('recipes')
+            sidebarChatProvider.setWebviewView('chat')
         ),
         vscode.commands.registerCommand('cody.walkthrough.enableInlineChat', async () => {
             await workspaceConfig.update('cody.inlineChat', true, vscode.ConfigurationTarget.Global)
