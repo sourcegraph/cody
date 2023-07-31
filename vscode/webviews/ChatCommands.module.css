@@ -1,16 +1,23 @@
 .container {
     width: 100%;
-    height: 200%;
+    max-height: 250%;
     z-index: 99;
 
-    position: absolute;
-    top: -200%;
-    left: 0;
-
     display: flex;
-    gap: 0.5rem;
 
-    border-radius: 1rem;
+    border-radius: 0.5rem 0.5rem 0 0;
+
+    flex-direction: column;
+    background: var(--vscode-input-background);
+}
+
+.commands-title-container {
+    margin-left: 0.5rem;
+
+    width: 96%;
+    display: flex;
+    margin-bottom: 0;
+    padding-bottom: 0;
 }
 
 .commands-container {
@@ -34,6 +41,10 @@
     border: none;
     background: var(--vscode-input-background);
     color: var(--vscode-input-foreground);
+}
+
+.command-item-title {
+    justify-content: space-between;
 }
 
 .selected {

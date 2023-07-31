@@ -19,17 +19,21 @@ export class DefaultPromptsProvider {
                 prompt.name = key
                 prompt.type = 'default'
                 if (prompt.slashCommand) {
-                    prompt.slashCommand = '/' + prompt.slashCommand
+                    const slashCommand = '/' + prompt.slashCommand
+                    prompt.slashCommand = slashCommand
+                    this.slashCommandsMap.set(slashCommand, prompt)
                 }
                 this.defaultPromptsMap.set(key, prompt)
-                this.slashCommandsMap.set(prompt.slashCommand || key, prompt)
             }
         }
         debug('MyPromptsProvider', 'initialized')
     }
 
     public get(id: string, isSlashCommand = false): CodyPrompt | undefined {
-        return isSlashCommand ? this.slashCommandsMap.get(id) : this.allCommands.get(id)
+        if (id.startsWith('/') || isSlashCommand) {
+            return this.slashCommandsMap.get(id)
+        }
+        return this.allCommands.get(id)
     }
 
     public getAllCommands(): [string, CodyPrompt][] {
@@ -62,15 +66,15 @@ export class DefaultPromptsProvider {
                 if (command.prompt === 'seperator') {
                     return { kind: -1, label: command.type, description: '' }
                 }
-                const description = showDesc && command.slashCommand ? '/' + command.slashCommand : ''
+                const description = showDesc && command.slashCommand ? command.slashCommand : ''
                 return {
                     label: command.name || commandItem[0],
                     description,
                 }
             }) as vscode.QuickPickItem[]
             commandItems.push(...allCommandItems)
-            const recipesSeperator: vscode.QuickPickItem = { kind: -1, label: 'Custom Commands' }
-            const recipesOption: vscode.QuickPickItem = { label: 'Use a Custom Command...' }
+            const recipesSeperator: vscode.QuickPickItem = { kind: -1, label: 'setting' }
+            const recipesOption: vscode.QuickPickItem = { label: 'Configure Custom Command...' }
             const chatSeperator: vscode.QuickPickItem = { kind: -1, label: 'inline chat' }
             const chatOption: vscode.QuickPickItem = { label: 'Ask a Question', alwaysShow: true }
             commandItems.push(recipesSeperator, recipesOption, chatSeperator, chatOption)

@@ -521,7 +521,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         return customPromptActions.includes(title)
     }
 
-    public async executeCustomPrompt(title: string, type?: CodyPromptType): Promise<string | void> {
+    public async executeCustomPrompt(title: string, type?: CodyPromptType): Promise<void> {
         if (!this.contextProvider.config.experimentalCustomPrompts) {
             return
         }
@@ -550,7 +550,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
             return
         }
         await this.executeRecipe('custom-prompt', promptText)
-        return promptText
+        return
     }
 
     protected async executeCommands(text: string): Promise<string | null> {
@@ -570,10 +570,12 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
                 return null
             case /^\/s(earch)?(\s)?/i.test(text):
                 return text
-            case /^\/(explain|docstring|tests|smell)/i.test(text):
+            case /^\/(explain|docstring|tests)/i.test(text): {
                 return this.editor.controllers.prompt?.find(text, true) || null
+            }
             default: {
                 const customCommand = this.editor.controllers.prompt?.find(text, true)
+                await this.editor.controllers.prompt?.get('command')
                 return customCommand || text
             }
         }

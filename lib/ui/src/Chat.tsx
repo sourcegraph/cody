@@ -108,6 +108,7 @@ export interface ChatCommandsProps {
     setSelectedChatCommand: (index: number) => void
     chatCommands?: [string, CodyPrompt][] | null
     selectedChatCommand?: number
+    onSubmit: (input: string, inputType: 'user' | 'suggestion') => void
 }
 /**
  * The Cody chat interface, with a transcript of all messages and a message form.
@@ -218,6 +219,8 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
             setSuggestions?.(undefined)
             setHistoryIndex(inputHistory.length + 1)
             setInputHistory([...inputHistory, input])
+            setDisplayCommands(null)
+            setSelectedChatCommand(-1)
         },
         [inputHistory, messageInProgress, onSubmit, setInputHistory, setSuggestions]
     )
@@ -373,6 +376,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                         selectedChatCommand={selectedChatCommand}
                         setFormInput={setFormInput}
                         setSelectedChatCommand={setSelectedChatCommand}
+                        onSubmit={onSubmit}
                     />
                 )}
                 {messageInProgress && AbortMessageInProgressButton && (

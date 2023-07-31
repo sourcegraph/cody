@@ -267,11 +267,6 @@
         "title": "Codebase Context Search"
       },
       {
-        "command": "cody.command.find-code-smells",
-        "category": "Ask Cody",
-        "title": "Smell Code"
-      },
-      {
         "command": "cody.auth.signout",
         "category": "Cody",
         "title": "Sign Out…",
@@ -503,10 +498,6 @@
           "when": "cody.activated && editorHasSelection"
         },
         {
-          "command": "cody.command.find-code-smells",
-          "when": "cody.activated && editorHasSelection"
-        },
-        {
           "command": "cody.focus",
           "title": "Cody: Sign In",
           "when": "!cody.activated"
@@ -581,10 +572,6 @@
         },
         {
           "command": "cody.command.fixup",
-          "when": "cody.activated"
-        },
-        {
-          "command": "cody.command.find-code-smells",
           "when": "cody.activated"
         },
         {

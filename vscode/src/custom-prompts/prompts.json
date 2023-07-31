@@ -26,14 +26,6 @@
         "selection": true
       },
       "slashCommand": "tests"
-    },
-    "Smell Code": {
-      "prompt": "Find code smells, potential bugs, and unhandled errors in the selected code. Provide me with a list of the issues you found, and explain why you think they are issues, with a short context, reasoning, and suggestion on each. Format your response as an ordered list. If you have no ideas because the code looks fine, feel free to say that it already looks fine.",
-      "context": {
-        "currentFile": true,
-        "selection": true
-      },
-      "slashCommand": "smell"
     }
   }
 }

@@ -278,9 +278,6 @@ const register = async (
         vscode.commands.registerCommand('cody.command.inline-touch', () =>
             executeRecipeInSidebar('inline-touch', false)
         ),
-        vscode.commands.registerCommand('cody.command.find-code-smells', () =>
-            executeRecipeInSidebar('custom-prompt', true, '/smell')
-        ),
         vscode.commands.registerCommand('cody.command.context-search', () => executeRecipeInSidebar('context-search')),
 
         // Register URI Handler (vscode://sourcegraph.cody-ai)

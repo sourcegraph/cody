@@ -11,6 +11,7 @@ export const ChatCommandsComponent: React.FunctionComponent<React.PropsWithChild
     selectedChatCommand,
     setFormInput,
     setSelectedChatCommand,
+    onSubmit,
 }) => {
     const commandList = chatCommands?.filter(command => command[1]?.slashCommand)
     const selectionRef = useRef<HTMLButtonElement>(null)
@@ -21,11 +22,12 @@ export const ChatCommandsComponent: React.FunctionComponent<React.PropsWithChild
         }
     }, [commandList, selectedChatCommand])
 
-    const onClick = (slashCommand?: string): void => {
+    const onCommandClick = (slashCommand?: string): void => {
         if (!slashCommand) {
             return
         }
-        setFormInput(slashCommand + ' ')
+        onSubmit(slashCommand, 'user')
+        setFormInput('')
         setSelectedChatCommand(-1)
     }
 
@@ -35,6 +37,19 @@ export const ChatCommandsComponent: React.FunctionComponent<React.PropsWithChild
 
     return (
         <div className={classNames(styles.container)}>
+            <div className={classNames(styles.commandsTitleContainer)}>
+                <button
+                    className={classNames(styles.commandItem, styles.commandItemTitle)}
+                    key="settings"
+                    onClick={() => onCommandClick('/')}
+                    type="button"
+                >
+                    <p className={styles.commandTitle}>Commands</p>
+                    <p className={styles.commandDescription}>
+                        <i className="codicon codicon-gear" />
+                    </p>
+                </button>
+            </div>
             <div className={classNames(styles.commandsContainer)}>
                 {chatCommands &&
                     selectedChatCommand >= 0 &&
@@ -42,7 +57,7 @@ export const ChatCommandsComponent: React.FunctionComponent<React.PropsWithChild
                         <button
                             className={classNames(styles.commandItem, selectedChatCommand === i && styles.selected)}
                             key={prompt.slashCommand}
-                            onClick={() => onClick(prompt.slashCommand)}
+                            onClick={() => onCommandClick(prompt.slashCommand)}
                             type="button"
                             ref={i === selectedChatCommand ? selectionRef : null}
                         >
