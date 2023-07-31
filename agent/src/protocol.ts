@@ -138,4 +138,5 @@ export interface RecipeInfo {
 export interface ExecuteRecipeParams {
     id: RecipeID
     humanChatInput: string
+    data?: any
 }
