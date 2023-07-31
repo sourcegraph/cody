@@ -154,8 +154,8 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
         tracer?.({ params: { document, position, context } })
 
         const abortController = new AbortController()
+        this.abortOpenCompletions()
         if (token) {
-            this.abortOpenCompletions()
             token.onCancellationRequested(() => abortController.abort())
             this.abortOpenCompletions = () => abortController.abort()
         }
@@ -225,7 +225,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
             // render if you insert whitespace but not on the original place when you delete it
             // again
             cachedCompletions = this.config.cache?.get(prefix, false)
-            if (cachedCompletions && !cachedCompletions.isExactPrefix) {
+            if (!cachedCompletions?.isExactPrefix) {
                 return emptyCompletions()
             }
         }
@@ -348,6 +348,15 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
 
         CompletionLogger.start(logId)
 
+        const stopLoading = this.config.statusBar.startLoading('Completions are being generated')
+        this.stopLoading = stopLoading
+        // Overwrite the abort handler to also update the loading state
+        const previousAbort = this.abortOpenCompletions
+        this.abortOpenCompletions = () => {
+            previousAbort()
+            stopLoading()
+        }
+
         const contextResult = await this.config.contextFetcher({
             document,
             prefix,
@@ -364,16 +373,6 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
         tracer?.({ context: contextResult })
 
         CompletionLogger.networkRequestStarted(logId, contextResult.logSummary)
-
-        const stopLoading = this.config.statusBar.startLoading('Completions are being generated')
-        this.stopLoading = stopLoading
-
-        // Overwrite the abort handler to also update the loading state
-        const previousAbort = this.abortOpenCompletions
-        this.abortOpenCompletions = () => {
-            previousAbort()
-            stopLoading()
-        }
 
         const completions = await this.requestManager.request(
             document.uri.toString(),
