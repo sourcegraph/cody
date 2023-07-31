@@ -98,8 +98,7 @@ export async function logTestingData(data: string): Promise<void> {
 
     console.log('Publishing message to pubsub')
     try {
-        await
-        pubSubClient
+        await pubSubClient
             .topic('projects/telligentsourcegraph/topics/aditya-test-topic')
             .publishMessage({ data: dataBuffer })
     } catch {
