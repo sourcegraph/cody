@@ -55,4 +55,6 @@ const dummyVSCodeAPI: VSCodeWrapper = {
         return () => {}
     },
     postMessage: () => {},
+    getState: () => ({}),
+    setState: () => {},
 }

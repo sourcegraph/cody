@@ -11,6 +11,8 @@ interface VSCodeApi {
 export interface VSCodeWrapper {
     postMessage(message: WebviewMessage): void
     onMessage(callback: (message: ExtensionMessage) => void): () => void
+    getState(): unknown
+    setState(newState: unknown): void
 }
 
 let api: VSCodeWrapper
@@ -27,6 +29,8 @@ export function getVSCodeAPI(): VSCodeWrapper {
                 window.addEventListener('message', listener)
                 return () => window.removeEventListener('message', listener)
             },
+            setState: newState => vsCodeApi.setState(newState),
+            getState: () => vsCodeApi.getState(),
         }
     }
     return api
