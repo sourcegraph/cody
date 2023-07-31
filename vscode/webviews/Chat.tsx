@@ -340,7 +340,7 @@ const FeedbackButtons: React.FunctionComponent<FeedbackButtonsProps> = ({ classN
                         className={classNames(styles.feedbackButton)}
                         appearance="icon"
                         type="button"
-                        title="Help improve Cody and give us feedback about this response"
+                        title="Help improve Cody by providing more feedback"
                         onClick={() => console.log(`TODO: Open ${CODY_FEEDBACK_URL}`)}
                     >
                         <i className="codicon codicon-feedback" /> {' Give Feedback'}
