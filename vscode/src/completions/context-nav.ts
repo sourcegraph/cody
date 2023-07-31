@@ -15,7 +15,7 @@ export async function getContextFromCodeNav(options: Options): Promise<Reference
         options.document.uri
     )
 
-    const allRangePromises: Thenable<vscode.Location[]>[] = []
+    const allRangePromises: Thenable<(vscode.Location | vscode.LocationLink)[]>[] = []
     for (const foldingRange of foldingRanges) {
         if (foldingRange.end < options.position.line) {
             continue
@@ -33,7 +33,7 @@ export async function getContextFromCodeNav(options: Options): Promise<Reference
             for (const match of line.matchAll(/[$A-Z_a-z][\w$]*/g)) {
                 if (match.index) {
                     allRangePromises.push(
-                        vscode.commands.executeCommand<vscode.Location[]>(
+                        vscode.commands.executeCommand<(vscode.Location | vscode.LocationLink)[]>(
                             'vscode.executeDefinitionProvider',
                             options.document.uri,
                             new vscode.Position(lineIndex, match.index)
@@ -47,7 +47,9 @@ export async function getContextFromCodeNav(options: Options): Promise<Reference
     }
 
     // Resolve all definitions in parallel
-    const allRanges = (await Promise.all(allRangePromises)).flat()
+    const allRanges = (await Promise.all(allRangePromises))
+        .flat()
+        .map(m => (isLocationLink(m) ? new vscode.Location(m.targetUri, m.targetRange) : m))
 
     // Load all files and folding ranges in parallel
     const allUris = allRanges.map(r => r.uri)
@@ -122,3 +124,5 @@ function dedupeWith<T>(items: T[], keyFn: (item: T) => string): T[] {
 function rangeKey(r: vscode.Range): string {
     return `${r.start.line}:${r.end.line}:${r.start.character}:${r.start.line}`
 }
+
+const isLocationLink = (p: any): p is vscode.LocationLink => !!p.targetUri
