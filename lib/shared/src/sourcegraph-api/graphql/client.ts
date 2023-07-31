@@ -335,7 +335,14 @@ export class SourcegraphGraphQLAPIClient {
             console.log(`not logging ${event.event} in test mode`)
             return {}
         }
-        if (this.config.serverEndpoint === this.dotcomUrl) {
+
+        // The below events are high volume and cause a lot of noise and pressure on the backend.
+        // Since we only need them for debugging, we don't nee to route them to custom instances.
+        const exclusivelyRouteToDotcom =
+            event.event === 'CodyVSCodeExtension:completion:started' ||
+            event.event === 'CodyVSCodeExtension:completion:networkRequestStarted'
+
+        if (exclusivelyRouteToDotcom || this.config.serverEndpoint === this.dotcomUrl) {
             return this.sendEventLogRequestToDotComAPI(event)
         }
         const responses = await Promise.all([
