@@ -5,7 +5,7 @@ export interface ActiveTextEditor {
     filePath: string
     repoName?: string
     revision?: string
-    selection?: ActiveTextEditorSelectionRange
+    selectionRange?: ActiveTextEditorSelectionRange
 }
 
 export interface ActiveTextEditorSelectionRange {
