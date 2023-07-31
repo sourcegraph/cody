@@ -159,10 +159,6 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
             this.abortOpenCompletions = () => abortController.abort()
         }
 
-        if (!vscode.window.activeTextEditor || document.uri.scheme === 'cody') {
-            return emptyCompletions()
-        }
-
         const docContext = getCurrentDocContext(document, position, this.maxPrefixChars, this.maxSuffixChars)
         if (!docContext) {
             return emptyCompletions()
