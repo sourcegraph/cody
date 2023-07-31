@@ -4,7 +4,7 @@ import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
 
 import { getContextFromEmbeddings } from './context-embeddings'
 import { getContextFromCurrentEditor } from './context-local'
-import { History } from './history'
+import { DocumentHistory } from './history'
 
 /**
  * Keep property names in sync with the `EmbeddingsSearchResult` type.
@@ -16,7 +16,7 @@ export interface ReferenceSnippet {
 
 export interface GetContextOptions {
     document: vscode.TextDocument
-    history: History
+    history: DocumentHistory
     prefix: string
     suffix: string
     jaccardDistanceWindowSize: number
