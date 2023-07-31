@@ -55,11 +55,11 @@ export const ChatInputContext: React.FunctionComponent<{
                     iconClassName={styles.warningColor}
                 />
             )}
-            {contextStatus.filePath && (
+            {(contextStatus.filePath && (
                 <p className={styles.file} title={contextStatus.filePath}>
                     {formatFilePath(contextStatus.filePath, contextStatus.selection)}
                 </p>
-            ) || (
+            )) || (
                 <p className={styles.file} title={contextStatus.filePath}>
                     No file selected
                 </p>
