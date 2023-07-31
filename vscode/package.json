@@ -872,7 +872,8 @@
             "anthropic",
             "unstable-codegen",
             "unstable-huggingface",
-            "unstable-fireworks"
+            "unstable-fireworks",
+            "unstable-azure-openai"
           ],
           "markdownDescription": "Overwrite the provider used for code autocomplete."
         },
