@@ -70,11 +70,18 @@ export class Fixup implements Recipe {
 
         const intent = await this.getIntent(humanChatInput, context)
 
+        // It is possible to trigger this recipe from the sidebar without any input.
+        // TODO: Consider deprecating this functionality once inline fixups and non-stop fixups and consolidated.
+        const promptInstruction =
+            humanChatInput.length > 0
+                ? truncateText(humanChatInput, MAX_HUMAN_INPUT_TOKENS)
+                : "You should infer your instructions from the users' selection"
+
         // Reconstruct Cody's prompt using user's context and intent
         // Replace placeholders in reverse order to avoid collisions if a placeholder occurs in the input
         // TODO: Move prompt suffix from recipe to chat view. It has other subscribers.
         const promptText = Fixup.prompt
-            .replace('{humanInput}', truncateText(humanChatInput, MAX_HUMAN_INPUT_TOKENS))
+            .replace('{humanInput}', promptInstruction)
             .replace('{intent}', PromptIntentInstruction[intent])
             .replace('{selectedText}', selection.selectedText)
             .replace('{fileName}', selection.fileName)
