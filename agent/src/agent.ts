@@ -97,6 +97,7 @@ export class Agent extends MessageHandler {
             }
             await client.executeRecipe(data.id, {
                 humanChatInput: data.humanChatInput,
+                data: data.data,
             })
             return null
         })
