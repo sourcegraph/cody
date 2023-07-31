@@ -14,10 +14,10 @@ import { CodyStatusBar } from '../services/StatusBar'
 import { vsCodeMocks } from '../testutils/mocks'
 import { wrapVSCodeTextDocument } from '../testutils/textDocument'
 
-import { CodyCompletionItemProvider } from '.'
 import { CompletionsCache } from './cache'
 import { DocumentHistory } from './history'
 import { createProviderConfig } from './providers/anthropic'
+import { InlineCompletionItemProvider } from './vscodeInlineCompletionItemProvider'
 
 const CURSOR_MARKER = '█'
 
@@ -138,7 +138,7 @@ describe('Cody completions', () => {
                 completionsClient,
                 contextWindowTokens: 2048,
             })
-            const completionProvider = new CodyCompletionItemProvider({
+            const completionProvider = new InlineCompletionItemProvider({
                 providerConfig,
                 statusBar: NOOP_STATUS_BAR,
                 history: DUMMY_DOCUMENT_HISTORY,
