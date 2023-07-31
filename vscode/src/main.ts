@@ -87,7 +87,10 @@ const register = async (
 }> => {
     const disposables: vscode.Disposable[] = []
 
-    await createOrUpdateEventLogger(initialConfig, localStorage)
+    const isExtensionModeDevOrTest =
+        context.extensionMode === vscode.ExtensionMode.Development ||
+        context.extensionMode === vscode.ExtensionMode.Test
+    await createOrUpdateEventLogger(initialConfig, localStorage, isExtensionModeDevOrTest)
     const telemetryService = createVSCodeTelemetryService()
 
     // Controller for inline Chat
@@ -165,7 +168,7 @@ const register = async (
         contextProvider.configurationChangeEvent.event(async () => {
             const newConfig = await getFullConfig(secretStorage, localStorage)
             externalServicesOnDidConfigurationChange(newConfig)
-            await createOrUpdateEventLogger(newConfig, localStorage)
+            await createOrUpdateEventLogger(newConfig, localStorage, isExtensionModeDevOrTest)
         })
     )
 
@@ -399,7 +402,7 @@ const register = async (
         onConfigurationChange: newConfig => {
             contextProvider.onConfigurationChange(newConfig)
             externalServicesOnDidConfigurationChange(newConfig)
-            void createOrUpdateEventLogger(newConfig, localStorage)
+            void createOrUpdateEventLogger(newConfig, localStorage, isExtensionModeDevOrTest)
         },
     }
 }

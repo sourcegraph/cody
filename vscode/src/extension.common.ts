@@ -40,7 +40,7 @@ export function activate(context: vscode.ExtensionContext, platformContext: Plat
             }
             context.subscriptions.push(disposable)
 
-            if (process.env.NODE_ENV === 'development') {
+            if (context.extensionMode === vscode.ExtensionMode.Development) {
                 onActivationDevelopmentHelpers()
             }
         })
