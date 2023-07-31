@@ -4,6 +4,7 @@ import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
 
 import { getContextFromEmbeddings } from './context-embeddings'
 import { getContextFromCurrentEditor } from './context-local'
+import { getContextFromCodeNav } from './context-nav'
 import { History } from './history'
 
 /**
@@ -16,6 +17,7 @@ export interface ReferenceSnippet {
 
 export interface GetContextOptions {
     document: vscode.TextDocument
+    position: vscode.Position
     history: History
     prefix: string
     suffix: string
@@ -44,6 +46,7 @@ export async function getContext(options: GetContextOptions): Promise<GetContext
      */
     const embeddingsMatches = isEmbeddingsContextEnabled ? getContextFromEmbeddings(options) : []
     const localMatches = await getContextFromCurrentEditor(options)
+    const codeNavMatches = await getContextFromCodeNav(options)
 
     /**
      * Iterate over matches and add them to the context.
@@ -78,12 +81,19 @@ export async function getContext(options: GetContextOptions): Promise<GetContext
             includedLocalMatches++
         }
     }
+    let includedCodeNavMatches = 0
+    for (const match of codeNavMatches) {
+        if (addMatch(match)) {
+            includedCodeNavMatches++
+        }
+    }
 
     return {
         context,
         logSummary: {
             ...(includedEmbeddingsMatches ? { embeddings: includedEmbeddingsMatches } : {}),
             ...(includedLocalMatches ? { local: includedLocalMatches } : {}),
+            ...(includedCodeNavMatches ? { codeNav: includedCodeNavMatches } : {}),
             duration: Date.now() - start,
         },
     }

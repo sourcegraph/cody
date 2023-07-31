@@ -359,6 +359,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
 
         const contextResult = await this.config.contextFetcher({
             document,
+            position,
             prefix,
             suffix,
             history: this.config.history,
