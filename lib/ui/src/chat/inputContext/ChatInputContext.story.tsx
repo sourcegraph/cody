@@ -60,7 +60,7 @@ export const CodebaseAndFileWithSelections: StoryObj<typeof meta> = {
                     codebase: 'github.com/sourcegraph/about',
                     filePath: 'path/to/file.go',
                     mode: 'embeddings',
-                    selection: { start: { line: 0, character: 0 }, end: { line: 0, character: 0 } },
+                    selectionRange: { start: { line: 0, character: 0 }, end: { line: 0, character: 0 } },
                 }}
             />
             <ChatInputContext
@@ -68,7 +68,7 @@ export const CodebaseAndFileWithSelections: StoryObj<typeof meta> = {
                     codebase: 'github.com/sourcegraph/about',
                     filePath: 'path/to/file.go',
                     mode: 'embeddings',
-                    selection: { start: { line: 0, character: 0 }, end: { line: 1, character: 0 } },
+                    selectionRange: { start: { line: 0, character: 0 }, end: { line: 1, character: 0 } },
                 }}
             />
             <ChatInputContext
@@ -76,7 +76,7 @@ export const CodebaseAndFileWithSelections: StoryObj<typeof meta> = {
                     codebase: 'github.com/sourcegraph/about',
                     filePath: 'path/to/file.go',
                     mode: 'embeddings',
-                    selection: { start: { line: 0, character: 0 }, end: { line: 3, character: 0 } },
+                    selectionRange: { start: { line: 0, character: 0 }, end: { line: 3, character: 0 } },
                 }}
             />
             <ChatInputContext
@@ -84,7 +84,7 @@ export const CodebaseAndFileWithSelections: StoryObj<typeof meta> = {
                     codebase: 'github.com/sourcegraph/about',
                     filePath: 'path/to/file.go',
                     mode: 'embeddings',
-                    selection: { start: { line: 42, character: 333 }, end: { line: 420, character: 999 } },
+                    selectionRange: { start: { line: 42, character: 333 }, end: { line: 420, character: 999 } },
                 }}
             />
         </div>
