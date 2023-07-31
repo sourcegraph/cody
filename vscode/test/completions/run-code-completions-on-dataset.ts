@@ -106,10 +106,8 @@ const iterationsPerCodeSample = parseInt(process.env.ITER || '1', 10)
 // TODO: use VSCode mocked APIs to provide context for the completions provider
 // See vscode/src/completions/context.ts:10:23
 async function generateCompletionsForDataset(codeSamples: Sample[]): Promise<void> {
-    console.error('Generarting completions for dataset')
     const timestamp = Date.now().toString()
     const results: CompletionResult[] = []
-    console.log('We have entries', codeSamples.length)
     for (const [index, sample] of codeSamples.entries()) {
         const { content, fileName, languageId } = sample
         if (sampleIndex !== null && sampleIndex !== index) {
