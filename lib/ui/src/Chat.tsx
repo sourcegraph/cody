@@ -104,9 +104,9 @@ export interface CopyButtonProps {
 }
 
 export interface ChatCommandsProps {
-    chatCommands?: [string, CodyPrompt][]
+    formInput: string
+    chatCommands?: [string, CodyPrompt][] | null
     selectedChatCommand?: number
-    formInput?: string
 }
 /**
  * The Cody chat interface, with a transcript of all messages and a message form.
@@ -160,28 +160,33 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
     ChatCommandsComponent,
 }) => {
     const [inputRows, setInputRows] = useState(5)
+    const commandList = chatCommands?.filter(command => command[1]?.slashCommand) || null
+    const [displayCommands, setDisplayCommands] = useState<[string, CodyPrompt][] | null>(commandList || null)
     const [selectedChatCommand, setSelectedChatCommand] = useState(-1)
     const [historyIndex, setHistoryIndex] = useState(inputHistory.length)
 
-    // TODO (bee) WIP
     // Handles selecting a chat command when the user types a slash in the chat input.
     const chatCommentSelectionHandler = useCallback(
         (inputValue: string): void => {
-            if (!chatCommands || !ChatCommandsComponent) {
+            if (!commandList || !ChatCommandsComponent) {
                 return
             }
             if (inputValue === '/') {
+                setDisplayCommands(commandList)
                 setSelectedChatCommand(0)
                 return
             }
             if (inputValue.startsWith('/')) {
                 const command = inputValue.replace('/', '')
-                const index = chatCommands.findIndex(([_, prompt]) => prompt.slashCommand === command)
-                setSelectedChatCommand(index >= 0 ? index : -1)
+                const filteredCommands = commandList.filter(([_, prompt]) => prompt.slashCommand?.startsWith(command))
+                setDisplayCommands(filteredCommands)
+                setSelectedChatCommand(0)
+                return
             }
+            setDisplayCommands(null)
             setSelectedChatCommand(-1)
         },
-        [ChatCommandsComponent, chatCommands]
+        [ChatCommandsComponent, commandList]
     )
 
     const inputHandler = useCallback(
@@ -240,8 +245,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                 !event.shiftKey &&
                 !event.nativeEvent.isComposing &&
                 formInput &&
-                formInput.trim() &&
-                selectedChatCommand < 0
+                formInput.trim()
             ) {
                 event.preventDefault()
                 event.stopPropagation()
@@ -250,21 +254,14 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
             }
 
             // Handles cycling through chat command suggestions using the up and down arrow keys
-            if (chatCommands && selectedChatCommand > -1 && formInput === '/') {
-                event.preventDefault()
-                event.stopPropagation()
+            if (displayCommands && formInput.startsWith('/')) {
                 if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
-                    const commandsLength = chatCommands.length - 2
-                    const newIndex = event.key === 'ArrowUp' ? selectedChatCommand - 1 : selectedChatCommand + 1
-                    const newCommandIndex = newIndex < 0 ? commandsLength : newIndex >= commandsLength ? 0 : newIndex
+                    const commandsLength = displayCommands?.length - 1
+                    const newIndex = event.key === 'ArrowUp' ? selectedChatCommand + 1 : selectedChatCommand - 1
+                    const newCommandIndex = newIndex < 0 ? 0 : newIndex > commandsLength ? 0 : newIndex
                     setSelectedChatCommand(newCommandIndex)
-                }
-                if (event.key === 'Enter' && !event.shiftKey) {
-                    const newInput = chatCommands?.[selectedChatCommand]?.[1]?.slashCommand
-                    if (newInput) {
-                        setFormInput(`/${newInput}`)
-                        setSelectedChatCommand(-1)
-                    }
+                    const newInput = displayCommands?.[newCommandIndex]?.[1]?.slashCommand
+                    setFormInput(`/${newInput}`)
                 }
             }
 
@@ -295,12 +292,12 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
         [
             formInput,
             selectedChatCommand,
+            displayCommands,
             inputHistory,
             historyIndex,
             setMessageBeingEdited,
             onChatSubmit,
             setFormInput,
-            chatCommands,
             onSubmit,
         ]
     )
@@ -368,8 +365,12 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                         )}
                     </div>
                 ) : null}
-                {chatCommands && ChatCommandsComponent && selectedChatCommand > -1 && (
-                    <ChatCommandsComponent chatCommands={chatCommands} selectedChatCommand={selectedChatCommand} />
+                {displayCommands && ChatCommandsComponent && formInput && (
+                    <ChatCommandsComponent
+                        chatCommands={displayCommands}
+                        selectedChatCommand={selectedChatCommand}
+                        formInput={formInput}
+                    />
                 )}
                 {messageInProgress && AbortMessageInProgressButton && (
                     <div className={classNames(styles.abortButtonContainer)}>
