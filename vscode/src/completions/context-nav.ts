@@ -7,14 +7,15 @@ interface Options {
     position: vscode.Position
 }
 
+const enabled = true // debugging
+
 export async function getContextFromCodeNav(options: Options): Promise<ReferenceSnippet[]> {
     const foldingRanges = await vscode.commands.executeCommand<vscode.FoldingRange[]>(
         'vscode.executeFoldingRangeProvider',
         options.document.uri
     )
 
-    const allRanges: vscode.Location[] = []
-
+    const allRangePromises: Thenable<vscode.Location[]>[] = []
     for (const foldingRange of foldingRanges) {
         if (foldingRange.end < options.position.line) {
             continue
@@ -30,49 +31,65 @@ export async function getContextFromCodeNav(options: Options): Promise<Reference
         let lineIndex = foldingRange.start
         for (const line of lines) {
             for (const match of line.matchAll(/[$A-Z_a-z][\w$]*/g)) {
-                if (!match.index) {
-                    continue
+                if (match.index) {
+                    allRangePromises.push(
+                        vscode.commands.executeCommand<vscode.Location[]>(
+                            'vscode.executeDefinitionProvider',
+                            options.document.uri,
+                            new vscode.Position(lineIndex, match.index)
+                        )
+                    )
                 }
-
-                allRanges.push(
-                    ...(await vscode.commands.executeCommand<vscode.Location[]>(
-                        'vscode.executeDefinitionProvider',
-                        options.document.uri,
-                        new vscode.Position(lineIndex, match.index)
-                    ))
-                )
             }
 
             lineIndex++
         }
     }
 
-    const snippets: ReferenceSnippet[] = []
-    const uris = dedupeWith(
-        allRanges.map(r => r.uri),
-        uri => uri.fsPath
-    )
-    for (const uri of uris) {
-        const content = (await vscode.workspace.openTextDocument(uri.fsPath)).getText()
+    // Resolve all definitions in parallel
+    const allRanges = (await Promise.all(allRangePromises)).flat()
 
-        const foldingRanges = await vscode.commands.executeCommand<vscode.FoldingRange[]>(
-            'vscode.executeFoldingRangeProvider',
-            uri
-        )
+    // Load all files and folding ranges in parallel
+    const allUris = allRanges.map(r => r.uri)
+    const uris = dedupeWith(allUris, uri => uri.fsPath)
+    const contentMap = new Map(
+        uris.map(uri => [uri, vscode.workspace.openTextDocument(uri.fsPath).then(d => d.getText())])
+    )
+    // Note: must actually open all documents before asking for metadata - force resolution here
+    await Promise.all([...contentMap.values()])
+    const foldingRangesMap = new Map(
+        uris.map(uri => [
+            uri,
+            vscode.commands.executeCommand<vscode.FoldingRange[]>('vscode.executeFoldingRangeProvider', uri),
+        ])
+    )
+
+    const snippets: ReferenceSnippet[] = []
+    for (const uri of uris) {
+        const contentPromise = contentMap.get(uri)
+        const foldingRangesPromise = foldingRangesMap.get(uri)
+        if (!contentPromise || !foldingRangesPromise) {
+            continue
+        }
+
+        const content = await contentPromise
+        const foldingRanges = await foldingRangesPromise
+        const documentRanges = allRanges.filter(r => r.uri === uri).map(r => r.range)
+        const documentSnippets = extractSnippets(content, foldingRanges, dedupeWith(documentRanges, rangeKey))
 
         snippets.push(
-            ...extractSnippets(
+            ...documentSnippets.map(content => ({
+                fileName: uri.fsPath,
                 content,
-                foldingRanges,
-                dedupeWith(
-                    allRanges.filter(r => r.uri === uri).map(r => r.range),
-                    r => `${r.start.line}:${r.end.line}:${r.start.character}:${r.start.line}`
-                )
-            ).map(content => ({ fileName: uri.fsPath, content }))
+            }))
         )
     }
 
     console.log({ snippets })
+    if (!enabled) {
+        console.log('CONTEXT DISABLED')
+        return []
+    }
     return snippets
 }
 
@@ -82,7 +99,7 @@ function extractSnippets(content: string, foldingRanges: vscode.FoldingRange[], 
         .map(fr =>
             content
                 .split('\n')
-                .slice(fr.start, fr.end + 2) // ??
+                .slice(fr.start, fr.end + 3) // ??
                 .join('\n')
         )
 }
@@ -100,4 +117,8 @@ function dedupeWith<T>(items: T[], keyFn: (item: T) => string): T[] {
     }
 
     return result
+}
+
+function rangeKey(r: vscode.Range): string {
+    return `${r.start.line}:${r.end.line}:${r.start.character}:${r.start.line}`
 }
