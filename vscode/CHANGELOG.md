@@ -14,7 +14,7 @@ Starting from `0.2.0`, Cody is using `major.EVEN_NUMBER.patch` for release versi
 
 ### Changed
 
-- Layout cleanups: smaller header and single line message input. [pull/449}(https://github.com/sourcegraph/cody/pull/449)
+- Layout cleanups: smaller header and single line message input. [pull/449](https://github.com/sourcegraph/cody/pull/449)
 
 ## [0.6.3]
 
