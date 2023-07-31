@@ -65,26 +65,26 @@ export async function getContextFromCodeNav(options: Options): Promise<Reference
                 content,
                 foldingRanges,
                 dedupeWith(
-                    allRanges.filter(r => r.uri !== uri).map(r => r.range),
-                    r => `${r.start.line}`
+                    allRanges.filter(r => r.uri === uri).map(r => r.range),
+                    r => `${r.start.line}:${r.end.line}:${r.start.character}:${r.start.line}`
                 )
             ).map(content => ({ fileName: uri.fsPath, content }))
         )
     }
 
-    console.log(`loaded ${snippets.length} snippets`)
+    console.log({ snippets })
     return snippets
 }
 
 function extractSnippets(content: string, foldingRanges: vscode.FoldingRange[], ranges: vscode.Range[]): string[] {
-    const frs = foldingRanges.filter(fr => ranges.some(r => fr.start <= r.start.line && r.start.line <= fr.end))
-    console.log({ frs: frs.length, rs: ranges.length })
-    return frs.map(fr =>
-        content
-            .split('\n')
-            .slice(fr.start, fr.end + 2) // ??
-            .join('\n')
-    )
+    return foldingRanges
+        .filter(fr => ranges.some(r => fr.start <= r.start.line && r.end.line <= fr.end))
+        .map(fr =>
+            content
+                .split('\n')
+                .slice(fr.start, fr.end + 2) // ??
+                .join('\n')
+        )
 }
 
 function dedupeWith<T>(items: T[], keyFn: (item: T) => string): T[] {
@@ -93,12 +93,10 @@ function dedupeWith<T>(items: T[], keyFn: (item: T) => string): T[] {
     const result: T[] = []
     for (const item of items) {
         const key = keyFn(item)
-        if (seen.has(key)) {
-            continue
+        if (!seen.has(key)) {
+            seen.add(key)
+            result.push(item)
         }
-
-        seen.add(key)
-        result.push(item)
     }
 
     return result
