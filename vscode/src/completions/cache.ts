@@ -78,6 +78,15 @@ export class CompletionsCache {
         }
     }
 
+    public updateLogId(oldLogId: string, newLogId: string): void {
+        const entries = this.cache.values()
+        for (const value of entries) {
+            if (value && 'logId' in value && value.logId === oldLogId) {
+                value.logId = newLogId
+            }
+        }
+    }
+
     private insertCompletion(key: string, logId: string, completion: Completion, isExactPrefix: boolean): void {
         let existingCompletions: Completion[] = []
         if (this.cache.has(key)) {
