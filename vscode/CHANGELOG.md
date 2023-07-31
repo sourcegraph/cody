@@ -23,6 +23,7 @@ Starting from `0.2.0`, Cody is using `major.EVEN_NUMBER.patch` for release versi
 ### Changed
 
 - Removed the experimental hallucination detection that highlighted nonexistent file paths.
+- Hide the feedback button in case of error assistant response. [pull/448](https://github.com/sourcegraph/cody/pull/448)
 
 ## [0.6.2]
 
