@@ -8,6 +8,7 @@ import * as vscode from 'vscode'
 import { URI } from 'vscode-uri'
 
 import { NoopEditor } from '@sourcegraph/cody-shared/src/editor'
+import { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/nodeClient'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/cody-shared/src/telemetry'
 
 import { CodyCompletionItemProvider } from '../../src/completions'
@@ -24,12 +25,14 @@ import { findSubstringPosition } from './utils'
 import { TextDocument } from './vscode-text-document'
 
 let didLogConfig = false
+let providerName: string
 
 async function initCompletionsProvider(context: GetContextResult): Promise<CodyCompletionItemProvider> {
     const secretStorage = new InMemorySecretStorage()
     await secretStorage.store('cody.access-token', ENVIRONMENT_CONFIG.SOURCEGRAPH_ACCESS_TOKEN)
 
     const initialConfig = await getFullConfig(secretStorage)
+    providerName = initialConfig.autocompleteAdvancedProvider
     if (!didLogConfig) {
         console.error('Running `initCompletionsProvider` with config:', initialConfig)
         didLogConfig = true
@@ -43,7 +46,8 @@ async function initCompletionsProvider(context: GetContextResult): Promise<CodyC
         initialConfig,
         'rg',
         new NoopEditor(),
-        NOOP_TELEMETRY_SERVICE
+        NOOP_TELEMETRY_SERVICE,
+        { createCompletionsClient: (...args) => new SourcegraphNodeCompletionsClient(...args) }
     )
 
     const history = new History()
@@ -59,7 +63,6 @@ async function initCompletionsProvider(context: GetContextResult): Promise<CodyC
         history,
         codebaseContext,
         disableTimeouts: true,
-        triggerMoreEagerly: true,
         cache: null,
         isEmbeddingsContextEnabled: true,
         contextFetcher: () => Promise.resolve(context),
@@ -157,8 +160,10 @@ async function generateCompletionsForDataset(codeSamples: Sample[]): Promise<voi
     // TODO: prettify path management
     // Save results to a JSON file in the completions-review-tool/data folder to be used by the review tool:
     // pnpm --filter @sourcegraph/completions-review-tool run dev
-    fs.mkdirSync(ENVIRONMENT_CONFIG.OUTPUT_PATH, { recursive: true })
-    const filename = path.join(ENVIRONMENT_CONFIG.OUTPUT_PATH, `anthropic-${timestamp}.json`)
+    if (!providerName) {
+        throw new Error('No provider name')
+    }
+    const filename = path.join(ENVIRONMENT_CONFIG.OUTPUT_PATH, `${providerName}-${timestamp}.json`)
     fs.writeFileSync(filename, JSON.stringify(results, null, 2))
     console.log('\n✅ Completions saved to:', filename)
 }

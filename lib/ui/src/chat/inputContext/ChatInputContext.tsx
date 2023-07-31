@@ -9,7 +9,7 @@ import { Icon } from '../../utils/Icon'
 
 import styles from './ChatInputContext.module.css'
 
-const formatFilePath = (filePath: string, selection: ChatContextStatus['selection']): string => {
+const formatFilePath = (filePath: string, selection: ChatContextStatus['selectionRange']): string => {
     const fileName = basename(filePath)
 
     if (!selection) {
@@ -57,7 +57,7 @@ export const ChatInputContext: React.FunctionComponent<{
             )}
             {contextStatus.filePath && (
                 <p className={styles.file} title={contextStatus.filePath}>
-                    {formatFilePath(contextStatus.filePath, contextStatus.selection)}
+                    {formatFilePath(contextStatus.filePath, contextStatus.selectionRange)}
                 </p>
             )}
         </div>

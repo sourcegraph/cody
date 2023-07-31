@@ -17,10 +17,19 @@
       }
     },
     {
-      "label": "Build VS Code Extension",
+      "label": "Build VS Code Extension (Desktop)",
       "type": "npm",
       "path": "vscode",
-      "script": "build:dev",
+      "script": "build:dev:desktop",
+      "problemMatcher": "$tsc-watch",
+      "options": { "cwd": "vscode" },
+      "isBackground": true
+    },
+    {
+      "label": "Build VS Code Extension (Web)",
+      "type": "npm",
+      "path": "vscode",
+      "script": "build:dev:web",
       "problemMatcher": "$tsc-watch",
       "options": { "cwd": "vscode" },
       "isBackground": true

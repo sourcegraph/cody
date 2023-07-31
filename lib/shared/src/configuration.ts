@@ -16,12 +16,16 @@ export interface Configuration {
     experimentalCustomRecipes: boolean
     experimentalGuardrails: boolean
     experimentalNonStop: boolean
-    autocompleteAdvancedProvider: 'anthropic' | 'unstable-codegen' | 'unstable-huggingface'
+    autocompleteAdvancedProvider:
+        | 'anthropic'
+        | 'unstable-codegen'
+        | 'unstable-huggingface'
+        | 'unstable-fireworks'
+        | 'unstable-azure-openai'
     autocompleteAdvancedServerEndpoint: string | null
     autocompleteAdvancedAccessToken: string | null
     autocompleteAdvancedCache: boolean
     autocompleteAdvancedEmbeddings: boolean
-    autocompleteExperimentalTriggerMoreEagerly: boolean
     autocompleteExperimentalCompleteSuggestWidgetSelection?: boolean
     pluginsEnabled?: boolean
     pluginsDebugEnabled?: boolean

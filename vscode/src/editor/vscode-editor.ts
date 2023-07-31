@@ -1,6 +1,6 @@
 import * as vscode from 'vscode'
 
-import {
+import type {
     ActiveTextEditor,
     ActiveTextEditorSelection,
     ActiveTextEditorViewControllers,
@@ -9,9 +9,9 @@ import {
 } from '@sourcegraph/cody-shared/src/editor'
 import { SURROUNDING_LINES } from '@sourcegraph/cody-shared/src/prompt/constants'
 
-import { MyPromptController } from '../my-cody/MyPromptController'
-import { FixupController } from '../non-stop/FixupController'
-import { InlineController } from '../services/InlineController'
+import type { MyPromptController } from '../my-cody/MyPromptController'
+import type { FixupController } from '../non-stop/FixupController'
+import type { InlineController } from '../services/InlineController'
 
 export class VSCodeEditor implements Editor<InlineController, FixupController, MyPromptController> {
     constructor(
@@ -55,7 +55,7 @@ export class VSCodeEditor implements Editor<InlineController, FixupController, M
         return {
             content: documentText,
             filePath: documentUri.fsPath,
-            selection: !documentSelection.isEmpty ? documentSelection : undefined,
+            selectionRange: !documentSelection.isEmpty ? documentSelection : undefined,
         }
     }
 

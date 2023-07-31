@@ -1,7 +1,7 @@
 import * as anthropic from '@anthropic-ai/sdk'
 
 import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
-import { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/nodeClient'
+import { SourcegraphCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/client'
 import { CompletionParameters } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
 
 import { Completion } from '..'
@@ -17,7 +17,7 @@ import {
 } from '../text-processing'
 import { batchCompletions, messagesToText } from '../utils'
 
-import { Provider, ProviderConfig, ProviderOptions } from './provider'
+import { CompletionProviderTracer, Provider, ProviderConfig, ProviderOptions } from './provider'
 
 const CHARS_PER_TOKEN = 4
 
@@ -27,13 +27,13 @@ function tokensToChars(tokens: number): number {
 
 interface AnthropicOptions {
     contextWindowTokens: number
-    completionsClient: SourcegraphNodeCompletionsClient
+    completionsClient: SourcegraphCompletionsClient
 }
 
 export class AnthropicProvider extends Provider {
     private promptChars: number
     private responseTokens: number
-    private completionsClient: SourcegraphNodeCompletionsClient
+    private completionsClient: SourcegraphCompletionsClient
 
     constructor(options: ProviderOptions, anthropicOptions: AnthropicOptions) {
         super(options)
@@ -137,7 +137,11 @@ export class AnthropicProvider extends Provider {
         return completion.trimEnd()
     }
 
-    public async generateCompletions(abortSignal: AbortSignal, snippets: ReferenceSnippet[]): Promise<Completion[]> {
+    public async generateCompletions(
+        abortSignal: AbortSignal,
+        snippets: ReferenceSnippet[],
+        tracer?: CompletionProviderTracer
+    ): Promise<Completion[]> {
         // Create prompt
         const { messages: prompt } = this.createPrompt(snippets)
         if (prompt.length > this.promptChars) {
@@ -157,6 +161,7 @@ export class AnthropicProvider extends Provider {
                   maxTokensToSample: Math.min(50, this.responseTokens),
                   stopSequences: [anthropic.HUMAN_PROMPT, CLOSING_CODE_TAG, '\n\n'],
               }
+        tracer?.params(args)
 
         // Issue request
         const responses = await batchCompletions(this.completionsClient, args, this.options.n, abortSignal)
@@ -172,14 +177,16 @@ export class AnthropicProvider extends Provider {
             return [
                 {
                     prefix: this.options.prefix,
-                    messages: prompt,
                     content,
                     stopReason: resp.stopReason,
                 },
             ]
         })
 
-        return ret.flat()
+        const completions = ret.flat()
+        tracer?.result({ rawResponses: responses, completions })
+
+        return completions
     }
 }
 
