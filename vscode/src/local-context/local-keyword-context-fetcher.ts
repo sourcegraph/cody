@@ -9,9 +9,9 @@ import winkUtils from 'wink-nlp-utils'
 import { ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
 import { Editor } from '@sourcegraph/cody-shared/src/editor'
 import { ContextResult, KeywordContextFetcher } from '@sourcegraph/cody-shared/src/local-context'
+import { TelemetryService } from '@sourcegraph/cody-shared/src/telemetry'
 
 import { debug } from '../log'
-import { logEvent } from '../services/EventLogger'
 
 /**
  * Exclude files without extensions and hidden files (starts with '.')
@@ -55,14 +55,14 @@ interface RipgrepStreamData {
  * For example, if the original is "cody" and the stem is "codi", the prefix is "cod"
  * - The count is the number of times the keyword appears in the document/query.
  */
-export interface Term {
+interface Term {
     stem: string
     originals: string[]
     prefix: string
     count: number
 }
 
-export function regexForTerms(...terms: Term[]): string {
+function regexForTerms(...terms: Term[]): string {
     const inner = terms.map(t => {
         if (t.prefix.length >= 4) {
             return escapeRegex(t.prefix)
@@ -92,7 +92,8 @@ export class LocalKeywordContextFetcher implements KeywordContextFetcher {
     constructor(
         private rgPath: string,
         private editor: Editor,
-        private chatClient: ChatClient
+        private chatClient: ChatClient,
+        private telemetryService: TelemetryService
     ) {}
 
     /**
@@ -128,7 +129,7 @@ export class LocalKeywordContextFetcher implements KeywordContextFetcher {
             })
         )
         const searchDuration = performance.now() - startTime
-        logEvent('CodyVSCodeExtension:keywordContext:searchDuration', searchDuration, searchDuration)
+        this.telemetryService.log('CodyVSCodeExtension:keywordContext:searchDuration', { searchDuration })
         debug('LocalKeywordContextFetcher:getContext', JSON.stringify({ searchDuration }))
 
         return messagePairs.reverse().flat()

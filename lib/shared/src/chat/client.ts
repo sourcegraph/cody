@@ -48,6 +48,8 @@ export interface Client {
     ) => Promise<void>
     reset: () => void
     codebaseContext: CodebaseContext
+    sourcegraphStatus: { authenticated: boolean; version: string }
+    codyStatus: { enabled: boolean; version: string }
 }
 
 export async function createClient({
@@ -57,117 +59,132 @@ export async function createClient({
     editor,
     initialTranscript,
     createCompletionsClient = config => new SourcegraphBrowserCompletionsClient(config),
-}: ClientInit): Promise<Client> {
+}: ClientInit): Promise<Client | null> {
     const fullConfig = { debugEnable: false, ...config }
 
-    const completionsClient = createCompletionsClient(fullConfig)
-    const chatClient = new ChatClient(completionsClient)
-
     const graphqlClient = new SourcegraphGraphQLAPIClient(fullConfig)
+    const sourcegraphVersion = await graphqlClient.getSiteVersion()
 
-    const repoId = config.codebase ? await graphqlClient.getRepoIdIfEmbeddingExists(config.codebase) : null
-    if (isError(repoId)) {
-        throw new Error(
-            `Cody could not access the '${config.codebase}' repository on your Sourcegraph instance. Details: ${repoId.message}`
-        )
+    const sourcegraphStatus = { authenticated: false, version: '' }
+    if (!isError(sourcegraphVersion)) {
+        sourcegraphStatus.authenticated = true
+        sourcegraphStatus.version = sourcegraphVersion
     }
 
-    const embeddingsSearch = repoId ? new SourcegraphEmbeddingsSearchClient(graphqlClient, repoId, true) : null
+    const codyStatus = await graphqlClient.isCodyEnabled()
 
-    const codebaseContext = new CodebaseContext(config, config.codebase, embeddingsSearch, null, null)
+    if (sourcegraphStatus.authenticated && codyStatus.enabled) {
+        const completionsClient = createCompletionsClient(fullConfig)
+        const chatClient = new ChatClient(completionsClient)
 
-    const intentDetector = new SourcegraphIntentDetectorClient(graphqlClient, completionsClient)
-
-    const transcript = initialTranscript || new Transcript()
-
-    let isMessageInProgress = false
-
-    const sendTranscript = (): void => {
-        if (isMessageInProgress) {
-            const messages = transcript.toChat()
-            setTranscript(transcript)
-            setMessageInProgress(messages[messages.length - 1])
-        } else {
-            setTranscript(transcript)
-            setMessageInProgress(null)
-        }
-    }
-
-    async function executeRecipe(
-        recipeId: RecipeID,
-        options?: {
-            prefilledOptions?: PrefilledOptions
-            humanChatInput?: string
-        }
-    ): Promise<void> {
-        const humanChatInput = options?.humanChatInput ?? ''
-        const recipe = getRecipe(recipeId)
-        if (!recipe) {
-            return
+        const repoId = config.codebase ? await graphqlClient.getRepoIdIfEmbeddingExists(config.codebase) : null
+        if (isError(repoId)) {
+            throw new Error(
+                `Cody could not access the '${config.codebase}' repository on your Sourcegraph instance. Details: ${repoId.message}`
+            )
         }
 
-        const interaction = await recipe.getInteraction(humanChatInput, {
-            editor: options?.prefilledOptions ? withPreselectedOptions(editor, options.prefilledOptions) : editor,
-            intentDetector,
-            codebaseContext,
-            responseMultiplexer: new BotResponseMultiplexer(),
-            firstInteraction: transcript.isEmpty,
-        })
-        if (!interaction) {
-            return
+        const embeddingsSearch = repoId ? new SourcegraphEmbeddingsSearchClient(graphqlClient, repoId, true) : null
+
+        const codebaseContext = new CodebaseContext(config, config.codebase, embeddingsSearch, null, null)
+
+        const intentDetector = new SourcegraphIntentDetectorClient(graphqlClient, completionsClient)
+
+        const transcript = initialTranscript || new Transcript()
+
+        let isMessageInProgress = false
+
+        const sendTranscript = (): void => {
+            if (isMessageInProgress) {
+                const messages = transcript.toChat()
+                setTranscript(transcript)
+                setMessageInProgress(messages[messages.length - 1])
+            } else {
+                setTranscript(transcript)
+                setMessageInProgress(null)
+            }
         }
-        isMessageInProgress = true
-        transcript.addInteraction(interaction)
 
-        sendTranscript()
+        async function executeRecipe(
+            recipeId: RecipeID,
+            options?: {
+                prefilledOptions?: PrefilledOptions
+                humanChatInput?: string
+            }
+        ): Promise<void> {
+            const humanChatInput = options?.humanChatInput ?? ''
+            const recipe = getRecipe(recipeId)
+            if (!recipe) {
+                return
+            }
 
-        const { prompt, contextFiles } = await transcript.getPromptForLastInteraction(getPreamble(config.codebase))
-        transcript.setUsedContextFilesForLastInteraction(contextFiles)
+            const interaction = await recipe.getInteraction(humanChatInput, {
+                editor: options?.prefilledOptions ? withPreselectedOptions(editor, options.prefilledOptions) : editor,
+                intentDetector,
+                codebaseContext,
+                responseMultiplexer: new BotResponseMultiplexer(),
+                firstInteraction: transcript.isEmpty,
+            })
+            if (!interaction) {
+                return
+            }
+            isMessageInProgress = true
+            transcript.addInteraction(interaction)
 
-        const responsePrefix = interaction.getAssistantMessage().prefix ?? ''
-        let rawText = ''
-        chatClient.chat(prompt, {
-            onChange(_rawText) {
-                rawText = _rawText
-
-                const text = reformatBotMessage(rawText, responsePrefix)
-                transcript.addAssistantResponse(text)
-
-                sendTranscript()
-            },
-            onComplete() {
-                isMessageInProgress = false
-
-                const text = reformatBotMessage(rawText, responsePrefix)
-                transcript.addAssistantResponse(text)
-                sendTranscript()
-            },
-            onError(error) {
-                // Display error message as assistant response
-                transcript.addErrorAsAssistantResponse(error)
-                isMessageInProgress = false
-                sendTranscript()
-                console.error(`Completion request failed: ${error}`)
-            },
-        })
-    }
-
-    return {
-        get transcript() {
-            return transcript
-        },
-        get isMessageInProgress() {
-            return isMessageInProgress
-        },
-        submitMessage(text: string) {
-            return executeRecipe('chat-question', { humanChatInput: text })
-        },
-        executeRecipe,
-        reset() {
-            isMessageInProgress = false
-            transcript.reset()
             sendTranscript()
-        },
-        codebaseContext,
+
+            const { prompt, contextFiles } = await transcript.getPromptForLastInteraction(getPreamble(config.codebase))
+            transcript.setUsedContextFilesForLastInteraction(contextFiles)
+
+            const responsePrefix = interaction.getAssistantMessage().prefix ?? ''
+            let rawText = ''
+            chatClient.chat(prompt, {
+                onChange(_rawText) {
+                    rawText = _rawText
+
+                    const text = reformatBotMessage(rawText, responsePrefix)
+                    transcript.addAssistantResponse(text)
+
+                    sendTranscript()
+                },
+                onComplete() {
+                    isMessageInProgress = false
+
+                    const text = reformatBotMessage(rawText, responsePrefix)
+                    transcript.addAssistantResponse(text)
+                    sendTranscript()
+                },
+                onError(error) {
+                    // Display error message as assistant response
+                    transcript.addErrorAsAssistantResponse(error)
+                    isMessageInProgress = false
+                    sendTranscript()
+                    console.error(`Completion request failed: ${error}`)
+                },
+            })
+        }
+
+        return {
+            get transcript() {
+                return transcript
+            },
+            get isMessageInProgress() {
+                return isMessageInProgress
+            },
+            submitMessage(text: string) {
+                return executeRecipe('chat-question', { humanChatInput: text })
+            },
+            executeRecipe,
+            reset() {
+                isMessageInProgress = false
+                transcript.reset()
+                sendTranscript()
+            },
+            codebaseContext,
+            sourcegraphStatus,
+            codyStatus,
+        }
     }
+
+    return null
 }

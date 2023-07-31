@@ -29,6 +29,9 @@ const editor: Editor = {
     getWorkspaceRootPath() {
         return null
     },
+    getWorkspaceRootUri() {
+        return null
+    },
     replaceSelection(_fileName, _selectedText, _replacement) {
         return Promise.resolve()
     },
@@ -56,7 +59,7 @@ export const App: React.FunctionComponent = () => {
     const [formInput, setFormInput] = useState('')
     const [inputHistory, setInputHistory] = useState<string[] | []>([])
 
-    const [client, setClient] = useState<Client | ErrorLike>()
+    const [client, setClient] = useState<Client | null | ErrorLike>()
     useEffect(() => {
         setMessageInProgress(null)
         setTranscript([])

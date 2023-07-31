@@ -81,9 +81,10 @@ export class TextDocument implements vscode.TextDocument {
             return this.text
         }
 
-        const offset = this.offsetAt(range.start)
-        const length = this.offsetAt(range.end) - offset
-        return this.text.slice(offset, length)
+        const start = this.offsetAt(range.start)
+        const end = this.offsetAt(range.end)
+
+        return this.text.slice(start, end)
     }
     public getWordRangeAtPosition(position: vscode.Position, regex?: RegExp): vscode.Range {
         throw new Error('Method not implemented.')

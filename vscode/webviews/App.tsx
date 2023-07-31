@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import './App.css'
 
@@ -11,15 +11,14 @@ import { Configuration } from '@sourcegraph/cody-shared/src/configuration'
 import { AuthStatus, defaultAuthStatus, LocalEnv } from '../src/chat/protocol'
 
 import { Chat } from './Chat'
-import { Debug } from './Debug'
 import { Header } from './Header'
 import { LoadingPage } from './LoadingPage'
 import { Login } from './Login'
 import { NavBar, View } from './NavBar'
 import { Plugins } from './Plugins'
 import { Recipes } from './Recipes'
-import { Settings } from './Settings'
 import { UserHistory } from './UserHistory'
+import { createWebviewTelemetryService } from './utils/telemetry'
 import type { VSCodeWrapper } from './utils/VSCodeApi'
 
 export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vscodeAPI }) => {
@@ -28,7 +27,6 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
         | null
     >(null)
     const [endpoint, setEndpoint] = useState<string | null>(null)
-    const [debugLog, setDebugLog] = useState<string[]>([])
     const [view, setView] = useState<View | undefined>()
     const [messageInProgress, setMessageInProgress] = useState<ChatMessage | null>(null)
     const [messageBeingEdited, setMessageBeingEdited] = useState<boolean>(false)
@@ -68,14 +66,6 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                         break
                     case 'login':
                         break
-                    case 'showTab':
-                        if (message.tab === 'chat') {
-                            setView('chat')
-                        }
-                        break
-                    case 'debug':
-                        setDebugLog([...debugLog, message.message])
-                        break
                     case 'history':
                         setInputHistory(message.messages?.input ?? [])
                         setUserHistory(message.messages?.chat ?? null)
@@ -85,7 +75,6 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                         break
                     case 'errors':
                         setErrorMessages([...errorMessages, message.errors].slice(-5))
-                        setDebugLog([...debugLog, message.errors])
                         break
                     case 'view':
                         setView(message.messages)
@@ -104,7 +93,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                         break
                 }
             }),
-        [debugLog, errorMessages, view, vscodeAPI]
+        [errorMessages, view, vscodeAPI]
     )
 
     useEffect(() => {
@@ -117,14 +106,6 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
             vscodeAPI.postMessage({ command: 'initialized' })
         }
     }, [view, vscodeAPI])
-
-    const onLogout = useCallback(() => {
-        setConfig(null)
-        setEndpoint(null)
-        setAuthStatus(defaultAuthStatus)
-        setView('login')
-        vscodeAPI.postMessage({ command: 'auth', type: 'signout' })
-    }, [vscodeAPI])
 
     const onLoginRedirect = useCallback(
         (uri: string) => {
@@ -146,6 +127,8 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
         [enabledPlugins, vscodeAPI]
     )
 
+    const telemetryService = useMemo(() => createWebviewTelemetryService(vscodeAPI), [vscodeAPI])
+
     if (!view || !authStatus || !config) {
         return <LoadingPage />
     }
@@ -160,6 +143,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                     isAppInstalled={isAppInstalled}
                     isAppRunning={config?.isAppRunning}
                     vscodeAPI={vscodeAPI}
+                    telemetryService={telemetryService}
                     appOS={config?.os}
                     appArch={config?.arch}
                     callbackScheme={config?.uriScheme}
@@ -167,14 +151,8 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                 />
             ) : (
                 <>
-                    <NavBar
-                        view={view}
-                        setView={setView}
-                        devMode={Boolean(config?.debugEnable)}
-                        pluginsEnabled={Boolean(config?.pluginsEnabled)}
-                    />
+                    <NavBar view={view} setView={setView} pluginsEnabled={Boolean(config?.pluginsEnabled)} />
                     {errorMessages && <ErrorBanner errors={errorMessages} setErrors={setErrorMessages} />}
-                    {view === 'debug' && config?.debugEnable && <Debug debugLog={debugLog} />}
                     {view === 'history' && (
                         <UserHistory
                             userHistory={userHistory}
@@ -185,9 +163,6 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                         />
                     )}
                     {view === 'recipes' && endpoint && <Recipes vscodeAPI={vscodeAPI} myPrompts={myPrompts} />}
-                    {view === 'settings' && endpoint && (
-                        <Settings onLogout={onLogout} endpoint={endpoint} version={config?.extensionVersion} />
-                    )}
                     {view === 'chat' && (
                         <Chat
                             messageInProgress={messageInProgress}
@@ -203,6 +178,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                             suggestions={suggestions}
                             pluginsDevMode={Boolean(config?.pluginsDebugEnabled)}
                             setSuggestions={setSuggestions}
+                            telemetryService={telemetryService}
                         />
                     )}
                 </>

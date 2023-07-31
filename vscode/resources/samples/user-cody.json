@@ -2,21 +2,13 @@
   "title": "Cody Custom Recipes - User",
   "description": "This file showcases how to build custom recipes for Cody by Sourcegraph.",
   "recipes": {
-    "Spell Checker": {
-      "prompt": "Review the selected code and correct any typos and non-standard usage. Ensure the corrected code remains unchanged in its functionality and readability."
-    },
     "Generate Multiple Unit Tests": {
-      "prompt": "Create at least 3 full, workable unit tests for the selected code. You may import common libraries for testing. Follow patterns and imports used in existing test files if available, otherwise use best practices for unit testing in this language.",
+      "prompt": "Generate 2 or more unit tests for the selected code. Provide me with full, workable unit tests. If there are existing test files in the directory, try to follow similar patterns and imports used in those files. You may import common libraries like the language's built-in test framework. If there are no test files, use common best practices for unit testing this language. Make sure to include all the imports needed to run the tests.",
       "context": {
         "currentDir": true,
         "currentFile": true
-      }
-    },
-    "Refactor Code": {
-      "prompt": "Please analyze the code and suggest constructive edits that follow best practices and improve code quality and readability. Focus your responses on being clear, thoughtful, coherent and easy for me to understand. Do not make changes that alter intended functionality without explaining why. Avoid responses that are overly complex or difficult to implement. Strive to provide helpful recommendations based on other shared code snippests.",
-      "context": {
-        "currentFile": true
-      }
+      },
+      "info": "Works best if there are other test files in the current directory"
     },
     "Compare Files in Opened Tabs": {
       "prompt": "Compare the code from opened tabs and explain their relationships.",

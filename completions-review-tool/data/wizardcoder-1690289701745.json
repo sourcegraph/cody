@@ -1,11 +1,10 @@
 [
   {
     "completions": [
-      "signale.info(message)\n}",
-      "signale.info(message)  \n}"
+      "signale.info(message)"
     ],
-    "elapsed": 916,
-    "timestamp": "1690203039316",
+    "elapsed": 1415,
+    "timestamp": "1690289701745",
     "sample": {
       "context": [],
       "fileName": "logger.ts",
@@ -15,12 +14,10 @@
   },
   {
     "completions": [
-      "const date = new Date().toDateString()  \n    const filePath = path.join(__dirname, 'date.txt')  \n    fs.writeFileSync(filePath, date, 'utf8')\n}",
-      "const dateString = new Date().toISOString()  \n    const filePath = path.join(__dirname, 'date.txt')    \n    fs.writeFileSync(filePath, dateString)\n}",
-      "const date = new Date()\n    const filePath = path.join(__dirname, 'date.txt') \n    fs.writeFileSync(filePath, date.toString())\n}"
+      "const filePath = path.join(__dirname, 'date.txt')\n    const date = new Date().toLocaleString()\n    const data = date.toString()\n    fs.writeFileSync(filePath, data)"
     ],
-    "elapsed": 2288,
-    "timestamp": "1690203039316",
+    "elapsed": 4462,
+    "timestamp": "1690289701745",
     "sample": {
       "context": [],
       "fileName": "writer.ts",
@@ -30,12 +27,10 @@
   },
   {
     "completions": [
-      "const lineNumber = position instanceof vscode.Position ? position.line : Math.floor(position / this.lineLength(position));\n        return {\n            text: this.lines[lineNumber],\n            range: new vscode.Range(lineNumber, 0, lineNumber, this.lines[lineNumber].length)\n        }\n    }",
-      "const lineNumber = position.line;\n        return {\n            text: this.lines[lineNumber],\n            range: new vscode.Range(lineNumber, 0, lineNumber, this.lines[lineNumber].length)\n        }\n    }",
-      "const lineNumber = position instanceof vscode.Position ? position.line : Math.floor(position / this.lineLength(position));\n        return {\n            text: this.lines[lineNumber],\n            range: new vscode.Range(position, position)\n        }\n    }"
+      "const lineNumber = typeof position === 'number'? position : position.line\n        const lineText = this.lines[lineNumber]\n        return new TextLine(this, lineNumber, lineText)"
     ],
-    "elapsed": 4682,
-    "timestamp": "1690203039316",
+    "elapsed": 24337,
+    "timestamp": "1690289701745",
     "sample": {
       "context": [],
       "fileName": "text-document.ts",
@@ -45,21 +40,23 @@
   },
   {
     "completions": [
-      "try {"
+      "try {\n            const osName = execFileSync('uname', ['-s']).toString().trim()\n            return osName\n        } catch (error) {\n            console.error(error)\n            return null\n        }\n    } else {\n        return navigator.platform\n    }"
     ],
-    "elapsed": 923,
-    "timestamp": "1690203039316",
+    "elapsed": 5665,
+    "timestamp": "1690289701745",
     "sample": {
       "context": [],
       "fileName": "getOs.ts",
       "languageId": "typescript",
-      "content": "import { execFileSync } from 'child_process'\n\nfunction getOSName(): string | null {\n    if (typeof window === 'undefined') {\n    ️🔥\n}"
+      "content": "import { execFileSync } from 'child_process'\n\nfunction getOSName(): string | null {\n    if (typeof window === 'undefined') {\n        ️🔥\n}"
     }
   },
   {
-    "completions": [],
-    "elapsed": 1,
-    "timestamp": "1690203039316",
+    "completions": [
+      "Media && window.matchMedia('(prefers-color-scheme: dark)').matches;"
+    ],
+    "elapsed": 2456,
+    "timestamp": "1690289701745",
     "sample": {
       "context": [],
       "fileName": "isDarkColorScheme.ts",
@@ -68,9 +65,11 @@
     }
   },
   {
-    "completions": [],
-    "elapsed": 1,
-    "timestamp": "1690203039316",
+    "completions": [
+      "=== \"localhost\" || window.location.host === \"127.0.0.1\";"
+    ],
+    "elapsed": 2617,
+    "timestamp": "1690289701745",
     "sample": {
       "context": [],
       "fileName": "isLocalhost.ts",
@@ -80,12 +79,10 @@
   },
   {
     "completions": [
-      "return text\n    .toLowerCase()\n    .replace(/[^a-z0-9 -]/g, \"\")\n    .replace(/\\s+/g, \"-\")\n    .replace(/-+/g, \"-\");\n}",
-      "return text\n    .toLowerCase()\n    .replace(/[^a-z0-9]+/g, \"-\")\n    .replace(/^-+|-+$/g, \"\");\n}",
-      "return text.toLowerCase().replace(/\\W+/g, \"-\");\n}"
+      "return text.replace(/[^\\w-]+/g, \"-\").replace(/(^-+|-+$)/g, \"\");"
     ],
-    "elapsed": 1677,
-    "timestamp": "1690203039316",
+    "elapsed": 2896,
+    "timestamp": "1690289701745",
     "sample": {
       "context": [
         {
@@ -112,12 +109,10 @@
   },
   {
     "completions": [
-      "responseBody := linesToResponse([]string{\"hello\", \"world\"})\n    client := getMockClient(responseBody)\n\n    var events []types.CompletionEvent\n    ctx := context.Background()\n    err := client.Stream(ctx, types.CompletionsFeatureAnthropic, types.CompletionRequestParameters{}, \n        func(event types.CompletionEvent) {\n            events = append(events, event)\n        })\n\n    require.NoError(t, err)\n    assert.Equal(t, []types.CompletionEvent{\n        {Completion: \"hello\"}, \n        {Completion: \"world\"}}, events)\n}",
-      "responseBody := linesToResponse([]string{\"foo\", \"bar\"})\n\n    client := getMockClient(responseBody)\n\n    var events []types.CompletionEvent\n    var err error\n\n    err = client.Stream(context.Background(), \"\", types.CompletionRequestParameters{}, \n        func(event types.CompletionEvent) {\n            events = append(events, event)\n        })\n\n    require.NoError(t, err)\n    assert.Equal(t, []string{\"foo\", \"bar\"}, eventsToStrings(events))\n}",
-      "responseBody := linesToResponse([]string{\"hello\", \"world\"})\n    client := getMockClient(responseBody)\n\n    var actual []string\n    err := client.Stream(context.Background(), types.CompletionsFeatureAnthropic, types.CompletionRequestParameters{}, \n        func(event types.CompletionEvent) {\n            actual = append(actual, event.Completion)\n        })\n    require.NoError(t, err)\n    assert.Equal(t, []string{\"hello\", \"world\"}, actual)\n}"
+      "var mockAnthropicValidResponseLines = []string{`{\"id\": \"1234\", \"result\": {\"completions\": [{\"label\": \"foo\", \"kind\": \"method\", \"detail\": \"bar\", \"insertText\": \"foo()\"}]}}`, `{\"id\": \"1234\", \"result\": {\"completions\": [{\"label\": \"baz\", \"kind\": \"method\", \"detail\": \"qux\", \"insertText\": \"baz()\"}]}}`}\n\n    mockClient := getMockClient(linesToResponse(mockAnthropicValidResponseLines))\n\n    completions, err := mockClient.GetCompletions(context.Background(), \"foo\", types.CompletionOptions{})\n    require.NoError(t, err)\n    assert.Equal(t, []types.Completion{\n        {\"foo\", \"method\", \"bar\", \"foo()\"},\n        {\"baz\", \"method\", \"qux\", \"baz()\"},\n    }, completions)\n}"
     ],
-    "elapsed": 9281,
-    "timestamp": "1690203039316",
+    "elapsed": 20294,
+    "timestamp": "1690289701745",
     "sample": {
       "context": [
         {
@@ -144,12 +139,10 @@
   },
   {
     "completions": [
-      "\"\"\"Test getting open issues.\"\"\"\n    issues = api_client.get_open_issues()\n    assert isinstance(issues, list)\n    assert len(issues) > 0",
-      "\"\"\"Test that we can get open issues.\"\"\"\n    issues = api_client.get_open_issues()\n    assert isinstance(issues, list)\n    assert len(issues) > 0",
-      "\"\"\"Test that we can get open issues from the GitHub repo.\"\"\"\n    issues = api_client.get_open_issues()\n    assert len(issues) > 0"
+      "\"\"\"Test getting open issues.\"\"\"\n    issues = api_client.get_open_issues()\n    assert isinstance(issues, List)\n    assert all(isinstance(issue, Issue) for issue in issues)"
     ],
-    "elapsed": 3847,
-    "timestamp": "1690203039316",
+    "elapsed": 4722,
+    "timestamp": "1690289701745",
     "sample": {
       "context": [
         {
@@ -182,8 +175,8 @@
     "completions": [
       "from_toolkit(self)"
     ],
-    "elapsed": 933,
-    "timestamp": "1690203039316",
+    "elapsed": 1215,
+    "timestamp": "1690289701745",
     "sample": {
       "context": [
         {
@@ -206,11 +199,10 @@
   },
   {
     "completions": [
-      "cache,\n                history: new History(),\n                providerConfig,\n                statusBar: noopStatusBar,\n                triggerMoreEagerly,\n            })",
-      "cache,\n                history: new History(),\n                providerConfig,\n                triggerMoreEagerly,\n            })"
+      "providerConfig,\n                cache,\n                triggerMoreEagerly,"
     ],
-    "elapsed": 2458,
-    "timestamp": "1690203039316",
+    "elapsed": 5327,
+    "timestamp": "1690289701745",
     "sample": {
       "context": [
         {

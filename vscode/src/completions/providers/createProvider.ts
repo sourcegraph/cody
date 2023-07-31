@@ -4,6 +4,7 @@ import { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/s
 import { createProviderConfig as createAnthropicProviderConfig } from './anthropic'
 import { ProviderConfig } from './provider'
 import { createProviderConfig as createUnstableCodeGenProviderConfig } from './unstable-codegen'
+import { createProviderConfig as createUnstableFireworksProviderConfig } from './unstable-fireworks'
 import { createProviderConfig as createUnstableHuggingFaceProviderConfig } from './unstable-huggingface'
 
 export function createProviderConfig(
@@ -27,7 +28,6 @@ export function createProviderConfig(
             break
         }
         case 'unstable-huggingface': {
-            console.log({ config: config.autocompleteAdvancedServerEndpoint })
             if (config.autocompleteAdvancedServerEndpoint !== null) {
                 providerConfig = createUnstableHuggingFaceProviderConfig({
                     serverEndpoint: config.autocompleteAdvancedServerEndpoint,
@@ -38,6 +38,20 @@ export function createProviderConfig(
 
             onError(
                 'Provider `unstable-huggingface` can not be used without configuring `cody.autocomplete.advanced.serverEndpoint`. Falling back to `anthropic`.'
+            )
+            break
+        }
+        case 'unstable-fireworks': {
+            if (config.autocompleteAdvancedServerEndpoint !== null) {
+                providerConfig = createUnstableFireworksProviderConfig({
+                    serverEndpoint: config.autocompleteAdvancedServerEndpoint,
+                    accessToken: config.autocompleteAdvancedAccessToken,
+                })
+                break
+            }
+
+            onError(
+                'Provider `unstable-fireworks` can not be used without configuring `cody.autocomplete.advanced.serverEndpoint`. Falling back to `anthropic`.'
             )
             break
         }

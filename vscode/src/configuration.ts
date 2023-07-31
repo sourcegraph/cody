@@ -8,7 +8,6 @@ import type {
 
 import { DOTCOM_URL } from './chat/protocol'
 import { CONFIG_KEY, ConfigKeys } from './configuration-keys'
-import { logEvent } from './services/EventLogger'
 import { LocalStorage } from './services/LocalStorageProvider'
 import { getAccessToken, SecretStorage } from './services/SecretStorageProvider'
 
@@ -37,14 +36,14 @@ export function getConfiguration(config: ConfigGetter): Configuration {
         debugRegex = new RegExp('.*')
     }
 
-    let autocompleteAdvancedProvider = config.get<'anthropic' | 'unstable-codegen' | 'unstable-huggingface'>(
-        CONFIG_KEY.autocompleteAdvancedProvider,
-        'anthropic'
-    )
+    let autocompleteAdvancedProvider = config.get<
+        'anthropic' | 'unstable-codegen' | 'unstable-huggingface' | 'unstable-fireworks'
+    >(CONFIG_KEY.autocompleteAdvancedProvider, 'anthropic')
     if (
         autocompleteAdvancedProvider !== 'anthropic' &&
         autocompleteAdvancedProvider !== 'unstable-codegen' &&
-        autocompleteAdvancedProvider !== 'unstable-huggingface'
+        autocompleteAdvancedProvider !== 'unstable-huggingface' &&
+        autocompleteAdvancedProvider !== 'unstable-fireworks'
     ) {
         autocompleteAdvancedProvider = 'anthropic'
         void vscode.window.showInformationMessage(
@@ -61,12 +60,13 @@ export function getConfiguration(config: ConfigGetter): Configuration {
         debugEnable: config.get<boolean>(CONFIG_KEY.debugEnable, false),
         debugVerbose: config.get<boolean>(CONFIG_KEY.debugVerbose, false),
         debugFilter: debugRegex,
+        telemetryLevel: config.get<'all' | 'off'>(CONFIG_KEY.telemetryLevel, 'all'),
         autocomplete: config.get(CONFIG_KEY.autocompleteEnabled, true),
         experimentalChatPredictions: config.get(CONFIG_KEY.experimentalChatPredictions, isTesting),
         inlineChat: config.get(CONFIG_KEY.inlineChatEnabled, true),
         experimentalGuardrails: config.get(CONFIG_KEY.experimentalGuardrails, isTesting),
         experimentalNonStop: config.get('cody.experimental.nonStop' as any, isTesting),
-        experimentalCustomRecipes: config.get(CONFIG_KEY.experimentalCustomRecipes, false),
+        experimentalCustomRecipes: config.get(CONFIG_KEY.experimentalCustomRecipes, isTesting),
         autocompleteAdvancedProvider,
         autocompleteAdvancedServerEndpoint: config.get<string | null>(
             CONFIG_KEY.autocompleteAdvancedServerEndpoint,
@@ -77,7 +77,7 @@ export function getConfiguration(config: ConfigGetter): Configuration {
         autocompleteAdvancedEmbeddings: config.get(CONFIG_KEY.autocompleteAdvancedEmbeddings, true),
         autocompleteExperimentalTriggerMoreEagerly: config.get(
             CONFIG_KEY.autocompleteExperimentalTriggerMoreEagerly,
-            false
+            true
         ),
         autocompleteExperimentalCompleteSuggestWidgetSelection: config.get(
             CONFIG_KEY.autocompleteExperimentalCompleteSuggestWidgetSelection,
@@ -129,62 +129,4 @@ export const getFullConfig = async (
     config.serverEndpoint = localStorage?.getEndpoint() || config.serverEndpoint
     const accessToken = (await getAccessToken(secretStorage)) || null
     return { ...config, accessToken }
-}
-
-// We run this callback on extension startup
-export async function migrateConfiguration(): Promise<void> {
-    let didMigrate = false
-    didMigrate ||= await migrateDeprecatedConfigOption(
-        CONFIG_KEY.experimentalSuggestions,
-        CONFIG_KEY.autocompleteEnabled
-    )
-    didMigrate ||= await migrateDeprecatedConfigOption(
-        CONFIG_KEY.completionsAdvancedProvider,
-        CONFIG_KEY.autocompleteAdvancedProvider
-    )
-    didMigrate ||= await migrateDeprecatedConfigOption(
-        CONFIG_KEY.completionsAdvancedServerEndpoint,
-        CONFIG_KEY.autocompleteAdvancedServerEndpoint
-    )
-    didMigrate ||= await migrateDeprecatedConfigOption(
-        CONFIG_KEY.completionsAdvancedAccessToken,
-        CONFIG_KEY.autocompleteAdvancedAccessToken
-    )
-    didMigrate ||= await migrateDeprecatedConfigOption(
-        CONFIG_KEY.completionsAdvancedCache,
-        CONFIG_KEY.autocompleteAdvancedCache
-    )
-    didMigrate ||= await migrateDeprecatedConfigOption(
-        CONFIG_KEY.completionsAdvancedEmbeddings,
-        CONFIG_KEY.autocompleteAdvancedEmbeddings
-    )
-
-    if (didMigrate) {
-        logEvent('CodyVSCodeExtension:configMigrator:migrated')
-    }
-}
-
-async function migrateDeprecatedConfigOption(
-    oldKey: (typeof CONFIG_KEY)[ConfigKeys],
-    newKey: (typeof CONFIG_KEY)[ConfigKeys]
-): Promise<boolean> {
-    const config = vscode.workspace.getConfiguration()
-    const value = config.get(oldKey)
-    const inspect = config.inspect(oldKey)
-
-    if (inspect === undefined || value === inspect.defaultValue) {
-        return false
-    }
-
-    const scope =
-        inspect.workspaceFolderValue !== undefined
-            ? vscode.ConfigurationTarget.WorkspaceFolder
-            : inspect?.workspaceValue !== undefined
-            ? vscode.ConfigurationTarget.Workspace
-            : vscode.ConfigurationTarget.Global
-
-    await config.update(newKey, value, scope)
-    await config.update(oldKey, undefined, scope)
-
-    return true
 }

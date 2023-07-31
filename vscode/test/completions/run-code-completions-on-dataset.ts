@@ -8,6 +8,8 @@ import * as vscode from 'vscode'
 import { URI } from 'vscode-uri'
 
 import { NoopEditor } from '@sourcegraph/cody-shared/src/editor'
+import { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/nodeClient'
+import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/cody-shared/src/telemetry'
 
 import { CodyCompletionItemProvider } from '../../src/completions'
 import { GetContextResult } from '../../src/completions/context'
@@ -22,12 +24,17 @@ import { ENVIRONMENT_CONFIG } from './environment-config'
 import { findSubstringPosition } from './utils'
 import { TextDocument } from './vscode-text-document'
 
+let didLogConfig = false
+
 async function initCompletionsProvider(context: GetContextResult): Promise<CodyCompletionItemProvider> {
     const secretStorage = new InMemorySecretStorage()
     await secretStorage.store('cody.access-token', ENVIRONMENT_CONFIG.SOURCEGRAPH_ACCESS_TOKEN)
 
     const initialConfig = await getFullConfig(secretStorage)
-    console.error('Running `initCompletionsProvider` with config:', initialConfig)
+    if (!didLogConfig) {
+        console.error('Running `initCompletionsProvider` with config:', initialConfig)
+        didLogConfig = true
+    }
 
     if (!initialConfig.autocomplete) {
         throw new Error('`cody.autocomplete` is not true!')
@@ -36,7 +43,9 @@ async function initCompletionsProvider(context: GetContextResult): Promise<CodyC
     const { completionsClient, codebaseContext } = await configureExternalServices(
         initialConfig,
         'rg',
-        new NoopEditor()
+        new NoopEditor(),
+        NOOP_TELEMETRY_SERVICE,
+        { createCompletionsClient: (...args) => new SourcegraphNodeCompletionsClient(...args) }
     )
 
     const history = new History()
@@ -52,7 +61,7 @@ async function initCompletionsProvider(context: GetContextResult): Promise<CodyC
         history,
         codebaseContext,
         disableTimeouts: true,
-        triggerMoreEagerly: false,
+        triggerMoreEagerly: true,
         cache: null,
         isEmbeddingsContextEnabled: true,
         contextFetcher: () => Promise.resolve(context),
