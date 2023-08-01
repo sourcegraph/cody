@@ -84,4 +84,14 @@ describe('CompletionsCache', () => {
         })
         expect(cache.get('foo\n ', false)).toEqual(undefined)
     })
+
+    it('updates the log id for all cached entries', () => {
+        const cache = new CompletionsCache()
+        cache.add('id1', [{ prefix: 'foo \n  ', content: 'bar' }])
+        cache.updateLogId('id1', 'id2')
+
+        expect(cache.get('foo \n  ', true)?.logId).toBe('id2')
+        expect(cache.get('foo \n ', true)?.logId).toBe('id2')
+        expect(cache.get('foo \n', true)?.logId).toBe('id2')
+    })
 })

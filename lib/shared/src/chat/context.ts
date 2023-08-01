@@ -6,6 +6,6 @@ export interface ChatContextStatus {
     connection?: boolean
     codebase?: string
     filePath?: string
-    selection?: ActiveTextEditorSelectionRange
+    selectionRange?: ActiveTextEditorSelectionRange
     supportsKeyword?: boolean
 }

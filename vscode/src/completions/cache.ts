@@ -1,7 +1,7 @@
 import { LRUCache } from 'lru-cache'
 
-import { Completion } from '.'
 import { trimEndOnLastLineIfWhitespaceOnly } from './text-processing'
+import { Completion } from './vscodeInlineCompletionItemProvider'
 
 export interface CachedCompletions {
     logId: string
@@ -74,6 +74,15 @@ export class CompletionsCache {
             for (let i = 0; i <= maxCharsAppended; i++) {
                 const key = trimEndOnLastLineIfWhitespaceOnly(completion.prefix) + completion.content.slice(0, i)
                 this.insertCompletion(key, logId, completion, key === completion.prefix)
+            }
+        }
+    }
+
+    public updateLogId(oldLogId: string, newLogId: string): void {
+        const entries = this.cache.values()
+        for (const value of entries) {
+            if (value && 'logId' in value && value.logId === oldLogId) {
+                value.logId = newLogId
             }
         }
     }
