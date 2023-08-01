@@ -73,7 +73,7 @@ export function sliceUntilFirstNLinesOfSuffixMatch(suggestion: string, suffix: s
 }
 
 export async function batchCompletions(
-    client: SourcegraphCompletionsClient,
+    client: Pick<SourcegraphCompletionsClient, 'complete'>,
     params: CompletionParameters,
     n: number,
     abortSignal: AbortSignal

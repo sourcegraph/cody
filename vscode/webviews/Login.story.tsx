@@ -17,6 +17,8 @@ const meta: ComponentMeta<typeof Login> = {
 const vscodeAPI: VSCodeWrapper = {
     postMessage: () => {},
     onMessage: () => () => {},
+    getState: () => ({}),
+    setState: () => {},
 }
 
 const validAuthStatus: AuthStatus = {

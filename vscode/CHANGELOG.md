@@ -17,10 +17,15 @@ Starting from `0.2.0`, Cody is using `major.EVEN_NUMBER.patch` for release versi
 ### Changed
 
 - Inline Fixups: Added intent detection to improve prompt and context quality. [pull/376](https://github.com/sourcegraph/cody/pull/376)
+- Layout cleanups: smaller header and single line message input. [pull/449](https://github.com/sourcegraph/cody/pull/449)
+- Improve response feedback button behavior. [pull/451](https://github.com/sourcegraph/cody/pull/451)
+- Remove in-chat onboarding buttons for new chats. [pull/450](https://github.com/sourcegraph/cody/pull/450)
 
 ## [0.6.3]
 
 ### Added
+
+- Added the functionality to drag and reorder the recipes. [pull/314](https://github.com/sourcegraph/cody/pull/314)
 
 ### Fixed
 

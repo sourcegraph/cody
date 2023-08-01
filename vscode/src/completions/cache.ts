@@ -1,7 +1,7 @@
 import { LRUCache } from 'lru-cache'
 
-import { Completion } from '.'
 import { trimEndOnLastLineIfWhitespaceOnly } from './text-processing'
+import { Completion } from './types'
 
 export interface CachedCompletions {
     logId: string

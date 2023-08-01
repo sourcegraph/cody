@@ -4,7 +4,6 @@ import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
 import { SourcegraphCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/client'
 import { CompletionParameters } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
 
-import { Completion } from '..'
 import { ReferenceSnippet } from '../context'
 import {
     CLOSING_CODE_TAG,
@@ -15,6 +14,7 @@ import {
     PrefixComponents,
     trimLeadingWhitespaceUntilNewline,
 } from '../text-processing'
+import { Completion } from '../types'
 import { batchCompletions, messagesToText } from '../utils'
 
 import { CompletionProviderTracer, Provider, ProviderConfig, ProviderOptions } from './provider'
@@ -27,13 +27,13 @@ function tokensToChars(tokens: number): number {
 
 interface AnthropicOptions {
     contextWindowTokens: number
-    completionsClient: SourcegraphCompletionsClient
+    completionsClient: Pick<SourcegraphCompletionsClient, 'complete'>
 }
 
 export class AnthropicProvider extends Provider {
     private promptChars: number
     private responseTokens: number
-    private completionsClient: SourcegraphCompletionsClient
+    private completionsClient: Pick<SourcegraphCompletionsClient, 'complete'>
 
     constructor(options: ProviderOptions, anthropicOptions: AnthropicOptions) {
         super(options)

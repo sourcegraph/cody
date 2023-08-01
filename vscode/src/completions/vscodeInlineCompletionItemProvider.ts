@@ -11,7 +11,7 @@ import { CodyStatusBar } from '../services/StatusBar'
 import { CachedCompletions, CompletionsCache } from './cache'
 import { getContext, GetContextOptions, GetContextResult } from './context'
 import { getCurrentDocContext } from './document'
-import { History } from './history'
+import { DocumentHistory } from './history'
 import * as CompletionLogger from './logger'
 import { detectMultiline } from './multiline'
 import { CompletionProviderTracer, Provider, ProviderConfig, ProviderOptions } from './providers/provider'
@@ -22,7 +22,7 @@ import { isAbortError, SNIPPET_WINDOW_SIZE } from './utils'
 
 interface CodyCompletionItemProviderConfig {
     providerConfig: ProviderConfig
-    history: History
+    history: DocumentHistory
     statusBar: CodyStatusBar
     codebaseContext: CodebaseContext
     responsePercentage?: number
@@ -30,14 +30,13 @@ interface CodyCompletionItemProviderConfig {
     suffixPercentage?: number
     disableTimeouts?: boolean
     isEmbeddingsContextEnabled?: boolean
-    triggerMoreEagerly: boolean
     cache: CompletionsCache | null
     completeSuggestWidgetSelection?: boolean
     tracer?: ProvideInlineCompletionItemsTracer | null
     contextFetcher?: (options: GetContextOptions) => Promise<GetContextResult>
 }
 
-export class CodyCompletionItemProvider implements vscode.InlineCompletionItemProvider {
+export class InlineCompletionItemProvider implements vscode.InlineCompletionItemProvider {
     private promptChars: number
     private maxPrefixChars: number
     private maxSuffixChars: number
@@ -154,14 +153,10 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
         tracer?.({ params: { document, position, context } })
 
         const abortController = new AbortController()
+        this.abortOpenCompletions()
         if (token) {
-            this.abortOpenCompletions()
             token.onCancellationRequested(() => abortController.abort())
             this.abortOpenCompletions = () => abortController.abort()
-        }
-
-        if (!vscode.window.activeTextEditor || document.uri.scheme === 'cody') {
-            return emptyCompletions()
         }
 
         const docContext = getCurrentDocContext(document, position, this.maxPrefixChars, this.maxSuffixChars)
@@ -169,29 +164,11 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
             return emptyCompletions()
         }
 
-        const { prefix, suffix, prevNonEmptyLine } = docContext
-
-        // Text before the cursor on the same line.
-        const sameLinePrefix = docContext.prevLine
-
-        // Text after the cursor on the same line.
-        const sameLineSuffix = suffix.slice(0, suffix.indexOf('\n'))
-
         const multiline = detectMultiline(
-            prefix,
-            prevNonEmptyLine,
-            sameLinePrefix,
-            sameLineSuffix,
+            docContext,
             document.languageId,
             this.config.providerConfig.enableExtendedMultilineTriggers
         )
-
-        // Don't show completions if we are in the process of writing a word.
-        const cursorAtWord = /\w$/.test(sameLinePrefix)
-        if (cursorAtWord && !this.config.triggerMoreEagerly) {
-            return emptyCompletions()
-        }
-        const triggeredMoreEagerly = this.config.triggerMoreEagerly && cursorAtWord
 
         let triggeredForSuggestWidgetSelection: string | undefined
         if (context.selectedCompletionInfo) {
@@ -210,7 +187,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
         //
         // VS Code will attempt to merge the remainder of the current line by characters but for
         // words this will easily get very confusing.
-        if (/\w/.test(sameLineSuffix)) {
+        if (/\w/.test(docContext.currentLineSuffix)) {
             return emptyCompletions()
         }
 
@@ -224,15 +201,15 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
             // untruncated prefix matches. This fixes some weird issues where the completion would
             // render if you insert whitespace but not on the original place when you delete it
             // again
-            cachedCompletions = this.config.cache?.get(prefix, false)
-            if (cachedCompletions && !cachedCompletions.isExactPrefix) {
+            cachedCompletions = this.config.cache?.get(docContext.prefix, false)
+            if (!cachedCompletions?.isExactPrefix) {
                 return emptyCompletions()
             }
         }
 
         // If cachedCompletions was already set by the above logic, we don't have to query the cache
         // again.
-        cachedCompletions = cachedCompletions ?? this.config.cache?.get(prefix)
+        cachedCompletions = cachedCompletions ?? this.config.cache?.get(docContext.prefix)
 
         // We create a log entry after determining if we have a potential cache hit. This is
         // necessary to make sure that typing text of a displayed completion will not log a new
@@ -252,10 +229,8 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
                   multiline,
                   providerIdentifier: this.config.providerConfig.identifier,
                   languageId: document.languageId,
-                  triggeredMoreEagerly,
                   triggeredForSuggestWidgetSelection: triggeredForSuggestWidgetSelection !== undefined,
                   settings: {
-                      autocompleteExperimentalTriggerMoreEagerly: this.config.triggerMoreEagerly,
                       autocompleteExperimentalCompleteSuggestWidgetSelection: Boolean(
                           this.config.completeSuggestWidgetSelection
                       ),
@@ -282,8 +257,8 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
                 document,
                 context,
                 position,
-                prefix,
-                suffix,
+                docContext.prefix,
+                docContext.suffix,
                 multiline,
                 document.languageId,
                 true,
@@ -296,8 +271,8 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
         let timeout: number
 
         const sharedProviderOptions: Omit<ProviderOptions, 'id' | 'n' | 'multiline'> = {
-            prefix,
-            suffix,
+            prefix: docContext.prefix,
+            suffix: docContext.suffix,
             fileName: path.normalize(vscode.workspace.asRelativePath(document.fileName ?? '')),
             languageId: document.languageId,
             responsePercentage: this.config.responsePercentage,
@@ -316,13 +291,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
                 })
             )
         } else {
-            if (cursorAtWord) {
-                // The cursor is at a word and the user might still be typing it, so wait for longer.
-                timeout = 200
-            } else {
-                // The current line has a suffix.
-                timeout = 20
-            }
+            timeout = 20
             completers.push(
                 this.config.providerConfig.create({
                     id: 'single-line-suffix',
@@ -348,10 +317,19 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
 
         CompletionLogger.start(logId)
 
+        const stopLoading = this.config.statusBar.startLoading('Completions are being generated')
+        this.stopLoading = stopLoading
+        // Overwrite the abort handler to also update the loading state
+        const previousAbort = this.abortOpenCompletions
+        this.abortOpenCompletions = () => {
+            previousAbort()
+            stopLoading()
+        }
+
         const contextResult = await this.config.contextFetcher({
             document,
-            prefix,
-            suffix,
+            prefix: docContext.prefix,
+            suffix: docContext.suffix,
             history: this.config.history,
             jaccardDistanceWindowSize: SNIPPET_WINDOW_SIZE,
             maxChars: this.promptChars,
@@ -365,20 +343,10 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
 
         CompletionLogger.networkRequestStarted(logId, contextResult.logSummary)
 
-        const stopLoading = this.config.statusBar.startLoading('Completions are being generated')
-        this.stopLoading = stopLoading
-
-        // Overwrite the abort handler to also update the loading state
-        const previousAbort = this.abortOpenCompletions
-        this.abortOpenCompletions = () => {
-            previousAbort()
-            stopLoading()
-        }
-
         const completions = await this.requestManager.request(
             document.uri.toString(),
             logId,
-            prefix,
+            docContext.prefix,
             completers,
             contextResult.context,
             abortController.signal,
@@ -392,8 +360,8 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
             document,
             context,
             position,
-            prefix,
-            suffix,
+            docContext.prefix,
+            docContext.suffix,
             multiline,
             document.languageId,
             false,

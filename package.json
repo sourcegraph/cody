@@ -72,6 +72,10 @@
           "tslib": "^2.1.0"
         }
       }
-    }
+    },
+    "neverBuiltDependencies": [
+      "deasync",
+      "playwright"
+    ]
   }
 }
