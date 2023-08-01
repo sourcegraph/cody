@@ -16,6 +16,7 @@ export function getLanguageConfig(languageId: string): LanguageConfig | null {
         case 'javascriptreact':
         case 'typescript':
         case 'typescriptreact':
+        case 'vue':
         case 'php':
             return {
                 blockStart: '{',
