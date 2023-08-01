@@ -21,6 +21,7 @@ export type RecipeID =
     | 'inline-touch'
     | 'find-code-smells'
     | 'fixup'
+    | 'fixup-improved'
     | 'generate-docstring'
     | 'generate-unit-test'
     | 'git-history'

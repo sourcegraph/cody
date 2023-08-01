@@ -99,6 +99,8 @@ export class FixupController
 
     // Adds a new task to the list of tasks
     // Then mark it as pending before sending it to the tree view for tree item creation
+
+    // TODO: Start it immediately, new MessageProvider
     public createTask(documentUri: vscode.Uri, instruction: string, selectionRange: vscode.Range): void {
         const fixupFile = this.files.forUri(documentUri)
         const task = new FixupTask(fixupFile, instruction, selectionRange)
