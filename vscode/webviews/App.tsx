@@ -12,7 +12,6 @@ import { Configuration } from '@sourcegraph/cody-shared/src/configuration'
 import { AuthStatus, defaultAuthStatus, LocalEnv } from '../src/chat/protocol'
 
 import { Chat } from './Chat'
-import { Debug } from './Debug'
 import { LoadingPage } from './LoadingPage'
 import { Login } from './Login'
 import { View } from './NavBar'
@@ -27,7 +26,6 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
         | null
     >(null)
     const [endpoint, setEndpoint] = useState<string | null>(null)
-    const [debugLog, setDebugLog] = useState<string[]>([])
     const [view, setView] = useState<View | undefined>()
     const [messageInProgress, setMessageInProgress] = useState<ChatMessage | null>(null)
     const [messageBeingEdited, setMessageBeingEdited] = useState<boolean>(false)
@@ -67,14 +65,6 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                         break
                     case 'login':
                         break
-                    case 'showTab':
-                        if (message.tab === 'chat') {
-                            setView('chat')
-                        }
-                        break
-                    case 'debug':
-                        setDebugLog([...debugLog, message.message])
-                        break
                     case 'history':
                         setInputHistory(message.messages?.input ?? [])
                         setUserHistory(message.messages?.chat ?? null)
@@ -84,7 +74,6 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                         break
                     case 'errors':
                         setErrorMessages([...errorMessages, message.errors].slice(-5))
-                        setDebugLog([...debugLog, message.errors])
                         break
                     case 'view':
                         setView(message.messages)
@@ -103,7 +92,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                         break
                 }
             }),
-        [debugLog, errorMessages, view, vscodeAPI]
+        [errorMessages, view, vscodeAPI]
     )
 
     useEffect(() => {
@@ -161,7 +150,6 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
             ) : (
                 <>
                     {errorMessages && <ErrorBanner errors={errorMessages} setErrors={setErrorMessages} />}
-                    {view === 'debug' && config?.debugEnable && <Debug debugLog={debugLog} />}
                     {view === 'history' && (
                         <UserHistory
                             userHistory={userHistory}

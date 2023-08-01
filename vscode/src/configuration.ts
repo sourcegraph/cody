@@ -36,14 +36,16 @@ export function getConfiguration(config: ConfigGetter): Configuration {
         debugRegex = new RegExp('.*')
     }
 
-    let autocompleteAdvancedProvider = config.get<'anthropic' | 'unstable-codegen' | 'unstable-huggingface'>(
-        CONFIG_KEY.autocompleteAdvancedProvider,
-        'anthropic'
-    )
+    let autocompleteAdvancedProvider = config.get<
+        'anthropic' | 'unstable-codegen' | 'unstable-huggingface' | 'unstable-fireworks' | 'unstable-azure-openai'
+    >(CONFIG_KEY.autocompleteAdvancedProvider, 'anthropic')
+
     if (
         autocompleteAdvancedProvider !== 'anthropic' &&
         autocompleteAdvancedProvider !== 'unstable-codegen' &&
-        autocompleteAdvancedProvider !== 'unstable-huggingface'
+        autocompleteAdvancedProvider !== 'unstable-huggingface' &&
+        autocompleteAdvancedProvider !== 'unstable-fireworks' &&
+        autocompleteAdvancedProvider !== 'unstable-azure-openai'
     ) {
         autocompleteAdvancedProvider = 'anthropic'
         void vscode.window.showInformationMessage(
@@ -60,6 +62,7 @@ export function getConfiguration(config: ConfigGetter): Configuration {
         debugEnable: config.get<boolean>(CONFIG_KEY.debugEnable, false),
         debugVerbose: config.get<boolean>(CONFIG_KEY.debugVerbose, false),
         debugFilter: debugRegex,
+        telemetryLevel: config.get<'all' | 'off'>(CONFIG_KEY.telemetryLevel, 'all'),
         autocomplete: config.get(CONFIG_KEY.autocompleteEnabled, true),
         experimentalChatPredictions: config.get(CONFIG_KEY.experimentalChatPredictions, isTesting),
         inlineChat: config.get(CONFIG_KEY.inlineChatEnabled, true),
@@ -74,10 +77,6 @@ export function getConfiguration(config: ConfigGetter): Configuration {
         autocompleteAdvancedAccessToken: config.get<string | null>(CONFIG_KEY.autocompleteAdvancedAccessToken, null),
         autocompleteAdvancedCache: config.get(CONFIG_KEY.autocompleteAdvancedCache, true),
         autocompleteAdvancedEmbeddings: config.get(CONFIG_KEY.autocompleteAdvancedEmbeddings, true),
-        autocompleteExperimentalTriggerMoreEagerly: config.get(
-            CONFIG_KEY.autocompleteExperimentalTriggerMoreEagerly,
-            false
-        ),
         autocompleteExperimentalCompleteSuggestWidgetSelection: config.get(
             CONFIG_KEY.autocompleteExperimentalCompleteSuggestWidgetSelection,
             false

@@ -79,25 +79,6 @@ body[data-vscode-theme-kind='vscode-high-contrast'] .transcript-item:not(.human-
     outline: none;
 }
 
-:global(.token-hallucinated),
-:global(.token-not-hallucinated) {
-    word-break: break-all;
-    text-underline-offset: 0.125rem;
-}
-
-:global(.token-hallucinated) {
-    text-decoration: 1px wavy underline var(--vscode-problemsWarningIcon-foreground);
-}
-
-:global(.token-not-hallucinated) {
-    text-decoration: 1px underline var(--vscode-textLink-foreground);
-}
-
-:global(.token-hallucinated)::before {
-    content: '⚠️ ';
-    color: var(--vscode-problemsWarningIcon-foreground);
-}
-
 .chat-button {
     margin-top: 0.5rem;
     padding: 0.25rem;
@@ -156,6 +137,20 @@ body[data-vscode-theme-kind='vscode-high-contrast'] .transcript-item:not(.human-
 
 .stop-generating-button:active {
     transition: all 0.5s linear;
+}
+
+.thumbs-down-feedback-container {
+    display: flex;
+    align-items: center;
+    gap: calc(var(--spacing) / 4);
+}
+
+.feedback-button[disabled] {
+    /* VSCodeButton's default cursor is not-allowed, but that's different to
+       native VS Code and feels off, especially when it quickly changes to
+       not-allowed after you submit feedback. So we reset it back to the
+       default cursor to fit in nicer with standard VS Code native behaviour */
+    cursor: default;
 }
 
 @keyframes fadeInSlideUp {

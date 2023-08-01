@@ -1,7 +1,7 @@
 import * as anthropic from '@anthropic-ai/sdk'
 
 import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
-import { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/nodeClient'
+import { SourcegraphCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/client'
 import {
     CompletionParameters,
     CompletionResponse,
@@ -73,7 +73,7 @@ export function sliceUntilFirstNLinesOfSuffixMatch(suggestion: string, suffix: s
 }
 
 export async function batchCompletions(
-    client: SourcegraphNodeCompletionsClient,
+    client: Pick<SourcegraphCompletionsClient, 'complete'>,
     params: CompletionParameters,
     n: number,
     abortSignal: AbortSignal

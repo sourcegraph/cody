@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 
-import { VSCodeButton, VSCodeTextArea } from '@vscode/webview-ui-toolkit/react'
+import { VSCodeButton, VSCodeLink, VSCodeTextArea } from '@vscode/webview-ui-toolkit/react'
 import classNames from 'classnames'
 
 import { ChatContextStatus } from '@sourcegraph/cody-shared/src/chat/context'
@@ -17,6 +17,8 @@ import {
     FeedbackButtonsProps,
 } from '@sourcegraph/cody-ui/src/Chat'
 import { SubmitSvg } from '@sourcegraph/cody-ui/src/utils/icons'
+
+import { CODY_FEEDBACK_URL } from '../src/chat/protocol'
 
 import { ChatCommandsComponent } from './ChatCommands'
 import { FileLink } from './FileLink'
@@ -271,44 +273,71 @@ const EditButton: React.FunctionComponent<EditButtonProps> = ({
 )
 
 const FeedbackButtons: React.FunctionComponent<FeedbackButtonsProps> = ({ className, feedbackButtonsOnSubmit }) => {
-    const [feedbackSubmitted, setFeedbackSubmitted] = useState(false)
+    const [feedbackSubmitted, setFeedbackSubmitted] = useState('')
 
     const onFeedbackBtnSubmit = useCallback(
         (text: string) => {
             feedbackButtonsOnSubmit(text)
-            setFeedbackSubmitted(true)
+            setFeedbackSubmitted(text)
         },
         [feedbackButtonsOnSubmit]
     )
 
-    if (feedbackSubmitted) {
-        return (
-            <div className={className}>
-                <VSCodeButton className={classNames(styles.submitButton)} title="Feedback submitted." disabled={true}>
-                    <i className="codicon codicon-check" />
-                </VSCodeButton>
-            </div>
-        )
-    }
-
     return (
         <div className={classNames(styles.feedbackButtons, className)}>
-            <VSCodeButton
-                className={classNames(styles.submitButton)}
-                appearance="icon"
-                type="button"
-                onClick={() => onFeedbackBtnSubmit('thumbsUp')}
-            >
-                <i className="codicon codicon-thumbsup" />
-            </VSCodeButton>
-            <VSCodeButton
-                className={classNames(styles.submitButton)}
-                appearance="icon"
-                type="button"
-                onClick={() => onFeedbackBtnSubmit('thumbsDown')}
-            >
-                <i className="codicon codicon-thumbsdown" />
-            </VSCodeButton>
+            {!feedbackSubmitted && (
+                <>
+                    <VSCodeButton
+                        className={classNames(styles.feedbackButton)}
+                        appearance="icon"
+                        type="button"
+                        onClick={() => onFeedbackBtnSubmit('thumbsUp')}
+                    >
+                        <i className="codicon codicon-thumbsup" />
+                    </VSCodeButton>
+                    <VSCodeButton
+                        className={classNames(styles.feedbackButton)}
+                        appearance="icon"
+                        type="button"
+                        onClick={() => onFeedbackBtnSubmit('thumbsDown')}
+                    >
+                        <i className="codicon codicon-thumbsdown" />
+                    </VSCodeButton>
+                </>
+            )}
+            {feedbackSubmitted === 'thumbsUp' && (
+                <VSCodeButton
+                    className={classNames(styles.feedbackButton)}
+                    appearance="icon"
+                    type="button"
+                    disabled={true}
+                    title="Thanks for your feedback"
+                >
+                    <i className="codicon codicon-thumbsup" />
+                    <i className="codicon codicon-check" />
+                </VSCodeButton>
+            )}
+            {feedbackSubmitted === 'thumbsDown' && (
+                <span className={styles.thumbsDownFeedbackContainer}>
+                    <VSCodeButton
+                        className={classNames(styles.feedbackButton)}
+                        appearance="icon"
+                        type="button"
+                        disabled={true}
+                        title="Thanks for your feedback"
+                    >
+                        <i className="codicon codicon-thumbsdown" />
+                        <i className="codicon codicon-check" />
+                    </VSCodeButton>
+                    <VSCodeLink
+                        href={String(CODY_FEEDBACK_URL)}
+                        target="_blank"
+                        title="Help improve Cody by providing more feedback about the quality of this response"
+                    >
+                        Give Feedback
+                    </VSCodeLink>
+                </span>
+            )}
         </div>
     )
 }

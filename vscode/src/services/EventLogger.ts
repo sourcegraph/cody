@@ -14,8 +14,14 @@ const extensionDetails: ExtensionDetails = { ide: 'VSCode', ideExtensionType: 'C
 
 export async function createOrUpdateEventLogger(
     config: ConfigurationWithAccessToken,
-    localStorage: LocalStorage
+    localStorage: LocalStorage,
+    isExtensionModeDevOrTest: boolean
 ): Promise<void> {
+    if (config.telemetryLevel === 'off' || isExtensionModeDevOrTest) {
+        eventLogger = null
+        return
+    }
+
     const { anonymousUserID, created } = await localStorage.anonymousUserID()
     globalAnonymousUserID = anonymousUserID
 
@@ -47,11 +53,11 @@ export async function createOrUpdateEventLogger(
  * @deprecated Use TelemetryService instead.
  */
 export function logEvent(eventName: string, properties?: TelemetryEventProperties): void {
+    debug(`logEvent${eventLogger === null ? ' (telemetry disabled)' : ''}`, eventName, JSON.stringify(properties))
     if (!eventLogger || !globalAnonymousUserID) {
         return
     }
     try {
-        debug('EventLogger', eventName, properties)
         eventLogger.log(eventName, globalAnonymousUserID, properties)
     } catch (error) {
         console.error(error)

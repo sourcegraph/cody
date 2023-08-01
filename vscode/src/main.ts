@@ -3,26 +3,25 @@ import * as vscode from 'vscode'
 import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
 import { Configuration, ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
-import { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/nodeClient'
+import { SourcegraphCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/client'
 
 import { ChatViewProvider } from './chat/ChatViewProvider'
 import { ContextProvider } from './chat/ContextProvider'
 import { InlineChatViewManager } from './chat/InlineChatViewProvider'
 import { MessageProviderOptions } from './chat/MessageProvider'
 import { CODY_FEEDBACK_URL } from './chat/protocol'
-import { CodyCompletionItemProvider } from './completions'
 import { CompletionsCache } from './completions/cache'
-import { History } from './completions/history'
+import { VSCodeDocumentHistory } from './completions/history'
 import * as CompletionsLogger from './completions/logger'
 import { createProviderConfig } from './completions/providers/createProvider'
 import { registerAutocompleteTraceView } from './completions/tracer/traceView'
+import { InlineCompletionItemProvider } from './completions/vscodeInlineCompletionItemProvider'
 import { getConfiguration, getFullConfig } from './configuration'
-import { CommandsController } from './custom-prompts/CommandsController'
 import { VSCodeEditor } from './editor/vscode-editor'
+import { PlatformContext } from './extension.common'
 import { configureExternalServices } from './external-services'
 import { FixupController } from './non-stop/FixupController'
 import { showSetupNotification } from './notifications/setup-notification'
-import { getRgPath } from './rg'
 import { AuthProvider } from './services/AuthProvider'
 import { createOrUpdateEventLogger } from './services/EventLogger'
 import { showFeedbackSupportQuickPick } from './services/FeedbackOptions'
@@ -42,13 +41,13 @@ import { TestSupport } from './test-support'
 /**
  * Start the extension, watching all relevant configuration and secrets for changes.
  */
-export async function start(context: vscode.ExtensionContext): Promise<vscode.Disposable> {
+export async function start(context: vscode.ExtensionContext, platform: PlatformContext): Promise<vscode.Disposable> {
     const secretStorage =
         process.env.CODY_TESTING === 'true' || process.env.CODY_PROFILE_TEMP === 'true'
             ? new InMemorySecretStorage()
             : new VSCodeSecretStorage(context.secrets)
     const localStorage = new LocalStorage(context.globalState)
-    const rgPath = await getRgPath(context.extensionPath)
+    const rgPath = platform.getRgPath ? await platform.getRgPath() : null
 
     const disposables: vscode.Disposable[] = []
 
@@ -57,7 +56,8 @@ export async function start(context: vscode.ExtensionContext): Promise<vscode.Di
         await getFullConfig(secretStorage, localStorage),
         secretStorage,
         localStorage,
-        rgPath
+        rgPath,
+        platform
     )
     disposables.push(disposable)
 
@@ -79,14 +79,18 @@ const register = async (
     initialConfig: ConfigurationWithAccessToken,
     secretStorage: SecretStorage,
     localStorage: LocalStorage,
-    rgPath: string | null
+    rgPath: string | null,
+    platform: Omit<PlatformContext, 'getRgPath'>
 ): Promise<{
     disposable: vscode.Disposable
     onConfigurationChange: (newConfig: ConfigurationWithAccessToken) => void
 }> => {
     const disposables: vscode.Disposable[] = []
 
-    await createOrUpdateEventLogger(initialConfig, localStorage)
+    const isExtensionModeDevOrTest =
+        context.extensionMode === vscode.ExtensionMode.Development ||
+        context.extensionMode === vscode.ExtensionMode.Test
+    await createOrUpdateEventLogger(initialConfig, localStorage, isExtensionModeDevOrTest)
     const telemetryService = createVSCodeTelemetryService()
 
     // Controller for inline Chat
@@ -97,10 +101,13 @@ const register = async (
     if (TestSupport.instance) {
         TestSupport.instance.fixupController.set(fixup)
     }
-    // Controller for Custom Commands
-    const command = new CommandsController(context, initialConfig.experimentalCustomCommands, localStorage)
 
-    const editor = new VSCodeEditor({ inline: commentController, fixups: fixup, command })
+    const editor = new VSCodeEditor({
+        inline: commentController,
+        fixups: fixup,
+        command: platform.createCommandsController?.(context, initialConfig.experimentalCustomCommands, localStorage),
+    })
+
     // Could we use the `initialConfig` instead?
     const workspaceConfig = vscode.workspace.getConfiguration()
     const config = getConfiguration(workspaceConfig)
@@ -112,7 +119,7 @@ const register = async (
         completionsClient,
         guardrails,
         onConfigurationChange: externalServicesOnDidConfigurationChange,
-    } = await configureExternalServices(initialConfig, rgPath, editor, telemetryService)
+    } = await configureExternalServices(initialConfig, rgPath, editor, telemetryService, platform)
 
     const authProvider = new AuthProvider(initialConfig, secretStorage, localStorage, telemetryService)
     await authProvider.init()
@@ -126,7 +133,8 @@ const register = async (
         localStorage,
         rgPath,
         authProvider,
-        telemetryService
+        telemetryService,
+        platform
     )
     disposables.push(contextProvider)
 
@@ -137,16 +145,16 @@ const register = async (
         guardrails,
         editor,
         localStorage,
-        rgPath,
         authProvider,
         contextProvider,
         telemetryService,
+        platform,
     }
 
     const inlineChatManager = new InlineChatViewManager(messageProviderOptions)
     const sidebarChatProvider = new ChatViewProvider({
         ...messageProviderOptions,
-        extensionPath: context.extensionPath,
+        extensionUri: context.extensionUri,
     })
 
     disposables.push(sidebarChatProvider)
@@ -160,7 +168,7 @@ const register = async (
         contextProvider.configurationChangeEvent.event(async () => {
             const newConfig = await getFullConfig(secretStorage, localStorage)
             externalServicesOnDidConfigurationChange(newConfig)
-            createOrUpdateEventLogger(newConfig, localStorage).catch(error => console.error(error))
+            await createOrUpdateEventLogger(newConfig, localStorage, isExtensionModeDevOrTest)
         })
     )
 
@@ -170,7 +178,7 @@ const register = async (
         humanInput?: string
     ): Promise<void> => {
         if (openChatView) {
-            sidebarChatProvider.showTab('chat')
+            await sidebarChatProvider.setWebviewView('chat')
         }
 
         await sidebarChatProvider.executeRecipe(recipe, humanInput)
@@ -221,8 +229,7 @@ const register = async (
             // The inline chat is already saved in history, we just need to tell the sidebar chat to restore it
             await sidebarChatProvider.restoreSession(inlineChatProvider.currentChatID)
             // Ensure that the sidebar view is open if not already
-            sidebarChatProvider.setWebviewView('chat')
-            await vscode.commands.executeCommand('cody.chat.focus')
+            await sidebarChatProvider.setWebviewView('chat')
             // Remove the inline chat
             inlineChatManager.removeProviderForThread(thread)
         }),
@@ -233,11 +240,9 @@ const register = async (
         }),
         // Tests
         // Access token - this is only used in configuration tests
-        vscode.commands.registerCommand('cody.test.token', async (args: any[]) => {
-            if (args?.length && (args[0] as string)) {
-                await secretStorage.store(CODY_ACCESS_TOKEN_SECRET, args[0])
-            }
-        }),
+        vscode.commands.registerCommand('cody.test.token', async token =>
+            secretStorage.store(CODY_ACCESS_TOKEN_SECRET, token)
+        ),
         // Auth
         vscode.commands.registerCommand('cody.auth.signin', () => authProvider.signinMenu()),
         vscode.commands.registerCommand('cody.auth.signout', () => authProvider.signoutMenu()),
@@ -245,28 +250,41 @@ const register = async (
         // Commands
         vscode.commands.registerCommand('cody.interactive.clear', async () => {
             await sidebarChatProvider.clearAndRestartSession()
-            sidebarChatProvider.setWebviewView('chat')
+            await sidebarChatProvider.setWebviewView('chat')
         }),
         vscode.commands.registerCommand('cody.focus', () => vscode.commands.executeCommand('cody.chat.focus')),
         vscode.commands.registerCommand('cody.settings.extension', () =>
             vscode.commands.executeCommand('workbench.action.openSettings', { query: '@ext:sourcegraph.cody-ai' })
         ),
-        vscode.commands.registerCommand('cody.history', () => sidebarChatProvider.setWebviewView('history')),
+        vscode.commands.registerCommand('cody.history', async () => sidebarChatProvider.setWebviewView('history')),
         vscode.commands.registerCommand('cody.history.clear', async () => {
             await sidebarChatProvider.clearHistory()
         }),
         // Recipes
         vscode.commands.registerCommand('cody.action.chat', input => executeRecipeInSidebar('chat-question', input)),
-        vscode.commands.registerCommand('cody.action.commands.menu', showDesc => command.default.menu(showDesc)),
+        vscode.commands.registerCommand(
+            'cody.action.commands.menu',
+            showDesc => editor.controllers.command?.default.menu(showDesc)
+        ),
         vscode.commands.registerCommand('cody.customPrompts.exec', async title => {
             if (!sidebarChatProvider.isCustomPromptAction(title)) {
-                sidebarChatProvider.showTab('chat')
+                await sidebarChatProvider.setWebviewView('chat')
             }
             await sidebarChatProvider.executeCustomPrompt(title)
         }),
-        vscode.commands.registerCommand('cody.action.custom-prompts.menu', () => command.promptsQuickPicker()),
+        vscode.commands.registerCommand(
+            'cody.action.custom-prompts.menu',
+            () => editor.controllers.command?.promptsQuickPicker()
+        ),
         vscode.commands.registerCommand('cody.command.explain-code', () =>
             executeRecipeInSidebar('custom-prompt', true, '/explain')
+        ),
+        vscode.commands.registerCommand(
+            'cody.customRecipes.list',
+            () => editor.controllers.command?.promptsQuickPicker()
+        ),
+        vscode.commands.registerCommand('cody.recipe.explain-code', () =>
+            executeRecipeInSidebar('explain-code-detailed')
         ),
         vscode.commands.registerCommand('cody.command.generate-unit-test', () =>
             executeRecipeInSidebar('custom-prompt', true, '/tests')
@@ -391,7 +409,7 @@ const register = async (
         onConfigurationChange: newConfig => {
             contextProvider.onConfigurationChange(newConfig)
             externalServicesOnDidConfigurationChange(newConfig)
-            void createOrUpdateEventLogger(newConfig, localStorage)
+            void createOrUpdateEventLogger(newConfig, localStorage, isExtensionModeDevOrTest)
         },
     }
 }
@@ -399,22 +417,21 @@ const register = async (
 function createCompletionsProvider(
     config: Configuration,
     webviewErrorMessenger: (error: string) => Promise<void>,
-    completionsClient: SourcegraphNodeCompletionsClient,
+    completionsClient: SourcegraphCompletionsClient,
     statusBar: CodyStatusBar,
     codebaseContext: CodebaseContext
 ): vscode.Disposable {
     const disposables: vscode.Disposable[] = []
 
-    const history = new History()
+    const history = new VSCodeDocumentHistory()
     const providerConfig = createProviderConfig(config, webviewErrorMessenger, completionsClient)
-    const completionsProvider = new CodyCompletionItemProvider({
+    const completionsProvider = new InlineCompletionItemProvider({
         providerConfig,
         history,
         statusBar,
         codebaseContext,
         cache: config.autocompleteAdvancedCache ? new CompletionsCache() : null,
         isEmbeddingsContextEnabled: config.autocompleteAdvancedEmbeddings,
-        triggerMoreEagerly: config.autocompleteExperimentalTriggerMoreEagerly,
         completeSuggestWidgetSelection: config.autocompleteExperimentalCompleteSuggestWidgetSelection,
     })
 

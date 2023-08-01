@@ -1,13 +1,17 @@
 {
   "search.exclude": {
     "**/node_modules": true,
-    "**/dist": true
+    "**/dist": true,
+    "**/.eslintcache": true,
+    "**/.vscode-test": true,
+    "**/.vscode-test-web": true
   },
   "files.exclude": {
     "**/node_modules": true,
     "**/dist": true,
     "**/.eslintcache": true,
-    "**/.vscode-test": true
+    "**/.vscode-test": true,
+    "**/.vscode-test-web": true
   },
   "editor.formatOnSave": true,
   "npm.packageManager": "pnpm",

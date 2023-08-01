@@ -13,6 +13,7 @@ export class TestClient extends MessageHandler {
         const info = await this.request('initialize', {
             name: 'test-client',
             version: 'v1',
+            workspaceRootUri: 'file:///path/to/foo',
             workspaceRootPath: '/path/to/foo',
         })
         this.notify('initialized', null)

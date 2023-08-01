@@ -37,7 +37,9 @@ jobs:
             echo "Release tag and version in vscode/package.json do not match: '${TAGGED_VERSION}' vs. '${WRITTEN_VERSION}'"
             exit 1
           fi
-      - run: xvfb-run -a pnpm run test
+      - run: pnpm run test
+      - run: xvfb-run -a pnpm -C vscode run test:integration
+      - run: xvfb-run -a pnpm -C vscode run test:e2e
       - run: CODY_RELEASE_TYPE=stable pnpm -C vscode run release
         if: github.repository == 'sourcegraph/cody'
         env:

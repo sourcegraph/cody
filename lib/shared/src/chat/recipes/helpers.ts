@@ -84,3 +84,7 @@ export const numResults = {
     numCodeResults: NUM_CODE_RESULTS,
     numTextResults: NUM_TEXT_RESULTS,
 }
+
+export function isSingleWord(str: string): boolean {
+    return str.trim().split(/\s+/).length === 1
+}

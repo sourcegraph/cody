@@ -1,3 +1,5 @@
+import { URI } from 'vscode-uri'
+
 import { BotResponseMultiplexer } from '../chat/bot-response-multiplexer'
 import { RecipeContext } from '../chat/recipes/recipe'
 import { CodebaseContext } from '../codebase-context'
@@ -77,6 +79,10 @@ export class MockEditor implements Editor {
 
     public getWorkspaceRootPath(): string | null {
         return this.mocks.getWorkspaceRootPath?.() ?? null
+    }
+
+    public getWorkspaceRootUri(): URI | null {
+        return this.mocks.getWorkspaceRootUri?.() ?? null
     }
 
     public getActiveTextEditorSelection(): ActiveTextEditorSelection | null {

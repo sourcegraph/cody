@@ -1,11 +1,12 @@
-import { Completion } from '.'
 import { CompletionsCache } from './cache'
 import { ReferenceSnippet } from './context'
 import { logCompletionEvent } from './logger'
-import { Provider } from './providers/provider'
+import { CompletionProviderTracer, Provider } from './providers/provider'
+import { Completion } from './vscodeInlineCompletionItemProvider'
 
 interface Request {
     prefix: string
+    tracer?: CompletionProviderTracer
     resolve(completions: Completion[]): void
     reject(error: Error): void
 }
@@ -27,7 +28,8 @@ export class RequestManager {
         prefix: string,
         providers: Provider[],
         context: ReferenceSnippet[],
-        signal: AbortSignal
+        signal: AbortSignal,
+        tracer?: CompletionProviderTracer
     ): Promise<Completion[]> {
         let resolve: Request['resolve'] = () => {}
         let reject: Request['reject'] = () => {}
@@ -40,6 +42,7 @@ export class RequestManager {
             prefix,
             resolve,
             reject,
+            tracer,
         }
         this.startRequest(request, documentUri, logId, providers, context, signal)
 
@@ -61,7 +64,9 @@ export class RequestManager {
 
         this.addRequest(documentUri, request)
 
-        Promise.all(providers.map(c => c.generateCompletions(networkRequestAbortController.signal, context)))
+        Promise.all(
+            providers.map(c => c.generateCompletions(networkRequestAbortController.signal, context, request.tracer))
+        )
             .then(res => res.flat())
             .then(completions => {
                 // Add the completed results to the cache, even if the request

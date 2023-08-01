@@ -31,7 +31,11 @@ jobs:
       - run: pnpm run test:unit --run
 
   test-integration:
-    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.runner }}
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v3
@@ -50,9 +54,16 @@ jobs:
           restore-keys: ${{ runner.os }}-pnpm-store-
       - run: pnpm install
       - run: xvfb-run -a pnpm -C vscode run test:integration
+        if: matrix.runner == 'ubuntu-latest'
+      - run: pnpm -C vscode run test:integration
+        if: github.ref == 'refs/heads/main' && (matrix.runner == 'windows-latest' || matrix.runner == 'macos-latest')
 
   test-e2e:
-    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: [ubuntu-latest] # TODO(sqs): enable e2e tests for Windows and macOS?
+    runs-on: ${{ matrix.runner }}
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v3
@@ -71,6 +82,9 @@ jobs:
           restore-keys: ${{ runner.os }}-pnpm-store-
       - run: pnpm install
       - run: xvfb-run -a pnpm -C vscode run test:e2e
+        if: matrix.runner == 'ubuntu-latest'
+      - run: pnpm -C vscode run test:e2e
+        if: matrix.runner == 'windows-latest' || matrix.runner == 'macos-latest'
 
   build:
     runs-on: ubuntu-latest

@@ -3,7 +3,7 @@ import * as vscode from 'vscode'
 import { isDefined } from '@sourcegraph/cody-shared'
 import { renderMarkdown } from '@sourcegraph/cody-shared/src/common/markdown'
 
-import { CodyCompletionItemProvider } from '..'
+import { InlineCompletionItemProvider } from '../vscodeInlineCompletionItemProvider'
 
 import { ProvideInlineCompletionsItemTraceData } from '.'
 
@@ -11,7 +11,7 @@ import { ProvideInlineCompletionsItemTraceData } from '.'
  * Registers a command `Cody: Open Autocomplete Trace View` that shows the context and prompt used
  * for autocomplete.
  */
-export function registerAutocompleteTraceView(completionsProvider: CodyCompletionItemProvider): vscode.Disposable {
+export function registerAutocompleteTraceView(provider: InlineCompletionItemProvider): vscode.Disposable {
     let panel: vscode.WebviewPanel | null = null
     let latestInvocationSequence = 0
 
@@ -26,13 +26,13 @@ export function registerAutocompleteTraceView(completionsProvider: CodyCompletio
                 }
             )
             panel.onDidDispose(() => {
-                completionsProvider.setTracer(null)
+                provider.setTracer(null)
                 panel = null
             })
 
             panel.webview.html = renderWebviewHtml(undefined)
 
-            completionsProvider.setTracer(data => {
+            provider.setTracer(data => {
                 if (!panel) {
                     return
                 }
@@ -109,6 +109,19 @@ ${
               .join('\n\n')
 }
 `,
+        data?.completionProviderCallParams &&
+            `
+## Completion provider calls
+
+${codeDetailsWithSummary('Params', JSON.stringify(data.completionProviderCallParams, null, 2))}
+
+${
+    data.completionProviderCallResult
+        ? codeDetailsWithSummary('Result', JSON.stringify(data.completionProviderCallResult, null, 2))
+        : '_Loading result..._'
+}
+
+`,
         data?.result &&
             `
 ## Completions (cache ${data.cacheHit === true ? 'hit' : data.cacheHit === false ? 'miss' : 'unknown'})
@@ -130,7 +143,7 @@ ${markdownCodeBlock(data.error)}
         `
 ## Advanced tools
 
-${codeDetailsWithSummary('JSON for dataset', jsonForDataset(data), 'start')}
+${codeDetailsWithSummary('JSON for dataset', jsonForDataset(data))}
 
 `,
     ]
@@ -141,13 +154,23 @@ ${codeDetailsWithSummary('JSON for dataset', jsonForDataset(data), 'start')}
     return renderMarkdown(markdownSource, { noDomPurify: true })
 }
 
-function codeDetailsWithSummary(title: string, value: string, anchor: 'start' | 'end', excerptLength = 50): string {
-    const excerpt = anchor === 'start' ? value.slice(0, excerptLength) : value.slice(-excerptLength)
+function codeDetailsWithSummary(
+    title: string,
+    value: string,
+    anchor: 'start' | 'end' | 'none' = 'none',
+    excerptLength = 50
+): string {
+    const excerpt =
+        anchor === 'start' ? value.slice(0, excerptLength) : anchor === 'end' ? value.slice(-excerptLength) : null
+    const excerptMarkdown =
+        excerpt !== null
+            ? `: <code>${anchor === 'end' ? '⋯' : ''}${withVisibleWhitespace(excerpt)
+                  .replace(/</g, '&lt;')
+                  .replace(/>/g, '&gt;')}${anchor === 'start' ? '⋯' : ''}</code>`
+            : ''
     return `
 <details>
-<summary>${title}: <code>${anchor === 'end' ? '⋯' : ''}${withVisibleWhitespace(excerpt)
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')}${anchor === 'start' ? '⋯' : ''}</code></summary>
+<summary>${title}${excerptMarkdown}</summary>
 
 ${markdownCodeBlock(value)}
 

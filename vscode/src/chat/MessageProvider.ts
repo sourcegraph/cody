@@ -4,12 +4,11 @@ import { BotResponseMultiplexer } from '@sourcegraph/cody-shared/src/chat/bot-re
 import { ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
 import { getPreamble } from '@sourcegraph/cody-shared/src/chat/preamble'
 import { CodyPrompt, CodyPromptType } from '@sourcegraph/cody-shared/src/chat/recipes/cody-prompts'
-import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
+import { Recipe, RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 import { Transcript } from '@sourcegraph/cody-shared/src/chat/transcript'
 import { ChatHistory, ChatMessage, UserLocalHistory } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { reformatBotMessage } from '@sourcegraph/cody-shared/src/chat/viewHelpers'
 import { annotateAttribution, Guardrails } from '@sourcegraph/cody-shared/src/guardrails'
-import { highlightTokens } from '@sourcegraph/cody-shared/src/hallucinations-detector'
 import { IntentDetector } from '@sourcegraph/cody-shared/src/intent-detector'
 import * as plugins from '@sourcegraph/cody-shared/src/plugins/api'
 import { PluginFunctionExecutionInfo } from '@sourcegraph/cody-shared/src/plugins/api/types'
@@ -19,16 +18,15 @@ import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
 import { TelemetryService } from '@sourcegraph/cody-shared/src/telemetry'
 
 import { VSCodeEditor } from '../editor/vscode-editor'
+import { PlatformContext } from '../extension.common'
 import { debug } from '../log'
 import { FixupTask } from '../non-stop/FixupTask'
 import { IdleRecipeRunner } from '../non-stop/roles'
-import { AuthProvider } from '../services/AuthProvider'
+import { AuthProvider, isNetworkError } from '../services/AuthProvider'
 import { LocalStorage } from '../services/LocalStorageProvider'
 import { TestSupport } from '../test-support'
 
 import { ContextProvider } from './ContextProvider'
-import { fastFilesExist } from './fastFileFinder'
-import { getRecipe } from './recipes'
 
 /**
  * The problem with a token limit for the prompt is that we can only
@@ -63,10 +61,10 @@ export interface MessageProviderOptions {
     guardrails: Guardrails
     editor: VSCodeEditor
     localStorage: LocalStorage
-    rgPath: string | null
     authProvider: AuthProvider
     contextProvider: ContextProvider
     telemetryService: TelemetryService
+    platform: Pick<PlatformContext, 'recipes'>
 }
 
 export abstract class MessageProvider extends MessageHandler implements vscode.Disposable, IdleRecipeRunner {
@@ -90,10 +88,10 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
     protected guardrails: Guardrails
     protected readonly editor: VSCodeEditor
     protected localStorage: LocalStorage
-    protected rgPath: string | null
     protected authProvider: AuthProvider
     protected contextProvider: ContextProvider
     protected telemetryService: TelemetryService
+    protected platform: Pick<PlatformContext, 'recipes'>
 
     constructor(options: MessageProviderOptions) {
         super()
@@ -107,10 +105,10 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         this.guardrails = options.guardrails
         this.editor = options.editor
         this.localStorage = options.localStorage
-        this.rgPath = options.rgPath
         this.authProvider = options.authProvider
         this.contextProvider = options.contextProvider
         this.telemetryService = options.telemetryService
+        this.platform = options.platform
 
         // chat id is used to identify chat session
         this.createNewChatID()
@@ -228,22 +226,10 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
             onTurnComplete: async () => {
                 const lastInteraction = this.transcript.getLastInteraction()
                 if (lastInteraction) {
-                    const displayText = reformatBotMessage(text, responsePrefix)
-                    const fileExistFunc = (filePaths: string[]): Promise<{ [filePath: string]: boolean } | null> => {
-                        const rootPath = this.editor.getWorkspaceRootPath()
-                        if (!rootPath || !this.rgPath) {
-                            return Promise.resolve(null)
-                        }
-                        return fastFilesExist(this.rgPath, rootPath, filePaths)
-                    }
-                    let { text: highlightedDisplayText } = await highlightTokens(
-                        displayText || '',
-                        fileExistFunc,
-                        this.contextProvider.currentWorkspaceRoot
-                    )
+                    let displayText = reformatBotMessage(text, responsePrefix)
                     // TODO(keegancsmith) guardrails may be slow, we need to make this async update the interaction.
-                    highlightedDisplayText = await this.guardrailsAnnotateAttributions(highlightedDisplayText)
-                    this.transcript.addAssistantResponse(text || '', highlightedDisplayText)
+                    displayText = await this.guardrailsAnnotateAttributions(displayText)
+                    this.transcript.addAssistantResponse(text || '', displayText)
                 }
                 await this.onCompletionEnd()
             },
@@ -278,6 +264,10 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
                         )
                         .catch(error => console.error(error))
                     debug('ChatViewProvider:onError:unauthUser', err, { verbose: { statusCode } })
+                }
+
+                if (isNetworkError(err)) {
+                    err = 'Cody could not respond due to network error.'
                 }
                 // Display error message as assistant response
                 this.transcript.addErrorAsAssistantResponse(err)
@@ -365,6 +355,10 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         return {}
     }
 
+    private getRecipe(id: RecipeID): Recipe | undefined {
+        return this.platform.recipes.find(recipe => recipe.id === id)
+    }
+
     public async executeRecipe(recipeId: RecipeID, humanInput = ''): Promise<void> {
         debug('ChatViewProvider:executeRecipe', recipeId, { verbose: humanInput })
         if (this.isMessageInProgress) {
@@ -377,9 +371,9 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         if (!command?.text) {
             return
         }
-
         const humanChatInput = command?.text
-        const recipe = getRecipe(command?.recipeID || recipeId)
+
+        const recipe = this.getRecipe(command?.recipeID || recipeId)
         if (!recipe) {
             debug('ChatViewProvider:executeRecipe', 'no recipe found')
             return
@@ -433,7 +427,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
     }
 
     protected async runRecipeForSuggestion(recipeId: RecipeID, humanChatInput: string = ''): Promise<void> {
-        const recipe = getRecipe(recipeId)
+        const recipe = this.getRecipe(recipeId)
         if (!recipe) {
             return
         }

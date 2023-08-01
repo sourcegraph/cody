@@ -1,5 +1,7 @@
-import { Completion } from '..'
+import { CompletionParameters } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
+
 import { ReferenceSnippet } from '../context'
+import { Completion } from '../vscodeInlineCompletionItemProvider'
 
 export interface ProviderConfig {
     /**
@@ -50,5 +52,28 @@ export interface ProviderOptions {
 export abstract class Provider {
     constructor(public readonly options: Readonly<ProviderOptions>) {}
 
-    public abstract generateCompletions(abortSignal: AbortSignal, snippets: ReferenceSnippet[]): Promise<Completion[]>
+    public abstract generateCompletions(
+        abortSignal: AbortSignal,
+        snippets: ReferenceSnippet[],
+        tracer?: CompletionProviderTracer
+    ): Promise<Completion[]>
+}
+
+/**
+ * Tracer for {@link Provider}.
+ */
+export interface CompletionProviderTracer {
+    /** Called with the params passed to the LLM. */
+    params(params: CompletionParameters): void
+
+    /** Called with the result from the LLM. */
+    result(data: CompletionProviderTracerResultData): void
+}
+
+export interface CompletionProviderTracerResultData {
+    /** The raw response from the LLM. */
+    rawResponses: unknown
+
+    /** The post-processed completions that are returned by the provider. */
+    completions: Completion[]
 }

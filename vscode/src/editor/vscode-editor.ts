@@ -1,6 +1,6 @@
 import * as vscode from 'vscode'
 
-import {
+import type {
     ActiveTextEditor,
     ActiveTextEditorSelection,
     ActiveTextEditorViewControllers,
@@ -30,15 +30,21 @@ export class VSCodeEditor implements Editor<InlineController, FixupController, C
         return vscode.window.activeTextEditor?.document.fileName ?? ''
     }
 
+    /** @deprecated Use {@link VSCodeEditor.getWorkspaceRootUri} instead. */
     public getWorkspaceRootPath(): string | null {
+        const uri = this.getWorkspaceRootUri()
+        return uri?.scheme === 'file' ? uri.fsPath : null
+    }
+
+    public getWorkspaceRootUri(): vscode.Uri | null {
         const uri = vscode.window.activeTextEditor?.document?.uri
         if (uri) {
             const wsFolder = vscode.workspace.getWorkspaceFolder(uri)
             if (wsFolder) {
-                return wsFolder.uri.fsPath
+                return wsFolder.uri
             }
         }
-        return vscode.workspace.workspaceFolders?.[0]?.uri?.fsPath ?? null
+        return vscode.workspace.workspaceFolders?.[0]?.uri ?? null
     }
 
     public getActiveTextEditor(): ActiveTextEditor | null {
@@ -53,7 +59,7 @@ export class VSCodeEditor implements Editor<InlineController, FixupController, C
         return {
             content: documentText,
             filePath: documentUri.fsPath,
-            selection: !documentSelection.isEmpty ? documentSelection : undefined,
+            selectionRange: !documentSelection.isEmpty ? documentSelection : undefined,
         }
     }
 

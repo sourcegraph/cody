@@ -15,6 +15,7 @@ export interface ChatMessage extends Message {
     contextFiles?: ContextFile[]
     pluginExecutionInfos?: PluginFunctionExecutionInfo[]
     buttons?: ChatButton[]
+    data?: any
 }
 
 export interface InteractionMessage extends Message {

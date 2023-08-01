@@ -1,6 +1,6 @@
-import { Completion } from '.'
 import { truncateMultilineCompletion } from './multiline'
 import { collapseDuplicativeWhitespace, trimUntilSuffix } from './text-processing'
+import { Completion } from './vscodeInlineCompletionItemProvider'
 
 /**
  * This function implements post-processing logic that is applied regardless of
@@ -24,7 +24,7 @@ export function sharedPostProcess({
     if (multiline) {
         content = truncateMultilineCompletion(content, prefix, suffix, languageId)
     }
-    content = trimUntilSuffix(content, prefix, suffix)
+    content = trimUntilSuffix(content, prefix, suffix, languageId)
     content = collapseDuplicativeWhitespace(prefix, content)
 
     return {

@@ -1,5 +1,3 @@
-import path from 'path'
-
 import * as vscode from 'vscode'
 
 import { CodyPrompt, CodyPromptType } from '@sourcegraph/cody-shared/src/chat/recipes/cody-prompts'
@@ -16,16 +14,16 @@ export interface ChatViewProviderWebview extends Omit<vscode.Webview, 'postMessa
 }
 
 interface ChatViewProviderOptions extends MessageProviderOptions {
-    extensionPath: string
+    extensionUri: vscode.Uri
 }
 
 export class ChatViewProvider extends MessageProvider implements vscode.WebviewViewProvider {
-    private extensionPath: string
+    private extensionUri: vscode.Uri
     public webview?: ChatViewProviderWebview
 
-    constructor({ extensionPath, ...options }: ChatViewProviderOptions) {
+    constructor({ extensionUri, ...options }: ChatViewProviderOptions) {
         super(options)
-        this.extensionPath = extensionPath
+        this.extensionUri = extensionUri
     }
 
     private async onDidReceiveMessage(message: WebviewMessage): Promise<void> {
@@ -50,7 +48,7 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
                 await this.abortCompletion()
                 break
             case 'executeRecipe':
-                this.showTab('chat')
+                await this.setWebviewView('chat')
                 await this.executeRecipe(message.recipe)
                 break
             case 'auth':
@@ -89,16 +87,18 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
             case 'custom-prompt':
                 await this.onCustomPromptClicked(message.title, message.value)
                 break
+            case 'reload':
+                await this.authProvider.reloadAuthStatus()
+                break
             case 'openFile': {
-                const rootPath = this.editor.getWorkspaceRootPath()
-                if (!rootPath) {
-                    this.handleError('Failed to open file: missing rootPath')
+                const rootUri = this.editor.getWorkspaceRootUri()
+                if (!rootUri) {
+                    this.handleError('Failed to open file: missing rootUri')
                     return
                 }
                 try {
                     // This opens the file in the active column.
-                    const uri = vscode.Uri.file(path.join(rootPath, message.filePath))
-                    const doc = await vscode.workspace.openTextDocument(uri)
+                    const doc = await vscode.workspace.openTextDocument(vscode.Uri.joinPath(rootUri, message.filePath))
                     await vscode.window.showTextDocument(doc)
                 } catch {
                     // Try to open the file in the sourcegraph view
@@ -155,14 +155,9 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
         this.telemetryService.log('CodyVSCodeExtension:custom-recipe:clicked')
         debug('ChatViewProvider:onCustomPromptClicked', title)
         if (!this.isCustomPromptAction(title)) {
-            this.showTab('chat')
+            await this.setWebviewView('chat')
         }
         await this.executeCustomPrompt(title, commandType)
-    }
-
-    public showTab(tab: string): void {
-        void vscode.commands.executeCommand('cody.chat.focus')
-        void this.webview?.postMessage({ type: 'showTab', tab })
     }
 
     /**
@@ -233,9 +228,9 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
     /**
      * Set webview view
      */
-    public setWebviewView(view: View): void {
-        void vscode.commands.executeCommand('cody.chat.focus')
-        void this.webview?.postMessage({
+    public async setWebviewView(view: View): Promise<void> {
+        await vscode.commands.executeCommand('cody.chat.focus')
+        await this.webview?.postMessage({
             type: 'view',
             messages: view,
         })
@@ -255,8 +250,7 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
         this.authProvider.webview = webviewView.webview
         this.contextProvider.webview = webviewView.webview
 
-        const extensionPath = vscode.Uri.file(this.extensionPath)
-        const webviewPath = vscode.Uri.joinPath(extensionPath, 'dist', 'webviews')
+        const webviewPath = vscode.Uri.joinPath(this.extensionUri, 'dist', 'webviews')
 
         webviewView.webview.options = {
             enableScripts: true,

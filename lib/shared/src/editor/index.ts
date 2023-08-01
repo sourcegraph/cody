@@ -1,9 +1,11 @@
+import { URI } from 'vscode-uri'
+
 export interface ActiveTextEditor {
     content: string
     filePath: string
     repoName?: string
     revision?: string
-    selection?: ActiveTextEditorSelectionRange
+    selectionRange?: ActiveTextEditorSelectionRange
 }
 
 export interface ActiveTextEditorSelectionRange {
@@ -72,7 +74,17 @@ export interface Editor<
     P extends VsCodeCommandsController = VsCodeCommandsController,
 > {
     controllers?: ActiveTextEditorViewControllers<I, F, P>
+
+    /**
+     * The path of the workspace root if on the file system, otherwise `null`.
+     *
+     * @deprecated Use {@link Editor.getWorkspaceRootUri} instead.
+     */
     getWorkspaceRootPath(): string | null
+
+    /** The URI of the workspace root. */
+    getWorkspaceRootUri(): URI | null
+
     getActiveTextEditor(): ActiveTextEditor | null
     getActiveTextEditorSelection(): ActiveTextEditorSelection | null
 
@@ -93,7 +105,15 @@ export interface Editor<
 }
 
 export class NoopEditor implements Editor {
+    public controllers?:
+        | ActiveTextEditorViewControllers<VsCodeInlineController, VsCodeFixupController, VsCodeCommandsController>
+        | undefined
+
     public getWorkspaceRootPath(): string | null {
+        return null
+    }
+
+    public getWorkspaceRootUri(): URI | null {
         return null
     }
 

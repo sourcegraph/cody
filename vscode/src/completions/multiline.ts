@@ -1,19 +1,17 @@
 import detectIndent from 'detect-indent'
 
+import { DocumentContext } from './document'
 import { getLanguageConfig } from './language'
-import { getEditorTabSize, indentation, PrefixComponents } from './text-processing'
+import { indentation } from './text-processing'
+import { getEditorTabSize, OPENING_BRACKET_REGEX, shouldIncludeClosingLine } from './utils/text-utils'
 
-const BRACKET_PAIR = {
-    '(': ')',
-    '[': ']',
-    '{': '}',
-} as const
-const OPENING_BRACKET_REGEX = /([([{])$/
 export function detectMultiline(
-    prefix: string,
-    prevNonEmptyLine: string,
-    sameLinePrefix: string,
-    sameLineSuffix: string,
+    {
+        prefix,
+        prevNonEmptyLine,
+        currentLinePrefix,
+        currentLineSuffix,
+    }: Pick<DocumentContext, 'prefix' | 'prevNonEmptyLine' | 'currentLinePrefix' | 'currentLineSuffix'>,
     languageId: string,
     enableExtendedTriggers: boolean
 ): boolean {
@@ -22,28 +20,22 @@ export function detectMultiline(
         return false
     }
 
-    if (enableExtendedTriggers && sameLinePrefix.match(OPENING_BRACKET_REGEX)) {
+    if (enableExtendedTriggers && currentLinePrefix.match(OPENING_BRACKET_REGEX)) {
         return true
     }
 
     if (
-        sameLinePrefix.trim() === '' &&
-        sameLineSuffix.trim() === '' &&
+        currentLinePrefix.trim() === '' &&
+        currentLineSuffix.trim() === '' &&
         // Only trigger multiline suggestions for the beginning of blocks
         prefix.trim().at(prefix.trim().length - config.blockStart.length) === config.blockStart &&
         // Only trigger multiline suggestions when the new current line is indented
-        indentation(prevNonEmptyLine) < indentation(sameLinePrefix)
+        indentation(prevNonEmptyLine) < indentation(currentLinePrefix)
     ) {
         return true
     }
 
     return false
-}
-
-// Detect if completion starts with a space followed by any non-space character.
-export const ODD_INDENTATION_REGEX = /^ [^ ]/
-export function checkOddIndentation(completion: string, prefix: PrefixComponents): boolean {
-    return completion.length > 0 && ODD_INDENTATION_REGEX.test(completion) && prefix.tail.rearSpace.length > 0
 }
 
 /**
@@ -85,52 +77,6 @@ function ensureSameOrLargerIndentation(completion: string): string {
     }
 
     return completion
-}
-
-/**
- * If a completion starts with an opening bracket and a suffix starts with
- * the corresponding closing bracket, we include the last closing bracket of the completion.
- * E.g., function foo(__CURSOR__)
- *
- * We can do this because we know that the existing block is already closed, which means that
- * new blocks need to be closed separately.
- * E.g. function foo() { console.log('hello') }
- */
-function shouldIncludeClosingLineBasedOnBrackets(
-    prefixIndentationWithFirstCompletionLine: string,
-    suffix: string
-): boolean {
-    const matches = prefixIndentationWithFirstCompletionLine.match(OPENING_BRACKET_REGEX)
-
-    if (matches && matches.length > 0) {
-        const openingBracket = matches[0] as keyof typeof BRACKET_PAIR
-        const closingBracket = BRACKET_PAIR[openingBracket]
-
-        return Boolean(openingBracket) && suffix.startsWith(closingBracket)
-    }
-
-    return false
-}
-
-/**
- * Only include a closing line (e.g. `}`) if the block is empty yet if the block is already closed.
- * We detect this by looking at the indentation of the next non-empty line.
- */
-function shouldIncludeClosingLine(prefixIndentationWithFirstCompletionLine: string, suffix: string): boolean {
-    const includeClosingLineBasedOnBrackets = shouldIncludeClosingLineBasedOnBrackets(
-        prefixIndentationWithFirstCompletionLine,
-        suffix
-    )
-    const startIndent = indentation(prefixIndentationWithFirstCompletionLine)
-
-    const firstNewLineIndex = suffix.indexOf('\n') + 1
-    const nextNonEmptyLine =
-        suffix
-            .slice(firstNewLineIndex)
-            .split('\n')
-            .find(line => line.trim().length > 0) ?? ''
-
-    return indentation(nextNonEmptyLine) < startIndent || includeClosingLineBasedOnBrackets
 }
 
 export function truncateMultilineCompletion(

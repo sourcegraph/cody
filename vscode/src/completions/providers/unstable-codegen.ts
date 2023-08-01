@@ -1,9 +1,9 @@
 import fetch from 'isomorphic-fetch'
 
-import { Completion } from '..'
 import { logger } from '../../log'
 import { ReferenceSnippet } from '../context'
 import { isAbortError } from '../utils'
+import { Completion } from '../vscodeInlineCompletionItemProvider'
 
 import { Provider, ProviderConfig, ProviderOptions } from './provider'
 
@@ -29,7 +29,7 @@ export class UnstableCodeGenProvider extends Provider {
             suffix: this.options.suffix,
             top_p: 0.95,
             temperature: 0.2,
-            max_tokens: this.options.multiline ? 40 : 128,
+            max_tokens: this.options.multiline ? 128 : 40,
             // The backend expects an even number of requests since it will
             // divide it into two different batches.
             batch_size: makeEven(4),
@@ -75,7 +75,7 @@ export class UnstableCodeGenProvider extends Provider {
 function postProcess(content: string, multiline: boolean): string {
     // The model might return multiple lines for single line completions because
     // we are only able to specify a token limit.
-    if (multiline && content.includes('\n')) {
+    if (!multiline && content.includes('\n')) {
         content = content.slice(0, content.indexOf('\n'))
     }
 

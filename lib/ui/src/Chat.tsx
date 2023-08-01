@@ -161,7 +161,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
     chatCommands,
     ChatCommandsComponent,
 }) => {
-    const [inputRows, setInputRows] = useState(5)
+    const [inputRows, setInputRows] = useState(1)
     const commandList = chatCommands?.filter(command => command[1]?.slashCommand) || null
     const [displayCommands, setDisplayCommands] = useState<[string, CodyPrompt][] | null>(commandList || null)
     const [selectedChatCommand, setSelectedChatCommand] = useState(-1)
@@ -195,12 +195,8 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
     const inputHandler = useCallback(
         (inputValue: string): void => {
             chatCommentSelectionHandler(inputValue)
-            const rowsCount = inputValue.match(/\n/g)?.length
-            if (rowsCount) {
-                setInputRows(rowsCount < 5 ? 5 : rowsCount > 25 ? 25 : rowsCount)
-            } else {
-                setInputRows(5)
-            }
+            const rowsCount = (inputValue.match(/\n/g)?.length || 0) + 1
+            setInputRows(rowsCount > 25 ? 25 : rowsCount)
             setFormInput(inputValue)
             if (inputValue !== inputHistory[historyIndex]) {
                 setHistoryIndex(inputHistory.length)
@@ -214,7 +210,6 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
             if (messageInProgress) {
                 return
             }
-
             onSubmit(input, submitType)
             setSuggestions?.(undefined)
             setHistoryIndex(inputHistory.length + 1)
@@ -235,8 +230,8 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
     const onChatSubmit = useCallback((): void => {
         // Submit chat only when input is not empty and not in progress
         if (formInput.trim() && !messageInProgress) {
-            setInputRows(5)
-            submitInput(formInput.trim(), 'user')
+            setInputRows(1)
+            submitInput(formInput, 'user')
             setFormInput('')
         }
     }, [formInput, messageInProgress, setFormInput, submitInput])

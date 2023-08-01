@@ -1,4 +1,4 @@
-import * as vscode from 'vscode'
+import { URI, Utils } from 'vscode-uri'
 
 import { CodebaseContext } from '../../codebase-context'
 import { MAX_HUMAN_INPUT_TOKENS } from '../../prompt/constants'
@@ -37,7 +37,7 @@ export class ContextSearch implements Recipe {
             return null
         }
         const truncatedText = truncateText(query.replace('/search ', '').replace('/s ', ''), MAX_HUMAN_INPUT_TOKENS)
-        const wsRootPath = context.editor.getWorkspaceRootPath()
+        const workspaceRootUri = context.editor.getWorkspaceRootUri()
         return new Interaction(
             {
                 speaker: 'human',
@@ -47,7 +47,7 @@ export class ContextSearch implements Recipe {
             {
                 speaker: 'assistant',
                 text: '',
-                displayText: await this.displaySearchResults(truncatedText, context.codebaseContext, wsRootPath),
+                displayText: await this.displaySearchResults(truncatedText, context.codebaseContext, workspaceRootUri),
             },
             new Promise(resolve => resolve([])),
             []
@@ -57,7 +57,7 @@ export class ContextSearch implements Recipe {
     private async displaySearchResults(
         text: string,
         codebaseContext: CodebaseContext,
-        wsRootPath: string | null
+        workspaceRootUri: URI | null
     ): Promise<string> {
         const resultContext = await codebaseContext.getSearchResults(text, numResults)
         const endpointUri = resultContext.endpoint
@@ -70,11 +70,12 @@ export class ContextSearch implements Recipe {
             if (extension.match(ignoreFilesExtension)) {
                 continue
             }
-            let uri = new URL(`/search?q=context:global+file:${file.fileName}`, endpointUri).href
+            let uri: string = new URL(`/search?q=context:global+file:${file.fileName}`, endpointUri).href
 
-            if (wsRootPath) {
-                const fileUri = vscode.Uri.joinPath(vscode.Uri.file(wsRootPath), file.fileName)
-                uri = vscode.Uri.parse(`vscode://file${fileUri.path}`).toString()
+            if (workspaceRootUri) {
+                const fileUri = Utils.joinPath(workspaceRootUri, file.fileName)
+                // TODO: make this open non-file: URIs
+                uri = `vscode://file${fileUri.fsPath}`
             }
 
             snippets +=

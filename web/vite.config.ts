@@ -9,11 +9,6 @@ export default defineConfig({
     plugins: [react()],
     publicDir: 'resources',
     base: './',
-    resolve: {
-        alias: {
-            path: __dirname + '/node_modules/path-browserify',
-        },
-    },
     css: {
         modules: {
             localsConvention: 'camelCaseOnly',
