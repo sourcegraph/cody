@@ -52,7 +52,7 @@ abstract class MessageHandler {
     protected abstract handleError(errorMsg: string): void
     protected abstract handleSuggestions(suggestions: string[]): void
     protected abstract handleEnabledPlugins(plugins: string[]): void
-    protected abstract handleCodyCommands(prompts: [string, CodyPrompt][], isEnabled: boolean): void
+    protected abstract handleCodyCommands(prompts: [string, CodyPrompt][]): void
 }
 
 export interface MessageProviderOptions {
@@ -531,7 +531,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
                 await this.sendMyPrompts()
                 break
             case 'menu':
-                await this.editor.controllers.command?.menu()
+                await this.editor.controllers.command?.menu('custom')
                 await this.sendMyPrompts()
                 break
             case 'add':
@@ -597,7 +597,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         const send = async (): Promise<void> => {
             await this.editor.controllers.command?.refresh()
             const commands = this.editor.controllers.command?.getAllCommands() || []
-            void this.handleCodyCommands(commands, this.contextProvider.config.experimentalCustomCommands)
+            void this.handleCodyCommands(commands)
         }
         this.editor.controllers.command?.setMessenger(send)
         await send()

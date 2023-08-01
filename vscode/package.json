@@ -112,7 +112,7 @@
           {
             "id": "explain",
             "title": "Explain Code",
-            "description": "Ask Cody to explain some code. Select some lines and use the \"Explain selected code\" recipe.\n[Open Recipes](command:cody.walkthrough.showExplain)",
+            "description": "Ask Cody to explain some code. Select some lines and use the \"Explain selected code\" recipe.\n[Open Commands](command:cody.action.commands.menu)",
             "media": {
               "markdown": "walkthroughs/explain.md"
             }
@@ -120,7 +120,7 @@
           {
             "id": "fixup",
             "title": "Fixup Code",
-            "description": "Instruct Cody to edit and improve code with the \"Fixup code from inline instructions\" recipe.\n[Open Recipes](command:cody.walkthrough.showFixup)",
+            "description": "Instruct Cody to edit and improve code with the \"Fixup code from inline instructions\" recipe.\n[Open Commands](command:cody.action.commands.menu)",
             "media": {
               "markdown": "walkthroughs/fixup.md"
             }
@@ -420,7 +420,7 @@
       {
         "command": "cody.action.commands.custom.menu",
         "category": "Cody",
-        "title": "Custom Commands (Experimental)",
+        "title": "Custom Commands Menu(Experimental)",
         "when": "cody.activated",
         "enablement": "config.cody.experimental.customCommands",
         "icon": "$(bookmark)"
@@ -428,7 +428,7 @@
       {
         "command": "cody.action.commands.menu",
         "category": "Cody",
-        "title": "Cody Commands (Experimental)",
+        "title": "Commands Menu",
         "when": "cody.activated",
         "icon": "$(cody-logo)"
       },

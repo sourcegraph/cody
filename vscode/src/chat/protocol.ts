@@ -50,7 +50,7 @@ export type ExtensionMessage =
     | { type: 'suggestions'; suggestions: string[] }
     | { type: 'app-state'; isInstalled: boolean }
     | { type: 'enabled-plugins'; plugins: string[] }
-    | { type: 'custom-prompts'; prompts: [string, CodyPrompt][]; isEnabled: boolean }
+    | { type: 'custom-prompts'; prompts: [string, CodyPrompt][] }
 
 /**
  * The subset of configuration that is visible to the webview.

@@ -95,7 +95,7 @@ export class CommandsController implements VsCodeCommandsController {
     // Check if the config is enabled on config change, and toggle the builder
     private checkIsConfigEnabled(): void {
         const config = vscode.workspace.getConfiguration('cody')
-        const newConfig = config.get('experimental.customPrompts') as boolean
+        const newConfig = config.get('experimental.customCommands') as boolean
         this.isEnabled = newConfig
         this.custom.activate(newConfig)
         if (newConfig && this.isEnabled) {
@@ -130,7 +130,7 @@ export class CommandsController implements VsCodeCommandsController {
     public find(id: string, isSlash = false): string {
         const myPrompt = this.default.get(id, isSlash)
         if (myPrompt) {
-            debug('CommandsController:find:myPrompt', id, { verbose: myPrompt })
+            debug('CommandsController:find:command', id, { verbose: myPrompt })
             this.myPromptInProgress = myPrompt
             this.lastUsedCommands.add(id)
             return myPrompt?.prompt
@@ -198,9 +198,8 @@ export class CommandsController implements VsCodeCommandsController {
     // Cody Custom Commands Menu - a menu with a list of user commands to run
     public async customCommandMenu(): Promise<void> {
         await this.refresh()
-        if (this.myPromptsMap.size === 0) {
-            await this.configMenu()
-            return
+        if (!this.isEnabled || !this.custom.hasCustomPrompts()) {
+            return this.configMenu()
         }
         try {
             const lastUsedCommands = this.getRecentlyUsedCommands()
@@ -245,6 +244,17 @@ export class CommandsController implements VsCodeCommandsController {
 
     // Menu with an option to add a new command via UI and save it to user's cody.json file
     public async configMenu(): Promise<void> {
+        if (!this.isEnabled) {
+            const enableResponse = await vscode.window.showInformationMessage(
+                'Please first enable `Custom Commands` before trying again.',
+                'Enable Custom Commands',
+                'Cancel'
+            )
+            if (enableResponse === 'Enable Custom Commands') {
+                await vscode.commands.executeCommand('cody.status-bar.interacted')
+            }
+            return
+        }
         const promptSize = this.custom.promptSize.user + this.custom.promptSize.workspace
         const selected = await showCustomPromptMenu()
         const selectedAction = promptSize === 0 ? 'file' : selected?.actionID
