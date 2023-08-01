@@ -142,12 +142,12 @@ export async function showcommandTypeQuickPick(
     const options: vscode.QuickPickItem[] = []
     const userItem = {
         label: 'User',
-        detail: 'User Commands are accessible only to you across Workspaces',
+        detail: 'Stored on your machine and usable across all your workspaces',
         description: '~/.vscode/cody.json',
     }
     const workspaceItem = {
-        label: 'Workspace',
-        detail: 'Workspace Commands are available to all users in your current repository',
+        label: 'Workspace (Repository)',
+        detail: 'Project-specific and shared with anyone using this workspace',
         description: '.vscode/cody.json',
     }
     if (action === 'file') {

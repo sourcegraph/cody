@@ -65,8 +65,8 @@ export class DefaultPromptsStore {
                 }
             }) as vscode.QuickPickItem[]
             commandItems.push(...allCommandItems)
-            const configSeperator: vscode.QuickPickItem = { kind: -1, label: 'setting' }
-            const configOption: vscode.QuickPickItem = { label: 'Configure Custom Command...' }
+            const configSeperator: vscode.QuickPickItem = { kind: -1, label: 'custom commands' }
+            const configOption: vscode.QuickPickItem = { label: 'Configure Custom Commands...' }
             const chatSeperator: vscode.QuickPickItem = { kind: -1, label: 'inline chat' }
             const chatOption: vscode.QuickPickItem = { label: 'Ask a Question', alwaysShow: true }
             commandItems.push(configSeperator, configOption, chatSeperator, chatOption)

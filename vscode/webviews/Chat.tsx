@@ -239,7 +239,7 @@ const TextArea: React.FunctionComponent<ChatUITextAreaProps> = ({
             autofocus={autoFocus}
             required={required}
             onInput={e => onInput(e as React.FormEvent<HTMLTextAreaElement>)}
-            placeholder='Type "/" for a list of commands or "/r" to reset chat'
+            placeholder="Ask a question or type '/' for commands"
             onKeyDown={handleKeyDown}
         />
     )

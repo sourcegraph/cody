@@ -51,7 +51,7 @@ export interface CustomPromptsMenuAnswer {
 export const CustomPromptsMainMenuOptions = [
     {
         kind: 0,
-        label: 'New Custom Command',
+        label: 'New Custom Command...',
         id: 'add',
         type: '',
         description: '',
