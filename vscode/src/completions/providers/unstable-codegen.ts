@@ -1,9 +1,9 @@
 import fetch from 'isomorphic-fetch'
 
-import { Completion } from '..'
 import { logger } from '../../log'
 import { ReferenceSnippet } from '../context'
 import { isAbortError } from '../utils'
+import { Completion } from '../vscodeInlineCompletionItemProvider'
 
 import { Provider, ProviderConfig, ProviderOptions } from './provider'
 

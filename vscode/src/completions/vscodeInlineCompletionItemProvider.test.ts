@@ -1,19 +1,23 @@
 import dedent from 'dedent'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type * as vscode from 'vscode'
-import { URI } from 'vscode-uri'
+import { TextDocument } from 'vscode-languageserver-textdocument'
 
+import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
+import { SourcegraphCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/client'
 import {
     CompletionParameters,
     CompletionResponse,
 } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
 
+import { CodyStatusBar } from '../services/StatusBar'
 import { vsCodeMocks } from '../testutils/mocks'
+import { wrapVSCodeTextDocument } from '../testutils/textDocument'
 
-import { CodyCompletionItemProvider } from '.'
 import { CompletionsCache } from './cache'
-import { History } from './history'
+import { DocumentHistory } from './history'
 import { createProviderConfig } from './providers/anthropic'
+import { InlineCompletionItemProvider } from './vscodeInlineCompletionItemProvider'
 
 const CURSOR_MARKER = '█'
 
@@ -25,10 +29,6 @@ const T = '\t'
 
 vi.mock('vscode', () => ({
     ...vsCodeMocks,
-    InlineCompletionTriggerKind: {
-        Invoke: 0,
-        Automatic: 1,
-    },
     workspace: {
         ...vsCodeMocks.workspace,
         asRelativePath(path: string) {
@@ -70,9 +70,23 @@ function completion(string: TemplateStringsArray, ...values: any): CompletionRes
     }
 }
 
-const noopStatusBar = {
+const NOOP_STATUS_BAR: CodyStatusBar = {
+    dispose: () => {},
     startLoading: () => () => {},
-} as any
+}
+
+const DUMMY_DOCUMENT_HISTORY: DocumentHistory = {
+    addItem: () => {},
+    lastN: () => [],
+}
+
+const DUMMY_CODEBASE_CONTEXT: CodebaseContext = new CodebaseContext(
+    { serverEndpoint: 'https://example.com', useContext: 'none' },
+    undefined,
+    null,
+    null,
+    null
+)
 
 describe('Cody completions', () => {
     /**
@@ -89,8 +103,7 @@ describe('Cody completions', () => {
         code: string,
         responses?: CompletionResponse[] | 'stall',
         languageId?: string,
-        context?: vscode.InlineCompletionContext,
-        triggerMoreEagerly?: boolean
+        context?: vscode.InlineCompletionContext
     ) => Promise<{
         requests: CompletionParameters[]
         completions: vscode.InlineCompletionItem[]
@@ -101,15 +114,17 @@ describe('Cody completions', () => {
             code: string,
             responses?: CompletionResponse[] | 'stall',
             languageId: string = 'typescript',
-            context: vscode.InlineCompletionContext = { triggerKind: 1, selectedCompletionInfo: undefined },
-            triggerMoreEagerly = true
+            context: vscode.InlineCompletionContext = {
+                triggerKind: vsCodeMocks.InlineCompletionTriggerKind.Automatic,
+                selectedCompletionInfo: undefined,
+            }
         ): Promise<{
             requests: CompletionParameters[]
             completions: vscode.InlineCompletionItem[]
         }> => {
             const requests: CompletionParameters[] = []
             let requestCounter = 0
-            const completionsClient: any = {
+            const completionsClient: Pick<SourcegraphCompletionsClient, 'complete'> = {
                 complete(params: CompletionParameters): Promise<CompletionResponse> {
                     requests.push(params)
                     if (responses === 'stall') {
@@ -123,13 +138,12 @@ describe('Cody completions', () => {
                 completionsClient,
                 contextWindowTokens: 2048,
             })
-            const completionProvider = new CodyCompletionItemProvider({
+            const completionProvider = new InlineCompletionItemProvider({
                 providerConfig,
-                statusBar: noopStatusBar,
-                history: new History(),
-                codebaseContext: null as any,
+                statusBar: NOOP_STATUS_BAR,
+                history: DUMMY_DOCUMENT_HISTORY,
+                codebaseContext: DUMMY_CODEBASE_CONTEXT,
                 disableTimeouts: true,
-                triggerMoreEagerly,
                 cache,
             })
 
@@ -143,51 +157,16 @@ describe('Cody completions', () => {
 
             const codeWithoutCursor = prefix + suffix
 
-            const token: any = {
-                onCancellationRequested() {
-                    return null
-                },
-            }
-            const document: any = {
-                filename: 'test.ts',
-                uri: URI.parse('file:///test.ts'),
-                languageId,
-                lineAt(position: vscode.Position) {
-                    const split = codeWithoutCursor.split('\n')
-                    const content = split[position.line - 1]
-                    return {
-                        range: {
-                            end: { line: position.line, character: content.length },
-                        },
-                    }
-                },
-                offsetAt(): number {
-                    return 0
-                },
-                positionAt(): any {
-                    const split = codeWithoutCursor.split('\n')
-                    return { line: split.length, character: split[split.length - 1].length }
-                },
-                getText(range?: vscode.Range): string {
-                    if (!range) {
-                        return codeWithoutCursor
-                    }
-                    if (range.start.line === 0 && range.start.character === 0) {
-                        return prefix
-                    }
-                    return suffix
-                },
-            }
+            const document = wrapVSCodeTextDocument(
+                TextDocument.create('file:///test.ts', languageId, 0, codeWithoutCursor)
+            )
 
             const splitPrefix = prefix.split('\n')
-            const position: any = { line: splitPrefix.length, character: splitPrefix[splitPrefix.length - 1].length }
+            const line = splitPrefix.length - 1
+            const character = splitPrefix[splitPrefix.length - 1].length
+            const position = new vsCodeMocks.Position(line, character)
 
-            const completions = await completionProvider.provideInlineCompletionItems(
-                document,
-                position,
-                context,
-                token
-            )
+            const completions = await completionProvider.provideInlineCompletionItems(document, position, context)
 
             return {
                 requests,
@@ -229,14 +208,9 @@ describe('Cody completions', () => {
         expect(requests[0].stopSequences).toEqual(['\n\nHuman:', '</CODE5711>', '\n\n'])
     })
 
-    it('makes a request when in the middle of a word when triggerMoreEagerly is true', async () => {
-        const { requests } = await complete('foo█', [completion`()`], undefined, undefined, true)
+    it('makes a request when in the middle of a word', async () => {
+        const { requests } = await complete('foo█', [completion`()`], undefined, undefined)
         expect(requests).toHaveLength(1)
-    })
-
-    it('does not make a request when in the middle of a word when triggerMoreEagerly is false', async () => {
-        const { requests } = await complete('foo█', undefined, undefined, undefined, false)
-        expect(requests).toHaveLength(0)
     })
 
     it('completes a single-line at the end of a sentence', async () => {
@@ -278,13 +252,13 @@ describe('Cody completions', () => {
 
         expect(completions[0].range).toMatchInlineSnapshot(`
           Range {
-            "end": {
+            "end": Position {
               "character": 21,
-              "line": 1,
+              "line": 0,
             },
-            "start": {
+            "start": Position {
               "character": 20,
-              "line": 1,
+              "line": 0,
             },
           }
         `)
@@ -293,10 +267,10 @@ describe('Cody completions', () => {
     it('does not make a request when context has a selectedCompletionInfo', async () => {
         const { requests } = await complete('foo = █', undefined, undefined, {
             selectedCompletionInfo: {
-                range: {} as any,
+                range: new vsCodeMocks.Range(0, 0, 0, 3),
                 text: 'something',
             },
-            triggerKind: 0,
+            triggerKind: vsCodeMocks.InlineCompletionTriggerKind.Invoke,
         })
 
         expect(requests).toHaveLength(0)

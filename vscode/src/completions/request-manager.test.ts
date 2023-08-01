@@ -2,10 +2,10 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { vsCodeMocks } from '../testutils/mocks'
 
-import { Completion } from '.'
 import { CompletionsCache } from './cache'
 import { Provider } from './providers/provider'
 import { RequestManager } from './request-manager'
+import { Completion } from './vscodeInlineCompletionItemProvider'
 
 vi.mock('vscode', () => vsCodeMocks)
 
