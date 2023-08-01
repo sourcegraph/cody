@@ -7,6 +7,7 @@ import { SourcegraphCompletionsClient } from '@sourcegraph/cody-shared/src/sourc
 
 import { ChatViewProvider } from './chat/ChatViewProvider'
 import { ContextProvider } from './chat/ContextProvider'
+import { FixupManager } from './chat/FixupViewProvider'
 import { InlineChatViewManager } from './chat/InlineChatViewProvider'
 import { MessageProviderOptions } from './chat/MessageProvider'
 import { CODY_FEEDBACK_URL } from './chat/protocol'
@@ -152,6 +153,7 @@ const register = async (
     }
 
     const inlineChatManager = new InlineChatViewManager(messageProviderOptions)
+    const fixupManager = new FixupManager(messageProviderOptions)
     const sidebarChatProvider = new ChatViewProvider({
         ...messageProviderOptions,
         extensionUri: context.extensionUri,
@@ -199,12 +201,28 @@ const register = async (
         sidebarChatProvider.handleError(error)
     }
 
+    const executeFixup = async (instruction: string, range: vscode.Range): Promise<void> => {
+        const editor = vscode.window.activeTextEditor
+        if (!editor) {
+            return
+        }
+        const task = fixup.createTask(editor.document.uri, instruction, range)
+        const provider = fixupManager.getProviderForTask(task)
+        return provider.startFix()
+    }
+
     const statusBar = createStatusBar()
 
     disposables.push(
         // Inline Chat Provider
         vscode.commands.registerCommand('cody.comment.add', async (comment: vscode.CommentReply) => {
             const isFixMode = /^\/f(ix)?\s/i.test(comment.text.trimStart())
+
+            if (isFixMode) {
+                telemetryService.log('CodyVSCodeExtension:fixup')
+                return executeFixup(comment.text, comment.thread.range)
+            }
+
             const inlineChatProvider = inlineChatManager.getProviderForThread(comment.thread)
             await inlineChatProvider.addChat(comment.text, isFixMode)
             telemetryService.log(`CodyVSCodeExtension:inline-assist:${isFixMode ? 'fixup' : 'chat'}`)
@@ -230,6 +248,9 @@ const register = async (
         }),
         vscode.commands.registerCommand('cody.inline.new', () =>
             vscode.commands.executeCommand('workbench.action.addComment')
+        ),
+        vscode.commands.registerCommand('cody.fixup.new', (instruction: string, range: vscode.Range) =>
+            executeFixup(instruction, range)
         ),
         // Tests
         // Access token - this is only used in configuration tests

@@ -1,78 +1,66 @@
-import * as vscode from 'vscode'
-
 import { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
+
+import { FixupTask } from '../non-stop/FixupTask'
 
 import { MessageProvider, MessageProviderOptions } from './MessageProvider'
 
-export class InlineChatViewManager {
-    private inlineChatThreadProviders = new Map<vscode.CommentThread, InlineChatViewProvider>()
+export class FixupManager {
+    private fixupProviders = new Map<FixupTask, FixupProvider>()
     private messageProviderOptions: MessageProviderOptions
 
     constructor(options: MessageProviderOptions) {
         this.messageProviderOptions = options
     }
 
-    public getProviderForThread(thread: vscode.CommentThread): InlineChatViewProvider {
-        let provider = this.inlineChatThreadProviders.get(thread)
+    public getProviderForTask(task: FixupTask): FixupProvider {
+        let provider = this.fixupProviders.get(task)
 
         if (!provider) {
-            provider = new InlineChatViewProvider({ thread, ...this.messageProviderOptions })
-            this.inlineChatThreadProviders.set(thread, provider)
+            provider = new FixupProvider({ task, ...this.messageProviderOptions })
+            this.fixupProviders.set(task, provider)
         }
 
         return provider
     }
 
-    public removeProviderForThread(thread: vscode.CommentThread): void {
-        const provider = this.inlineChatThreadProviders.get(thread)
+    public removeProviderForTask(task: FixupTask): void {
+        const provider = this.fixupProviders.get(task)
 
         if (provider) {
-            this.inlineChatThreadProviders.delete(thread)
-            provider.removeChat()
+            this.fixupProviders.delete(task)
+            provider.removeFix()
             provider.dispose()
         }
     }
 }
 
-interface InlineChatViewProviderOptions extends MessageProviderOptions {
-    thread: vscode.CommentThread
+interface FixupProviderOptions extends MessageProviderOptions {
+    task: FixupTask
 }
 
-export class InlineChatViewProvider extends MessageProvider {
-    private thread: vscode.CommentThread
+export class FixupProvider extends MessageProvider {
+    private task: FixupTask
 
-    constructor({ thread, ...options }: InlineChatViewProviderOptions) {
+    constructor({ task, ...options }: FixupProviderOptions) {
         super(options)
-        this.thread = thread
+        this.task = task
     }
 
-    public async addChat(reply: string, isFixMode: boolean): Promise<void> {
-        // TODO(umpox): We use `inline.reply.pending` to gate against multiple inline chats being sent at once.
-        // We need to update the comment controller to support more than one active thread at a time.
-        void vscode.commands.executeCommand('setContext', 'cody.inline.reply.pending', true)
-
-        /**
-         * TODO(umpox):
-         * We create a new comment and trigger the inline chat recipe, but may end up closing this comment and running a fix instead
-         * We should detect intent here (through regex and then `classifyIntentFromOptions`) and run the correct recipe/controller instead.
-         */
-        await this.editor.controllers.inline?.chat(reply, this.thread, isFixMode)
-        this.editor.controllers.inline?.setResponsePending(true)
-        await this.executeRecipe('inline-chat', reply.trimStart())
+    public async startFix(): Promise<void> {
+        await this.executeRecipe('non-stop-new', this.task.id)
     }
 
-    public removeChat(): void {
-        this.editor.controllers.inline?.delete(this.thread)
-    }
-
-    public async abortChat(): Promise<void> {
-        this.editor.controllers.inline?.abort()
+    public async abortFix(): Promise<void> {
+        // this.editor.controllers.inline?.abort()
         await this.abortCompletion()
-        void vscode.commands.executeCommand('setContext', 'cody.inline.reply.pending', false)
+    }
+
+    public removeFix(): void {
+        // this.editor.controllers.inline?.delete(this.thread)
     }
 
     /**
-     * Send transcript to the active inline chat thread.
+     * Send transcript to the fixup
      */
     protected handleTranscript(transcript: ChatMessage[], isMessageInProgress: boolean): void {
         const lastMessage = transcript[transcript.length - 1]
@@ -83,16 +71,11 @@ export class InlineChatViewProvider extends MessageProvider {
         }
 
         if (lastMessage.displayText) {
-            this.editor.controllers.inline?.setResponsePending(false)
-            this.editor.controllers.inline?.reply(
+            void this.editor.controllers.fixups?.didReceiveFixupText(
+                this.task.id,
                 lastMessage.displayText,
                 isMessageInProgress ? 'streaming' : 'complete'
             )
-        }
-
-        if (!isMessageInProgress) {
-            // Finished responding, we can allow users to send another inline chat message.
-            void vscode.commands.executeCommand('setContext', 'cody.inline.reply.pending', false)
         }
     }
 
@@ -106,18 +89,18 @@ export class InlineChatViewProvider extends MessageProvider {
     }
 
     protected handleHistory(): void {
-        // navigating history not yet implemented for inline chat
+        // not implemented
     }
 
     protected handleSuggestions(): void {
-        // showing suggestions not yet implemented for inline chat
+        // not implemented
     }
 
     protected handleEnabledPlugins(): void {
-        // plugins not yet implemented for inline chat
+        // not implemented
     }
 
     protected handleMyPrompts(): void {
-        // my prompts not yet implemented for inline chat
+        // not implemented
     }
 }

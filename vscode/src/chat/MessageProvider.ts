@@ -209,13 +209,17 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         this.currentChatID = new Date(Date.now()).toUTCString()
     }
 
-    private sendPrompt(promptMessages: Message[], responsePrefix = ''): void {
+    private sendPrompt(
+        promptMessages: Message[],
+        responsePrefix = '',
+        multiplexerTopic = BotResponseMultiplexer.DEFAULT_TOPIC
+    ): void {
         this.cancelCompletion()
         void vscode.commands.executeCommand('setContext', 'cody.reply.pending', true)
 
         let text = ''
 
-        this.multiplexer.sub(BotResponseMultiplexer.DEFAULT_TOPIC, {
+        this.multiplexer.sub(multiplexerTopic, {
             onResponse: (content: string) => {
                 text += content
                 const displayText = reformatBotMessage(text, responsePrefix)
@@ -412,7 +416,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
                     pluginsPrompt
                 )
                 this.transcript.setUsedContextFilesForLastInteraction(contextFiles, pluginExecutionInfos)
-                this.sendPrompt(prompt, interaction.getAssistantMessage().prefix ?? '')
+                this.sendPrompt(prompt, interaction.getAssistantMessage().prefix ?? '', recipe.multiplexerTopic)
                 await this.saveTranscriptToChatHistory()
             }
         }

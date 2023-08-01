@@ -30,11 +30,13 @@ export type RecipeID =
     | 'my-prompt'
     | 'next-questions'
     | 'non-stop'
+    | 'non-stop-new'
     | 'pr-description'
     | 'release-notes'
     | 'translate-to-language'
 
 export interface Recipe {
     id: RecipeID
+    multiplexerTopic?: string
     getInteraction(humanChatInput: string, context: RecipeContext): Promise<Interaction | null>
 }

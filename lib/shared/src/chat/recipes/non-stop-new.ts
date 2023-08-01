@@ -8,8 +8,8 @@ import { numResults } from './helpers'
 import { Recipe, RecipeContext, RecipeID } from './recipe'
 
 // TODO: Disconnect recipe from chat
-export class NonStop implements Recipe {
-    public id: RecipeID = 'non-stop'
+export class NonStopNew implements Recipe {
+    public id: RecipeID = 'non-stop-new'
     public multiplexerTopic = 'selection'
 
     public async getInteraction(taskId: string, context: RecipeContext): Promise<Interaction | null> {
@@ -34,25 +34,13 @@ export class NonStop implements Recipe {
 
         // Reconstruct Cody's prompt using user's context
         // Replace placeholders in reverse order to avoid collisions if a placeholder occurs in the input
-        const promptText = NonStop.prompt
+        const promptText = NonStopNew.prompt
             .replace('{humanInput}', truncateText(instruction, MAX_HUMAN_INPUT_TOKENS))
             .replace('{responseMultiplexerPrompt}', context.responseMultiplexer.prompt())
             .replace('{truncateFollowingText}', truncateText(followingText, quarterFileContext))
             .replace('{selectedText}', selectedText)
             .replace('{truncateTextStart}', truncateTextStart(precedingText, quarterFileContext))
             .replace('{fileName}', fileName)
-
-        let text = ''
-
-        context.responseMultiplexer.sub('selection', {
-            onResponse: async (content: string) => {
-                text += content
-                await context.editor.didReceiveFixupText(taskId, text, 'streaming')
-            },
-            onTurnComplete: async () => {
-                await context.editor.didReceiveFixupText(taskId, text, 'complete')
-            },
-        })
 
         return Promise.resolve(
             new Interaction(

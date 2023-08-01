@@ -101,11 +101,12 @@ export class FixupController
     // Then mark it as pending before sending it to the tree view for tree item creation
 
     // TODO: Start it immediately, new MessageProvider
-    public createTask(documentUri: vscode.Uri, instruction: string, selectionRange: vscode.Range): void {
+    public createTask(documentUri: vscode.Uri, instruction: string, selectionRange: vscode.Range): FixupTask {
         const fixupFile = this.files.forUri(documentUri)
         const task = new FixupTask(fixupFile, instruction, selectionRange)
         this.tasks.set(task.id, task)
-        this.setTaskState(task, CodyTaskState.waiting)
+        this.setTaskState(task, CodyTaskState.asking)
+        return task
     }
 
     // Open fsPath at the selected line in editor on tree item click
@@ -165,7 +166,7 @@ export class FixupController
             return
         }
         void vscode.window.showInformationMessage('Cody will rewrite to include your changes')
-        this.setTaskState(task, CodyTaskState.waiting)
+        this.setTaskState(task, CodyTaskState.asking)
         return undefined
     }
 
@@ -489,6 +490,7 @@ export class FixupController
 
     private setTaskState(task: FixupTask, state: CodyTaskState): void {
         const oldState = task.state
+        console.log('old state', oldState, 'new', state)
         if (oldState === state) {
             // Not a transition--nothing to do.
             return
@@ -504,15 +506,6 @@ export class FixupController
             void vscode.commands.executeCommand('setContext', 'cody.fixup.running', true)
         } else if (oldState === CodyTaskState.asking && task.state !== CodyTaskState.asking) {
             void vscode.commands.executeCommand('setContext', 'cody.fixup.running', false)
-        }
-
-        if (task.state === CodyTaskState.waiting && this.recipeRunner) {
-            // TODO: Move this to the scheduler, have one outstanding callback
-            // at a time, and pick the most advantageous recipe to execute.
-            this.recipeRunner.onIdle(() => {
-                this.setTaskState(task, CodyTaskState.asking)
-                void this.recipeRunner?.runIdleRecipe('non-stop', task.id)
-            })
         }
 
         if (task.state === CodyTaskState.fixed) {
