@@ -14,7 +14,7 @@ test('open the Custom Commands in sidebar and add new user recipe', async ({ pag
 
     // Create Command via UI
     const recipeName = 'A Test Recipes'
-    await page.getByText('Configure Custom Command...').click()
+    await page.getByText('Configure Custom Commands...').click()
     await page.locator('a').filter({ hasText: 'New Custom Command...' }).click()
     await page.keyboard.type(recipeName)
     await page.keyboard.press('Enter')
