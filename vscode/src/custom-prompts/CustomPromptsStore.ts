@@ -13,7 +13,7 @@ import { newPromptMixin, PromptMixin } from '@sourcegraph/cody-shared/src/prompt
 import { debug } from '../log'
 
 import { promptSizeInit } from './types'
-import { constructFileUri, deleteFile, getFileContentText, saveJSONFile } from './utils'
+import { constructFileUri, createJSONFile, deleteFile, getFileContentText, saveJSONFile } from './utils/helpers'
 
 /**
  * The CustomPromptsStore class is responsible for loading and building the custom prompts from the cody.json files.
@@ -31,6 +31,7 @@ export class CustomPromptsStore {
 
     constructor(
         private isActive: boolean,
+        private extensionPath: string,
         private workspaceRoot?: string,
         private homeDir?: string
     ) {
@@ -56,6 +57,7 @@ export class CustomPromptsStore {
         // reset map and set
         this.myPromptsMap = new Map<string, CodyPrompt>()
         this.promptSize = { ...promptSizeInit }
+        this.myPromptsMap.set('seperator', { prompt: 'seperator' })
         // user prompts
         if (this.homeDir) {
             await this.build('user')
@@ -78,7 +80,6 @@ export class CustomPromptsStore {
         if (!content) {
             return null
         }
-        this.myPromptsMap.set(type, { prompt: 'seperator', type })
         const json = JSON.parse(content) as MyPromptsJSON
         const prompts = json.prompts
         for (const key in prompts) {
@@ -140,7 +141,8 @@ export class CustomPromptsStore {
         await saveJSONFile(jsonString, rootDirPath, isSaveMode)
     }
 
-    public async delete(type: CodyPromptType = 'user'): Promise<void> {
+    // Clear the user prompts from the extension storage
+    public async deleteConfig(type: CodyPromptType = 'user'): Promise<void> {
         const isUserType = type === 'user'
         // delete .vscode/cody.json for user command using the vs code api
         const uri = isUserType ? this.jsonFileUris.user : this.jsonFileUris.workspace
@@ -148,9 +150,46 @@ export class CustomPromptsStore {
             void vscode.window.showInformationMessage(
                 'Fail: try deleting the .vscode/cody.json file in your repository or home directory manually.'
             )
-            debug('CommandsController:clear:error:', 'Failed to remove cody.json file for' + type)
+            debug('CustomPromptsStore:clear:error:', 'Failed to remove cody.json file for' + type)
         }
         await deleteFile(uri)
+    }
+
+    // Add a new cody.json file to the user's workspace or home directory
+    public async createConfig(type: CodyPromptType = 'user'): Promise<void> {
+        try {
+            const extensionPath = this.extensionPath
+            const isUserType = isTypeUser(type)
+            const configFileUri = this.getConfigUriByType(type)
+            if (configFileUri) {
+                return await createJSONFile(extensionPath, configFileUri, isUserType)
+            }
+            throw new Error('Please make sure you have a repository opened in your workspace.')
+        } catch (error) {
+            const errorMessage = 'Failed to create cody.json file: '
+            void vscode.window.showErrorMessage(`${errorMessage} ${error}`)
+            debug('CustomPromptsStore:addJSONFile:create', 'failed', { verbose: error })
+        }
+    }
+
+    public async openConfig(type: CodyPromptType = 'user'): Promise<void> {
+        const uri = this.getConfigUriByType(type)
+        return vscode.commands.executeCommand('vscode.open', uri)
+    }
+
+    public async createExampleConfig(): Promise<void> {
+        const userExampleUri = constructFileUri('resources/samples/user-cody.json', this.extensionPath)
+        if (!userExampleUri) {
+            return
+        }
+        const content = await getFileContentText(userExampleUri)
+        const exampleFilePath = this.extensionPath + '/.cody.example.json'
+        const uri = vscode.Uri.parse('untitled:' + exampleFilePath)
+        const document = await vscode.workspace.openTextDocument(uri)
+        const editor = await vscode.window.showTextDocument(document)
+        await editor.edit(editBuilder => {
+            editBuilder.insert(new vscode.Position(0, 0), content)
+        })
     }
 
     // Get the context of the json file from the file system
@@ -171,4 +210,15 @@ export class CustomPromptsStore {
         this.myStarter = ''
         this.userPromptsJSON = null
     }
+
+    private getConfigUriByType(type: CodyPromptType): vscode.Uri | undefined {
+        const isUserType = type === 'user'
+        const configFileUri = isUserType ? this.jsonFileUris.user : this.jsonFileUris.workspace
+        return configFileUri
+    }
 }
+
+export const isTypeUser = (type: CodyPromptType): boolean => type === 'user'
+export const isTypeWorkspace = (type: CodyPromptType): boolean => type === 'workspace'
+export const isNotCustomType = (type: CodyPromptType): boolean => type !== 'user' && type !== 'workspace'
+export const isNonCustomType = (type: CodyPromptType): boolean => type === 'recently used' || type === 'default'

@@ -41,7 +41,7 @@ export const ChatCommandsComponent: React.FunctionComponent<React.PropsWithChild
                 <button
                     className={classNames(styles.commandItem, styles.commandItemTitle)}
                     key="settings"
-                    onClick={() => onCommandClick('/')}
+                    onClick={() => onCommandClick('/custom-settings')}
                     type="button"
                 >
                     <p className={styles.commandTitle}>Commands</p>

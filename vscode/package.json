@@ -263,7 +263,7 @@
       {
         "command": "cody.command.generate-docstring",
         "category": "Ask Cody",
-        "title": "Generate Docstring"
+        "title": "Document Code"
       },
       {
         "command": "cody.command.fixup",

@@ -1,5 +1,45 @@
 import { CodyPromptType } from '@sourcegraph/cody-shared/src/chat/recipes/cody-prompts'
 
+export type CustomPromptsMenuAnswerType = 'add' | 'file' | 'delete' | 'list' | 'open' | 'cancel' | 'example'
+
+export interface CustomPromptsMenuAnswer {
+    actionID: CustomPromptsMenuAnswerType
+    commandType: CodyPromptType
+}
+
+export interface UserWorkspaceInfo {
+    homeDir: string
+    workspaceRoot?: string
+    currentFilePath?: string
+}
+
+export const CustomPromptsMainMenuOptions = [
+    {
+        kind: 0,
+        label: 'New Custom Command...',
+        id: 'add',
+        type: 'user',
+        description: '',
+    },
+    { kind: -1, id: 'seperator', label: '' },
+    {
+        kind: 0,
+        label: 'Open Workspace Settings (JSON)',
+        id: 'open',
+        type: 'workspace',
+        description: '.vscode/cody.json',
+    },
+    {
+        kind: 0,
+        label: 'Open User Settings (JSON)',
+        id: 'open',
+        type: 'user',
+        description: '~/.vscode/cody.json',
+    },
+    { kind: -1, id: 'seperator', label: '' },
+    { kind: 0, label: 'Open Example Commands (JSON)', id: 'example', type: 'default' },
+]
+
 // List of context types to include with the prompt
 export const CustomPromptsContextOptions = [
     {
@@ -40,46 +80,6 @@ export const CustomPromptsContextOptions = [
         picked: false,
     },
 ]
-
-export type CustomPromptsMenuAnswerType = 'add' | 'file' | 'delete' | 'list' | 'open' | 'cancel'
-
-export interface CustomPromptsMenuAnswer {
-    actionID: CustomPromptsMenuAnswerType
-    commandType: CodyPromptType
-}
-
-export const CustomPromptsMainMenuOptions = [
-    {
-        kind: 0,
-        label: 'New Custom Command...',
-        id: 'add',
-        type: '',
-        description: '',
-    },
-    { kind: -1, id: 'seperator', label: '' },
-    {
-        kind: 0,
-        label: 'Open Workspace Settings (JSON)',
-        id: 'open',
-        type: 'workspace',
-        description: '.vscode/cody.json',
-    },
-    {
-        kind: 0,
-        label: 'Open User Settings (JSON)',
-        id: 'add',
-        type: 'user',
-        description: '~/.vscode/cody.json',
-    },
-    { kind: -1, id: 'seperator', label: '' },
-    { kind: 0, label: 'Open Example Commands (JSON)', id: 'open', type: 'default' },
-]
-
-export interface UserWorkspaceInfo {
-    homeDir: string
-    workspaceRoot?: string
-    currentFilePath?: string
-}
 
 export const promptSizeInit = {
     user: 0,

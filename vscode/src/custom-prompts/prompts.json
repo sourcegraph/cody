@@ -1,31 +1,30 @@
 {
   "prompts": {
-    "Explain Code": {
-      "prompt": "Explain the selected code at a high level. Only include details that are essential to an overall understanding of what's happening in the code.",
-      "context": {
-        "currentFile": true,
-        "selection": true
-      },
-      "slashCommand": "explain"
-    },
-    "Generate Docstring": {
-      "name": "Generate Docstring",
+    "Document Code": {
+      "slashCommand": "document",
       "prompt": "Generate a comment documenting the parameters and functionality for the selected code. Only generate the documentation for the selected code, do not generate the code. Use the same documentation style in the file of the selected code to generate the comments. Pay attention to the file name of the selected code to make sure the comments are generated for the correct language. For example, If the selected code is from a .java file, use the JavaDoc documentation style to generate comments. If the selected code is from a .py file, generate the Python docstring using Python multi-line string.",
       "context": {
         "currentDir": true,
         "currentFile": true,
         "selection": true
-      },
-      "slashCommand": "docstring"
+      }
+    },
+    "Explain Code": {
+      "slashCommand": "explain",
+      "prompt": "Explain the selected code at a high level. Only include details that are essential to an overall understanding of what's happening in the code.",
+      "context": {
+        "currentFile": true,
+        "selection": true
+      }
     },
     "Generate Unit Tests": {
+      "slashCommand": "tests",
       "prompt": "Create 3 or more complete workable unit tests for each functions in the selected code. If there are examples test cases included in comments, create additional test cases for them. If there are existing test files in the directory included in the shared, try to follow similar patterns and imports used in those files. If no test files are shared, you may import common libraries like the language's built-in test framework. Make sure to include all the imports needed to run the tests.",
       "context": {
         "currentDir": true,
         "currentFile": true,
         "selection": true
-      },
-      "slashCommand": "tests"
+      }
     }
   }
 }

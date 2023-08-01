@@ -4,8 +4,10 @@ import { CodyPrompt } from '@sourcegraph/cody-shared/src/chat/recipes/cody-promp
 
 import { debug } from '../log'
 
+import { CodyMenu_CodyCommands, menu_options, menu_seperators } from './menuOptions'
 import * as defaultCommands from './prompts.json'
 
+// Manage default commands created by the prompts in prompts.json
 export class DefaultPromptsStore {
     private defaultPromptsMap = new Map<string, CodyPrompt>()
     private allCommands = new Map<string, CodyPrompt>()
@@ -48,34 +50,24 @@ export class DefaultPromptsStore {
         this.allCommands = new Map([...this.defaultPromptsMap, ...customCommands])
     }
 
-    // Main Menu
+    // Main Menu: Cody Commands
     public async menu(showDesc = false): Promise<void> {
         try {
-            // Get the list of prompts from the cody.json file
-            const commandItems: vscode.QuickPickItem[] = [{ kind: -1, label: 'commands' }]
+            const commandItems = [menu_seperators.chat, menu_options.chat, menu_seperators.commands]
             const allCommandItems = [...this.allCommands]?.map(commandItem => {
                 const command = commandItem[1]
                 if (command.prompt === 'seperator') {
-                    return { kind: -1, label: command.type, description: '' }
+                    return menu_seperators.customCommands
                 }
-                const description = showDesc && command.slashCommand ? command.slashCommand : ''
+                const description = showDesc && command.slashCommand ? command.slashCommand : command.type
                 return {
                     label: command.name || commandItem[0],
                     description,
                 }
-            }) as vscode.QuickPickItem[]
-            commandItems.push(...allCommandItems)
-            const configSeperator: vscode.QuickPickItem = { kind: -1, label: 'custom commands' }
-            const configOption: vscode.QuickPickItem = { label: 'Configure Custom Commands...' }
-            const chatSeperator: vscode.QuickPickItem = { kind: -1, label: 'inline chat' }
-            const chatOption: vscode.QuickPickItem = { label: 'Ask a Question', alwaysShow: true }
-            commandItems.push(configSeperator, configOption, chatSeperator, chatOption)
-            // Show the list of prompts to the user using a quick pick
-            const options = {
-                title: 'Cody Commands',
-                placeHolder: 'Search for a command',
-            }
-            const selectedPrompt = await vscode.window.showQuickPick([...commandItems], options)
+            })
+            commandItems.push(...allCommandItems, menu_options.config)
+            // Show the list of prompts to the user using a quick pick menu
+            const selectedPrompt = await vscode.window.showQuickPick([...commandItems], CodyMenu_CodyCommands)
             if (!selectedPrompt) {
                 return
             }
@@ -83,9 +75,9 @@ export class DefaultPromptsStore {
             switch (true) {
                 case !selectedCommandID:
                     break
-                case selectedCommandID === configOption.label:
-                    return await vscode.commands.executeCommand('cody.action.custom-prompts.menu')
-                case selectedCommandID === chatOption.label:
+                case selectedCommandID === menu_options.config.label:
+                    return await vscode.commands.executeCommand('cody.action.custom-prompts.config')
+                case selectedCommandID === menu_options.chat.label:
                     return await vscode.commands.executeCommand('cody.inline.new')
             }
 

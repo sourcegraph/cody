@@ -1,7 +1,5 @@
 import * as vscode from 'vscode'
 
-import { CodyPrompt } from '@sourcegraph/cody-shared/src/chat/recipes/cody-prompts'
-
 export function constructFileUri(fileName: string, rootDirPath?: string): vscode.Uri | undefined {
     if (!rootDirPath) {
         return undefined
@@ -24,8 +22,7 @@ export async function createJSONFile(
         void vscode.window.showErrorMessage('Failed to create cody.json file.')
         return
     }
-    const bytes = await vscode.workspace.fs.readFile(codyJsonPath)
-    const decoded = new TextDecoder('utf-8').decode(bytes)
+    const decoded = await getFileContentText(codyJsonPath)
     await saveJSONFile(decoded, configFileUri)
 }
 
@@ -63,8 +60,6 @@ export async function deleteFile(uri?: vscode.Uri): Promise<void> {
     await vscode.workspace.fs.delete(uri)
 }
 
-export const prompt_creation_title = 'Cody Custom Commands - New Command'
-
 export async function doesPathExist(filePath?: string): Promise<boolean> {
     try {
         return (filePath && !!(await vscode.workspace.fs.stat(vscode.Uri.file(filePath)))) || false
@@ -88,16 +83,26 @@ Output of \`{command}\` command:
 {output}
 \`\`\``
 
-export const lastUsedCommandsSeperator: [string, CodyPrompt][] = [
-    ['seperator', { prompt: 'seperator', type: 'recently used' }],
-]
+export const createQuickPickSeperator = (label = '', detail = ''): vscode.QuickPickItem => ({ kind: -1, label, detail })
+export const createQuickPickItem = (label = '', description = ''): vscode.QuickPickItem => ({ label, description })
 
-export const getFileContentText = async (uri: vscode.Uri): Promise<string | null> => {
+export async function createUntitledFileWithExample(): Promise<void> {
+    const content = 'Hello, world!'
+    const uri = vscode.Uri.parse('untitled:')
+    const document = await vscode.workspace.openTextDocument(uri)
+    const editor = await vscode.window.showTextDocument(document)
+    await editor.edit(editBuilder => {
+        editBuilder.insert(new vscode.Position(0, 0), content)
+    })
+}
+
+export async function getFileContentText(uri: vscode.Uri): Promise<string> {
     try {
         const bytes = await vscode.workspace.fs.readFile(uri)
-        const decoded = new TextDecoder('utf-8').decode(bytes) || null
-        return decoded
-    } catch {
-        return null
+        const content = new TextDecoder('utf-8').decode(bytes)
+        return content
+    } catch (error) {
+        console.error('Failed to get decoded content from file uri', error)
+        return ''
     }
 }

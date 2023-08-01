@@ -266,22 +266,19 @@ const register = async (
             'cody.action.commands.menu',
             showDesc => editor.controllers.command?.default.menu(showDesc)
         ),
+        vscode.commands.registerCommand('cody.action.custom-prompts.menu', () => editor.controllers.command?.menu()),
+        vscode.commands.registerCommand(
+            'cody.action.custom-prompts.config',
+            () => editor.controllers.command?.configMenu()
+        ),
         vscode.commands.registerCommand('cody.customPrompts.exec', async title => {
             if (!sidebarChatProvider.isCustomPromptAction(title)) {
                 await sidebarChatProvider.setWebviewView('chat')
             }
             await sidebarChatProvider.executeCustomPrompt(title)
         }),
-        vscode.commands.registerCommand(
-            'cody.action.custom-prompts.menu',
-            () => editor.controllers.command?.promptsQuickPicker()
-        ),
         vscode.commands.registerCommand('cody.command.explain-code', () =>
             executeRecipeInSidebar('custom-prompt', true, '/explain')
-        ),
-        vscode.commands.registerCommand(
-            'cody.customRecipes.list',
-            () => editor.controllers.command?.promptsQuickPicker()
         ),
         vscode.commands.registerCommand('cody.recipe.explain-code', () =>
             executeRecipeInSidebar('explain-code-detailed')

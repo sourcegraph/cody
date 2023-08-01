@@ -538,7 +538,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
                 if (!type) {
                     break
                 }
-                await this.editor.controllers.command?.addJSONFile(type)
+                await this.editor.controllers.command?.config('add', type)
                 break
         }
         // Get prompt details from controller by title then execute prompt's command
@@ -560,6 +560,8 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         switch (true) {
             case text === '/':
                 return vscode.commands.executeCommand('cody.action.commands.menu')
+            case text === '/custom-settings':
+                return vscode.commands.executeCommand('cody.action.custom-prompts.config')
             case /^\/o(pen)?/i.test(text) && this.editor.controllers.command !== undefined:
                 // open the user's ~/.vscode/cody.json file
                 await this.editor.controllers.command?.open(text.split(' ')[1])

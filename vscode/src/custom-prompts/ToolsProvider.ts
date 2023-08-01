@@ -7,7 +7,7 @@ import * as vscode from 'vscode'
 import { debug } from '../log'
 
 import { UserWorkspaceInfo } from './types'
-import { outputWrapper } from './utils'
+import { outputWrapper } from './utils/helpers'
 
 const rootPath = vscode.workspace.workspaceFolders?.[0].uri.fsPath
 const currentFilePath = vscode.window.activeTextEditor?.document.uri.fsPath

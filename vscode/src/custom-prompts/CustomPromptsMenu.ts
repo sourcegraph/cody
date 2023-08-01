@@ -6,13 +6,13 @@ import {
     defaultCodyPromptContext,
 } from '@sourcegraph/cody-shared/src/chat/recipes/cody-prompts'
 
+import { CodyMenu_NewCustomCommands, menu_commandTypes } from './menuOptions'
 import {
     CustomPromptsContextOptions,
     CustomPromptsMainMenuOptions,
     CustomPromptsMenuAnswer,
     CustomPromptsMenuAnswerType,
 } from './types'
-import { prompt_creation_title } from './utils'
 
 // Main menu for the Custom Commands in Quick Pick
 export async function showCustomPromptMenu(): Promise<CustomPromptsMenuAnswer | void> {
@@ -29,8 +29,8 @@ export async function showCustomPromptMenu(): Promise<CustomPromptsMenuAnswer | 
     return { actionID, commandType }
 }
 
-// Quick pick menu to select a recipe from the list of available Custom Commands
-export async function recipePicker(promptList: string[] = []): Promise<string> {
+// Quick pick menu to select a command from the list of available Custom Commands
+export async function commandPicker(promptList: string[] = []): Promise<string> {
     const selectedRecipe = (await vscode.window.showQuickPick(promptList)) || ''
     return selectedRecipe
 }
@@ -43,7 +43,7 @@ export async function createNewPrompt(promptName?: string): Promise<CodyPrompt |
     // Get the prompt description from the user using the input box
     const minPromptLength = 3
     const promptDescription = await vscode.window.showInputBox({
-        title: prompt_creation_title,
+        title: CodyMenu_NewCustomCommands,
         prompt: 'Enter a prompt --a set of instructions/questions for Cody to follow and answer.',
         placeHolder: "e,g. 'Create five different test cases for the selected code''",
         validateInput: (input: string) => {
@@ -61,7 +61,7 @@ export async function createNewPrompt(promptName?: string): Promise<CodyPrompt |
     newPrompt.context = { ...defaultCodyPromptContext }
     // Get the context types from the user using the quick pick
     const promptContext = await vscode.window.showQuickPick(CustomPromptsContextOptions, {
-        title: 'Select the context to include with the prompt for the new recipe',
+        title: 'Select the context to include with the prompt for the new command',
         placeHolder: 'TIPS: Providing limited but precise context helps Cody provide more relevant answers',
         canPickMany: true,
         ignoreFocusOut: false,
@@ -94,25 +94,25 @@ export async function createNewPrompt(promptName?: string): Promise<CodyPrompt |
 export async function showPromptCommandInput(): Promise<string | void> {
     // Get the command to run from the user using the input box
     const promptCommand = await vscode.window.showInputBox({
-        title: prompt_creation_title,
-        prompt: 'Add a terminal command to run the recipe locally and share the output with Cody as prompt context.',
+        title: CodyMenu_NewCustomCommands,
+        prompt: 'Add a terminal command to run the command locally and share the output with Cody as prompt context.',
         placeHolder: 'e,g. node your-script.js, git describe --long, cat src/file-name.js etc.',
     })
     return promptCommand
 }
 
-// Input box for the user to name the recipe during the UI prompt building process
+// Input box for the user to name the command during the UI prompt building process
 export async function showPromptNameInput(myPromptStore: Map<string, CodyPrompt>): Promise<string | void> {
     const promptName = await vscode.window.showInputBox({
-        title: prompt_creation_title,
-        prompt: 'Enter an unique name for the new recipe.',
+        title: CodyMenu_NewCustomCommands,
+        prompt: 'Enter an unique name for the new command.',
         placeHolder: 'e,g. Vulnerability Scanner',
         validateInput: (input: string) => {
             if (!input) {
                 return 'Recipe name cannot be empty. Please enter a unique name.'
             }
             if (myPromptStore.has(input)) {
-                return 'A recipe with the same name exists. Please enter a different name.'
+                return 'A command with the same name exists. Please enter a different name.'
             }
             return
         },
@@ -131,7 +131,7 @@ export async function showRemoveConfirmationInput(): Promise<string | void> {
     return confirmRemove
 }
 
-// Quick pick menu with the correct recipe type (user or workspace) selections based on existing JSON files
+// Quick pick menu with the correct command type (user or workspace) selections based on existing JSON files
 export async function showcommandTypeQuickPick(
     action: 'file' | 'delete' | 'open',
     prompts: {
@@ -140,16 +140,8 @@ export async function showcommandTypeQuickPick(
     }
 ): Promise<CodyPromptType | null> {
     const options: vscode.QuickPickItem[] = []
-    const userItem = {
-        label: 'User',
-        detail: 'Stored on your machine and usable across all your workspaces',
-        description: '~/.vscode/cody.json',
-    }
-    const workspaceItem = {
-        label: 'Workspace (Repository)',
-        detail: 'Project-specific and shared with anyone using this workspace',
-        description: '.vscode/cody.json',
-    }
+    const userItem = menu_commandTypes.user
+    const workspaceItem = menu_commandTypes.workspace
     if (action === 'file') {
         if (prompts.user === 0) {
             options.push(userItem)
@@ -165,14 +157,14 @@ export async function showcommandTypeQuickPick(
             options.push(workspaceItem)
         }
     }
-    const title = `Cody: Custom Commands - ${action === 'file' ? 'Creating Config File' : 'Recipe Type'}`
-    const placeHolder = 'Select recipe type (when available) to continue, or ESC to cancel'
+    const title = `Cody: Custom Commands - ${action === 'file' ? 'Creating Configure File...' : 'Command Type'}`
+    const placeHolder = 'Select command type (when available) to continue, or ESC to cancel'
     // Show quick pick menu
     const commandType = await vscode.window.showQuickPick(options, { title, placeHolder })
     if (!commandType?.label) {
         return null
     }
-    return commandType.label.toLowerCase() as CodyPromptType
+    return (commandType.label.toLowerCase() === 'user' ? 'user' : 'workspace') as CodyPromptType
 }
 
 // Ask chat question via quick input box
