@@ -986,7 +986,6 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.4.2",
-    "@google-cloud/pubsub": "^3.7.3",
     "@sourcegraph/cody-shared": "workspace:*",
     "@sourcegraph/cody-ui": "workspace:*",
     "@types/stream-json": "^1.7.3",
@@ -1010,6 +1009,7 @@
     "wink-nlp-utils": "^2.1.0"
   },
   "devDependencies": {
+    "@google-cloud/pubsub": "^3.7.3",
     "@playwright/test": "^1.33.0",
     "@types/dedent": "^0.7.0",
     "@types/express": "^4.17.17",
