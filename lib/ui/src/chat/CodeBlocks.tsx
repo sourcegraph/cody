@@ -104,6 +104,8 @@ export const CodeBlocks: React.FunctionComponent<CodeBlocksProps> = React.memo(f
 }) {
     const rootRef = useRef<HTMLDivElement>(null)
 
+    console.log('CODY rootRef', rootRef)
+
     useEffect(() => {
         const preElements = rootRef.current?.querySelectorAll('pre')
         if (!preElements?.length) {
@@ -126,18 +128,20 @@ export const CodeBlocks: React.FunctionComponent<CodeBlocksProps> = React.memo(f
     return useMemo(() => {
         if (RecipeWidgetWrapper) {
             return (
-                <RecipeWidgetWrapper targetRef={rootRef}>
-                    Hello from naman wrapped
-                    <div ref={rootRef} dangerouslySetInnerHTML={{ __html: renderCodyMarkdown(displayText) }} />
-                </RecipeWidgetWrapper>
+                <div>
+                    <span>V Test</span>
+                    {/* TODO: Popover happens on whole re: instead of just code block */}
+                    <RecipeWidgetWrapper targetRef={rootRef}>
+                        <div
+                            ref={rootRef}
+                            className={styles.relative}
+                            dangerouslySetInnerHTML={{ __html: renderCodyMarkdown(displayText) }}
+                        />
+                    </RecipeWidgetWrapper>
+                </div>
             )
         }
 
-        return (
-            <>
-                Hello from naman not wrapped
-                <div ref={rootRef} dangerouslySetInnerHTML={{ __html: renderCodyMarkdown(displayText) }} />
-            </>
-        )
+        return <div ref={rootRef} dangerouslySetInnerHTML={{ __html: renderCodyMarkdown(displayText) }} />
     }, [displayText, RecipeWidgetWrapper])
 })

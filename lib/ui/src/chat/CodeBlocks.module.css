@@ -7,6 +7,10 @@
     margin-top: 0;
 }
 
+.relative {
+    position: relative;
+}
+
 .buttons {
     position: absolute;
     top: 0;
