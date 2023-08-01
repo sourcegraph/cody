@@ -2,7 +2,10 @@ import * as vscode from 'vscode'
 
 import type {
     ActiveTextEditor,
+    ActiveTextEditorDiagnostic,
+    ActiveTextEditorDiagnosticType,
     ActiveTextEditorSelection,
+    ActiveTextEditorSelectionRange,
     ActiveTextEditorViewControllers,
     ActiveTextEditorVisibleContent,
     Editor,
@@ -55,7 +58,7 @@ export class VSCodeEditor implements Editor<InlineController, FixupController, M
         return {
             content: documentText,
             filePath: documentUri.fsPath,
-            selection: !documentSelection.isEmpty ? documentSelection : undefined,
+            selectionRange: !documentSelection.isEmpty ? documentSelection : undefined,
         }
     }
 
@@ -89,6 +92,43 @@ export class VSCodeEditor implements Editor<InlineController, FixupController, M
             selection = new vscode.Selection(0, 0, activeEditor.document.lineCount, 0)
         }
         return this.createActiveTextEditorSelection(activeEditor, selection)
+    }
+
+    private getActiveTextEditorDiagnosticType(severity: vscode.DiagnosticSeverity): ActiveTextEditorDiagnosticType {
+        switch (severity) {
+            case vscode.DiagnosticSeverity.Error:
+                return 'error'
+            case vscode.DiagnosticSeverity.Warning:
+                return 'warning'
+            case vscode.DiagnosticSeverity.Information:
+                return 'information'
+            case vscode.DiagnosticSeverity.Hint:
+                return 'hint'
+        }
+    }
+
+    public getActiveTextEditorDiagnosticsForRange({
+        start,
+        end,
+    }: ActiveTextEditorSelectionRange): ActiveTextEditorDiagnostic[] | null {
+        const activeEditor = this.getActiveTextEditorInstance()
+        if (!activeEditor) {
+            return null
+        }
+        const diagnostics = vscode.languages.getDiagnostics(activeEditor.document.uri)
+        const selectionRange = new vscode.Range(
+            new vscode.Position(start.line, start.character),
+            new vscode.Position(end.line, end.character)
+        )
+
+        return diagnostics
+            .filter(diagnostic => selectionRange.contains(diagnostic.range))
+            .map(({ message, range, severity }) => ({
+                type: this.getActiveTextEditorDiagnosticType(severity),
+                range,
+                text: activeEditor.document.getText(range),
+                message,
+            }))
     }
 
     private createActiveTextEditorSelection(

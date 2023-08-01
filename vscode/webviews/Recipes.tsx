@@ -1,10 +1,24 @@
+import { useState } from 'react'
+
 import { VSCodeButton } from '@vscode/webview-ui-toolkit/react'
+import classNames from 'classnames'
 
 import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 
 import { VSCodeWrapper } from './utils/VSCodeApi'
 
 import styles from './Recipes.module.css'
+
+type ClickableRecipeID = Exclude<
+    RecipeID,
+    'chat-question' | 'inline-touch' | 'inline-chat' | 'my-prompt' | 'next-questions' | 'non-stop'
+>
+
+type RecipeListType = Record<ClickableRecipeID, string>
+
+interface State {
+    reorderedRecipes: RecipeListType
+}
 
 export const recipesList = {
     'explain-code-detailed': 'Explain selected code (detailed)',
@@ -25,6 +39,10 @@ export const Recipes: React.FunctionComponent<{
     vscodeAPI: VSCodeWrapper
     myPrompts: string[] | null
 }> = ({ vscodeAPI, myPrompts }) => {
+    const initialState = vscodeAPI.getState() as State | undefined
+    const reorderedRecipeList: RecipeListType = initialState?.reorderedRecipes ?? recipesList
+    const [recipes, setRecipes] = useState<RecipeListType>(reorderedRecipeList)
+    const [draggedIndex, setDraggedIndex] = useState<number | null>(null)
     const onRecipeClick = (recipeID: RecipeID): void => {
         vscodeAPI.postMessage({ command: 'executeRecipe', recipe: recipeID })
     }
@@ -32,6 +50,34 @@ export const Recipes: React.FunctionComponent<{
         vscodeAPI.postMessage({ command: 'my-prompt', title: promptID, value })
     }
     const myPromptsEnabled = myPrompts !== null
+
+    const handleDragStart = (event: React.DragEvent<HTMLElement>, index: number): void => {
+        setDraggedIndex(index)
+    }
+
+    const handleDragOver = (event: React.DragEvent<HTMLElement>, index: number): void => {
+        event.preventDefault()
+
+        if (draggedIndex !== null && draggedIndex !== index) {
+            const newRecipes = Object.entries(recipes)
+            const [removedRecipe] = newRecipes.splice(draggedIndex, 1)
+            newRecipes.splice(index, 0, removedRecipe)
+
+            const reorderedRecipes: RecipeListType = {} as RecipeListType
+
+            for (const recipe of newRecipes) {
+                reorderedRecipes[recipe[0] as ClickableRecipeID] = recipe[1]
+            }
+
+            setRecipes(reorderedRecipes)
+            vscodeAPI.setState({ reorderedRecipes })
+            setDraggedIndex(index)
+        }
+    }
+
+    const handleDragEnd = (): void => {
+        setDraggedIndex(null)
+    }
 
     return (
         <div className="inner-container">
@@ -100,12 +146,19 @@ export const Recipes: React.FunctionComponent<{
                             </div>
                         </>
                     )}
-                    {Object.entries(recipesList).map(([key, value]) => (
+                    {Object.entries(recipes).map(([key, value], index) => (
                         <VSCodeButton
                             key={key}
-                            className={styles.recipeButton}
+                            className={classNames(
+                                styles.recipeButton,
+                                index === draggedIndex && styles.recipeButtonDrag
+                            )}
                             type="button"
-                            onClick={() => onRecipeClick(key as RecipeID)}
+                            onClick={() => onRecipeClick(key as ClickableRecipeID)}
+                            draggable={true}
+                            onDragStart={e => handleDragStart(e, index)}
+                            onDragOver={e => handleDragOver(e, index)}
+                            onDragEnd={handleDragEnd}
                         >
                             {value}
                         </VSCodeButton>

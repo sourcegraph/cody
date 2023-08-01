@@ -4,7 +4,7 @@ import * as vscode from 'vscode'
 
 import { bestJaccardMatch, JaccardMatch } from './bestJaccardMatch'
 import type { ReferenceSnippet } from './context'
-import { History } from './history'
+import { DocumentHistory } from './history'
 
 interface JaccardMatchWithFilename extends JaccardMatch {
     fileName: string
@@ -12,7 +12,7 @@ interface JaccardMatchWithFilename extends JaccardMatch {
 
 interface Options {
     document: vscode.TextDocument
-    history: History
+    history: DocumentHistory
     prefix: string
     jaccardDistanceWindowSize: number
 }
@@ -57,7 +57,10 @@ interface FileContents {
  * For every file, we will load up to 10.000 lines to avoid OOMing when working with very large
  * files.
  */
-async function getRelevantFiles(currentDocument: vscode.TextDocument, history: History): Promise<FileContents[]> {
+async function getRelevantFiles(
+    currentDocument: vscode.TextDocument,
+    history: DocumentHistory
+): Promise<FileContents[]> {
     const files: FileContents[] = []
 
     const curLang = currentDocument.languageId

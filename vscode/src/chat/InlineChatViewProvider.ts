@@ -51,6 +51,11 @@ export class InlineChatViewProvider extends MessageProvider {
         // We need to update the comment controller to support more than one active thread at a time.
         void vscode.commands.executeCommand('setContext', 'cody.inline.reply.pending', true)
 
+        /**
+         * TODO(umpox):
+         * We create a new comment and trigger the inline chat recipe, but may end up closing this comment and running a fix instead
+         * We should detect intent here (through regex and then `classifyIntentFromOptions`) and run the correct recipe/controller instead.
+         */
         await this.editor.controllers.inline?.chat(reply, this.thread, isFixMode)
         this.editor.controllers.inline?.setResponsePending(true)
         await this.executeRecipe('inline-chat', reply.trimStart())

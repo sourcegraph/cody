@@ -11,7 +11,6 @@ import { Configuration } from '@sourcegraph/cody-shared/src/configuration'
 import { AuthStatus, defaultAuthStatus, LocalEnv } from '../src/chat/protocol'
 
 import { Chat } from './Chat'
-import { Header } from './Header'
 import { LoadingPage } from './LoadingPage'
 import { Login } from './Login'
 import { NavBar, View } from './NavBar'
@@ -140,7 +139,6 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
 
     return (
         <div className="outer-container">
-            <Header endpoint={authStatus.isLoggedIn ? endpoint : null} />
             {view === 'login' || !authStatus.isLoggedIn ? (
                 <Login
                     authStatus={authStatus}
@@ -185,6 +183,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                             setSuggestions={setSuggestions}
                             telemetryService={telemetryService}
                             isTranscriptError={isTranscriptError}
+                            showOnboardingButtons={userHistory && Object.entries(userHistory).length === 0}
                         />
                     )}
                 </>

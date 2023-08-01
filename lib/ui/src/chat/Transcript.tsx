@@ -120,7 +120,7 @@ export const Transcript: React.FunctionComponent<
                             FeedbackButtonsContainer={FeedbackButtonsContainer}
                             feedbackButtonsOnSubmit={feedbackButtonsOnSubmit}
                             copyButtonOnSubmit={copyButtonOnSubmit}
-                            showFeedbackButtons={index > 0 && transcript.length - index === 1 && !isTranscriptError}
+                            showFeedbackButtons={index !== 0 && !isTranscriptError}
                             submitButtonComponent={submitButtonComponent}
                             chatInputClassName={chatInputClassName}
                             ChatButtonComponent={ChatButtonComponent}

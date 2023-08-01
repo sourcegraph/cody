@@ -9,7 +9,9 @@
   "description": "Code AI with codebase context",
   "scripts": {
     "dev": "pnpm run -s dev:desktop",
-    "dev:desktop": "pnpm run -s build:dev:desktop && CODY_FOCUS_SIDEBAR_ON_STARTUP=1 NODE_ENV=development code --extensionDevelopmentPath=. --disable-extension=sourcegraph.cody-ai --disable-extension=github.copilot --disable-extension=github.copilot-nightly --inspect-extensions=9333 --new-window . --goto ./src/logged-rerank.ts:16:5",
+    "dev:insiders": "pnpm run -s dev:desktop:insiders",
+    "dev:desktop": "pnpm run -s build:dev:desktop && CODY_FOCUS_SIDEBAR_ON_STARTUP=1 NODE_ENV=development code --extensionDevelopmentPath=$PWD --disable-extension=sourcegraph.cody-ai --disable-extension=github.copilot --disable-extension=github.copilot-nightly --inspect-extensions=9333 --new-window . --goto ./src/logged-rerank.ts:16:5",
+    "dev:desktop:insiders": "pnpm run -s build:dev:desktop && CODY_FOCUS_SIDEBAR_ON_STARTUP=1 NODE_ENV=development code-insiders --extensionDevelopmentPath=$PWD --disable-extension=sourcegraph.cody-ai --disable-extension=github.copilot --disable-extension=github.copilot-nightly --inspect-extensions=9333 --new-window . --goto ./src/logged-rerank.ts:16:5",
     "dev:web": "pnpm run -s build:dev:web && pnpm run -s _dev:vscode-test-web --browserType none",
     "watch:dev:web": "concurrently \"pnpm run -s watch:build:dev:web\" \"pnpm run -s _dev:vscode-test-web --browserType none\"",
     "_dev:vscode-test-web": "vscode-test-web --extensionDevelopmentPath=. ${WORKSPACE-test/fixtures/workspace}",
@@ -204,7 +206,7 @@
       "activitybar": [
         {
           "id": "cody",
-          "title": "Sourcegraph Cody",
+          "title": "Cody",
           "icon": "resources/cody.svg"
         }
       ]
@@ -870,7 +872,8 @@
             "anthropic",
             "unstable-codegen",
             "unstable-huggingface",
-            "unstable-fireworks"
+            "unstable-fireworks",
+            "unstable-azure-openai"
           ],
           "markdownDescription": "Overwrite the provider used for code autocomplete."
         },
@@ -892,11 +895,6 @@
           "type": "boolean",
           "default": true,
           "markdownDescription": "Enables the use of embeddings as code completions context."
-        },
-        "cody.autocomplete.experimental.triggerMoreEagerly": {
-          "type": "boolean",
-          "default": true,
-          "markdownDescription": "Trigger autocomplete when the cursor is at the end of a word (instead of waiting for a space or other non-word character). Share feedback at https://github.com/sourcegraph/cody/discussions/274."
         },
         "cody.autocomplete.experimental.completeSuggestWidgetSelection": {
           "type": "boolean",
@@ -1004,6 +1002,7 @@
     "openai": "^3.2.1",
     "stream-json": "^1.8.0",
     "uuid": "^9.0.0",
+    "vscode-languageserver-textdocument": "^1.0.8",
     "vscode-uri": "^3.0.7",
     "wink-eng-lite-web-model": "^1.5.0",
     "wink-nlp": "^1.13.1",
