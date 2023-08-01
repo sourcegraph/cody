@@ -1,6 +1,6 @@
 import { truncateMultilineCompletion } from './multiline'
 import { collapseDuplicativeWhitespace, trimUntilSuffix } from './text-processing'
-import { Completion } from './vscodeInlineCompletionItemProvider'
+import { Completion } from './types'
 
 /**
  * This function implements post-processing logic that is applied regardless of

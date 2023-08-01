@@ -5,7 +5,7 @@ import { vsCodeMocks } from '../testutils/mocks'
 import { CompletionsCache } from './cache'
 import { Provider } from './providers/provider'
 import { RequestManager } from './request-manager'
-import { Completion } from './vscodeInlineCompletionItemProvider'
+import { Completion } from './types'
 
 vi.mock('vscode', () => vsCodeMocks)
 

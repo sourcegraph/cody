@@ -2,7 +2,7 @@ import { CompletionsCache } from './cache'
 import { ReferenceSnippet } from './context'
 import { logCompletionEvent } from './logger'
 import { CompletionProviderTracer, Provider } from './providers/provider'
-import { Completion } from './vscodeInlineCompletionItemProvider'
+import { Completion } from './types'
 
 interface Request {
     prefix: string

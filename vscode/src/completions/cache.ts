@@ -1,7 +1,7 @@
 import { LRUCache } from 'lru-cache'
 
 import { trimEndOnLastLineIfWhitespaceOnly } from './text-processing'
-import { Completion } from './vscodeInlineCompletionItemProvider'
+import { Completion } from './types'
 
 export interface CachedCompletions {
     logId: string

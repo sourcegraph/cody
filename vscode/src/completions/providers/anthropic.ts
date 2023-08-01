@@ -14,8 +14,8 @@ import {
     PrefixComponents,
     trimLeadingWhitespaceUntilNewline,
 } from '../text-processing'
+import { Completion } from '../types'
 import { batchCompletions, messagesToText } from '../utils'
-import { Completion } from '../vscodeInlineCompletionItemProvider'
 
 import { CompletionProviderTracer, Provider, ProviderConfig, ProviderOptions } from './provider'
 
