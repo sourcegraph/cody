@@ -394,8 +394,8 @@ importers:
         specifier: ^4.17.17
         version: 4.17.17
       '@types/glob':
-        specifier: ^7.2.0
-        version: 7.2.0
+        specifier: ^8.0.0
+        version: 8.1.0
       '@types/isomorphic-fetch':
         specifier: ^0.0.36
         version: 0.0.36
