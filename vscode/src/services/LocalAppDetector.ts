@@ -48,6 +48,7 @@ export class LocalAppDetector implements vscode.Disposable {
         // Start with init state
         this.dispose()
         this.localEnv = { ...envInit }
+        debug('LocalAppDetector', 'initializing')
         const homeDir = this.localEnv.homeDir
         // if conditions are not met, this will be a noop
         if (!this.isSupported || !homeDir) {
@@ -68,7 +69,6 @@ export class LocalAppDetector implements vscode.Disposable {
                 this.tokenFsPath = vscode.Uri.file(dirPath + marker.file)
             }
         }
-        debug('LocalAppDetector:init', 'initialized')
         await this.fetchApp()
     }
 

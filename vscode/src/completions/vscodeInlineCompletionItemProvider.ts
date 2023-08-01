@@ -139,7 +139,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
                 debug('CodyCompletionProvider:inline:error', `${error.toString()}\n${error.stack}`)
             }
 
-            return emptyCompletions()
+            throw error
         }
     }
 
@@ -169,17 +169,6 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
             document.languageId,
             this.config.providerConfig.enableExtendedMultilineTriggers
         )
-
-        let triggeredForSuggestWidgetSelection: string | undefined
-        if (context.selectedCompletionInfo) {
-            if (this.config.completeSuggestWidgetSelection) {
-                triggeredForSuggestWidgetSelection = context.selectedCompletionInfo.text
-            } else {
-                // Don't show completions if the suggest widget (which shows language autocomplete)
-                // is showing.
-                return emptyCompletions()
-            }
-        }
 
         // If we have a suffix in the same line as the cursor and the suffix contains any word
         // characters, do not attempt to make a completion. This means we only make completions if
@@ -229,12 +218,6 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
                   multiline,
                   providerIdentifier: this.config.providerConfig.identifier,
                   languageId: document.languageId,
-                  triggeredForSuggestWidgetSelection: triggeredForSuggestWidgetSelection !== undefined,
-                  settings: {
-                      autocompleteExperimentalCompleteSuggestWidgetSelection: Boolean(
-                          this.config.completeSuggestWidgetSelection
-                      ),
-                  },
               })
         this.previousCompletionLogId = logId
 
@@ -469,13 +452,16 @@ function toInlineCompletionItems(
 ): vscode.InlineCompletionList {
     return {
         items: completions.map(completion => {
-            const lines = completion.content.split(/\r\n|\r|\n/).length
-            const currentLineText = document.lineAt(position)
-            const endOfLine = currentLineText.range.end
-            return new vscode.InlineCompletionItem(completion.content, new vscode.Range(position, endOfLine), {
+            // Return the completion from the start of the current line (instead of starting at the
+            // given position). This avoids UI jitter in VS Code; when typing or deleting individual
+            // characters, VS Code reuses the existing completion while it waits for the new one to
+            // come in.
+            const currentLine = document.lineAt(position)
+            const currentLinePrefix = document.getText(currentLine.range.with({ end: position }))
+            return new vscode.InlineCompletionItem(currentLinePrefix + completion.content, currentLine.range, {
                 title: 'Completion accepted',
                 command: 'cody.autocomplete.inline.accepted',
-                arguments: [{ codyLogId: logId, codyLines: lines }],
+                arguments: [{ codyLogId: logId, codyLines: completion.content.split(/\r\n|\r|\n/).length }],
             })
         }),
     }

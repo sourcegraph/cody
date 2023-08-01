@@ -131,11 +131,21 @@ describe('Cody completions', () => {
 
             const { document, position } = documentAndPosition(code, languageId)
 
-            const completions = await completionProvider.provideInlineCompletionItems(document, position, context)
+            const result = await completionProvider.provideInlineCompletionItems(document, position, context)
+            const completions = 'items' in result ? result.items : result
+
+            // The provider returns completions with text starting at the beginning of the
+            // current line (to reduce jitter in VS Code), but for testing, it's simpler to
+            // omit that prefix.
+            const completionsWithCurrentLinePrefixRemoved = completions.map(c => ({
+                ...c,
+                insertText: (c.insertText as string).slice(position.character),
+                range: c.range?.with({ start: position }),
+            }))
 
             return {
                 requests,
-                completions: 'items' in completions ? completions.items : completions,
+                completions: completionsWithCurrentLinePrefixRemoved,
             }
         }
     })
@@ -229,16 +239,15 @@ describe('Cody completions', () => {
         `)
     })
 
-    it('does not make a request when context has a selectedCompletionInfo', async () => {
-        const { requests } = await complete('foo = █', undefined, undefined, {
+    it('makes a request when context has a selectedCompletionInfo', async () => {
+        const { completions } = await complete('foo█', [completion`123`], undefined, {
             selectedCompletionInfo: {
                 range: new vsCodeMocks.Range(0, 0, 0, 3),
-                text: 'something',
+                text: 'foo123',
             },
             triggerKind: vsCodeMocks.InlineCompletionTriggerKind.Invoke,
         })
-
-        expect(requests).toHaveLength(0)
+        expect(completions[0].insertText).toBe('123')
     })
 
     it('preserves leading whitespace when prefix has no trailing whitespace', async () => {
@@ -603,6 +612,78 @@ describe('Cody completions', () => {
                     } else {
                         printf(\\"ODD %d\\", i);
                     }"
+            `)
+        })
+
+        it('works with php', async () => {
+            const { completions, requests } = await complete(
+                dedent`
+                    for ($i = 0; $i < 11; $i++) {
+                        if ($i % 2 == 0) {
+                            █
+                `,
+                [
+                    completion`
+                            ├echo $i;
+                        } else if ($i % 3 == 0) {
+                            echo "Multiple of 3: " . $i;
+                        } else {
+                            echo "ODD " . $i;
+                        }
+                    }
+
+                    for ($i = 0; $i < 12; $i++) {
+                        echo "unrelated";
+                    }┤`,
+                ],
+                'c'
+            )
+
+            expect(requests).toHaveLength(3)
+            expect(requests[0].stopSequences).not.toContain('\n')
+            expect(completions[0].insertText).toMatchInlineSnapshot(`
+              "echo $i;
+                  } else if ($i % 3 == 0) {
+                      echo \\"Multiple of 3: \\" . $i;
+                  } else {
+                      echo \\"ODD \\" . $i;
+                  }"
+            `)
+        })
+
+        it('works with dart', async () => {
+            const { completions, requests } = await complete(
+                dedent`
+                    for (int i = 0; i < 11; i++) {
+                        if (i % 2 == 0) {
+                            █
+                `,
+                [
+                    completion`
+                            ├print(i);
+                        } else if (i % 3 == 0) {
+                          print('Multiple of 3: $i');
+                        } else {
+                          print('ODD $i');
+                        }
+                      }
+
+                      for (int i = 0; i < 12; i++) {
+                        print('unrelated');
+                      }┤`,
+                ],
+                'dart'
+            )
+
+            expect(requests).toHaveLength(3)
+            expect(requests[0].stopSequences).not.toContain('\n')
+            expect(completions[0].insertText).toMatchInlineSnapshot(`
+              "print(i);
+                  } else if (i % 3 == 0) {
+                      print('Multiple of 3: $i');
+                  } else {
+                      print('ODD $i');
+                  }"
             `)
         })
 

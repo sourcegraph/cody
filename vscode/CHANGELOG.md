@@ -11,6 +11,7 @@ Starting from `0.2.0`, Cody is using `major.EVEN_NUMBER.patch` for release versi
 - `Custom Commands`: An experimental feature available behind the `cody.experimental.customCommands` feature flag. [pull/386](https://github.com/sourcegraph/cody/pull/386)
 - Quick pick menu for running default and custom commands. [pull/386](https://github.com/sourcegraph/cody/pull/386)
 - Inline Fixups: Cody is now aware of errors, warnings and hints within your editor selection. [pull/376](https://github.com/sourcegraph/cody/pull/376)
+- Experimental user setting `cody.experimental.localTokenPath` to store authentication token in local file system when keychain access is unavailable. This provides alternative to [settings sync keychain storage](https://code.visualstudio.com/docs/editor/settings-sync#_troubleshooting-keychain-issues), but is not the recommended method for storing tokens securely. Use at your own risk. [pull/471](https://github.com/sourcegraph/cody/pull/471)
 
 ### Fixed
 
