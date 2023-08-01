@@ -31,7 +31,7 @@ export class VSCodeSecretStorage implements SecretStorage {
     constructor(private secretStorage: vscode.SecretStorage) {
         const config = vscode.workspace.getConfiguration('cody')
         // For user that does not have secret storage implemented in their sever
-        this.fsPath = config.get('experimental.LocalTokenPath') || null
+        this.fsPath = config.get('experimental.localTokenPath') || null
     }
     // Catch corrupted token in secret storage
     public async get(key: string): Promise<string | undefined> {
