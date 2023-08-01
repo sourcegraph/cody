@@ -79,7 +79,6 @@ export class UnstableFireworksProvider extends Provider {
             echo: false,
             model: 'fireworks-starcoder-16b-w8a16',
         }
-        console.log(request)
 
         const log = logger.startCompletion({
             request,
@@ -100,10 +99,10 @@ export class UnstableFireworksProvider extends Provider {
         try {
             const data = (await response.json()) as
                 | { choices: { text: string; finish_reason: string }[] }
-                | { error: string }
+                | { error: { message: string } }
 
             if ('error' in data) {
-                throw new Error(data.error)
+                throw new Error(data.error.message)
             }
 
             const completions = data.choices.map(c => ({
