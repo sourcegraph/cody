@@ -9,7 +9,12 @@ import { VSCodeWrapper } from './utils/VSCodeApi'
 
 import styles from './Recipes.module.css'
 
-type RecipeListType = Record<string, string>
+type ClickableRecipeID = Exclude<
+    RecipeID,
+    'chat-question' | 'inline-touch' | 'inline-chat' | 'my-prompt' | 'next-questions' | 'non-stop'
+>
+
+type RecipeListType = Record<ClickableRecipeID, string>
 
 interface State {
     reorderedRecipes: RecipeListType
@@ -61,7 +66,7 @@ export const Recipes: React.FunctionComponent<{
             const reorderedRecipes: RecipeListType = {} as RecipeListType
 
             for (const recipe of newRecipes) {
-                reorderedRecipes[recipe[0]] = recipe[1]
+                reorderedRecipes[recipe[0] as ClickableRecipeID] = recipe[1]
             }
 
             setRecipes(reorderedRecipes)
@@ -149,7 +154,7 @@ export const Recipes: React.FunctionComponent<{
                                 index === draggedIndex && styles.recipeButtonDrag
                             )}
                             type="button"
-                            onClick={() => onRecipeClick(key as RecipeID)}
+                            onClick={() => onRecipeClick(key as ClickableRecipeID)}
                             draggable={true}
                             onDragStart={e => handleDragStart(e, index)}
                             onDragOver={e => handleDragOver(e, index)}
