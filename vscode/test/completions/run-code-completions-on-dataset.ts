@@ -61,7 +61,7 @@ async function initCompletionsProvider(context: GetContextResult): Promise<Inlin
             dispose: () => {},
         },
         history,
-        codebaseContext,
+        getCodebaseContext: () => codebaseContext,
         disableTimeouts: true,
         cache: null,
         isEmbeddingsContextEnabled: true,

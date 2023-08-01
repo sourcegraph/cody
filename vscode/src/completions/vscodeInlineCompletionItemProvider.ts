@@ -24,7 +24,7 @@ interface CodyCompletionItemProviderConfig {
     providerConfig: ProviderConfig
     history: DocumentHistory
     statusBar: CodyStatusBar
-    codebaseContext: CodebaseContext
+    getCodebaseContext: () => CodebaseContext
     responsePercentage?: number
     prefixPercentage?: number
     suffixPercentage?: number
@@ -333,7 +333,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
             history: this.config.history,
             jaccardDistanceWindowSize: SNIPPET_WINDOW_SIZE,
             maxChars: this.promptChars,
-            codebaseContext: this.config.codebaseContext,
+            getCodebaseContext: this.config.getCodebaseContext,
             isEmbeddingsContextEnabled: this.config.isEmbeddingsContextEnabled,
         })
         if (abortController.signal.aborted) {

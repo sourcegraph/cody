@@ -89,6 +89,7 @@ export class ContextProvider implements vscode.Disposable {
     }
 
     public async init(): Promise<void> {
+        await this.updateCodebaseContext()
         await this.publishContextStatus()
     }
 

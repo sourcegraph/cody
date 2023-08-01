@@ -4,7 +4,7 @@ import { differenceInMinutes } from 'date-fns'
 import { LRUCache } from 'lru-cache'
 import * as vscode from 'vscode'
 
-import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
+import type { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
 
 import type { ReferenceSnippet } from './context'
 import { logCompletionEvent } from './logger'
@@ -13,7 +13,7 @@ interface Options {
     document: vscode.TextDocument
     prefix: string
     suffix: string
-    codebaseContext: CodebaseContext
+    getCodebaseContext: () => CodebaseContext
 }
 
 interface EmbeddingsForFile {
@@ -26,23 +26,25 @@ const embeddingsPerFile = new LRUCache<string, EmbeddingsForFile>({
 })
 
 export function getContextFromEmbeddings(options: Options): ReferenceSnippet[] {
-    const { document, codebaseContext, prefix, suffix } = options
+    const { document, getCodebaseContext, prefix, suffix } = options
 
     const currentFilePath = path.normalize(document.fileName)
     const embeddingsForCurrentFile = embeddingsPerFile.get(currentFilePath)
 
     /**
-     * Fetch embeddings if we don't have any or if the last fetch was more than 5 minutes ago.
-     * Ideally, we should fetch embeddings in the background if file significantly changed.
-     * We can use the `onDidChangeTextDocument` event with some diffing logic for that in the improved version.
+     * Fetch embeddings if we don't have any or if the last fetch was more than
+     * 5 minutes ago. Ideally, we should fetch embeddings in the background if
+     * file significantly changed. We can use the `onDidChangeTextDocument`
+     * event with some diffing logic for that in the improved version.
      */
     if (!embeddingsForCurrentFile || differenceInMinutes(embeddingsForCurrentFile.lastChange, new Date()) > 5) {
         fetchAndSaveEmbeddings({
-            codebaseContext,
+            getCodebaseContext,
             currentFilePath,
-            // Use preifx + suffix to limit number of lines we send to the server.
-            // We can use the fullText here via `currentEditor.document.getText()` but
-            // it can negatively affect the embeddings quality and price.
+            // Use prefix + suffix to limit number of lines we send to the
+            // server. We can use the fullText here via
+            // `currentEditor.document.getText()` but it can negatively affect
+            // the embeddings quality and price.
             text: prefix + suffix,
         }).catch(console.error)
     }
@@ -54,7 +56,7 @@ export function getContextFromEmbeddings(options: Options): ReferenceSnippet[] {
 interface FetchEmbeddingsOptions {
     currentFilePath: string
     text: string
-    codebaseContext: CodebaseContext
+    getCodebaseContext: () => CodebaseContext
 }
 
 const NUM_CODE_RESULTS = 2
@@ -63,7 +65,8 @@ const NUM_CODE_RESULTS_EXTRA = 5
 const NUM_TEXT_RESULTS = 1
 
 async function fetchAndSaveEmbeddings(options: FetchEmbeddingsOptions): Promise<void> {
-    const { currentFilePath, text, codebaseContext } = options
+    const { currentFilePath, text, getCodebaseContext } = options
+    const codebaseContext = getCodebaseContext()
 
     if (!codebaseContext.checkEmbeddingsConnection()) {
         return

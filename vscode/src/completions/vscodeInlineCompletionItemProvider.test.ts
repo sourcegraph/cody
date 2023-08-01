@@ -120,7 +120,7 @@ describe('Cody completions', () => {
                 providerConfig,
                 statusBar: NOOP_STATUS_BAR,
                 history: DUMMY_DOCUMENT_HISTORY,
-                codebaseContext: DUMMY_CODEBASE_CONTEXT,
+                getCodebaseContext: () => DUMMY_CODEBASE_CONTEXT,
                 disableTimeouts: true,
                 cache,
             })
