@@ -22,7 +22,7 @@ export const recipesList = {
     'pr-description': 'Generate pull request description',
 }
 
-const RecipeTypeGetStartedMessage = {
+const CommandTypeGetStartedMessage = {
     user: 'User Recipes are accessible only to you across Workspaces',
     workspace: 'Workspace Recipes are available to all users in your current repository',
 }
@@ -68,7 +68,7 @@ export const Recipes: React.FunctionComponent<{
                     className={styles.recipeButton}
                     type="button"
                     onClick={() => onMyPromptClick('add', type)}
-                    title={RecipeTypeGetStartedMessage[type]}
+                    title={CommandTypeGetStartedMessage[type]}
                 >
                     Get Started
                 </VSCodeButton>

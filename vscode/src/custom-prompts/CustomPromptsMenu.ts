@@ -11,7 +11,7 @@ import {
     CustomPromptsMainMenuOptions,
     CustomPromptsMenuAnswer,
     CustomPromptsMenuAnswerType,
-} from './const'
+} from './types'
 import { prompt_creation_title } from './utils'
 
 // Main menu for the Custom Commands in Quick Pick
@@ -25,8 +25,8 @@ export async function showCustomPromptMenu(): Promise<CustomPromptsMenuAnswer | 
         return
     }
     const actionID = selectedOption.id as CustomPromptsMenuAnswerType
-    const recipeType = selectedOption.type as CodyPromptType
-    return { actionID, recipeType }
+    const commandType = selectedOption.type as CodyPromptType
+    return { actionID, commandType }
 }
 
 // Quick pick menu to select a recipe from the list of available Custom Commands
@@ -132,7 +132,7 @@ export async function showRemoveConfirmationInput(): Promise<string | void> {
 }
 
 // Quick pick menu with the correct recipe type (user or workspace) selections based on existing JSON files
-export async function showRecipeTypeQuickPick(
+export async function showcommandTypeQuickPick(
     action: 'file' | 'delete' | 'open',
     prompts: {
         user: number
@@ -168,9 +168,21 @@ export async function showRecipeTypeQuickPick(
     const title = `Cody: Custom Commands - ${action === 'file' ? 'Creating Config File' : 'Recipe Type'}`
     const placeHolder = 'Select recipe type (when available) to continue, or ESC to cancel'
     // Show quick pick menu
-    const recipeType = await vscode.window.showQuickPick(options, { title, placeHolder })
-    if (!recipeType?.label) {
+    const commandType = await vscode.window.showQuickPick(options, { title, placeHolder })
+    if (!commandType?.label) {
         return null
     }
-    return recipeType.label.toLowerCase() as CodyPromptType
+    return commandType.label.toLowerCase() as CodyPromptType
+}
+
+// Ask chat question via quick input box
+export async function quickChatInput(): Promise<void> {
+    const humanInput = await vscode.window.showInputBox({
+        prompt: 'Ask Cody a question...',
+        placeHolder: 'ex. What is a class in Typescript?',
+        validateInput: (input: string) => (input ? null : 'Please enter a question.'),
+    })
+    if (humanInput) {
+        await vscode.commands.executeCommand('cody.action.chat', humanInput)
+    }
 }

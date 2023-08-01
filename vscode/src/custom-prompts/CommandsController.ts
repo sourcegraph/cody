@@ -6,38 +6,30 @@ import {
     defaultCodyPromptContext,
     MyPrompts,
 } from '@sourcegraph/cody-shared/src/chat/recipes/cody-prompts'
-import { VsCodePromptsController } from '@sourcegraph/cody-shared/src/editor'
+import { VsCodeCommandsController } from '@sourcegraph/cody-shared/src/editor'
 
 import { debug } from '../log'
 import { LocalStorage } from '../services/LocalStorageProvider'
 
 import {
     createNewPrompt,
+    showcommandTypeQuickPick,
     showCustomPromptMenu,
     showPromptNameInput,
-    showRecipeTypeQuickPick,
     showRemoveConfirmationInput,
 } from './CustomPromptsMenu'
 import { CustomPromptsStore } from './CustomPromptsStore'
 import { DefaultPromptsStore } from './DefaultPromptsStore'
 import { ToolsProvider } from './ToolsProvider'
-import {
-    constructFileUri,
-    createFileWatchers,
-    createJSONFile,
-    deleteFile,
-    lastUsedCommandsSeperator,
-    saveJSONFile,
-} from './utils'
+import { constructFileUri, createFileWatchers, createJSONFile, lastUsedCommandsSeperator } from './utils'
 
 /**
- * Utilizes CustomPromptsStore to get the built prompt data
+ * Manage commands built with prompts from CustomPromptsStore and DefaultPromptsStore
  * Provides additional prompt management and execution logic
- * NOTE: Dogfooding - Internal s2 users only
  */
-export class PromptsController implements VsCodePromptsController {
+export class CommandsController implements VsCodeCommandsController {
     private tools: ToolsProvider
-    private store: CustomPromptsStore
+    private custom: CustomPromptsStore
     public default = new DefaultPromptsStore()
 
     private myPromptsMap = new Map<string, CodyPrompt>()
@@ -56,7 +48,7 @@ export class PromptsController implements VsCodePromptsController {
     ) {
         this.tools = new ToolsProvider(context)
         const user = this.tools.getUserInfo()
-        this.store = new CustomPromptsStore(isEnabled, user?.workspaceRoot, user.homeDir)
+        this.custom = new CustomPromptsStore(isEnabled, user?.workspaceRoot, user.homeDir)
         this.lastUsedCommands = new Set(this.localStorage.getLastUsedCommands())
         this.watcherInit()
         // Toggle on Config Change
@@ -87,18 +79,18 @@ export class PromptsController implements VsCodePromptsController {
         this.userFileWatcher?.onDidChange(() => this.webViewMessenger?.())
         this.wsFileWatcher?.onDidDelete(() => this.webViewMessenger?.())
         this.userFileWatcher?.onDidDelete(() => this.webViewMessenger?.())
-        debug('PromptsController:watcherInit', 'watchers created')
+        debug('CommandsController:watcherInit', 'watchers created')
     }
 
     // dispose and reset the controller and builder
     public dispose(): void {
         this.isEnabled = false
-        this.store.dispose()
+        this.custom.dispose()
         this.myPromptInProgress = null
         this.myPromptsMap = new Map<string, CodyPrompt>()
         this.wsFileWatcher?.dispose()
         this.userFileWatcher?.dispose()
-        debug('PromptsController:dispose', 'disposed')
+        debug('CommandsController:dispose', 'disposed')
     }
 
     // Check if the config is enabled on config change, and toggle the builder
@@ -106,7 +98,7 @@ export class PromptsController implements VsCodePromptsController {
         const config = vscode.workspace.getConfiguration('cody')
         const newConfig = config.get('experimental.customPrompts') as boolean
         this.isEnabled = newConfig
-        this.store.activate(newConfig)
+        this.custom.activate(newConfig)
         if (newConfig && this.isEnabled) {
             this.watcherInit()
         }
@@ -138,7 +130,7 @@ export class PromptsController implements VsCodePromptsController {
     // Open workspace file in editor
     public async open(filePath: string): Promise<void> {
         if (filePath === 'user' || filePath === 'workspace') {
-            return this.tools.openFile(this.store.jsonFileUris[filePath])
+            return this.tools.openFile(this.custom.jsonFileUris[filePath])
         }
         const fileUri = constructFileUri(filePath, this.tools.getUserInfo()?.workspaceRoot)
         return vscode.commands.executeCommand('vscode.open', fileUri)
@@ -150,7 +142,7 @@ export class PromptsController implements VsCodePromptsController {
         if (!myPrompt) {
             return ''
         }
-        debug('PromptsController:find:myPrompt', id, { verbose: myPrompt })
+        debug('CommandsController:find:myPrompt', id, { verbose: myPrompt })
         this.myPromptInProgress = myPrompt
         this.lastUsedCommands.add(id)
         return myPrompt?.prompt
@@ -158,12 +150,12 @@ export class PromptsController implements VsCodePromptsController {
 
     // get the list of commands names to share with the webview to display
     public getCommands(): [string, CodyPrompt][] {
-        return this.store.getCommands().filter(recipe => recipe[1].prompt !== 'seperator')
+        return this.custom.getCommands().filter(command => command[1].prompt !== 'seperator')
     }
 
     // Get the prompts and premade for client to use
     public async getMyPrompts(): Promise<MyPrompts> {
-        const myPromptsConfig = await this.store.refresh()
+        const myPromptsConfig = await this.custom.refresh()
         return myPromptsConfig
     }
 
@@ -179,51 +171,16 @@ export class PromptsController implements VsCodePromptsController {
         return commandOutput || null
     }
 
-    // Save the user prompts to the user json file
-    public async save(
-        id: string,
-        prompt: CodyPrompt,
-        deletePrompt = false,
-        type: CodyPromptType = 'user'
-    ): Promise<void> {
-        if (deletePrompt) {
-            this.myPromptsMap.delete(id)
-        } else {
-            this.myPromptsMap.set(id, prompt)
-        }
-        // filter prompt map to remove prompt with type workspace
-        const filtered = new Map<string, CodyPrompt>()
-        for (const [key, value] of this.myPromptsMap) {
-            if (value.type === 'user') {
-                filtered.set(key, value)
-            }
-        }
-        // Add new prompt to the map
-        filtered.set(id, prompt)
-        // turn prompt map into json
-        const jsonContext = { ...this.store.userPromptsJSON }
-        jsonContext.prompts = Object.fromEntries(filtered)
-        const jsonString = JSON.stringify(jsonContext)
-        const rootDirPath = type === 'user' ? this.store.jsonFileUris.user : this.store.jsonFileUris.workspace
-        if (!rootDirPath || !jsonString) {
-            void vscode.window.showErrorMessage('Failed to save to cody.json file.')
-            return
-        }
-        const isSaveMode = true
-        await saveJSONFile(jsonString, rootDirPath, isSaveMode)
-        await this.refresh()
-    }
-
     // Get the prompts from cody.json file then build the map of prompts
     public async refresh(): Promise<void> {
         await this.saveLastUsedCommands()
-        const { prompts } = await this.store.refresh()
+        const { prompts } = await this.custom.refresh()
         this.myPromptsMap = prompts
         this.default.groupCommands(prompts)
     }
 
     private async saveLastUsedCommands(): Promise<void> {
-        // store the last 3 used recipes
+        // store the last 3 used commands
         const lastUsedCommands = [...this.lastUsedCommands].slice(-3)
         if (lastUsedCommands.length > 0) {
             await this.localStorage.setLastUsedCommands(lastUsedCommands)
@@ -233,16 +190,7 @@ export class PromptsController implements VsCodePromptsController {
 
     // Clear the user prompts from the extension storage
     public async clear(type: CodyPromptType = 'user'): Promise<void> {
-        const isUserType = type === 'user'
-        // delete .vscode/cody.json for user recipe using the vs code api
-        const uri = isUserType ? this.store.jsonFileUris.user : this.store.jsonFileUris.workspace
-        if (this.store.promptSize[type] === 0 || !uri) {
-            void vscode.window.showInformationMessage(
-                'Fail: try deleting the .vscode/cody.json file in your repository or home directory manually.'
-            )
-            debug('PromptsController:clear:error:', 'Failed to remove cody.json file for' + type)
-        }
-        await deleteFile(uri)
+        await this.custom.delete(type)
         await this.refresh()
     }
 
@@ -251,7 +199,7 @@ export class PromptsController implements VsCodePromptsController {
         try {
             const extensionPath = this.context.extensionPath
             const isUserType = type === 'user'
-            const configFileUri = isUserType ? this.store.jsonFileUris.user : this.store.jsonFileUris.workspace
+            const configFileUri = isUserType ? this.custom.jsonFileUris.user : this.custom.jsonFileUris.workspace
             if (!configFileUri) {
                 throw new Error('Please make sure you have a repository opened in your workspace.')
             }
@@ -259,30 +207,30 @@ export class PromptsController implements VsCodePromptsController {
         } catch (error) {
             const errorMessage = 'Failed to create cody.json file: '
             void vscode.window.showErrorMessage(`${errorMessage} ${error}`)
-            debug('PromptsController:addJSONFile:create', 'failed', { verbose: error })
+            debug('CommandsController:addJSONFile:create', 'failed', { verbose: error })
         }
     }
 
-    // Menu with an option to add a new recipe via UI and save it to user's cody.json file
+    // Menu with an option to add a new command via UI and save it to user's cody.json file
     public async menu(): Promise<void> {
-        const promptSize = this.store.promptSize.user + this.store.promptSize.workspace
+        const promptSize = this.custom.promptSize.user + this.custom.promptSize.workspace
         const selectedOption = await showCustomPromptMenu()
         const selected = promptSize === 0 ? 'file' : selectedOption?.actionID
         if (!selectedOption || !selected) {
             return
         }
-        debug('PromptsController:customPrompts:menu', selected)
+        debug('CommandsController:customPrompts:menu', selected)
         if (selected === 'delete' || selected === 'file' || selected === 'open') {
-            const fileType = await showRecipeTypeQuickPick(selected, this.store.promptSize)
+            const fileType = await showcommandTypeQuickPick(selected, this.custom.promptSize)
             if (!fileType) {
                 return
             }
             await this.fileTypeActionProcessor(selected, fileType)
         } else if (selected === 'add') {
-            if (selectedOption?.recipeType === 'user') {
-                await this.updateUserRecipeQuick()
+            if (selectedOption?.commandType === 'user') {
+                await this.updateUserCommandQuick()
             } else {
-                const wsFileAction = this.store.promptSize.workspace === 0 ? 'file' : 'open'
+                const wsFileAction = this.custom.promptSize.workspace === 0 ? 'file' : 'open'
                 await this.fileTypeActionProcessor(wsFileAction, 'workspace')
             }
         } else if (selected === 'list') {
@@ -295,7 +243,7 @@ export class PromptsController implements VsCodePromptsController {
         return type === 'default' ? this.default.menu() : this.menu()
     }
 
-    // Menu with a list of user recipes to run
+    // Menu with a list of user commands to run
     public async promptsQuickPicker(): Promise<void> {
         if (this.myPromptsMap.size === 0) {
             await this.menu()
@@ -304,29 +252,29 @@ export class PromptsController implements VsCodePromptsController {
         try {
             const lastUsedCommands = [...this.lastUsedCommands]
                 ?.map(id => {
-                    const recipe = this.myPromptsMap.get(id)
-                    return recipe ? [id, recipe] : null
+                    const command = this.myPromptsMap.get(id)
+                    return command ? [id, command] : null
                 })
                 ?.reverse()
             const lastUsedCommandsList = [...lastUsedCommandsSeperator, ...lastUsedCommands] as [string, CodyPrompt][]
             // Get the list of prompts from the cody.json file
-            const commandsFromStore = this.store.getCommands()
+            const commandsFromStore = this.custom.getCommands()
             const promptList = lastUsedCommands.length
                 ? [...lastUsedCommandsList, ...commandsFromStore]
                 : commandsFromStore
             const promptItems = promptList
-                ?.filter(recipe => recipe !== null && recipe?.[1]?.type !== 'default')
+                ?.filter(command => command !== null && command?.[1]?.type !== 'default')
                 .map(commandItem => {
-                    const recipe = commandItem[1]
-                    const description = recipe.slashCommand ? '/' + recipe.slashCommand : ''
-                    return recipe.prompt === 'seperator'
+                    const command = commandItem[1]
+                    const description = command.slashCommand ? '/' + command.slashCommand : ''
+                    return command.prompt === 'seperator'
                         ? {
                               kind: -1,
-                              label: recipe.type,
-                              detail: recipe.prompt,
+                              label: command.type,
+                              detail: command.prompt,
                           }
                         : {
-                              label: recipe.name || commandItem[0],
+                              label: command.name || commandItem[0],
                               description,
                           }
                 }) as vscode.QuickPickItem[]
@@ -334,7 +282,7 @@ export class PromptsController implements VsCodePromptsController {
             const addOption: vscode.QuickPickItem = { label: 'New Custom Command...', alwaysShow: true }
             promptItems.push(seperator, addOption)
             // Show the list of prompts to the user using a quick pick
-            const options = { title: 'Cody Custom Commands', placeHolder: 'Search recipe to run...' }
+            const options = { title: 'Cody Custom Commands', placeHolder: 'Search command to run...' }
             const selectedPrompt = await vscode.window.showQuickPick([...promptItems], options)
             if (!selectedPrompt) {
                 return
@@ -342,23 +290,23 @@ export class PromptsController implements VsCodePromptsController {
             // Find the prompt based on the selected prompt name
             const promptTitle = selectedPrompt.label
             if (promptTitle === addOption.label) {
-                await this.updateUserRecipeQuick()
+                await this.updateUserCommandQuick()
                 return
             }
             if (!promptTitle) {
                 return
             }
-            debug('PromptsController:promptsQuickPicker:selectedPrompt', promptTitle)
+            debug('CommandsController:promptsQuickPicker:selectedPrompt', promptTitle)
             // Run the prompt
             await vscode.commands.executeCommand('cody.customPrompts.exec', promptTitle)
         } catch (error) {
-            debug('PromptsController:promptsQuickPicker', 'error', { verbose: error })
+            debug('CommandsController:promptsQuickPicker', 'error', { verbose: error })
         }
     }
 
     // Get the prompt name and prompt description from the user using the input box
-    // Add new recipe to user's .vscode/cody.json file
-    private async updateUserRecipeQuick(): Promise<void> {
+    // Add new command to user's .vscode/cody.json file
+    private async updateUserCommandQuick(): Promise<void> {
         const promptName = (await showPromptNameInput(this.myPromptsMap)) || null
         if (!promptName) {
             return
@@ -368,9 +316,9 @@ export class PromptsController implements VsCodePromptsController {
             return
         }
         // Save the prompt to the current Map and Extension storage
-        this.myPromptsMap.set(promptName, newPrompt)
-        await this.save(promptName, newPrompt)
-        debug('PromptsController:updateUserRecipeQuick:newPrompt:', 'saved', { verbose: newPrompt })
+        await this.custom.save(promptName, newPrompt)
+        await this.refresh()
+        debug('CommandsController:updateUserCommandQuick:newPrompt:', 'saved', { verbose: newPrompt })
     }
 
     // Show the menu for the actions that require file type selection

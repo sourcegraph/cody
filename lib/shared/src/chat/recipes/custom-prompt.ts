@@ -31,7 +31,7 @@ export class CustomPrompt implements Recipe {
     public id: RecipeID = 'custom-prompt'
 
     public async getInteraction(humanChatInput: string, context: RecipeContext): Promise<Interaction | null> {
-        const contextConfig = await context.editor.controllers?.prompt?.get('context')
+        const contextConfig = await context.editor.controllers?.command?.get('context')
         const isContextRequired = contextConfig
             ? (JSON.parse(contextConfig) as CodyPromptContext)
             : defaultCodyPromptContext
@@ -44,12 +44,12 @@ export class CustomPrompt implements Recipe {
         // Make prompt text
         const humanInput = humanChatInput.trim()
         // Match human input with key from promptStore to get prompt text when there is none
-        const promptText = humanInput || (await context.editor.controllers?.prompt?.get()) || null
+        const promptText = humanInput || (await context.editor.controllers?.command?.get()) || null
         if (!promptText) {
             await vscode.window.showErrorMessage('Please enter a valid prompt for the custom command.')
             return null
         }
-        const commandOutput = await context.editor.controllers?.prompt?.get('output')
+        const commandOutput = await context.editor.controllers?.command?.get('output')
         const note = 'Refer to the command output, my selected code, and shared code snippets to answer my quesiton.'
         const truncatedText = truncateText(promptText + note, MAX_HUMAN_INPUT_TOKENS)
         // Add selection file name as display when available

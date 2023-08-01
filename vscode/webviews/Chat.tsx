@@ -147,7 +147,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             isCodyEnabled={true}
             codyNotEnabledNotice={undefined}
             helpMarkdown=""
-            afterMarkdown="To get started, open a file right click on some code, or enter '/' for a list of commands."
+            afterMarkdown="To get started, open a file & right click on some code, or enter '/' for a list of commands."
             ChatButtonComponent={ChatButton}
             pluginsDevMode={pluginsDevMode}
             chatCommands={chatCommands}
@@ -229,7 +229,7 @@ const TextArea: React.FunctionComponent<ChatUITextAreaProps> = ({
             autofocus={autoFocus}
             required={required}
             onInput={e => onInput(e as React.FormEvent<HTMLTextAreaElement>)}
-            placeholder='Type "/" for a list of commands.'
+            placeholder='Type "/" for a list of commands or "/r" to reset chat'
             onKeyDown={handleKeyDown}
         />
     )

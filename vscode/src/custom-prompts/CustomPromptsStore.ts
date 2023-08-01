@@ -10,8 +10,10 @@ import {
 } from '@sourcegraph/cody-shared/src/chat/recipes/cody-prompts'
 import { newPromptMixin, PromptMixin } from '@sourcegraph/cody-shared/src/prompt/prompt-mixin'
 
-import { promptSizeInit } from './const'
-import { constructFileUri, getFileContentText } from './utils'
+import { debug } from '../log'
+
+import { promptSizeInit } from './types'
+import { constructFileUri, deleteFile, getFileContentText, saveJSONFile } from './utils'
 
 /**
  * The CustomPromptsStore class is responsible for loading and building the custom prompts from the cody.json files.
@@ -20,7 +22,6 @@ import { constructFileUri, getFileContentText } from './utils'
 export class CustomPromptsStore {
     public myPremade: Preamble | undefined = undefined
     public myPromptsMap = new Map<string, CodyPrompt>()
-    public mySlashCommands = new Map<string, CodyPrompt>()
     public myStarter = ''
 
     public userPromptsJSON: MyPromptsJSON | null = null
@@ -88,7 +89,6 @@ export class CustomPromptsStore {
                 if (prompt.slashCommand) {
                     const slashCommand = `/${prompt.slashCommand}`
                     prompt.slashCommand = slashCommand
-                    this.mySlashCommands.set(slashCommand, prompt)
                 }
                 this.myPromptsMap.set(key, prompt)
             }
@@ -104,6 +104,53 @@ export class CustomPromptsStore {
         }
         this.promptSize[type] = this.myPromptsMap.size - 1
         return this.myPromptsMap
+    }
+
+    // Save the user prompts to the user json file
+    public async save(
+        id: string,
+        prompt: CodyPrompt,
+        deletePrompt = false,
+        type: CodyPromptType = 'user'
+    ): Promise<void> {
+        if (deletePrompt) {
+            this.myPromptsMap.delete(id)
+        } else {
+            this.myPromptsMap.set(id, prompt)
+        }
+        // filter prompt map to remove prompt with type workspace
+        const filtered = new Map<string, CodyPrompt>()
+        for (const [key, value] of this.myPromptsMap) {
+            if (value.type === 'user' && value.prompt !== 'seperator') {
+                filtered.set(key, value)
+            }
+        }
+        // Add new prompt to the map
+        filtered.set(id, prompt)
+        // turn prompt map into json
+        const jsonContext = { ...this.userPromptsJSON }
+        jsonContext.prompts = Object.fromEntries(filtered)
+        const jsonString = JSON.stringify(jsonContext)
+        const rootDirPath = type === 'user' ? this.jsonFileUris.user : this.jsonFileUris.workspace
+        if (!rootDirPath || !jsonString) {
+            void vscode.window.showErrorMessage('Failed to save to cody.json file.')
+            return
+        }
+        const isSaveMode = true
+        await saveJSONFile(jsonString, rootDirPath, isSaveMode)
+    }
+
+    public async delete(type: CodyPromptType = 'user'): Promise<void> {
+        const isUserType = type === 'user'
+        // delete .vscode/cody.json for user command using the vs code api
+        const uri = isUserType ? this.jsonFileUris.user : this.jsonFileUris.workspace
+        if (this.promptSize[type] === 0 || !uri) {
+            void vscode.window.showInformationMessage(
+                'Fail: try deleting the .vscode/cody.json file in your repository or home directory manually.'
+            )
+            debug('CommandsController:clear:error:', 'Failed to remove cody.json file for' + type)
+        }
+        await deleteFile(uri)
     }
 
     // Get the context of the json file from the file system

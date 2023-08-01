@@ -17,7 +17,7 @@ import * as CompletionsLogger from './completions/logger'
 import { createProviderConfig } from './completions/providers/createProvider'
 import { registerAutocompleteTraceView } from './completions/tracer/traceView'
 import { getConfiguration, getFullConfig } from './configuration'
-import { PromptsController } from './custom-prompts/PromptsController'
+import { CommandsController } from './custom-prompts/CommandsController'
 import { VSCodeEditor } from './editor/vscode-editor'
 import { configureExternalServices } from './external-services'
 import { FixupController } from './non-stop/FixupController'
@@ -98,9 +98,9 @@ const register = async (
         TestSupport.instance.fixupController.set(fixup)
     }
     // Controller for Custom Commands
-    const prompt = new PromptsController(context, initialConfig.experimentalCustomPrompts, localStorage)
+    const command = new CommandsController(context, initialConfig.experimentalCustomCommands, localStorage)
 
-    const editor = new VSCodeEditor({ inline: commentController, fixups: fixup, prompt })
+    const editor = new VSCodeEditor({ inline: commentController, fixups: fixup, command })
     // Could we use the `initialConfig` instead?
     const workspaceConfig = vscode.workspace.getConfiguration()
     const config = getConfiguration(workspaceConfig)
@@ -257,14 +257,14 @@ const register = async (
         }),
         // Recipes
         vscode.commands.registerCommand('cody.action.chat', input => executeRecipeInSidebar('chat-question', input)),
-        vscode.commands.registerCommand('cody.action.commands.menu', showDesc => prompt.default.menu(showDesc)),
+        vscode.commands.registerCommand('cody.action.commands.menu', showDesc => command.default.menu(showDesc)),
         vscode.commands.registerCommand('cody.customPrompts.exec', async title => {
             if (!sidebarChatProvider.isCustomPromptAction(title)) {
                 sidebarChatProvider.showTab('chat')
             }
             await sidebarChatProvider.executeCustomPrompt(title)
         }),
-        vscode.commands.registerCommand('cody.action.custom-prompts.menu', () => prompt.promptsQuickPicker()),
+        vscode.commands.registerCommand('cody.action.custom-prompts.menu', () => command.promptsQuickPicker()),
         vscode.commands.registerCommand('cody.command.explain-code', () =>
             executeRecipeInSidebar('custom-prompt', true, '/explain')
         ),

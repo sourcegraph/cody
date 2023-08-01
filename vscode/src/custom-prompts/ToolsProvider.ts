@@ -6,7 +6,7 @@ import * as vscode from 'vscode'
 
 import { debug } from '../log'
 
-import { UserWorkspaceInfo } from './const'
+import { UserWorkspaceInfo } from './types'
 import { outputWrapper } from './utils'
 
 const rootPath = vscode.workspace.workspaceFolders?.[0].uri.fsPath

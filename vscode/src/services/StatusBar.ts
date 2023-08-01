@@ -83,8 +83,8 @@ export function createStatusBar(): CodyStatusBar {
                     'Custom Commands',
                     'Experimental',
                     'Enable creating Custom Commands with reusable prompts and context with access through code lenses',
-                    'cody.experimental.customPrompts',
-                    c => c.experimentalCustomPrompts
+                    'cody.experimental.customCommands',
+                    c => c.experimentalCustomCommands
                 ),
                 { label: 'extension settings', kind: vscode.QuickPickItemKind.Separator },
                 {

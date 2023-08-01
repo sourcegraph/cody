@@ -8,7 +8,6 @@ import * as defaultCommands from './prompts.json'
 
 export class DefaultPromptsStore {
     private defaultPromptsMap = new Map<string, CodyPrompt>()
-    private slashCommandsMap = new Map<string, CodyPrompt>()
     private allCommands = new Map<string, CodyPrompt>()
 
     constructor() {
@@ -21,7 +20,6 @@ export class DefaultPromptsStore {
                 if (prompt.slashCommand) {
                     const slashCommand = '/' + prompt.slashCommand
                     prompt.slashCommand = slashCommand
-                    this.slashCommandsMap.set(slashCommand, prompt)
                 }
                 this.defaultPromptsMap.set(key, prompt)
             }
@@ -31,7 +29,9 @@ export class DefaultPromptsStore {
 
     public get(id: string, isSlashCommand = false): CodyPrompt | undefined {
         if (id.startsWith('/') || isSlashCommand) {
-            return this.slashCommandsMap.get(id)
+            const commands = [...this.allCommands]
+            const slashCommand = commands.find(command => command[1].slashCommand === id)
+            return slashCommand ? slashCommand[1] : this.allCommands.get(id)
         }
         return this.allCommands.get(id)
     }
@@ -42,14 +42,6 @@ export class DefaultPromptsStore {
 
     public getDefault(): [string, CodyPrompt][] | undefined {
         return [...this.defaultPromptsMap]
-    }
-
-    public getByCommand(command: string): CodyPrompt | undefined {
-        return this.slashCommandsMap.get(command)
-    }
-
-    public addCommand(slashCommand: string, prompt: CodyPrompt): void {
-        this.slashCommandsMap.set(slashCommand, prompt)
     }
 
     public groupCommands(customCommands = new Map<string, CodyPrompt>()): void {
@@ -104,13 +96,13 @@ export class DefaultPromptsStore {
             }
             await vscode.commands.executeCommand('cody.customPrompts.exec', selectedCommandID)
         } catch (error) {
-            debug('PromptsController:commandQuickPicker', 'error', { verbose: error })
+            debug('CommandsController:commandQuickPicker', 'error', { verbose: error })
         }
     }
 
     // dispose and reset the controller and builder
     public dispose(): void {
         this.allCommands = new Map()
-        debug('PromptsController:dispose', 'disposed')
+        debug('CommandsController:dispose', 'disposed')
     }
 }

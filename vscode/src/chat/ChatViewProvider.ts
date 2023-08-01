@@ -151,13 +151,13 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
     /**
      * Process custom command click
      */
-    private async onCustomPromptClicked(title: string, recipeType: CodyPromptType = 'user'): Promise<void> {
+    private async onCustomPromptClicked(title: string, commandType: CodyPromptType = 'user'): Promise<void> {
         this.telemetryService.log('CodyVSCodeExtension:custom-recipe:clicked')
         debug('ChatViewProvider:onCustomPromptClicked', title)
         if (!this.isCustomPromptAction(title)) {
             this.showTab('chat')
         }
-        await this.executeCustomPrompt(title, recipeType)
+        await this.executeCustomPrompt(title, commandType)
     }
 
     public showTab(tab: string): void {

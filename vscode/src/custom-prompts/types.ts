@@ -45,7 +45,7 @@ export type CustomPromptsMenuAnswerType = 'add' | 'file' | 'delete' | 'list' | '
 
 export interface CustomPromptsMenuAnswer {
     actionID: CustomPromptsMenuAnswerType
-    recipeType: CodyPromptType
+    commandType: CodyPromptType
 }
 
 export const CustomPromptsMainMenuOptions = [

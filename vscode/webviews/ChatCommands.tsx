@@ -31,7 +31,7 @@ export const ChatCommandsComponent: React.FunctionComponent<React.PropsWithChild
         setSelectedChatCommand(-1)
     }
 
-    if (!commandList || selectedChatCommand === undefined || selectedChatCommand < 0) {
+    if (!commandList?.length || selectedChatCommand === undefined || selectedChatCommand < 0) {
         return null
     }
 

@@ -372,9 +372,13 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
             return
         }
 
+        // Process the human input to look for chat commands
         const command = await this.executeCommands(humanInput)
-        const humanChatInput = command?.text || humanInput
+        if (!command?.text) {
+            return
+        }
 
+        const humanChatInput = command?.text
         const recipe = getRecipe(command?.recipeID || recipeId)
         if (!recipe) {
             debug('ChatViewProvider:executeRecipe', 'no recipe found')
@@ -414,7 +418,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
             default: {
                 this.sendTranscript()
 
-                const myPremade = (await this.editor.controllers.prompt?.getMyPrompts())?.premade
+                const myPremade = (await this.editor.controllers.command?.getMyPrompts())?.premade
                 const { prompt, contextFiles } = await this.transcript.getPromptForLastInteraction(
                     getPreamble(this.contextProvider.context.getCodebase(), myPremade),
                     this.maxPromptTokens,
@@ -449,7 +453,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         }
         transcript.addInteraction(interaction)
 
-        const myPremade = (await this.editor.controllers.prompt?.getMyPrompts())?.premade
+        const myPremade = (await this.editor.controllers.command?.getMyPrompts())?.premade
         const { prompt, contextFiles } = await transcript.getPromptForLastInteraction(
             getPreamble(this.contextProvider.context.getCodebase(), myPremade),
             this.maxPromptTokens
@@ -523,7 +527,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
     }
 
     public async executeCustomPrompt(title: string, type?: CodyPromptType): Promise<void> {
-        if (!this.contextProvider.config.experimentalCustomPrompts) {
+        if (!this.contextProvider.config.experimentalCustomCommands) {
             return
         }
         title = title.trim()
@@ -533,19 +537,19 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
                 await this.sendMyPrompts()
                 break
             case 'menu':
-                await this.editor.controllers.prompt?.menu()
+                await this.editor.controllers.command?.menu()
                 await this.sendMyPrompts()
                 break
             case 'add':
                 if (!type) {
                     break
                 }
-                await this.editor.controllers.prompt?.addJSONFile(type)
+                await this.editor.controllers.command?.addJSONFile(type)
                 break
         }
         // Get prompt details from controller by title then execute prompt's command
-        const promptText = this.editor.controllers.prompt?.find(title)
-        await this.editor.controllers.prompt?.get('command')
+        const promptText = this.editor.controllers.command?.find(title)
+        await this.editor.controllers.command?.get('command')
         if (!promptText) {
             debug('executeCustomPrompt:noPrompt', title)
             return
@@ -562,9 +566,9 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         switch (true) {
             case text === '/':
                 return vscode.commands.executeCommand('cody.action.commands.menu')
-            case /^\/o(pen)?/i.test(text) && this.editor.controllers.prompt !== undefined:
+            case /^\/o(pen)?/i.test(text) && this.editor.controllers.command !== undefined:
                 // open the user's ~/.vscode/cody.json file
-                await this.editor.controllers.prompt?.open(text.split(' ')[1])
+                await this.editor.controllers.command?.open(text.split(' ')[1])
                 return null
             case /^\/r(eset)?/i.test(text):
                 await this.clearAndRestartSession()
@@ -572,16 +576,16 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
             case /^\/s(earch)?(\s)?/i.test(text):
                 return { text }
             case /^\/(explain|docstring|tests)/i.test(text): {
-                const promptText = this.editor.controllers.prompt?.find(text, true) || null
-                await this.editor.controllers.prompt?.get('command')
+                const promptText = this.editor.controllers.command?.find(text, true) || null
+                await this.editor.controllers.command?.get('command')
                 if (!promptText) {
                     return null
                 }
                 return { text: promptText, recipeID: 'custom-prompt' }
             }
             default: {
-                const promptText = this.editor.controllers.prompt?.find(text, true)
-                await this.editor.controllers.prompt?.get('command')
+                const promptText = this.editor.controllers.command?.find(text, true)
+                await this.editor.controllers.command?.get('command')
                 if (!promptText) {
                     return null
                 }
@@ -595,11 +599,11 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
      */
     private async sendMyPrompts(): Promise<void> {
         const send = async (): Promise<void> => {
-            await this.editor.controllers.prompt?.refresh()
-            const recipes = this.editor.controllers.prompt?.default.getAllCommands() || []
-            void this.handleMyPrompts(recipes, this.contextProvider.config.experimentalCustomPrompts)
+            await this.editor.controllers.command?.refresh()
+            const recipes = this.editor.controllers.command?.default.getAllCommands() || []
+            void this.handleMyPrompts(recipes, this.contextProvider.config.experimentalCustomCommands)
         }
-        this.editor.controllers.prompt?.setMessenger(send)
+        this.editor.controllers.command?.setMessenger(send)
         await send()
     }
 

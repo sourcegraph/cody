@@ -413,7 +413,7 @@
         "category": "Cody",
         "title": "Custom Commands (Experimental)",
         "when": "cody.activated",
-        "enablement": "config.cody.experimental.customPrompts",
+        "enablement": "config.cody.experimental.customCommands",
         "icon": "$(bookmark)"
       },
       {
@@ -421,7 +421,7 @@
         "category": "Cody",
         "title": "Cody Commands (Experimental)",
         "when": "cody.activated",
-        "enablement": "config.cody.experimental.customPrompts"
+        "enablement": "config.cody.experimental.customCommands"
       },
       {
         "command": "cody.autocomplete.openTraceView",
@@ -548,7 +548,7 @@
         },
         {
           "command": "cody.action.custom-prompts.menu",
-          "when": "cody.activated && config.cody.experimental.customPrompts"
+          "when": "cody.activated && config.cody.experimental.customCommands"
         }
       ],
       "editor/context": [
@@ -584,7 +584,7 @@
         },
         {
           "command": "cody.action.custom-prompts.menu",
-          "when": "cody.activated && config.cody.experimental.customPrompts"
+          "when": "cody.activated && config.cody.experimental.customCommands"
         }
       ],
       "view/title": [
@@ -772,7 +772,7 @@
           "markdownDescription": "Experimental feature for internal use.",
           "default": false
         },
-        "cody.experimental.customPrompts": {
+        "cody.experimental.customCommands": {
           "order": 9,
           "type": "boolean",
           "markdownDescription": "[Experimental] Create reusable and customizable prompts and context tailored to your workflow.",
