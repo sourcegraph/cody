@@ -8,6 +8,9 @@ Starting from `0.2.0`, Cody is using `major.EVEN_NUMBER.patch` for release versi
 
 ### Added
 
+- `Custom Commands`: An experimental feature available behind the `cody.experimental.customCommands` feature flag. [pull/386](https://github.com/sourcegraph/cody/pull/386)
+- Quick pick menu for running default and custom commands. [pull/386](https://github.com/sourcegraph/cody/pull/386)
+
 ### Fixed
 
 - Bug: Chat History command shows chat view instead of history view. [pull/414](https://github.com/sourcegraph/cody/pull/414)
@@ -16,6 +19,9 @@ Starting from `0.2.0`, Cody is using `major.EVEN_NUMBER.patch` for release versi
 
 - Layout cleanups: smaller header and single line message input. [pull/449](https://github.com/sourcegraph/cody/pull/449)
 - Improve response feedback button behavior. [pull/451](https://github.com/sourcegraph/cody/pull/451)
+- Remove in-chat onboarding buttons for new chats. [pull/450](https://github.com/sourcegraph/cody/pull/450)
+- `Commands`: Replacing `Recipes` with `Commands`. [pull/386](https://github.com/sourcegraph/cody/pull/386)
+- Remove `Header` and `Navbar` from `Chat` view due to removal of the `Recipes` tab. [pull/386](https://github.com/sourcegraph/cody/pull/386)
 
 ## [0.6.3]
 

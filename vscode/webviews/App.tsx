@@ -176,6 +176,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                             setSuggestions={setSuggestions}
                             telemetryService={telemetryService}
                             chatCommands={myPrompts || undefined}
+                            showOnboardingButtons={userHistory && Object.entries(userHistory).length === 0}
                         />
                     )}
                 </>

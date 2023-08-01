@@ -42,6 +42,7 @@ interface ChatboxProps {
     setSuggestions?: (suggestions: undefined | string[]) => void
     pluginsDevMode?: boolean
     chatCommands?: [string, CodyPrompt][]
+    showOnboardingButtons?: boolean | null
 }
 
 export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>> = ({
@@ -60,6 +61,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     setSuggestions,
     pluginsDevMode,
     chatCommands,
+    showOnboardingButtons,
 }) => {
     const [abortMessageInProgressInternal, setAbortMessageInProgress] = useState<() => void>(() => () => undefined)
 
@@ -148,8 +150,14 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             // down here to render cody is disabled on the instance nicely.
             isCodyEnabled={true}
             codyNotEnabledNotice={undefined}
-            helpMarkdown=""
-            afterMarkdown="To get started, open a file & right click on some code, or enter '/' for a list of commands."
+            afterMarkdown="To get started, select some code and right click to select a Cody command, or enter '/' for a list of commands."
+            helpMarkdown={
+                showOnboardingButtons
+                    ? `See [Getting Started](command:cody.welcome) for help and tips.
+
+To get started, select some code and right click to select a Cody command to run.`
+                    : 'See [Getting Started](command:cody.welcome) for help and tips.'
+            }
             ChatButtonComponent={ChatButton}
             pluginsDevMode={pluginsDevMode}
             chatCommands={chatCommands}
