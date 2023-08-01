@@ -333,7 +333,10 @@ export class CommandsController implements VsCodeCommandsController {
     // Open workspace file in editor
     public async open(filePath: string): Promise<void> {
         if (filePath === 'user' || filePath === 'workspace') {
-            return this.tools.openFile(this.custom.jsonFileUris[filePath])
+            const uri = this.custom.jsonFileUris[filePath]
+            const doesExist = await this.tools.doesUriExist(uri)
+            // create file if it doesn't exist
+            return doesExist ? this.tools.openFile(uri) : this.config('file', filePath)
         }
         const fileUri = constructFileUri(filePath, this.tools.getUserInfo()?.workspaceRoot)
         return vscode.commands.executeCommand('vscode.open', fileUri)

@@ -60,15 +60,6 @@ export async function deleteFile(uri?: vscode.Uri): Promise<void> {
     await vscode.workspace.fs.delete(uri)
 }
 
-export async function doesPathExist(filePath?: string): Promise<boolean> {
-    try {
-        return (filePath && !!(await vscode.workspace.fs.stat(vscode.Uri.file(filePath)))) || false
-    } catch (error) {
-        console.error('Failed to locate file', error)
-        return false
-    }
-}
-
 export function getFileNameFromPath(path: string): string | undefined {
     return path.split('/').pop()
 }
@@ -86,23 +77,12 @@ Output of \`{command}\` command:
 export const createQuickPickSeperator = (label = '', detail = ''): vscode.QuickPickItem => ({ kind: -1, label, detail })
 export const createQuickPickItem = (label = '', description = ''): vscode.QuickPickItem => ({ label, description })
 
-export async function createUntitledFileWithExample(): Promise<void> {
-    const content = 'Hello, world!'
-    const uri = vscode.Uri.parse('untitled:')
-    const document = await vscode.workspace.openTextDocument(uri)
-    const editor = await vscode.window.showTextDocument(document)
-    await editor.edit(editBuilder => {
-        editBuilder.insert(new vscode.Position(0, 0), content)
-    })
-}
-
 export async function getFileContentText(uri: vscode.Uri): Promise<string> {
     try {
         const bytes = await vscode.workspace.fs.readFile(uri)
         const content = new TextDecoder('utf-8').decode(bytes)
         return content
-    } catch (error) {
-        console.error('Failed to get decoded content from file uri', error)
+    } catch {
         return ''
     }
 }

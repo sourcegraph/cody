@@ -71,4 +71,15 @@ export class ToolsProvider {
         }
         return
     }
+
+    public async doesUriExist(uri?: vscode.Uri): Promise<boolean> {
+        if (!uri) {
+            return false
+        }
+        try {
+            return (uri && !!(await vscode.workspace.fs.stat(uri))) || false
+        } catch {
+            return false
+        }
+    }
 }

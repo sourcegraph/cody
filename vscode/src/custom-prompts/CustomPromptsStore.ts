@@ -166,7 +166,9 @@ export class CustomPromptsStore {
             const isUserType = isTypeUser(type)
             const configFileUri = this.getConfigUriByType(type)
             if (configFileUri) {
-                return await createJSONFile(extensionPath, configFileUri, isUserType)
+                await createJSONFile(extensionPath, configFileUri, isUserType)
+                void vscode.window.showInformationMessage('A new cody.json file has been created successfully.')
+                return
             }
             throw new Error('Please make sure you have a repository opened in your workspace.')
         } catch (error) {

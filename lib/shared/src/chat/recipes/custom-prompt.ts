@@ -195,7 +195,7 @@ export class CustomPrompt implements Recipe {
                 fileName,
             })
         } catch (error) {
-            console.error(error)
+            console.log(error)
             return []
         }
     }
