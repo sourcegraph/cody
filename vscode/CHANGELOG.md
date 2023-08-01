@@ -20,7 +20,7 @@ Starting from `0.2.0`, Cody is using `major.EVEN_NUMBER.patch` for release versi
 - Layout cleanups: smaller header and single line message input. [pull/449](https://github.com/sourcegraph/cody/pull/449)
 - Improve response feedback button behavior. [pull/451](https://github.com/sourcegraph/cody/pull/451)
 - Remove in-chat onboarding buttons for new chats. [pull/450](https://github.com/sourcegraph/cody/pull/450)
-- `Commands`: Replacing `Recipes` with `Commands`. [pull/386](https://github.com/sourcegraph/cody/pull/386)
+- `Recipes` are removed in favor of `Commands`, the improved version of `Recipes`. [pull/386](https://github.com/sourcegraph/cody/pull/386)
 - Remove `Header` and `Navbar` from `Chat` view due to removal of the `Recipes` tab. [pull/386](https://github.com/sourcegraph/cody/pull/386)
 
 ## [0.6.3]

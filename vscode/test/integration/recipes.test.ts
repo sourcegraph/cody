@@ -18,7 +18,7 @@ suite('Recipes', function () {
         textEditor.selection = new vscode.Selection(5, 0, 7, 0)
 
         // Run the "explain" command
-        await vscode.commands.executeCommand('cody.command.explain-code-high-level')
+        await vscode.commands.executeCommand('cody.command.explain-code')
 
         // Check the chat transcript contains markdown
         const humanMessage = await getTranscript(0)

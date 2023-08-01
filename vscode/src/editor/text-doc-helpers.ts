@@ -58,6 +58,7 @@ export const checkIsNonFunction = (text: string): boolean => {
  * Use regex to check if the line is the first line of a function
  */
 export const checkIsLineAFunction = (text: string): boolean => {
+    text = text.trim()
     const isObject = isLineObject(text)
     // JavaScript / TypeScript
     const isJSArrowFunction = /^.*=.*=>.*$/.test(text) && !isObject
@@ -99,8 +100,12 @@ export const checkIsLineAFunction = (text: string): boolean => {
 /**
  * Check if the end line text starts with the same number of spaces as the start line text
  */
-export const checkHasSameNumberOfSpacesAsStartLine = (startLineText: string, endLineText: string): boolean =>
-    new RegExp(`^\\s{${startLineText.length}}.*$`).test(endLineText)
+export const checkHasSameNumberOfSpacesAsStartLine = (startLineText: string, endLineText: string): boolean => {
+    if (startLineText.length === 0 || endLineText.length === 0) {
+        return false
+    }
+    return new RegExp(`^\\s{${startLineText.length}}.*$`).test(endLineText)
+}
 /**
  * Use regex to check if the line starts with a function in various languages
  */
@@ -108,6 +113,7 @@ export const checkIsStartOfFunctionOrClass = (text: string): boolean => {
     if (!text) {
         return false
     }
+    text = text.trim()
     const isNonFunction = checkIsNonFunction(text)
     const isFunctionOrClass = checkIsLineAFunction(text) || isLineStartOfClass(text)
     return !isNonFunction && isFunctionOrClass
