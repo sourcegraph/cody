@@ -522,9 +522,6 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
     }
 
     public async executeCustomPrompt(title: string, type?: CodyPromptType): Promise<void> {
-        if (!this.contextProvider.config.experimentalCustomCommands) {
-            return
-        }
         title = title.trim()
         // Send prompt names to display as recipe options
         switch (title) {
