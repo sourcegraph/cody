@@ -4,6 +4,9 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+neverBuiltDependencies:
+  - deasync
+
 overrides:
   tslib: 2.1.0
 
@@ -7813,7 +7816,6 @@ packages:
   /deasync@0.1.28:
     resolution: {integrity: sha512-QqLF6inIDwiATrfROIyQtwOQxjZuek13WRYZ7donU5wJPLoP67MnYxA6QtqdvdBy2mMqv5m3UefBVdJjvevOYg==}
     engines: {node: '>=0.11.0'}
-    requiresBuild: true
     dependencies:
       bindings: 1.5.0
       node-addon-api: 1.7.2
