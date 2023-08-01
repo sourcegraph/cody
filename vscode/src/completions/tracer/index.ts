@@ -4,6 +4,7 @@ import { CompletionParameters } from '@sourcegraph/cody-shared/src/sourcegraph-a
 
 import { GetContextResult } from '../context'
 import { CompletionProviderTracerResultData, Provider } from '../providers/provider'
+import { InlineCompletionItem } from '../types'
 
 /**
  * Traces invocations of {@link CodyCompletionItemProvider.provideInlineCompletionItems}.
@@ -37,7 +38,7 @@ export interface ProvideInlineCompletionsItemTraceData {
     completionProviderCallResult?: CompletionProviderTracerResultData
 
     context?: GetContextResult | null
-    result?: vscode.InlineCompletionList | null
+    result?: { items: InlineCompletionItem[] } | null
     cacheHit?: boolean
     error?: string
 }
