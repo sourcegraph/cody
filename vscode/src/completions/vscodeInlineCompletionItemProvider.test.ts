@@ -642,6 +642,42 @@ describe('Cody completions', () => {
             `)
         })
 
+        it('works with dart', async () => {
+            const { completions, requests } = await complete(
+                dedent`
+                    for (int i = 0; i < 11; i++) {
+                        if (i % 2 == 0) {
+                            █
+                `,
+                [
+                    completion`
+                            ├print(i);
+                        } else if (i % 3 == 0) {
+                          print('Multiple of 3: $i');
+                        } else {
+                          print('ODD $i');
+                        }
+                      }
+
+                      for (int i = 0; i < 12; i++) {
+                        print('unrelated');
+                      }┤`,
+                ],
+                'dart'
+            )
+
+            expect(requests).toHaveLength(3)
+            expect(requests[0].stopSequences).not.toContain('\n')
+            expect(completions[0].insertText).toMatchInlineSnapshot(`
+              "print(i);
+                  } else if (i % 3 == 0) {
+                      print('Multiple of 3: $i');
+                  } else {
+                      print('ODD $i');
+                  }"
+            `)
+        })
+
         it('skips over empty lines', async () => {
             const { completions } = await complete(
                 dedent`
