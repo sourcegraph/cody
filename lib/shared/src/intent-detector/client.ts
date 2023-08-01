@@ -71,33 +71,48 @@ export class SourcegraphIntentDetectorClient implements IntentDetector {
         options: IntentClassificationOption<Intent>[],
         fallback: Intent
     ): Promise<Intent> {
-        if (!this.completionsClient) {
+        const completionsClient = this.completionsClient
+        if (!completionsClient) {
             return fallback;
         }
 
         const preamble = this.buildInitialTranscript(options)
         const examples = this.buildExampleTranscript(options)
 
-        const result = await this.completionsClient.complete({
-            fast: true,
-            temperature: 0,
-            maxTokensToSample: ANSWER_TOKENS,
-            topK: -1,
-            topP: -1,
-            messages: [
-                ...preamble,
-                ...examples,
-                {
-                    speaker: 'human',
-                    text: input,
+        const result =  await new Promise<string>(resolve => {
+            let responseText = '';
+            return completionsClient.stream({
+                fast: true,
+                temperature: 0,
+                maxTokensToSample: ANSWER_TOKENS,
+                topK: -1,
+                topP: -1,
+                messages: [
+                    ...preamble,
+                    ...examples,
+                    {
+                        speaker: 'human',
+                        text: input,
+                    },
+                    {
+                        speaker: 'assistant',
+                    },
+                ],
+            }, {
+                onChange: (text: string) => {
+                    responseText = text
                 },
-                {
-                    speaker: 'assistant',
+                onComplete: () => {
+                    resolve(responseText)
                 },
-            ],
-        })
+                onError: (message: string, statusCode?: number) => {
+                    console.error(`Error detecting intent: Status code ${statusCode}: ${message}`);
+                    resolve(fallback)
+                },
+            })
+    })
 
-        const responseClassification = result.completion.match(/<classification>(.*?)<\/classification>/)?.[1]
+        const responseClassification = result.match(/<classification>(.*?)<\/classification>/)?.[1]
         if (!responseClassification) {
             return fallback
         }
