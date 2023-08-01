@@ -6,6 +6,7 @@ settings:
 
 neverBuiltDependencies:
   - deasync
+  - playwright
 
 overrides:
   tslib: 2.1.0
@@ -13482,7 +13483,6 @@ packages:
     resolution: {integrity: sha512-+zzU3V2TslRX2ETBRgQKsKytYBkJeLZ2xzUj4JohnZnxQnivoUvOvNbRBYWSYykQTO0Y4zb8NwZTYFUO+EpPBQ==}
     engines: {node: '>=14'}
     hasBin: true
-    requiresBuild: true
     dependencies:
       playwright-core: 1.33.0
     dev: true
@@ -13491,7 +13491,6 @@ packages:
     resolution: {integrity: sha512-2ZqHpD0U0COKR8bqR3W5IkyIAAM0mT9FgGJB9xWCI1qAUkqLxJskA1ueeQOTH2Qfz3+oxdwwf2EzdOX+RkZmmQ==}
     engines: {node: '>=16'}
     hasBin: true
-    requiresBuild: true
     dependencies:
       playwright-core: 1.36.1
     dev: true
