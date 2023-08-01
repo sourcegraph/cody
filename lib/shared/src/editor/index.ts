@@ -28,6 +28,15 @@ export interface ActiveTextEditorSelection {
     followingText: string
 }
 
+export type ActiveTextEditorDiagnosticType = 'error' | 'warning' | 'information' | 'hint'
+
+export interface ActiveTextEditorDiagnostic {
+    type: ActiveTextEditorDiagnosticType
+    range: ActiveTextEditorSelectionRange
+    text: string
+    message: string
+}
+
 export interface ActiveTextEditorVisibleContent {
     content: string
     fileName: string
@@ -37,6 +46,7 @@ export interface ActiveTextEditorVisibleContent {
 
 export interface VsCodeInlineController {
     selection: ActiveTextEditorSelection | null
+    selectionRange: ActiveTextEditorSelectionRange | null
     error(): Promise<void>
 }
 
@@ -92,6 +102,10 @@ export interface Editor<
      * Gets the active text editor's selection, or the entire file if the selected range is empty.
      */
     getActiveTextEditorSelectionOrEntireFile(): ActiveTextEditorSelection | null
+    /**
+     * Get diagnostics (errors, warnings, hints) for a range within the active text editor.
+     */
+    getActiveTextEditorDiagnosticsForRange(range: ActiveTextEditorSelectionRange): ActiveTextEditorDiagnostic[] | null
 
     getActiveTextEditorVisibleContent(): ActiveTextEditorVisibleContent | null
     replaceSelection(fileName: string, selectedText: string, replacement: string): Promise<void>
@@ -126,6 +140,10 @@ export class NoopEditor implements Editor {
     }
 
     public getActiveTextEditorSelectionOrEntireFile(): ActiveTextEditorSelection | null {
+        return null
+    }
+
+    public getActiveTextEditorDiagnosticsForRange(): ActiveTextEditorDiagnostic[] | null {
         return null
     }
 

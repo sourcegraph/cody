@@ -36,7 +36,7 @@ interface CodyCompletionItemProviderConfig {
     contextFetcher?: (options: GetContextOptions) => Promise<GetContextResult>
 }
 
-export class CodyCompletionItemProvider implements vscode.InlineCompletionItemProvider {
+export class InlineCompletionItemProvider implements vscode.InlineCompletionItemProvider {
     private promptChars: number
     private maxPrefixChars: number
     private maxSuffixChars: number
