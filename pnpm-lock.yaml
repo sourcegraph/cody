@@ -168,8 +168,8 @@ importers:
         specifier: ^3.6.8
         version: 3.6.8
       marked:
-        specifier: ^4.0.16
-        version: 4.0.16
+        specifier: ^6.0.0
+        version: 6.0.0
       morgan:
         specifier: ^1.10.0
         version: 1.10.0
@@ -235,8 +235,8 @@ importers:
         specifier: ^4.17.21
         version: 4.17.21
       marked:
-        specifier: ^4.0.16
-        version: 4.0.16
+        specifier: ^6.0.0
+        version: 6.0.0
       vscode-uri:
         specifier: ^3.0.7
         version: 3.0.7
@@ -11642,9 +11642,9 @@ packages:
       react: 18.1.0
     dev: true
 
-  /marked@4.0.16:
-    resolution: {integrity: sha512-wahonIQ5Jnyatt2fn8KqF/nIqZM8mh3oRu2+l5EANGMhu6RFjiSG52QNE2eWzFMI94HqYSgN184NurgNG6CztA==}
-    engines: {node: '>= 12'}
+  /marked@6.0.0:
+    resolution: {integrity: sha512-7E3m/xIlymrFL5gWswIT4CheIE3fDeh51NV09M4x8iOc7NDYlyERcQMLAIHcSlrvwliwbPQ4OGD+MpPSYiQcqw==}
+    engines: {node: '>= 16'}
     hasBin: true
     dev: false
 
