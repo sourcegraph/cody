@@ -420,7 +420,7 @@
       {
         "command": "cody.action.commands.custom.menu",
         "category": "Cody",
-        "title": "Custom Commands Menu(Experimental)",
+        "title": "Custom Commands (Experimental)",
         "when": "cody.activated",
         "enablement": "config.cody.experimental.customCommands",
         "icon": "$(bookmark)"
@@ -563,7 +563,13 @@
       "editor/context": [
         {
           "submenu": "cody.submenu",
-          "group": "7_modification"
+          "group": "0_cody"
+        },
+        {
+          "command": "cody.action.commands.custom.menu",
+          "group": "0_cody",
+          "label": "Cody Commands",
+          "when": "cody.activated && config.cody.experimental.customCommands"
         }
       ],
       "cody.submenu": [
@@ -590,10 +596,6 @@
         {
           "command": "cody.guardrails.debug",
           "when": "cody.activated && config.cody.experimental.guardrails && editorHasSelection"
-        },
-        {
-          "command": "cody.action.commands.custom.menu",
-          "when": "cody.activated && config.cody.experimental.customCommands"
         }
       ],
       "view/title": [

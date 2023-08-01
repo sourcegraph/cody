@@ -17,7 +17,7 @@ export const isLineArrowFunction = (text: string): boolean => /^.*=>.*$/.test(te
 export const isLineEndsWithClosingBracket = (text: string): boolean => text.trim().endsWith(')')
 // Check for statement (e.g. 'if (foo)', 'for (foo)', 'while (foo)')
 export const isLineStatement = (text: string): boolean =>
-    /^(if|for|while|switch|case|return|try|catch).*$/.test(text.trim())
+    /^(if|for|while|switch|case|return|try|catch|import|pkg).*$/.test(text.trim())
 // Check for variable declaration, array, list, tuple, dict
 // (e.g. 'const foo = []', 'foo = []', 'foo = "bar"',, 'foo = ["bar"]',  '":foo"',, 'foo= {', 'foo = {}', '"foo" : "bar", 'foo bar', (foo bar), [foo bar], "foo bar", "foo:  bar," etc)
 export const isLineVariable = (text: string): boolean => {
@@ -29,7 +29,8 @@ export const isLineVariable = (text: string): boolean => {
         /^load\("@.+"(, ".+")?\)/m.test(text) ||
         /^\W.*\W$/.test(text) ||
         /^\w+(\s)?:.*/m.test(text) ||
-        isLineEndsWithClosingBracket(text)
+        isLineEndsWithClosingBracket(text) ||
+        text.endsWith(',')
     )
 }
 

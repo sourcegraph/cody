@@ -359,21 +359,22 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         return this.platform.recipes.find(recipe => recipe.id === id)
     }
 
-    public async executeRecipe(recipeId: RecipeID, humanInput = ''): Promise<void> {
-        debug('ChatViewProvider:executeRecipe', recipeId, { verbose: humanInput })
+    public async executeRecipe(recipeId: RecipeID, humanChatInput = ''): Promise<void> {
+        debug('ChatViewProvider:executeRecipe', recipeId, { verbose: humanChatInput })
         if (this.isMessageInProgress) {
             this.handleError('Cannot execute multiple recipes. Please wait for the current recipe to finish.')
             return
         }
 
         // Filter the human input to look for chat commands
-        const command = await this.chatCommandsFilter(humanInput)
+        const command = await this.chatCommandsFilter(humanChatInput)
         if (!command?.text) {
             return
         }
-        const humanChatInput = command?.text
+        humanChatInput = command?.text
+        recipeId = command?.recipeId || recipeId
 
-        const recipe = this.getRecipe(command?.recipeID || recipeId)
+        const recipe = this.getRecipe(recipeId)
         if (!recipe) {
             debug('ChatViewProvider:executeRecipe', 'no recipe found')
             return
@@ -552,7 +553,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         return
     }
 
-    protected async chatCommandsFilter(text: string): Promise<{ text: string; recipeID?: RecipeID } | null> {
+    protected async chatCommandsFilter(text: string): Promise<{ text: string; recipeId?: RecipeID } | null> {
         text = text.trim()
         if (!text?.startsWith('/')) {
             return { text }
@@ -570,14 +571,14 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
                 await this.clearAndRestartSession()
                 return null
             case /^\/s(earch)?(\s)?/i.test(text):
-                return { text }
+                return { text, recipeId: 'context-search' }
             case /^\/(explain|docstring|tests)/i.test(text): {
                 const promptText = this.editor.controllers.command?.find(text, true) || null
                 await this.editor.controllers.command?.get('command')
                 if (!promptText) {
                     return null
                 }
-                return { text: promptText, recipeID: 'custom-prompt' }
+                return { text: promptText, recipeId: 'custom-prompt' }
             }
             default: {
                 const promptText = this.editor.controllers.command?.find(text, true)
@@ -585,7 +586,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
                 if (!promptText) {
                     return null
                 }
-                return { text: promptText, recipeID: 'custom-prompt' }
+                return { text: promptText, recipeId: 'custom-prompt' }
             }
         }
     }

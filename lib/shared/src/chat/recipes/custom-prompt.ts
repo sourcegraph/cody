@@ -12,6 +12,7 @@ import {
 import {
     populateCodeContextTemplate,
     populateCurrentEditorContextTemplate,
+    populateCurrentEditorSelectedContextTemplate,
     populateTerminalOutputContextTemplate,
 } from '../../prompt/templates'
 import { truncateText } from '../../prompt/truncation'
@@ -49,9 +50,14 @@ export class CustomPrompt implements Recipe {
             await vscode.window.showErrorMessage('Please enter a valid prompt for the custom command.')
             return null
         }
+        // get output from the command if any
         const commandOutput = await context.editor.controllers?.command?.get('output')
-        const note = 'Refer to the command output, my selected code, and shared code snippets to answer my quesiton.'
-        const truncatedText = truncateText(promptText + note, MAX_HUMAN_INPUT_TOKENS)
+        const note = 'Refer to the terminal output, my selected code, and shared code snippets to answer my quesiton.'
+        const fileInfo = selection?.fileName ? `Selected code is from file ${selection?.fileName}` : ''
+        const truncatedText = truncateText(
+            `${promptText} ${isContextRequired.none ? '' : note} ${fileInfo}`,
+            MAX_HUMAN_INPUT_TOKENS
+        )
         // Add selection file name as display when available
         const displayText = selection?.fileName ? this.getHumanDisplayText(humanInput, selection?.fileName) : humanInput
 
@@ -131,7 +137,7 @@ export class CustomPrompt implements Recipe {
         }
         // Add selected text as context when available
         if (selection?.selectedText && isContextRequired.selection) {
-            contextMessages.push(...ChatQuestion.getEditorSelectionContext(selection))
+            contextMessages.push(...CustomPrompt.getEditorSelectionContext(selection))
         }
         // Create context messages from terminal output if any
         if (isContextRequired.command?.length && commandOutput) {
@@ -141,6 +147,15 @@ export class CustomPrompt implements Recipe {
         // Make sure numResults is an even number and times 2 again to get the last n pairs
         const maxResults = Math.floor((NUM_CODE_RESULTS + NUM_TEXT_RESULTS) / 2) * 2
         return contextMessages.slice(-maxResults * 2)
+    }
+
+    public static getEditorSelectionContext(selection: ActiveTextEditorSelection): ContextMessage[] {
+        const truncatedContent = truncateText(selection.selectedText, MAX_CURRENT_FILE_TOKENS)
+        return getContextMessageWithResponse(
+            populateCurrentEditorSelectedContextTemplate(truncatedContent, selection.fileName, selection.repoName),
+            selection,
+            'Noted. I will refer to this code you selected in the editor to answer your question.'
+        )
     }
 
     // Get context from current editor open tabs
@@ -178,7 +193,10 @@ export class CustomPrompt implements Recipe {
         const truncatedContent = truncateText(output, MAX_CURRENT_FILE_TOKENS)
         return [
             { speaker: 'human', text: populateTerminalOutputContextTemplate(truncatedContent) },
-            { speaker: 'assistant', text: 'OK.' },
+            {
+                speaker: 'assistant',
+                text: 'Noted. I will answer your next question based on this terminal output with the code you just shared.',
+            },
         ]
     }
 
