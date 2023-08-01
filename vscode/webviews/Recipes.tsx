@@ -9,7 +9,10 @@ import { VSCodeWrapper } from './utils/VSCodeApi'
 
 import styles from './Recipes.module.css'
 
-type ClickableRecipeID = Exclude<RecipeID, 'chat-question' | 'inline-touch' | 'inline-chat' | 'my-prompt' | 'next-questions' | 'non-stop'>
+type ClickableRecipeID = Exclude<
+    RecipeID,
+    'chat-question' | 'inline-touch' | 'inline-chat' | 'my-prompt' | 'next-questions' | 'non-stop'
+>
 
 type RecipeListType = Record<ClickableRecipeID, string>
 
