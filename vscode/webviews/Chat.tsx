@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 
-import { VSCodeButton, VSCodeTextArea } from '@vscode/webview-ui-toolkit/react'
+import { VSCodeButton, VSCodeLink, VSCodeTextArea } from '@vscode/webview-ui-toolkit/react'
 import classNames from 'classnames'
 
 import { ChatContextStatus } from '@sourcegraph/cody-shared/src/chat/context'
@@ -325,7 +325,7 @@ const FeedbackButtons: React.FunctionComponent<FeedbackButtonsProps> = ({ classN
                 </VSCodeButton>
             )}
             {feedbackSubmitted === 'thumbsDown' && (
-                <>
+                <span className={styles.thumbsDownFeedbackContainer}>
                     <VSCodeButton
                         className={classNames(styles.feedbackButton)}
                         appearance="icon"
@@ -336,16 +336,14 @@ const FeedbackButtons: React.FunctionComponent<FeedbackButtonsProps> = ({ classN
                         <i className="codicon codicon-thumbsdown" />
                         <i className="codicon codicon-check" />
                     </VSCodeButton>
-                    <VSCodeButton
-                        className={classNames(styles.feedbackButton)}
-                        appearance="icon"
-                        type="button"
-                        title="Help improve Cody by providing more feedback"
-                        onClick={() => console.log(`TODO: Open ${CODY_FEEDBACK_URL}`)}
+                    <VSCodeLink
+                        href={String(CODY_FEEDBACK_URL)}
+                        target="_blank"
+                        title="Help improve Cody by providing more feedback about the quality of this response"
                     >
-                        <i className="codicon codicon-feedback" /> {' Give Feedback'}
-                    </VSCodeButton>
-                </>
+                        Give Feedback
+                    </VSCodeLink>
+                </span>
             )}
         </div>
     )
