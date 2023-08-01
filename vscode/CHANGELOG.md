@@ -10,6 +10,7 @@ Starting from `0.2.0`, Cody is using `major.EVEN_NUMBER.patch` for release versi
 
 - `Custom Commands`: An experimental feature available behind the `cody.experimental.customCommands` feature flag. [pull/386](https://github.com/sourcegraph/cody/pull/386)
 - Quick pick menu for running default and custom commands. [pull/386](https://github.com/sourcegraph/cody/pull/386)
+- Inline Fixups: Cody is now aware of errors, warnings and hints within your editor selection. [pull/376](https://github.com/sourcegraph/cody/pull/376)
 
 ### Fixed
 
@@ -17,6 +18,7 @@ Starting from `0.2.0`, Cody is using `major.EVEN_NUMBER.patch` for release versi
 
 ### Changed
 
+- Inline Fixups: Added intent detection to improve prompt and context quality. [pull/376](https://github.com/sourcegraph/cody/pull/376)
 - Layout cleanups: smaller header and single line message input. [pull/449](https://github.com/sourcegraph/cody/pull/449)
 - Improve response feedback button behavior. [pull/451](https://github.com/sourcegraph/cody/pull/451)
 - Remove in-chat onboarding buttons for new chats. [pull/450](https://github.com/sourcegraph/cody/pull/450)

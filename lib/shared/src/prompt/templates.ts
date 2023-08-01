@@ -1,6 +1,7 @@
 import path from 'path'
 
 import { getFileExtension, getNormalizedLanguageName } from '../chat/recipes/helpers'
+import { ActiveTextEditorDiagnostic } from '../editor'
 
 const CODE_CONTEXT_TEMPLATE = `Use following code snippet from file \`{filePath}\`:
 \`\`\`{language}
@@ -71,6 +72,26 @@ export function populateCurrentEditorSelectedContextTemplate(
             .replace('{language}', languageName)
             .replace(/{filePath}/g, filePath) + context
     )
+}
+
+const DIAGNOSTICS_CONTEXT_TEMPLATE = `Use the following {type} from the code snippet in the file \`{filePath}\`
+{prefix}: {message}
+Code snippet:
+\`\`\`{language}
+{code}
+\`\`\``
+
+export function populateCurrentEditorDiagnosticsTemplate(
+    { message, type, text }: ActiveTextEditorDiagnostic,
+    filePath: string
+): string {
+    const language = getExtension(filePath)
+    return DIAGNOSTICS_CONTEXT_TEMPLATE.replace('{type}', type)
+        .replace('{filePath}', filePath)
+        .replace('{prefix}', type)
+        .replace('{message}', message)
+        .replace('{language}', language)
+        .replace('{code}', text)
 }
 
 const COMMAND_OUTPUT_TEMPLATE = 'Here is the output returned from the terminal.\n'

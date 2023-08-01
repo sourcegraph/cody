@@ -1,7 +1,6 @@
 import dedent from 'dedent'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type * as vscode from 'vscode'
-import { TextDocument } from 'vscode-languageserver-textdocument'
 
 import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
 import { SourcegraphCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/client'
@@ -12,11 +11,11 @@ import {
 
 import { CodyStatusBar } from '../services/StatusBar'
 import { vsCodeMocks } from '../testutils/mocks'
-import { wrapVSCodeTextDocument } from '../testutils/textDocument'
 
 import { CompletionsCache } from './cache'
 import { DocumentHistory } from './history'
 import { createProviderConfig } from './providers/anthropic'
+import { completion, documentAndPosition } from './testHelpers'
 import { InlineCompletionItemProvider } from './vscodeInlineCompletionItemProvider'
 
 const CURSOR_MARKER = '█'
@@ -48,27 +47,6 @@ vi.mock('vscode', () => ({
 vi.mock('./context-embeddings.ts', () => ({
     getContextFromEmbeddings: () => [],
 }))
-
-// `├` start of the inline completion to insert
-// `┤` end of the inline completion to insert
-// `┴` use for indent placeholder, should be placed at last line after `┤`
-function completion(string: TemplateStringsArray, ...values: any): CompletionResponse {
-    const raw = dedent(string, ...values)
-    let completion = raw
-
-    const start = raw.indexOf('├')
-    const end = raw.lastIndexOf('┤')
-
-    // eslint-disable-next-line yoda
-    if (0 <= start && start <= end) {
-        completion = raw.slice(start + 1, end)
-    }
-
-    return {
-        completion,
-        stopReason: 'unknown',
-    }
-}
 
 const NOOP_STATUS_BAR: CodyStatusBar = {
     dispose: () => {},
@@ -151,20 +129,7 @@ describe('Cody completions', () => {
                 throw new Error(`The test code must include a ${CURSOR_MARKER} to denote the cursor position`)
             }
 
-            const cursorIndex = code.indexOf(CURSOR_MARKER)
-            const prefix = code.slice(0, cursorIndex)
-            const suffix = code.slice(cursorIndex + CURSOR_MARKER.length)
-
-            const codeWithoutCursor = prefix + suffix
-
-            const document = wrapVSCodeTextDocument(
-                TextDocument.create('file:///test.ts', languageId, 0, codeWithoutCursor)
-            )
-
-            const splitPrefix = prefix.split('\n')
-            const line = splitPrefix.length - 1
-            const character = splitPrefix[splitPrefix.length - 1].length
-            const position = new vsCodeMocks.Position(line, character)
+            const { document, position } = documentAndPosition(code, languageId)
 
             const completions = await completionProvider.provideInlineCompletionItems(document, position, context)
 
