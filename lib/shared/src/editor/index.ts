@@ -51,7 +51,7 @@ export interface VsCodeFixupController {
     >
 }
 
-export interface VsCodeCustomPromptsController {
+export interface VsCodePromptsController {
     get(type?: string): Promise<string | null>
     menu(): Promise<void>
 }
@@ -59,7 +59,7 @@ export interface VsCodeCustomPromptsController {
 export interface ActiveTextEditorViewControllers<
     I extends VsCodeInlineController = VsCodeInlineController,
     F extends VsCodeFixupController = VsCodeFixupController,
-    P extends VsCodeCustomPromptsController = VsCodeCustomPromptsController,
+    P extends VsCodePromptsController = VsCodePromptsController,
 > {
     readonly inline?: I
     readonly fixups?: F
@@ -69,7 +69,7 @@ export interface ActiveTextEditorViewControllers<
 export interface Editor<
     I extends VsCodeInlineController = VsCodeInlineController,
     F extends VsCodeFixupController = VsCodeFixupController,
-    P extends VsCodeCustomPromptsController = VsCodeCustomPromptsController,
+    P extends VsCodePromptsController = VsCodePromptsController,
 > {
     controllers?: ActiveTextEditorViewControllers<I, F, P>
     getWorkspaceRootPath(): string | null

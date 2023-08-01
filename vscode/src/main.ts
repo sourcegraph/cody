@@ -17,7 +17,7 @@ import * as CompletionsLogger from './completions/logger'
 import { createProviderConfig } from './completions/providers/createProvider'
 import { registerAutocompleteTraceView } from './completions/tracer/traceView'
 import { getConfiguration, getFullConfig } from './configuration'
-import { CustomPromptsController } from './custom-prompts/CustomPromptsController'
+import { PromptsController } from './custom-prompts/PromptsController'
 import { VSCodeEditor } from './editor/vscode-editor'
 import { configureExternalServices } from './external-services'
 import { FixupController } from './non-stop/FixupController'
@@ -98,7 +98,7 @@ const register = async (
         TestSupport.instance.fixupController.set(fixup)
     }
     // Controller for Custom Commands
-    const prompt = new CustomPromptsController(context, initialConfig.experimentalCustomPrompts, localStorage)
+    const prompt = new PromptsController(context, initialConfig.experimentalCustomPrompts, localStorage)
 
     const editor = new VSCodeEditor({ inline: commentController, fixups: fixup, prompt })
     // Could we use the `initialConfig` instead?

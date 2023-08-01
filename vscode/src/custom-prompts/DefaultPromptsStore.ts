@@ -6,7 +6,7 @@ import { debug } from '../log'
 
 import * as defaultCommands from './prompts.json'
 
-export class DefaultPromptsProvider {
+export class DefaultPromptsStore {
     private defaultPromptsMap = new Map<string, CodyPrompt>()
     private slashCommandsMap = new Map<string, CodyPrompt>()
     private allCommands = new Map<string, CodyPrompt>()
@@ -73,11 +73,11 @@ export class DefaultPromptsProvider {
                 }
             }) as vscode.QuickPickItem[]
             commandItems.push(...allCommandItems)
-            const recipesSeperator: vscode.QuickPickItem = { kind: -1, label: 'setting' }
-            const recipesOption: vscode.QuickPickItem = { label: 'Configure Custom Command...' }
+            const configSeperator: vscode.QuickPickItem = { kind: -1, label: 'setting' }
+            const configOption: vscode.QuickPickItem = { label: 'Configure Custom Command...' }
             const chatSeperator: vscode.QuickPickItem = { kind: -1, label: 'inline chat' }
             const chatOption: vscode.QuickPickItem = { label: 'Ask a Question', alwaysShow: true }
-            commandItems.push(recipesSeperator, recipesOption, chatSeperator, chatOption)
+            commandItems.push(configSeperator, configOption, chatSeperator, chatOption)
             // Show the list of prompts to the user using a quick pick
             const options = {
                 title: 'Cody Commands',
@@ -91,7 +91,7 @@ export class DefaultPromptsProvider {
             switch (true) {
                 case !selectedCommandID:
                     break
-                case selectedCommandID === recipesOption.label:
+                case selectedCommandID === configOption.label:
                     return await vscode.commands.executeCommand('cody.action.custom-prompts.menu')
                 case selectedCommandID === chatOption.label:
                     return await vscode.commands.executeCommand('cody.inline.new')
@@ -104,13 +104,13 @@ export class DefaultPromptsProvider {
             }
             await vscode.commands.executeCommand('cody.customPrompts.exec', selectedCommandID)
         } catch (error) {
-            debug('CustomPromptsController:commandQuickPicker', 'error', { verbose: error })
+            debug('PromptsController:commandQuickPicker', 'error', { verbose: error })
         }
     }
 
     // dispose and reset the controller and builder
     public dispose(): void {
         this.allCommands = new Map()
-        debug('CustomPromptsController:dispose', 'disposed')
+        debug('PromptsController:dispose', 'disposed')
     }
 }

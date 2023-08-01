@@ -372,9 +372,10 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
             return
         }
 
-        const humanChatInput = (await this.executeCommands(humanInput)) || humanInput
+        const command = await this.executeCommands(humanInput)
+        const humanChatInput = command?.text || humanInput
 
-        const recipe = getRecipe(recipeId)
+        const recipe = getRecipe(command?.recipeID || recipeId)
         if (!recipe) {
             debug('ChatViewProvider:executeRecipe', 'no recipe found')
             return
@@ -553,10 +554,10 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         return
     }
 
-    protected async executeCommands(text: string): Promise<string | null> {
+    protected async executeCommands(text: string): Promise<{ text: string; recipeID?: RecipeID } | null> {
         text = text.trim()
         if (!text?.startsWith('/')) {
-            return text
+            return { text }
         }
         switch (true) {
             case text === '/':
@@ -569,14 +570,22 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
                 await this.clearAndRestartSession()
                 return null
             case /^\/s(earch)?(\s)?/i.test(text):
-                return text
+                return { text }
             case /^\/(explain|docstring|tests)/i.test(text): {
-                return this.editor.controllers.prompt?.find(text, true) || null
+                const promptText = this.editor.controllers.prompt?.find(text, true) || null
+                await this.editor.controllers.prompt?.get('command')
+                if (!promptText) {
+                    return null
+                }
+                return { text: promptText, recipeID: 'custom-prompt' }
             }
             default: {
-                const customCommand = this.editor.controllers.prompt?.find(text, true)
+                const promptText = this.editor.controllers.prompt?.find(text, true)
                 await this.editor.controllers.prompt?.get('command')
-                return customCommand || text
+                if (!promptText) {
+                    return null
+                }
+                return { text: promptText, recipeID: 'custom-prompt' }
             }
         }
     }

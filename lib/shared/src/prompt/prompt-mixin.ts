@@ -48,7 +48,7 @@ export class PromptMixin {
  */
 export function languagePromptMixin(languageCode: string): PromptMixin {
     return new PromptMixin(
-        `(Reply as Cody developed by Sourcegraph in the language with RFC5646/ISO language code "${languageCode}") I need your help!`
+        `(Reply as Cody, a coding assistant developed by Sourcegraph, in the language with RFC5646/ISO language code "${languageCode}") `
     )
 }
 

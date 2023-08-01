@@ -67,7 +67,7 @@ export class CustomPromptsStore {
     }
 
     // Return myPromptsMap as an array with keys as the id
-    public getRecipes(): [string, CodyPrompt][] {
+    public getCommands(): [string, CodyPrompt][] {
         return [...this.myPromptsMap]
     }
 

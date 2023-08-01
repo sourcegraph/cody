@@ -6,7 +6,7 @@ import {
     defaultCodyPromptContext,
     MyPrompts,
 } from '@sourcegraph/cody-shared/src/chat/recipes/cody-prompts'
-import { VsCodeCustomPromptsController } from '@sourcegraph/cody-shared/src/editor'
+import { VsCodePromptsController } from '@sourcegraph/cody-shared/src/editor'
 
 import { debug } from '../log'
 import { LocalStorage } from '../services/LocalStorageProvider'
@@ -19,7 +19,7 @@ import {
     showRemoveConfirmationInput,
 } from './CustomPromptsMenu'
 import { CustomPromptsStore } from './CustomPromptsStore'
-import { DefaultPromptsProvider } from './DefaultPromptsProvider'
+import { DefaultPromptsStore } from './DefaultPromptsStore'
 import { ToolsProvider } from './ToolsProvider'
 import {
     constructFileUri,
@@ -35,10 +35,10 @@ import {
  * Provides additional prompt management and execution logic
  * NOTE: Dogfooding - Internal s2 users only
  */
-export class CustomPromptsController implements VsCodeCustomPromptsController {
+export class PromptsController implements VsCodePromptsController {
     private tools: ToolsProvider
     private store: CustomPromptsStore
-    public default = new DefaultPromptsProvider()
+    public default = new DefaultPromptsStore()
 
     private myPromptsMap = new Map<string, CodyPrompt>()
 
@@ -87,7 +87,7 @@ export class CustomPromptsController implements VsCodeCustomPromptsController {
         this.userFileWatcher?.onDidChange(() => this.webViewMessenger?.())
         this.wsFileWatcher?.onDidDelete(() => this.webViewMessenger?.())
         this.userFileWatcher?.onDidDelete(() => this.webViewMessenger?.())
-        debug('CustomPromptsController:watcherInit', 'watchers created')
+        debug('PromptsController:watcherInit', 'watchers created')
     }
 
     // dispose and reset the controller and builder
@@ -98,7 +98,7 @@ export class CustomPromptsController implements VsCodeCustomPromptsController {
         this.myPromptsMap = new Map<string, CodyPrompt>()
         this.wsFileWatcher?.dispose()
         this.userFileWatcher?.dispose()
-        debug('CustomPromptsController:dispose', 'disposed')
+        debug('PromptsController:dispose', 'disposed')
     }
 
     // Check if the config is enabled on config change, and toggle the builder
@@ -150,15 +150,15 @@ export class CustomPromptsController implements VsCodeCustomPromptsController {
         if (!myPrompt) {
             return ''
         }
-        debug('CustomPromptsController:find:myPrompt', id, { verbose: myPrompt })
+        debug('PromptsController:find:myPrompt', id, { verbose: myPrompt })
         this.myPromptInProgress = myPrompt
         this.lastUsedCommands.add(id)
         return myPrompt?.prompt
     }
 
-    // get the list of recipe names to share with the webview to display
-    public getRecipes(): [string, CodyPrompt][] {
-        return this.store.getRecipes().filter(recipe => recipe[1].prompt !== 'seperator')
+    // get the list of commands names to share with the webview to display
+    public getCommands(): [string, CodyPrompt][] {
+        return this.store.getCommands().filter(recipe => recipe[1].prompt !== 'seperator')
     }
 
     // Get the prompts and premade for client to use
@@ -240,7 +240,7 @@ export class CustomPromptsController implements VsCodeCustomPromptsController {
             void vscode.window.showInformationMessage(
                 'Fail: try deleting the .vscode/cody.json file in your repository or home directory manually.'
             )
-            debug('CustomPromptsController:clear:error:', 'Failed to remove cody.json file for' + type)
+            debug('PromptsController:clear:error:', 'Failed to remove cody.json file for' + type)
         }
         await deleteFile(uri)
         await this.refresh()
@@ -259,7 +259,7 @@ export class CustomPromptsController implements VsCodeCustomPromptsController {
         } catch (error) {
             const errorMessage = 'Failed to create cody.json file: '
             void vscode.window.showErrorMessage(`${errorMessage} ${error}`)
-            debug('CustomPromptsController:addJSONFile:create', 'failed', { verbose: error })
+            debug('PromptsController:addJSONFile:create', 'failed', { verbose: error })
         }
     }
 
@@ -271,7 +271,7 @@ export class CustomPromptsController implements VsCodeCustomPromptsController {
         if (!selectedOption || !selected) {
             return
         }
-        debug('CustomPromptsController:customPrompts:menu', selected)
+        debug('PromptsController:customPrompts:menu', selected)
         if (selected === 'delete' || selected === 'file' || selected === 'open') {
             const fileType = await showRecipeTypeQuickPick(selected, this.store.promptSize)
             if (!fileType) {
@@ -310,7 +310,7 @@ export class CustomPromptsController implements VsCodeCustomPromptsController {
                 ?.reverse()
             const lastUsedCommandsList = [...lastUsedCommandsSeperator, ...lastUsedCommands] as [string, CodyPrompt][]
             // Get the list of prompts from the cody.json file
-            const commandsFromStore = this.store.getRecipes()
+            const commandsFromStore = this.store.getCommands()
             const promptList = lastUsedCommands.length
                 ? [...lastUsedCommandsList, ...commandsFromStore]
                 : commandsFromStore
@@ -348,11 +348,11 @@ export class CustomPromptsController implements VsCodeCustomPromptsController {
             if (!promptTitle) {
                 return
             }
-            debug('CustomPromptsController:promptsQuickPicker:selectedPrompt', promptTitle)
+            debug('PromptsController:promptsQuickPicker:selectedPrompt', promptTitle)
             // Run the prompt
             await vscode.commands.executeCommand('cody.customPrompts.exec', promptTitle)
         } catch (error) {
-            debug('CustomPromptsController:promptsQuickPicker', 'error', { verbose: error })
+            debug('PromptsController:promptsQuickPicker', 'error', { verbose: error })
         }
     }
 
@@ -370,7 +370,7 @@ export class CustomPromptsController implements VsCodeCustomPromptsController {
         // Save the prompt to the current Map and Extension storage
         this.myPromptsMap.set(promptName, newPrompt)
         await this.save(promptName, newPrompt)
-        debug('CustomPromptsController:updateUserRecipeQuick:newPrompt:', 'saved', { verbose: newPrompt })
+        debug('PromptsController:updateUserRecipeQuick:newPrompt:', 'saved', { verbose: newPrompt })
     }
 
     // Show the menu for the actions that require file type selection
