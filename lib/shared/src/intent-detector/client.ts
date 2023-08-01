@@ -10,7 +10,7 @@ const editorRegexps = [/editor/, /(open|current|this)\s+file/, /current(ly)?\s+o
 export class SourcegraphIntentDetectorClient implements IntentDetector {
     constructor(
         private client: SourcegraphGraphQLAPIClient,
-        private completionsClient: SourcegraphCompletionsClient
+        private completionsClient?: SourcegraphCompletionsClient
     ) {}
 
     public isCodebaseContextRequired(input: string): Promise<boolean | Error> {
@@ -71,6 +71,10 @@ export class SourcegraphIntentDetectorClient implements IntentDetector {
         options: IntentClassificationOption<Intent>[],
         fallback: Intent
     ): Promise<Intent> {
+        if (!this.completionsClient) {
+            return fallback;
+        }
+
         const preamble = this.buildInitialTranscript(options)
         const examples = this.buildExampleTranscript(options)
 
