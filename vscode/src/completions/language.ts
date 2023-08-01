@@ -25,14 +25,6 @@ export function getLanguageConfig(languageId: string): LanguageConfig | null {
                 blockEnd: '}',
                 commentStart: '// ',
             }
-        case 'ruby': {
-            return {
-                blockStart: ':',
-                blockElseTest: /^[\t ]*(elif |else:)/,
-                blockEnd: null,
-                commentStart: '# ',
-            }
-        }
         case 'python': {
             return {
                 blockStart: ':',
