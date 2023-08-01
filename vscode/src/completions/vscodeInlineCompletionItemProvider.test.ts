@@ -131,11 +131,21 @@ describe('Cody completions', () => {
 
             const { document, position } = documentAndPosition(code, languageId)
 
-            const completions = await completionProvider.provideInlineCompletionItems(document, position, context)
+            const result = await completionProvider.provideInlineCompletionItems(document, position, context)
+            const completions = 'items' in result ? result.items : result
+
+            // The provider returns completions with text starting at the beginning of the
+            // current line (to reduce jitter in VS Code), but for testing, it's simpler to
+            // omit that prefix.
+            const completionsWithCurrentLinePrefixRemoved = completions.map(c => ({
+                ...c,
+                insertText: (c.insertText as string).slice(position.character),
+                range: c.range?.with({ start: position }),
+            }))
 
             return {
                 requests,
-                completions: 'items' in completions ? completions.items : completions,
+                completions: completionsWithCurrentLinePrefixRemoved,
             }
         }
     })
