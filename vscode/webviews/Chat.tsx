@@ -37,7 +37,7 @@ interface ChatboxProps {
     suggestions?: string[]
     setSuggestions?: (suggestions: undefined | string[]) => void
     pluginsDevMode?: boolean
-    isFirstChat?: boolean
+    showOnboardingButtons?: boolean | null
 }
 
 export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>> = ({
@@ -55,7 +55,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     suggestions,
     setSuggestions,
     pluginsDevMode,
-    isFirstChat,
+    showOnboardingButtons,
 }) => {
     const [abortMessageInProgressInternal, setAbortMessageInProgress] = useState<() => void>(() => () => undefined)
 
@@ -152,14 +152,14 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             isCodyEnabled={true}
             codyNotEnabledNotice={undefined}
             helpMarkdown={
-                isFirstChat
+                showOnboardingButtons
                     ? `See [Getting Started](command:cody.welcome) for help and tips.
 
 To get started, select some code and run one of Cody's recipes:`
                     : 'See [Getting Started](command:cody.welcome) for help and tips.'
             }
             gettingStartedButtons={
-                isFirstChat
+                showOnboardingButtons
                     ? [
                           {
                               label: 'Explain code (high level)',
