@@ -4,6 +4,9 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+neverBuiltDependencies:
+  - deasync
+
 overrides:
   tslib: 2.1.0
 
@@ -367,6 +370,9 @@ importers:
       uuid:
         specifier: ^9.0.0
         version: 9.0.0
+      vscode-languageserver-textdocument:
+        specifier: ^1.0.8
+        version: 1.0.8
       vscode-uri:
         specifier: ^3.0.7
         version: 3.0.7
@@ -7988,7 +7994,6 @@ packages:
   /deasync@0.1.28:
     resolution: {integrity: sha512-QqLF6inIDwiATrfROIyQtwOQxjZuek13WRYZ7donU5wJPLoP67MnYxA6QtqdvdBy2mMqv5m3UefBVdJjvevOYg==}
     engines: {node: '>=0.11.0'}
-    requiresBuild: true
     dependencies:
       bindings: 1.5.0
       node-addon-api: 1.7.2
@@ -16747,6 +16752,10 @@ packages:
     dependencies:
       acorn: 8.10.0
       acorn-walk: 8.2.0
+
+  /vscode-languageserver-textdocument@1.0.8:
+    resolution: {integrity: sha512-1bonkGqQs5/fxGT5UchTgjGVnfysL0O8v1AYMBjqTbWQTFn721zaPGDYFkOKtfDgFiSgXM3KwaG3FMGfW4Ed9Q==}
+    dev: false
 
   /vscode-uri@3.0.7:
     resolution: {integrity: sha512-eOpPHogvorZRobNqJGhapa0JdwaxpjVvyBp0QIUMRMSf8ZAlqOdEquKuRmw9Qwu0qXtJIWqFtMkmvJjUZmMjVA==}

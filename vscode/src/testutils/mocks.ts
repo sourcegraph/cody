@@ -1,6 +1,10 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 // TODO: use implements vscode.XXX on mocked classes to ensure they match the real vscode API.
-// import * as vscode from 'vscode'
+import type {
+    InlineCompletionTriggerKind as VSCodeInlineCompletionTriggerKind,
+    Position as VSCodePosition,
+    Range as VSCodeRange,
+} from 'vscode'
 
 /**
  * This module defines shared VSCode mocks for use in every Vitest test.
@@ -8,7 +12,12 @@
  * This is made possible via the `setupFiles` property in the Vitest configuration.
  */
 
-class Position {
+enum InlineCompletionTriggerKind {
+    Invoke = 0 satisfies VSCodeInlineCompletionTriggerKind.Invoke,
+    Automatic = 1 satisfies VSCodeInlineCompletionTriggerKind.Automatic,
+}
+
+class Position implements VSCodePosition {
     public line: number
     public character: number
 
@@ -32,12 +41,31 @@ class Position {
     public isEqual(other: Position): boolean {
         return this.line === other.line && this.character === other.character
     }
-    public translate(lineDelta?: number, characterDelta?: number): Position {
+    public translate(change: { lineDelta?: number; characterDelta?: number }): VSCodePosition
+    public translate(lineDelta?: number, characterDelta?: number): VSCodePosition
+    public translate(
+        arg?: number | { lineDelta?: number; characterDelta?: number },
+        characterDelta?: number
+    ): VSCodePosition {
+        const lineDelta = typeof arg === 'number' ? arg : arg?.lineDelta
+        characterDelta = arg && typeof arg !== 'number' ? arg.characterDelta : characterDelta
         return new Position(this.line + (lineDelta || 0), this.character + (characterDelta || 0))
+    }
+
+    public with(line?: number, character?: number): VSCodePosition
+    public with(change: { line?: number; character?: number }): VSCodePosition
+    public with(arg?: number | { line?: number; character?: number }, character?: number): VSCodePosition {
+        const line = typeof arg === 'number' ? arg : arg?.line
+        character = arg && typeof arg !== 'number' ? arg.character : character
+        return new Position(this.line + (line || 0), this.character + (character || 0))
+    }
+
+    public compareTo(other: VSCodePosition): number {
+        return this.isBefore(other) ? -1 : this.isAfter(other) ? 1 : 0
     }
 }
 
-class Range {
+class Range implements VSCodeRange {
     public start: Position
     public end: Position
 
@@ -63,8 +91,15 @@ class Range {
         }
     }
 
-    public with(start: Position, end: Position): Range {
-        return start.isEqual(this.start) && end.isEqual(this.end) ? this : new Range(start, end)
+    public with(start?: VSCodePosition, end?: VSCodePosition): VSCodeRange
+    public with(change: { start?: VSCodePosition; end?: VSCodePosition }): VSCodeRange
+    public with(
+        arg?: VSCodePosition | { start?: VSCodePosition; end?: VSCodePosition },
+        end?: VSCodePosition
+    ): VSCodeRange {
+        const start = arg && ('start' in arg || 'end' in arg) ? arg.start : (arg as VSCodePosition)
+        end = arg && 'end' in arg ? arg.end : end
+        return new Range(start || this.start, end || this.end)
     }
     public get startLine(): number {
         return this.start.line
@@ -78,8 +113,23 @@ class Range {
     public get endCharacter(): number {
         return this.end.character
     }
-    public isEqual(other: Range): boolean {
+    public isEqual(other: VSCodeRange): boolean {
         return this.start.isEqual(other.start) && this.end.isEqual(other.end)
+    }
+    public get isEmpty(): boolean {
+        return this.start.isEqual(this.end)
+    }
+    public get isSingleLine(): boolean {
+        return this.start.line === this.end.line
+    }
+    public contains(): boolean {
+        throw new Error('not implemented')
+    }
+    public intersection(): VSCodeRange | undefined {
+        throw new Error('not implemented')
+    }
+    public union(): VSCodeRange {
+        throw new Error('not implemented')
     }
 }
 
@@ -196,4 +246,5 @@ export const vsCodeMocks = {
             return undefined
         },
     },
+    InlineCompletionTriggerKind,
 } as const

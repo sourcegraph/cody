@@ -10,12 +10,12 @@ import { ContextProvider } from './chat/ContextProvider'
 import { InlineChatViewManager } from './chat/InlineChatViewProvider'
 import { MessageProviderOptions } from './chat/MessageProvider'
 import { CODY_FEEDBACK_URL } from './chat/protocol'
-import { CodyCompletionItemProvider } from './completions'
 import { CompletionsCache } from './completions/cache'
-import { History } from './completions/history'
+import { VSCodeDocumentHistory } from './completions/history'
 import * as CompletionsLogger from './completions/logger'
 import { createProviderConfig } from './completions/providers/createProvider'
 import { registerAutocompleteTraceView } from './completions/tracer/traceView'
+import { InlineCompletionItemProvider } from './completions/vscodeInlineCompletionItemProvider'
 import { getConfiguration, getFullConfig } from './configuration'
 import { VSCodeEditor } from './editor/vscode-editor'
 import { PlatformContext } from './extension.common'
@@ -87,7 +87,10 @@ const register = async (
 }> => {
     const disposables: vscode.Disposable[] = []
 
-    await createOrUpdateEventLogger(initialConfig, localStorage)
+    const isExtensionModeDevOrTest =
+        context.extensionMode === vscode.ExtensionMode.Development ||
+        context.extensionMode === vscode.ExtensionMode.Test
+    await createOrUpdateEventLogger(initialConfig, localStorage, isExtensionModeDevOrTest)
     const telemetryService = createVSCodeTelemetryService()
 
     // Controller for inline Chat
@@ -165,7 +168,7 @@ const register = async (
         contextProvider.configurationChangeEvent.event(async () => {
             const newConfig = await getFullConfig(secretStorage, localStorage)
             externalServicesOnDidConfigurationChange(newConfig)
-            await createOrUpdateEventLogger(newConfig, localStorage)
+            await createOrUpdateEventLogger(newConfig, localStorage, isExtensionModeDevOrTest)
         })
     )
 
@@ -399,7 +402,7 @@ const register = async (
         onConfigurationChange: newConfig => {
             contextProvider.onConfigurationChange(newConfig)
             externalServicesOnDidConfigurationChange(newConfig)
-            void createOrUpdateEventLogger(newConfig, localStorage)
+            void createOrUpdateEventLogger(newConfig, localStorage, isExtensionModeDevOrTest)
         },
     }
 }
@@ -413,9 +416,9 @@ function createCompletionsProvider(
 ): vscode.Disposable {
     const disposables: vscode.Disposable[] = []
 
-    const history = new History()
+    const history = new VSCodeDocumentHistory()
     const providerConfig = createProviderConfig(config, webviewErrorMessenger, completionsClient)
-    const completionsProvider = new CodyCompletionItemProvider({
+    const completionsProvider = new InlineCompletionItemProvider({
         providerConfig,
         history,
         statusBar,
