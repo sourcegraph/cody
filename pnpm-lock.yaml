@@ -202,7 +202,7 @@ importers:
         specifier: ^7.0.3
         version: 7.0.3
       dotenv:
-        specifier: ^16.0.3
+        specifier: ^16.3.1
         version: 16.3.1
       nodemon:
         specifier: ^3.0.1
