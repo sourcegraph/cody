@@ -137,7 +137,7 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
             this.telemetryService.log('CodyVSCodeExtension:chatPredictions:used')
         }
         if (text === '/') {
-            this.telemetryService.log('CodyVSCodeExtension:custom-recipe-command-menu:clicked')
+            this.telemetryService.log('CodyVSCodeExtension:custom-command-menu:clicked')
             void vscode.commands.executeCommand('cody.action.commands.menu', true)
             return
         }
@@ -152,7 +152,7 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
      * Process custom command click
      */
     private async onCustomPromptClicked(title: string, commandType: CodyPromptType = 'user'): Promise<void> {
-        this.telemetryService.log('CodyVSCodeExtension:custom-recipe:clicked')
+        this.telemetryService.log('CodyVSCodeExtension:custom-command:clicked')
         debug('ChatViewProvider:onCustomPromptClicked', title)
         if (!this.isCustomPromptAction(title)) {
             await this.setWebviewView('chat')
