@@ -48,7 +48,7 @@
     "jsdom": "^22.1.0",
     "prettier": "3.0.0",
     "storybook": "^7.0.26",
-    "stylelint": "^15.10.1",
+    "stylelint": "^15.10.2",
     "stylelint-config-prettier": "^9.0.5",
     "stylelint-config-standard": "^34.0.0",
     "ts-node": "^10.9.1",
