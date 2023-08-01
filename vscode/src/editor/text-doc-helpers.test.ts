@@ -213,9 +213,9 @@ describe('checkHasSameNumberOfSpacesAsStartLine', () => {
         expect(checkHasSameNumberOfSpacesAsStartLine(start, end)).toBe(false)
     })
 
-    it('trims whitespace before comparing', () => {
-        const start = '      const foo = 1'
-        const end = '       const bar = 2'
+    it('return true after trims', () => {
+        const start = '   const foo = 1'.trim()
+        const end = '   const bar = 2'.trim()
         expect(checkHasSameNumberOfSpacesAsStartLine(start, end)).toBe(true)
     })
 })

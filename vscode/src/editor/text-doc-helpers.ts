@@ -1,5 +1,5 @@
 /**
- * Helpers
+ * Helper function for adding Editor Code Lenses to TextDocument
  */
 // Check if the line starts with a word
 export const startsWithWord = (text: string): boolean => /^\w/.test(text)
@@ -13,7 +13,9 @@ export const isLineSingleCharOnly = (text: string): boolean => /^.$/.test(text.t
 export const isLineSingleWordOnly = (text: string): boolean => text.trim().split(' ').length === 1
 // Check for arrow function
 export const isLineArrowFunction = (text: string): boolean => /^.*=>.*$/.test(text.trim())
-// Check for arrow function
+// Does line ends with closing bracket
+export const isLineEndsWithClosingBracket = (text: string): boolean => text.trim().endsWith(')')
+// Check for statement (e.g. 'if (foo)', 'for (foo)', 'while (foo)')
 export const isLineStatement = (text: string): boolean =>
     /^(if|for|while|switch|case|return|try|catch).*$/.test(text.trim())
 // Check for variable declaration, array, list, tuple, dict
@@ -26,9 +28,11 @@ export const isLineVariable = (text: string): boolean => {
         /^:.+:$/m.test(text) ||
         /^load\("@.+"(, ".+")?\)/m.test(text) ||
         /^\W.*\W$/.test(text) ||
-        /^\w+(\s)?:.*/m.test(text)
+        /^\w+(\s)?:.*/m.test(text) ||
+        isLineEndsWithClosingBracket(text)
     )
 }
+
 /**
  *  Cover first line of class methods for all languages
  * (e.g. 'public void myMethod() {',
@@ -104,7 +108,16 @@ export const checkHasSameNumberOfSpacesAsStartLine = (startLineText: string, end
     if (startLineText.length === 0 || endLineText.length === 0) {
         return false
     }
-    return new RegExp(`^\\s{${startLineText.length}}.*$`).test(endLineText)
+    // Get the leading whitespace of the start line
+    const startMatches = startLineText.match(/^\s*/)
+    const startLeadingWhitespace = startMatches ? startMatches[0] : ''
+
+    // Get the leading whitespace of the end line
+    const endMatches = endLineText.match(/^\s*/)
+    const endLeadingWhitespace = endMatches ? endMatches[0] : ''
+
+    // Compare the leading whitespace
+    return startLeadingWhitespace === endLeadingWhitespace
 }
 /**
  * Use regex to check if the line starts with a function in various languages

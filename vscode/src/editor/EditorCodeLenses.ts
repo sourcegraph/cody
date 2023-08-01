@@ -57,7 +57,8 @@ export class EditorCodeLenses implements vscode.CodeLensProvider {
      */
     private updateConfig(): void {
         const config = vscode.workspace.getConfiguration('cody')
-        this.isEnabled = config.get('experimental.customCommands') as boolean
+        const isDisabled = config.get('experimental.customCommands.codeLenses.disabled') as boolean
+        this.isEnabled = !isDisabled
         this.isInlineChatEnabled =
             (config.get('inlineChat.enabled') as boolean) && (config.get('inlineChat.codeLenses') as boolean)
         if (this.isEnabled && !this._disposables.length) {
