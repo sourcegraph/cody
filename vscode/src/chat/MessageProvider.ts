@@ -52,7 +52,7 @@ abstract class MessageHandler {
     protected abstract handleError(errorMsg: string): void
     protected abstract handleSuggestions(suggestions: string[]): void
     protected abstract handleEnabledPlugins(plugins: string[]): void
-    protected abstract handleMyPrompts(prompts: [string, CodyPrompt][], isEnabled: boolean): void
+    protected abstract handleCodyCommands(prompts: [string, CodyPrompt][], isEnabled: boolean): void
 }
 
 export interface MessageProviderOptions {
@@ -366,8 +366,8 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
             return
         }
 
-        // Process the human input to look for chat commands
-        const command = await this.executeCommands(humanInput)
+        // Filter the human input to look for chat commands
+        const command = await this.chatCommandsFilter(humanInput)
         if (!command?.text) {
             return
         }
@@ -412,7 +412,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
             default: {
                 this.sendTranscript()
 
-                const myPremade = (await this.editor.controllers.command?.getMyPrompts())?.premade
+                const myPremade = (await this.editor.controllers.command?.getCustomConfig())?.premade
                 const { prompt, contextFiles } = await this.transcript.getPromptForLastInteraction(
                     getPreamble(this.contextProvider.context.getCodebase(), myPremade),
                     this.maxPromptTokens,
@@ -447,7 +447,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         }
         transcript.addInteraction(interaction)
 
-        const myPremade = (await this.editor.controllers.command?.getMyPrompts())?.premade
+        const myPremade = (await this.editor.controllers.command?.getCustomConfig())?.premade
         const { prompt, contextFiles } = await transcript.getPromptForLastInteraction(
             getPreamble(this.contextProvider.context.getCodebase(), myPremade),
             this.maxPromptTokens
@@ -552,7 +552,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         return
     }
 
-    protected async executeCommands(text: string): Promise<{ text: string; recipeID?: RecipeID } | null> {
+    protected async chatCommandsFilter(text: string): Promise<{ text: string; recipeID?: RecipeID } | null> {
         text = text.trim()
         if (!text?.startsWith('/')) {
             return { text }
@@ -560,8 +560,8 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         switch (true) {
             case text === '/':
                 return vscode.commands.executeCommand('cody.action.commands.menu')
-            case text === '/custom-settings':
-                return vscode.commands.executeCommand('cody.action.custom-prompts.config')
+            case text === '/commands-settings':
+                return vscode.commands.executeCommand('cody.action.commands.custom.config')
             case /^\/o(pen)?/i.test(text) && this.editor.controllers.command !== undefined:
                 // open the user's ~/.vscode/cody.json file
                 await this.editor.controllers.command?.open(text.split(' ')[1])
@@ -596,8 +596,8 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
     private async sendMyPrompts(): Promise<void> {
         const send = async (): Promise<void> => {
             await this.editor.controllers.command?.refresh()
-            const recipes = this.editor.controllers.command?.default.getAllCommands() || []
-            void this.handleMyPrompts(recipes, this.contextProvider.config.experimentalCustomCommands)
+            const commands = this.editor.controllers.command?.getAllCommands() || []
+            void this.handleCodyCommands(commands, this.contextProvider.config.experimentalCustomCommands)
         }
         this.editor.controllers.command?.setMessenger(send)
         await send()

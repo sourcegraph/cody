@@ -9,12 +9,17 @@ export const CodyMenu_CodyCommands = {
 }
 
 export const CodyMenu_CodyCustomCommands = {
-    title: 'Cody Custom Commands',
+    title: 'Cody Custom Commands (Experimental)',
     placeHolder: 'Search command to run...',
     ignoreFocusOut: true,
 }
 
-export const CodyMenu_NewCustomCommands = 'Cody Custom Commands - New User Command'
+export const CodyMenu_NewCustomCommands = 'Cody Custom Commands (Experimental) - New User Command'
+
+export const CodyMenu_CodyCustomCommandsConfig = {
+    title: 'Configure Custom Commands (Experimental)',
+    placeHolder: 'Choose an option',
+}
 
 const chatSeperator: QuickPickItem = { kind: -1, label: 'inline chat' }
 const chatOption: QuickPickItem = { label: 'Ask a Question', alwaysShow: true }

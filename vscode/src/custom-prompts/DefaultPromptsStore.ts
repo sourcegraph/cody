@@ -13,7 +13,7 @@ export class DefaultPromptsStore {
     private allCommands = new Map<string, CodyPrompt>()
 
     constructor() {
-        const prompts = defaultCommands.prompts as Record<string, unknown>
+        const prompts = defaultCommands.commands as Record<string, unknown>
         for (const key in prompts) {
             if (Object.prototype.hasOwnProperty.call(prompts, key)) {
                 const prompt = prompts[key] as CodyPrompt
@@ -26,6 +26,7 @@ export class DefaultPromptsStore {
                 this.defaultPromptsMap.set(key, prompt)
             }
         }
+        this.groupCommands(this.defaultPromptsMap)
         debug('MyPromptsProvider', 'initialized')
     }
 
@@ -38,16 +39,14 @@ export class DefaultPromptsStore {
         return this.allCommands.get(id)
     }
 
-    public getAllCommands(): [string, CodyPrompt][] {
+    public getGroupedCommands(): [string, CodyPrompt][] {
         return [...this.allCommands]
     }
 
-    public getDefault(): [string, CodyPrompt][] | undefined {
-        return [...this.defaultPromptsMap]
-    }
-
     public groupCommands(customCommands = new Map<string, CodyPrompt>()): void {
-        this.allCommands = new Map([...this.defaultPromptsMap, ...customCommands])
+        const combinedMap = new Map([...this.defaultPromptsMap])
+        combinedMap.set('seperator', { prompt: 'seperator' })
+        this.allCommands = new Map([...combinedMap, ...customCommands])
     }
 
     // Main Menu: Cody Commands
@@ -59,13 +58,15 @@ export class DefaultPromptsStore {
                 if (command.prompt === 'seperator') {
                     return menu_seperators.customCommands
                 }
-                const description = showDesc && command.slashCommand ? command.slashCommand : command.type
+                const description =
+                    showDesc && command.slashCommand && command.type === 'default' ? command.slashCommand : command.type
                 return {
                     label: command.name || commandItem[0],
                     description,
                 }
             })
             commandItems.push(...allCommandItems, menu_options.config)
+
             // Show the list of prompts to the user using a quick pick menu
             const selectedPrompt = await vscode.window.showQuickPick([...commandItems], CodyMenu_CodyCommands)
             if (!selectedPrompt) {
@@ -76,7 +77,7 @@ export class DefaultPromptsStore {
                 case !selectedCommandID:
                     break
                 case selectedCommandID === menu_options.config.label:
-                    return await vscode.commands.executeCommand('cody.action.custom-prompts.config')
+                    return await vscode.commands.executeCommand('cody.action.commands.custom.config')
                 case selectedCommandID === menu_options.chat.label:
                     return await vscode.commands.executeCommand('cody.inline.new')
             }
@@ -86,7 +87,7 @@ export class DefaultPromptsStore {
             if (!prompt) {
                 return
             }
-            await vscode.commands.executeCommand('cody.customPrompts.exec', selectedCommandID)
+            await vscode.commands.executeCommand('cody.action.commands.exec', selectedCommandID)
         } catch (error) {
             debug('CommandsController:commandQuickPicker', 'error', { verbose: error })
         }

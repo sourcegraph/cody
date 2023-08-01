@@ -43,21 +43,25 @@ export class CustomPromptsStore {
     }
 
     public activate(state: boolean): void {
+        this.isActive = state
         if (this.isActive && !state) {
             this.dispose()
         }
-        this.isActive = state
+    }
+
+    public hasCustomPrompts(): boolean {
+        const numberOfPrompts = this.promptSize.user + this.promptSize.workspace
+        return this.isActive && numberOfPrompts > 0
     }
 
     // Get the formatted context from the json config file
     public async refresh(): Promise<MyPrompts> {
         if (!this.isActive) {
-            return { prompts: this.myPromptsMap, premade: this.myPremade, starter: this.myStarter }
+            return { commands: this.myPromptsMap, premade: this.myPremade, starter: this.myStarter }
         }
         // reset map and set
         this.myPromptsMap = new Map<string, CodyPrompt>()
         this.promptSize = { ...promptSizeInit }
-        this.myPromptsMap.set('seperator', { prompt: 'seperator' })
         // user prompts
         if (this.homeDir) {
             await this.build('user')
@@ -66,7 +70,7 @@ export class CustomPromptsStore {
         if (this.workspaceRoot) {
             await this.build('workspace')
         }
-        return { prompts: this.myPromptsMap, premade: this.myPremade, starter: this.myStarter }
+        return { commands: this.myPromptsMap, premade: this.myPremade, starter: this.myStarter }
     }
 
     // Return myPromptsMap as an array with keys as the id
@@ -81,7 +85,7 @@ export class CustomPromptsStore {
             return null
         }
         const json = JSON.parse(content) as MyPromptsJSON
-        const prompts = json.prompts
+        const prompts = json.commands || json.recipes
         for (const key in prompts) {
             if (Object.prototype.hasOwnProperty.call(prompts, key)) {
                 const prompt = prompts[key]
@@ -130,7 +134,7 @@ export class CustomPromptsStore {
         filtered.set(id, prompt)
         // turn prompt map into json
         const jsonContext = { ...this.userPromptsJSON }
-        jsonContext.prompts = Object.fromEntries(filtered)
+        jsonContext.commands = Object.fromEntries(filtered)
         const jsonString = JSON.stringify(jsonContext)
         const rootDirPath = type === 'user' ? this.jsonFileUris.user : this.jsonFileUris.workspace
         if (!rootDirPath || !jsonString) {

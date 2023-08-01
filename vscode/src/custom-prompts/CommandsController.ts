@@ -120,7 +120,7 @@ export class CommandsController implements VsCodeCommandsController {
                 return this.myPromptInProgress?.context?.output || null
             case 'command':
                 // return the terminal output from the command for the prompt if any
-                return this.getCommandOutput()
+                return this.execCommand()
             default:
                 return this.myPromptInProgress?.prompt || null
         }
@@ -139,17 +139,17 @@ export class CommandsController implements VsCodeCommandsController {
     }
 
     // get the list of commands names to share with the webview to display
-    public getCommands(): [string, CodyPrompt][] {
-        return this.custom.getCommands().filter(command => command[1].prompt !== 'seperator')
+    public getAllCommands(): [string, CodyPrompt][] {
+        return this.default.getGroupedCommands().filter(command => command[1].prompt !== 'seperator')
     }
 
     // Get the prompts and premade for client to use
-    public async getMyPrompts(): Promise<MyPrompts> {
+    public async getCustomConfig(): Promise<MyPrompts> {
         const myPromptsConfig = await this.custom.refresh()
         return myPromptsConfig
     }
 
-    public async getCommandOutput(): Promise<string | null> {
+    private async execCommand(): Promise<string | null> {
         const currentContext = this.myPromptInProgress?.context
         if (!this.myPromptInProgress || !currentContext?.command) {
             return null
@@ -164,9 +164,9 @@ export class CommandsController implements VsCodeCommandsController {
     // Get the prompts from cody.json file then build the map of prompts
     public async refresh(): Promise<void> {
         await this.saveLastUsedCommands()
-        const { prompts } = await this.custom.refresh()
-        this.myPromptsMap = prompts
-        this.default.groupCommands(prompts)
+        const { commands } = await this.custom.refresh()
+        this.myPromptsMap = commands
+        this.default.groupCommands(commands)
     }
 
     private async saveLastUsedCommands(): Promise<void> {
@@ -178,12 +178,26 @@ export class CommandsController implements VsCodeCommandsController {
         this.lastUsedCommands = new Set(lastUsedCommands)
     }
 
-    public async mainMenu(type: 'custom' | 'default'): Promise<void> {
-        return type === 'default' ? this.default.menu() : this.configMenu()
+    public async menu(type: 'custom' | 'config' | 'default', showDesc?: boolean): Promise<void> {
+        await this.refresh()
+        switch (type) {
+            case 'custom':
+                await this.customCommandMenu()
+                break
+            case 'config':
+                await this.configMenu()
+                break
+            case 'default':
+                await this.default.menu(showDesc)
+                break
+            default:
+                break
+        }
     }
 
-    // Menu with a list of user commands to run: Cody Custom Commands
-    public async menu(): Promise<void> {
+    // Cody Custom Commands Menu - a menu with a list of user commands to run
+    public async customCommandMenu(): Promise<void> {
+        await this.refresh()
         if (this.myPromptsMap.size === 0) {
             await this.configMenu()
             return
@@ -220,7 +234,7 @@ export class CommandsController implements VsCodeCommandsController {
                     return await this.configMenu()
                 default:
                     // Run the prompt
-                    await vscode.commands.executeCommand('cody.customPrompts.exec', promptTitle)
+                    await vscode.commands.executeCommand('cody.action.commands.exec', promptTitle)
                     break
             }
             debug('CommandsController:promptsQuickPicker:selectedPrompt', promptTitle)
@@ -259,7 +273,7 @@ export class CommandsController implements VsCodeCommandsController {
                 break
             }
             case 'list':
-                await this.menu()
+                await this.customCommandMenu()
                 break
             case 'example':
                 await this.custom.createExampleConfig()

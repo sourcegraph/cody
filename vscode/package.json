@@ -418,7 +418,7 @@
         "icon": "$(diff)"
       },
       {
-        "command": "cody.action.custom-prompts.menu",
+        "command": "cody.action.commands.custom.menu",
         "category": "Cody",
         "title": "Custom Commands (Experimental)",
         "when": "cody.activated",
@@ -430,7 +430,7 @@
         "category": "Cody",
         "title": "Cody Commands (Experimental)",
         "when": "cody.activated",
-        "enablement": "config.cody.experimental.customCommands"
+        "icon": "$(cody-logo)"
       },
       {
         "command": "cody.autocomplete.openTraceView",
@@ -556,7 +556,7 @@
           "when": "config.cody.experimental.guardrails && editorHasSelection"
         },
         {
-          "command": "cody.action.custom-prompts.menu",
+          "command": "cody.action.commands.custom.menu",
           "when": "cody.activated && config.cody.experimental.customCommands"
         }
       ],
@@ -592,7 +592,7 @@
           "when": "cody.activated && config.cody.experimental.guardrails && editorHasSelection"
         },
         {
-          "command": "cody.action.custom-prompts.menu",
+          "command": "cody.action.commands.custom.menu",
           "when": "cody.activated && config.cody.experimental.customCommands"
         }
       ],
@@ -647,6 +647,12 @@
         {
           "command": "cody.non-stop.fixup",
           "when": "cody.nonstop.fixups.enabled && cody.activated",
+          "group": "navigation",
+          "visibility": "visible"
+        },
+        {
+          "command": "cody.action.commands.menu",
+          "when": "cody.activated",
           "group": "navigation",
           "visibility": "visible"
         }

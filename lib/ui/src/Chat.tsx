@@ -263,6 +263,11 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                     const newInput = displayCommands?.[newCommandIndex]?.[1]?.slashCommand
                     setFormInput(newInput || formInput)
                 }
+                // close the chat command suggestions on escape key
+                if (event.key === 'Escape') {
+                    setDisplayCommands(null)
+                    setSelectedChatCommand(-1)
+                }
             }
 
             // Loop through input history on up arrow press

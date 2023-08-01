@@ -82,7 +82,7 @@ export function createStatusBar(): CodyStatusBar {
                 createFeatureToggle(
                     'Custom Commands',
                     'Experimental',
-                    'Enable creating Custom Commands with reusable prompts and context with access through code lenses',
+                    'Enable creating custom commands with reusable prompts and context',
                     'cody.experimental.customCommands',
                     c => c.experimentalCustomCommands
                 ),

@@ -65,7 +65,7 @@ export interface VsCodeFixupController {
 
 export interface VsCodeCommandsController {
     get(type?: string): Promise<string | null>
-    menu(): Promise<void>
+    menu(type: 'custom' | 'config' | 'default', showDesc?: boolean): Promise<void>
 }
 
 export interface ActiveTextEditorViewControllers<

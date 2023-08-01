@@ -6,7 +6,7 @@ import {
     defaultCodyPromptContext,
 } from '@sourcegraph/cody-shared/src/chat/recipes/cody-prompts'
 
-import { CodyMenu_NewCustomCommands, menu_commandTypes } from './menuOptions'
+import { CodyMenu_CodyCustomCommandsConfig, CodyMenu_NewCustomCommands, menu_commandTypes } from './menuOptions'
 import {
     CustomPromptsContextOptions,
     CustomPromptsMainMenuOptions,
@@ -16,10 +16,7 @@ import {
 
 // Main menu for the Custom Commands in Quick Pick
 export async function showCustomPromptMenu(): Promise<CustomPromptsMenuAnswer | void> {
-    const inputOptions = {
-        title: 'Configure Custom Commands (Experimental)',
-        placeHolder: 'Choose an option',
-    }
+    const inputOptions = CodyMenu_CodyCustomCommandsConfig
     const selectedOption = await vscode.window.showQuickPick(CustomPromptsMainMenuOptions, inputOptions)
     if (!selectedOption?.id) {
         return

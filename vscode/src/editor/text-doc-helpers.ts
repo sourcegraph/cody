@@ -64,7 +64,7 @@ export const checkIsLineAFunction = (text: string): boolean => {
     const isJSArrowFunction = /^.*=.*=>.*$/.test(text) && !isObject
     const isJSFunction = !!text.match(/^\w.*{$/) || isJSArrowFunction
     // Python
-    const isPythonFunction = /^(async\s*)?def\s/.test(text)
+    const isPythonFunction = /^(async\s*)?def\s.*:$/.test(text)
     // C#
     const isCSharpFunction = !!text.match(
         /^(public|private|protected|internal|static|async)\s+[\w<>]+\s+\w+\s*\(.*\)\s*{.*/

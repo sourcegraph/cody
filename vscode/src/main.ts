@@ -264,14 +264,17 @@ const register = async (
         vscode.commands.registerCommand('cody.action.chat', input => executeRecipeInSidebar('chat-question', input)),
         vscode.commands.registerCommand(
             'cody.action.commands.menu',
-            showDesc => editor.controllers.command?.default.menu(showDesc)
+            showDesc => editor.controllers.command?.menu('default', showDesc)
         ),
-        vscode.commands.registerCommand('cody.action.custom-prompts.menu', () => editor.controllers.command?.menu()),
         vscode.commands.registerCommand(
-            'cody.action.custom-prompts.config',
+            'cody.action.commands.custom.menu',
+            () => editor.controllers.command?.menu('custom')
+        ),
+        vscode.commands.registerCommand(
+            'cody.action.commands.custom.config',
             () => editor.controllers.command?.configMenu()
         ),
-        vscode.commands.registerCommand('cody.customPrompts.exec', async title => {
+        vscode.commands.registerCommand('cody.action.commands.exec', async title => {
             if (!sidebarChatProvider.isCustomPromptAction(title)) {
                 await sidebarChatProvider.setWebviewView('chat')
             }

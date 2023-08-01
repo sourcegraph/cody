@@ -217,7 +217,7 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
         void this.webview?.postMessage({ type: 'enabled-plugins', plugins })
     }
 
-    protected handleMyPrompts(prompts: [string, CodyPrompt][], isEnabled: boolean): void {
+    protected handleCodyCommands(prompts: [string, CodyPrompt][], isEnabled: boolean): void {
         void this.webview?.postMessage({
             type: 'custom-prompts',
             prompts,

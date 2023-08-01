@@ -20,9 +20,18 @@ export const defaultCodyPromptContext: CodyPromptContext = {
     selection: true,
 }
 
+export interface MyPrompts {
+    commands: Map<string, CodyPrompt>
+    recipes?: Map<string, CodyPrompt>
+    premade?: Preamble
+    starter: string
+}
+
 export interface MyPromptsJSON {
     // A set of reusable prompts where instructions and context can be configured.
-    prompts: { [id: string]: CodyPrompt }
+    commands: { [id: string]: CodyPrompt }
+    // backward compatibility
+    recipes?: { [id: string]: CodyPrompt }
     // Premade are a set of prompts that are added to the start of every new conversation.
     // This is where we define the "persona" and "rules" to share with LLM
     premade?: CodyPromptPremade
@@ -45,11 +54,5 @@ export interface CodyPromptPremade {
 }
 
 export type CodyPromptType = 'workspace' | 'user' | 'default' | 'recently used'
-
-export interface MyPrompts {
-    prompts: Map<string, CodyPrompt>
-    premade?: Preamble
-    starter: string
-}
 
 export const CustomPromptsConfigFileName = '.vscode/cody.json'
