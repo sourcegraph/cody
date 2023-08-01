@@ -4,13 +4,18 @@
     {
       "type": "typescript",
       "tsconfig": "tsconfig.json",
-      "problemMatcher": ["$tsc-watch"],
+      "problemMatcher": [
+        "$tsc-watch"
+      ],
       "group": {
         "kind": "build",
         "isDefault": true
       },
       "option": "watch",
-      "runOptions": { "runOn": "folderOpen", "instanceLimit": 1 },
+      "runOptions": {
+        "runOn": "folderOpen",
+        "instanceLimit": 1
+      },
       "isBackground": true,
       "presentation": {
         "reveal": "never"
@@ -22,7 +27,9 @@
       "path": "vscode",
       "script": "build:dev:desktop",
       "problemMatcher": "$tsc-watch",
-      "options": { "cwd": "vscode" },
+      "options": {
+        "cwd": "vscode"
+      },
       "isBackground": true
     },
     {
@@ -31,8 +38,21 @@
       "path": "vscode",
       "script": "build:dev:web",
       "problemMatcher": "$tsc-watch",
-      "options": { "cwd": "vscode" },
+      "options": {
+        "cwd": "vscode"
+      },
       "isBackground": true
+    },
+    {
+      "type": "cmake",
+      "label": "CMake: build",
+      "command": "build",
+      "targets": [
+        "[N/A - Select Kit]"
+      ],
+      "group": "build",
+      "problemMatcher": [],
+      "detail": "CMake template build task"
     }
   ]
 }
