@@ -92,25 +92,27 @@ export async function run<T>(around: () => Promise<T>): Promise<T> {
 
 export async function logTestingData(data: string): Promise<void> {
     // create a pubsub client
-    const pubSubClient = new PubSub()
-
-    // Publishes the message as a string
-    const dataBuffer = Buffer.from(data)
-
-    const timestamp = new Date().toUTCString()
+    const pubSubClient = new PubSub({
+        projectId: 'secret',
+    })
 
     const message = {
-        event: dataBuffer,
-        timestamp,
+        event: data,
+        timestamp: new Date().getTime(),
         // aditya todo: pass in the E2E test nama
         test_name: 'test_name',
         UID: uuid.v4(),
     }
 
+    // Publishes the message as a string
+    const dataBuffer = Buffer.from(JSON.stringify(message))
+
+    // todo: remove all console.logs before merging
     console.log('Publishing message to pubsub')
     try {
-        await pubSubClient.topic('topic_name').publishMessage({ data: JSON.stringify(message) })
-    } catch {
-        console.error('Received error while publishing')
+        await pubSubClient.topic('projects/secret/topics/secret-topic').publishMessage({ data: dataBuffer })
+        console.log('Message published.')
+    } catch (error) {
+        console.error('Received error while publishing:', error)
     }
 }
