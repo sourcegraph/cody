@@ -39,6 +39,7 @@ interface ChatboxProps {
     suggestions?: string[]
     setSuggestions?: (suggestions: undefined | string[]) => void
     pluginsDevMode?: boolean
+    showOnboardingButtons?: boolean | null
 }
 
 export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>> = ({
@@ -56,6 +57,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     suggestions,
     setSuggestions,
     pluginsDevMode,
+    showOnboardingButtons,
 }) => {
     const [abortMessageInProgressInternal, setAbortMessageInProgress] = useState<() => void>(() => () => undefined)
 
@@ -151,14 +153,26 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             // down here to render cody is disabled on the instance nicely.
             isCodyEnabled={true}
             codyNotEnabledNotice={undefined}
-            helpMarkdown="See [Getting Started](command:cody.welcome) for help and tips.
+            helpMarkdown={
+                showOnboardingButtons
+                    ? `See [Getting Started](command:cody.welcome) for help and tips.
 
-To get started, select some code and run one of Cody's recipes:"
-            gettingStartedButtons={[
-                { label: 'Explain code (high level)', action: 'explain-code-high-level', onClick: onChatButtonClick },
-                { label: 'Smell code', action: 'find-code-smells', onClick: onChatButtonClick },
-                { label: 'Generate a unit test', action: 'generate-unit-test', onClick: onChatButtonClick },
-            ]}
+To get started, select some code and run one of Cody's recipes:`
+                    : 'See [Getting Started](command:cody.welcome) for help and tips.'
+            }
+            gettingStartedButtons={
+                showOnboardingButtons
+                    ? [
+                          {
+                              label: 'Explain code (high level)',
+                              action: 'explain-code-high-level',
+                              onClick: onChatButtonClick,
+                          },
+                          { label: 'Smell code', action: 'find-code-smells', onClick: onChatButtonClick },
+                          { label: 'Generate a unit test', action: 'generate-unit-test', onClick: onChatButtonClick },
+                      ]
+                    : undefined
+            }
             ChatButtonComponent={ChatButton}
             pluginsDevMode={pluginsDevMode}
         />

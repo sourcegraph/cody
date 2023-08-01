@@ -177,6 +177,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                             pluginsDevMode={Boolean(config?.pluginsDebugEnabled)}
                             setSuggestions={setSuggestions}
                             telemetryService={telemetryService}
+                            showOnboardingButtons={userHistory && Object.entries(userHistory).length === 0}
                         />
                     )}
                 </>
