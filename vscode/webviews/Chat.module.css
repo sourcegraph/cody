@@ -68,6 +68,7 @@ body[data-vscode-theme-kind='vscode-high-contrast'] .transcript-item:not(.human-
 
 .input-row {
     border-top: solid 1px var(--vscode-sideBarSectionHeader-border);
+    gap: 0;
 }
 
 .chat-input-context {

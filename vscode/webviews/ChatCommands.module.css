@@ -1,23 +1,26 @@
 .container {
-    width: 100%;
     max-height: 250%;
     z-index: 99;
 
     display: flex;
 
-    border-radius: 0.5rem 0.5rem 0 0;
+    border: 1px solid;
+    margin-bottom: 0.2rem;
 
     flex-direction: column;
-    background: var(--vscode-input-background);
+    background: var(--vscode-sideBar-background);
 }
 
 .commands-title-container {
     margin-left: 0.5rem;
+    margin-right: 0.5rem;
 
     width: 96%;
     display: flex;
     margin-bottom: 0;
     padding-bottom: 0;
+
+    color: var(--vscode-sideBarTitle-foreground);
 }
 
 .commands-container {
@@ -39,26 +42,30 @@
     cursor: pointer;
 
     border: none;
-    background: var(--vscode-input-background);
-    color: var(--vscode-input-foreground);
+    background: var(--vscode-sideBar-background);
 }
 
 .command-item-title {
+    font-size: smaller;
     justify-content: space-between;
-}
-
-.selected {
-    background: var(--vscode-input-foreground);
-    color: var(--vscode-input-background);
-    width: 100%;
 }
 
 .command-title {
     font-weight: 500;
     font-size: inherit;
+
+    color: var(--vscode-sideBarTitle-foreground);
 }
 
 .command-description {
-    margin-left: 1rem;
+    margin-left: 0.25rem;
     font-size: smaller;
+
+    color: var(--vscode-sideBar-foreground);
+}
+
+.selected {
+    width: 100%;
+
+    opacity: 0.5;
 }
