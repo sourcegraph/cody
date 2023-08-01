@@ -1,6 +1,6 @@
 import * as vscode from 'vscode'
 
-import { VsCodeFixupController } from '@sourcegraph/cody-shared/src/editor'
+import { VsCodeFixupController, VsCodeFixupTaskRecipeData } from '@sourcegraph/cody-shared/src/editor'
 
 import { computeDiff, Diff } from './diff'
 import { FixupCodeLenses } from './FixupCodeLenses'
@@ -95,14 +95,9 @@ export class FixupController
         return this.scheduler.scheduleIdle(callback)
     }
 
-    // FixupTaskFactory
-
-    // Adds a new task to the list of tasks
-    // Then mark it as pending before sending it to the tree view for tree item creation
-
-    // TODO: Start it immediately, new MessageProvider
     public createTask(documentUri: vscode.Uri, instruction: string, selectionRange: vscode.Range): FixupTask {
         const fixupFile = this.files.forUri(documentUri)
+        console.log('fixupFile', fixupFile)
         const task = new FixupTask(fixupFile, instruction, selectionRange)
         this.tasks.set(task.id, task)
         this.setTaskState(task, CodyTaskState.asking)
@@ -268,16 +263,7 @@ export class FixupController
     }
 
     // Called by the non-stop recipe to gather current state for the task.
-    public async getTaskRecipeData(id: string): Promise<
-        | {
-              instruction: string
-              fileName: string
-              precedingText: string
-              selectedText: string
-              followingText: string
-          }
-        | undefined
-    > {
+    public async getTaskRecipeData(id: string): Promise<VsCodeFixupTaskRecipeData | undefined> {
         const task = this.tasks.get(id)
         if (!task) {
             return undefined
@@ -303,6 +289,7 @@ export class FixupController
             precedingText,
             selectedText,
             followingText,
+            selectionRange: task.selectionRange,
         }
     }
 
@@ -348,6 +335,7 @@ export class FixupController
 
     // Handles when the range associated with a fixup task changes.
     public rangeDidChange(task: FixupTask): void {
+        console.log('Updating codeleneses 2')
         this.codelenses.didUpdateTask(task)
         // We don't notify the decorator about this range change; vscode
         // updates any text decorations and we can recompute them, lazily,

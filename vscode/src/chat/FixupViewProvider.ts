@@ -47,7 +47,7 @@ export class FixupProvider extends MessageProvider {
     }
 
     public async startFix(): Promise<void> {
-        await this.executeRecipe('non-stop-new', this.task.id)
+        await this.executeRecipe('fixup', this.task.id)
     }
 
     public async abortFix(): Promise<void> {

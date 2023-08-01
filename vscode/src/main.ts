@@ -201,12 +201,12 @@ const register = async (
         sidebarChatProvider.handleError(error)
     }
 
-    const executeFixup = async (instruction: string, range: vscode.Range): Promise<void> => {
-        const editor = vscode.window.activeTextEditor
-        if (!editor) {
-            return
-        }
-        const task = fixup.createTask(editor.document.uri, instruction, range)
+    const executeFixup = async (
+        document: vscode.TextDocument,
+        instruction: string,
+        range: vscode.Range
+    ): Promise<void> => {
+        const task = fixup.createTask(document.uri, instruction, range)
         const provider = fixupManager.getProviderForTask(task)
         return provider.startFix()
     }
@@ -220,7 +220,9 @@ const register = async (
 
             if (isFixMode) {
                 telemetryService.log('CodyVSCodeExtension:fixup')
-                return executeFixup(comment.text, comment.thread.range)
+                void vscode.commands.executeCommand('workbench.action.collapseAllComments')
+                const activeDocument = await vscode.workspace.openTextDocument(comment.thread.uri)
+                return executeFixup(activeDocument, comment.text, comment.thread.range)
             }
 
             const inlineChatProvider = inlineChatManager.getProviderForThread(comment.thread)
@@ -249,9 +251,11 @@ const register = async (
         vscode.commands.registerCommand('cody.inline.new', () =>
             vscode.commands.executeCommand('workbench.action.addComment')
         ),
-        vscode.commands.registerCommand('cody.fixup.new', (instruction: string, range: vscode.Range) =>
-            executeFixup(instruction, range)
-        ),
+        vscode.commands.registerCommand('cody.fixup.new', (instruction: string, range: vscode.Range): void => {
+            if (vscode.window.activeTextEditor) {
+                void executeFixup(vscode.window.activeTextEditor.document, instruction, range)
+            }
+        }),
         // Tests
         // Access token - this is only used in configuration tests
         vscode.commands.registerCommand('cody.test.token', async token =>
