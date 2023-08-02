@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef } from 'react'
+import React, { ReactNode, RefObject, useEffect, useMemo, useRef } from 'react'
 
 import classNames from 'classnames'
 
@@ -8,7 +8,10 @@ import { CopyButtonProps } from '../Chat'
 
 import styles from './CodeBlocks.module.css'
 
-export type CodyRecipeWidgetWrapper = React.ComponentType<{ targetRef: any; children: any }> | null
+export type CodyRecipeWidgetWrapper = React.ComponentType<{
+    targetRef: RefObject<HTMLElement>
+    children: ReactNode | ReactNode[]
+}> | null
 
 interface CodeBlocksProps {
     displayText: string
