@@ -268,6 +268,10 @@ async function doGetInlineCompletions({
     }
 }
 
+function isWhitespace(s: string): boolean {
+    return /^\s*$/.test(s)
+}
+
 /**
  * See test cases for the expected behaviors.
  */
@@ -286,52 +290,31 @@ function reuseResultFromLastCandidate({
         return null
     }
 
-    const isWhitespace = (s: string): boolean => /^\s*$/.test(s)
+    // There are 2 reasons we can reuse a candidate: typing-as-suggested or change-of-indentation.
 
-    // Changes in whitespace can either be typing-as-suggested (if the completion starts with the
-    // added whitespace) or indentations of the completion (otherwise).
+    const isIndentation = isWhitespace(currentLinePrefix) && currentLinePrefix.startsWith(originalTriggerLinePrefix)
+    const isDeindentation =
+        isWhitespace(originalTriggerLinePrefix) && originalTriggerLinePrefix.startsWith(currentLinePrefix)
+    const isIndentationChange = currentLineSuffix === '' && (isIndentation || isDeindentation)
 
     const itemsToReuse = lastCandidate.result.items
         .map((item): InlineCompletionItem | undefined => {
-            // There are 2 reasons we can reuse a candidate: typing-as-suggested or change-of-indentation.
-
-            // Allow reuse if only the indentation (leading whitespace) has changed.
-            const isIndent =
-                isWhitespace(currentLinePrefix) &&
-                currentLineSuffix === '' &&
-                currentLinePrefix.startsWith(originalTriggerLinePrefix)
-            const isDeindent =
-                isWhitespace(originalTriggerLinePrefix) &&
-                currentLineSuffix === '' &&
-                originalTriggerLinePrefix.startsWith(currentLinePrefix)
-            const isChangeOfIndentation = isIndent || isDeindent
-
-            // Allow reuse if the user is (possibly) typing forward as suggested by the last candidate
-            // completion. We still need to filter the candidate items to see which ones the user's typing
-            // actually follows.
+            // Allow reuse if the user is (possibly) typing forward as suggested by the last
+            // candidate completion. We still need to filter the candidate items to see which ones
+            // the user's typing actually follows.
             const originalCompletion = originalTriggerLinePrefix + item.insertText
             const isTypingAsSuggested =
                 originalCompletion.startsWith(currentLinePrefix) && position.isAfterOrEqual(originalTriggerPosition)
-
-            console.log({
-                isChangeOfIndentation,
-                isTypingAsSuggested,
-                currentLinePrefix,
-                originalCompletion,
-                originalTriggerLinePrefix,
-            })
-
-            if (!isChangeOfIndentation && !isTypingAsSuggested) {
-                return undefined
-            }
-
-            let insertText: string
             if (isTypingAsSuggested) {
-                insertText = originalCompletion.slice(currentLinePrefix.length)
-            } else {
-                insertText = originalTriggerLinePrefix.slice(currentLinePrefix.length) + item.insertText
+                return { insertText: originalCompletion.slice(currentLinePrefix.length) }
             }
-            return { insertText }
+
+            // Allow reuse if only the indentation (leading whitespace) has changed.
+            if (isIndentationChange) {
+                return { insertText: originalTriggerLinePrefix.slice(currentLinePrefix.length) + item.insertText }
+            }
+
+            return undefined
         })
         .filter(isDefined)
     return itemsToReuse.length > 0
