@@ -178,33 +178,31 @@ async function doGetInlineCompletions({
         const isSameDocument = lastCandidate.uri.toString() === document.uri.toString()
         const isSameLine = lastCandidate.originalTriggerPosition.line === position.line
 
-        const clpTrimmed = docContext.currentLinePrefix.trimEnd()
-
         // TODO(sqs): not correct in general
         const isSamePrefix = (lastCandidate.originalTriggerLinePrefix + lastCandidate.item.insertText).startsWith(
-            clpTrimmed
+            docContext.currentLinePrefix
         )
-        const isSamePrefixIgnoringWhitespace = (
-            lastCandidate.originalTriggerLinePrefix + lastCandidate.item.insertText
-        ).startsWith(clpTrimmed)
-        console.log('isSamePrefix', isSamePrefix)
-        console.log('isSamePrefixIgnoringWhitespace', isSamePrefixIgnoringWhitespace)
 
         const isCursorWithinGhostText = isSamePrefix && position.isAfterOrEqual(lastCandidate.originalTriggerPosition)
-        console.log('isCursorWithinGhostText', isCursorWithinGhostText)
 
         const isLineOnlyLeadingWhitespace =
             /^\s*$/.test(docContext.currentLinePrefix) && docContext.currentLineSuffix === ''
-        console.log('isLineOnlyLeadingWhitespace', isLineOnlyLeadingWhitespace)
 
         if (
             isSameDocument &&
             isSameLine &&
             (isLineOnlyLeadingWhitespace || (isSamePrefix && isCursorWithinGhostText))
         ) {
-            const insertText = (lastCandidate.originalTriggerLinePrefix + lastCandidate.item.insertText).slice(
-                clpTrimmed.length
-            )
+            let insertText: string
+            if (isLineOnlyLeadingWhitespace) {
+                insertText =
+                    lastCandidate.originalTriggerLinePrefix.slice(docContext.currentLinePrefix.length) +
+                    lastCandidate.item.insertText
+            } else {
+                insertText = (lastCandidate.originalTriggerLinePrefix + lastCandidate.item.insertText).slice(
+                    docContext.currentLinePrefix.length
+                )
+            }
             return {
                 // Reuse the logId to so that typing text of a displayed completion will not log a
                 // new completion on every keystroke.
