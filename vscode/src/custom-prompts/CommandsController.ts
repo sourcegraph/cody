@@ -73,6 +73,8 @@ export class CommandsController implements VsCodeCommandsController {
             case 'command':
                 // return the terminal output from the command for the prompt if any
                 return this.execCommand()
+            case 'current':
+                return this.myPromptInProgress?.name || null
             default:
                 return this.myPromptInProgress?.prompt || null
         }

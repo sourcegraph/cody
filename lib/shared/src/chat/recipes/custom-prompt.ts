@@ -61,6 +61,8 @@ export class CustomPrompt implements Recipe {
             await vscode.window.showErrorMessage('Please enter a valid prompt for the custom command.')
             return null
         }
+        const promptName = await context.editor.controllers?.command?.get('current')
+        const displayPromptText = promptName ? `Command: ${promptName}` : promptText
 
         // Get output from the command if any
         const commandOutput = await context.editor.controllers?.command?.get('output')
@@ -77,7 +79,9 @@ export class CustomPrompt implements Recipe {
         const codyPromptText = selectionPromptText + prompts.instruction.replace('{humanInput}', promptText)
 
         // Add selection file name as display when available
-        const displayText = selection?.fileName ? this.getHumanDisplayText(promptText, selection?.fileName) : promptText
+        const displayText = selection?.fileName
+            ? this.getHumanDisplayText(displayPromptText, selection?.fileName)
+            : displayPromptText
 
         const truncatedText = truncateText(codyPromptText, MAX_HUMAN_INPUT_TOKENS)
 

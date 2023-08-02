@@ -1,11 +1,5 @@
 import * as vscode from 'vscode'
 
-import {
-    checkHasSameNumberOfSpacesAsStartLine,
-    checkIsStartOfFunctionOrClass,
-    startsWithWord,
-} from './text-doc-helpers'
-
 interface EditorCodeLens {
     name: string
     selection: vscode.Selection
@@ -31,6 +25,7 @@ export class EditorCodeLenses implements vscode.CodeLensProvider {
             }
         })
     }
+
     /**
      * init
      */
@@ -52,6 +47,7 @@ export class EditorCodeLenses implements vscode.CodeLensProvider {
             vscode.window.onDidChangeTextEditorVisibleRanges(() => this.fire())
         )
     }
+
     /**
      * Update the configurations
      */
@@ -65,6 +61,7 @@ export class EditorCodeLenses implements vscode.CodeLensProvider {
         }
         this.fire()
     }
+
     /**
      * Handle the code lens click event
      */
@@ -79,10 +76,10 @@ export class EditorCodeLenses implements vscode.CodeLensProvider {
     /**
      * Gets the code lenses for the specified document.
      */
-    public provideCodeLenses(
+    public async provideCodeLenses(
         document: vscode.TextDocument,
         token: vscode.CancellationToken
-    ): vscode.CodeLens[] | Thenable<vscode.CodeLens[]> {
+    ): Promise<vscode.CodeLens[]> {
         if (!this.isEnabled) {
             return []
         }
@@ -94,90 +91,47 @@ export class EditorCodeLenses implements vscode.CodeLensProvider {
         // Generate code lenses for the document.
         const codeLenses = []
         const codeLensesMap = new Map<string, vscode.Range>()
-        // Create codelens for visible functions only
-        // Add n lines before and after the visible range as buffer to avoid flickering / line jumping
-        const nBufferLines = 50
-        const visibleRanges = editor.visibleRanges
-        const lineCount = Math.min(visibleRanges[0].end.line + nBufferLines, document.lineCount)
-        const startLine = Math.max(visibleRanges[0].start.line - nBufferLines, 0)
-        // Iterate over each function in the document
-        for (let i = startLine; i < lineCount; i++) {
-            const line = document.lineAt(i)
-            const isStartOfFunction = checkIsStartOfFunctionOrClass(line.text)
-            if (isStartOfFunction) {
-                // Create a CodeLens object for the function
-                const firstLineOfFunction = new vscode.Range(i, 0, i, line.range.end.character)
-                const functionRange = this.getFunctionCodeRange(editor, firstLineOfFunction.start.line)
-                const selection = new vscode.Selection(functionRange.start, functionRange.end)
 
+        // Get a list of symbols from the document, filter out symbols that are not functions / classes / methods
+        const allSymbols = await vscode.commands.executeCommand<vscode.SymbolInformation[]>(
+            'vscode.executeDocumentSymbolProvider',
+            document.uri
+        )
+        const symbols = allSymbols?.filter(
+            symbol =>
+                symbol.kind === vscode.SymbolKind.Function ||
+                symbol.kind === vscode.SymbolKind.Class ||
+                symbol.kind === vscode.SymbolKind.Method ||
+                symbol.kind === vscode.SymbolKind.Constructor ||
+                symbol.kind === vscode.SymbolKind.Variable
+        )
+
+        // Add code lenses for each symbol
+        if (symbols) {
+            for (let i = 0; i < symbols.length; i++) {
+                const range = symbols[i].location.range
+                const selection = new vscode.Selection(range.start, range.end)
                 codeLenses.push(
-                    new vscode.CodeLens(firstLineOfFunction, {
+                    new vscode.CodeLens(range, {
                         ...editorCodeLenses.cody,
                         arguments: [{ name: 'cody.action.commands.menu', selection }],
                     })
                 )
-
                 if (this.isInlineChatEnabled) {
                     codeLenses.push(
-                        new vscode.CodeLens(firstLineOfFunction, {
+                        new vscode.CodeLens(range, {
                             ...editorCodeLenses.inline,
                             arguments: [{ name: 'cody.inline.new', selection }],
                         })
                     )
                 }
-
-                codeLensesMap.set(i.toString(), firstLineOfFunction)
+                codeLensesMap.set(i.toString(), range)
             }
         }
+
         return codeLenses
     }
-    /**
-     * Get the range for the function from the code lens range
-     * the function range is from the line of the function
-     * to the line where the next function starts or the end of the document
-     */
-    private getFunctionCodeRange(editor: vscode.TextEditor, startLine: number): vscode.Range {
-        if (!editor) {
-            return new vscode.Range(0, 0, 0, 0)
-        }
-        const document = editor.document
-        const lineCount = document.lineCount
-        const endLine = this._getFunctionEndLine(startLine, lineCount, document)
-        return new vscode.Range(startLine, 0, Math.min(endLine, lineCount - 1), 0)
-    }
-    /**
-     * Get the line where the function ends
-     */
-    private _getFunctionEndLine(startLine: number, lineCount: number, document: vscode.TextDocument): number {
-        if (!document) {
-            return 0
-        }
-        const startLineText = document.lineAt(startLine).text
-        const isStartLineStartedWithWord = startsWithWord(startLineText)
-        // Iterate forwards util we find the line that:
-        // - starts with a } or
-        // - is start of a new function
-        for (let i = startLine + 1; i < lineCount; i++) {
-            const text = document.lineAt(i).text
-            // If the start line text does not start with space or tab
-            // then the end line should start with word without space or tab
-            if (isStartLineStartedWithWord) {
-                if (startsWithWord(text)) {
-                    return i - 1
-                }
-            } else {
-                // if line is the start of a new function
-                const isStartOfFunction = checkIsStartOfFunctionOrClass(text)
-                if (isStartOfFunction && text.length > 0) {
-                    return i - 1
-                }
-                if (checkHasSameNumberOfSpacesAsStartLine(startLineText, text)) {
-                    return i - 1
-                }
-            }
-        }
-        return lineCount
-    }
+
     /**
      * Fire an event to notify VS Code that the code lenses have changed.
      */
@@ -188,6 +142,7 @@ export class EditorCodeLenses implements vscode.CodeLensProvider {
         }
         this._onDidChangeCodeLenses.fire()
     }
+
     /**
      * Dispose the disposables
      */
