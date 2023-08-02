@@ -193,6 +193,7 @@ const TextArea: React.FunctionComponent<ChatUITextAreaProps> = ({
     required,
     onInput,
     onKeyDown,
+    rows,
 }) => {
     // Focus the textarea when the webview gains focus (unless there is text selected). This makes
     // it so that the user can immediately start typing to Cody after invoking `Cody: Focus on Chat
@@ -226,7 +227,7 @@ const TextArea: React.FunctionComponent<ChatUITextAreaProps> = ({
     return (
         <VSCodeTextArea
             className={classNames(styles.chatInput, className)}
-            rows={1}
+            rows={rows}
             ref={
                 // VSCodeTextArea has a very complex type.
                 //
