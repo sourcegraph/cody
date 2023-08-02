@@ -8,7 +8,8 @@
     font-family: var(--vscode-font-family);
     font-weight: var(--vscode-font-weight);
     border-color: var(--vscode-sideBarSectionHeader-border);
-    padding: 10px 15px 10px 20px;
+    padding: 15px 15px 15px 20px;
+    color: var(--vscode-foreground);
 }
 
 /* Apply a slight tint to the assistant transcript item. */
@@ -24,10 +25,6 @@ body[data-vscode-theme-kind='vscode-high-contrast'] .human-transcript-item {
 
 .human-transcript-item:before {
     background-color: var(--vscode-sideBar-foreground, currentColor);
-}
-
-.transcript-item + .transcript-item, .transcript-item:first-of-type {
-    border-top: 1px solid var(--vscode-sideBarSectionHeader-border);
 }
 
 .transcript-item pre,
