@@ -476,7 +476,6 @@ export const completionsDataset: Sample[] = [
         import { vsCodeMocks } from '../testutils/mocks'
 
         import { CodyCompletionItemProvider } from '.'
-        import { CompletionsCache } from './cache'
         import { History } from './history'
         import { createProviderConfig } from './providers/anthropic'
 
@@ -565,7 +564,6 @@ export const completionsDataset: Sample[] = [
                 completions: vscode.InlineCompletionItem[]
             }>
             beforeEach(() => {
-                const cache = new CompletionsCache()
                 complete = async (
                     code: string,
                     responses?: CompletionResponse[] | 'stall',
