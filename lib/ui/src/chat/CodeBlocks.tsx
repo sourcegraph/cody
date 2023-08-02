@@ -109,7 +109,6 @@ export const CodeBlocks: React.FunctionComponent<CodeBlocksProps> = React.memo(f
     transcriptRef,
 }) {
     const rootRef = useRef<HTMLDivElement>(null)
-    console.log('transcriptRef??', transcriptRef)
 
     useEffect(() => {
         const preElements = rootRef.current?.querySelectorAll('pre')
