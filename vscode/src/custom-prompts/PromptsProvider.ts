@@ -1,55 +1,56 @@
 import * as vscode from 'vscode'
 
-import { CodyPrompt } from '@sourcegraph/cody-shared/src/chat/recipes/cody-prompts'
+import { CodyPrompt, getDefaultCommandsMap } from '@sourcegraph/cody-shared/src/chat/prompts'
 
 import { debug } from '../log'
 
-import { CodyMenu_CodyCommands, menu_options, menu_seperators } from './menuOptions'
-import * as defaultCommands from './prompts.json'
+import { CodyMenu_CodyCommands, menu_options, menu_seperators } from './utils/menu'
 
 // Manage default commands created by the prompts in prompts.json
-export class DefaultPromptsStore {
-    private defaultPromptsMap = new Map<string, CodyPrompt>()
+export class PromptsProvider {
+    // The default prompts
+    private defaultPromptsMap = getDefaultCommandsMap()
+
+    // The commands grouped by default prompts and custom prompts
     private allCommands = new Map<string, CodyPrompt>()
 
     constructor() {
-        const prompts = defaultCommands.commands as Record<string, unknown>
-        for (const key in prompts) {
-            if (Object.prototype.hasOwnProperty.call(prompts, key)) {
-                const prompt = prompts[key] as CodyPrompt
-                prompt.name = key
-                prompt.type = 'default'
-                if (prompt.slashCommand) {
-                    const slashCommand = '/' + prompt.slashCommand
-                    prompt.slashCommand = slashCommand
-                }
-                this.defaultPromptsMap.set(key, prompt)
-            }
-        }
+        // add the default prompts to the all commands map
         this.groupCommands(this.defaultPromptsMap)
-        debug('MyPromptsProvider', 'initialized')
     }
 
+    /**
+     * Find a prompt by its id
+     */
     public get(id: string, isSlashCommand = false): CodyPrompt | undefined {
         if (id.startsWith('/') || isSlashCommand) {
             const commands = [...this.allCommands]
             const slashCommand = commands.find(command => command[1].slashCommand === id)
             return slashCommand ? slashCommand[1] : this.allCommands.get(id)
         }
+
         return this.allCommands.get(id)
     }
 
+    /**
+     * Retuen default and custom commands without the seperator which is added for quick pick menu
+     */
     public getGroupedCommands(): [string, CodyPrompt][] {
-        return [...this.allCommands]
+        return [...this.allCommands].filter(command => command[1].prompt !== 'seperator')
     }
 
+    /**
+     * Group the default prompts with the custom prompts and add a seperator
+     */
     public groupCommands(customCommands = new Map<string, CodyPrompt>()): void {
         const combinedMap = new Map([...this.defaultPromptsMap])
         combinedMap.set('seperator', { prompt: 'seperator' })
         this.allCommands = new Map([...combinedMap, ...customCommands])
     }
 
-    // Main Menu: Cody Commands
+    /**
+     * Main Menu: Cody Commands
+     */
     public async menu(showDesc = false): Promise<void> {
         try {
             const commandItems = [menu_seperators.chat, menu_options.chat, menu_seperators.commands]
@@ -72,12 +73,13 @@ export class DefaultPromptsStore {
             if (!selectedPrompt) {
                 return
             }
+
             const selectedCommandID = selectedPrompt.label
             switch (true) {
                 case !selectedCommandID:
                     break
                 case selectedCommandID === menu_options.config.label:
-                    return await vscode.commands.executeCommand('cody.action.commands.custom.config')
+                    return await vscode.commands.executeCommand('cody.settings.commands')
                 case selectedCommandID === menu_options.chat.label:
                     return await vscode.commands.executeCommand('cody.inline.new')
             }
@@ -87,6 +89,7 @@ export class DefaultPromptsStore {
             if (!prompt) {
                 return
             }
+
             await vscode.commands.executeCommand('cody.action.commands.exec', selectedCommandID)
         } catch (error) {
             debug('CommandsController:commandQuickPicker', 'error', { verbose: error })

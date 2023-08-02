@@ -1,5 +1,5 @@
 import { ChatContextStatus } from '@sourcegraph/cody-shared/src/chat/context'
-import { CodyPrompt, CodyPromptType } from '@sourcegraph/cody-shared/src/chat/recipes/cody-prompts'
+import { CodyPrompt, CodyPromptType } from '@sourcegraph/cody-shared/src/chat/prompts'
 import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 import { ChatMessage, UserLocalHistory } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { Configuration } from '@sourcegraph/cody-shared/src/configuration'
@@ -31,7 +31,6 @@ export type WebviewMessage =
           value?: string
       }
     | { command: 'abort' }
-    | { command: 'chat-button'; action: string }
     | { command: 'setEnabledPlugins'; plugins: string[] }
     | { command: 'custom-prompt'; title: string; value?: CodyPromptType }
     | { command: 'reload' }

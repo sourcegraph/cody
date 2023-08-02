@@ -105,7 +105,7 @@ const register = async (
     const editor = new VSCodeEditor({
         inline: commentController,
         fixups: fixup,
-        command: platform.createCommandsController?.(context, initialConfig.experimentalCustomCommands, localStorage),
+        command: platform.createCommandsController?.(context, localStorage),
     })
 
     // Could we use the `initialConfig` instead?
@@ -270,15 +270,12 @@ const register = async (
             'cody.action.commands.custom.menu',
             () => editor.controllers.command?.menu('custom')
         ),
-        vscode.commands.registerCommand(
-            'cody.action.commands.custom.config',
-            () => editor.controllers.command?.configMenu()
-        ),
+        vscode.commands.registerCommand('cody.settings.commands', () => editor.controllers.command?.configMenu()),
         vscode.commands.registerCommand('cody.action.commands.exec', async title => {
-            if (!sidebarChatProvider.isCustomPromptAction(title)) {
+            if (!sidebarChatProvider.isCustomCommandAction(title)) {
                 await sidebarChatProvider.setWebviewView('chat')
             }
-            await sidebarChatProvider.executeCustomPrompt(title)
+            await sidebarChatProvider.executeCustomCommand(title)
         }),
         vscode.commands.registerCommand('cody.command.explain-code', () =>
             executeRecipeInSidebar('custom-prompt', true, '/explain')
@@ -292,7 +289,7 @@ const register = async (
         vscode.commands.registerCommand('cody.command.generate-docstring', () =>
             executeRecipeInSidebar('custom-prompt', true, '/docstring')
         ),
-        vscode.commands.registerCommand('cody.command.fixup', () => executeRecipeInSidebar('fixup')),
+        vscode.commands.registerCommand('cody.command.fixup', () => executeRecipeInSidebar('fixup', false)),
         vscode.commands.registerCommand('cody.command.inline-touch', () =>
             executeRecipeInSidebar('inline-touch', false)
         ),

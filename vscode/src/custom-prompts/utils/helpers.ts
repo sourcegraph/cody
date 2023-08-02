@@ -1,5 +1,7 @@
 import * as vscode from 'vscode'
 
+import { CodyPromptType, ConfigFileName } from '@sourcegraph/cody-shared/src/chat/prompts'
+
 export function constructFileUri(fileName: string, rootDirPath?: string): vscode.Uri | undefined {
     if (!rootDirPath) {
         return undefined
@@ -47,8 +49,7 @@ export function createFileWatchers(fsPath?: string): vscode.FileSystemWatcher | 
     if (!fsPath) {
         return null
     }
-    const fileName = '.vscode/cody.json'
-    const watchPattern = new vscode.RelativePattern(fsPath, fileName)
+    const watchPattern = new vscode.RelativePattern(fsPath, ConfigFileName.vscode)
     const watcher = vscode.workspace.createFileSystemWatcher(watchPattern)
     return watcher
 }
@@ -68,12 +69,6 @@ export async function getFileToRemove(keys: string[]): Promise<string | undefine
     return vscode.window.showQuickPick(Array.from(keys))
 }
 
-export const outputWrapper = `
-Output of \`{command}\` command:
-\`\`\`sh
-{output}
-\`\`\``
-
 export const createQuickPickSeperator = (label = '', detail = ''): vscode.QuickPickItem => ({ kind: -1, label, detail })
 export const createQuickPickItem = (label = '', description = ''): vscode.QuickPickItem => ({ label, description })
 
@@ -85,4 +80,30 @@ export async function getFileContentText(uri: vscode.Uri): Promise<string> {
     } catch {
         return ''
     }
+}
+
+export const isUserType = (type: CodyPromptType): boolean => type === 'user'
+export const isWorkspaceType = (type: CodyPromptType): boolean => type === 'workspace'
+export const isCustomType = (type: CodyPromptType): boolean => type === 'user' || type === 'workspace'
+export const isNonCustomType = (type: CodyPromptType): boolean => type === 'recently used' || type === 'default'
+
+export const outputWrapper = `
+Here is the output of the \`{command}\` command:
+\`\`\`sh
+{output}
+\`\`\``
+
+export const notificationOnDisabled = async (isEnabled: boolean): Promise<boolean> => {
+    if (isEnabled) {
+        return isEnabled
+    }
+    const enableResponse = await vscode.window.showInformationMessage(
+        'Please first enable `Custom Commands` before trying again.',
+        'Enable Custom Commands',
+        'Cancel'
+    )
+    if (enableResponse === 'Enable Custom Commands') {
+        await vscode.commands.executeCommand('cody.status-bar.interacted')
+    }
+    return isEnabled
 }

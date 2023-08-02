@@ -57,8 +57,7 @@ export class EditorCodeLenses implements vscode.CodeLensProvider {
      */
     private updateConfig(): void {
         const config = vscode.workspace.getConfiguration('cody')
-        const isDisabled = config.get('experimental.customCommands.codeLenses.disabled') as boolean
-        this.isEnabled = !isDisabled
+        this.isEnabled = config.get('experimental.commandLenses') as boolean
         this.isInlineChatEnabled =
             (config.get('inlineChat.enabled') as boolean) && (config.get('inlineChat.codeLenses') as boolean)
         if (this.isEnabled && !this._disposables.length) {
@@ -198,13 +197,13 @@ export class EditorCodeLenses implements vscode.CodeLensProvider {
      * Dispose the disposables
      */
     public dispose(): void {
-        if (!this._disposables.length) {
-            return
+        if (this._disposables.length) {
+            for (const disposable of this._disposables) {
+                disposable.dispose()
+            }
+            this._disposables = []
         }
-        for (const disposable of this._disposables) {
-            disposable.dispose()
-        }
-        this._disposables = []
+        this._onDidChangeCodeLenses.fire()
     }
 }
 

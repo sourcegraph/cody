@@ -1,6 +1,6 @@
 import * as vscode from 'vscode'
 
-import { CodyPrompt, CodyPromptType } from '@sourcegraph/cody-shared/src/chat/recipes/cody-prompts'
+import { CodyPrompt, CodyPromptType } from '@sourcegraph/cody-shared/src/chat/prompts'
 import { ChatMessage, UserLocalHistory } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 
 import { View } from '../../webviews/NavBar'
@@ -90,38 +90,9 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
             case 'reload':
                 await this.authProvider.reloadAuthStatus()
                 break
-            case 'openFile': {
-                const rootUri = this.editor.getWorkspaceRootUri()
-                if (!rootUri) {
-                    this.handleError('Failed to open file: missing rootUri')
-                    return
-                }
-                try {
-                    // This opens the file in the active column.
-                    const doc = await vscode.workspace.openTextDocument(vscode.Uri.joinPath(rootUri, message.filePath))
-                    await vscode.window.showTextDocument(doc)
-                } catch {
-                    // Try to open the file in the sourcegraph view
-                    const sourcegraphSearchURL = new URL(
-                        `/search?q=context:global+file:${message.filePath}`,
-                        this.contextProvider.config.serverEndpoint
-                    ).href
-                    void this.openExternalLinks(sourcegraphSearchURL)
-                }
+            case 'openFile':
+                await this.openFilePath(message.filePath)
                 break
-            }
-            case 'chat-button': {
-                switch (message.action) {
-                    case 'explain-code-high-level':
-                    case 'find-code-smells':
-                    case 'generate-unit-test':
-                        void this.executeRecipe(message.action)
-                        break
-                    default:
-                        break
-                }
-                break
-            }
             case 'setEnabledPlugins':
                 await this.localStorage.setEnabledPlugins(message.plugins)
                 this.handleEnabledPlugins(message.plugins)
@@ -154,10 +125,10 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
     private async onCustomPromptClicked(title: string, commandType: CodyPromptType = 'user'): Promise<void> {
         this.telemetryService.log('CodyVSCodeExtension:custom-command:clicked')
         debug('ChatViewProvider:onCustomPromptClicked', title)
-        if (!this.isCustomPromptAction(title)) {
+        if (!this.isCustomCommandAction(title)) {
             await this.setWebviewView('chat')
         }
-        await this.executeCustomPrompt(title, commandType)
+        await this.executeCustomCommand(title, commandType)
     }
 
     /**
@@ -273,6 +244,29 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
 
         // Register webview
         this.disposables.push(webviewView.webview.onDidReceiveMessage(message => this.onDidReceiveMessage(message)))
+    }
+
+    /**
+     * Open file in editor or in sourcegraph
+     */
+    protected async openFilePath(filePath: string): Promise<void> {
+        const rootUri = this.editor.getWorkspaceRootUri()
+        if (!rootUri) {
+            this.handleError('Failed to open file: missing rootUri')
+            return
+        }
+        try {
+            // This opens the file in the active column.
+            const doc = await vscode.workspace.openTextDocument(vscode.Uri.joinPath(rootUri, filePath))
+            await vscode.window.showTextDocument(doc)
+        } catch {
+            // Try to open the file in the sourcegraph view
+            const sourcegraphSearchURL = new URL(
+                `/search?q=context:global+file:${filePath}`,
+                this.contextProvider.config.serverEndpoint
+            ).href
+            void this.openExternalLinks(sourcegraphSearchURL)
+        }
     }
 
     /**

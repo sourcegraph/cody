@@ -422,7 +422,6 @@
         "category": "Cody",
         "title": "Custom Commands (Experimental)",
         "when": "cody.activated",
-        "enablement": "config.cody.experimental.customCommands",
         "icon": "$(bookmark)"
       },
       {
@@ -557,19 +556,13 @@
         },
         {
           "command": "cody.action.commands.custom.menu",
-          "when": "cody.activated && config.cody.experimental.customCommands"
+          "when": "cody.activated"
         }
       ],
       "editor/context": [
         {
           "submenu": "cody.submenu",
           "group": "0_cody"
-        },
-        {
-          "command": "cody.action.commands.custom.menu",
-          "group": "0_cody",
-          "label": "Cody Commands",
-          "when": "cody.activated && config.cody.experimental.customCommands"
         }
       ],
       "cody.submenu": [
@@ -587,6 +580,10 @@
         },
         {
           "command": "cody.command.fixup",
+          "when": "cody.activated"
+        },
+        {
+          "command": "cody.action.commands.custom.menu",
           "when": "cody.activated"
         },
         {
@@ -646,12 +643,6 @@
         }
       ],
       "editor/title": [
-        {
-          "command": "cody.non-stop.fixup",
-          "when": "cody.nonstop.fixups.enabled && cody.activated",
-          "group": "navigation",
-          "visibility": "visible"
-        },
         {
           "command": "cody.action.commands.menu",
           "when": "cody.activated",
@@ -778,16 +769,16 @@
           "default": false,
           "markdownDescription": "Adds suggestions of possible relevant messages in the chat window."
         },
-        "cody.experimental.guardrails": {
+        "cody.experimental.commandLenses": {
           "order": 8,
           "type": "boolean",
-          "markdownDescription": "Experimental feature for internal use.",
-          "default": false
+          "markdownDescription": "[Experimental] Adds code lenses to current file for quick access to Cody commands.",
+          "default": true
         },
-        "cody.experimental.customCommands": {
+        "cody.experimental.guardrails": {
           "order": 9,
           "type": "boolean",
-          "markdownDescription": "[Experimental] Create reusable and customizable prompts and context tailored to your workflow.",
+          "markdownDescription": "Experimental feature for internal use.",
           "default": false
         },
         "cody.debug.enable": {

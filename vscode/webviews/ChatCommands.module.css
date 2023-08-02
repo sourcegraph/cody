@@ -35,7 +35,8 @@
 
 .commands-container {
     display: flex;
-    flex-direction: column-reverse;
+    flex-direction: column;
+
     overflow-x: scroll;
 }
 
@@ -49,9 +50,12 @@
     color: currentColor;
     background: transparent;
     padding: 0.25rem 0.5rem;
+
+    white-space: nowrap;
 }
 
-.command-title, .command-description {
+.command-title,
+.command-description {
     margin: 0;
 }
 
@@ -59,6 +63,10 @@
     margin-left: 0.25rem;
     font-size: smaller;
     opacity: 0.7;
+
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
 }
 
 .command-item:hover {
@@ -66,7 +74,8 @@
     background-color: var(--vscode-list-hoverBackground);
 }
 
-.selected, .selected.command-item:hover {
+.selected,
+.selected.command-item:hover {
     color: var(--vscode-list-activeSelectionForeground);
     background: var(--vscode-list-activeSelectionBackground);
 }

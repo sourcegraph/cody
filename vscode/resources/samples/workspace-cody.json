@@ -1,15 +1,16 @@
 {
-  "title": "Cody by Sourcegraph : Custom Commands Config File - Workspace",
-  "description": "This is an example file to showcase how to build custom commandss for Cody by Sourcegraph.",
+  "title": "[Example] Custom Workspace Commands",
+  "description": "This file showcases how to build custom commandss for Cody by Sourcegraph in VS Code.",
+  "doc": "For more information, see https://sourcegraph.com/notebooks/Tm90ZWJvb2s6MzA1NQ==",
   "commands": {
-    "[Example] Generate README.md for Current Directory": {
+    "(example) Generate README.md for Current Directory": {
       "prompt": "Write a detailed README.md introduction for this project. If possible, briefly explain what the directory is and its key features. Use Markdown formatting. Focus on clarity and being beginner-friendly. Surround the answer with a code block to indicate that it is code.",
       "context": {
         "currentDir": true,
         "selection": false
       }
     },
-    "[Example] Commit Message for Current Changes": {
+    "(example) Commit Message for Current Changes": {
       "prompt": "Suggest a commit message based on current diff changes.",
       "context": {
         "selection": false,

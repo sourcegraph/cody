@@ -257,7 +257,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
             if (displayCommands && formInput.startsWith('/')) {
                 if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
                     const commandsLength = displayCommands?.length - 1
-                    const newIndex = event.key === 'ArrowUp' ? selectedChatCommand + 1 : selectedChatCommand - 1
+                    const newIndex = event.key === 'ArrowUp' ? selectedChatCommand - 1 : selectedChatCommand + 1
                     const newCommandIndex = newIndex < 0 ? commandsLength : newIndex > commandsLength ? 0 : newIndex
                     setSelectedChatCommand(newCommandIndex)
                     const newInput = displayCommands?.[newCommandIndex]?.[1]?.slashCommand
@@ -267,6 +267,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                 if (event.key === 'Escape') {
                     setDisplayCommands(null)
                     setSelectedChatCommand(-1)
+                    setFormInput('')
                 }
             }
 

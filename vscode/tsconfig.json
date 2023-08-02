@@ -17,7 +17,6 @@
     "webpack.config.js",
     "package.json",
     ".storybook/*.ts",
-    "src/custom-prompts/prompts.json",
     "../lib/shared/src/telemetry/EventLogger.ts",
     "test/completions/completions-dataset.ts",
   ],

@@ -80,17 +80,23 @@ export function createStatusBar(): CodyStatusBar {
                     true
                 ),
                 createFeatureToggle(
-                    'Custom Commands',
+                    'Code Lenses',
                     'Experimental',
-                    'Enable creating custom commands with reusable prompts and context',
-                    'cody.experimental.customCommands',
-                    c => c.experimentalCustomCommands
+                    'Enable Code Lenses in documents for quick access to Cody commands',
+                    'cody.experimental.commandLenses',
+                    c => c.experimentalCommandLenses
                 ),
-                { label: 'extension settings', kind: vscode.QuickPickItemKind.Separator },
+                { label: 'settings', kind: vscode.QuickPickItemKind.Separator },
                 {
                     label: '$(gear) Cody Extension Settings',
                     async onSelect(): Promise<void> {
                         await vscode.commands.executeCommand('cody.settings.extension')
+                    },
+                },
+                {
+                    label: '$(terminal) Custom Commands Settings',
+                    async onSelect(): Promise<void> {
+                        await vscode.commands.executeCommand('cody.settings.commands')
                     },
                 },
                 { label: 'feedback & support', kind: vscode.QuickPickItemKind.Separator },

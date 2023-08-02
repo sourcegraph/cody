@@ -16,11 +16,11 @@ import {
     populateTerminalOutputContextTemplate,
 } from '../../prompt/templates'
 import { truncateText } from '../../prompt/truncation'
+import { CodyPromptContext, defaultCodyPromptContext } from '../prompts'
 import { Interaction } from '../transcript/interaction'
 
 import { ChatQuestion } from './chat-question'
-import { CodyPromptContext, defaultCodyPromptContext } from './cody-prompts'
-import { getFileExtension, numResults } from './helpers'
+import { getFileExtension, getNormalizedLanguageName, numResults } from './helpers'
 import { InlineTouch } from './inline-touch'
 import { Recipe, RecipeContext, RecipeID } from './recipe'
 
@@ -37,7 +37,7 @@ export class CustomPrompt implements Recipe {
             ? (JSON.parse(contextConfig) as CodyPromptContext)
             : defaultCodyPromptContext
         // Check if selection is required
-        const selection = context.editor.getActiveTextEditorSelection()
+        const selection = context.editor.getActiveTextEditorSelection() || context.editor.controllers?.inline?.selection
         if (isContextRequired?.selection && !selection?.selectedText) {
             await vscode.window.showErrorMessage('This command requires text to be selected in the editor.')
             return null
@@ -54,12 +54,19 @@ export class CustomPrompt implements Recipe {
         const commandOutput = await context.editor.controllers?.command?.get('output')
         const note = 'Refer to the terminal output, my selected code, and shared code snippets to answer my quesiton.'
         const fileInfo = selection?.fileName ? `Selected code is from file ${selection?.fileName}` : ''
+
         const truncatedText = truncateText(
             `${promptText} ${isContextRequired.none ? '' : note} ${fileInfo}`,
             MAX_HUMAN_INPUT_TOKENS
         )
+
         // Add selection file name as display when available
-        const displayText = selection?.fileName ? this.getHumanDisplayText(humanInput, selection?.fileName) : humanInput
+        let displayText = selection?.fileName ? this.getHumanDisplayText(humanInput, selection?.fileName) : humanInput
+
+        if (selection?.fileName) {
+            const languageName = getNormalizedLanguageName(selection?.fileName)
+            displayText = displayText.replace('{languageName}', languageName)
+        }
 
         return Promise.resolve(
             new Interaction(

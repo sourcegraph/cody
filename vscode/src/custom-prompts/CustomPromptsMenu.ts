@@ -1,27 +1,24 @@
 import * as vscode from 'vscode'
 
-import {
-    CodyPrompt,
-    CodyPromptType,
-    defaultCodyPromptContext,
-} from '@sourcegraph/cody-shared/src/chat/recipes/cody-prompts'
+import { CodyPrompt, CodyPromptType, defaultCodyPromptContext } from '@sourcegraph/cody-shared/src/chat/prompts'
 
-import { CodyMenu_CodyCustomCommandsConfig, CodyMenu_NewCustomCommands, menu_commandTypes } from './menuOptions'
+import { CustomCommandMenuAction, CustomCommandMenuAnswer } from './utils'
 import {
+    CodyMenu_CodyCustomCommandsConfig,
+    CodyMenu_NewCustomCommands,
+    CustomCommandTypes,
     CustomPromptsContextOptions,
     CustomPromptsMainMenuOptions,
-    CustomPromptsMenuAnswer,
-    CustomPromptsMenuAnswerType,
-} from './types'
+} from './utils/menu'
 
 // Main menu for the Custom Commands in Quick Pick
-export async function showCustomPromptMenu(): Promise<CustomPromptsMenuAnswer | void> {
+export async function showCustomPromptMenu(): Promise<CustomCommandMenuAnswer | void> {
     const inputOptions = CodyMenu_CodyCustomCommandsConfig
     const selectedOption = await vscode.window.showQuickPick(CustomPromptsMainMenuOptions, inputOptions)
     if (!selectedOption?.id) {
         return
     }
-    const actionID = selectedOption.id as CustomPromptsMenuAnswerType
+    const actionID = selectedOption.id as CustomCommandMenuAction
     const commandType = selectedOption.type as CodyPromptType
     return { actionID, commandType }
 }
@@ -137,8 +134,8 @@ export async function showcommandTypeQuickPick(
     }
 ): Promise<CodyPromptType | null> {
     const options: vscode.QuickPickItem[] = []
-    const userItem = menu_commandTypes.user
-    const workspaceItem = menu_commandTypes.workspace
+    const userItem = CustomCommandTypes.user
+    const workspaceItem = CustomCommandTypes.workspace
     if (action === 'file') {
         if (prompts.user === 0) {
             options.push(userItem)

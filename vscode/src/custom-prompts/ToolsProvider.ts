@@ -6,12 +6,12 @@ import * as vscode from 'vscode'
 
 import { debug } from '../log'
 
-import { UserWorkspaceInfo } from './types'
+import { UserWorkspaceInfo } from './utils'
 import { outputWrapper } from './utils/helpers'
 
 const rootPath = vscode.workspace.workspaceFolders?.[0].uri.fsPath
 const currentFilePath = vscode.window.activeTextEditor?.document.uri.fsPath
-const homePath = os.homedir()
+const homePath = os.homedir() || process.env.HOME || process.env.USERPROFILE || ''
 const _exec = promisify(exec)
 /**
  * Provides utility methods and tools for working with the file system, running commands,
@@ -24,6 +24,9 @@ export class ToolsProvider {
         this.user = this.getUserInfo()
     }
 
+    /**
+     * Get the user's workspace info
+     */
     public getUserInfo(): UserWorkspaceInfo {
         if (this.user?.workspaceRoot) {
             return this.user
@@ -35,17 +38,23 @@ export class ToolsProvider {
         }
     }
 
-    // Open a file in the editor
+    /**
+     * Open a file in the editor
+     */
     public async openFile(uri?: vscode.Uri): Promise<void> {
         return vscode.commands.executeCommand('vscode.open', uri)
     }
 
-    // Open a folder in the file explorer
+    /**
+     * Open a folder in the file explorer
+     */
     public async openFolder(): Promise<void> {
         await vscode.commands.executeCommand('vscode.openFolder', rootPath)
     }
 
-    // Execute a command in the terminal
+    /**
+     * Execute a command in the terminal
+     */
     public async exeCommand(command: string, runFromWSRoot = true): Promise<string | undefined> {
         // Expand the ~/ in command with the home directory if any of the substring starts with ~/ with a space before it
         const homeDir = this.user.homeDir + '/' || ''
@@ -72,6 +81,9 @@ export class ToolsProvider {
         return
     }
 
+    /**
+     * Check if a file exists
+     */
     public async doesUriExist(uri?: vscode.Uri): Promise<boolean> {
         if (!uri) {
             return false

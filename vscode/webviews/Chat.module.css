@@ -70,7 +70,7 @@ body[data-vscode-theme-kind='vscode-high-contrast'] .human-transcript-item {
 
 .input-row {
     border-top: solid 1px var(--vscode-sideBarSectionHeader-border);
-    gap: .3rem;
+    gap: 0.3rem;
     padding: 0.75rem 0.75rem 1rem 0.75rem;
 }
 
@@ -86,8 +86,10 @@ body[data-vscode-theme-kind='vscode-high-contrast'] .human-transcript-item {
     height: 35px; /* Gross hack to remove the space below the input */
 }
 
-.chat-input:focus, .chat-input:focus-visible, .chat-input:focus-within {
-    outline: 1px solid var(--vscode-focusBorder, transparent);
+.chat-input:focus,
+.chat-input:focus-visible,
+.chat-input:focus-within {
+    outline: 1px solid var(--vscode-inputOption-activeBorder);
     outline-offset: -1px;
 }
 
@@ -132,7 +134,8 @@ body[data-vscode-theme-kind='vscode-high-contrast'] .human-transcript-item {
     color: var(--foreground);
 }
 
-.submit-button-disabled, .submit-button-disabled:hover {
+.submit-button-disabled,
+.submit-button-disabled:hover {
     cursor: default;
     --button-icon-hover-background: none;
     color: var(--vscode-icon-foreground);

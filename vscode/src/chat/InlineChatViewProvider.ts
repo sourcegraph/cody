@@ -47,9 +47,6 @@ export class InlineChatViewProvider extends MessageProvider {
     }
 
     public async addChat(reply: string, isFixMode: boolean): Promise<void> {
-        if (reply.trimStart().startsWith('/') && !reply.trimStart().startsWith('/fix')) {
-            return this.executeRecipe('chat-question', reply.trimStart())
-        }
         // TODO(umpox): We use `inline.reply.pending` to gate against multiple inline chats being sent at once.
         // We need to update the comment controller to support more than one active thread at a time.
         void vscode.commands.executeCommand('setContext', 'cody.inline.reply.pending', true)
