@@ -231,17 +231,31 @@ describe('getInlineCompletions', () => {
             }))
 
         test('not used when the user deletes past the entire original completion', async () =>
-            // The user types `const x`, accepts a completion to `const x = 123`, then deletes back
+            // The user types `const x`, accepts a completion to `const x = 1`, then deletes back
             // to `const ` (i.e., *past* the start of the original completion). The original ghost
-            // text should be replaced with a new result from the network.
+            // text should not be reused.
             expect(
                 await getInlineCompletions(
-                    params('const █', [completion`y = 456`], {
-                        lastCandidate: lastCandidate('const x█', ' = 123'),
+                    params('const █', [completion`y = 2`], {
+                        lastCandidate: lastCandidate('const x█', ' = 1'),
                     })
                 )
             ).toEqual<V>({
-                items: [{ insertText: 'y = 456' }],
+                items: [{ insertText: 'y = 2' }],
+                source: InlineCompletionsResultSource.Network,
+            }))
+
+        test('not used when the user deletes the entire line', async () =>
+            // The user types `const x`, then deletes the entire line. The original ghost text
+            // should not be reused.
+            expect(
+                await getInlineCompletions(
+                    params('█', [completion`y = 2`], {
+                        lastCandidate: lastCandidate('const x█', ' = 1'),
+                    })
+                )
+            ).toEqual<V>({
+                items: [{ insertText: 'y = 2' }],
                 source: InlineCompletionsResultSource.Network,
             }))
 
