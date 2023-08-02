@@ -46,8 +46,8 @@ export class FixupProvider extends MessageProvider {
         this.task = task
     }
 
-    public async startFix(): Promise<void> {
-        await this.executeRecipe('fixup', this.task.id)
+    public async startFix({ fast }: { fast: boolean }): Promise<void> {
+        await this.executeRecipe('fixup', this.task.id, { fast })
     }
 
     public async abortFix(): Promise<void> {
@@ -57,6 +57,26 @@ export class FixupProvider extends MessageProvider {
 
     public removeFix(): void {
         // this.editor.controllers.inline?.delete(this.thread)
+    }
+
+    private formatResponse(response: string): string {
+        const cursorPosition = this.task.selectionRange.start.character
+        const firstCharacterOfResponsePosition = getFirstNonWhitespaceCharacterPosition(response)
+
+        // Cody returned where we expected
+        if (firstCharacterOfResponsePosition === null || cursorPosition === firstCharacterOfResponsePosition) {
+            return response
+        }
+
+        // We didn't return where we wanted, let's pad each line
+        const paddingDistance = cursorPosition - firstCharacterOfResponsePosition
+        const paddedResponse = response
+            .split('\n')
+            .map(line => line.padStart(line.length + paddingDistance))
+            .join('\n')
+
+        // Finally return the trimmed response ready for insertion at the cursor
+        return paddedResponse.trimStart()
     }
 
     /**
@@ -73,7 +93,7 @@ export class FixupProvider extends MessageProvider {
         if (lastMessage.displayText) {
             void this.editor.controllers.fixups?.didReceiveFixupText(
                 this.task.id,
-                lastMessage.displayText,
+                isMessageInProgress ? lastMessage.displayText : this.formatResponse(lastMessage.displayText),
                 isMessageInProgress ? 'streaming' : 'complete'
             )
         }
@@ -103,4 +123,20 @@ export class FixupProvider extends MessageProvider {
     protected handleMyPrompts(): void {
         // not implemented
     }
+}
+
+enum CharCode {
+    Tab = 9,
+    Space = 32,
+}
+
+export function getFirstNonWhitespaceCharacterPosition(text: string): number | null {
+    for (let i = 0; i < text.length; i++) {
+        const char = text.charCodeAt(i)
+        if (char !== CharCode.Space && char !== CharCode.Tab) {
+            return i
+        }
+    }
+
+    return null
 }

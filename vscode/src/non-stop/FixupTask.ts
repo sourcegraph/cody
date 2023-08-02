@@ -22,6 +22,8 @@ export class FixupTask {
     // The number of times we've submitted this to the LLM.
     public spinCount = 0
 
+    public name = ''
+
     constructor(
         public readonly fixupFile: FixupFile,
         public readonly instruction: string,

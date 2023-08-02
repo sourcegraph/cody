@@ -204,11 +204,12 @@ const register = async (
     const executeFixup = async (
         document: vscode.TextDocument,
         instruction: string,
-        range: vscode.Range
+        range: vscode.Range,
+        fast: boolean
     ): Promise<void> => {
-        const task = fixup.createTask(document.uri, instruction, range)
+        const task = fixup.createTask(document.uri, instruction, range, fast ? 'Fast Model' : 'Chat Model')
         const provider = fixupManager.getProviderForTask(task)
-        return provider.startFix()
+        return provider.startFix({ fast })
     }
 
     const statusBar = createStatusBar()
@@ -216,18 +217,20 @@ const register = async (
     disposables.push(
         // Inline Chat Provider
         vscode.commands.registerCommand('cody.comment.add', async (comment: vscode.CommentReply) => {
-            const isFixMode = /^\/f(ix)?\s/i.test(comment.text.trimStart())
+            // const isFixMode = /^\/f(ix)?\s/i.test(comment.text.trimStart())
 
-            if (isFixMode) {
-                telemetryService.log('CodyVSCodeExtension:fixup')
-                void vscode.commands.executeCommand('workbench.action.collapseAllComments')
-                const activeDocument = await vscode.workspace.openTextDocument(comment.thread.uri)
-                return executeFixup(activeDocument, comment.text, comment.thread.range)
-            }
+            // TODO: Make fix mode the default?
+            // if (isFixMode) {
+            telemetryService.log('CodyVSCodeExtension:fixup')
+            void vscode.commands.executeCommand('workbench.action.collapseAllComments')
+            const activeDocument = await vscode.workspace.openTextDocument(comment.thread.uri)
+            // TODO: If in fix mode do we need to trim the start?
+            return executeFixup(activeDocument, comment.text, comment.thread.range, false)
+            // }
 
-            const inlineChatProvider = inlineChatManager.getProviderForThread(comment.thread)
-            await inlineChatProvider.addChat(comment.text, isFixMode)
-            telemetryService.log(`CodyVSCodeExtension:inline-assist:${isFixMode ? 'fixup' : 'chat'}`)
+            // const inlineChatProvider = inlineChatManager.getProviderForThread(comment.thread)
+            // await inlineChatProvider.addChat(comment.text, isFixMode)
+            // telemetryService.log(`CodyVSCodeExtension:inline-assist:${isFixMode ? 'fixup' : 'chat'}`)
         }),
         vscode.commands.registerCommand('cody.comment.delete', (thread: vscode.CommentThread) => {
             inlineChatManager.removeProviderForThread(thread)
@@ -253,7 +256,7 @@ const register = async (
         ),
         vscode.commands.registerCommand('cody.fixup.new', (instruction: string, range: vscode.Range): void => {
             if (vscode.window.activeTextEditor) {
-                void executeFixup(vscode.window.activeTextEditor.document, instruction, range)
+                void executeFixup(vscode.window.activeTextEditor.document, instruction, range, false)
             }
         }),
         // Tests

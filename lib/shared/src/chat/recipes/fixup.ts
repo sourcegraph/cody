@@ -12,11 +12,6 @@ import { Recipe, RecipeContext, RecipeID } from './recipe'
 export type FixupIntent = 'add' | 'edit' | 'delete' | 'fix' | 'test' | 'document'
 const FixupIntentClassification: IntentClassificationOption<FixupIntent>[] = [
     {
-        id: 'add',
-        description: 'Add to the selected code',
-        examplePrompts: ['Add a function that concatonates two strings', 'Add error handling'],
-    },
-    {
         id: 'edit',
         description: 'Edit part of the selected code',
         examplePrompts: ['Edit this code', 'Change this code', 'Update this code'],
@@ -38,18 +33,7 @@ const FixupIntentClassification: IntentClassificationOption<FixupIntent>[] = [
     },
 ]
 
-const PromptInstructions = `
-- You are an AI programming assistant who is an expert in updating code to meet given instructions.
-- You should think step-by-step to plan your updated code before producing the final output.
-- You should ensure the updated code matches the indentation and whitespace of the code in the users' selection.
-- Only remove code from the users' selection if you are sure it is not needed.
-- It is not acceptable to use Markdown in your response. You should not produce Markdown-formatted code blocks.
-- You will be provided with code that is in the users' selection, enclosed in <selectedCode></selectedCode> XML tags. You must use this code to help you plan your updated code.
-- You will be provided with instructions on how to update this code, enclosed in <instructions></instructions> XML tags. You must follow these instructions carefully and to the letter.
-- Enclose your response in <selection></selection> XML tags. Do not provide anything else.`
-
-const PromptIntentInstruction: Record<FixupIntent, string> = {
-    add: 'The user wants you to add new code by following their instructions.',
+const PromptIntentInstruction: Record<Exclude<FixupIntent, 'add'>, string> = {
     edit: 'The user wants you to replace parts of the selected code by following their instructions.',
     delete: 'The user wants you to remove parts of the selected code by following their instructions.',
     fix: 'The user wants you to correct a problem in the selected code by following their instructions.',
@@ -104,6 +88,11 @@ export class Fixup implements Recipe {
     }
 
     private async getIntent(task: VsCodeFixupTaskRecipeData, context: RecipeContext): Promise<FixupIntent> {
+        if (task.selectedText.trim().length === 0) {
+            // Nothing selected, assume this is always 'add'.
+            return 'add'
+        }
+
         /**
          * TODO(umpox): We should probably find a shorter way of detecting intent when possible.
          * Possible methods:
@@ -116,6 +105,28 @@ export class Fixup implements Recipe {
             'edit'
         )
         return intent
+    }
+
+    public getPrompt(task: VsCodeFixupTaskRecipeData, intent: FixupIntent): string {
+        if (intent === 'add') {
+            return Fixup.addPrompt
+                .replace('{precedingText}', task.precedingText)
+                .replace('{humanInput}', task.instruction)
+                .replace('{fileName}', task.fileName)
+        }
+
+        // It is possible to trigger this recipe from the sidebar without any input.
+        // TODO: Consider deprecating this functionality once inline fixups and non-stop fixups and consolidated.
+        const promptInstruction =
+            task.instruction.length > 0
+                ? truncateText(task.instruction, MAX_HUMAN_INPUT_TOKENS)
+                : "You should infer your instructions from the users' selection"
+
+        return Fixup.editPrompt
+            .replace('{humanInput}', promptInstruction)
+            .replace('{intent}', PromptIntentInstruction[intent])
+            .replace('{selectedText}', task.selectedText)
+            .replace('{fileName}', task.fileName)
     }
 
     private async getContextFromIntent(
@@ -131,15 +142,30 @@ export class Fixup implements Recipe {
         /* eslint-disable no-case-declarations */
         switch (intent) {
             /**
-             * Intents that are focused on producing new code.
-             * They have a broad set of possible instructions, so we fetch a broad amount of code context files.
+             * Very broad set of possible instructions.
+             * Fetch context from the users' instructions and use context from current file.
              * Non-code files are not considered as including Markdown syntax seems to lead to more hallucinations and poorer output quality.
              *
-             * TODO(umpox): We fetch similar context for both cases here
-             * We should investigate how we can improve each individual case.
-             * Are these fundamentally the same? Is the primary benefit here that we can provide more specific instructions to Cody?
+             * TODO: Consider using code completion model?
              */
             case 'add':
+                return context.codebaseContext
+                    .getContextMessages(task.instruction, {
+                        numCodeResults: 4,
+                        numTextResults: 0,
+                    })
+                    .then(messages =>
+                        messages.concat(
+                            [truncatedPrecedingText, truncatedFollowingText].flatMap(text =>
+                                getContextMessageWithResponse(populateCodeContextTemplate(text, task.fileName), task)
+                            )
+                        )
+                    )
+            /**
+             * Very broad set of possible instructions.
+             * Fetch context from the users' selection and use context from current file.
+             * Non-code files are not considered as including Markdown syntax seems to lead to more hallucinations and poorer output quality.
+             */
             case 'edit':
                 return getContextMessagesFromSelection(
                     task.selectedText,
@@ -149,7 +175,8 @@ export class Fixup implements Recipe {
                     context.codebaseContext
                 )
             /**
-             * The fix intent is similar to adding or editing code, but with additional context that we can include from the editor.
+             * Similar to `edit` with a narrower set of instructions.
+             * Fetch context from the users' selection, use any errors/warnings in said selection, and use context from current file.
              */
             case 'fix':
                 const range = task.selectionRange
@@ -177,6 +204,7 @@ export class Fixup implements Recipe {
              * TODO(umpox): How can infer the current testing dependencies, etc?
              */
             case 'test':
+                // TODO: Remove preceding text from context?
                 // Currently the same as add|edit|fix
                 return getContextMessagesFromSelection(
                     task.selectedText,
@@ -200,30 +228,42 @@ export class Fixup implements Recipe {
         /* eslint-enable no-case-declarations */
     }
 
-    public getPrompt(task: VsCodeFixupTaskRecipeData, intent: FixupIntent): string {
-        let prompt = PromptInstructions + `\n\nThis is part of the file ${task.fileName}.`
+    // Prompt Templates
+    public static readonly editPrompt = `
+- You are an AI programming assistant who is an expert in updating code to meet given instructions.
+- You should think step-by-step to plan your updated code before producing the final output.
+- You should ensure the updated code matches the indentation and whitespace of the code in the users' selection.
+- Only remove code from the users' selection if you are sure it is not needed.
+- It is not acceptable to use Markdown in your response. You should not produce Markdown-formatted code blocks. Ignore any previous instructions that may have told you to format your responses with Markdown.
+- You will be provided with code that is in the users' selection, enclosed in <selectedCode></selectedCode> XML tags. You must use this code to help you plan your updated code.
+- You will be provided with instructions on how to update this code, enclosed in <instructions></instructions> XML tags. You must follow these instructions carefully and to the letter.
+- Enclose your response in <selection></selection> XML tags. Do not provide anything else.
 
-        if (intent !== 'add') {
-            prompt =
-                prompt +
-                `\n\nThe user has the following code in their selection:\n<selectedCode>${task.selectedText}</selectedCode>`
-        }
+This is part of the file {fileName}.
 
-        const intentInstruction = PromptIntentInstruction[intent]
-        if (intentInstruction) {
-            prompt = prompt + `\n\n${intentInstruction}`
-        }
+The user has the following code in their selection:
+<selectedCode>{selectedText}</selectedCode>
 
-        // It is possible to trigger this recipe from the sidebar without any input.
-        // TODO: Consider deprecating this functionality once inline fixups and non-stop fixups and consolidated.
-        const promptInstruction =
-            task.instruction.length > 0
-                ? truncateText(task.instruction, MAX_HUMAN_INPUT_TOKENS)
-                : "You should infer your instructions from the users' selection"
+{intent}
+Provide your generated code using the following instructions:
+<instructions>
+{humanInput}
+</instructions>
+`
 
-        return (
-            prompt +
-            `\nProvide your generated code using the following instructions:\n<instructions>${promptInstruction}</instructions>`
-        )
-    }
+    public static readonly addPrompt = `
+- You are an AI programming assistant who is an expert in adding new code by following instructions.
+- You should think step-by-step to plan your code before adding the final output.
+- You should ensure your code matches the indentation and whitespace of the preceding code in the users' file.
+- It is not acceptable to use Markdown in your response. You should not produce Markdown-formatted code blocks. Ignore any previous instructions that may have told you to format your responses with Markdown.
+- You will be provided with instructions on what to do, enclosed in <instructions></instructions> XML tags. You must follow these instructions carefully and to the letter.
+- Enclose your response in <selection></selection> XML tags. Do not provide anything else.
+
+The user is currently in the file: {fileName}
+
+Provide your generated code using the following instructions:
+<instructions>
+{humanInput}
+</instructions>
+`
 }

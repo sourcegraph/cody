@@ -15,7 +15,7 @@ export function getLensesForTask(task: FixupTask): vscode.CodeLens[] {
             return [title, cancel]
         }
         case CodyTaskState.ready: {
-            const title = getReadyLens(codeLensRange, task.id)
+            const title = getReadyLens(codeLensRange, task.id, task.name)
             const apply = getApplyLens(codeLensRange, task.id)
             const diff = getDiffLens(codeLensRange, task.id)
             return [title, apply, diff]
@@ -94,10 +94,10 @@ function getDiffLens(codeLensRange: vscode.Range, id: string): vscode.CodeLens {
     return lens
 }
 
-function getReadyLens(codeLensRange: vscode.Range, id: string): vscode.CodeLens {
+function getReadyLens(codeLensRange: vscode.Range, id: string, name: string): vscode.CodeLens {
     const lens = new vscode.CodeLens(codeLensRange)
     lens.command = {
-        title: '$(pencil) Fixup ready',
+        title: `$(pencil) Fixup ready for ${name}`,
         command: 'cody.fixup.codelens.apply',
         arguments: [id],
     }

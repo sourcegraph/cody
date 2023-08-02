@@ -22,7 +22,7 @@ import { debug } from '../log'
 import { CodyPromptType } from '../my-cody/types'
 import { FixupTask } from '../non-stop/FixupTask'
 import { IdleRecipeRunner } from '../non-stop/roles'
-import { AuthProvider, isNetworkError } from '../services/AuthProvider'
+import { AuthProvider } from '../services/AuthProvider'
 import { LocalStorage } from '../services/LocalStorageProvider'
 import { TestSupport } from '../test-support'
 
@@ -212,7 +212,8 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
     private sendPrompt(
         promptMessages: Message[],
         responsePrefix = '',
-        multiplexerTopic = BotResponseMultiplexer.DEFAULT_TOPIC
+        multiplexerTopic = BotResponseMultiplexer.DEFAULT_TOPIC,
+        fast = false
     ): void {
         this.cancelCompletion()
         void vscode.commands.executeCommand('setContext', 'cody.reply.pending', true)
@@ -241,46 +242,46 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
 
         let textConsumed = 0
 
-        this.cancelCompletionCallback = this.chat.chat(promptMessages, {
-            onChange: text => {
-                // TODO(dpc): The multiplexer can handle incremental text. Change chat to provide incremental text.
-                text = text.slice(textConsumed)
-                textConsumed += text.length
-                void this.multiplexer.publish(text)
-            },
-            onComplete: () => {
-                void this.multiplexer.notifyTurnComplete()
-            },
-            onError: (err, statusCode) => {
-                // TODO notify the multiplexer of the error
-                debug('ChatViewProvider:onError', err)
+        this.cancelCompletionCallback = this.chat.chat(
+            promptMessages,
+            {
+                onChange: text => {
+                    // TODO(dpc): The multiplexer can handle incremental text. Change chat to provide incremental text.
+                    text = text.slice(textConsumed)
+                    textConsumed += text.length
+                    void this.multiplexer.publish(text)
+                },
+                onComplete: () => {
+                    void this.multiplexer.notifyTurnComplete()
+                },
+                onError: (err, statusCode) => {
+                    // TODO notify the multiplexer of the error
+                    debug('ChatViewProvider:onError', err)
 
-                if (isAbortError(err)) {
-                    return
-                }
-                // Log users out on unauth error
-                if (statusCode && statusCode >= 400 && statusCode <= 410) {
-                    this.authProvider
-                        .auth(
-                            this.contextProvider.config.serverEndpoint,
-                            this.contextProvider.config.accessToken,
-                            this.contextProvider.config.customHeaders
-                        )
-                        .catch(error => console.error(error))
-                    debug('ChatViewProvider:onError:unauthUser', err, { verbose: { statusCode } })
-                }
+                    // Log users out on unauth error
+                    if (statusCode && statusCode >= 400 && statusCode <= 410) {
+                        this.authProvider
+                            .auth(
+                                this.contextProvider.config.serverEndpoint,
+                                this.contextProvider.config.accessToken,
+                                this.contextProvider.config.customHeaders
+                            )
+                            .catch(error => console.error(error))
+                        debug('ChatViewProvider:onError:unauthUser', err, { verbose: { statusCode } })
+                    }
 
-                if (isNetworkError(err)) {
-                    err = 'Cody could not respond due to network error.'
-                }
-                // Display error message as assistant response
-                this.transcript.addErrorAsAssistantResponse(err)
-                // We ignore embeddings errors in this instance because we're already showing an
-                // error message and don't want to overwhelm the user.
-                void this.onCompletionEnd(true)
-                console.error(`Completion request failed: ${err}`)
+                    // Display error message as assistant response
+                    this.transcript.addErrorAsAssistantResponse(err)
+                    // We ignore embeddings errors in this instance because we're already showing an
+                    // error message and don't want to overwhelm the user.
+                    void this.onCompletionEnd(true)
+                    console.error(`Completion request failed: ${err}`)
+                },
             },
-        })
+            {
+                fast,
+            }
+        )
     }
 
     protected cancelCompletion(): void {
@@ -363,7 +364,11 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         return this.platform.recipes.find(recipe => recipe.id === id)
     }
 
-    public async executeRecipe(recipeId: RecipeID, humanChatInput = ''): Promise<void> {
+    public async executeRecipe(
+        recipeId: RecipeID,
+        humanChatInput = '',
+        options: { fast?: boolean } = {}
+    ): Promise<void> {
         debug('ChatViewProvider:executeRecipe', recipeId, { verbose: humanChatInput })
         if (this.isMessageInProgress) {
             this.handleError('Cannot execute multiple recipes. Please wait for the current recipe to finish.')
@@ -416,7 +421,12 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
                     pluginsPrompt
                 )
                 this.transcript.setUsedContextFilesForLastInteraction(contextFiles, pluginExecutionInfos)
-                this.sendPrompt(prompt, interaction.getAssistantMessage().prefix ?? '', recipe.multiplexerTopic)
+                this.sendPrompt(
+                    prompt,
+                    interaction.getAssistantMessage().prefix ?? '',
+                    recipe.multiplexerTopic,
+                    options.fast
+                )
                 await this.saveTranscriptToChatHistory()
             }
         }
@@ -707,8 +717,4 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
 
         return DEFAULT_MAX_TOKENS - solutionLimit
     }
-}
-
-function isAbortError(error: string): boolean {
-    return error === 'aborted' || error === 'socket hang up'
 }

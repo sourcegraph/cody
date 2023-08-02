@@ -95,12 +95,21 @@ export class FixupController
         return this.scheduler.scheduleIdle(callback)
     }
 
-    public createTask(documentUri: vscode.Uri, instruction: string, selectionRange: vscode.Range): FixupTask {
+    public createTask(
+        documentUri: vscode.Uri,
+        instruction: string,
+        selectionRange: vscode.Range,
+        name?: string
+    ): FixupTask {
         const fixupFile = this.files.forUri(documentUri)
-        console.log('fixupFile', fixupFile)
         const task = new FixupTask(fixupFile, instruction, selectionRange)
         this.tasks.set(task.id, task)
         this.setTaskState(task, CodyTaskState.asking)
+
+        if (name) {
+            task.name = name
+        }
+
         return task
     }
 
