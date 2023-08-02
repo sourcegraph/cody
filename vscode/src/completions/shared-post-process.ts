@@ -1,5 +1,5 @@
 import { truncateMultilineCompletion } from './multiline'
-import { collapseDuplicativeWhitespace, trimUntilSuffix } from './text-processing'
+import { collapseDuplicativeWhitespace, removeTrailingWhitespace, trimUntilSuffix } from './text-processing'
 import { Completion } from './types'
 
 /**
@@ -23,6 +23,7 @@ export function sharedPostProcess({
 
     if (multiline) {
         content = truncateMultilineCompletion(content, prefix, suffix, languageId)
+        content = removeTrailingWhitespace(content)
     }
     content = trimUntilSuffix(content, prefix, suffix, languageId)
     content = collapseDuplicativeWhitespace(prefix, content)

@@ -293,6 +293,28 @@ describe('Cody completions', () => {
     })
 
     describe('multi-line completions', () => {
+        it('removes trailing spaces', async () => {
+            const { completions } = await complete(
+                dedent`
+                    function bubbleSort() {
+                        █
+                    }`,
+                [
+                    completion`
+                            ├console.log('foo')${' '}
+                            console.log('bar')${'    '}
+                            console.log('baz')${'  '}┤
+                        ┴┴┴┴`,
+                ]
+            )
+
+            expect(completions[0].insertText).toMatchInlineSnapshot(`
+              "console.log('foo')
+                  console.log('bar')
+                  console.log('baz')"
+            `)
+        })
+
         it('honors a leading new line in the completion', async () => {
             const { completions } = await complete(
                 dedent`
