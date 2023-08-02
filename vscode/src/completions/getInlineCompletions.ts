@@ -1,6 +1,7 @@
 import * as vscode from 'vscode'
 import { URI } from 'vscode-uri'
 
+import { isDefined } from '@sourcegraph/cody-shared'
 import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
 
 import { debug } from '../log'
@@ -291,26 +292,31 @@ function reuseResultFromLastCandidate({
         return null
     }
 
-    const itemsToReuse = lastCandidate.result.items.map((item): InlineCompletionItem => {
-        // TODO(sqs): not correct in general
+    const itemsToReuse = lastCandidate.result.items
+        .map((item): InlineCompletionItem | undefined => {
+            // TODO(sqs): not correct in general
 
-        const isSamePrefix = (originalTriggerLinePrefix + item.insertText).startsWith(docContext.currentLinePrefix)
+            const isSamePrefix = (originalTriggerLinePrefix + item.insertText).startsWith(docContext.currentLinePrefix)
 
-        const isCursorWithinGhostText = isSamePrefix && position.isAfterOrEqual(originalTriggerPosition)
+            const isCursorWithinGhostText = isSamePrefix && position.isAfterOrEqual(originalTriggerPosition)
 
-        const isLineOnlyLeadingWhitespace =
-            /^\s*$/.test(docContext.currentLinePrefix) && docContext.currentLineSuffix === ''
+            const isLineOnlyLeadingWhitespace =
+                /^\s*$/.test(docContext.currentLinePrefix) && docContext.currentLineSuffix === ''
 
-        if (isLineOnlyLeadingWhitespace || (isSamePrefix && isCursorWithinGhostText)) {
-            let insertText: string
-            if (isLineOnlyLeadingWhitespace) {
-                insertText = originalTriggerLinePrefix.slice(docContext.currentLinePrefix.length) + item.insertText
-            } else {
-                insertText = (originalTriggerLinePrefix + item.insertText).slice(docContext.currentLinePrefix.length)
+            if (isLineOnlyLeadingWhitespace || (isSamePrefix && isCursorWithinGhostText)) {
+                let insertText: string
+                if (isLineOnlyLeadingWhitespace) {
+                    insertText = originalTriggerLinePrefix.slice(docContext.currentLinePrefix.length) + item.insertText
+                } else {
+                    insertText = (originalTriggerLinePrefix + item.insertText).slice(
+                        docContext.currentLinePrefix.length
+                    )
+                }
+                return { insertText }
             }
-            return { insertText }
-        }
-    })
+            return undefined
+        })
+        .filter(isDefined)
     return itemsToReuse.length > 0
         ? {
               // Reuse the logId to so that typing text of a displayed completion will not log a new
