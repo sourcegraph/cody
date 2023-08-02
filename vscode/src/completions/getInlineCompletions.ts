@@ -286,16 +286,24 @@ function reuseResultFromLastCandidate({
         return null
     }
 
-    // Reuse the last candidate if the user just deletes indentation (leading whitespace).
-    const isInsignificantLeadingWhitespaceChange =
+    // Allow reuse if the user just deletes indentation (leading whitespace).
+    const isDeindent =
         /^\s*$/.test(originalTriggerLinePrefix) && originalTriggerLinePrefix.startsWith(currentLinePrefix)
     // const xxx = originalTriggerLinePrefix.slice(0, -currentLinePrefix.length)
 
-    const isTypingAsSuggested =
+    // Allow reuse if the user is (possibly) typing forward as suggested by the last candidate
+    // completion. We still need to filter the candidate items to see which ones the user's typing
+    // actually follows.
+    const isMaybeTypingAsSuggested =
         currentLinePrefix.startsWith(originalTriggerLinePrefix) && originalTriggerPosition.isBeforeOrEqual(position)
 
-    console.log({ isInsignificantLeadingWhitespaceChange, isTypingAsSuggested })
-    if (!isInsignificantLeadingWhitespaceChange && !isTypingAsSuggested) {
+    console.log({
+        isInsignificantLeadingWhitespaceChange: isDeindent,
+        currentLinePrefix,
+        originalTriggerLinePrefix,
+        isMaybeTypingAsSuggested,
+    })
+    if (!isDeindent && !isMaybeTypingAsSuggested) {
         return null
     }
 
