@@ -4,7 +4,8 @@
   "doc": "For more information, see https://sourcegraph.com/notebooks/Tm90ZWJvb2s6MzA1NQ==",
   "commands": {
     "(example) Compare Files in Opened Tabs": {
-      "prompt": "Compare the code from opened tabs and explain their relationships.",
+      "slashCommand": "compare",
+      "prompt": "Please examine the code in the opened tabs. Then explain the relationship between the code samples by answering these questions: 1. What are the main tasks or functions the code is performing? 2. Are there any similarities in functions or logic across the samples? 3. Does one code snippet call or import another? If so, how do they interact? 4. Are there any notable differences in how they approach similar problems? 5. Overall, how are the code snippets related - do they work together as part of a larger program, solve variants of the same problem, or serve entirely different purposes?",
       "context": {
         "openTabs": true,
         "selection": false

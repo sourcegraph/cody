@@ -579,7 +579,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
                 return { text, recipeId: 'context-search' }
             case /^\/f(ix)?(\s)?/i.test(text):
                 return { text, recipeId: 'fixup' }
-            case /^\/(explain|doc|test)/i.test(text): {
+            case /^\/(explain|doc|test)$/i.test(text): {
                 const promptText = this.editor.controllers.command?.find(text, true) || null
                 await this.editor.controllers.command?.get('command')
                 if (!promptText) {

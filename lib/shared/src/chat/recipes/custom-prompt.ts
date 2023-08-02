@@ -20,7 +20,7 @@ import { CodyPromptContext, defaultCodyPromptContext } from '../prompts'
 import { Interaction } from '../transcript/interaction'
 
 import { ChatQuestion } from './chat-question'
-import { getFileExtension, getNormalizedLanguageName, numResults } from './helpers'
+import { getFileExtension, numResults } from './helpers'
 import { InlineTouch } from './inline-touch'
 import { Recipe, RecipeContext, RecipeID } from './recipe'
 
@@ -28,6 +28,7 @@ import { Recipe, RecipeContext, RecipeID } from './recipe'
  * Recipe for running custom prompts from the cody.json files
  * Works with VS Code only
 ====================================================== **/
+// TODO (bee) clean up
 export class CustomPrompt implements Recipe {
     public id: RecipeID = 'custom-prompt'
 
@@ -52,21 +53,19 @@ export class CustomPrompt implements Recipe {
         }
         // get output from the command if any
         const commandOutput = await context.editor.controllers?.command?.get('output')
-        const note = 'Refer to the terminal output, my selected code, and shared code snippets to answer my quesiton.'
-        const fileInfo = selection?.fileName ? `Selected code is from file ${selection?.fileName}` : ''
 
-        const truncatedText = truncateText(
-            `${promptText} ${isContextRequired.none ? '' : note} ${fileInfo}`,
-            MAX_HUMAN_INPUT_TOKENS
-        )
+        const selectionPromptText =
+            !isContextRequired?.none && isContextRequired?.selection && selection?.fileName
+                ? selection_prompt
+                      .replace('{selectedText}', selection.selectedText)
+                      .replace('{fileName}', selection?.fileName)
+                : ''
+        const codyPromptText = selectionPromptText + instruction_prompt.replace('{humanInput}', promptText)
+
+        const truncatedText = truncateText(codyPromptText, MAX_HUMAN_INPUT_TOKENS)
 
         // Add selection file name as display when available
-        let displayText = selection?.fileName ? this.getHumanDisplayText(humanInput, selection?.fileName) : humanInput
-
-        if (selection?.fileName) {
-            const languageName = getNormalizedLanguageName(selection?.fileName)
-            displayText = displayText.replace('{languageName}', languageName)
-        }
+        const displayText = selection?.fileName ? this.getHumanDisplayText(humanInput, selection?.fileName) : humanInput
 
         return Promise.resolve(
             new Interaction(
@@ -142,10 +141,12 @@ export class CustomPrompt implements Recipe {
         if (isContextRequired.currentFile) {
             contextMessages.push(...ChatQuestion.getEditorContext(editor))
         }
+
         // Add selected text as context when available
-        if (selection?.selectedText && isContextRequired.selection) {
-            contextMessages.push(...CustomPrompt.getEditorSelectionContext(selection))
-        }
+        // if (selection?.selectedText && isContextRequired.selection) {
+        //     contextMessages.push(...CustomPrompt.getEditorSelectionContext(selection))
+        // }
+
         // Create context messages from terminal output if any
         if (isContextRequired.command?.length && commandOutput) {
             contextMessages.push(...CustomPrompt.getTerminalOutputContext(commandOutput))
@@ -386,3 +387,19 @@ async function getContextMessageFromFiles(files: vscode.Uri[]): Promise<ContextM
     }
     return contextMessages
 }
+
+const selection_prompt = `
+I have questions about this selected code from {fileName}:
+\`\`\`
+{selectedText}
+\`\`\`
+`
+
+const instruction_prompt = `Please follow these rules when answering my question:
+- Do not remove code that might be being used by the other part of the code that was not shared.
+- Your answers and suggestions should based on the shared context only.
+- Do not suggest anything that would break the working code.
+- Provides full workable code when possible.
+
+Questions: {humanInput}
+`

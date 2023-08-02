@@ -11,6 +11,7 @@
       }
     },
     "(example) Commit Message for Current Changes": {
+      "slashCommand": "commit",
       "prompt": "Suggest a commit message based on current diff changes.",
       "context": {
         "selection": false,
