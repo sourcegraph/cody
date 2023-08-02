@@ -85,6 +85,22 @@ export const completionsDataset: Sample[] = [
             }`,
     },
     {
+        context: [],
+        fileName: 'interface.ts',
+        languageId: 'typescript',
+        content: `
+            interface CacheRequest {
+                /**
+                 * The prefix (up to the cursor) of the source file where the completion was requested
+                 */
+                prefix: string
+                /**
+                 * Wether to ${CURSOR}
+                 */
+                trim: boolean
+            }`,
+    },
+    {
         // prettier-ignore
         context: [
             {'fileName':'lib/parser/excerpt.ts','content':'export function excerpt(text: string, limit: number = 144) {\n  let result = "";\n\n  for (const word of text.split(" ")) {\n    if (result.length + word.length + 1 <= limit) {\n      result += " " + word;\n    } else {\n      // Fix trailing comma. Might need a more generic solution at some point :D\n      if (result.endsWith(",")) {\n        result = result.slice(0, -1);\n      }\n      result += "…";\n      break;\n    }\n  }\n\n  return result;\n}\n'},
