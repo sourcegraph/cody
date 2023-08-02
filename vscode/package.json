@@ -373,7 +373,7 @@
         "command": "cody.non-stop.fixup",
         "category": "Cody",
         "title": "Fixup (Experimental)",
-        "icon": "resources/cody.png",
+        "icon": "$(sparkle)",
         "when": "cody.nonstop.fixups.enabled",
         "enablement": "cody.nonstop.fixups.enabled && editorHasSelection"
       },
@@ -646,6 +646,12 @@
         {
           "command": "cody.action.commands.menu",
           "when": "cody.activated",
+          "group": "navigation",
+          "visibility": "visible"
+        },
+        {
+          "command": "cody.non-stop.fixup",
+          "when": "cody.nonstop.fixups.enabled && cody.activated",
           "group": "navigation",
           "visibility": "visible"
         }
