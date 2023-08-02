@@ -6,7 +6,12 @@ import { debug } from '../log'
 import { CodyStatusBar } from '../services/StatusBar'
 
 import { getContext, GetContextOptions, GetContextResult } from './context'
-import { getInlineCompletions, InlineCompletionsParams, InlineCompletionsResultSource } from './getInlineCompletions'
+import {
+    getInlineCompletions,
+    InlineCompletionsParams,
+    InlineCompletionsResultSource,
+    LastInlineCompletionCandidate,
+} from './getInlineCompletions'
 import { DocumentHistory } from './history'
 import { ProviderConfig } from './providers/provider'
 import { RequestManager } from './request-manager'
@@ -39,6 +44,9 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
 
     /** Mockable (for testing only). */
     protected getInlineCompletions = getInlineCompletions
+
+    /** Accessible for testing only. */
+    protected lastCandidate: LastInlineCompletionCandidate | undefined
 
     constructor({
         responsePercentage = 0.1,
@@ -133,46 +141,25 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
             codebaseContext: this.config.codebaseContext,
             documentHistory: this.config.history,
             requestManager: this.requestManager,
-            lastInlineCompletionResult: this.lastInlineCompletionResult,
+            lastCandidate: this.lastCandidate,
             debounceInterval: { singleLine: 25, multiLine: 125 },
             setIsLoading,
             abortSignal: abortController.signal,
             tracer,
         })
-        const items = result ? processInlineCompletionsForVSCode(result.logId, document, position, result.items) : []
 
-        // Keep the current last-suggestion if the user is typing as last suggested so that we can
-        // track when they stop following it.
+        // Track the last candidate completion (that is shown as ghost text in the editor) so that
+        // we can reuse it if the user types in such a way that it is still valid (such as by typing
+        // `ab` if the ghost text suggests `abcd`).
         if (result && result.source !== InlineCompletionsResultSource.LastSuggestion) {
-            this.saveLastInlineCompletionResult(result.logId, document, position, items)
+            const candidate = result.items[0]
+            this.lastCandidate = candidate
+                ? { logId: result.logId, uri: document.uri, originalTriggerPosition: position, item: candidate }
+                : undefined
         }
 
-        return { items }
-    }
-
-    protected lastInlineCompletionResult: InlineCompletionsParams['lastInlineCompletionResult'] | undefined
-    private saveLastInlineCompletionResult(
-        logId: string,
-        document: vscode.TextDocument,
-        originalTriggerPosition: vscode.Position,
-        items: vscode.InlineCompletionItem[]
-    ): void {
-        if (items.length === 0) {
-            this.lastInlineCompletionResult = undefined
-        } else {
-            const itemToSave = items[0]
-            if (!itemToSave.range) {
-                throw new Error('expected itemToSave.range to be set')
-            }
-            this.lastInlineCompletionResult = {
-                logId,
-                uri: document.uri,
-                originalTriggerPosition,
-
-                // TODO(sqs): assumes that the full line is in the insertText because that is how
-                // processInlineCompletionsForVSCode is implemented.
-                firstLineFullText: itemToSave.insertText as string,
-            }
+        return {
+            items: result ? processInlineCompletionsForVSCode(result.logId, document, position, result.items) : [],
         }
     }
 }

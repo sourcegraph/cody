@@ -15,6 +15,7 @@ import {
     getInlineCompletions as _getInlineCompletions,
     InlineCompletionsParams,
     InlineCompletionsResultSource,
+    LastInlineCompletionCandidate,
 } from './getInlineCompletions'
 import { createProviderConfig } from './providers/anthropic'
 import { RequestManager } from './request-manager'
@@ -192,7 +193,16 @@ describe('getInlineCompletions', () => {
     })
 
     describe('InlineCompletionsResultSource.LastSuggestion', () => {
-        const cursorPosition = (code: string) => documentAndPosition(code).position
+        const lastCandidate = (code: string, insertText: string): LastInlineCompletionCandidate => {
+            const { document, position } = documentAndPosition(code)
+            return {
+                logId: '1',
+                uri: document.uri,
+                originalTriggerPosition: position,
+                originalTriggerLinePrefix: document.lineAt(position).text.slice(0, position.character),
+                item: { insertText },
+            }
+        }
 
         test('used when the user is typing forward as suggested', async () =>
             // The user types `\n`, sees ghost text `const x = 123`, then types `const x = 1` (i.e.,
@@ -201,11 +211,11 @@ describe('getInlineCompletions', () => {
             expect(
                 await getInlineCompletions(
                     params('\nconst x = 1█', [], {
-                        lastInlineCompletionResult: {
+                        lastCandidate: {
                             logId: '1',
                             uri: URI_FIXTURE,
                             originalTriggerPosition: cursorPosition('\n█'),
-                            firstLineFullText: 'const x = 123',
+                            item: { insertText: 'const x = 123' },
                         },
                     })
                 )
@@ -221,11 +231,11 @@ describe('getInlineCompletions', () => {
             expect(
                 await getInlineCompletions(
                     params('const x█', [], {
-                        lastInlineCompletionResult: {
+                        lastCandidate: {
                             logId: '1',
                             uri: URI_FIXTURE,
                             originalTriggerPosition: cursorPosition('const x█'),
-                            firstLineFullText: 'const x = 123',
+                            item: { insertText: 'const x = 123' },
                         },
                     })
                 )
@@ -241,11 +251,11 @@ describe('getInlineCompletions', () => {
             expect(
                 await getInlineCompletions(
                     params('const █', [completion`y = 456`], {
-                        lastInlineCompletionResult: {
+                        lastCandidate: {
                             logId: '1',
                             uri: URI_FIXTURE,
                             originalTriggerPosition: cursorPosition('const x█'),
-                            firstLineFullText: 'const x = 123',
+                            item: { insertText: 'const x = 123' },
                         },
                     })
                 )
@@ -260,11 +270,12 @@ describe('getInlineCompletions', () => {
             expect(
                 await getInlineCompletions(
                     params('\t█', [], {
-                        lastInlineCompletionResult: {
+                        lastCandidate: {
                             logId: '1',
                             uri: URI_FIXTURE,
                             originalTriggerPosition: cursorPosition('\t\t█'),
-                            firstLineFullText: '\t\tconst x = 1',
+                            originalTriggerLinePrefix: '\t\t',
+                            item: { insertText: 'const x = 1' },
                         },
                     })
                 )
@@ -277,11 +288,11 @@ describe('getInlineCompletions', () => {
             expect(
                 await getInlineCompletions(
                     params('█', [], {
-                        lastInlineCompletionResult: {
+                        lastCandidate: {
                             logId: '1',
                             uri: URI_FIXTURE,
                             originalTriggerPosition: cursorPosition('\t\t█'),
-                            firstLineFullText: '\t\tconst x = 1',
+                            item: { insertText: 'const x = 1' },
                         },
                     })
                 )
@@ -297,11 +308,11 @@ describe('getInlineCompletions', () => {
             expect(
                 await getInlineCompletions(
                     params(' █', [], {
-                        lastInlineCompletionResult: {
+                        lastCandidate: {
                             logId: '1',
                             uri: URI_FIXTURE,
                             originalTriggerPosition: cursorPosition('█'),
-                            firstLineFullText: 'x = 1',
+                            item: { insertText: 'x = 1' },
                         },
                     })
                 )
@@ -316,11 +327,11 @@ describe('getInlineCompletions', () => {
             expect(
                 await getInlineCompletions(
                     params('x█', [], {
-                        lastInlineCompletionResult: {
+                        lastCandidate: {
                             logId: '1',
                             uri: URI_FIXTURE,
                             originalTriggerPosition: cursorPosition('█'),
-                            firstLineFullText: 'x\ny',
+                            item: { insertText: 'x\ny' },
                         },
                     })
                 )
@@ -335,11 +346,11 @@ describe('getInlineCompletions', () => {
             expect(
                 await getInlineCompletions(
                     params(' █', [], {
-                        lastInlineCompletionResult: {
+                        lastCandidate: {
                             logId: '1',
                             uri: URI_FIXTURE,
                             originalTriggerPosition: cursorPosition('█'),
-                            firstLineFullText: 'x\ny',
+                            item: { insertText: 'x\ny' },
                         },
                     })
                 )

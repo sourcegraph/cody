@@ -6,6 +6,7 @@ import { vsCodeMocks } from '../testutils/mocks'
 import { getInlineCompletions, InlineCompletionsResultSource } from './getInlineCompletions'
 import { createProviderConfig } from './providers/anthropic'
 import { documentAndPosition } from './testHelpers'
+import { InlineCompletionItem } from './types'
 import { InlineCompletionItemProvider } from './vscodeInlineCompletionItemProvider'
 
 vi.mock('vscode', () => ({
@@ -58,18 +59,18 @@ class MockableInlineCompletionItemProvider extends InlineCompletionItemProvider 
         this.getInlineCompletions = mockGetInlineCompletions
     }
 
-    public declare lastInlineCompletionResult
+    public declare lastCandidate
 }
 
 describe('InlineCompletionItemProvider', () => {
     test('returns results that span the whole line', async () => {
+        const { document, position } = documentAndPosition('const foo = █', 'typescript')
         const fn = vi.fn(getInlineCompletions).mockResolvedValue({
             logId: '1',
-            items: [{ insertText: 'test' }],
+            items: [{ insertText: 'test', range: new vsCodeMocks.Range(position, position) }],
             source: InlineCompletionsResultSource.Network,
         })
         const provider = new MockableInlineCompletionItemProvider(fn)
-        const { document, position } = documentAndPosition('const foo = █', 'typescript')
         const { items } = await provider.provideInlineCompletionItems(document, position, DUMMY_CONTEXT)
         expect(items).toMatchInlineSnapshot(`
           [
@@ -91,29 +92,29 @@ describe('InlineCompletionItemProvider', () => {
     })
 
     test('saves lastInlineCompletionResult', async () => {
+        const { document, position } = documentAndPosition('const foo = █', 'typescript')
+
+        const item: InlineCompletionItem = { insertText: 'test', range: new vsCodeMocks.Range(position, position) }
         const fn = vi.fn(getInlineCompletions).mockResolvedValue({
             logId: '1',
-            items: [{ insertText: 'test' }],
+            items: [item],
             source: InlineCompletionsResultSource.Network,
         })
         const provider = new MockableInlineCompletionItemProvider(fn)
 
         // Initially it is undefined.
-        expect(provider.lastInlineCompletionResult).toBeUndefined()
+        expect(provider.lastCandidate).toBeUndefined()
 
         // No lastInlineCompletionResult is provided on the 1st call.
-        const { document, position } = documentAndPosition('const foo = █', 'typescript')
         await provider.provideInlineCompletionItems(document, position, DUMMY_CONTEXT)
-        expect(fn.mock.calls.map(call => call[0].lastInlineCompletionResult)).toEqual([undefined])
+        expect(fn.mock.calls.map(call => call[0].lastCandidate)).toEqual([undefined])
         fn.mockReset()
 
         // But it is returned and saved.
-        expect(provider.lastInlineCompletionResult?.firstLineFullText).toMatchInlineSnapshot('"const foo = test"')
+        expect(provider.lastCandidate?.item).toEqual(item)
 
         // On the 2nd call, lastInlineCompletionResult is provided.
         await provider.provideInlineCompletionItems(document, position, DUMMY_CONTEXT)
-        expect(fn.mock.calls.map(call => call[0].lastInlineCompletionResult?.firstLineFullText)).toEqual([
-            'const foo = test',
-        ])
+        expect(fn.mock.calls.map(call => call[0].lastCandidate?.item)).toEqual([item])
     })
 })

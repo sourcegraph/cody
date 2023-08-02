@@ -45,22 +45,28 @@ export interface InlineCompletionsParams {
     requestManager: RequestManager
 
     // UI state
-    /**
-     * The last-suggested result, which can be reused if it is still valid.
-     */
-    lastInlineCompletionResult?: {
-        logId: string
-        uri: URI
-        originalTriggerPosition: vscode.Position
-        firstLineFullText: string
-        insertText: string
-    }
+    lastCandidate?: LastInlineCompletionCandidate
     debounceInterval?: { singleLine: number; multiLine: number }
     setIsLoading?: (isLoading: boolean) => void
 
     // Execution
     abortSignal?: AbortSignal
     tracer?: (data: Partial<ProvideInlineCompletionsItemTraceData>) => void
+}
+
+/**
+ * The last-suggested ghost text result, which can be reused if it is still valid.
+ */
+export interface LastInlineCompletionCandidate {
+    logId: string
+
+    /** The document URI for which this candidate was generated. */
+    uri: URI
+
+    /** The position at which this candidate was generated. */
+    originalTriggerPosition: vscode.Position
+
+    item: InlineCompletionItem
 }
 
 export interface InlineCompletionsResult {
@@ -81,7 +87,7 @@ export enum InlineCompletionsResultSource {
      * an inline completion `abc` ahead of the cursor, and the user types `a` then `b`, the original
      * completion will continue to display.
      *
-     * The last suggestion is passed in {@link InlineCompletionsParams.lastInlineCompletionResult}.
+     * The last suggestion is passed in {@link InlineCompletionsParams.lastCandidate}.
      */
     LastSuggestion,
 }
@@ -130,7 +136,7 @@ async function doGetInlineCompletions({
     codebaseContext,
     documentHistory,
     requestManager,
-    lastInlineCompletionResult,
+    lastCandidate,
     debounceInterval,
     setIsLoading,
     abortSignal,
@@ -153,32 +159,31 @@ async function doGetInlineCompletions({
         return null
     }
 
-    // Check if the user is typing as suggested by the last-suggested result.
-    if (lastInlineCompletionResult) {
+    // Check if the user is typing as suggested by the last candidate completion (that is shown as
+    // ghost text in the editor), and reuse it if it is still valid.
+    if (lastCandidate) {
         // See test cases for the expected behaviors.
-        const isSameDocument = lastInlineCompletionResult.uri.toString() === document.uri.toString()
-        const isSameLine = lastInlineCompletionResult.originalTriggerPosition.line === position.line
-        const isPastOriginalTriggerPosition = position.isAfterOrEqual(
-            lastInlineCompletionResult.originalTriggerPosition
-        )
+        const isSameDocument = lastCandidate.uri.toString() === document.uri.toString()
+        const isSameLine = lastCandidate.originalTriggerPosition.line === position.line
+
+        const isCursorWithinGhostText = position.isAfterOrEqual(lastCandidate.originalTriggerPosition)
+        const isSamePrefix = lastCandidate.item.insertText.startsWith(docContext.currentLinePrefix)
+        const isAfterOriginalTrigger = isCursorWithinGhostText && isSamePrefix
+
         const isLineOnlyLeadingWhitespace =
             /^\s*$/.test(docContext.currentLinePrefix) && docContext.currentLineSuffix === ''
-        const isSamePrefix = lastInlineCompletionResult.firstLineFullText.startsWith(docContext.currentLinePrefix)
-        if (
-            isSameDocument &&
-            isSameLine &&
-            (isLineOnlyLeadingWhitespace || (isPastOriginalTriggerPosition && isSamePrefix))
-        ) {
+
+        if (isSameDocument && isSameLine && (isLineOnlyLeadingWhitespace || isAfterOriginalTrigger)) {
             return {
                 // Reuse the logId to so that typing text of a displayed completion will not log a
                 // new completion on every keystroke.
-                logId: lastInlineCompletionResult.logId,
+                logId: lastCandidate.logId,
 
                 items: [
                     {
-                        insertText: lastInlineCompletionResult.firstLineFullText.slice(
-                            docContext.currentLinePrefix.length
-                        ),
+                        insertText: isAfterOriginalTrigger
+                            ? lastCandidate.item.insertText.slice(docContext.currentLinePrefix.length)
+                            : lastCandidate.item.insertText,
                     },
                 ],
                 source: InlineCompletionsResultSource.LastSuggestion,
