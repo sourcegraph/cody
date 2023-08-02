@@ -360,19 +360,21 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
     }
 
     public async executeRecipe(recipeId: RecipeID, humanChatInput = ''): Promise<void> {
-        debug('ChatViewProvider:executeRecipe', recipeId, { verbose: humanChatInput })
         if (this.isMessageInProgress) {
             this.handleError('Cannot execute multiple recipes. Please wait for the current recipe to finish.')
             return
         }
 
-        // Filter the human input to look for chat commands
-        const command = await this.chatCommandsFilter(humanChatInput)
+        // Filter the human input to check for chat commands and retrieve the correct recipe id
+        // e.g. /fix from 'chat-question' should be redirected to use the 'fixup' recipe
+        const command = await this.chatCommandsFilter(humanChatInput, recipeId)
         if (!command?.text) {
             return
         }
         humanChatInput = command?.text
-        recipeId = command?.recipeId || recipeId
+        recipeId = command?.recipeId
+
+        debug('ChatViewProvider:executeRecipe', recipeId, { verbose: humanChatInput })
 
         const recipe = this.getRecipe(recipeId)
         if (!recipe) {
@@ -550,10 +552,13 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         return
     }
 
-    protected async chatCommandsFilter(text: string): Promise<{ text: string; recipeId?: RecipeID } | null> {
+    protected async chatCommandsFilter(
+        text: string,
+        recipeId: RecipeID
+    ): Promise<{ text: string; recipeId: RecipeID } | null> {
         text = text.trim()
         if (!text?.startsWith('/')) {
-            return { text }
+            return { text, recipeId }
         }
         switch (true) {
             case text === '/':
@@ -580,10 +585,10 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
             default: {
                 const promptText = this.editor.controllers.command?.find(text, true)
                 await this.editor.controllers.command?.get('command')
-                if (!promptText) {
-                    return null
+                if (promptText) {
+                    return { text: promptText, recipeId: 'custom-prompt' }
                 }
-                return { text: promptText, recipeId: 'custom-prompt' }
+                return { text, recipeId }
             }
         }
     }
