@@ -31,47 +31,6 @@ export function lastNLines(text: string, n: number): string {
     return lines.slice(Math.max(0, lines.length - n)).join('\n')
 }
 
-/**
- * This function slices the suggestion string until the first n lines match the suffix string.
- *
- * It splits suggestion and suffix into lines, then iterates over the lines of suffix. For each line
- * of suffix, it checks if the next n lines of suggestion match. If so, it returns the first part of
- * suggestion up to those matching lines. If no match is found after iterating all lines of suffix,
- * the full suggestion is returned.
- *
- * For example, with:
- * suggestion = "foo\nbar\nbaz\nqux\nquux"
- * suffix = "baz\nqux\nquux"
- * n = 3
- *
- * It would return: "foo\nbar"
- *
- * Because the first 3 lines of suggestion ("baz\nqux\nquux") match suffix.
- */
-export function sliceUntilFirstNLinesOfSuffixMatch(suggestion: string, suffix: string, n: number): string {
-    const suggestionLines = suggestion.split('\n')
-    const suffixLines = suffix.split('\n')
-
-    for (let i = 0; i < suffixLines.length; i++) {
-        let matchedLines = 0
-        for (let j = 0; j < suggestionLines.length; j++) {
-            if (suffixLines.length < i + matchedLines) {
-                continue
-            }
-            if (suffixLines[i + matchedLines] === suggestionLines[j]) {
-                matchedLines += 1
-            } else {
-                matchedLines = 0
-            }
-            if (matchedLines >= n) {
-                return suggestionLines.slice(0, j - n + 1).join('\n')
-            }
-        }
-    }
-
-    return suggestion
-}
-
 export async function batchCompletions(
     client: Pick<SourcegraphCompletionsClient, 'complete'>,
     params: CompletionParameters,

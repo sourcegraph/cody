@@ -24,7 +24,8 @@ const responses = {
     fixup: '<selection><title>Goodbye Cody</title></selection>',
 }
 
-const FIXUP_PROMPT_TAG = '<selection>'
+const FIXUP_PROMPT_TAG = '<selectedCode>'
+const NON_STOP_FIXUP_PROMPT_TAG = '<selection>'
 
 // Runs a stub Cody service for testing.
 export async function run<T>(around: () => Promise<T>): Promise<T> {
@@ -45,9 +46,11 @@ export async function run<T>(around: () => Promise<T>): Promise<T> {
         // or have a method on the server to send a set response the next time it sees a trigger word in the request.
         const request = req as MockRequest
         const lastHumanMessageIndex = request.body.messages.length - 2
-        const response = request.body.messages[lastHumanMessageIndex].text.includes(FIXUP_PROMPT_TAG)
-            ? responses.fixup
-            : responses.chat
+        const response =
+            request.body.messages[lastHumanMessageIndex].text.includes(FIXUP_PROMPT_TAG) ||
+            request.body.messages[lastHumanMessageIndex].text.includes(NON_STOP_FIXUP_PROMPT_TAG)
+                ? responses.fixup
+                : responses.chat
         res.send(`event: completion\ndata: {"completion": ${JSON.stringify(response)}}\n\nevent: done\ndata: {}\n\n`)
     })
 

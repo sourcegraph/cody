@@ -14,8 +14,8 @@ import {
     PrefixComponents,
     trimLeadingWhitespaceUntilNewline,
 } from '../text-processing'
+import { Completion } from '../types'
 import { batchCompletions, messagesToText } from '../utils'
-import { Completion } from '../vscodeInlineCompletionItemProvider'
 
 import { CompletionProviderTracer, Provider, ProviderConfig, ProviderOptions } from './provider'
 
@@ -145,7 +145,7 @@ export class AnthropicProvider extends Provider {
         // Create prompt
         const { messages: prompt } = this.createPrompt(snippets)
         if (prompt.length > this.promptChars) {
-            throw new Error('prompt length exceeded maximum alloted chars')
+            throw new Error(`prompt length (${prompt.length}) exceeded maximum character length (${this.promptChars})`)
         }
 
         const args: CompletionParameters = this.options.multiline

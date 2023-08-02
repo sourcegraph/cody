@@ -166,6 +166,13 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
         })
     }
 
+    /**
+     * Send transcript error to webview
+     */
+    protected handleTranscriptErrors(transcriptError: boolean): void {
+        void this.webview?.postMessage({ type: 'transcript-errors', isTranscriptError: transcriptError })
+    }
+
     protected handleSuggestions(suggestions: string[]): void {
         void this.webview?.postMessage({
             type: 'suggestions',

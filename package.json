@@ -26,7 +26,7 @@
     "test:e2e": "pnpm -C vscode test:e2e"
   },
   "devDependencies": {
-    "@ianvs/prettier-plugin-sort-imports": "^4.0.2",
+    "@ianvs/prettier-plugin-sort-imports": "^4.1.0",
     "@sourcegraph/eslint-config": "0.33.0",
     "@sourcegraph/prettierrc": "^3.0.3",
     "@sourcegraph/tsconfig": "^4.0.1",
@@ -38,7 +38,7 @@
     "@storybook/react-vite": "^7.0.26",
     "@storybook/testing-library": "^0.0.14-next.2",
     "@types/node": "20.4.0",
-    "@types/prettier": "^2.7.2",
+    "@types/prettier": "2.7.3",
     "@types/react": "18.0.8",
     "@types/react-dom": "18.0.2",
     "@vitejs/plugin-react": "^4.0.2",
@@ -48,7 +48,7 @@
     "jsdom": "^22.1.0",
     "prettier": "3.0.0",
     "storybook": "^7.0.26",
-    "stylelint": "^15.10.1",
+    "stylelint": "^15.10.2",
     "stylelint-config-prettier": "^9.0.5",
     "stylelint-config-standard": "^34.0.0",
     "ts-node": "^10.9.1",
@@ -74,7 +74,8 @@
       }
     },
     "neverBuiltDependencies": [
-      "deasync"
+      "deasync",
+      "playwright"
     ]
   }
 }

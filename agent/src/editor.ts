@@ -2,6 +2,7 @@ import { URI } from 'vscode-uri'
 
 import {
     ActiveTextEditor,
+    ActiveTextEditorDiagnostic,
     ActiveTextEditorSelection,
     ActiveTextEditorViewControllers,
     ActiveTextEditorVisibleContent,
@@ -76,6 +77,10 @@ export class AgentEditor implements Editor {
             }
         }
         return this.getActiveTextEditorSelection()
+    }
+
+    public getActiveTextEditorDiagnosticsForRange(): ActiveTextEditorDiagnostic[] | null {
+        throw new Error('Method not implemented.')
     }
 
     public getActiveTextEditorVisibleContent(): ActiveTextEditorVisibleContent | null {

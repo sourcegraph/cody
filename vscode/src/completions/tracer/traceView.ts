@@ -3,6 +3,7 @@ import * as vscode from 'vscode'
 import { isDefined } from '@sourcegraph/cody-shared'
 import { renderMarkdown } from '@sourcegraph/cody-shared/src/common/markdown'
 
+import { InlineCompletionItem } from '../types'
 import { InlineCompletionItemProvider } from '../vscodeInlineCompletionItemProvider'
 
 import { ProvideInlineCompletionsItemTraceData } from '.'
@@ -93,14 +94,14 @@ ${codeDetailsWithSummary('Suffix', suffix, 'start')}
 ${markdownList(otherOptions)}
 `
 )}`,
-        data?.context &&
-            `
+        data?.context !== undefined
+            ? `
 ## Context
 
-${markdownList(data.context.logSummary)}
+${data.context ? markdownList(data.context.logSummary) : ''}
 
 ${
-    data.context.context.length === 0
+    data.context === null || data.context.context.length === 0
         ? 'No context.'
         : data.context.context
               .map(({ content, fileName }) =>
@@ -108,7 +109,8 @@ ${
               )
               .join('\n\n')
 }
-`,
+`
+            : '',
         data?.completionProviderCallParams &&
             `
 ## Completion provider calls
@@ -122,17 +124,18 @@ ${
 }
 
 `,
-        data?.result &&
-            `
+        data?.result !== undefined
+            ? `
 ## Completions (cache ${data.cacheHit === true ? 'hit' : data.cacheHit === false ? 'miss' : 'unknown'})
 
 ${
-    data.result.items.length === 0
+    data.result === null || data.result.items.length === 0
         ? 'No completions.'
         : data.result.items
               .map(item => inlineCompletionItemDescription(item, data.params?.document))
               .join('\n\n---\n\n')
-}`,
+}`
+            : '',
 
         data?.error &&
             `
@@ -148,6 +151,7 @@ ${codeDetailsWithSummary('JSON for dataset', jsonForDataset(data))}
 `,
     ]
         .filter(isDefined)
+        .filter(s => s !== '')
         .map(s => s.trim())
         .join('\n\n---\n\n')
 
@@ -203,13 +207,23 @@ function selectedCompletionInfoDescription(
 }
 
 function inlineCompletionItemDescription(
-    item: vscode.InlineCompletionItem,
+    item: InlineCompletionItem,
     document: vscode.TextDocument | undefined
 ): string {
-    return `${markdownCodeBlock(
-        withVisibleWhitespace(typeof item.insertText === 'string' ? item.insertText : item.insertText.value)
-    )}
-${item.range ? `replacing ${rangeDescriptionWithCurrentText(item.range, document)}` : 'inserting at cursor'}`
+    return `${markdownCodeBlock(withVisibleWhitespace(item.insertText))}
+${
+    item.range
+        ? `replacing ${rangeDescriptionWithCurrentText(
+              new vscode.Range(
+                  item.range.start.line,
+                  item.range.start.character,
+                  item.range.end.line,
+                  item.range.end.character
+              ),
+              document
+          )}`
+        : 'inserting at cursor'
+}`
 }
 
 function rangeDescription(range: vscode.Range): string {
