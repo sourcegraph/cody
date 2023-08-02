@@ -7,6 +7,7 @@ import {
     CURRENT_SITE_CODY_LLM_CONFIGURATION,
     CURRENT_SITE_GRAPHQL_FIELDS_QUERY,
     CURRENT_SITE_HAS_CODY_ENABLED_QUERY,
+    CURRENT_SITE_IDENTIFICATION,
     CURRENT_SITE_VERSION_QUERY,
     CURRENT_USER_ID_AND_VERIFIED_EMAIL_QUERY,
     CURRENT_USER_ID_QUERY,
@@ -14,6 +15,7 @@ import {
     IS_CONTEXT_REQUIRED_QUERY,
     LEGACY_SEARCH_EMBEDDINGS_QUERY,
     LOG_EVENT_MUTATION,
+    LOG_EVENT_MUTATION_DEPRECATED,
     REPOSITORY_EMBEDDING_EXISTS_QUERY,
     REPOSITORY_ID_QUERY,
     REPOSITORY_IDS_QUERY,
@@ -30,6 +32,10 @@ interface APIResponse<T> {
 
 interface SiteVersionResponse {
     site: { productVersion: string } | null
+}
+
+interface SiteIdentificationResponse {
+    site: { siteID: string; productSubscription: { license: { hashedKey: string } } } | null
 }
 
 interface SiteGraphqlFieldsResponse {
@@ -150,6 +156,18 @@ function extractDataOrError<T, R>(response: APIResponse<T> | Error, extract: (da
     return extract(response.data)
 }
 
+interface event {
+    event: string
+    userCookieID: string
+    url: string
+    source: string
+    argument?: string | {}
+    publicArgument?: string | {}
+    client: string
+    connectedSiteID?: string
+    hashedLicenseKey?: string
+}
+
 export class SourcegraphGraphQLAPIClient {
     private dotcomUrl = 'https://sourcegraph.com'
 
@@ -174,6 +192,23 @@ export class SourcegraphGraphQLAPIClient {
                     // Example values: "5.1.0" or "222587_2023-05-30_5.0-39cbcf1a50f0" for insider builds
                     data.site?.productVersion ? data.site?.productVersion : new Error('site version not found')
                 )
+        )
+    }
+
+    public async getSiteIdentification(): Promise<{ siteid: string; hashedLicenseKey: string } | Error> {
+        const response = await this.fetchSourcegraphAPI<APIResponse<SiteIdentificationResponse>>(
+            CURRENT_SITE_IDENTIFICATION,
+            {}
+        )
+        return extractDataOrError(response, data =>
+            data.site?.siteID
+                ? data.site?.productSubscription?.license?.hashedKey
+                    ? {
+                          siteid: data.site?.siteID,
+                          hashedLicenseKey: data.site?.productSubscription?.license?.hashedKey,
+                      }
+                    : new Error('site hashed license key not found')
+                : new Error('site ID not found')
         )
     }
 
@@ -295,14 +330,7 @@ export class SourcegraphGraphQLAPIClient {
         return { enabled: insiderBuild || betaVersion, version: siteVersion }
     }
 
-    public async logEvent(event: {
-        event: string
-        userCookieID: string
-        url: string
-        source: string
-        argument?: string | {}
-        publicArgument?: string | {}
-    }): Promise<void | Error> {
+    public async logEvent(event: event): Promise<LogEventResponse | Error> {
         if (process.env.CODY_TESTING === 'true') {
             try {
                 await this.fetchSourcegraphTestingAPI<APIResponse<LogEventResponse>>(LOG_EVENT_MUTATION, event).then(
@@ -315,30 +343,43 @@ export class SourcegraphGraphQLAPIClient {
                 return error
             }
         }
-        try {
-            if (this.config.serverEndpoint === this.dotcomUrl) {
-                await this.fetchSourcegraphAPI<APIResponse<LogEventResponse>>(LOG_EVENT_MUTATION, event).then(
-                    response => {
-                        extractDataOrError(response, data => {})
-                    }
-                )
-            } else {
-                await Promise.all([
-                    this.fetchSourcegraphAPI<APIResponse<LogEventResponse>>(LOG_EVENT_MUTATION, event).then(
-                        response => {
-                            extractDataOrError(response, data => {})
-                        }
-                    ),
-                    this.fetchSourcegraphDotcomAPI<APIResponse<LogEventResponse>>(LOG_EVENT_MUTATION, event).then(
-                        response => {
-                            extractDataOrError(response, data => {})
-                        }
-                    ),
-                ])
-            }
-        } catch (error: any) {
-            return error
+        if (this.config.serverEndpoint === this.dotcomUrl) {
+            return this.sendEventLogRequestToDotComAPI(event)
         }
+        const responses = await Promise.all([
+            this.sendEventLogRequestToAPI(event),
+            this.sendEventLogRequestToDotComAPI(event),
+        ])
+        if (isError(responses[0]) && isError(responses[1])) {
+            return new Error('Errors logging events: ' + responses[0].toString() + ', ' + responses[1].toString())
+        }
+        if (isError(responses[0])) {
+            return responses[0]
+        }
+        if (isError(responses[1])) {
+            return responses[1]
+        }
+        return {}
+    }
+
+    private async sendEventLogRequestToDotComAPI(event: event): Promise<LogEventResponse | Error> {
+        const response = await this.fetchSourcegraphDotcomAPI<APIResponse<LogEventResponse>>(LOG_EVENT_MUTATION, event)
+        return extractDataOrError(response, data => data)
+    }
+
+    private async sendEventLogRequestToAPI(event: event): Promise<LogEventResponse | Error> {
+        const initialResponse = await this.fetchSourcegraphAPI<APIResponse<LogEventResponse>>(LOG_EVENT_MUTATION, event)
+        const initialDataOrError = extractDataOrError(initialResponse, data => data)
+
+        if (isError(initialDataOrError)) {
+            const secondResponse = await this.fetchSourcegraphAPI<APIResponse<LogEventResponse>>(
+                LOG_EVENT_MUTATION_DEPRECATED,
+                event
+            )
+            return extractDataOrError(secondResponse, data => data)
+        }
+
+        return initialDataOrError
     }
 
     public async getCodyContext(

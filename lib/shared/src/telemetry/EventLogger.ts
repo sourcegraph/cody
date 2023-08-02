@@ -1,5 +1,6 @@
 import { ConfigurationWithAccessToken } from '../configuration'
 import { SourcegraphGraphQLAPIClient } from '../sourcegraph-api/graphql'
+import { isError } from '../utils'
 
 import { TelemetryEventProperties } from '.'
 
@@ -13,6 +14,8 @@ export interface ExtensionDetails {
 
 export class EventLogger {
     private gqlAPIClient: SourcegraphGraphQLAPIClient
+    private client: string
+    private siteIdentification?: { siteid: string; hashedLicenseKey: string }
 
     constructor(
         private serverEndpoint: string,
@@ -20,6 +23,12 @@ export class EventLogger {
         private config: ConfigurationWithAccessToken
     ) {
         this.gqlAPIClient = new SourcegraphGraphQLAPIClient(this.config)
+        this.setSiteIdentification().catch(error => console.error(error))
+        if (this.extensionDetails.ide === 'VSCode' && this.extensionDetails.ideExtensionType === 'Cody') {
+            this.client = 'VSCODE_CODY_EXTENSION'
+        } else {
+            throw new Error('new extension type not yet accounted for')
+        }
     }
 
     public onConfigurationChange(
@@ -31,6 +40,19 @@ export class EventLogger {
         this.extensionDetails = newExtensionDetails
         this.config = newConfig
         this.gqlAPIClient.onConfigurationChange(newConfig)
+        this.setSiteIdentification().catch(error => console.error(error))
+    }
+
+    private async setSiteIdentification(): Promise<void> {
+        const siteIdentification = await this.gqlAPIClient.getSiteIdentification()
+        if (isError(siteIdentification)) {
+            /**
+             * Swallow errors. Any instance with a version before https://github.com/sourcegraph/sourcegraph/commit/05184f310f631bb36c6d726792e49ff9d122e4af
+             * will return an error here due to it not having new parameters in its GraphQL schema or database schema.
+             */
+        } else {
+            this.siteIdentification = siteIdentification
+        }
     }
 
     /**
@@ -67,9 +89,15 @@ export class EventLogger {
                 url: '',
                 argument: '{}',
                 publicArgument: JSON.stringify(publicArgument),
+                client: this.client,
+                connectedSiteID: this.siteIdentification?.siteid,
+                hashedLicenseKey: this.siteIdentification?.hashedLicenseKey,
             })
-            .catch(error => {
-                console.log(error)
+            .then(response => {
+                if (isError(response)) {
+                    console.error('Error logging event', response)
+                }
             })
+            .catch(error => console.error('Error logging event', error))
     }
 }
