@@ -240,6 +240,7 @@ const TextArea: React.FunctionComponent<ChatUITextAreaProps> = ({
             onInput={e => onInput(e as React.FormEvent<HTMLTextAreaElement>)}
             placeholder="Ask a question or type '/' for commands"
             onKeyDown={handleKeyDown}
+            title="" // Set to blank to avoid HTML5 error tooltip "Please fill in this field"
         />
     )
 }

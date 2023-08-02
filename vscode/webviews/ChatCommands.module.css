@@ -1,71 +1,78 @@
 .container {
+    position: absolute;
+    bottom: 100%;
+    box-sizing: border-box;
+    /* 2px above the input */
+    transform: translateY(calc(var(--spacing) - 5px));
+    /* Match the input width */
+    width: calc(100vw - 1.5rem);
+
     max-height: 250%;
     z-index: 99;
+    background: var(--vscode-sideBar-background);
+    color: var(--vscode-sideBar-foreground);
+    border: 1px solid var(--vscode-widget-border);
+    box-shadow: 0 0 8px 2px var(--vscode-widget-shadow);
+    border-radius: 6px;
 
     display: flex;
-
-    border: 1px solid;
-    margin-bottom: 0.2rem;
-
     flex-direction: column;
-    background: var(--vscode-sideBar-background);
 }
 
-.commands-title-container {
-    margin-left: 0.5rem;
-    margin-right: 0.5rem;
-
-    width: 96%;
+.heading-container {
     display: flex;
-    margin-bottom: 0;
-    padding-bottom: 0;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.25rem 0.25rem 0 0.5rem;
+}
 
-    color: var(--vscode-sideBarTitle-foreground);
+.heading {
+    font-size: smaller;
+    opacity: 0.6;
+    font-weight: 500;
+    margin: 0;
 }
 
 .commands-container {
-    margin-left: 0.5rem;
-
-    width: 96%;
     display: flex;
-
     flex-direction: column-reverse;
     overflow-x: scroll;
 }
 
 .command-item {
     display: flex;
-    align-items: center;
+    align-items: baseline;
     font-size: inherit;
     width: 100%;
-    max-height: 2rem;
     cursor: pointer;
-
     border: none;
-    background: var(--vscode-sideBar-background);
+    color: currentColor;
+    background: transparent;
+    padding: 0.25rem 0.5rem;
 }
 
-.command-item-title {
-    font-size: smaller;
-    justify-content: space-between;
-}
-
-.command-title {
-    font-weight: 500;
-    font-size: inherit;
-
-    color: var(--vscode-sideBarTitle-foreground);
+.command-title, .command-description {
+    margin: 0;
 }
 
 .command-description {
     margin-left: 0.25rem;
     font-size: smaller;
-
-    color: var(--vscode-sideBar-foreground);
+    opacity: 0.7;
 }
 
-.selected {
-    width: 100%;
+.command-item:hover {
+    color: var(--vscode-list-hoverForeground);
+    background-color: var(--vscode-list-hoverBackground);
+}
 
-    opacity: 0.5;
+.selected, .selected.command-item:hover {
+    color: var(--vscode-list-activeSelectionForeground);
+    background: var(--vscode-list-activeSelectionBackground);
+}
+
+body[data-vscode-theme-kind='vscode-high-contrast-light'] .selected,
+body[data-vscode-theme-kind='vscode-high-contrast'] .selected {
+    outline: 1px dashed var(--vscode-contrastActiveBorder);
+    outline-offset: -1px;
 }
