@@ -38,7 +38,7 @@
     "@storybook/react-vite": "^7.0.26",
     "@storybook/testing-library": "^0.0.14-next.2",
     "@types/node": "20.4.0",
-    "@types/prettier": "2.7.2",
+    "@types/prettier": "2.7.3",
     "@types/react": "18.0.8",
     "@types/react-dom": "18.0.2",
     "@vitejs/plugin-react": "^4.0.2",

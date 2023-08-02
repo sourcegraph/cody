@@ -1,7 +1,7 @@
 import { logger } from '../../log'
 import { ReferenceSnippet } from '../context'
 import { getHeadAndTail } from '../text-processing'
-import { Completion } from '../vscodeInlineCompletionItemProvider'
+import { Completion } from '../types'
 
 import { Provider, ProviderConfig, ProviderOptions } from './provider'
 

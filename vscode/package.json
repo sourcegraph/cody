@@ -2,7 +2,7 @@
   "name": "cody-ai",
   "private": true,
   "displayName": "Cody AI",
-  "version": "0.6.3",
+  "version": "0.6.4",
   "publisher": "sourcegraph",
   "license": "Apache-2.0",
   "icon": "resources/cody.png",
@@ -885,11 +885,6 @@
           "type": "string",
           "markdownDescription": "Overwrite the access token used for code autocomplete. This is only supported with a provider other than `anthropic`."
         },
-        "cody.autocomplete.advanced.cache": {
-          "type": "boolean",
-          "default": true,
-          "markdownDescription": "Enables caching of code autocomplete."
-        },
         "cody.autocomplete.advanced.embeddings": {
           "order": 99,
           "type": "boolean",
@@ -1012,7 +1007,7 @@
     "@playwright/test": "^1.33.0",
     "@types/dedent": "^0.7.0",
     "@types/express": "^4.17.17",
-    "@types/glob": "^7.2.0",
+    "@types/glob": "^8.0.0",
     "@types/isomorphic-fetch": "^0.0.36",
     "@types/lodash": "^4.14.195",
     "@types/mocha": "^10.0.1",

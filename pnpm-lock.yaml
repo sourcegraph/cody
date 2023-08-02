@@ -61,8 +61,8 @@ importers:
         specifier: 20.4.0
         version: 20.4.0
       '@types/prettier':
-        specifier: 2.7.2
-        version: 2.7.2
+        specifier: 2.7.3
+        version: 2.7.3
       '@types/react':
         specifier: 18.0.8
         version: 18.0.8
@@ -190,8 +190,8 @@ importers:
         specifier: ^1.7.2
         version: 1.7.2
       '@types/marked':
-        specifier: ^4.0.3
-        version: 4.0.3
+        specifier: ^5.0.0
+        version: 5.0.0
       '@types/morgan':
         specifier: ^1.9.4
         version: 1.9.4
@@ -257,8 +257,8 @@ importers:
         specifier: ^4.14.195
         version: 4.14.195
       '@types/marked':
-        specifier: ^4.0.3
-        version: 4.0.3
+        specifier: ^5.0.0
+        version: 5.0.0
       '@types/vscode':
         specifier: ^1.80.0
         version: 1.80.0
@@ -394,8 +394,8 @@ importers:
         specifier: ^4.17.17
         version: 4.17.17
       '@types/glob':
-        specifier: ^7.2.0
-        version: 7.2.0
+        specifier: ^8.0.0
+        version: 8.1.0
       '@types/isomorphic-fetch':
         specifier: ^0.0.36
         version: 0.0.36
@@ -5594,8 +5594,8 @@ packages:
     resolution: {integrity: sha512-Hwx9EUgdwf2GLarOjQp5ZH8ZmblzcbTBC2wtQWNKARBSxM9ezRIAUpeDTgoQRAFB0+8CNWXVA9+MaSOzOF3nPg==}
     dev: true
 
-  /@types/marked@4.0.3:
-    resolution: {integrity: sha512-HnMWQkLJEf/PnxZIfbm0yGJRRZYYMhb++O9M36UCTA9z53uPvVoSlAwJr3XOpDEryb7Hwl1qAx/MV6YIW1RXxg==}
+  /@types/marked@5.0.0:
+    resolution: {integrity: sha512-YcZe50jhltsCq7rc9MNZC/4QB/OnA2Pd6hrOSTOFajtabN+38slqgDDCeE/0F83SjkKBQcsZUj7VLWR0H5cKRA==}
     dev: true
 
   /@types/mdast@3.0.3:
@@ -5683,8 +5683,8 @@ packages:
     resolution: {integrity: sha512-eKAv5Ql6k78dh3ULCsSBxX6bFNuGjTmof5Q/T6PiECDq0Yf8IIn46jCyp3RJvCi8owaEmm3DZH1PEImjBMd/vQ==}
     dev: false
 
-  /@types/prettier@2.7.2:
-    resolution: {integrity: sha512-KufADq8uQqo1pYKVIYzfKbJfBAc0sOeXqGbFaSpv8MRmC/zXgowNZmFcbngndGk922QDmOASEXUZCaY48gs4cg==}
+  /@types/prettier@2.7.3:
+    resolution: {integrity: sha512-+68kP9yzs4LMp7VNh8gdzMSPZFL44MLGqiHWvttYJe+6qnuVr4Ek9wSBQoveqY/r+LwjCcU29kNVkidwim+kYA==}
     dev: true
 
   /@types/pretty-hrtime@1.0.1:

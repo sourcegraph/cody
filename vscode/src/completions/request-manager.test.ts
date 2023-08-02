@@ -2,14 +2,12 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { vsCodeMocks } from '../testutils/mocks'
 
-import { CompletionsCache } from './cache'
 import { Provider } from './providers/provider'
-import { RequestManager } from './request-manager'
+import { RequestManager, RequestManagerResult } from './request-manager'
 import { Completion } from './types'
 
 vi.mock('vscode', () => vsCodeMocks)
 
-const DOCUMENT_URI = 'file:///path/to/file.ts'
 const LOG_ID = 'some-log-id'
 
 class MockProvider extends Provider {
@@ -49,13 +47,12 @@ function createProvider(prefix: string) {
 }
 
 describe('RequestManager', () => {
-    let createRequest: (prefix: string, provider: Provider) => Promise<Completion[]>
+    let createRequest: (prefix: string, provider: Provider) => Promise<RequestManagerResult>
     beforeEach(() => {
-        const cache = new CompletionsCache()
-        const requestManager = new RequestManager(cache)
+        const requestManager = new RequestManager()
 
         createRequest = (prefix: string, provider: Provider) =>
-            requestManager.request(DOCUMENT_URI, LOG_ID, prefix, [provider], [], new AbortController().signal)
+            requestManager.request({ prefix }, [provider], [], new AbortController().signal)
     })
 
     it('resolves a single request', async () => {
@@ -65,12 +62,15 @@ describe('RequestManager', () => {
         setTimeout(() => provider.resolveRequest(["'hello')"]), 0)
 
         await expect(createRequest(prefix, provider)).resolves.toMatchInlineSnapshot(`
-          [
-            {
-              "content": "'hello')",
-              "prefix": "console.log(",
-            },
-          ]
+          {
+            "cacheHit": false,
+            "completions": [
+              {
+                "content": "'hello')",
+                "prefix": "console.log(",
+              },
+            ],
+          }
         `)
     })
 
@@ -88,35 +88,14 @@ describe('RequestManager', () => {
 
         provider2.resolveRequest(["'hello')"])
 
-        expect((await promise2)[0].content).toBe("'hello')")
+        expect((await promise2).completions[0].content).toBe("'hello')")
 
         expect(provider1.didFinishNetworkRequest).toBe(false)
         expect(provider2.didFinishNetworkRequest).toBe(true)
 
         provider1.resolveRequest(['log();'])
 
-        expect((await promise1)[0].content).toBe('log();')
+        expect((await promise1).completions[0].content).toBe('log();')
         expect(provider1.didFinishNetworkRequest).toBe(true)
-    })
-
-    it('serves request from cache when a prior request resolves', async () => {
-        const prefix1 = 'console.'
-        const provider1 = createProvider(prefix1)
-        const promise1 = createRequest(prefix1, provider1)
-
-        const prefix2 = 'console.log('
-        const provider2 = createProvider(prefix2)
-        const promise2 = createRequest(prefix2, provider2)
-
-        provider1.resolveRequest(["log('hello')"])
-
-        expect((await promise1)[0].content).toBe("log('hello')")
-        expect((await promise2)[0].content).toBe("'hello')")
-
-        expect(provider1.didFinishNetworkRequest).toBe(true)
-        expect(provider2.didFinishNetworkRequest).toBe(false)
-
-        // Ensure that the completed network request does not cause issues
-        provider2.resolveRequest(["'world')"])
     })
 })

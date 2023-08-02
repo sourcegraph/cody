@@ -3,6 +3,7 @@ import * as vscode from 'vscode'
 import { isDefined } from '@sourcegraph/cody-shared'
 import { renderMarkdown } from '@sourcegraph/cody-shared/src/common/markdown'
 
+import { InlineCompletionItem } from '../types'
 import { InlineCompletionItemProvider } from '../vscodeInlineCompletionItemProvider'
 
 import { ProvideInlineCompletionsItemTraceData } from '.'
@@ -206,13 +207,23 @@ function selectedCompletionInfoDescription(
 }
 
 function inlineCompletionItemDescription(
-    item: vscode.InlineCompletionItem,
+    item: InlineCompletionItem,
     document: vscode.TextDocument | undefined
 ): string {
-    return `${markdownCodeBlock(
-        withVisibleWhitespace(typeof item.insertText === 'string' ? item.insertText : item.insertText.value)
-    )}
-${item.range ? `replacing ${rangeDescriptionWithCurrentText(item.range, document)}` : 'inserting at cursor'}`
+    return `${markdownCodeBlock(withVisibleWhitespace(item.insertText))}
+${
+    item.range
+        ? `replacing ${rangeDescriptionWithCurrentText(
+              new vscode.Range(
+                  item.range.start.line,
+                  item.range.start.character,
+                  item.range.end.line,
+                  item.range.end.character
+              ),
+              document
+          )}`
+        : 'inserting at cursor'
+}`
 }
 
 function rangeDescription(range: vscode.Range): string {

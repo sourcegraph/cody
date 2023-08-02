@@ -223,3 +223,10 @@ export function collapseDuplicativeWhitespace(prefix: string, completion: string
 export function trimEndOnLastLineIfWhitespaceOnly(text: string): string {
     return text.replace(/(\r?\n)\s+$/, '$1')
 }
+
+export function removeTrailingWhitespace(text: string): string {
+    return text
+        .split('\n')
+        .map(l => l.trimEnd())
+        .join('\n')
+}
