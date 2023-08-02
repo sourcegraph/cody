@@ -7,8 +7,12 @@
     margin-top: 0;
 }
 
-.relative {
+.popover-wrapper {
     position: relative;
+
+    > pre {
+        margin-bottom: 0;
+    }
 }
 
 .buttons {

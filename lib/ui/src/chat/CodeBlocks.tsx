@@ -128,17 +128,13 @@ export const CodeBlocks: React.FunctionComponent<CodeBlocksProps> = React.memo(f
     return useMemo(() => {
         if (RecipeWidgetWrapper) {
             return (
-                <div>
-                    <span>V Test</span>
-                    {/* TODO: Popover happens on whole re: instead of just code block */}
-                    <RecipeWidgetWrapper targetRef={rootRef}>
-                        <div
-                            ref={rootRef}
-                            className={styles.relative}
-                            dangerouslySetInnerHTML={{ __html: renderCodyMarkdown(displayText) }}
-                        />
-                    </RecipeWidgetWrapper>
-                </div>
+                <RecipeWidgetWrapper targetRef={rootRef}>
+                    <div
+                        ref={rootRef}
+                        className={styles.popoverWrapper}
+                        dangerouslySetInnerHTML={{ __html: renderCodyMarkdown(displayText) }}
+                    />
+                </RecipeWidgetWrapper>
             )
         }
 
