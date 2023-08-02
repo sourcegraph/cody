@@ -145,7 +145,7 @@ export class AnthropicProvider extends Provider {
         // Create prompt
         const { messages: prompt } = this.createPrompt(snippets)
         if (prompt.length > this.promptChars) {
-            throw new Error('prompt length exceeded maximum alloted chars')
+            throw new Error(`prompt length (${prompt.length}) exceeded maximum character length (${this.promptChars})`)
         }
 
         const args: CompletionParameters = this.options.multiline

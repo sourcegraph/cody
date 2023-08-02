@@ -10,7 +10,6 @@ import { ContextProvider } from './chat/ContextProvider'
 import { InlineChatViewManager } from './chat/InlineChatViewProvider'
 import { MessageProviderOptions } from './chat/MessageProvider'
 import { CODY_FEEDBACK_URL } from './chat/protocol'
-import { CompletionsCache } from './completions/cache'
 import { VSCodeDocumentHistory } from './completions/history'
 import * as CompletionsLogger from './completions/logger'
 import { createProviderConfig } from './completions/providers/createProvider'
@@ -427,7 +426,6 @@ function createCompletionsProvider(
         history,
         statusBar,
         codebaseContext,
-        cache: config.autocompleteAdvancedCache ? new CompletionsCache() : null,
         isEmbeddingsContextEnabled: config.autocompleteAdvancedEmbeddings,
         completeSuggestWidgetSelection: config.autocompleteExperimentalCompleteSuggestWidgetSelection,
     })

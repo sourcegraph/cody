@@ -49,6 +49,7 @@ interface ChatProps extends ChatClassNames {
     pluginsDevMode?: boolean
     chatCommands?: [string, CodyPrompt][] | null
     ChatCommandsComponent?: React.FunctionComponent<ChatCommandsProps>
+    isTranscriptError?: boolean
 }
 
 interface ChatClassNames extends TranscriptItemClassNames {
@@ -160,6 +161,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
     pluginsDevMode,
     chatCommands,
     ChatCommandsComponent,
+    isTranscriptError,
 }) => {
     const [inputRows, setInputRows] = useState(1)
     const commandList = chatCommands?.filter(command => command[1]?.slashCommand) || null
@@ -354,6 +356,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                     chatInputClassName={chatInputClassName}
                     ChatButtonComponent={ChatButtonComponent}
                     pluginsDevMode={pluginsDevMode}
+                    isTranscriptError={isTranscriptError}
                 />
             )}
 

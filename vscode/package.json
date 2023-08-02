@@ -2,7 +2,7 @@
   "name": "cody-ai",
   "private": true,
   "displayName": "Cody AI",
-  "version": "0.6.3",
+  "version": "0.6.4",
   "publisher": "sourcegraph",
   "license": "Apache-2.0",
   "icon": "resources/cody.png",
@@ -829,11 +829,6 @@
         "cody.autocomplete.advanced.accessToken": {
           "type": "string",
           "markdownDescription": "Overwrite the access token used for code autocomplete. This is only supported with a provider other than `anthropic`."
-        },
-        "cody.autocomplete.advanced.cache": {
-          "type": "boolean",
-          "default": true,
-          "markdownDescription": "Enables caching of code autocomplete."
         },
         "cody.autocomplete.advanced.embeddings": {
           "order": 99,

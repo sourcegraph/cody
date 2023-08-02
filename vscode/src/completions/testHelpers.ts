@@ -36,7 +36,8 @@ const CURSOR_MARKER = '█'
 
 export function documentAndPosition(
     textWithCursor: string,
-    languageId = 'typescript'
+    languageId = 'typescript',
+    uriString = 'file:///test.ts'
 ): { document: VSCodeTextDocument; position: VSCodePosition } {
     const cursorIndex = textWithCursor.indexOf(CURSOR_MARKER)
     if (cursorIndex === -1) {
@@ -45,7 +46,7 @@ export function documentAndPosition(
     const prefix = textWithCursor.slice(0, cursorIndex)
     const suffix = textWithCursor.slice(cursorIndex + CURSOR_MARKER.length)
     const codeWithoutCursor = prefix + suffix
-    const document = wrapVSCodeTextDocument(TextDocument.create('file:///test.ts', languageId, 0, codeWithoutCursor))
+    const document = wrapVSCodeTextDocument(TextDocument.create(uriString, languageId, 0, codeWithoutCursor))
     const position = document.positionAt(cursorIndex)
     return { document, position }
 }

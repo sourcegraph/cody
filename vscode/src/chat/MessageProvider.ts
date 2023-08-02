@@ -53,6 +53,7 @@ abstract class MessageHandler {
     protected abstract handleSuggestions(suggestions: string[]): void
     protected abstract handleEnabledPlugins(plugins: string[]): void
     protected abstract handleCodyCommands(prompts: [string, CodyPrompt][]): void
+    protected abstract handleTranscriptErrors(transciptError: boolean): void
 }
 
 export interface MessageProviderOptions {
@@ -271,6 +272,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
                 }
                 // Display error message as assistant response
                 this.transcript.addErrorAsAssistantResponse(err)
+                this.handleTranscriptErrors(true)
                 // We ignore embeddings errors in this instance because we're already showing an
                 // error message and don't want to overwhelm the user.
                 void this.onCompletionEnd(true)
@@ -686,6 +688,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         // Display error message as assistant response for users with indexed codebase but getting search errors
         if (this.contextProvider.context.checkEmbeddingsConnection() && searchErrors) {
             this.transcript.addErrorAsAssistantResponse(searchErrors)
+            this.handleTranscriptErrors(true)
             debug('ChatViewProvider:onLogEmbeddingsErrors', '', { verbose: searchErrors })
         }
     }

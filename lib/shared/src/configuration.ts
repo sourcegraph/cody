@@ -24,7 +24,6 @@ export interface Configuration {
         | 'unstable-azure-openai'
     autocompleteAdvancedServerEndpoint: string | null
     autocompleteAdvancedAccessToken: string | null
-    autocompleteAdvancedCache: boolean
     autocompleteAdvancedEmbeddings: boolean
     autocompleteExperimentalCompleteSuggestWidgetSelection?: boolean
     pluginsEnabled?: boolean

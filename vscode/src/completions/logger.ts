@@ -83,7 +83,7 @@ export function networkRequestStarted(
         embeddings?: number
         local?: number
         duration: number
-    }
+    } | null
 ): void {
     const event = displayedCompletions.get(id)
     if (event) {
