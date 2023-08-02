@@ -223,7 +223,7 @@ describe('getInlineCompletions', () => {
             // should be reused.
             expect(
                 await getInlineCompletions(
-                    params('const x█', [], { lastCandidate: lastCandidate('const x█', 'const x = 123') })
+                    params('const x█', [], { lastCandidate: lastCandidate('const x█', ' = 123') })
                 )
             ).toEqual<V>({
                 items: [{ insertText: ' = 123' }],
@@ -237,7 +237,7 @@ describe('getInlineCompletions', () => {
             expect(
                 await getInlineCompletions(
                     params('const █', [completion`y = 456`], {
-                        lastCandidate: lastCandidate('const x█', 'const x = 123'),
+                        lastCandidate: lastCandidate('const x█', ' = 123'),
                     })
                 )
             ).toEqual<V>({
