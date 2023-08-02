@@ -1,4 +1,5 @@
 import * as vscode from 'vscode'
+import { Range } from 'vscode-languageserver-textdocument'
 import { URI } from 'vscode-uri'
 
 import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
@@ -177,6 +178,30 @@ async function doGetInlineCompletions({
         // See test cases for the expected behaviors.
         const isSameDocument = lastCandidate.uri.toString() === document.uri.toString()
         const isSameLine = lastCandidate.originalTriggerPosition.line === position.line
+
+        const candidateFullRange: Range = lastCandidate.item.range ?? {
+            start: lastCandidate.originalTriggerPosition,
+            end: lastCandidate.originalTriggerPosition,
+        }
+
+        // TODO(sqs): also check position?
+        const candidateRangeOnFirstLine =
+            candidateFullRange.start.line === candidateFullRange.end.line
+                ? candidateFullRange
+                : candidateFullRange.start.line === lastCandidate.originalTriggerPosition.line
+                ? {
+                      start: candidateFullRange.start,
+                      end: {
+                          line: candidateFullRange.start.line,
+                          character: lastCandidate.originalTriggerLineText.length,
+                      },
+                  }
+                : null
+        const lineWithGhostText = candidateRangeOnFirstLine
+            ? lastCandidate.originalTriggerLineText.slice(0, candidateRangeOnFirstLine.start.character) +
+              lastCandidate.item.insertText +
+              lastCandidate.originalTriggerLineText.slice(candidateRangeOnFirstLine.end.character)
+            : lastCandidate.originalTriggerLineText
 
         const isCursorWithinGhostText = position.isAfterOrEqual(lastCandidate.originalTriggerPosition)
         const isSamePrefix = lastCandidate.item.insertText.startsWith(docContext.currentLinePrefix)
