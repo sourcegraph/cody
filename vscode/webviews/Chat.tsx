@@ -39,6 +39,7 @@ interface ChatboxProps {
     suggestions?: string[]
     setSuggestions?: (suggestions: undefined | string[]) => void
     pluginsDevMode?: boolean
+    isTranscriptError: boolean
     showOnboardingButtons?: boolean | null
 }
 
@@ -57,6 +58,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     suggestions,
     setSuggestions,
     pluginsDevMode,
+    isTranscriptError,
     showOnboardingButtons,
 }) => {
     const [abortMessageInProgressInternal, setAbortMessageInProgress] = useState<() => void>(() => () => undefined)
@@ -149,6 +151,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             setSuggestions={setSuggestions}
             abortMessageInProgressComponent={AbortMessageInProgress}
             onAbortMessageInProgress={abortMessageInProgress}
+            isTranscriptError={isTranscriptError}
             // TODO: We should fetch this from the server and pass a pretty component
             // down here to render cody is disabled on the instance nicely.
             isCodyEnabled={true}
