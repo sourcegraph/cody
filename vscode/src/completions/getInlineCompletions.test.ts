@@ -192,14 +192,19 @@ describe('getInlineCompletions', () => {
     })
 
     describe('InlineCompletionsResultSource.LastSuggestion', () => {
+        const cursorPosition = (code: string) => documentAndPosition(code).position
+
         test('used when the user is typing forward as suggested', async () =>
+            // The user types `\n`, sees ghost text `const x = 123`, then types `const x = 1` (i.e.,
+            // all but the last 2 characters of the ghost text). The original completion should
+            // still display.
             expect(
                 await getInlineCompletions(
                     params('\nconst x = 1█', [], {
                         lastInlineCompletionResult: {
                             logId: '1',
                             uri: URI_FIXTURE,
-                            originalTriggerPosition: new vsCodeMocks.Position(1, 7),
+                            originalTriggerPosition: cursorPosition('\n█'),
                             firstLineFullText: 'const x = 123',
                         },
                     })
@@ -209,14 +214,37 @@ describe('getInlineCompletions', () => {
                 source: InlineCompletionsResultSource.LastSuggestion,
             }))
 
-        test('not used when the user deletes past the original completion position', async () =>
+        test('used when the user deletes back to the start of the original completion (but no further)', async () =>
+            // The user types `const x`, accepts a completion to `const x = 123`, then deletes back
+            // to `const x` (i.e., to the start of the original completion). The original completion
+            // should be reused.
+            expect(
+                await getInlineCompletions(
+                    params('const x█', [], {
+                        lastInlineCompletionResult: {
+                            logId: '1',
+                            uri: URI_FIXTURE,
+                            originalTriggerPosition: cursorPosition('const x█'),
+                            firstLineFullText: 'const x = 123',
+                        },
+                    })
+                )
+            ).toEqual<V>({
+                items: [{ insertText: ' = 123' }],
+                source: InlineCompletionsResultSource.LastSuggestion,
+            }))
+
+        test('not used when the user deletes past the entire original completion', async () =>
+            // The user types `const x`, accepts a completion to `const x = 123`, then deletes back
+            // to `const ` (i.e., *past* the start of the original completion). The original ghost
+            // text should be replaced with a new result from the network.
             expect(
                 await getInlineCompletions(
                     params('const █', [completion`y = 456`], {
                         lastInlineCompletionResult: {
                             logId: '1',
                             uri: URI_FIXTURE,
-                            originalTriggerPosition: new vsCodeMocks.Position(0, 7), // after the cursor position
+                            originalTriggerPosition: cursorPosition('const x█'),
                             firstLineFullText: 'const x = 123',
                         },
                     })
@@ -224,6 +252,100 @@ describe('getInlineCompletions', () => {
             ).toEqual<V>({
                 items: [{ insertText: 'y = 456' }],
                 source: InlineCompletionsResultSource.Network,
+            }))
+
+        test('used when the user deletes leading whitespace', async () => {
+            // The user types on a new line `\t\t`, sees ghost text `const x = 1`, then deletes the
+            // `\t`. The same ghost text should still be displayed.
+            expect(
+                await getInlineCompletions(
+                    params('\t█', [], {
+                        lastInlineCompletionResult: {
+                            logId: '1',
+                            uri: URI_FIXTURE,
+                            originalTriggerPosition: cursorPosition('\t\t█'),
+                            firstLineFullText: '\t\tconst x = 1',
+                        },
+                    })
+                )
+            ).toEqual<V>({
+                items: [{ insertText: '\tconst x = 1' }],
+                source: InlineCompletionsResultSource.LastSuggestion,
+            })
+
+            // Then the user deletes the other `\t`. The same ghost text should still be displayed.
+            expect(
+                await getInlineCompletions(
+                    params('█', [], {
+                        lastInlineCompletionResult: {
+                            logId: '1',
+                            uri: URI_FIXTURE,
+                            originalTriggerPosition: cursorPosition('\t\t█'),
+                            firstLineFullText: '\t\tconst x = 1',
+                        },
+                    })
+                )
+            ).toEqual<V>({
+                items: [{ insertText: '\t\tconst x = 1' }],
+                source: InlineCompletionsResultSource.LastSuggestion,
+            })
+        })
+
+        test('used when the user adds leading whitespace', async () =>
+            // The user types ``, sees ghost text `x = 1`, then types ` ` (space). The original
+            // completion should be reused.
+            expect(
+                await getInlineCompletions(
+                    params(' █', [], {
+                        lastInlineCompletionResult: {
+                            logId: '1',
+                            uri: URI_FIXTURE,
+                            originalTriggerPosition: cursorPosition('█'),
+                            firstLineFullText: 'x = 1',
+                        },
+                    })
+                )
+            ).toEqual<V>({
+                items: [{ insertText: 'x = 1' }],
+                source: InlineCompletionsResultSource.LastSuggestion,
+            }))
+
+        test('used for a multi-line completion', async () =>
+            // The user types ``, sees ghost text `x\ny`, then types ` ` (space). The original
+            // completion should be reused.
+            expect(
+                await getInlineCompletions(
+                    params('x█', [], {
+                        lastInlineCompletionResult: {
+                            logId: '1',
+                            uri: URI_FIXTURE,
+                            originalTriggerPosition: cursorPosition('█'),
+                            firstLineFullText: 'x\ny',
+                        },
+                    })
+                )
+            ).toEqual<V>({
+                items: [{ insertText: '\ny' }],
+                source: InlineCompletionsResultSource.LastSuggestion,
+            }))
+
+        test('used when the user adds leading whitespace for a multi-line completion', async () =>
+            // The user types ``, sees ghost text `x\ny`, then types ` `. The original completion
+            // should be reused.
+            expect(
+                await getInlineCompletions(
+                    params(' █', [], {
+                        lastInlineCompletionResult: {
+                            logId: '1',
+                            uri: URI_FIXTURE,
+                            originalTriggerPosition: cursorPosition('█'),
+                            firstLineFullText: 'x\ny',
+                        },
+                    })
+                )
+            ).toEqual<V>({
+                items: [{ insertText: 'x\ny' }],
+                source: InlineCompletionsResultSource.LastSuggestion,
             }))
     })
 

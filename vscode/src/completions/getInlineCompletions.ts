@@ -45,12 +45,15 @@ export interface InlineCompletionsParams {
     requestManager: RequestManager
 
     // UI state
-    /** The last-suggested result, which can be reused if it is still valid. */
+    /**
+     * The last-suggested result, which can be reused if it is still valid.
+     */
     lastInlineCompletionResult?: {
         logId: string
         uri: URI
         originalTriggerPosition: vscode.Position
         firstLineFullText: string
+        insertText: string
     }
     debounceInterval?: { singleLine: number; multiLine: number }
     setIsLoading?: (isLoading: boolean) => void
@@ -152,6 +155,7 @@ async function doGetInlineCompletions({
 
     // Check if the user is typing as suggested by the last-suggested result.
     if (lastInlineCompletionResult) {
+        // See test cases for the expected behaviors.
         const isSameDocument = lastInlineCompletionResult.uri.toString() === document.uri.toString()
         const isSameLine = lastInlineCompletionResult.originalTriggerPosition.line === position.line
         const isPastOriginalTriggerPosition = position.isAfterOrEqual(
@@ -163,8 +167,7 @@ async function doGetInlineCompletions({
         if (
             isSameDocument &&
             isSameLine &&
-            (isPastOriginalTriggerPosition || isLineOnlyLeadingWhitespace) &&
-            isSamePrefix
+            (isLineOnlyLeadingWhitespace || (isPastOriginalTriggerPosition && isSamePrefix))
         ) {
             return {
                 // Reuse the logId to so that typing text of a displayed completion will not log a
