@@ -196,19 +196,16 @@ export class SourcegraphGraphQLAPIClient {
     }
 
     public async getSiteIdentification(): Promise<{ siteid: string; hashedLicenseKey: string } | Error> {
-        return this.fetchSourcegraphAPI<APIResponse<SiteIdentificationResponse>>(CURRENT_SITE_IDENTIFICATION, {}).then(
-            response =>
-                extractDataOrError(response, data =>
-                    data.site?.siteID
-                        ? data.site?.productSubscription?.license?.hashedKey
-                            ? {
-                                  siteid: data.site?.siteID,
-                                  hashedLicenseKey: data.site?.productSubscription?.license?.hashedKey,
-                              }
-                            : new Error('site hashed license key not found')
-                        : new Error('site ID not found')
-                )
-        )
+        const response = await this.fetchSourcegraphAPI<APIResponse<SiteIdentificationResponse>>(CURRENT_SITE_IDENTIFICATION, {})
+        return extractDataOrError(response, data =>
+            data.site?.siteID
+                ? data.site?.productSubscription?.license?.hashedKey
+                    ? {
+                            siteid: data.site?.siteID,
+                            hashedLicenseKey: data.site?.productSubscription?.license?.hashedKey,
+                        }
+                    : new Error('site hashed license key not found')
+                : new Error('site ID not found'))
     }
 
     public async getSiteHasIsCodyEnabledField(): Promise<boolean | Error> {
@@ -337,42 +334,37 @@ export class SourcegraphGraphQLAPIClient {
         if (this.config.serverEndpoint === this.dotcomUrl) {
             return this.sendEventLogRequestToDotComAPI(event)
         }
-        return Promise.all([
+        const responses = await Promise.all([
             this.sendEventLogRequestToAPI(event),
             this.sendEventLogRequestToDotComAPI(event),
-        ]).then(responses => {
-            if (isError(responses[0]) && isError(responses[1])) {
-                return new Error('Errors logging events: ' + responses[0].toString() + ', ' + responses[1].toString())
-            }
-            if (isError(responses[0])) {
-                return responses[0]
-            }
-            if (isError(responses[1])) {
-                return responses[1]
-            }
-            return {}
-        })
+        ])
+        if (isError(responses[0]) && isError(responses[1])) {
+            return new Error('Errors logging events: ' + responses[0].toString() + ', ' + responses[1].toString())
+        }
+        if (isError(responses[0])) {
+            return responses[0]
+        }
+        if (isError(responses[1])) {
+            return responses[1]
+        }
+        return {}
     }
 
     private async sendEventLogRequestToDotComAPI(event: event): Promise<LogEventResponse | Error> {
-        return this.fetchSourcegraphDotcomAPI<APIResponse<LogEventResponse>>(LOG_EVENT_MUTATION, event).then(
-            response => extractDataOrError(response, data => data)
-        )
+        const response = await this.fetchSourcegraphDotcomAPI<APIResponse<LogEventResponse>>(LOG_EVENT_MUTATION, event)
+        return extractDataOrError(response, data => data)
     }
 
     private async sendEventLogRequestToAPI(event: event): Promise<LogEventResponse | Error> {
-        const initialAttempt = await this.fetchSourcegraphAPI<APIResponse<LogEventResponse>>(
-            LOG_EVENT_MUTATION,
-            event
-        ).then(response => extractDataOrError(response, data => data))
+        const initialResponse = await this.fetchSourcegraphAPI<APIResponse<LogEventResponse>>(LOG_EVENT_MUTATION, event)
+        const initialDataOrError = extractDataOrError(initialResponse, data => data)
 
-        if (isError(initialAttempt)) {
-            return this.fetchSourcegraphAPI<APIResponse<LogEventResponse>>(LOG_EVENT_MUTATION_DEPRECATED, event).then(
-                response => extractDataOrError(response, data => data)
-            )
+        if (isError(initialDataOrError)) {
+            const secondResponse = await this.fetchSourcegraphAPI<APIResponse<LogEventResponse>>(LOG_EVENT_MUTATION_DEPRECATED, event)
+            return extractDataOrError(secondResponse, data => data)
         }
 
-        return initialAttempt
+        return initialDataOrError
     }
 
     public async getCodyContext(
