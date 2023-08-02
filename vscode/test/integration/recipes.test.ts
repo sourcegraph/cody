@@ -22,7 +22,7 @@ suite('Recipes', function () {
 
         // Check the chat transcript contains markdown
         const humanMessage = await getTranscript(0)
-        assert.match(humanMessage.displayText || '', /^Explain the (following|selected) code/)
+        assert.match(humanMessage.displayText || '', /^Explain what the selected code does/)
 
         assert.match((await getTranscript(1)).displayText || '', /^hello from the assistant$/)
     })
