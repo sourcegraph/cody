@@ -58,8 +58,6 @@ export interface InlineCompletionsParams {
  * The last-suggested ghost text result, which can be reused if it is still valid.
  */
 export interface LastInlineCompletionCandidate {
-    logId: string
-
     /** The document URI for which this candidate was generated. */
     uri: URI
 
@@ -69,8 +67,8 @@ export interface LastInlineCompletionCandidate {
     /** The prefix of the line (before the cursor position) where this candidate was generated. */
     originalTriggerLinePrefix: string
 
-    /** The candidate completion item. */
-    item: InlineCompletionItem
+    /** The previously suggested result. */
+    result: Pick<InlineCompletionsResult, 'logId' | 'items'>
 }
 
 /**
@@ -95,13 +93,13 @@ export enum InlineCompletionsResultSource {
     Cache,
 
     /**
-     * The user is typing as suggested by the last result. For example, if the user's editor shows
-     * an inline completion `abc` ahead of the cursor, and the user types `a` then `b`, the original
-     * completion will continue to display.
+     * The user is typing as suggested by the currently visible ghost text. For example, if the
+     * user's editor shows ghost text `abc` ahead of the cursor, and the user types `ab`, the
+     * original completion should be reused because it is still relevant.
      *
      * The last suggestion is passed in {@link InlineCompletionsParams.lastCandidate}.
      */
-    LastSuggestion,
+    LastCandidate,
 }
 
 export async function getInlineCompletions(params: InlineCompletionsParams): Promise<InlineCompletionsResult | null> {
@@ -148,7 +146,7 @@ async function doGetInlineCompletions({
     codebaseContext,
     documentHistory,
     requestManager,
-    lastCandidate,
+    lastCandidate: lastCandidate,
     debounceInterval,
     setIsLoading,
     abortSignal,
@@ -173,49 +171,11 @@ async function doGetInlineCompletions({
 
     // Check if the user is typing as suggested by the last candidate completion (that is shown as
     // ghost text in the editor), and reuse it if it is still valid.
-    if (lastCandidate) {
-        // See test cases for the expected behaviors.
-        const isSameDocument = lastCandidate.uri.toString() === document.uri.toString()
-        const isSameLine = lastCandidate.originalTriggerPosition.line === position.line
-
-        // TODO(sqs): not correct in general
-        const isSamePrefix = (lastCandidate.originalTriggerLinePrefix + lastCandidate.item.insertText).startsWith(
-            docContext.currentLinePrefix
-        )
-
-        const isCursorWithinGhostText = isSamePrefix && position.isAfterOrEqual(lastCandidate.originalTriggerPosition)
-
-        const isLineOnlyLeadingWhitespace =
-            /^\s*$/.test(docContext.currentLinePrefix) && docContext.currentLineSuffix === ''
-
-        if (
-            isSameDocument &&
-            isSameLine &&
-            (isLineOnlyLeadingWhitespace || (isSamePrefix && isCursorWithinGhostText))
-        ) {
-            let insertText: string
-            if (isLineOnlyLeadingWhitespace) {
-                insertText =
-                    lastCandidate.originalTriggerLinePrefix.slice(docContext.currentLinePrefix.length) +
-                    lastCandidate.item.insertText
-            } else {
-                insertText = (lastCandidate.originalTriggerLinePrefix + lastCandidate.item.insertText).slice(
-                    docContext.currentLinePrefix.length
-                )
-            }
-            return {
-                // Reuse the logId to so that typing text of a displayed completion will not log a
-                // new completion on every keystroke.
-                logId: lastCandidate.logId,
-
-                items: [
-                    {
-                        insertText,
-                    },
-                ],
-                source: InlineCompletionsResultSource.LastSuggestion,
-            }
-        }
+    const resultToReuse = lastCandidate
+        ? reuseResultFromLastCandidate({ document, position, lastCandidate, docContext })
+        : null
+    if (resultToReuse) {
+        return resultToReuse
     }
 
     const multiline = detectMultiline(docContext, document.languageId, providerConfig.enableExtendedMultilineTriggers)
@@ -305,6 +265,62 @@ async function doGetInlineCompletions({
         items: processedCompletions,
         source: cacheHit ? InlineCompletionsResultSource.Cache : InlineCompletionsResultSource.Network,
     }
+}
+
+/**
+ * See test cases for the expected behaviors.
+ */
+function reuseResultFromLastCandidate({
+    document,
+    position,
+    lastCandidate: { originalTriggerPosition, originalTriggerLinePrefix, ...lastCandidate },
+    docContext,
+}: Required<Pick<InlineCompletionsParams, 'document' | 'position' | 'lastCandidate'>> & {
+    docContext: DocumentContext
+}): InlineCompletionsResult | null {
+    const isSameDocument = lastCandidate.uri.toString() === document.uri.toString()
+    const isSameLine = originalTriggerPosition.line === position.line
+
+    if (!isSameDocument || !isSameLine) {
+        return null
+    }
+
+    const trimmedPrefix = docContext.currentLinePrefix.trimStart()
+    if (!trimmedPrefix.startsWith(originalTriggerLinePrefix)) {
+        // TODO(sqs): or swap operands?
+        return null
+    }
+
+    const itemsToReuse = lastCandidate.result.items.map((item): InlineCompletionItem => {
+        // TODO(sqs): not correct in general
+
+        const isSamePrefix = (originalTriggerLinePrefix + item.insertText).startsWith(docContext.currentLinePrefix)
+
+        const isCursorWithinGhostText = isSamePrefix && position.isAfterOrEqual(originalTriggerPosition)
+
+        const isLineOnlyLeadingWhitespace =
+            /^\s*$/.test(docContext.currentLinePrefix) && docContext.currentLineSuffix === ''
+
+        if (isLineOnlyLeadingWhitespace || (isSamePrefix && isCursorWithinGhostText)) {
+            let insertText: string
+            if (isLineOnlyLeadingWhitespace) {
+                insertText = originalTriggerLinePrefix.slice(docContext.currentLinePrefix.length) + item.insertText
+            } else {
+                insertText = (originalTriggerLinePrefix + item.insertText).slice(docContext.currentLinePrefix.length)
+            }
+            return { insertText }
+        }
+    })
+    return itemsToReuse.length > 0
+        ? {
+              // Reuse the logId to so that typing text of a displayed completion will not log a new
+              // completion on every keystroke.
+              logId: lastCandidate.result.logId,
+
+              source: InlineCompletionsResultSource.LastCandidate,
+              items: itemsToReuse,
+          }
+        : null
 }
 
 interface GetCompletionProvidersParams

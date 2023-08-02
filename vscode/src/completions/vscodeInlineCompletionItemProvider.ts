@@ -151,17 +151,19 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
         // Track the last candidate completion (that is shown as ghost text in the editor) so that
         // we can reuse it if the user types in such a way that it is still valid (such as by typing
         // `ab` if the ghost text suggests `abcd`).
-        if (result && result.source !== InlineCompletionsResultSource.LastSuggestion) {
-            const candidate = result.items[0]
-            this.lastCandidate = candidate
-                ? {
-                      logId: result.logId,
-                      uri: document.uri,
-                      originalTriggerPosition: position,
-                      originalTriggerLinePrefix: document.lineAt(position).text.slice(0, position.character),
-                      item: candidate,
-                  }
-                : undefined
+        if (result && result.source !== InlineCompletionsResultSource.LastCandidate) {
+            this.lastCandidate =
+                result?.items.length > 0
+                    ? {
+                          uri: document.uri,
+                          originalTriggerPosition: position,
+                          originalTriggerLinePrefix: document.lineAt(position).text.slice(0, position.character),
+                          result: {
+                              logId: result.logId,
+                              items: result.items,
+                          },
+                      }
+                    : undefined
         }
 
         return {

@@ -111,10 +111,10 @@ describe('InlineCompletionItemProvider', () => {
         fn.mockReset()
 
         // But it is returned and saved.
-        expect(provider.lastCandidate?.item).toEqual(item)
+        expect(provider.lastCandidate?.result.items).toEqual([item])
 
         // On the 2nd call, lastInlineCompletionResult is provided.
         await provider.provideInlineCompletionItems(document, position, DUMMY_CONTEXT)
-        expect(fn.mock.calls.map(call => call[0].lastCandidate?.item)).toEqual([item])
+        expect(fn.mock.calls.map(call => call[0].lastCandidate?.result.items)).toEqual([[item]])
     })
 })

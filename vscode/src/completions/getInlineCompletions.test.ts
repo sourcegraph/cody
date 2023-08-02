@@ -192,15 +192,17 @@ describe('getInlineCompletions', () => {
             expect(await getInlineCompletions(params('foo = █;', []))).toBeTruthy())
     })
 
-    describe('InlineCompletionsResultSource.LastSuggestion', () => {
+    describe('reuseResultFromLastCandidate', () => {
         function lastCandidate(code: string, insertText: string): LastInlineCompletionCandidate {
             const { document, position } = documentAndPosition(code)
             return {
-                logId: '1',
                 uri: document.uri,
                 originalTriggerPosition: position,
                 originalTriggerLinePrefix: document.lineAt(position).text.slice(0, position.character),
-                item: { insertText },
+                result: {
+                    logId: '1',
+                    items: [{ insertText }],
+                },
             }
         }
 
@@ -214,7 +216,7 @@ describe('getInlineCompletions', () => {
                 )
             ).toEqual<V>({
                 items: [{ insertText: '23' }],
-                source: InlineCompletionsResultSource.LastSuggestion,
+                source: InlineCompletionsResultSource.LastCandidate,
             }))
 
         test('used when the user deletes back to the start of the original completion (but no further)', async () =>
@@ -227,7 +229,7 @@ describe('getInlineCompletions', () => {
                 )
             ).toEqual<V>({
                 items: [{ insertText: ' = 123' }],
-                source: InlineCompletionsResultSource.LastSuggestion,
+                source: InlineCompletionsResultSource.LastCandidate,
             }))
 
         test('not used when the user deletes past the entire original completion', async () =>
@@ -266,13 +268,13 @@ describe('getInlineCompletions', () => {
             // Then the user deletes the`\t`. The same ghost text should still be displayed.
             expect(await getInlineCompletions(params('\t█', [], { lastCandidate: candidate }))).toEqual<V>({
                 items: [{ insertText: '\tconst x = 1' }],
-                source: InlineCompletionsResultSource.LastSuggestion,
+                source: InlineCompletionsResultSource.LastCandidate,
             })
 
             // Then the user deletes the other `\t`. The same ghost text should still be displayed.
             expect(await getInlineCompletions(params('█', [], { lastCandidate: candidate }))).toEqual<V>({
                 items: [{ insertText: '\t\tconst x = 1' }],
-                source: InlineCompletionsResultSource.LastSuggestion,
+                source: InlineCompletionsResultSource.LastCandidate,
             })
         })
 
@@ -283,7 +285,7 @@ describe('getInlineCompletions', () => {
                 await getInlineCompletions(params(' █', [], { lastCandidate: lastCandidate('█', 'x = 1') }))
             ).toEqual<V>({
                 items: [{ insertText: 'x = 1' }],
-                source: InlineCompletionsResultSource.LastSuggestion,
+                source: InlineCompletionsResultSource.LastCandidate,
             }))
 
         test('used for a multi-line completion', async () =>
@@ -293,7 +295,7 @@ describe('getInlineCompletions', () => {
                 await getInlineCompletions(params('x█', [], { lastCandidate: lastCandidate('█', 'x\ny') }))
             ).toEqual<V>({
                 items: [{ insertText: '\ny' }],
-                source: InlineCompletionsResultSource.LastSuggestion,
+                source: InlineCompletionsResultSource.LastCandidate,
             }))
 
         test('used when the user adds leading whitespace for a multi-line completion', async () =>
@@ -303,7 +305,7 @@ describe('getInlineCompletions', () => {
                 await getInlineCompletions(params(' █', [], { lastCandidate: lastCandidate('█', 'x\ny') }))
             ).toEqual<V>({
                 items: [{ insertText: 'x\ny' }],
-                source: InlineCompletionsResultSource.LastSuggestion,
+                source: InlineCompletionsResultSource.LastCandidate,
             }))
     })
 
