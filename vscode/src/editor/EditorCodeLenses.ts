@@ -166,11 +166,6 @@ export class EditorCodeLenses implements vscode.CodeLensProvider {
                     return i - 1
                 }
             } else {
-                const isStartLineEndedWithOpeningCurlyBracket = startLineText.match(/^\s*{$/)
-                const isEndLineStartedWithClosingCurlyBracket = text.match(/^\s*}$/)
-                if (isStartLineEndedWithOpeningCurlyBracket && isEndLineStartedWithClosingCurlyBracket) {
-                    return i + 1
-                }
                 // if line is the start of a new function
                 const isStartOfFunction = checkIsStartOfFunctionOrClass(text)
                 if (isStartOfFunction && text.length > 0) {

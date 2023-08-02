@@ -79,6 +79,3 @@ export const defaultCodyPromptContext: CodyPromptContext = {
     codebase: false,
     selection: true,
 }
-
-export const prevent_hallucinations =
-    "Answer the questions only if you know the answer or can make a well-informed guess, else tell me you don't know it."

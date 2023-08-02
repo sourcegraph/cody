@@ -17,6 +17,7 @@ import {
 } from '../../prompt/templates'
 import { truncateText } from '../../prompt/truncation'
 import { CodyPromptContext, defaultCodyPromptContext } from '../prompts'
+import { answers, prompts } from '../prompts/templates'
 import { Interaction } from '../transcript/interaction'
 
 import { ChatQuestion } from './chat-question'
@@ -32,40 +33,53 @@ import { Recipe, RecipeContext, RecipeID } from './recipe'
 export class CustomPrompt implements Recipe {
     public id: RecipeID = 'custom-prompt'
 
+    /**
+     * Retrieves an Interaction object based on the humanChatInput and RecipeContext provided.
+     * The Interaction object contains messages from both the human and the assistant, as well as context information.
+     *
+     * @param humanChatInput - The input from the human user.
+     * @param context - The RecipeContext object containing information about the editor, intent detector, codebase context, response multiplexer, and whether this is the first interaction.
+     * @returns A Promise that resolves to an Interaction object.
+     */
     public async getInteraction(humanChatInput: string, context: RecipeContext): Promise<Interaction | null> {
+        // Check if context is required
         const contextConfig = await context.editor.controllers?.command?.get('context')
         const isContextRequired = contextConfig
             ? (JSON.parse(contextConfig) as CodyPromptContext)
             : defaultCodyPromptContext
+
         // Check if selection is required
         const selection = context.editor.getActiveTextEditorSelection() || context.editor.controllers?.inline?.selection
         if (isContextRequired?.selection && !selection?.selectedText) {
             await vscode.window.showErrorMessage('This command requires text to be selected in the editor.')
             return null
         }
-        // Make prompt text
-        const humanInput = humanChatInput.trim()
-        // Match human input with key from promptStore to get prompt text when there is none
-        const promptText = humanInput || (await context.editor.controllers?.command?.get()) || null
+
+        // Get prompt text from the editor command or from the human input
+        const promptText = humanChatInput.trim() || (await context.editor.controllers?.command?.get()) || null
         if (!promptText) {
             await vscode.window.showErrorMessage('Please enter a valid prompt for the custom command.')
             return null
         }
-        // get output from the command if any
+
+        // Get output from the command if any
         const commandOutput = await context.editor.controllers?.command?.get('output')
 
+        // Generate selection prompt text if selection is required and selection file name is available
         const selectionPromptText =
             !isContextRequired?.none && isContextRequired?.selection && selection?.fileName
-                ? selection_prompt
+                ? prompts.selection
                       .replace('{selectedText}', selection.selectedText)
                       .replace('{fileName}', selection?.fileName)
                 : ''
-        const codyPromptText = selectionPromptText + instruction_prompt.replace('{humanInput}', promptText)
 
-        const truncatedText = truncateText(codyPromptText, MAX_HUMAN_INPUT_TOKENS)
+        // Prompt text to share with Cody only and not display to human
+        const codyPromptText = selectionPromptText + prompts.instruction.replace('{humanInput}', promptText)
 
         // Add selection file name as display when available
-        const displayText = selection?.fileName ? this.getHumanDisplayText(humanInput, selection?.fileName) : humanInput
+        const displayText = selection?.fileName ? this.getHumanDisplayText(promptText, selection?.fileName) : promptText
+
+        const truncatedText = truncateText(codyPromptText, MAX_HUMAN_INPUT_TOKENS)
 
         return Promise.resolve(
             new Interaction(
@@ -98,33 +112,28 @@ export class CustomPrompt implements Recipe {
         commandOutput?: string | null
     ): Promise<ContextMessage[]> {
         const contextMessages: ContextMessage[] = []
-        // Return empty array if no context is required
+
         if (isContextRequired.none) {
             return []
         }
-        // Codebase context is not included by default
+
         if (isContextRequired.codebase) {
             const codebaseContextMessages = await codebaseContext.getContextMessages(text, numResults)
             contextMessages.push(...codebaseContextMessages)
         }
-        // Create context messages from open tabs
+
         if (isContextRequired.openTabs) {
             const openTabsContext = await CustomPrompt.getEditorOpenTabsContext()
             contextMessages.push(...openTabsContext)
         }
-        // Create context messages from current directory
+
         if (isContextRequired.currentDir) {
-            // Select test files from the directory only if the prompt text includes 'test'
             const isTestRequest = text.includes('test')
             const currentDirContext = await CustomPrompt.getCurrentDirContext(isTestRequest)
-            contextMessages.push(...currentDirContext)
-            // Add package.json context if it's available for test requests
-            if (isTestRequest) {
-                const packageJSONContextMessage = await CustomPrompt.getPackageJsonContext(selection?.fileName)
-                contextMessages.push(...packageJSONContextMessage)
-            }
+            const packageJSONContext = await CustomPrompt.getPackageJsonContext(selection?.fileName)
+            contextMessages.push(...currentDirContext, ...(isTestRequest ? packageJSONContext : []))
         }
-        // Create context messages from a fsPath of a workspace directory
+
         if (isContextRequired.directoryPath?.length) {
             const fileContext = await CustomPrompt.getEditorDirContext(
                 isContextRequired.directoryPath,
@@ -132,27 +141,24 @@ export class CustomPrompt implements Recipe {
             )
             contextMessages.push(...fileContext)
         }
-        // Create context messages from a fsPath of a file
+
+        const fileContextQueue = []
         if (isContextRequired.filePath?.length) {
             const fileContext = await CustomPrompt.getFilePathContext(isContextRequired.filePath)
-            contextMessages.push(...fileContext)
+            fileContextQueue.push(...fileContext)
         }
-        // Create context messages from current file
+
+        const currentFileContextStack = []
         if (isContextRequired.currentFile) {
-            contextMessages.push(...ChatQuestion.getEditorContext(editor))
+            currentFileContextStack.push(...ChatQuestion.getEditorContext(editor))
         }
 
-        // Add selected text as context when available
-        // if (selection?.selectedText && isContextRequired.selection) {
-        //     contextMessages.push(...CustomPrompt.getEditorSelectionContext(selection))
-        // }
+        contextMessages.push(...fileContextQueue, ...currentFileContextStack)
 
-        // Create context messages from terminal output if any
         if (isContextRequired.command?.length && commandOutput) {
             contextMessages.push(...CustomPrompt.getTerminalOutputContext(commandOutput))
         }
-        // Return the last n context messages in case there are too many
-        // Make sure numResults is an even number and times 2 again to get the last n pairs
+
         const maxResults = Math.floor((NUM_CODE_RESULTS + NUM_TEXT_RESULTS) / 2) * 2
         return contextMessages.slice(-maxResults * 2)
     }
@@ -162,7 +168,7 @@ export class CustomPrompt implements Recipe {
         return getContextMessageWithResponse(
             populateCurrentEditorSelectedContextTemplate(truncatedContent, selection.fileName, selection.repoName),
             selection,
-            'Noted. I will refer to this code you selected in the editor to answer your question.'
+            answers.selection
         )
     }
 
@@ -203,7 +209,7 @@ export class CustomPrompt implements Recipe {
             { speaker: 'human', text: populateTerminalOutputContextTemplate(truncatedContent) },
             {
                 speaker: 'assistant',
-                text: 'Noted. I will answer your next question based on this terminal output with the code you just shared.',
+                text: answers.terminal,
             },
         ]
     }
@@ -239,47 +245,58 @@ export class CustomPrompt implements Recipe {
 
     // Create Context from Current Directory of the Active Document
     // Return tests files only if testOnly is true
+    /**
+     * Retrieves context messages related to files in a given directory path.
+     *
+     * @param dirPath - The path of the directory to retrieve context messages from.
+     * @param currentFileName - The name of the current file being edited.
+     * @param testOnly - Flag indicating whether to only retrieve context messages related to test files.
+     * @returns An array of context messages related to files in the given directory path.
+     */
     public static async getEditorDirContext(
         dirPath: string,
         currentFileName?: string,
-        testOnly?: boolean
+        testOnly = false
     ): Promise<ContextMessage[]> {
         try {
-            // get a list of files from the current directory path
             const dirUri = vscode.Uri.file(dirPath)
-            // Get the list of files in the current directory then filter out:
-            // directories, non-test files, and dot files
-            // then returns the first 10 results
+            const filteredFiles = await getFilesFromDir(dirUri, testOnly)
+
+            const contextMessages: ContextMessage[] = []
+
             if (testOnly) {
-                const contextMessages: ContextMessage[] = []
-                const filesInDir = (await vscode.workspace.fs.readDirectory(dirUri)).filter(
-                    file => file[1] === 1 && !file[0].startsWith('.') && (testOnly ? file[0].includes('test') : true)
-                )
-                contextMessages.push(...(await populateVscodeDirContextMessage(dirUri, filesInDir)))
-                if (filesInDir.length > 1) {
+                contextMessages.push(...(await populateVscodeDirContextMessage(dirUri, filteredFiles)))
+
+                if (filteredFiles.length > 1) {
                     return contextMessages
                 }
+
                 const parentDirName = getParentDirName(dirPath)
                 const fileExt = currentFileName ? getFileExtension(currentFileName) : '*'
+
                 // Search for files in directory with test(s) in the name
                 const testDirFiles = await vscode.workspace.findFiles(`**/test*/**/*.${fileExt}`, undefined, 2)
                 contextMessages.push(...(await getContextMessageFromFiles(testDirFiles)))
-                // Search for test files from the parent directory
-                const testFile = await vscode.workspace.findFiles(
-                    `**/${parentDirName}/**/*test*.${fileExt}}`,
-                    undefined,
-                    2
-                )
-                contextMessages.push(...(await getContextMessageFromFiles(testFile)))
+
+                if (!contextMessages.length) {
+                    // Search for test files from the parent directory
+                    const testFiles = await vscode.workspace.findFiles(
+                        `**/${parentDirName}/**/*test*.${fileExt}`,
+                        undefined,
+                        2
+                    )
+                    contextMessages.push(...(await getContextMessageFromFiles(testFiles)))
+                }
+
                 // Return the context messages if there are any
                 if (contextMessages.length) {
                     return contextMessages
                 }
             }
+
             // Get first 10 files in the directory
-            const filesInDir = await getFirstNFilesFromDir(dirUri, 10)
-            // When there is no test files, Try to add the package.json context if it's available
-            return await populateVscodeDirContextMessage(dirUri, filesInDir)
+            const firstNFiles = filteredFiles.slice(0, 10)
+            return await populateVscodeDirContextMessage(dirUri, firstNFiles)
         } catch {
             return []
         }
@@ -318,13 +335,12 @@ export class CustomPrompt implements Recipe {
 }
 
 /**
- * Populates context messages for files in a VS Code directory.
+ * Generates context messages for each file in a given directory.
  *
- * @param dirUri - The VS Code Uri of the directory to get files from.
- * @param filesInDir - An array of file name and file type tuples for the files in the director
- *
+ * @param dirUri - The URI representing the directory to be analyzed.
+ * @param filesInDir - An array of tuples containing the name and type of each file in the directory.
+ * @returns An array of context messages, one for each file in the directory.
  */
-
 async function populateVscodeDirContextMessage(
     dirUri: vscode.Uri,
     filesInDir: [string, vscode.FileType][]
@@ -373,11 +389,21 @@ const getParentDirName = (dirPath: string): string => {
 // Get the current directory path from the file path
 const getCurrentDirPath = (filePath: string): string => filePath?.replace(/\/[^/]+$/, '')
 
-// Get the first n files from a directory Uri
-const getFirstNFilesFromDir = async (dirUri: vscode.Uri, n: number): Promise<[string, vscode.FileType][]> =>
-    (await vscode.workspace.fs.readDirectory(dirUri))
-        .filter(file => file[1] === 1 && !file[0].startsWith('.'))
-        .slice(0, n)
+// Get files from a directory Uri
+const getFilesFromDir = async (dirUri: vscode.Uri, testOnly: boolean): Promise<[string, vscode.FileType][]> => {
+    const filesInDir = await vscode.workspace.fs.readDirectory(dirUri)
+
+    // Filter out directories, non-test files, and dot files
+    return filesInDir.filter(file => {
+        const fileName = file[0]
+        const fileType = file[1]
+        const isDirectory = fileType === vscode.FileType.Directory
+        const isHiddenFile = fileName.startsWith('.')
+        const isTestFile = testOnly ? fileName.includes('test') : true
+
+        return !isDirectory && !isHiddenFile && isTestFile
+    })
+}
 
 async function getContextMessageFromFiles(files: vscode.Uri[]): Promise<ContextMessage[]> {
     const contextMessages: ContextMessage[] = []
@@ -387,19 +413,3 @@ async function getContextMessageFromFiles(files: vscode.Uri[]): Promise<ContextM
     }
     return contextMessages
 }
-
-const selection_prompt = `
-I have questions about this selected code from {fileName}:
-\`\`\`
-{selectedText}
-\`\`\`
-`
-
-const instruction_prompt = `Please follow these rules when answering my question:
-- Do not remove code that might be being used by the other part of the code that was not shared.
-- Your answers and suggestions should based on the shared context only.
-- Do not suggest anything that would break the working code.
-- Provides full workable code when possible.
-
-Questions: {humanInput}
-`

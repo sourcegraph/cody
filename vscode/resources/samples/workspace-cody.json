@@ -12,7 +12,7 @@
     },
     "(example) Commit Message for Current Changes": {
       "slashCommand": "commit",
-      "prompt": "Suggest a commit message based on current diff changes.",
+      "prompt": "Suggest a informative commit message by summarizing code changes from the shared command output. The commit message should follow the conventional commit format and provide meaningful context for future readers.",
       "context": {
         "selection": false,
         "command": "git diff"
