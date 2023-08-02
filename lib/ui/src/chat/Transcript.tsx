@@ -63,6 +63,7 @@ export const Transcript: React.FunctionComponent<
     RecipeWidgetWrapper,
 }) {
     const transcriptContainerRef = useRef<HTMLDivElement>(null)
+    console.log('transcriptRef??', transcriptContainerRef)
     useEffect(() => {
         if (transcriptContainerRef.current) {
             // Only scroll if the user didn't scroll up manually more than the scrolling threshold.
@@ -126,6 +127,7 @@ export const Transcript: React.FunctionComponent<
                             ChatButtonComponent={ChatButtonComponent}
                             pluginsDevMode={pluginsDevMode}
                             RecipeWidgetWrapper={RecipeWidgetWrapper}
+                            transcriptRef={transcriptContainerRef}
                         />
                     )
             )}
@@ -148,6 +150,7 @@ export const Transcript: React.FunctionComponent<
                     chatInputClassName={chatInputClassName}
                     ChatButtonComponent={ChatButtonComponent}
                     RecipeWidgetWrapper={RecipeWidgetWrapper}
+                    transcriptRef={transcriptContainerRef}
                 />
             )}
         </div>

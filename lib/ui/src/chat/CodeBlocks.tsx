@@ -1,4 +1,4 @@
-import React, { ReactNode, RefObject, useEffect, useMemo, useRef } from 'react'
+import React, { RefObject, useEffect, useMemo, useRef } from 'react'
 
 import classNames from 'classnames'
 
@@ -10,7 +10,8 @@ import styles from './CodeBlocks.module.css'
 
 export type CodyRecipeWidgetWrapper = React.ComponentType<{
     targetRef: RefObject<HTMLElement>
-    children: ReactNode | ReactNode[]
+    transcriptRef: RefObject<HTMLElement>
+    children: any
 }> | null
 
 interface CodeBlocksProps {
@@ -21,6 +22,7 @@ interface CodeBlocksProps {
 
     CopyButtonProps?: CopyButtonProps['copyButtonOnSubmit']
     RecipeWidgetWrapper?: CodyRecipeWidgetWrapper
+    transcriptRef?: RefObject<HTMLElement>
 }
 
 function wrapElement(element: HTMLElement, wrapperElement: HTMLElement): void {
@@ -104,10 +106,10 @@ export const CodeBlocks: React.FunctionComponent<CodeBlocksProps> = React.memo(f
     insertButtonClassName,
     CopyButtonProps,
     RecipeWidgetWrapper,
+    transcriptRef,
 }) {
     const rootRef = useRef<HTMLDivElement>(null)
-
-    console.log('CODY rootRef', rootRef)
+    console.log('transcriptRef??', transcriptRef)
 
     useEffect(() => {
         const preElements = rootRef.current?.querySelectorAll('pre')
@@ -127,17 +129,28 @@ export const CodeBlocks: React.FunctionComponent<CodeBlocksProps> = React.memo(f
             }
         }
     }, [displayText, CopyButtonProps, copyButtonClassName, insertButtonClassName, rootRef])
+    console.log('transcriptRef??')
+
+    const RecipeWidgetWrapperWithProps = useMemo(
+        () => (props: { targetRef: RefObject<HTMLElement>; transcriptRef: RefObject<HTMLElement>; children: any }) => {
+            if (RecipeWidgetWrapper) {
+                return <RecipeWidgetWrapper {...props} />
+            }
+            return null
+        },
+        [rootRef]
+    )
 
     return useMemo(() => {
-        if (RecipeWidgetWrapper) {
+        if (RecipeWidgetWrapper && transcriptRef) {
             return (
-                <RecipeWidgetWrapper targetRef={rootRef}>
+                <RecipeWidgetWrapperWithProps targetRef={rootRef} transcriptRef={transcriptRef}>
                     <div
                         ref={rootRef}
                         className={styles.popoverWrapper}
                         dangerouslySetInnerHTML={{ __html: renderCodyMarkdown(displayText) }}
                     />
-                </RecipeWidgetWrapper>
+                </RecipeWidgetWrapperWithProps>
             )
         }
 

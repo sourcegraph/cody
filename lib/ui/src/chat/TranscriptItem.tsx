@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { RefObject, useState } from 'react'
 
 import classNames from 'classnames'
 
@@ -59,6 +59,7 @@ export const TranscriptItem: React.FunctionComponent<
         ChatButtonComponent?: React.FunctionComponent<ChatButtonProps>
         pluginsDevMode?: boolean
         RecipeWidgetWrapper?: CodyRecipeWidgetWrapper
+        transcriptRef?: RefObject<HTMLElement>
     } & TranscriptItemClassNames
 > = React.memo(function TranscriptItemContent({
     message,
@@ -85,8 +86,11 @@ export const TranscriptItem: React.FunctionComponent<
     ChatButtonComponent,
     pluginsDevMode,
     RecipeWidgetWrapper,
+    transcriptRef,
 }) {
     const [formInput, setFormInput] = useState<string>(message.displayText ?? '')
+    console.log('transcriptRef??', transcriptRef)
+
     const textarea =
         TextArea && beingEdited && editButtonOnSubmit && SubmitButton ? (
             <div className={styles.textAreaContainer}>
@@ -182,6 +186,7 @@ export const TranscriptItem: React.FunctionComponent<
                             CopyButtonProps={copyButtonOnSubmit}
                             insertButtonClassName={codeBlocksInsertButtonClassName}
                             RecipeWidgetWrapper={RecipeWidgetWrapper}
+                            transcriptRef={transcriptRef}
                         />
                     )
                 ) : inProgress ? (
