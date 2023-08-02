@@ -247,7 +247,7 @@ describe('getInlineCompletions', () => {
                 source: InlineCompletionsResultSource.Network,
             }))
 
-        test('not used when deleting the entire line', async () =>
+        test('not used when deleting the entire non-whitespace line', async () =>
             // The user types `const x`, then deletes the entire line. The original ghost text
             // should not be reused.
             expect(
@@ -276,15 +276,31 @@ describe('getInlineCompletions', () => {
                 // The user types on a new line `\t\t`, sees ghost text `const x = 1`, then deletes
                 // all leading whitespace (both `\t\t`). The same ghost text should still be
                 // displayed.
-                expect.soft(await getInlineCompletions(params('█', [], { lastCandidate: candidate }))).toEqual<V>({
+                expect(await getInlineCompletions(params('█', [], { lastCandidate: candidate }))).toEqual<V>({
                     items: [{ insertText: '\t\tconst x = 1' }],
                     source: InlineCompletionsResultSource.LastCandidate,
                 }))
 
-            test('not reused when different leading whitespace is added', async () =>
+            test('not reused when different leading whitespace is added at end of prefix', async () =>
                 // The user types on a new line `\t\t`, sees ghost text `const x = 1`, then deletes
                 // `\t` and adds ` ` (space). The same ghost text should not still be displayed.
-                expect.soft(await getInlineCompletions(params('\t █', [], { lastCandidate: candidate }))).toEqual<V>({
+                expect(await getInlineCompletions(params('\t █', [], { lastCandidate: candidate }))).toEqual<V>({
+                    items: [],
+                    source: InlineCompletionsResultSource.Network,
+                }))
+
+            test('not reused when different leading whitespace is added at start of prefix', async () =>
+                // The user types on a new line `\t\t`, sees ghost text `const x = 1`, then deletes
+                // `\t\t` and adds ` \t` (space). The same ghost text should not still be displayed.
+                expect(await getInlineCompletions(params(' \t█', [], { lastCandidate: candidate }))).toEqual<V>({
+                    items: [],
+                    source: InlineCompletionsResultSource.Network,
+                }))
+
+            test('not reused when prefix replaced by different leading whitespace', async () =>
+                // The user types on a new line `\t\t`, sees ghost text `const x = 1`, then deletes
+                // `\t\t` and adds ` ` (space). The same ghost text should not still be displayed.
+                expect(await getInlineCompletions(params(' █', [], { lastCandidate: candidate }))).toEqual<V>({
                     items: [],
                     source: InlineCompletionsResultSource.Network,
                 }))

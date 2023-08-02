@@ -275,7 +275,7 @@ function reuseResultFromLastCandidate({
     document,
     position,
     lastCandidate: { originalTriggerPosition, originalTriggerLinePrefix, ...lastCandidate },
-    docContext,
+    docContext: { currentLinePrefix, currentLineSuffix },
 }: Required<Pick<InlineCompletionsParams, 'document' | 'position' | 'lastCandidate'>> & {
     docContext: DocumentContext
 }): InlineCompletionsResult | null {
@@ -286,31 +286,33 @@ function reuseResultFromLastCandidate({
         return null
     }
 
-    const trimmedPrefix = docContext.currentLinePrefix
-    if (!trimmedPrefix.startsWith(originalTriggerLinePrefix)) {
-        // TODO(sqs): or swap operands?
+    // Reuse the last candidate if the user just deletes indentation (leading whitespace).
+    const isInsignificantLeadingWhitespaceChange =
+        /^\s*$/.test(originalTriggerLinePrefix) && originalTriggerLinePrefix.startsWith(currentLinePrefix)
+    // const xxx = originalTriggerLinePrefix.slice(0, -currentLinePrefix.length)
+
+    const isTypingAsSuggested =
+        currentLinePrefix.startsWith(originalTriggerLinePrefix) && originalTriggerPosition.isBeforeOrEqual(position)
+
+    console.log({ isInsignificantLeadingWhitespaceChange, isTypingAsSuggested })
+    if (!isInsignificantLeadingWhitespaceChange && !isTypingAsSuggested) {
         return null
     }
 
     const itemsToReuse = lastCandidate.result.items
         .map((item): InlineCompletionItem | undefined => {
-            // TODO(sqs): not correct in general
-
-            const isSamePrefix = (originalTriggerLinePrefix + item.insertText).startsWith(docContext.currentLinePrefix)
+            const isSamePrefix = (originalTriggerLinePrefix + item.insertText).startsWith(currentLinePrefix)
 
             const isCursorWithinGhostText = isSamePrefix && position.isAfterOrEqual(originalTriggerPosition)
 
-            const isLineOnlyLeadingWhitespace =
-                /^\s*$/.test(docContext.currentLinePrefix) && docContext.currentLineSuffix === ''
+            const isLineOnlyLeadingWhitespace = /^\s*$/.test(currentLinePrefix) && currentLineSuffix === ''
 
             if (isLineOnlyLeadingWhitespace || (isSamePrefix && isCursorWithinGhostText)) {
                 let insertText: string
                 if (isLineOnlyLeadingWhitespace) {
-                    insertText = originalTriggerLinePrefix.slice(docContext.currentLinePrefix.length) + item.insertText
+                    insertText = originalTriggerLinePrefix.slice(currentLinePrefix.length) + item.insertText
                 } else {
-                    insertText = (originalTriggerLinePrefix + item.insertText).slice(
-                        docContext.currentLinePrefix.length
-                    )
+                    insertText = (originalTriggerLinePrefix + item.insertText).slice(currentLinePrefix.length)
                 }
                 return { insertText }
             }
