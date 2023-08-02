@@ -4,7 +4,7 @@ import { CodyPrompt, getDefaultCommandsMap } from '@sourcegraph/cody-shared/src/
 
 import { debug } from '../log'
 
-import { CodyMenu_CodyCommands, menu_options, menu_seperators } from './utils/menu'
+import { CodyMenu_CodyCommands, menu_options, menu_separators } from './utils/menu'
 
 // Manage default commands created by the prompts in prompts.json
 export class PromptsProvider {
@@ -33,18 +33,18 @@ export class PromptsProvider {
     }
 
     /**
-     * Retuen default and custom commands without the seperator which is added for quick pick menu
+     * Retuen default and custom commands without the separator which is added for quick pick menu
      */
     public getGroupedCommands(): [string, CodyPrompt][] {
-        return [...this.allCommands].filter(command => command[1].prompt !== 'seperator')
+        return [...this.allCommands].filter(command => command[1].prompt !== 'separator')
     }
 
     /**
-     * Group the default prompts with the custom prompts and add a seperator
+     * Group the default prompts with the custom prompts and add a separator
      */
     public groupCommands(customCommands = new Map<string, CodyPrompt>()): void {
         const combinedMap = new Map([...this.defaultPromptsMap])
-        combinedMap.set('seperator', { prompt: 'seperator' })
+        combinedMap.set('separator', { prompt: 'separator' })
         this.allCommands = new Map([...combinedMap, ...customCommands])
     }
 
@@ -53,14 +53,18 @@ export class PromptsProvider {
      */
     public async menu(showDesc = false): Promise<void> {
         try {
-            const commandItems = [menu_seperators.chat, menu_options.chat, menu_seperators.commands]
+            const commandItems = [menu_separators.chat, menu_options.chat, menu_separators.commands]
             const allCommandItems = [...this.allCommands]?.map(commandItem => {
                 const command = commandItem[1]
-                if (command.prompt === 'seperator') {
-                    return menu_seperators.customCommands
+                if (command.prompt === 'separator') {
+                    return menu_separators.customCommands
                 }
                 const description =
-                    showDesc && command.slashCommand && command.type === 'default' ? command.slashCommand : command.type
+                    showDesc && command.slashCommand && command.type === 'default'
+                        ? command.slashCommand
+                        : command.type !== 'default'
+                        ? command.type
+                        : ''
                 return {
                     label: command.name || commandItem[0],
                     description,

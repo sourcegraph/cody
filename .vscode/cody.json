@@ -1,5 +1,5 @@
 {
-  "recipes": {
+  "commands": {
     "Generate README.md for Current Directory": {
       "prompt": "Write a detailed README.md introduction for this project. If possible, briefly explain what the directory is and its key features. Use Markdown formatting. Focus on clarity and being beginner-friendly. Surround the answer with a code block to indicate that it is code.",
       "context": {

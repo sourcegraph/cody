@@ -69,7 +69,7 @@ export async function getFileToRemove(keys: string[]): Promise<string | undefine
     return vscode.window.showQuickPick(Array.from(keys))
 }
 
-export const createQuickPickSeperator = (label = '', detail = ''): vscode.QuickPickItem => ({ kind: -1, label, detail })
+export const createQuickPickSeparator = (label = '', detail = ''): vscode.QuickPickItem => ({ kind: -1, label, detail })
 export const createQuickPickItem = (label = '', description = ''): vscode.QuickPickItem => ({ label, description })
 
 export async function getFileContentText(uri: vscode.Uri): Promise<string> {

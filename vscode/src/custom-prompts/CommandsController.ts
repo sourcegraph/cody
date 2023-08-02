@@ -22,7 +22,7 @@ import { CustomPromptsStore } from './CustomPromptsStore'
 import { PromptsProvider } from './PromptsProvider'
 import { ToolsProvider } from './ToolsProvider'
 import { constructFileUri, createFileWatchers, createQuickPickItem } from './utils/helpers'
-import { CodyMenu_CodyCustomCommands, menu_options, menu_seperators } from './utils/menu'
+import { CodyMenu_CodyCustomCommands, menu_options, menu_separators } from './utils/menu'
 
 /**
  * Manage commands built with prompts from CustomPromptsStore and PromptsProvider
@@ -100,7 +100,7 @@ export class CommandsController implements VsCodeCommandsController {
      * get the list of commands names to share with the webview to display
      */
     public getAllCommands(): [string, CodyPrompt][] {
-        return this.default.getGroupedCommands().filter(command => command[1].prompt !== 'seperator')
+        return this.default.getGroupedCommands().filter(command => command[1].prompt !== 'separator')
     }
 
     // Get the prompts and premade for client to use
@@ -180,7 +180,7 @@ export class CommandsController implements VsCodeCommandsController {
 
             const configOption = menu_options.config
             const addOption = menu_options.add
-            promptItems.push(menu_seperators.settings, configOption, addOption)
+            promptItems.push(menu_separators.settings, configOption, addOption)
 
             // Show the list of prompts to the user using a quick pick
             const selectedPrompt = await vscode.window.showQuickPick([...promptItems], CodyMenu_CodyCustomCommands)
@@ -319,7 +319,7 @@ export class CommandsController implements VsCodeCommandsController {
      */
     private async saveLastUsedCommands(): Promise<void> {
         // store the last 3 used commands
-        const commands = [...this.lastUsedCommands].filter(command => command !== 'seperator').slice(0, 3)
+        const commands = [...this.lastUsedCommands].filter(command => command !== 'separator').slice(0, 3)
         if (commands.length > 0) {
             await this.localStorage.setLastUsedCommands(commands)
         }

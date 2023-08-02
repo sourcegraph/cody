@@ -146,7 +146,7 @@ export class CustomPromptsStore {
         // filter prompt map to remove prompt with type workspace
         const filtered = new Map<string, CodyPrompt>()
         for (const [key, value] of this.myPromptsMap) {
-            if (value.type === 'user' && value.prompt !== 'seperator') {
+            if (value.type === 'user' && value.prompt !== 'separator') {
                 filtered.set(key, value)
             }
         }

@@ -43,8 +43,7 @@ export class EditorCodeLenses implements vscode.CodeLensProvider {
         // on change events for toggling
         this._disposables.push(
             vscode.window.onDidChangeVisibleTextEditors(() => this.fire()),
-            vscode.window.onDidChangeActiveTextEditor(() => this.fire()),
-            vscode.window.onDidChangeTextEditorVisibleRanges(() => this.fire())
+            vscode.window.onDidChangeActiveTextEditor(() => this.fire())
         )
     }
 
@@ -71,7 +70,7 @@ export class EditorCodeLenses implements vscode.CodeLensProvider {
         if (activeEditor) {
             activeEditor.selection = lens.selection
         }
-        await vscode.commands.executeCommand(lens.name)
+        await vscode.commands.executeCommand(lens.name, false)
     }
     /**
      * Gets the code lenses for the specified document.

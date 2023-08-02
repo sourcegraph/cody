@@ -21,23 +21,23 @@ export const CodyMenu_CodyCustomCommandsConfig = {
     placeHolder: 'Choose an option',
 }
 
-const chatSeperator: QuickPickItem = { kind: -1, label: 'inline chat' }
+const chatSeparator: QuickPickItem = { kind: -1, label: 'inline chat' }
 const chatOption: QuickPickItem = { label: 'Ask a Question', alwaysShow: true }
-const commandsSeperator: QuickPickItem = { kind: -1, label: 'commands' }
-const customCommandsSeperator: QuickPickItem = { kind: -1, label: 'custom commands' }
+const commandsSeparator: QuickPickItem = { kind: -1, label: 'commands' }
+const customCommandsSeparator: QuickPickItem = { kind: -1, label: 'custom commands' }
 const configOption: QuickPickItem = { label: 'Configure Custom Commands...' }
-const settingsSeperator: QuickPickItem = { kind: -1, label: 'settings' }
+const settingsSeparator: QuickPickItem = { kind: -1, label: 'settings' }
 const addOption: QuickPickItem = { label: 'New Custom Command...', alwaysShow: true }
 
-export const recentlyUsedSeperatorAsPrompt: [string, CodyPrompt][] = [
-    ['seperator', { prompt: 'seperator', type: 'recently used' }],
+export const recentlyUsedSeparatorAsPrompt: [string, CodyPrompt][] = [
+    ['separator', { prompt: 'separator', type: 'recently used' }],
 ]
 
-export const menu_seperators = {
-    chat: chatSeperator,
-    commands: commandsSeperator,
-    customCommands: customCommandsSeperator,
-    settings: settingsSeperator,
+export const menu_separators = {
+    chat: chatSeparator,
+    commands: commandsSeparator,
+    customCommands: customCommandsSeparator,
+    settings: settingsSeparator,
 }
 
 export const menu_options = {
@@ -71,7 +71,7 @@ export const CustomPromptsMainMenuOptions = [
         type: 'user',
         description: '',
     },
-    { kind: -1, id: 'seperator', label: '' },
+    { kind: -1, id: 'separator', label: '' },
     {
         kind: 0,
         label: 'Open User Settings (JSON)',
@@ -86,12 +86,21 @@ export const CustomPromptsMainMenuOptions = [
         type: 'workspace',
         description: '.vscode/cody.json',
     },
-    { kind: -1, id: 'seperator', label: '' },
+    { kind: -1, id: 'separator', label: '' },
     { kind: 0, label: 'Open Example Commands (JSON)', id: 'example', type: 'default' },
 ]
 
+// Define the type for a context option
+interface ContextOption {
+    id: string
+    label: string
+    detail: string
+    picked: boolean
+    description?: string
+}
+
 // List of context types to include with the prompt
-export const CustomPromptsContextOptions = [
+export const CustomPromptsContextOptions: ContextOption[] = [
     {
         id: 'selection',
         label: 'Selected Code',
