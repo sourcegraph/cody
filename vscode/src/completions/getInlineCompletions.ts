@@ -66,12 +66,24 @@ export interface LastInlineCompletionCandidate {
     /** The position at which this candidate was generated. */
     originalTriggerPosition: vscode.Position
 
+    /** The full text of the line where this candidate was generated. */
+    originalTriggerLineText: string
+
+    /** The candidate completion item. */
     item: InlineCompletionItem
 }
 
+/**
+ * The result of a call to {@link getInlineCompletions}.
+ */
 export interface InlineCompletionsResult {
+    /** The unique identifier for logging this result. */
     logId: string
+
+    /** Where this result was generated from. */
     source: InlineCompletionsResultSource
+
+    /** The completions. */
     items: InlineCompletionItem[]
 }
 

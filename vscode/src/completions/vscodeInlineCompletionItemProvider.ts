@@ -154,7 +154,13 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
         if (result && result.source !== InlineCompletionsResultSource.LastSuggestion) {
             const candidate = result.items[0]
             this.lastCandidate = candidate
-                ? { logId: result.logId, uri: document.uri, originalTriggerPosition: position, item: candidate }
+                ? {
+                      logId: result.logId,
+                      uri: document.uri,
+                      originalTriggerPosition: position,
+                      originalTriggerLineText: document.lineAt(position).text,
+                      item: candidate,
+                  }
                 : undefined
         }
 

@@ -193,13 +193,13 @@ describe('getInlineCompletions', () => {
     })
 
     describe('InlineCompletionsResultSource.LastSuggestion', () => {
-        const lastCandidate = (code: string, insertText: string): LastInlineCompletionCandidate => {
+        function lastCandidate(code: string, insertText: string): LastInlineCompletionCandidate {
             const { document, position } = documentAndPosition(code)
             return {
                 logId: '1',
                 uri: document.uri,
                 originalTriggerPosition: position,
-                originalTriggerLinePrefix: document.lineAt(position).text.slice(0, position.character),
+                originalTriggerLineText: document.lineAt(position).text.slice(0, position.character),
                 item: { insertText },
             }
         }
@@ -210,14 +210,7 @@ describe('getInlineCompletions', () => {
             // still display.
             expect(
                 await getInlineCompletions(
-                    params('\nconst x = 1█', [], {
-                        lastCandidate: {
-                            logId: '1',
-                            uri: URI_FIXTURE,
-                            originalTriggerPosition: cursorPosition('\n█'),
-                            item: { insertText: 'const x = 123' },
-                        },
-                    })
+                    params('\nconst x = 1█', [], { lastCandidate: lastCandidate('\n█', 'const x = 123') })
                 )
             ).toEqual<V>({
                 items: [{ insertText: '23' }],
@@ -230,14 +223,7 @@ describe('getInlineCompletions', () => {
             // should be reused.
             expect(
                 await getInlineCompletions(
-                    params('const x█', [], {
-                        lastCandidate: {
-                            logId: '1',
-                            uri: URI_FIXTURE,
-                            originalTriggerPosition: cursorPosition('const x█'),
-                            item: { insertText: 'const x = 123' },
-                        },
-                    })
+                    params('const x█', [], { lastCandidate: lastCandidate('const x█', 'const x = 123') })
                 )
             ).toEqual<V>({
                 items: [{ insertText: ' = 123' }],
@@ -251,12 +237,7 @@ describe('getInlineCompletions', () => {
             expect(
                 await getInlineCompletions(
                     params('const █', [completion`y = 456`], {
-                        lastCandidate: {
-                            logId: '1',
-                            uri: URI_FIXTURE,
-                            originalTriggerPosition: cursorPosition('const x█'),
-                            item: { insertText: 'const x = 123' },
-                        },
+                        lastCandidate: lastCandidate('const x█', 'const x = 123'),
                     })
                 )
             ).toEqual<V>({
@@ -268,17 +249,7 @@ describe('getInlineCompletions', () => {
             // The user types on a new line `\t\t`, sees ghost text `const x = 1`, then deletes the
             // `\t`. The same ghost text should still be displayed.
             expect(
-                await getInlineCompletions(
-                    params('\t█', [], {
-                        lastCandidate: {
-                            logId: '1',
-                            uri: URI_FIXTURE,
-                            originalTriggerPosition: cursorPosition('\t\t█'),
-                            originalTriggerLinePrefix: '\t\t',
-                            item: { insertText: 'const x = 1' },
-                        },
-                    })
-                )
+                await getInlineCompletions(params('\t█', [], { lastCandidate: lastCandidate('\t\t█', 'const x = 1') }))
             ).toEqual<V>({
                 items: [{ insertText: '\tconst x = 1' }],
                 source: InlineCompletionsResultSource.LastSuggestion,
@@ -286,16 +257,7 @@ describe('getInlineCompletions', () => {
 
             // Then the user deletes the other `\t`. The same ghost text should still be displayed.
             expect(
-                await getInlineCompletions(
-                    params('█', [], {
-                        lastCandidate: {
-                            logId: '1',
-                            uri: URI_FIXTURE,
-                            originalTriggerPosition: cursorPosition('\t\t█'),
-                            item: { insertText: 'const x = 1' },
-                        },
-                    })
-                )
+                await getInlineCompletions(params('█', [], { lastCandidate: lastCandidate('\t\t█', 'const x = 1') }))
             ).toEqual<V>({
                 items: [{ insertText: '\t\tconst x = 1' }],
                 source: InlineCompletionsResultSource.LastSuggestion,
@@ -306,16 +268,7 @@ describe('getInlineCompletions', () => {
             // The user types ``, sees ghost text `x = 1`, then types ` ` (space). The original
             // completion should be reused.
             expect(
-                await getInlineCompletions(
-                    params(' █', [], {
-                        lastCandidate: {
-                            logId: '1',
-                            uri: URI_FIXTURE,
-                            originalTriggerPosition: cursorPosition('█'),
-                            item: { insertText: 'x = 1' },
-                        },
-                    })
-                )
+                await getInlineCompletions(params(' █', [], { lastCandidate: lastCandidate('█', 'x = 1') }))
             ).toEqual<V>({
                 items: [{ insertText: 'x = 1' }],
                 source: InlineCompletionsResultSource.LastSuggestion,
@@ -325,16 +278,7 @@ describe('getInlineCompletions', () => {
             // The user types ``, sees ghost text `x\ny`, then types ` ` (space). The original
             // completion should be reused.
             expect(
-                await getInlineCompletions(
-                    params('x█', [], {
-                        lastCandidate: {
-                            logId: '1',
-                            uri: URI_FIXTURE,
-                            originalTriggerPosition: cursorPosition('█'),
-                            item: { insertText: 'x\ny' },
-                        },
-                    })
-                )
+                await getInlineCompletions(params('x█', [], { lastCandidate: lastCandidate('█', 'x\ny') }))
             ).toEqual<V>({
                 items: [{ insertText: '\ny' }],
                 source: InlineCompletionsResultSource.LastSuggestion,
@@ -344,16 +288,7 @@ describe('getInlineCompletions', () => {
             // The user types ``, sees ghost text `x\ny`, then types ` `. The original completion
             // should be reused.
             expect(
-                await getInlineCompletions(
-                    params(' █', [], {
-                        lastCandidate: {
-                            logId: '1',
-                            uri: URI_FIXTURE,
-                            originalTriggerPosition: cursorPosition('█'),
-                            item: { insertText: 'x\ny' },
-                        },
-                    })
-                )
+                await getInlineCompletions(params(' █', [], { lastCandidate: lastCandidate('█', 'x\ny') }))
             ).toEqual<V>({
                 items: [{ insertText: 'x\ny' }],
                 source: InlineCompletionsResultSource.LastSuggestion,
