@@ -27,7 +27,8 @@
     "lint": "pnpm run lint:js",
     "lint:js": "eslint --cache '**/*.[tj]s?(x)'",
     "release": "ts-node ./scripts/release.ts",
-    "release:dry-run": "CODY_RELEASE_DRY_RUN=1 ts-node ./scripts/release.ts",
+    "download-wasm": "ts-node ./scripts/download-wasm-modules.ts && cp ./resources/wasm/* ./dist",
+    "release:dry-run": "pnpm run download-wasm && CODY_RELEASE_DRY_RUN=1 ts-node ./scripts/release.ts",
     "storybook": "storybook dev -p 6007 --no-open --no-version-updates --no-release-notes",
     "test:e2e": "pnpm exec playwright install && tsc --build && pnpm run -s build:dev:desktop && playwright test",
     "test:integration": "tsc --build ./test/integration && pnpm run -s build:dev:desktop && node --inspect -r ts-node/register dist/tsc/test/integration/main.js",
@@ -1001,9 +1002,16 @@
     "mock-require": "^3.0.3",
     "openai": "^3.2.1",
     "stream-json": "^1.8.0",
+    "tree-sitter": "^0.20.5",
+    "tree-sitter-go": "^0.20.0",
+    "tree-sitter-java": "^0.19.1",
+    "tree-sitter-javascript": "^0.19.0",
+    "tree-sitter-python": "^0.20.3",
+    "tree-sitter-typescript": "^0.20.1",
     "uuid": "^9.0.0",
     "vscode-languageserver-textdocument": "^1.0.8",
     "vscode-uri": "^3.0.7",
+    "web-tree-sitter": "^0.20.8",
     "wink-eng-lite-web-model": "^1.5.0",
     "wink-nlp": "^1.13.1",
     "wink-nlp-utils": "^2.1.0"
@@ -1017,6 +1025,7 @@
     "@types/lodash": "^4.14.195",
     "@types/mocha": "^10.0.1",
     "@types/mock-require": "^2.0.1",
+    "@types/progress": "^2.0.5",
     "@types/semver": "^7.5.0",
     "@types/uuid": "^9.0.2",
     "@types/vscode": "^1.79.0",
@@ -1033,6 +1042,7 @@
     "ovsx": "^0.8.2",
     "path-browserify": "^1.0.1",
     "playwright": "^1.33.0",
+    "progress": "^2.0.3",
     "semver": "^7.5.4"
   }
 }
