@@ -8,7 +8,7 @@
     font-family: var(--vscode-font-family);
     font-weight: var(--vscode-font-weight);
     border-color: var(--vscode-sideBarSectionHeader-border);
-    padding: 10px 20px;
+    padding: 10px 15px 10px 20px;
 }
 
 /* Apply a slight tint to the assistant transcript item. */
@@ -73,12 +73,12 @@ body[data-vscode-theme-kind='vscode-high-contrast'] .human-transcript-item {
 
 .input-row {
     border-top: solid 1px var(--vscode-sideBarSectionHeader-border);
-    gap: .25rem;
-    padding: 0.75rem;
+    gap: .3rem;
+    padding: 0.75rem 0.75rem 1rem 0.75rem;
 }
 
 .chat-input-context {
-    opacity: 0.6;
+    opacity: 0.85;
 }
 
 .chat-input {
