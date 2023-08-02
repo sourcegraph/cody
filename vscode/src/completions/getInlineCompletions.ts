@@ -285,7 +285,7 @@ function reuseResultFromLastCandidate({
         return null
     }
 
-    const trimmedPrefix = docContext.currentLinePrefix.trimStart()
+    const trimmedPrefix = docContext.currentLinePrefix
     if (!trimmedPrefix.startsWith(originalTriggerLinePrefix)) {
         // TODO(sqs): or swap operands?
         return null
