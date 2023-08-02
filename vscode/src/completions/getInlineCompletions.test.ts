@@ -219,6 +219,36 @@ describe('getInlineCompletions', () => {
                 source: InlineCompletionsResultSource.LastCandidate,
             }))
 
+        test('reused when typing forward as suggested through partial whitespace', async () =>
+            // The user types ` `, sees ghost text ` x`, then types ` `. The original completion
+            // should still display.
+            expect(
+                await getInlineCompletions(params('  █', [], { lastCandidate: lastCandidate(' █', ' x') }))
+            ).toEqual<V>({
+                items: [{ insertText: 'x' }],
+                source: InlineCompletionsResultSource.LastCandidate,
+            }))
+
+        test('reused when typing forward as suggested through all whitespace', async () =>
+            // The user sees ghost text `  x`, then types `  `. The original completion should still
+            // display.
+            expect(
+                await getInlineCompletions(params('  █', [], { lastCandidate: lastCandidate('█', '  x') }))
+            ).toEqual<V>({
+                items: [{ insertText: 'x' }],
+                source: InlineCompletionsResultSource.LastCandidate,
+            }))
+
+        test('reused when adding leading whitespace', async () =>
+            // The user types ``, sees ghost text `x = 1`, then types ` ` (space). The original
+            // completion should be reused.
+            expect(
+                await getInlineCompletions(params(' █', [], { lastCandidate: lastCandidate('█', 'x = 1') }))
+            ).toEqual<V>({
+                items: [{ insertText: 'x = 1' }],
+                source: InlineCompletionsResultSource.LastCandidate,
+            }))
+
         test('reused when the deleting back to the start of the original trigger (but no further)', async () =>
             // The user types `const x`, accepts a completion to `const x = 123`, then deletes back
             // to `const x` (i.e., to the start of the original trigger). The original completion
@@ -247,13 +277,27 @@ describe('getInlineCompletions', () => {
                 source: InlineCompletionsResultSource.Network,
             }))
 
-        test('not used when deleting the entire non-whitespace line', async () =>
+        test('not reused when deleting the entire non-whitespace line', async () =>
             // The user types `const x`, then deletes the entire line. The original ghost text
             // should not be reused.
             expect(
                 await getInlineCompletions(
                     params('█', [], {
                         lastCandidate: lastCandidate('const x█', ' = 1'),
+                    })
+                )
+            ).toEqual<V>({
+                items: [],
+                source: InlineCompletionsResultSource.Network,
+            }))
+
+        test('not reused when prefix changes', async () =>
+            // The user types `x`, then deletes it, then types `y`. The original ghost text should
+            // not be reused.
+            expect(
+                await getInlineCompletions(
+                    params('y█', [], {
+                        lastCandidate: lastCandidate('x█', ' = 1'),
                     })
                 )
             ).toEqual<V>({
@@ -305,16 +349,6 @@ describe('getInlineCompletions', () => {
                     source: InlineCompletionsResultSource.Network,
                 }))
         })
-
-        test('reused when adding leading whitespace', async () =>
-            // The user types ``, sees ghost text `x = 1`, then types ` ` (space). The original
-            // completion should be reused.
-            expect(
-                await getInlineCompletions(params(' █', [], { lastCandidate: lastCandidate('█', 'x = 1') }))
-            ).toEqual<V>({
-                items: [{ insertText: 'x = 1' }],
-                source: InlineCompletionsResultSource.LastCandidate,
-            }))
 
         test('reused for a multi-line completion', async () =>
             // The user types ``, sees ghost text `x\ny`, then types ` ` (space). The original

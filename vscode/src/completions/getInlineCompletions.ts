@@ -286,29 +286,39 @@ function reuseResultFromLastCandidate({
         return null
     }
 
-    // Allow reuse if the user just deletes indentation (leading whitespace).
-    const isDeindent =
-        /^\s*$/.test(originalTriggerLinePrefix) && originalTriggerLinePrefix.startsWith(currentLinePrefix)
-    // const xxx = originalTriggerLinePrefix.slice(0, -currentLinePrefix.length)
+    const isWhitespace = (s: string): boolean => /^\s*$/.test(s)
 
-    // Allow reuse if the user is (possibly) typing forward as suggested by the last candidate
-    // completion. We still need to filter the candidate items to see which ones the user's typing
-    // actually follows.
-    const isMaybeTypingAsSuggested =
-        currentLinePrefix.startsWith(originalTriggerLinePrefix) && originalTriggerPosition.isBeforeOrEqual(position)
-
-    console.log({
-        isInsignificantLeadingWhitespaceChange: isDeindent,
-        currentLinePrefix,
-        originalTriggerLinePrefix,
-        isMaybeTypingAsSuggested,
-    })
-    if (!isDeindent && !isMaybeTypingAsSuggested) {
-        return null
-    }
+    // Changes in whitespace can either be typing-as-suggested (if the completion starts with the
+    // added whitespace) or indentations of the completion (otherwise).
 
     const itemsToReuse = lastCandidate.result.items
         .map((item): InlineCompletionItem | undefined => {
+            // There are 2 reasons we can reuse a candidate: typing-as-suggested or change-of-indentation.
+
+            // Allow reuse if only the indentation (leading whitespace) has changed.
+            const isIndent = isWhitespace(currentLinePrefix) && currentLinePrefix.startsWith(originalTriggerLinePrefix)
+            const isDeindent =
+                isWhitespace(originalTriggerLinePrefix) && originalTriggerLinePrefix.startsWith(currentLinePrefix)
+            const isChangeOfIndentation = isIndent || isDeindent
+
+            // Allow reuse if the user is (possibly) typing forward as suggested by the last candidate
+            // completion. We still need to filter the candidate items to see which ones the user's typing
+            // actually follows.
+            const originalLine = originalTriggerLinePrefix + item.insertText.slice(0, item.insertText.indexOf('\n'))
+            const isTypingAsSuggested =
+                originalLine.startsWith(currentLinePrefix) && position.isAfterOrEqual(originalTriggerPosition)
+
+            console.log({
+                isChangeOfIndentation,
+                isTypingAsSuggested,
+                currentLinePrefix,
+                originalLine,
+                originalTriggerLinePrefix,
+            })
+            if (!isChangeOfIndentation && !isTypingAsSuggested) {
+                return undefined
+            }
+
             const isSamePrefix = (originalTriggerLinePrefix + item.insertText).startsWith(currentLinePrefix)
 
             const isCursorWithinGhostText = isSamePrefix && position.isAfterOrEqual(originalTriggerPosition)
@@ -317,10 +327,10 @@ function reuseResultFromLastCandidate({
 
             if (isLineOnlyLeadingWhitespace || (isSamePrefix && isCursorWithinGhostText)) {
                 let insertText: string
-                if (isLineOnlyLeadingWhitespace) {
-                    insertText = originalTriggerLinePrefix.slice(currentLinePrefix.length) + item.insertText
-                } else {
+                if (isSamePrefix && isCursorWithinGhostText) {
                     insertText = (originalTriggerLinePrefix + item.insertText).slice(currentLinePrefix.length)
+                } else {
+                    insertText = originalTriggerLinePrefix.slice(currentLinePrefix.length) + item.insertText
                 }
                 return { insertText }
             }
