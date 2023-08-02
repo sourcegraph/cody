@@ -1,5 +1,4 @@
 import * as vscode from 'vscode'
-import { Range } from 'vscode-languageserver-textdocument'
 import { URI } from 'vscode-uri'
 
 import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
@@ -67,8 +66,8 @@ export interface LastInlineCompletionCandidate {
     /** The position at which this candidate was generated. */
     originalTriggerPosition: vscode.Position
 
-    /** The full text of the line where this candidate was generated. */
-    originalTriggerLineText: string
+    /** The prefix of the line (before the cursor position) where this candidate was generated. */
+    originalTriggerLinePrefix: string
 
     /** The candidate completion item. */
     item: InlineCompletionItem
@@ -179,30 +178,6 @@ async function doGetInlineCompletions({
         const isSameDocument = lastCandidate.uri.toString() === document.uri.toString()
         const isSameLine = lastCandidate.originalTriggerPosition.line === position.line
 
-        const candidateFullRange: Range = lastCandidate.item.range ?? {
-            start: lastCandidate.originalTriggerPosition,
-            end: lastCandidate.originalTriggerPosition,
-        }
-
-        // TODO(sqs): also check position?
-        const candidateRangeOnFirstLine =
-            candidateFullRange.start.line === candidateFullRange.end.line
-                ? candidateFullRange
-                : candidateFullRange.start.line === lastCandidate.originalTriggerPosition.line
-                ? {
-                      start: candidateFullRange.start,
-                      end: {
-                          line: candidateFullRange.start.line,
-                          character: lastCandidate.originalTriggerLineText.length,
-                      },
-                  }
-                : null
-        const lineWithGhostText = candidateRangeOnFirstLine
-            ? lastCandidate.originalTriggerLineText.slice(0, candidateRangeOnFirstLine.start.character) +
-              lastCandidate.item.insertText +
-              lastCandidate.originalTriggerLineText.slice(candidateRangeOnFirstLine.end.character)
-            : lastCandidate.originalTriggerLineText
-
         const isCursorWithinGhostText = position.isAfterOrEqual(lastCandidate.originalTriggerPosition)
         const isSamePrefix = lastCandidate.item.insertText.startsWith(docContext.currentLinePrefix)
         const isAfterOriginalTrigger = isCursorWithinGhostText && isSamePrefix
@@ -220,7 +195,7 @@ async function doGetInlineCompletions({
                     {
                         insertText: isAfterOriginalTrigger
                             ? lastCandidate.item.insertText.slice(docContext.currentLinePrefix.length)
-                            : lastCandidate.item.insertText,
+                            : lastCandidate.originalTriggerLinePrefix.slice() + lastCandidate.item.insertText,
                     },
                 ],
                 source: InlineCompletionsResultSource.LastSuggestion,

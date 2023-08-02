@@ -199,7 +199,7 @@ describe('getInlineCompletions', () => {
                 logId: '1',
                 uri: document.uri,
                 originalTriggerPosition: position,
-                originalTriggerLineText: document.lineAt(position).text.slice(0, position.character),
+                originalTriggerLinePrefix: document.lineAt(position).text.slice(0, position.character),
                 item: { insertText },
             }
         }
@@ -246,19 +246,17 @@ describe('getInlineCompletions', () => {
             }))
 
         test('used when the user deletes leading whitespace', async () => {
-            // The user types on a new line `\t\t`, sees ghost text `const x = 1`, then deletes the
-            // `\t`. The same ghost text should still be displayed.
-            expect(
-                await getInlineCompletions(params('\t█', [], { lastCandidate: lastCandidate('\t\t█', 'const x = 1') }))
-            ).toEqual<V>({
+            // // The user types on a new line `\t\t` and sees ghost text `const x = 1`.
+            const candidate = lastCandidate('\t\t█', 'const x = 1')
+
+            // Then the user deletes the`\t`. The same ghost text should still be displayed.
+            expect(await getInlineCompletions(params('\t█', [], { lastCandidate: candidate }))).toEqual<V>({
                 items: [{ insertText: '\tconst x = 1' }],
                 source: InlineCompletionsResultSource.LastSuggestion,
             })
 
             // Then the user deletes the other `\t`. The same ghost text should still be displayed.
-            expect(
-                await getInlineCompletions(params('█', [], { lastCandidate: lastCandidate('\t\t█', 'const x = 1') }))
-            ).toEqual<V>({
+            expect(await getInlineCompletions(params('█', [], { lastCandidate: candidate }))).toEqual<V>({
                 items: [{ insertText: '\t\tconst x = 1' }],
                 source: InlineCompletionsResultSource.LastSuggestion,
             })
