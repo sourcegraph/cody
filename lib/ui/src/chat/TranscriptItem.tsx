@@ -14,13 +14,13 @@ import {
 } from '../Chat'
 
 import { BlinkingCursor } from './BlinkingCursor'
-import { CodeBlocks, CodyRecipeWidgetWrapper } from './CodeBlocks'
+import { CodeBlocks, CodyRecipesWidgetWrapper } from './CodeBlocks'
 import { ContextFiles, FileLinkProps } from './ContextFiles'
 import { PluginExecutionInfos } from './PluginExecutionInfos'
 
 import styles from './TranscriptItem.module.css'
 
-export type { CodyRecipeWidgetWrapper } from './CodeBlocks'
+export type { CodyRecipesWidgetWrapper } from './CodeBlocks'
 
 /**
  * CSS class names used for the {@link TranscriptItem} component.
@@ -58,7 +58,7 @@ export const TranscriptItem: React.FunctionComponent<
         onAbortMessageInProgress?: () => void
         ChatButtonComponent?: React.FunctionComponent<ChatButtonProps>
         pluginsDevMode?: boolean
-        RecipeWidgetWrapper?: CodyRecipeWidgetWrapper
+        RecipesWidgetWrapper?: CodyRecipesWidgetWrapper
         transcriptRef?: RefObject<HTMLElement>
     } & TranscriptItemClassNames
 > = React.memo(function TranscriptItemContent({
@@ -85,11 +85,10 @@ export const TranscriptItem: React.FunctionComponent<
     chatInputClassName,
     ChatButtonComponent,
     pluginsDevMode,
-    RecipeWidgetWrapper,
+    RecipesWidgetWrapper,
     transcriptRef,
 }) {
     const [formInput, setFormInput] = useState<string>(message.displayText ?? '')
-    console.log('transcriptRef??', transcriptRef)
 
     const textarea =
         TextArea && beingEdited && editButtonOnSubmit && SubmitButton ? (
@@ -185,7 +184,7 @@ export const TranscriptItem: React.FunctionComponent<
                             copyButtonClassName={codeBlocksCopyButtonClassName}
                             CopyButtonProps={copyButtonOnSubmit}
                             insertButtonClassName={codeBlocksInsertButtonClassName}
-                            RecipeWidgetWrapper={RecipeWidgetWrapper}
+                            RecipesWidgetWrapper={RecipesWidgetWrapper}
                             transcriptRef={transcriptRef}
                         />
                     )

@@ -7,7 +7,7 @@ import { ChatButton, ChatContextStatus, ChatMessage, isDefined } from '@sourcegr
 import { FileLinkProps } from './chat/ContextFiles'
 import { ChatInputContext } from './chat/inputContext/ChatInputContext'
 import { Transcript } from './chat/Transcript'
-import { CodyRecipeWidgetWrapper, TranscriptItemClassNames } from './chat/TranscriptItem'
+import { CodyRecipesWidgetWrapper, TranscriptItemClassNames } from './chat/TranscriptItem'
 
 import styles from './Chat.module.css'
 
@@ -47,7 +47,7 @@ interface ChatProps extends ChatClassNames {
     isCodyEnabled: boolean
     ChatButtonComponent?: React.FunctionComponent<ChatButtonProps>
     pluginsDevMode?: boolean
-    RecipeWidgetWrapper?: CodyRecipeWidgetWrapper
+    RecipesWidgetWrapper?: CodyRecipesWidgetWrapper
 }
 
 interface ChatClassNames extends TranscriptItemClassNames {
@@ -149,7 +149,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
     isCodyEnabled,
     ChatButtonComponent,
     pluginsDevMode,
-    RecipeWidgetWrapper,
+    RecipesWidgetWrapper,
 }) => {
     const [inputRows, setInputRows] = useState(5)
     const [historyIndex, setHistoryIndex] = useState(inputHistory.length)
@@ -290,7 +290,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                     chatInputClassName={chatInputClassName}
                     ChatButtonComponent={ChatButtonComponent}
                     pluginsDevMode={pluginsDevMode}
-                    RecipeWidgetWrapper={RecipeWidgetWrapper}
+                    RecipesWidgetWrapper={RecipesWidgetWrapper}
                 />
             )}
 

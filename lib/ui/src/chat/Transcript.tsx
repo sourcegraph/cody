@@ -14,7 +14,7 @@ import {
 } from '../Chat'
 
 import { FileLinkProps } from './ContextFiles'
-import { CodyRecipeWidgetWrapper, TranscriptItem, TranscriptItemClassNames } from './TranscriptItem'
+import { CodyRecipesWidgetWrapper, TranscriptItem, TranscriptItemClassNames } from './TranscriptItem'
 
 import styles from './Transcript.module.css'
 
@@ -35,7 +35,7 @@ export const Transcript: React.FunctionComponent<
         submitButtonComponent?: React.FunctionComponent<ChatUISubmitButtonProps>
         ChatButtonComponent?: React.FunctionComponent<ChatButtonProps>
         pluginsDevMode?: boolean
-        RecipeWidgetWrapper?: CodyRecipeWidgetWrapper
+        RecipesWidgetWrapper?: CodyRecipesWidgetWrapper
     } & TranscriptItemClassNames
 > = React.memo(function TranscriptContent({
     transcript,
@@ -60,10 +60,9 @@ export const Transcript: React.FunctionComponent<
     chatInputClassName,
     ChatButtonComponent,
     pluginsDevMode,
-    RecipeWidgetWrapper,
+    RecipesWidgetWrapper,
 }) {
     const transcriptContainerRef = useRef<HTMLDivElement>(null)
-    console.log('transcriptRef??', transcriptContainerRef)
     useEffect(() => {
         if (transcriptContainerRef.current) {
             // Only scroll if the user didn't scroll up manually more than the scrolling threshold.
@@ -126,7 +125,7 @@ export const Transcript: React.FunctionComponent<
                             chatInputClassName={chatInputClassName}
                             ChatButtonComponent={ChatButtonComponent}
                             pluginsDevMode={pluginsDevMode}
-                            RecipeWidgetWrapper={RecipeWidgetWrapper}
+                            RecipesWidgetWrapper={RecipesWidgetWrapper}
                             transcriptRef={transcriptContainerRef}
                         />
                     )
@@ -149,7 +148,7 @@ export const Transcript: React.FunctionComponent<
                     submitButtonComponent={submitButtonComponent}
                     chatInputClassName={chatInputClassName}
                     ChatButtonComponent={ChatButtonComponent}
-                    RecipeWidgetWrapper={RecipeWidgetWrapper}
+                    RecipesWidgetWrapper={RecipesWidgetWrapper}
                     transcriptRef={transcriptContainerRef}
                 />
             )}
