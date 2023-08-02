@@ -296,45 +296,42 @@ function reuseResultFromLastCandidate({
             // There are 2 reasons we can reuse a candidate: typing-as-suggested or change-of-indentation.
 
             // Allow reuse if only the indentation (leading whitespace) has changed.
-            const isIndent = isWhitespace(currentLinePrefix) && currentLinePrefix.startsWith(originalTriggerLinePrefix)
+            const isIndent =
+                isWhitespace(currentLinePrefix) &&
+                currentLineSuffix === '' &&
+                currentLinePrefix.startsWith(originalTriggerLinePrefix)
             const isDeindent =
-                isWhitespace(originalTriggerLinePrefix) && originalTriggerLinePrefix.startsWith(currentLinePrefix)
+                isWhitespace(originalTriggerLinePrefix) &&
+                currentLineSuffix === '' &&
+                originalTriggerLinePrefix.startsWith(currentLinePrefix)
             const isChangeOfIndentation = isIndent || isDeindent
 
             // Allow reuse if the user is (possibly) typing forward as suggested by the last candidate
             // completion. We still need to filter the candidate items to see which ones the user's typing
             // actually follows.
-            const originalLine = originalTriggerLinePrefix + item.insertText.slice(0, item.insertText.indexOf('\n'))
+            const originalCompletion = originalTriggerLinePrefix + item.insertText
             const isTypingAsSuggested =
-                originalLine.startsWith(currentLinePrefix) && position.isAfterOrEqual(originalTriggerPosition)
+                originalCompletion.startsWith(currentLinePrefix) && position.isAfterOrEqual(originalTriggerPosition)
 
             console.log({
                 isChangeOfIndentation,
                 isTypingAsSuggested,
                 currentLinePrefix,
-                originalLine,
+                originalCompletion,
                 originalTriggerLinePrefix,
             })
+
             if (!isChangeOfIndentation && !isTypingAsSuggested) {
                 return undefined
             }
 
-            const isSamePrefix = (originalTriggerLinePrefix + item.insertText).startsWith(currentLinePrefix)
-
-            const isCursorWithinGhostText = isSamePrefix && position.isAfterOrEqual(originalTriggerPosition)
-
-            const isLineOnlyLeadingWhitespace = /^\s*$/.test(currentLinePrefix) && currentLineSuffix === ''
-
-            if (isLineOnlyLeadingWhitespace || (isSamePrefix && isCursorWithinGhostText)) {
-                let insertText: string
-                if (isSamePrefix && isCursorWithinGhostText) {
-                    insertText = (originalTriggerLinePrefix + item.insertText).slice(currentLinePrefix.length)
-                } else {
-                    insertText = originalTriggerLinePrefix.slice(currentLinePrefix.length) + item.insertText
-                }
-                return { insertText }
+            let insertText: string
+            if (isTypingAsSuggested) {
+                insertText = originalCompletion.slice(currentLinePrefix.length)
+            } else {
+                insertText = originalTriggerLinePrefix.slice(currentLinePrefix.length) + item.insertText
             }
-            return undefined
+            return { insertText }
         })
         .filter(isDefined)
     return itemsToReuse.length > 0
