@@ -143,11 +143,7 @@ export const CodeBlocks: React.FunctionComponent<CodeBlocksProps> = React.memo(f
         if (RecipesWidgetWrapper && transcriptRef) {
             return (
                 <RecipesWidgetWrapperWithProps targetRef={rootRef} transcriptRef={transcriptRef}>
-                    <div
-                        ref={rootRef}
-                        className={styles.popoverWrapper}
-                        dangerouslySetInnerHTML={{ __html: renderCodyMarkdown(displayText) }}
-                    />
+                    <div ref={rootRef} dangerouslySetInnerHTML={{ __html: renderCodyMarkdown(displayText) }} />
                 </RecipesWidgetWrapperWithProps>
             )
         }
