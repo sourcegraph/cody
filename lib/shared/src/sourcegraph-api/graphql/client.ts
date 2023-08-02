@@ -196,16 +196,20 @@ export class SourcegraphGraphQLAPIClient {
     }
 
     public async getSiteIdentification(): Promise<{ siteid: string; hashedLicenseKey: string } | Error> {
-        const response = await this.fetchSourcegraphAPI<APIResponse<SiteIdentificationResponse>>(CURRENT_SITE_IDENTIFICATION, {})
+        const response = await this.fetchSourcegraphAPI<APIResponse<SiteIdentificationResponse>>(
+            CURRENT_SITE_IDENTIFICATION,
+            {}
+        )
         return extractDataOrError(response, data =>
             data.site?.siteID
                 ? data.site?.productSubscription?.license?.hashedKey
                     ? {
-                            siteid: data.site?.siteID,
-                            hashedLicenseKey: data.site?.productSubscription?.license?.hashedKey,
-                        }
+                          siteid: data.site?.siteID,
+                          hashedLicenseKey: data.site?.productSubscription?.license?.hashedKey,
+                      }
                     : new Error('site hashed license key not found')
-                : new Error('site ID not found'))
+                : new Error('site ID not found')
+        )
     }
 
     public async getSiteHasIsCodyEnabledField(): Promise<boolean | Error> {
@@ -360,7 +364,10 @@ export class SourcegraphGraphQLAPIClient {
         const initialDataOrError = extractDataOrError(initialResponse, data => data)
 
         if (isError(initialDataOrError)) {
-            const secondResponse = await this.fetchSourcegraphAPI<APIResponse<LogEventResponse>>(LOG_EVENT_MUTATION_DEPRECATED, event)
+            const secondResponse = await this.fetchSourcegraphAPI<APIResponse<LogEventResponse>>(
+                LOG_EVENT_MUTATION_DEPRECATED,
+                event
+            )
             return extractDataOrError(secondResponse, data => data)
         }
 
