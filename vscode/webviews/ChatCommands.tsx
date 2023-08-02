@@ -1,11 +1,11 @@
 import React, { useEffect, useRef } from 'react'
 
+import { VSCodeButton } from '@vscode/webview-ui-toolkit/react'
 import classNames from 'classnames'
 
 import { ChatCommandsProps } from '@sourcegraph/cody-ui/src/Chat'
 
 import styles from './ChatCommands.module.css'
-import { VSCodeButton } from '@vscode/webview-ui-toolkit/react'
 
 export const ChatCommandsComponent: React.FunctionComponent<React.PropsWithChildren<ChatCommandsProps>> = ({
     chatCommands,
@@ -43,7 +43,7 @@ export const ChatCommandsComponent: React.FunctionComponent<React.PropsWithChild
                 <VSCodeButton
                     className={classNames(styles.settingsButton)}
                     onClick={() => onCommandClick('/commands-settings')}
-                    appearance='icon'
+                    appearance="icon"
                     title="Configure Custom Commands"
                 >
                     <i className="codicon codicon-gear" />
