@@ -9,7 +9,7 @@ import { Interaction } from '../transcript/interaction'
 import { getContextMessagesFromSelection } from './helpers'
 import { Recipe, RecipeContext, RecipeID } from './recipe'
 
-export type FixupIntent = 'add' | 'edit' | 'delete' | 'fix' | 'test' | 'document'
+export type FixupIntent = 'add' | 'edit' | 'remove' | 'fix' | 'test' | 'document'
 const FixupIntentClassification: IntentClassificationOption<FixupIntent>[] = [
     {
         id: 'edit',
@@ -17,8 +17,8 @@ const FixupIntentClassification: IntentClassificationOption<FixupIntent>[] = [
         examplePrompts: ['Edit this code', 'Change this code', 'Update this code'],
     },
     {
-        id: 'delete',
-        description: 'Delete a part of the selection code',
+        id: 'remove',
+        description: 'Remove a part of the selected code',
         examplePrompts: ['Delete these comments', 'Remove log statements'],
     },
     {
@@ -35,7 +35,7 @@ const FixupIntentClassification: IntentClassificationOption<FixupIntent>[] = [
 
 const PromptIntentInstruction: Record<Exclude<FixupIntent, 'add'>, string> = {
     edit: 'The user wants you to replace parts of the selected code by following their instructions.',
-    delete: 'The user wants you to remove parts of the selected code by following their instructions.',
+    remove: 'The user wants you to remove parts of the selected code by following their instructions.',
     fix: 'The user wants you to correct a problem in the selected code by following their instructions.',
     document:
         'The user wants you to add documentation or comments to the selected code by following their instructions.',
