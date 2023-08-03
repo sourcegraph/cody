@@ -4,10 +4,10 @@
   "doc": "For more information, see https://sourcegraph.com/notebooks/Tm90ZWJvb2s6MzA1NQ==",
   "commands": {
     "(example) Generate README.md for Current Directory": {
-      "prompt": "Write a detailed README.md introduction for this project. If possible, briefly explain what the directory is and its key features. Use Markdown formatting. Focus on clarity and being beginner-friendly. Surround the answer with a code block to indicate that it is code.",
+      "prompt": "Write a detailed README.md file to document the code located in the same directory as my current selection. Summarize what the code in this directory is meant to accomplish. Explain the key files, functions, classes, and features. Use Markdown formatting for headings, code blocks, lists, etc. to make the it organized and readable. Aim for a beginner-friendly explanation that gives a developer unfamiliar with the code a good starting point to understand it. Make sure to include: - Overview of directory purpose - Functionality explanations - Relevant diagrams or visuals if helpful. Write the README content clearly and concisely using complete sentences and paragraphs based on the shared context. Use proper spelling, grammar, and punctuation throughout. Surround your full README text with triple backticks so it renders properly as a code block. Do not make assumptions or fabricating additional details.",
       "context": {
         "currentDir": true,
-        "selection": false
+        "selection": true
       }
     },
     "(example) Commit Message for Current Changes": {

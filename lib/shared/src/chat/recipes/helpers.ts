@@ -24,6 +24,7 @@ const EXTENSION_TO_LANGUAGE: { [key: string]: string } = {
     css: 'CSS',
     html: 'HTML',
     json: 'JSON',
+    rs: 'Rust',
 }
 
 export const commandRegex = {

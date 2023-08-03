@@ -21,7 +21,7 @@ import { answers, prompts } from '../prompts/templates'
 import { Interaction } from '../transcript/interaction'
 
 import { ChatQuestion } from './chat-question'
-import { getFileExtension, numResults } from './helpers'
+import { getFileExtension, getNormalizedLanguageName, numResults } from './helpers'
 import { InlineTouch } from './inline-touch'
 import { Recipe, RecipeContext, RecipeID } from './recipe'
 
@@ -73,6 +73,7 @@ export class CustomPrompt implements Recipe {
                 ? prompts.selection
                       .replace('{selectedText}', selection.selectedText)
                       .replace('{fileName}', selection?.fileName)
+                      .replace('{languageName}', getNormalizedLanguageName(getFileExtension(selection.fileName)))
                 : ''
 
         // Prompt text to share with Cody only and not display to human

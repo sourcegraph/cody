@@ -1,15 +1,15 @@
 const selection_prompt = `
-I have questions about this selected code from {fileName}:
+I have questions about this selected {languageName} code from {fileName}:
 \`\`\`
 {selectedText}
 \`\`\`
 `
 
 const instruction_prompt = `Please follow these rules when answering my question:
-- Do not remove code that might be being used by the other part of the code that was not shared.
 - Your answers and suggestions should based on the shared context only.
 - Do not suggest anything that would break the working code.
-- Provides full workable code when possible.
+- Do not make assumptions or fabricating additional details.
+- All generated code should be full workable code.
 
 Questions: {humanInput}
 `

@@ -109,9 +109,10 @@ export class CustomPromptsStore {
                 const prompt = prompts[key]
                 prompt.name = key
                 prompt.type = type
-                if (prompt.slashCommand) {
-                    const slashCommand = `/${prompt.slashCommand}`
-                    prompt.slashCommand = slashCommand
+                // replace any '/' from the start
+                const slashCommand = prompt.slashCommand?.replace(/^\//, '')
+                if (slashCommand?.length) {
+                    prompt.slashCommand = `/${slashCommand}`
                 }
                 this.myPromptsMap.set(key, prompt)
             }
