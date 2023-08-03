@@ -3,6 +3,7 @@ import * as vscode from 'vscode'
 import { isDefined } from '@sourcegraph/cody-shared'
 import { renderMarkdown } from '@sourcegraph/cody-shared/src/common/markdown'
 
+import { InlineCompletionsResultSource } from '../getInlineCompletions'
 import { InlineCompletionItem } from '../types'
 import { InlineCompletionItemProvider } from '../vscodeInlineCompletionItemProvider'
 
@@ -70,6 +71,7 @@ function renderWebviewHtml(data: ProvideInlineCompletionsItemTraceData | undefin
 - ${markdownInlineCode(data.params.document.fileName)} @ ${data.params.position.line + 1}:${
                 data.params.position.character + 1
             }
+- triggerKind: ${vscode.InlineCompletionTriggerKind[data.params.context.triggerKind]}
 - selectedCompletionInfo: ${
                 data.params.context.selectedCompletionInfo
                     ? selectedCompletionInfoDescription(
@@ -126,11 +128,18 @@ ${
 `,
         data?.result !== undefined
             ? `
-## Completions (cache ${data.cacheHit === true ? 'hit' : data.cacheHit === false ? 'miss' : 'unknown'})
+## Completions
+
+${(data.result
+    ? [`- source: ${InlineCompletionsResultSource[data.result.source]}`, `- logId: \`${data.result.logId}\``]
+    : []
+).join('\n')}
 
 ${
-    data.result === null || data.result.items.length === 0
-        ? 'No completions.'
+    data.result === null
+        ? '`null`'
+        : data.result.items.length === 0
+        ? 'Empty completions.'
         : data.result.items
               .map(item => inlineCompletionItemDescription(item, data.params?.document))
               .join('\n\n---\n\n')
