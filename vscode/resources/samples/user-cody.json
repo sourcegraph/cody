@@ -11,13 +11,12 @@
         "selection": false
       }
     },
-    "(example) Debug last error from Cody app": {
-      "prompt": "Tell me about the most recent error in log and how I can resolve it.",
+    "(example) Summarize the Last Cody Release": {
+      "prompt": "Summarize the last released patch of Cody based on the information from the CHANGELOG in the output. Tell me: 1) the version number of the latest stable release, and 2) the changes included in that release.",
       "context": {
         "selection": false,
-        "command": "tail -n 30 ~/Library/Logs/com.sourcegraph.cody/Cody.log"
-      },
-      "note": "You must have Cody app installed to use this recipe"
+        "command": "curl https://raw.githubusercontent.com/sourcegraph/cody/main/vscode/CHANGELOG.md | head -n 50"
+      }
     }
   }
 }
