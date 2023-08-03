@@ -14,6 +14,7 @@ function docState(
         position: prefix.length,
         suffix: ';',
         languageId: 'typescript',
+        multiline: false,
         ...other,
     }
 }
@@ -61,6 +62,12 @@ describe('CompletionsCache', () => {
         expect(cache.get(docState('foo \n'))).toEqual(undefined)
         expect(cache.get(docState('foo\n'))).toEqual(undefined)
         expect(cache.get(docState('foo\t'))).toEqual(undefined)
+    })
+
+    it('does not a multi-line request with a single-line entry', () => {
+        const cache = new CompletionsCache()
+        cache.add(docState('function bubbleSort'), [completion('baz')])
+        expect(cache.get(docState('function bubbleSort(', { multiline: true }))).toEqual(undefined)
     })
 
     describe('when the document is ahead of the completion', () => {

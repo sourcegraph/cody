@@ -243,6 +243,7 @@ async function doGetInlineCompletions({
         suffix: docContext.suffix,
         position: document.offsetAt(position),
         languageId: document.languageId,
+        multiline,
     }
 
     // Get completions from providers

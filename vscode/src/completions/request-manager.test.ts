@@ -42,6 +42,7 @@ function docState(prefix: string): RequestParams {
         position: prefix.length,
         suffix: ';',
         languageId: 'typescript',
+        multiline: false,
     }
 }
 
