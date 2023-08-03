@@ -13,21 +13,25 @@ export type FixupIntent = 'add' | 'edit' | 'remove' | 'fix' | 'test' | 'document
 const FixupIntentClassification: IntentClassificationOption<FixupIntent>[] = [
     {
         id: 'edit',
+        rawCommand: '/edit',
         description: 'Edit part of the selected code',
         examplePrompts: ['Edit this code', 'Change this code', 'Update this code'],
     },
     {
         id: 'remove',
+        rawCommand: '/remove',
         description: 'Remove a part of the selected code',
         examplePrompts: ['Delete these comments', 'Remove log statements'],
     },
     {
         id: 'fix',
+        rawCommand: '/fix',
         description: 'Fix a problem in a part of the selected code',
         examplePrompts: ['Implement this TODO', 'Fix this code'],
     },
     {
         id: 'document',
+        rawCommand: '/document',
         description: 'Generate documentation for parts of the selected code.',
         examplePrompts: ['Add a docstring for this function', 'Write comments to explain this code'],
     },
