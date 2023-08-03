@@ -17,7 +17,7 @@ describe('getConfiguration', () => {
             codebase: '',
             useContext: 'embeddings',
             autocomplete: true,
-            experimentalCommandLenses: true,
+            experimentalCommandLenses: false,
             experimentalChatPredictions: false,
             experimentalGuardrails: false,
             inlineChat: true,

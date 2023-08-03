@@ -645,7 +645,7 @@
       "editor/title": [
         {
           "command": "cody.action.commands.menu",
-          "when": "cody.activated",
+          "when": "cody.activated && config.cody.experimental.editorTitleCommandIcon",
           "group": "navigation",
           "visibility": "visible"
         },
@@ -779,7 +779,13 @@
           "order": 8,
           "type": "boolean",
           "markdownDescription": "[Experimental] Adds code lenses to current file for quick access to Cody commands.",
-          "default": true
+          "default": false
+        },
+        "cody.experimental.editorTitleCommandIcon": {
+          "order": 8,
+          "type": "boolean",
+          "markdownDescription": "[Experimental] Adds an editor title menu icon for quick access to Cody commands.",
+          "default": false
         },
         "cody.experimental.guardrails": {
           "order": 9,
