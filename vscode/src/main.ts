@@ -205,12 +205,11 @@ const register = async (
         sidebarChatProvider.handleError(error)
     }
 
-    const executeFixup = async (instruction: string | null, range: vscode.Range): Promise<void> => {
-        const document = vscode.window.activeTextEditor?.document
-        if (!document) {
-            return Promise.resolve()
-        }
-
+    const executeFixup = async (
+        document: vscode.TextDocument,
+        instruction: string | null,
+        range: vscode.Range
+    ): Promise<void> => {
         const task = !instruction ? await fixup.promptUserForTask() : fixup.createTask(document.uri, instruction, range)
         if (!task) {
             return Promise.resolve()
@@ -219,21 +218,6 @@ const register = async (
         const provider = fixupManager.getProviderForTask(task)
         return provider.startFix()
     }
-
-    // const promptForFixup = async (range: vscode.Range): Promise<void> => {
-    //     const qp = vscode.window.createQuickPick()
-    //     qp.title = 'Cody'
-    //     qp.placeholder = "Ask Cody to do something, or type '/' for commands"
-    //     qp.buttons = [{ tooltip: 'Cody', iconPath: new vscode.ThemeIcon('cody-logo-heavy') }]
-    //     qp.ignoreFocusOut = true
-    //     qp.show()
-    //     qp.onDidTriggerButton(() => {
-    //         void vscode.commands.executeCommand('cody.focus')
-    //         qp.hide()
-    //     })
-    //     const instruction = await new Promise(resolve => qp.onDidAccept(resolve))
-    //     return executeFixup(instruction as string, range)
-    // }
 
     const statusBar = createStatusBar()
 
@@ -276,18 +260,32 @@ const register = async (
             // Remove the inline chat
             inlineChatManager.removeProviderForThread(thread)
         }),
-        vscode.commands.registerCommand(
-            'cody.fixup.new',
-            (range: vscode.Range): Promise<void> => executeFixup(null, range)
-        ),
-        vscode.commands.registerCommand(
-            'cody.fixup.add',
-            (instruction: string, range: vscode.Range): Promise<void> => executeFixup(instruction, range)
-        ),
+        vscode.commands.registerCommand('cody.fixup.new', (range: vscode.Range): Promise<void> => {
+            const document = vscode.window.activeTextEditor?.document
+            if (!document) {
+                return Promise.resolve()
+            }
+            return executeFixup(document, null, range)
+        }),
+        vscode.commands.registerCommand('cody.fixup.add', (instruction: string, range: vscode.Range): Promise<void> => {
+            const document = vscode.window.activeTextEditor?.document
+            if (!document) {
+                return Promise.resolve()
+            }
+            return executeFixup(document, instruction, range)
+        }),
         vscode.commands.registerCommand('cody.inline.new', async () => {
             // move focus line to the end of the current selection
             await vscode.commands.executeCommand('cursorLineEndSelect')
             await vscode.commands.executeCommand('workbench.action.addComment')
+        }),
+        vscode.commands.registerCommand('cody.inline.add', async (instruction: string, range: vscode.Range) => {
+            const comment = commentController.create(instruction, range)
+            if (!comment) {
+                return Promise.resolve()
+            }
+            const inlineChatProvider = inlineChatManager.getProviderForThread(comment.thread)
+            void inlineChatProvider.addChat(comment.text, false)
         }),
         // Tests
         // Access token - this is only used in configuration tests

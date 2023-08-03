@@ -212,7 +212,7 @@ export class Fixup implements Recipe {
              * Intents that are focused primarily on updating code within the current file and selection.
              * Providing a much more focused context window here seems to provide better quality responses.
              */
-            case 'delete':
+            case 'remove':
             case 'document':
                 return Promise.resolve(
                     [truncatedPrecedingText, truncatedFollowingText].flatMap(text =>

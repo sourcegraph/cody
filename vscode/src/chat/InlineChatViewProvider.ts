@@ -2,14 +2,22 @@ import * as vscode from 'vscode'
 
 import { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 
+import { ExplainCodeAction } from '../code-actions/explain'
+
 import { MessageProvider, MessageProviderOptions } from './MessageProvider'
 
-export class InlineChatViewManager {
+export class InlineChatViewManager implements vscode.Disposable {
     private inlineChatThreadProviders = new Map<vscode.CommentThread, InlineChatViewProvider>()
     private messageProviderOptions: MessageProviderOptions
+    private disposables: vscode.Disposable[] = []
 
     constructor(options: MessageProviderOptions) {
         this.messageProviderOptions = options
+        this.disposables.push(
+            vscode.languages.registerCodeActionsProvider('*', new ExplainCodeAction(), {
+                providedCodeActionKinds: ExplainCodeAction.providedCodeActionKinds,
+            })
+        )
     }
 
     public getProviderForThread(thread: vscode.CommentThread): InlineChatViewProvider {
@@ -31,6 +39,13 @@ export class InlineChatViewManager {
             provider.removeChat()
             provider.dispose()
         }
+    }
+
+    public dispose(): void {
+        for (const disposable of this.disposables) {
+            disposable.dispose()
+        }
+        this.disposables = []
     }
 }
 
@@ -58,7 +73,7 @@ export class InlineChatViewProvider extends MessageProvider {
          */
         await this.editor.controllers.inline?.chat(reply, this.thread, isFixMode)
         this.editor.controllers.inline?.setResponsePending(true)
-        await this.executeRecipe('inline-chat', reply.trimStart())
+        void this.executeRecipe('inline-chat', reply.trimStart())
     }
 
     public removeChat(): void {

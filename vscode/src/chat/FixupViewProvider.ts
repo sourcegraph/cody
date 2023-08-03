@@ -1,16 +1,25 @@
+import * as vscode from 'vscode'
+
 import { CodyPrompt } from '@sourcegraph/cody-shared/src/chat/prompts'
 import { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 
+import { FixupCodeAction } from '../code-actions/fixup'
 import { FixupTask } from '../non-stop/FixupTask'
 
 import { MessageProvider, MessageProviderOptions } from './MessageProvider'
 
-export class FixupManager {
+export class FixupManager implements vscode.Disposable {
     private fixupProviders = new Map<FixupTask, FixupProvider>()
     private messageProviderOptions: MessageProviderOptions
+    private disposables: vscode.Disposable[] = []
 
     constructor(options: MessageProviderOptions) {
         this.messageProviderOptions = options
+        this.disposables.push(
+            vscode.languages.registerCodeActionsProvider('*', new FixupCodeAction(), {
+                providedCodeActionKinds: FixupCodeAction.providedCodeActionKinds,
+            })
+        )
     }
 
     public getProviderForTask(task: FixupTask): FixupProvider {
@@ -32,6 +41,13 @@ export class FixupManager {
             provider.removeFix()
             provider.dispose()
         }
+    }
+
+    public dispose(): void {
+        for (const disposable of this.disposables) {
+            disposable.dispose()
+        }
+        this.disposables = []
     }
 }
 
