@@ -23,6 +23,8 @@ export const CodyMenu_CodyCustomCommandsConfig = {
 
 const chatSeparator: QuickPickItem = { kind: -1, label: 'inline chat' }
 const chatOption: QuickPickItem = { label: 'Ask a Question', alwaysShow: true }
+const fixSeparator: QuickPickItem = { kind: -1, label: 'inline fix' }
+const fixOption: QuickPickItem = { label: 'Refactor this code', alwaysShow: true }
 const commandsSeparator: QuickPickItem = { kind: -1, label: 'commands' }
 const customCommandsSeparator: QuickPickItem = { kind: -1, label: 'custom commands' }
 const configOption: QuickPickItem = { label: 'Configure Custom Commands...' }
@@ -35,6 +37,7 @@ export const recentlyUsedSeparatorAsPrompt: [string, CodyPrompt][] = [
 
 export const menu_separators = {
     chat: chatSeparator,
+    fix: fixSeparator,
     commands: commandsSeparator,
     customCommands: customCommandsSeparator,
     settings: settingsSeparator,
@@ -42,6 +45,7 @@ export const menu_separators = {
 
 export const menu_options = {
     chat: chatOption,
+    fix: fixOption,
     config: configOption,
     add: addOption,
 }

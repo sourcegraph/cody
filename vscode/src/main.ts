@@ -215,6 +215,27 @@ const register = async (
         return provider.startFix()
     }
 
+    const promptForFixup = async (range: vscode.Range): Promise<void> => {
+        const document = vscode.window.activeTextEditor?.document
+        if (!document) {
+            return Promise.resolve()
+        }
+
+        const qp = vscode.window.createQuickPick()
+        qp.title = 'Cody'
+        qp.placeholder = "Ask Cody to do something, or type '/' for commands"
+        qp.buttons = [{ tooltip: 'Cody', iconPath: new vscode.ThemeIcon('cody-logo-heavy') }]
+        qp.ignoreFocusOut = true
+        qp.show()
+        qp.onDidTriggerButton(() => {
+            void vscode.commands.executeCommand('cody.focus')
+            qp.hide()
+        })
+        const instruction = await new Promise(resolve => qp.onDidAccept(resolve))
+        console.log(instruction)
+        return executeFixup(document, instruction as string, range)
+    }
+
     const statusBar = createStatusBar()
 
     disposables.push(
@@ -256,11 +277,10 @@ const register = async (
             // Remove the inline chat
             inlineChatManager.removeProviderForThread(thread)
         }),
-        vscode.commands.registerCommand('cody.fixup.new', (instruction: string, range: vscode.Range): void => {
-            if (vscode.window.activeTextEditor) {
-                void executeFixup(vscode.window.activeTextEditor.document, instruction, range)
-            }
-        }),
+        vscode.commands.registerCommand(
+            'cody.fixup.new',
+            (range: vscode.Range): Promise<void> => promptForFixup(range)
+        ),
         vscode.commands.registerCommand('cody.inline.new', async () => {
             // move focus line to the end of the current selection
             await vscode.commands.executeCommand('cursorLineEndSelect')
