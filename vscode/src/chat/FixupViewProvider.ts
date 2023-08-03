@@ -38,7 +38,6 @@ export class FixupManager implements vscode.Disposable {
 
         if (provider) {
             this.fixupProviders.delete(task)
-            provider.removeFix()
             provider.dispose()
         }
     }

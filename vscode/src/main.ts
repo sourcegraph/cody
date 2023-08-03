@@ -444,7 +444,9 @@ const register = async (
             })
         )
     }
-    // Register task view and non-stop cody command when feature flag is on
+    // Register task view when feature flag is on
+    // TODO(umpox): We should move the task view to a quick pick before enabling it everywhere.
+    // It is too obstructive when it is in the same window as the sidebar chat.
     if (initialConfig.experimentalNonStop || process.env.CODY_TESTING === 'true') {
         fixup.register()
         await vscode.commands.executeCommand('setContext', 'cody.nonstop.fixups.enabled', true)
