@@ -31,6 +31,11 @@ export interface CompletionsCacheDocumentState {
      * different languages (even if the files have the same prefix).
      */
     languageId: string
+
+    /**
+     * Wether the completion request is multiline or not.
+     */
+    multiline: boolean
 }
 
 /**
@@ -82,6 +87,11 @@ class DocumentCompletionsCache {
                 // Update the recency of the cache entry
                 this.cache.get(entry)
                 synthesizedCompletions.push(entry.completion)
+                continue
+            }
+
+            // Never allow a multi-line request to be resolved by a single-line entry
+            if (documentState.multiline && !entry.documentState.multiline) {
                 continue
             }
 
