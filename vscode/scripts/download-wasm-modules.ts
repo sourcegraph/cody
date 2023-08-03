@@ -9,6 +9,7 @@ const WASM_DIRECTORY = path.join(path.resolve(__dirname), '..', 'resources', 'wa
 const urls = [
     'https://storage.googleapis.com/sourcegraph-assets/cody-wasm/tree-sitter-javascript.wasm',
     'https://storage.googleapis.com/sourcegraph-assets/cody-wasm/tree-sitter-typescript.wasm',
+    'https://storage.googleapis.com/sourcegraph-assets/cody-wasm/tree-sitter-tsx.wasm',
     'https://storage.googleapis.com/sourcegraph-assets/cody-wasm/tree-sitter-c_sharp.wasm',
     'https://storage.googleapis.com/sourcegraph-assets/cody-wasm/tree-sitter-cpp.wasm',
     'https://storage.googleapis.com/sourcegraph-assets/cody-wasm/tree-sitter-go.wasm',
