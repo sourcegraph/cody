@@ -64,7 +64,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     }, [abortMessageInProgressInternal, vscodeAPI])
 
     const onSubmit = useCallback(
-        (text: string, submitType: 'user' | 'suggestion') => {
+        (text: string, submitType: 'user' | 'suggestion' | 'example') => {
             vscodeAPI.postMessage({ command: 'submit', text, submitType })
         },
         [vscodeAPI]
