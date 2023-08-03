@@ -4,6 +4,7 @@ import { VSCodeButton, VSCodeLink, VSCodeTextArea } from '@vscode/webview-ui-too
 import classNames from 'classnames'
 
 import { ChatContextStatus } from '@sourcegraph/cody-shared/src/chat/context'
+import { CodyPrompt } from '@sourcegraph/cody-shared/src/chat/prompts'
 import { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { TelemetryService } from '@sourcegraph/cody-shared/src/telemetry'
 import {
@@ -19,6 +20,7 @@ import { SubmitSvg } from '@sourcegraph/cody-ui/src/utils/icons'
 
 import { CODY_FEEDBACK_URL } from '../src/chat/protocol'
 
+import { ChatCommandsComponent } from './ChatCommands'
 import { FileLink } from './FileLink'
 import { VSCodeWrapper } from './utils/VSCodeApi'
 
@@ -39,6 +41,7 @@ interface ChatboxProps {
     suggestions?: string[]
     setSuggestions?: (suggestions: undefined | string[]) => void
     pluginsDevMode?: boolean
+    chatCommands?: [string, CodyPrompt][]
     isTranscriptError: boolean
     showOnboardingButtons?: boolean | null
 }
@@ -58,6 +61,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     suggestions,
     setSuggestions,
     pluginsDevMode,
+    chatCommands,
     isTranscriptError,
     showOnboardingButtons,
 }) => {
@@ -109,13 +113,6 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
         [telemetryService, vscodeAPI]
     )
 
-    const onChatButtonClick = useCallback(
-        (which: string) => {
-            vscodeAPI.postMessage({ command: 'chat-button', action: which })
-        },
-        [vscodeAPI]
-    )
-
     return (
         <ChatUI
             messageInProgress={messageInProgress}
@@ -156,28 +153,16 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             // down here to render cody is disabled on the instance nicely.
             isCodyEnabled={true}
             codyNotEnabledNotice={undefined}
-            helpMarkdown={
+            afterMarkdown={
                 showOnboardingButtons
-                    ? `See [Getting Started](command:cody.welcome) for help and tips.
-
-To get started, select some code and run one of Cody's recipes:`
-                    : 'See [Getting Started](command:cody.welcome) for help and tips.'
+                    ? 'To get started, select some code and right click to select a Cody command to run.'
+                    : ''
             }
-            gettingStartedButtons={
-                showOnboardingButtons
-                    ? [
-                          {
-                              label: 'Explain code (high level)',
-                              action: 'explain-code-high-level',
-                              onClick: onChatButtonClick,
-                          },
-                          { label: 'Smell code', action: 'find-code-smells', onClick: onChatButtonClick },
-                          { label: 'Generate a unit test', action: 'generate-unit-test', onClick: onChatButtonClick },
-                      ]
-                    : undefined
-            }
+            helpMarkdown="See [Getting Started](command:cody.welcome) for help and tips."
             ChatButtonComponent={ChatButton}
             pluginsDevMode={pluginsDevMode}
+            chatCommands={chatCommands}
+            ChatCommandsComponent={ChatCommandsComponent}
         />
     )
 }
@@ -206,12 +191,12 @@ const ChatButton: React.FunctionComponent<ChatButtonProps> = ({ label, action, o
 
 const TextArea: React.FunctionComponent<ChatUITextAreaProps> = ({
     className,
-    rows,
     autoFocus,
     value,
     required,
     onInput,
     onKeyDown,
+    rows,
 }) => {
     // Focus the textarea when the webview gains focus (unless there is text selected). This makes
     // it so that the user can immediately start typing to Cody after invoking `Cody: Focus on Chat
@@ -256,7 +241,9 @@ const TextArea: React.FunctionComponent<ChatUITextAreaProps> = ({
             autofocus={autoFocus}
             required={required}
             onInput={e => onInput(e as React.FormEvent<HTMLTextAreaElement>)}
+            placeholder="Ask a question or type '/' for commands"
             onKeyDown={handleKeyDown}
+            title="" // Set to blank to avoid HTML5 error tooltip "Please fill in this field"
         />
     )
 }

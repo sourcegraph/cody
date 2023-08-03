@@ -117,7 +117,7 @@ export class InlineChatViewProvider extends MessageProvider {
         // plugins not yet implemented for inline chat
     }
 
-    protected handleMyPrompts(): void {
+    protected handleCodyCommands(): void {
         // my prompts not yet implemented for inline chat
     }
 

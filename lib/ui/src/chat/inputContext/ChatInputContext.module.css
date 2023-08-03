@@ -29,7 +29,6 @@
     white-space: nowrap;
     text-overflow: ellipsis;
     overflow: hidden;
-    opacity: 0.7;
 }
 
 .errorColor {

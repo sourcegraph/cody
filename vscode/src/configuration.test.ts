@@ -17,7 +17,7 @@ describe('getConfiguration', () => {
             codebase: '',
             useContext: 'embeddings',
             autocomplete: true,
-            experimentalCustomRecipes: false,
+            experimentalCommandLenses: true,
             experimentalChatPredictions: false,
             experimentalGuardrails: false,
             inlineChat: true,
@@ -54,7 +54,7 @@ describe('getConfiguration', () => {
                         return false
                     case 'cody.experimental.chatPredictions':
                         return true
-                    case 'cody.experimental.customRecipes':
+                    case 'cody.experimental.commandLenses':
                         return true
                     case 'cody.experimental.guardrails':
                         return true
@@ -106,7 +106,7 @@ describe('getConfiguration', () => {
             },
             autocomplete: false,
             experimentalChatPredictions: true,
-            experimentalCustomRecipes: true,
+            experimentalCommandLenses: true,
             experimentalGuardrails: true,
             inlineChat: true,
             experimentalNonStop: true,

@@ -18,12 +18,11 @@ suite('Recipes', function () {
         textEditor.selection = new vscode.Selection(5, 0, 7, 0)
 
         // Run the "explain" command
-        await vscode.commands.executeCommand('cody.recipe.explain-code-high-level')
+        await vscode.commands.executeCommand('cody.command.explain-code')
 
         // Check the chat transcript contains markdown
         const humanMessage = await getTranscript(0)
-        assert.match(humanMessage.displayText || '', /^Explain the following code/)
-        assert.match(humanMessage.displayText || '', /public/)
+        assert.match(humanMessage.displayText || '', /^.*Explain Code/)
 
         assert.match((await getTranscript(1)).displayText || '', /^hello from the assistant$/)
     })

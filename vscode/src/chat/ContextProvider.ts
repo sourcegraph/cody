@@ -35,7 +35,7 @@ export type Config = Pick<
     | 'useContext'
     | 'experimentalChatPredictions'
     | 'experimentalGuardrails'
-    | 'experimentalCustomRecipes'
+    | 'experimentalCommandLenses'
     | 'pluginsEnabled'
     | 'pluginsConfig'
     | 'pluginsDebugEnabled'
@@ -131,7 +131,6 @@ export class ContextProvider implements vscode.Disposable {
 
         this.codebaseContext = codebaseContext
         await this.publishContextStatus()
-        this.editor.controllers.prompt?.setCodebase(codebaseContext.getCodebase())
     }
 
     /**

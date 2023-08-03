@@ -3,6 +3,7 @@ import * as vscode from 'vscode'
 import { BotResponseMultiplexer } from '@sourcegraph/cody-shared/src/chat/bot-response-multiplexer'
 import { ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
 import { getPreamble } from '@sourcegraph/cody-shared/src/chat/preamble'
+import { CodyPrompt, CodyPromptType } from '@sourcegraph/cody-shared/src/chat/prompts'
 import { Recipe, RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 import { Transcript } from '@sourcegraph/cody-shared/src/chat/transcript'
 import { ChatHistory, ChatMessage, UserLocalHistory } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
@@ -19,7 +20,6 @@ import { TelemetryService } from '@sourcegraph/cody-shared/src/telemetry'
 import { VSCodeEditor } from '../editor/vscode-editor'
 import { PlatformContext } from '../extension.common'
 import { debug } from '../log'
-import { CodyPromptType } from '../my-cody/types'
 import { FixupTask } from '../non-stop/FixupTask'
 import { IdleRecipeRunner } from '../non-stop/roles'
 import { AuthProvider, isNetworkError } from '../services/AuthProvider'
@@ -52,7 +52,7 @@ abstract class MessageHandler {
     protected abstract handleError(errorMsg: string): void
     protected abstract handleSuggestions(suggestions: string[]): void
     protected abstract handleEnabledPlugins(plugins: string[]): void
-    protected abstract handleMyPrompts(prompts: string[], isEnabled: boolean): void
+    protected abstract handleCodyCommands(prompts: [string, CodyPrompt][]): void
     protected abstract handleTranscriptErrors(transciptError: boolean): void
 }
 
@@ -114,8 +114,8 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         // chat id is used to identify chat session
         this.createNewChatID()
 
-        // Listen to configuration changes to possibly enable custom recipes
-        this.contextProvider.configurationChangeEvent.event(() => this.sendMyPrompts())
+        // Listen to configuration changes to possibly enable Custom Commands
+        this.contextProvider.configurationChangeEvent.event(() => this.sendCodyCommands())
     }
 
     protected async init(): Promise<void> {
@@ -125,7 +125,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         this.sendEnabledPlugins(this.localStorage.getEnabledPlugins() ?? [])
         await this.loadRecentChat()
         await this.contextProvider.init()
-        await this.sendMyPrompts()
+        await this.sendCodyCommands()
     }
 
     private idleCallbacks_: (() => void)[] = []
@@ -362,11 +362,21 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
     }
 
     public async executeRecipe(recipeId: RecipeID, humanChatInput = ''): Promise<void> {
-        debug('ChatViewProvider:executeRecipe', recipeId, { verbose: humanChatInput })
         if (this.isMessageInProgress) {
             this.handleError('Cannot execute multiple recipes. Please wait for the current recipe to finish.')
             return
         }
+
+        // Filter the human input to check for chat commands and retrieve the correct recipe id
+        // e.g. /fix from 'chat-question' should be redirected to use the 'fixup' recipe
+        const command = await this.chatCommandsFilter(humanChatInput, recipeId)
+        if (!command) {
+            return
+        }
+        humanChatInput = command?.text
+        recipeId = command?.recipeId
+
+        debug('ChatViewProvider:executeRecipe', recipeId, { verbose: humanChatInput })
 
         const recipe = this.getRecipe(recipeId)
         if (!recipe) {
@@ -407,7 +417,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
             default: {
                 this.sendTranscript()
 
-                const myPremade = this.editor.controllers.prompt?.getMyPrompts().premade
+                const myPremade = (await this.editor.controllers.command?.getCustomConfig())?.premade
                 const { prompt, contextFiles } = await this.transcript.getPromptForLastInteraction(
                     getPreamble(this.contextProvider.context.getCodebase(), myPremade),
                     this.maxPromptTokens,
@@ -442,7 +452,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         }
         transcript.addInteraction(interaction)
 
-        const myPremade = this.editor.controllers.prompt?.getMyPrompts().premade
+        const myPremade = (await this.editor.controllers.command?.getCustomConfig())?.premade
         const { prompt, contextFiles } = await transcript.getPromptForLastInteraction(
             getPreamble(this.contextProvider.context.getCodebase(), myPremade),
             this.maxPromptTokens
@@ -510,73 +520,96 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         this.handleTranscript(chatTranscript, this.isMessageInProgress)
     }
 
-    public isCustomRecipeAction(title: string): boolean {
-        const customRecipeActions = ['add', 'get', 'menu']
-        return customRecipeActions.includes(title)
+    public isCustomCommandAction(title: string): boolean {
+        const customPromptActions = ['add', 'get', 'menu']
+        return customPromptActions.includes(title)
     }
 
-    public async executeCustomRecipe(title: string, type?: CodyPromptType): Promise<string | void> {
-        if (!this.contextProvider.config.experimentalCustomRecipes) {
-            return
-        }
-        // Send prompt names to display as recipe options
-        if (!title || title === 'get') {
-            await this.sendMyPrompts()
-            return
-        }
-        // Create a new recipe
-        if (title === 'menu') {
-            await this.editor.controllers.prompt?.menu()
-            await this.sendMyPrompts()
-            return
-        }
-        if (title === 'add' && type) {
-            try {
-                // copy the cody.json file from the extension path and move it to the workspace root directory
-                await this.editor.controllers.prompt?.addJSONFile(type)
-            } catch (error) {
-                void vscode.window.showErrorMessage(`Could not create a new cody.json file: ${error}`)
-            }
-            return
+    /**
+     * Handle instructions returned from webview in regard to a Cody Command
+     * Finds and execute a Cody command
+     */
+    public async executeCustomCommand(title: string, type?: CodyPromptType): Promise<void> {
+        title = title.trim()
+        switch (title) {
+            case 'get':
+                await this.sendCodyCommands()
+                break
+            case 'menu':
+                await this.editor.controllers.command?.menu('custom')
+                await this.sendCodyCommands()
+                break
+            case 'add':
+                if (!type) {
+                    break
+                }
+                await this.editor.controllers.command?.config('add', type)
+                break
         }
         // Get prompt details from controller by title then execute prompt's command
-        const promptText = this.editor.controllers.prompt?.find(title)
-        await this.editor.controllers.prompt?.get('command')
+        const promptText = this.editor.controllers.command?.find(title)
+        await this.editor.controllers.command?.get('command')
         if (!promptText) {
-            debug('executeCustomRecipe:noPrompt', title)
+            debug('executeCustomCommand:noPrompt', title)
             return
         }
-        await this.executeCommands(promptText, 'my-prompt')
-        return promptText
+        await this.executeRecipe('custom-prompt', promptText)
+        return
     }
 
-    protected async executeCommands(text: string, recipeID: RecipeID = 'chat-question'): Promise<void> {
+    protected async chatCommandsFilter(
+        text: string,
+        recipeId: RecipeID
+    ): Promise<{ text: string; recipeId: RecipeID } | null> {
+        text = text.trim()
+        if (!text?.startsWith('/')) {
+            return { text, recipeId }
+        }
         switch (true) {
-            case /^\/o(pen)?/i.test(text) && this.editor.controllers.prompt !== undefined:
+            case text === '/':
+                return vscode.commands.executeCommand('cody.action.commands.menu')
+            case text === '/commands-settings':
+                return vscode.commands.executeCommand('cody.settings.commands')
+            case /^\/o(pen)?/i.test(text) && this.editor.controllers.command !== undefined:
                 // open the user's ~/.vscode/cody.json file
-                await this.editor.controllers.prompt?.open(text.split(' ')[1])
-                break
+                await this.editor.controllers.command?.open(text.split(' ')[1])
+                return null
             case /^\/r(eset)?/i.test(text):
                 await this.clearAndRestartSession()
-                break
-            case /^\/s(earch)?\s/i.test(text):
-                await this.executeRecipe('context-search', text)
-                break
-            default:
-                return this.executeRecipe(recipeID, text)
+                return null
+            case /^\/s(earch)?(\s)?/i.test(text):
+                return { text, recipeId: 'context-search' }
+            case /^\/f(ix)?(\s)?/i.test(text):
+                return { text, recipeId: 'fixup' }
+            case /^\/(explain|doc|test)$/i.test(text): {
+                const promptText = this.editor.controllers.command?.find(text, true) || null
+                await this.editor.controllers.command?.get('command')
+                if (!promptText) {
+                    return null
+                }
+                return { text: promptText, recipeId: 'custom-prompt' }
+            }
+            default: {
+                const promptText = this.editor.controllers.command?.find(text, true)
+                await this.editor.controllers.command?.get('command')
+                if (promptText) {
+                    return { text: promptText, recipeId: 'custom-prompt' }
+                }
+                return { text, recipeId }
+            }
         }
     }
 
     /**
-     * Send custom recipe names to view
+     * Send list of Cody commands (default and custom) to webview
      */
-    private async sendMyPrompts(): Promise<void> {
+    private async sendCodyCommands(): Promise<void> {
         const send = async (): Promise<void> => {
-            await this.editor.controllers.prompt?.refresh()
-            const prompts = this.editor.controllers.prompt?.getPromptList() ?? []
-            void this.handleMyPrompts(prompts, this.contextProvider.config.experimentalCustomRecipes)
+            await this.editor.controllers.command?.refresh()
+            const commands = this.editor.controllers.command?.getAllCommands() || []
+            void this.handleCodyCommands(commands)
         }
-        this.editor.controllers.prompt?.setMessenger(send)
+        this.editor.controllers.command?.setMessenger(send)
         await send()
     }
 
