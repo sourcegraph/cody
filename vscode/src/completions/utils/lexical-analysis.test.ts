@@ -2,7 +2,7 @@ import path from 'path'
 
 import { describe, expect, it } from 'vitest'
 
-import { createParser, GenericLexem, SupportedLanguage } from './lexical-analysis'
+import { createParser, GenericLexem, SupportedLanguage, traverseTree } from './lexical-analysis'
 
 const CUSTOM_WASM_LANGUAGE_DIR = path.resolve(__dirname, '..', '..', '..', 'resources', 'wasm')
 
@@ -71,6 +71,89 @@ describe('lexical analysis', () => {
                     // hello
                     console.log('hello from else statement')
                   }
+                }`)
+    })
+
+    it('parses common TypeScript function', async () => {
+        const parser = createParser({
+            language: SupportedLanguage.TypeScript,
+            grammarDirectory: CUSTOM_WASM_LANGUAGE_DIR,
+        })
+
+        const tree = await parser.parse(`
+                const d: number = 5;
+
+                function helloWorld() {
+                  if (d > 5) {
+                    console.log('d is greater than 5')
+                  } else {
+                    // hello
+                    console.log('hello from else statement')
+                  }
+                }
+
+                console.log('hello d')
+            `)
+
+        expect(tree).toBeTruthy()
+
+        const declaration = parser.findClosestLexem(tree!.rootNode, { row: 7, column: 25 }, GenericLexem.StatementBlock)
+
+        expect(declaration?.text).toBe(`{
+                    // hello
+                    console.log('hello from else statement')
+                  }`)
+    })
+
+    it('parses common JSX function', async () => {
+        const parser = createParser({
+            language: SupportedLanguage.JavaScript,
+            grammarDirectory: CUSTOM_WASM_LANGUAGE_DIR,
+        })
+
+        const tree = await parser.parse(`
+                function Component() {
+                    return (
+                        <HelloWorld/>
+                    )
+                }
+            `)
+
+        expect(tree).toBeTruthy()
+
+        traverseTree(tree.rootNode)
+        const declaration = parser.findClosestLexem(tree.rootNode, { row: 3, column: 25 }, GenericLexem.StatementBlock)
+
+        expect(declaration?.text).toBe(`{
+                    return (
+                        <HelloWorld/>
+                    )
+                }`)
+    })
+
+    it('parses common TSX function', async () => {
+        const parser = createParser({
+            language: SupportedLanguage.TSX,
+            grammarDirectory: CUSTOM_WASM_LANGUAGE_DIR,
+        })
+
+        const tree = await parser.parse(`
+                function Component(props: Props): ReactNode {
+                    return (
+                        <HelloWorld/>
+                    )
+                }
+            `)
+
+        expect(tree).toBeTruthy()
+
+        traverseTree(tree.rootNode)
+        const declaration = parser.findClosestLexem(tree.rootNode, { row: 3, column: 25 }, GenericLexem.StatementBlock)
+
+        expect(declaration?.text).toBe(`{
+                    return (
+                        <HelloWorld/>
+                    )
                 }`)
     })
 })
