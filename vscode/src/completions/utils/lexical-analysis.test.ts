@@ -7,7 +7,6 @@ import { createParser, GenericLexem, SupportedLanguage } from './lexical-analysi
 const CUSTOM_WASM_LANGUAGE_DIR = path.resolve(__dirname, '..', '..', '..', 'resources', 'wasm')
 
 describe('lexical analysis', () => {
-
     describe('JavaScript', () => {
         it('finds statement declaration correctly', async () => {
             const parser = createParser({
@@ -30,7 +29,11 @@ describe('lexical analysis', () => {
                 console.log('hello d')
             `)
 
-            const declaration = parser.findClosestLexem(tree!.rootNode, { row: 7, column: 25 }, GenericLexem.StatementBlock)
+            const declaration = parser.findClosestLexem(
+                tree!.rootNode,
+                { row: 7, column: 25 },
+                GenericLexem.StatementBlock
+            )
             expect(declaration?.text).toBe(`{
                     // hello
                     console.log('hello from else statement')
@@ -59,7 +62,11 @@ describe('lexical analysis', () => {
                 console.log('end of program')
             `)
 
-            const declaration = parser.findClosestLexem(tree!.rootNode, { row: 5, column: 25 }, GenericLexem.StatementBlock)
+            const declaration = parser.findClosestLexem(
+                tree!.rootNode,
+                { row: 5, column: 25 },
+                GenericLexem.StatementBlock
+            )
             expect(declaration?.text).toBe(`{
                   if (d > 5) {
                     console.log('d is greater than 5')
@@ -84,7 +91,11 @@ describe('lexical analysis', () => {
                 }
             `)
 
-            const declaration = parser.findClosestLexem(tree.rootNode, { row: 3, column: 25 }, GenericLexem.StatementBlock)
+            const declaration = parser.findClosestLexem(
+                tree.rootNode,
+                { row: 3, column: 25 },
+                GenericLexem.StatementBlock
+            )
             expect(declaration?.text).toBe(`{
                     return (
                         <HelloWorld/>
@@ -115,7 +126,11 @@ describe('lexical analysis', () => {
                 console.log('hello d')
             `)
 
-            const declaration = parser.findClosestLexem(tree!.rootNode, { row: 7, column: 25 }, GenericLexem.StatementBlock)
+            const declaration = parser.findClosestLexem(
+                tree!.rootNode,
+                { row: 7, column: 25 },
+                GenericLexem.StatementBlock
+            )
             expect(declaration?.text).toBe(`{
                     // hello
                     console.log('hello from else statement')
@@ -136,7 +151,11 @@ describe('lexical analysis', () => {
                 }
             `)
 
-            const declaration = parser.findClosestLexem(tree.rootNode, { row: 3, column: 25 }, GenericLexem.StatementBlock)
+            const declaration = parser.findClosestLexem(
+                tree.rootNode,
+                { row: 3, column: 25 },
+                GenericLexem.StatementBlock
+            )
             expect(declaration?.text).toBe(`{
                     return (
                         <HelloWorld/>

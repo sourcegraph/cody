@@ -2,7 +2,7 @@ import path from 'path'
 
 import Parser, { Point, SyntaxNode, Tree } from 'web-tree-sitter'
 
-import { getLanguageLexems, SupportedLanguage, GenericLexem } from './grammars'
+import { GenericLexem, getLanguageLexems, SupportedLanguage } from './grammars'
 
 export { SupportedLanguage, GenericLexem }
 
