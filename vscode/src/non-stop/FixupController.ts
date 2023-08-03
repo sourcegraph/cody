@@ -72,10 +72,7 @@ export class FixupController
      * is enabled.
      */
     public register(): void {
-        this._disposables.push(
-            vscode.window.registerTreeDataProvider('cody.fixup.tree.view', this.taskViewProvider),
-            vscode.commands.registerCommand('cody.non-stop.fixup', () => this.typingUI.show())
-        )
+        this._disposables.push(vscode.window.registerTreeDataProvider('cody.fixup.tree.view', this.taskViewProvider))
     }
 
     // FixupFileCollection
@@ -92,6 +89,11 @@ export class FixupController
 
     public scheduleIdle<T>(callback: () => T): Promise<T> {
         return this.scheduler.scheduleIdle(callback)
+    }
+
+    public async promptUserForTask(): Promise<FixupTask | null> {
+        const task = await this.typingUI.show()
+        return task
     }
 
     public createTask(documentUri: vscode.Uri, instruction: string, selectionRange: vscode.Range): FixupTask {

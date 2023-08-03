@@ -357,7 +357,7 @@
         "title": "Touch"
       },
       {
-        "command": "cody.non-stop.fixup",
+        "command": "cody.fixup.new",
         "category": "Cody",
         "title": "Fixup (Experimental)",
         "icon": "$(sparkle)",
@@ -432,7 +432,7 @@
         "mac": "alt+/"
       },
       {
-        "command": "cody.non-stop.fixup",
+        "command": "cody.fixup.new",
         "key": "ctrl+shift+v",
         "mac": "shift+cmd+v",
         "when": "cody.activated && editorHasSelection && !editorReadonly"
@@ -629,7 +629,7 @@
           "visibility": "visible"
         },
         {
-          "command": "cody.non-stop.fixup",
+          "command": "cody.fixup.new",
           "when": "cody.nonstop.fixups.enabled && cody.activated",
           "group": "navigation",
           "visibility": "visible"
