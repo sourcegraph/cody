@@ -1,30 +1,24 @@
 {
   "commands": {
-    "Generate README.md for Current Directory": {
-      "prompt": "Write a detailed README.md file to document the code in the same directory as my current selection. Summarize what the code in this directory is meant to accomplish. Explain the key files, functions, classes, and features. Use Markdown formatting for headings, code blocks, lists, etc. to make it organized and readable. Aim for a beginner-friendly explanation that gives a developer unfamiliar with the code a good starting point to understand it. Ensure to include: - Overview of directory purpose - Functionality explanations - Relevant diagrams or visuals if helpful. Write the README content clearly and concisely using complete sentences and paragraphs based on the shared context. Use proper spelling, grammar, and punctuation throughout. Surround your full README text with triple backticks so it renders properly as a code block. Do not make assumptions or fabricate additional details.",
-      "context": {
-        "currentDir": true,
-        "selection": true
-      }
-    },
-    "Commit Message for Current Changes": {
+    "Commit Message Suggestion": {
       "prompt": "Suggest a informative commit message by summarizing code changes from the shared command output. The commit message should follow the conventional commit format and provide meaningful context for future readers.",
       "context": {
         "selection": false,
         "command": "git diff"
       },
-      "info": "You must have git installed and authenticated to use this recipe"
+      "note": "You must have git installed and authenticated to use this command. Runs this command before staging."
     },
-    "Compare Files in Opened Tabs": {
+    "Compare Open Tabs": {
       "prompt": "Please examine the code in the opened tabs. Then explain the relationship between the code samples by answering these questions: 1. What are the main tasks or functions the code is performing? 2. Are there any similarities in functions or logic across the samples? 3. Does one code snippet call or import another? If so, how do they interact? 4. Are there any notable differences in how they approach similar problems? 5. Overall, how are the code snippets related - do they work together as part of a larger program, solve variants of the same problem, or serve entirely different purposes?",
+      "slashCommand": "compare",
       "context": {
         "openTabs": true,
         "selection": false
       },
-      "info": "This recipe lets Cody analyze code from open tabs to provide insights on how they relate to each other."
+      "note": "This command lets Cody analyze code from open tabs to provide insights on how they relate to each other."
     },
-    "Summarize the Last Cody Release": {
-      "prompt": "Can you summarize the last released patch of Cody based on the information from the CHANGELOG in the output? I want to know what is the latest release version number, and the changes included in that release.",
+    "Summarize the latest Cody Release": {
+      "prompt": "What is the latest stable version of Cody? Can you briefly summarize the changes that were included in that release based on this CHANGELOG excerpt?",
       "context": {
         "selection": false,
         "command": "curl https://raw.githubusercontent.com/sourcegraph/cody/main/vscode/CHANGELOG.md | head -n 50"
