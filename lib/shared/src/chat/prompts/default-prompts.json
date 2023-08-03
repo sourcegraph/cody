@@ -17,16 +17,19 @@
         "selection": true
       }
     },
-    "Fixup": {
-      "slashCommand": "fix",
-      "prompt": "/fix'"
-    },
     "Generate Unit Tests": {
       "slashCommand": "test",
       "prompt": "Write unit tests to validate the expected functionality for each function in the selected code. Ensure you cover any example test cases included in comments. If test files already exist, follow similar patterns for imports, setup, and assertions used in those tests. If no tests exist, feel free to import any common test libraries as needed. Focus on testing key behaviors and edge cases. Structure the tests so they are clear, maintainable, and can be run automatically. All code for the tests must be complete and workable.",
       "context": {
         "currentDir": true,
         "currentFile": true,
+        "selection": true
+      }
+    },
+    "Inline Fixup": {
+      "slashCommand": "fix",
+      "prompt": "/fix",
+      "context": {
         "selection": true
       }
     }

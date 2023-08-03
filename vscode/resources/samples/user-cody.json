@@ -1,16 +1,15 @@
 {
-  "title": "[Example] Custom User Commands",
+  "title": "[Experimental] Custom User Commands",
   "description": "This file showcases how to build custom commandss for Cody by Sourcegraph in VS Code.",
   "doc": "For more information, see https://sourcegraph.com/notebooks/Tm90ZWJvb2s6MzA1NQ==",
   "commands": {
     "(example) Compare Files in Opened Tabs": {
       "slashCommand": "compare",
-      "prompt": "Please examine the code in the opened tabs. Then explain the relationship between the code samples by answering these questions: 1. What are the main tasks or functions the code is performing? 2. Are there any similarities in functions or logic across the samples? 3. Does one code snippet call or import another? If so, how do they interact? 4. Are there any notable differences in how they approach similar problems? 5. Overall, how are the code snippets related - do they work together as part of a larger program, solve variants of the same problem, or serve entirely different purposes?",
+      "prompt": "Examine the code in the opened tabs. Then explain the relationship between the code samples by answering these questions: 1. What are the main tasks or functions the code is performing? 2. Are there any similarities in functions or logic across the samples? 3. Does one code snippet call or import another? If so, how do they interact? 4. Are there any notable differences in how they approach similar problems? 5. Overall, how are the code snippets related - do they work together as part of a larger program, solve variants of the same problem, or serve entirely different purposes?",
       "context": {
         "openTabs": true,
         "selection": false
-      },
-      "info": "This recipe lets Cody analyze code from open tabs to provide insights on how they relate to each other."
+      }
     },
     "(example) Debug last error from Cody app": {
       "prompt": "Tell me about the most recent error in log and how I can resolve it.",
@@ -18,7 +17,7 @@
         "selection": false,
         "command": "tail -n 30 ~/Library/Logs/com.sourcegraph.cody/Cody.log"
       },
-      "info": "You must have Cody app installed to use this recipe"
+      "note": "You must have Cody app installed to use this recipe"
     }
   }
 }

@@ -32,10 +32,9 @@ export class FixupTypingUI {
             return
         }
         const match = instruction.match(CHAT_RE)
-        if (match) {
-            // TODO: If we got here, we have a selection; start an inline chat
-            // with match[1].
-            void vscode.commands.executeCommand('cody.focus')
+        if (match?.[1]) {
+            // If we got here, we have a selection; start chat with match[1].
+            await vscode.commands.executeCommand('cody.action.chat', match[1])
             return
         }
 

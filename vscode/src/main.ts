@@ -260,7 +260,9 @@ const register = async (
             await sidebarChatProvider.clearHistory()
         }),
         // Recipes
-        vscode.commands.registerCommand('cody.action.chat', input => executeRecipeInSidebar('chat-question', input)),
+        vscode.commands.registerCommand('cody.action.chat', input =>
+            executeRecipeInSidebar('chat-question', true, input)
+        ),
         vscode.commands.registerCommand(
             'cody.action.commands.menu',
             showDesc => editor.controllers.command?.menu('default', showDesc)

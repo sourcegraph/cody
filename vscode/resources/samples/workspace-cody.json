@@ -1,5 +1,5 @@
 {
-  "title": "[Example] Custom Workspace Commands",
+  "title": "[Experimental] Custom Workspace Commands",
   "description": "This file showcases how to build custom commandss for Cody by Sourcegraph in VS Code.",
   "doc": "For more information, see https://sourcegraph.com/notebooks/Tm90ZWJvb2s6MzA1NQ==",
   "commands": {
@@ -17,7 +17,7 @@
         "selection": false,
         "command": "git diff"
       },
-      "info": "You must have git installed and authenticated to use this recipe"
+      "note": "You must have git installed and authenticated to use this recipe"
     }
   }
 }
