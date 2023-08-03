@@ -67,7 +67,7 @@ export function getConfiguration(config: ConfigGetter): Configuration {
         experimentalChatPredictions: config.get(CONFIG_KEY.experimentalChatPredictions, isTesting),
         inlineChat: config.get(CONFIG_KEY.inlineChatEnabled, true),
         experimentalGuardrails: config.get(CONFIG_KEY.experimentalGuardrails, isTesting),
-        experimentalNonStop: config.get('cody.experimental.nonStop' as any, isTesting),
+        experimentalNonStop: config.get(CONFIG_KEY.experimentalNonStop, isTesting),
         experimentalCommandLenses: config.get(CONFIG_KEY.experimentalCommandLenses, false),
         autocompleteAdvancedProvider,
         autocompleteAdvancedServerEndpoint: config.get<string | null>(
