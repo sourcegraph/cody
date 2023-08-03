@@ -454,6 +454,10 @@
         "key": "ctrl+shift+v",
         "mac": "cmd+shift+v",
         "when": "cody.activated && editorFocus"
+      },
+      {
+        "command": "-github.copilot.generate",
+        "key": "ctrl+enter"
       }
     ],
     "submenus": [
