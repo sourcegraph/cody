@@ -18,7 +18,7 @@ export enum SupportedLanguage {
     C = 'c',
     Cpp = 'cpp',
     CSharp = 'csharp',
-    Php = 'php'
+    Php = 'php',
 }
 
 export enum GenericLexem {
@@ -26,7 +26,7 @@ export enum GenericLexem {
     ElseClause,
     StatementBlock,
     CallExpression,
-    Comment
+    Comment,
 }
 
 enum StandardLexem {
@@ -34,7 +34,7 @@ enum StandardLexem {
     ElseClause = 'else_clause',
     StatementBlock = 'statement_block',
     CallExpression = 'call_expression',
-    Comment = 'comment'
+    Comment = 'comment',
 }
 
 enum JavaLexemType {
@@ -42,7 +42,7 @@ enum JavaLexemType {
     ElseClause = 'else',
     StatementBlock = 'block',
     MethodInvocation = 'method_invocation',
-    Comment = 'comment'
+    Comment = 'comment',
 }
 
 enum GoLexemType {
@@ -50,7 +50,7 @@ enum GoLexemType {
     ElseClause = 'else',
     StatementBlock = 'block',
     CallExpression = 'call_expression',
-    Comment = 'comment'
+    Comment = 'comment',
 }
 
 enum PythonLexemType {
@@ -58,7 +58,7 @@ enum PythonLexemType {
     ElseClause = 'else',
     StatementBlock = 'block',
     CallExpression = 'call',
-    Comment = 'comment'
+    Comment = 'comment',
 }
 
 enum DartLexemType {
@@ -66,7 +66,7 @@ enum DartLexemType {
     ElseClause = 'else',
     StatementBlock = 'block',
     CallExpression = 'expression_statement',
-    Comment = 'comment'
+    Comment = 'comment',
 }
 
 enum CLexemType {
@@ -74,7 +74,7 @@ enum CLexemType {
     ElseClause = 'else_clause',
     StatementBlock = 'compound_statement',
     CallExpression = 'call_expression',
-    Comment = 'comment'
+    Comment = 'comment',
 }
 
 enum CppLexemType {
@@ -82,7 +82,7 @@ enum CppLexemType {
     ElseClause = 'else_clause',
     StatementBlock = 'compound_statement',
     CallExpression = 'call_expression',
-    Comment = 'comment'
+    Comment = 'comment',
 }
 
 enum CSharpLexemType {
@@ -90,7 +90,7 @@ enum CSharpLexemType {
     ElseClause = 'else',
     StatementBlock = 'block',
     CallExpression = 'invocation_expression',
-    Comment = 'comment'
+    Comment = 'comment',
 }
 
 enum PhpLexemType {
@@ -98,7 +98,7 @@ enum PhpLexemType {
     ElseClause = 'else_clause',
     StatementBlock = 'compound_statement',
     CallExpression = 'expression_statement',
-    Comment = 'comment'
+    Comment = 'comment',
 }
 
 export type LEXEME_DICTIONARY = Record<GenericLexem, string>
@@ -189,12 +189,13 @@ export function getLanguageLexems(language: SupportedLanguage): LEXEME_DICTIONAR
                 [GenericLexem.Comment]: StandardLexem.Comment,
             }
 
-        default: return {
-            [GenericLexem.IfStatement]: StandardLexem.IfStatement,
+        default:
+            return {
+                [GenericLexem.IfStatement]: StandardLexem.IfStatement,
                 [GenericLexem.ElseClause]: StandardLexem.ElseClause,
                 [GenericLexem.StatementBlock]: StandardLexem.StatementBlock,
                 [GenericLexem.CallExpression]: StandardLexem.CallExpression,
                 [GenericLexem.Comment]: StandardLexem.Comment,
-        }
+            }
     }
 }
