@@ -11,14 +11,7 @@ import styles from './Recipes.module.css'
 
 type ClickableRecipeID = Exclude<
     RecipeID,
-    | 'chat-question'
-    | 'inline-touch'
-    | 'inline-chat'
-    | 'my-prompt'
-    | 'next-questions'
-    | 'non-stop'
-    | 'non-stop-new'
-    | 'fixup-improved'
+    'chat-question' | 'inline-touch' | 'inline-chat' | 'my-prompt' | 'next-questions'
 >
 
 type RecipeListType = Record<ClickableRecipeID, string>

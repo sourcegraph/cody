@@ -6,7 +6,6 @@ import { ExplainCodeDetailed } from '@sourcegraph/cody-shared/src/chat/recipes/e
 import { ExplainCodeHighLevel } from '@sourcegraph/cody-shared/src/chat/recipes/explain-code-high-level'
 import { FindCodeSmells } from '@sourcegraph/cody-shared/src/chat/recipes/find-code-smells'
 import { Fixup } from '@sourcegraph/cody-shared/src/chat/recipes/fixup'
-import { FixupImproved } from '@sourcegraph/cody-shared/src/chat/recipes/fixup-improved'
 import { GenerateDocstring } from '@sourcegraph/cody-shared/src/chat/recipes/generate-docstring'
 import { GenerateTest } from '@sourcegraph/cody-shared/src/chat/recipes/generate-test'
 import { ImproveVariableNames } from '@sourcegraph/cody-shared/src/chat/recipes/improve-variable-names'
@@ -14,8 +13,6 @@ import { InlineChat } from '@sourcegraph/cody-shared/src/chat/recipes/inline-cha
 import { InlineTouch } from '@sourcegraph/cody-shared/src/chat/recipes/inline-touch'
 import { MyPrompt } from '@sourcegraph/cody-shared/src/chat/recipes/my-prompt'
 import { NextQuestions } from '@sourcegraph/cody-shared/src/chat/recipes/next-questions'
-import { NonStop } from '@sourcegraph/cody-shared/src/chat/recipes/non-stop'
-import { NonStopNew } from '@sourcegraph/cody-shared/src/chat/recipes/non-stop-new'
 import { Recipe } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 import { TranslateToLanguage } from '@sourcegraph/cody-shared/src/chat/recipes/translate'
 import { SourcegraphBrowserCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/browserClient'
@@ -34,7 +31,6 @@ export const VSCODE_WEB_RECIPES: Recipe[] = [
     new ExplainCodeHighLevel(),
     new FindCodeSmells(),
     new Fixup(),
-    new FixupImproved(),
     new GenerateDocstring(),
     new GenerateTest(),
     new ImproveVariableNames(),
@@ -42,8 +38,6 @@ export const VSCODE_WEB_RECIPES: Recipe[] = [
     new InlineChat(debug),
     new InlineTouch(debug),
     new NextQuestions(),
-    new NonStop(),
-    new NonStopNew(),
     new TranslateToLanguage(),
 ]
 
