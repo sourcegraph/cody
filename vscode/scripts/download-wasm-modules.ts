@@ -17,6 +17,8 @@ const urls = [
     'https://storage.googleapis.com/sourcegraph-assets/cody-wasm/tree-sitter-ruby.wasm',
     'https://storage.googleapis.com/sourcegraph-assets/cody-wasm/tree-sitter-rust.wasm',
     'https://storage.googleapis.com/sourcegraph-assets/cody-wasm/tree-sitter-java.wasm',
+    'https://storage.googleapis.com/sourcegraph-assets/cody-wasm/tree-sitter-dart.wasm',
+    'https://storage.googleapis.com/sourcegraph-assets/cody-wasm/tree-sitter-php.wasm',
 ]
 
 export async function main(): Promise<void> {
@@ -74,7 +76,7 @@ function downloadFile(url: string): Promise<WriteStream> {
             const contentLength = res.headers?.['content-length'] ?? '0'
             const totalLength = parseInt(contentLength, 10)
 
-            const progress = new ProgressBar('-> downloading [:bar] :rate/bps :percent :etas', {
+            const progress = new ProgressBar(`-> ${fileName} [:bar] :rate/bps :percent :etas`, {
                 width: 40,
                 complete: '=',
                 incomplete: ' ',
