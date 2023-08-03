@@ -6,12 +6,7 @@ import { debug } from '../log'
 import { CodyStatusBar } from '../services/StatusBar'
 
 import { getContext, GetContextOptions, GetContextResult } from './context'
-import {
-    getInlineCompletions,
-    InlineCompletionsParams,
-    InlineCompletionsResultSource,
-    LastInlineCompletionCandidate,
-} from './getInlineCompletions'
+import { getInlineCompletions, InlineCompletionsParams, LastInlineCompletionCandidate } from './getInlineCompletions'
 import { DocumentHistory } from './history'
 import { ProviderConfig } from './providers/provider'
 import { RequestManager } from './request-manager'
@@ -151,13 +146,13 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
         // Track the last candidate completion (that is shown as ghost text in the editor) so that
         // we can reuse it if the user types in such a way that it is still valid (such as by typing
         // `ab` if the ghost text suggests `abcd`).
-        if (result && result.source !== InlineCompletionsResultSource.LastCandidate) {
+        if (result) {
             this.lastCandidate =
                 result?.items.length > 0
                     ? {
                           uri: document.uri,
-                          originalTriggerPosition: position,
-                          originalTriggerLinePrefix: document.lineAt(position).text.slice(0, position.character),
+                          lastTriggerPosition: position,
+                          lastTriggerLinePrefix: document.lineAt(position).text.slice(0, position.character),
                           result: {
                               logId: result.logId,
                               items: result.items,

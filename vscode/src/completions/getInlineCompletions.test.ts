@@ -195,15 +195,17 @@ describe('getInlineCompletions', () => {
     })
 
     describe('reuseResultFromLastCandidate', () => {
-        function lastCandidate(code: string, insertText: string): LastInlineCompletionCandidate {
+        function lastCandidate(code: string, insertText: string | string[]): LastInlineCompletionCandidate {
             const { document, position } = documentAndPosition(code)
             return {
                 uri: document.uri,
-                originalTriggerPosition: position,
-                originalTriggerLinePrefix: document.lineAt(position).text.slice(0, position.character),
+                lastTriggerPosition: position,
+                lastTriggerLinePrefix: document.lineAt(position).text.slice(0, position.character),
                 result: {
                     logId: '1',
-                    items: [{ insertText }],
+                    items: Array.isArray(insertText)
+                        ? insertText.map(insertText => ({ insertText }))
+                        : [{ insertText }],
                 },
             }
         }
@@ -300,6 +302,20 @@ describe('getInlineCompletions', () => {
                 await getInlineCompletions(
                     params('y█', [], {
                         lastCandidate: lastCandidate('x█', ' = 1'),
+                    })
+                )
+            ).toEqual<V>({
+                items: [],
+                source: InlineCompletionsResultSource.Network,
+            }))
+
+        test('not reused when the previously visible item is no longer matching', async () =>
+            // The user forward-types a character that matches a completion item that was not
+            // visible before. The original ghost text should not be reused.
+            expect(
+                await getInlineCompletions(
+                    params('\nconsol.log("h█', [], {
+                        lastCandidate: lastCandidate('\n█', ['console.log("Hi")', 'console.log("hi")']),
                     })
                 )
             ).toEqual<V>({
