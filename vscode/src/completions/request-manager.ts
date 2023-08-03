@@ -1,14 +1,21 @@
-import { CompletionsCache } from './cache'
+import { LRUCache } from 'lru-cache'
+
+import { debug } from '../log'
+
 import { ReferenceSnippet } from './context'
-import { logCompletionEvent } from './logger'
 import { CompletionProviderTracer, Provider } from './providers/provider'
 import { Completion } from './types'
 
-interface Request {
+export interface RequestParams {
+    // TODO(sqs): This is not a unique enough cache key. We should cache based on the params wrapped
+    // into generateCompletions instead of requiring callers to separately pass cache-key-able
+    // params to RequestManager.
     prefix: string
-    tracer?: CompletionProviderTracer
-    resolve(completions: Completion[]): void
-    reject(error: Error): void
+}
+
+export interface RequestManagerResult {
+    completions: Completion[]
+    cacheHit: boolean
 }
 
 /**
@@ -18,120 +25,64 @@ interface Request {
  * return them when the user triggers a completion again.
  */
 export class RequestManager {
-    private readonly requests: Map<string, Request[]> = new Map()
-
-    constructor(private completionsCache: CompletionsCache | null) {}
+    private cache = new RequestCache()
 
     public async request(
-        documentUri: string,
-        logId: string,
-        prefix: string,
+        params: RequestParams,
         providers: Provider[],
         context: ReferenceSnippet[],
-        signal: AbortSignal,
+        signal?: AbortSignal,
         tracer?: CompletionProviderTracer
-    ): Promise<Completion[]> {
-        let resolve: Request['resolve'] = () => {}
-        let reject: Request['reject'] = () => {}
-        const requestPromise = new Promise<Completion[]>((res, rej) => {
-            resolve = res
-            reject = rej
-        })
-
-        const request: Request = {
-            prefix,
-            resolve,
-            reject,
-            tracer,
+    ): Promise<RequestManagerResult> {
+        const existing = this.cache.get({ params })
+        if (existing) {
+            debug('RequestManager', 'cache hit', { verbose: { params, existing } })
+            return { ...existing.result, cacheHit: true }
         }
-        this.startRequest(request, documentUri, logId, providers, context, signal)
+        debug('RequestManager', 'cache miss', { verbose: { params } })
 
-        return requestPromise
-    }
-
-    private startRequest(
-        request: Request,
-        documentUri: string,
-        logId: string,
-        providers: Provider[],
-        context: ReferenceSnippet[],
-        signal: AbortSignal
-    ): void {
         // We forward a different abort controller to the network request so we
         // can cancel the network request independently of the user cancelling
         // the completion.
         const networkRequestAbortController = new AbortController()
 
-        this.addRequest(documentUri, request)
-
-        Promise.all(
-            providers.map(c => c.generateCompletions(networkRequestAbortController.signal, context, request.tracer))
+        return Promise.all(
+            providers.map(c => c.generateCompletions(networkRequestAbortController.signal, context, tracer))
         )
             .then(res => res.flat())
             .then(completions => {
-                // Add the completed results to the cache, even if the request
-                // was cancelled before or completed via a cache retest of a
-                // previous request.
-                this.completionsCache?.add(logId, completions)
+                // Cache even if the request was aborted.
+                this.cache.set({ params }, { result: { completions } })
 
-                if (signal.aborted) {
+                if (signal?.aborted) {
                     throw new Error('aborted')
                 }
 
-                request.resolve(completions)
-            })
-            .catch(error => {
-                request.reject(error)
-            })
-            .finally(() => {
-                this.removeRequest(documentUri, request)
-                this.retestCaches(documentUri)
+                return { completions, cacheHit: false }
             })
     }
+}
 
-    /**
-     * When one network request completes and the item is being added to the
-     * completion cache, we check all pending requests for the same document to
-     * see if we can synthesize a completion response from the new cache.
-     */
-    private retestCaches(documentUri: string): void {
-        const requests = this.requests.get(documentUri)
-        if (!requests) {
-            return
-        }
+interface RequestCacheKey {
+    params: RequestParams
+}
 
-        for (const request of requests) {
-            const cachedCompletions = this.completionsCache?.get(request.prefix)
-            if (cachedCompletions) {
-                logCompletionEvent('synthesizedFromParallelRequest')
-                request.resolve(cachedCompletions.completions)
-                this.removeRequest(documentUri, request)
-            }
-        }
+interface RequestCacheEntry {
+    result: Omit<RequestManagerResult, 'cacheHit'>
+}
+
+class RequestCache {
+    private cache = new LRUCache<string, RequestCacheEntry>({ max: 50 })
+
+    private toCacheKey(key: RequestCacheKey): string {
+        return key.params.prefix
     }
 
-    private addRequest(documentUri: string, request: Request): void {
-        let requestsForDocument: Request[] = []
-        if (this.requests.has(documentUri)) {
-            requestsForDocument = this.requests.get(documentUri)!
-        } else {
-            this.requests.set(documentUri, requestsForDocument)
-        }
-        requestsForDocument.push(request)
+    public get(key: RequestCacheKey): RequestCacheEntry | undefined {
+        return this.cache.get(this.toCacheKey(key))
     }
 
-    private removeRequest(documentUri: string, request: Request): void {
-        const requestsForDocument = this.requests.get(documentUri)
-        const index = requestsForDocument?.indexOf(request)
-
-        if (requestsForDocument === undefined || index === undefined || index === -1) {
-            return
-        }
-
-        requestsForDocument.splice(index, 1)
-
-        if (requestsForDocument.length === 0) {
-            this.requests.delete(documentUri)
-        }
+    public set(key: RequestCacheKey, entry: RequestCacheEntry): void {
+        this.cache.set(this.toCacheKey(key), entry)
     }
 }

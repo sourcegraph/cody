@@ -12,18 +12,22 @@ import type {
 } from '@sourcegraph/cody-shared/src/editor'
 import { SURROUNDING_LINES } from '@sourcegraph/cody-shared/src/prompt/constants'
 
-import type { MyPromptController } from '../my-cody/MyPromptController'
-import type { FixupController } from '../non-stop/FixupController'
-import type { InlineController } from '../services/InlineController'
+import { CommandsController } from '../custom-prompts/CommandsController'
+import { FixupController } from '../non-stop/FixupController'
+import { InlineController } from '../services/InlineController'
 
-export class VSCodeEditor implements Editor<InlineController, FixupController, MyPromptController> {
+import { EditorCodeLenses } from './EditorCodeLenses'
+
+export class VSCodeEditor implements Editor<InlineController, FixupController, CommandsController> {
     constructor(
         public readonly controllers: ActiveTextEditorViewControllers<
             InlineController,
             FixupController,
-            MyPromptController
+            CommandsController
         >
-    ) {}
+    ) {
+        new EditorCodeLenses()
+    }
 
     public get fileName(): string {
         return vscode.window.activeTextEditor?.document.fileName ?? ''
@@ -68,6 +72,7 @@ export class VSCodeEditor implements Editor<InlineController, FixupController, M
     }
 
     public getActiveTextEditorSelection(): ActiveTextEditorSelection | null {
+        // Skip this for Inline Chat tasks as the replace method uses selection tracked by the Inline Controller
         if (this.controllers.inline?.isInProgress) {
             return null
         }
@@ -180,6 +185,7 @@ export class VSCodeEditor implements Editor<InlineController, FixupController, M
 
     public async replaceSelection(fileName: string, selectedText: string, replacement: string): Promise<void> {
         const activeEditor = this.getActiveTextEditorInstance()
+        // Use the replace method from inline controller if there is a Inline Fixsup in progress
         if (this.controllers.inline?.isInProgress) {
             await this.controllers.inline.replace(fileName, replacement, selectedText)
             return

@@ -350,7 +350,6 @@ export class AuthProvider {
 
     // Store endpoint in local storage, token in secret storage, and update endpoint history
     private async storeAuthInfo(endpoint: string | null | undefined, token: string | null | undefined): Promise<void> {
-        debug('AuthProvider:storeAuthInfo:init', endpoint || '')
         if (!endpoint) {
             return
         }
@@ -359,7 +358,6 @@ export class AuthProvider {
             await this.secretStorage.storeToken(endpoint, token)
         }
         this.loadEndpointHistory()
-        debug('AuthProvider:storeAuthInfo:stored', endpoint || '')
     }
 }
 

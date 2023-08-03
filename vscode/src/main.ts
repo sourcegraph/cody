@@ -11,7 +11,6 @@ import { FixupManager } from './chat/FixupViewProvider'
 import { InlineChatViewManager } from './chat/InlineChatViewProvider'
 import { MessageProviderOptions } from './chat/MessageProvider'
 import { CODY_FEEDBACK_URL } from './chat/protocol'
-import { CompletionsCache } from './completions/cache'
 import { VSCodeDocumentHistory } from './completions/history'
 import * as CompletionsLogger from './completions/logger'
 import { createProviderConfig } from './completions/providers/createProvider'
@@ -106,7 +105,7 @@ const register = async (
     const editor = new VSCodeEditor({
         inline: commentController,
         fixups: fixup,
-        prompt: platform.createMyPromptController?.(context, initialConfig.experimentalCustomRecipes),
+        command: platform.createCommandsController?.(context, localStorage),
     })
 
     // Could we use the `initialConfig` instead?
@@ -174,11 +173,16 @@ const register = async (
         })
     )
 
-    const executeRecipeInSidebar = async (recipe: RecipeID, openChatView = true): Promise<void> => {
+    const executeRecipeInSidebar = async (
+        recipe: RecipeID,
+        openChatView = true,
+        humanInput?: string
+    ): Promise<void> => {
         if (openChatView) {
             await sidebarChatProvider.setWebviewView('chat')
         }
-        await sidebarChatProvider.executeRecipe(recipe, '')
+
+        await sidebarChatProvider.executeRecipe(recipe, humanInput)
     }
 
     const webviewErrorMessenger = async (error: string): Promise<void> => {
@@ -251,13 +255,14 @@ const register = async (
             // Remove the inline chat
             inlineChatManager.removeProviderForThread(thread)
         }),
-        vscode.commands.registerCommand('cody.inline.new', () =>
-            vscode.commands.executeCommand('workbench.action.addComment')
-        ),
         vscode.commands.registerCommand('cody.fixup.new', (instruction: string, range: vscode.Range): void => {
             if (vscode.window.activeTextEditor) {
                 void executeFixup(vscode.window.activeTextEditor.document, instruction, range, false)
             }
+        vscode.commands.registerCommand('cody.inline.new', async () => {
+            // move focus line to the end of the current selection
+            await vscode.commands.executeCommand('cursorLineEndSelect')
+            await vscode.commands.executeCommand('workbench.action.addComment')
         }),
         // Tests
         // Access token - this is only used in configuration tests
@@ -282,40 +287,40 @@ const register = async (
             await sidebarChatProvider.clearHistory()
         }),
         // Recipes
-        vscode.commands.registerCommand('cody.customRecipes.exec', async title => {
-            if (!sidebarChatProvider.isCustomRecipeAction(title)) {
+        vscode.commands.registerCommand('cody.action.chat', input =>
+            executeRecipeInSidebar('chat-question', true, input)
+        ),
+        vscode.commands.registerCommand(
+            'cody.action.commands.menu',
+            showDesc => editor.controllers.command?.menu('default', showDesc)
+        ),
+        vscode.commands.registerCommand(
+            'cody.action.commands.custom.menu',
+            () => editor.controllers.command?.menu('custom')
+        ),
+        vscode.commands.registerCommand('cody.settings.commands', () => editor.controllers.command?.configMenu()),
+        vscode.commands.registerCommand('cody.action.commands.exec', async title => {
+            if (!sidebarChatProvider.isCustomCommandAction(title)) {
                 await sidebarChatProvider.setWebviewView('chat')
             }
-            await sidebarChatProvider.executeCustomRecipe(title)
+            await sidebarChatProvider.executeCustomCommand(title)
         }),
-        vscode.commands.registerCommand('cody.customRecipes.list', () => editor.controllers.prompt?.quickRecipe()),
+        vscode.commands.registerCommand('cody.command.explain-code', () =>
+            executeRecipeInSidebar('custom-prompt', true, '/explain')
+        ),
         vscode.commands.registerCommand('cody.recipe.explain-code', () =>
             executeRecipeInSidebar('explain-code-detailed')
         ),
-        vscode.commands.registerCommand('cody.recipe.explain-code-high-level', () =>
-            executeRecipeInSidebar('explain-code-high-level')
+        vscode.commands.registerCommand('cody.command.generate-unit-test', () =>
+            executeRecipeInSidebar('custom-prompt', true, '/tests')
         ),
-        vscode.commands.registerCommand('cody.recipe.generate-unit-test', () =>
-            executeRecipeInSidebar('generate-unit-test')
+        vscode.commands.registerCommand('cody.command.generate-docstring', () =>
+            executeRecipeInSidebar('custom-prompt', true, '/docstring')
         ),
-        vscode.commands.registerCommand('cody.recipe.generate-docstring', () =>
-            executeRecipeInSidebar('generate-docstring')
-        ),
-        vscode.commands.registerCommand('cody.recipe.fixup', () => executeRecipeInSidebar('fixup')),
-        vscode.commands.registerCommand('cody.recipe.translate-to-language', () =>
-            executeRecipeInSidebar('translate-to-language')
-        ),
-        vscode.commands.registerCommand('cody.recipe.git-history', () => executeRecipeInSidebar('git-history')),
-        vscode.commands.registerCommand('cody.recipe.improve-variable-names', () =>
-            executeRecipeInSidebar('improve-variable-names')
-        ),
-        vscode.commands.registerCommand('cody.recipe.inline-touch', () =>
+        vscode.commands.registerCommand('cody.command.inline-touch', () =>
             executeRecipeInSidebar('inline-touch', false)
         ),
-        vscode.commands.registerCommand('cody.recipe.find-code-smells', () =>
-            executeRecipeInSidebar('find-code-smells')
-        ),
-        vscode.commands.registerCommand('cody.recipe.context-search', () => executeRecipeInSidebar('context-search')),
+        vscode.commands.registerCommand('cody.command.context-search', () => executeRecipeInSidebar('context-search')),
 
         // Register URI Handler (vscode://sourcegraph.cody-ai)
         vscode.window.registerUriHandler({
@@ -345,11 +350,9 @@ const register = async (
             vscode.commands.executeCommand('workbench.view.extension.cody')
         ),
         vscode.commands.registerCommand('cody.walkthrough.showChat', () => sidebarChatProvider.setWebviewView('chat')),
-        vscode.commands.registerCommand('cody.walkthrough.showFixup', () =>
-            sidebarChatProvider.setWebviewView('recipes')
-        ),
+        vscode.commands.registerCommand('cody.walkthrough.showFixup', () => sidebarChatProvider.setWebviewView('chat')),
         vscode.commands.registerCommand('cody.walkthrough.showExplain', () =>
-            sidebarChatProvider.setWebviewView('recipes')
+            sidebarChatProvider.setWebviewView('chat')
         ),
         vscode.commands.registerCommand('cody.walkthrough.enableInlineChat', async () => {
             await workspaceConfig.update('cody.inlineChat', true, vscode.ConfigurationTarget.Global)
@@ -451,7 +454,6 @@ function createCompletionsProvider(
         history,
         statusBar,
         codebaseContext,
-        cache: config.autocompleteAdvancedCache ? new CompletionsCache() : null,
         isEmbeddingsContextEnabled: config.autocompleteAdvancedEmbeddings,
         completeSuggestWidgetSelection: config.autocompleteExperimentalCompleteSuggestWidgetSelection,
     })

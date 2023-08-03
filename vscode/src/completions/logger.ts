@@ -3,7 +3,6 @@ import * as vscode from 'vscode'
 
 import { TelemetryEventProperties } from '@sourcegraph/cody-shared/src/telemetry'
 
-import { ConfigKeys } from '../configuration-keys'
 import { debug } from '../log'
 import { logEvent } from '../services/EventLogger'
 
@@ -14,15 +13,6 @@ interface CompletionEvent {
         multilineMode: null | 'block'
         providerIdentifier: string
         languageId: string
-
-        /**
-         * Whether the completion was triggered only because of the experimental setting
-         * `cody.autocomplete.experimental.completeSuggestWidgetSelection`.
-         */
-        triggeredForSuggestWidgetSelection: boolean
-
-        /** Relevant user settings. */
-        settings: Record<Extract<ConfigKeys, 'autocompleteExperimentalCompleteSuggestWidgetSelection'>, boolean>
     }
     // The timestamp when the request started
     startedAt: number
@@ -93,7 +83,7 @@ export function networkRequestStarted(
         embeddings?: number
         local?: number
         duration: number
-    }
+    } | null
 ): void {
     const event = displayedCompletions.get(id)
     if (event) {

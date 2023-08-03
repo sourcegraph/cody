@@ -115,12 +115,7 @@ export class Fixup implements Recipe {
                 .replace('{fileName}', task.fileName)
         }
 
-        // It is possible to trigger this recipe from the sidebar without any input.
-        // TODO: Consider deprecating this functionality once inline fixups and non-stop fixups and consolidated.
-        const promptInstruction =
-            task.instruction.length > 0
-                ? truncateText(task.instruction, MAX_HUMAN_INPUT_TOKENS)
-                : "You should infer your instructions from the users' selection"
+        const promptInstruction = truncateText(task.instruction, MAX_HUMAN_INPUT_TOKENS)
 
         return Fixup.editPrompt
             .replace('{humanInput}', promptInstruction)

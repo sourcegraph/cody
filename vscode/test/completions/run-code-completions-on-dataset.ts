@@ -62,8 +62,6 @@ async function initCompletionsProvider(context: GetContextResult): Promise<Inlin
         },
         history,
         codebaseContext,
-        disableTimeouts: true,
-        cache: null,
         isEmbeddingsContextEnabled: true,
         contextFetcher: () => Promise.resolve(context),
     })
@@ -164,6 +162,7 @@ async function generateCompletionsForDataset(codeSamples: Sample[]): Promise<voi
         throw new Error('No provider name')
     }
     const filename = path.join(ENVIRONMENT_CONFIG.OUTPUT_PATH, `${providerName}-${timestamp}.json`)
+    fs.mkdirSync(ENVIRONMENT_CONFIG.OUTPUT_PATH, { recursive: true })
     fs.writeFileSync(filename, JSON.stringify(results, null, 2))
     console.log('\n✅ Completions saved to:', filename)
 }

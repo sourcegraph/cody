@@ -17,7 +17,7 @@ describe('getConfiguration', () => {
             codebase: '',
             useContext: 'embeddings',
             autocomplete: true,
-            experimentalCustomRecipes: false,
+            experimentalCommandLenses: false,
             experimentalChatPredictions: false,
             experimentalGuardrails: false,
             inlineChat: true,
@@ -30,7 +30,6 @@ describe('getConfiguration', () => {
             autocompleteAdvancedProvider: 'anthropic',
             autocompleteAdvancedServerEndpoint: null,
             autocompleteAdvancedAccessToken: null,
-            autocompleteAdvancedCache: true,
             autocompleteAdvancedEmbeddings: true,
             autocompleteExperimentalCompleteSuggestWidgetSelection: false,
         })
@@ -55,7 +54,7 @@ describe('getConfiguration', () => {
                         return false
                     case 'cody.experimental.chatPredictions':
                         return true
-                    case 'cody.experimental.customRecipes':
+                    case 'cody.experimental.commandLenses':
                         return true
                     case 'cody.experimental.guardrails':
                         return true
@@ -77,8 +76,6 @@ describe('getConfiguration', () => {
                         return 'https://example.com/llm'
                     case 'cody.autocomplete.advanced.accessToken':
                         return 'foobar'
-                    case 'cody.autocomplete.advanced.cache':
-                        return false
                     case 'cody.autocomplete.advanced.embeddings':
                         return false
                     case 'cody.autocomplete.experimental.completeSuggestWidgetSelection':
@@ -109,7 +106,7 @@ describe('getConfiguration', () => {
             },
             autocomplete: false,
             experimentalChatPredictions: true,
-            experimentalCustomRecipes: true,
+            experimentalCommandLenses: true,
             experimentalGuardrails: true,
             inlineChat: true,
             experimentalNonStop: true,
@@ -120,7 +117,6 @@ describe('getConfiguration', () => {
             autocompleteAdvancedProvider: 'unstable-codegen',
             autocompleteAdvancedServerEndpoint: 'https://example.com/llm',
             autocompleteAdvancedAccessToken: 'foobar',
-            autocompleteAdvancedCache: false,
             autocompleteAdvancedEmbeddings: false,
             autocompleteExperimentalCompleteSuggestWidgetSelection: false,
         })

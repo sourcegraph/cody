@@ -2,7 +2,7 @@
   "name": "cody-ai",
   "private": true,
   "displayName": "Cody AI",
-  "version": "0.6.3",
+  "version": "0.6.4",
   "publisher": "sourcegraph",
   "license": "Apache-2.0",
   "icon": "resources/cody.png",
@@ -112,17 +112,9 @@
           {
             "id": "explain",
             "title": "Explain Code",
-            "description": "Ask Cody to explain some code. Select some lines and use the \"Explain selected code\" recipe.\n[Open Recipes](command:cody.walkthrough.showExplain)",
+            "description": "Ask Cody to explain some code. Select some lines and use the \"Explain selected code\" recipe.\n[Open Commands](command:cody.action.commands.menu)",
             "media": {
               "markdown": "walkthroughs/explain.md"
-            }
-          },
-          {
-            "id": "fixup",
-            "title": "Fixup Code",
-            "description": "Instruct Cody to edit and improve code with the \"Fixup code from inline instructions\" recipe.\n[Open Recipes](command:cody.walkthrough.showFixup)",
-            "media": {
-              "markdown": "walkthroughs/fixup.md"
             }
           },
           {
@@ -251,54 +243,24 @@
         "icon": "$(feedback)"
       },
       {
-        "command": "cody.recipe.explain-code",
+        "command": "cody.command.explain-code",
         "category": "Ask Cody",
-        "title": "Explain Code in Detail"
+        "title": "Explain Code"
       },
       {
-        "command": "cody.recipe.explain-code-high-level",
-        "category": "Ask Cody",
-        "title": "Explain Code at a High Level"
-      },
-      {
-        "command": "cody.recipe.generate-unit-test",
+        "command": "cody.command.generate-unit-test",
         "category": "Ask Cody",
         "title": "Generate Unit Test"
       },
       {
-        "command": "cody.recipe.generate-docstring",
+        "command": "cody.command.generate-docstring",
         "category": "Ask Cody",
-        "title": "Generate Docstring"
+        "title": "Document Code"
       },
       {
-        "command": "cody.recipe.translate-to-language",
-        "category": "Ask Cody",
-        "title": "Translate to Language"
-      },
-      {
-        "command": "cody.recipe.git-history",
-        "category": "Ask Cody",
-        "title": "Summarize Recent Code Changes"
-      },
-      {
-        "command": "cody.recipe.improve-variable-names",
-        "category": "Ask Cody",
-        "title": "Improve Variable Names"
-      },
-      {
-        "command": "cody.recipe.fixup",
-        "category": "Cody",
-        "title": "Inline Fixup"
-      },
-      {
-        "command": "cody.recipe.context-search",
+        "command": "cody.command.context-search",
         "category": "Ask Cody",
         "title": "Codebase Context Search"
-      },
-      {
-        "command": "cody.recipe.find-code-smells",
-        "category": "Ask Cody",
-        "title": "Find Code Smells"
       },
       {
         "command": "cody.auth.signout",
@@ -390,7 +352,7 @@
         "enablement": "config.cody.experimental.guardrails && editorHasSelection"
       },
       {
-        "command": "cody.recipe.inline-touch",
+        "command": "cody.command.inline-touch",
         "category": "Cody",
         "title": "Touch"
       },
@@ -398,7 +360,7 @@
         "command": "cody.non-stop.fixup",
         "category": "Cody",
         "title": "Fixup (Experimental)",
-        "icon": "resources/cody.png",
+        "icon": "$(sparkle)",
         "when": "cody.nonstop.fixups.enabled",
         "enablement": "cody.nonstop.fixups.enabled && editorHasSelection"
       },
@@ -443,12 +405,18 @@
         "icon": "$(diff)"
       },
       {
-        "command": "cody.customRecipes.list",
+        "command": "cody.action.commands.custom.menu",
         "category": "Cody",
-        "title": "Custom Recipes (Experimental)",
+        "title": "Custom Commands (Experimental)",
         "when": "cody.activated",
-        "enablement": "config.cody.experimental.customRecipes",
         "icon": "$(bookmark)"
+      },
+      {
+        "command": "cody.action.commands.menu",
+        "category": "Cody",
+        "title": "Commands Menu",
+        "when": "cody.activated",
+        "icon": "$(cody-logo)"
       },
       {
         "command": "cody.autocomplete.openTraceView",
@@ -464,17 +432,13 @@
         "mac": "alt+/"
       },
       {
-        "command": "cody.recipe.fixup",
-        "when": "cody.activated && editorTextFocus && !editorReadonly"
-      },
-      {
         "command": "cody.non-stop.fixup",
         "key": "ctrl+shift+v",
         "mac": "shift+cmd+v",
         "when": "cody.activated && editorHasSelection && !editorReadonly"
       },
       {
-        "command": "cody.recipe.inline-touch",
+        "command": "cody.command.inline-touch",
         "key": "ctrl+alt+/",
         "mac": "cmd+alt+/",
         "when": "cody.activated && editorTextFocus && editorHasSelection && config.cody.inlineChat.enabled"
@@ -486,10 +450,14 @@
         "when": "cody.activated && editorFocus && config.cody.inlineChat.enabled"
       },
       {
-        "command": "cody.customRecipes.list",
+        "command": "cody.action.commands.menu",
         "key": "ctrl+shift+v",
         "mac": "cmd+shift+v",
         "when": "cody.activated && editorFocus"
+      },
+      {
+        "command": "-github.copilot.generate",
+        "key": "ctrl+enter"
       }
     ],
     "submenus": [
@@ -501,43 +469,23 @@
     "menus": {
       "commandPalette": [
         {
-          "command": "cody.recipe.explain-code",
+          "command": "cody.command.explain-code",
           "when": "cody.activated && editorHasSelection"
         },
         {
-          "command": "cody.recipe.context-search",
+          "command": "cody.command.context-search",
           "when": "cody.activated"
         },
         {
-          "command": "cody.recipe.explain-code-high-level",
-          "when": "cody.activated && editorHasSelection"
-        },
-        {
-          "command": "cody.recipe.inline-touch",
+          "command": "cody.command.inline-touch",
           "when": "false"
         },
         {
-          "command": "cody.recipe.generate-unit-test",
+          "command": "cody.command.generate-unit-test",
           "when": "cody.activated && editorHasSelection"
         },
         {
-          "command": "cody.recipe.generate-docstring",
-          "when": "cody.activated && editorHasSelection"
-        },
-        {
-          "command": "cody.recipe.translate-to-language",
-          "when": "cody.activated && editorHasSelection"
-        },
-        {
-          "command": "cody.recipe.git-history",
-          "when": "cody.activated"
-        },
-        {
-          "command": "cody.recipe.fixup",
-          "when": "cody.activated && editorHasSelection"
-        },
-        {
-          "command": "cody.recipe.find-code-smells",
+          "command": "cody.command.generate-docstring",
           "when": "cody.activated && editorHasSelection"
         },
         {
@@ -590,51 +538,31 @@
           "when": "config.cody.experimental.guardrails && editorHasSelection"
         },
         {
-          "command": "cody.customRecipes.list",
-          "when": "cody.activated && config.cody.experimental.customRecipes"
+          "command": "cody.action.commands.custom.menu",
+          "when": "cody.activated"
         }
       ],
       "editor/context": [
         {
           "submenu": "cody.submenu",
-          "group": "7_modification"
+          "group": "0_cody"
         }
       ],
       "cody.submenu": [
         {
-          "command": "cody.recipe.explain-code",
+          "command": "cody.command.explain-code",
           "when": "cody.activated"
         },
         {
-          "command": "cody.recipe.explain-code-high-level",
+          "command": "cody.command.generate-unit-test",
           "when": "cody.activated"
         },
         {
-          "command": "cody.recipe.inline-touch",
-          "when": "cody.activated && config.cody.inlineChat.enabled"
-        },
-        {
-          "command": "cody.recipe.generate-unit-test",
+          "command": "cody.command.generate-docstring",
           "when": "cody.activated"
         },
         {
-          "command": "cody.recipe.generate-docstring",
-          "when": "cody.activated"
-        },
-        {
-          "command": "cody.recipe.improve-variable-names",
-          "when": "cody.activated"
-        },
-        {
-          "command": "cody.recipe.translate-to-language",
-          "when": "cody.activated"
-        },
-        {
-          "command": "cody.recipe.fixup",
-          "when": "cody.activated"
-        },
-        {
-          "command": "cody.recipe.find-code-smells",
+          "command": "cody.action.commands.custom.menu",
           "when": "cody.activated"
         },
         {
@@ -644,10 +572,6 @@
         {
           "command": "cody.guardrails.debug",
           "when": "cody.activated && config.cody.experimental.guardrails && editorHasSelection"
-        },
-        {
-          "command": "cody.customRecipes.list",
-          "when": "cody.activated && config.cody.experimental.customRecipes"
         }
       ],
       "view/title": [
@@ -698,6 +622,12 @@
         }
       ],
       "editor/title": [
+        {
+          "command": "cody.action.commands.menu",
+          "when": "cody.activated && config.cody.experimental.editorTitleCommandIcon",
+          "group": "navigation",
+          "visibility": "visible"
+        },
         {
           "command": "cody.non-stop.fixup",
           "when": "cody.nonstop.fixups.enabled && cody.activated",
@@ -824,16 +754,28 @@
           "default": false,
           "markdownDescription": "Adds suggestions of possible relevant messages in the chat window."
         },
-        "cody.experimental.guardrails": {
+        "cody.experimental.commandLenses": {
           "order": 8,
+          "type": "boolean",
+          "markdownDescription": "[Experimental] Adds code lenses to current file for quick access to Cody commands.",
+          "default": false
+        },
+        "cody.experimental.editorTitleCommandIcon": {
+          "order": 8,
+          "type": "boolean",
+          "markdownDescription": "[Experimental] Adds an editor title menu icon for quick access to Cody commands.",
+          "default": false
+        },
+        "cody.experimental.guardrails": {
+          "order": 9,
           "type": "boolean",
           "markdownDescription": "Experimental feature for internal use.",
           "default": false
         },
-        "cody.experimental.customRecipes": {
+        "cody.experimental.nonStop": {
           "order": 9,
           "type": "boolean",
-          "markdownDescription": "[Experimental] Create reusable recipes with customized prompts and context tailored to your workflow.",
+          "markdownDescription": "Experimental feature for internal use.",
           "default": false
         },
         "cody.debug.enable": {
@@ -884,11 +826,6 @@
         "cody.autocomplete.advanced.accessToken": {
           "type": "string",
           "markdownDescription": "Overwrite the access token used for code autocomplete. This is only supported with a provider other than `anthropic`."
-        },
-        "cody.autocomplete.advanced.cache": {
-          "type": "boolean",
-          "default": true,
-          "markdownDescription": "Enables caching of code autocomplete."
         },
         "cody.autocomplete.advanced.embeddings": {
           "order": 99,
@@ -1012,7 +949,7 @@
     "@playwright/test": "^1.33.0",
     "@types/dedent": "^0.7.0",
     "@types/express": "^4.17.17",
-    "@types/glob": "^7.2.0",
+    "@types/glob": "^8.0.0",
     "@types/isomorphic-fetch": "^0.0.36",
     "@types/lodash": "^4.14.195",
     "@types/mocha": "^10.0.1",
