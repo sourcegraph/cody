@@ -23,6 +23,7 @@ export class FixupTypingUI {
         title = 'Cody',
         placeholder = "Ask Cody to do something, or type ' / ' for commands",
         fallback = '',
+        prefix = '',
     } = {}): Promise<string> {
         const quickPick = vscode.window.createQuickPick()
         quickPick.title = title
@@ -55,13 +56,15 @@ export class FixupTypingUI {
                         this.getInstructionFromQuickPick({
                             title: `Cody - ${selectedItem}`,
                             placeholder: command,
-                            fallback: `${selectedItem} ${command}`,
+                            fallback: command,
+                            prefix: selectedItem,
                         })
                     )
                 }
 
                 quickPick.hide()
-                return resolve(quickPick.value.trim() || fallback)
+                const instruction = quickPick.value.trim() || fallback
+                return resolve(prefix ? `${prefix} ${instruction}` : instruction)
             })
         )
     }
