@@ -362,7 +362,7 @@
         "title": "Fixup (Experimental)",
         "icon": "$(sparkle)",
         "when": "cody.nonstop.fixups.enabled",
-        "enablement": "cody.nonstop.fixups.enabled && editorHasSelection"
+        "enablement": "cody.nonstop.fixups.enabled"
       },
       {
         "command": "cody.fixup.open",
@@ -435,7 +435,7 @@
         "command": "cody.fixup.new",
         "key": "ctrl+shift+v",
         "mac": "shift+cmd+v",
-        "when": "cody.activated && editorHasSelection && !editorReadonly"
+        "when": "cody.activated && !editorReadonly"
       },
       {
         "command": "cody.command.inline-touch",

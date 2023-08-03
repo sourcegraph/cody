@@ -1,12 +1,12 @@
 import * as vscode from 'vscode'
 
-import { CodyPrompt } from '@sourcegraph/cody-shared/src/chat/prompts'
 import { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 
 import { FixupCodeAction } from '../code-actions/fixup'
 import { FixupTask } from '../non-stop/FixupTask'
 
 import { MessageProvider, MessageProviderOptions } from './MessageProvider'
+import { getFirstNonWhitespaceCharacterPosition } from './utils'
 
 export class FixupManager implements vscode.Disposable {
     private fixupProviders = new Map<FixupTask, FixupProvider>()
@@ -68,12 +68,7 @@ export class FixupProvider extends MessageProvider {
     }
 
     public async abortFix(): Promise<void> {
-        // this.editor.controllers.inline?.abort()
         await this.abortCompletion()
-    }
-
-    public removeFix(): void {
-        // this.editor.controllers.inline?.delete(this.thread)
     }
 
     private formatResponse(response: string): string {
@@ -125,12 +120,12 @@ export class FixupProvider extends MessageProvider {
         void this.editor.controllers.inline?.error(errorMsg)
     }
 
-    protected handleTranscriptErrors(transciptError: boolean): void {
-        // TODO:
+    protected handleTranscriptErrors(): void {
+        // not implemented
     }
 
-    protected handleCodyCommands(prompts: [string, CodyPrompt][]): void {
-        // TODO:
+    protected handleCodyCommands(): void {
+        // not implemented
     }
 
     protected handleHistory(): void {
@@ -148,20 +143,4 @@ export class FixupProvider extends MessageProvider {
     protected handleMyPrompts(): void {
         // not implemented
     }
-}
-
-enum CharCode {
-    Tab = 9,
-    Space = 32,
-}
-
-export function getFirstNonWhitespaceCharacterPosition(text: string): number | null {
-    for (let i = 0; i < text.length; i++) {
-        const char = text.charCodeAt(i)
-        if (char !== CharCode.Space && char !== CharCode.Tab) {
-            return i
-        }
-    }
-
-    return null
 }

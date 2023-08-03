@@ -238,7 +238,7 @@ const register = async (
             }
 
             const inlineChatProvider = inlineChatManager.getProviderForThread(comment.thread)
-            await inlineChatProvider.addChat(comment.text, isFixMode)
+            await inlineChatProvider.addChat(comment.text, false)
             telemetryService.log('CodyVSCodeExtension:inline-assist:chat')
         }),
         vscode.commands.registerCommand('cody.comment.delete', (thread: vscode.CommentThread) => {

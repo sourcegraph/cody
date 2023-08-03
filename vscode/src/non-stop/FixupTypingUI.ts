@@ -74,13 +74,6 @@ export class FixupTypingUI {
             return null
         }
         const range = editor.selection
-
-        // TODO: Do not require any text to be selected
-        if (range.isEmpty) {
-            await vscode.window.showWarningMessage('Select some text to fix up')
-            return null
-        }
-
         const instruction = (await this.getInstructionFromQuickPick())?.trim()
         if (!instruction) {
             return null

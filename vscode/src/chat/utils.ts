@@ -81,3 +81,19 @@ export function newAuthStatus(
     authStatus.isLoggedIn = isLoggedIn && isAllowed
     return authStatus
 }
+
+enum CharCode {
+    Tab = 9,
+    Space = 32,
+}
+
+export function getFirstNonWhitespaceCharacterPosition(text: string): number | null {
+    for (let i = 0; i < text.length; i++) {
+        const char = text.charCodeAt(i)
+        if (char !== CharCode.Space && char !== CharCode.Tab) {
+            return i
+        }
+    }
+
+    return null
+}
