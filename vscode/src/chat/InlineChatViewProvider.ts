@@ -73,7 +73,7 @@ export class InlineChatViewProvider extends MessageProvider {
          */
         await this.editor.controllers.inline?.chat(reply, this.thread, isFixMode)
         this.editor.controllers.inline?.setResponsePending(true)
-        void this.executeRecipe('inline-chat', reply.trimStart())
+        await this.executeRecipe('inline-chat', reply.trimStart())
     }
 
     public removeChat(): void {

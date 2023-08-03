@@ -31,7 +31,6 @@ export class FixupTypingUI {
         quickPick.buttons = [{ tooltip: 'Cody', iconPath: new vscode.ThemeIcon('cody-logo-heavy') }]
         quickPick.ignoreFocusOut = true
         quickPick.onDidTriggerButton(() => {
-            console.log('triggeredeed')
             void vscode.commands.executeCommand('cody.focus')
             quickPick.hide()
         })

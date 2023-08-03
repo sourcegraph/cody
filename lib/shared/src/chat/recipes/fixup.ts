@@ -58,8 +58,6 @@ export class Fixup implements Recipe {
 
         const fixupTask = await fixupController.getTaskRecipeData(taskId)
         if (!fixupTask) {
-            // TODO: remove?
-            await context.editor.controllers?.inline?.error()
             await context.editor.showWarningMessage('Select some code to fixup.')
             return null
         }
@@ -67,7 +65,6 @@ export class Fixup implements Recipe {
         const quarterFileContext = Math.floor(MAX_CURRENT_FILE_TOKENS / 4)
         if (truncateText(fixupTask.selectedText, quarterFileContext * 2) !== fixupTask.selectedText) {
             const msg = "The amount of text selected exceeds Cody's current capacity."
-            await context.editor.controllers?.inline?.error()
             await context.editor.showWarningMessage(msg)
             return null
         }

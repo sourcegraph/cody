@@ -335,7 +335,6 @@ export class FixupController
 
     // Handles when the range associated with a fixup task changes.
     public rangeDidChange(task: FixupTask): void {
-        console.log('Updating codeleneses 2')
         this.codelenses.didUpdateTask(task)
         // We don't notify the decorator about this range change; vscode
         // updates any text decorations and we can recompute them, lazily,
@@ -478,7 +477,6 @@ export class FixupController
 
     private setTaskState(task: FixupTask, state: CodyTaskState): void {
         const oldState = task.state
-        console.log('old state', oldState, 'new', state)
         if (oldState === state) {
             // Not a transition--nothing to do.
             return

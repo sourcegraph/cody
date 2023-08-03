@@ -179,6 +179,8 @@ export class InlineController implements VsCodeInlineController {
         const comment = new Comment(reply, 'Me', this.userIcon, thread)
         thread.comments = [...thread.comments, comment]
 
+        // TODO(umpox): Remove usage of `isFixMode` in the InlineController.
+        // We should no longer need it, logic has been moved to the FixupController.
         if (isFixMode) {
             await this.runFixMode(comment, thread)
         }
@@ -200,7 +202,7 @@ export class InlineController implements VsCodeInlineController {
     }
 
     /**
-     * List response from Cody as comment
+     * Li st response from Cody as comment
      */
     public reply(text: string, state: keyof typeof CodyInlineStateContextValue): void {
         if (!this.thread || this.thread.state) {
@@ -223,7 +225,7 @@ export class InlineController implements VsCodeInlineController {
             this.threads.set(firstComment.id, this.thread)
         }
 
-        // Terminal states
+        // Terminal s tates
         if (state === 'complete' || state === 'error') {
             this.thread.state = state === 'error' ? 1 : 0
             this.thread.canReply = state !== 'error'
@@ -238,7 +240,7 @@ export class InlineController implements VsCodeInlineController {
         }
     }
     /**
-     * Display a "..." loading style reply from Cody.
+     * Di splay a "..." loading style reply from Cody.
      */
     public setResponsePending(isResponsePending: boolean): void {
         let iterations = 0
@@ -265,7 +267,7 @@ export class InlineController implements VsCodeInlineController {
         this.codeLenses.delete(id)
     }
     /**
-     * Remove a comment thread / conversation
+     * Re move a comment thread / conversation
      */
     public delete(thread: vscode.CommentThread): void {
         if (!thread) {
@@ -279,14 +281,14 @@ export class InlineController implements VsCodeInlineController {
         this.reset()
     }
     /**
-     * Reset class
+     * Re set class
      */
     public reset(): void {
         this.selectionRange = initRange
         this.thread = null
     }
     /**
-     * Display error message when Cody is unable to complete a request
+     * Di splay error message when Cody is unable to complete a request
      */
     public async error(message = 'Please provide Cody with more details and try again.'): Promise<void> {
         const fixupInProgress = this.currentTaskId.length > 0
@@ -297,7 +299,7 @@ export class InlineController implements VsCodeInlineController {
         }
     }
     /**
-     * Create code lense and initiate decorators for fix mode
+     * Cr eate code lense and initiate decorators for fix mode
      */
     private async runFixMode(comment: Comment, thread: vscode.CommentThread): Promise<void> {
         const lens = await this.makeCodeLenses(comment.id, this.extensionPath, thread)
@@ -307,7 +309,7 @@ export class InlineController implements VsCodeInlineController {
         void vscode.commands.executeCommand('workbench.action.collapseAllComments')
     }
     /**
-     * Reset the selection range once replacement started by fixup has been completed
+     * Re set the selection range once replacement started by fixup has been completed
      * Then inform the dependents (eg. Code Lenses and Decorators) about the new range
      * so that they could update accordingly
      */
@@ -331,7 +333,7 @@ export class InlineController implements VsCodeInlineController {
         }
     }
     /**
-     * Get current selected lines from the comment thread.
+     * Ge t current selected lines from the comment thread.
      * Add an extra line to the end line to prevent empty selection on single line selection
      */
     public async makeSelection(isFixMode: boolean): Promise<ActiveTextEditorSelection | null> {
@@ -356,7 +358,7 @@ export class InlineController implements VsCodeInlineController {
                 new vscode.Position(this.thread.range.end.line + 1 + SURROUNDING_LINES, 0)
             )
         )
-        // Add space when selectedText is empty --empty selectedText could cause delayed response
+        // Add space  when selectedText is empty --empty selectedText could cause delayed response
         const selection = {
             fileName: vscode.workspace.asRelativePath(this.thread.uri.fsPath),
             selectedText: activeDocument.getText(selectionRange) || ' ',
@@ -368,7 +370,7 @@ export class InlineController implements VsCodeInlineController {
         return selection
     }
     /**
-     * When a comment thread is open, the Editor will be switched to the comment input editor.
+     * Wh en a comment thread is open, the Editor will be switched to the comment input editor.
      * Get the current editor using the comment thread uri instead
      */
     public async makeCodeLenses(
@@ -396,7 +398,7 @@ export class InlineController implements VsCodeInlineController {
             await this.stopFixMode(true)
             return
         }
-        // Stop tracking for file changes to perfotm replacement
+        // Stop track ing for file changes to perfotm replacement
         this.isInProgress = false
         try {
             const chatSelection = this.getSelectionRange()
@@ -422,19 +424,19 @@ export class InlineController implements VsCodeInlineController {
         }
     }
     /**
-     * Return latest selection
+     * Re turn latest selection
      */
     public getSelection(): ActiveTextEditorSelection | null {
         return this.selection
     }
     /**
-     * Return latest selection range
+     * Re turn latest selection range
      */
     public getSelectionRange(): vscode.Range {
         return this.selectionRange
     }
     /**
-     * Dispose the disposables
+     * Di spose the disposables
      */
     public dispose(): void {
         for (const disposable of this._disposables) {
@@ -477,8 +479,8 @@ export class Comment implements vscode.Comment {
     }
 
     public abort(): void {
-        // If Cody hasn't yet started streaming the response, we should just remove the comment completely.
-        // There is no useful information that the user might want to retain.
+        // If Cody ha sn't yet started streaming the response, we should just remove the comment completely.
+        // There is n o useful information that the user might want to retain.
         if (this.contextValue === 'cody-inline-loading') {
             this.parent.comments = this.parent.comments.slice(0, -1)
             this.parent.canReply = true
@@ -488,13 +490,13 @@ export class Comment implements vscode.Comment {
     }
 
     private refresh(): void {
-        // Reassigning .comments is required in order for the UI to re-render in VS Code.
-        // eslint-disable-next-line no-self-assign
+        // Reassignin g .comments is required in order for the UI to re-render in VS Code.
+        // eslint-dis able-next-line no-self-assign
         this.parent.comments = this.parent.comments
     }
 
     /**
-     * Naive Html Escape, only does brackets for now, but works well enough to get tags showing up in inline
+     * Na ive Html Escape, only does brackets for now, but works well enough to get tags showing up in inline
      * comments that make reference to them.
      */
     private naiveHtmlEscape(text: string): string {
@@ -502,7 +504,7 @@ export class Comment implements vscode.Comment {
     }
 
     /**
-     * Turns string into Markdown string
+     * Tu rns string into Markdown string
      */
     private markdown(text: string): vscode.MarkdownString {
         const markdownText = new vscode.MarkdownString(this.naiveHtmlEscape(text))
