@@ -13,7 +13,7 @@ import * as CompletionLogger from './logger'
 import { detectMultiline } from './multiline'
 import { processInlineCompletions } from './processInlineCompletions'
 import { CompletionProviderTracer, Provider, ProviderConfig, ProviderOptions } from './providers/provider'
-import { RequestManager } from './request-manager'
+import { RequestManager, RequestParams } from './request-manager'
 import { ProvideInlineCompletionsItemTraceData } from './tracer'
 import { InlineCompletionItem } from './types'
 import { isAbortError, SNIPPET_WINDOW_SIZE } from './utils'
@@ -92,6 +92,7 @@ export interface InlineCompletionsResult {
 export enum InlineCompletionsResultSource {
     Network,
     Cache,
+    CacheAfterRequestStart,
 
     /**
      * The user is typing as suggested by the currently visible ghost text. For example, if the
@@ -236,9 +237,17 @@ async function doGetInlineCompletions({
 
     CompletionLogger.networkRequestStarted(logId, contextResult?.logSummary ?? null)
 
+    const reqContext: RequestParams = {
+        uri: document.uri.toString(),
+        prefix: docContext.prefix,
+        suffix: docContext.suffix,
+        position: document.offsetAt(position),
+        languageId: document.languageId,
+    }
+
     // Get completions from providers
     const { completions, cacheHit } = await requestManager.request(
-        { prefix: docContext.prefix },
+        reqContext,
         completionProviders,
         contextResult?.context ?? [],
         abortSignal,
@@ -263,7 +272,12 @@ async function doGetInlineCompletions({
     return {
         logId,
         items: processedCompletions,
-        source: cacheHit ? InlineCompletionsResultSource.Cache : InlineCompletionsResultSource.Network,
+        source:
+            cacheHit === 'hit'
+                ? InlineCompletionsResultSource.Cache
+                : cacheHit === 'hit-after-request-started'
+                ? InlineCompletionsResultSource.CacheAfterRequestStart
+                : InlineCompletionsResultSource.Network,
     }
 }
 
