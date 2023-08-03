@@ -35,7 +35,7 @@ const URI_FIXTURE = URI.parse('file:///test.ts')
  */
 function params(
     code: string,
-    responses: CompletionResponse[],
+    responses: CompletionResponse[] | 'never-resolve',
     {
         languageId = 'typescript',
         requests = [],
@@ -53,7 +53,9 @@ function params(
     const completionsClient: Pick<SourcegraphCompletionsClient, 'complete'> = {
         complete(params: CompletionParameters): Promise<CompletionResponse> {
             requests.push(params)
-            return Promise.resolve(responses?.[requestCounter++] || { completion: '', stopReason: 'unknown' })
+            return responses === 'never-resolve'
+                ? new Promise(() => {})
+                : Promise.resolve(responses?.[requestCounter++] || { completion: '', stopReason: 'unknown' })
         },
     }
     const providerConfig = createProviderConfig({
@@ -1290,5 +1292,16 @@ describe('getInlineCompletions', () => {
             }
         `)
         expect(requests[0].stopSequences).toEqual(['\n\nHuman:', '</CODE5711>', '\n\n'])
+    })
+
+    test('synthesizes a completion from a prior request', async () => {
+        // Reuse the same request manager for both requests in this test
+        const requestManager = new RequestManager()
+
+        await getInlineCompletions(params('console.█', [completion`log('Hello, world!');`], { requestManager }))
+
+        const completions = await getInlineCompletions(params('console.log(█', 'never-resolve', { requestManager }))
+
+        expect(completions?.items[0].insertText).toBe("'Hello, world!');")
     })
 })
