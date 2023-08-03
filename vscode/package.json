@@ -118,14 +118,6 @@
             }
           },
           {
-            "id": "fixup",
-            "title": "Fixup Code",
-            "description": "Instruct Cody to edit and improve code with the \"Fixup code from inline instructions\" recipe.\n[Open Commands](command:cody.action.commands.menu)",
-            "media": {
-              "markdown": "walkthroughs/fixup.md"
-            }
-          },
-          {
             "id": "inline-assist",
             "title": "Inline Chat (Beta)",
             "description": "Chat with Cody without leaving your file. Click the + button next to any line number in a file to bring up Inline Chat.\n[Enable in Settings](command:cody.walkthrough.enableInlineChat)",
@@ -264,11 +256,6 @@
         "command": "cody.command.generate-docstring",
         "category": "Ask Cody",
         "title": "Document Code"
-      },
-      {
-        "command": "cody.command.fixup",
-        "category": "Cody",
-        "title": "Inline Fixup"
       },
       {
         "command": "cody.command.context-search",
@@ -445,10 +432,6 @@
         "mac": "alt+/"
       },
       {
-        "command": "cody.command.fixup",
-        "when": "cody.activated && editorTextFocus && !editorReadonly"
-      },
-      {
         "command": "cody.non-stop.fixup",
         "key": "ctrl+shift+v",
         "mac": "shift+cmd+v",
@@ -499,10 +482,6 @@
         },
         {
           "command": "cody.command.generate-docstring",
-          "when": "cody.activated && editorHasSelection"
-        },
-        {
-          "command": "cody.command.fixup",
           "when": "cody.activated && editorHasSelection"
         },
         {
@@ -576,10 +555,6 @@
         },
         {
           "command": "cody.command.generate-docstring",
-          "when": "cody.activated"
-        },
-        {
-          "command": "cody.command.fixup",
           "when": "cody.activated"
         },
         {

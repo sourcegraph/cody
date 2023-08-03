@@ -24,13 +24,6 @@
         "currentFile": true,
         "selection": true
       }
-    },
-    "Inline Fixup": {
-      "slashCommand": "fix",
-      "prompt": "/fix",
-      "context": {
-        "selection": true
-      }
     }
   }
 }

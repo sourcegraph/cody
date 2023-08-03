@@ -290,7 +290,6 @@ const register = async (
         vscode.commands.registerCommand('cody.command.generate-docstring', () =>
             executeRecipeInSidebar('custom-prompt', true, '/docstring')
         ),
-        vscode.commands.registerCommand('cody.command.fixup', () => executeRecipeInSidebar('fixup', false)),
         vscode.commands.registerCommand('cody.command.inline-touch', () =>
             executeRecipeInSidebar('inline-touch', false)
         ),
