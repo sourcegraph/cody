@@ -12,13 +12,14 @@ import Parser, { Point, SyntaxNode, Tree } from 'web-tree-sitter'
  */
 export enum SupportedLanguage {
     JavaScript = 'javascript',
+    JSX = 'javascriptreact',
     TypeScript = 'typescript',
+    TSX = 'typescriptreact',
     Java = 'java',
-    Go = 'go',
     // The problem with these two is that we have to use typescript
     // wasm module grammar, the problem that exports in wasm works differently
     // we probably have to compile custom wasm module for tsx grammar.
-    // JSX = 'javascriptreact',
+    Go = 'go',
     // TSX = 'typescriptreact',
 }
 
@@ -28,9 +29,12 @@ type GrammarPath = string
 
 const SUPPORTED_LANGUAGES: Record<SupportedLanguage, GrammarPath> = {
     [SupportedLanguage.JavaScript]: 'tree-sitter-javascript.wasm',
+    [SupportedLanguage.JSX]: 'tree-sitter-javascript.wasm',
     [SupportedLanguage.Java]: 'tree-sitter-java.wasm',
     [SupportedLanguage.Go]: 'tree-sitter-go.wasm',
     [SupportedLanguage.TypeScript]: 'tree-sitter-typescript.wasm',
+    [SupportedLanguage.TSX]: 'tree-sitter-tsx.wasm',
+
     // Since TypeScript is a subset over javascript grammar we
     // use typescript grammar here in order to support jsx parsing
     // [SupportedLanguage.JSX]: TypeScript.tsx,
@@ -78,6 +82,12 @@ export const LANGUAGE_TO_LEXEM: Partial<Record<SupportedLanguage, LEXEME_DICTION
     // We reuse JavaScript lexemes for typescript since TS grammar extends
     // JavaScript grammar
     [SupportedLanguage.TypeScript]: {
+        [GenericLexem.IfStatement]: JavaScriptLexemType.IfStatement,
+        [GenericLexem.ElseClause]: JavaScriptLexemType.ElseClause,
+        [GenericLexem.StatementBlock]: JavaScriptLexemType.StatementBlock,
+        [GenericLexem.CallExpression]: JavaScriptLexemType.CallExpression,
+    },
+    [SupportedLanguage.TSX]: {
         [GenericLexem.IfStatement]: JavaScriptLexemType.IfStatement,
         [GenericLexem.ElseClause]: JavaScriptLexemType.ElseClause,
         [GenericLexem.StatementBlock]: JavaScriptLexemType.StatementBlock,
@@ -158,4 +168,15 @@ export function createParser(settings: ParserSettings): ParserApi {
             return null
         },
     }
+}
+
+export function traverseTree(node: SyntaxNode): void {
+    console.group(node.type)
+    console.log(node.text)
+
+    node.children.forEach(child => {
+        traverseTree(child)
+    })
+
+    console.groupEnd()
 }
