@@ -309,6 +309,18 @@ describe('getInlineCompletions', () => {
                 source: InlineCompletionsResultSource.Network,
             }))
 
+        test('filtered to only matching last-candidate items', async () =>
+            expect(
+                await getInlineCompletions(
+                    params('\nconsole.log("h█', [], {
+                        lastCandidate: lastCandidate('\n█', ['console.log("Hi abc")', 'console.log("hi xyz")']),
+                    })
+                )
+            ).toEqual<V>({
+                items: [{ insertText: 'i xyz")' }],
+                source: InlineCompletionsResultSource.LastCandidate,
+            }))
+
         test('not reused when the previously visible item is no longer matching', async () =>
             // The user forward-types a character that matches a completion item that was not
             // visible before. The original ghost text should not be reused.
