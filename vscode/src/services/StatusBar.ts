@@ -14,6 +14,9 @@ export interface CodyStatusBar {
 const DEFAULT_TEXT = '$(cody-logo-heavy)'
 const DEFAULT_TOOLTIP = 'Cody Settings'
 
+const QUICK_PICK_ITEM_CHECKED_PREFIX = '$(check) '
+const QUICK_PICK_ITEM_EMPTY_INDENT_PREFIX = '\u00A0\u00A0\u00A0\u00A0 '
+
 export function createStatusBar(): CodyStatusBar {
     const statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right)
     statusBarItem.text = DEFAULT_TEXT
@@ -35,9 +38,9 @@ export function createStatusBar(): CodyStatusBar {
         ): vscode.QuickPickItem & { onSelect: () => Promise<void> } {
             const isEnabled = getValue(config)
             return {
-                label: (isEnabled ? '$(check) ' : '') + name,
+                label: (isEnabled ? QUICK_PICK_ITEM_CHECKED_PREFIX : QUICK_PICK_ITEM_EMPTY_INDENT_PREFIX) + name,
                 description,
-                detail,
+                detail: QUICK_PICK_ITEM_EMPTY_INDENT_PREFIX + detail,
                 onSelect: async () => {
                     await workspaceConfig.update(setting, !isEnabled, vscode.ConfigurationTarget.Global)
 
