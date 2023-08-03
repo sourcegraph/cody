@@ -1,21 +1,16 @@
-import { LRUCache } from 'lru-cache'
-
 import { debug } from '../log'
 
+import { CompletionsCache, CompletionsCacheDocumentState } from './cache/cache'
 import { ReferenceSnippet } from './context'
+import { logCompletionEvent } from './logger'
 import { CompletionProviderTracer, Provider } from './providers/provider'
 import { Completion } from './types'
 
-export interface RequestParams {
-    // TODO(sqs): This is not a unique enough cache key. We should cache based on the params wrapped
-    // into generateCompletions instead of requiring callers to separately pass cache-key-able
-    // params to RequestManager.
-    prefix: string
-}
+export interface RequestParams extends CompletionsCacheDocumentState {}
 
 export interface RequestManagerResult {
     completions: Completion[]
-    cacheHit: boolean
+    cacheHit: 'hit' | 'hit-after-request-started' | null
 }
 
 /**
@@ -23,9 +18,15 @@ export interface RequestManagerResult {
  * that requests are not cancelled even when the user continues typing in the
  * document. This allows us to cache the results of expensive completions and
  * return them when the user triggers a completion again.
+ *
+ * It also retests the request against the completions cache when an inflight
+ * request resolves. Since our completions cache is capable of synthesizing
+ * completions, it can be used to provide completions for requests that are
+ * still inflight.
  */
 export class RequestManager {
-    private cache = new RequestCache()
+    private cache = new CompletionsCache()
+    private readonly inflightRequests: Set<InflightRequest> = new Set()
 
     public async request(
         params: RequestParams,
@@ -34,55 +35,84 @@ export class RequestManager {
         signal?: AbortSignal,
         tracer?: CompletionProviderTracer
     ): Promise<RequestManagerResult> {
-        const existing = this.cache.get({ params })
-        if (existing) {
-            debug('RequestManager', 'cache hit', { verbose: { params, existing } })
-            return { ...existing.result, cacheHit: true }
+        const cachedCompletions = this.cache.get(params)
+        if (cachedCompletions) {
+            debug('RequestManager', 'cache hit', { verbose: { params, cachedCompletions } })
+            return { completions: cachedCompletions, cacheHit: 'hit' }
         }
         debug('RequestManager', 'cache miss', { verbose: { params } })
+
+        const request = new InflightRequest(params)
+        this.inflightRequests.add(request)
 
         // We forward a different abort controller to the network request so we
         // can cancel the network request independently of the user cancelling
         // the completion.
         const networkRequestAbortController = new AbortController()
 
-        return Promise.all(
-            providers.map(c => c.generateCompletions(networkRequestAbortController.signal, context, tracer))
-        )
+        Promise.all(providers.map(c => c.generateCompletions(networkRequestAbortController.signal, context, tracer)))
             .then(res => res.flat())
             .then(completions => {
-                // Cache even if the request was aborted.
-                this.cache.set({ params }, { result: { completions } })
+                // Cache even if the request was aborted or already fulfilled.
+                this.cache.add(params, completions)
 
                 if (signal?.aborted) {
                     throw new Error('aborted')
                 }
 
-                return { completions, cacheHit: false }
+                // A promise will never resolve twice, so we do not need to
+                // check if the request was already fulfilled.
+                request.resolve({ completions, cacheHit: null })
             })
+            .catch(error => {
+                request.reject(error)
+            })
+            .finally(() => {
+                this.inflightRequests.delete(request)
+                this.retestCaches(params)
+            })
+
+        return request.promise
+    }
+
+    /**
+     * When one network request completes and the item is being added to the
+     * completion cache, we check all pending requests for the same document to
+     * see if we can synthesize a completion response from the new cache.
+     */
+    private retestCaches({ uri }: RequestParams): void {
+        for (const request of this.inflightRequests) {
+            if (request.params.uri !== uri) {
+                continue
+            }
+
+            const cachedCompletions = this.cache.get(request.params)
+            if (cachedCompletions) {
+                logCompletionEvent('synthesizedFromParallelRequest')
+                debug('RequestManager', 'cache hit after request started', {
+                    verbose: { params: request.params, cachedCompletions },
+                })
+                request.resolve({ completions: cachedCompletions, cacheHit: 'hit-after-request-started' })
+                this.inflightRequests.delete(request)
+            }
+        }
     }
 }
 
-interface RequestCacheKey {
-    params: RequestParams
-}
+class InflightRequest {
+    public promise: Promise<RequestManagerResult>
+    public resolve: (result: RequestManagerResult) => void
+    public reject: (error: Error) => void
 
-interface RequestCacheEntry {
-    result: Omit<RequestManagerResult, 'cacheHit'>
-}
+    constructor(public params: RequestParams) {
+        // The promise constructor is called synchronously, so this is just to
+        // make TS happy
+        this.resolve = () => {}
+        this.reject = () => {}
 
-class RequestCache {
-    private cache = new LRUCache<string, RequestCacheEntry>({ max: 50 })
-
-    private toCacheKey(key: RequestCacheKey): string {
-        return key.params.prefix
-    }
-
-    public get(key: RequestCacheKey): RequestCacheEntry | undefined {
-        return this.cache.get(this.toCacheKey(key))
-    }
-
-    public set(key: RequestCacheKey, entry: RequestCacheEntry): void {
-        this.cache.set(this.toCacheKey(key), entry)
+        this.promise = new Promise<RequestManagerResult>((res, rej) => {
+            this.resolve = res
+            this.reject = rej
+        })
     }
 }

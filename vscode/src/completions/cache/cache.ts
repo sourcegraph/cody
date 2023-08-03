@@ -67,7 +67,9 @@ interface CacheEntry {
  * A completions cache for a single document.
  */
 class DocumentCompletionsCache {
-    // We use the LRU Cache here solely as a LRU queue, so the key is not used.
+    // We use the LRU Cache here solely as a LRU queue, so the key is not used
+    // other than counting the recency. We use an empty object so we can create
+    // a new reference quickly and without possibility of any number overflow.
     private cache = new LRUCache<{}, CacheEntry>({ max: 50 })
 
     public get(documentState: CompletionsCacheDocumentState): Completion[] | undefined {
@@ -92,7 +94,8 @@ class DocumentCompletionsCache {
                 const addedText = documentState.prefix.slice(-offset)
 
                 // Ensure the current document and cached document share a common prefix.
-                // TODO allow partial overlap
+                // TODO: Allow partial overlap because completions only contain up to a fixed number
+                //       of lines above the cursor as the prefix.
                 const prefixMatch = documentState.prefix.startsWith(entry.documentState.prefix)
                 if (!prefixMatch) {
                     continue
@@ -121,7 +124,8 @@ class DocumentCompletionsCache {
                 const deletedText = entry.documentState.prefix.slice(offset)
 
                 // Ensure the current document and cached document share a common prefix.
-                // TODO allow partial overlap
+                // TODO: Allow partial overlap because completions only contain up to a fixed number
+                //       of lines above the cursor as the prefix.
                 const prefixMatch = entry.documentState.prefix.startsWith(documentState.prefix)
                 if (!prefixMatch) {
                     continue
