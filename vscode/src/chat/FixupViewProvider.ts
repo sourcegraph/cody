@@ -1,3 +1,4 @@
+import { CodyPrompt } from '@sourcegraph/cody-shared/src/chat/prompts'
 import { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 
 import { FixupTask } from '../non-stop/FixupTask'
@@ -46,8 +47,8 @@ export class FixupProvider extends MessageProvider {
         this.task = task
     }
 
-    public async startFix({ fast }: { fast: boolean }): Promise<void> {
-        await this.executeRecipe('fixup', this.task.id, { fast })
+    public async startFix(): Promise<void> {
+        await this.executeRecipe('fixup', this.task.id)
     }
 
     public async abortFix(): Promise<void> {
@@ -106,6 +107,14 @@ export class FixupProvider extends MessageProvider {
      */
     protected handleError(errorMsg: string): void {
         void this.editor.controllers.inline?.error(errorMsg)
+    }
+
+    protected handleTranscriptErrors(transciptError: boolean): void {
+        // TODO:
+    }
+
+    protected handleCodyCommands(prompts: [string, CodyPrompt][]): void {
+        // TODO:
     }
 
     protected handleHistory(): void {

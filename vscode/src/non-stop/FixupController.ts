@@ -12,7 +12,7 @@ import { FixupFileObserver } from './FixupFileObserver'
 import { FixupScheduler } from './FixupScheduler'
 import { FixupTask, taskID } from './FixupTask'
 import { FixupTypingUI } from './FixupTypingUI'
-import { FixupFileCollection, FixupIdleTaskRunner, FixupTaskFactory, FixupTextChanged, IdleRecipeRunner } from './roles'
+import { FixupFileCollection, FixupIdleTaskRunner, FixupTaskFactory, FixupTextChanged } from './roles'
 import { FixupTaskTreeItem, TaskViewProvider } from './TaskViewProvider'
 import { CodyTaskState } from './utils'
 
@@ -36,7 +36,6 @@ export class FixupController
     private readonly codelenses = new FixupCodeLenses(this)
     private readonly contentStore = new ContentProvider()
     private readonly typingUI = new FixupTypingUI(this)
-    public recipeRunner: IdleRecipeRunner | undefined
 
     private _disposables: vscode.Disposable[] = []
 
@@ -95,21 +94,11 @@ export class FixupController
         return this.scheduler.scheduleIdle(callback)
     }
 
-    public createTask(
-        documentUri: vscode.Uri,
-        instruction: string,
-        selectionRange: vscode.Range,
-        name?: string
-    ): FixupTask {
+    public createTask(documentUri: vscode.Uri, instruction: string, selectionRange: vscode.Range): FixupTask {
         const fixupFile = this.files.forUri(documentUri)
         const task = new FixupTask(fixupFile, instruction, selectionRange)
         this.tasks.set(task.id, task)
         this.setTaskState(task, CodyTaskState.asking)
-
-        if (name) {
-            task.name = name
-        }
-
         return task
     }
 
