@@ -157,7 +157,15 @@ class DocumentCompletionsCache {
             }
         }
 
-        return synthesizedCompletions.length > 0 ? synthesizedCompletions : undefined // cache miss
+        if (synthesizedCompletions.length > 0) {
+            // Reverse the array in place. This helps with stability because the LRUQueue will have
+            // the most recently hit item at the back of the array. By ensuring we reverse it after
+            // we iterate over the queue, we also guarantee that the item at the end of the array
+            // will be the most recently hit item again.
+            synthesizedCompletions.reverse()
+            return synthesizedCompletions
+        }
+        return undefined // cache miss
     }
 
     public add(documentState: CompletionsCacheDocumentState, completions: Completion[]): void {
