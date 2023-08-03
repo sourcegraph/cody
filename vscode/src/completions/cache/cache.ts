@@ -67,22 +67,20 @@ interface CacheEntry {
  * A completions cache for a single document.
  */
 class DocumentCompletionsCache {
-    // We use the LRU Cache here solely as a LRU queue, so the key is not used
-    // other than counting the recency. We use an empty object so we can create
-    // a new reference quickly and without possibility of any number overflow.
-    private cache = new LRUCache<{}, CacheEntry>({ max: 50 })
+    // We use a simple LRU queue for the completions.
+    private cache = new LRUQueue<CacheEntry>(50)
 
     public get(documentState: CompletionsCacheDocumentState): Completion[] | undefined {
         const synthesizedCompletions: Completion[] = []
 
-        for (const [key, entry] of this.cache.entries() as Generator<[{}, CacheEntry]>) {
+        for (const entry of this.cache.entries()) {
             const exactMatch =
                 documentState.position === entry.documentState.position &&
                 documentState.prefix === entry.documentState.prefix &&
                 documentState.suffix === entry.documentState.suffix
             if (exactMatch) {
                 // Update the recency of the cache entry
-                this.cache.get(key)
+                this.cache.get(entry)
                 synthesizedCompletions.push(entry.completion)
                 continue
             }
@@ -115,7 +113,7 @@ class DocumentCompletionsCache {
                 }
 
                 // Update the recency of the cache entry
-                this.cache.get(key)
+                this.cache.get(entry)
                 synthesizedCompletions.push(trimmedCompletions)
             }
 
@@ -144,7 +142,7 @@ class DocumentCompletionsCache {
                 }
 
                 // Update the recency of the cache entry
-                this.cache.get(key)
+                this.cache.get(entry)
                 synthesizedCompletions.push(prependedCompletion)
             }
         }
@@ -154,8 +152,36 @@ class DocumentCompletionsCache {
 
     public add(documentState: CompletionsCacheDocumentState, completions: Completion[]): void {
         for (const completion of completions) {
-            const key = {}
-            this.cache.set(key, { documentState, completion })
+            this.cache.add({ documentState, completion })
         }
+    }
+}
+
+class LRUQueue<T> {
+    private items: T[] = []
+
+    constructor(private max: number) {}
+
+    public get(item: T): T | undefined {
+        const index = this.items.indexOf(item)
+        if (index === -1) {
+            return undefined
+        }
+        const removed = this.items.splice(index, 1)[0]
+        this.items.push(removed)
+        return removed
+    }
+
+    public add(item: T): void {
+        this.items.push(item)
+        if (this.items.length > this.max) {
+            this.items.shift()
+        }
+    }
+
+    public entries(): T[] {
+        // We create a copy so that any mutations on th array doesn't cause
+        // issues downstream
+        return [...this.items]
     }
 }
