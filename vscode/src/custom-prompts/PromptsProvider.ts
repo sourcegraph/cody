@@ -53,13 +53,7 @@ export class PromptsProvider {
      */
     public async menu(showDesc = false): Promise<void> {
         try {
-            const commandItems = [
-                menu_separators.chat,
-                menu_options.chat,
-                menu_separators.fix,
-                menu_options.fix,
-                menu_separators.commands,
-            ]
+            const commandItems = [menu_separators.inline, menu_options.chat, menu_options.fix, menu_separators.commands]
             const allCommandItems = [...this.allCommands]?.map(commandItem => {
                 const command = commandItem[1]
                 if (command.prompt === 'separator') {

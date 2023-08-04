@@ -206,11 +206,25 @@ const register = async (
     }
 
     const executeFixup = async (
-        document: vscode.TextDocument,
-        instruction: string | null,
-        range: vscode.Range
+        options: {
+            document?: vscode.TextDocument
+            instruction?: string
+            range?: vscode.Range
+        } = {}
     ): Promise<void> => {
-        const task = !instruction ? await fixup.promptUserForTask() : fixup.createTask(document.uri, instruction, range)
+        const document = options.document || vscode.window.activeTextEditor?.document
+        if (!document) {
+            return Promise.resolve()
+        }
+
+        const range = options.range || vscode.window.activeTextEditor?.selection
+        if (!range) {
+            return Promise.resolve
+        }
+
+        const task = options.instruction
+            ? fixup.createTask(document.uri, options.instruction, range)
+            : await fixup.promptUserForTask()
         if (!task) {
             return Promise.resolve()
         }
@@ -234,7 +248,11 @@ const register = async (
                 telemetryService.log('CodyVSCodeExtension:fixup')
                 void vscode.commands.executeCommand('workbench.action.collapseAllComments')
                 const activeDocument = await vscode.workspace.openTextDocument(comment.thread.uri)
-                return executeFixup(activeDocument, comment.text.replace(commandRegex.fix, ''), comment.thread.range)
+                return executeFixup({
+                    document: activeDocument,
+                    instruction: comment.text.replace(commandRegex.fix, ''),
+                    range: comment.thread.range,
+                })
             }
 
             const inlineChatProvider = inlineChatManager.getProviderForThread(comment.thread)
@@ -260,20 +278,14 @@ const register = async (
             // Remove the inline chat
             inlineChatManager.removeProviderForThread(thread)
         }),
-        vscode.commands.registerCommand('cody.fixup.new', (range: vscode.Range): Promise<void> => {
-            const document = vscode.window.activeTextEditor?.document
-            if (!document) {
-                return Promise.resolve()
-            }
-            return executeFixup(document, null, range)
-        }),
-        vscode.commands.registerCommand('cody.fixup.add', (instruction: string, range: vscode.Range): Promise<void> => {
-            const document = vscode.window.activeTextEditor?.document
-            if (!document) {
-                return Promise.resolve()
-            }
-            return executeFixup(document, instruction, range)
-        }),
+        vscode.commands.registerCommand(
+            'cody.fixup.new',
+            (range: vscode.Range): Promise<void> => executeFixup({ range })
+        ),
+        vscode.commands.registerCommand(
+            'cody.fixup.add',
+            (instruction: string, range: vscode.Range): Promise<void> => executeFixup({ instruction, range })
+        ),
         vscode.commands.registerCommand('cody.inline.new', async () => {
             // move focus line to the end of the current selection
             await vscode.commands.executeCommand('cursorLineEndSelect')
@@ -344,6 +356,7 @@ const register = async (
             executeRecipeInSidebar('inline-touch', false)
         ),
         vscode.commands.registerCommand('cody.command.context-search', () => executeRecipeInSidebar('context-search')),
+        vscode.commands.registerCommand('cody.command.edit-code', () => executeFixup()),
 
         // Register URI Handler (vscode://sourcegraph.cody-ai)
         vscode.window.registerUriHandler({

@@ -243,6 +243,11 @@
         "icon": "$(feedback)"
       },
       {
+        "command": "cody.command.edit-code",
+        "category": "Ask Cody",
+        "title": "Edit Code"
+      },
+      {
         "command": "cody.command.explain-code",
         "category": "Ask Cody",
         "title": "Explain Code"
@@ -543,6 +548,10 @@
       "cody.submenu": [
         {
           "command": "cody.command.explain-code",
+          "when": "cody.activated"
+        },
+        {
+          "command": "cody.command.edit-code",
           "when": "cody.activated"
         },
         {

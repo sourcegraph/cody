@@ -21,12 +21,12 @@ export class ExplainCodeAction implements vscode.CodeActionProvider {
     }
 
     private createCommandCodeAction(diagnostics: vscode.Diagnostic[], range: vscode.Range): vscode.CodeAction {
-        const action = new vscode.CodeAction('Explain with Cody', vscode.CodeActionKind.QuickFix)
+        const action = new vscode.CodeAction('Ask Cody to Explain', vscode.CodeActionKind.QuickFix)
         const instruction = this.getCodeActionInstruction(diagnostics)
         action.command = {
             command: 'cody.inline.add',
             arguments: [instruction, range],
-            title: 'Explain with Cody',
+            title: 'Ask Cody to Explain',
         }
         return action
     }

@@ -9,19 +9,13 @@ import { Interaction } from '../transcript/interaction'
 import { getContextMessagesFromSelection } from './helpers'
 import { Recipe, RecipeContext, RecipeID } from './recipe'
 
-export type FixupIntent = 'add' | 'edit' | 'remove' | 'fix' | 'test' | 'document'
+export type FixupIntent = 'add' | 'edit' | 'fix' | 'test' | 'document'
 const FixupIntentClassification: IntentClassificationOption<FixupIntent>[] = [
     {
         id: 'edit',
         rawCommand: '/edit',
         description: 'Edit part of the selected code',
         examplePrompts: ['Edit this code', 'Change this code', 'Update this code'],
-    },
-    {
-        id: 'remove',
-        rawCommand: '/remove',
-        description: 'Remove a part of the selected code',
-        examplePrompts: ['Delete these comments', 'Remove log statements'],
     },
     {
         id: 'fix',
@@ -39,7 +33,6 @@ const FixupIntentClassification: IntentClassificationOption<FixupIntent>[] = [
 
 const PromptIntentInstruction: Record<Exclude<FixupIntent, 'add'>, string> = {
     edit: 'The user wants you to replace parts of the selected code by following their instructions.',
-    remove: 'The user wants you to remove parts of the selected code by following their instructions.',
     fix: 'The user wants you to correct a problem in the selected code by following their instructions.',
     document:
         'The user wants you to add documentation or comments to the selected code by following their instructions.',
@@ -213,7 +206,6 @@ export class Fixup implements Recipe {
              * Intents that are focused primarily on updating code within the current file and selection.
              * Providing a much more focused context window here seems to provide better quality responses.
              */
-            case 'remove':
             case 'document':
                 return Promise.resolve(
                     [truncatedPrecedingText, truncatedFollowingText].flatMap(text =>

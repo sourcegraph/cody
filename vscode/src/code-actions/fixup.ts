@@ -28,12 +28,12 @@ export class FixupCodeAction implements vscode.CodeActionProvider {
     }
 
     private createCommandCodeAction(diagnostics: vscode.Diagnostic[], range: vscode.Range): vscode.CodeAction {
-        const action = new vscode.CodeAction('Fix with Cody', vscode.CodeActionKind.QuickFix)
+        const action = new vscode.CodeAction('Ask Cody to Fix', vscode.CodeActionKind.QuickFix)
         const instruction = this.getCodeActionInstruction(diagnostics)
         action.command = {
             command: 'cody.fixup.add',
             arguments: [instruction, range],
-            title: 'Fix with Cody',
+            title: 'Ask Cody to Fix',
         }
         action.diagnostics = diagnostics
         action.isPreferred = true

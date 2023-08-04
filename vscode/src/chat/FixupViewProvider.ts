@@ -1,12 +1,12 @@
 import * as vscode from 'vscode'
 
+import { contentSanitizer } from '@sourcegraph/cody-shared/src/chat/recipes/helpers'
 import { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 
 import { FixupCodeAction } from '../code-actions/fixup'
 import { FixupTask } from '../non-stop/FixupTask'
 
 import { MessageProvider, MessageProviderOptions } from './MessageProvider'
-import { getFirstNonWhitespaceCharacterPosition } from './utils'
 
 export class FixupManager implements vscode.Disposable {
     private fixupProviders = new Map<FixupTask, FixupProvider>()
@@ -70,26 +70,6 @@ export class FixupProvider extends MessageProvider {
         await this.abortCompletion()
     }
 
-    private formatResponse(response: string): string {
-        const cursorPosition = this.task.selectionRange.start.character
-        const firstCharacterOfResponsePosition = getFirstNonWhitespaceCharacterPosition(response)
-
-        // Cody returned where we expected
-        if (firstCharacterOfResponsePosition === null || cursorPosition === firstCharacterOfResponsePosition) {
-            return response
-        }
-
-        // We didn't return where we wanted, let's pad each line
-        const paddingDistance = cursorPosition - firstCharacterOfResponsePosition
-        const paddedResponse = response
-            .split('\n')
-            .map(line => line.padStart(line.length + paddingDistance))
-            .join('\n')
-
-        // Finally return the trimmed response ready for insertion at the cursor
-        return paddedResponse.trimStart()
-    }
-
     /**
      * Send transcript to the fixup
      */
@@ -104,7 +84,7 @@ export class FixupProvider extends MessageProvider {
         if (lastMessage.displayText) {
             void this.editor.controllers.fixups?.didReceiveFixupText(
                 this.task.id,
-                isMessageInProgress ? lastMessage.displayText : this.formatResponse(lastMessage.displayText),
+                isMessageInProgress ? lastMessage.displayText : contentSanitizer(lastMessage.displayText),
                 isMessageInProgress ? 'streaming' : 'complete'
             )
         }
