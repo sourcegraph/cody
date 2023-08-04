@@ -114,3 +114,8 @@ export const notificationOnDisabled = async (isEnabled: boolean): Promise<boolea
     }
     return isEnabled
 }
+
+export async function openCustomCommandDocsLink(): Promise<void> {
+    const uri = 'https://sourcegraph.com/notebooks/Tm90ZWJvb2s6MzA1NQ=='
+    await vscode.env.openExternal(vscode.Uri.parse(uri))
+}
