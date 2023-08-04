@@ -1,3 +1,5 @@
+import path from 'path'
+
 import * as vscode from 'vscode'
 
 import { CodyPromptType, ConfigFileName } from '@sourcegraph/cody-shared/src/chat/prompts'
@@ -49,7 +51,12 @@ export function createFileWatchers(fsPath?: string): vscode.FileSystemWatcher | 
     if (!fsPath) {
         return null
     }
-    const watchPattern = new vscode.RelativePattern(fsPath, ConfigFileName.vscode)
+
+    // Use the file as the first arg to RelativePattern because a file watcher will be set up on the
+    // first arg given. If this is a directory with many files, such as the user's home directory,
+    // it will cause a very large number of watchers to be created, which will exhaust the system.
+    // This occurs even if the second arg is a relative file path with no wildcards.
+    const watchPattern = new vscode.RelativePattern(vscode.Uri.file(path.join(fsPath, ConfigFileName.vscode)), '')
     const watcher = vscode.workspace.createFileSystemWatcher(watchPattern)
     return watcher
 }

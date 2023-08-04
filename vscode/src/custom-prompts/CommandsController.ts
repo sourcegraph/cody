@@ -23,8 +23,10 @@ import { menu_options, menu_separators, showcommandTypeQuickPick, showRemoveConf
  * Manage commands built with prompts from CustomPromptsStore and PromptsProvider
  * Provides additional prompt management and execution logic
  */
-export class CommandsController implements VsCodeCommandsController {
+export class CommandsController implements VsCodeCommandsController, vscode.Disposable {
     private isEnabled = true
+
+    private disposables: vscode.Disposable[] = []
 
     private tools: ToolsProvider
     private custom: CustomPromptsStore
@@ -45,7 +47,10 @@ export class CommandsController implements VsCodeCommandsController {
     ) {
         this.tools = new ToolsProvider(context)
         const user = this.tools.getUserInfo()
+
         this.custom = new CustomPromptsStore(this.isEnabled, context.extensionPath, user?.workspaceRoot, user.homeDir)
+        this.disposables.push(this.custom)
+
         this.lastUsedCommands = new Set(this.localStorage.getLastUsedCommands())
         this.custom.activate()
         this.fileWatcherInit()
@@ -366,20 +371,40 @@ export class CommandsController implements VsCodeCommandsController {
         this.webViewMessenger = messenger
     }
 
+    private fileWatcherDisposables: vscode.Disposable[] = []
+
     /**
      * Create file watchers for cody.json files used for building Custom Commands
      */
     private fileWatcherInit(): void {
+        for (const disposable of this.fileWatcherDisposables) {
+            disposable.dispose()
+        }
+        this.fileWatcherDisposables = []
+
         if (!this.isEnabled) {
             return
         }
+
         const user = this.tools.getUserInfo()
+
         this.wsFileWatcher = createFileWatchers(user?.workspaceRoot)
+        if (this.wsFileWatcher) {
+            this.fileWatcherDisposables.push(
+                this.wsFileWatcher,
+                this.wsFileWatcher.onDidChange(() => this.webViewMessenger?.()),
+                this.wsFileWatcher.onDidDelete(() => this.webViewMessenger?.())
+            )
+        }
+
         this.userFileWatcher = createFileWatchers(user?.homeDir)
-        this.wsFileWatcher?.onDidChange(() => this.webViewMessenger?.())
-        this.userFileWatcher?.onDidChange(() => this.webViewMessenger?.())
-        this.wsFileWatcher?.onDidDelete(() => this.webViewMessenger?.())
-        this.userFileWatcher?.onDidDelete(() => this.webViewMessenger?.())
+        if (this.userFileWatcher) {
+            this.fileWatcherDisposables.push(
+                this.userFileWatcher,
+                this.userFileWatcher.onDidChange(() => this.webViewMessenger?.()),
+                this.userFileWatcher.onDidDelete(() => this.webViewMessenger?.())
+            )
+        }
 
         debug('CommandsController:fileWatcherInit', 'watchers created')
     }
@@ -389,12 +414,14 @@ export class CommandsController implements VsCodeCommandsController {
      */
     public dispose(): void {
         this.isEnabled = false
-        this.custom.dispose()
         this.myPromptInProgress = null
+        for (const disposable of this.disposables) {
+            disposable.dispose()
+        }
+        for (const disposable of this.fileWatcherDisposables) {
+            disposable.dispose()
+        }
         this.myPromptsMap = new Map<string, CodyPrompt>()
-        this.wsFileWatcher?.dispose()
-        this.userFileWatcher?.dispose()
-
         debug('CommandsController:dispose', 'disposed')
     }
 }

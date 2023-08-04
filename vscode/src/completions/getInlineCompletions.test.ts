@@ -193,7 +193,7 @@ describe('getInlineCompletions', () => {
     })
 
     describe('reuseResultFromLastCandidate', () => {
-        function lastCandidate(code: string, insertText: string): LastInlineCompletionCandidate {
+        function lastCandidate(code: string, insertText: string | string[]): LastInlineCompletionCandidate {
             const { document, position } = documentAndPosition(code)
             return {
                 uri: document.uri,
@@ -201,7 +201,9 @@ describe('getInlineCompletions', () => {
                 originalTriggerLinePrefix: document.lineAt(position).text.slice(0, position.character),
                 result: {
                     logId: '1',
-                    items: [{ insertText }],
+                    items: Array.isArray(insertText)
+                        ? insertText.map(insertText => ({ insertText }))
+                        : [{ insertText }],
                 },
             }
         }
@@ -303,6 +305,23 @@ describe('getInlineCompletions', () => {
             ).toEqual<V>({
                 items: [],
                 source: InlineCompletionsResultSource.Network,
+            }))
+
+        test('filtered to only matching last-candidate items', async () =>
+            // This behavior and test case is actually not needed for VS Code because it automatically
+            // filters out items whose `insertText` does not prefix-match the replace range. (See
+            // vscode.InlineCompletionItem.filterText for the docs about this.) But it is good to
+            // perform this filtering anyway to avoid dependence on little-known VS Code behavior that
+            // other consumers of this (via the agent) will likely not implement.
+            expect(
+                await getInlineCompletions(
+                    params('\nconsole.log("h█', [], {
+                        lastCandidate: lastCandidate('\n█', ['console.log("Hi abc")', 'console.log("hi xyz")']),
+                    })
+                )
+            ).toEqual<V>({
+                items: [{ insertText: 'i xyz")' }],
+                source: InlineCompletionsResultSource.LastCandidate,
             }))
 
         describe('deleting leading whitespace', () => {
