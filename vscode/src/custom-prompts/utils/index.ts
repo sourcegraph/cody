@@ -13,6 +13,7 @@ export interface UserWorkspaceInfo {
     homeDir: string
     workspaceRoot?: string
     currentFilePath?: string
+    appRoot: string
 }
 
 export interface CustomCommandsItem extends QuickPickItem {

@@ -271,7 +271,7 @@ const register = async (
             'cody.action.commands.custom.menu',
             () => editor.controllers.command?.menu('custom')
         ),
-        vscode.commands.registerCommand('cody.settings.commands', () => editor.controllers.command?.configMenu()),
+        vscode.commands.registerCommand('cody.settings.commands', () => editor.controllers.command?.menu('config')),
         vscode.commands.registerCommand('cody.action.commands.exec', async title => {
             if (!sidebarChatProvider.isCustomCommandAction(title)) {
                 await sidebarChatProvider.setWebviewView('chat')

@@ -26,7 +26,7 @@ import { promptSizeInit } from './utils/menu'
  * The CustomPromptsStore class is responsible for loading and building the custom prompts from the cody.json files.
  * It has methods to get the prompts from the file system, parse the JSON, and build the prompts map.
  */
-export class CustomPromptsStore {
+export class CustomPromptsStore implements vscode.Disposable {
     public myPromptsJSON: MyPromptsJSON | null = null
     public myPremade: Preamble | undefined = undefined
     public myPromptsMap = new Map<string, CodyPrompt>()
@@ -207,24 +207,6 @@ export class CustomPromptsStore {
     public async openConfig(type: CodyPromptType = 'user'): Promise<void> {
         const uri = this.getConfigUriByType(type)
         return vscode.commands.executeCommand('vscode.open', uri)
-    }
-
-    /**
-     * Create an untitled file with example prompts from the user-cody.json file
-     */
-    public async createExampleConfig(): Promise<void> {
-        const userExampleUri = constructFileUri('resources/samples/user-cody.json', this.extensionPath)
-        if (!userExampleUri) {
-            return
-        }
-        const content = await getFileContentText(userExampleUri)
-        const exampleFilePath = this.extensionPath + '/.cody.example.json'
-        const uri = vscode.Uri.parse('untitled:' + exampleFilePath)
-        const document = await vscode.workspace.openTextDocument(uri)
-        const editor = await vscode.window.showTextDocument(document)
-        await editor.edit(editBuilder => {
-            editBuilder.insert(new vscode.Position(0, 0), content)
-        })
     }
 
     /**

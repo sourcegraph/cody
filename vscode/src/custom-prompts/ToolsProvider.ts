@@ -19,6 +19,7 @@ const _exec = promisify(exec)
  */
 export class ToolsProvider {
     private user: UserWorkspaceInfo
+    private shell = vscode.env.shell
 
     constructor(public context: vscode.ExtensionContext) {
         this.user = this.getUserInfo()
@@ -31,10 +32,12 @@ export class ToolsProvider {
         if (this.user?.workspaceRoot) {
             return this.user
         }
+        const appRoot = vscode.env.appRoot
         return {
             homeDir: homePath,
             workspaceRoot: rootPath,
             currentFilePath,
+            appRoot,
         }
     }
 
@@ -56,6 +59,10 @@ export class ToolsProvider {
      * Execute a command in the terminal
      */
     public async exeCommand(command: string, runFromWSRoot = true): Promise<string | undefined> {
+        if (!this.shell) {
+            void vscode.window.showErrorMessage('Shell command is not supported your current workspace.')
+            return
+        }
         // Expand the ~/ in command with the home directory if any of the substring starts with ~/ with a space before it
         const homeDir = this.user.homeDir + '/' || ''
         const filteredCommand = command.replace(/(\s~\/)/g, ` ${homeDir}`)

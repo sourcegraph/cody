@@ -1,4 +1,4 @@
-import { commands, QuickInputButton, QuickInputButtons, QuickPickItem, ThemeIcon, window } from 'vscode'
+import { commands, QuickInputButtons, QuickPickItem, ThemeIcon, window } from 'vscode'
 
 import { CodyPrompt } from '@sourcegraph/cody-shared'
 import { CodyPromptType } from '@sourcegraph/cody-shared/src/chat/prompts'
@@ -48,14 +48,12 @@ const workspaceItem: QuickPickItem = {
     description: '.vscode/cody.json',
 }
 
-const openIconButton: QuickInputButton = { iconPath: new ThemeIcon('go-to-file'), tooltip: 'open' }
-const fileIconButton: QuickInputButton = { iconPath: new ThemeIcon('new-file'), tooltip: 'file' }
-const trashIconButton: QuickInputButton = { iconPath: new ThemeIcon('trash'), tooltip: 'delete' }
-const backIconButton: QuickInputButton = QuickInputButtons.Back
+const openIconButton = { iconPath: new ThemeIcon('go-to-file'), tooltip: 'open / create', id: 'open' }
+const trashIconButton = { iconPath: new ThemeIcon('trash'), tooltip: 'delete', id: 'delete' }
+const backIconButton = QuickInputButtons.Back
 
 export const menu_buttons = {
     open: openIconButton,
-    file: fileIconButton,
     trash: trashIconButton,
     back: backIconButton,
 }
@@ -177,3 +175,32 @@ export async function showcommandTypeQuickPick(
     }
     return (commandType.label.toLowerCase() === 'user' ? 'user' : 'workspace') as CodyPromptType
 }
+
+export const CustomCommandConfigMenuItems = [
+    {
+        kind: 0,
+        label: 'New Custom Command...',
+        id: 'add',
+        type: 'user',
+        description: '',
+    },
+    { kind: -1, id: 'separator', label: '' },
+    {
+        kind: 0,
+        label: 'User Settings (JSON)',
+        id: 'open',
+        type: 'user',
+        description: '~/.vscode/cody.json',
+        buttons: [menu_buttons.open, menu_buttons.trash],
+    },
+    {
+        kind: 0,
+        label: 'Workspace Settings (JSON)',
+        id: 'open',
+        type: 'workspace',
+        description: '.vscode/cody.json',
+        buttons: [menu_buttons.open, menu_buttons.trash],
+    },
+    { kind: -1, id: 'separator', label: '' },
+    { kind: 0, label: 'See Example Commands', id: 'example', type: 'default' },
+]

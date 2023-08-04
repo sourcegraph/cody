@@ -55,6 +55,7 @@ export function getConfiguration(config: ConfigGetter): Configuration {
 
     return {
         // NOTE: serverEndpoint is now stored in Local Storage instead but we will still keep supporting the one in confg
+        // to use as fallback for users who do not have access to local storage
         serverEndpoint: sanitizeServerEndpoint(config.get(CONFIG_KEY.serverEndpoint, '')),
         codebase: sanitizeCodebase(config.get(CONFIG_KEY.codebase)),
         customHeaders: config.get<object>(CONFIG_KEY.customHeaders, {}) as Record<string, string>,

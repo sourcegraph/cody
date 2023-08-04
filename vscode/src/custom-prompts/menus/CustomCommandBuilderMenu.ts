@@ -5,7 +5,7 @@ import { defaultCodyPromptContext } from '@sourcegraph/cody-shared/src/chat/prom
 
 import { customPromptsContextOptions } from '../utils/menu'
 
-export const NewCustomCommandConfigMenuOptions = {
+const NewCustomCommandConfigMenuOptions = {
     title: 'Cody Custom Commands (Experimental) - New User Command',
 }
 
@@ -14,13 +14,11 @@ export interface CodyCommand {
     prompt: CodyPrompt
 }
 export class CustomCommandsBuilderMenu {
-    constructor(private commands: Map<string, CodyPrompt>) {}
-
-    public async start(): Promise<CodyCommand | null> {
+    public async start(commands: Map<string, CodyPrompt>): Promise<CodyCommand | null> {
         // get name
-        const title = await this.name()
+        const title = await this.makeName(commands)
         // build prompt
-        const prompt = await this.build(title)
+        const prompt = await this.makePrompt(title)
 
         if (!title || !prompt) {
             return null
@@ -28,7 +26,7 @@ export class CustomCommandsBuilderMenu {
         return { title, prompt }
     }
 
-    private async name(): Promise<string | undefined> {
+    private async makeName(commands: Map<string, CodyPrompt>): Promise<string | undefined> {
         const name = await window.showInputBox({
             ...NewCustomCommandConfigMenuOptions,
             prompt: 'Enter an unique name for the new command.',
@@ -37,18 +35,16 @@ export class CustomCommandsBuilderMenu {
                 if (!input) {
                     return 'Command name cannot be empty. Please enter a unique name.'
                 }
-                if (this.commands.has(input)) {
+                if (commands.has(input)) {
                     return 'A command with the same name exists. Please enter a different name.'
                 }
                 return
             },
         })
-        this.commands = new Map()
-
         return name
     }
 
-    private async build(promptName?: string): Promise<CodyPrompt | null> {
+    private async makePrompt(promptName?: string): Promise<CodyPrompt | null> {
         if (!promptName) {
             return null
         }
@@ -66,14 +62,14 @@ export class CustomCommandsBuilderMenu {
             },
         })
         if (!prompt) {
-            void window.showErrorMessage('Invalid values.')
+            void window.showErrorMessage('Prompt is required and cannot be empty.')
             return null
         }
-        return this.context({ prompt })
+        return this.addContext({ prompt })
     }
 
     // Add context to the command
-    private async context(newPrompt?: CodyPrompt): Promise<CodyPrompt | null> {
+    private async addContext(newPrompt?: CodyPrompt): Promise<CodyPrompt | null> {
         if (!newPrompt) {
             return null
         }
@@ -113,6 +109,7 @@ export class CustomCommandsBuilderMenu {
         return newPrompt
     }
 }
+
 async function showPromptCommandInput(): Promise<string | void> {
     // Get the command to run from the user using the input box
     const promptCommand = await window.showInputBox({

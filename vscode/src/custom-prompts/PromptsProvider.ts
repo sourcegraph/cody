@@ -1,12 +1,6 @@
-import * as vscode from 'vscode'
-
 import { CodyPrompt, getDefaultCommandsMap } from '@sourcegraph/cody-shared/src/chat/prompts'
 
 import { debug } from '../log'
-
-import { CommandsMainMenu } from './menus/CommandsMainMenu'
-import { createQuickPickItem } from './utils/helpers'
-import { menu_options, menu_separators } from './utils/menu'
 
 // Manage default commands created by the prompts in prompts.json
 export class PromptsProvider {
@@ -37,7 +31,10 @@ export class PromptsProvider {
     /**
      * Retuen default and custom commands without the separator which is added for quick pick menu
      */
-    public getGroupedCommands(): [string, CodyPrompt][] {
+    public getGroupedCommands(keepSeparator: boolean): [string, CodyPrompt][] {
+        if (keepSeparator) {
+            return [...this.allCommands]
+        }
         return [...this.allCommands].filter(command => command[1].prompt !== 'separator')
     }
 
@@ -48,59 +45,6 @@ export class PromptsProvider {
         const combinedMap = new Map([...this.defaultPromptsMap])
         combinedMap.set('separator', { prompt: 'separator' })
         this.allCommands = new Map([...combinedMap, ...customCommands])
-    }
-
-    /**
-     * Main Menu: Cody Commands
-     */
-    public async menu(showDesc = false): Promise<void> {
-        try {
-            const commandItems = [menu_separators.chat, menu_options.chat, menu_separators.commands]
-            const allCommandItems = [...this.allCommands]?.map(commandItem => {
-                const command = commandItem[1]
-                if (command.prompt === 'separator') {
-                    return menu_separators.customCommands
-                }
-                const description =
-                    showDesc && command.slashCommand && command.type === 'default'
-                        ? command.slashCommand
-                        : command.type !== 'default'
-                        ? command.type
-                        : ''
-
-                return createQuickPickItem(command.name || commandItem[0], description)
-            })
-            commandItems.push(...allCommandItems, menu_options.config)
-
-            // Show the list of prompts to the user using a quick pick menu
-            // const selectedPrompt = await vscode.window.showQuickPick([...commandItems], CodyMenu_CodyCommands)
-            const selectedPrompt = await CommandsMainMenu.show([...commandItems])
-            if (!selectedPrompt) {
-                return
-            }
-
-            const selectedCommandID = selectedPrompt.label
-            switch (true) {
-                case !selectedCommandID:
-                    break
-                case selectedCommandID === menu_options.config.label:
-                    return await vscode.commands.executeCommand('cody.settings.commands')
-                case selectedCommandID === menu_options.chat.label:
-                    return await vscode.commands.executeCommand('cody.inline.new')
-                case selectedCommandID === menu_options.submit.label:
-                    return await vscode.commands.executeCommand('cody.action.chat', selectedPrompt.detail)
-            }
-
-            // Run the prompt
-            const prompt = this.get(selectedCommandID)
-            if (!prompt) {
-                return
-            }
-
-            await vscode.commands.executeCommand('cody.action.commands.exec', selectedCommandID)
-        } catch (error) {
-            debug('CommandsController:commandQuickPicker', 'error', { verbose: error })
-        }
     }
 
     // dispose and reset the controller and builder
