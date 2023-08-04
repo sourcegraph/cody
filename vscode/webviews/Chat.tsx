@@ -1,5 +1,9 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 
+import { Menu, MenuButton, MenuItem, MenuList } from '@reach/menu-button'
+
+import '@reach/menu-button/styles.css'
+
 import { VSCodeButton, VSCodeLink, VSCodeTextArea } from '@vscode/webview-ui-toolkit/react'
 import classNames from 'classnames'
 
@@ -228,23 +232,39 @@ const TextArea: React.FunctionComponent<ChatUITextAreaProps> = ({
     }
 
     return (
-        <VSCodeTextArea
-            className={classNames(styles.chatInput, className)}
-            rows={rows}
-            ref={
-                // VSCodeTextArea has a very complex type.
-                //
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                inputRef as any
-            }
-            value={value}
-            autofocus={autoFocus}
-            required={required}
-            onInput={e => onInput(e as React.FormEvent<HTMLTextAreaElement>)}
-            placeholder="Ask a question or type '/' for commands"
-            onKeyDown={handleKeyDown}
-            title="" // Set to blank to avoid HTML5 error tooltip "Please fill in this field"
-        />
+        <>
+            {/* Docs: https://reach.tech/menu-button */}
+            {/* eslint-disable-next-line react/forbid-dom-props */}
+            <div style={{ position: 'relative', textAlign: 'end', marginBottom: '1rem' }}>
+                <Menu>
+                    <MenuButton>
+                        <span aria-hidden={true}>...</span>
+                    </MenuButton>
+                    <MenuList>
+                        <MenuItem onSelect={() => alert('1')}>Item 1</MenuItem>
+                        <MenuItem onSelect={() => alert('2')}>Item 2</MenuItem>
+                        <MenuItem onSelect={() => alert('3')}>Item 3</MenuItem>
+                    </MenuList>
+                </Menu>
+            </div>
+            <VSCodeTextArea
+                className={classNames(styles.chatInput, className)}
+                rows={rows}
+                ref={
+                    // VSCodeTextArea has a very complex type.
+                    //
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    inputRef as any
+                }
+                value={value}
+                autofocus={autoFocus}
+                required={required}
+                onInput={e => onInput(e as React.FormEvent<HTMLTextAreaElement>)}
+                placeholder="Ask a question or type '/' for commands"
+                onKeyDown={handleKeyDown}
+                title="" // Set to blank to avoid HTML5 error tooltip "Please fill in this field"
+            />
+        </>
     )
 }
 
