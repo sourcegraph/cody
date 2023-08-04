@@ -89,6 +89,7 @@ export class ContextProvider implements vscode.Disposable {
     }
 
     public async init(): Promise<void> {
+        await this.updateCodebaseContext()
         await this.publishContextStatus()
     }
 
@@ -184,6 +185,7 @@ export class ContextProvider implements vscode.Disposable {
             })
         }
         this.disposables.push(this.configurationChangeEvent.event(() => send()))
+        this.disposables.push(vscode.window.onDidChangeActiveTextEditor(() => send()))
         this.disposables.push(vscode.window.onDidChangeTextEditorSelection(() => send()))
         return send()
     }

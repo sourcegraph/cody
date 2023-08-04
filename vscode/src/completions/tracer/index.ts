@@ -3,8 +3,8 @@ import * as vscode from 'vscode'
 import { CompletionParameters } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
 
 import { GetContextResult } from '../context'
+import { InlineCompletionsResult } from '../getInlineCompletions'
 import { CompletionProviderTracerResultData, Provider } from '../providers/provider'
-import { InlineCompletionItem } from '../types'
 
 /**
  * Traces invocations of {@link CodyCompletionItemProvider.provideInlineCompletionItems}.
@@ -38,7 +38,6 @@ export interface ProvideInlineCompletionsItemTraceData {
     completionProviderCallResult?: CompletionProviderTracerResultData
 
     context?: GetContextResult | null
-    result?: { items: InlineCompletionItem[] } | null
-    cacheHit?: boolean
+    result?: InlineCompletionsResult | null
     error?: string
 }

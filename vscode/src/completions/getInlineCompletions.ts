@@ -39,7 +39,7 @@ export interface InlineCompletionsParams {
 
     // Injected
     contextFetcher?: (options: GetContextOptions) => Promise<GetContextResult>
-    codebaseContext?: CodebaseContext
+    getCodebaseContext?: () => CodebaseContext
     documentHistory?: DocumentHistory
 
     // Shared
@@ -144,7 +144,7 @@ async function doGetInlineCompletions({
     isEmbeddingsContextEnabled,
     toWorkspaceRelativePath,
     contextFetcher,
-    codebaseContext,
+    getCodebaseContext,
     documentHistory,
     requestManager,
     lastCandidate: lastCandidate,
@@ -211,7 +211,7 @@ async function doGetInlineCompletions({
         promptChars,
         isEmbeddingsContextEnabled,
         contextFetcher,
-        codebaseContext,
+        getCodebaseContext,
         documentHistory,
         docContext,
     })
@@ -244,7 +244,6 @@ async function doGetInlineCompletions({
         abortSignal,
         tracer ? createCompletionProviderTracer(tracer) : undefined
     )
-    tracer?.({ cacheHit })
 
     if (abortSignal?.aborted) {
         return null
@@ -393,7 +392,7 @@ interface GetCompletionContextParams
         | 'promptChars'
         | 'isEmbeddingsContextEnabled'
         | 'contextFetcher'
-        | 'codebaseContext'
+        | 'getCodebaseContext'
         | 'documentHistory'
     > {
     docContext: DocumentContext
@@ -404,15 +403,15 @@ async function getCompletionContext({
     promptChars,
     isEmbeddingsContextEnabled,
     contextFetcher,
-    codebaseContext,
+    getCodebaseContext,
     documentHistory,
     docContext: { prefix, suffix },
 }: GetCompletionContextParams): Promise<GetContextResult | null> {
     if (!contextFetcher) {
         return null
     }
-    if (!codebaseContext) {
-        throw new Error('codebaseContext is required if contextFetcher is provided')
+    if (!getCodebaseContext) {
+        throw new Error('getCodebaseContext is required if contextFetcher is provided')
     }
     if (!documentHistory) {
         throw new Error('documentHistory is required if contextFetcher is provided')
@@ -425,7 +424,7 @@ async function getCompletionContext({
         history: documentHistory,
         jaccardDistanceWindowSize: SNIPPET_WINDOW_SIZE,
         maxChars: promptChars,
-        codebaseContext,
+        getCodebaseContext,
         isEmbeddingsContextEnabled,
     })
 }

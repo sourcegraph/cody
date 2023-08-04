@@ -22,7 +22,7 @@ interface CodyCompletionItemProviderConfig {
     providerConfig: ProviderConfig
     history: DocumentHistory
     statusBar: CodyStatusBar
-    codebaseContext: CodebaseContext
+    getCodebaseContext: () => CodebaseContext
     responsePercentage?: number
     prefixPercentage?: number
     suffixPercentage?: number
@@ -138,7 +138,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
             isEmbeddingsContextEnabled: this.config.isEmbeddingsContextEnabled,
             toWorkspaceRelativePath: uri => vscode.workspace.asRelativePath(uri),
             contextFetcher: this.config.contextFetcher,
-            codebaseContext: this.config.codebaseContext,
+            getCodebaseContext: this.config.getCodebaseContext,
             documentHistory: this.config.history,
             requestManager: this.requestManager,
             lastCandidate: this.lastCandidate,

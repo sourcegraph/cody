@@ -2,7 +2,6 @@ import * as vscode from 'vscode'
 
 import { commandRegex } from '@sourcegraph/cody-shared/src/chat/recipes/helpers'
 import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
-import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
 import { Configuration, ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
 import { SourcegraphCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/client'
 
@@ -115,7 +114,7 @@ const register = async (
 
     const {
         intentDetector,
-        codebaseContext,
+        codebaseContext: initialCodebaseContext,
         chatClient,
         completionsClient,
         guardrails,
@@ -128,7 +127,7 @@ const register = async (
     const contextProvider = new ContextProvider(
         initialConfig,
         chatClient,
-        codebaseContext,
+        initialCodebaseContext,
         editor,
         secretStorage,
         localStorage,
@@ -138,6 +137,7 @@ const register = async (
         platform
     )
     disposables.push(contextProvider)
+    await contextProvider.init()
 
     // Shared configuration that is required for chat views to send and receive messages
     const messageProviderOptions: MessageProviderOptions = {
@@ -394,7 +394,7 @@ const register = async (
             webviewErrorMessenger,
             completionsClient,
             statusBar,
-            codebaseContext
+            contextProvider
         )
     }
 
@@ -426,7 +426,7 @@ const register = async (
                 webviewErrorMessenger,
                 completionsClient,
                 statusBar,
-                codebaseContext
+                contextProvider
             )
         }
     })
@@ -468,7 +468,7 @@ function createCompletionsProvider(
     webviewErrorMessenger: (error: string) => Promise<void>,
     completionsClient: SourcegraphCompletionsClient,
     statusBar: CodyStatusBar,
-    codebaseContext: CodebaseContext
+    contextProvider: ContextProvider
 ): vscode.Disposable {
     const disposables: vscode.Disposable[] = []
 
@@ -478,7 +478,7 @@ function createCompletionsProvider(
         providerConfig,
         history,
         statusBar,
-        codebaseContext,
+        getCodebaseContext: () => contextProvider.context,
         isEmbeddingsContextEnabled: config.autocompleteAdvancedEmbeddings,
         completeSuggestWidgetSelection: config.autocompleteExperimentalCompleteSuggestWidgetSelection,
     })
