@@ -82,7 +82,7 @@ export class CustomCommandsBuilderMenu {
         // Get the context types from the user using the quick pick
         const promptContext = await window.showQuickPick(customPromptsContextOptions, {
             title: 'Select the context to include with the prompt for the new command',
-            placeHolder: 'TIPS: Providing limited but precise context helps Cody provide more relevant answers',
+            placeHolder: 'Tip: Providing limited but precise context helps Cody provide more relevant answers',
             canPickMany: true,
             ignoreFocusOut: false,
             onDidSelectItem: (item: QuickPickItem) => {
