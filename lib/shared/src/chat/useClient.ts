@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { CodebaseContext } from '../codebase-context'
 import { isErrorLike } from '../common'
@@ -95,6 +95,11 @@ export const useClient = ({
     const [chatMessages, setChatMessagesState] = useState<ChatMessage[]>([])
     const [isMessageInProgress, setIsMessageInProgressState] = useState<boolean>(false)
     const [abortMessageInProgressInternal, setAbortMessageInProgress] = useState<() => void>(() => () => undefined)
+
+    const transcriptIdRef = useRef<Transcript['id']>()
+    useEffect(() => {
+        transcriptIdRef.current = transcript?.id
+    }, [transcript])
 
     const messageInProgress: ChatMessage | null = useMemo(() => {
         if (isMessageInProgress) {
@@ -313,6 +318,9 @@ export const useClient = ({
             const updatedTranscript = await new Promise<Transcript | null>(resolve => {
                 const abort = chatClient.chat(prompt, {
                     onChange(_rawText) {
+                        if (transcript.id !== transcriptIdRef.current) {
+                            return
+                        }
                         rawText = _rawText
 
                         const text = reformatBotMessage(rawText, responsePrefix)
@@ -320,6 +328,9 @@ export const useClient = ({
                         setChatMessagesState(transcript.toChat())
                     },
                     onComplete() {
+                        if (transcript.id !== transcriptIdRef.current) {
+                            return
+                        }
                         const text = reformatBotMessage(rawText, responsePrefix)
                         transcript.addAssistantResponse(text)
 
@@ -334,6 +345,9 @@ export const useClient = ({
                         resolve(transcript)
                     },
                     onError(error) {
+                        if (transcript.id !== transcriptIdRef.current) {
+                            return
+                        }
                         // Display error message as assistant response
                         transcript.addErrorAsAssistantResponse(error)
 
