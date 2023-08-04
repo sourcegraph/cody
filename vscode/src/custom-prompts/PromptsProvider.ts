@@ -4,7 +4,9 @@ import { CodyPrompt, getDefaultCommandsMap } from '@sourcegraph/cody-shared/src/
 
 import { debug } from '../log'
 
-import { CodyMenu_CodyCommands, menu_options, menu_separators } from './utils/menu'
+import { CommandsMainMenu } from './menus/CommandsMainMenu'
+import { createQuickPickItem } from './utils/helpers'
+import { menu_options, menu_separators } from './utils/menu'
 
 // Manage default commands created by the prompts in prompts.json
 export class PromptsProvider {
@@ -65,15 +67,14 @@ export class PromptsProvider {
                         : command.type !== 'default'
                         ? command.type
                         : ''
-                return {
-                    label: command.name || commandItem[0],
-                    description,
-                }
+
+                return createQuickPickItem(command.name || commandItem[0], description)
             })
             commandItems.push(...allCommandItems, menu_options.config)
 
             // Show the list of prompts to the user using a quick pick menu
-            const selectedPrompt = await vscode.window.showQuickPick([...commandItems], CodyMenu_CodyCommands)
+            // const selectedPrompt = await vscode.window.showQuickPick([...commandItems], CodyMenu_CodyCommands)
+            const selectedPrompt = await CommandsMainMenu.show([...commandItems])
             if (!selectedPrompt) {
                 return
             }
@@ -86,6 +87,8 @@ export class PromptsProvider {
                     return await vscode.commands.executeCommand('cody.settings.commands')
                 case selectedCommandID === menu_options.chat.label:
                     return await vscode.commands.executeCommand('cody.inline.new')
+                case selectedCommandID === menu_options.submit.label:
+                    return await vscode.commands.executeCommand('cody.action.chat', selectedPrompt.detail)
             }
 
             // Run the prompt

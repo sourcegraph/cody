@@ -11,18 +11,13 @@ import { VsCodeCommandsController } from '@sourcegraph/cody-shared/src/editor'
 import { debug } from '../log'
 import { LocalStorage } from '../services/LocalStorageProvider'
 
-import {
-    createNewPrompt,
-    showcommandTypeQuickPick,
-    showCustomPromptMenu,
-    showPromptNameInput,
-    showRemoveConfirmationInput,
-} from './CustomPromptsMenu'
 import { CustomPromptsStore } from './CustomPromptsStore'
+import { CustomCommandsConfigMenu } from './menus/CustomCommandsConfigMenu'
+import { CustomCommandsMainMenu } from './menus/CustomCommandsMainMenu'
 import { PromptsProvider } from './PromptsProvider'
 import { ToolsProvider } from './ToolsProvider'
 import { constructFileUri, createFileWatchers, createQuickPickItem } from './utils/helpers'
-import { CodyMenu_CodyCustomCommands, menu_options, menu_separators } from './utils/menu'
+import { menu_options, menu_separators, showcommandTypeQuickPick, showRemoveConfirmationInput } from './utils/menu'
 
 /**
  * Manage commands built with prompts from CustomPromptsStore and PromptsProvider
@@ -57,10 +52,22 @@ export class CommandsController implements VsCodeCommandsController {
     }
 
     /**
-     * getter for the promptInProgress
+     * Get the prompt, context, output, or current prompt name based on the passed type and id.
+     *
+     * @param type - The type of data to return. Valid values:
+     *   - 'prompt' - Return the prompt text for the command with the given id.
+     *   - 'context' - Return the context for the current prompt in progress as a JSON string.
+     *   - 'codebase' - Return 'codebase' if there is a codebase in the current context.
+     *   - 'output' - Return the output for the current prompt in progress.
+     *   - 'command' - Return the output from executing the command for the current prompt.
+     *   - 'current' - Return the name of the current prompt in progress.
+     * @param id - The id of the command to get the prompt for if type is 'prompt'.
+     *
+     * @returns The requested data based on type, or null if not found.
      */
     public async get(type?: string, id?: string): Promise<string | null> {
         await this.refresh()
+
         switch (type) {
             case 'prompt':
                 return id ? this.default.get(id)?.prompt || null : null
@@ -82,6 +89,11 @@ export class CommandsController implements VsCodeCommandsController {
 
     /**
      * Find the text of the prompt for a command based on its id / title
+     *
+     * @param id - The id/name of the command
+     * @param isSlash - Whether this is a slash command
+     *
+     * @returns The prompt text for the command if found, empty string otherwise
      */
     public find(id: string, isSlash = false): string {
         const myPrompt = this.default.get(id, isSlash)
@@ -97,18 +109,29 @@ export class CommandsController implements VsCodeCommandsController {
     }
 
     /**
-     * get the list of commands names to share with the webview to display
+     * Get the list of command names and prompts to send to the webview for display.
+     *
+     * @returns An array of tuples containing the command name and prompt object.
      */
     public getAllCommands(): [string, CodyPrompt][] {
         return this.default.getGroupedCommands().filter(command => command[1].prompt !== 'separator')
     }
 
-    // Get the prompts and premade for client to use
+    /**
+     * Gets the custom prompt configuration by refreshing the store.
+     *
+     * @returns The custom prompt configuration object containing the prompt map, premade text, and starter text.
+     */
     public async getCustomConfig(): Promise<MyPrompts> {
         const myPromptsConfig = await this.custom.refresh()
         return myPromptsConfig
     }
 
+    /**
+     * Executes the command stored in the prompt context if available.
+     *
+     * @returns The output of the command execution, or null if no command was found.
+     */
     private async execCommand(): Promise<string | null> {
         const currentContext = this.myPromptInProgress?.context
         if (!this.myPromptInProgress || !currentContext?.command) {
@@ -173,8 +196,7 @@ export class CommandsController implements VsCodeCommandsController {
                 ?.filter(command => command !== null && command?.[1]?.type !== 'default')
                 .map(commandItem => {
                     const command = commandItem[1]
-                    const description =
-                        command.slashCommand && command.type === 'default' ? '/' + command.slashCommand : command.type
+                    const description = command.type
                     return createQuickPickItem(command.name || commandItem[0], description)
                 })
 
@@ -183,7 +205,7 @@ export class CommandsController implements VsCodeCommandsController {
             promptItems.push(menu_separators.settings, configOption, addOption)
 
             // Show the list of prompts to the user using a quick pick
-            const selectedPrompt = await vscode.window.showQuickPick([...promptItems], CodyMenu_CodyCustomCommands)
+            const selectedPrompt = await CustomCommandsMainMenu.show([...promptItems])
             // Find the prompt based on the selected prompt name
             const promptTitle = selectedPrompt?.label
             if (!selectedPrompt || !promptTitle) {
@@ -194,7 +216,7 @@ export class CommandsController implements VsCodeCommandsController {
                 case promptTitle === addOption.label:
                     return await this.addNewUserCommandQuick()
                 case promptTitle === configOption.label:
-                    return await this.configMenu()
+                    return await this.configMenu('custom')
                 default:
                     // Run the prompt
                     await vscode.commands.executeCommand('cody.action.commands.exec', promptTitle)
@@ -210,29 +232,35 @@ export class CommandsController implements VsCodeCommandsController {
     /**
      * Menu with an option to add a new command via UI and save it to user's cody.json file
      */
-    public async configMenu(): Promise<void> {
+    public async configMenu(lastMenu?: string): Promise<void> {
         const promptSize = this.custom.promptSize.user + this.custom.promptSize.workspace
-        const selected = await showCustomPromptMenu()
-        const action = promptSize === 0 ? 'file' : selected?.actionID
+        const selected = await CustomCommandsConfigMenu.show()
+        const action = promptSize === 0 ? 'file' : selected?.id
         if (!selected || !action) {
             return
         }
+
+        if (action === 'back' && lastMenu === 'custom') {
+            return this.customCommandMenu()
+        }
+
         debug('CommandsController:customPrompts:menu', action)
+
         switch (action) {
             case 'delete':
             case 'file':
             case 'open': {
-                const type = selected.commandType || (await showcommandTypeQuickPick(action, this.custom.promptSize))
+                const type = selected.type || (await showcommandTypeQuickPick(action, this.custom.promptSize))
                 await this.config(action, type)
                 break
             }
             case 'add': {
-                if (selected?.commandType === 'workspace') {
+                if (selected?.type === 'workspace') {
                     const wsFileAction = this.custom.promptSize.workspace === 0 ? 'file' : 'open'
                     await this.config(wsFileAction, 'workspace')
                     break
                 }
-                await this.config(action, selected?.commandType)
+                await this.config(action, selected?.type)
                 break
             }
             case 'list':
@@ -242,7 +270,8 @@ export class CommandsController implements VsCodeCommandsController {
                 await this.custom.createExampleConfig()
                 break
         }
-        await this.refresh()
+
+        return this.refresh()
     }
 
     /**
@@ -277,18 +306,15 @@ export class CommandsController implements VsCodeCommandsController {
      * Allows user to enter the prompt name and prompt description in the input box
      */
     private async addNewUserCommandQuick(): Promise<void> {
-        const promptName = (await showPromptNameInput(this.myPromptsMap)) || null
-        if (!promptName) {
-            return
-        }
-        const newPrompt = await createNewPrompt(promptName)
-        if (!newPrompt) {
+        const newCommand = await CustomCommandsConfigMenu.add(this.myPromptsMap)
+        if (!newCommand) {
             return
         }
         // Save the prompt to the current Map and Extension storage
-        await this.custom.save(promptName, newPrompt)
+        await this.custom.save(newCommand.title, newCommand.prompt)
         await this.refresh()
-        debug('CommandsController:updateUserCommandQuick:newPrompt:', 'saved', { verbose: newPrompt })
+
+        debug('CommandsController:updateUserCommandQuick:newPrompt:', 'saved', { verbose: newCommand })
     }
 
     /**
@@ -302,6 +328,7 @@ export class CommandsController implements VsCodeCommandsController {
             return doesExist ? this.tools.openFile(uri) : this.config('file', filePath)
         }
         const fileUri = constructFileUri(filePath, this.tools.getUserInfo()?.workspaceRoot)
+
         return vscode.commands.executeCommand('vscode.open', fileUri)
     }
 
@@ -311,6 +338,7 @@ export class CommandsController implements VsCodeCommandsController {
     private getLastUsedCommands(): [string, CodyPrompt][] {
         const commands = [...this.lastUsedCommands]?.map(id => [id, this.myPromptsMap.get(id) as CodyPrompt])?.reverse()
         const filtered = commands?.filter(command => command[1] !== undefined) as [string, CodyPrompt][]
+
         return filtered.length > 0 ? filtered : []
     }
 
@@ -323,6 +351,7 @@ export class CommandsController implements VsCodeCommandsController {
         if (commands.length > 0) {
             await this.localStorage.setLastUsedCommands(commands)
         }
+
         this.lastUsedCommands = new Set(commands)
     }
 
@@ -333,6 +362,7 @@ export class CommandsController implements VsCodeCommandsController {
         if (this.webViewMessenger) {
             return
         }
+
         this.webViewMessenger = messenger
     }
 
@@ -350,6 +380,7 @@ export class CommandsController implements VsCodeCommandsController {
         this.userFileWatcher?.onDidChange(() => this.webViewMessenger?.())
         this.wsFileWatcher?.onDidDelete(() => this.webViewMessenger?.())
         this.userFileWatcher?.onDidDelete(() => this.webViewMessenger?.())
+
         debug('CommandsController:fileWatcherInit', 'watchers created')
     }
 
@@ -363,6 +394,7 @@ export class CommandsController implements VsCodeCommandsController {
         this.myPromptsMap = new Map<string, CodyPrompt>()
         this.wsFileWatcher?.dispose()
         this.userFileWatcher?.dispose()
+
         debug('CommandsController:dispose', 'disposed')
     }
 }
