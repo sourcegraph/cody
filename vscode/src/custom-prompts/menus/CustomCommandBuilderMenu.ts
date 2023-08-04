@@ -56,11 +56,11 @@ export class CustomCommandsBuilderMenu {
         const minPromptLength = 3
         const prompt = await window.showInputBox({
             ...NewCustomCommandConfigMenuOptions,
-            prompt: 'Enter a prompt --a set of instructions/questions for Cody to follow and answer.',
-            placeHolder: "e,g. 'Create five different test cases for the selected code''",
+            prompt: 'Enter a prompt—a set of instructions/questions for Cody to follow and answer.',
+            placeHolder: "e.g. 'Create five different test cases for the selected code'",
             validateInput: (input: string) => {
                 if (!input || input.split(' ').length < minPromptLength) {
-                    return `Please enter a prompt with min ${minPromptLength} words`
+                    return `Please enter a prompt with a minimum of ${minPromptLength} words`
                 }
                 return null
             },
@@ -118,7 +118,7 @@ async function showPromptCommandInput(): Promise<string | void> {
     const promptCommand = await window.showInputBox({
         ...NewCustomCommandConfigMenuOptions,
         prompt: 'Add a terminal command to run the command locally and share the output with Cody as prompt context.',
-        placeHolder: 'e,g. node your-script.js, git describe --long, cat src/file-name.js etc.',
+        placeHolder: 'e.g. node your-script.js, git describe --long, cat src/file-name.js etc.',
     })
     return promptCommand
 }

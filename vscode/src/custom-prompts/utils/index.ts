@@ -20,7 +20,6 @@ export interface CustomCommandsItem extends QuickPickItem {
     type: CodyPromptType
 }
 
-// Define the type for a context option
 export interface ContextOption {
     id: string
     label: string

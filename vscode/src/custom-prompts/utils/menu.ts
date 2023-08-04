@@ -16,7 +16,7 @@ const customCommandsSeparator: QuickPickItem = { kind: -1, label: 'custom comman
 const configOption: QuickPickItem = { label: 'Configure Custom Commands...' }
 const settingsSeparator: QuickPickItem = { kind: -1, label: 'settings' }
 const addOption: QuickPickItem = { label: 'New Custom Command...', alwaysShow: true }
-const submitOption: QuickPickItem = { label: 'Submit question', alwaysShow: true }
+const submitOption: QuickPickItem = { label: 'Submit Question', alwaysShow: true }
 
 export const recentlyUsedSeparatorAsPrompt: [string, CodyPrompt][] = [
     ['separator', { prompt: 'separator', type: 'recently used' }],
@@ -134,7 +134,7 @@ export async function commandPicker(promptList: string[] = []): Promise<string> 
 export async function quickChatInput(): Promise<void> {
     const humanInput = await window.showInputBox({
         prompt: 'Ask Cody a question...',
-        placeHolder: 'ex. What is a class in Typescript?',
+        placeHolder: 'e.g. What is a class in TypeScript?',
         validateInput: (input: string) => (input ? null : 'Please enter a question.'),
     })
     if (humanInput) {
