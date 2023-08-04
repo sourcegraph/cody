@@ -194,7 +194,7 @@ describe('getInlineCompletions', () => {
             expect(await getInlineCompletions(params('foo = █;', []))).toBeTruthy())
     })
 
-    describe('reuseResultFromLastCandidate', () => {
+    describe('reuseLastCandidate', () => {
         function lastCandidate(code: string, insertText: string | string[]): LastInlineCompletionCandidate {
             const { document, position } = documentAndPosition(code)
             return {
@@ -1317,9 +1317,16 @@ describe('getInlineCompletions', () => {
         // Reuse the same request manager for both requests in this test
         const requestManager = new RequestManager()
 
-        await getInlineCompletions(params('console.█', [completion`log('Hello, world!');`], { requestManager }))
+        const promise1 = getInlineCompletions(
+            params('console.█', [completion`log('Hello, world!');`], { requestManager })
+        )
 
-        const completions = await getInlineCompletions(params('console.log(█', 'never-resolve', { requestManager }))
+        // Start a second completions query before the first one is finished. The second one never
+        // receives a network response
+        const promise2 = getInlineCompletions(params('console.log(█', 'never-resolve', { requestManager }))
+
+        await promise1
+        const completions = await promise2
 
         expect(completions?.items[0].insertText).toBe("'Hello, world!');")
     })

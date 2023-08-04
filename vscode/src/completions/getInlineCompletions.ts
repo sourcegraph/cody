@@ -2,7 +2,6 @@ import * as vscode from 'vscode'
 import { URI } from 'vscode-uri'
 
 import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
-import { isDefined } from '@sourcegraph/cody-shared/src/common'
 
 import { debug } from '../log'
 
@@ -14,6 +13,7 @@ import { detectMultiline } from './multiline'
 import { processInlineCompletions } from './processInlineCompletions'
 import { CompletionProviderTracer, Provider, ProviderConfig, ProviderOptions } from './providers/provider'
 import { RequestManager, RequestParams } from './request-manager'
+import { reuseLastCandidate } from './reuse-last-candidate'
 import { ProvideInlineCompletionsItemTraceData } from './tracer'
 import { InlineCompletionItem } from './types'
 import { isAbortError, SNIPPET_WINDOW_SIZE } from './utils'
@@ -173,9 +173,7 @@ async function doGetInlineCompletions({
 
     // Check if the user is typing as suggested by the last candidate completion (that is shown as
     // ghost text in the editor), and reuse it if it is still valid.
-    const resultToReuse = lastCandidate
-        ? reuseResultFromLastCandidate({ document, position, lastCandidate, docContext })
-        : null
+    const resultToReuse = lastCandidate ? reuseLastCandidate({ document, position, lastCandidate, docContext }) : null
     if (resultToReuse) {
         return resultToReuse
     }
@@ -238,11 +236,9 @@ async function doGetInlineCompletions({
     CompletionLogger.networkRequestStarted(logId, contextResult?.logSummary ?? null)
 
     const reqContext: RequestParams = {
-        uri: document.uri.toString(),
-        prefix: docContext.prefix,
-        suffix: docContext.suffix,
-        position: document.offsetAt(position),
-        languageId: document.languageId,
+        document,
+        docContext,
+        position,
         multiline,
     }
 
@@ -280,66 +276,6 @@ async function doGetInlineCompletions({
                 ? InlineCompletionsResultSource.CacheAfterRequestStart
                 : InlineCompletionsResultSource.Network,
     }
-}
-
-function isWhitespace(s: string): boolean {
-    return /^\s*$/.test(s)
-}
-
-/**
- * See test cases for the expected behaviors.
- */
-function reuseResultFromLastCandidate({
-    document,
-    position,
-    lastCandidate: { lastTriggerPosition, lastTriggerLinePrefix, ...lastCandidate },
-    docContext: { currentLinePrefix, currentLineSuffix },
-}: Required<Pick<InlineCompletionsParams, 'document' | 'position' | 'lastCandidate'>> & {
-    docContext: DocumentContext
-}): InlineCompletionsResult | null {
-    const isSameDocument = lastCandidate.uri.toString() === document.uri.toString()
-    const isSameLine = lastTriggerPosition.line === position.line
-
-    if (!isSameDocument || !isSameLine) {
-        return null
-    }
-
-    // There are 2 reasons we can reuse a candidate: typing-as-suggested or change-of-indentation.
-
-    const isIndentation = isWhitespace(currentLinePrefix) && currentLinePrefix.startsWith(lastTriggerLinePrefix)
-    const isDeindentation = isWhitespace(lastTriggerLinePrefix) && lastTriggerLinePrefix.startsWith(currentLinePrefix)
-    const isIndentationChange = currentLineSuffix === '' && (isIndentation || isDeindentation)
-
-    const itemsToReuse = lastCandidate.result.items
-        .map((item): InlineCompletionItem | undefined => {
-            // Allow reuse if the user is (possibly) typing forward as suggested by the last
-            // candidate completion. We still need to filter the candidate items to see which ones
-            // the user's typing actually follows.
-            const lastCompletion = lastTriggerLinePrefix + item.insertText
-            const isTypingAsSuggested =
-                lastCompletion.startsWith(currentLinePrefix) && position.isAfterOrEqual(lastTriggerPosition)
-            if (isTypingAsSuggested) {
-                return { insertText: lastCompletion.slice(currentLinePrefix.length) }
-            }
-
-            // Allow reuse if only the indentation (leading whitespace) has changed.
-            if (isIndentationChange) {
-                return { insertText: lastTriggerLinePrefix.slice(currentLinePrefix.length) + item.insertText }
-            }
-
-            return undefined
-        })
-        .filter(isDefined)
-    return itemsToReuse.length > 0
-        ? {
-              // Reuse the logId to so that typing text of a displayed completion will not log a new
-              // completion on every keystroke.
-              logId: lastCandidate.result.logId,
-
-              source: InlineCompletionsResultSource.LastCandidate,
-              items: itemsToReuse,
-          }
-        : null
 }
 
 interface GetCompletionProvidersParams

@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 
 import { Provider } from './providers/provider'
 import { RequestManager, RequestManagerResult, RequestParams } from './request-manager'
+import { documentAndPosition } from './testHelpers'
 import { Completion } from './types'
 
 class MockProvider extends Provider {
@@ -36,12 +37,20 @@ function createProvider(prefix: string) {
 }
 
 function docState(prefix: string): RequestParams {
+    const suffix = ';'
+    const { document, position } = documentAndPosition(`${prefix}█${suffix}`)
     return {
-        uri: 'file:///file',
-        prefix,
-        position: prefix.length,
-        suffix: ';',
-        languageId: 'typescript',
+        document,
+        position,
+        docContext: {
+            prefix,
+            suffix,
+            currentLinePrefix:
+                prefix.lastIndexOf('\n') === -1 ? prefix : prefix.slice(Math.max(0, prefix.lastIndexOf('\n') + 1)),
+            currentLineSuffix: suffix,
+            prevNonEmptyLine: '',
+            nextNonEmptyLine: '',
+        },
         multiline: false,
     }
 }
@@ -108,19 +117,19 @@ describe('RequestManager', () => {
         provider2.resolveRequest(["'hello')"])
 
         expect((await promise2).completions[0].content).toBe("'hello')")
-        // The completion is going to be resolved from cache, but the request
-        // is still running
-        expect((await promise1).completions[0].content).toBe("log('hello')")
 
+        // Since the later request resolves first, the first request will not
+        // resolve yet.
         expect(provider1.didFinishNetworkRequest).toBe(false)
         expect(provider2.didFinishNetworkRequest).toBe(true)
 
         provider1.resolveRequest(['log();'])
+        expect((await promise1).completions[0].content).toBe('log();')
 
         expect(provider1.didFinishNetworkRequest).toBe(true)
     })
 
-    it('serves request from cache when a prior request resolves', async () => {
+    it('synthesizes a result when a prior request resolves', async () => {
         const prefix1 = 'console.'
         const provider1 = createProvider(prefix1)
         const promise1 = createRequest(prefix1, provider1)

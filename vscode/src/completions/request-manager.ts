@@ -1,42 +1,27 @@
 import { LRUCache } from 'lru-cache'
+import * as vscode from 'vscode'
 
 import { debug } from '../log'
 
 import { ReferenceSnippet } from './context'
+import { DocumentContext } from './document'
+import { LastInlineCompletionCandidate } from './getInlineCompletions'
 import { logCompletionEvent } from './logger'
 import { CompletionProviderTracer, Provider } from './providers/provider'
+import { reuseLastCandidate } from './reuse-last-candidate'
 import { Completion } from './types'
 
 export interface RequestParams {
-    /**
-     * The document URI.
-     */
-    uri: string
+    /** The request's document **/
+    document: vscode.TextDocument
 
-    /**
-     * The prefix (up to the cursor) of the source file where the completion request was triggered.
-     */
-    prefix: string
+    /** The request's document context **/
+    docContext: DocumentContext
 
-    /**
-     * The suffix (after the cursor) of the source file where the completion request was triggered.
-     */
-    suffix: string
+    /** The cursor position in the source file where the completion request was triggered. **/
+    position: vscode.Position
 
-    /**
-     * The cursor position in the source file where the completion request was triggered.
-     */
-    position: number
-
-    /**
-     * The language of the document, used to ensure that completions are cached separately for
-     * different languages (even if the files have the same prefix).
-     */
-    languageId: string
-
-    /**
-     * Wether the completion request is multiline or not.
-     */
+    /** Wether the completion request is multiline or not. **/
     multiline: boolean
 }
 
@@ -95,36 +80,64 @@ export class RequestManager {
                 // A promise will never resolve twice, so we do not need to
                 // check if the request was already fulfilled.
                 request.resolve({ completions, cacheHit: null })
+
+                this.testIfResultCanBeUsedForInflightRequests(request, completions)
+
+                return completions
             })
             .catch(error => {
                 request.reject(error)
             })
             .finally(() => {
                 this.inflightRequests.delete(request)
-                this.retestCaches(params)
             })
 
         return request.promise
     }
 
     /**
-     * When one network request completes and the item is being added to the
-     * completion cache, we check all pending requests for the same document to
-     * see if we can synthesize a completion response from the new cache.
+     * Test if the result can be used for inflight requests. This only works
+     * if a completion is a forward-typed version of a previous completion.
      */
-    private retestCaches({ uri }: RequestParams): void {
+    private testIfResultCanBeUsedForInflightRequests(
+        resolvedRequest: InflightRequest,
+        completions: Completion[]
+    ): void {
+        const { document, position, docContext } = resolvedRequest.params
+        const lastCandidate: LastInlineCompletionCandidate = {
+            uri: document.uri,
+            lastTriggerPosition: position,
+            lastTriggerLinePrefix: docContext.prefix,
+            result: {
+                logId: 'unknown',
+                items: completions.map(c => ({ insertText: c.content })),
+            },
+        }
+
         for (const request of this.inflightRequests) {
-            if (request.params.uri !== uri) {
+            if (request === resolvedRequest) {
                 continue
             }
 
-            const cachedCompletions = this.cache.get(request.params)
-            if (cachedCompletions) {
+            if (request.params.document.uri.toString() !== document.uri.toString()) {
+                continue
+            }
+
+            const synthesizedCandidate = reuseLastCandidate({
+                document: request.params.document,
+                position: request.params.position,
+                lastCandidate,
+                docContext: request.params.docContext,
+            })
+
+            if (synthesizedCandidate) {
+                const synthesizedCompletions = synthesizedCandidate.items.map(c => ({ content: c.insertText }))
+
                 logCompletionEvent('synthesizedFromParallelRequest')
                 debug('RequestManager', 'cache hit after request started', {
-                    verbose: { params: request.params, cachedCompletions },
+                    verbose: { params: request.params, cachedCompletions: synthesizedCompletions },
                 })
-                request.resolve({ completions: cachedCompletions, cacheHit: 'hit-after-request-started' })
+                request.resolve({ completions: synthesizedCompletions, cacheHit: 'hit-after-request-started' })
                 this.inflightRequests.delete(request)
             }
         }
@@ -153,7 +166,7 @@ class RequestCache {
     private cache = new LRUCache<string, Completion[]>({ max: 50 })
 
     private toCacheKey(key: RequestParams): string {
-        return key.prefix
+        return key.docContext.prefix
     }
 
     public get(key: RequestParams): Completion[] | undefined {
