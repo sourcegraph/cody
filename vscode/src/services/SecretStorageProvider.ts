@@ -17,7 +17,7 @@ export async function getAccessToken(secretStorage: SecretStorage): Promise<stri
         // Remove corrupted token from secret storage
         await secretStorage.delete(CODY_ACCESS_TOKEN_SECRET)
         // Display system notification because the error was caused by system storage
-        void vscode.window.showErrorMessage(`Failed to retrieve access token for Cody from secret storage: ${error}`)
+        console.error(`Failed to retrieve access token for Cody from secret storage: ${error}`)
         return null
     }
 }

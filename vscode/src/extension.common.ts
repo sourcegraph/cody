@@ -5,12 +5,12 @@ import { languagePromptMixin, PromptMixin } from '@sourcegraph/cody-shared/src/p
 import type { SourcegraphBrowserCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/browserClient'
 import type { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/nodeClient'
 
+import { CommandsController } from './custom-prompts/CommandsController'
 import { onActivationDevelopmentHelpers } from './dev/helpers'
 import { ExtensionApi } from './extension-api'
 import type { FilenameContextFetcher } from './local-context/filename-context-fetcher'
 import type { LocalKeywordContextFetcher } from './local-context/local-keyword-context-fetcher'
 import { start } from './main'
-import type { MyPromptController } from './my-cody/MyPromptController'
 import type { getRgPath } from './rg'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -20,7 +20,7 @@ type Constructor<T extends new (...args: any) => any> = T extends new (...args: 
 
 export interface PlatformContext {
     getRgPath?: typeof getRgPath
-    createMyPromptController?: Constructor<typeof MyPromptController>
+    createCommandsController?: Constructor<typeof CommandsController>
     createLocalKeywordContextFetcher?: Constructor<typeof LocalKeywordContextFetcher>
     createFilenameContextFetcher?: Constructor<typeof FilenameContextFetcher>
     createCompletionsClient:

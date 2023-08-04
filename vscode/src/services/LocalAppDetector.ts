@@ -32,7 +32,6 @@ export class LocalAppDetector implements vscode.Disposable {
         this.onChange = options.onChange
         this.localEnv = { ...envInit }
         this.localAppMarkers = LOCAL_APP_LOCATIONS[this.localEnv.os]
-        // Only Mac is supported for now
         this.isSupported =
             isOsSupportedByApp(this.localEnv.os, this.localEnv.arch) && this.localEnv.homeDir !== undefined
     }
@@ -115,7 +114,6 @@ export class LocalAppDetector implements vscode.Disposable {
         try {
             const response = await fetch(`${LOCAL_APP_URL.href}__version`)
             if (response.status === 200) {
-                debug('LocalAppDetector:fetchServer', 'found')
                 this.localEnv.isAppRunning = true
                 await this.found('server')
             }

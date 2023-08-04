@@ -1,4 +1,8 @@
+import path from 'path'
+
 import * as vscode from 'vscode'
+
+import { CodyPromptType, ConfigFileName } from '@sourcegraph/cody-shared/src/chat/prompts'
 
 export function constructFileUri(fileName: string, rootDirPath?: string): vscode.Uri | undefined {
     if (!rootDirPath) {
@@ -22,8 +26,7 @@ export async function createJSONFile(
         void vscode.window.showErrorMessage('Failed to create cody.json file.')
         return
     }
-    const bytes = await vscode.workspace.fs.readFile(codyJsonPath)
-    const decoded = new TextDecoder('utf-8').decode(bytes)
+    const decoded = await getFileContentText(codyJsonPath)
     await saveJSONFile(decoded, configFileUri)
 }
 
@@ -44,12 +47,16 @@ export async function saveJSONFile(context: string, filePath: vscode.Uri, isSave
 }
 
 // Create a file watcher for each .vscode/cody.json file
-export function createFileWatch(fsPath?: string): vscode.FileSystemWatcher | null {
+export function createFileWatchers(fsPath?: string): vscode.FileSystemWatcher | null {
     if (!fsPath) {
         return null
     }
-    const fileName = '.vscode/cody.json'
-    const watchPattern = new vscode.RelativePattern(fsPath, fileName)
+
+    // Use the file as the first arg to RelativePattern because a file watcher will be set up on the
+    // first arg given. If this is a directory with many files, such as the user's home directory,
+    // it will cause a very large number of watchers to be created, which will exhaust the system.
+    // This occurs even if the second arg is a relative file path with no wildcards.
+    const watchPattern = new vscode.RelativePattern(vscode.Uri.file(path.join(fsPath, ConfigFileName.vscode)), '')
     const watcher = vscode.workspace.createFileSystemWatcher(watchPattern)
     return watcher
 }
@@ -61,17 +68,6 @@ export async function deleteFile(uri?: vscode.Uri): Promise<void> {
     await vscode.workspace.fs.delete(uri)
 }
 
-export const prompt_creation_title = 'Cody Custom Recipes - New Recipe'
-
-export async function doesPathExist(filePath?: string): Promise<boolean> {
-    try {
-        return (filePath && !!(await vscode.workspace.fs.stat(vscode.Uri.file(filePath)))) || false
-    } catch (error) {
-        console.error('Failed to locate file', error)
-        return false
-    }
-}
-
 export function getFileNameFromPath(path: string): string | undefined {
     return path.split('/').pop()
 }
@@ -80,8 +76,41 @@ export async function getFileToRemove(keys: string[]): Promise<string | undefine
     return vscode.window.showQuickPick(Array.from(keys))
 }
 
+export const createQuickPickSeparator = (label = '', detail = ''): vscode.QuickPickItem => ({ kind: -1, label, detail })
+export const createQuickPickItem = (label = '', description = ''): vscode.QuickPickItem => ({ label, description })
+
+export async function getFileContentText(uri: vscode.Uri): Promise<string> {
+    try {
+        const bytes = await vscode.workspace.fs.readFile(uri)
+        const content = new TextDecoder('utf-8').decode(bytes)
+        return content
+    } catch {
+        return ''
+    }
+}
+
+export const isUserType = (type: CodyPromptType): boolean => type === 'user'
+export const isWorkspaceType = (type: CodyPromptType): boolean => type === 'workspace'
+export const isCustomType = (type: CodyPromptType): boolean => type === 'user' || type === 'workspace'
+export const isNonCustomType = (type: CodyPromptType): boolean => type === 'recently used' || type === 'default'
+
 export const outputWrapper = `
-Output of \`{command}\` command:
+Here is the output of the \`{command}\` command:
 \`\`\`sh
 {output}
 \`\`\``
+
+export const notificationOnDisabled = async (isEnabled: boolean): Promise<boolean> => {
+    if (isEnabled) {
+        return isEnabled
+    }
+    const enableResponse = await vscode.window.showInformationMessage(
+        'Please first enable `Custom Commands` before trying again.',
+        'Enable Custom Commands',
+        'Cancel'
+    )
+    if (enableResponse === 'Enable Custom Commands') {
+        await vscode.commands.executeCommand('cody.status-bar.interacted')
+    }
+    return isEnabled
+}

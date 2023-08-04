@@ -26,7 +26,7 @@ export type RecipeID =
     | 'git-history'
     | 'improve-variable-names'
     | 'inline-chat'
-    | 'my-prompt'
+    | 'custom-prompt'
     | 'next-questions'
     | 'non-stop'
     | 'pr-description'

@@ -8,8 +8,8 @@ import { BufferedBotResponseSubscriber } from '../bot-response-multiplexer'
 import { Interaction } from '../transcript/interaction'
 
 import { ChatQuestion } from './chat-question'
+import { CustomPrompt } from './custom-prompt'
 import { commandRegex, contentSanitizer } from './helpers'
-import { MyPrompt } from './my-prompt'
 import { Recipe, RecipeContext, RecipeID } from './recipe'
 
 /** ======================================================
@@ -163,11 +163,11 @@ export class InlineTouch implements Recipe {
         const contextMessages: ContextMessage[] = []
         // Add selected text and current file as context and create context messages from current directory
         const selectedContext = ChatQuestion.getEditorSelectionContext(selection)
-        const currentDirContext = await MyPrompt.getEditorDirContext(currentDir, selection.fileName, true)
+        const currentDirContext = await CustomPrompt.getEditorDirContext(currentDir, selection.fileName, true)
         contextMessages.push(...selectedContext, ...currentDirContext)
         // Create context messages from open tabs
         if (contextMessages.length < 10) {
-            const tabsContext = await MyPrompt.getEditorOpenTabsContext(currentDir)
+            const tabsContext = await CustomPrompt.getEditorOpenTabsContext(currentDir)
             contextMessages.push(...tabsContext)
         }
         return contextMessages.slice(-10)

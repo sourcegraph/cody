@@ -244,7 +244,6 @@ async function doGetInlineCompletions({
         abortSignal,
         tracer ? createCompletionProviderTracer(tracer) : undefined
     )
-    tracer?.({ cacheHit })
 
     if (abortSignal?.aborted) {
         return null

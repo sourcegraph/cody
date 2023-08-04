@@ -63,25 +63,25 @@ export interface VsCodeFixupController {
     >
 }
 
-export interface VsCodeMyPromptController {
+export interface VsCodeCommandsController {
     get(type?: string): Promise<string | null>
-    menu(): Promise<void>
+    menu(type: 'custom' | 'config' | 'default', showDesc?: boolean): Promise<void>
 }
 
 export interface ActiveTextEditorViewControllers<
     I extends VsCodeInlineController = VsCodeInlineController,
     F extends VsCodeFixupController = VsCodeFixupController,
-    P extends VsCodeMyPromptController = VsCodeMyPromptController,
+    C extends VsCodeCommandsController = VsCodeCommandsController,
 > {
     readonly inline?: I
     readonly fixups?: F
-    readonly prompt?: P
+    readonly command?: C
 }
 
 export interface Editor<
     I extends VsCodeInlineController = VsCodeInlineController,
     F extends VsCodeFixupController = VsCodeFixupController,
-    P extends VsCodeMyPromptController = VsCodeMyPromptController,
+    P extends VsCodeCommandsController = VsCodeCommandsController,
 > {
     controllers?: ActiveTextEditorViewControllers<I, F, P>
 
@@ -120,7 +120,7 @@ export interface Editor<
 
 export class NoopEditor implements Editor {
     public controllers?:
-        | ActiveTextEditorViewControllers<VsCodeInlineController, VsCodeFixupController, VsCodeMyPromptController>
+        | ActiveTextEditorViewControllers<VsCodeInlineController, VsCodeFixupController, VsCodeCommandsController>
         | undefined
 
     public getWorkspaceRootPath(): string | null {

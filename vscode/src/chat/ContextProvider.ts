@@ -35,7 +35,7 @@ export type Config = Pick<
     | 'useContext'
     | 'experimentalChatPredictions'
     | 'experimentalGuardrails'
-    | 'experimentalCustomRecipes'
+    | 'experimentalCommandLenses'
     | 'pluginsEnabled'
     | 'pluginsConfig'
     | 'pluginsDebugEnabled'
@@ -132,7 +132,6 @@ export class ContextProvider implements vscode.Disposable {
 
         this.codebaseContext = codebaseContext
         await this.publishContextStatus()
-        this.editor.controllers.prompt?.setCodebase(codebaseContext.getCodebase())
     }
 
     /**
@@ -186,6 +185,7 @@ export class ContextProvider implements vscode.Disposable {
             })
         }
         this.disposables.push(this.configurationChangeEvent.event(() => send()))
+        this.disposables.push(vscode.window.onDidChangeActiveTextEditor(() => send()))
         this.disposables.push(vscode.window.onDidChangeTextEditorSelection(() => send()))
         return send()
     }
