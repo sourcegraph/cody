@@ -148,7 +148,7 @@ async function doGetInlineCompletions({
     getCodebaseContext,
     documentHistory,
     requestManager,
-    lastCandidate,
+    lastCandidate: lastCandidate,
     debounceInterval,
     setIsLoading,
     abortSignal,
@@ -311,58 +311,35 @@ function reuseResultFromLastCandidate({
     const isIndentationChange = currentLineSuffix === '' && (isIndentation || isDeindentation)
 
     const itemsToReuse = lastCandidate.result.items
-        .map((item, index): { item: InlineCompletionItem; isLastVisibleResult: boolean } | undefined => {
-            const isLastVisibleResult = index === 0
-
+        .map((item): InlineCompletionItem | undefined => {
             // Allow reuse if the user is (possibly) typing forward as suggested by the last
             // candidate completion. We still need to filter the candidate items to see which ones
             // the user's typing actually follows.
-            const originalCompletion = lastTriggerLinePrefix + item.insertText
+            const lastCompletion = lastTriggerLinePrefix + item.insertText
             const isTypingAsSuggested =
-                originalCompletion.startsWith(currentLinePrefix) && position.isAfterOrEqual(lastTriggerPosition)
+                lastCompletion.startsWith(currentLinePrefix) && position.isAfterOrEqual(lastTriggerPosition)
             if (isTypingAsSuggested) {
-                return { item: { insertText: originalCompletion.slice(currentLinePrefix.length) }, isLastVisibleResult }
+                return { insertText: lastCompletion.slice(currentLinePrefix.length) }
             }
 
             // Allow reuse if only the indentation (leading whitespace) has changed.
             if (isIndentationChange) {
-                return {
-                    item: { insertText: lastTriggerLinePrefix.slice(currentLinePrefix.length) + item.insertText },
-                    isLastVisibleResult,
-                }
+                return { insertText: lastTriggerLinePrefix.slice(currentLinePrefix.length) + item.insertText }
             }
 
             return undefined
         })
         .filter(isDefined)
+    return itemsToReuse.length > 0
+        ? {
+              // Reuse the logId to so that typing text of a displayed completion will not log a new
+              // completion on every keystroke.
+              logId: lastCandidate.result.logId,
 
-    if (itemsToReuse.length > 0) {
-        // itemsToReuse MUST contain the completion that was previously visible (the completion
-        // appearing at the first index). If it does not, the visible item will change, causing
-        // unwanted UI churn.
-        const newLastVisibleIndex = itemsToReuse.findIndex(item => item.isLastVisibleResult)
-        if (newLastVisibleIndex === -1) {
-            return null
-        }
-
-        // If itemsToReuse contains the item but not on the first place for some reason, reorder to
-        // make sure the visible item remains stable
-        if (newLastVisibleIndex !== 0) {
-            const lastVisibleItem = itemsToReuse[newLastVisibleIndex]
-            itemsToReuse.splice(newLastVisibleIndex, 1)
-            itemsToReuse.unshift(lastVisibleItem)
-        }
-
-        return {
-            // Reuse the logId to so that typing text of a displayed completion will not log a new
-            // completion on every keystroke.
-            logId: lastCandidate.result.logId,
-
-            source: InlineCompletionsResultSource.LastCandidate,
-            items: itemsToReuse.map(({ item }) => item),
-        }
-    }
-    return null
+              source: InlineCompletionsResultSource.LastCandidate,
+              items: itemsToReuse,
+          }
+        : null
 }
 
 interface GetCompletionProvidersParams

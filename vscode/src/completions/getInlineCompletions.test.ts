@@ -326,20 +326,6 @@ describe('getInlineCompletions', () => {
                 source: InlineCompletionsResultSource.LastCandidate,
             }))
 
-        test('not reused when the previously visible item is no longer matching', async () =>
-            // The user forward-types a character that matches a completion item that was not
-            // visible before. The original ghost text should not be reused.
-            expect(
-                await getInlineCompletions(
-                    params('\nconsol.log("h█', [], {
-                        lastCandidate: lastCandidate('\n█', ['console.log("Hi")', 'console.log("hi")']),
-                    })
-                )
-            ).toEqual<V>({
-                items: [],
-                source: InlineCompletionsResultSource.Network,
-            }))
-
         describe('deleting leading whitespace', () => {
             const candidate = lastCandidate('\t\t█', 'const x = 1')
 
