@@ -214,19 +214,19 @@ const register = async (
     ): Promise<void> => {
         const document = options.document || vscode.window.activeTextEditor?.document
         if (!document) {
-            return Promise.resolve()
+            return
         }
 
         const range = options.range || vscode.window.activeTextEditor?.selection
         if (!range) {
-            return Promise.resolve
+            return
         }
 
         const task = options.instruction
             ? fixup.createTask(document.uri, options.instruction, range)
             : await fixup.promptUserForTask()
         if (!task) {
-            return Promise.resolve()
+            return
         }
 
         const provider = fixupManager.getProviderForTask(task)

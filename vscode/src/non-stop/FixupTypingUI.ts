@@ -46,14 +46,6 @@ const FixupCommands = new Map<FixupCommand, FixupQuickPickItem>([
             value: 'Generate documentation or comments for the selected code',
         },
     ],
-    [
-        '/test',
-        {
-            detail: 'Generate a test for the selected code',
-            placeholder: 'Describe what you want Cody to do',
-            value: 'Generate a test for the selected code',
-        },
-    ],
 ])
 
 const FixupQuickPickItems: vscode.QuickPickItem[] = [...FixupCommands].map(([command, item]) => ({

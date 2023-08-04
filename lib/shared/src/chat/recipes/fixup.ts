@@ -9,7 +9,11 @@ import { Interaction } from '../transcript/interaction'
 import { getContextMessagesFromSelection } from './helpers'
 import { Recipe, RecipeContext, RecipeID } from './recipe'
 
-export type FixupIntent = 'add' | 'edit' | 'fix' | 'test' | 'document'
+/**
+ * The intent classification.
+ * This is either provided by the user, or inferred from their instructions
+ */
+export type FixupIntent = 'add' | 'edit' | 'fix' | 'document'
 const FixupIntentClassification: IntentClassificationOption<FixupIntent>[] = [
     {
         id: 'edit',
@@ -36,7 +40,6 @@ const PromptIntentInstruction: Record<Exclude<FixupIntent, 'add'>, string> = {
     fix: 'The user wants you to correct a problem in the selected code by following their instructions.',
     document:
         'The user wants you to add documentation or comments to the selected code by following their instructions.',
-    test: 'The user wants you to add, update or fix a test by following their instructions',
 }
 
 export class Fixup implements Recipe {
@@ -187,20 +190,6 @@ export class Fixup implements Recipe {
                             )
                         )
                     )
-                )
-            /**
-             * The test intent is unique in that we likely want to be much more specific in that context that we retrieve.
-             * TODO(umpox): How can infer the current testing dependencies, etc?
-             */
-            case 'test':
-                // TODO: Remove preceding text from context?
-                // Currently the same as add|edit|fix
-                return getContextMessagesFromSelection(
-                    task.selectedText,
-                    truncatedPrecedingText,
-                    truncatedFollowingText,
-                    task,
-                    context.codebaseContext
                 )
             /**
              * Intents that are focused primarily on updating code within the current file and selection.
