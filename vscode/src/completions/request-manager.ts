@@ -1,12 +1,44 @@
+import { LRUCache } from 'lru-cache'
+
 import { debug } from '../log'
 
-import { CompletionsCache, CompletionsCacheDocumentState } from './cache/cache'
 import { ReferenceSnippet } from './context'
 import { logCompletionEvent } from './logger'
 import { CompletionProviderTracer, Provider } from './providers/provider'
 import { Completion } from './types'
 
-export interface RequestParams extends CompletionsCacheDocumentState {}
+export interface RequestParams {
+    /**
+     * The document URI.
+     */
+    uri: string
+
+    /**
+     * The prefix (up to the cursor) of the source file where the completion request was triggered.
+     */
+    prefix: string
+
+    /**
+     * The suffix (after the cursor) of the source file where the completion request was triggered.
+     */
+    suffix: string
+
+    /**
+     * The cursor position in the source file where the completion request was triggered.
+     */
+    position: number
+
+    /**
+     * The language of the document, used to ensure that completions are cached separately for
+     * different languages (even if the files have the same prefix).
+     */
+    languageId: string
+
+    /**
+     * Wether the completion request is multiline or not.
+     */
+    multiline: boolean
+}
 
 export interface RequestManagerResult {
     completions: Completion[]
@@ -25,7 +57,7 @@ export interface RequestManagerResult {
  * still inflight.
  */
 export class RequestManager {
-    private cache = new CompletionsCache()
+    private cache = new RequestCache()
     private readonly inflightRequests: Set<InflightRequest> = new Set()
 
     public async request(
@@ -54,7 +86,7 @@ export class RequestManager {
             .then(res => res.flat())
             .then(completions => {
                 // Cache even if the request was aborted or already fulfilled.
-                this.cache.add(params, completions)
+                this.cache.set(params, completions)
 
                 if (signal?.aborted) {
                     throw new Error('aborted')
@@ -114,5 +146,21 @@ class InflightRequest {
             this.resolve = res
             this.reject = rej
         })
+    }
+}
+
+class RequestCache {
+    private cache = new LRUCache<string, Completion[]>({ max: 50 })
+
+    private toCacheKey(key: RequestParams): string {
+        return key.prefix
+    }
+
+    public get(key: RequestParams): Completion[] | undefined {
+        return this.cache.get(this.toCacheKey(key))
+    }
+
+    public set(key: RequestParams, entry: Completion[]): void {
+        this.cache.set(this.toCacheKey(key), entry)
     }
 }
