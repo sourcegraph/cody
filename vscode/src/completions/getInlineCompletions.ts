@@ -247,13 +247,8 @@ async function doGetInlineCompletions({
         reqContext,
         completionProviders,
         contextResult?.context ?? [],
-        abortSignal,
         tracer ? createCompletionProviderTracer(tracer) : undefined
     )
-
-    if (abortSignal?.aborted) {
-        return null
-    }
 
     // Shared post-processing logic
     const processedCompletions = processInlineCompletions(
@@ -265,7 +260,11 @@ async function doGetInlineCompletions({
             docContext,
         }
     )
-    logCompletions(logId, processedCompletions, document, context)
+
+    if (!abortSignal?.aborted) {
+        logCompletions(logId, processedCompletions, document, context)
+    }
+
     return {
         logId,
         items: processedCompletions,

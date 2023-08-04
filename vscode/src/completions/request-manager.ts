@@ -49,7 +49,6 @@ export class RequestManager {
         params: RequestParams,
         providers: Provider[],
         context: ReferenceSnippet[],
-        signal?: AbortSignal,
         tracer?: CompletionProviderTracer
     ): Promise<RequestManagerResult> {
         const cachedCompletions = this.cache.get(params)
@@ -72,10 +71,6 @@ export class RequestManager {
             .then(completions => {
                 // Cache even if the request was aborted or already fulfilled.
                 this.cache.set(params, completions)
-
-                if (signal?.aborted) {
-                    throw new Error('aborted')
-                }
 
                 // A promise will never resolve twice, so we do not need to
                 // check if the request was already fulfilled.
