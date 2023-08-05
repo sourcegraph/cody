@@ -1,6 +1,6 @@
 import * as vscode from 'vscode'
 
-import { CodyPromptType } from '@sourcegraph/cody-shared/src/chat/prompts'
+import { CodyPromptType, ConfigFileName } from '@sourcegraph/cody-shared/src/chat/prompts'
 
 export function constructFileUri(fileName: string, rootDirPath?: string): vscode.Uri | undefined {
     if (!rootDirPath) {
@@ -46,15 +46,15 @@ export async function saveJSONFile(context: string, filePath: vscode.Uri, isSave
 
 // Create a file watcher for each .vscode/cody.json file
 export function createFileWatchers(fsPath?: string): vscode.FileSystemWatcher | null {
-    const uri = constructFileUri('.vscode', fsPath)
-    if (!uri) {
+    const fileUri = constructFileUri(ConfigFileName.vscode, fsPath)
+    if (!fileUri) {
         return null
     }
     // Use the file as the first arg to RelativePattern because a file watcher will be set up on the
     // first arg given. If this is a directory with many files, such as the user's home directory,
     // it will cause a very large number of watchers to be created, which will exhaust the system.
     // This occurs even if the second arg is a relative file path with no wildcards.
-    const watchPattern = new vscode.RelativePattern(uri, 'cody.json')
+    const watchPattern = new vscode.RelativePattern(fileUri, '*')
     const watcher = vscode.workspace.createFileSystemWatcher(watchPattern)
     return watcher
 }
