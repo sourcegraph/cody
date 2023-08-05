@@ -3,6 +3,7 @@ import * as vscode from 'vscode'
 
 import { version } from '../../package.json'
 import { isOsSupportedByApp, LOCAL_APP_URL, LocalEnv } from '../chat/protocol'
+import { constructFileUri } from '../custom-prompts/utils/helpers'
 import { debug } from '../log'
 
 import { AppJson, LOCAL_APP_LOCATIONS } from './LocalAppFsPaths'
@@ -59,8 +60,11 @@ export class LocalAppDetector implements vscode.Disposable {
         const markers = this.localAppMarkers
         for (const marker of markers) {
             const dirPath = expandHomeDir(marker.dir, homeDir)
-            const dirUri = vscode.Uri.file(dirPath)
-            const watchPattern = new vscode.RelativePattern(dirUri, marker.file)
+            const fileUri = constructFileUri(marker.file, marker.dir)
+            if (!fileUri) {
+                return
+            }
+            const watchPattern = new vscode.RelativePattern(fileUri, '*')
             const watcher = vscode.workspace.createFileSystemWatcher(watchPattern)
             watcher.onDidChange(() => this.fetchApp())
             this._watchers.push(watcher)
