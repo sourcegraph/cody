@@ -1,5 +1,5 @@
 import dedent from 'dedent'
-import { describe, expect, test } from 'vitest'
+import { describe, expect, test, vi } from 'vitest'
 import { URI } from 'vscode-uri'
 
 import { SourcegraphCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/client'
@@ -17,6 +17,7 @@ import {
     InlineCompletionsResultSource,
     LastInlineCompletionCandidate,
 } from './getInlineCompletions'
+import * as CompletionsLogger from './logger'
 import { createProviderConfig } from './providers/anthropic'
 import { RequestManager } from './request-manager'
 import { completion, documentAndPosition } from './testHelpers'
@@ -196,6 +197,39 @@ describe('getInlineCompletions', () => {
         ).toEqual<V>({
             items: [{ insertText: '1337' }],
             source: InlineCompletionsResultSource.Network,
+        })
+    })
+
+    describe('logger', () => {
+        test('logs a completion as shown', async () => {
+            const spy = vi.spyOn(CompletionsLogger, 'suggested')
+            await getInlineCompletions(params('foo = █', [completion`bar`]))
+            expect(spy).toHaveBeenCalled()
+        })
+
+        test('does not log a completion when the abort handler was triggered after a network fetch', async () => {
+            const spy = vi.spyOn(CompletionsLogger, 'suggested')
+            const abortController = new AbortController()
+            await getInlineCompletions({
+                ...params('const x = █', [completion`├1337┤`], { onNetworkRequest: () => abortController.abort() }),
+                abortSignal: abortController.signal,
+            })
+            expect(spy).not.toHaveBeenCalled()
+        })
+
+        test('does not log a completion if it does not overlap the completion popup', async () => {
+            const spy = vi.spyOn(CompletionsLogger, 'suggested')
+            const abortController = new AbortController()
+            await getInlineCompletions({
+                ...params('console.█', [completion`├log()┤`], {
+                    context: {
+                        triggerKind: vsCodeMocks.InlineCompletionTriggerKind.Automatic,
+                        selectedCompletionInfo: { text: 'dir', range: new vsCodeMocks.Range(0, 6, 0, 8) },
+                    },
+                }),
+                abortSignal: abortController.signal,
+            })
+            expect(spy).not.toHaveBeenCalled()
         })
     })
 
