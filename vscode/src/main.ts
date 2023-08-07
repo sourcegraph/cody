@@ -492,7 +492,7 @@ function createCompletionsProvider(
 
     const completionsProvider: vscode.InlineCompletionItemProvider & SetProviderInlineCompletionItemsTracer =
         config.autocompleteAdvancedEngine === 'agent'
-            ? new AgentInlineCompletionItemProvider(disposables)
+            ? new AgentInlineCompletionItemProvider(disposables, contextProvider, providerConfig)
             : new InlineCompletionItemProvider({
                   providerConfig,
                   history,

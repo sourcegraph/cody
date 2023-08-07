@@ -105,7 +105,7 @@ export class Agent extends MessageHandler {
         this.registerRequest('autocomplete/execute', async params => {
             console.error({
                 request: 'autocomplete/execute',
-                filePath: params.document.filePath,
+                filePath: params.filePath,
                 openDocuments: [...this.documents.keys()],
             })
             return { items: [{ insertText: 'poop', range: { start: params.position, end: params.position } }] }
