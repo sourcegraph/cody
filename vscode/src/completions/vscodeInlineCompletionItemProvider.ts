@@ -160,7 +160,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
                     ? {
                           uri: document.uri,
                           lastTriggerPosition: position,
-                          lastTriggerLinePrefix: document.lineAt(position).text.slice(0, position.character),
+                          lastTriggerCurrentLinePrefix: document.lineAt(position).text.slice(0, position.character),
                           result: {
                               logId: result.logId,
                               items: result.items,

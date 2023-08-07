@@ -10,7 +10,6 @@ import { DocumentContext, getCurrentDocContext } from './document'
 import { DocumentHistory } from './history'
 import * as CompletionLogger from './logger'
 import { detectMultiline } from './multiline'
-import { processInlineCompletions } from './processInlineCompletions'
 import { CompletionProviderTracer, Provider, ProviderConfig, ProviderOptions } from './providers/provider'
 import { RequestManager, RequestParams } from './request-manager'
 import { reuseLastCandidate } from './reuse-last-candidate'
@@ -66,7 +65,7 @@ export interface LastInlineCompletionCandidate {
     lastTriggerPosition: vscode.Position
 
     /** The prefix of the line (before the cursor position) where this candidate was generated. */
-    lastTriggerLinePrefix: string
+    lastTriggerCurrentLinePrefix: string
 
     /** The previously suggested result. */
     result: Pick<InlineCompletionsResult, 'logId' | 'items'>
@@ -242,30 +241,20 @@ async function doGetInlineCompletions({
         multiline,
     }
 
-    // Get completions from providers
+    // Get the processed completions from providers
     const { completions, cacheHit } = await requestManager.request(
         reqContext,
         completionProviders,
         contextResult?.context ?? [],
+
         tracer ? createCompletionProviderTracer(tracer) : undefined
     )
 
-    // Shared post-processing logic
-    const processedCompletions = processInlineCompletions(
-        completions.map(item => ({ insertText: item.content })),
-        {
-            document,
-            position,
-            multiline,
-            docContext,
-        }
-    )
-
-    logCompletions(logId, processedCompletions, document, context, abortSignal)
+    logCompletions(logId, completions, document, context, abortSignal)
 
     return {
         logId,
-        items: processedCompletions,
+        items: completions,
         source:
             cacheHit === 'hit'
                 ? InlineCompletionsResultSource.Cache

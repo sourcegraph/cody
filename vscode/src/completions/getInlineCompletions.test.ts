@@ -247,7 +247,7 @@ describe('getInlineCompletions', () => {
             return {
                 uri: document.uri,
                 lastTriggerPosition: position,
-                lastTriggerLinePrefix: document.lineAt(position).text.slice(0, position.character),
+                lastTriggerCurrentLinePrefix: document.lineAt(position).text.slice(0, position.character),
                 result: {
                     logId: '1',
                     items: Array.isArray(insertText)

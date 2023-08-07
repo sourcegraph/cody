@@ -10,7 +10,7 @@ import { InlineCompletionItem } from './types'
 export function reuseLastCandidate({
     document,
     position,
-    lastCandidate: { lastTriggerPosition, lastTriggerLinePrefix, ...lastCandidate },
+    lastCandidate: { lastTriggerPosition, lastTriggerCurrentLinePrefix, ...lastCandidate },
     docContext: { currentLinePrefix, currentLineSuffix },
 }: Required<Pick<InlineCompletionsParams, 'document' | 'position' | 'lastCandidate'>> & {
     docContext: DocumentContext
@@ -24,8 +24,9 @@ export function reuseLastCandidate({
 
     // There are 2 reasons we can reuse a candidate: typing-as-suggested or change-of-indentation.
 
-    const isIndentation = isWhitespace(currentLinePrefix) && currentLinePrefix.startsWith(lastTriggerLinePrefix)
-    const isDeindentation = isWhitespace(lastTriggerLinePrefix) && lastTriggerLinePrefix.startsWith(currentLinePrefix)
+    const isIndentation = isWhitespace(currentLinePrefix) && currentLinePrefix.startsWith(lastTriggerCurrentLinePrefix)
+    const isDeindentation =
+        isWhitespace(lastTriggerCurrentLinePrefix) && lastTriggerCurrentLinePrefix.startsWith(currentLinePrefix)
     const isIndentationChange = currentLineSuffix === '' && (isIndentation || isDeindentation)
 
     const itemsToReuse = lastCandidate.result.items
@@ -33,7 +34,7 @@ export function reuseLastCandidate({
             // Allow reuse if the user is (possibly) typing forward as suggested by the last
             // candidate completion. We still need to filter the candidate items to see which ones
             // the user's typing actually follows.
-            const lastCompletion = lastTriggerLinePrefix + item.insertText
+            const lastCompletion = lastTriggerCurrentLinePrefix + item.insertText
             const isTypingAsSuggested =
                 lastCompletion.startsWith(currentLinePrefix) && position.isAfterOrEqual(lastTriggerPosition)
             if (isTypingAsSuggested) {
@@ -42,7 +43,7 @@ export function reuseLastCandidate({
 
             // Allow reuse if only the indentation (leading whitespace) has changed.
             if (isIndentationChange) {
-                return { insertText: lastTriggerLinePrefix.slice(currentLinePrefix.length) + item.insertText }
+                return { insertText: lastTriggerCurrentLinePrefix.slice(currentLinePrefix.length) + item.insertText }
             }
 
             return undefined

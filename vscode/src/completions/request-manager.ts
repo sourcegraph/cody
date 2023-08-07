@@ -7,9 +7,10 @@ import { ReferenceSnippet } from './context'
 import { DocumentContext } from './document'
 import { LastInlineCompletionCandidate } from './getInlineCompletions'
 import { logCompletionEvent } from './logger'
+import { processInlineCompletions } from './processInlineCompletions'
 import { CompletionProviderTracer, Provider } from './providers/provider'
 import { reuseLastCandidate } from './reuse-last-candidate'
-import { Completion } from './types'
+import { InlineCompletionItem } from './types'
 
 export interface RequestParams {
     /** The request's document **/
@@ -26,7 +27,7 @@ export interface RequestParams {
 }
 
 export interface RequestManagerResult {
-    completions: Completion[]
+    completions: InlineCompletionItem[]
     cacheHit: 'hit' | 'hit-after-request-started' | null
 }
 
@@ -68,17 +69,29 @@ export class RequestManager {
 
         Promise.all(providers.map(c => c.generateCompletions(networkRequestAbortController.signal, context, tracer)))
             .then(res => res.flat())
-            .then(completions => {
+            .then(completions =>
+                // Shared post-processing logic
+                processInlineCompletions(
+                    completions.map(item => ({ insertText: item.content })),
+                    {
+                        document: params.document,
+                        position: params.position,
+                        multiline: params.multiline,
+                        docContext: params.docContext,
+                    }
+                )
+            )
+            .then(processedCompletions => {
                 // Cache even if the request was aborted or already fulfilled.
-                this.cache.set(params, completions)
+                this.cache.set(params, processedCompletions)
 
                 // A promise will never resolve twice, so we do not need to
                 // check if the request was already fulfilled.
-                request.resolve({ completions, cacheHit: null })
+                request.resolve({ completions: processedCompletions, cacheHit: null })
 
-                this.testIfResultCanBeUsedForInflightRequests(request, completions)
+                this.testIfResultCanBeUsedForInflightRequests(request, processedCompletions)
 
-                return completions
+                return processedCompletions
             })
             .catch(error => {
                 request.reject(error)
@@ -96,16 +109,16 @@ export class RequestManager {
      */
     private testIfResultCanBeUsedForInflightRequests(
         resolvedRequest: InflightRequest,
-        completions: Completion[]
+        items: InlineCompletionItem[]
     ): void {
         const { document, position, docContext } = resolvedRequest.params
         const lastCandidate: LastInlineCompletionCandidate = {
             uri: document.uri,
             lastTriggerPosition: position,
-            lastTriggerLinePrefix: docContext.prefix,
+            lastTriggerCurrentLinePrefix: docContext.currentLinePrefix,
             result: {
-                logId: 'unknown',
-                items: completions.map(c => ({ insertText: c.content })),
+                logId: '',
+                items,
             },
         }
 
@@ -125,14 +138,22 @@ export class RequestManager {
                 docContext: request.params.docContext,
             })
 
+            console.log(
+                'synth?',
+                resolvedRequest.params.docContext.currentLinePrefix,
+                items,
+                request.params.docContext.currentLinePrefix,
+                { synthesizedCandidate }
+            )
             if (synthesizedCandidate) {
-                const synthesizedCompletions = synthesizedCandidate.items.map(c => ({ content: c.insertText }))
+                console.log('synth!', synthesizedCandidate)
+                const synthesizedItems = synthesizedCandidate.items
 
                 logCompletionEvent('synthesizedFromParallelRequest')
                 debug('RequestManager', 'cache hit after request started', {
-                    verbose: { params: request.params, cachedCompletions: synthesizedCompletions },
+                    verbose: { params: request.params, cachedCompletions: synthesizedItems },
                 })
-                request.resolve({ completions: synthesizedCompletions, cacheHit: 'hit-after-request-started' })
+                request.resolve({ completions: synthesizedItems, cacheHit: 'hit-after-request-started' })
                 this.inflightRequests.delete(request)
             }
         }
@@ -158,17 +179,17 @@ class InflightRequest {
 }
 
 class RequestCache {
-    private cache = new LRUCache<string, Completion[]>({ max: 50 })
+    private cache = new LRUCache<string, InlineCompletionItem[]>({ max: 50 })
 
     private toCacheKey(key: RequestParams): string {
         return key.docContext.prefix
     }
 
-    public get(key: RequestParams): Completion[] | undefined {
+    public get(key: RequestParams): InlineCompletionItem[] | undefined {
         return this.cache.get(this.toCacheKey(key))
     }
 
-    public set(key: RequestParams, entry: Completion[]): void {
+    public set(key: RequestParams, entry: InlineCompletionItem[]): void {
         this.cache.set(this.toCacheKey(key), entry)
     }
 }

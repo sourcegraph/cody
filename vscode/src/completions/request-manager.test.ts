@@ -60,8 +60,7 @@ describe('RequestManager', () => {
     beforeEach(() => {
         const requestManager = new RequestManager()
 
-        createRequest = (prefix: string, provider: Provider) =>
-            requestManager.request(docState(prefix), [provider], [], new AbortController().signal)
+        createRequest = (prefix: string, provider: Provider) => requestManager.request(docState(prefix), [provider], [])
     })
 
     it('resolves a single request', async () => {
@@ -70,16 +69,10 @@ describe('RequestManager', () => {
 
         setTimeout(() => provider.resolveRequest(["'hello')"]), 0)
 
-        await expect(createRequest(prefix, provider)).resolves.toMatchInlineSnapshot(`
-          {
-            "cacheHit": null,
-            "completions": [
-              {
-                "content": "'hello')",
-              },
-            ],
-          }
-        `)
+        const { completions, cacheHit } = await createRequest(prefix, provider)
+
+        expect(completions[0].insertText).toBe("'hello')")
+        expect(cacheHit).toBeNull()
     })
 
     it('resolves a single request', async () => {
@@ -90,16 +83,10 @@ describe('RequestManager', () => {
 
         const provider2 = createProvider(prefix)
 
-        await expect(createRequest(prefix, provider2)).resolves.toMatchInlineSnapshot(`
-          {
-            "cacheHit": "hit",
-            "completions": [
-              {
-                "content": "'hello')",
-              },
-            ],
-          }
-        `)
+        const { completions, cacheHit } = await createRequest(prefix, provider2)
+
+        expect(cacheHit).toBe('hit')
+        expect(completions[0].insertText).toBe("'hello')")
     })
 
     it('keeps requests running when a new request comes in', async () => {
@@ -116,7 +103,7 @@ describe('RequestManager', () => {
 
         provider2.resolveRequest(["'hello')"])
 
-        expect((await promise2).completions[0].content).toBe("'hello')")
+        expect((await promise2).completions[0].insertText).toBe("'hello')")
 
         // Since the later request resolves first, the first request will not
         // resolve yet.
@@ -124,7 +111,7 @@ describe('RequestManager', () => {
         expect(provider2.didFinishNetworkRequest).toBe(true)
 
         provider1.resolveRequest(['log();'])
-        expect((await promise1).completions[0].content).toBe('log();')
+        expect((await promise1).completions[0].insertText).toBe('log();')
 
         expect(provider1.didFinishNetworkRequest).toBe(true)
     })
@@ -140,26 +127,10 @@ describe('RequestManager', () => {
 
         provider1.resolveRequest(["log('hello')"])
 
-        expect(await promise1).toMatchInlineSnapshot(`
-          {
-            "cacheHit": null,
-            "completions": [
-              {
-                "content": "log('hello')",
-              },
-            ],
-          }
-        `)
-        expect(await promise2).toMatchInlineSnapshot(`
-          {
-            "cacheHit": "hit-after-request-started",
-            "completions": [
-              {
-                "content": "'hello')",
-              },
-            ],
-          }
-        `)
+        expect((await promise1).completions[0].insertText).toBe("log('hello')")
+        const { completions, cacheHit } = await promise2
+        expect(completions[0].insertText).toBe("'hello')")
+        expect(cacheHit).toBe('hit-after-request-started')
 
         expect(provider1.didFinishNetworkRequest).toBe(true)
         expect(provider2.didFinishNetworkRequest).toBe(false)
