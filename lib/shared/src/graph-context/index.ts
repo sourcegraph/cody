@@ -18,7 +18,7 @@ export class GraphContextFetcher {
             revision: commitID = 'HEAD',
             filePath = '',
             content = '',
-            selection,
+            selectionRange,
         } = this.editor.getActiveTextEditor() || {}
         if (!repository) {
             return []
@@ -29,7 +29,7 @@ export class GraphContextFetcher {
             commitID,
             pathRelativeToRoot(filePath, this.editor.getWorkspaceRootPath() || ''),
             content,
-            getActiveSelectionRange(selection)
+            getActiveSelectionRange(selectionRange)
         )
         return isErrorLike(response) ? [] : response
     }
