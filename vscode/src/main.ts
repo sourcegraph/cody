@@ -188,6 +188,7 @@ const register = async (
         options: {
             document?: vscode.TextDocument
             instruction?: string
+            partialInstruction?: string
             range?: vscode.Range
         } = {}
     ): Promise<void> => {
@@ -203,7 +204,7 @@ const register = async (
 
         const task = options.instruction
             ? fixup.createTask(document.uri, options.instruction, range)
-            : await fixup.promptUserForTask()
+            : await fixup.promptUserForTask(options.partialInstruction)
         if (!task) {
             return
         }
@@ -308,6 +309,12 @@ const register = async (
             'cody.action.commands.menu',
             showDesc => editor.controllers.command?.menu('default', showDesc)
         ),
+        vscode.commands.registerCommand('cody.action.generate-test', () =>
+            executeFixup({ partialInstruction: 'Generate a unit test for the selected code' })
+        ),
+        vscode.commands.registerCommand('cody.action.generate-documentation', () =>
+            executeFixup({ partialInstruction: 'Generate documentation for the selected code' })
+        ),
         vscode.commands.registerCommand(
             'cody.action.commands.custom.menu',
             () => editor.controllers.command?.menu('custom')
@@ -336,6 +343,12 @@ const register = async (
             await executeRecipeInSidebar('custom-prompt', true, '/smell')
             telemetryService.log('CodyVSCodeExtension:recipe:find-code-smells:executed')
         }),
+        vscode.commands.registerCommand('cody.command.explain-code', () =>
+            executeRecipeInSidebar('custom-prompt', true, '/explain')
+        ),
+        vscode.commands.registerCommand('cody.recipe.explain-code', () =>
+            executeRecipeInSidebar('explain-code-detailed')
+        ),
         vscode.commands.registerCommand('cody.command.inline-touch', () =>
             executeRecipeInSidebar('inline-touch', false)
         ),

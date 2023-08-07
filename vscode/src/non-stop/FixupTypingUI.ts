@@ -107,13 +107,13 @@ export class FixupTypingUI {
         )
     }
 
-    public async show(): Promise<FixupTask | null> {
+    public async show(partialInstruction?: string): Promise<FixupTask | null> {
         const editor = vscode.window.activeTextEditor
         if (!editor) {
             return null
         }
         const range = editor.selection
-        const instruction = (await this.getInstructionFromQuickPick())?.trim()
+        const instruction = (await this.getInstructionFromQuickPick({ value: partialInstruction }))?.trim()
         if (!instruction) {
             return null
         }
