@@ -120,6 +120,9 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
         const abortController = new AbortController()
         this.abortOpenCompletions()
         if (token) {
+            if (token.isCancellationRequested) {
+                abortController.abort()
+            }
             token.onCancellationRequested(() => abortController.abort())
             this.abortOpenCompletions = () => abortController.abort()
         }
@@ -156,8 +159,8 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
                 result?.items.length > 0
                     ? {
                           uri: document.uri,
-                          originalTriggerPosition: position,
-                          originalTriggerLinePrefix: document.lineAt(position).text.slice(0, position.character),
+                          lastTriggerPosition: position,
+                          lastTriggerCurrentLinePrefix: document.lineAt(position).text.slice(0, position.character),
                           result: {
                               logId: result.logId,
                               items: result.items,

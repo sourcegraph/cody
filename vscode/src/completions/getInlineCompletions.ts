@@ -2,7 +2,6 @@ import * as vscode from 'vscode'
 import { URI } from 'vscode-uri'
 
 import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
-import { isDefined } from '@sourcegraph/cody-shared/src/common'
 
 import { debug } from '../log'
 
@@ -11,9 +10,9 @@ import { DocumentContext, getCurrentDocContext } from './document'
 import { DocumentHistory } from './history'
 import * as CompletionLogger from './logger'
 import { detectMultiline } from './multiline'
-import { processInlineCompletions } from './processInlineCompletions'
 import { CompletionProviderTracer, Provider, ProviderConfig, ProviderOptions } from './providers/provider'
-import { RequestManager } from './request-manager'
+import { RequestManager, RequestParams } from './request-manager'
+import { reuseLastCandidate } from './reuse-last-candidate'
 import { ProvideInlineCompletionsItemTraceData } from './tracer'
 import { InlineCompletionItem } from './types'
 import { isAbortError, SNIPPET_WINDOW_SIZE } from './utils'
@@ -63,10 +62,10 @@ export interface LastInlineCompletionCandidate {
     uri: URI
 
     /** The position at which this candidate was generated. */
-    originalTriggerPosition: vscode.Position
+    lastTriggerPosition: vscode.Position
 
     /** The prefix of the line (before the cursor position) where this candidate was generated. */
-    originalTriggerLinePrefix: string
+    lastTriggerCurrentLinePrefix: string
 
     /** The previously suggested result. */
     result: Pick<InlineCompletionsResult, 'logId' | 'items'>
@@ -92,6 +91,7 @@ export interface InlineCompletionsResult {
 export enum InlineCompletionsResultSource {
     Network,
     Cache,
+    CacheAfterRequestStart,
 
     /**
      * The user is typing as suggested by the currently visible ghost text. For example, if the
@@ -172,9 +172,7 @@ async function doGetInlineCompletions({
 
     // Check if the user is typing as suggested by the last candidate completion (that is shown as
     // ghost text in the editor), and reuse it if it is still valid.
-    const resultToReuse = lastCandidate
-        ? reuseResultFromLastCandidate({ document, position, lastCandidate, docContext })
-        : null
+    const resultToReuse = lastCandidate ? reuseLastCandidate({ document, position, lastCandidate, docContext }) : null
     if (resultToReuse) {
         return resultToReuse
     }
@@ -236,96 +234,34 @@ async function doGetInlineCompletions({
 
     CompletionLogger.networkRequestStarted(logId, contextResult?.logSummary ?? null)
 
-    // Get completions from providers
+    const reqContext: RequestParams = {
+        document,
+        docContext,
+        position,
+        multiline,
+    }
+
+    // Get the processed completions from providers
     const { completions, cacheHit } = await requestManager.request(
-        { prefix: docContext.prefix },
+        reqContext,
         completionProviders,
         contextResult?.context ?? [],
-        abortSignal,
+
         tracer ? createCompletionProviderTracer(tracer) : undefined
     )
 
-    if (abortSignal?.aborted) {
-        return null
-    }
+    logCompletions(logId, completions, document, docContext, context, abortSignal)
 
-    // Shared post-processing logic
-    const processedCompletions = processInlineCompletions(
-        completions.map(item => ({ insertText: item.content })),
-        {
-            document,
-            position,
-            multiline,
-            docContext,
-        }
-    )
-    logCompletions(logId, processedCompletions, document, context)
     return {
         logId,
-        items: processedCompletions,
-        source: cacheHit ? InlineCompletionsResultSource.Cache : InlineCompletionsResultSource.Network,
+        items: completions,
+        source:
+            cacheHit === 'hit'
+                ? InlineCompletionsResultSource.Cache
+                : cacheHit === 'hit-after-request-started'
+                ? InlineCompletionsResultSource.CacheAfterRequestStart
+                : InlineCompletionsResultSource.Network,
     }
-}
-
-function isWhitespace(s: string): boolean {
-    return /^\s*$/.test(s)
-}
-
-/**
- * See test cases for the expected behaviors.
- */
-function reuseResultFromLastCandidate({
-    document,
-    position,
-    lastCandidate: { originalTriggerPosition, originalTriggerLinePrefix, ...lastCandidate },
-    docContext: { currentLinePrefix, currentLineSuffix },
-}: Required<Pick<InlineCompletionsParams, 'document' | 'position' | 'lastCandidate'>> & {
-    docContext: DocumentContext
-}): InlineCompletionsResult | null {
-    const isSameDocument = lastCandidate.uri.toString() === document.uri.toString()
-    const isSameLine = originalTriggerPosition.line === position.line
-
-    if (!isSameDocument || !isSameLine) {
-        return null
-    }
-
-    // There are 2 reasons we can reuse a candidate: typing-as-suggested or change-of-indentation.
-
-    const isIndentation = isWhitespace(currentLinePrefix) && currentLinePrefix.startsWith(originalTriggerLinePrefix)
-    const isDeindentation =
-        isWhitespace(originalTriggerLinePrefix) && originalTriggerLinePrefix.startsWith(currentLinePrefix)
-    const isIndentationChange = currentLineSuffix === '' && (isIndentation || isDeindentation)
-
-    const itemsToReuse = lastCandidate.result.items
-        .map((item): InlineCompletionItem | undefined => {
-            // Allow reuse if the user is (possibly) typing forward as suggested by the last
-            // candidate completion. We still need to filter the candidate items to see which ones
-            // the user's typing actually follows.
-            const originalCompletion = originalTriggerLinePrefix + item.insertText
-            const isTypingAsSuggested =
-                originalCompletion.startsWith(currentLinePrefix) && position.isAfterOrEqual(originalTriggerPosition)
-            if (isTypingAsSuggested) {
-                return { insertText: originalCompletion.slice(currentLinePrefix.length) }
-            }
-
-            // Allow reuse if only the indentation (leading whitespace) has changed.
-            if (isIndentationChange) {
-                return { insertText: originalTriggerLinePrefix.slice(currentLinePrefix.length) + item.insertText }
-            }
-
-            return undefined
-        })
-        .filter(isDefined)
-    return itemsToReuse.length > 0
-        ? {
-              // Reuse the logId to so that typing text of a displayed completion will not log a new
-              // completion on every keystroke.
-              logId: lastCandidate.result.logId,
-
-              source: InlineCompletionsResultSource.LastCandidate,
-              items: itemsToReuse,
-          }
-        : null
 }
 
 interface GetCompletionProvidersParams
@@ -444,27 +380,57 @@ function logCompletions(
     logId: string,
     completions: InlineCompletionItem[],
     document: vscode.TextDocument,
-    context: vscode.InlineCompletionContext
+    docContext: DocumentContext,
+    context: vscode.InlineCompletionContext,
+    abortSignal: AbortSignal | undefined
 ): void {
-    if (completions.length > 0) {
-        // When the VS Code completion popup is open and we suggest a completion that does not match
-        // the currently selected completion, VS Code won't display it. For now we make sure to not
-        // log these completions as displayed.
-        //
-        // TODO: Take this into account when creating the completion prefix.
-        let isCompletionVisible = true
-        if (context.selectedCompletionInfo) {
-            const currentText = document.getText(context.selectedCompletionInfo.range)
-            const selectedText = context.selectedCompletionInfo.text
-            if (!(currentText + completions[0].insertText).startsWith(selectedText)) {
-                isCompletionVisible = false
+    CompletionLogger.loaded(logId)
+
+    // There are these cases when a completion is being returned here but won't
+    // be displayed by VS Code.
+    //
+    // - When the abort signal was already triggered and a new completion
+    //   request was stared.
+    // - When the VS Code completion popup is open and we suggest a completion
+    //   that does not match the currently selected completion. For now we make
+    //   sure to not log these completions as displayed.
+    //   TODO: Take this into account when creating the completion prefix.
+    // - When no completions contains characters in the current line that are
+    //   not in the current line suffix. Since VS Code will try to merge
+    //   completion with the suffix, we have to do a per-character diff to test
+    //   this.
+    const isAborted = abortSignal ? abortSignal.aborted : false
+    let isMatchingCompletionPopup = true
+    if (context.selectedCompletionInfo) {
+        const currentText = document.getText(context.selectedCompletionInfo.range)
+        const selectedText = context.selectedCompletionInfo.text
+        if (completions.length > 0 && !(currentText + completions[0].insertText).startsWith(selectedText)) {
+            isMatchingCompletionPopup = false
+        }
+    }
+    let containsCompletionThatMatchesSuffix = false
+    for (const completion of completions) {
+        const insertion = completion.insertText
+        const suffix = docContext.currentLineSuffix
+        let j = 0
+        // eslint-disable-next-line @typescript-eslint/prefer-for-of
+        for (let i = 0; i < insertion.length; i++) {
+            if (insertion[i] === suffix[j]) {
+                j++
             }
         }
-
-        if (isCompletionVisible) {
-            CompletionLogger.suggest(logId, isCompletionVisible)
+        if (j === suffix.length) {
+            containsCompletionThatMatchesSuffix = true
         }
-    } else {
-        CompletionLogger.noResponse(logId)
+    }
+
+    const isVisible = !isAborted && isMatchingCompletionPopup && containsCompletionThatMatchesSuffix
+
+    if (isVisible) {
+        if (completions.length > 0) {
+            CompletionLogger.suggested(logId)
+        } else {
+            CompletionLogger.noResponse(logId)
+        }
     }
 }
