@@ -140,5 +140,6 @@ export function createProviderConfig(unstableHuggingFaceOptions: UnstableHugging
         maximumContextCharacters: CONTEXT_WINDOW_CHARS,
         enableExtendedMultilineTriggers: true,
         identifier: PROVIDER_IDENTIFIER,
+        supportsInfilling: true,
     }
 }

@@ -30,6 +30,11 @@ export interface ProviderConfig {
      * A string identifier for the provider config used in event logs.
      */
     identifier: string
+
+    /**
+     * Indicating whether the provider supports infilling.
+     */
+    supportsInfilling: boolean
 }
 
 export interface ProviderOptions {
