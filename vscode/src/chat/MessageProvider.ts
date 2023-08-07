@@ -570,18 +570,18 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
                 return vscode.commands.executeCommand('cody.action.commands.menu')
             case text === '/commands-settings':
                 return vscode.commands.executeCommand('cody.settings.commands')
-            case /^\/o(pen)?/i.test(text) && this.editor.controllers.command !== undefined:
+            case /^\/o(pen)?\s.*$/.test(text) && this.editor.controllers.command !== undefined:
                 // open the user's ~/.vscode/cody.json file
                 await this.editor.controllers.command?.open(text.split(' ')[1])
                 return null
-            case /^\/r(eset)?/i.test(text):
+            case /^\/r(eset)?$/.test(text):
                 await this.clearAndRestartSession()
                 return null
-            case /^\/s(earch)?(\s)?/i.test(text):
+            case /^\/s(earch)?\s.*$/.test(text):
                 return { text, recipeId: 'context-search' }
-            case /^\/f(ix)?(\s)?/i.test(text):
+            case /^\/f(ix)?\s.*$/.test(text):
                 return { text, recipeId: 'fixup' }
-            case /^\/(explain|doc|test)$/i.test(text): {
+            case /^\/(explain|doc|test)$/.test(text): {
                 const promptText = this.editor.controllers.command?.find(text, true) || null
                 await this.editor.controllers.command?.get('command')
                 if (!promptText) {
