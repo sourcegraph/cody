@@ -37,10 +37,9 @@ export interface RequestManagerResult {
  * document. This allows us to cache the results of expensive completions and
  * return them when the user triggers a completion again.
  *
- * It also retests the request against the completions cache when an inflight
- * request resolves. Since our completions cache is capable of synthesizing
- * completions, it can be used to provide completions for requests that are
- * still inflight.
+ * It also retests the request against the completion result of an inflight
+ * request that just resolved and uses the last candidate logic to synthesize
+ * completions if possible.
  */
 export class RequestManager {
     private cache = new RequestCache()
@@ -73,12 +72,7 @@ export class RequestManager {
                 // Shared post-processing logic
                 processInlineCompletions(
                     completions.map(item => ({ insertText: item.content })),
-                    {
-                        document: params.document,
-                        position: params.position,
-                        multiline: params.multiline,
-                        docContext: params.docContext,
-                    }
+                    params
                 )
             )
             .then(processedCompletions => {
