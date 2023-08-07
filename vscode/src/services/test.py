@@ -1,0 +1,3 @@
+# Write hello world
+
+print()
