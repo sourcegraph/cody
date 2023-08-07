@@ -461,7 +461,7 @@ const register = async (
     // TODO(umpox): We should move the task view to a quick pick before enabling it everywhere.
     // It is too obstructive when it is in the same window as the sidebar chat.
     if (initialConfig.experimentalNonStop || process.env.CODY_TESTING === 'true') {
-        fixup.register()
+        fixup.registerTreeView()
         await vscode.commands.executeCommand('setContext', 'cody.nonstop.fixups.enabled', true)
     }
 

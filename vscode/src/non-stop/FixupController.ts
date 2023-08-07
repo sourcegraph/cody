@@ -68,10 +68,11 @@ export class FixupController
     }
 
     /**
-     * Register commands and views which are entrypoints to the feature. Call this if the feature
-     * is enabled.
+     * Register the tree view that provides an additional UI for Fixups.
+     * Call this if the feature is enabled.
+     * TODO: We should move this to a QuickPick and enable it by default.
      */
-    public register(): void {
+    public registerTreeView(): void {
         this._disposables.push(vscode.window.registerTreeDataProvider('cody.fixup.tree.view', this.taskViewProvider))
     }
 
