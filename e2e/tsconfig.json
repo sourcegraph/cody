@@ -7,8 +7,5 @@
   },
   "include": ["**/*", ".*", "package.json"],
   "exclude": ["dist"],
-  "references": [
-    { "path": "../lib/shared" },
-    { "path": "../agent" }
-  ],
+  "references": [{ "path": "../lib/shared" }, { "path": "../agent" }],
 }
