@@ -377,6 +377,7 @@
         "command": "cody.fixup.apply",
         "category": "Cody",
         "title": "Apply fixup",
+        "when": "cody.nonstop.fixups.enabled",
         "enablement": "!cody.fixup.view.isEmpty",
         "icon": "$(check)"
       },
@@ -384,6 +385,7 @@
         "command": "cody.fixup.apply-all",
         "category": "Cody",
         "title": "Apply all fixups",
+        "when": "cody.nonstop.fixups.enabled",
         "enablement": "!cody.fixup.view.isEmpty",
         "icon": "$(check-all)"
       },
@@ -391,6 +393,7 @@
         "command": "cody.fixup.apply-by-file",
         "category": "Cody",
         "title": "Apply fixups to selected directory",
+        "when": "cody.nonstop.fixups.enabled",
         "enablement": "!cody.fixup.view.isEmpty",
         "icon": "$(check-all)"
       },
@@ -398,6 +401,7 @@
         "command": "cody.fixup.diff",
         "category": "Cody",
         "title": "Show diff for fixup",
+        "when": "cody.nonstop.fixups.enabled",
         "enablement": "!cody.fixup.view.isEmpty",
         "icon": "$(diff)"
       },
