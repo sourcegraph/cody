@@ -169,7 +169,7 @@ class RequestCache {
     private cache = new LRUCache<string, InlineCompletionItem[]>({ max: 50 })
 
     private toCacheKey(key: RequestParams): string {
-        return key.docContext.prefix
+        return `${key.docContext.prefix}█${key.docContext.nextNonEmptyLine}`
     }
 
     public get(key: RequestParams): InlineCompletionItem[] | undefined {
