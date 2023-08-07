@@ -7,7 +7,12 @@ import { CustomCommandConfigMenuItems, menu_options } from '../utils/menu'
 
 import { CodyCommand, CustomCommandsBuilderMenu } from './CustomCommandBuilderMenu'
 
-export async function showCommandMenu(items: QuickPickItem[]): Promise<QuickPickItem> {
+interface CommandMenuResponse {
+    selectedItem: QuickPickItem
+    input: string
+}
+
+export async function showCommandMenu(items: QuickPickItem[]): Promise<CommandMenuResponse> {
     const options = {
         title: 'Cody Commands',
         placeHolder: 'Search for a command',
@@ -25,7 +30,7 @@ export async function showCommandMenu(items: QuickPickItem[]): Promise<QuickPick
         const labels = new Set(items.map(item => item.label))
         quickPick.onDidChangeValue(() => {
             if (quickPick.value && !labels.has(quickPick.value)) {
-                quickPick.items = [menu_options.submit, ...items]
+                quickPick.items = [menu_options.submitChat, menu_options.submitFix, ...items]
                 input = quickPick.value
                 return
             }
@@ -34,10 +39,7 @@ export async function showCommandMenu(items: QuickPickItem[]): Promise<QuickPick
 
         quickPick.onDidAccept(() => {
             const selection = quickPick.activeItems[0]
-            if (selection.label === 'Submit question') {
-                selection.detail = input
-            }
-            resolve(selection)
+            resolve({ selectedItem: selection, input })
             quickPick.hide()
         })
         quickPick.show()

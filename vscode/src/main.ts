@@ -282,10 +282,6 @@ const register = async (
             'cody.fixup.new',
             (range: vscode.Range): Promise<void> => executeFixup({ range })
         ),
-        vscode.commands.registerCommand(
-            'cody.fixup.add',
-            (instruction: string, range: vscode.Range): Promise<void> => executeFixup({ instruction, range })
-        ),
         vscode.commands.registerCommand('cody.inline.new', async () => {
             // move focus line to the end of the current selection
             await vscode.commands.executeCommand('cursorLineEndSelect')
@@ -324,6 +320,10 @@ const register = async (
         // Recipes
         vscode.commands.registerCommand('cody.action.chat', input =>
             executeRecipeInSidebar('chat-question', true, input)
+        ),
+        vscode.commands.registerCommand(
+            'cody.action.fixup',
+            (instruction: string, range: vscode.Range): Promise<void> => executeFixup({ instruction, range })
         ),
         vscode.commands.registerCommand(
             'cody.action.commands.menu',
