@@ -245,7 +245,7 @@
       {
         "command": "cody.command.edit-code",
         "category": "Ask Cody",
-        "title": "Edit Code"
+        "title": "Refactor Code"
       },
       {
         "command": "cody.command.explain-code",
@@ -364,7 +364,7 @@
       {
         "command": "cody.fixup.new",
         "category": "Cody",
-        "title": "Fixup (Experimental)",
+        "title": "Fixup",
         "icon": "$(sparkle)"
       },
       {
@@ -626,12 +626,6 @@
         {
           "command": "cody.action.commands.menu",
           "when": "cody.activated && config.cody.experimental.editorTitleCommandIcon",
-          "group": "navigation",
-          "visibility": "visible"
-        },
-        {
-          "command": "cody.fixup.new",
-          "when": "cody.activated",
           "group": "navigation",
           "visibility": "visible"
         }

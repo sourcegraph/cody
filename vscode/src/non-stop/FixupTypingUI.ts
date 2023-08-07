@@ -7,7 +7,7 @@ import { FixupTaskFactory } from './roles'
 
 type FixupCommand = `/${FixupIntent}`
 interface FixupQuickPickItem {
-    detail: string
+    description: string
     placeholder: string
     /**
      * Optional value to insert.
@@ -20,28 +20,15 @@ const FixupCommands = new Map<FixupCommand, FixupQuickPickItem>([
     [
         '/fix',
         {
-            detail: 'Fix a problem in the selected code',
+            description: 'Fix a problem in the selected code',
             placeholder: 'Describe what you want Cody to fix',
-        },
-    ],
-    [
-        '/add',
-        {
-            detail: 'Suggest new code',
-            placeholder: 'Describe what you want Cody to add',
-        },
-    ],
-    [
-        '/edit',
-        {
-            detail: 'Edit the selected code',
-            placeholder: 'Describe what you want Cody to change',
+            value: 'Fix any problems in the selected code',
         },
     ],
     [
         '/document',
         {
-            detail: 'Generate documentation or comments for the selected code',
+            description: 'Generate documentation or comments for the selected code',
             placeholder: 'Describe what you want Cody to do',
             value: 'Generate documentation or comments for the selected code',
         },
@@ -71,6 +58,12 @@ export class FixupTypingUI {
         quickPick.buttons = [{ tooltip: 'Cody', iconPath: new vscode.ThemeIcon('cody-logo-heavy') }]
         quickPick.ignoreFocusOut = true
         quickPick.value = value
+
+        // VS Code automatically sorts quick pick items by label.
+        // We want the 'edit' item to always be first, so we remove this.
+        // Property not currently documented, open issue: https://github.com/microsoft/vscode/issues/73904
+        ;(quickPick as any).sortByLabel = false
+
         quickPick.onDidTriggerButton(() => {
             void vscode.commands.executeCommand('cody.focus')
             quickPick.hide()
