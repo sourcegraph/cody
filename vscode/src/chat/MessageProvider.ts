@@ -21,7 +21,6 @@ import { VSCodeEditor } from '../editor/vscode-editor'
 import { PlatformContext } from '../extension.common'
 import { debug } from '../log'
 import { FixupTask } from '../non-stop/FixupTask'
-import { IdleRecipeRunner } from '../non-stop/roles'
 import { AuthProvider, isNetworkError } from '../services/AuthProvider'
 import { LocalStorage } from '../services/LocalStorageProvider'
 import { TestSupport } from '../test-support'
@@ -68,7 +67,7 @@ export interface MessageProviderOptions {
     platform: Pick<PlatformContext, 'recipes'>
 }
 
-export abstract class MessageProvider extends MessageHandler implements vscode.Disposable, IdleRecipeRunner {
+export abstract class MessageProvider extends MessageHandler implements vscode.Disposable {
     public currentChatID = ''
 
     // input and chat history are shared across all MessageProvider instances
@@ -128,50 +127,6 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         await this.sendCodyCommands()
     }
 
-    private idleCallbacks_: (() => void)[] = []
-
-    private get isIdle(): boolean {
-        // TODO: Use a cooldown timer for typing and interaction
-        return !this.isMessageInProgress
-    }
-
-    private scheduleIdleRecipes(): void {
-        setTimeout(() => {
-            if (!this.isIdle) {
-                // We rely on the recipe ending re-scheduling idle recipes
-                return
-            }
-            const notifyIdle = this.idleCallbacks_.shift()
-            if (!notifyIdle) {
-                return
-            }
-            try {
-                notifyIdle()
-            } catch (error) {
-                console.error(error)
-            }
-            if (this.idleCallbacks_.length) {
-                this.scheduleIdleRecipes()
-            }
-        }, 1000)
-    }
-
-    public onIdle(callback: () => void): void {
-        if (this.isIdle) {
-            // Run "now", but not synchronously on this callstack.
-            void Promise.resolve().then(callback)
-        } else {
-            this.idleCallbacks_.push(callback)
-        }
-    }
-
-    public runIdleRecipe(recipeId: RecipeID, humanChatInput?: string): Promise<void> {
-        if (!this.isIdle) {
-            throw new Error('not idle')
-        }
-        return this.executeRecipe(recipeId, humanChatInput)
-    }
-
     public async clearAndRestartSession(): Promise<void> {
         await this.saveTranscriptToChatHistory()
         this.createNewChatID()
@@ -210,13 +165,17 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         this.currentChatID = new Date(Date.now()).toUTCString()
     }
 
-    private sendPrompt(promptMessages: Message[], responsePrefix = ''): void {
+    private sendPrompt(
+        promptMessages: Message[],
+        responsePrefix = '',
+        multiplexerTopic = BotResponseMultiplexer.DEFAULT_TOPIC
+    ): void {
         this.cancelCompletion()
         void vscode.commands.executeCommand('setContext', 'cody.reply.pending', true)
 
         let text = ''
 
-        this.multiplexer.sub(BotResponseMultiplexer.DEFAULT_TOPIC, {
+        this.multiplexer.sub(multiplexerTopic, {
             onResponse: (content: string) => {
                 text += content
                 const displayText = reformatBotMessage(text, responsePrefix)
@@ -272,7 +231,6 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
                 }
                 // Display error message as assistant response
                 this.transcript.addErrorAsAssistantResponse(err)
-                this.handleTranscriptErrors(true)
                 // We ignore embeddings errors in this instance because we're already showing an
                 // error message and don't want to overwhelm the user.
                 void this.onCompletionEnd(true)
@@ -296,7 +254,6 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         if (!ignoreEmbeddingsError) {
             this.logEmbeddingsSearchErrors()
         }
-        this.scheduleIdleRecipes()
     }
 
     protected async abortCompletion(): Promise<void> {
@@ -424,7 +381,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
                     pluginsPrompt
                 )
                 this.transcript.setUsedContextFilesForLastInteraction(contextFiles, pluginExecutionInfos)
-                this.sendPrompt(prompt, interaction.getAssistantMessage().prefix ?? '')
+                this.sendPrompt(prompt, interaction.getAssistantMessage().prefix ?? '', recipe.multiplexerTopic)
                 await this.saveTranscriptToChatHistory()
             }
         }
@@ -606,7 +563,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
     private async sendCodyCommands(): Promise<void> {
         const send = async (): Promise<void> => {
             await this.editor.controllers.command?.refresh()
-            const commands = this.editor.controllers.command?.getAllCommands() || []
+            const commands = (await this.editor.controllers.command?.getAllCommands()) || []
             void this.handleCodyCommands(commands)
         }
         this.editor.controllers.command?.setMessenger(send)

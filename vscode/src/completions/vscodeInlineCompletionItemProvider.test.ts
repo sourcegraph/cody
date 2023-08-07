@@ -43,7 +43,7 @@ class MockableInlineCompletionItemProvider extends InlineCompletionItemProvider 
             // we can just make them `null`.
             //
             // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-explicit-any
-            codebaseContext: null as any,
+            getCodebaseContext: null as any,
             // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-explicit-any
             history: null as any,
             // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-explicit-any

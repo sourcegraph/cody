@@ -2,8 +2,15 @@ export interface IntentClassificationOption<Intent = string> {
     /**
      * An identifier for this intent.
      * This is what will be returned by the classifier.
+     * Example: 'edit'
      */
     id: Intent
+    /**
+     * A command for this intent.
+     * This will be matched against using `startsWith`.
+     * Example: `/edit`
+     */
+    rawCommand: `/${string}`
     /**
      * A description for this intent.
      * Be specific in order to help the LLM understand the intent.

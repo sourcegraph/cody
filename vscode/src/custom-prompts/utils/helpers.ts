@@ -46,10 +46,15 @@ export async function saveJSONFile(context: string, filePath: vscode.Uri, isSave
 
 // Create a file watcher for each .vscode/cody.json file
 export function createFileWatchers(fsPath?: string): vscode.FileSystemWatcher | null {
-    if (!fsPath) {
+    const fileUri = constructFileUri(ConfigFileName.vscode, fsPath)
+    if (!fileUri) {
         return null
     }
-    const watchPattern = new vscode.RelativePattern(fsPath, ConfigFileName.vscode)
+    // Use the file as the first arg to RelativePattern because a file watcher will be set up on the
+    // first arg given. If this is a directory with many files, such as the user's home directory,
+    // it will cause a very large number of watchers to be created, which will exhaust the system.
+    // This occurs even if the second arg is a relative file path with no wildcards.
+    const watchPattern = new vscode.RelativePattern(fileUri, '*')
     const watcher = vscode.workspace.createFileSystemWatcher(watchPattern)
     return watcher
 }
@@ -106,4 +111,9 @@ export const notificationOnDisabled = async (isEnabled: boolean): Promise<boolea
         await vscode.commands.executeCommand('cody.status-bar.interacted')
     }
     return isEnabled
+}
+
+export async function openCustomCommandDocsLink(): Promise<void> {
+    const uri = 'https://sourcegraph.com/notebooks/Tm90ZWJvb2s6MzA1NQ=='
+    await vscode.env.openExternal(vscode.Uri.parse(uri))
 }

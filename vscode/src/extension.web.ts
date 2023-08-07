@@ -13,7 +13,6 @@ import { ImproveVariableNames } from '@sourcegraph/cody-shared/src/chat/recipes/
 import { InlineChat } from '@sourcegraph/cody-shared/src/chat/recipes/inline-chat'
 import { InlineTouch } from '@sourcegraph/cody-shared/src/chat/recipes/inline-touch'
 import { NextQuestions } from '@sourcegraph/cody-shared/src/chat/recipes/next-questions'
-import { NonStop } from '@sourcegraph/cody-shared/src/chat/recipes/non-stop'
 import { Recipe } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 import { TranslateToLanguage } from '@sourcegraph/cody-shared/src/chat/recipes/translate'
 import { SourcegraphBrowserCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/browserClient'
@@ -39,7 +38,6 @@ export const VSCODE_WEB_RECIPES: Recipe[] = [
     new InlineChat(debug),
     new InlineTouch(debug),
     new NextQuestions(),
-    new NonStop(),
     new TranslateToLanguage(),
 ]
 

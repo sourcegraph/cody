@@ -243,6 +243,11 @@
         "icon": "$(feedback)"
       },
       {
+        "command": "cody.command.edit-code",
+        "category": "Ask Cody",
+        "title": "Refactor Code"
+      },
+      {
         "command": "cody.command.explain-code",
         "category": "Ask Cody",
         "title": "Explain Code"
@@ -357,19 +362,15 @@
         "title": "Touch"
       },
       {
-        "command": "cody.non-stop.fixup",
+        "command": "cody.fixup.new",
         "category": "Cody",
-        "title": "Fixup (Experimental)",
-        "icon": "$(sparkle)",
-        "when": "cody.nonstop.fixups.enabled",
-        "enablement": "cody.nonstop.fixups.enabled && editorHasSelection"
+        "title": "Fixup",
+        "icon": "$(sparkle)"
       },
       {
         "command": "cody.fixup.open",
         "category": "Cody",
         "title": "Go to Fixup",
-        "when": "cody.nonstop.fixups.enabled",
-        "enablement": "cody.nonstop.fixups.enabled",
         "icon": "$(file-code)"
       },
       {
@@ -432,10 +433,10 @@
         "mac": "alt+/"
       },
       {
-        "command": "cody.non-stop.fixup",
+        "command": "cody.fixup.new",
         "key": "ctrl+shift+v",
         "mac": "shift+cmd+v",
-        "when": "cody.activated && editorHasSelection && !editorReadonly"
+        "when": "cody.activated && !editorReadonly"
       },
       {
         "command": "cody.command.inline-touch",
@@ -554,6 +555,10 @@
           "when": "cody.activated"
         },
         {
+          "command": "cody.command.edit-code",
+          "when": "cody.activated"
+        },
+        {
           "command": "cody.command.generate-unit-test",
           "when": "cody.activated"
         },
@@ -625,12 +630,6 @@
         {
           "command": "cody.action.commands.menu",
           "when": "cody.activated && config.cody.experimental.editorTitleCommandIcon",
-          "group": "navigation",
-          "visibility": "visible"
-        },
-        {
-          "command": "cody.non-stop.fixup",
-          "when": "cody.nonstop.fixups.enabled && cody.activated",
           "group": "navigation",
           "visibility": "visible"
         }

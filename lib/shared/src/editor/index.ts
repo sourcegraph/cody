@@ -50,17 +50,17 @@ export interface VsCodeInlineController {
     error(): Promise<void>
 }
 
+export interface VsCodeFixupTaskRecipeData {
+    instruction: string
+    fileName: string
+    precedingText: string
+    selectedText: string
+    followingText: string
+    selectionRange: ActiveTextEditorSelectionRange
+}
+
 export interface VsCodeFixupController {
-    getTaskRecipeData(taskId: string): Promise<
-        | {
-              instruction: string
-              fileName: string
-              precedingText: string
-              selectedText: string
-              followingText: string
-          }
-        | undefined
-    >
+    getTaskRecipeData(taskId: string): Promise<VsCodeFixupTaskRecipeData | undefined>
 }
 
 export interface VsCodeCommandsController {
