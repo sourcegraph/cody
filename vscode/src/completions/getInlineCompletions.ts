@@ -261,9 +261,7 @@ async function doGetInlineCompletions({
         }
     )
 
-    if (!abortSignal?.aborted) {
-        logCompletions(logId, processedCompletions, document, context)
-    }
+    logCompletions(logId, processedCompletions, document, context, abortSignal)
 
     return {
         logId,
@@ -393,27 +391,35 @@ function logCompletions(
     logId: string,
     completions: InlineCompletionItem[],
     document: vscode.TextDocument,
-    context: vscode.InlineCompletionContext
+    context: vscode.InlineCompletionContext,
+    abortSignal: AbortSignal | undefined
 ): void {
-    if (completions.length > 0) {
-        // When the VS Code completion popup is open and we suggest a completion that does not match
-        // the currently selected completion, VS Code won't display it. For now we make sure to not
-        // log these completions as displayed.
-        //
-        // TODO: Take this into account when creating the completion prefix.
-        let isCompletionVisible = true
-        if (context.selectedCompletionInfo) {
-            const currentText = document.getText(context.selectedCompletionInfo.range)
-            const selectedText = context.selectedCompletionInfo.text
-            if (!(currentText + completions[0].insertText).startsWith(selectedText)) {
-                isCompletionVisible = false
-            }
-        }
+    CompletionLogger.loaded(logId)
 
-        if (isCompletionVisible) {
-            CompletionLogger.suggest(logId, isCompletionVisible)
+    // There are two cases when a completion is not visible:
+    //
+    // - When the abort signal was already triggered and a new completion request was stared.
+    // - When the VS Code completion popup is open and we suggest a completion that does not match
+    //   the currently selected completion. For now we make sure to not log these completions as
+    //   displayed.
+    //
+    //   TODO: Take this into account when creating the completion prefix.
+    const isAborted = abortSignal ? abortSignal.aborted : false
+    let isMatchingCompletionPopup = true
+    if (context.selectedCompletionInfo) {
+        const currentText = document.getText(context.selectedCompletionInfo.range)
+        const selectedText = context.selectedCompletionInfo.text
+        if (completions.length > 0 && !(currentText + completions[0].insertText).startsWith(selectedText)) {
+            isMatchingCompletionPopup = false
         }
-    } else {
-        CompletionLogger.noResponse(logId)
+    }
+    const isVisible = !isAborted && isMatchingCompletionPopup
+
+    if (isVisible) {
+        if (completions.length > 0) {
+            CompletionLogger.suggested(logId)
+        } else {
+            CompletionLogger.noResponse(logId)
+        }
     }
 }
