@@ -9,21 +9,23 @@ export const NewCustomCommandConfigMenuOptions = {
     title: 'Cody Custom Commands (Experimental) - New User Command',
 }
 
-const chatSeparator: QuickPickItem = { kind: -1, label: 'inline chat' }
+const inlineSeparator: QuickPickItem = { kind: -1, label: 'inline' }
 const chatOption: QuickPickItem = { label: 'Ask a Question' }
+const fixOption: QuickPickItem = { label: 'Refactor This Code' }
 const commandsSeparator: QuickPickItem = { kind: -1, label: 'commands' }
 const customCommandsSeparator: QuickPickItem = { kind: -1, label: 'custom commands' }
 const configOption: QuickPickItem = { label: 'Configure Custom Commands...' }
 const settingsSeparator: QuickPickItem = { kind: -1, label: 'settings' }
 const addOption: QuickPickItem = { label: 'New Custom Command...', alwaysShow: true }
-const submitOption: QuickPickItem = { label: 'Submit Question', alwaysShow: true }
+const chatSubmitOption: QuickPickItem = { label: 'Submit Question', alwaysShow: true }
+const fixSubmitOption: QuickPickItem = { label: 'Submit Refactor Request', alwaysShow: true }
 
 export const recentlyUsedSeparatorAsPrompt: [string, CodyPrompt][] = [
     ['separator', { prompt: 'separator', type: 'recently used' }],
 ]
 
 export const menu_separators = {
-    chat: chatSeparator,
+    inline: inlineSeparator,
     commands: commandsSeparator,
     customCommands: customCommandsSeparator,
     settings: settingsSeparator,
@@ -31,9 +33,11 @@ export const menu_separators = {
 
 export const menu_options = {
     chat: chatOption,
+    fix: fixOption,
     config: configOption,
     add: addOption,
-    submit: submitOption,
+    submitChat: chatSubmitOption,
+    submitFix: fixSubmitOption,
 }
 
 const userItem: QuickPickItem = {

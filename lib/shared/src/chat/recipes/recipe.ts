@@ -28,12 +28,12 @@ export type RecipeID =
     | 'inline-chat'
     | 'custom-prompt'
     | 'next-questions'
-    | 'non-stop'
     | 'pr-description'
     | 'release-notes'
     | 'translate-to-language'
 
 export interface Recipe {
     id: RecipeID
+    multiplexerTopic?: string
     getInteraction(humanChatInput: string, context: RecipeContext): Promise<Interaction | null>
 }

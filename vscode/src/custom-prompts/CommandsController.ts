@@ -186,7 +186,7 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
      */
     public async mainCommandMenu(showDesc = false): Promise<void> {
         try {
-            const commandItems = [menu_separators.chat, menu_options.chat, menu_separators.commands]
+            const commandItems = [menu_separators.inline, menu_options.chat, menu_options.fix, menu_separators.commands]
             const allCommands = this.default.getGroupedCommands(true)
             const allCommandItems = [...allCommands]?.map(commandItem => {
                 const command = commandItem[1]
@@ -206,7 +206,7 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
 
             // Show the list of prompts to the user using a quick pick menu
             // const selectedPrompt = await vscode.window.showQuickPick([...commandItems], CodyMenu_CodyCommands)
-            const selectedPrompt = await showCommandMenu([...commandItems])
+            const { selectedItem: selectedPrompt, input: userPrompt } = await showCommandMenu([...commandItems])
             if (!selectedPrompt) {
                 return
             }
@@ -219,8 +219,12 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
                     return await vscode.commands.executeCommand('cody.settings.commands')
                 case selectedCommandID === menu_options.chat.label:
                     return await vscode.commands.executeCommand('cody.inline.new')
-                case selectedCommandID === menu_options.submit.label:
-                    return await vscode.commands.executeCommand('cody.action.chat', selectedPrompt.detail)
+                case selectedCommandID === menu_options.fix.label:
+                    return await vscode.commands.executeCommand('cody.fixup.new')
+                case selectedCommandID === menu_options.submitChat.label:
+                    return await vscode.commands.executeCommand('cody.action.chat', userPrompt)
+                case selectedCommandID === menu_options.submitFix.label:
+                    return await vscode.commands.executeCommand('cody.action.fixup', userPrompt)
             }
 
             // Run the prompt

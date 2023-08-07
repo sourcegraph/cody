@@ -150,7 +150,7 @@ export class InlineController implements VsCodeInlineController {
     /**
      * Create a new thread (the first comment of a thread)
      */
-    public create(humanInput: string): vscode.CommentReply | null {
+    public create(humanInput: string, range: vscode.Range): vscode.CommentReply | null {
         if (!this.commentController) {
             return null
         }
@@ -158,7 +158,7 @@ export class InlineController implements VsCodeInlineController {
         if (!editor || !humanInput || editor.document.uri.scheme !== 'file') {
             return null
         }
-        this.thread = this.commentController.createCommentThread(editor?.document.uri, editor.selection, [])
+        this.thread = this.commentController.createCommentThread(editor?.document.uri, range, [])
         this.thread.collapsibleState = vscode.CommentThreadCollapsibleState.Collapsed
         const threads = {
             text: humanInput,

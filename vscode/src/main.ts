@@ -1,11 +1,13 @@
 import * as vscode from 'vscode'
 
+import { commandRegex } from '@sourcegraph/cody-shared/src/chat/recipes/helpers'
 import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 import { Configuration, ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
 import { SourcegraphCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/client'
 
 import { ChatViewProvider } from './chat/ChatViewProvider'
 import { ContextProvider } from './chat/ContextProvider'
+import { FixupManager } from './chat/FixupViewProvider'
 import { InlineChatViewManager } from './chat/InlineChatViewProvider'
 import { MessageProviderOptions } from './chat/MessageProvider'
 import { CODY_FEEDBACK_URL } from './chat/protocol'
@@ -151,13 +153,13 @@ const register = async (
     }
 
     const inlineChatManager = new InlineChatViewManager(messageProviderOptions)
+    const fixupManager = new FixupManager(messageProviderOptions)
     const sidebarChatProvider = new ChatViewProvider({
         ...messageProviderOptions,
         extensionUri: context.extensionUri,
     })
 
     disposables.push(sidebarChatProvider)
-    fixup.recipeRunner = sidebarChatProvider
 
     disposables.push(
         vscode.window.registerWebviewViewProvider('cody.chat', sidebarChatProvider, {
@@ -203,15 +205,59 @@ const register = async (
         sidebarChatProvider.handleError(error)
     }
 
+    const executeFixup = async (
+        options: {
+            document?: vscode.TextDocument
+            instruction?: string
+            range?: vscode.Range
+        } = {}
+    ): Promise<void> => {
+        const document = options.document || vscode.window.activeTextEditor?.document
+        if (!document) {
+            return
+        }
+
+        const range = options.range || vscode.window.activeTextEditor?.selection
+        if (!range) {
+            return
+        }
+
+        const task = options.instruction
+            ? fixup.createTask(document.uri, options.instruction, range)
+            : await fixup.promptUserForTask()
+        if (!task) {
+            return
+        }
+
+        telemetryService.log('CodyVSCodeExtension:fixup')
+        const provider = fixupManager.getProviderForTask(task)
+        return provider.startFix()
+    }
+
     const statusBar = createStatusBar()
 
     disposables.push(
         // Inline Chat Provider
         vscode.commands.registerCommand('cody.comment.add', async (comment: vscode.CommentReply) => {
-            const isFixMode = /^\/f(ix)?\s/i.test(comment.text.trimStart())
+            const isFixMode = commandRegex.fix.test(comment.text.trimStart())
+
+            /**
+             * TODO: Should we make fix the default for comments?
+             * /chat or /ask could trigger a chat
+             */
+            if (isFixMode) {
+                void vscode.commands.executeCommand('workbench.action.collapseAllComments')
+                const activeDocument = await vscode.workspace.openTextDocument(comment.thread.uri)
+                return executeFixup({
+                    document: activeDocument,
+                    instruction: comment.text.replace(commandRegex.fix, ''),
+                    range: comment.thread.range,
+                })
+            }
+
             const inlineChatProvider = inlineChatManager.getProviderForThread(comment.thread)
-            await inlineChatProvider.addChat(comment.text, isFixMode)
-            telemetryService.log(`CodyVSCodeExtension:inline-assist:${isFixMode ? 'fixup' : 'chat'}`)
+            await inlineChatProvider.addChat(comment.text, false)
+            telemetryService.log('CodyVSCodeExtension:inline-assist:chat')
         }),
         vscode.commands.registerCommand('cody.comment.delete', (thread: vscode.CommentThread) => {
             inlineChatManager.removeProviderForThread(thread)
@@ -232,10 +278,22 @@ const register = async (
             // Remove the inline chat
             inlineChatManager.removeProviderForThread(thread)
         }),
+        vscode.commands.registerCommand(
+            'cody.fixup.new',
+            (range: vscode.Range): Promise<void> => executeFixup({ range })
+        ),
         vscode.commands.registerCommand('cody.inline.new', async () => {
             // move focus line to the end of the current selection
             await vscode.commands.executeCommand('cursorLineEndSelect')
             await vscode.commands.executeCommand('workbench.action.addComment')
+        }),
+        vscode.commands.registerCommand('cody.inline.add', async (instruction: string, range: vscode.Range) => {
+            const comment = commentController.create(instruction, range)
+            if (!comment) {
+                return Promise.resolve()
+            }
+            const inlineChatProvider = inlineChatManager.getProviderForThread(comment.thread)
+            void inlineChatProvider.addChat(comment.text, false)
         }),
         // Tests
         // Access token - this is only used in configuration tests
@@ -262,6 +320,10 @@ const register = async (
         // Recipes
         vscode.commands.registerCommand('cody.action.chat', input =>
             executeRecipeInSidebar('chat-question', true, input)
+        ),
+        vscode.commands.registerCommand(
+            'cody.action.fixup',
+            (instruction: string, range: vscode.Range): Promise<void> => executeFixup({ instruction, range })
         ),
         vscode.commands.registerCommand(
             'cody.action.commands.menu',
@@ -294,6 +356,7 @@ const register = async (
             executeRecipeInSidebar('inline-touch', false)
         ),
         vscode.commands.registerCommand('cody.command.context-search', () => executeRecipeInSidebar('context-search')),
+        vscode.commands.registerCommand('cody.command.edit-code', () => executeFixup()),
 
         // Register URI Handler (vscode://sourcegraph.cody-ai)
         vscode.window.registerUriHandler({
@@ -394,9 +457,11 @@ const register = async (
             })
         )
     }
-    // Register task view and non-stop cody command when feature flag is on
+    // Register task view when feature flag is on
+    // TODO(umpox): We should move the task view to a quick pick before enabling it everywhere.
+    // It is too obstructive when it is in the same window as the sidebar chat.
     if (initialConfig.experimentalNonStop || process.env.CODY_TESTING === 'true') {
-        fixup.register()
+        fixup.registerTreeView()
         await vscode.commands.executeCommand('setContext', 'cody.nonstop.fixups.enabled', true)
     }
 
