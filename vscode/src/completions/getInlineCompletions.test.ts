@@ -231,6 +231,26 @@ describe('getInlineCompletions', () => {
             })
             expect(spy).not.toHaveBeenCalled()
         })
+
+        test('log a completion if the suffix is inside the completion', async () => {
+            const spy = vi.spyOn(CompletionsLogger, 'suggested')
+            const abortController = new AbortController()
+            await getInlineCompletions({
+                ...params('const a = [1, █];', [completion`├2] ;┤`]),
+                abortSignal: abortController.signal,
+            })
+            expect(spy).toHaveBeenCalled()
+        })
+
+        test('does not log a completion if the suffix does not match', async () => {
+            const spy = vi.spyOn(CompletionsLogger, 'suggested')
+            const abortController = new AbortController()
+            await getInlineCompletions({
+                ...params('const a = [1, █)(123);', [completion`├2];┤`]),
+                abortSignal: abortController.signal,
+            })
+            expect(spy).not.toHaveBeenCalled()
+        })
     })
 
     describe('same line suffix behavior', () => {

@@ -250,7 +250,7 @@ async function doGetInlineCompletions({
         tracer ? createCompletionProviderTracer(tracer) : undefined
     )
 
-    logCompletions(logId, completions, document, context, abortSignal)
+    logCompletions(logId, completions, document, docContext, context, abortSignal)
 
     return {
         logId,
@@ -380,19 +380,25 @@ function logCompletions(
     logId: string,
     completions: InlineCompletionItem[],
     document: vscode.TextDocument,
+    docContext: DocumentContext,
     context: vscode.InlineCompletionContext,
     abortSignal: AbortSignal | undefined
 ): void {
     CompletionLogger.loaded(logId)
 
-    // There are two cases when a completion is not visible:
+    // There are these cases when a completion is being returned here but won't
+    // be displayed by VS Code.
     //
-    // - When the abort signal was already triggered and a new completion request was stared.
-    // - When the VS Code completion popup is open and we suggest a completion that does not match
-    //   the currently selected completion. For now we make sure to not log these completions as
-    //   displayed.
-    //
+    // - When the abort signal was already triggered and a new completion
+    //   request was stared.
+    // - When the VS Code completion popup is open and we suggest a completion
+    //   that does not match the currently selected completion. For now we make
+    //   sure to not log these completions as displayed.
     //   TODO: Take this into account when creating the completion prefix.
+    // - When no completions contains characters in the current line that are
+    //   not in the current line suffix. Since VS Code will try to merge
+    //   completion with the suffix, we have to do a per-character diff to test
+    //   this.
     const isAborted = abortSignal ? abortSignal.aborted : false
     let isMatchingCompletionPopup = true
     if (context.selectedCompletionInfo) {
@@ -402,7 +408,23 @@ function logCompletions(
             isMatchingCompletionPopup = false
         }
     }
-    const isVisible = !isAborted && isMatchingCompletionPopup
+    let containsCompletionThatMatchesSuffix = false
+    for (const completion of completions) {
+        const insertion = completion.insertText
+        const suffix = docContext.currentLineSuffix
+        let j = 0
+        // eslint-disable-next-line @typescript-eslint/prefer-for-of
+        for (let i = 0; i < insertion.length; i++) {
+            if (insertion[i] === suffix[j]) {
+                j++
+            }
+        }
+        if (j === suffix.length) {
+            containsCompletionThatMatchesSuffix = true
+        }
+    }
+
+    const isVisible = !isAborted && isMatchingCompletionPopup && containsCompletionThatMatchesSuffix
 
     if (isVisible) {
         if (completions.length > 0) {
