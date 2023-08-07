@@ -19,7 +19,7 @@ import { ProvideInlineCompletionItemsTracer, ProvideInlineCompletionsItemTraceDa
 import { InlineCompletionItem } from './types'
 import { getNextNonEmptyLine } from './utils/text-utils'
 
-interface CodyCompletionItemProviderConfig {
+export interface CodyCompletionItemProviderConfig {
     providerConfig: ProviderConfig
     history: DocumentHistory
     statusBar: CodyStatusBar

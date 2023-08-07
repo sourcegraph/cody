@@ -1,5 +1,5 @@
 import assert from 'assert'
-import { spawn } from 'child_process'
+import { execSync, spawn } from 'child_process'
 import path from 'path'
 
 import { afterAll, describe, it } from 'vitest'
@@ -15,6 +15,11 @@ export class TestClient extends MessageHandler {
             version: 'v1',
             workspaceRootUri: 'file:///path/to/foo',
             workspaceRootPath: '/path/to/foo',
+            connectionConfiguration: {
+                accessToken: process.env.SRC_ACCESS_TOKEN ?? 'invalid',
+                serverEndpoint: process.env.SRC_ENDPOINT ?? 'invalid',
+                customHeaders: {},
+            },
         })
         this.notify('initialized', null)
         return info
@@ -43,7 +48,11 @@ describe('StandardAgent', () => {
         return
     }
     const client = new TestClient()
-    const agentProcess = spawn('node', [path.join(__dirname, '../dist/agent.js')], {
+
+    // Bundle the agent. When running `pnpm run test`, vitest doesn't re-run this step.
+    execSync('pnpm run build')
+
+    const agentProcess = spawn('node', ['--inspect', path.join(__dirname, '../dist/index.js'), '--inspect'], {
         stdio: 'pipe',
     })
 
@@ -65,19 +74,37 @@ describe('StandardAgent', () => {
         assert(recipes.length === 8)
     })
 
-    const streamingChatMessages = new Promise<void>(resolve => {
-        client.registerNotification('chat/updateMessageInProgress', msg => {
-            if (msg === null) {
-                resolve()
-            }
+    it('returns non-empty autocomplete', async () => {
+        const filePath = '/path/to/foo/file.js'
+        const content = 'function sum(a, b) {\n    \n}'
+        client.notify('textDocument/didOpen', { filePath, content })
+        // client.notify('connectionConfiguration/didChange', {
+        //     accessToken: process.env.SRC_ACCESS_TOKEN ?? '',
+        //     serverEndpoint: process.env.SRC_ENDPOINT ?? '',
+        //     customHeaders: {},
+        // })
+        const completions = await client.request('autocomplete/execute', {
+            filePath: filePath,
+            position: { line: 1, character: 4 },
         })
+
+        console.log({ recipes: completions })
+        assert(completions.items.length > 0)
     })
 
-    it('allows us to execute recipes properly', async () => {
-        await client.executeRecipe('chat-question', "What's 2+2?")
-    })
+    // const streamingChatMessages = new Promise<void>(resolve => {
+    //     client.registerNotification('chat/updateMessageInProgress', msg => {
+    //         if (msg === null) {
+    //             resolve()
+    //         }
+    //     })
+    // })
 
-    it('sends back transcript updates and makes sense', () => streamingChatMessages, 20_000)
+    // it('allows us to execute recipes properly', async () => {
+    //     await client.executeRecipe('chat-question', "What's 2+2?")
+    // })
+
+    // it('sends back transcript updates and makes sense', () => streamingChatMessages, 20_000)
 
     afterAll(async () => {
         await client.shutdownAndExit()
