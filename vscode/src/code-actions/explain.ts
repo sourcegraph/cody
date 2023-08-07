@@ -8,7 +8,6 @@ export class ExplainCodeAction implements vscode.CodeActionProvider {
         range: vscode.Range,
         context: vscode.CodeActionContext
     ): vscode.CodeAction[] {
-        console.log(range)
         const diagnostics = context.diagnostics.filter(
             diagnostic =>
                 diagnostic.severity === vscode.DiagnosticSeverity.Error ||

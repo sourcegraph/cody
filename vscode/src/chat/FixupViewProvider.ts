@@ -91,9 +91,8 @@ export class FixupProvider extends MessageProvider {
     }
 
     /**
-     * Display error message in the active inline chat thread..
-     * Unlike the sidebar, this message is displayed as an assistant response.
-     * TODO(umpox): Should we render these differently for inline chat? We are limited in UI options.
+     * TODO: How should we handle errors for fixups?
+     * Should we create a new inline chat with the message?
      */
     protected handleError(errorMsg: string): void {
         void this.editor.controllers.inline?.error(errorMsg)

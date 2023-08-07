@@ -229,6 +229,7 @@ const register = async (
             return
         }
 
+        telemetryService.log('CodyVSCodeExtension:fixup')
         const provider = fixupManager.getProviderForTask(task)
         return provider.startFix()
     }
@@ -245,7 +246,6 @@ const register = async (
              * /chat or /ask could trigger a chat
              */
             if (isFixMode) {
-                telemetryService.log('CodyVSCodeExtension:fixup')
                 void vscode.commands.executeCommand('workbench.action.collapseAllComments')
                 const activeDocument = await vscode.workspace.openTextDocument(comment.thread.uri)
                 return executeFixup({
