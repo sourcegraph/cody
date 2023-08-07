@@ -138,15 +138,7 @@ export class RequestManager {
                 docContext: request.params.docContext,
             })
 
-            console.log(
-                'synth?',
-                resolvedRequest.params.docContext.currentLinePrefix,
-                items,
-                request.params.docContext.currentLinePrefix,
-                { synthesizedCandidate }
-            )
             if (synthesizedCandidate) {
-                console.log('synth!', synthesizedCandidate)
                 const synthesizedItems = synthesizedCandidate.items
 
                 logCompletionEvent('synthesizedFromParallelRequest')
