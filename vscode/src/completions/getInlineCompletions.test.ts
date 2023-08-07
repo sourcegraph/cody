@@ -38,7 +38,7 @@ function params(
     responses: CompletionResponse[] | 'never-resolve',
     {
         languageId = 'typescript',
-        requests = [],
+        onNetworkRequest,
         context = {
             triggerKind: vsCodeMocks.InlineCompletionTriggerKind.Automatic,
             selectedCompletionInfo: undefined,
@@ -46,13 +46,13 @@ function params(
         ...params
     }: Partial<Omit<InlineCompletionsParams, 'document' | 'position'>> & {
         languageId?: string
-        requests?: CompletionParameters[]
+        onNetworkRequest?: (params: CompletionParameters) => void
     } = {}
 ): InlineCompletionsParams {
     let requestCounter = 0
     const completionsClient: Pick<SourcegraphCompletionsClient, 'complete'> = {
         complete(params: CompletionParameters): Promise<CompletionResponse> {
-            requests.push(params)
+            onNetworkRequest?.(params)
             return responses === 'never-resolve'
                 ? new Promise(() => {})
                 : Promise.resolve(responses?.[requestCounter++] || { completion: '', stopReason: 'unknown' })
@@ -185,6 +185,19 @@ describe('getInlineCompletions', () => {
             items: [{ insertText: '7' }],
             source: InlineCompletionsResultSource.Network,
         }))
+
+    test('emits a completion even when the abort signal was triggered after a network fetch ', async () => {
+        const abortController = new AbortController()
+        expect(
+            await getInlineCompletions({
+                ...params('const x = █', [completion`├1337┤`], { onNetworkRequest: () => abortController.abort() }),
+                abortSignal: abortController.signal,
+            })
+        ).toEqual<V>({
+            items: [{ insertText: '1337' }],
+            source: InlineCompletionsResultSource.Network,
+        })
+    })
 
     describe('same line suffix behavior', () => {
         test('does not trigger when there are alphanumeric chars in the line suffix', async () =>
@@ -517,7 +530,13 @@ describe('getInlineCompletions', () => {
 
         test('triggers a multi-line completion at the start of a block', async () => {
             const requests: CompletionParameters[] = []
-            await getInlineCompletions(params('function bubbleSort() {\n  █', [], { requests }))
+            await getInlineCompletions(
+                params('function bubbleSort() {\n  █', [], {
+                    onNetworkRequest(request) {
+                        requests.push(request)
+                    },
+                })
+            )
             expect(requests).toHaveLength(3)
             expect(requests[0].stopSequences).not.toContain('\n')
         })
@@ -584,14 +603,27 @@ describe('getInlineCompletions', () => {
 
         test('does not support multi-line completion on unsupported languages', async () => {
             const requests: CompletionParameters[] = []
-            await getInlineCompletions(params('function looksLegit() {\n  █', [], { languageId: 'elixir', requests }))
+            await getInlineCompletions(
+                params('function looksLegit() {\n  █', [], {
+                    languageId: 'elixir',
+                    onNetworkRequest(request) {
+                        requests.push(request)
+                    },
+                })
+            )
             expect(requests).toHaveLength(1)
             expect(requests[0].stopSequences).toContain('\n\n')
         })
 
         test('requires an indentation to start a block', async () => {
             const requests: CompletionParameters[] = []
-            await getInlineCompletions(params('function bubbleSort() {\n█', [], { requests }))
+            await getInlineCompletions(
+                params('function bubbleSort() {\n█', [], {
+                    onNetworkRequest(request) {
+                        requests.push(request)
+                    },
+                })
+            )
             expect(requests).toHaveLength(1)
             expect(requests[0].stopSequences).toContain('\n\n')
         })
@@ -616,7 +648,12 @@ describe('getInlineCompletions', () => {
                     for i in range(12):
                         print("unrelated")┤`,
                     ],
-                    { languageId: 'python', requests }
+                    {
+                        languageId: 'python',
+                        onNetworkRequest(request) {
+                            requests.push(request)
+                        },
+                    }
                 )
             )
             expect(requests).toHaveLength(3)
@@ -653,7 +690,12 @@ describe('getInlineCompletions', () => {
                         System.out.println("unrelated");
                     }┤`,
                     ],
-                    { languageId: 'java', requests }
+                    {
+                        languageId: 'java',
+                        onNetworkRequest(request) {
+                            requests.push(request)
+                        },
+                    }
                 )
             )
             expect(requests).toHaveLength(3)
@@ -699,7 +741,12 @@ describe('getInlineCompletions', () => {
                         Console.WriteLine("unrelated");
                     }┤`,
                     ],
-                    { languageId: 'csharp', requests }
+                    {
+                        languageId: 'csharp',
+                        onNetworkRequest(request) {
+                            requests.push(request)
+                        },
+                    }
                 )
             )
             expect(requests).toHaveLength(3)
@@ -733,7 +780,12 @@ describe('getInlineCompletions', () => {
                         std::cout << "unrelated";
                     }┤`,
                     ],
-                    { languageId: 'cpp', requests }
+                    {
+                        languageId: 'cpp',
+                        onNetworkRequest(request) {
+                            requests.push(request)
+                        },
+                    }
                 )
             )
             expect(requests).toHaveLength(3)
@@ -771,7 +823,12 @@ describe('getInlineCompletions', () => {
                         printf("unrelated");
                     }┤`,
                     ],
-                    { languageId: 'c', requests }
+                    {
+                        languageId: 'c',
+                        onNetworkRequest(request) {
+                            requests.push(request)
+                        },
+                    }
                 )
             )
             expect(requests).toHaveLength(3)
@@ -809,7 +866,12 @@ describe('getInlineCompletions', () => {
                         echo "unrelated";
                     }┤`,
                     ],
-                    { languageId: 'c', requests }
+                    {
+                        languageId: 'c',
+                        onNetworkRequest(request) {
+                            requests.push(request)
+                        },
+                    }
                 )
             )
 
@@ -848,7 +910,12 @@ describe('getInlineCompletions', () => {
                         print('unrelated');
                       }┤`,
                     ],
-                    { languageId: 'dart', requests }
+                    {
+                        languageId: 'dart',
+                        onNetworkRequest(request) {
+                            requests.push(request)
+                        },
+                    }
                 )
             )
 
@@ -1298,7 +1365,11 @@ describe('getInlineCompletions', () => {
             }
         `,
                 [],
-                { requests }
+                {
+                    onNetworkRequest(request) {
+                        requests.push(request)
+                    },
+                }
             )
         )
         expect(requests).toHaveLength(1)

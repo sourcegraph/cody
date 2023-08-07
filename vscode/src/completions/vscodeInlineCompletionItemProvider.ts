@@ -120,6 +120,9 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
         const abortController = new AbortController()
         this.abortOpenCompletions()
         if (token) {
+            if (token.isCancellationRequested) {
+                abortController.abort()
+            }
             token.onCancellationRequested(() => abortController.abort())
             this.abortOpenCompletions = () => abortController.abort()
         }
