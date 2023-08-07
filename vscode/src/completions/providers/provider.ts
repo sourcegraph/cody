@@ -1,7 +1,7 @@
 import { CompletionParameters } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
 
-import { Completion } from '..'
 import { ReferenceSnippet } from '../context'
+import { Completion } from '../types'
 
 export interface ProviderConfig {
     /**

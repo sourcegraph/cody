@@ -3,48 +3,27 @@ import * as vscode from 'vscode'
 
 import { TelemetryEventProperties } from '@sourcegraph/cody-shared/src/telemetry'
 
-import { ConfigKeys } from '../configuration-keys'
 import { debug } from '../log'
 import { logEvent } from '../services/EventLogger'
 
 interface CompletionEvent {
     params: {
-        type: 'inline' | 'manual'
+        type: 'inline'
         multiline: boolean
         multilineMode: null | 'block'
         providerIdentifier: string
-        contextSummary: {
-            embeddings?: number
-            local?: number
-            duration: number
-        }
         languageId: string
-
-        /**
-         * Whether the completion was triggered only because of the experimental settting
-         * `cody.autocomplete.experimental.triggerMoreEagerly`.
-         */
-        triggeredMoreEagerly: boolean
-
-        /**
-         * Whether the completion was triggered only because of the experimental setting
-         * `cody.autocomplete.experimental.completeSuggestWidgetSelection`.
-         */
-        triggeredForSuggestWidgetSelection: boolean
-
-        /** Relevant user settings. */
-        settings: Record<
-            Extract<
-                ConfigKeys,
-                'autocompleteExperimentalTriggerMoreEagerly' | 'autocompleteExperimentalCompleteSuggestWidgetSelection'
-            >,
-            boolean
-        >
     }
     // The timestamp when the request started
     startedAt: number
-    // The timestamp of when the suggestion was first displayed to a users
-    // screen
+    // Track wether or not we have already logged a start event for this
+    // completion
+    startLoggedAt: number | null
+    // The time of when we have fully loaded a completion. This can happen
+    // before we show it to the user, e.g. when the VS Code completions dropdown
+    // prevents it from rendering
+    loadedAt: number | null
+    // The time of when the suggestion was first displayed to a users screen
     suggestedAt: number | null
     // The timestamp of when the suggestion was logged to our analytics backend
     // This is to avoid double-logging
@@ -67,9 +46,10 @@ export function logCompletionEvent(name: string, params?: TelemetryEventProperti
     logEvent(`CodyVSCodeExtension:completion:${name}`, params)
 }
 
-export function start(inputParams: Omit<CompletionEvent['params'], 'multilineMode'>): string {
+export function create(inputParams: Omit<CompletionEvent['params'], 'multilineMode' | 'type'>): string {
     const params: CompletionEvent['params'] = {
         ...inputParams,
+        type: 'inline',
         // Keep the legacy name for backward compatibility in analytics
         multilineMode: inputParams.multiline ? 'block' : null,
     }
@@ -78,35 +58,70 @@ export function start(inputParams: Omit<CompletionEvent['params'], 'multilineMod
     displayedCompletions.set(id, {
         params,
         startedAt: performance.now(),
+        startLoggedAt: null,
+        loadedAt: null,
         suggestedAt: null,
         suggestionLoggedAt: null,
         acceptedAt: null,
         forceRead: false,
     })
 
-    logCompletionEvent('started', params)
-
     return id
 }
 
-// Suggested completions will not be logged individually. Instead, we log them when
-// we either hide them again (they are NOT accepted) or when they ARE accepted.
-// This way, we can calculate the duration they were actually visible.
-export function suggest(id: string): void {
+export function start(id: string): void {
+    const event = displayedCompletions.get(id)
+    if (event && !event.startLoggedAt) {
+        event.startLoggedAt = performance.now()
+        logCompletionEvent('started', event.params)
+    }
+}
+
+export function networkRequestStarted(
+    id: string,
+    contextSummary: {
+        embeddings?: number
+        local?: number
+        duration: number
+    } | null
+): void {
     const event = displayedCompletions.get(id)
     if (event) {
-        event.suggestedAt = performance.now()
+        logCompletionEvent('networkRequestStarted', {
+            ...event.params,
+            contextSummary,
+        })
+    }
+}
 
+// Suggested completions will not be logged immediately. Instead, we log them when
+// we either hide them again (they are NOT accepted) or when they ARE accepted.
+// This way, we can calculate the duration they were actually visible for.
+export function suggest(id: string, isVisible: boolean): void {
+    const event = displayedCompletions.get(id)
+    if (!event) {
+        return
+    }
+
+    if (!event.loadedAt) {
+        event.loadedAt = performance.now()
         // Emit a debug event to print timing information to the console eagerly
-        debug('CodyCompletionProvider:inline:timing', `${Math.round(event.suggestedAt - event.startedAt)}ms`, id)
+        debug('CodyCompletionProvider:inline:timing', `${Math.round(event.loadedAt - event.startedAt)}ms`, id)
+    }
+
+    if (isVisible && !event.suggestedAt) {
+        event.suggestedAt = performance.now()
     }
 }
 
 export function accept(id: string, lines: number): void {
     const completionEvent = displayedCompletions.get(id)
     if (!completionEvent || completionEvent.acceptedAt) {
+        // Log a debug event, this case should not happen in production
+        logCompletionEvent('acceptedUntrackedCompletion')
         return
     }
+
     completionEvent.forceRead = true
     completionEvent.acceptedAt = performance.now()
 
@@ -140,16 +155,17 @@ function logSuggestionEvent(): void {
     const now = performance.now()
     // eslint-disable-next-line ban/ban
     displayedCompletions.forEach(completionEvent => {
-        const { suggestedAt, suggestionLoggedAt, startedAt, params, forceRead } = completionEvent
+        const { loadedAt, suggestedAt, suggestionLoggedAt, startedAt, params, forceRead, startLoggedAt } =
+            completionEvent
 
-        // Only log events that were already suggested to the user and have not
-        // been logged yet.
-        if (!suggestedAt || suggestionLoggedAt) {
+        // Only log suggestion events that were already shown to the user and
+        // have not been logged yet.
+        if (!loadedAt || !startLoggedAt || !suggestedAt || suggestionLoggedAt) {
             return
         }
         completionEvent.suggestionLoggedAt = now
 
-        const latency = suggestedAt - startedAt
+        const latency = loadedAt - startedAt
         const displayDuration = now - suggestedAt
         const read = displayDuration >= READ_TIMEOUT
 

@@ -9,11 +9,6 @@ import { CodyTaskState } from './utils'
 export function getLensesForTask(task: FixupTask): vscode.CodeLens[] {
     const codeLensRange = getSingleLineRange(task.selectionRange.start.line)
     switch (task.state) {
-        case CodyTaskState.waiting: {
-            const title = getWaitingLens(codeLensRange)
-            const cancel = getCancelLens(codeLensRange, task.id)
-            return [title, cancel]
-        }
         case CodyTaskState.asking: {
             const title = getAskingLens(codeLensRange)
             const cancel = getCancelLens(codeLensRange, task.id)
@@ -55,15 +50,6 @@ function getAskingLens(codeLensRange: vscode.Range): vscode.CodeLens {
     const lens = new vscode.CodeLens(codeLensRange)
     lens.command = {
         title: '$(sync~spin) Asking Cody...',
-        command: 'cody.focus',
-    }
-    return lens
-}
-
-function getWaitingLens(codeLensRange: vscode.Range): vscode.CodeLens {
-    const lens = new vscode.CodeLens(codeLensRange)
-    lens.command = {
-        title: '$(sync) Asking Cody...',
         command: 'cody.focus',
     }
     return lens

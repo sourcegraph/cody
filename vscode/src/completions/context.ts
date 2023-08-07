@@ -4,7 +4,7 @@ import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
 
 import { getContextFromEmbeddings } from './context-embeddings'
 import { getContextFromCurrentEditor } from './context-local'
-import { History } from './history'
+import { DocumentHistory } from './history'
 
 /**
  * Keep property names in sync with the `EmbeddingsSearchResult` type.
@@ -16,12 +16,12 @@ export interface ReferenceSnippet {
 
 export interface GetContextOptions {
     document: vscode.TextDocument
-    history: History
+    history: DocumentHistory
     prefix: string
     suffix: string
     jaccardDistanceWindowSize: number
     maxChars: number
-    codebaseContext: CodebaseContext
+    getCodebaseContext: () => CodebaseContext
     isEmbeddingsContextEnabled?: boolean
 }
 
@@ -36,7 +36,7 @@ export interface GetContextResult {
 
 export async function getContext(options: GetContextOptions): Promise<GetContextResult> {
     const { maxChars, isEmbeddingsContextEnabled } = options
-    const start = Date.now()
+    const start = performance.now()
 
     /**
      * The embeddings context is sync to retrieve to keep the completions latency minimal. If it's
@@ -53,6 +53,8 @@ export async function getContext(options: GetContextOptions): Promise<GetContext
     const context: ReferenceSnippet[] = []
     let totalChars = 0
     function addMatch(match: ReferenceSnippet): boolean {
+        // TODO(@philipp-spiess): We should de-dupe on the snippet range and not
+        // the file name to allow for more than one snippet of the same file
         if (usedFilenames.has(match.fileName)) {
             return false
         }
@@ -66,6 +68,8 @@ export async function getContext(options: GetContextOptions): Promise<GetContext
         return true
     }
 
+    // TODO(@philipp-spiess): Rank embedding results against local context
+    // snippets instead of always appending embedding results at the top.
     let includedEmbeddingsMatches = 0
     for (const match of embeddingsMatches) {
         if (addMatch(match)) {
@@ -84,7 +88,7 @@ export async function getContext(options: GetContextOptions): Promise<GetContext
         logSummary: {
             ...(includedEmbeddingsMatches ? { embeddings: includedEmbeddingsMatches } : {}),
             ...(includedLocalMatches ? { local: includedLocalMatches } : {}),
-            duration: Date.now() - start,
+            duration: performance.now() - start,
         },
     }
 }
