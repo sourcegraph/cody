@@ -1,7 +1,7 @@
 import { CompletionParameters } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
 
-import { Completion } from '..'
 import { ReferenceSnippet } from '../context'
+import { Completion } from '../types'
 
 export interface ProviderConfig {
     /**
@@ -30,6 +30,11 @@ export interface ProviderConfig {
      * A string identifier for the provider config used in event logs.
      */
     identifier: string
+
+    /**
+     * Indicating whether the provider supports infilling.
+     */
+    supportsInfilling: boolean
 }
 
 export interface ProviderOptions {

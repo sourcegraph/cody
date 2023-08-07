@@ -1,9 +1,9 @@
 import fetch from 'isomorphic-fetch'
 
-import { Completion } from '..'
 import { logger } from '../../log'
 import { ReferenceSnippet } from '../context'
 import { getLanguageConfig } from '../language'
+import { Completion } from '../types'
 import { isAbortError } from '../utils'
 
 import { Provider, ProviderConfig, ProviderOptions } from './provider'
@@ -77,9 +77,8 @@ export class UnstableFireworksProvider extends Provider {
             min_tokens: 1,
             n: this.options.n,
             echo: false,
-            model: 'fireworks-starcoder-16b-w8a16',
+            model: 'accounts/fireworks/models/fireworks-starcoder-7b-w8a16-1gpu',
         }
-        console.log(request)
 
         const log = logger.startCompletion({
             request,
@@ -100,10 +99,10 @@ export class UnstableFireworksProvider extends Provider {
         try {
             const data = (await response.json()) as
                 | { choices: { text: string; finish_reason: string }[] }
-                | { error: string }
+                | { error: { message: string } }
 
             if ('error' in data) {
-                throw new Error(data.error)
+                throw new Error(data.error.message)
             }
 
             const completions = data.choices.map(c => ({
@@ -147,5 +146,6 @@ export function createProviderConfig(unstableFireworksOptions: UnstableFireworks
         maximumContextCharacters: CONTEXT_WINDOW_CHARS,
         enableExtendedMultilineTriggers: true,
         identifier: PROVIDER_IDENTIFIER,
+        supportsInfilling: true,
     }
 }

@@ -1,9 +1,9 @@
 import fetch from 'isomorphic-fetch'
 
-import { Completion } from '..'
 import { logger } from '../../log'
 import { ReferenceSnippet } from '../context'
 import { getLanguageConfig } from '../language'
+import { Completion } from '../types'
 import { isAbortError } from '../utils'
 
 import { Provider, ProviderConfig, ProviderOptions } from './provider'
@@ -140,5 +140,6 @@ export function createProviderConfig(unstableHuggingFaceOptions: UnstableHugging
         maximumContextCharacters: CONTEXT_WINDOW_CHARS,
         enableExtendedMultilineTriggers: true,
         identifier: PROVIDER_IDENTIFIER,
+        supportsInfilling: true,
     }
 }

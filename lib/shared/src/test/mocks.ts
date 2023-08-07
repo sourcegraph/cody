@@ -3,9 +3,16 @@ import { URI } from 'vscode-uri'
 import { BotResponseMultiplexer } from '../chat/bot-response-multiplexer'
 import { RecipeContext } from '../chat/recipes/recipe'
 import { CodebaseContext } from '../codebase-context'
-import { ActiveTextEditor, ActiveTextEditorSelection, ActiveTextEditorVisibleContent, Editor } from '../editor'
+import {
+    ActiveTextEditor,
+    ActiveTextEditorDiagnostic,
+    ActiveTextEditorSelection,
+    ActiveTextEditorSelectionRange,
+    ActiveTextEditorVisibleContent,
+    Editor,
+} from '../editor'
 import { EmbeddingsSearch } from '../embeddings'
-import { IntentDetector } from '../intent-detector'
+import { IntentClassificationOption, IntentDetector } from '../intent-detector'
 import { ContextResult, KeywordContextFetcher } from '../local-context'
 import { SourcegraphCompletionsClient } from '../sourcegraph-api/completions/client'
 import { CompletionParameters, CompletionResponse } from '../sourcegraph-api/completions/types'
@@ -58,6 +65,14 @@ export class MockIntentDetector implements IntentDetector {
     public isEditorContextRequired(input: string): boolean | Error {
         return this.mocks.isEditorContextRequired?.(input) ?? false
     }
+
+    public classifyIntentFromOptions<Intent extends string>(
+        input: string,
+        options: IntentClassificationOption<Intent>[],
+        fallback: Intent
+    ): Promise<Intent> {
+        return Promise.resolve(fallback)
+    }
 }
 
 export class MockKeywordContextFetcher implements KeywordContextFetcher {
@@ -91,6 +106,12 @@ export class MockEditor implements Editor {
 
     public getActiveTextEditorSelectionOrEntireFile(): ActiveTextEditorSelection | null {
         return this.mocks.getActiveTextEditorSelection?.() ?? null
+    }
+
+    public getActiveTextEditorDiagnosticsForRange(
+        range: ActiveTextEditorSelectionRange
+    ): ActiveTextEditorDiagnostic[] | null {
+        return this.mocks.getActiveTextEditorDiagnosticsForRange?.(range) ?? null
     }
 
     public getActiveTextEditor(): ActiveTextEditor | null {

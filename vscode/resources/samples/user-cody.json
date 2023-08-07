@@ -1,22 +1,23 @@
 {
-  "title": "Cody Custom Recipes - User",
-  "description": "This file showcases how to build custom recipes for Cody by Sourcegraph.",
-  "recipes": {
-    "Generate Multiple Unit Tests": {
-      "prompt": "Generate 2 or more unit tests for the selected code. Provide me with full, workable unit tests. If there are existing test files in the directory, try to follow similar patterns and imports used in those files. You may import common libraries like the language's built-in test framework. If there are no test files, use common best practices for unit testing this language. Make sure to include all the imports needed to run the tests.",
-      "context": {
-        "currentDir": true,
-        "currentFile": true
-      },
-      "info": "Works best if there are other test files in the current directory"
-    },
-    "Compare Files in Opened Tabs": {
-      "prompt": "Compare the code from opened tabs and explain their relationships.",
+  "title": "[Experimental] Custom User Commands",
+  "description": "This file showcases how to build custom commandss for Cody by Sourcegraph in VS Code.",
+  "doc": "For more information, see https://sourcegraph.com/notebooks/Tm90ZWJvb2s6MzA1NQ==",
+  "commands": {
+    "(example) Compare Open Tabs": {
+      "prompt": "Please examine the code in the opened tabs. Then explain the relationship between the code samples by answering these questions: 1. What are the main tasks or functions the code is performing? 2. Are there any similarities in functions or logic across the samples? 3. Does one code snippet call or import another? If so, how do they interact? 4. Are there any notable differences in how they approach similar problems? 5. Overall, how are the code snippets related - do they work together as part of a larger program, solve variants of the same problem, or serve entirely different purposes?",
+      "slashCommand": "compare",
       "context": {
         "openTabs": true,
-        "excludeSelection": true
+        "selection": false
       },
-      "info": "This recipe lets Cody analyze code from open tabs to provide insights on how they relate to each other."
+      "note": "This command lets Cody analyze code from open tabs to provide insights on how they relate to each other."
+    },
+    "(example) Summarize the Last Cody Release": {
+      "prompt": "What is the latest stable version of Cody? Can you briefly summarize the changes that were included in that release based on this CHANGELOG excerpt?",
+      "context": {
+        "selection": false,
+        "command": "curl https://raw.githubusercontent.com/sourcegraph/cody/main/vscode/CHANGELOG.md | head -n 50"
+      }
     }
   }
 }

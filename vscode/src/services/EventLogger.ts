@@ -14,9 +14,10 @@ const extensionDetails: ExtensionDetails = { ide: 'VSCode', ideExtensionType: 'C
 
 export async function createOrUpdateEventLogger(
     config: ConfigurationWithAccessToken,
-    localStorage: LocalStorage
+    localStorage: LocalStorage,
+    isExtensionModeDevOrTest: boolean
 ): Promise<void> {
-    if (config.telemetryLevel === 'off') {
+    if (config.telemetryLevel === 'off' || isExtensionModeDevOrTest) {
         eventLogger = null
         return
     }

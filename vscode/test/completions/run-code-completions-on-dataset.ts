@@ -5,32 +5,34 @@ import fs from 'fs'
 import path from 'path'
 
 import * as vscode from 'vscode'
-import { URI } from 'vscode-uri'
+import { TextDocument } from 'vscode-languageserver-textdocument'
 
 import { NoopEditor } from '@sourcegraph/cody-shared/src/editor'
 import { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/nodeClient'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/cody-shared/src/telemetry'
 
-import { CodyCompletionItemProvider } from '../../src/completions'
 import { GetContextResult } from '../../src/completions/context'
-import { History } from '../../src/completions/history'
+import { VSCodeDocumentHistory } from '../../src/completions/history'
 import { createProviderConfig } from '../../src/completions/providers/createProvider'
+import { InlineCompletionItemProvider } from '../../src/completions/vscodeInlineCompletionItemProvider'
 import { getFullConfig } from '../../src/configuration'
 import { configureExternalServices } from '../../src/external-services'
 import { InMemorySecretStorage } from '../../src/services/SecretStorageProvider'
+import { wrapVSCodeTextDocument } from '../../src/testutils/textDocument'
 
 import { completionsDataset, CURSOR, Sample } from './completions-dataset'
 import { ENVIRONMENT_CONFIG } from './environment-config'
 import { findSubstringPosition } from './utils'
-import { TextDocument } from './vscode-text-document'
 
 let didLogConfig = false
+let providerName: string
 
-async function initCompletionsProvider(context: GetContextResult): Promise<CodyCompletionItemProvider> {
+async function initCompletionsProvider(context: GetContextResult): Promise<InlineCompletionItemProvider> {
     const secretStorage = new InMemorySecretStorage()
     await secretStorage.store('cody.access-token', ENVIRONMENT_CONFIG.SOURCEGRAPH_ACCESS_TOKEN)
 
     const initialConfig = await getFullConfig(secretStorage)
+    providerName = initialConfig.autocompleteAdvancedProvider
     if (!didLogConfig) {
         console.error('Running `initCompletionsProvider` with config:', initialConfig)
         didLogConfig = true
@@ -48,21 +50,18 @@ async function initCompletionsProvider(context: GetContextResult): Promise<CodyC
         { createCompletionsClient: (...args) => new SourcegraphNodeCompletionsClient(...args) }
     )
 
-    const history = new History()
+    const history = new VSCodeDocumentHistory()
 
     const providerConfig = createProviderConfig(initialConfig, console.error, completionsClient)
 
-    const completionsProvider = new CodyCompletionItemProvider({
+    const completionsProvider = new InlineCompletionItemProvider({
         providerConfig,
         statusBar: {
             startLoading: () => () => {},
             dispose: () => {},
         },
         history,
-        codebaseContext,
-        disableTimeouts: true,
-        triggerMoreEagerly: true,
-        cache: null,
+        getCodebaseContext: () => codebaseContext,
         isEmbeddingsContextEnabled: true,
         contextFetcher: () => Promise.resolve(context),
     })
@@ -86,7 +85,7 @@ function prepareTextDocument(
 
     // Remove CURSOR marks from the code before processing it further.
     const completionReadyCode = code.replaceAll(CURSOR, '')
-    const textDocument = new TextDocument(URI.parse('file:///' + fileName), languageId, completionReadyCode)
+    const textDocument = TextDocument.create('file:///' + fileName, languageId, 0, completionReadyCode)
 
     return { textDocument, position }
 }
@@ -127,7 +126,7 @@ async function generateCompletionsForDataset(codeSamples: Sample[]): Promise<voi
 
             const completionsProvider = await initCompletionsProvider(context)
             const completionItems = await completionsProvider.provideInlineCompletionItems(
-                textDocument,
+                wrapVSCodeTextDocument(textDocument),
                 position,
                 {
                     triggerKind: 1,
@@ -159,8 +158,11 @@ async function generateCompletionsForDataset(codeSamples: Sample[]): Promise<voi
     // TODO: prettify path management
     // Save results to a JSON file in the completions-review-tool/data folder to be used by the review tool:
     // pnpm --filter @sourcegraph/completions-review-tool run dev
+    if (!providerName) {
+        throw new Error('No provider name')
+    }
+    const filename = path.join(ENVIRONMENT_CONFIG.OUTPUT_PATH, `${providerName}-${timestamp}.json`)
     fs.mkdirSync(ENVIRONMENT_CONFIG.OUTPUT_PATH, { recursive: true })
-    const filename = path.join(ENVIRONMENT_CONFIG.OUTPUT_PATH, `anthropic-${timestamp}.json`)
     fs.writeFileSync(filename, JSON.stringify(results, null, 2))
     console.log('\n✅ Completions saved to:', filename)
 }

@@ -5,11 +5,12 @@ import { UserLocalHistory } from '@sourcegraph/cody-shared/src/chat/transcript/m
 
 export class LocalStorage {
     // Bump this on storage changes so we don't handle incorrectly formatted data
-    private KEY_LOCAL_HISTORY = 'cody-local-chatHistory-v2'
-    private ANONYMOUS_USER_ID_KEY = 'sourcegraphAnonymousUid'
-    private LAST_USED_ENDPOINT = 'SOURCEGRAPH_CODY_ENDPOINT'
-    private CODY_ENDPOINT_HISTORY = 'SOURCEGRAPH_CODY_ENDPOINT_HISTORY'
-    private KEY_ENABLED_PLUGINS = 'KEY_ENABLED_PLUGINS'
+    protected KEY_LOCAL_HISTORY = 'cody-local-chatHistory-v2'
+    protected ANONYMOUS_USER_ID_KEY = 'sourcegraphAnonymousUid'
+    protected LAST_USED_ENDPOINT = 'SOURCEGRAPH_CODY_ENDPOINT'
+    protected CODY_ENDPOINT_HISTORY = 'SOURCEGRAPH_CODY_ENDPOINT_HISTORY'
+    protected KEY_ENABLED_PLUGINS = 'KEY_ENABLED_PLUGINS'
+    protected KEY_LAST_USED_RECIPES = 'SOURCEGRAPH_CODY_LAST_USED_RECIPE_NAMES'
 
     constructor(private storage: Memento) {}
 
@@ -112,6 +113,21 @@ export class LocalStorage {
 
     public getEnabledPlugins(): string[] | null {
         return this.storage.get<string[] | null>(this.KEY_ENABLED_PLUGINS, null)
+    }
+
+    public async setLastUsedCommands(recipes: string[]): Promise<void> {
+        if (recipes.length === 0) {
+            return
+        }
+        try {
+            await this.storage.update(this.KEY_LAST_USED_RECIPES, recipes)
+        } catch (error) {
+            console.error(error)
+        }
+    }
+
+    public getLastUsedCommands(): string[] | null {
+        return this.storage.get<string[] | null>(this.KEY_LAST_USED_RECIPES, null)
     }
 
     public get(key: string): string | null {

@@ -49,14 +49,14 @@ export async function getClient({ codebase, endpoint, context: contextType, debu
         process.exit(1)
     }
 
-    const intentDetector = new SourcegraphIntentDetectorClient(sourcegraphClient)
-
     const completionsClient = new SourcegraphNodeCompletionsClient({
         serverEndpoint: endpoint,
         accessToken,
         debugEnable: debug,
         customHeaders: {},
     })
+
+    const intentDetector = new SourcegraphIntentDetectorClient(sourcegraphClient, completionsClient)
 
     return { codebaseContext, intentDetector, completionsClient }
 }

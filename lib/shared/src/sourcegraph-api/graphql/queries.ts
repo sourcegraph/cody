@@ -163,7 +163,10 @@ query IsContextRequiredForChatQuery($query: String!) {
 	isContextRequiredForChatQuery(query: $query)
 }`
 
-export const LOG_EVENT_MUTATION = `
+/**
+ * Deprecated following new event structure: https://github.com/sourcegraph/sourcegraph/pull/55126.
+ */
+export const LOG_EVENT_MUTATION_DEPRECATED = `
 mutation LogEventMutation($event: String!, $userCookieID: String!, $url: String!, $source: EventSource!, $argument: String, $publicArgument: String) {
     logEvent(
 		event: $event
@@ -192,3 +195,32 @@ query GetPreciseContext($input: PreciseContextInput!) {
     }
 }
 `
+
+export const LOG_EVENT_MUTATION = `
+mutation LogEventMutation($event: String!, $userCookieID: String!, $url: String!, $source: EventSource!, $argument: String, $publicArgument: String, $client: String, $connectedSiteID: String, $hashedLicenseKey: String) {
+    logEvent(
+		event: $event
+		userCookieID: $userCookieID
+		url: $url
+		source: $source
+		argument: $argument
+		publicArgument: $publicArgument
+		client: $client
+		connectedSiteID: $connectedSiteID
+		hashedLicenseKey: $hashedLicenseKey
+    ) {
+		alwaysNil
+	}
+}`
+
+export const CURRENT_SITE_IDENTIFICATION = `
+query SiteIdentification {
+	site {
+		siteID
+		productSubscription {
+			license {
+				hashedKey
+			}
+		}
+	}
+}`

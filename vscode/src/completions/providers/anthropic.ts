@@ -4,7 +4,6 @@ import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
 import { SourcegraphCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/client'
 import { CompletionParameters } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
 
-import { Completion } from '..'
 import { ReferenceSnippet } from '../context'
 import {
     CLOSING_CODE_TAG,
@@ -15,6 +14,7 @@ import {
     PrefixComponents,
     trimLeadingWhitespaceUntilNewline,
 } from '../text-processing'
+import { Completion } from '../types'
 import { batchCompletions, messagesToText } from '../utils'
 
 import { CompletionProviderTracer, Provider, ProviderConfig, ProviderOptions } from './provider'
@@ -27,13 +27,13 @@ function tokensToChars(tokens: number): number {
 
 interface AnthropicOptions {
     contextWindowTokens: number
-    completionsClient: SourcegraphCompletionsClient
+    completionsClient: Pick<SourcegraphCompletionsClient, 'complete'>
 }
 
 export class AnthropicProvider extends Provider {
     private promptChars: number
     private responseTokens: number
-    private completionsClient: SourcegraphCompletionsClient
+    private completionsClient: Pick<SourcegraphCompletionsClient, 'complete'>
 
     constructor(options: ProviderOptions, anthropicOptions: AnthropicOptions) {
         super(options)
@@ -61,7 +61,13 @@ export class AnthropicProvider extends Provider {
         const prefixMessages: Message[] = [
             {
                 speaker: 'human',
-                text: `You are a code completion AI that writes high-quality code like a senior engineer. You write code in between tags like this:${OPENING_CODE_TAG}/* Code goes here */${CLOSING_CODE_TAG}`,
+                text: `You are a code completion AI that writes high-quality code like a senior engineer. You are looking at ${
+                    this.options.fileName
+                }. You write code in between tags like this: ${OPENING_CODE_TAG}${
+                    this.options.languageId === 'python' || this.options.languageId === 'ruby'
+                        ? '# Code goes here'
+                        : '/* Code goes here */'
+                }${CLOSING_CODE_TAG}.`,
             },
             {
                 speaker: 'assistant',
@@ -145,7 +151,7 @@ export class AnthropicProvider extends Provider {
         // Create prompt
         const { messages: prompt } = this.createPrompt(snippets)
         if (prompt.length > this.promptChars) {
-            throw new Error('prompt length exceeded maximum alloted chars')
+            throw new Error(`prompt length (${prompt.length}) exceeded maximum character length (${this.promptChars})`)
         }
 
         const args: CompletionParameters = this.options.multiline
@@ -198,5 +204,6 @@ export function createProviderConfig(anthropicOptions: AnthropicOptions): Provid
         maximumContextCharacters: tokensToChars(anthropicOptions.contextWindowTokens),
         enableExtendedMultilineTriggers: true,
         identifier: 'anthropic',
+        supportsInfilling: false,
     }
 }

@@ -16,6 +16,7 @@ export interface ChatMessage extends Message {
     preciseContext?: PreciseContext[]
     pluginExecutionInfos?: PluginFunctionExecutionInfo[]
     buttons?: ChatButton[]
+    data?: any
 }
 
 export interface InteractionMessage extends Message {

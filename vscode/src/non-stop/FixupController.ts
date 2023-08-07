@@ -1,6 +1,6 @@
 import * as vscode from 'vscode'
 
-import { VsCodeFixupController } from '@sourcegraph/cody-shared/src/editor'
+import { VsCodeFixupController, VsCodeFixupTaskRecipeData } from '@sourcegraph/cody-shared/src/editor'
 
 import { computeDiff, Diff } from './diff'
 import { FixupCodeLenses } from './FixupCodeLenses'
@@ -12,7 +12,7 @@ import { FixupFileObserver } from './FixupFileObserver'
 import { FixupScheduler } from './FixupScheduler'
 import { FixupTask, taskID } from './FixupTask'
 import { FixupTypingUI } from './FixupTypingUI'
-import { FixupFileCollection, FixupIdleTaskRunner, FixupTaskFactory, FixupTextChanged, IdleRecipeRunner } from './roles'
+import { FixupFileCollection, FixupIdleTaskRunner, FixupTaskFactory, FixupTextChanged } from './roles'
 import { FixupTaskTreeItem, TaskViewProvider } from './TaskViewProvider'
 import { CodyTaskState } from './utils'
 
@@ -36,7 +36,6 @@ export class FixupController
     private readonly codelenses = new FixupCodeLenses(this)
     private readonly contentStore = new ContentProvider()
     private readonly typingUI = new FixupTypingUI(this)
-    public recipeRunner: IdleRecipeRunner | undefined
 
     private _disposables: vscode.Disposable[] = []
 
@@ -69,14 +68,12 @@ export class FixupController
     }
 
     /**
-     * Register commands and views which are entrypoints to the feature. Call this if the feature
-     * is enabled.
+     * Register the tree view that provides an additional UI for Fixups.
+     * Call this if the feature is enabled.
+     * TODO: We should move this to a QuickPick and enable it by default.
      */
-    public register(): void {
-        this._disposables.push(
-            vscode.window.registerTreeDataProvider('cody.fixup.tree.view', this.taskViewProvider),
-            vscode.commands.registerCommand('cody.non-stop.fixup', () => this.typingUI.show())
-        )
+    public registerTreeView(): void {
+        this._disposables.push(vscode.window.registerTreeDataProvider('cody.fixup.tree.view', this.taskViewProvider))
     }
 
     // FixupFileCollection
@@ -95,15 +92,17 @@ export class FixupController
         return this.scheduler.scheduleIdle(callback)
     }
 
-    // FixupTaskFactory
+    public async promptUserForTask(): Promise<FixupTask | null> {
+        const task = await this.typingUI.show()
+        return task
+    }
 
-    // Adds a new task to the list of tasks
-    // Then mark it as pending before sending it to the tree view for tree item creation
-    public createTask(documentUri: vscode.Uri, instruction: string, selectionRange: vscode.Range): void {
+    public createTask(documentUri: vscode.Uri, instruction: string, selectionRange: vscode.Range): FixupTask {
         const fixupFile = this.files.forUri(documentUri)
         const task = new FixupTask(fixupFile, instruction, selectionRange)
         this.tasks.set(task.id, task)
-        this.setTaskState(task, CodyTaskState.waiting)
+        this.setTaskState(task, CodyTaskState.asking)
+        return task
     }
 
     // Open fsPath at the selected line in editor on tree item click
@@ -163,7 +162,7 @@ export class FixupController
             return
         }
         void vscode.window.showInformationMessage('Cody will rewrite to include your changes')
-        this.setTaskState(task, CodyTaskState.waiting)
+        this.setTaskState(task, CodyTaskState.asking)
         return undefined
     }
 
@@ -265,16 +264,7 @@ export class FixupController
     }
 
     // Called by the non-stop recipe to gather current state for the task.
-    public async getTaskRecipeData(id: string): Promise<
-        | {
-              instruction: string
-              fileName: string
-              precedingText: string
-              selectedText: string
-              followingText: string
-          }
-        | undefined
-    > {
+    public async getTaskRecipeData(id: string): Promise<VsCodeFixupTaskRecipeData | undefined> {
         const task = this.tasks.get(id)
         if (!task) {
             return undefined
@@ -300,6 +290,7 @@ export class FixupController
             precedingText,
             selectedText,
             followingText,
+            selectionRange: task.selectionRange,
         }
     }
 
@@ -502,15 +493,6 @@ export class FixupController
             void vscode.commands.executeCommand('setContext', 'cody.fixup.running', true)
         } else if (oldState === CodyTaskState.asking && task.state !== CodyTaskState.asking) {
             void vscode.commands.executeCommand('setContext', 'cody.fixup.running', false)
-        }
-
-        if (task.state === CodyTaskState.waiting && this.recipeRunner) {
-            // TODO: Move this to the scheduler, have one outstanding callback
-            // at a time, and pick the most advantageous recipe to execute.
-            this.recipeRunner.onIdle(() => {
-                this.setTaskState(task, CodyTaskState.asking)
-                void this.recipeRunner?.runIdleRecipe('non-stop', task.id)
-            })
         }
 
         if (task.state === CodyTaskState.fixed) {

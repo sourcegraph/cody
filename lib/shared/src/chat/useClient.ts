@@ -135,7 +135,7 @@ export const useClient = ({
         const completionsClient = new SourcegraphBrowserCompletionsClient(config)
         const chatClient = new ChatClient(completionsClient)
         const graphqlClient = new SourcegraphGraphQLAPIClient(config)
-        const intentDetector = new SourcegraphIntentDetectorClient(graphqlClient)
+        const intentDetector = new SourcegraphIntentDetectorClient(graphqlClient, completionsClient)
 
         return { graphqlClient, chatClient, intentDetector }
     }, [config])
