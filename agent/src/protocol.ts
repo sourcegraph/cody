@@ -145,7 +145,7 @@ export interface ExecuteRecipeParams {
 }
 
 export interface ExecuteAutocompleteParams {
-    document: TextDocument
+    filePath: string
     position: Position
     context: AutocompleteContext
 }
