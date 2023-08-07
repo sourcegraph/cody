@@ -11,15 +11,16 @@ export function convertGitCloneURLToCodebaseName(cloneURL: string): string | nul
         return null
     }
     try {
-        const uri = new URL(cloneURL.replace('git@', ''))
         // Handle common Git SSH URL format
-        const match = cloneURL.match(/git@([^:]+):([\w-]+)\/([\w-]+)(\.git)?/)
-        if (cloneURL.startsWith('git@') && match) {
+        const match = cloneURL.match(/^[\w-]+@([^:]+):([\w-]+)\/([\w-]+)(\.git)?$/)
+        if (match) {
             const host = match[1]
             const owner = match[2]
             const repo = match[3]
             return `${host}/${owner}/${repo}`
         }
+
+        const uri = new URL(cloneURL)
         // Handle GitHub URLs
         if (uri.protocol.startsWith('github') || uri.href.startsWith('github')) {
             return `github.com/${uri.pathname.replace('.git', '')}`
