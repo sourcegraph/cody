@@ -170,33 +170,47 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
         }
 
         return {
-            items: result ? processInlineCompletionsForVSCode(result.logId, document, position, result.items) : [],
+            items: result ? this.processInlineCompletionsForVSCode(result.logId, document, position, result.items) : [],
         }
     }
-}
 
-/**
- * Process completions items in VS Code-specific ways.
- */
-function processInlineCompletionsForVSCode(
-    logId: string,
-    document: vscode.TextDocument,
-    position: vscode.Position,
-    items: InlineCompletionItem[]
-): vscode.InlineCompletionItem[] {
-    return items.map(completion => {
-        // Return the completion from the start of the current line (instead of starting at the
-        // given position). This avoids UI jitter in VS Code; when typing or deleting individual
-        // characters, VS Code reuses the existing completion while it waits for the new one to
-        // come in.
-        const currentLine = document.lineAt(position)
-        const currentLinePrefix = document.getText(currentLine.range.with({ end: position }))
-        return new vscode.InlineCompletionItem(currentLinePrefix + completion.insertText, currentLine.range, {
-            title: 'Completion accepted',
-            command: 'cody.autocomplete.inline.accepted',
-            arguments: [{ codyLogId: logId, codyLines: completion.insertText.split(/\r\n|\r|\n/).length }],
+    /**
+     * Process completions items in VS Code-specific ways.
+     */
+    private processInlineCompletionsForVSCode(
+        logId: string,
+        document: vscode.TextDocument,
+        position: vscode.Position,
+        items: InlineCompletionItem[]
+    ): vscode.InlineCompletionItem[] {
+        return items.map(completion => {
+            const currentLine = document.lineAt(position)
+            const currentLinePrefix = document.getText(currentLine.range.with({ end: position }))
+
+            // Return the completion from the start of the current line (instead of starting at the
+            // given position). This avoids UI jitter in VS Code; when typing or deleting individual
+            // characters, VS Code reuses the existing completion while it waits for the new one to
+            // come in.
+            const start = currentLine.range.start
+
+            // Limit the range to the current position if the model supports infilling and the
+            // response only has a single line.
+            // For non FIM models, the same line suffix will be repeated in the completion
+            const supportsInfilling = this.config.providerConfig.supportsInfilling
+            const isMultiline = completion.insertText.includes('\n')
+            const end = supportsInfilling && !isMultiline ? position : currentLine.range.end
+
+            return new vscode.InlineCompletionItem(
+                currentLinePrefix + completion.insertText,
+                new vscode.Range(start, end),
+                {
+                    title: 'Completion accepted',
+                    command: 'cody.autocomplete.inline.accepted',
+                    arguments: [{ codyLogId: logId, codyLines: completion.insertText.split(/\r\n|\r|\n/).length }],
+                }
+            )
         })
-    })
+    }
 }
 
 let globalInvocationSequenceForTracer = 0

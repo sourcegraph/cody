@@ -120,5 +120,6 @@ export function createProviderConfig(unstableAzureOpenAIOptions: UnstableAzureOp
         maximumContextCharacters: contextWindowChars,
         enableExtendedMultilineTriggers: false,
         identifier: PROVIDER_IDENTIFIER,
+        supportsInfilling: false,
     }
 }
