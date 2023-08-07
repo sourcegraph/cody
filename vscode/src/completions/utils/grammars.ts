@@ -21,12 +21,20 @@ export enum SupportedLanguage {
     Php = 'php',
 }
 
+/**
+ * Different languages have different names for lexem we want to work
+ * with in our parser logic, this enum is supposed to be an abstraction
+ * layer to parser and query code snippets with generic language agnostic
+ * lexems, see map function below to see how generic lexems relate to
+ * specific language lexem tokens.
+ */
 export enum GenericLexem {
     IfStatement,
     ElseClause,
     StatementBlock,
     CallExpression,
     Comment,
+    MethodCall,
 }
 
 enum StandardLexem {
@@ -50,6 +58,7 @@ enum GoLexemType {
     ElseClause = 'else',
     StatementBlock = 'block',
     CallExpression = 'call_expression',
+    MethodCall = 'call_expression',
     Comment = 'comment',
 }
 
@@ -58,15 +67,17 @@ enum PythonLexemType {
     ElseClause = 'else',
     StatementBlock = 'block',
     CallExpression = 'call',
+    MethodCall = 'call',
     Comment = 'comment',
 }
 
 enum DartLexemType {
+    Comment = 'comment',
     IfStatement = 'if_statement',
     ElseClause = 'else',
     StatementBlock = 'block',
     CallExpression = 'expression_statement',
-    Comment = 'comment',
+    MethodCall = 'call_expression',
 }
 
 enum CLexemType {
@@ -78,30 +89,33 @@ enum CLexemType {
 }
 
 enum CppLexemType {
+    Comment = 'comment',
     IfStatement = 'if_statement',
     ElseClause = 'else_clause',
     StatementBlock = 'compound_statement',
     CallExpression = 'call_expression',
-    Comment = 'comment',
+    MethodCall = 'call_expression',
 }
 
 enum CSharpLexemType {
+    Comment = 'comment',
     IfStatement = 'if_statement',
     ElseClause = 'else',
     StatementBlock = 'block',
     CallExpression = 'invocation_expression',
-    Comment = 'comment',
+    MethodCall = 'invocation_expression',
 }
 
 enum PhpLexemType {
+    Comment = 'comment',
     IfStatement = 'if_statement',
     ElseClause = 'else_clause',
     StatementBlock = 'compound_statement',
-    CallExpression = 'expression_statement',
-    Comment = 'comment',
+    CallExpression = 'function_call_expression',
+    MethodCall = 'member_call_expression',
 }
 
-export type LEXEME_DICTIONARY = Record<GenericLexem, string>
+export type LEXEME_DICTIONARY = Record<GenericLexem, string | null>
 
 export function getLanguageLexems(language: SupportedLanguage): LEXEME_DICTIONARY | null {
     switch (language) {
@@ -115,6 +129,7 @@ export function getLanguageLexems(language: SupportedLanguage): LEXEME_DICTIONAR
                 [GenericLexem.StatementBlock]: StandardLexem.StatementBlock,
                 [GenericLexem.CallExpression]: StandardLexem.CallExpression,
                 [GenericLexem.Comment]: StandardLexem.Comment,
+                [GenericLexem.MethodCall]: StandardLexem.CallExpression,
             }
 
         case SupportedLanguage.Java:
@@ -124,6 +139,7 @@ export function getLanguageLexems(language: SupportedLanguage): LEXEME_DICTIONAR
                 [GenericLexem.StatementBlock]: JavaLexemType.StatementBlock,
                 [GenericLexem.CallExpression]: JavaLexemType.MethodInvocation,
                 [GenericLexem.Comment]: StandardLexem.Comment,
+                [GenericLexem.MethodCall]: JavaLexemType.MethodInvocation,
             }
 
         case SupportedLanguage.Go:
@@ -133,6 +149,7 @@ export function getLanguageLexems(language: SupportedLanguage): LEXEME_DICTIONAR
                 [GenericLexem.StatementBlock]: GoLexemType.StatementBlock,
                 [GenericLexem.CallExpression]: GoLexemType.CallExpression,
                 [GenericLexem.Comment]: StandardLexem.Comment,
+                [GenericLexem.MethodCall]: GoLexemType.MethodCall,
             }
 
         case SupportedLanguage.Python:
@@ -142,6 +159,7 @@ export function getLanguageLexems(language: SupportedLanguage): LEXEME_DICTIONAR
                 [GenericLexem.StatementBlock]: PythonLexemType.StatementBlock,
                 [GenericLexem.CallExpression]: PythonLexemType.CallExpression,
                 [GenericLexem.Comment]: StandardLexem.Comment,
+                [GenericLexem.MethodCall]: PythonLexemType.MethodCall,
             }
 
         case SupportedLanguage.Dart:
@@ -151,6 +169,7 @@ export function getLanguageLexems(language: SupportedLanguage): LEXEME_DICTIONAR
                 [GenericLexem.StatementBlock]: DartLexemType.StatementBlock,
                 [GenericLexem.CallExpression]: DartLexemType.CallExpression,
                 [GenericLexem.Comment]: StandardLexem.Comment,
+                [GenericLexem.MethodCall]: DartLexemType.MethodCall,
             }
 
         case SupportedLanguage.C:
@@ -160,6 +179,8 @@ export function getLanguageLexems(language: SupportedLanguage): LEXEME_DICTIONAR
                 [GenericLexem.StatementBlock]: CLexemType.StatementBlock,
                 [GenericLexem.CallExpression]: CLexemType.CallExpression,
                 [GenericLexem.Comment]: StandardLexem.Comment,
+                // C doesn't support class or methods
+                [GenericLexem.MethodCall]: null,
             }
 
         case SupportedLanguage.Cpp:
@@ -169,6 +190,7 @@ export function getLanguageLexems(language: SupportedLanguage): LEXEME_DICTIONAR
                 [GenericLexem.StatementBlock]: CppLexemType.StatementBlock,
                 [GenericLexem.CallExpression]: CppLexemType.CallExpression,
                 [GenericLexem.Comment]: StandardLexem.Comment,
+                [GenericLexem.MethodCall]: CppLexemType.MethodCall,
             }
 
         case SupportedLanguage.CSharp:
@@ -178,6 +200,7 @@ export function getLanguageLexems(language: SupportedLanguage): LEXEME_DICTIONAR
                 [GenericLexem.StatementBlock]: CSharpLexemType.StatementBlock,
                 [GenericLexem.CallExpression]: CSharpLexemType.CallExpression,
                 [GenericLexem.Comment]: StandardLexem.Comment,
+                [GenericLexem.MethodCall]: CSharpLexemType.MethodCall,
             }
 
         case SupportedLanguage.Php:
@@ -187,6 +210,7 @@ export function getLanguageLexems(language: SupportedLanguage): LEXEME_DICTIONAR
                 [GenericLexem.StatementBlock]: PhpLexemType.StatementBlock,
                 [GenericLexem.CallExpression]: PhpLexemType.CallExpression,
                 [GenericLexem.Comment]: StandardLexem.Comment,
+                [GenericLexem.MethodCall]: PhpLexemType.MethodCall,
             }
 
         default:
@@ -196,6 +220,7 @@ export function getLanguageLexems(language: SupportedLanguage): LEXEME_DICTIONAR
                 [GenericLexem.StatementBlock]: StandardLexem.StatementBlock,
                 [GenericLexem.CallExpression]: StandardLexem.CallExpression,
                 [GenericLexem.Comment]: StandardLexem.Comment,
+                [GenericLexem.MethodCall]: null,
             }
     }
 }
