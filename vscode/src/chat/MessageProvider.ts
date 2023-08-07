@@ -212,6 +212,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
                 debug('ChatViewProvider:onError', err)
 
                 if (isAbortError(err)) {
+                    void this.onCompletionEnd()
                     return
                 }
                 // Log users out on unauth error
@@ -259,7 +260,6 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
     protected async abortCompletion(): Promise<void> {
         this.cancelCompletion()
         await this.multiplexer.notifyTurnComplete()
-        await this.onCompletionEnd()
     }
 
     private async getPluginsContext(
