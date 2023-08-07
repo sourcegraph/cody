@@ -92,8 +92,8 @@ export class FixupController
         return this.scheduler.scheduleIdle(callback)
     }
 
-    public async promptUserForTask(): Promise<FixupTask | null> {
-        const task = await this.typingUI.show()
+    public async promptUserForTask(partialInstruction?: string): Promise<FixupTask | null> {
+        const task = await this.typingUI.show(partialInstruction)
         return task
     }
 

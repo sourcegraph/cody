@@ -209,6 +209,7 @@ const register = async (
         options: {
             document?: vscode.TextDocument
             instruction?: string
+            partialInstruction?: string
             range?: vscode.Range
         } = {}
     ): Promise<void> => {
@@ -224,7 +225,7 @@ const register = async (
 
         const task = options.instruction
             ? fixup.createTask(document.uri, options.instruction, range)
-            : await fixup.promptUserForTask()
+            : await fixup.promptUserForTask(options.partialInstruction)
         if (!task) {
             return
         }
@@ -329,6 +330,12 @@ const register = async (
             'cody.action.commands.menu',
             showDesc => editor.controllers.command?.menu('default', showDesc)
         ),
+        vscode.commands.registerCommand('cody.action.generate-test', () =>
+            executeFixup({ partialInstruction: 'Generate a unit test for the selected code' })
+        ),
+        vscode.commands.registerCommand('cody.action.generate-documentation', () =>
+            executeFixup({ partialInstruction: 'Generate documentation for the selected code' })
+        ),
         vscode.commands.registerCommand(
             'cody.action.commands.custom.menu',
             () => editor.controllers.command?.menu('custom')
@@ -345,12 +352,6 @@ const register = async (
         ),
         vscode.commands.registerCommand('cody.recipe.explain-code', () =>
             executeRecipeInSidebar('explain-code-detailed')
-        ),
-        vscode.commands.registerCommand('cody.command.generate-unit-test', () =>
-            executeRecipeInSidebar('custom-prompt', true, '/tests')
-        ),
-        vscode.commands.registerCommand('cody.command.generate-docstring', () =>
-            executeRecipeInSidebar('custom-prompt', true, '/docstring')
         ),
         vscode.commands.registerCommand('cody.command.inline-touch', () =>
             executeRecipeInSidebar('inline-touch', false)

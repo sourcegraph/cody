@@ -29,7 +29,7 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
 
     private tools: ToolsProvider
     private custom: CustomPromptsStore
-    public default = new PromptsProvider()
+    public default = new PromptsProvider({ includeDefaultCommands: false })
 
     private myPromptsMap = new Map<string, CodyPrompt>()
 
@@ -178,7 +178,7 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
         await this.saveLastUsedCommands()
         const { commands } = await this.custom.refresh()
         this.myPromptsMap = commands
-        this.default.groupCommands(commands)
+        this.default.groupCommands(commands, false)
     }
 
     /**
@@ -186,7 +186,14 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
      */
     public async mainCommandMenu(showDesc = false): Promise<void> {
         try {
-            const commandItems = [menu_separators.inline, menu_options.chat, menu_options.fix, menu_separators.commands]
+            const commandItems = [
+                menu_separators.inline,
+                menu_options.chat,
+                menu_options.fix,
+                menu_options.doc,
+                menu_options.test,
+                menu_separators.commands,
+            ]
             const allCommands = this.default.getGroupedCommands(true)
             const allCommandItems = [...allCommands]?.map(commandItem => {
                 const command = commandItem[1]
@@ -221,6 +228,10 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
                     return await vscode.commands.executeCommand('cody.inline.new')
                 case selectedCommandID === menu_options.fix.label:
                     return await vscode.commands.executeCommand('cody.fixup.new')
+                case selectedCommandID === menu_options.doc.label:
+                    return await vscode.commands.executeCommand('cody.action.generate-documentation')
+                case selectedCommandID === menu_options.test.label:
+                    return await vscode.commands.executeCommand('cody.action.generate-test')
                 case selectedCommandID === menu_options.submitChat.label:
                     return await vscode.commands.executeCommand('cody.action.chat', userPrompt)
                 case selectedCommandID === menu_options.submitFix.label:
