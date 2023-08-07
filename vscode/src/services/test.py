@@ -1,3 +1,0 @@
-# Write hello world
-
-print()
