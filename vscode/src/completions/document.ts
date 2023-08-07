@@ -1,5 +1,7 @@
 import * as vscode from 'vscode'
 
+import { getNextNonEmptyLine, getPrevNonEmptyLine } from './utils/text-utils'
+
 export interface DocumentContext {
     prefix: string
     suffix: string
@@ -50,25 +52,6 @@ export function getCurrentDocContext(
         .getText(new vscode.Range(position, document.positionAt(document.getText().length)))
         .split('\n')
 
-    let nextNonEmptyLine = ''
-    if (suffixLines.length > 0) {
-        for (const line of suffixLines) {
-            if (line.trim().length > 0) {
-                nextNonEmptyLine = line
-                break
-            }
-        }
-    }
-
-    let prevNonEmptyLine = ''
-    for (let i = prefixLines.length - 1; i >= 0; i--) {
-        const line = prefixLines[i]
-        if (line.trim().length > 0) {
-            prevNonEmptyLine = line
-            break
-        }
-    }
-
     const currentLinePrefix = prefixLines[prefixLines.length - 1]
 
     let prefix: string
@@ -86,6 +69,7 @@ export function getCurrentDocContext(
     } else {
         prefix = document.getText(new vscode.Range(new vscode.Position(0, 0), position))
     }
+    const prevNonEmptyLine = getPrevNonEmptyLine(prefix)
 
     let totalSuffix = 0
     let endLine = 0
@@ -97,6 +81,7 @@ export function getCurrentDocContext(
         totalSuffix += suffixLines[i].length
     }
     const suffix = suffixLines.slice(0, endLine).join('\n')
+    const nextNonEmptyLine = getNextNonEmptyLine(suffix)
 
     const currentLineSuffix = suffixLines[0]
 

@@ -1,5 +1,6 @@
 import dedent from 'dedent'
 import { describe, expect, test, vi } from 'vitest'
+import { Range } from 'vscode'
 import { URI } from 'vscode-uri'
 
 import { SourcegraphCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/client'
@@ -21,6 +22,7 @@ import * as CompletionsLogger from './logger'
 import { createProviderConfig } from './providers/anthropic'
 import { RequestManager } from './request-manager'
 import { completion, documentAndPosition } from './testHelpers'
+import { getNextNonEmptyLine } from './utils/text-utils'
 
 // The dedent package seems to replace `\t` with `\\t` so in order to insert a tab character, we
 // have to use interpolation. We abbreviate this to `T` because ${T} is exactly 4 characters,
@@ -264,10 +266,13 @@ describe('getInlineCompletions', () => {
     describe('reuseLastCandidate', () => {
         function lastCandidate(code: string, insertText: string | string[]): LastInlineCompletionCandidate {
             const { document, position } = documentAndPosition(code)
+            const suffix = document.getText(new Range(position, document.lineAt(document.lineCount - 1).range.end))
+            const nextNonEmptyLine = getNextNonEmptyLine(suffix)
             return {
                 uri: document.uri,
                 lastTriggerPosition: position,
                 lastTriggerCurrentLinePrefix: document.lineAt(position).text.slice(0, position.character),
+                lastTriggerNextNonEmptyLine: nextNonEmptyLine,
                 result: {
                     logId: '1',
                     items: Array.isArray(insertText)
@@ -347,6 +352,38 @@ describe('getInlineCompletions', () => {
                 items: [],
                 source: InlineCompletionsResultSource.Network,
             }))
+
+        test('not reused when the the next non-empty line has changed', async () => {
+            // The user accepts a completion and then moves the cursor to the previous line and hits
+            // enter again, causing a full suffix match with the previous completion that was
+            // accepted before.
+            const completions = await getInlineCompletions(
+                params(
+                    dedent`
+                    function foo() {
+                        █
+                        console.log()
+                    }
+                `,
+                    [],
+                    {
+                        lastCandidate: lastCandidate(
+                            dedent`
+                        function foo() {
+                            █
+                        }
+                    `,
+                            'console.log()'
+                        ),
+                    }
+                )
+            )
+
+            expect(completions).toEqual<V>({
+                items: [],
+                source: InlineCompletionsResultSource.Network,
+            })
+        })
 
         test('not reused when deleting the entire non-whitespace line', async () =>
             // The user types `const x`, then deletes the entire line. The original ghost text

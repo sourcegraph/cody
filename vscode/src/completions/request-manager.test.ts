@@ -4,6 +4,7 @@ import { Provider } from './providers/provider'
 import { RequestManager, RequestManagerResult, RequestParams } from './request-manager'
 import { documentAndPosition } from './testHelpers'
 import { Completion } from './types'
+import { getNextNonEmptyLine, getPrevNonEmptyLine } from './utils/text-utils'
 
 class MockProvider extends Provider {
     public didFinishNetworkRequest = false
@@ -36,8 +37,7 @@ function createProvider(prefix: string) {
     })
 }
 
-function docState(prefix: string): RequestParams {
-    const suffix = ';'
+function docState(prefix: string, suffix: string = ';'): RequestParams {
     const { document, position } = documentAndPosition(`${prefix}█${suffix}`)
     return {
         document,
@@ -48,19 +48,20 @@ function docState(prefix: string): RequestParams {
             currentLinePrefix:
                 prefix.lastIndexOf('\n') === -1 ? prefix : prefix.slice(Math.max(0, prefix.lastIndexOf('\n') + 1)),
             currentLineSuffix: suffix,
-            prevNonEmptyLine: '',
-            nextNonEmptyLine: '',
+            prevNonEmptyLine: getPrevNonEmptyLine(prefix),
+            nextNonEmptyLine: getNextNonEmptyLine(suffix),
         },
         multiline: false,
     }
 }
 
 describe('RequestManager', () => {
-    let createRequest: (prefix: string, provider: Provider) => Promise<RequestManagerResult>
+    let createRequest: (prefix: string, provider: Provider, suffix?: string) => Promise<RequestManagerResult>
     beforeEach(() => {
         const requestManager = new RequestManager()
 
-        createRequest = (prefix: string, provider: Provider) => requestManager.request(docState(prefix), [provider], [])
+        createRequest = (prefix: string, provider: Provider, suffix?: string) =>
+            requestManager.request(docState(prefix, suffix), [provider], [])
     })
 
     it('resolves a single request', async () => {
@@ -87,6 +88,23 @@ describe('RequestManager', () => {
 
         expect(cacheHit).toBe('hit')
         expect(completions[0].insertText).toBe("'hello')")
+    })
+
+    it('does not resolve from cache if the suffix has changed', async () => {
+        const prefix = 'console.log('
+        const suffix1 = ')\nconsole.log(1)'
+        const provider1 = createProvider(prefix)
+        setTimeout(() => provider1.resolveRequest(["'hello')"]), 0)
+        await createRequest(prefix, provider1, suffix1)
+
+        const suffix2 = ')\nconsole.log(2)'
+        const provider2 = createProvider(prefix)
+        setTimeout(() => provider2.resolveRequest(["'world')"]), 0)
+
+        const { completions, cacheHit } = await createRequest(prefix, provider2, suffix2)
+
+        expect(cacheHit).toBeNull()
+        expect(completions[0].insertText).toBe("'world')")
     })
 
     it('keeps requests running when a new request comes in', async () => {

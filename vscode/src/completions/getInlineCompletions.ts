@@ -67,6 +67,9 @@ export interface LastInlineCompletionCandidate {
     /** The prefix of the line (before the cursor position) where this candidate was generated. */
     lastTriggerCurrentLinePrefix: string
 
+    /** The next non-empty line in the suffix */
+    lastTriggerNextNonEmptyLine: string
+
     /** The previously suggested result. */
     result: Pick<InlineCompletionsResult, 'logId' | 'items'>
 }
@@ -147,7 +150,7 @@ async function doGetInlineCompletions({
     getCodebaseContext,
     documentHistory,
     requestManager,
-    lastCandidate: lastCandidate,
+    lastCandidate,
     debounceInterval,
     setIsLoading,
     abortSignal,

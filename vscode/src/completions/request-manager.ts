@@ -110,6 +110,7 @@ export class RequestManager {
             uri: document.uri,
             lastTriggerPosition: position,
             lastTriggerCurrentLinePrefix: docContext.currentLinePrefix,
+            lastTriggerNextNonEmptyLine: docContext.nextNonEmptyLine,
             result: {
                 logId: '',
                 items,
@@ -168,7 +169,7 @@ class RequestCache {
     private cache = new LRUCache<string, InlineCompletionItem[]>({ max: 50 })
 
     private toCacheKey(key: RequestParams): string {
-        return key.docContext.prefix
+        return `${key.docContext.prefix}█${key.docContext.nextNonEmptyLine}`
     }
 
     public get(key: RequestParams): InlineCompletionItem[] | undefined {
