@@ -10,6 +10,8 @@ Starting from `0.2.0`, Cody is using `major.EVEN_NUMBER.patch` for release versi
 
 ### Fixed
 
+- Update file link color to match buttons. [pull/600](https://github.com/sourcegraph/cody/pull/600)
+
 ### Changed
 
 ## [0.6.5]
