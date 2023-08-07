@@ -110,6 +110,7 @@ export class RequestManager {
             uri: document.uri,
             lastTriggerPosition: position,
             lastTriggerCurrentLinePrefix: docContext.currentLinePrefix,
+            lastTriggerNextNonEmptyLine: docContext.nextNonEmptyLine,
             result: {
                 logId: '',
                 items,

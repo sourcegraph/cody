@@ -4,6 +4,7 @@ import { Provider } from './providers/provider'
 import { RequestManager, RequestManagerResult, RequestParams } from './request-manager'
 import { documentAndPosition } from './testHelpers'
 import { Completion } from './types'
+import { getNextNonEmptyLine, getPrevNonEmptyLine } from './utils/text-utils'
 
 class MockProvider extends Provider {
     public didFinishNetworkRequest = false
@@ -48,8 +49,8 @@ function docState(prefix: string): RequestParams {
             currentLinePrefix:
                 prefix.lastIndexOf('\n') === -1 ? prefix : prefix.slice(Math.max(0, prefix.lastIndexOf('\n') + 1)),
             currentLineSuffix: suffix,
-            prevNonEmptyLine: '',
-            nextNonEmptyLine: '',
+            prevNonEmptyLine: getPrevNonEmptyLine(prefix),
+            nextNonEmptyLine: getNextNonEmptyLine(suffix),
         },
         multiline: false,
     }

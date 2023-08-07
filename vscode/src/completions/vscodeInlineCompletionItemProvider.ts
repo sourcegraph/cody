@@ -17,6 +17,7 @@ import { ProviderConfig } from './providers/provider'
 import { RequestManager } from './request-manager'
 import { ProvideInlineCompletionItemsTracer, ProvideInlineCompletionsItemTraceData } from './tracer'
 import { InlineCompletionItem } from './types'
+import { getNextNonEmptyLine } from './utils/text-utils'
 
 interface CodyCompletionItemProviderConfig {
     providerConfig: ProviderConfig
@@ -161,6 +162,11 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
                           uri: document.uri,
                           lastTriggerPosition: position,
                           lastTriggerCurrentLinePrefix: document.lineAt(position).text.slice(0, position.character),
+                          lastTriggerNextNonEmptyLine: getNextNonEmptyLine(
+                              document.getText(
+                                  new vscode.Range(position, document.lineAt(document.lineCount - 1).range.end)
+                              )
+                          ),
                           result: {
                               logId: result.logId,
                               items: result.items,
