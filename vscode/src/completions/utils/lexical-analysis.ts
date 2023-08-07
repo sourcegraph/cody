@@ -10,6 +10,14 @@ export { SupportedLanguage, GenericLexem }
 // see https://github.com/asgerf/dts-tree-sitter
 type GrammarPath = string
 
+/**
+ * Map language to wasm grammar path modules, usually we would have
+ * used node bindings for grammar packages, but since VSCode editor
+ * runtime doesn't support this we have to work with wasm modules.
+ *
+ * Note: make sure that dist folder contains these modules when you
+ * run VSCode extension.
+ */
 const SUPPORTED_LANGUAGES: Record<SupportedLanguage, GrammarPath> = {
     [SupportedLanguage.JavaScript]: 'tree-sitter-javascript.wasm',
     [SupportedLanguage.JSX]: 'tree-sitter-javascript.wasm',
@@ -25,6 +33,12 @@ const SUPPORTED_LANGUAGES: Record<SupportedLanguage, GrammarPath> = {
     [SupportedLanguage.Php]: 'tree-sitter-php.wasm',
 }
 
+/*
+ * Loading wasm grammar and creation parser instance everytime we trigger
+ * pre- and post-process might be a performance problem, so we create instance
+ * and load language grammar only once, first time we need parser for a specific
+ * language, next time we read it from this cache.
+ * */
 const PARSERS_LOCAL_CACHE: Partial<Record<SupportedLanguage, Parser>> = {}
 
 interface ParserSettings {
@@ -87,6 +101,10 @@ export function createParser(settings: ParserSettings): ParserApi {
     }
 }
 
+/*
+ * Walk the whole syntax tree recursively and log each node text
+ * and its lexem type. It's used mostly for debug purpose.
+ */
 export function logTree(node: SyntaxNode): void {
     console.group(node.type)
     console.log(node.text)
