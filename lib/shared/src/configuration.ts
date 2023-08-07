@@ -16,6 +16,7 @@ export interface Configuration {
     experimentalCommandLenses: boolean
     experimentalGuardrails: boolean
     experimentalNonStop: boolean
+    autocompleteAdvancedEngine: 'vscode' | 'agent'
     autocompleteAdvancedProvider:
         | 'anthropic'
         | 'unstable-codegen'

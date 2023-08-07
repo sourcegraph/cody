@@ -26,6 +26,9 @@
       "path": "../lib/shared",
     },
     {
+      "path": "../agent",
+    },
+    {
       "path": "../lib/ui",
     },
   ],

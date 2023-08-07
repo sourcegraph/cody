@@ -320,6 +320,9 @@ importers:
       '@anthropic-ai/sdk':
         specifier: ^0.4.2
         version: 0.4.3
+      '@sourcegraph/cody-agent':
+        specifier: workspace:*
+        version: link:../agent
       '@sourcegraph/cody-shared':
         specifier: workspace:*
         version: link:../lib/shared

@@ -16,6 +16,10 @@ import { CompletionProviderTracerResultData, Provider } from '../providers/provi
  */
 export type ProvideInlineCompletionItemsTracer = (data: ProvideInlineCompletionsItemTraceData) => void
 
+export interface SetProviderInlineCompletionItemsTracer {
+    setTracer(value: ProvideInlineCompletionItemsTracer | null): void
+}
+
 /**
  * Trace data for a completion request.
  *
