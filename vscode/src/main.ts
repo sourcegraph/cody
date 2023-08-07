@@ -11,9 +11,11 @@ import { FixupManager } from './chat/FixupViewProvider'
 import { InlineChatViewManager } from './chat/InlineChatViewProvider'
 import { MessageProviderOptions } from './chat/MessageProvider'
 import { CODY_FEEDBACK_URL } from './chat/protocol'
+import { AgentInlineCompletionItemProvider } from './completions/agentInlineCompletionItemProvider'
 import { VSCodeDocumentHistory } from './completions/history'
 import * as CompletionsLogger from './completions/logger'
 import { createProviderConfig } from './completions/providers/createProvider'
+import { SetProviderInlineCompletionItemsTracer } from './completions/tracer'
 import { registerAutocompleteTraceView } from './completions/tracer/traceView'
 import { InlineCompletionItemProvider } from './completions/vscodeInlineCompletionItemProvider'
 import { getConfiguration, getFullConfig } from './configuration'
@@ -487,19 +489,26 @@ function createCompletionsProvider(
 
     const history = new VSCodeDocumentHistory()
     const providerConfig = createProviderConfig(config, webviewErrorMessenger, completionsClient)
-    const completionsProvider = new InlineCompletionItemProvider({
-        providerConfig,
-        history,
-        statusBar,
-        getCodebaseContext: () => contextProvider.context,
-        isEmbeddingsContextEnabled: config.autocompleteAdvancedEmbeddings,
-        completeSuggestWidgetSelection: config.autocompleteExperimentalCompleteSuggestWidgetSelection,
-    })
+
+    const completionsProvider: vscode.InlineCompletionItemProvider & SetProviderInlineCompletionItemsTracer =
+        config.autocompleteAdvancedEngine === 'agent'
+            ? new AgentInlineCompletionItemProvider(disposables)
+            : new InlineCompletionItemProvider({
+                  providerConfig,
+                  history,
+                  statusBar,
+                  getCodebaseContext: () => contextProvider.context,
+                  isEmbeddingsContextEnabled: config.autocompleteAdvancedEmbeddings,
+                  completeSuggestWidgetSelection: config.autocompleteExperimentalCompleteSuggestWidgetSelection,
+              })
 
     disposables.push(
         vscode.commands.registerCommand('cody.autocomplete.inline.accepted', ({ codyLogId, codyLines }) => {
             CompletionsLogger.accept(codyLogId, codyLines)
-        }),
+        })
+    )
+
+    disposables.push(
         vscode.languages.registerInlineCompletionItemProvider('*', completionsProvider),
         registerAutocompleteTraceView(completionsProvider)
     )

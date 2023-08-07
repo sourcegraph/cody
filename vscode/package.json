@@ -806,6 +806,15 @@
           "markdownDescription": "Controls the telemetry about Cody usage and errors. See [Cody usage and privacy notice](https://about.sourcegraph.com/terms/cody-notice).",
           "default": "all"
         },
+        "cody.autocomplete.advanced.engine": {
+          "type": "string",
+          "default": "vscode",
+          "enum": [
+            "vscode",
+            "agent"
+          ],
+          "markdownDescription": "Selects the code completion engine. 'vscode' uses the original Cody autocomplete engine, which is only available in VS Code. 'agent' uses the experimental Cody agent that is shared between all editors."
+        },
         "cody.autocomplete.advanced.provider": {
           "type": "string",
           "default": "anthropic",
@@ -924,6 +933,7 @@
     "@anthropic-ai/sdk": "^0.4.2",
     "@sourcegraph/cody-shared": "workspace:*",
     "@sourcegraph/cody-ui": "workspace:*",
+    "@sourcegraph/cody-agent": "workspace:*",
     "@types/stream-json": "^1.7.3",
     "@vscode/codicons": "^0.0.29",
     "@vscode/webview-ui-toolkit": "^1.2.2",

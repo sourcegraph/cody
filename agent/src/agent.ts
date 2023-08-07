@@ -101,6 +101,15 @@ export class Agent extends MessageHandler {
             })
             return null
         })
+
+        this.registerRequest('autocomplete/execute', async params => {
+            console.error({
+                request: 'autocomplete/execute',
+                filePath: params.document.filePath,
+                openDocuments: [...this.documents.keys()],
+            })
+            return { items: [{ insertText: 'poop', range: { start: params.position, end: params.position } }] }
+        })
     }
 
     private setClient(config: ConnectionConfiguration): void {

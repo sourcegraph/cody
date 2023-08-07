@@ -32,6 +32,9 @@ export type Requests = {
     // client <-- chat/updateMessageInProgress --- server
     'recipes/execute': [ExecuteRecipeParams, null]
 
+    // Client requests the agent server to provide inline autocomplete results at the given location.
+    'autocomplete/execute': [ExecuteAutocompleteParams, ExecuteAutocompleteResult]
+
     // ================
     // Server -> Client
     // ================
@@ -92,7 +95,7 @@ export interface ClientInfo {
 }
 
 export interface ClientCapabilities {
-    completions?: 'none'
+    completions?: 'none' | 'enabled'
     //  When 'streaming', handles 'chat/updateMessageInProgress' streaming notifications.
     chat?: 'none' | 'streaming'
 }
@@ -139,4 +142,23 @@ export interface ExecuteRecipeParams {
     id: RecipeID
     humanChatInput: string
     data?: any
+}
+
+export interface ExecuteAutocompleteParams {
+    document: TextDocument
+    position: Position
+    context: AutocompleteContext
+}
+
+export interface AutocompleteContext {
+    triggerKind: 'invoke' | 'automatic'
+}
+
+export interface ExecuteAutocompleteResult {
+    items: InlineCompletionItem[]
+}
+
+export interface InlineCompletionItem {
+    insertText: string
+    range: Range
 }

@@ -70,6 +70,7 @@ export function getConfiguration(config: ConfigGetter): Configuration {
         experimentalGuardrails: config.get(CONFIG_KEY.experimentalGuardrails, isTesting),
         experimentalNonStop: config.get(CONFIG_KEY.experimentalNonStop, isTesting),
         experimentalCommandLenses: config.get(CONFIG_KEY.experimentalCommandLenses, false),
+        autocompleteAdvancedEngine: config.get(CONFIG_KEY.autocompleteAdvancedEngine, 'vscode'),
         autocompleteAdvancedProvider,
         autocompleteAdvancedServerEndpoint: config.get<string | null>(
             CONFIG_KEY.autocompleteAdvancedServerEndpoint,

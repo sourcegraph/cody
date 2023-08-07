@@ -15,7 +15,11 @@ import {
 import { DocumentHistory } from './history'
 import { ProviderConfig } from './providers/provider'
 import { RequestManager } from './request-manager'
-import { ProvideInlineCompletionItemsTracer, ProvideInlineCompletionsItemTraceData } from './tracer'
+import {
+    ProvideInlineCompletionItemsTracer,
+    ProvideInlineCompletionsItemTraceData,
+    SetProviderInlineCompletionItemsTracer,
+} from './tracer'
 import { InlineCompletionItem } from './types'
 import { getNextNonEmptyLine } from './utils/text-utils'
 
@@ -33,7 +37,9 @@ interface CodyCompletionItemProviderConfig {
     contextFetcher?: (options: GetContextOptions) => Promise<GetContextResult>
 }
 
-export class InlineCompletionItemProvider implements vscode.InlineCompletionItemProvider {
+export class InlineCompletionItemProvider
+    implements vscode.InlineCompletionItemProvider, SetProviderInlineCompletionItemsTracer
+{
     private promptChars: number
     private maxPrefixChars: number
     private maxSuffixChars: number
