@@ -103,6 +103,10 @@ export interface Editor<
      */
     getActiveTextEditorSelectionOrEntireFile(): ActiveTextEditorSelection | null
     /**
+     * Gets the active text editor's selection, or the visible content if the selected range is empty.
+     */
+    getActiveTextEditorSelectionOrVisibleContent(): ActiveTextEditorSelection | null
+    /**
      * Get diagnostics (errors, warnings, hints) for a range within the active text editor.
      */
     getActiveTextEditorDiagnosticsForRange(range: ActiveTextEditorSelectionRange): ActiveTextEditorDiagnostic[] | null
@@ -140,6 +144,10 @@ export class NoopEditor implements Editor {
     }
 
     public getActiveTextEditorSelectionOrEntireFile(): ActiveTextEditorSelection | null {
+        return null
+    }
+
+    public getActiveTextEditorSelectionOrVisibleContent(): ActiveTextEditorSelection | null {
         return null
     }
 

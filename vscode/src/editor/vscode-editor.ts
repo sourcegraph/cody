@@ -99,6 +99,32 @@ export class VSCodeEditor implements Editor<InlineController, FixupController, C
         return this.createActiveTextEditorSelection(activeEditor, selection)
     }
 
+    public getActiveTextEditorSelectionOrVisibleContent(): ActiveTextEditorSelection | null {
+        const activeEditor = this.getActiveTextEditorInstance()
+        if (!activeEditor) {
+            return null
+        }
+        let selection = activeEditor.selection
+        if (!selection || selection.isEmpty) {
+            const activeEditor = this.getActiveTextEditorInstance()
+            if (!activeEditor) {
+                return null
+            }
+
+            const visibleRanges = activeEditor.visibleRanges
+            if (visibleRanges.length === 0) {
+                return null
+            }
+
+            const visibleRange = visibleRanges[0]
+            selection = new vscode.Selection(visibleRange.start.line, 0, visibleRange.end.line + 1, 0)
+        }
+        if (!selection || selection.isEmpty) {
+            return null
+        }
+        return this.createActiveTextEditorSelection(activeEditor, selection)
+    }
+
     private getActiveTextEditorDiagnosticType(severity: vscode.DiagnosticSeverity): ActiveTextEditorDiagnosticType {
         switch (severity) {
             case vscode.DiagnosticSeverity.Error:

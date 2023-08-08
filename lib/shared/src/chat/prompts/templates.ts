@@ -1,5 +1,5 @@
 const selection_prompt = `
-I have questions about this selected {languageName} code from {fileName}:
+Here are the selected {languageName} code from {fileName}:
 \`\`\`
 {selectedText}
 \`\`\`

@@ -109,3 +109,27 @@ export function isMarkdownFile(filePath: string): boolean {
 function getExtension(filePath: string): string {
     return path.extname(filePath).slice(1)
 }
+
+const SELECTED_CODE_CONTEXT_TEMPLATE = `"Here is my selected {languageName} code from file \`{filePath}\`:
+\`\`\`{extension}
+{text}
+\`\`\``
+
+const SELECTED_CODE_CONTEXT_TEMPLATE_WITH_REPO = `"Here is my selected {languageName} code from file \`{filePath}\` in repository \`{repoName}\`:
+\`\`\`{extension}
+{text}
+\`\`\``
+
+export function populateCurrentSelectedCodeContextTemplate(code: string, filePath: string, repoName?: string): string {
+    const extension = getFileExtension(filePath)
+    const languageName = getNormalizedLanguageName(extension)
+    return (
+        repoName
+            ? SELECTED_CODE_CONTEXT_TEMPLATE_WITH_REPO.replace('{repoName}', repoName)
+            : SELECTED_CODE_CONTEXT_TEMPLATE
+    )
+        .replace('{text', code)
+        .replace('{extension}', extension)
+        .replace(/{filePath}/g, filePath)
+        .replace('{languageName}', languageName)
+}
