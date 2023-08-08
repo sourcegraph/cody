@@ -89,6 +89,13 @@ export function createStatusBar(): CodyStatusBar {
                     'cody.experimental.commandLenses',
                     c => c.experimentalCommandLenses
                 ),
+                createFeatureToggle(
+                    'Editor Title Icon',
+                    'Experimental',
+                    'Enable Cody to appear in editor title menu for quick access to Cody commands',
+                    'cody.experimental.editorTitleCommandIcon',
+                    c => c.experimentalEditorTitleCommandIcon
+                ),
                 { label: 'settings', kind: vscode.QuickPickItemKind.Separator },
                 {
                     label: '$(gear) Cody Extension Settings',
