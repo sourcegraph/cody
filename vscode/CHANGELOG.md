@@ -9,6 +9,7 @@ Starting from `0.2.0`, Cody is using `major.EVEN_NUMBER.patch` for release versi
 ### Added
 
 - Chat Commands: Add tab-to-complete behavior. [pull/606](https://github.com/sourcegraph/cody/pull/606)
+- Option to toggle `cody.experimental.editorTitleCommandIcon` setting through status bar. [pull/TBA](https://github.com/sourcegraph/cody/pull/TBA)
 
 ### Fixed
 
