@@ -49,8 +49,9 @@ export class CustomPrompt implements Recipe {
             : defaultCodyPromptContext
 
         // Check if selection is required
-        const selection = context.editor.getActiveTextEditorSelection() || context.editor.controllers?.inline?.selection
-        if (isContextRequired?.selection && !selection?.selectedText) {
+        const selection =
+            context.editor.getActiveTextEditorSelectionOrEntireFile() || context.editor.controllers?.inline?.selection
+        if ((isContextRequired?.selection || isContextRequired.currentFile) && !selection?.selectedText) {
             await vscode.window.showErrorMessage('This command requires text to be selected in the editor.')
             return null
         }
@@ -154,7 +155,9 @@ export class CustomPrompt implements Recipe {
         }
 
         const currentFileContextStack = []
-        if (isContextRequired.currentFile) {
+        // If currentFile is true, or when selection is true but there is no selected text
+        // then we want to include the current file context
+        if (isContextRequired.currentFile || (isContextRequired.selection && !selection?.selectedText)) {
             currentFileContextStack.push(...ChatQuestion.getEditorContext(editor))
         }
 
