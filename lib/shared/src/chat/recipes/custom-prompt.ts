@@ -6,22 +6,23 @@ import { ActiveTextEditorSelection, Editor } from '../../editor'
 import {
     MAX_CURRENT_FILE_TOKENS,
     MAX_HUMAN_INPUT_TOKENS,
+    MAX_RECIPE_INPUT_TOKENS,
+    MAX_RECIPE_SURROUNDING_TOKENS,
     NUM_CODE_RESULTS,
     NUM_TEXT_RESULTS,
 } from '../../prompt/constants'
 import {
     populateCodeContextTemplate,
     populateCurrentEditorContextTemplate,
-    populateCurrentEditorSelectedContextTemplate,
+    populateCurrentSelectedCodeContextTemplate,
     populateTerminalOutputContextTemplate,
 } from '../../prompt/templates'
-import { truncateText } from '../../prompt/truncation'
+import { truncateText, truncateTextStart } from '../../prompt/truncation'
 import { CodyPromptContext, defaultCodyPromptContext } from '../prompts'
 import { answers, prompts } from '../prompts/templates'
 import { Interaction } from '../transcript/interaction'
 
-import { ChatQuestion } from './chat-question'
-import { getFileExtension, getNormalizedLanguageName, numResults } from './helpers'
+import { getContextMessagesFromSelection, getFileExtension, numResults } from './helpers'
 import { InlineTouch } from './inline-touch'
 import { Recipe, RecipeContext, RecipeID } from './recipe'
 
@@ -57,28 +58,23 @@ export class CustomPrompt implements Recipe {
         const promptName = await context.editor.controllers?.command?.get('current')
         const displayPromptText = promptName ? `Command: ${promptName}` : promptText
 
-        // Check if selection is required
-        const selection =
-            context.editor.getActiveTextEditorSelectionOrEntireFile() || context.editor.controllers?.inline?.selection
-        if ((isContextRequired?.selection || isContextRequired?.currentFile) && !selection?.selectedText) {
-            const errorMsg = 'This command requires text to be selected in the editor.'
+        // Check if selection is required. If selection is not defined, accept visible content
+        const selectionContent =
+            isContextRequired?.selection === true
+                ? context.editor.getActiveTextEditorSelection()
+                : context.editor.getActiveTextEditorSelectionOrVisibleContent()
+
+        const selection = selectionContent || context.editor.controllers?.inline?.selection
+        if ((isContextRequired?.selection === true || isContextRequired?.currentFile) && !selection?.selectedText) {
+            const errorMsg = `Select some code in your editor before running the ${promptName} command again.`
             return this.getInteractionWithAssistantError(errorMsg, displayPromptText)
         }
 
         // Get output from the command if any
         const commandOutput = await context.editor.controllers?.command?.get('output')
 
-        // Generate selection prompt text if selection is required and selection file name is available
-        const selectionPromptText =
-            !isContextRequired?.none && isContextRequired?.selection && selection?.fileName
-                ? prompts.selection
-                      .replace('{selectedText}', selection.selectedText)
-                      .replace('{fileName}', selection?.fileName)
-                      .replace('{languageName}', getNormalizedLanguageName(getFileExtension(selection.fileName)))
-                : ''
-
         // Prompt text to share with Cody only and not display to human
-        const codyPromptText = selectionPromptText + prompts.instruction.replace('{humanInput}', promptText)
+        const codyPromptText = prompts.instruction.replace('{humanInput}', promptText)
 
         // Add selection file name as display when available
         const displayText = selection?.fileName
@@ -130,20 +126,24 @@ export class CustomPrompt implements Recipe {
     ): Promise<ContextMessage[]> {
         const contextMessages: ContextMessage[] = []
 
+        // NONE
         if (isContextRequired.none) {
             return []
         }
 
+        // CODEBASE CONTEXT
         if (isContextRequired.codebase) {
             const codebaseContextMessages = await codebaseContext.getContextMessages(text, numResults)
             contextMessages.push(...codebaseContextMessages)
         }
 
+        // OPEN FILES IN EDITOR TABS
         if (isContextRequired.openTabs) {
             const openTabsContext = await CustomPrompt.getEditorOpenTabsContext()
             contextMessages.push(...openTabsContext)
         }
 
+        // CURRENT DIRECTORTY
         if (isContextRequired.currentDir) {
             const isTestRequest = text.includes('test')
             const currentDirContext = await CustomPrompt.getCurrentDirContext(isTestRequest)
@@ -151,6 +151,7 @@ export class CustomPrompt implements Recipe {
             contextMessages.push(...currentDirContext, ...(isTestRequest ? packageJSONContext : []))
         }
 
+        // DIR PATH
         if (isContextRequired.directoryPath?.length) {
             const fileContext = await CustomPrompt.getEditorDirContext(
                 isContextRequired.directoryPath,
@@ -159,21 +160,39 @@ export class CustomPrompt implements Recipe {
             contextMessages.push(...fileContext)
         }
 
+        // FILE PATH
         const fileContextQueue = []
         if (isContextRequired.filePath?.length) {
             const fileContext = await CustomPrompt.getFilePathContext(isContextRequired.filePath)
             fileContextQueue.push(...fileContext)
         }
 
+        // CURRENT FILE
         const currentFileContextStack = []
         // If currentFile is true, or when selection is true but there is no selected text
         // then we want to include the current file context
-        if (isContextRequired.currentFile || (isContextRequired.selection && !selection?.selectedText)) {
-            currentFileContextStack.push(...ChatQuestion.getEditorContext(editor))
+        if (selection && (isContextRequired.currentFile || (isContextRequired.selection && !selection?.selectedText))) {
+            const truncatedSelectedText = truncateText(selection.selectedText, MAX_RECIPE_INPUT_TOKENS)
+            const truncatedPrecedingText = truncateTextStart(selection.precedingText, MAX_RECIPE_SURROUNDING_TOKENS)
+            const truncatedFollowingText = truncateText(selection.followingText, MAX_RECIPE_SURROUNDING_TOKENS)
+            const contextMsg = await getContextMessagesFromSelection(
+                truncatedSelectedText,
+                truncatedPrecedingText,
+                truncatedFollowingText,
+                selection,
+                codebaseContext
+            )
+            currentFileContextStack.push(...contextMsg)
         }
 
         contextMessages.push(...fileContextQueue, ...currentFileContextStack)
 
+        // SELECTED TEXT: Exclude only if selection is set to false specifically
+        if (isContextRequired.selection !== false && selection?.selectedText) {
+            contextMessages.push(...CustomPrompt.getEditorSelectionContext(selection))
+        }
+
+        // COMMAND OUTPUT
         if (isContextRequired.command?.length && commandOutput) {
             contextMessages.push(...CustomPrompt.getTerminalOutputContext(commandOutput))
         }
@@ -185,7 +204,7 @@ export class CustomPrompt implements Recipe {
     public static getEditorSelectionContext(selection: ActiveTextEditorSelection): ContextMessage[] {
         const truncatedContent = truncateText(selection.selectedText, MAX_CURRENT_FILE_TOKENS)
         return getContextMessageWithResponse(
-            populateCurrentEditorSelectedContextTemplate(truncatedContent, selection.fileName, selection.repoName),
+            populateCurrentSelectedCodeContextTemplate(truncatedContent, selection.fileName, selection.repoName),
             selection,
             answers.selection
         )
@@ -294,7 +313,11 @@ export class CustomPrompt implements Recipe {
                 const fileExt = currentFileName ? getFileExtension(currentFileName) : '*'
 
                 // Search for files in directory with test(s) in the name
-                const testDirFiles = await vscode.workspace.findFiles(`**/test*/**/*.${fileExt}`, undefined, 2)
+                const testDirFiles = await vscode.workspace.findFiles(
+                    `**/{test,tests}/**/*test*.${fileExt}`,
+                    undefined,
+                    2
+                )
                 contextMessages.push(...(await getContextMessageFromFiles(testDirFiles)))
 
                 if (!contextMessages.length) {
