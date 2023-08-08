@@ -23,6 +23,9 @@ const editor: Editor = {
     getActiveTextEditorSelectionOrEntireFile() {
         return null
     },
+    getActiveTextEditorSelectionOrVisibleContent() {
+        return null
+    },
     getActiveTextEditorDiagnosticsForRange() {
         return null
     },

@@ -79,6 +79,19 @@ export class AgentEditor implements Editor {
         return this.getActiveTextEditorSelection()
     }
 
+    public getActiveTextEditorSelectionOrVisibleContent(): ActiveTextEditorSelection | null {
+        const document = this.activeDocument()
+        if (document !== undefined && document.selection === undefined) {
+            return {
+                fileName: document.filePath || '',
+                precedingText: '',
+                selectedText: document.content || '',
+                followingText: '',
+            }
+        }
+        return this.getActiveTextEditorSelection()
+    }
+
     public getActiveTextEditorDiagnosticsForRange(): ActiveTextEditorDiagnostic[] | null {
         throw new Error('Method not implemented.')
     }
