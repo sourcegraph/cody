@@ -14,6 +14,7 @@ export interface Configuration {
     experimentalChatPredictions: boolean
     inlineChat: boolean
     experimentalCommandLenses: boolean
+    experimentalEditorTitleCommandIcon: boolean
     experimentalGuardrails: boolean
     experimentalNonStop: boolean
     autocompleteAdvancedProvider:

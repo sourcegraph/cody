@@ -127,7 +127,7 @@
           },
           {
             "id": "inline-assist",
-            "title": "Inline Chat (Beta)",
+            "title": "Inline Chat",
             "description": "Chat with Cody without leaving your file. Click the + button next to any line number in a file to bring up Inline Chat.\n[Enable in Settings](command:cody.walkthrough.enableInlineChat)",
             "media": {
               "markdown": "walkthroughs/inline-assist.md"
@@ -135,7 +135,7 @@
           },
           {
             "id": "autocomplete",
-            "title": "Code Autocomplete (Beta)",
+            "title": "Code Autocomplete",
             "description": "Let Cody automatically write code for you. Start writing a comment or a line of code and Cody will suggest the next few lines.",
             "media": {
               "markdown": "walkthroughs/autocomplete.md"
@@ -627,11 +627,6 @@
           "command": "cody.fixup.apply-all",
           "when": "cody.nonstop.fixups.enabled && view == cody.fixup.tree.view && cody.activated",
           "group": "navigation"
-        },
-        {
-          "command": "workbench.action.reloadWindow",
-          "title": "Reload",
-          "group": "8_cody@0"
         }
       ],
       "editor/title": [

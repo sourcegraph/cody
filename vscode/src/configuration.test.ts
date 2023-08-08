@@ -18,6 +18,7 @@ describe('getConfiguration', () => {
             useContext: 'embeddings',
             autocomplete: true,
             experimentalCommandLenses: false,
+            experimentalEditorTitleCommandIcon: false,
             experimentalChatPredictions: false,
             experimentalGuardrails: false,
             inlineChat: true,
@@ -55,6 +56,8 @@ describe('getConfiguration', () => {
                     case 'cody.experimental.chatPredictions':
                         return true
                     case 'cody.experimental.commandLenses':
+                        return true
+                    case 'cody.experimental.editorTitleCommandIcon':
                         return true
                     case 'cody.experimental.guardrails':
                         return true
@@ -107,6 +110,7 @@ describe('getConfiguration', () => {
             autocomplete: false,
             experimentalChatPredictions: true,
             experimentalCommandLenses: true,
+            experimentalEditorTitleCommandIcon: true,
             experimentalGuardrails: true,
             inlineChat: true,
             experimentalNonStop: true,

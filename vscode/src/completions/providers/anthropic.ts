@@ -4,7 +4,6 @@ import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
 import { SourcegraphCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/client'
 import { CompletionParameters } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
 
-import { ReferenceSnippet } from '../context'
 import {
     CLOSING_CODE_TAG,
     extractFromCodeBlock,
@@ -14,7 +13,7 @@ import {
     PrefixComponents,
     trimLeadingWhitespaceUntilNewline,
 } from '../text-processing'
-import { Completion } from '../types'
+import { Completion, ContextSnippet } from '../types'
 import { batchCompletions, messagesToText } from '../utils'
 
 import { CompletionProviderTracer, Provider, ProviderConfig, ProviderOptions } from './provider'
@@ -87,7 +86,7 @@ export class AnthropicProvider extends Provider {
 
     // Creates the resulting prompt and adds as many snippets from the reference
     // list as possible.
-    protected createPrompt(snippets: ReferenceSnippet[]): { messages: Message[]; prefix: PrefixComponents } {
+    protected createPrompt(snippets: ContextSnippet[]): { messages: Message[]; prefix: PrefixComponents } {
         const { messages: prefixMessages, prefix } = this.createPromptPrefix()
 
         const referenceSnippetMessages: Message[] = []
@@ -145,7 +144,7 @@ export class AnthropicProvider extends Provider {
 
     public async generateCompletions(
         abortSignal: AbortSignal,
-        snippets: ReferenceSnippet[],
+        snippets: ContextSnippet[],
         tracer?: CompletionProviderTracer
     ): Promise<Completion[]> {
         // Create prompt

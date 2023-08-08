@@ -1,7 +1,6 @@
 import { CompletionParameters } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
 
-import { ReferenceSnippet } from '../context'
-import { Completion } from '../types'
+import { Completion, ContextSnippet } from '../types'
 
 export interface ProviderConfig {
     /**
@@ -59,7 +58,7 @@ export abstract class Provider {
 
     public abstract generateCompletions(
         abortSignal: AbortSignal,
-        snippets: ReferenceSnippet[],
+        snippets: ContextSnippet[],
         tracer?: CompletionProviderTracer
     ): Promise<Completion[]>
 }

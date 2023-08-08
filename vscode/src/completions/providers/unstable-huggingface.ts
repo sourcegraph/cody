@@ -1,9 +1,8 @@
 import fetch from 'isomorphic-fetch'
 
 import { logger } from '../../log'
-import { ReferenceSnippet } from '../context'
 import { getLanguageConfig } from '../language'
-import { Completion } from '../types'
+import { Completion, ContextSnippet } from '../types'
 import { isAbortError } from '../utils'
 
 import { Provider, ProviderConfig, ProviderOptions } from './provider'
@@ -27,7 +26,7 @@ export class UnstableHuggingFaceProvider extends Provider {
         this.accessToken = unstableHuggingFaceOptions.accessToken
     }
 
-    private createPrompt(snippets: ReferenceSnippet[]): string {
+    private createPrompt(snippets: ContextSnippet[]): string {
         const maxPromptChars = CONTEXT_WINDOW_CHARS - CONTEXT_WINDOW_CHARS * this.options.responsePercentage
 
         const intro: string[] = []
@@ -64,7 +63,7 @@ export class UnstableHuggingFaceProvider extends Provider {
         return prompt
     }
 
-    public async generateCompletions(abortSignal: AbortSignal, snippets: ReferenceSnippet[]): Promise<Completion[]> {
+    public async generateCompletions(abortSignal: AbortSignal, snippets: ContextSnippet[]): Promise<Completion[]> {
         const prompt = this.createPrompt(snippets)
 
         const request = {
