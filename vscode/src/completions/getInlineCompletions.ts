@@ -445,9 +445,6 @@ function completionMatchesSuffix(
     }
 
     const suffix = docContext.currentLineSuffix
-    if (suffix.trim() === '') {
-        return true
-    }
 
     for (const completion of completions) {
         const insertion = completion.insertText
