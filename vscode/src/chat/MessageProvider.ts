@@ -355,6 +355,14 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         if (!interaction) {
             return
         }
+        const errorMsg = interaction?.getAssistantMessage()?.error
+        if (errorMsg !== undefined) {
+            this.transcript.addInteraction(interaction)
+            this.transcript.addErrorAsAssistantResponse(errorMsg)
+            this.sendTranscript()
+            await this.saveTranscriptToChatHistory()
+            return
+        }
         this.isMessageInProgress = true
         this.transcript.addInteraction(interaction)
 

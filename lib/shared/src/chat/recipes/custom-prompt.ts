@@ -48,22 +48,22 @@ export class CustomPrompt implements Recipe {
             ? (JSON.parse(contextConfig) as CodyPromptContext)
             : defaultCodyPromptContext
 
-        // Check if selection is required
-        const selection =
-            context.editor.getActiveTextEditorSelectionOrEntireFile() || context.editor.controllers?.inline?.selection
-        if ((isContextRequired?.selection || isContextRequired.currentFile) && !selection?.selectedText) {
-            await vscode.window.showErrorMessage('This command requires text to be selected in the editor.')
-            return null
-        }
-
         // Get prompt text from the editor command or from the human input
         const promptText = humanChatInput.trim() || (await context.editor.controllers?.command?.get()) || null
         if (!promptText) {
-            await vscode.window.showErrorMessage('Please enter a valid prompt for the custom command.')
-            return null
+            const errorMsg = 'Please enter a valid prompt for the custom command.'
+            return this.getInteractionWithAssistantError(errorMsg)
         }
         const promptName = await context.editor.controllers?.command?.get('current')
         const displayPromptText = promptName ? `Command: ${promptName}` : promptText
+
+        // Check if selection is required
+        const selection =
+            context.editor.getActiveTextEditorSelectionOrEntireFile() || context.editor.controllers?.inline?.selection
+        if ((isContextRequired?.selection || isContextRequired?.currentFile) && !selection?.selectedText) {
+            const errorMsg = 'This command requires text to be selected in the editor.'
+            return this.getInteractionWithAssistantError(errorMsg, displayPromptText)
+        }
 
         // Get output from the command if any
         const commandOutput = await context.editor.controllers?.command?.get('output')
@@ -99,6 +99,17 @@ export class CustomPrompt implements Recipe {
                     selection,
                     commandOutput
                 ),
+                []
+            )
+        )
+    }
+
+    private async getInteractionWithAssistantError(errorMsg: string, displayText = ''): Promise<Interaction> {
+        return Promise.resolve(
+            new Interaction(
+                { speaker: 'human', displayText },
+                { speaker: 'assistant', error: errorMsg },
+                Promise.resolve([]),
                 []
             )
         )
