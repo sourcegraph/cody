@@ -30,7 +30,7 @@ export function createStatusBar(): CodyStatusBar {
 
         function createFeatureToggle(
             name: string,
-            description: string,
+            description: string | undefined,
             detail: string,
             setting: string,
             getValue: (config: Configuration) => boolean,
@@ -62,14 +62,14 @@ export function createStatusBar(): CodyStatusBar {
                 { label: 'enable/disable features', kind: vscode.QuickPickItemKind.Separator },
                 createFeatureToggle(
                     'Code Autocomplete',
-                    'Beta',
+                    undefined,
                     'Enable Cody-powered code autocompletions',
                     'cody.autocomplete.enabled',
                     c => c.autocomplete
                 ),
                 createFeatureToggle(
                     'Inline Chat',
-                    'Beta',
+                    undefined,
                     'Enable chatting and editing with Cody, directly in your code',
                     'cody.inlineChat.enabled',
                     c => c.inlineChat
