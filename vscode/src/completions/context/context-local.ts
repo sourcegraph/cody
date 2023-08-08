@@ -2,8 +2,9 @@ import path from 'path'
 
 import * as vscode from 'vscode'
 
+import { ContextSnippet } from '../types'
+
 import { bestJaccardMatch, JaccardMatch } from './bestJaccardMatch'
-import type { ReferenceSnippet } from './context'
 import { DocumentHistory } from './history'
 
 interface JaccardMatchWithFilename extends JaccardMatch {
@@ -17,7 +18,7 @@ interface Options {
     jaccardDistanceWindowSize: number
 }
 
-export async function getContextFromCurrentEditor(options: Options): Promise<ReferenceSnippet[]> {
+export async function getContextFromCurrentEditor(options: Options): Promise<ContextSnippet[]> {
     const { document, history, prefix, jaccardDistanceWindowSize } = options
 
     const targetText = lastNLines(prefix, jaccardDistanceWindowSize)

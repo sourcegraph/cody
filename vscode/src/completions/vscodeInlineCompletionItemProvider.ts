@@ -5,14 +5,14 @@ import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
 import { debug } from '../log'
 import { CodyStatusBar } from '../services/StatusBar'
 
-import { getContext, GetContextOptions, GetContextResult } from './context'
+import { getContext, GetContextOptions, GetContextResult } from './context/context'
+import { DocumentHistory } from './context/history'
 import {
     getInlineCompletions,
     InlineCompletionsParams,
     InlineCompletionsResultSource,
     LastInlineCompletionCandidate,
 } from './getInlineCompletions'
-import { DocumentHistory } from './history'
 import { ProviderConfig } from './providers/provider'
 import { RequestManager } from './request-manager'
 import { ProvideInlineCompletionItemsTracer, ProvideInlineCompletionsItemTraceData } from './tracer'
