@@ -14,7 +14,7 @@ import { TestCase, testCases } from './test-cases'
 import { aggregateResults, AggregateTestResults, logAggregateResults, TestResult } from './test-results'
 
 async function runTestCase(testCase: TestCase): Promise<TestResult | Error> {
-    let latestMessage: ChatMessage | null = null
+    let latestMessage: ChatMessage | null = { text: '', speaker: 'assistant' }
     let transcript: Transcript | null = new Transcript()
     const client = await createClient({
         config: {
@@ -45,6 +45,8 @@ async function runTestCase(testCase: TestCase): Promise<TestResult | Error> {
         await new Promise<void>(resolve => {
             const interval = setInterval(() => {
                 if (latestMessage === null) {
+                    // Reset latest message for next interaction.
+                    latestMessage = { text: '', speaker: 'assistant' }
                     clearInterval(interval)
                     resolve()
                 }
@@ -117,8 +119,10 @@ export async function run(): Promise<void> {
         console.log()
     }
 
-    console.log('Summary across all runs:')
-    logAggregateResults(aggregateResults(runs.flat()))
+    if (runs.length > 1) {
+        console.log('Summary across all runs:')
+        logAggregateResults(aggregateResults(runs.flat()))
+    }
 
     if (options.output) {
         await fs.writeFile(options.output, JSON.stringify({ runs }, null, 2))
