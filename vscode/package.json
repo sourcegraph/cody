@@ -110,9 +110,17 @@
             }
           },
           {
+            "id": "commands",
+            "title": "Cody Commands",
+            "description": "You can use Cody commands to streamline your development process (e.g. generate unit tests, documentation, and more) with just a few clicks.\n[Open Commands Menu](command:cody.action.commands.menu)",
+            "media": {
+              "markdown": "walkthroughs/commands.md"
+            }
+          },
+          {
             "id": "explain",
             "title": "Explain Code",
-            "description": "Ask Cody to explain some code. Select some lines and use the \"Explain selected code\" recipe.\n[Open Commands](command:cody.action.commands.menu)",
+            "description": "Ask Cody to explain some code. Select some lines and use the \"Explain Code\" command.\n[Open Commands Menu](command:cody.action.commands.menu)",
             "media": {
               "markdown": "walkthroughs/explain.md"
             }
