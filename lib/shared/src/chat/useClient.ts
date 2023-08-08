@@ -319,6 +319,8 @@ export const useClient = ({
                 const abort = chatClient.chat(prompt, {
                     onChange(_rawText) {
                         if (transcript.id !== transcriptIdRef.current) {
+                            abort()
+                            resolve(transcript)
                             return
                         }
                         rawText = _rawText
@@ -329,6 +331,8 @@ export const useClient = ({
                     },
                     onComplete() {
                         if (transcript.id !== transcriptIdRef.current) {
+                            abort()
+                            resolve(transcript)
                             return
                         }
                         const text = reformatBotMessage(rawText, responsePrefix)
@@ -346,6 +350,8 @@ export const useClient = ({
                     },
                     onError(error) {
                         if (transcript.id !== transcriptIdRef.current) {
+                            abort()
+                            resolve(transcript)
                             return
                         }
                         // Display error message as assistant response
