@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/consistent-type-definitions */
+import { ExecuteAutocompleteParams, ExecuteAutocompleteResult } from '@sourcegraph/cody-shared/src/chat/autocomplete'
 import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 import { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 
@@ -113,6 +114,15 @@ export interface ConnectionConfiguration {
     serverEndpoint: string
     accessToken: string
     customHeaders: Record<string, string>
+    autocompleteAdvancedProvider:
+        | 'anthropic'
+        | 'unstable-codegen'
+        | 'unstable-huggingface'
+        | 'unstable-fireworks'
+        | 'unstable-azure-openai'
+    autocompleteAdvancedServerEndpoint: string | null
+    autocompleteAdvancedAccessToken: string | null
+    autocompleteAdvancedEmbeddings: boolean
 }
 
 export interface Position {
@@ -142,23 +152,4 @@ export interface ExecuteRecipeParams {
     id: RecipeID
     humanChatInput: string
     data?: any
-}
-
-export interface ExecuteAutocompleteParams {
-    filePath: string
-    position: Position
-    context: AutocompleteContext
-}
-
-export interface AutocompleteContext {
-    triggerKind: 'invoke' | 'automatic'
-}
-
-export interface ExecuteAutocompleteResult {
-    items: InlineCompletionItem[]
-}
-
-export interface InlineCompletionItem {
-    insertText: string
-    range: Range
 }

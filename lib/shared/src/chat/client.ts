@@ -1,3 +1,7 @@
+import { error } from 'console'
+
+import { createProviderConfig } from '../autocomplete/providers/createProvider'
+import { ExecuteAutocompleteParams, ExecuteAutocompleteResult, InlineCompletionItem } from '../autocomplete/types'
 import { CodebaseContext } from '../codebase-context'
 import { ConfigurationWithAccessToken } from '../configuration'
 import { Editor } from '../editor'
@@ -23,7 +27,14 @@ export { Transcript }
 
 export type ClientInitConfig = Pick<
     ConfigurationWithAccessToken,
-    'serverEndpoint' | 'codebase' | 'useContext' | 'accessToken' | 'customHeaders'
+    | 'serverEndpoint'
+    | 'codebase'
+    | 'useContext'
+    | 'accessToken'
+    | 'customHeaders'
+    | 'autocompleteAdvancedProvider'
+    | 'autocompleteAdvancedAccessToken'
+    | 'autocompleteAdvancedServerEndpoint'
 >
 
 export interface ClientInit {
@@ -48,6 +59,7 @@ export interface Client {
         }
     ) => Promise<void>
     reset: () => void
+    executeAutocomplete: (params: ExecuteAutocompleteParams) => Promise<ExecuteAutocompleteResult>
     codebaseContext: CodebaseContext
     sourcegraphStatus: { authenticated: boolean; version: string }
     codyStatus: { enabled: boolean; version: string }
@@ -172,6 +184,43 @@ export async function createClient({
             })
         }
 
+        const executeAutocomplete = async function (
+            params: ExecuteAutocompleteParams
+        ): Promise<ExecuteAutocompleteResult> {
+            const providerFactory = createProviderConfig(
+                config,
+                err => {
+                    console.error(err)
+                },
+                completionsClient
+            )
+
+            const provider = providerFactory.create({
+                /** A unique and descriptive identifier for the provider. */
+                id: '1',
+                prefix: 'if err != nil {',
+                suffix: '',
+                fileName: 'string',
+                languageId: 'go',
+                multiline: false,
+                responsePercentage: 0.1,
+                prefixPercentage: 0.6,
+                suffixPercentage: 0.1,
+                n: 1,
+            })
+
+            const items: InlineCompletionItem[] = []
+            provider.generateCompletions(new AbortController().signal, [], undefined).then(response => {
+                response.map(c =>
+                    items.push({
+                        insertText: c.content,
+                        range: { start: params.position, end: params.position },
+                    })
+                )
+            })
+            return { items }
+        }
+
         return {
             get transcript() {
                 return transcript
@@ -188,6 +237,7 @@ export async function createClient({
                 transcript.reset()
                 sendTranscript()
             },
+            executeAutocomplete,
             codebaseContext,
             sourcegraphStatus,
             codyStatus,
