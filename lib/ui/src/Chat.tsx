@@ -272,6 +272,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                     setFormInput('')
                 }
                 if (event.key === 'Tab' && selectedChatCommand > -1) {
+                    event.preventDefault()
                     const newInput = displayCommands?.[selectedChatCommand]?.[1]?.slashCommand
                     setFormInput(newInput || formInput)
                 }
