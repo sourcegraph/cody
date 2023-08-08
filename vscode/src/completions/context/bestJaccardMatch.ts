@@ -23,7 +23,7 @@ export function bestJaccardMatch(targetText: string, matchText: string, windowSi
         }
         return count
     }
-    // subract the subtrahend bag of words from minuend and return the net change in word count
+    // Subtract the subtrahend bag of words from minuend and return the net change in word count
     const subtract = (minuend: Map<string, number>, subtrahend: Map<string, number>): number => {
         let decrease = 0 // will be non-positive
         for (const [word, count] of subtrahend) {
@@ -34,8 +34,8 @@ export function bestJaccardMatch(targetText: string, matchText: string, windowSi
         }
         return decrease
     }
-    // add incorporates a new line into window and intersection, updating each, and returns the
-    // net increase in size for each
+    // Add incorporates a new line into window and intersection, updating each, and returns the net
+    // increase in size for each
     const add = (
         target: Map<string, number>,
         window: Map<string, number>,
@@ -59,15 +59,15 @@ export function bestJaccardMatch(targetText: string, matchText: string, windowSi
         return { windowIncrease, intersectionIncrease }
     }
 
-    // get the bag-of-words-count dictionary for the target text
+    // Get the bag-of-words-count dictionary for the target text
     const targetWords = getWords(targetText)
     const targetCount = wordCount(targetWords)
 
-    // split the matchText into lines
+    // Split the matchText into lines
     const lines = matchText.split('\n')
     const wordsForEachLine = lines.map(line => getWords(line))
 
-    // initialize the bag of words for the topmost window
+    // Initialize the bag of words for the topmost window
     const windowWords = new Map<string, number>()
     for (let i = 0; i < Math.min(windowSize, lines.length); i++) {
         for (const [wordInThisLine, wordInThisLineCount] of wordsForEachLine[i].entries()) {
@@ -76,23 +76,23 @@ export function bestJaccardMatch(targetText: string, matchText: string, windowSi
     }
 
     let windowCount = wordCount(windowWords)
-    // initialize the bag of words for the intersection of the match window and targetText
+    // Initialize the bag of words for the intersection of the match window and targetText
     const bothWords = new Map<string, number>()
     for (const [word, wordCount] of targetWords.entries()) {
         bothWords.set(word, Math.min(wordCount, windowWords.get(word) || 0))
     }
     let bothCount = wordCount(bothWords)
 
-    // slide our window through matchText, keeping track of the best score and window so far
+    // Slide our window through matchText, keeping track of the best score and window so far
     let bestScore = jaccardDistance(targetCount, windowCount, bothCount)
     let bestWindow = [0, Math.min(windowSize, lines.length)]
 
     for (let i = 0; i < wordsForEachLine.length - windowSize; i++) {
-        // subtract the words from the line we are scrolling past
+        // Subtract the words from the line we are scrolling past
         windowCount += subtract(windowWords, wordsForEachLine[i])
         bothCount += subtract(bothWords, wordsForEachLine[i])
 
-        // add the words from the new line our window just slid over
+        // Add the words from the new line our window just slid over
         const { windowIncrease, intersectionIncrease } = add(
             targetWords,
             windowWords,

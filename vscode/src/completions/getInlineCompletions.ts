@@ -5,9 +5,9 @@ import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
 
 import { debug } from '../log'
 
-import { GetContextOptions, GetContextResult } from './context'
+import { GetContextOptions, GetContextResult } from './context/context'
+import { DocumentHistory } from './context/history'
 import { DocumentContext, getCurrentDocContext } from './document'
-import { DocumentHistory } from './history'
 import * as CompletionLogger from './logger'
 import { detectMultiline } from './multiline'
 import { CompletionProviderTracer, Provider, ProviderConfig, ProviderOptions } from './providers/provider'
