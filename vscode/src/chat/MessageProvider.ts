@@ -210,8 +210,9 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
             onError: (err, statusCode) => {
                 // TODO notify the multiplexer of the error
                 debug('ChatViewProvider:onError', err)
-
-                if (isAbortError(err)) {
+                // When the user has initiated the abortion of the message, isMessageInProgress would have set to false by abortCompletion() and we can safely ignore this error.
+                // If isMessageInProgeress is true, then user did not abort the message and we will treat it as an error.
+                if (isAbortError(err) && !this.isMessageInProgress) {
                     return
                 }
                 // Log users out on unauth error
