@@ -94,10 +94,7 @@ export function networkRequestStarted(
     }
 }
 
-// Suggested completions will not be logged immediately. Instead, we log them when
-// we either hide them again (they are NOT accepted) or when they ARE accepted.
-// This way, we can calculate the duration they were actually visible for.
-export function suggest(id: string, isVisible: boolean): void {
+export function loaded(id: string): void {
     const event = displayedCompletions.get(id)
     if (!event) {
         return
@@ -108,8 +105,18 @@ export function suggest(id: string, isVisible: boolean): void {
         // Emit a debug event to print timing information to the console eagerly
         debug('CodyCompletionProvider:inline:timing', `${Math.round(event.loadedAt - event.startedAt)}ms`, id)
     }
+}
 
-    if (isVisible && !event.suggestedAt) {
+// Suggested completions will not be logged immediately. Instead, we log them when
+// we either hide them again (they are NOT accepted) or when they ARE accepted.
+// This way, we can calculate the duration they were actually visible for.
+export function suggested(id: string): void {
+    const event = displayedCompletions.get(id)
+    if (!event) {
+        return
+    }
+
+    if (!event.suggestedAt) {
         event.suggestedAt = performance.now()
     }
 }

@@ -61,7 +61,13 @@ export class AnthropicProvider extends Provider {
         const prefixMessages: Message[] = [
             {
                 speaker: 'human',
-                text: `You are a code completion AI that writes high-quality code like a senior engineer. You are looking at ${this.options.fileName}. You write code in between tags like this: ${OPENING_CODE_TAG}/* Code goes here */${CLOSING_CODE_TAG}.`,
+                text: `You are a code completion AI that writes high-quality code like a senior engineer. You are looking at ${
+                    this.options.fileName
+                }. You write code in between tags like this: ${OPENING_CODE_TAG}${
+                    this.options.languageId === 'python' || this.options.languageId === 'ruby'
+                        ? '# Code goes here'
+                        : '/* Code goes here */'
+                }${CLOSING_CODE_TAG}.`,
             },
             {
                 speaker: 'assistant',
@@ -198,5 +204,6 @@ export function createProviderConfig(anthropicOptions: AnthropicOptions): Provid
         maximumContextCharacters: tokensToChars(anthropicOptions.contextWindowTokens),
         enableExtendedMultilineTriggers: true,
         identifier: 'anthropic',
+        supportsInfilling: false,
     }
 }

@@ -2,7 +2,7 @@
   "name": "cody-ai",
   "private": true,
   "displayName": "Cody AI",
-  "version": "0.6.4",
+  "version": "0.6.5",
   "publisher": "sourcegraph",
   "license": "Apache-2.0",
   "icon": "resources/cody.png",
@@ -619,11 +619,6 @@
           "command": "cody.fixup.apply-all",
           "when": "cody.nonstop.fixups.enabled && view == cody.fixup.tree.view && cody.activated",
           "group": "navigation"
-        },
-        {
-          "command": "workbench.action.reloadWindow",
-          "title": "Reload",
-          "group": "8_cody@0"
         }
       ],
       "editor/title": [

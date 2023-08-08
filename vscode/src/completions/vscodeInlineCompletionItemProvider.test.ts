@@ -1,3 +1,4 @@
+import dedent from 'dedent'
 import { describe, expect, test, vi } from 'vitest'
 import type * as vscode from 'vscode'
 
@@ -92,7 +93,14 @@ describe('InlineCompletionItemProvider', () => {
     })
 
     test('saves lastInlineCompletionResult', async () => {
-        const { document, position } = documentAndPosition('const foo = █', 'typescript')
+        const { document, position } = documentAndPosition(
+            dedent`
+                const foo = █
+                console.log(1)
+                console.log(2)
+            `,
+            'typescript'
+        )
 
         const item: InlineCompletionItem = { insertText: 'test', range: new vsCodeMocks.Range(position, position) }
         const fn = vi.fn(getInlineCompletions).mockResolvedValue({
@@ -111,7 +119,39 @@ describe('InlineCompletionItemProvider', () => {
         fn.mockReset()
 
         // But it is returned and saved.
-        expect(provider.lastCandidate?.result.items).toEqual([item])
+        expect(provider.lastCandidate).toMatchInlineSnapshot(`
+          {
+            "lastTriggerCurrentLinePrefix": "const foo = ",
+            "lastTriggerNextNonEmptyLine": "console.log(1)",
+            "lastTriggerPosition": Position {
+              "character": 12,
+              "line": 0,
+            },
+            "result": {
+              "items": [
+                {
+                  "insertText": "test",
+                  "range": Range {
+                    "end": Position {
+                      "character": 12,
+                      "line": 0,
+                    },
+                    "start": Position {
+                      "character": 12,
+                      "line": 0,
+                    },
+                  },
+                },
+              ],
+              "logId": "1",
+            },
+            "uri": {
+              "$mid": 1,
+              "path": "/test.ts",
+              "scheme": "file",
+            },
+          }
+        `)
 
         // On the 2nd call, lastInlineCompletionResult is provided.
         await provider.provideInlineCompletionItems(document, position, DUMMY_CONTEXT)

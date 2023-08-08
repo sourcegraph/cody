@@ -174,7 +174,7 @@ export class InlineController implements VsCodeInlineController {
         // disable reply until the task is completed
         thread.canReply = false
         thread.label = this.threadLabel
-        thread.collapsibleState = vscode.CommentThreadCollapsibleState.Collapsed
+        thread.collapsibleState = vscode.CommentThreadCollapsibleState.Expanded
 
         const comment = new Comment(reply, 'Me', this.userIcon, thread)
         thread.comments = [...thread.comments, comment]
