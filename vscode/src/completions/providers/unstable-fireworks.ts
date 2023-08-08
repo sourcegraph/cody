@@ -14,7 +14,7 @@ interface UnstableFireworksOptions {
 
 const PROVIDER_IDENTIFIER = 'fireworks'
 const STOP_WORD = '<|endoftext|>'
-const CONTEXT_WINDOW_CHARS = 3500 // ~ 1280 token limit
+const CONTEXT_WINDOW_CHARS = 5000 // ~ 2000 token limit
 
 export class UnstableFireworksProvider extends Provider {
     private serverEndpoint: string
@@ -73,7 +73,6 @@ export class UnstableFireworksProvider extends Provider {
             max_tokens: this.options.multiline ? 256 : 30,
             temperature: 0.4,
             top_p: 0.95,
-            min_tokens: 1,
             n: this.options.n,
             echo: false,
             model: 'accounts/fireworks/models/fireworks-starcoder-7b-w8a16-1gpu',
