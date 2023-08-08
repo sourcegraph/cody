@@ -271,6 +271,10 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                     setSelectedChatCommand(-1)
                     setFormInput('')
                 }
+                if (event.key === 'Tab' && selectedChatCommand > -1) {
+                    const newInput = displayCommands?.[selectedChatCommand]?.[1]?.slashCommand
+                    setFormInput(newInput || formInput)
+                }
             }
 
             // Loop through input history on up arrow press
