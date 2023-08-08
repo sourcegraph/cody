@@ -164,24 +164,23 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
     isTranscriptError,
 }) => {
     const [inputRows, setInputRows] = useState(1)
-    const commandList = chatCommands?.filter(command => command[1]?.slashCommand) || null
-    const [displayCommands, setDisplayCommands] = useState<[string, CodyPrompt][] | null>(commandList || null)
+    const [displayCommands, setDisplayCommands] = useState<[string, CodyPrompt][] | null>(chatCommands || null)
     const [selectedChatCommand, setSelectedChatCommand] = useState(-1)
     const [historyIndex, setHistoryIndex] = useState(inputHistory.length)
 
     // Handles selecting a chat command when the user types a slash in the chat input.
     const chatCommentSelectionHandler = useCallback(
         (inputValue: string): void => {
-            if (!commandList || !ChatCommandsComponent) {
+            if (!chatCommands || !ChatCommandsComponent) {
                 return
             }
             if (inputValue === '/') {
-                setDisplayCommands(commandList)
-                setSelectedChatCommand(commandList.length)
+                setDisplayCommands(chatCommands)
+                setSelectedChatCommand(chatCommands.length)
                 return
             }
             if (inputValue.startsWith('/')) {
-                const filteredCommands = commandList.filter(
+                const filteredCommands = chatCommands.filter(
                     ([_, prompt]) => prompt.slashCommand?.startsWith(inputValue)
                 )
                 setDisplayCommands(filteredCommands)
@@ -191,7 +190,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
             setDisplayCommands(null)
             setSelectedChatCommand(-1)
         },
-        [ChatCommandsComponent, commandList]
+        [ChatCommandsComponent, chatCommands]
     )
 
     const inputHandler = useCallback(
@@ -247,7 +246,8 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                 !event.shiftKey &&
                 !event.nativeEvent.isComposing &&
                 formInput &&
-                formInput.trim()
+                formInput.trim() &&
+                selectedChatCommand < 0
             ) {
                 event.preventDefault()
                 event.stopPropagation()
@@ -271,11 +271,14 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                     setSelectedChatCommand(-1)
                     setFormInput('')
                 }
-                // tab to complete
-                if (event.key === 'Tab' && selectedChatCommand > -1) {
+                // tab/enter to complete
+                if ((event.key === 'Tab' || event.key === 'Enter') && selectedChatCommand > -1) {
                     event.preventDefault()
+                    event.stopPropagation()
                     const newInput = displayCommands?.[selectedChatCommand]?.[1]?.slashCommand
                     setFormInput(newInput || formInput)
+                    setDisplayCommands(null)
+                    setSelectedChatCommand(-1)
                 }
             }
 
@@ -367,7 +370,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
             )}
 
             <form className={classNames(styles.inputRow, inputRowClassName)}>
-                {suggestions !== undefined && suggestions.length !== 0 && SuggestionButton ? (
+                {!displayCommands && suggestions !== undefined && suggestions.length !== 0 && SuggestionButton ? (
                     <div className={styles.suggestions}>
                         {suggestions.map((suggestion: string) =>
                             suggestion.trim().length > 0 ? (
