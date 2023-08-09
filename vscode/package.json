@@ -94,6 +94,18 @@
   "activationEvents": [
     "onStartupFinished"
   ],
+  "enabledApiProposals": [
+    "interactive",
+    "interactiveSlashCommands",
+    "interactiveUserActions",
+    "interactiveWindow",
+    "semanticSimilarity",
+    "findTextInFiles",
+    "fileSearchProvider",
+    "inlineCompletionsAdditions",
+    "terminalDataWriteEvent",
+    "terminalQuickFixProvider"
+  ],
   "contributes": {
     "walkthroughs": [
       {
