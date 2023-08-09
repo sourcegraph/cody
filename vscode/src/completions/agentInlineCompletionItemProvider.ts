@@ -3,10 +3,12 @@ import * as vscode from 'vscode'
 import { Agent } from '@sourcegraph/cody-agent/src/agent'
 
 import { ContextProvider } from '../chat/ContextProvider'
+import { CodyStatusBar } from '../services/StatusBar'
 
 import * as CompletionLogger from './logger'
 import { ProviderConfig } from './providers/provider'
 import { ProvideInlineCompletionItemsTracer, SetProviderInlineCompletionItemsTracer } from './tracer'
+import { CodyCompletionItemProviderConfig } from './vscodeInlineCompletionItemProvider'
 
 export class AgentInlineCompletionItemProvider
     implements vscode.InlineCompletionItemProvider, SetProviderInlineCompletionItemsTracer
@@ -18,7 +20,8 @@ export class AgentInlineCompletionItemProvider
     constructor(
         disposables: vscode.Disposable[],
         contextProvider: ContextProvider,
-        private readonly providerConfig: ProviderConfig
+        private readonly providerConfig: ProviderConfig,
+        private statusBar: CodyStatusBar
     ) {
         this.initialize = this.doInitialize(disposables, contextProvider)
     }
@@ -106,6 +109,7 @@ export class AgentInlineCompletionItemProvider
             providerIdentifier: this.providerConfig.identifier,
             languageId: document.languageId,
         })
+        const stopLoading = this.statusBar.startLoading('Completions are being generated')
         const result = await this.agent.request('autocomplete/execute', {
             filePath: document.fileName,
             context: { triggerKind: 'automatic' },
@@ -113,6 +117,7 @@ export class AgentInlineCompletionItemProvider
             languageId: document.languageId,
             multiline: false,
         })
+        stopLoading()
         return result.items.map(
             item =>
                 new vscode.InlineCompletionItem(
