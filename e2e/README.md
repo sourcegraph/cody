@@ -1,7 +1,5 @@
 # Cody end-to-end quality evaluation suite
 
-![Screenshot of the test suite output](./assets/screenshot.png)
-
 The end-to-end evaluation suite runs a set of test cases desinged to evaluate the quality of Cody responses. It measures:
 
 - Answer correctness - the percentage of test cases where Cody provides a correct answer as judged by an LLM.
