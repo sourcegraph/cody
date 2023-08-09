@@ -36,6 +36,7 @@ export type Config = Pick<
     | 'experimentalChatPredictions'
     | 'experimentalGuardrails'
     | 'experimentalCommandLenses'
+    | 'experimentalEditorTitleCommandIcon'
     | 'pluginsEnabled'
     | 'pluginsConfig'
     | 'pluginsDebugEnabled'

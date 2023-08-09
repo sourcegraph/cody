@@ -6,8 +6,8 @@ import * as vscode from 'vscode'
 
 import type { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
 
-import type { ReferenceSnippet } from './context'
-import { logCompletionEvent } from './logger'
+import { logCompletionEvent } from '../logger'
+import { ContextSnippet } from '../types'
 
 interface Options {
     document: vscode.TextDocument
@@ -17,7 +17,7 @@ interface Options {
 }
 
 interface EmbeddingsForFile {
-    embeddings: ReferenceSnippet[]
+    embeddings: ContextSnippet[]
     lastChange: Date
 }
 
@@ -25,7 +25,7 @@ const embeddingsPerFile = new LRUCache<string, EmbeddingsForFile>({
     max: 10,
 })
 
-export function getContextFromEmbeddings(options: Options): ReferenceSnippet[] {
+export function getContextFromEmbeddings(options: Options): ContextSnippet[] {
     const { document, getCodebaseContext, prefix, suffix } = options
 
     const currentFilePath = path.normalize(document.fileName)

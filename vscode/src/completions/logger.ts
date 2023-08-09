@@ -6,6 +6,8 @@ import { TelemetryEventProperties } from '@sourcegraph/cody-shared/src/telemetry
 import { debug } from '../log'
 import { logEvent } from '../services/EventLogger'
 
+import { ContextSummary } from './context/context'
+
 interface CompletionEvent {
     params: {
         type: 'inline'
@@ -13,9 +15,13 @@ interface CompletionEvent {
         multilineMode: null | 'block'
         providerIdentifier: string
         languageId: string
+        contextSummary?: ContextSummary
+        source?: string
     }
-    // The timestamp when the request started
+    // The timestamp when the completion request started
     startedAt: number
+    // The timestamp when the completion fired off an eventual network request
+    networkRequestStartedAt: number | null
     // Track wether or not we have already logged a start event for this
     // completion
     startLoggedAt: number | null
@@ -58,6 +64,7 @@ export function create(inputParams: Omit<CompletionEvent['params'], 'multilineMo
     displayedCompletions.set(id, {
         params,
         startedAt: performance.now(),
+        networkRequestStartedAt: null,
         startLoggedAt: null,
         loadedAt: null,
         suggestedAt: null,
@@ -77,20 +84,11 @@ export function start(id: string): void {
     }
 }
 
-export function networkRequestStarted(
-    id: string,
-    contextSummary: {
-        embeddings?: number
-        local?: number
-        duration: number
-    } | null
-): void {
+export function networkRequestStarted(id: string, contextSummary: ContextSummary | undefined): void {
     const event = displayedCompletions.get(id)
-    if (event) {
-        logCompletionEvent('networkRequestStarted', {
-            ...event.params,
-            contextSummary,
-        })
+    if (event && !event.networkRequestStartedAt) {
+        event.networkRequestStartedAt = performance.now()
+        event.params.contextSummary = contextSummary
     }
 }
 
@@ -110,13 +108,14 @@ export function loaded(id: string): void {
 // Suggested completions will not be logged immediately. Instead, we log them when
 // we either hide them again (they are NOT accepted) or when they ARE accepted.
 // This way, we can calculate the duration they were actually visible for.
-export function suggested(id: string): void {
+export function suggested(id: string, source: string): void {
     const event = displayedCompletions.get(id)
     if (!event) {
         return
     }
 
     if (!event.suggestedAt) {
+        event.params.source = source
         event.suggestedAt = performance.now()
     }
 }
@@ -132,7 +131,7 @@ export function accept(id: string, lines: number): void {
     completionEvent.forceRead = true
     completionEvent.acceptedAt = performance.now()
 
-    logSuggestionEvent()
+    logSuggestionEvents()
     logCompletionEvent('accepted', {
         ...completionEvent.params,
         lines,
@@ -151,14 +150,14 @@ export function noResponse(id: string): void {
  * used to measure how long previous completions were visible.
  */
 export function clear(): void {
-    logSuggestionEvent()
+    logSuggestionEvents()
 }
 
 function createId(): string {
     return Math.random().toString(36).slice(2, 11)
 }
 
-function logSuggestionEvent(): void {
+function logSuggestionEvents(): void {
     const now = performance.now()
     // eslint-disable-next-line ban/ban
     displayedCompletions.forEach(completionEvent => {

@@ -210,8 +210,9 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
             onError: (err, statusCode) => {
                 // TODO notify the multiplexer of the error
                 debug('ChatViewProvider:onError', err)
-
-                if (isAbortError(err)) {
+                // When the user has initiated the abortion of the message, isMessageInProgress would have set to false by abortCompletion() and we can safely ignore this error.
+                // If isMessageInProgeress is true, then user did not abort the message and we will treat it as an error.
+                if (isAbortError(err) && !this.isMessageInProgress) {
                     return
                 }
                 // Log users out on unauth error
@@ -375,6 +376,10 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
                 this.sendTranscript()
 
                 const myPremade = (await this.editor.controllers.command?.getCustomConfig())?.premade
+                if (myPremade) {
+                    this.telemetryService.log('CodyVSCodeExtension:command:customPremade:applied')
+                }
+
                 const { prompt, contextFiles, preciseContexts } = await this.transcript.getPromptForLastInteraction(
                     getPreamble(this.contextProvider.context.getCodebase(), myPremade),
                     this.maxPromptTokens,
@@ -414,6 +419,10 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         transcript.addInteraction(interaction)
 
         const myPremade = (await this.editor.controllers.command?.getCustomConfig())?.premade
+        if (myPremade) {
+            this.telemetryService.log('CodyVSCodeExtension:command:customPremade:applied')
+        }
+
         const { prompt, contextFiles } = await transcript.getPromptForLastInteraction(
             getPreamble(this.contextProvider.context.getCodebase(), myPremade),
             this.maxPromptTokens
@@ -499,12 +508,14 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
             case 'menu':
                 await this.editor.controllers.command?.menu('custom')
                 await this.sendCodyCommands()
+                this.telemetryService.log('CodyVSCodeExtension:command:menu:opened')
                 break
             case 'add':
                 if (!type) {
                     break
                 }
                 await this.editor.controllers.command?.config('add', type)
+                this.telemetryService.log('CodyVSCodeExtension:command:addCommand')
                 break
         }
         // Get prompt details from controller by title then execute prompt's command
@@ -515,6 +526,11 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
             return
         }
         await this.executeRecipe('custom-prompt', promptText)
+        this.telemetryService.log(`CodyVSCodeExtension:command:${title}:executed`)
+        const starter = (await this.editor.controllers.command?.getCustomConfig())?.starter
+        if (starter) {
+            this.telemetryService.log('CodyVSCodeExtension:command:customStarter:applied')
+        }
         return
     }
 
@@ -526,6 +542,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         if (!text?.startsWith('/')) {
             return { text, recipeId }
         }
+        this.telemetryService.log(`CodyVSCodeExtension:slashCommand:${text}:submitted`)
         switch (true) {
             case text === '/':
                 return vscode.commands.executeCommand('cody.action.commands.menu')
@@ -542,18 +559,12 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
                 return { text, recipeId: 'context-search' }
             case /^\/f(ix)?\s.*$/.test(text):
                 return { text, recipeId: 'fixup' }
-            case /^\/(explain|doc|test)$/.test(text): {
-                const promptText = this.editor.controllers.command?.find(text, true) || null
-                await this.editor.controllers.command?.get('command')
-                if (!promptText) {
-                    return null
-                }
-                return { text: promptText, recipeId: 'custom-prompt' }
-            }
+            case /^\/(explain|doc|test)$/.test(text):
             default: {
                 const promptText = this.editor.controllers.command?.find(text, true)
                 await this.editor.controllers.command?.get('command')
                 if (promptText) {
+                    this.telemetryService.log(`CodyVSCodeExtension:command:${text}:executing`)
                     return { text: promptText, recipeId: 'custom-prompt' }
                 }
                 return { text, recipeId }

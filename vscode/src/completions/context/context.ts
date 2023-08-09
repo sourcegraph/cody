@@ -2,17 +2,11 @@ import * as vscode from 'vscode'
 
 import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
 
+import { ContextSnippet } from '../types'
+
 import { getContextFromEmbeddings } from './context-embeddings'
 import { getContextFromCurrentEditor } from './context-local'
 import { DocumentHistory } from './history'
-
-/**
- * Keep property names in sync with the `EmbeddingsSearchResult` type.
- */
-export interface ReferenceSnippet {
-    fileName: string
-    content: string
-}
 
 export interface GetContextOptions {
     document: vscode.TextDocument
@@ -25,13 +19,15 @@ export interface GetContextOptions {
     isEmbeddingsContextEnabled?: boolean
 }
 
+export type ContextSummary = Readonly<{
+    embeddings?: number
+    local?: number
+    duration: number
+}>
+
 export interface GetContextResult {
-    context: ReferenceSnippet[]
-    logSummary: {
-        embeddings?: number
-        local?: number
-        duration: number
-    }
+    context: ContextSnippet[]
+    logSummary: ContextSummary
 }
 
 export async function getContext(options: GetContextOptions): Promise<GetContextResult> {
@@ -50,9 +46,9 @@ export async function getContext(options: GetContextOptions): Promise<GetContext
      * Discard editor matches for files with embedding matches.
      */
     const usedFilenames = new Set<string>()
-    const context: ReferenceSnippet[] = []
+    const context: ContextSnippet[] = []
     let totalChars = 0
-    function addMatch(match: ReferenceSnippet): boolean {
+    function addMatch(match: ContextSnippet): boolean {
         // TODO(@philipp-spiess): We should de-dupe on the snippet range and not
         // the file name to allow for more than one snippet of the same file
         if (usedFilenames.has(match.fileName)) {

@@ -5,9 +5,9 @@ import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
 
 import { debug } from '../log'
 
-import { GetContextOptions, GetContextResult } from './context'
+import { GetContextOptions, GetContextResult } from './context/context'
+import { DocumentHistory } from './context/history'
 import { DocumentContext, getCurrentDocContext } from './document'
-import { DocumentHistory } from './history'
 import * as CompletionLogger from './logger'
 import { detectMultiline } from './multiline'
 import { CompletionProviderTracer, Provider, ProviderConfig, ProviderOptions } from './providers/provider'
@@ -235,7 +235,7 @@ async function doGetInlineCompletions({
     })
     tracer?.({ completers: completionProviders.map(({ options }) => options) })
 
-    CompletionLogger.networkRequestStarted(logId, contextResult?.logSummary ?? null)
+    CompletionLogger.networkRequestStarted(logId, contextResult?.logSummary)
 
     const reqContext: RequestParams = {
         document,
@@ -253,17 +253,19 @@ async function doGetInlineCompletions({
         tracer ? createCompletionProviderTracer(tracer) : undefined
     )
 
-    logCompletions(logId, completions, document, docContext, context, abortSignal)
+    const source =
+        cacheHit === 'hit'
+            ? InlineCompletionsResultSource.Cache
+            : cacheHit === 'hit-after-request-started'
+            ? InlineCompletionsResultSource.CacheAfterRequestStart
+            : InlineCompletionsResultSource.Network
+
+    logCompletions(logId, completions, document, docContext, context, providerConfig, source, abortSignal)
 
     return {
         logId,
         items: completions,
-        source:
-            cacheHit === 'hit'
-                ? InlineCompletionsResultSource.Cache
-                : cacheHit === 'hit-after-request-started'
-                ? InlineCompletionsResultSource.CacheAfterRequestStart
-                : InlineCompletionsResultSource.Network,
+        source,
     }
 }
 
@@ -385,6 +387,8 @@ function logCompletions(
     document: vscode.TextDocument,
     docContext: DocumentContext,
     context: vscode.InlineCompletionContext,
+    providerConfig: ProviderConfig,
+    source: InlineCompletionsResultSource,
     abortSignal: AbortSignal | undefined
 ): void {
     CompletionLogger.loaded(logId)
@@ -403,18 +407,50 @@ function logCompletions(
     //   completion with the suffix, we have to do a per-character diff to test
     //   this.
     const isAborted = abortSignal ? abortSignal.aborted : false
-    let isMatchingCompletionPopup = true
+    const isMatchingPopupItem = completionMatchesPopupItem(completions, document, context)
+    const isMatchingSuffix = completionMatchesSuffix(completions, docContext, providerConfig)
+    const isVisible = !isAborted && isMatchingPopupItem && isMatchingSuffix
+
+    if (isVisible) {
+        if (completions.length > 0) {
+            CompletionLogger.suggested(logId, InlineCompletionsResultSource[source])
+        } else {
+            CompletionLogger.noResponse(logId)
+        }
+    }
+}
+
+function completionMatchesPopupItem(
+    completions: InlineCompletionItem[],
+    document: vscode.TextDocument,
+    context: vscode.InlineCompletionContext
+): boolean {
     if (context.selectedCompletionInfo) {
         const currentText = document.getText(context.selectedCompletionInfo.range)
         const selectedText = context.selectedCompletionInfo.text
         if (completions.length > 0 && !(currentText + completions[0].insertText).startsWith(selectedText)) {
-            isMatchingCompletionPopup = false
+            return false
         }
     }
-    let containsCompletionThatMatchesSuffix = false
+    return true
+}
+
+function completionMatchesSuffix(
+    completions: InlineCompletionItem[],
+    docContext: DocumentContext,
+    providerConfig: ProviderConfig
+): boolean {
+    // Models that support infilling do not replace an existing suffix but
+    // instead insert the completion only at the current cursor position. Thus,
+    // we do not need to compare the suffix
+    if (providerConfig.supportsInfilling) {
+        return true
+    }
+
+    const suffix = docContext.currentLineSuffix
+
     for (const completion of completions) {
         const insertion = completion.insertText
-        const suffix = docContext.currentLineSuffix
         let j = 0
         // eslint-disable-next-line @typescript-eslint/prefer-for-of
         for (let i = 0; i < insertion.length; i++) {
@@ -423,17 +459,9 @@ function logCompletions(
             }
         }
         if (j === suffix.length) {
-            containsCompletionThatMatchesSuffix = true
+            return true
         }
     }
 
-    const isVisible = !isAborted && isMatchingCompletionPopup && containsCompletionThatMatchesSuffix
-
-    if (isVisible) {
-        if (completions.length > 0) {
-            CompletionLogger.suggested(logId)
-        } else {
-            CompletionLogger.noResponse(logId)
-        }
-    }
+    return false
 }

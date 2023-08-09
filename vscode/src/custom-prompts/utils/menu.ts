@@ -16,7 +16,7 @@ const commandsSeparator: QuickPickItem = { kind: -1, label: 'commands' }
 const customCommandsSeparator: QuickPickItem = { kind: -1, label: 'custom commands' }
 const configOption: QuickPickItem = { label: 'Configure Custom Commands...' }
 const settingsSeparator: QuickPickItem = { kind: -1, label: 'settings' }
-const addOption: QuickPickItem = { label: 'New Custom Command...', alwaysShow: true }
+const addOption: QuickPickItem = { label: 'New Custom User Command...', alwaysShow: true }
 const chatSubmitOption: QuickPickItem = { label: 'Submit Question', alwaysShow: true }
 const fixSubmitOption: QuickPickItem = { label: 'Submit Refactor Request', alwaysShow: true }
 
@@ -183,7 +183,7 @@ export async function showcommandTypeQuickPick(
 export const CustomCommandConfigMenuItems = [
     {
         kind: 0,
-        label: 'New Custom Command...',
+        label: 'New Custom User Command...',
         id: 'add',
         type: 'user',
         description: '',
@@ -191,7 +191,7 @@ export const CustomCommandConfigMenuItems = [
     { kind: -1, id: 'separator', label: '' },
     {
         kind: 0,
-        label: 'User Settings (JSON)',
+        label: 'Open User Settings (JSON)',
         id: 'open',
         type: 'user',
         description: '~/.vscode/cody.json',
@@ -199,7 +199,7 @@ export const CustomCommandConfigMenuItems = [
     },
     {
         kind: 0,
-        label: 'Workspace Settings (JSON)',
+        label: 'Open Workspace Settings (JSON)',
         id: 'open',
         type: 'workspace',
         description: '.vscode/cody.json',
