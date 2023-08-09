@@ -1,17 +1,15 @@
-import * as anthropic from '@anthropic-ai/sdk'
+import { Message } from '../sourcegraph-api'
+import { SourcegraphCompletionsClient } from '../sourcegraph-api/completions/client'
+import { CompletionParameters, CompletionResponse } from '../sourcegraph-api/completions/types'
 
-import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
-import { SourcegraphCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/client'
-import {
-    CompletionParameters,
-    CompletionResponse,
-} from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
+const HUMAN_PROMPT = '\n\nHuman:'
+const AI_PROMPT = '\n\nAssistant:'
 
 export function messagesToText(messages: Message[]): string {
     return messages
         .map(
             message =>
-                `${message.speaker === 'human' ? anthropic.HUMAN_PROMPT : anthropic.AI_PROMPT}${
+                `${message.speaker === 'human' ? HUMAN_PROMPT : AI_PROMPT}${
                     message.text === undefined ? '' : ' ' + message.text
                 }`
         )

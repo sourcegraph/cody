@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/consistent-type-definitions */
-import { ExecuteAutocompleteParams, ExecuteAutocompleteResult } from '@sourcegraph/cody-shared/src/chat/autocomplete'
+import { AutocompleteContext } from '@sourcegraph/cody-shared/src/autocomplete/types'
+import { ExecuteAutocompleteResult } from '@sourcegraph/cody-shared/src/chat/autocomplete'
 import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 import { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 
@@ -152,4 +153,12 @@ export interface ExecuteRecipeParams {
     id: RecipeID
     humanChatInput: string
     data?: any
+}
+
+export interface ExecuteAutocompleteParams {
+    filePath: string
+    context: AutocompleteContext
+    position: Position
+    languageId: string
+    multiline: boolean
 }

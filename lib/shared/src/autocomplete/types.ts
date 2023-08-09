@@ -1,7 +1,11 @@
-export interface ExecuteAutocompleteParams {
+export interface AutocompleteParams {
     filePath: string
     position: Position
     context: AutocompleteContext
+    prefix: string
+    suffix: string
+    languageId: string
+    multiline: boolean
 }
 
 export interface AutocompleteContext {

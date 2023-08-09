@@ -6,6 +6,7 @@ import { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/s
 
 import { AgentEditor } from './editor'
 import { MessageHandler } from './jsonrpc'
+import { DocumentOffsets } from './offsets'
 import { ConnectionConfiguration, TextDocument } from './protocol'
 
 export class Agent extends MessageHandler {
@@ -21,6 +22,10 @@ export class Agent extends MessageHandler {
             customHeaders: {},
             accessToken: process.env.SRC_ACCESS_TOKEN || '',
             serverEndpoint: process.env.SRC_ENDPOINT || 'https://sourcegraph.com',
+            autocompleteAdvancedAccessToken: null,
+            autocompleteAdvancedEmbeddings: false,
+            autocompleteAdvancedProvider: 'anthropic',
+            autocompleteAdvancedServerEndpoint: null,
         })
 
         this.registerRequest('initialize', async client => {
@@ -102,12 +107,29 @@ export class Agent extends MessageHandler {
             return null
         })
 
-        this.registerRequest('autocomplete/execute', async params => {        
+        this.registerRequest('autocomplete/execute', async params => {
             const client = await this.client
             if (!client) {
                 return null
             }
-            return client.executeAutocomplete(params)
+            const document = this.documents.get(params.filePath)
+            if (document === undefined || document.content === undefined || document.selection === undefined) {
+                return null
+            }
+            const offsets = new DocumentOffsets(document)
+            const positionOffset = offsets.offset(params.position)
+            const prefix = document.content.slice(0, positionOffset)
+            const suffix = document.content.slice(positionOffset, document.content.length)
+
+            return client.executeAutocomplete({
+                filePath: params.filePath,
+                context: params.context,
+                languageId: params.languageId,
+                multiline: params.multiline,
+                prefix: prefix,
+                suffix: suffix,
+                position: params.position,
+            })
         })
     }
 

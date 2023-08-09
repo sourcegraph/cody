@@ -110,6 +110,8 @@ export class AgentInlineCompletionItemProvider
             filePath: document.fileName,
             context: { triggerKind: 'automatic' },
             position,
+            languageId: document.languageId,
+            multiline: false,
         })
         return result.items.map(
             item =>
