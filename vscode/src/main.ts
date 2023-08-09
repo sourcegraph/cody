@@ -339,18 +339,19 @@ const register = async (
                 await sidebarChatProvider.setWebviewView('chat')
             }
             await sidebarChatProvider.executeCustomCommand(title)
+            telemetryService.log('CodyVSCodeExtension:command:custom:executed')
         }),
         vscode.commands.registerCommand('cody.command.explain-code', () =>
             executeRecipeInSidebar('custom-prompt', true, '/explain')
         ),
-        vscode.commands.registerCommand('cody.recipe.explain-code', () =>
-            executeRecipeInSidebar('explain-code-detailed')
+        vscode.commands.registerCommand('cody.command.generate-tests', () =>
+            executeRecipeInSidebar('custom-prompt', true, '/test')
         ),
-        vscode.commands.registerCommand('cody.command.generate-unit-test', () =>
-            executeRecipeInSidebar('custom-prompt', true, '/tests')
+        vscode.commands.registerCommand('cody.command.document-code', () =>
+            executeRecipeInSidebar('custom-prompt', true, '/doc')
         ),
-        vscode.commands.registerCommand('cody.command.generate-docstring', () =>
-            executeRecipeInSidebar('custom-prompt', true, '/docstring')
+        vscode.commands.registerCommand('cody.command.smell-code', () =>
+            executeRecipeInSidebar('custom-prompt', true, '/smell')
         ),
         vscode.commands.registerCommand('cody.command.inline-touch', () =>
             executeRecipeInSidebar('inline-touch', false)
