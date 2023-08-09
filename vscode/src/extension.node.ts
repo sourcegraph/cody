@@ -5,12 +5,12 @@ import { ReleaseNotes } from '@sourcegraph/cody-shared/src/chat/recipes/generate
 import { GitHistory } from '@sourcegraph/cody-shared/src/chat/recipes/git-log'
 import { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/nodeClient'
 
+import { CommandsController } from './custom-prompts/CommandsController'
 import { ExtensionApi } from './extension-api'
 import { activate as activateCommon } from './extension.common'
 import { VSCODE_WEB_RECIPES } from './extension.web'
 import { FilenameContextFetcher } from './local-context/filename-context-fetcher'
 import { LocalKeywordContextFetcher } from './local-context/local-keyword-context-fetcher'
-import { MyPromptController } from './my-cody/MyPromptController'
 import { getRgPath } from './rg'
 
 /**
@@ -20,7 +20,7 @@ import { getRgPath } from './rg'
 export function activate(context: vscode.ExtensionContext): ExtensionApi {
     return activateCommon(context, {
         getRgPath,
-        createMyPromptController: (...args) => new MyPromptController(...args),
+        createCommandsController: (...args) => new CommandsController(...args),
         createLocalKeywordContextFetcher: (...args) => new LocalKeywordContextFetcher(...args),
         createFilenameContextFetcher: (...args) => new FilenameContextFetcher(...args),
         createCompletionsClient: (...args) => new SourcegraphNodeCompletionsClient(...args),

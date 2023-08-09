@@ -2,14 +2,22 @@ import * as vscode from 'vscode'
 
 import { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 
+import { ExplainCodeAction } from '../code-actions/explain'
+
 import { MessageProvider, MessageProviderOptions } from './MessageProvider'
 
-export class InlineChatViewManager {
+export class InlineChatViewManager implements vscode.Disposable {
     private inlineChatThreadProviders = new Map<vscode.CommentThread, InlineChatViewProvider>()
     private messageProviderOptions: MessageProviderOptions
+    private disposables: vscode.Disposable[] = []
 
     constructor(options: MessageProviderOptions) {
         this.messageProviderOptions = options
+        this.disposables.push(
+            vscode.languages.registerCodeActionsProvider('*', new ExplainCodeAction(), {
+                providedCodeActionKinds: ExplainCodeAction.providedCodeActionKinds,
+            })
+        )
     }
 
     public getProviderForThread(thread: vscode.CommentThread): InlineChatViewProvider {
@@ -32,6 +40,13 @@ export class InlineChatViewManager {
             provider.dispose()
         }
     }
+
+    public dispose(): void {
+        for (const disposable of this.disposables) {
+            disposable.dispose()
+        }
+        this.disposables = []
+    }
 }
 
 interface InlineChatViewProviderOptions extends MessageProviderOptions {
@@ -51,6 +66,11 @@ export class InlineChatViewProvider extends MessageProvider {
         // We need to update the comment controller to support more than one active thread at a time.
         void vscode.commands.executeCommand('setContext', 'cody.inline.reply.pending', true)
 
+        /**
+         * TODO(umpox):
+         * We create a new comment and trigger the inline chat recipe, but may end up closing this comment and running a fix instead
+         * We should detect intent here (through regex and then `classifyIntentFromOptions`) and run the correct recipe/controller instead.
+         */
         await this.editor.controllers.inline?.chat(reply, this.thread, isFixMode)
         this.editor.controllers.inline?.setResponsePending(true)
         await this.executeRecipe('inline-chat', reply.trimStart())
@@ -112,7 +132,11 @@ export class InlineChatViewProvider extends MessageProvider {
         // plugins not yet implemented for inline chat
     }
 
-    protected handleMyPrompts(): void {
+    protected handleCodyCommands(): void {
         // my prompts not yet implemented for inline chat
+    }
+
+    protected handleTranscriptErrors(): void {
+        // handle transcript errors not yet implemented for inline chat
     }
 }

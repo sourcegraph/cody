@@ -1,14 +1,17 @@
 import detectIndent from 'detect-indent'
 
+import { DocumentContext } from './document'
 import { getLanguageConfig } from './language'
 import { indentation } from './text-processing'
 import { getEditorTabSize, OPENING_BRACKET_REGEX, shouldIncludeClosingLine } from './utils/text-utils'
 
 export function detectMultiline(
-    prefix: string,
-    prevNonEmptyLine: string,
-    sameLinePrefix: string,
-    sameLineSuffix: string,
+    {
+        prefix,
+        prevNonEmptyLine,
+        currentLinePrefix,
+        currentLineSuffix,
+    }: Pick<DocumentContext, 'prefix' | 'prevNonEmptyLine' | 'currentLinePrefix' | 'currentLineSuffix'>,
     languageId: string,
     enableExtendedTriggers: boolean
 ): boolean {
@@ -17,17 +20,17 @@ export function detectMultiline(
         return false
     }
 
-    if (enableExtendedTriggers && sameLinePrefix.match(OPENING_BRACKET_REGEX)) {
+    if (enableExtendedTriggers && currentLinePrefix.match(OPENING_BRACKET_REGEX)) {
         return true
     }
 
     if (
-        sameLinePrefix.trim() === '' &&
-        sameLineSuffix.trim() === '' &&
+        currentLinePrefix.trim() === '' &&
+        currentLineSuffix.trim() === '' &&
         // Only trigger multiline suggestions for the beginning of blocks
         prefix.trim().at(prefix.trim().length - config.blockStart.length) === config.blockStart &&
         // Only trigger multiline suggestions when the new current line is indented
-        indentation(prevNonEmptyLine) < indentation(sameLinePrefix)
+        indentation(prevNonEmptyLine) < indentation(currentLinePrefix)
     ) {
         return true
     }

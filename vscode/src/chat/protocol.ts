@@ -1,4 +1,5 @@
 import { ChatContextStatus } from '@sourcegraph/cody-shared/src/chat/context'
+import { CodyPrompt, CodyPromptType } from '@sourcegraph/cody-shared/src/chat/prompts'
 import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 import { ChatMessage, UserLocalHistory } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { Configuration } from '@sourcegraph/cody-shared/src/configuration'
@@ -6,7 +7,6 @@ import { CodyLLMSiteConfiguration } from '@sourcegraph/cody-shared/src/sourcegra
 import type { TelemetryEventProperties } from '@sourcegraph/cody-shared/src/telemetry'
 
 import { View } from '../../webviews/NavBar'
-import { CodyPromptType } from '../my-cody/types'
 
 /**
  * A message sent from the webview to the extension host.
@@ -31,9 +31,8 @@ export type WebviewMessage =
           value?: string
       }
     | { command: 'abort' }
-    | { command: 'chat-button'; action: string }
     | { command: 'setEnabledPlugins'; plugins: string[] }
-    | { command: 'my-prompt'; title: string; value?: CodyPromptType }
+    | { command: 'custom-prompt'; title: string; value?: CodyPromptType }
     | { command: 'reload' }
 
 /**
@@ -50,7 +49,8 @@ export type ExtensionMessage =
     | { type: 'suggestions'; suggestions: string[] }
     | { type: 'app-state'; isInstalled: boolean }
     | { type: 'enabled-plugins'; plugins: string[] }
-    | { type: 'my-prompts'; prompts: string[]; isEnabled: boolean }
+    | { type: 'custom-prompts'; prompts: [string, CodyPrompt][] }
+    | { type: 'transcript-errors'; isTranscriptError: boolean }
 
 /**
  * The subset of configuration that is visible to the webview.

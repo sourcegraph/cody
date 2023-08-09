@@ -9,7 +9,6 @@ import { RemixServer } from '@remix-run/react'
 import isbot from 'isbot'
 import { renderToPipeableStream } from 'react-dom/server'
 
-// eslint-disable-next-line @typescript-eslint/no-require-imports
 const { PassThrough } = require('node:stream')
 
 const ABORT_DELAY = 5_000

@@ -16,6 +16,12 @@ describe('convertGitCloneURLToCodebaseName', () => {
         )
     })
 
+    test('converts SSH URL with custom user@', () => {
+        expect(convertGitCloneURLToCodebaseName('wq4235-wewrwweq_3efrge@github.com:sourcegraph/sourcegraph')).toEqual(
+            'github.com/sourcegraph/sourcegraph'
+        )
+    })
+
     test('converts GitHub HTTPS URL', () => {
         expect(convertGitCloneURLToCodebaseName('https://github.com/sourcegraph/sourcegraph')).toEqual(
             'github.com/sourcegraph/sourcegraph'

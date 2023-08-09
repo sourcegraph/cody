@@ -37,13 +37,15 @@ export function getConfiguration(config: ConfigGetter): Configuration {
     }
 
     let autocompleteAdvancedProvider = config.get<
-        'anthropic' | 'unstable-codegen' | 'unstable-huggingface' | 'unstable-fireworks'
+        'anthropic' | 'unstable-codegen' | 'unstable-huggingface' | 'unstable-fireworks' | 'unstable-azure-openai'
     >(CONFIG_KEY.autocompleteAdvancedProvider, 'anthropic')
+
     if (
         autocompleteAdvancedProvider !== 'anthropic' &&
         autocompleteAdvancedProvider !== 'unstable-codegen' &&
         autocompleteAdvancedProvider !== 'unstable-huggingface' &&
-        autocompleteAdvancedProvider !== 'unstable-fireworks'
+        autocompleteAdvancedProvider !== 'unstable-fireworks' &&
+        autocompleteAdvancedProvider !== 'unstable-azure-openai'
     ) {
         autocompleteAdvancedProvider = 'anthropic'
         void vscode.window.showInformationMessage(
@@ -53,6 +55,7 @@ export function getConfiguration(config: ConfigGetter): Configuration {
 
     return {
         // NOTE: serverEndpoint is now stored in Local Storage instead but we will still keep supporting the one in confg
+        // to use as fallback for users who do not have access to local storage
         serverEndpoint: sanitizeServerEndpoint(config.get(CONFIG_KEY.serverEndpoint, '')),
         codebase: sanitizeCodebase(config.get(CONFIG_KEY.codebase)),
         customHeaders: config.get<object>(CONFIG_KEY.customHeaders, {}) as Record<string, string>,
@@ -65,20 +68,16 @@ export function getConfiguration(config: ConfigGetter): Configuration {
         experimentalChatPredictions: config.get(CONFIG_KEY.experimentalChatPredictions, isTesting),
         inlineChat: config.get(CONFIG_KEY.inlineChatEnabled, true),
         experimentalGuardrails: config.get(CONFIG_KEY.experimentalGuardrails, isTesting),
-        experimentalNonStop: config.get('cody.experimental.nonStop' as any, isTesting),
-        experimentalCustomRecipes: config.get(CONFIG_KEY.experimentalCustomRecipes, isTesting),
+        experimentalNonStop: config.get(CONFIG_KEY.experimentalNonStop, isTesting),
+        experimentalCommandLenses: config.get(CONFIG_KEY.experimentalCommandLenses, false),
+        experimentalEditorTitleCommandIcon: config.get(CONFIG_KEY.experimentalEditorTitleCommandIcon, false),
         autocompleteAdvancedProvider,
         autocompleteAdvancedServerEndpoint: config.get<string | null>(
             CONFIG_KEY.autocompleteAdvancedServerEndpoint,
             null
         ),
         autocompleteAdvancedAccessToken: config.get<string | null>(CONFIG_KEY.autocompleteAdvancedAccessToken, null),
-        autocompleteAdvancedCache: config.get(CONFIG_KEY.autocompleteAdvancedCache, true),
         autocompleteAdvancedEmbeddings: config.get(CONFIG_KEY.autocompleteAdvancedEmbeddings, true),
-        autocompleteExperimentalTriggerMoreEagerly: config.get(
-            CONFIG_KEY.autocompleteExperimentalTriggerMoreEagerly,
-            true
-        ),
         autocompleteExperimentalCompleteSuggestWidgetSelection: config.get(
             CONFIG_KEY.autocompleteExperimentalCompleteSuggestWidgetSelection,
             false

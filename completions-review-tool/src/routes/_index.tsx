@@ -50,13 +50,15 @@ export default function Index() {
                 bgColor: '#f7f7f7',
             }
 
-            entries.forEach(({ completions, snapshotFileName }: any) => {
+            entries.forEach(({ completions, snapshotFileName, elapsed }: any) => {
                 const columnKey = snapshotFileName
 
                 extraColumns.add(columnKey)
 
                 // All completions are displayed in the same cell separated by <hr />.
-                row[columnKey] = completions.map(renderMarkdown).join('<hr />')
+                row[columnKey] = `<div class="elapsed">${elapsed}ms</div>${completions
+                    .map(renderMarkdown)
+                    .join('<hr />')}`
             })
 
             rows.push(row)

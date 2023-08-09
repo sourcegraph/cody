@@ -1,5 +1,8 @@
 import path from 'path'
 
+import { getFileExtension, getNormalizedLanguageName } from '../chat/recipes/helpers'
+import { ActiveTextEditorDiagnostic } from '../editor'
+
 const CODE_CONTEXT_TEMPLATE = `Use following code snippet from file \`{filePath}\`:
 \`\`\`{language}
 {text}
@@ -45,16 +48,19 @@ export function populateCurrentEditorContextTemplate(code: string, filePath: str
     )
 }
 
-const CURRENT_EDITOR_SELECTED_CODE_TEMPLATE = 'I am currently looking at this selected code from `{filePath}`. '
+const CURRENT_EDITOR_SELECTED_CODE_TEMPLATE =
+    'Here is the selected code from file `{filePath}`, written in {language}: '
 
 const CURRENT_EDITOR_SELECTED_CODE_TEMPLATE_WITH_REPO =
-    'I am currently looking at this selected code from `{filePath}` in the {repoName} repository. '
+    'Here is the selected code from file `{filePath}` in the {repoName} repository, written in {language}: '
 
 export function populateCurrentEditorSelectedContextTemplate(
     code: string,
     filePath: string,
     repoName?: string
 ): string {
+    const extension = getFileExtension(filePath)
+    const languageName = getNormalizedLanguageName(extension)
     const context = isMarkdownFile(filePath)
         ? populateMarkdownContextTemplate(code, filePath, repoName)
         : populateCodeContextTemplate(code, filePath, repoName)
@@ -62,8 +68,30 @@ export function populateCurrentEditorSelectedContextTemplate(
         (repoName
             ? CURRENT_EDITOR_SELECTED_CODE_TEMPLATE_WITH_REPO.replace('{repoName}', repoName)
             : CURRENT_EDITOR_SELECTED_CODE_TEMPLATE
-        ).replace(/{filePath}/g, filePath) + context
+        )
+            .replace('{language}', languageName)
+            .replace(/{filePath}/g, filePath) + context
     )
+}
+
+const DIAGNOSTICS_CONTEXT_TEMPLATE = `Use the following {type} from the code snippet in the file \`{filePath}\`
+{prefix}: {message}
+Code snippet:
+\`\`\`{language}
+{code}
+\`\`\``
+
+export function populateCurrentEditorDiagnosticsTemplate(
+    { message, type, text }: ActiveTextEditorDiagnostic,
+    filePath: string
+): string {
+    const language = getExtension(filePath)
+    return DIAGNOSTICS_CONTEXT_TEMPLATE.replace('{type}', type)
+        .replace('{filePath}', filePath)
+        .replace('{prefix}', type)
+        .replace('{message}', message)
+        .replace('{language}', language)
+        .replace('{code}', text)
 }
 
 const COMMAND_OUTPUT_TEMPLATE = 'Here is the output returned from the terminal.\n'

@@ -1,5 +1,21 @@
 import * as vscode from 'vscode'
 
+import { getNextNonEmptyLine, getPrevNonEmptyLine } from './utils/text-utils'
+
+export interface DocumentContext {
+    prefix: string
+    suffix: string
+
+    /** Text before the cursor on the same line. */
+    currentLinePrefix: string
+
+    /** Text after the cursor on the same line. */
+    currentLineSuffix: string
+
+    prevNonEmptyLine: string
+    nextNonEmptyLine: string
+}
+
 /**
  * Get the current document context based on the cursor position in the current document.
  *
@@ -22,13 +38,7 @@ export function getCurrentDocContext(
     position: vscode.Position,
     maxPrefixLength: number,
     maxSuffixLength: number
-): {
-    prefix: string
-    suffix: string
-    prevLine: string
-    prevNonEmptyLine: string
-    nextNonEmptyLine: string
-} | null {
+): DocumentContext | null {
     const offset = document.offsetAt(position)
 
     const prefixLines = document.getText(new vscode.Range(new vscode.Position(0, 0), position)).split('\n')
@@ -42,26 +52,7 @@ export function getCurrentDocContext(
         .getText(new vscode.Range(position, document.positionAt(document.getText().length)))
         .split('\n')
 
-    let nextNonEmptyLine = ''
-    if (suffixLines.length > 0) {
-        for (const line of suffixLines) {
-            if (line.trim().length > 0) {
-                nextNonEmptyLine = line
-                break
-            }
-        }
-    }
-
-    let prevNonEmptyLine = ''
-    for (let i = prefixLines.length - 1; i >= 0; i--) {
-        const line = prefixLines[i]
-        if (line.trim().length > 0) {
-            prevNonEmptyLine = line
-            break
-        }
-    }
-
-    const prevLine = prefixLines[prefixLines.length - 1]
+    const currentLinePrefix = prefixLines[prefixLines.length - 1]
 
     let prefix: string
     if (offset > maxPrefixLength) {
@@ -78,6 +69,7 @@ export function getCurrentDocContext(
     } else {
         prefix = document.getText(new vscode.Range(new vscode.Position(0, 0), position))
     }
+    const prevNonEmptyLine = getPrevNonEmptyLine(prefix)
 
     let totalSuffix = 0
     let endLine = 0
@@ -89,11 +81,15 @@ export function getCurrentDocContext(
         totalSuffix += suffixLines[i].length
     }
     const suffix = suffixLines.slice(0, endLine).join('\n')
+    const nextNonEmptyLine = getNextNonEmptyLine(suffix)
+
+    const currentLineSuffix = suffixLines[0]
 
     return {
         prefix,
         suffix,
-        prevLine,
+        currentLinePrefix,
+        currentLineSuffix,
         prevNonEmptyLine,
         nextNonEmptyLine,
     }

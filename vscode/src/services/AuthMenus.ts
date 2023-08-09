@@ -42,8 +42,8 @@ export const AuthMenu = async (type: AuthMenuType, historyItems: string[]): Prom
                   }))
                   .reverse()
             : []
-    const seperator = [{ label: type === 'signin' ? 'previously used' : 'current', kind: -1 }]
-    const optionItems = type === 'signout' ? history : [...LoginMenuOptionItems, ...seperator, ...history]
+    const separator = [{ label: type === 'signin' ? 'previously used' : 'current', kind: -1 }]
+    const optionItems = type === 'signout' ? history : [...LoginMenuOptionItems, ...separator, ...history]
     const option = (await vscode.window.showQuickPick(optionItems, AuthMenuOptions[type])) as LoginMenuItem
     return option
 }
