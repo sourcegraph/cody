@@ -19,7 +19,7 @@ export async function showCommandMenu(items: QuickPickItem[]): Promise<CommandMe
         ignoreFocusOut: true,
     }
 
-    return new Promise((resolve, reject) => {
+    return new Promise(resolve => {
         let input = ''
         const quickPick = window.createQuickPick()
         quickPick.items = items
@@ -41,7 +41,6 @@ export async function showCommandMenu(items: QuickPickItem[]): Promise<CommandMe
         // On gear icon click
         quickPick.onDidTriggerButton(async () => {
             quickPick.hide()
-            reject()
             await commands.executeCommand('cody.settings.commands')
         })
 
@@ -86,7 +85,7 @@ export async function showCommandConfigMenu(): Promise<CustomCommandsItem> {
         placeHolder: 'Choose an option',
     }
 
-    return new Promise((resolve, reject) => {
+    return new Promise(resolve => {
         const quickPick = window.createQuickPick()
         quickPick.items = CustomCommandConfigMenuItems
         quickPick.title = CustomCommandConfigMenuOptions.title
@@ -110,7 +109,6 @@ export async function showCommandConfigMenu(): Promise<CustomCommandsItem> {
 
         quickPick.onDidTriggerButton(async () => {
             quickPick.hide()
-            reject()
             await commands.executeCommand('cody.action.commands.menu')
         })
 
