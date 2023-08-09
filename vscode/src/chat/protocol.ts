@@ -139,6 +139,9 @@ export interface LocalEnv {
     appName: string
     extensionVersion: string
 
+    /** Whether the extension is running in VS Code Web (as opposed to VS Code Desktop). */
+    uiKindIsWeb: boolean
+
     // App Local State
     hasAppJson: boolean
     isAppInstalled: boolean

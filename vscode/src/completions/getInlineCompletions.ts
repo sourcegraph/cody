@@ -235,7 +235,7 @@ async function doGetInlineCompletions({
     })
     tracer?.({ completers: completionProviders.map(({ options }) => options) })
 
-    CompletionLogger.networkRequestStarted(logId, contextResult?.logSummary ?? null)
+    CompletionLogger.networkRequestStarted(logId, contextResult?.logSummary)
 
     const reqContext: RequestParams = {
         document,
@@ -253,17 +253,19 @@ async function doGetInlineCompletions({
         tracer ? createCompletionProviderTracer(tracer) : undefined
     )
 
-    logCompletions(logId, completions, document, docContext, context, providerConfig, abortSignal)
+    const source =
+        cacheHit === 'hit'
+            ? InlineCompletionsResultSource.Cache
+            : cacheHit === 'hit-after-request-started'
+            ? InlineCompletionsResultSource.CacheAfterRequestStart
+            : InlineCompletionsResultSource.Network
+
+    logCompletions(logId, completions, document, docContext, context, providerConfig, source, abortSignal)
 
     return {
         logId,
         items: completions,
-        source:
-            cacheHit === 'hit'
-                ? InlineCompletionsResultSource.Cache
-                : cacheHit === 'hit-after-request-started'
-                ? InlineCompletionsResultSource.CacheAfterRequestStart
-                : InlineCompletionsResultSource.Network,
+        source,
     }
 }
 
@@ -386,6 +388,7 @@ function logCompletions(
     docContext: DocumentContext,
     context: vscode.InlineCompletionContext,
     providerConfig: ProviderConfig,
+    source: InlineCompletionsResultSource,
     abortSignal: AbortSignal | undefined
 ): void {
     CompletionLogger.loaded(logId)
@@ -410,7 +413,7 @@ function logCompletions(
 
     if (isVisible) {
         if (completions.length > 0) {
-            CompletionLogger.suggested(logId)
+            CompletionLogger.suggested(logId, InlineCompletionsResultSource[source])
         } else {
             CompletionLogger.noResponse(logId)
         }
