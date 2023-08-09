@@ -153,12 +153,8 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             // down here to render cody is disabled on the instance nicely.
             isCodyEnabled={true}
             codyNotEnabledNotice={undefined}
-            afterMarkdown="🔔 Recipes are now Commands! See [Getting Started](command:cody.welcome) to learn more about Cody Commands!"
-            helpMarkdown={
-                showOnboardingButtons
-                    ? 'To get started, highlight some code and select a Cody command from your right-click menu.'
-                    : ''
-            }
+            helpMarkdown="See [Getting Started](command:cody.welcome) for help and tips."
+            afterMarkdown="To get started, highlight some code and select a command from the [Cody Menu](command:cody.action.commands.menu)."
             ChatButtonComponent={ChatButton}
             pluginsDevMode={pluginsDevMode}
             chatCommands={chatCommands}
