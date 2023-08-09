@@ -1,4 +1,5 @@
 import { getLanguageConfig } from './language'
+import { PostProcessCompletionContext } from './types'
 import { isAlmostTheSameString } from './utils/string-comparator'
 import { getEditorTabSize } from './utils/text-utils'
 
@@ -129,7 +130,8 @@ function trimSpace(s: string): TrimmedString {
  * Oftentimes, the last couple of lines of the completion may match against the suffix
  * (the code following the cursor).
  */
-export function trimUntilSuffix(insertion: string, prefix: string, suffix: string, languageId: string): string {
+export function trimUntilSuffix(insertion: string, context: PostProcessCompletionContext): string {
+    const { suffix, prefix, languageId } = context
     const config = getLanguageConfig(languageId)
 
     insertion = insertion.trimEnd()
@@ -210,10 +212,13 @@ export function trimLeadingWhitespaceUntilNewline(str: string): string {
  *
  * Language-specific customizations are needed here to get greater accuracy.
  */
-export function collapseDuplicativeWhitespace(prefix: string, completion: string): string {
+export function collapseDuplicativeWhitespace(completion: string, context: PostProcessCompletionContext): string {
+    const { prefix } = context
+
     if (prefix.endsWith(' ') || prefix.endsWith('\t')) {
         completion = completion.replace(/^[\t ]+/, '')
     }
+
     return completion
 }
 

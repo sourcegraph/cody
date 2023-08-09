@@ -4,7 +4,7 @@ import Parser, { Point, SyntaxNode, Tree } from 'web-tree-sitter'
 
 import { GenericLexem, getLanguageLexems, SupportedLanguage } from './grammars'
 
-export { SupportedLanguage, GenericLexem }
+export { SupportedLanguage, GenericLexem, Tree, SyntaxNode, Point }
 
 // TODO: Add grammar type autogenerate script
 // see https://github.com/asgerf/dts-tree-sitter
@@ -51,9 +51,10 @@ interface ParserSettings {
     grammarDirectory?: string
 }
 
-interface ParserApi {
+export interface ParserApi {
     parse: (sourceCode: string) => Promise<Tree>
     findClosestLexem: (rootNode: SyntaxNode, cursor: Point, lexemType: GenericLexem) => SyntaxNode | null
+    findParentLexem: (element: SyntaxNode, lexemType: GenericLexem) => SyntaxNode | null
 }
 
 export function createParser(settings: ParserSettings): ParserApi {
@@ -79,21 +80,26 @@ export function createParser(settings: ParserSettings): ParserApi {
             return parser.parse(sourceCode)
         },
 
-        findClosestLexem: (rootNode: SyntaxNode, cursor: Point, lexemType: GenericLexem): SyntaxNode | null => {
+        findClosestLexem(rootNode: SyntaxNode, cursor: Point, lexemType: GenericLexem): SyntaxNode | null {
+            const nodeAtCursor: SyntaxNode | null = rootNode.descendantForPosition(cursor)
+
+            return this.findParentLexem(nodeAtCursor, lexemType)
+        },
+        findParentLexem: (element: SyntaxNode, lexemType: GenericLexem): SyntaxNode | null => {
             const currentLexem = lexems?.[lexemType]
 
             if (!currentLexem) {
                 throw new Error(`Support current lexem ${lexemType} for ${language} language`)
             }
 
-            let nodeAtCursor: SyntaxNode | null = rootNode.descendantForPosition(cursor)
+            let nodeAtCursor: SyntaxNode | null = element
 
             while (nodeAtCursor) {
-                nodeAtCursor = nodeAtCursor.parent
-
                 if (nodeAtCursor?.type === currentLexem) {
                     return nodeAtCursor
                 }
+
+                nodeAtCursor = nodeAtCursor.parent
             }
 
             return null

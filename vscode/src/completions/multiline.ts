@@ -3,6 +3,7 @@ import detectIndent from 'detect-indent'
 import { DocumentContext } from './document'
 import { getLanguageConfig } from './language'
 import { indentation } from './text-processing'
+import { PostProcessCompletionContext } from './types'
 import { getEditorTabSize, OPENING_BRACKET_REGEX, shouldIncludeClosingLine } from './utils/text-utils'
 
 export function detectMultiline(
@@ -79,13 +80,10 @@ function ensureSameOrLargerIndentation(completion: string): string {
     return completion
 }
 
-export function truncateMultilineCompletion(
-    completion: string,
-    prefix: string,
-    suffix: string,
-    languageId: string
-): string {
+export function truncateMultilineCompletion(completion: string, context: PostProcessCompletionContext): string {
+    const { prefix, suffix, languageId } = context
     const config = getLanguageConfig(languageId)
+
     if (!config) {
         return completion
     }

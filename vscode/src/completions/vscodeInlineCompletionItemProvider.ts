@@ -365,7 +365,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
         isCacheHit: boolean,
         abortSignal: AbortSignal
     ): Promise<vscode.InlineCompletionList> {
-        const results = processCompletions(completions, prefix, suffix, multiline, languageId)
+        const results = await processCompletions(completions, prefix, suffix, multiline, languageId)
 
         // We usually resolve cached results instantly. However, if the inserted completion would
         // include more than one line, this can create a lot of visible UI churn. To avoid this, we
@@ -420,16 +420,18 @@ export interface Completion {
     stopReason?: string
 }
 
-function processCompletions(
+async function processCompletions(
     completions: Completion[],
     prefix: string,
     suffix: string,
     multiline: boolean,
     languageId: string
-): Completion[] {
+): Promise<Completion[]> {
     // Shared post-processing logic
-    const processedCompletions = completions.map(completion =>
-        sharedPostProcess({ prefix, suffix, multiline, languageId, completion })
+    // TODO: Move more control over to shared post process so we could run
+    // prefix + suffix parsing only once for all completions parts
+    const processedCompletions = await Promise.all(
+        completions.map(completion => sharedPostProcess({ prefix, suffix, multiline, languageId, completion }))
     )
 
     // Filter results

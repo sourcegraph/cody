@@ -3,3 +3,9 @@ export interface Completion {
     content: string
     stopReason?: string
 }
+
+export interface PostProcessCompletionContext {
+    prefix: string
+    suffix: string
+    languageId: string
+}
