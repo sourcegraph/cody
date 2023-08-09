@@ -6,6 +6,7 @@ import { getPreamble } from '@sourcegraph/cody-shared/src/chat/preamble'
 import { CodyPrompt, CodyPromptType } from '@sourcegraph/cody-shared/src/chat/prompts'
 import { Recipe, RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 import { Transcript } from '@sourcegraph/cody-shared/src/chat/transcript'
+import { Interaction } from '@sourcegraph/cody-shared/src/chat/transcript/interaction'
 import { ChatHistory, ChatMessage, UserLocalHistory } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { reformatBotMessage } from '@sourcegraph/cody-shared/src/chat/viewHelpers'
 import { annotateAttribution, Guardrails } from '@sourcegraph/cody-shared/src/guardrails'
@@ -357,10 +358,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         }
         const errorMsg = interaction?.getAssistantMessage()?.error
         if (errorMsg !== undefined) {
-            this.transcript.addInteraction(interaction)
-            this.sendTranscript()
-            this.handleTranscriptErrors(true)
-            await this.saveTranscriptToChatHistory()
+            await this.addCustomInteraction(errorMsg, '', interaction)
             return
         }
         this.isMessageInProgress = true
@@ -525,12 +523,12 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         // Get prompt details from controller by title then execute prompt's command
         const promptText = this.editor.controllers.command?.find(title)
         await this.editor.controllers.command?.get('command')
+        debug('executeCustomCommand:starting', title)
         if (!promptText) {
-            debug('executeCustomCommand:noPrompt', title)
             return
         }
         await this.executeRecipe('custom-prompt', promptText)
-        this.telemetryService.log(`CodyVSCodeExtension:command:${title}:executed`)
+        this.telemetryService.log('CodyVSCodeExtension:command:executedFromMenu')
         const starter = (await this.editor.controllers.command?.getCustomConfig())?.starter
         if (starter) {
             this.telemetryService.log('CodyVSCodeExtension:command:customStarter:applied')
@@ -546,7 +544,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         if (!text?.startsWith('/')) {
             return { text, recipeId }
         }
-        this.telemetryService.log(`CodyVSCodeExtension:slashCommand:${text}:submitted`)
+        this.telemetryService.log('CodyVSCodeExtension:slashCommand:submitted')
         switch (true) {
             case text === '/':
                 return vscode.commands.executeCommand('cody.action.commands.menu')
@@ -563,17 +561,49 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
                 return { text, recipeId: 'context-search' }
             case /^\/f(ix)?\s.*$/.test(text):
                 return { text, recipeId: 'fixup' }
-            case /^\/(explain|doc|test)$/.test(text):
+            case /^\/(explain|doc|test|smell)$/.test(text):
+                this.telemetryService.log(`CodyVSCodeExtension:command:${text.replace('/', '')}:executed`)
             default: {
                 const promptText = this.editor.controllers.command?.find(text, true)
                 await this.editor.controllers.command?.get('command')
                 if (promptText) {
-                    this.telemetryService.log(`CodyVSCodeExtension:command:${text}:executing`)
+                    this.telemetryService.log('CodyVSCodeExtension:command:found')
                     return { text: promptText, recipeId: 'custom-prompt' }
                 }
-                return { text, recipeId }
+                // Inline chat has its own filter for slash commands
+                if (recipeId === 'inline-chat') {
+                    return { text, recipeId }
+                }
+                // If no command found, send error message to view
+                await this.addCustomInteraction(`_Invalid command:_ ${text}`, text)
+                return null
             }
         }
+    }
+
+    /**
+     * Adds a custom interaction to the transcript.
+     *
+     * This method adds a new Interaction with the given assistant response and human input to the transcript.
+     * It then sends the updated transcript, checks for transcript errors, and saves the transcript to the chat history
+     */
+    private async addCustomInteraction(
+        assistantResponse: string,
+        humanInput?: string,
+        interaction?: Interaction
+    ): Promise<void> {
+        const newInteraction =
+            interaction ||
+            new Interaction(
+                { speaker: 'human', displayText: humanInput },
+                { speaker: 'assistant', displayText: assistantResponse },
+                Promise.resolve([]),
+                []
+            )
+        this.transcript.addInteraction(newInteraction)
+        this.sendTranscript()
+        this.handleTranscriptErrors(true)
+        await this.saveTranscriptToChatHistory()
     }
 
     /**

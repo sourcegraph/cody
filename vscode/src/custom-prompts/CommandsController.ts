@@ -107,7 +107,11 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
     public find(id: string, isSlash = false): string {
         const myPrompt = this.default.get(id, isSlash)
 
-        debug('CommandsController:find:command', id, { verbose: myPrompt })
+        debug('CommandsController:command:finding', id, { verbose: myPrompt })
+
+        if (!myPrompt) {
+            this.telemetryService.log('CodyVSCodeExtension:command:find:invalid')
+        }
 
         if (myPrompt) {
             this.myPromptInProgress = myPrompt
