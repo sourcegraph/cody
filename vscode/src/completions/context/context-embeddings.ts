@@ -6,6 +6,7 @@ import * as vscode from 'vscode'
 
 import type { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
 
+import { debug } from '../../log'
 import { logCompletionEvent } from '../logger'
 import { ContextSnippet } from '../types'
 
@@ -38,6 +39,7 @@ export function getContextFromEmbeddings(options: Options): ContextSnippet[] {
      * event with some diffing logic for that in the improved version.
      */
     if (!embeddingsForCurrentFile || differenceInMinutes(embeddingsForCurrentFile.lastChange, new Date()) > 5) {
+        debug('embeddings', 'fetchAndSaveEmbeddings', currentFilePath)
         fetchAndSaveEmbeddings({
             getCodebaseContext,
             currentFilePath,
@@ -50,6 +52,11 @@ export function getContextFromEmbeddings(options: Options): ContextSnippet[] {
     }
 
     // Return embeddings for current file if we have any in the cache.
+    if (embeddingsForCurrentFile) {
+        debug('embeddings', 'found embeddings', currentFilePath, embeddingsForCurrentFile?.embeddings.length)
+    } else {
+        debug('embeddings', 'found no embeddings', currentFilePath)
+    }
     return embeddingsForCurrentFile?.embeddings || []
 }
 
