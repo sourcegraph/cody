@@ -12,8 +12,8 @@
     position: relative;
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
-    padding: 1rem;
+    gap: 0.25rem;
+    padding: 0.5rem;
 }
 
 .text-area-container {
@@ -29,10 +29,10 @@
 .submit-button {
     position: absolute;
     right: 0;
-    bottom: 0.125rem;
+    bottom: 0;
     fill: currentColor;
     opacity: 0.8;
-    margin: 0.25rem;
+    margin: 0 0 0.2rem 0;
     background: none;
     border: none;
     cursor: pointer;

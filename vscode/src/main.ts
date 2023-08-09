@@ -1,21 +1,21 @@
 import * as vscode from 'vscode'
 
+import { commandRegex } from '@sourcegraph/cody-shared/src/chat/recipes/helpers'
 import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
-import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
 import { Configuration, ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
 import { SourcegraphCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/client'
 
 import { ChatViewProvider } from './chat/ChatViewProvider'
 import { ContextProvider } from './chat/ContextProvider'
+import { FixupManager } from './chat/FixupViewProvider'
 import { InlineChatViewManager } from './chat/InlineChatViewProvider'
 import { MessageProviderOptions } from './chat/MessageProvider'
 import { CODY_FEEDBACK_URL } from './chat/protocol'
-import { CodyCompletionItemProvider } from './completions'
-import { CompletionsCache } from './completions/cache'
-import { History } from './completions/history'
+import { VSCodeDocumentHistory } from './completions/context/history'
 import * as CompletionsLogger from './completions/logger'
 import { createProviderConfig } from './completions/providers/createProvider'
 import { registerAutocompleteTraceView } from './completions/tracer/traceView'
+import { InlineCompletionItemProvider } from './completions/vscodeInlineCompletionItemProvider'
 import { getConfiguration, getFullConfig } from './configuration'
 import { VSCodeEditor } from './editor/vscode-editor'
 import { PlatformContext } from './extension.common'
@@ -87,7 +87,10 @@ const register = async (
 }> => {
     const disposables: vscode.Disposable[] = []
 
-    await createOrUpdateEventLogger(initialConfig, localStorage)
+    const isExtensionModeDevOrTest =
+        context.extensionMode === vscode.ExtensionMode.Development ||
+        context.extensionMode === vscode.ExtensionMode.Test
+    await createOrUpdateEventLogger(initialConfig, localStorage, isExtensionModeDevOrTest)
     const telemetryService = createVSCodeTelemetryService()
 
     // Controller for inline Chat
@@ -102,7 +105,7 @@ const register = async (
     const editor = new VSCodeEditor({
         inline: commentController,
         fixups: fixup,
-        prompt: platform.createMyPromptController?.(context, initialConfig.experimentalCustomRecipes),
+        command: platform.createCommandsController?.(context, localStorage),
     })
 
     // Could we use the `initialConfig` instead?
@@ -111,7 +114,7 @@ const register = async (
 
     const {
         intentDetector,
-        codebaseContext,
+        codebaseContext: initialCodebaseContext,
         chatClient,
         completionsClient,
         guardrails,
@@ -124,7 +127,7 @@ const register = async (
     const contextProvider = new ContextProvider(
         initialConfig,
         chatClient,
-        codebaseContext,
+        initialCodebaseContext,
         editor,
         secretStorage,
         localStorage,
@@ -134,6 +137,7 @@ const register = async (
         platform
     )
     disposables.push(contextProvider)
+    await contextProvider.init()
 
     // Shared configuration that is required for chat views to send and receive messages
     const messageProviderOptions: MessageProviderOptions = {
@@ -149,13 +153,13 @@ const register = async (
     }
 
     const inlineChatManager = new InlineChatViewManager(messageProviderOptions)
+    const fixupManager = new FixupManager(messageProviderOptions)
     const sidebarChatProvider = new ChatViewProvider({
         ...messageProviderOptions,
         extensionUri: context.extensionUri,
     })
 
     disposables.push(sidebarChatProvider)
-    fixup.recipeRunner = sidebarChatProvider
 
     disposables.push(
         vscode.window.registerWebviewViewProvider('cody.chat', sidebarChatProvider, {
@@ -165,15 +169,20 @@ const register = async (
         contextProvider.configurationChangeEvent.event(async () => {
             const newConfig = await getFullConfig(secretStorage, localStorage)
             externalServicesOnDidConfigurationChange(newConfig)
-            await createOrUpdateEventLogger(newConfig, localStorage)
+            await createOrUpdateEventLogger(newConfig, localStorage, isExtensionModeDevOrTest)
         })
     )
 
-    const executeRecipeInSidebar = async (recipe: RecipeID, openChatView = true): Promise<void> => {
+    const executeRecipeInSidebar = async (
+        recipe: RecipeID,
+        openChatView = true,
+        humanInput?: string
+    ): Promise<void> => {
         if (openChatView) {
             await sidebarChatProvider.setWebviewView('chat')
         }
-        await sidebarChatProvider.executeRecipe(recipe, '')
+
+        await sidebarChatProvider.executeRecipe(recipe, humanInput)
     }
 
     const webviewErrorMessenger = async (error: string): Promise<void> => {
@@ -196,15 +205,59 @@ const register = async (
         sidebarChatProvider.handleError(error)
     }
 
+    const executeFixup = async (
+        options: {
+            document?: vscode.TextDocument
+            instruction?: string
+            range?: vscode.Range
+        } = {}
+    ): Promise<void> => {
+        const document = options.document || vscode.window.activeTextEditor?.document
+        if (!document) {
+            return
+        }
+
+        const range = options.range || vscode.window.activeTextEditor?.selection
+        if (!range) {
+            return
+        }
+
+        const task = options.instruction
+            ? fixup.createTask(document.uri, options.instruction, range)
+            : await fixup.promptUserForTask()
+        if (!task) {
+            return
+        }
+
+        telemetryService.log('CodyVSCodeExtension:fixup')
+        const provider = fixupManager.getProviderForTask(task)
+        return provider.startFix()
+    }
+
     const statusBar = createStatusBar()
 
     disposables.push(
         // Inline Chat Provider
         vscode.commands.registerCommand('cody.comment.add', async (comment: vscode.CommentReply) => {
-            const isFixMode = /^\/f(ix)?\s/i.test(comment.text.trimStart())
+            const isFixMode = commandRegex.fix.test(comment.text.trimStart())
+
+            /**
+             * TODO: Should we make fix the default for comments?
+             * /chat or /ask could trigger a chat
+             */
+            if (isFixMode) {
+                void vscode.commands.executeCommand('workbench.action.collapseAllComments')
+                const activeDocument = await vscode.workspace.openTextDocument(comment.thread.uri)
+                return executeFixup({
+                    document: activeDocument,
+                    instruction: comment.text.replace(commandRegex.fix, ''),
+                    range: comment.thread.range,
+                })
+            }
+
             const inlineChatProvider = inlineChatManager.getProviderForThread(comment.thread)
-            await inlineChatProvider.addChat(comment.text, isFixMode)
-            telemetryService.log(`CodyVSCodeExtension:inline-assist:${isFixMode ? 'fixup' : 'chat'}`)
+            await inlineChatProvider.addChat(comment.text, false)
+            telemetryService.log('CodyVSCodeExtension:inline-assist:chat')
         }),
         vscode.commands.registerCommand('cody.comment.delete', (thread: vscode.CommentThread) => {
             inlineChatManager.removeProviderForThread(thread)
@@ -225,9 +278,23 @@ const register = async (
             // Remove the inline chat
             inlineChatManager.removeProviderForThread(thread)
         }),
-        vscode.commands.registerCommand('cody.inline.new', () =>
-            vscode.commands.executeCommand('workbench.action.addComment')
+        vscode.commands.registerCommand(
+            'cody.fixup.new',
+            (range: vscode.Range): Promise<void> => executeFixup({ range })
         ),
+        vscode.commands.registerCommand('cody.inline.new', async () => {
+            // move focus line to the end of the current selection
+            await vscode.commands.executeCommand('cursorLineEndSelect')
+            await vscode.commands.executeCommand('workbench.action.addComment')
+        }),
+        vscode.commands.registerCommand('cody.inline.add', async (instruction: string, range: vscode.Range) => {
+            const comment = commentController.create(instruction, range)
+            if (!comment) {
+                return Promise.resolve()
+            }
+            const inlineChatProvider = inlineChatManager.getProviderForThread(comment.thread)
+            void inlineChatProvider.addChat(comment.text, false)
+        }),
         // Tests
         // Access token - this is only used in configuration tests
         vscode.commands.registerCommand('cody.test.token', async token =>
@@ -251,40 +318,45 @@ const register = async (
             await sidebarChatProvider.clearHistory()
         }),
         // Recipes
-        vscode.commands.registerCommand('cody.customRecipes.exec', async title => {
-            if (!sidebarChatProvider.isCustomRecipeAction(title)) {
+        vscode.commands.registerCommand('cody.action.chat', input =>
+            executeRecipeInSidebar('chat-question', true, input)
+        ),
+        vscode.commands.registerCommand(
+            'cody.action.fixup',
+            (instruction: string, range: vscode.Range): Promise<void> => executeFixup({ instruction, range })
+        ),
+        vscode.commands.registerCommand(
+            'cody.action.commands.menu',
+            showDesc => editor.controllers.command?.menu('default', showDesc)
+        ),
+        vscode.commands.registerCommand(
+            'cody.action.commands.custom.menu',
+            () => editor.controllers.command?.menu('custom')
+        ),
+        vscode.commands.registerCommand('cody.settings.commands', () => editor.controllers.command?.menu('config')),
+        vscode.commands.registerCommand('cody.action.commands.exec', async title => {
+            if (!sidebarChatProvider.isCustomCommandAction(title)) {
                 await sidebarChatProvider.setWebviewView('chat')
             }
-            await sidebarChatProvider.executeCustomRecipe(title)
+            await sidebarChatProvider.executeCustomCommand(title)
         }),
-        vscode.commands.registerCommand('cody.customRecipes.list', () => editor.controllers.prompt?.quickRecipe()),
+        vscode.commands.registerCommand('cody.command.explain-code', () =>
+            executeRecipeInSidebar('custom-prompt', true, '/explain')
+        ),
         vscode.commands.registerCommand('cody.recipe.explain-code', () =>
             executeRecipeInSidebar('explain-code-detailed')
         ),
-        vscode.commands.registerCommand('cody.recipe.explain-code-high-level', () =>
-            executeRecipeInSidebar('explain-code-high-level')
+        vscode.commands.registerCommand('cody.command.generate-unit-test', () =>
+            executeRecipeInSidebar('custom-prompt', true, '/tests')
         ),
-        vscode.commands.registerCommand('cody.recipe.generate-unit-test', () =>
-            executeRecipeInSidebar('generate-unit-test')
+        vscode.commands.registerCommand('cody.command.generate-docstring', () =>
+            executeRecipeInSidebar('custom-prompt', true, '/docstring')
         ),
-        vscode.commands.registerCommand('cody.recipe.generate-docstring', () =>
-            executeRecipeInSidebar('generate-docstring')
-        ),
-        vscode.commands.registerCommand('cody.recipe.fixup', () => executeRecipeInSidebar('fixup')),
-        vscode.commands.registerCommand('cody.recipe.translate-to-language', () =>
-            executeRecipeInSidebar('translate-to-language')
-        ),
-        vscode.commands.registerCommand('cody.recipe.git-history', () => executeRecipeInSidebar('git-history')),
-        vscode.commands.registerCommand('cody.recipe.improve-variable-names', () =>
-            executeRecipeInSidebar('improve-variable-names')
-        ),
-        vscode.commands.registerCommand('cody.recipe.inline-touch', () =>
+        vscode.commands.registerCommand('cody.command.inline-touch', () =>
             executeRecipeInSidebar('inline-touch', false)
         ),
-        vscode.commands.registerCommand('cody.recipe.find-code-smells', () =>
-            executeRecipeInSidebar('find-code-smells')
-        ),
-        vscode.commands.registerCommand('cody.recipe.context-search', () => executeRecipeInSidebar('context-search')),
+        vscode.commands.registerCommand('cody.command.context-search', () => executeRecipeInSidebar('context-search')),
+        vscode.commands.registerCommand('cody.command.edit-code', () => executeFixup()),
 
         // Register URI Handler (vscode://sourcegraph.cody-ai)
         vscode.window.registerUriHandler({
@@ -314,11 +386,9 @@ const register = async (
             vscode.commands.executeCommand('workbench.view.extension.cody')
         ),
         vscode.commands.registerCommand('cody.walkthrough.showChat', () => sidebarChatProvider.setWebviewView('chat')),
-        vscode.commands.registerCommand('cody.walkthrough.showFixup', () =>
-            sidebarChatProvider.setWebviewView('recipes')
-        ),
+        vscode.commands.registerCommand('cody.walkthrough.showFixup', () => sidebarChatProvider.setWebviewView('chat')),
         vscode.commands.registerCommand('cody.walkthrough.showExplain', () =>
-            sidebarChatProvider.setWebviewView('recipes')
+            sidebarChatProvider.setWebviewView('chat')
         ),
         vscode.commands.registerCommand('cody.walkthrough.enableInlineChat', async () => {
             await workspaceConfig.update('cody.inlineChat', true, vscode.ConfigurationTarget.Global)
@@ -337,7 +407,7 @@ const register = async (
             webviewErrorMessenger,
             completionsClient,
             statusBar,
-            codebaseContext
+            contextProvider
         )
     }
 
@@ -369,7 +439,7 @@ const register = async (
                 webviewErrorMessenger,
                 completionsClient,
                 statusBar,
-                codebaseContext
+                contextProvider
             )
         }
     })
@@ -387,9 +457,11 @@ const register = async (
             })
         )
     }
-    // Register task view and non-stop cody command when feature flag is on
+    // Register task view when feature flag is on
+    // TODO(umpox): We should move the task view to a quick pick before enabling it everywhere.
+    // It is too obstructive when it is in the same window as the sidebar chat.
     if (initialConfig.experimentalNonStop || process.env.CODY_TESTING === 'true') {
-        fixup.register()
+        fixup.registerTreeView()
         await vscode.commands.executeCommand('setContext', 'cody.nonstop.fixups.enabled', true)
     }
 
@@ -399,7 +471,7 @@ const register = async (
         onConfigurationChange: newConfig => {
             contextProvider.onConfigurationChange(newConfig)
             externalServicesOnDidConfigurationChange(newConfig)
-            void createOrUpdateEventLogger(newConfig, localStorage)
+            void createOrUpdateEventLogger(newConfig, localStorage, isExtensionModeDevOrTest)
         },
     }
 }
@@ -409,20 +481,18 @@ function createCompletionsProvider(
     webviewErrorMessenger: (error: string) => Promise<void>,
     completionsClient: SourcegraphCompletionsClient,
     statusBar: CodyStatusBar,
-    codebaseContext: CodebaseContext
+    contextProvider: ContextProvider
 ): vscode.Disposable {
     const disposables: vscode.Disposable[] = []
 
-    const history = new History()
+    const history = new VSCodeDocumentHistory()
     const providerConfig = createProviderConfig(config, webviewErrorMessenger, completionsClient)
-    const completionsProvider = new CodyCompletionItemProvider({
+    const completionsProvider = new InlineCompletionItemProvider({
         providerConfig,
         history,
         statusBar,
-        codebaseContext,
-        cache: config.autocompleteAdvancedCache ? new CompletionsCache() : null,
+        getCodebaseContext: () => contextProvider.context,
         isEmbeddingsContextEnabled: config.autocompleteAdvancedEmbeddings,
-        triggerMoreEagerly: config.autocompleteExperimentalTriggerMoreEagerly,
         completeSuggestWidgetSelection: config.autocompleteExperimentalCompleteSuggestWidgetSelection,
     })
 

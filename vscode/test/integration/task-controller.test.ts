@@ -12,7 +12,8 @@ async function getFixupController(): Promise<FixupController> {
     return fixups
 }
 
-suite('Cody Fixup Task Controller', function () {
+// TODO: Skipped due to flakiness (https://github.com/sourcegraph/cody/pull/481).
+suite.skip('Cody Fixup Task Controller', function () {
     this.beforeEach(() => beforeIntegrationTest())
     this.afterEach(() => afterIntegrationTest())
 

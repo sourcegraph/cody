@@ -3,7 +3,7 @@ import path from 'path'
 
 import * as vscode from 'vscode'
 
-import { History } from '../../src/completions/history'
+import { VSCodeDocumentHistory } from '../../src/completions/context/history'
 
 suite('API tests', () => {
     test('Cody registers some commands', async () => {
@@ -13,7 +13,7 @@ suite('API tests', () => {
     })
 
     test('History', () => {
-        const h = new History(() => null)
+        const h = new VSCodeDocumentHistory(() => null)
         h.addItem({
             document: {
                 uri: vscode.Uri.file('foo.ts'),

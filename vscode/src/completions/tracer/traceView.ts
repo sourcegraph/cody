@@ -3,7 +3,9 @@ import * as vscode from 'vscode'
 import { isDefined } from '@sourcegraph/cody-shared'
 import { renderMarkdown } from '@sourcegraph/cody-shared/src/common/markdown'
 
-import { CodyCompletionItemProvider } from '..'
+import { InlineCompletionsResultSource } from '../getInlineCompletions'
+import { InlineCompletionItem } from '../types'
+import { InlineCompletionItemProvider } from '../vscodeInlineCompletionItemProvider'
 
 import { ProvideInlineCompletionsItemTraceData } from '.'
 
@@ -11,7 +13,7 @@ import { ProvideInlineCompletionsItemTraceData } from '.'
  * Registers a command `Cody: Open Autocomplete Trace View` that shows the context and prompt used
  * for autocomplete.
  */
-export function registerAutocompleteTraceView(completionsProvider: CodyCompletionItemProvider): vscode.Disposable {
+export function registerAutocompleteTraceView(provider: InlineCompletionItemProvider): vscode.Disposable {
     let panel: vscode.WebviewPanel | null = null
     let latestInvocationSequence = 0
 
@@ -26,13 +28,13 @@ export function registerAutocompleteTraceView(completionsProvider: CodyCompletio
                 }
             )
             panel.onDidDispose(() => {
-                completionsProvider.setTracer(null)
+                provider.setTracer(null)
                 panel = null
             })
 
             panel.webview.html = renderWebviewHtml(undefined)
 
-            completionsProvider.setTracer(data => {
+            provider.setTracer(data => {
                 if (!panel) {
                     return
                 }
@@ -69,6 +71,7 @@ function renderWebviewHtml(data: ProvideInlineCompletionsItemTraceData | undefin
 - ${markdownInlineCode(data.params.document.fileName)} @ ${data.params.position.line + 1}:${
                 data.params.position.character + 1
             }
+- triggerKind: ${vscode.InlineCompletionTriggerKind[data.params.context.triggerKind]}
 - selectedCompletionInfo: ${
                 data.params.context.selectedCompletionInfo
                     ? selectedCompletionInfoDescription(
@@ -93,14 +96,14 @@ ${codeDetailsWithSummary('Suffix', suffix, 'start')}
 ${markdownList(otherOptions)}
 `
 )}`,
-        data?.context &&
-            `
+        data?.context !== undefined
+            ? `
 ## Context
 
-${markdownList(data.context.logSummary)}
+${data.context ? markdownList(data.context.logSummary) : ''}
 
 ${
-    data.context.context.length === 0
+    data.context === null || data.context.context.length === 0
         ? 'No context.'
         : data.context.context
               .map(({ content, fileName }) =>
@@ -108,18 +111,40 @@ ${
               )
               .join('\n\n')
 }
-`,
-        data?.result &&
+`
+            : '',
+        data?.completionProviderCallParams &&
             `
-## Completions (cache ${data.cacheHit === true ? 'hit' : data.cacheHit === false ? 'miss' : 'unknown'})
+## Completion provider calls
+
+${codeDetailsWithSummary('Params', JSON.stringify(data.completionProviderCallParams, null, 2))}
 
 ${
-    data.result.items.length === 0
-        ? 'No completions.'
+    data.completionProviderCallResult
+        ? codeDetailsWithSummary('Result', JSON.stringify(data.completionProviderCallResult, null, 2))
+        : '_Loading result..._'
+}
+
+`,
+        data?.result !== undefined
+            ? `
+## Completions
+
+${(data.result
+    ? [`- source: ${InlineCompletionsResultSource[data.result.source]}`, `- logId: \`${data.result.logId}\``]
+    : []
+).join('\n')}
+
+${
+    data.result === null
+        ? '`null`'
+        : data.result.items.length === 0
+        ? 'Empty completions.'
         : data.result.items
               .map(item => inlineCompletionItemDescription(item, data.params?.document))
               .join('\n\n---\n\n')
-}`,
+}`
+            : '',
 
         data?.error &&
             `
@@ -130,24 +155,35 @@ ${markdownCodeBlock(data.error)}
         `
 ## Advanced tools
 
-${codeDetailsWithSummary('JSON for dataset', jsonForDataset(data), 'start')}
+${codeDetailsWithSummary('JSON for dataset', jsonForDataset(data))}
 
 `,
     ]
         .filter(isDefined)
+        .filter(s => s !== '')
         .map(s => s.trim())
         .join('\n\n---\n\n')
 
     return renderMarkdown(markdownSource, { noDomPurify: true })
 }
 
-function codeDetailsWithSummary(title: string, value: string, anchor: 'start' | 'end', excerptLength = 50): string {
-    const excerpt = anchor === 'start' ? value.slice(0, excerptLength) : value.slice(-excerptLength)
+function codeDetailsWithSummary(
+    title: string,
+    value: string,
+    anchor: 'start' | 'end' | 'none' = 'none',
+    excerptLength = 50
+): string {
+    const excerpt =
+        anchor === 'start' ? value.slice(0, excerptLength) : anchor === 'end' ? value.slice(-excerptLength) : null
+    const excerptMarkdown =
+        excerpt !== null
+            ? `: <code>${anchor === 'end' ? '⋯' : ''}${withVisibleWhitespace(excerpt)
+                  .replace(/</g, '&lt;')
+                  .replace(/>/g, '&gt;')}${anchor === 'start' ? '⋯' : ''}</code>`
+            : ''
     return `
 <details>
-<summary>${title}: <code>${anchor === 'end' ? '⋯' : ''}${withVisibleWhitespace(excerpt)
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')}${anchor === 'start' ? '⋯' : ''}</code></summary>
+<summary>${title}${excerptMarkdown}</summary>
 
 ${markdownCodeBlock(value)}
 
@@ -180,13 +216,23 @@ function selectedCompletionInfoDescription(
 }
 
 function inlineCompletionItemDescription(
-    item: vscode.InlineCompletionItem,
+    item: InlineCompletionItem,
     document: vscode.TextDocument | undefined
 ): string {
-    return `${markdownCodeBlock(
-        withVisibleWhitespace(typeof item.insertText === 'string' ? item.insertText : item.insertText.value)
-    )}
-${item.range ? `replacing ${rangeDescriptionWithCurrentText(item.range, document)}` : 'inserting at cursor'}`
+    return `${markdownCodeBlock(withVisibleWhitespace(item.insertText))}
+${
+    item.range
+        ? `replacing ${rangeDescriptionWithCurrentText(
+              new vscode.Range(
+                  item.range.start.line,
+                  item.range.start.character,
+                  item.range.end.line,
+                  item.range.end.character
+              ),
+              document
+          )}`
+        : 'inserting at cursor'
+}`
 }
 
 function rangeDescription(range: vscode.Range): string {

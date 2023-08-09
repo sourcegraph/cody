@@ -1,10 +1,10 @@
 import * as vscode from 'vscode'
 
+import { CodyPrompt, CodyPromptType } from '@sourcegraph/cody-shared/src/chat/prompts'
 import { ChatMessage, UserLocalHistory } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 
 import { View } from '../../webviews/NavBar'
 import { debug } from '../log'
-import { CodyPromptType } from '../my-cody/types'
 
 import { MessageProvider, MessageProviderOptions } from './MessageProvider'
 import { ExtensionMessage, WebviewMessage } from './protocol'
@@ -60,7 +60,7 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
                     break
                 }
                 if (message.type === 'callback' && message.endpoint) {
-                    await this.authProvider.redirectToEndpointLogin(message.endpoint)
+                    this.authProvider.redirectToEndpointLogin(message.endpoint)
                     break
                 }
                 // cody.auth.signin or cody.auth.signout
@@ -84,44 +84,15 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
             case 'links':
                 void this.openExternalLinks(message.value)
                 break
-            case 'my-prompt':
-                await this.onCustomRecipeClicked(message.title, message.value)
+            case 'custom-prompt':
+                await this.onCustomPromptClicked(message.title, message.value)
                 break
             case 'reload':
                 await this.authProvider.reloadAuthStatus()
                 break
-            case 'openFile': {
-                const rootUri = this.editor.getWorkspaceRootUri()
-                if (!rootUri) {
-                    this.handleError('Failed to open file: missing rootUri')
-                    return
-                }
-                try {
-                    // This opens the file in the active column.
-                    const doc = await vscode.workspace.openTextDocument(vscode.Uri.joinPath(rootUri, message.filePath))
-                    await vscode.window.showTextDocument(doc)
-                } catch {
-                    // Try to open the file in the sourcegraph view
-                    const sourcegraphSearchURL = new URL(
-                        `/search?q=context:global+file:${message.filePath}`,
-                        this.contextProvider.config.serverEndpoint
-                    ).href
-                    void this.openExternalLinks(sourcegraphSearchURL)
-                }
+            case 'openFile':
+                await this.openFilePath(message.filePath)
                 break
-            }
-            case 'chat-button': {
-                switch (message.action) {
-                    case 'explain-code-high-level':
-                    case 'find-code-smells':
-                    case 'generate-unit-test':
-                        void this.executeRecipe(message.action)
-                        break
-                    default:
-                        break
-                }
-                break
-            }
             case 'setEnabledPlugins':
                 await this.localStorage.setEnabledPlugins(message.plugins)
                 this.handleEnabledPlugins(message.plugins)
@@ -136,23 +107,28 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
         if (submitType === 'suggestion') {
             this.telemetryService.log('CodyVSCodeExtension:chatPredictions:used')
         }
+        if (text === '/') {
+            this.telemetryService.log('CodyVSCodeExtension:custom-command-menu:clicked')
+            void vscode.commands.executeCommand('cody.action.commands.menu', true)
+            return
+        }
         MessageProvider.inputHistory.push(text)
         if (this.contextProvider.config.experimentalChatPredictions) {
             void this.runRecipeForSuggestion('next-questions', text)
         }
-        await this.executeCommands(text, 'chat-question')
+        await this.executeRecipe('chat-question', text)
     }
 
     /**
-     * Process custom recipe click
+     * Process custom command click
      */
-    private async onCustomRecipeClicked(title: string, recipeType: CodyPromptType = 'user'): Promise<void> {
-        this.telemetryService.log('CodyVSCodeExtension:custom-recipe:clicked')
-        debug('ChatViewProvider:onCustomRecipeClicked', title)
-        if (!this.isCustomRecipeAction(title)) {
+    private async onCustomPromptClicked(title: string, commandType: CodyPromptType = 'user'): Promise<void> {
+        this.telemetryService.log('CodyVSCodeExtension:custom-command:clicked')
+        debug('ChatViewProvider:onCustomPromptClicked', title)
+        if (!this.isCustomCommandAction(title)) {
             await this.setWebviewView('chat')
         }
-        await this.executeCustomRecipe(title, recipeType)
+        await this.executeCustomCommand(title, commandType)
     }
 
     /**
@@ -164,6 +140,13 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
             messages: transcript,
             isMessageInProgress,
         })
+    }
+
+    /**
+     * Send transcript error to webview
+     */
+    protected handleTranscriptErrors(transcriptError: boolean): void {
+        void this.webview?.postMessage({ type: 'transcript-errors', isTranscriptError: transcriptError })
     }
 
     protected handleSuggestions(suggestions: string[]): void {
@@ -212,11 +195,10 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
         void this.webview?.postMessage({ type: 'enabled-plugins', plugins })
     }
 
-    protected handleMyPrompts(prompts: string[], isEnabled: boolean): void {
+    protected handleCodyCommands(prompts: [string, CodyPrompt][]): void {
         void this.webview?.postMessage({
-            type: 'my-prompts',
+            type: 'custom-prompts',
             prompts,
-            isEnabled,
         })
     }
 
@@ -269,6 +251,29 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
 
         // Register webview
         this.disposables.push(webviewView.webview.onDidReceiveMessage(message => this.onDidReceiveMessage(message)))
+    }
+
+    /**
+     * Open file in editor or in sourcegraph
+     */
+    protected async openFilePath(filePath: string): Promise<void> {
+        const rootUri = this.editor.getWorkspaceRootUri()
+        if (!rootUri) {
+            this.handleError('Failed to open file: missing rootUri')
+            return
+        }
+        try {
+            // This opens the file in the active column.
+            const doc = await vscode.workspace.openTextDocument(vscode.Uri.joinPath(rootUri, filePath))
+            await vscode.window.showTextDocument(doc)
+        } catch {
+            // Try to open the file in the sourcegraph view
+            const sourcegraphSearchURL = new URL(
+                `/search?q=context:global+file:${filePath}`,
+                this.contextProvider.config.serverEndpoint
+            ).href
+            void this.openExternalLinks(sourcegraphSearchURL)
+        }
     }
 
     /**

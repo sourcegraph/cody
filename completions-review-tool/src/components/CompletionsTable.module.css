@@ -9,6 +9,10 @@
     position: relative;
 }
 
+.table td {
+    position: relative;
+}
+
 .table thead tr > th {
     background: #ccc;
     position: sticky;
@@ -27,4 +31,11 @@
     position: sticky;
     z-index: 1;
     left: 0;
+}
+
+:global(.elapsed) {
+    position: absolute;
+    right: 0;
+    top: 0;
+    font-size: 0.75rem;
 }

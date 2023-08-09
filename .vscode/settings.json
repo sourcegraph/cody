@@ -4,7 +4,8 @@
     "**/dist": true,
     "**/.eslintcache": true,
     "**/.vscode-test": true,
-    "**/.vscode-test-web": true
+    "**/.vscode-test-web": true,
+    "completions-review-tool/data/*": true
   },
   "files.exclude": {
     "**/node_modules": true,

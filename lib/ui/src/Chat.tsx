@@ -2,7 +2,7 @@ import React, { useCallback, useMemo, useState } from 'react'
 
 import classNames from 'classnames'
 
-import { ChatButton, ChatContextStatus, ChatMessage, isDefined } from '@sourcegraph/cody-shared'
+import { ChatButton, ChatContextStatus, ChatMessage, CodyPrompt, isDefined } from '@sourcegraph/cody-shared'
 
 import { FileLinkProps } from './chat/ContextFiles'
 import { ChatInputContext } from './chat/inputContext/ChatInputContext'
@@ -48,6 +48,9 @@ interface ChatProps extends ChatClassNames {
     ChatButtonComponent?: React.FunctionComponent<ChatButtonProps>
     pluginsDevMode?: boolean
     RecipesWidgetWrapper?: CodyRecipesWidgetWrapper
+    chatCommands?: [string, CodyPrompt][] | null
+    ChatCommandsComponent?: React.FunctionComponent<ChatCommandsProps>
+    isTranscriptError?: boolean
 }
 
 interface ChatClassNames extends TranscriptItemClassNames {
@@ -101,6 +104,14 @@ export interface FeedbackButtonsProps {
 export interface CopyButtonProps {
     copyButtonOnSubmit: (text: string, insert?: boolean) => void
 }
+
+export interface ChatCommandsProps {
+    setFormInput: (input: string) => void
+    setSelectedChatCommand: (index: number) => void
+    chatCommands?: [string, CodyPrompt][] | null
+    selectedChatCommand?: number
+    onSubmit: (input: string, inputType: 'user' | 'suggestion') => void
+}
 /**
  * The Cody chat interface, with a transcript of all messages and a message form.
  */
@@ -150,24 +161,51 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
     ChatButtonComponent,
     pluginsDevMode,
     RecipesWidgetWrapper,
+    chatCommands,
+    ChatCommandsComponent,
+    isTranscriptError,
 }) => {
-    const [inputRows, setInputRows] = useState(5)
+    const [inputRows, setInputRows] = useState(1)
+    const [displayCommands, setDisplayCommands] = useState<[string, CodyPrompt][] | null>(chatCommands || null)
+    const [selectedChatCommand, setSelectedChatCommand] = useState(-1)
     const [historyIndex, setHistoryIndex] = useState(inputHistory.length)
+
+    // Handles selecting a chat command when the user types a slash in the chat input.
+    const chatCommentSelectionHandler = useCallback(
+        (inputValue: string): void => {
+            if (!chatCommands || !ChatCommandsComponent) {
+                return
+            }
+            if (inputValue === '/') {
+                setDisplayCommands(chatCommands)
+                setSelectedChatCommand(chatCommands.length)
+                return
+            }
+            if (inputValue.startsWith('/')) {
+                const filteredCommands = chatCommands.filter(
+                    ([_, prompt]) => prompt.slashCommand?.startsWith(inputValue)
+                )
+                setDisplayCommands(filteredCommands)
+                setSelectedChatCommand(0)
+                return
+            }
+            setDisplayCommands(null)
+            setSelectedChatCommand(-1)
+        },
+        [ChatCommandsComponent, chatCommands]
+    )
 
     const inputHandler = useCallback(
         (inputValue: string): void => {
-            const rowsCount = inputValue.match(/\n/g)?.length
-            if (rowsCount) {
-                setInputRows(rowsCount < 5 ? 5 : rowsCount > 25 ? 25 : rowsCount)
-            } else {
-                setInputRows(5)
-            }
+            chatCommentSelectionHandler(inputValue)
+            const rowsCount = (inputValue.match(/\n/g)?.length || 0) + 1
+            setInputRows(rowsCount > 25 ? 25 : rowsCount)
             setFormInput(inputValue)
             if (inputValue !== inputHistory[historyIndex]) {
                 setHistoryIndex(inputHistory.length)
             }
         },
-        [historyIndex, inputHistory, setFormInput]
+        [chatCommentSelectionHandler, historyIndex, inputHistory, setFormInput]
     )
 
     const submitInput = useCallback(
@@ -175,11 +213,12 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
             if (messageInProgress) {
                 return
             }
-
             onSubmit(input, submitType)
             setSuggestions?.(undefined)
             setHistoryIndex(inputHistory.length + 1)
             setInputHistory([...inputHistory, input])
+            setDisplayCommands(null)
+            setSelectedChatCommand(-1)
         },
         [inputHistory, messageInProgress, onSubmit, setInputHistory, setSuggestions]
     )
@@ -194,9 +233,9 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
     const onChatSubmit = useCallback((): void => {
         // Submit chat only when input is not empty and not in progress
         if (formInput.trim() && !messageInProgress) {
-            setInputRows(5)
-            setFormInput('')
+            setInputRows(1)
             submitInput(formInput, 'user')
+            setFormInput('')
         }
     }, [formInput, messageInProgress, setFormInput, submitInput])
 
@@ -209,12 +248,40 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                 !event.shiftKey &&
                 !event.nativeEvent.isComposing &&
                 formInput &&
-                formInput.trim()
+                formInput.trim() &&
+                selectedChatCommand < 0
             ) {
                 event.preventDefault()
                 event.stopPropagation()
                 setMessageBeingEdited(false)
                 onChatSubmit()
+            }
+
+            // Handles cycling through chat command suggestions using the up and down arrow keys
+            if (displayCommands && formInput.startsWith('/')) {
+                if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
+                    const commandsLength = displayCommands?.length - 1
+                    const newIndex = event.key === 'ArrowUp' ? selectedChatCommand - 1 : selectedChatCommand + 1
+                    const newCommandIndex = newIndex < 0 ? commandsLength : newIndex > commandsLength ? 0 : newIndex
+                    setSelectedChatCommand(newCommandIndex)
+                    const newInput = displayCommands?.[newCommandIndex]?.[1]?.slashCommand
+                    setFormInput(newInput || formInput)
+                }
+                // close the chat command suggestions on escape key
+                if (event.key === 'Escape') {
+                    setDisplayCommands(null)
+                    setSelectedChatCommand(-1)
+                    setFormInput('')
+                }
+                // tab/enter to complete
+                if ((event.key === 'Tab' || event.key === 'Enter') && selectedChatCommand > -1) {
+                    event.preventDefault()
+                    event.stopPropagation()
+                    const newInput = displayCommands?.[selectedChatCommand]?.[1]?.slashCommand
+                    setFormInput(newInput || formInput)
+                    setDisplayCommands(null)
+                    setSelectedChatCommand(-1)
+                }
             }
 
             // Loop through input history on up arrow press
@@ -241,7 +308,17 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                 }
             }
         },
-        [inputHistory, historyIndex, setFormInput, onChatSubmit, onSubmit, formInput, setMessageBeingEdited]
+        [
+            formInput,
+            selectedChatCommand,
+            displayCommands,
+            inputHistory,
+            historyIndex,
+            setMessageBeingEdited,
+            onChatSubmit,
+            setFormInput,
+            onSubmit,
+        ]
     )
 
     const transcriptWithWelcome = useMemo<ChatMessage[]>(
@@ -291,11 +368,12 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                     ChatButtonComponent={ChatButtonComponent}
                     pluginsDevMode={pluginsDevMode}
                     RecipesWidgetWrapper={RecipesWidgetWrapper}
+                    isTranscriptError={isTranscriptError}
                 />
             )}
 
             <form className={classNames(styles.inputRow, inputRowClassName)}>
-                {suggestions !== undefined && suggestions.length !== 0 && SuggestionButton ? (
+                {!displayCommands && suggestions !== undefined && suggestions.length !== 0 && SuggestionButton ? (
                     <div className={styles.suggestions}>
                         {suggestions.map((suggestion: string) =>
                             suggestion.trim().length > 0 ? (
@@ -308,6 +386,15 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                         )}
                     </div>
                 ) : null}
+                {displayCommands && ChatCommandsComponent && formInput && (
+                    <ChatCommandsComponent
+                        chatCommands={displayCommands}
+                        selectedChatCommand={selectedChatCommand}
+                        setFormInput={setFormInput}
+                        setSelectedChatCommand={setSelectedChatCommand}
+                        onSubmit={onSubmit}
+                    />
+                )}
                 {messageInProgress && AbortMessageInProgressButton && (
                     <div className={classNames(styles.abortButtonContainer)}>
                         <AbortMessageInProgressButton onAbortMessageInProgress={onAbortMessageInProgress} />
@@ -327,7 +414,9 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                     <SubmitButton
                         className={styles.submitButton}
                         onClick={onChatSubmit}
-                        disabled={!!messageInProgress || needsEmailVerification || !isCodyEnabled}
+                        disabled={
+                            !!messageInProgress || needsEmailVerification || !isCodyEnabled || formInput.length === 0
+                        }
                     />
                 </div>
                 {ContextStatusComponent ? (

@@ -7,23 +7,24 @@
     font-size: var(--vscode-editor-font-size);
     font-family: var(--vscode-font-family);
     font-weight: var(--vscode-font-weight);
-    color: var(--vscode-input-foreground);
     border-color: var(--vscode-sideBarSectionHeader-border);
+    padding: 15px 15px 15px 20px;
+    color: var(--vscode-foreground);
 }
 
 /* Apply a slight tint to the assistant transcript item. */
-body[data-vscode-theme-kind='vscode-light'] .transcript-item:not(.human-transcript-item),
-body[data-vscode-theme-kind='vscode-high-contrast-light'] .transcript-item:not(.human-transcript-item) {
+body[data-vscode-theme-kind='vscode-light'] .human-transcript-item,
+body[data-vscode-theme-kind='vscode-high-contrast-light'] .human-transcript-item {
     background-color: rgba(0, 0, 0, 0.04); /* slight dark tint */
 }
 
-body[data-vscode-theme-kind='vscode-dark'] .transcript-item:not(.human-transcript-item),
-body[data-vscode-theme-kind='vscode-high-contrast'] .transcript-item:not(.human-transcript-item) {
+body[data-vscode-theme-kind='vscode-dark'] .human-transcript-item,
+body[data-vscode-theme-kind='vscode-high-contrast'] .human-transcript-item {
     background-color: rgba(255, 255, 255, 0.04); /* slight light tint */
 }
 
 .human-transcript-item:before {
-    background-color: var(--vscode-sideBarSectionHeader-border);
+    background-color: var(--vscode-sideBar-foreground, currentColor);
 }
 
 .transcript-item pre,
@@ -44,6 +45,7 @@ body[data-vscode-theme-kind='vscode-high-contrast'] .transcript-item:not(.human-
     background: var(--vscode-button-secondaryBackground);
     color: var(--vscode-button-secondaryForeground);
     font-size: var(--vscode-editor-font-size);
+    margin-top: 5px;
 }
 
 .transcript-action > button {
@@ -68,14 +70,27 @@ body[data-vscode-theme-kind='vscode-high-contrast'] .transcript-item:not(.human-
 
 .input-row {
     border-top: solid 1px var(--vscode-sideBarSectionHeader-border);
+    gap: 0.3rem;
+    padding: 0.75rem 0.75rem 1rem 0.75rem;
 }
 
 .chat-input-context {
-    color: var(--vscode-input-foreground);
+    opacity: 0.85;
 }
 
 .chat-input {
-    outline: none;
+    border: 1px solid var(--vscode-input-border, transparent);
+    border-radius: 2px;
+    --corner-radius: 2; /* Make sure the inner <textarea> gets the right border-radius */
+    box-sizing: border-box;
+    height: 35px; /* Gross hack to remove the space below the input */
+}
+
+.chat-input:focus,
+.chat-input:focus-visible,
+.chat-input:focus-within {
+    outline: 1px solid var(--vscode-inputOption-activeBorder);
+    outline-offset: -1px;
 }
 
 .chat-button {
@@ -115,8 +130,17 @@ body[data-vscode-theme-kind='vscode-high-contrast'] .transcript-item:not(.human-
     margin-right: 3px;
 }
 
-.submit-button-disabled {
-    cursor: not-allowed;
+.submit-button {
+    color: var(--foreground);
+}
+
+.submit-button-disabled,
+.submit-button-disabled:hover {
+    cursor: default;
+    --button-icon-hover-background: none;
+    color: var(--vscode-icon-foreground);
+    opacity: 0.4;
+    pointer-events: none; /* Lets you focus the text area by clicking the disabled button */
 }
 
 .stop-generating-button {
@@ -132,6 +156,20 @@ body[data-vscode-theme-kind='vscode-high-contrast'] .transcript-item:not(.human-
 
 .stop-generating-button:active {
     transition: all 0.5s linear;
+}
+
+.thumbs-down-feedback-container {
+    display: flex;
+    align-items: center;
+    gap: calc(var(--spacing) / 4);
+}
+
+.feedback-button[disabled] {
+    /* VSCodeButton's default cursor is not-allowed, but that's different to
+       native VS Code and feels off, especially when it quickly changes to
+       not-allowed after you submit feedback. So we reset it back to the
+       default cursor to fit in nicer with standard VS Code native behaviour */
+    cursor: default;
 }
 
 @keyframes fadeInSlideUp {

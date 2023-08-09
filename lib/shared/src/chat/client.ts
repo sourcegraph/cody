@@ -44,6 +44,7 @@ export interface Client {
         options?: {
             prefilledOptions?: PrefilledOptions
             humanChatInput?: string
+            data?: any // returned as is
         }
     ) => Promise<void>
     reset: () => void
@@ -88,20 +89,28 @@ export async function createClient({
 
         const codebaseContext = new CodebaseContext(config, config.codebase, embeddingsSearch, null, null)
 
-        const intentDetector = new SourcegraphIntentDetectorClient(graphqlClient)
+        const intentDetector = new SourcegraphIntentDetectorClient(graphqlClient, completionsClient)
 
         const transcript = initialTranscript || new Transcript()
 
         let isMessageInProgress = false
 
-        const sendTranscript = (): void => {
+        const sendTranscript = (data?: any): void => {
             if (isMessageInProgress) {
                 const messages = transcript.toChat()
                 setTranscript(transcript)
-                setMessageInProgress(messages[messages.length - 1])
+                const message = messages[messages.length - 1]
+                if (data) {
+                    message.data = data
+                }
+                setMessageInProgress(message)
             } else {
                 setTranscript(transcript)
-                setMessageInProgress(null)
+                if (data) {
+                    setMessageInProgress({ data, speaker: 'assistant' })
+                } else {
+                    setMessageInProgress(null)
+                }
             }
         }
 
@@ -110,6 +119,7 @@ export async function createClient({
             options?: {
                 prefilledOptions?: PrefilledOptions
                 humanChatInput?: string
+                data?: any
             }
         ): Promise<void> {
             const humanChatInput = options?.humanChatInput ?? ''
@@ -131,8 +141,6 @@ export async function createClient({
             isMessageInProgress = true
             transcript.addInteraction(interaction)
 
-            sendTranscript()
-
             const { prompt, contextFiles } = await transcript.getPromptForLastInteraction(getPreamble(config.codebase))
             transcript.setUsedContextFilesForLastInteraction(contextFiles)
 
@@ -145,20 +153,20 @@ export async function createClient({
                     const text = reformatBotMessage(rawText, responsePrefix)
                     transcript.addAssistantResponse(text)
 
-                    sendTranscript()
+                    sendTranscript(options?.data)
                 },
                 onComplete() {
                     isMessageInProgress = false
 
                     const text = reformatBotMessage(rawText, responsePrefix)
                     transcript.addAssistantResponse(text)
-                    sendTranscript()
+                    sendTranscript(options?.data)
                 },
                 onError(error) {
                     // Display error message as assistant response
                     transcript.addErrorAsAssistantResponse(error)
                     isMessageInProgress = false
-                    sendTranscript()
+                    sendTranscript(options?.data)
                     console.error(`Completion request failed: ${error}`)
                 },
             })

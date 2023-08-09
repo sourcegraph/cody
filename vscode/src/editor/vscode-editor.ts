@@ -2,25 +2,32 @@ import * as vscode from 'vscode'
 
 import type {
     ActiveTextEditor,
+    ActiveTextEditorDiagnostic,
+    ActiveTextEditorDiagnosticType,
     ActiveTextEditorSelection,
+    ActiveTextEditorSelectionRange,
     ActiveTextEditorViewControllers,
     ActiveTextEditorVisibleContent,
     Editor,
 } from '@sourcegraph/cody-shared/src/editor'
 import { SURROUNDING_LINES } from '@sourcegraph/cody-shared/src/prompt/constants'
 
-import type { MyPromptController } from '../my-cody/MyPromptController'
-import type { FixupController } from '../non-stop/FixupController'
-import type { InlineController } from '../services/InlineController'
+import { CommandsController } from '../custom-prompts/CommandsController'
+import { FixupController } from '../non-stop/FixupController'
+import { InlineController } from '../services/InlineController'
 
-export class VSCodeEditor implements Editor<InlineController, FixupController, MyPromptController> {
+import { EditorCodeLenses } from './EditorCodeLenses'
+
+export class VSCodeEditor implements Editor<InlineController, FixupController, CommandsController> {
     constructor(
         public readonly controllers: ActiveTextEditorViewControllers<
             InlineController,
             FixupController,
-            MyPromptController
+            CommandsController
         >
-    ) {}
+    ) {
+        new EditorCodeLenses()
+    }
 
     public get fileName(): string {
         return vscode.window.activeTextEditor?.document.fileName ?? ''
@@ -55,7 +62,7 @@ export class VSCodeEditor implements Editor<InlineController, FixupController, M
         return {
             content: documentText,
             filePath: documentUri.fsPath,
-            selection: !documentSelection.isEmpty ? documentSelection : undefined,
+            selectionRange: !documentSelection.isEmpty ? documentSelection : undefined,
         }
     }
 
@@ -65,6 +72,7 @@ export class VSCodeEditor implements Editor<InlineController, FixupController, M
     }
 
     public getActiveTextEditorSelection(): ActiveTextEditorSelection | null {
+        // Skip this for Inline Chat tasks as the replace method uses selection tracked by the Inline Controller
         if (this.controllers.inline?.isInProgress) {
             return null
         }
@@ -89,6 +97,43 @@ export class VSCodeEditor implements Editor<InlineController, FixupController, M
             selection = new vscode.Selection(0, 0, activeEditor.document.lineCount, 0)
         }
         return this.createActiveTextEditorSelection(activeEditor, selection)
+    }
+
+    private getActiveTextEditorDiagnosticType(severity: vscode.DiagnosticSeverity): ActiveTextEditorDiagnosticType {
+        switch (severity) {
+            case vscode.DiagnosticSeverity.Error:
+                return 'error'
+            case vscode.DiagnosticSeverity.Warning:
+                return 'warning'
+            case vscode.DiagnosticSeverity.Information:
+                return 'information'
+            case vscode.DiagnosticSeverity.Hint:
+                return 'hint'
+        }
+    }
+
+    public getActiveTextEditorDiagnosticsForRange({
+        start,
+        end,
+    }: ActiveTextEditorSelectionRange): ActiveTextEditorDiagnostic[] | null {
+        const activeEditor = this.getActiveTextEditorInstance()
+        if (!activeEditor) {
+            return null
+        }
+        const diagnostics = vscode.languages.getDiagnostics(activeEditor.document.uri)
+        const selectionRange = new vscode.Range(
+            new vscode.Position(start.line, start.character),
+            new vscode.Position(end.line, end.character)
+        )
+
+        return diagnostics
+            .filter(diagnostic => selectionRange.contains(diagnostic.range))
+            .map(({ message, range, severity }) => ({
+                type: this.getActiveTextEditorDiagnosticType(severity),
+                range,
+                text: activeEditor.document.getText(range),
+                message,
+            }))
     }
 
     private createActiveTextEditorSelection(
@@ -140,6 +185,7 @@ export class VSCodeEditor implements Editor<InlineController, FixupController, M
 
     public async replaceSelection(fileName: string, selectedText: string, replacement: string): Promise<void> {
         const activeEditor = this.getActiveTextEditorInstance()
+        // Use the replace method from inline controller if there is a Inline Fixsup in progress
         if (this.controllers.inline?.isInProgress) {
             await this.controllers.inline.replace(fileName, replacement, selectedText)
             return

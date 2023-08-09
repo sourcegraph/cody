@@ -1,7 +1,10 @@
 import * as vscode from 'vscode'
 
-import { GetContextResult } from '../context'
-import { Provider } from '../providers/provider'
+import { CompletionParameters } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
+
+import { GetContextResult } from '../context/context'
+import { InlineCompletionsResult } from '../getInlineCompletions'
+import { CompletionProviderTracerResultData, Provider } from '../providers/provider'
 
 /**
  * Traces invocations of {@link CodyCompletionItemProvider.provideInlineCompletionItems}.
@@ -27,8 +30,14 @@ export interface ProvideInlineCompletionsItemTraceData {
         context: vscode.InlineCompletionContext
     }
     completers?: Provider['options'][]
-    context?: GetContextResult
-    result?: vscode.InlineCompletionList
-    cacheHit?: boolean
+
+    /**
+     * @todo Make this support recording more than 1 call to a completion provider.
+     */
+    completionProviderCallParams?: CompletionParameters
+    completionProviderCallResult?: CompletionProviderTracerResultData
+
+    context?: GetContextResult | null
+    result?: InlineCompletionsResult | null
     error?: string
 }
