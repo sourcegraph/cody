@@ -2,6 +2,7 @@ import * as vscode from 'vscode'
 
 import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
 
+import { debug } from '../../log'
 import { ContextSnippet } from '../types'
 
 import { getContextFromEmbeddings } from './context-embeddings'
@@ -36,6 +37,7 @@ export async function getContext(options: GetContextOptions): Promise<GetContext
      * The embeddings context is sync to retrieve to keep the completions latency minimal. If it's
      * not available in cache yet, we'll retrieve it in the background and cache it for future use.
      */
+    debug('embeddings', 'getContext isEmbeddingsContextEnabled?', isEmbeddingsContextEnabled)
     const embeddingsMatches = isEmbeddingsContextEnabled ? getContextFromEmbeddings(options) : []
     const localMatches = await getContextFromCurrentEditor(options)
 

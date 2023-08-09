@@ -241,7 +241,8 @@ const TextArea: React.FunctionComponent<ChatUITextAreaProps> = ({
             autofocus={autoFocus}
             required={required}
             onInput={e => onInput(e as React.FormEvent<HTMLTextAreaElement>)}
-            placeholder="Ask a question or type '/' for commands"
+            placeholder="Cody chat is disabled by your server admin."
+            disabled={true}
             onKeyDown={handleKeyDown}
             title="" // Set to blank to avoid HTML5 error tooltip "Please fill in this field"
         />
