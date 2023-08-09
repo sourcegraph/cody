@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react'
+import React, { useRef } from 'react'
 
 import { VSCodeButton } from '@vscode/webview-ui-toolkit/react'
 import classNames from 'classnames'
@@ -14,14 +14,7 @@ export const ChatCommandsComponent: React.FunctionComponent<React.PropsWithChild
     setSelectedChatCommand,
     onSubmit,
 }) => {
-    const commandList = chatCommands?.filter(command => command[1]?.slashCommand)
     const selectionRef = useRef<HTMLButtonElement>(null)
-    useEffect(() => {
-        if (commandList && selectedChatCommand && selectedChatCommand >= 0 && selectionRef.current) {
-            selectionRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
-            return
-        }
-    }, [commandList, selectedChatCommand])
 
     const onCommandClick = (slashCommand?: string): void => {
         if (!slashCommand) {
@@ -32,7 +25,7 @@ export const ChatCommandsComponent: React.FunctionComponent<React.PropsWithChild
         setSelectedChatCommand(-1)
     }
 
-    if (!commandList?.length || selectedChatCommand === undefined || selectedChatCommand < 0) {
+    if (!chatCommands?.length || selectedChatCommand === undefined || selectedChatCommand < 0) {
         return null
     }
 
@@ -52,18 +45,20 @@ export const ChatCommandsComponent: React.FunctionComponent<React.PropsWithChild
             <div className={classNames(styles.commandsContainer)}>
                 {chatCommands &&
                     selectedChatCommand >= 0 &&
-                    commandList?.map(([command, prompt], i) => (
-                        <button
-                            className={classNames(styles.commandItem, selectedChatCommand === i && styles.selected)}
-                            key={prompt.slashCommand}
-                            onClick={() => onCommandClick(prompt.slashCommand)}
-                            type="button"
-                            ref={i === selectedChatCommand ? selectionRef : null}
-                        >
-                            <p className={styles.commandTitle}>{prompt.slashCommand}</p>
-                            <p className={styles.commandDescription}>{command}</p>
-                        </button>
-                    ))}
+                    chatCommands
+                        ?.filter(command => command[1]?.slashCommand)
+                        ?.map(([command, prompt], i) => (
+                            <button
+                                className={classNames(styles.commandItem, selectedChatCommand === i && styles.selected)}
+                                key={prompt.slashCommand}
+                                onClick={() => onCommandClick(prompt.slashCommand)}
+                                type="button"
+                                ref={i === selectedChatCommand ? selectionRef : null}
+                            >
+                                <p className={styles.commandTitle}>{prompt.slashCommand}</p>
+                                <p className={styles.commandDescription}>{command}</p>
+                            </button>
+                        ))}
             </div>
         </div>
     )

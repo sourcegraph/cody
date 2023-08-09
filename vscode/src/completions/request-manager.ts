@@ -3,14 +3,13 @@ import * as vscode from 'vscode'
 
 import { debug } from '../log'
 
-import { ReferenceSnippet } from './context'
 import { DocumentContext } from './document'
 import { LastInlineCompletionCandidate } from './getInlineCompletions'
 import { logCompletionEvent } from './logger'
 import { processInlineCompletions } from './processInlineCompletions'
 import { CompletionProviderTracer, Provider } from './providers/provider'
 import { reuseLastCandidate } from './reuse-last-candidate'
-import { InlineCompletionItem } from './types'
+import { ContextSnippet, InlineCompletionItem } from './types'
 
 export interface RequestParams {
     /** The request's document **/
@@ -48,7 +47,7 @@ export class RequestManager {
     public async request(
         params: RequestParams,
         providers: Provider[],
-        context: ReferenceSnippet[],
+        context: ContextSnippet[],
         tracer?: CompletionProviderTracer
     ): Promise<RequestManagerResult> {
         const cachedCompletions = this.cache.get(params)
