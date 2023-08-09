@@ -1,9 +1,9 @@
-import { commands, QuickInputButtons, QuickPickItem, QuickPickOptions, window } from 'vscode'
+import { commands, QuickPickItem, QuickPickOptions, window } from 'vscode'
 
 import { CodyPrompt } from '@sourcegraph/cody-shared'
 
 import { CustomCommandsItem } from '../utils'
-import { CustomCommandConfigMenuItems, menu_options } from '../utils/menu'
+import { CustomCommandConfigMenuItems, menu_buttons, menu_options } from '../utils/menu'
 
 import { CodyCommand, CustomCommandsBuilderMenu } from './CustomCommandBuilderMenu'
 
@@ -14,18 +14,20 @@ interface CommandMenuResponse {
 
 export async function showCommandMenu(items: QuickPickItem[]): Promise<CommandMenuResponse> {
     const options = {
-        title: 'Cody Commands',
-        placeHolder: 'Search for a command',
+        title: 'Cody',
+        placeHolder: 'Search for a command or enter your question here',
         ignoreFocusOut: true,
     }
 
-    return new Promise(resolve => {
+    return new Promise((resolve, reject) => {
         let input = ''
         const quickPick = window.createQuickPick()
         quickPick.items = items
         quickPick.title = options.title
         quickPick.placeholder = options.placeHolder
         quickPick.ignoreFocusOut = options.ignoreFocusOut
+
+        quickPick.buttons = [menu_buttons.gear]
 
         const labels = new Set(items.map(item => item.label))
         quickPick.onDidChangeValue(() => {
@@ -35,6 +37,12 @@ export async function showCommandMenu(items: QuickPickItem[]): Promise<CommandMe
                 return
             }
             quickPick.items = items
+        })
+        // On gear icon click
+        quickPick.onDidTriggerButton(async () => {
+            quickPick.hide()
+            reject()
+            await commands.executeCommand('cody.settings.commands')
         })
 
         quickPick.onDidAccept(() => {
@@ -78,13 +86,13 @@ export async function showCommandConfigMenu(): Promise<CustomCommandsItem> {
         placeHolder: 'Choose an option',
     }
 
-    return new Promise(resolve => {
+    return new Promise((resolve, reject) => {
         const quickPick = window.createQuickPick()
         quickPick.items = CustomCommandConfigMenuItems
         quickPick.title = CustomCommandConfigMenuOptions.title
         quickPick.placeholder = CustomCommandConfigMenuOptions.placeHolder
 
-        quickPick.buttons = [QuickInputButtons.Back]
+        quickPick.buttons = [menu_buttons.back]
 
         // on item button click
         quickPick.onDidTriggerItemButton(item => {
@@ -101,8 +109,9 @@ export async function showCommandConfigMenu(): Promise<CustomCommandsItem> {
         })
 
         quickPick.onDidTriggerButton(async () => {
-            await commands.executeCommand('cody.action.commands.menu')
             quickPick.hide()
+            reject()
+            await commands.executeCommand('cody.action.commands.menu')
         })
 
         quickPick.show()
