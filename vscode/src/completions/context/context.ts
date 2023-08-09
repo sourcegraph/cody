@@ -19,13 +19,15 @@ export interface GetContextOptions {
     isEmbeddingsContextEnabled?: boolean
 }
 
+export type ContextSummary = Readonly<{
+    embeddings?: number
+    local?: number
+    duration: number
+}>
+
 export interface GetContextResult {
     context: ContextSnippet[]
-    logSummary: {
-        embeddings?: number
-        local?: number
-        duration: number
-    }
+    logSummary: ContextSummary
 }
 
 export async function getContext(options: GetContextOptions): Promise<GetContextResult> {
