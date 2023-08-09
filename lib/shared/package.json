@@ -25,6 +25,7 @@
   },
   "dependencies": {
     "@microsoft/fetch-event-source": "^2.0.1",
+    "detect-indent": "^7.0.1",
     "dompurify": "^3.0.4",
     "highlight.js": "^10.7.3",
     "isomorphic-fetch": "^3.0.0",

@@ -222,6 +222,9 @@ importers:
       '@microsoft/fetch-event-source':
         specifier: ^2.0.1
         version: 2.0.1
+      detect-indent:
+        specifier: ^7.0.1
+        version: 7.0.1
       dompurify:
         specifier: ^3.0.4
         version: 3.0.4

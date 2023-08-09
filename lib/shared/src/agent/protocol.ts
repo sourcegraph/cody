@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/consistent-type-definitions */
-import { AutocompleteContext } from '@sourcegraph/cody-shared/src/autocomplete/types'
-import { ExecuteAutocompleteResult } from '@sourcegraph/cody-shared/src/chat/autocomplete'
-import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
-import { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
+
+import { ExecuteAutocompleteResult } from '../autocomplete/types'
+import { RecipeID } from '../chat/recipes/recipe'
+import { ChatMessage } from '../chat/transcript/messages'
 
 // This file documents the Cody Agent JSON-RPC protocol. Consult the JSON-RPC
 // specification to learn about how JSON-RPC works https://www.jsonrpc.org/specification
@@ -138,12 +138,6 @@ export interface Range {
     end: Position
 }
 
-export interface TextDocument {
-    filePath: string
-    content?: string
-    selection?: Range
-}
-
 export interface RecipeInfo {
     id: RecipeID
     title: string
@@ -154,11 +148,20 @@ export interface ExecuteRecipeParams {
     humanChatInput: string
     data?: any
 }
+export interface AutocompleteContext {
+    triggerKind: 'invoke' | 'automatic'
+}
 
 export interface ExecuteAutocompleteParams {
+    id: string
     filePath: string
     context: AutocompleteContext
     position: Position
     languageId: string
-    multiline: boolean
+}
+
+export interface TextDocument {
+    filePath: string
+    content?: string
+    selection?: Range
 }

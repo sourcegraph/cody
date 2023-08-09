@@ -1,5 +1,7 @@
 import { error } from 'console'
 
+import { getCurrentDocContext } from '../autocomplete/document'
+import { detectMultiline } from '../autocomplete/multiline'
 import { createProviderConfig } from '../autocomplete/providers/createProvider'
 import { AutocompleteParams, ExecuteAutocompleteResult, InlineCompletionItem } from '../autocomplete/types'
 import { CodebaseContext } from '../codebase-context'
@@ -185,6 +187,10 @@ export async function createClient({
         }
 
         const executeAutocomplete = async function (params: AutocompleteParams): Promise<ExecuteAutocompleteResult> {
+            const responsePercentage = 0.1
+            const prefixPercentage = 0.6
+            const suffixPercentage = 0.1
+
             const providerFactory = createProviderConfig(
                 config,
                 err => {
@@ -192,18 +198,35 @@ export async function createClient({
                 },
                 completionsClient
             )
-
+            const promptChars =
+                providerFactory.maximumContextCharacters - providerFactory.maximumContextCharacters * responsePercentage
+            const maxPrefixChars = Math.floor(promptChars * prefixPercentage)
+            const maxSuffixChars = Math.floor(promptChars * suffixPercentage)
+            const currentDoc = params.documents.get(params.filePath)
+            if (!currentDoc) {
+                return { items: [] }
+            }
+            const docContext = getCurrentDocContext(currentDoc, params.position, maxPrefixChars, maxSuffixChars)
+            if (!docContext) {
+                return { items: [] }
+            }
+            const multiline = detectMultiline(
+                docContext,
+                params.languageId,
+                providerFactory.enableExtendedMultilineTriggers
+            )
+            console.log(multiline)
             const provider = providerFactory.create({
                 /** A unique and descriptive identifier for the provider. */
-                id: '1',
-                prefix: params.prefix,
-                suffix: params.suffix,
+                id: params.id,
+                prefix: docContext.prefix,
+                suffix: docContext.suffix,
                 fileName: params.filePath,
                 languageId: params.languageId,
-                multiline: params.multiline,
-                responsePercentage: 0.1,
-                prefixPercentage: 0.6,
-                suffixPercentage: 0.1,
+                multiline: multiline,
+                prefixPercentage: prefixPercentage,
+                suffixPercentage: suffixPercentage,
+                responsePercentage: responsePercentage,
                 n: 1,
             })
 

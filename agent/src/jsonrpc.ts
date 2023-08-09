@@ -2,7 +2,7 @@
 import assert from 'assert'
 import { Readable, Writable } from 'stream'
 
-import { Notifications, Requests } from './protocol'
+import { Notifications, Requests } from '@sourcegraph/cody-shared/src/agent/protocol'
 
 // This file is a standalone implementation of JSON-RPC for Node.js
 // ReadStream/WriteStream, which conventionally map to stdin/stdout.

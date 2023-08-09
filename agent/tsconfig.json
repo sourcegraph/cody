@@ -5,7 +5,7 @@
     "rootDir": ".",
     "outDir": "dist",
   },
-  "include": ["**/*", ".*", "package.json"],
+  "include": ["**/*", ".*", "package.json", "../lib/shared/src/agent/protocol.ts", "../lib/shared/src/agent/offsets.ts"],
   "exclude": ["dist"],
   "references": [{ "path": "../lib/shared" }],
 }

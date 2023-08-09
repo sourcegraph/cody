@@ -115,7 +115,7 @@ export class AgentInlineCompletionItemProvider
             context: { triggerKind: 'automatic' },
             position,
             languageId: document.languageId,
-            multiline: false,
+            id: logId,
         })
         stopLoading()
         return result.items.map(

@@ -1,13 +1,12 @@
 import { URI } from 'vscode-uri'
 
+import { ConnectionConfiguration, TextDocument } from '@sourcegraph/cody-shared/src/agent/protocol'
 import { Client, createClient } from '@sourcegraph/cody-shared/src/chat/client'
 import { registeredRecipes } from '@sourcegraph/cody-shared/src/chat/recipes/agent-recipes'
 import { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/nodeClient'
 
 import { AgentEditor } from './editor'
 import { MessageHandler } from './jsonrpc'
-import { DocumentOffsets } from './offsets'
-import { ConnectionConfiguration, TextDocument } from './protocol'
 
 export class Agent extends MessageHandler {
     private client: Promise<Client | null> = Promise.resolve(null)
@@ -110,25 +109,16 @@ export class Agent extends MessageHandler {
         this.registerRequest('autocomplete/execute', async params => {
             const client = await this.client
             if (!client) {
-                return null
+                throw new Error('no client available')
             }
-            const document = this.documents.get(params.filePath)
-            if (document === undefined || document.content === undefined || document.selection === undefined) {
-                return null
-            }
-            const offsets = new DocumentOffsets(document)
-            const positionOffset = offsets.offset(params.position)
-            const prefix = document.content.slice(0, positionOffset)
-            const suffix = document.content.slice(positionOffset, document.content.length)
 
             return client.executeAutocomplete({
+                id: params.id,
                 filePath: params.filePath,
                 context: params.context,
                 languageId: params.languageId,
-                multiline: params.multiline,
-                prefix: prefix,
-                suffix: suffix,
                 position: params.position,
+                documents: this.documents,
             })
         })
     }

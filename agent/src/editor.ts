@@ -1,5 +1,7 @@
 import { URI } from 'vscode-uri'
 
+import { DocumentOffsets } from '@sourcegraph/cody-shared/src/agent/offsets'
+import { TextDocument } from '@sourcegraph/cody-shared/src/agent/protocol'
 import {
     ActiveTextEditor,
     ActiveTextEditorDiagnostic,
@@ -10,8 +12,6 @@ import {
 } from '@sourcegraph/cody-shared/src/editor'
 
 import { Agent } from './agent'
-import { DocumentOffsets } from './offsets'
-import { TextDocument } from './protocol'
 
 export class AgentEditor implements Editor {
     public controllers?: ActiveTextEditorViewControllers | undefined

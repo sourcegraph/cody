@@ -1,15 +1,12 @@
+import { AutocompleteContext, Position, Range, TextDocument } from '../agent/protocol'
+
 export interface AutocompleteParams {
+    id: string
     filePath: string
     position: Position
-    context: AutocompleteContext
-    prefix: string
-    suffix: string
     languageId: string
-    multiline: boolean
-}
-
-export interface AutocompleteContext {
-    triggerKind: 'invoke' | 'automatic'
+    context: AutocompleteContext
+    documents: Map<string, TextDocument>
 }
 
 export interface ExecuteAutocompleteResult {
@@ -19,17 +16,6 @@ export interface ExecuteAutocompleteResult {
 export interface InlineCompletionItem {
     insertText: string
     range: Range
-}
-export interface Position {
-    // 0-indexed
-    line: number
-    // 0-indexed
-    character: number
-}
-
-export interface Range {
-    start: Position
-    end: Position
 }
 
 export interface Completion {
@@ -43,4 +29,18 @@ export interface Completion {
 export interface ReferenceSnippet {
     fileName: string
     content: string
+}
+
+export interface DocumentContext {
+    prefix: string
+    suffix: string
+
+    /** Text before the cursor on the same line. */
+    currentLinePrefix: string
+
+    /** Text after the cursor on the same line. */
+    currentLineSuffix: string
+
+    prevNonEmptyLine: string
+    nextNonEmptyLine: string
 }
