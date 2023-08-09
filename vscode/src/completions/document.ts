@@ -37,7 +37,8 @@ export function getCurrentDocContext(
     document: vscode.TextDocument,
     position: vscode.Position,
     maxPrefixLength: number,
-    maxSuffixLength: number
+    maxSuffixLength: number,
+    context: vscode.InlineCompletionContext
 ): DocumentContext | null {
     const offset = document.offsetAt(position)
 
@@ -69,6 +70,13 @@ export function getCurrentDocContext(
     } else {
         prefix = document.getText(new vscode.Range(new vscode.Position(0, 0), position))
     }
+
+    // Append any eventual inline completion context item to the prefix
+    if (context.selectedCompletionInfo) {
+        const { range, text } = context.selectedCompletionInfo
+        prefix = prefix.slice(0, range.start.character - position.character) + text
+    }
+
     const prevNonEmptyLine = getPrevNonEmptyLine(prefix)
 
     let totalSuffix = 0

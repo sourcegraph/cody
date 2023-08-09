@@ -18,7 +18,6 @@ import { ProviderConfig } from './providers/provider'
 import { RequestManager } from './request-manager'
 import { ProvideInlineCompletionItemsTracer, ProvideInlineCompletionsItemTraceData } from './tracer'
 import { InlineCompletionItem } from './types'
-import { getNextNonEmptyLine } from './utils/text-utils'
 
 interface CodyCompletionItemProviderConfig {
     providerConfig: ProviderConfig
@@ -157,27 +156,29 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
         // we can reuse it if the user types in such a way that it is still valid (such as by typing
         // `ab` if the ghost text suggests `abcd`).
         if (result && result.source !== InlineCompletionsResultSource.LastCandidate) {
-            this.lastCandidate =
-                result?.items.length > 0
-                    ? {
-                          uri: document.uri,
-                          lastTriggerPosition: position,
-                          lastTriggerCurrentLinePrefix: document.lineAt(position).text.slice(0, position.character),
-                          lastTriggerNextNonEmptyLine: getNextNonEmptyLine(
-                              document.getText(
-                                  new vscode.Range(position, document.lineAt(document.lineCount - 1).range.end)
-                              )
-                          ),
-                          result: {
-                              logId: result.logId,
-                              items: result.items,
-                          },
-                      }
-                    : undefined
+            // this.lastCandidate =
+            //     result?.items.length > 0
+            //         ? {
+            //               uri: document.uri,
+            //               lastTriggerPosition: position,
+            //               lastTriggerCurrentLinePrefix: document.lineAt(position).text.slice(0, position.character),
+            //               lastTriggerNextNonEmptyLine: getNextNonEmptyLine(
+            //                   document.getText(
+            //                       new vscode.Range(position, document.lineAt(document.lineCount - 1).range.end)
+            //                   )
+            //               ),
+            //               result: {
+            //                   logId: result.logId,
+            //                   items: result.items,
+            //               },
+            //           }
+            //         : undefined
         }
 
         return {
-            items: result ? this.processInlineCompletionsForVSCode(result.logId, document, position, result.items) : [],
+            items: result
+                ? this.processInlineCompletionsForVSCode(result.logId, document, position, result.items, context)
+                : [],
         }
     }
 
@@ -196,11 +197,37 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
         logId: string,
         document: vscode.TextDocument,
         position: vscode.Position,
-        items: InlineCompletionItem[]
+        items: InlineCompletionItem[],
+        context: vscode.InlineCompletionContext
     ): vscode.InlineCompletionItem[] {
         return items.map(completion => {
             const currentLine = document.lineAt(position)
             const currentLinePrefix = document.getText(currentLine.range.with({ end: position }))
+            let insertText = completion.insertText
+
+            // Append any eventual inline completion context item to the prefix
+            if (context.selectedCompletionInfo) {
+                const { range, text } = context.selectedCompletionInfo
+                console.log({ range, text })
+
+                console.log(
+                    'WTF TIMMY',
+                    position.character,
+                    range.start.character,
+                    insertText,
+                    document.getText(range),
+                    position.character - range.start.character,
+                    document.getText(range).slice(position.character - range.start.character),
+                    text.slice(position.character - range.start.character) + insertText
+                )
+                insertText = text.slice(position.character - range.start.character) + insertText
+
+                // return new vscode.InlineCompletionItem(document.getText(range) + insertText, range, {
+                //     title: 'Completion accepted',
+                //     command: 'cody.autocomplete.inline.accepted',
+                //     arguments: [{ codyLogId: logId, codyLines: insertText.split(/\r\n|\r|\n/).length }],
+                // })
+            }
 
             // Return the completion from the start of the current line (instead of starting at the
             // given position). This avoids UI jitter in VS Code; when typing or deleting individual
@@ -212,18 +239,14 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
             // response only has a single line.
             // For non FIM models, the same line suffix will be repeated in the completion
             const supportsInfilling = this.config.providerConfig.supportsInfilling
-            const isMultiline = completion.insertText.includes('\n')
+            const isMultiline = insertText.includes('\n')
             const end = supportsInfilling && !isMultiline ? position : currentLine.range.end
 
-            return new vscode.InlineCompletionItem(
-                currentLinePrefix + completion.insertText,
-                new vscode.Range(start, end),
-                {
-                    title: 'Completion accepted',
-                    command: 'cody.autocomplete.inline.accepted',
-                    arguments: [{ codyLogId: logId, codyLines: completion.insertText.split(/\r\n|\r|\n/).length }],
-                }
-            )
+            return new vscode.InlineCompletionItem(currentLinePrefix + insertText, new vscode.Range(start, end), {
+                title: 'Completion accepted',
+                command: 'cody.autocomplete.inline.accepted',
+                arguments: [{ codyLogId: logId, codyLines: insertText.split(/\r\n|\r|\n/).length }],
+            })
         })
     }
 }

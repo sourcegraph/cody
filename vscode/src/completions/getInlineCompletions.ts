@@ -153,7 +153,7 @@ async function doGetInlineCompletions({
 }: InlineCompletionsParams): Promise<InlineCompletionsResult | null> {
     tracer?.({ params: { document, position, context } })
 
-    const docContext = getCurrentDocContext(document, position, maxPrefixChars, maxSuffixChars)
+    const docContext = getCurrentDocContext(document, position, maxPrefixChars, maxSuffixChars, context)
     if (!docContext) {
         return null
     }
