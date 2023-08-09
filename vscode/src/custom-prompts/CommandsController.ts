@@ -123,6 +123,10 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
         return this.default.getGroupedCommands(keepSperator)
     }
 
+    public getCommandInProgress(): CodyPrompt | null {
+        return this.myPromptInProgress
+    }
+
     /**
      * Gets the custom prompt configuration by refreshing the store.
      *
@@ -202,7 +206,7 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
 
                 return createQuickPickItem(command.name || commandItem[0], description)
             })
-            commandItems.push(...allCommandItems, menu_options.config)
+            commandItems.push(...allCommandItems)
 
             // Show the list of prompts to the user using a quick pick menu
             // const selectedPrompt = await vscode.window.showQuickPick([...commandItems], CodyMenu_CodyCommands)
@@ -215,8 +219,6 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
             switch (true) {
                 case !selectedCommandID:
                     break
-                case selectedCommandID === menu_options.config.label:
-                    return await vscode.commands.executeCommand('cody.settings.commands')
                 case selectedCommandID === menu_options.chat.label:
                     return await vscode.commands.executeCommand('cody.inline.new')
                 case selectedCommandID === menu_options.fix.label:

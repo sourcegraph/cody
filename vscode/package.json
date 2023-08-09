@@ -586,9 +586,14 @@
           "group": "navigation@1"
         },
         {
-          "command": "cody.history",
+          "command": "cody.action.commands.menu",
           "when": "view == cody.chat && cody.activated",
           "group": "navigation@2"
+        },
+        {
+          "command": "cody.history",
+          "when": "view == cody.chat && cody.activated",
+          "group": "navigation@3"
         },
         {
           "command": "cody.feedback",
