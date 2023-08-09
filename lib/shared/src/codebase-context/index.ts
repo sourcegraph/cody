@@ -221,24 +221,14 @@ export class CodebaseContext {
 
         const contextMessages: ContextMessage[] = []
         const preciseContext = await this.graph.getContext()
-        for (const {
-            filepath: fileName,
-            repositoryName: repoName,
-            scipSymbolName,
-            fuzzyDescriptorSuffix,
-            scipDescriptorSuffix,
-            text,
-        } of preciseContext) {
+        for (const { symbol, definitionSnippet, repositoryName, filepath } of preciseContext) {
             contextMessages.push({
                 speaker: 'human',
-                file: { fileName, repoName },
-                preciseContext: {
-                    fuzzyToScipPair: `${fuzzyDescriptorSuffix} -> ${scipDescriptorSuffix}`,
-                    scipSymbolName,
-                },
+                file: { fileName: filepath, repoName: repositoryName },
+                preciseContext: { symbol },
                 text: `
                 As my coding assistant, use this context to help me answer the question asked:
-                Here is the precise snippet of code that is relevant to the current active file: ${text}
+                Here is the precise snippet of code that is relevant to the current active file: ${definitionSnippet}
                 ## Instruction
                 - Do not enclose your answer with tags.
                 - Do not remove code that might be being used by the other part of the code that was not shared.

@@ -16,8 +16,11 @@ export interface ContextFile {
 }
 
 export interface PreciseContext {
-    scipSymbolName: string
-    fuzzyToScipPair: string
+    symbol: {
+        scipName: string
+        scipDescriptorSuffix: string
+        fuzzyName?: string
+    }
 }
 
 export interface ContextMessage extends Message {

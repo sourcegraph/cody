@@ -10,13 +10,15 @@ export const PreciseContexts: FunctionComponent<{
     preciseContexts: PreciseContext[]
     className?: string
 }> = memo(function PreciseContextsContent({ preciseContexts, className }) {
-    const unique = new Map<string, string>()
-    for (const { scipSymbolName, fuzzyToScipPair } of preciseContexts) {
-        unique.set(scipSymbolName, fuzzyToScipPair)
+    const unique = new Map<string, JSX.Element>()
+    console.log({ preciseContexts })
+
+    for (const { symbol } of preciseContexts) {
+        unique.set(symbol.scipName, <>will link to {symbol.fuzzyName || symbol.scipDescriptorSuffix}</>)
     }
-    const uniqueContext = Array.from(unique, ([scipSymbolName, fuzzyToScipPair]) => ({
-        object: fuzzyToScipPair,
-        hoverText: scipSymbolName,
+    const uniqueContext = Array.from(unique, ([hoverText, object]) => ({
+        object,
+        hoverText,
     }))
 
     return (

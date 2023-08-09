@@ -104,12 +104,13 @@ interface GetCodyContextResponse {
 }
 
 export interface PreciseContextResult {
-    scipSymbolName: string
-    fuzzySymbolName: string
-    scipDescriptorSuffix: string
-    fuzzyDescriptorSuffix: string
+    symbol: {
+        scipName: string
+        scipDescriptorSuffix: string
+        fuzzyName?: string
+    }
+    definitionSnippet: string
     repositoryName: string
-    text: string
     filepath: string
 }
 
@@ -119,16 +120,6 @@ interface PreciseContextResponse {
 interface PreciseContext {
     context: PreciseContextResult[]
 }
-
-// interface PreciseDataContext {
-//     scipSymbolName: string
-//     fuzzySymbolName: string
-//     scipDescriptorSuffix: string
-//     fuzzyDescriptorSuffix: string
-//     repositoryName: string
-//     text: string
-//     filepath: string
-// }
 
 export interface ActiveFileSelectionRange {
     startLine: number

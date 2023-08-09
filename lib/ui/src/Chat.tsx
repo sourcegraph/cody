@@ -439,7 +439,10 @@ function welcomeText({
     helpMarkdown = 'See [Cody documentation](https://docs.sourcegraph.com/cody) for help and tips.',
     afterMarkdown,
 }: WelcomeTextOptions): string {
-    return ["Hello! I'm Cody. I can write code and answer questions for you. " + helpMarkdown, afterMarkdown]
+    return [
+        "Hello! I'm Intelligent Cody. I can write code and answer questions for you. " + helpMarkdown,
+        afterMarkdown,
+    ]
         .filter(isDefined)
         .join('\n\n')
 }

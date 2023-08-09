@@ -184,13 +184,15 @@ export const PRECISE_CONTEXT = `
 query GetPreciseContext($input: PreciseContextInput!) {
     getPreciseContext(input: $input) {
         context {
-            scipSymbolName
-            fuzzySymbolName
-            scipDescriptorSuffix
-            fuzzyDescriptorSuffix
+            symbol {
+                scipName
+                scipDescriptorSuffix
+                fuzzyName
+            }
+            definitionSnippet
             repositoryName
-            text
             filepath
+            canonicalLocationURL
         }
     }
 }
