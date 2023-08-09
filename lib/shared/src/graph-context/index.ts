@@ -31,7 +31,13 @@ export class GraphContextFetcher {
             content,
             getActiveSelectionRange(selectionRange)
         )
-        return isErrorLike(response) ? [] : response
+        if (isErrorLike(response)) {
+            return []
+        }
+
+        // :)
+        console.log(response.traceLogs)
+        return response.context
     }
 }
 

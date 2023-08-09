@@ -119,6 +119,7 @@ interface PreciseContextResponse {
 }
 interface PreciseContext {
     context: PreciseContextResult[]
+    traceLogs: string
 }
 
 export interface ActiveFileSelectionRange {
@@ -268,7 +269,7 @@ export class SourcegraphGraphQLAPIClient {
         activeFile: string,
         activeFileContent: string,
         activeFileSelectionRange: ActiveFileSelectionRange | null
-    ): Promise<PreciseContextResult[] | Error> {
+    ): Promise<PreciseContext | Error> {
         return this.fetchSourcegraphAPI<APIResponse<PreciseContextResponse>>(PRECISE_CONTEXT, {
             input: {
                 repositoryName,
@@ -277,7 +278,7 @@ export class SourcegraphGraphQLAPIClient {
                 activeFileContent,
                 ...(activeFileSelectionRange && { activeFileSelectionRange }),
             },
-        }).then(response => extractDataOrError(response, data => data.getPreciseContext.context))
+        }).then(response => extractDataOrError(response, data => data.getPreciseContext))
     }
 
     public async getCurrentUserIdAndVerifiedEmail(): Promise<{ id: string; hasVerifiedEmail: boolean } | Error> {

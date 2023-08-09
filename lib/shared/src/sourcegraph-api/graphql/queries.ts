@@ -194,6 +194,7 @@ query GetPreciseContext($input: PreciseContextInput!) {
             filepath
             canonicalLocationURL
         }
+        traceLogs
     }
 }
 `
