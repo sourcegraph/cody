@@ -14,7 +14,7 @@ interface CommandMenuResponse {
 
 export async function showCommandMenu(items: QuickPickItem[]): Promise<CommandMenuResponse> {
     const options = {
-        title: 'Cody',
+        title: 'Cody (Shortcut: ⌥C)',
         placeHolder: 'Search for a command or enter your question here',
         ignoreFocusOut: true,
     }
