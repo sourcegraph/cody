@@ -334,7 +334,7 @@ export function getHumanDisplayTextWithFileName(
 
     const startLineNumber = selectionInfo?.selectionRange ? `${selectionInfo?.selectionRange?.start.line + 1}` : ''
     const fileRange = selectionInfo?.selectionRange
-        ? `${selectionInfo?.selectionRange?.start.line + 1}:${selectionInfo?.selectionRange?.end.line + 1}`
+        ? `${selectionInfo?.selectionRange?.start.line + 1}-${selectionInfo?.selectionRange?.end.line + 1}`
         : startLineNumber
 
     if (!workspaceRoot) {
