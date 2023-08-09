@@ -10,6 +10,7 @@ Starting from `0.2.0`, Cody is using `major.EVEN_NUMBER.patch` for release versi
 
 - Chat Commands: Add tab-to-complete behavior. [pull/606](https://github.com/sourcegraph/cody/pull/606)
 - Option to toggle `cody.experimental.editorTitleCommandIcon` setting through status bar. [pull/611](https://github.com/sourcegraph/cody/pull/611)
+- Chat Command: New `/smell` command, an improved version of the old `Find Code Smell` recipe. [pull/602](https://github.com/sourcegraph/cody/pull/602)
 
 ### Fixed
 
@@ -17,6 +18,9 @@ Starting from `0.2.0`, Cody is using `major.EVEN_NUMBER.patch` for release versi
 - Handle `socket hung up` errors that are not caused by the `stop generating` button. [pull/598](https://github.com/sourcegraph/cody/pull/598)
 
 ### Changed
+
+- Update shortcut for Cody Commands Menu to `alt` + `c` due to conflict with exisiting keybind for `fixup`. [pull/602](https://github.com/sourcegraph/cody/pull/602)
+- `Explain Code` command now includes visible content of the current file when no code is selected. [pull/602](https://github.com/sourcegraph/cody/pull/602)
 
 ## [0.6.5]
 
