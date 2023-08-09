@@ -10,7 +10,7 @@ import styles from './CodeBlocks.module.css'
 
 export type CodyRecipesWidgetWrapper = React.ComponentType<{
     targetRef: RefObject<HTMLElement>
-    children: any
+    children: React.ReactNode
 }> | null
 
 interface CodeBlocksProps {
@@ -127,7 +127,7 @@ export const CodeBlocks: React.FunctionComponent<CodeBlocksProps> = React.memo(f
     }, [displayText, CopyButtonProps, copyButtonClassName, insertButtonClassName, rootRef])
 
     const RecipesWidgetWrapperWithProps = useMemo(
-        () => (props: { targetRef: RefObject<HTMLElement>; children: any }) => {
+        () => (props: { targetRef: RefObject<HTMLElement>; children: React.ReactNode }) => {
             if (RecipesWidgetWrapper) {
                 return <RecipesWidgetWrapper {...props} />
             }
