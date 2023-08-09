@@ -29,3 +29,6 @@ export const prompts = {
 export const rules = {
     hallucination: prevent_hallucinations,
 }
+
+export const displayFileName = `\n
+    File: `
