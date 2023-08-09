@@ -575,7 +575,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
                     return { text, recipeId }
                 }
                 // If no command found, send error message to view
-                await this.addCustomInteraction(`_Invalid command:_ ${text}`, text)
+                await this.addCustomInteraction(`__${text}__ is not a valid command`, text)
                 return null
             }
         }
