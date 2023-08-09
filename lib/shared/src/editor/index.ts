@@ -26,6 +26,7 @@ export interface ActiveTextEditorSelection {
     precedingText: string
     selectedText: string
     followingText: string
+    selectionRange?: ActiveTextEditorSelectionRange | null
 }
 
 export type ActiveTextEditorDiagnosticType = 'error' | 'warning' | 'information' | 'hint'

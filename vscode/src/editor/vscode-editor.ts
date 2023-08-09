@@ -178,6 +178,7 @@ export class VSCodeEditor implements Editor<InlineController, FixupController, C
             selectedText: activeEditor.document.getText(selection),
             precedingText,
             followingText,
+            selectionRange: selection,
         }
     }
 

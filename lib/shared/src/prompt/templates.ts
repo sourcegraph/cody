@@ -110,12 +110,12 @@ function getExtension(filePath: string): string {
     return path.extname(filePath).slice(1)
 }
 
-const SELECTED_CODE_CONTEXT_TEMPLATE = `"Here is my selected {languageName} code from file \`{filePath}\`:
+const SELECTED_CODE_CONTEXT_TEMPLATE = `"Here is my selected code from a {languageName} file \`{filePath}\`:
 \`\`\`{extension}
 {text}
 \`\`\``
 
-const SELECTED_CODE_CONTEXT_TEMPLATE_WITH_REPO = `"Here is my selected {languageName} code from file \`{filePath}\` in repository \`{repoName}\`:
+const SELECTED_CODE_CONTEXT_TEMPLATE_WITH_REPO = `"Here is my selected code from a {languageName} file \`{filePath}\` in repository \`{repoName}\`:
 \`\`\`{extension}
 {text}
 \`\`\``
