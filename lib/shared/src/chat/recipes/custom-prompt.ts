@@ -66,7 +66,8 @@ export class CustomPrompt implements Recipe {
 
         const selection = selectionContent || context.editor.controllers?.inline?.selection
         if ((isContextRequired?.selection === true || isContextRequired?.currentFile) && !selection?.selectedText) {
-            const errorMsg = `Select some code in your editor before running the ${promptName} command again.`
+            const slashCommand = (await context.editor.controllers?.command?.get('slash')) || promptName
+            const errorMsg = `Failed: __${slashCommand}__ requires highlighted code. Please select some code in your editor and try again.`
             return this.getInteractionWithAssistantError(errorMsg, displayPromptText)
         }
 
@@ -104,7 +105,7 @@ export class CustomPrompt implements Recipe {
         return Promise.resolve(
             new Interaction(
                 { speaker: 'human', displayText },
-                { speaker: 'assistant', error: errorMsg },
+                { speaker: 'assistant', displayText: errorMsg, error: errorMsg },
                 Promise.resolve([]),
                 []
             )

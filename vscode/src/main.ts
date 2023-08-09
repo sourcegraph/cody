@@ -105,7 +105,7 @@ const register = async (
     const editor = new VSCodeEditor({
         inline: commentController,
         fixups: fixup,
-        command: platform.createCommandsController?.(context, localStorage),
+        command: platform.createCommandsController?.(context, localStorage, telemetryService),
     })
 
     // Could we use the `initialConfig` instead?
