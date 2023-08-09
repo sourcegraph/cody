@@ -60,7 +60,7 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
                     break
                 }
                 if (message.type === 'callback' && message.endpoint) {
-                    await this.authProvider.redirectToEndpointLogin(message.endpoint)
+                    this.authProvider.redirectToEndpointLogin(message.endpoint)
                     break
                 }
                 // cody.auth.signin or cody.auth.signout
