@@ -174,13 +174,14 @@ async function loadAppJson(uri: vscode.Uri): Promise<AppJson | null> {
     }
 }
 
-const envInit = {
+const envInit: LocalEnv = {
     os: process.platform,
     arch: process.arch,
     homeDir: process.env.HOME,
     uriScheme: vscode.env.uriScheme,
     appName: vscode.env.appName,
     extensionVersion: version,
+    uiKindIsWeb: vscode.env.uiKind === vscode.UIKind.Web,
     isAppInstalled: false,
     isAppRunning: false,
     hasAppJson: false,

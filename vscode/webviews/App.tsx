@@ -149,6 +149,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                     telemetryService={telemetryService}
                     appOS={config?.os}
                     appArch={config?.arch}
+                    uiKindIsWeb={config?.uiKindIsWeb}
                     callbackScheme={config?.uriScheme}
                     onLoginRedirect={onLoginRedirect}
                 />
