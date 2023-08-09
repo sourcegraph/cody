@@ -126,7 +126,6 @@ export const Transcript: React.FunctionComponent<
                             ChatButtonComponent={ChatButtonComponent}
                             pluginsDevMode={pluginsDevMode}
                             RecipesWidgetWrapper={RecipesWidgetWrapper}
-                            transcriptRef={transcriptContainerRef}
                         />
                     )
             )}
@@ -149,7 +148,6 @@ export const Transcript: React.FunctionComponent<
                     chatInputClassName={chatInputClassName}
                     ChatButtonComponent={ChatButtonComponent}
                     RecipesWidgetWrapper={RecipesWidgetWrapper}
-                    transcriptRef={transcriptContainerRef}
                 />
             )}
         </div>
