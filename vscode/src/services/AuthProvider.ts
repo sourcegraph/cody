@@ -1,4 +1,3 @@
-import fetch from 'isomorphic-fetch'
 import * as vscode from 'vscode'
 
 import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
@@ -77,25 +76,18 @@ export class AuthProvider {
                     return
                 }
                 this.authStatus.endpoint = instanceUrl
-                await this.redirectToEndpointLogin(instanceUrl)
+                this.redirectToEndpointLogin(instanceUrl)
                 break
             }
             case 'dotcom':
-                await this.redirectToEndpointLogin(DOTCOM_URL.href)
+                this.redirectToEndpointLogin(DOTCOM_URL.href)
                 break
             case 'token': {
                 const instanceUrl = await showInstanceURLInputBox(uri || item.uri)
                 if (!instanceUrl) {
                     return
                 }
-                const accessToken = await showAccessTokenInputBox(instanceUrl)
-                if (!accessToken) {
-                    return
-                }
-                const authState = await this.auth(instanceUrl, accessToken)
-                this.telemetryService.log('CodyVSCodeExtension:auth:fromToken', {
-                    success: Boolean(authState?.isLoggedIn),
-                })
+                await this.signinMenuForInstanceUrl(instanceUrl)
                 break
             }
             case 'app': {
@@ -119,6 +111,17 @@ export class AuthProvider {
                 debug('AuthProvider:signinMenu', mode, selectedEndpoint)
             }
         }
+    }
+
+    private async signinMenuForInstanceUrl(instanceUrl: string): Promise<void> {
+        const accessToken = await showAccessTokenInputBox(instanceUrl)
+        if (!accessToken) {
+            return
+        }
+        const authState = await this.auth(instanceUrl, accessToken)
+        this.telemetryService.log('CodyVSCodeExtension:auth:fromToken', {
+            success: Boolean(authState?.isLoggedIn),
+        })
     }
 
     private showIsLoggedIn(authStatus: AuthStatus | null): void {
@@ -319,31 +322,30 @@ export class AuthProvider {
         }
     }
 
-    // Open callback URL in browser to get token from instance
-    public async redirectToEndpointLogin(uri: string): Promise<void> {
+    /** Open callback URL in browser to get token from instance. */
+    public redirectToEndpointLogin(uri: string): void {
         const endpoint = formatURL(uri)
-        const isDotComOrApp = uri === LOCAL_APP_URL.href || uri === DOTCOM_URL.href
         if (!endpoint) {
             return
         }
-        await fetch(endpoint)
-            .then(async res => {
-                // Read the string response body
-                const version = await res.text()
-                if (!isDotComOrApp && version < '5.1.0') {
-                    void this.signinMenu('token', uri)
-                    return
-                }
-                const authUri = new URL('/user/settings/tokens/new/callback', endpoint)
-                authUri.searchParams.append(
-                    'requestFrom',
-                    this.appScheme === 'vscode-insiders' ? 'CODY_INSIDERS' : 'CODY'
-                )
-                this.authStatus.endpoint = endpoint
-                // open external link
-                void vscode.env.openExternal(vscode.Uri.parse(authUri.href))
-            })
-            .catch(error => console.error(error))
+
+        if (vscode.env.uiKind === vscode.UIKind.Web) {
+            // VS Code Web needs a different kind of callback using asExternalUri and changes to our
+            // UserSettingsCreateAccessTokenCallbackPage.tsx page in the Sourcegraph web app. So,
+            // just require manual token entry for now.
+            const newTokenNoCallbackUrl = new URL('/user/settings/tokens/new', endpoint)
+            void vscode.env.openExternal(vscode.Uri.parse(newTokenNoCallbackUrl.href))
+            void this.signinMenuForInstanceUrl(endpoint)
+            return
+        }
+
+        const newTokenCallbackUrl = new URL('/user/settings/tokens/new/callback', endpoint)
+        newTokenCallbackUrl.searchParams.append(
+            'requestFrom',
+            this.appScheme === 'vscode-insiders' ? 'CODY_INSIDERS' : 'CODY'
+        )
+        this.authStatus.endpoint = endpoint
+        void vscode.env.openExternal(vscode.Uri.parse(newTokenCallbackUrl.href))
     }
 
     // Refresh current endpoint history with the one from local storage
