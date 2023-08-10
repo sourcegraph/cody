@@ -500,11 +500,11 @@
         },
         {
           "command": "cody.command.generate-tests",
-          "when": "cody.activated && editorHasSelection"
+          "when": "cody.activated"
         },
         {
           "command": "cody.command.document-code",
-          "when": "cody.activated && editorHasSelection"
+          "when": "cody.activated"
         },
         {
           "command": "cody.focus",

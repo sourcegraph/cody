@@ -344,11 +344,11 @@ const register = async (
             await executeRecipeInSidebar('custom-prompt', true, '/explain')
             telemetryService.log('CodyVSCodeExtension:recipe:explain-code-high-level:executed')
         }),
-        vscode.commands.registerCommand('cody.command.generate-unit-test', async () => {
+        vscode.commands.registerCommand('cody.command.generate-tests', async () => {
             await executeRecipeInSidebar('custom-prompt', true, '/test')
             telemetryService.log('CodyVSCodeExtension:recipe:generate-unit-test:executed')
         }),
-        vscode.commands.registerCommand('cody.command.generate-docstring', async () => {
+        vscode.commands.registerCommand('cody.command.document-code', async () => {
             await executeRecipeInSidebar('custom-prompt', true, '/doc')
             telemetryService.log('CodyVSCodeExtension:recipe:generate-docstring:executed')
         }),

@@ -362,6 +362,7 @@ export class InlineController implements VsCodeInlineController {
             selectedText: activeDocument.getText(selectionRange) || ' ',
             precedingText,
             followingText,
+            selectionRange,
         }
         this.selectionRange = selectionRange
         this.selection = selection

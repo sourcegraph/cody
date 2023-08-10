@@ -58,7 +58,7 @@ export class CustomPrompt implements Recipe {
         const promptText = humanChatInput.trim() || (await context.editor.controllers?.command?.get()) || null
         if (!promptText) {
             const errorMessage = 'Please enter a valid prompt for the custom command.'
-            return interactionWithAssistantError(errorMessage)
+            return interactionWithAssistantError(errorMessage, promptText || '')
         }
         const promptName = (await context.editor.controllers?.command?.get('current')) || promptText
         const slashCommand = (await context.editor.controllers?.command?.get('slash')) || promptName
@@ -87,7 +87,7 @@ export class CustomPrompt implements Recipe {
         if (selection && isOnlySelectionRequired(isContextNeeded, selection.selectedText)) {
             const truncatedTextWithCode = promptTextWithCodeSelection(codyPromptText, selection)
             if (truncatedTextWithCode) {
-                return makeInteraction(truncatedTextWithCode)
+                return makeInteraction(truncatedTextWithCode, displayText)
             }
         }
 
