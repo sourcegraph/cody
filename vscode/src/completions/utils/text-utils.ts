@@ -97,6 +97,6 @@ export function getPrevNonEmptyLine(prefix: string): string {
         prefix
             .slice(0, prevNewline)
             .split('\n')
-            .find(line => line.trim().length > 0) ?? ''
+            .findLast(line => line.trim().length > 0) ?? ''
     )
 }
