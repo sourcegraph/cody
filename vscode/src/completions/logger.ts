@@ -36,10 +36,6 @@ interface CompletionEvent {
     suggestionLoggedAt: number | null
     // The timestamp of when a completion was accepted and logged to our backend
     acceptedAt: number | null
-    // When set, the completion will always be marked as `read`. This helps us
-    // to avoid not counting a suggested event in case where the user accepts
-    // the completion below the default timeout
-    forceRead: boolean
 }
 
 const READ_TIMEOUT = 750
@@ -71,7 +67,6 @@ export function create(inputParams: Omit<CompletionEvent['params'], 'multilineMo
         suggestedAt: null,
         suggestionLoggedAt: null,
         acceptedAt: null,
-        forceRead: false,
     })
 
     return id
@@ -127,7 +122,6 @@ export function accept(id: string, lines: number): void {
         return
     }
 
-    completionEvent.forceRead = true
     completionEvent.acceptedAt = performance.now()
 
     logSuggestionEvents()
@@ -160,7 +154,7 @@ function logSuggestionEvents(): void {
     const now = performance.now()
     // eslint-disable-next-line ban/ban
     displayedCompletions.forEach(completionEvent => {
-        const { loadedAt, suggestedAt, suggestionLoggedAt, startedAt, params, forceRead, startLoggedAt, acceptedAt } =
+        const { loadedAt, suggestedAt, suggestionLoggedAt, startedAt, params, startLoggedAt, acceptedAt } =
             completionEvent
 
         // Only log suggestion events that were already shown to the user and
@@ -173,13 +167,14 @@ function logSuggestionEvents(): void {
         const latency = loadedAt - startedAt
         const displayDuration = now - suggestedAt
         const read = displayDuration >= READ_TIMEOUT
+        const accepted = acceptedAt !== null
 
         logCompletionEvent('suggested', {
             ...params,
             latency,
             displayDuration,
-            read: forceRead || read,
-            accepted: acceptedAt !== null,
+            read: accepted || read,
+            accepted,
             otherCompletionProviderEnabled: otherCompletionProviderEnabled(),
         })
     })
