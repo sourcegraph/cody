@@ -123,7 +123,7 @@ export function accept(id: string, lines: number): void {
     }
 
     // Some additional logging to ensure the invariant is correct. I expect these branches to never
-    // hit but if they do, they might explain undercount issues
+    // hit but if they do, they might help debug analytics issues
     if (!completionEvent.loadedAt) {
         logCompletionEvent('unexpectedNotLoaded')
     }
