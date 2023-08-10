@@ -111,14 +111,14 @@ function getExtension(filePath: string): string {
 }
 
 const SELECTED_CODE_CONTEXT_TEMPLATE = `"Here is my selected code from a {languageName} file \`{filePath}\`:
-\`\`\`{extension}
-{text}
-\`\`\``
+<selected>
+{code}
+</selected>`
 
 const SELECTED_CODE_CONTEXT_TEMPLATE_WITH_REPO = `"Here is my selected code from a {languageName} file \`{filePath}\` in repository \`{repoName}\`:
-\`\`\`{extension}
-{text}
-\`\`\``
+<selected>
+{code}
+</selected>`
 
 export function populateCurrentSelectedCodeContextTemplate(code: string, filePath: string, repoName?: string): string {
     const extension = getFileExtension(filePath)
@@ -128,8 +128,7 @@ export function populateCurrentSelectedCodeContextTemplate(code: string, filePat
             ? SELECTED_CODE_CONTEXT_TEMPLATE_WITH_REPO.replace('{repoName}', repoName)
             : SELECTED_CODE_CONTEXT_TEMPLATE
     )
-        .replace('{text', code)
-        .replace('{extension}', extension)
+        .replace('{code}', code)
         .replace(/{filePath}/g, filePath)
         .replace('{languageName}', languageName)
 }

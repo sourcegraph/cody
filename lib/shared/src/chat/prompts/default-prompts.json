@@ -26,10 +26,9 @@
     },
     "Code Smell": {
       "slashCommand": "smell",
-      "prompt": "Please review the code I provide and identify any potential issues, such as code smells, bugs, or unhandled errors. List up to 5 notable issues you find, along with a brief description and suggested improvement for each one. After listing any issues, provide a summary statement on whether the code overall contains concerning smells or errors that need to be addressed, or if it looks clean and well-structured. The summary should clearly indicate if the code passes a smell-test based on your review, or if refactoring is advised. If no major issues are found, reply 'There are no errors.'",
+      "prompt": "Please review and analyze the {languageName} code I have selected and identify potential areas for improvement related to code smells, readability, maintainability, performance, security, etc. Do not list issues already addressed in the given code. Focus on providing up to 5 constructive suggestions that could make the code more robust, efficient, or align with best practices. For each suggestion, provide a brief explanation of the potential benefits. After listing any recommendations, summarize if you found notable opportunities to enhance the code quality overall or if the code generally follows sound design principles. If no issues found, reply 'There are no errors.'",
       "context": {
-        "currentFile": true,
-        "strict": true
+        "selection": true
       }
     }
   }

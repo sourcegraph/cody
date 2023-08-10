@@ -11,7 +11,12 @@ import {
 import { truncateText, truncateTextStart } from '../../prompt/truncation'
 import { CodyPromptContext, defaultCodyPromptContext } from '../prompts'
 import { prompts, rules } from '../prompts/templates'
-import { interactionWithAssistantError } from '../prompts/utils'
+import {
+    interactionWithAssistantError,
+    isOnlySelectionRequired,
+    makeInteraction,
+    promptTextWithCodeSelection,
+} from '../prompts/utils'
 import {
     getCurrentDirContext,
     getEditorDirContext,
@@ -65,40 +70,40 @@ export class CustomPrompt implements Recipe {
                 : context.editor.getActiveTextEditorSelectionOrVisibleContent()
 
         const selection = selectionContent || context.editor.controllers?.inline?.selection
-        if ((isContextNeeded?.selection === true || isContextNeeded?.currentFile) && !selection?.selectedText) {
+        if (isContextNeeded?.selection === true && !selection?.selectedText) {
             const errorMessage = `__${slashCommand}__ requires highlighted code. Please select some code in your editor and try again.`
             return interactionWithAssistantError(errorMessage, slashCommand)
         }
-
-        // Get output from the command if any
-        const commandOutput = await context.editor.controllers?.command?.get('output')
-
-        // Prompt text to share with Cody but not display to human
-        const promptRuleText = isContextNeeded?.strict ? rules.hallucination : ''
-        const codyPromptText = prompts.instruction.replace('{humanInput}', promptText) + promptRuleText
 
         // Add selection file name as display when available
         const displayText = selection?.fileName
             ? getHumanDisplayTextWithFileName(slashCommand, selection, context.editor.getWorkspaceRootUri())
             : slashCommand
+        // Prompt text to share with Cody but not display to human
+        const promptRuleText = isContextNeeded?.strict ? rules.hallucination : ''
+        const codyPromptText = prompts.instruction.replace('{humanInput}', promptText) + promptRuleText
+
+        // Attach code selection to prompt text if only selection is needed as context
+        if (selection && isOnlySelectionRequired(isContextNeeded, selection.selectedText)) {
+            const truncatedTextWithCode = promptTextWithCodeSelection(codyPromptText, selection)
+            if (truncatedTextWithCode) {
+                return makeInteraction(truncatedTextWithCode)
+            }
+        }
+
+        // Get output from the command if any
+        const commandOutput = await context.editor.controllers?.command?.get('output')
 
         const truncatedText = truncateText(codyPromptText, MAX_HUMAN_INPUT_TOKENS)
-
-        return Promise.resolve(
-            new Interaction(
-                { speaker: 'human', text: truncatedText, displayText },
-                { speaker: 'assistant' },
-                this.getContextMessages(
-                    truncatedText,
-                    context.editor,
-                    context.codebaseContext,
-                    isContextNeeded,
-                    selection,
-                    commandOutput
-                ),
-                []
-            )
+        const contextMessages = this.getContextMessages(
+            truncatedText,
+            context.editor,
+            context.codebaseContext,
+            isContextNeeded,
+            selection,
+            commandOutput
         )
+        return makeInteraction(truncatedText, displayText, contextMessages)
     }
 
     private async getContextMessages(

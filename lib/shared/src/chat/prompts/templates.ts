@@ -1,10 +1,3 @@
-const selection_prompt = `
-Here is the selected {languageName} code from {fileName}:
-\`\`\`
-{selectedText}
-\`\`\`
-`
-
 const instruction_prompt = `Please follow these rules when answering my question:
 - Your answers and suggestions should based on the shared context only.
 - Do not suggest anything that would break the working code.
@@ -22,7 +15,6 @@ export const answers = {
 }
 
 export const prompts = {
-    selection: selection_prompt,
     instruction: instruction_prompt,
 }
 
