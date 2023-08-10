@@ -48,24 +48,30 @@ export const AuthMenu = async (type: AuthMenuType, historyItems: string[]): Prom
     return option
 }
 
-// step 1 is to get the endpoint, step 2 is to get the token
-export async function LoginStepInputBox(title: string, step: number, needToken: boolean): Promise<LoginInput | null> {
-    // Get endpoint
-    const options = LoginStepOptions[step - 1]
-    options.title = title
-    const endpoint = await vscode.window.showInputBox(options)
-    if (!needToken || !endpoint) {
-        return { endpoint, token: null }
-    }
-    return TokenInputBox(endpoint)
+/**
+ * Show a VS Code input box to ask the user to enter a Sourcegraph instance URL.
+ */
+export async function showInstanceURLInputBox(title: string): Promise<string | undefined> {
+    return vscode.window.showInputBox({
+        title,
+        prompt: 'Enter the URL of the Sourcegraph instance',
+        placeHolder: 'https://sourcegraph.example.com',
+        password: false,
+        ignoreFocusOut: true,
+    })
 }
 
-export async function TokenInputBox(endpoint: string): Promise<LoginInput | null> {
-    // Get endpoint
-    const options = LoginStepOptions[1]
-    options.title = endpoint
-    const token = await vscode.window.showInputBox(LoginStepOptions[1])
-    return { endpoint, token }
+/**
+ * Show a VS Code input box to ask the user to enter an access token.
+ */
+export async function showAccessTokenInputBox(endpoint: string): Promise<string | undefined> {
+    return vscode.window.showInputBox({
+        title: endpoint,
+        prompt: 'Paste your access token. To create an access token, go to "Settings" and then "Access tokens" on the Sourcegraph instance.',
+        placeHolder: 'Access Token',
+        password: true,
+        ignoreFocusOut: true,
+    })
 }
 
 export const AuthMenuOptions = {
@@ -106,26 +112,5 @@ export const LoginMenuOptionItems = [
         id: 'token',
         label: 'Sign in with URL and Access Token',
         totalSteps: 2,
-    },
-]
-
-const LoginStepOptions = [
-    {
-        prompt: 'Enter the URL of the Sourcegraph instance',
-        placeholder: 'https://sourcegraph.mycompany.com/',
-        password: false,
-        ignoreFocusOut: true,
-        totalSteps: 2,
-        title: '',
-        step: 1,
-    },
-    {
-        prompt: 'Paste your access token. To create an access token, go to "Settings" and then "Access tokens" on the Sourcegraph instance.',
-        placeholder: 'Access Token',
-        password: true,
-        ignoreFocusOut: true,
-        totalSteps: 2,
-        title: 'Sign in with URL and Access Token',
-        step: 2,
     },
 ]

@@ -16,11 +16,13 @@ Starting from `0.2.0`, Cody is using `major.EVEN_NUMBER.patch` for release versi
 
 - Update file link color to match buttons. [pull/600](https://github.com/sourcegraph/cody/pull/600)
 - Handle `socket hung up` errors that are not caused by the `stop generating` button. [pull/598](https://github.com/sourcegraph/cody/pull/598)
+- Fix "Reload Window" appearing in all VS Code views. [pull/603](https://github.com/sourcegraph/cody/pull/603)
 
 ### Changed
 
 - Update shortcut for Cody Commands Menu to `alt` + `c` due to conflict with exisiting keybind for `fixup`. [pull/602](https://github.com/sourcegraph/cody/pull/602)
 - `Explain Code` command now includes visible content of the current file when no code is selected. [pull/602](https://github.com/sourcegraph/cody/pull/602)
+- Removed beta labels from autocorrect and inine chat features. [pull/605](https://github.com/sourcegraph/cody/pull/605)
 
 ## [0.6.5]
 
