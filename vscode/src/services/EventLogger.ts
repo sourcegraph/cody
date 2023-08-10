@@ -1,3 +1,5 @@
+import * as vscode from 'vscode'
+
 import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
 import { TelemetryEventProperties } from '@sourcegraph/cody-shared/src/telemetry'
 import { EventLogger, ExtensionDetails } from '@sourcegraph/cody-shared/src/telemetry/EventLogger'
@@ -10,7 +12,14 @@ import { LocalStorage } from './LocalStorageProvider'
 export let eventLogger: EventLogger | null = null
 let globalAnonymousUserID: string
 
-const extensionDetails: ExtensionDetails = { ide: 'VSCode', ideExtensionType: 'Cody', version: packageVersion }
+const extensionDetails: ExtensionDetails = {
+    ide: 'VSCode',
+    ideExtensionType: 'Cody',
+    // Prefer the runtime package json over the version that is inlined during build times. This
+    // way we will be able to include pre-release builds that are published with a different version
+    // identifier.
+    version: vscode.extensions.getExtension('sourcegraph.cody-ai')?.packageJSON?.version ?? packageVersion,
+}
 
 export async function createOrUpdateEventLogger(
     config: ConfigurationWithAccessToken,
