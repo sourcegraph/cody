@@ -192,6 +192,7 @@ export const CustomCommandConfigMenuItems = [
     {
         kind: 0,
         label: 'Open User Settings (JSON)',
+        detail: 'Stored on your machine and usable across all your workspaces',
         id: 'open',
         type: 'user',
         description: '~/.vscode/cody.json',
@@ -200,6 +201,7 @@ export const CustomCommandConfigMenuItems = [
     {
         kind: 0,
         label: 'Open Workspace Settings (JSON)',
+        detail: 'Project-specific and shared with anyone using this workspace',
         id: 'open',
         type: 'workspace',
         description: '.vscode/cody.json',

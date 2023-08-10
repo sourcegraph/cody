@@ -339,18 +339,18 @@ const register = async (
             }
             await sidebarChatProvider.executeCustomCommand(title)
         }),
-        vscode.commands.registerCommand('cody.command.explain-code', () =>
-            executeRecipeInSidebar('custom-prompt', true, '/explain')
-        ),
-        vscode.commands.registerCommand('cody.recipe.explain-code', () =>
-            executeRecipeInSidebar('explain-code-detailed')
-        ),
-        vscode.commands.registerCommand('cody.command.generate-unit-test', () =>
-            executeRecipeInSidebar('custom-prompt', true, '/tests')
-        ),
-        vscode.commands.registerCommand('cody.command.generate-docstring', () =>
-            executeRecipeInSidebar('custom-prompt', true, '/docstring')
-        ),
+        vscode.commands.registerCommand('cody.command.explain-code', async () => {
+            await executeRecipeInSidebar('custom-prompt', true, '/explain')
+            telemetryService.log('CodyVSCodeExtension:recipe:explain-code-high-level:executed')
+        }),
+        vscode.commands.registerCommand('cody.command.generate-unit-test', async () => {
+            await executeRecipeInSidebar('custom-prompt', true, '/test')
+            telemetryService.log('CodyVSCodeExtension:recipe:generate-unit-test:executed')
+        }),
+        vscode.commands.registerCommand('cody.command.generate-docstring', async () => {
+            await executeRecipeInSidebar('custom-prompt', true, '/doc')
+            telemetryService.log('CodyVSCodeExtension:recipe:generate-docstring:executed')
+        }),
         vscode.commands.registerCommand('cody.command.inline-touch', () =>
             executeRecipeInSidebar('inline-touch', false)
         ),
