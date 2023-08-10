@@ -36,23 +36,6 @@ export function getConfiguration(config: ConfigGetter): Configuration {
         debugRegex = new RegExp('.*')
     }
 
-    let autocompleteAdvancedProvider = config.get<
-        'anthropic' | 'unstable-codegen' | 'unstable-huggingface' | 'unstable-fireworks' | 'unstable-azure-openai'
-    >(CONFIG_KEY.autocompleteAdvancedProvider, 'anthropic')
-
-    if (
-        autocompleteAdvancedProvider !== 'anthropic' &&
-        autocompleteAdvancedProvider !== 'unstable-codegen' &&
-        autocompleteAdvancedProvider !== 'unstable-huggingface' &&
-        autocompleteAdvancedProvider !== 'unstable-fireworks' &&
-        autocompleteAdvancedProvider !== 'unstable-azure-openai'
-    ) {
-        autocompleteAdvancedProvider = 'anthropic'
-        void vscode.window.showInformationMessage(
-            `Unrecognized ${CONFIG_KEY.autocompleteAdvancedProvider}, defaulting to 'anthropic'`
-        )
-    }
-
     return {
         // NOTE: serverEndpoint is now stored in Local Storage instead but we will still keep supporting the one in confg
         // to use as fallback for users who do not have access to local storage
@@ -71,7 +54,7 @@ export function getConfiguration(config: ConfigGetter): Configuration {
         experimentalNonStop: config.get(CONFIG_KEY.experimentalNonStop, isTesting),
         experimentalCommandLenses: config.get(CONFIG_KEY.experimentalCommandLenses, false),
         experimentalEditorTitleCommandIcon: config.get(CONFIG_KEY.experimentalEditorTitleCommandIcon, false),
-        autocompleteAdvancedProvider,
+        autocompleteAdvancedProvider: config.get(CONFIG_KEY.autocompleteAdvancedProvider, 'anthropic'),
         autocompleteAdvancedServerEndpoint: config.get<string | null>(
             CONFIG_KEY.autocompleteAdvancedServerEndpoint,
             null
