@@ -52,7 +52,7 @@ export function logCompletionEvent(name: string, params?: TelemetryEventProperti
     logEvent(`CodyVSCodeExtension:completion:${name}`, params)
 }
 
-export function create(inputParams: Omit<CompletionEvent['params'], 'multilineMode' | 'type'>): string {
+export function create(inputParams: Omit<CompletionEvent['params'], 'multilineMode' | 'type' | 'id'>): string {
     const id = createId()
     const params: CompletionEvent['params'] = {
         ...inputParams,
