@@ -208,25 +208,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
             // Append any eventual inline completion context item to the prefix
             if (context.selectedCompletionInfo) {
                 const { range, text } = context.selectedCompletionInfo
-                console.log({ range, text })
-
-                console.log(
-                    'WTF TIMMY',
-                    position.character,
-                    range.start.character,
-                    insertText,
-                    document.getText(range),
-                    position.character - range.start.character,
-                    document.getText(range).slice(position.character - range.start.character),
-                    text.slice(position.character - range.start.character) + insertText
-                )
                 insertText = text.slice(position.character - range.start.character) + insertText
-
-                // return new vscode.InlineCompletionItem(document.getText(range) + insertText, range, {
-                //     title: 'Completion accepted',
-                //     command: 'cody.autocomplete.inline.accepted',
-                //     arguments: [{ codyLogId: logId, codyLines: insertText.split(/\r\n|\r|\n/).length }],
-                // })
             }
 
             // Return the completion from the start of the current line (instead of starting at the
