@@ -10,6 +10,7 @@ Starting from `0.2.0`, Cody is using `major.EVEN_NUMBER.patch` for release versi
 
 - Chat Commands: Add tab-to-complete behavior. [pull/606](https://github.com/sourcegraph/cody/pull/606)
 - Option to toggle `cody.experimental.editorTitleCommandIcon` setting through status bar. [pull/611](https://github.com/sourcegraph/cody/pull/611)
+- New walkthrough for Cody Commands. [pull/](https://github.com/sourcegraph/cody/pull/)
 
 ### Fixed
 
@@ -20,6 +21,7 @@ Starting from `0.2.0`, Cody is using `major.EVEN_NUMBER.patch` for release versi
 ### Changed
 
 - Removed beta labels from autocorrect and inine chat features. [pull/605](https://github.com/sourcegraph/cody/pull/605)
+- Update shortcut for Cody Commands Menu to `alt` + `c` due to conflict with existing keybinding for `fixup`. [pull/](https://github.com/sourcegraph/cody/pull/)
 
 ## [0.6.5]
 

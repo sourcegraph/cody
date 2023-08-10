@@ -31,6 +31,7 @@ export class CustomCommandsBuilderMenu {
             ...NewCustomCommandConfigMenuOptions,
             prompt: 'Enter an unique name for the new command.',
             placeHolder: 'e,g. Vulnerability Scanner',
+            ignoreFocusOut: true,
             validateInput: (input: string) => {
                 if (!input) {
                     return 'Command name cannot be empty. Please enter a unique name.'
@@ -54,6 +55,7 @@ export class CustomCommandsBuilderMenu {
             ...NewCustomCommandConfigMenuOptions,
             prompt: 'Enter a prompt—a set of instructions/questions for Cody to follow and answer.',
             placeHolder: "e.g. 'Create five different test cases for the selected code'",
+            ignoreFocusOut: true,
             validateInput: (input: string) => {
                 if (!input || input.split(' ').length < minPromptLength) {
                     return `Please enter a prompt with a minimum of ${minPromptLength} words`
