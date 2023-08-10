@@ -428,7 +428,7 @@
       {
         "command": "cody.action.commands.menu",
         "category": "Cody",
-        "title": "Commands Menu",
+        "title": "Commands",
         "when": "cody.activated",
         "icon": "$(cody-logo)"
       },

@@ -13,6 +13,7 @@ import {
     InlineCompletionsResultSource,
     LastInlineCompletionCandidate,
 } from './getInlineCompletions'
+import * as CompletionsLogger from './logger'
 import { ProviderConfig } from './providers/provider'
 import { RequestManager } from './request-manager'
 import { ProvideInlineCompletionItemsTracer, ProvideInlineCompletionsItemTraceData } from './tracer'
@@ -178,6 +179,14 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
         return {
             items: result ? this.processInlineCompletionsForVSCode(result.logId, document, position, result.items) : [],
         }
+    }
+
+    public handleDidAcceptCompletionItem(logId: string, lines: number): void {
+        // When a completion is accepted, the lastCandidate should be cleared. This makes sure the
+        // log id is never reused if the completion is accepted.
+        this.lastCandidate = undefined
+
+        CompletionsLogger.accept(logId, lines)
     }
 
     /**

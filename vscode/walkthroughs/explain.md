@@ -8,3 +8,5 @@
 </video>
 
 Cody can explain code in an easy-to-understand manner. Highlight any code block and execute the `Explain Code` command from your right-click menu, and Cody will explain it to you in conversational language.
+
+You can also execute a command from the [Cody: Commands Menu (Shortcut: ⌥C)](command:cody.action.commands.menu).

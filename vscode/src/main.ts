@@ -12,7 +12,6 @@ import { InlineChatViewManager } from './chat/InlineChatViewProvider'
 import { MessageProviderOptions } from './chat/MessageProvider'
 import { CODY_FEEDBACK_URL } from './chat/protocol'
 import { VSCodeDocumentHistory } from './completions/context/history'
-import * as CompletionsLogger from './completions/logger'
 import { createProviderConfig } from './completions/providers/createProvider'
 import { registerAutocompleteTraceView } from './completions/tracer/traceView'
 import { InlineCompletionItemProvider } from './completions/vscodeInlineCompletionItemProvider'
@@ -341,18 +340,22 @@ const register = async (
             await sidebarChatProvider.executeCustomCommand(title)
             telemetryService.log('CodyVSCodeExtension:command:custom:executed')
         }),
-        vscode.commands.registerCommand('cody.command.explain-code', () =>
-            executeRecipeInSidebar('custom-prompt', true, '/explain')
-        ),
-        vscode.commands.registerCommand('cody.command.generate-tests', () =>
-            executeRecipeInSidebar('custom-prompt', true, '/test')
-        ),
-        vscode.commands.registerCommand('cody.command.document-code', () =>
-            executeRecipeInSidebar('custom-prompt', true, '/doc')
-        ),
-        vscode.commands.registerCommand('cody.command.smell-code', () =>
-            executeRecipeInSidebar('custom-prompt', true, '/smell')
-        ),
+        vscode.commands.registerCommand('cody.command.explain-code', async () => {
+            await executeRecipeInSidebar('custom-prompt', true, '/explain')
+            telemetryService.log('CodyVSCodeExtension:recipe:explain-code-high-level:executed')
+        }),
+        vscode.commands.registerCommand('cody.command.generate-unit-test', async () => {
+            await executeRecipeInSidebar('custom-prompt', true, '/test')
+            telemetryService.log('CodyVSCodeExtension:recipe:generate-unit-test:executed')
+        }),
+        vscode.commands.registerCommand('cody.command.generate-docstring', async () => {
+            await executeRecipeInSidebar('custom-prompt', true, '/doc')
+            telemetryService.log('CodyVSCodeExtension:recipe:generate-docstring:executed')
+        }),
+        vscode.commands.registerCommand('cody.command.smell-code', async () => {
+            await executeRecipeInSidebar('custom-prompt', true, '/smell')
+            telemetryService.log('CodyVSCodeExtension:recipe:find-code-smells:executed')
+        }),
         vscode.commands.registerCommand('cody.command.inline-touch', () =>
             executeRecipeInSidebar('inline-touch', false)
         ),
@@ -499,7 +502,7 @@ function createCompletionsProvider(
 
     disposables.push(
         vscode.commands.registerCommand('cody.autocomplete.inline.accepted', ({ codyLogId, codyLines }) => {
-            CompletionsLogger.accept(codyLogId, codyLines)
+            completionsProvider.handleDidAcceptCompletionItem(codyLogId, codyLines)
         }),
         vscode.languages.registerInlineCompletionItemProvider('*', completionsProvider),
         registerAutocompleteTraceView(completionsProvider)
