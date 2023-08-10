@@ -1,33 +1,16 @@
+import path from 'path'
+
 import { Interaction } from '../transcript/interaction'
 
 /**
- * Converts the provided context string to a JSON string by escaping special
- * characters.
- *
- * @param context - The context string to convert to JSON.
- * @returns The JSON string representing the escaped context.
- */
-export function toJSON(context: string): string {
-    const escaped = context.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\//g, '\\/').replace('/\n//', '\n')
-    return JSON.stringify(escaped)
-}
-
-/**
  * Gets the name of the parent directory from a directory path.
- *
- * @param dirPath - The full directory path
- * @returns The name of the parent directory, or empty string if none.
  */
-export const getParentDirName = (dirPath: string): string => {
-    const pathParts = dirPath.split('/')
-    pathParts.pop()
-    return pathParts.pop() || ''
-}
+export const getParentDirName = (dirPath: string): string => path.basename(path.dirname(dirPath))
 
 /**
  * Gets the current directory path from the file path param
  */
-export const getCurrentDirPath = (filePath: string): string => filePath?.replace(/\/[^/]+$/, '')
+export const getCurrentDirPath = (filePath: string): string => path.dirname(filePath)
 
 /**
  * Returns a Promise resolving to an Interaction object representing an error response from the assistant.

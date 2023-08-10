@@ -14,7 +14,7 @@ import { truncateText } from '../../prompt/truncation'
 import { getFileExtension } from '../recipes/helpers'
 
 import { answers, displayFileName } from './templates'
-import { getCurrentDirPath, getParentDirName, toJSON } from './utils'
+import { getCurrentDirPath, getParentDirName } from './utils'
 
 /**
  * Gets files from a directory, optionally filtering for test files only.
@@ -228,7 +228,7 @@ export async function populateVscodeDirContextMessage(
             const decoded = new TextDecoder('utf-8').decode(fileContent)
             const truncatedContent = truncateText(decoded, MAX_CURRENT_FILE_TOKENS)
             const contextMessage = getContextMessageWithResponse(
-                populateCurrentEditorContextTemplate(toJSON(truncatedContent), fileName),
+                populateCurrentEditorContextTemplate(truncatedContent, fileName),
                 { fileName }
             )
             contextMessages.push(...contextMessage)
@@ -290,10 +290,9 @@ export async function getEditorOpenTabsContext(skipDirectory?: string): Promise<
         const truncatedText = truncateText(fileText, MAX_CURRENT_FILE_TOKENS)
 
         // Create context message
-        const message = getContextMessageWithResponse(
-            populateCurrentEditorContextTemplate(toJSON(truncatedText), fileName),
-            { fileName }
-        )
+        const message = getContextMessageWithResponse(populateCurrentEditorContextTemplate(truncatedText, fileName), {
+            fileName,
+        })
 
         contextMessages.push(...message)
     }

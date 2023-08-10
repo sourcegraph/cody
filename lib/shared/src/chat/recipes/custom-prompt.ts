@@ -11,7 +11,7 @@ import {
 import { truncateText, truncateTextStart } from '../../prompt/truncation'
 import { CodyPromptContext, defaultCodyPromptContext } from '../prompts'
 import { prompts, rules } from '../prompts/templates'
-import { getInteractionWithAssistantError } from '../prompts/utils'
+import { interactionWithAssistantError } from '../prompts/utils'
 import {
     getCurrentDirContext,
     getEditorDirContext,
@@ -53,7 +53,7 @@ export class CustomPrompt implements Recipe {
         const promptText = humanChatInput.trim() || (await context.editor.controllers?.command?.get()) || null
         if (!promptText) {
             const errorMessage = 'Please enter a valid prompt for the custom command.'
-            return getInteractionWithAssistantError(errorMessage)
+            return interactionWithAssistantError(errorMessage)
         }
         const promptName = (await context.editor.controllers?.command?.get('current')) || promptText
         const slashCommand = (await context.editor.controllers?.command?.get('slash')) || promptName
@@ -67,7 +67,7 @@ export class CustomPrompt implements Recipe {
         const selection = selectionContent || context.editor.controllers?.inline?.selection
         if ((isContextNeeded?.selection === true || isContextNeeded?.currentFile) && !selection?.selectedText) {
             const errorMessage = `__${slashCommand}__ requires highlighted code. Please select some code in your editor and try again.`
-            return getInteractionWithAssistantError(errorMessage, slashCommand)
+            return interactionWithAssistantError(errorMessage, slashCommand)
         }
 
         // Get output from the command if any
