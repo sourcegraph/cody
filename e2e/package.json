@@ -2,7 +2,7 @@
   "private": true,
   "name": "@sourcegraph/cody-e2e",
   "version": "0.0.1",
-  "description": "TODO",
+  "description": "Cody end-to-end quality evaluation suite",
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
