@@ -65,7 +65,7 @@ export class CustomPrompt implements Recipe {
 
         // Check if selection is required. If selection is not defined, accept visible content
         const selectionContent =
-            isContextNeeded?.selection === true
+            isContextNeeded?.selection
                 ? context.editor.getActiveTextEditorSelection()
                 : context.editor.getActiveTextEditorSelectionOrVisibleContent()
 
