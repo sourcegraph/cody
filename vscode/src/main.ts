@@ -12,7 +12,6 @@ import { InlineChatViewManager } from './chat/InlineChatViewProvider'
 import { MessageProviderOptions } from './chat/MessageProvider'
 import { CODY_FEEDBACK_URL } from './chat/protocol'
 import { VSCodeDocumentHistory } from './completions/context/history'
-import * as CompletionsLogger from './completions/logger'
 import { createProviderConfig } from './completions/providers/createProvider'
 import { registerAutocompleteTraceView } from './completions/tracer/traceView'
 import { InlineCompletionItemProvider } from './completions/vscodeInlineCompletionItemProvider'
@@ -498,7 +497,7 @@ function createCompletionsProvider(
 
     disposables.push(
         vscode.commands.registerCommand('cody.autocomplete.inline.accepted', ({ codyLogId, codyLines }) => {
-            CompletionsLogger.accept(codyLogId, codyLines)
+            completionsProvider.handleDidAcceptCompletionItem(codyLogId, codyLines)
         }),
         vscode.languages.registerInlineCompletionItemProvider('*', completionsProvider),
         registerAutocompleteTraceView(completionsProvider)

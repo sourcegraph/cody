@@ -3,7 +3,6 @@ import * as vscode from 'vscode'
 
 import { TelemetryEventProperties } from '@sourcegraph/cody-shared/src/telemetry'
 
-import { debug } from '../log'
 import { logEvent } from '../services/EventLogger'
 
 import { ContextSummary } from './context/context'
@@ -17,6 +16,7 @@ interface CompletionEvent {
         languageId: string
         contextSummary?: ContextSummary
         source?: string
+        id: string
     }
     // The timestamp when the completion request started
     startedAt: number
@@ -53,14 +53,15 @@ export function logCompletionEvent(name: string, params?: TelemetryEventProperti
 }
 
 export function create(inputParams: Omit<CompletionEvent['params'], 'multilineMode' | 'type'>): string {
+    const id = createId()
     const params: CompletionEvent['params'] = {
         ...inputParams,
         type: 'inline',
         // Keep the legacy name for backward compatibility in analytics
         multilineMode: inputParams.multiline ? 'block' : null,
+        id,
     }
 
-    const id = createId()
     displayedCompletions.set(id, {
         params,
         startedAt: performance.now(),
@@ -100,8 +101,6 @@ export function loaded(id: string): void {
 
     if (!event.loadedAt) {
         event.loadedAt = performance.now()
-        // Emit a debug event to print timing information to the console eagerly
-        debug('CodyCompletionProvider:inline:timing', `${Math.round(event.loadedAt - event.startedAt)}ms`, id)
     }
 }
 
@@ -161,7 +160,7 @@ function logSuggestionEvents(): void {
     const now = performance.now()
     // eslint-disable-next-line ban/ban
     displayedCompletions.forEach(completionEvent => {
-        const { loadedAt, suggestedAt, suggestionLoggedAt, startedAt, params, forceRead, startLoggedAt } =
+        const { loadedAt, suggestedAt, suggestionLoggedAt, startedAt, params, forceRead, startLoggedAt, acceptedAt } =
             completionEvent
 
         // Only log suggestion events that were already shown to the user and
@@ -180,6 +179,7 @@ function logSuggestionEvents(): void {
             latency,
             displayDuration,
             read: forceRead || read,
+            accepted: acceptedAt !== null,
             otherCompletionProviderEnabled: otherCompletionProviderEnabled(),
         })
     })

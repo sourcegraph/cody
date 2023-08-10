@@ -1,8 +1,6 @@
 import { LRUCache } from 'lru-cache'
 import * as vscode from 'vscode'
 
-import { debug } from '../log'
-
 import { DocumentContext } from './document'
 import { LastInlineCompletionCandidate } from './getInlineCompletions'
 import { logCompletionEvent } from './logger'
@@ -52,10 +50,8 @@ export class RequestManager {
     ): Promise<RequestManagerResult> {
         const cachedCompletions = this.cache.get(params)
         if (cachedCompletions) {
-            debug('RequestManager', 'cache hit', { verbose: { params, cachedCompletions } })
             return { completions: cachedCompletions, cacheHit: 'hit' }
         }
-        debug('RequestManager', 'cache miss', { verbose: { params } })
 
         const request = new InflightRequest(params)
         this.inflightRequests.add(request)
@@ -136,9 +132,6 @@ export class RequestManager {
                 const synthesizedItems = synthesizedCandidate.items
 
                 logCompletionEvent('synthesizedFromParallelRequest')
-                debug('RequestManager', 'cache hit after request started', {
-                    verbose: { params: request.params, cachedCompletions: synthesizedItems },
-                })
                 request.resolve({ completions: synthesizedItems, cacheHit: 'hit-after-request-started' })
                 this.inflightRequests.delete(request)
             }
