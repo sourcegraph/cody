@@ -3,7 +3,6 @@ import * as vscode from 'vscode'
 
 import { TelemetryEventProperties } from '@sourcegraph/cody-shared/src/telemetry'
 
-import { debug } from '../log'
 import { logEvent } from '../services/EventLogger'
 
 import { ContextSummary } from './context/context'
@@ -17,6 +16,7 @@ interface CompletionEvent {
         languageId: string
         contextSummary?: ContextSummary
         source?: string
+        id: string
     }
     // The timestamp when the completion request started
     startedAt: number
@@ -36,10 +36,6 @@ interface CompletionEvent {
     suggestionLoggedAt: number | null
     // The timestamp of when a completion was accepted and logged to our backend
     acceptedAt: number | null
-    // When set, the completion will always be marked as `read`. This helps us
-    // to avoid not counting a suggested event in case where the user accepts
-    // the completion below the default timeout
-    forceRead: boolean
 }
 
 const READ_TIMEOUT = 750
@@ -52,15 +48,16 @@ export function logCompletionEvent(name: string, params?: TelemetryEventProperti
     logEvent(`CodyVSCodeExtension:completion:${name}`, params)
 }
 
-export function create(inputParams: Omit<CompletionEvent['params'], 'multilineMode' | 'type'>): string {
+export function create(inputParams: Omit<CompletionEvent['params'], 'multilineMode' | 'type' | 'id'>): string {
+    const id = createId()
     const params: CompletionEvent['params'] = {
         ...inputParams,
         type: 'inline',
-        // Keep the legacy name for backward compatibility in analytics
+        // @deprecated: We only keep the legacy name for backward compatibility in analytics
         multilineMode: inputParams.multiline ? 'block' : null,
+        id,
     }
 
-    const id = createId()
     displayedCompletions.set(id, {
         params,
         startedAt: performance.now(),
@@ -70,7 +67,6 @@ export function create(inputParams: Omit<CompletionEvent['params'], 'multilineMo
         suggestedAt: null,
         suggestionLoggedAt: null,
         acceptedAt: null,
-        forceRead: false,
     })
 
     return id
@@ -100,14 +96,12 @@ export function loaded(id: string): void {
 
     if (!event.loadedAt) {
         event.loadedAt = performance.now()
-        // Emit a debug event to print timing information to the console eagerly
-        debug('CodyCompletionProvider:inline:timing', `${Math.round(event.loadedAt - event.startedAt)}ms`, id)
     }
 }
 
-// Suggested completions will not be logged immediately. Instead, we log them when
-// we either hide them again (they are NOT accepted) or when they ARE accepted.
-// This way, we can calculate the duration they were actually visible for.
+// Suggested completions will not be logged immediately. Instead, we log them when we either hide
+// them again (they are NOT accepted) or when they ARE accepted. This way, we can calculate the
+// duration they were actually visible for.
 export function suggested(id: string, source: string): void {
     const event = displayedCompletions.get(id)
     if (!event) {
@@ -128,7 +122,6 @@ export function accept(id: string, lines: number): void {
         return
     }
 
-    completionEvent.forceRead = true
     completionEvent.acceptedAt = performance.now()
 
     logSuggestionEvents()
@@ -145,8 +138,7 @@ export function noResponse(id: string): void {
 }
 
 /**
- * This callback should be triggered whenever VS Code tries to highlight a new
- * completion and it's
+ * This callback should be triggered whenever VS Code tries to highlight a new completion and it's
  * used to measure how long previous completions were visible.
  */
 export function clear(): void {
@@ -161,7 +153,7 @@ function logSuggestionEvents(): void {
     const now = performance.now()
     // eslint-disable-next-line ban/ban
     displayedCompletions.forEach(completionEvent => {
-        const { loadedAt, suggestedAt, suggestionLoggedAt, startedAt, params, forceRead, startLoggedAt } =
+        const { loadedAt, suggestedAt, suggestionLoggedAt, startedAt, params, startLoggedAt, acceptedAt } =
             completionEvent
 
         // Only log suggestion events that were already shown to the user and
@@ -174,12 +166,14 @@ function logSuggestionEvents(): void {
         const latency = loadedAt - startedAt
         const displayDuration = now - suggestedAt
         const read = displayDuration >= READ_TIMEOUT
+        const accepted = acceptedAt !== null
 
         logCompletionEvent('suggested', {
             ...params,
             latency,
             displayDuration,
-            read: forceRead || read,
+            read: accepted || read,
+            accepted,
             otherCompletionProviderEnabled: otherCompletionProviderEnabled(),
         })
     })

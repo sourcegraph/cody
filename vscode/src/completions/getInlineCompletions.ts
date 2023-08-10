@@ -109,11 +109,6 @@ export enum InlineCompletionsResultSource {
 export async function getInlineCompletions(params: InlineCompletionsParams): Promise<InlineCompletionsResult | null> {
     try {
         const result = await doGetInlineCompletions(params)
-        if (result) {
-            debug('getInlineCompletions:result', InlineCompletionsResultSource[result.source])
-        } else {
-            debug('getInlineCompletions:noResult', '')
-        }
         params.tracer?.({ result })
         return result
     } catch (unknownError: unknown) {
