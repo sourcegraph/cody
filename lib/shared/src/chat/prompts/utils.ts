@@ -36,7 +36,7 @@ export const getCurrentDirPath = (filePath: string): string => filePath?.replace
  * @param displayText - Optional human-readable display text for the request.
  * @returns A Promise resolving to the Interaction object.
  */
-export async function getInteractionWithAssistantError(errorMsg: string, displayText = ''): Promise<Interaction> {
+export async function interactionWithAssistantError(errorMsg: string, displayText = ''): Promise<Interaction> {
     return Promise.resolve(
         new Interaction(
             { speaker: 'human', displayText },

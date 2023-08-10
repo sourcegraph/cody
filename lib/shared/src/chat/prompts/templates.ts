@@ -1,5 +1,5 @@
 const selection_prompt = `
-Here are the selected {languageName} code from {fileName}:
+Here is the selected {languageName} code from {fileName}:
 \`\`\`
 {selectedText}
 \`\`\`
