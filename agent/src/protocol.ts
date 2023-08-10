@@ -126,6 +126,10 @@ export interface ConnectionConfiguration {
     serverEndpoint: string
     accessToken: string
     customHeaders: Record<string, string>
+    autocompleteAdvancedProvider: string
+    autocompleteAdvancedServerEndpoint: string | null
+    autocompleteAdvancedAccessToken: string | null
+    autocompleteAdvancedEmbeddings: boolean
 }
 
 export interface Position {

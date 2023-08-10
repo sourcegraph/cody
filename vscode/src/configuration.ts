@@ -47,6 +47,9 @@ export function getConfiguration(config: ConfigGetter): Configuration {
         autocompleteAdvancedProvider !== 'unstable-fireworks' &&
         autocompleteAdvancedProvider !== 'unstable-azure-openai'
     ) {
+        console.error(
+            `Unrecognized ${CONFIG_KEY.autocompleteAdvancedProvider} - ${autocompleteAdvancedProvider}, defaulting to 'anthropic'`
+        )
         autocompleteAdvancedProvider = 'anthropic'
         void vscode.window.showInformationMessage(
             `Unrecognized ${CONFIG_KEY.autocompleteAdvancedProvider}, defaulting to 'anthropic'`

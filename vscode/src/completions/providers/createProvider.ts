@@ -13,6 +13,8 @@ export function createProviderConfig(
     onError: (error: string) => void,
     completionsClient: SourcegraphNodeCompletionsClient
 ): ProviderConfig {
+    console.error('CREATING PROVIDER')
+    console.error('Provider: ', config.autocompleteAdvancedProvider)
     let providerConfig: null | ProviderConfig = null
     switch (config.autocompleteAdvancedProvider) {
         case 'unstable-codegen': {

@@ -73,6 +73,15 @@ const configuration: vscode.WorkspaceConfiguration = {
                 return connectionConfig?.customHeaders
             case 'cody.autocomplete.enabled':
                 return true
+            case 'cody.autocomplete.advanced.provider':
+                console.error(`provider - ${connectionConfig?.autocompleteAdvancedProvider}`)
+                return connectionConfig?.autocompleteAdvancedProvider
+            case 'cody.autocomplete.advanced.serverEndpoint':
+                return connectionConfig?.autocompleteAdvancedServerEndpoint
+            case 'cody.autocomplete.advanced.accessToken':
+                return connectionConfig?.autocompleteAdvancedAccessToken
+            case 'cody.autocomplete.advanced.embeddings':
+                return connectionConfig?.autocompleteAdvancedEmbeddings
             default:
                 // console.log({ section })
                 return defaultValue
@@ -87,7 +96,9 @@ const configuration: vscode.WorkspaceConfiguration = {
 }
 const _workspace: Partial<typeof vscode.workspace> = {
     onDidChangeWorkspaceFolders: (() => ({})) as any,
-    onDidChangeConfiguration: (() => ({})) as any,
+    onDidChangeConfiguration: (event => ({
+        affectsConfiguration: () => false,
+    })) as any,
     onDidChangeTextDocument: (() => ({})) as any,
     onDidCloseTextDocument: (() => ({})) as any,
     onDidRenameFiles: (() => ({})) as any,
@@ -197,7 +208,7 @@ export const commands = _commands as typeof vscode.commands
 const _env: Partial<typeof vscode.env> = {
     uriScheme: 'file',
     appRoot: process.cwd(),
-    uiKind: UIKind.Desktop,
+    uiKind: UIKind.Web,
 }
 export const env = _env as typeof vscode.env
 
