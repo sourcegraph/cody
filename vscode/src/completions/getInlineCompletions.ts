@@ -154,9 +154,6 @@ async function doGetInlineCompletions({
     tracer?.({ params: { document, position, context } })
 
     const docContext = getCurrentDocContext(document, position, maxPrefixChars, maxSuffixChars, context)
-    if (!docContext) {
-        return null
-    }
 
     // If we have a suffix in the same line as the cursor and the suffix contains any word
     // characters, do not attempt to make a completion. This means we only make completions if
