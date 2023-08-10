@@ -122,6 +122,18 @@ export function accept(id: string, lines: number): void {
         return
     }
 
+    // Some additional logging to ensure the invariant is correct. I expect these branches to never
+    // hit but if they do, they might explain undercount issues
+    if (!completionEvent.loadedAt) {
+        logCompletionEvent('unexpectedNotLoaded')
+    }
+    if (!completionEvent.startLoggedAt) {
+        logCompletionEvent('unexpectedNotStarted')
+    }
+    if (!completionEvent.suggestedAt) {
+        logCompletionEvent('unexpectedNotSuggested')
+    }
+
     completionEvent.acceptedAt = performance.now()
 
     logSuggestionEvents()
