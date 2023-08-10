@@ -24,7 +24,7 @@ interface ChatProps extends ChatClassNames {
     onSubmit: (text: string, submitType: 'user' | 'suggestion' | 'example') => void
     contextStatusComponent?: React.FunctionComponent<any>
     contextStatusComponentProps?: any
-    gettingStartedComponent?: React.FunctionComponent<{ onSubmit: (query: string, submitType: 'example') => void }>
+    gettingStartedComponent?: React.FunctionComponent
     textAreaComponent: React.FunctionComponent<ChatUITextAreaProps>
     submitButtonComponent: React.FunctionComponent<ChatUISubmitButtonProps>
     suggestionButtonComponent?: React.FunctionComponent<ChatUISuggestionButtonProps>
@@ -333,7 +333,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
         [helpMarkdown, afterMarkdown, gettingStartedButtons, transcript]
     )
 
-    const isGettingStartedComponentVisible = transcript.length === 0 && GettingStartedComponent
+    const isGettingStartedComponentVisible = transcript.length === 0 && GettingStartedComponent !== undefined
 
     return (
         <div className={classNames(className, styles.innerContainer)}>
@@ -373,7 +373,9 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                 />
             )}
 
-            {isGettingStartedComponentVisible && <GettingStartedComponent onSubmit={submitInput} />}
+            {isGettingStartedComponentVisible && (
+                <GettingStartedComponent {...contextStatusComponentProps} submitInput={submitInput} />
+            )}
 
             <form className={classNames(styles.inputRow, inputRowClassName)}>
                 {!displayCommands && suggestions !== undefined && suggestions.length !== 0 && SuggestionButton ? (
