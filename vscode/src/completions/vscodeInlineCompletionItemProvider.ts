@@ -14,7 +14,7 @@ import {
     InlineCompletionsResultSource,
     LastInlineCompletionCandidate,
 } from './getInlineCompletions'
-import * as CompletionsLogger from './logger'
+import * as CompletionLogger from './logger'
 import { ProviderConfig } from './providers/provider'
 import { RequestManager } from './request-manager'
 import { ProvideInlineCompletionItemsTracer, ProvideInlineCompletionsItemTraceData } from './tracer'
@@ -197,9 +197,9 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
         }
 
         if (result.items.length > 0) {
-            CompletionsLogger.suggested(result.logId, InlineCompletionsResultSource[result.source])
+            CompletionLogger.suggested(result.logId, InlineCompletionsResultSource[result.source])
         } else {
-            CompletionsLogger.noResponse(result.logId)
+            CompletionLogger.noResponse(result.logId)
         }
 
         return {
@@ -212,7 +212,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
         // log id is never reused if the completion is accepted.
         this.lastCandidate = undefined
 
-        CompletionsLogger.accept(logId, lines)
+        CompletionLogger.accept(logId, lines)
     }
 
     /**
