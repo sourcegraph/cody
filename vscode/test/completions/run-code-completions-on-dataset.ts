@@ -135,9 +135,11 @@ async function generateCompletionsForDataset(codeSamples: Sample[]): Promise<voi
                 undefined
             )
 
-            const completions = ('items' in completionItems ? completionItems.items : completionItems).map(item =>
-                typeof item.insertText === 'string' ? item.insertText : ''
-            )
+            const completions = completionItems
+                ? ('items' in completionItems ? completionItems.items : completionItems).map(item =>
+                      typeof item.insertText === 'string' ? item.insertText : ''
+                  )
+                : []
             console.error(`#${index}@i=${i}`, completions)
             codeSampleResults.push({
                 completions,
