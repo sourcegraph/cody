@@ -96,9 +96,12 @@ const configuration: vscode.WorkspaceConfiguration = {
 }
 const _workspace: Partial<typeof vscode.workspace> = {
     onDidChangeWorkspaceFolders: (() => ({})) as any,
-    onDidChangeConfiguration: (event => ({
-        affectsConfiguration: () => false,
-    })) as any,
+    onDidChangeConfiguration: (() => {
+        console.error('CONFIG CHANGED!!!!')
+        const config = workspace.getConfiguration()
+        console.error({ config })
+        console.error({ completionItemProvider })
+    }) as any,
     onDidChangeTextDocument: (() => ({})) as any,
     onDidCloseTextDocument: (() => ({})) as any,
     onDidRenameFiles: (() => ({})) as any,
@@ -217,13 +220,16 @@ export let completionProvider: Promise<InlineCompletionItemProvider> = new Promi
     resolveCompletionProvider = resolve
 })
 
+var completionItemProvider: any
+
 const _languages: Partial<typeof vscode.languages> = {
     registerCodeActionsProvider: () => emptyDisposable,
     registerCodeLensProvider: () => emptyDisposable,
     registerInlineCompletionItemProvider: (selector, provider) => {
         console.error('PROVIDER!!')
-        resolveCompletionProvider(provider as any)
-        completionProvider = Promise.resolve(provider as any)
+        completionItemProvider = provider
+        resolveCompletionProvider(completionItemProvider as any)
+        completionProvider = Promise.resolve(completionItemProvider as any)
         return emptyDisposable
     },
 }
