@@ -4,6 +4,7 @@ import { BotResponseMultiplexer } from '@sourcegraph/cody-shared/src/chat/bot-re
 import { ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
 import { getPreamble } from '@sourcegraph/cody-shared/src/chat/preamble'
 import { CodyPrompt, CodyPromptType } from '@sourcegraph/cody-shared/src/chat/prompts'
+import { newInteraction } from '@sourcegraph/cody-shared/src/chat/prompts/utils'
 import { Recipe, RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 import { Transcript } from '@sourcegraph/cody-shared/src/chat/transcript'
 import { Interaction } from '@sourcegraph/cody-shared/src/chat/transcript/interaction'
@@ -590,18 +591,14 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
      */
     private async addCustomInteraction(
         assistantResponse: string,
-        humanInput?: string,
+        humanInput: string,
         interaction?: Interaction
     ): Promise<void> {
-        const newInteraction =
-            interaction ||
-            new Interaction(
-                { speaker: 'human', displayText: humanInput },
-                { speaker: 'assistant', displayText: assistantResponse },
-                Promise.resolve([]),
-                []
-            )
-        this.transcript.addInteraction(newInteraction)
+        const customInteraction = await newInteraction({
+            displayText: humanInput,
+            assistantDisplayText: assistantResponse,
+        })
+        this.transcript.addInteraction(interaction || customInteraction)
         this.sendTranscript()
         this.handleTranscriptErrors(true)
         await this.saveTranscriptToChatHistory()

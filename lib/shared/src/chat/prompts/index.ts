@@ -66,7 +66,6 @@ export interface CodyPromptContext {
     filePath?: string
     directoryPath?: string
     none?: boolean
-    strict?: boolean // add additional prompt at the end to prevent hallucination
 }
 
 export type CodyPromptType = 'workspace' | 'user' | 'default' | 'recently used'

@@ -1,5 +1,3 @@
-import path from 'path'
-
 import { ContextMessage } from '../../codebase-context/messages'
 import { ActiveTextEditorSelection } from '../../editor'
 import { CHARS_PER_TOKEN, MAX_AVAILABLE_PROMPT_LENGTH, MAX_RECIPE_INPUT_TOKENS } from '../../prompt/constants'
@@ -10,23 +8,13 @@ import { Interaction } from '../transcript/interaction'
 import { CodyPromptContext } from '.'
 
 /**
- * Gets the name of the parent directory from a directory path.
- */
-export const getParentDirName = (dirPath: string): string => path.basename(path.dirname(dirPath))
-
-/**
- * Gets the current directory path from the file path param
- */
-export const getCurrentDirPath = (filePath: string): string => path.dirname(filePath)
-
-/**
  * Returns a Promise resolving to an Interaction object representing an error response from the assistant.
  *
  * @param errorMsg - The error message text to include in the assistant response.
  * @param displayText - Optional human-readable display text for the request.
  * @returns A Promise resolving to the Interaction object.
  */
-export async function interactionWithAssistantError(errorMsg: string, displayText = ''): Promise<Interaction> {
+export async function newInteractionWithError(errorMsg: string, displayText = ''): Promise<Interaction> {
     return Promise.resolve(
         new Interaction(
             { speaker: 'human', displayText },
@@ -65,13 +53,14 @@ export function promptTextWithCodeSelection(
     return promptText
 }
 
-export async function makeInteraction(
-    text: string,
-    displayText?: string,
-    contextMessages?: Promise<ContextMessage[]>,
-    assistantText?: string,
+export async function newInteraction(args: {
+    text?: string
+    displayText: string
+    contextMessages?: Promise<ContextMessage[]>
+    assistantText?: string
     assistantDisplayText?: string
-): Promise<Interaction> {
+}): Promise<Interaction> {
+    const { text, displayText, contextMessages, assistantText, assistantDisplayText } = args
     return Promise.resolve(
         new Interaction(
             { speaker: 'human', text, displayText },

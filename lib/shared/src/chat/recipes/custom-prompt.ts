@@ -10,11 +10,11 @@ import {
 } from '../../prompt/constants'
 import { truncateText, truncateTextStart } from '../../prompt/truncation'
 import { CodyPromptContext, defaultCodyPromptContext } from '../prompts'
-import { prompts, rules } from '../prompts/templates'
+import { prompts } from '../prompts/templates'
 import {
-    interactionWithAssistantError,
     isOnlySelectionRequired,
-    makeInteraction,
+    newInteraction,
+    newInteractionWithError,
     promptTextWithCodeSelection,
 } from '../prompts/utils'
 import {
@@ -58,21 +58,20 @@ export class CustomPrompt implements Recipe {
         const promptText = humanChatInput.trim() || (await context.editor.controllers?.command?.get()) || null
         if (!promptText) {
             const errorMessage = 'Please enter a valid prompt for the custom command.'
-            return interactionWithAssistantError(errorMessage, promptText || '')
+            return newInteractionWithError(errorMessage, promptText || '')
         }
         const promptName = (await context.editor.controllers?.command?.get('current')) || promptText
         const slashCommand = (await context.editor.controllers?.command?.get('slash')) || promptName
 
         // Check if selection is required. If selection is not defined, accept visible content
-        const selectionContent =
-            isContextNeeded?.selection
-                ? context.editor.getActiveTextEditorSelection()
-                : context.editor.getActiveTextEditorSelectionOrVisibleContent()
+        const selectionContent = isContextNeeded?.selection
+            ? context.editor.getActiveTextEditorSelection()
+            : context.editor.getActiveTextEditorSelectionOrVisibleContent()
 
         const selection = selectionContent || context.editor.controllers?.inline?.selection
         if (isContextNeeded?.selection && !selection?.selectedText) {
             const errorMessage = `__${slashCommand}__ requires highlighted code. Please select some code in your editor and try again.`
-            return interactionWithAssistantError(errorMessage, slashCommand)
+            return newInteractionWithError(errorMessage, slashCommand)
         }
 
         // Add selection file name as display when available
@@ -80,14 +79,13 @@ export class CustomPrompt implements Recipe {
             ? getHumanDisplayTextWithFileName(slashCommand, selection, context.editor.getWorkspaceRootUri())
             : slashCommand
         // Prompt text to share with Cody but not display to human
-        const promptRuleText = isContextNeeded?.strict ? rules.hallucination : ''
-        const codyPromptText = prompts.instruction.replace('{humanInput}', promptText) + promptRuleText
+        const codyPromptText = prompts.instruction.replace('{humanInput}', promptText)
 
         // Attach code selection to prompt text if only selection is needed as context
         if (selection && isOnlySelectionRequired(isContextNeeded, selection.selectedText)) {
             const truncatedTextWithCode = promptTextWithCodeSelection(codyPromptText, selection)
             if (truncatedTextWithCode) {
-                return makeInteraction(truncatedTextWithCode, displayText)
+                return newInteraction({ text: truncatedTextWithCode, displayText })
             }
         }
 
@@ -103,7 +101,7 @@ export class CustomPrompt implements Recipe {
             selection,
             commandOutput
         )
-        return makeInteraction(truncatedText, displayText, contextMessages)
+        return newInteraction({ text: truncatedText, displayText, contextMessages })
     }
 
     private async getContextMessages(
@@ -116,24 +114,24 @@ export class CustomPrompt implements Recipe {
     ): Promise<ContextMessage[]> {
         const contextMessages: ContextMessage[] = []
 
-        // NONE
+        // none
         if (isContextRequired.none) {
             return []
         }
 
-        // CODEBASE CONTEXT
+        // codebase
         if (isContextRequired.codebase) {
             const codebaseContextMessages = await codebaseContext.getContextMessages(text, numResults)
             contextMessages.push(...codebaseContextMessages)
         }
 
-        // OPEN FILES IN EDITOR TABS
+        // Open files in editor tabs
         if (isContextRequired.openTabs) {
             const openTabsContext = await getEditorOpenTabsContext()
             contextMessages.push(...openTabsContext)
         }
 
-        // CURRENT DIRECTORTY
+        // Current directory
         if (isContextRequired.currentDir) {
             const isTestRequest = text.includes('test')
             const currentDirContext = await getCurrentDirContext(isTestRequest)
@@ -141,20 +139,20 @@ export class CustomPrompt implements Recipe {
             contextMessages.push(...currentDirContext, ...(isTestRequest ? packageJSONContext : []))
         }
 
-        // DIR PATH
+        // Files from a directory path
         if (isContextRequired.directoryPath?.length) {
             const fileContext = await getEditorDirContext(isContextRequired.directoryPath, selection?.fileName)
             contextMessages.push(...fileContext)
         }
 
-        // FILE PATH
+        // File path
         const fileContextQueue = []
         if (isContextRequired.filePath?.length) {
             const fileContext = await getFilePathContext(isContextRequired.filePath)
             fileContextQueue.push(...fileContext)
         }
 
-        // CURRENT FILE
+        // Currently focused file in editor
         const currentFileContextStack = []
         // If currentFile is true, or when selection is true but there is no selected text
         // then we want to include the current file context
@@ -174,12 +172,12 @@ export class CustomPrompt implements Recipe {
 
         contextMessages.push(...fileContextQueue, ...currentFileContextStack)
 
-        // SELECTED TEXT: Exclude only if selection is set to false specifically
+        // Selected text - this is exclude only if selection is set to false specifically
         if (isContextRequired.selection !== false && selection?.selectedText) {
             contextMessages.push(...getEditorSelectionContext(selection))
         }
 
-        // COMMAND OUTPUT
+        // Command output
         if (isContextRequired.command?.length && commandOutput) {
             contextMessages.push(...getTerminalOutputContext(commandOutput))
         }

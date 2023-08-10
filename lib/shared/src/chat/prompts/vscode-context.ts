@@ -1,3 +1,5 @@
+import { basename, dirname } from 'path'
+
 import * as vscode from 'vscode'
 import { URI } from 'vscode-uri'
 
@@ -14,7 +16,6 @@ import { truncateText } from '../../prompt/truncation'
 import { getFileExtension } from '../recipes/helpers'
 
 import { answers, displayFileName } from './templates'
-import { getCurrentDirPath, getParentDirName } from './utils'
 
 /**
  * Gets files from a directory, optionally filtering for test files only.
@@ -97,7 +98,7 @@ export async function getCurrentDirContext(isTestOnly: boolean): Promise<Context
         return []
     }
 
-    const currentDir = getCurrentDirPath(currentFile)
+    const currentDir = dirname(currentFile)
 
     return getEditorDirContext(currentDir, currentFile, isTestOnly)
 }
@@ -130,7 +131,7 @@ export async function getEditorDirContext(
                 return contextMessages
             }
 
-            const parentDirectoryName = getParentDirName(directoryPath)
+            const parentDirectoryName = basename(dirname(directoryPath))
             const fileExtension = currentFileName ? getFileExtension(currentFileName) : '*'
 
             // Search for test files in directory
