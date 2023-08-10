@@ -70,7 +70,7 @@ export class CustomPrompt implements Recipe {
                 : context.editor.getActiveTextEditorSelectionOrVisibleContent()
 
         const selection = selectionContent || context.editor.controllers?.inline?.selection
-        if (isContextNeeded?.selection === true && !selection?.selectedText) {
+        if (isContextNeeded?.selection && !selection?.selectedText) {
             const errorMessage = `__${slashCommand}__ requires highlighted code. Please select some code in your editor and try again.`
             return interactionWithAssistantError(errorMessage, slashCommand)
         }
