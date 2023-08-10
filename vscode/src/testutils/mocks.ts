@@ -565,3 +565,8 @@ export const vsCodeMocks = {
     },
     InlineCompletionTriggerKind,
 } as const
+
+export enum UIKind {
+    Desktop = 1,
+    Web = 2
+}

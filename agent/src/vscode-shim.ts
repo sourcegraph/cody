@@ -1,7 +1,7 @@
 import * as vscode from 'vscode'
 
 import { InlineCompletionItemProvider } from '../../vscode/src/completions/vscodeInlineCompletionItemProvider'
-import { Disposable } from '../../vscode/src/testutils/mocks'
+import { Disposable, UIKind } from '../../vscode/src/testutils/mocks'
 
 import { ConnectionConfiguration } from './protocol'
 
@@ -38,6 +38,7 @@ export {
     ViewColumn,
     QuickInputButtons,
     Uri,
+    UIKind,
 } from '../../vscode/src/testutils/mocks'
 
 export const emptyDisposable = new Disposable(() => {})
@@ -196,6 +197,7 @@ export const commands = _commands as typeof vscode.commands
 const _env: Partial<typeof vscode.env> = {
     uriScheme: 'file',
     appRoot: process.cwd(),
+    uiKind: UIKind.Desktop,
 }
 export const env = _env as typeof vscode.env
 
