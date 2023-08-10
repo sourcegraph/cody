@@ -53,7 +53,7 @@ export function create(inputParams: Omit<CompletionEvent['params'], 'multilineMo
     const params: CompletionEvent['params'] = {
         ...inputParams,
         type: 'inline',
-        // Keep the legacy name for backward compatibility in analytics
+        // @deprecated: We only keep the legacy name for backward compatibility in analytics
         multilineMode: inputParams.multiline ? 'block' : null,
         id,
     }
@@ -99,9 +99,9 @@ export function loaded(id: string): void {
     }
 }
 
-// Suggested completions will not be logged immediately. Instead, we log them when
-// we either hide them again (they are NOT accepted) or when they ARE accepted.
-// This way, we can calculate the duration they were actually visible for.
+// Suggested completions will not be logged immediately. Instead, we log them when we either hide
+// them again (they are NOT accepted) or when they ARE accepted. This way, we can calculate the
+// duration they were actually visible for.
 export function suggested(id: string, source: string): void {
     const event = displayedCompletions.get(id)
     if (!event) {
@@ -138,8 +138,7 @@ export function noResponse(id: string): void {
 }
 
 /**
- * This callback should be triggered whenever VS Code tries to highlight a new
- * completion and it's
+ * This callback should be triggered whenever VS Code tries to highlight a new completion and it's
  * used to measure how long previous completions were visible.
  */
 export function clear(): void {
