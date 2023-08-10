@@ -40,8 +40,10 @@ export async function main(): Promise<void> {
     try {
         await Promise.all(filesToDownload.map(downloadFile))
         console.log('All files were successful downloaded, check resources/wasm directory')
+        process.exit(0);
     } catch (error) {
         console.error('Some error occurred', error)
+        process.exit(1);
     }
 }
 
