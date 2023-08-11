@@ -44,6 +44,7 @@ interface ChatProps extends ChatClassNames {
     codyNotEnabledNotice?: React.FunctionComponent
     abortMessageInProgressComponent?: React.FunctionComponent<{ onAbortMessageInProgress: () => void }>
     onAbortMessageInProgress?: () => void
+    serverEndpoint: string
     isCodyEnabled: boolean
     ChatButtonComponent?: React.FunctionComponent<ChatButtonProps>
     pluginsDevMode?: boolean
@@ -156,6 +157,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
     contextStatusComponentProps = {},
     abortMessageInProgressComponent: AbortMessageInProgressButton,
     onAbortMessageInProgress = () => {},
+    serverEndpoint,
     isCodyEnabled,
     ChatButtonComponent,
     pluginsDevMode,
@@ -353,6 +355,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                     messageInProgress={messageInProgress}
                     messageBeingEdited={messageBeingEdited}
                     setMessageBeingEdited={setMessageBeingEdited}
+                    serverEndpoint={serverEndpoint}
                     fileLinkComponent={fileLinkComponent}
                     codeBlocksCopyButtonClassName={codeBlocksCopyButtonClassName}
                     codeBlocksInsertButtonClassName={codeBlocksInsertButtonClassName}

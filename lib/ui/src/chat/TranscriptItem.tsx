@@ -43,6 +43,7 @@ export const TranscriptItem: React.FunctionComponent<
         inProgress: boolean
         beingEdited: boolean
         setBeingEdited: (input: boolean) => void
+        serverEndpoint: string
         fileLinkComponent: React.FunctionComponent<FileLinkProps>
         textAreaComponent?: React.FunctionComponent<ChatUITextAreaProps>
         EditButtonContainer?: React.FunctionComponent<EditButtonProps>
@@ -63,6 +64,7 @@ export const TranscriptItem: React.FunctionComponent<
     inProgress,
     beingEdited,
     setBeingEdited,
+    serverEndpoint,
     fileLinkComponent,
     transcriptItemClassName,
     humanTranscriptItemClassName,
@@ -157,7 +159,11 @@ export const TranscriptItem: React.FunctionComponent<
             )}
             {message.preciseContext && message.preciseContext.length > 0 && (
                 <div className={styles.actions}>
-                    <PreciseContexts preciseContexts={message.preciseContext} className={transcriptActionClassName} />
+                    <PreciseContexts
+                        preciseContexts={message.preciseContext}
+                        serverEndpoint={serverEndpoint}
+                        className={transcriptActionClassName}
+                    />
                 </div>
             )}
             {message.pluginExecutionInfos && message.pluginExecutionInfos.length > 0 && (

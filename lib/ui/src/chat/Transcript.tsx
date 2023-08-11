@@ -25,6 +25,7 @@ export const Transcript: React.FunctionComponent<
         messageBeingEdited: boolean
         setMessageBeingEdited: (input: boolean) => void
         fileLinkComponent: React.FunctionComponent<FileLinkProps>
+        serverEndpoint: string
         className?: string
         textAreaComponent?: React.FunctionComponent<ChatUITextAreaProps>
         EditButtonContainer?: React.FunctionComponent<EditButtonProps>
@@ -42,6 +43,7 @@ export const Transcript: React.FunctionComponent<
     messageInProgress,
     messageBeingEdited,
     setMessageBeingEdited,
+    serverEndpoint,
     fileLinkComponent,
     className,
     codeBlocksCopyButtonClassName,
@@ -106,6 +108,7 @@ export const Transcript: React.FunctionComponent<
                             inProgress={false}
                             beingEdited={index > 0 && transcript.length - index === 2 && messageBeingEdited}
                             setBeingEdited={setMessageBeingEdited}
+                            serverEndpoint={serverEndpoint}
                             fileLinkComponent={fileLinkComponent}
                             codeBlocksCopyButtonClassName={codeBlocksCopyButtonClassName}
                             codeBlocksInsertButtonClassName={codeBlocksInsertButtonClassName}
@@ -134,6 +137,7 @@ export const Transcript: React.FunctionComponent<
                     inProgress={true}
                     beingEdited={false}
                     setBeingEdited={setMessageBeingEdited}
+                    serverEndpoint={serverEndpoint}
                     fileLinkComponent={fileLinkComponent}
                     codeBlocksCopyButtonClassName={codeBlocksCopyButtonClassName}
                     codeBlocksInsertButtonClassName={codeBlocksInsertButtonClassName}

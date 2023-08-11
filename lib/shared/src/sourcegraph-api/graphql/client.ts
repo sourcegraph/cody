@@ -209,6 +209,10 @@ export class SourcegraphGraphQLAPIClient {
         this.config = newConfig
     }
 
+    public serverEndpoint(): string {
+        return this.config.serverEndpoint
+    }
+
     public isDotCom(): boolean {
         return new URL(this.config.serverEndpoint).origin === new URL(this.dotcomUrl).origin
     }
