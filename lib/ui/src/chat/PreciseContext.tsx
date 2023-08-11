@@ -18,10 +18,10 @@ export const PreciseContexts: FunctionComponent<{
 
         unique.set(
             symbol.scipName,
-            serverEndpoint === '' ? (
-                <span>{niceName}</span>
-            ) : (
+            serverEndpoint ? (
                 <a href={join(serverEndpoint, canonicalLocationURL)}>{niceName}</a>
+            ) : (
+                <span>{niceName}</span>
             )
         )
     }
@@ -54,4 +54,5 @@ const join = (...parts: string[]): string =>
     parts
         .map(part => (part.startsWith('/') ? part.slice(1) : part))
         .map(part => (part.endsWith('/') ? part.slice(0, -1) : part))
+        .filter(part => part !== '')
         .join('/')
