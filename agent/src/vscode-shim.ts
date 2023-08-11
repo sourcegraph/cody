@@ -94,22 +94,22 @@ const configuration: vscode.WorkspaceConfiguration = {
         return undefined
     },
 }
+
+export const onDidChangeConfigurationCallbacks: ((e: vscode.ConfigurationChangeEvent) => any)[] = []
+
+// vscode.workspace.onDidChangeConfiguration
 const _workspace: Partial<typeof vscode.workspace> = {
     onDidChangeWorkspaceFolders: (() => ({})) as any,
-    onDidChangeConfiguration: (() => {
-        console.error('CONFIG CHANGED!!!!')
-        const config = workspace.getConfiguration()
-        console.error({ config })
-        console.error({ completionItemProvider })
-    }) as any,
+    onDidChangeConfiguration: (callback => {
+        onDidChangeConfigurationCallbacks.push(callback)
+        return emptyDisposable
+    }) as typeof vscode.workspace.onDidChangeConfiguration,
     onDidChangeTextDocument: (() => ({})) as any,
     onDidCloseTextDocument: (() => ({})) as any,
     onDidRenameFiles: (() => ({})) as any,
     onDidDeleteFiles: (() => ({})) as any,
     registerTextDocumentContentProvider: () => emptyDisposable,
-    asRelativePath: (pathOrUri: string | vscode.Uri, includeWorkspaceFolder?: boolean): string => {
-        return pathOrUri.toString()
-    },
+    asRelativePath: (pathOrUri: string | vscode.Uri, includeWorkspaceFolder?: boolean): string => pathOrUri.toString(),
     createFileSystemWatcher: () => emptyFileWatcher,
     getConfiguration: (() => configuration) as any,
 }
@@ -176,6 +176,13 @@ const _extensions: Partial<typeof vscode.extensions> = {
 }
 export const extensions = _extensions as typeof vscode.extensions
 
+export const configurationChangeEvent: vscode.ConfigurationChangeEvent = {
+    affectsConfiguration: (section: string, scope?: vscode.ConfigurationScope): boolean =>
+        // TODO: actually check scopes, this just causes more work to be done by whoever
+        // is listening for configuration so should be harmless
+        true,
+}
+
 interface RegisteredCommand {
     command: string
     callback: (...args: any[]) => any
@@ -198,8 +205,10 @@ const _commands: Partial<typeof vscode.commands> = {
         const registered = registeredCommands.get(command)
         if (registered) {
             try {
-                if (args) return registered.callback(...args)
-                else return registered.callback()
+                if (args) {
+                    return registered.callback(...args)
+                }
+                return registered.callback()
             } catch (error) {
                 console.error(error)
             }
@@ -220,7 +229,7 @@ export let completionProvider: Promise<InlineCompletionItemProvider> = new Promi
     resolveCompletionProvider = resolve
 })
 
-var completionItemProvider: any
+let completionItemProvider: any
 
 const _languages: Partial<typeof vscode.languages> = {
     registerCodeActionsProvider: () => emptyDisposable,
@@ -228,8 +237,8 @@ const _languages: Partial<typeof vscode.languages> = {
     registerInlineCompletionItemProvider: (selector, provider) => {
         console.error('PROVIDER!!')
         completionItemProvider = provider
-        resolveCompletionProvider(completionItemProvider as any)
-        completionProvider = Promise.resolve(completionItemProvider as any)
+        resolveCompletionProvider(completionItemProvider)
+        completionProvider = Promise.resolve(completionItemProvider)
         return emptyDisposable
     },
 }

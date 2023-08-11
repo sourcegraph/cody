@@ -15,7 +15,7 @@ import { MessageHandler } from './jsonrpc'
 import { AutocompleteItem, ConnectionConfiguration, TextDocument } from './protocol'
 import * as vscode_shim from './vscode-shim'
 
-let secretStorage = new Map<string, string>()
+const secretStorage = new Map<string, string>()
 
 async function initializeVscodeExtension(): Promise<void> {
     await activate({
@@ -201,6 +201,9 @@ export class Agent extends MessageHandler {
 
         this.registerNotification('connectionConfiguration/didChange', config => {
             this.setClient(config)
+            for (const registeredCallback of vscode_shim.onDidChangeConfigurationCallbacks) {
+                registeredCallback(vscode_shim.configurationChangeEvent)
+            }
         })
 
         this.registerRequest('recipes/list', () =>
