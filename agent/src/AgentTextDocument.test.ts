@@ -29,7 +29,7 @@ describe('AgentTextDocument', () => {
         assert.equal(emptyFirstLineCrlf.lineCount, 2)
     })
 
-    it.only('positionAt()', () => {
+    it('positionAt()', () => {
         assert.deepEqual(basic.positionAt(0), new vscode.Position(0, 0))
     })
 
