@@ -4,7 +4,6 @@ import { describe, it } from 'vitest'
 import * as vscode from 'vscode'
 
 import { AgentTextDocument } from './AgentTextDocument'
-import { Range } from './vscode-shim'
 
 describe('AgentTextDocument', () => {
     const basic = new AgentTextDocument({ filePath: 'foo', content: 'a\nb\n' })
@@ -15,10 +14,10 @@ describe('AgentTextDocument', () => {
     const emptyFirstLineCrlf = new AgentTextDocument({ filePath: 'foo', content: '\r\nb' })
 
     it('getText(Range)', () => {
-        assert.equal(basic.getText(new Range(0, 0, 0, 1)), 'a')
-        assert.equal(basic.getText(new Range(0, 0, 1, 1)), 'a\nb')
-        assert.equal(basic.getText(new Range(2, 0, 2, 10)), '')
-        assert.equal(basic.getText(new Range(0, 0, 2, 3)), 'a\nb\n')
+        assert.equal(basic.getText(new vscode.Range(0, 0, 0, 1)), 'a')
+        assert.equal(basic.getText(new vscode.Range(0, 0, 1, 1)), 'a\nb')
+        assert.equal(basic.getText(new vscode.Range(2, 0, 2, 10)), '')
+        assert.equal(basic.getText(new vscode.Range(0, 0, 2, 3)), 'a\nb\n')
     })
 
     it('lineCount()', () => {

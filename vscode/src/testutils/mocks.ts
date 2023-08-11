@@ -422,15 +422,6 @@ export class Selection extends Range {
     isReversed: boolean = false
 }
 
-// export class Uri {
-//     public fsPath: string
-//     public path: string
-//     constructor(path: string) {
-//         this.fsPath = path
-//         this.path = path
-//     }
-// }
-
 export class InlineCompletionItem {
     public insertText: string
     public range: Range | undefined
