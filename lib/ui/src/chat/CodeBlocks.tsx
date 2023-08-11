@@ -67,7 +67,7 @@ function createCopyButton(
         button.textContent = 'Copied'
         setTimeout(() => (button.textContent = 'Copy'), 3000)
         if (copyButtonOnSubmit) {
-            copyButtonOnSubmit('copyButton')
+            copyButtonOnSubmit(text, false)
         }
     })
     return button
@@ -115,6 +115,12 @@ export const CodeBlocks: React.FunctionComponent<CodeBlocksProps> = React.memo(f
                     preElement,
                     createButtons(preText, copyButtonClassName, CopyButtonProps, insertButtonClassName)
                 )
+                // capture copy events (right click or keydown) on code block
+                preElement.addEventListener('copy', () => {
+                    if (CopyButtonProps) {
+                        CopyButtonProps(preText, false, 'Key')
+                    }
+                })
             }
         }
     }, [displayText, CopyButtonProps, copyButtonClassName, insertButtonClassName, rootRef])
