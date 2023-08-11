@@ -819,15 +819,15 @@
             "unstable-fireworks",
             "unstable-azure-openai"
           ],
-          "markdownDescription": "Overwrite the provider used for code autocomplete."
+          "markdownDescription": "The provider used for code autocomplete. Most providers other than `anthropic` require the `cody.autocomplete.advanced.serverEndpoint` and `cody.autocomplete.advanced.accessToken` settings to also be set. Check the Cody output channel for error messages if autocomplete is not working as expected."
         },
         "cody.autocomplete.advanced.serverEndpoint": {
           "type": "string",
-          "markdownDescription": "Overwrite the server endpoint used for code autocomplete. This is only supported with a provider other than `anthropic`."
+          "markdownDescription": "The server endpoint used for code autocomplete. This is only supported with a provider other than `anthropic`."
         },
         "cody.autocomplete.advanced.accessToken": {
           "type": "string",
-          "markdownDescription": "Overwrite the access token used for code autocomplete. This is only supported with a provider other than `anthropic`."
+          "markdownDescription": "The access token used for code autocomplete. This is only supported with a provider other than `anthropic`."
         },
         "cody.autocomplete.advanced.embeddings": {
           "order": 99,

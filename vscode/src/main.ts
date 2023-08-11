@@ -184,26 +184,6 @@ const register = async (
         await sidebarChatProvider.executeRecipe(recipe, humanInput)
     }
 
-    const webviewErrorMessenger = async (error: string): Promise<void> => {
-        if (error.includes('rate limit')) {
-            const currentTime: number = Date.now()
-            const userPref = localStorage.get('rateLimitError')
-            // 21600000 is 6h in ms. ex 6 * 60 * 60 * 1000
-            if (!userPref || userPref !== 'never' || currentTime - 21600000 >= parseInt(userPref, 10)) {
-                const input = await vscode.window.showErrorMessage(error, 'Do not show again', 'Close')
-                switch (input) {
-                    case 'Do not show again':
-                        await localStorage.set('rateLimitError', 'never')
-                        break
-                    default:
-                        // Save current time as a reminder stamp in 6 hours
-                        await localStorage.set('rateLimitError', currentTime.toString())
-                }
-            }
-        }
-        sidebarChatProvider.handleError(error)
-    }
-
     const executeFixup = async (
         options: {
             document?: vscode.TextDocument
@@ -400,48 +380,30 @@ const register = async (
     )
 
     let completionsProvider: vscode.Disposable | null = null
-    if (initialConfig.autocomplete) {
-        completionsProvider = createCompletionsProvider(
-            config,
-            webviewErrorMessenger,
-            completionsClient,
-            statusBar,
-            contextProvider
-        )
-    }
+    disposables.push({ dispose: () => completionsProvider?.dispose() })
+    const setupAutocomplete = (): void => {
+        const config = getConfiguration(vscode.workspace.getConfiguration())
 
-    // Create a disposable to clean up completions when the extension reloads.
-    const disposeCompletions: vscode.Disposable = {
-        dispose: () => {
+        if (!config.autocomplete) {
             completionsProvider?.dispose()
-        },
-    }
-    disposables.push(disposeCompletions)
+            completionsProvider = null
+            return
+        }
 
+        if (completionsProvider !== null) {
+            // If completions are already initialized and still enabled, we
+            // need to reset the completion provider.
+            completionsProvider.dispose()
+        }
+
+        completionsProvider = createCompletionsProvider(config, completionsClient, statusBar, contextProvider)
+    }
     vscode.workspace.onDidChangeConfiguration(event => {
         if (event.affectsConfiguration('cody.autocomplete')) {
-            const config = getConfiguration(vscode.workspace.getConfiguration())
-
-            if (!config.autocomplete) {
-                completionsProvider?.dispose()
-                completionsProvider = null
-                return
-            }
-
-            if (completionsProvider !== null) {
-                // If completions are already initialized and still enabled, we
-                // need to reset the completion provider.
-                completionsProvider.dispose()
-            }
-            completionsProvider = createCompletionsProvider(
-                config,
-                webviewErrorMessenger,
-                completionsClient,
-                statusBar,
-                contextProvider
-            )
+            setupAutocomplete()
         }
     })
+    setupAutocomplete()
 
     // Initiate inline chat when feature flag is on
     if (!initialConfig.inlineChat) {
@@ -477,31 +439,33 @@ const register = async (
 
 function createCompletionsProvider(
     config: Configuration,
-    webviewErrorMessenger: (error: string) => Promise<void>,
     completionsClient: SourcegraphCompletionsClient,
     statusBar: CodyStatusBar,
     contextProvider: ContextProvider
 ): vscode.Disposable {
     const disposables: vscode.Disposable[] = []
 
-    const history = new VSCodeDocumentHistory()
-    const providerConfig = createProviderConfig(config, webviewErrorMessenger, completionsClient)
-    const completionsProvider = new InlineCompletionItemProvider({
-        providerConfig,
-        history,
-        statusBar,
-        getCodebaseContext: () => contextProvider.context,
-        isEmbeddingsContextEnabled: config.autocompleteAdvancedEmbeddings,
-        completeSuggestWidgetSelection: config.autocompleteExperimentalCompleteSuggestWidgetSelection,
-    })
+    const providerConfig = createProviderConfig(config, completionsClient)
+    if (providerConfig) {
+        const history = new VSCodeDocumentHistory()
+        const completionsProvider = new InlineCompletionItemProvider({
+            providerConfig,
+            history,
+            statusBar,
+            getCodebaseContext: () => contextProvider.context,
+            isEmbeddingsContextEnabled: config.autocompleteAdvancedEmbeddings,
+            completeSuggestWidgetSelection: config.autocompleteExperimentalCompleteSuggestWidgetSelection,
+        })
 
-    disposables.push(
-        vscode.commands.registerCommand('cody.autocomplete.inline.accepted', ({ codyLogId, codyLines }) => {
-            completionsProvider.handleDidAcceptCompletionItem(codyLogId, codyLines)
-        }),
-        vscode.languages.registerInlineCompletionItemProvider('*', completionsProvider),
-        registerAutocompleteTraceView(completionsProvider)
-    )
+        disposables.push(
+            vscode.commands.registerCommand('cody.autocomplete.inline.accepted', ({ codyLogId, codyLines }) => {
+                completionsProvider.handleDidAcceptCompletionItem(codyLogId, codyLines)
+            }),
+            vscode.languages.registerInlineCompletionItemProvider('*', completionsProvider),
+            registerAutocompleteTraceView(completionsProvider)
+        )
+    }
+
     return {
         dispose: () => {
             for (const disposable of disposables) {
