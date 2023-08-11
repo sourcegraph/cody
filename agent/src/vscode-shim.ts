@@ -73,6 +73,14 @@ const configuration: vscode.WorkspaceConfiguration = {
                 return connectionConfig?.customHeaders
             case 'cody.autocomplete.enabled':
                 return true
+            case 'cody.autocomplete.advanced.provider':
+                return connectionConfig?.autocompleteAdvancedProvider
+            case 'cody.autocomplete.advanced.serverEndpoint':
+                return connectionConfig?.autocompleteAdvancedServerEndpoint
+            case 'cody.autocomplete.advanced.accessToken':
+                return connectionConfig?.autocompleteAdvancedAccessToken
+            case 'cody.autocomplete.advanced.embeddings':
+                return connectionConfig?.autocompleteAdvancedEmbeddings
             default:
                 // console.log({ section })
                 return defaultValue
@@ -85,17 +93,22 @@ const configuration: vscode.WorkspaceConfiguration = {
         return undefined
     },
 }
+
+export const onDidChangeConfigurationCallbacks: ((e: vscode.ConfigurationChangeEvent) => any)[] = []
+
+// vscode.workspace.onDidChangeConfiguration
 const _workspace: Partial<typeof vscode.workspace> = {
     onDidChangeWorkspaceFolders: (() => ({})) as any,
-    onDidChangeConfiguration: (() => ({})) as any,
+    onDidChangeConfiguration: (callback => {
+        onDidChangeConfigurationCallbacks.push(callback)
+        return emptyDisposable
+    }) as typeof vscode.workspace.onDidChangeConfiguration,
     onDidChangeTextDocument: (() => ({})) as any,
     onDidCloseTextDocument: (() => ({})) as any,
     onDidRenameFiles: (() => ({})) as any,
     onDidDeleteFiles: (() => ({})) as any,
     registerTextDocumentContentProvider: () => emptyDisposable,
-    asRelativePath: (pathOrUri: string | vscode.Uri, includeWorkspaceFolder?: boolean): string => {
-        return pathOrUri.toString()
-    },
+    asRelativePath: (pathOrUri: string | vscode.Uri, includeWorkspaceFolder?: boolean): string => pathOrUri.toString(),
     createFileSystemWatcher: () => emptyFileWatcher,
     getConfiguration: (() => configuration) as any,
 }
@@ -162,6 +175,13 @@ const _extensions: Partial<typeof vscode.extensions> = {
 }
 export const extensions = _extensions as typeof vscode.extensions
 
+export const configurationChangeEvent: vscode.ConfigurationChangeEvent = {
+    affectsConfiguration: (section: string, scope?: vscode.ConfigurationScope): boolean =>
+        // TODO: actually check scopes, this just causes more work to be done by whoever
+        // is listening for configuration so should be harmless
+        true,
+}
+
 interface RegisteredCommand {
     command: string
     callback: (...args: any[]) => any
@@ -184,8 +204,10 @@ const _commands: Partial<typeof vscode.commands> = {
         const registered = registeredCommands.get(command)
         if (registered) {
             try {
-                if (args) return registered.callback(...args)
-                else return registered.callback()
+                if (args) {
+                    return registered.callback(...args)
+                }
+                return registered.callback()
             } catch (error) {
                 console.error(error)
             }
@@ -197,7 +219,7 @@ export const commands = _commands as typeof vscode.commands
 const _env: Partial<typeof vscode.env> = {
     uriScheme: 'file',
     appRoot: process.cwd(),
-    uiKind: UIKind.Desktop,
+    uiKind: UIKind.Web,
 }
 export const env = _env as typeof vscode.env
 
@@ -206,13 +228,16 @@ export let completionProvider: Promise<InlineCompletionItemProvider> = new Promi
     resolveCompletionProvider = resolve
 })
 
+let completionItemProvider: any
+
 const _languages: Partial<typeof vscode.languages> = {
     registerCodeActionsProvider: () => emptyDisposable,
     registerCodeLensProvider: () => emptyDisposable,
     registerInlineCompletionItemProvider: (selector, provider) => {
         console.error('PROVIDER!!')
-        resolveCompletionProvider(provider as any)
-        completionProvider = Promise.resolve(provider as any)
+        completionItemProvider = provider
+        resolveCompletionProvider(completionItemProvider)
+        completionProvider = Promise.resolve(completionItemProvider)
         return emptyDisposable
     },
 }
