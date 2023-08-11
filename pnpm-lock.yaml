@@ -287,8 +287,8 @@ importers:
         specifier: ^7.2.96
         version: 7.2.96
       '@sourcegraph/cody-shared':
-        specifier: workspace:*
-        version: link:../shared
+        specifier: https://github.com/sourcegraph/cody/files/12324804/sourcegraph-cody-shared-0.0.0-codyintel.experimental.1.tgz
+        version: '@github.com/sourcegraph/cody/files/12324804/sourcegraph-cody-shared-0.0.0-codyintel.experimental.1.tgz'
       classnames:
         specifier: ^2.3.2
         version: 2.3.2
@@ -16835,3 +16835,20 @@ packages:
 
   /zwitch@2.0.4:
     resolution: {integrity: sha512-bXE4cR/kVZhKZX/RjPEflHaKVhUVl85noU3v6b8apfQEc1x4A+zBxjZ4lN8LqGd6WZ3dl98pY4o717VFmoPp+A==}
+
+  '@github.com/sourcegraph/cody/files/12324804/sourcegraph-cody-shared-0.0.0-codyintel.experimental.1.tgz':
+    resolution: {tarball: https://github.com/sourcegraph/cody/files/12324804/sourcegraph-cody-shared-0.0.0-codyintel.experimental.1.tgz}
+    name: '@sourcegraph/cody-shared'
+    version: 0.0.0-codyintel.experimental.1
+    dependencies:
+      '@microsoft/fetch-event-source': 2.0.1
+      dompurify: 3.0.4
+      highlight.js: 10.7.3
+      isomorphic-fetch: 3.0.0
+      lodash: 4.17.21
+      marked: 4.0.16
+      vscode-uri: 3.0.7
+      x2js: 3.4.4
+    transitivePeerDependencies:
+      - encoding
+    dev: false
