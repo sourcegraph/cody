@@ -11,10 +11,12 @@ export const PreciseContexts: FunctionComponent<{
     className?: string
 }> = memo(function PreciseContextsContent({ preciseContexts, className }) {
     const unique = new Map<string, JSX.Element>()
-    console.log({ preciseContexts })
 
-    for (const { symbol } of preciseContexts) {
-        unique.set(symbol.scipName, <>will link to {symbol.fuzzyName || symbol.scipDescriptorSuffix}</>)
+    for (const { symbol, canonicalLocationURL } of preciseContexts) {
+        unique.set(
+            symbol.scipName,
+            <a href={canonicalLocationURL}>{symbol.fuzzyName || symbol.scipDescriptorSuffix}</a>
+        )
     }
     const uniqueContext = Array.from(unique, ([hoverText, object]) => ({
         object,

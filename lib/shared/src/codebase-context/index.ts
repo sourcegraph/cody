@@ -220,15 +220,17 @@ export class CodebaseContext {
         }
 
         const contextMessages: ContextMessage[] = []
-        const preciseContext = await this.graph.getContext()
-        for (const { symbol, definitionSnippet, repositoryName, filepath } of preciseContext) {
+        for (const preciseContext of await this.graph.getContext()) {
             contextMessages.push({
                 speaker: 'human',
-                file: { fileName: filepath, repoName: repositoryName },
-                preciseContext: { symbol },
+                file: {
+                    repoName: preciseContext.repositoryName,
+                    fileName: preciseContext.filepath,
+                },
+                preciseContext,
                 text: `
                 As my coding assistant, use this context to help me answer the question asked:
-                Here is the precise snippet of code that is relevant to the current active file: ${definitionSnippet}
+                Here is the precise snippet of code that is relevant to the current active file: ${preciseContext.definitionSnippet}
                 ## Instruction
                 - Do not enclose your answer with tags.
                 - Do not remove code that might be being used by the other part of the code that was not shared.

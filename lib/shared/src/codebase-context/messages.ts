@@ -21,6 +21,10 @@ export interface PreciseContext {
         scipDescriptorSuffix: string
         fuzzyName?: string
     }
+    definitionSnippet: string
+    repositoryName: string
+    filepath: string
+    canonicalLocationURL: string
 }
 
 export interface ContextMessage extends Message {

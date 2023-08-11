@@ -112,6 +112,7 @@ export interface PreciseContextResult {
     definitionSnippet: string
     repositoryName: string
     filepath: string
+    canonicalLocationURL: string
 }
 
 interface PreciseContextResponse {
