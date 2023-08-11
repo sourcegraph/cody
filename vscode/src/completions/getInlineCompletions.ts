@@ -69,6 +69,9 @@ export interface LastInlineCompletionCandidate {
     /** The next non-empty line in the suffix */
     lastTriggerNextNonEmptyLine: string
 
+    /** The selected info item. */
+    lastTriggerSelectedInfoItem: string | undefined
+
     /** The previously suggested result. */
     result: Pick<InlineCompletionsResult, 'logId' | 'items'>
 }
@@ -163,7 +166,9 @@ async function doGetInlineCompletions({
 
     // Check if the user is typing as suggested by the last candidate completion (that is shown as
     // ghost text in the editor), and reuse it if it is still valid.
-    const resultToReuse = lastCandidate ? reuseLastCandidate({ document, position, lastCandidate, docContext }) : null
+    const resultToReuse = lastCandidate
+        ? reuseLastCandidate({ document, position, lastCandidate, docContext, context })
+        : null
     if (resultToReuse) {
         return resultToReuse
     }
@@ -230,6 +235,7 @@ async function doGetInlineCompletions({
         docContext,
         position,
         multiline,
+        context,
     }
 
     // Get the processed completions from providers

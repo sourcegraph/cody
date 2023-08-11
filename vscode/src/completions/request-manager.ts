@@ -16,6 +16,9 @@ export interface RequestParams {
     /** The request's document context **/
     docContext: DocumentContext
 
+    /** The request's inline completion context. **/
+    context: vscode.InlineCompletionContext
+
     /** The cursor position in the source file where the completion request was triggered. **/
     position: vscode.Position
 
@@ -100,12 +103,13 @@ export class RequestManager {
         resolvedRequest: InflightRequest,
         items: InlineCompletionItem[]
     ): void {
-        const { document, position, docContext } = resolvedRequest.params
+        const { document, position, docContext, context } = resolvedRequest.params
         const lastCandidate: LastInlineCompletionCandidate = {
             uri: document.uri,
             lastTriggerPosition: position,
             lastTriggerCurrentLinePrefix: docContext.currentLinePrefix,
             lastTriggerNextNonEmptyLine: docContext.nextNonEmptyLine,
+            lastTriggerSelectedInfoItem: context.selectedCompletionInfo?.text,
             result: {
                 logId: '',
                 items,
@@ -126,6 +130,7 @@ export class RequestManager {
                 position: request.params.position,
                 lastCandidate,
                 docContext: request.params.docContext,
+                context: request.params.context,
             })
 
             if (synthesizedCandidate) {

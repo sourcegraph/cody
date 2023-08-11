@@ -10,16 +10,24 @@ import { InlineCompletionItem } from './types'
 export function reuseLastCandidate({
     document,
     position,
-    lastCandidate: { lastTriggerPosition, lastTriggerCurrentLinePrefix, lastTriggerNextNonEmptyLine, ...lastCandidate },
+    context,
+    lastCandidate: {
+        lastTriggerPosition,
+        lastTriggerCurrentLinePrefix,
+        lastTriggerNextNonEmptyLine,
+        lastTriggerSelectedInfoItem,
+        ...lastCandidate
+    },
     docContext: { currentLinePrefix, currentLineSuffix, nextNonEmptyLine },
-}: Required<Pick<InlineCompletionsParams, 'document' | 'position' | 'lastCandidate'>> & {
+}: Required<Pick<InlineCompletionsParams, 'document' | 'position' | 'lastCandidate' | 'context'>> & {
     docContext: DocumentContext
 }): InlineCompletionsResult | null {
     const isSameDocument = lastCandidate.uri.toString() === document.uri.toString()
     const isSameLine = lastTriggerPosition.line === position.line
     const isSameNextNonEmptyLine = lastTriggerNextNonEmptyLine === nextNonEmptyLine
+    const isSameTriggerSelectedInfoItem = lastTriggerSelectedInfoItem === context.selectedCompletionInfo?.text
 
-    if (!isSameDocument || !isSameLine || !isSameNextNonEmptyLine) {
+    if (!isSameDocument || !isSameLine || !isSameNextNonEmptyLine || !isSameTriggerSelectedInfoItem) {
         return null
     }
 

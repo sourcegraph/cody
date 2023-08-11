@@ -19,6 +19,7 @@ import { ProviderConfig } from './providers/provider'
 import { RequestManager } from './request-manager'
 import { ProvideInlineCompletionItemsTracer, ProvideInlineCompletionsItemTraceData } from './tracer'
 import { InlineCompletionItem } from './types'
+import { getNextNonEmptyLine } from './utils/text-utils'
 
 interface CodyCompletionItemProviderConfig {
     providerConfig: ProviderConfig
@@ -126,10 +127,13 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
             token.onCancellationRequested(() => abortController.abort())
         }
 
-        const docContext = getCurrentDocContext(document, position, this.maxPrefixChars, this.maxSuffixChars)
-        if (!docContext) {
+        // When the user has the completions popup open and an item is selected that does not match
+        // the text that is already in the editor, VS Code will never render the completion.
+        if (!currentEditorContentMatchesPopupItem(document, context)) {
             return null
         }
+
+        const docContext = getCurrentDocContext(document, position, this.maxPrefixChars, this.maxSuffixChars, context)
 
         const result = await this.getInlineCompletions({
             document,
@@ -162,49 +166,41 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
         // we can reuse it if the user types in such a way that it is still valid (such as by typing
         // `ab` if the ghost text suggests `abcd`).
         if (result.source !== InlineCompletionsResultSource.LastCandidate) {
-            // this.lastCandidate =
-            //     result.items.length > 0
-            //         ? {
-            //               uri: document.uri,
-            //               lastTriggerPosition: position,
-            //               lastTriggerCurrentLinePrefix: document.lineAt(position).text.slice(0, position.character),
-            //               lastTriggerNextNonEmptyLine: getNextNonEmptyLine(
-            //                   document.getText(
-            //                       new vscode.Range(position, document.lineAt(document.lineCount - 1).range.end)
-            //                   )
-            //               ),
-            //               result: {
-            //                   logId: result.logId,
-            //                   items: result.items,
-            //               },
-            //           }
-            //         : undefined
+            this.lastCandidate =
+                result.items.length > 0
+                    ? {
+                          uri: document.uri,
+                          lastTriggerPosition: position,
+                          lastTriggerCurrentLinePrefix: document.lineAt(position).text.slice(0, position.character),
+                          lastTriggerNextNonEmptyLine: getNextNonEmptyLine(
+                              document.getText(
+                                  new vscode.Range(position, document.lineAt(document.lineCount - 1).range.end)
+                              )
+                          ),
+                          lastTriggerSelectedInfoItem: context?.selectedCompletionInfo?.text,
+                          result: {
+                              logId: result.logId,
+                              items: result.items,
+                          },
+                      }
+                    : undefined
         }
 
+        const items = this.processInlineCompletionsForVSCode(result.logId, document, position, result.items, context)
+
         // A completion that won't be visible in VS Code will not be returned and not be logged.
-        if (
-            !isCompletionVisible(
-                result?.items,
-                document,
-                docContext,
-                context,
-                this.config.providerConfig,
-                abortController.signal
-            )
-        ) {
+        if (!isCompletionVisible(items, docContext, this.config.providerConfig, abortController.signal)) {
             return null
         }
 
-        if (result.items.length > 0) {
+        if (items.length > 0) {
             CompletionLogger.suggested(result.logId, InlineCompletionsResultSource[result.source])
         } else {
             CompletionLogger.noResponse(result.logId)
         }
 
         return {
-            items: result
-                ? this.processInlineCompletionsForVSCode(result.logId, document, position, result.items, context)
-                : [],
+            items,
         }
     }
 
@@ -235,6 +231,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
             if (context.selectedCompletionInfo) {
                 const { range, text } = context.selectedCompletionInfo
                 insertText = text.slice(position.character - range.start.character) + insertText
+                console.log({ insertText })
             }
 
             // Return the completion from the start of the current line (instead of starting at the
@@ -275,10 +272,8 @@ function createTracerForInvocation(tracer: ProvideInlineCompletionItemsTracer): 
 }
 
 function isCompletionVisible(
-    completions: InlineCompletionItem[],
-    document: vscode.TextDocument,
+    completions: vscode.InlineCompletionItem[],
     docContext: DocumentContext,
-    context: vscode.InlineCompletionContext,
     providerConfig: ProviderConfig,
     abortSignal: AbortSignal | undefined
 ): boolean {
@@ -296,22 +291,23 @@ function isCompletionVisible(
     //   completion with the suffix, we have to do a per-character diff to test
     //   this.
     const isAborted = abortSignal ? abortSignal.aborted : false
-    const isMatchingPopupItem = completionMatchesPopupItem(completions, document, context)
+    // const isMatchingPopupItem = completionMatchesPopupItem(completions, document, context)
     const isMatchingSuffix = completionMatchesSuffix(completions, docContext, providerConfig)
-    const isVisible = !isAborted && isMatchingPopupItem && isMatchingSuffix
+    const isVisible = !isAborted && isMatchingSuffix
 
     return isVisible
 }
 
-function completionMatchesPopupItem(
-    completions: InlineCompletionItem[],
+function currentEditorContentMatchesPopupItem(
     document: vscode.TextDocument,
     context: vscode.InlineCompletionContext
 ): boolean {
     if (context.selectedCompletionInfo) {
         const currentText = document.getText(context.selectedCompletionInfo.range)
         const selectedText = context.selectedCompletionInfo.text
-        if (completions.length > 0 && !(currentText + completions[0].insertText).startsWith(selectedText)) {
+        console.log({ currentText, selectedText })
+
+        if (!selectedText.startsWith(currentText)) {
             return false
         }
     }
@@ -319,7 +315,7 @@ function completionMatchesPopupItem(
 }
 
 function completionMatchesSuffix(
-    completions: InlineCompletionItem[],
+    completions: vscode.InlineCompletionItem[],
     docContext: DocumentContext,
     providerConfig: ProviderConfig
 ): boolean {
@@ -333,6 +329,9 @@ function completionMatchesSuffix(
     const suffix = docContext.currentLineSuffix
 
     for (const completion of completions) {
+        if (typeof completion.insertText !== 'string') {
+            continue
+        }
         const insertion = completion.insertText
         let j = 0
         // eslint-disable-next-line @typescript-eslint/prefer-for-of
