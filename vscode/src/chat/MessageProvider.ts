@@ -542,7 +542,8 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         if (!text?.startsWith('/')) {
             return { text, recipeId }
         }
-        this.telemetryService.log(`CodyVSCodeExtension:slashCommand:${text}:submitted`)
+        const commandKey = text.split(' ')[0].replace('/', '')
+        this.telemetryService.log(`CodyVSCodeExtension:command:${commandKey}:filtering`)
         switch (true) {
             case text === '/':
                 return vscode.commands.executeCommand('cody.action.commands.menu')
@@ -564,7 +565,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
                 const promptText = this.editor.controllers.command?.find(text, true)
                 await this.editor.controllers.command?.get('command')
                 if (promptText) {
-                    this.telemetryService.log(`CodyVSCodeExtension:command:${text}:executing`)
+                    this.telemetryService.log(`CodyVSCodeExtension:command:${commandKey}:executing`)
                     return { text: promptText, recipeId: 'custom-prompt' }
                 }
                 return { text, recipeId }

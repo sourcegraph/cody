@@ -154,11 +154,9 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             isCodyEnabled={true}
             codyNotEnabledNotice={undefined}
             afterMarkdown={
-                showOnboardingButtons
-                    ? 'To get started, select some code and right click to select a Cody command to run.'
-                    : ''
+                '🔔 Recipes are now [Cody Commands](command:cody.action.commands.menu)! You can start using them with the [⌥C](command:cody.action.commands.menu) shortcut on highlighted code. \n\nSee [Getting Started](command:cody.welcome) to learn more about [Cody Commands](command:cody.action.commands.menu).'
             }
-            helpMarkdown="See [Getting Started](command:cody.welcome) for help and tips."
+            helpMarkdown=""
             ChatButtonComponent={ChatButton}
             pluginsDevMode={pluginsDevMode}
             chatCommands={chatCommands}

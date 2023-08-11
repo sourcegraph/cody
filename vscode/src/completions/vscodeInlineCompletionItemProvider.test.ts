@@ -5,6 +5,7 @@ import type * as vscode from 'vscode'
 import { vsCodeMocks } from '../testutils/mocks'
 
 import { getInlineCompletions, InlineCompletionsResultSource } from './getInlineCompletions'
+import * as CompletionLogger from './logger'
 import { createProviderConfig } from './providers/anthropic'
 import { documentAndPosition } from './testHelpers'
 import { InlineCompletionItem } from './types'
@@ -72,8 +73,9 @@ describe('InlineCompletionItemProvider', () => {
             source: InlineCompletionsResultSource.Network,
         })
         const provider = new MockableInlineCompletionItemProvider(fn)
-        const { items } = await provider.provideInlineCompletionItems(document, position, DUMMY_CONTEXT)
-        expect(items).toMatchInlineSnapshot(`
+        const result = await provider.provideInlineCompletionItems(document, position, DUMMY_CONTEXT)
+        expect(result).not.toBeNull()
+        expect(result!.items).toMatchInlineSnapshot(`
           [
             InlineCompletionItem {
               "insertText": "const foo = test",
@@ -156,5 +158,106 @@ describe('InlineCompletionItemProvider', () => {
         // On the 2nd call, lastInlineCompletionResult is provided.
         await provider.provideInlineCompletionItems(document, position, DUMMY_CONTEXT)
         expect(fn.mock.calls.map(call => call[0].lastCandidate?.result.items)).toEqual([[item]])
+    })
+
+    describe('logger', () => {
+        test('logs a completion as shown', async () => {
+            const spy = vi.spyOn(CompletionLogger, 'suggested')
+
+            const { document, position } = documentAndPosition('const foo = █', 'typescript')
+            const fn = vi.fn(getInlineCompletions).mockResolvedValue({
+                logId: '1',
+                items: [{ insertText: 'bar', range: new vsCodeMocks.Range(position, position) }],
+                source: InlineCompletionsResultSource.Network,
+            })
+
+            const provider = new MockableInlineCompletionItemProvider(fn)
+            await provider.provideInlineCompletionItems(document, position, DUMMY_CONTEXT)
+
+            expect(spy).toHaveBeenCalled()
+        })
+
+        test('does not log a completion when the abort handler was triggered after a network fetch', async () => {
+            const spy = vi.spyOn(CompletionLogger, 'suggested')
+
+            let onCancel = () => {}
+            const token: vscode.CancellationToken = {
+                isCancellationRequested: false,
+                onCancellationRequested(fn: any): vscode.Disposable {
+                    onCancel = fn
+                    return { dispose: () => {} }
+                },
+            }
+            function cancel() {
+                token.isCancellationRequested = true
+                onCancel()
+            }
+
+            const { document, position } = documentAndPosition('const foo = █', 'typescript')
+            const fn = vi.fn(getInlineCompletions).mockImplementation(() => {
+                cancel()
+                return Promise.resolve({
+                    logId: '1',
+                    items: [{ insertText: 'bar', range: new vsCodeMocks.Range(position, position) }],
+                    source: InlineCompletionsResultSource.Network,
+                })
+            })
+
+            const provider = new MockableInlineCompletionItemProvider(fn)
+            await provider.provideInlineCompletionItems(document, position, DUMMY_CONTEXT, token)
+
+            expect(spy).not.toHaveBeenCalled()
+        })
+
+        test('does not log a completion if it does not overlap the completion popup', async () => {
+            const spy = vi.spyOn(CompletionLogger, 'suggested')
+
+            const { document, position } = documentAndPosition('console.█', 'typescript')
+            const fn = vi.fn(getInlineCompletions).mockResolvedValue({
+                logId: '1',
+                items: [{ insertText: 'log()', range: new vsCodeMocks.Range(position, position) }],
+                source: InlineCompletionsResultSource.Network,
+            })
+
+            const provider = new MockableInlineCompletionItemProvider(fn)
+            await provider.provideInlineCompletionItems(document, position, {
+                triggerKind: vsCodeMocks.InlineCompletionTriggerKind.Automatic,
+                selectedCompletionInfo: { text: 'dir', range: new vsCodeMocks.Range(0, 6, 0, 8) },
+            })
+
+            expect(spy).not.toHaveBeenCalled()
+        })
+
+        test('log a completion if the suffix is inside the completion', async () => {
+            const spy = vi.spyOn(CompletionLogger, 'suggested')
+
+            const { document, position } = documentAndPosition('const a = [1, █];', 'typescript')
+            const fn = vi.fn(getInlineCompletions).mockResolvedValue({
+                logId: '1',
+                items: [{ insertText: '2] ;', range: new vsCodeMocks.Range(position, position) }],
+                source: InlineCompletionsResultSource.Network,
+            })
+
+            const provider = new MockableInlineCompletionItemProvider(fn)
+            await provider.provideInlineCompletionItems(document, position, DUMMY_CONTEXT)
+
+            expect(spy).toHaveBeenCalled()
+        })
+
+        test('does not log a completion if the suffix does not match', async () => {
+            const spy = vi.spyOn(CompletionLogger, 'suggested')
+
+            const { document, position } = documentAndPosition('const a = [1, █)(123);', 'typescript')
+            const fn = vi.fn(getInlineCompletions).mockResolvedValue({
+                logId: '1',
+                items: [{ insertText: '2];', range: new vsCodeMocks.Range(position, position) }],
+                source: InlineCompletionsResultSource.Network,
+            })
+
+            const provider = new MockableInlineCompletionItemProvider(fn)
+            await provider.provideInlineCompletionItems(document, position, DUMMY_CONTEXT)
+
+            expect(spy).not.toHaveBeenCalled()
+        })
     })
 })

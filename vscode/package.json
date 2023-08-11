@@ -2,7 +2,7 @@
   "name": "cody-ai",
   "private": true,
   "displayName": "Cody AI",
-  "version": "0.6.5",
+  "version": "0.6.6",
   "publisher": "sourcegraph",
   "license": "Apache-2.0",
   "icon": "resources/cody.png",
@@ -110,9 +110,17 @@
             }
           },
           {
+            "id": "commands",
+            "title": "Cody Commands",
+            "description": "You can use Cody commands to streamline your development process (e.g. generate unit tests, documentation, and more) with just a few clicks.\n[Open Commands Menu](command:cody.action.commands.menu)",
+            "media": {
+              "markdown": "walkthroughs/commands.md"
+            }
+          },
+          {
             "id": "explain",
             "title": "Explain Code",
-            "description": "Ask Cody to explain some code. Select some lines and use the \"Explain selected code\" recipe.\n[Open Commands](command:cody.action.commands.menu)",
+            "description": "Ask Cody to explain some code. Select some lines and use the \"Explain Code\" command.\n[Open Commands Menu](command:cody.action.commands.menu)",
             "media": {
               "markdown": "walkthroughs/explain.md"
             }
@@ -415,7 +423,7 @@
       {
         "command": "cody.action.commands.menu",
         "category": "Cody",
-        "title": "Commands Menu",
+        "title": "Commands",
         "when": "cody.activated",
         "icon": "$(cody-logo)"
       },
@@ -452,9 +460,9 @@
       },
       {
         "command": "cody.action.commands.menu",
-        "key": "ctrl+shift+v",
-        "mac": "cmd+shift+v",
-        "when": "cody.activated && editorFocus"
+        "key": "alt+c",
+        "mac": "alt+c",
+        "when": "cody.activated"
       },
       {
         "command": "-github.copilot.generate",
@@ -811,15 +819,15 @@
             "unstable-fireworks",
             "unstable-azure-openai"
           ],
-          "markdownDescription": "Overwrite the provider used for code autocomplete."
+          "markdownDescription": "The provider used for code autocomplete. Most providers other than `anthropic` require the `cody.autocomplete.advanced.serverEndpoint` and `cody.autocomplete.advanced.accessToken` settings to also be set. Check the Cody output channel for error messages if autocomplete is not working as expected."
         },
         "cody.autocomplete.advanced.serverEndpoint": {
           "type": "string",
-          "markdownDescription": "Overwrite the server endpoint used for code autocomplete. This is only supported with a provider other than `anthropic`."
+          "markdownDescription": "The server endpoint used for code autocomplete. This is only supported with a provider other than `anthropic`."
         },
         "cody.autocomplete.advanced.accessToken": {
           "type": "string",
-          "markdownDescription": "Overwrite the access token used for code autocomplete. This is only supported with a provider other than `anthropic`."
+          "markdownDescription": "The access token used for code autocomplete. This is only supported with a provider other than `anthropic`."
         },
         "cody.autocomplete.advanced.embeddings": {
           "order": 99,

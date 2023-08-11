@@ -8,13 +8,7 @@ For example, the Sourcegraph web app uses these packages to provide Cody functio
 
 1. Increment the `version` in `lib/shared/package.json` and `lib/ui/package.json`.
 1. Commit and push the version increment.
-1. Publish the new packages:
-
-   ```shell
-   pnpm -C lib/shared publish
-   pnpm -C lib/ui publish
-   ```
-
+1. Run `pnpm publish` from the corresponding package root folder (`lib/shared` or `lib/ui`). See instructions in the team password manager for npm authentication.
 1. Update consumers to use the new published versions.
 
 ## Local development

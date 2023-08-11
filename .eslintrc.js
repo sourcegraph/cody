@@ -16,6 +16,7 @@ const config = {
     },
     EXPERIMENTAL_useSourceOfProjectReferenceRedirect: true,
     project: [
+      __dirname + '/e2e/tsconfig.json',
       __dirname + '/agent/tsconfig.json',
       __dirname + '/cli/tsconfig.json',
       __dirname + '/lib/ui/tsconfig.json',

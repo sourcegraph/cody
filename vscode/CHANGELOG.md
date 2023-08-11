@@ -8,18 +8,32 @@ Starting from `0.2.0`, Cody is using `major.EVEN_NUMBER.patch` for release versi
 
 ### Added
 
+### Fixed
+
+### Changed
+
+## [0.6.6]
+
+### Added
+
 - Chat Commands: Add tab-to-complete behavior. [pull/606](https://github.com/sourcegraph/cody/pull/606)
 - Option to toggle `cody.experimental.editorTitleCommandIcon` setting through status bar. [pull/611](https://github.com/sourcegraph/cody/pull/611)
+- New walkthrough for Cody Commands. [pull/648](https://github.com/sourcegraph/cody/pull/648)
 
 ### Fixed
 
 - Update file link color to match buttons. [pull/600](https://github.com/sourcegraph/cody/pull/600)
 - Handle `socket hung up` errors that are not caused by the `stop generating` button. [pull/598](https://github.com/sourcegraph/cody/pull/598)
 - Fix "Reload Window" appearing in all VS Code views. [pull/603](https://github.com/sourcegraph/cody/pull/603)
+- Fixes issues where in some instances, suggested autocomplete events were under counted. [pull/649](https://github.com/sourcegraph/cody/pull/649)
+- Various smaller tweaks to autocomplete analytics. [pull/644](https://github.com/sourcegraph/cody/pull/644)
+- Includes the correct pre-release version in analytics events. [pull/641](https://github.com/sourcegraph/cody/pull/641)
 
 ### Changed
 
 - Removed beta labels from autocorrect and inine chat features. [pull/605](https://github.com/sourcegraph/cody/pull/605)
+- Update shortcut for Cody Commands to `alt` + `c` due to conflict with existing keybinding for `fixup`. [pull/648](https://github.com/sourcegraph/cody/pull/648)
+- Removed beta labels from autocorrect and inline chat features. [pull/605](https://github.com/sourcegraph/cody/pull/605)
 
 ## [0.6.5]
 
