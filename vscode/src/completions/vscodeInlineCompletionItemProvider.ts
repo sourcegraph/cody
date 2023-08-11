@@ -234,12 +234,9 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
             // come in.
             const start = currentLine.range.start
 
-            // Limit the range to the current position if the model supports infilling and the
-            // response only has a single line.
-            // For non FIM models, the same line suffix will be repeated in the completion
-            const supportsInfilling = this.config.providerConfig.supportsInfilling
-            const isMultiline = completion.insertText.includes('\n')
-            const end = supportsInfilling && !isMultiline ? position : currentLine.range.end
+            // The completion will always exclude the same line suffix, so it has to overwrite the
+            // current range.
+            const end = currentLine.range.end
 
             return new vscode.InlineCompletionItem(
                 currentLinePrefix + completion.insertText,
