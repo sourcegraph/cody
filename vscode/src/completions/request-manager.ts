@@ -109,7 +109,7 @@ export class RequestManager {
             lastTriggerPosition: position,
             lastTriggerCurrentLinePrefix: docContext.currentLinePrefix,
             lastTriggerNextNonEmptyLine: docContext.nextNonEmptyLine,
-            lastTriggerSelectedInfoItem: context.selectedCompletionInfo?.text,
+            lastTriggerSelectedInfoItem: context?.selectedCompletionInfo?.text,
             result: {
                 logId: '',
                 items,

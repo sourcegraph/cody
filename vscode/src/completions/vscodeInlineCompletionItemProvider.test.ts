@@ -129,6 +129,7 @@ describe('InlineCompletionItemProvider', () => {
               "character": 12,
               "line": 0,
             },
+            "lastTriggerSelectedInfoItem": undefined,
             "result": {
               "items": [
                 {

@@ -36,7 +36,7 @@ export function getCurrentDocContext(
     position: vscode.Position,
     maxPrefixLength: number,
     maxSuffixLength: number,
-    context: vscode.InlineCompletionContext | null = null
+    context?: vscode.InlineCompletionContext
 ): DocumentContext {
     const offset = document.offsetAt(position)
 

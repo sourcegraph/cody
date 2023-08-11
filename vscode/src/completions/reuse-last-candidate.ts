@@ -19,7 +19,7 @@ export function reuseLastCandidate({
         ...lastCandidate
     },
     docContext: { currentLinePrefix, currentLineSuffix, nextNonEmptyLine },
-}: Required<Pick<InlineCompletionsParams, 'document' | 'position' | 'lastCandidate' | 'context'>> & {
+}: Required<Pick<InlineCompletionsParams, 'document' | 'position' | 'context' | 'lastCandidate'>> & {
     docContext: DocumentContext
 }): InlineCompletionsResult | null {
     const isSameDocument = lastCandidate.uri.toString() === document.uri.toString()
