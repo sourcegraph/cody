@@ -261,14 +261,19 @@
         "title": "Explain Code"
       },
       {
-        "command": "cody.command.generate-unit-test",
+        "command": "cody.command.generate-tests",
         "category": "Ask Cody",
         "title": "Generate Unit Test"
       },
       {
-        "command": "cody.command.generate-docstring",
+        "command": "cody.command.document-code",
         "category": "Ask Cody",
         "title": "Document Code"
+      },
+      {
+        "command": "cody.command.smell-code",
+        "category": "Ask Cody",
+        "title": "Smell Code"
       },
       {
         "command": "cody.command.context-search",
@@ -479,7 +484,7 @@
       "commandPalette": [
         {
           "command": "cody.command.explain-code",
-          "when": "cody.activated && editorHasSelection"
+          "when": "cody.activated"
         },
         {
           "command": "cody.command.context-search",
@@ -490,12 +495,16 @@
           "when": "false"
         },
         {
-          "command": "cody.command.generate-unit-test",
-          "when": "cody.activated && editorHasSelection"
+          "command": "cody.command.smell-code",
+          "when": "cody.activated"
         },
         {
-          "command": "cody.command.generate-docstring",
-          "when": "cody.activated && editorHasSelection"
+          "command": "cody.command.generate-tests",
+          "when": "cody.activated"
+        },
+        {
+          "command": "cody.command.document-code",
+          "when": "cody.activated"
         },
         {
           "command": "cody.focus",
@@ -567,11 +576,15 @@
           "when": "cody.activated"
         },
         {
-          "command": "cody.command.generate-unit-test",
+          "command": "cody.command.generate-tests",
           "when": "cody.activated"
         },
         {
-          "command": "cody.command.generate-docstring",
+          "command": "cody.command.document-code",
+          "when": "cody.activated"
+        },
+        {
+          "command": "cody.command.smell-code",
           "when": "cody.activated"
         },
         {

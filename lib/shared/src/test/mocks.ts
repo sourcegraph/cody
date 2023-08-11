@@ -108,6 +108,10 @@ export class MockEditor implements Editor {
         return this.mocks.getActiveTextEditorSelection?.() ?? null
     }
 
+    public getActiveTextEditorSelectionOrVisibleContent(): ActiveTextEditorSelection | null {
+        return this.mocks.getActiveTextEditorSelection?.() ?? null
+    }
+
     public getActiveTextEditorDiagnosticsForRange(
         range: ActiveTextEditorSelectionRange
     ): ActiveTextEditorDiagnostic[] | null {
@@ -116,6 +120,14 @@ export class MockEditor implements Editor {
 
     public getActiveTextEditor(): ActiveTextEditor | null {
         return this.mocks.getActiveTextEditor?.() ?? null
+    }
+
+    public getActiveInlineChatTextEditor(): ActiveTextEditor | null {
+        return this.mocks.getActiveTextEditor?.() ?? null
+    }
+
+    public getActiveInlineChatSelection(): ActiveTextEditorSelection | null {
+        return this.mocks.getActiveTextEditorSelection?.() ?? null
     }
 
     public getActiveTextEditorVisibleContent(): ActiveTextEditorVisibleContent | null {

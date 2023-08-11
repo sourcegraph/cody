@@ -104,7 +104,7 @@ const register = async (
     const editor = new VSCodeEditor({
         inline: commentController,
         fixups: fixup,
-        command: platform.createCommandsController?.(context, localStorage),
+        command: platform.createCommandsController?.(context, localStorage, telemetryService),
     })
 
     // Could we use the `initialConfig` instead?
@@ -318,18 +318,23 @@ const register = async (
                 await sidebarChatProvider.setWebviewView('chat')
             }
             await sidebarChatProvider.executeCustomCommand(title)
+            telemetryService.log('CodyVSCodeExtension:command:custom:executed')
         }),
         vscode.commands.registerCommand('cody.command.explain-code', async () => {
             await executeRecipeInSidebar('custom-prompt', true, '/explain')
             telemetryService.log('CodyVSCodeExtension:recipe:explain-code-high-level:executed')
         }),
-        vscode.commands.registerCommand('cody.command.generate-unit-test', async () => {
+        vscode.commands.registerCommand('cody.command.generate-tests', async () => {
             await executeRecipeInSidebar('custom-prompt', true, '/test')
             telemetryService.log('CodyVSCodeExtension:recipe:generate-unit-test:executed')
         }),
-        vscode.commands.registerCommand('cody.command.generate-docstring', async () => {
+        vscode.commands.registerCommand('cody.command.document-code', async () => {
             await executeRecipeInSidebar('custom-prompt', true, '/doc')
             telemetryService.log('CodyVSCodeExtension:recipe:generate-docstring:executed')
+        }),
+        vscode.commands.registerCommand('cody.command.smell-code', async () => {
+            await executeRecipeInSidebar('custom-prompt', true, '/smell')
+            telemetryService.log('CodyVSCodeExtension:recipe:find-code-smells:executed')
         }),
         vscode.commands.registerCommand('cody.command.inline-touch', () =>
             executeRecipeInSidebar('inline-touch', false)

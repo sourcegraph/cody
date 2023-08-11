@@ -5,10 +5,10 @@ import { ActiveTextEditorSelection } from '../../editor'
 import { MAX_HUMAN_INPUT_TOKENS, MAX_RECIPE_INPUT_TOKENS, MAX_RECIPE_SURROUNDING_TOKENS } from '../../prompt/constants'
 import { truncateText } from '../../prompt/truncation'
 import { BufferedBotResponseSubscriber } from '../bot-response-multiplexer'
+import { getEditorDirContext, getEditorOpenTabsContext } from '../prompts/vscode-context'
 import { Interaction } from '../transcript/interaction'
 
 import { ChatQuestion } from './chat-question'
-import { CustomPrompt } from './custom-prompt'
 import { commandRegex, contentSanitizer } from './helpers'
 import { Recipe, RecipeContext, RecipeID } from './recipe'
 
@@ -163,11 +163,11 @@ export class InlineTouch implements Recipe {
         const contextMessages: ContextMessage[] = []
         // Add selected text and current file as context and create context messages from current directory
         const selectedContext = ChatQuestion.getEditorSelectionContext(selection)
-        const currentDirContext = await CustomPrompt.getEditorDirContext(currentDir, selection.fileName, true)
+        const currentDirContext = await getEditorDirContext(currentDir, selection.fileName, true)
         contextMessages.push(...selectedContext, ...currentDirContext)
         // Create context messages from open tabs
         if (contextMessages.length < 10) {
-            const tabsContext = await CustomPrompt.getEditorOpenTabsContext(currentDir)
+            const tabsContext = await getEditorOpenTabsContext(currentDir)
             contextMessages.push(...tabsContext)
         }
         return contextMessages.slice(-10)

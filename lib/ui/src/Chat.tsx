@@ -247,7 +247,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                 !event.nativeEvent.isComposing &&
                 formInput &&
                 formInput.trim() &&
-                selectedChatCommand < 0
+                !displayCommands?.length
             ) {
                 event.preventDefault()
                 event.stopPropagation()
@@ -264,7 +264,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
             // Handles cycling through chat command suggestions using the up and down arrow keys
             if (displayCommands && formInput.startsWith('/')) {
                 if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
-                    const commandsLength = displayCommands?.length - 1
+                    const commandsLength = displayCommands?.length
                     const newIndex = event.key === 'ArrowUp' ? selectedChatCommand - 1 : selectedChatCommand + 1
                     const newCommandIndex = newIndex < 0 ? commandsLength : newIndex > commandsLength ? 0 : newIndex
                     setSelectedChatCommand(newCommandIndex)
@@ -277,8 +277,13 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                     setSelectedChatCommand(-1)
                     setFormInput('')
                 }
+
                 // tab/enter to complete
-                if ((event.key === 'Tab' || event.key === 'Enter') && selectedChatCommand > -1) {
+                if (
+                    (event.key === 'Tab' || event.key === 'Enter') &&
+                    selectedChatCommand > -1 &&
+                    displayCommands.length
+                ) {
                     event.preventDefault()
                     event.stopPropagation()
                     const newInput = displayCommands?.[selectedChatCommand]?.[1]?.slashCommand

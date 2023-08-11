@@ -1,9 +1,9 @@
-import { commands, QuickInputButtons, QuickPickItem, QuickPickOptions, window } from 'vscode'
+import { commands, QuickPickItem, QuickPickOptions, window } from 'vscode'
 
 import { CodyPrompt } from '@sourcegraph/cody-shared'
 
 import { CustomCommandsItem } from '../utils'
-import { CustomCommandConfigMenuItems, menu_options } from '../utils/menu'
+import { CustomCommandConfigMenuItems, menu_buttons, menu_options } from '../utils/menu'
 
 import { CodyCommand, CustomCommandsBuilderMenu } from './CustomCommandBuilderMenu'
 
@@ -27,6 +27,8 @@ export async function showCommandMenu(items: QuickPickItem[]): Promise<CommandMe
         quickPick.placeholder = options.placeHolder
         quickPick.ignoreFocusOut = options.ignoreFocusOut
 
+        quickPick.buttons = [menu_buttons.gear]
+
         const labels = new Set(items.map(item => item.label))
         quickPick.onDidChangeValue(() => {
             if (quickPick.value && !labels.has(quickPick.value)) {
@@ -35,6 +37,11 @@ export async function showCommandMenu(items: QuickPickItem[]): Promise<CommandMe
                 return
             }
             quickPick.items = items
+        })
+        // On gear icon click
+        quickPick.onDidTriggerButton(async () => {
+            quickPick.hide()
+            await commands.executeCommand('cody.settings.commands')
         })
 
         quickPick.onDidAccept(() => {
@@ -84,7 +91,7 @@ export async function showCommandConfigMenu(): Promise<CustomCommandsItem> {
         quickPick.title = CustomCommandConfigMenuOptions.title
         quickPick.placeholder = CustomCommandConfigMenuOptions.placeHolder
 
-        quickPick.buttons = [QuickInputButtons.Back]
+        quickPick.buttons = [menu_buttons.back]
 
         // on item button click
         quickPick.onDidTriggerItemButton(item => {
@@ -101,8 +108,8 @@ export async function showCommandConfigMenu(): Promise<CustomCommandsItem> {
         })
 
         quickPick.onDidTriggerButton(async () => {
-            await commands.executeCommand('cody.action.commands.menu')
             quickPick.hide()
+            await commands.executeCommand('cody.action.commands.menu')
         })
 
         quickPick.show()
