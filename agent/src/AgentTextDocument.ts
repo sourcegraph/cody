@@ -4,7 +4,10 @@ import { DocumentOffsets } from './offsets'
 import { TextDocument } from './protocol'
 import * as vscode_shim from './vscode-shim'
 
-// TODO: implement with vscode-languageserver-textdocument
+// TODO: implement with vscode-languageserver-textdocument The reason we don't
+// use vscode-languageserver-textdocument is because it doesn't implement all
+// the properties/functions that vscode.TextDocument has. For example, lineAt is
+// missing in vscode-languageserver-textdocument
 export class AgentTextDocument implements vscode.TextDocument {
     constructor(public readonly textDocument: TextDocument) {
         this.content = textDocument.content ?? ''

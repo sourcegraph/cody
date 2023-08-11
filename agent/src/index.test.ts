@@ -19,6 +19,10 @@ export class TestClient extends MessageHandler {
                 accessToken: process.env.SRC_ACCESS_TOKEN ?? 'invalid',
                 serverEndpoint: process.env.SRC_ENDPOINT ?? 'invalid',
                 customHeaders: {},
+                autocompleteAdvancedProvider: '',
+                autocompleteAdvancedAccessToken: '',
+                autocompleteAdvancedServerEndpoint: '',
+                autocompleteAdvancedEmbeddings: true,
             },
         })
         this.notify('initialized', null)
@@ -78,33 +82,26 @@ describe('StandardAgent', () => {
         const filePath = '/path/to/foo/file.js'
         const content = 'function sum(a, b) {\n    \n}'
         client.notify('textDocument/didOpen', { filePath, content })
-        // client.notify('connectionConfiguration/didChange', {
-        //     accessToken: process.env.SRC_ACCESS_TOKEN ?? '',
-        //     serverEndpoint: process.env.SRC_ENDPOINT ?? '',
-        //     customHeaders: {},
-        // })
         const completions = await client.request('autocomplete/execute', {
             filePath: filePath,
             position: { line: 1, character: 4 },
         })
-
-        console.log({ recipes: completions })
         assert(completions.items.length > 0)
     })
 
-    // const streamingChatMessages = new Promise<void>(resolve => {
-    //     client.registerNotification('chat/updateMessageInProgress', msg => {
-    //         if (msg === null) {
-    //             resolve()
-    //         }
-    //     })
-    // })
+    const streamingChatMessages = new Promise<void>(resolve => {
+        client.registerNotification('chat/updateMessageInProgress', msg => {
+            if (msg === null) {
+                resolve()
+            }
+        })
+    })
 
-    // it('allows us to execute recipes properly', async () => {
-    //     await client.executeRecipe('chat-question', "What's 2+2?")
-    // })
+    it('allows us to execute recipes properly', async () => {
+        await client.executeRecipe('chat-question', "What's 2+2?")
+    })
 
-    // it('sends back transcript updates and makes sense', () => streamingChatMessages, 20_000)
+    it('sends back transcript updates and makes sense', () => streamingChatMessages, 20_000)
 
     afterAll(async () => {
         await client.shutdownAndExit()

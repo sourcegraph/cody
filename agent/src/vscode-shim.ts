@@ -1,11 +1,36 @@
-import * as vscode from 'vscode'
+import type * as vscode from 'vscode'
 
-import { InlineCompletionItemProvider } from '../../vscode/src/completions/vscodeInlineCompletionItemProvider'
-import { Disposable, UIKind } from '../../vscode/src/testutils/mocks'
+// <VERY IMPORTANT - PLEASE READ>
+// This file must not import any module that transitively imports from 'vscode'.
+// It's only OK to `import type` from vscode. We can't depend on any vscode APIs
+// to implement this this file because this file is responsible for implementing
+// VS Code APIs resulting in cyclic dependencies.  If we make a mistake and
+// transitively import vscode then you are most likely to hit an error like this:
+//
+//     /pkg/prelude/bootstrap.js:1926
+//     return wrapper.apply(this.exports, args);
+//                    ^
+//     TypeError: Cannot read properties of undefined (reading 'getConfiguration')
+//     at Object.<anonymous> (/snapshot/dist/agent.js)
+//     at Module._compile (pkg/prelude/bootstrap.js:1926:22)
+// </VERY IMPORTANT>
+import type { InlineCompletionItemProvider } from '../../vscode/src/completions/vscodeInlineCompletionItemProvider'
+import {
+    // It's OK to import the VS Code mocks because they don't depend on the 'vscode' module.
+    Disposable,
+    emptyDisposable,
+    emptyEvent,
+    EventEmitter,
+    UIKind,
+    Uri,
+} from '../../vscode/src/testutils/mocks'
 
-import { ConnectionConfiguration } from './protocol'
+import { AgentTabGroups } from './AgentTabGroups'
+import type { ConnectionConfiguration } from './protocol'
 
 export {
+    emptyEvent,
+    emptyDisposable,
     Range,
     Selection,
     Position,
@@ -40,11 +65,6 @@ export {
     Uri,
     UIKind,
 } from '../../vscode/src/testutils/mocks'
-
-export const emptyDisposable = new Disposable(() => {})
-export function emptyEvent<T>(): vscode.Event<T> {
-    return () => emptyDisposable
-}
 
 const emptyFileWatcher: vscode.FileSystemWatcher = {
     onDidChange: emptyEvent(),
@@ -94,19 +114,37 @@ const configuration: vscode.WorkspaceConfiguration = {
     },
 }
 
-export const onDidChangeConfigurationCallbacks: ((e: vscode.ConfigurationChangeEvent) => any)[] = []
+export const onDidChangeActiveTextEditor = new EventEmitter<vscode.TextEditor | undefined>()
+export const onDidChangeConfiguration = new EventEmitter<vscode.ConfigurationChangeEvent>()
+export const onDidOpenTextDocument = new EventEmitter<vscode.TextDocument>()
+export const onDidChangeTextDocument = new EventEmitter<vscode.TextDocumentChangeEvent>()
+export const onDidCloseTextDocument = new EventEmitter<vscode.TextDocument>()
+export const onDidRenameFiles = new EventEmitter<vscode.FileRenameEvent>()
+export const onDidDeleteFiles = new EventEmitter<vscode.FileDeleteEvent>()
+
+export interface WorkspaceDocuments {
+    openTextDocument: (filePath: string) => Promise<vscode.TextDocument>
+}
+let workspaceDocuments: WorkspaceDocuments | undefined
+export function setWorkspaceDocuments(newWorkspaceDocuments: WorkspaceDocuments): void {
+    workspaceDocuments = newWorkspaceDocuments
+}
 
 // vscode.workspace.onDidChangeConfiguration
 const _workspace: Partial<typeof vscode.workspace> = {
+    openTextDocument: uri => {
+        // We currently treat filePath the same as uri for now, but will need to
+        // properly pass around URIs once the agent protocol supports URIs
+        const filePath = uri instanceof Uri ? uri.path : uri?.toString() ?? ''
+        return workspaceDocuments ? workspaceDocuments.openTextDocument(filePath) : ('missingWorkspaceDocuments' as any)
+    },
     onDidChangeWorkspaceFolders: (() => ({})) as any,
-    onDidChangeConfiguration: (callback => {
-        onDidChangeConfigurationCallbacks.push(callback)
-        return emptyDisposable
-    }) as typeof vscode.workspace.onDidChangeConfiguration,
-    onDidChangeTextDocument: (() => ({})) as any,
-    onDidCloseTextDocument: (() => ({})) as any,
-    onDidRenameFiles: (() => ({})) as any,
-    onDidDeleteFiles: (() => ({})) as any,
+    onDidOpenTextDocument: onDidOpenTextDocument.event,
+    onDidChangeConfiguration: onDidChangeConfiguration.event,
+    onDidChangeTextDocument: onDidChangeTextDocument.event,
+    onDidCloseTextDocument: onDidCloseTextDocument.event,
+    onDidRenameFiles: onDidRenameFiles.event,
+    onDidDeleteFiles: onDidDeleteFiles.event,
     registerTextDocumentContentProvider: () => emptyDisposable,
     asRelativePath: (pathOrUri: string | vscode.Uri, includeWorkspaceFolder?: boolean): string => pathOrUri.toString(),
     createFileSystemWatcher: () => emptyFileWatcher,
@@ -117,14 +155,13 @@ export const workspace = _workspace as typeof vscode.workspace
 const statusBarItem: Partial<vscode.StatusBarItem> = {
     show: () => {},
 }
+
+export const visibleTextEditors: vscode.TextEditor[] = []
+
+export const tabGroups = new AgentTabGroups()
+
 const _window: Partial<typeof vscode.window> = {
-    tabGroups: {
-        all: [],
-        activeTabGroup: { isActive: false, activeTab: undefined, tabs: [], viewColumn: vscode.ViewColumn.Active },
-        close: () => Promise.resolve(false),
-        onDidChangeTabGroups: emptyEvent(),
-        onDidChangeTabs: emptyEvent(),
-    },
+    tabGroups,
     registerCustomEditorProvider: () => emptyDisposable,
     registerFileDecorationProvider: () => emptyDisposable,
     registerTerminalLinkProvider: () => emptyDisposable,
@@ -147,8 +184,8 @@ const _window: Partial<typeof vscode.window> = {
     registerUriHandler: () => emptyDisposable,
     registerWebviewViewProvider: () => emptyDisposable,
     createStatusBarItem: (() => statusBarItem) as any,
-    visibleTextEditors: [],
-    onDidChangeActiveTextEditor: emptyEvent(),
+    visibleTextEditors,
+    onDidChangeActiveTextEditor: onDidChangeActiveTextEditor.event,
     onDidChangeVisibleTextEditors: (() => ({})) as any,
     onDidChangeTextEditorSelection: (() => ({})) as any,
     showErrorMessage: ((message: string, ...items: string[]) => {}) as any,
@@ -174,13 +211,6 @@ const _extensions: Partial<typeof vscode.extensions> = {
     getExtension: (extensionId: string) => undefined,
 }
 export const extensions = _extensions as typeof vscode.extensions
-
-export const configurationChangeEvent: vscode.ConfigurationChangeEvent = {
-    affectsConfiguration: (section: string, scope?: vscode.ConfigurationScope): boolean =>
-        // TODO: actually check scopes, this just causes more work to be done by whoever
-        // is listening for configuration so should be harmless
-        true,
-}
 
 interface RegisteredCommand {
     command: string
@@ -228,16 +258,12 @@ export let completionProvider: Promise<InlineCompletionItemProvider> = new Promi
     resolveCompletionProvider = resolve
 })
 
-let completionItemProvider: any
-
 const _languages: Partial<typeof vscode.languages> = {
     registerCodeActionsProvider: () => emptyDisposable,
     registerCodeLensProvider: () => emptyDisposable,
-    registerInlineCompletionItemProvider: (selector, provider) => {
-        console.error('PROVIDER!!')
-        completionItemProvider = provider
-        resolveCompletionProvider(completionItemProvider)
-        completionProvider = Promise.resolve(completionItemProvider)
+    registerInlineCompletionItemProvider: (_selector, provider) => {
+        resolveCompletionProvider(provider as any)
+        completionProvider = Promise.resolve(provider as any)
         return emptyDisposable
     },
 }

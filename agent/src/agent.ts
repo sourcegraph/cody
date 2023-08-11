@@ -10,9 +10,11 @@ import { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/s
 import { activate } from '../../vscode/src/extension.node'
 
 import { AgentTextDocument } from './AgentTextDocument'
+import { newTextEditor } from './AgentTextEditor'
+import { AgentWorkspaceDocuments } from './AgentWorkspaceDocuments'
 import { AgentEditor } from './editor'
 import { MessageHandler } from './jsonrpc'
-import { AutocompleteItem, ConnectionConfiguration, TextDocument } from './protocol'
+import { AutocompleteItem, ConnectionConfiguration } from './protocol'
 import * as vscode_shim from './vscode-shim'
 
 const secretStorage = new Map<string, string>()
@@ -131,35 +133,23 @@ async function initializeVscodeExtension(): Promise<void> {
 
 export class Agent extends MessageHandler {
     private client: Promise<Client | null> = Promise.resolve(null)
-    public workspaceRootUri: URI | null = null
-    public activeDocumentFilePath: string | null = null
-    public documents: Map<string, TextDocument> = new Map()
+    public workspace = new AgentWorkspaceDocuments()
 
     constructor() {
         super()
-
-        // this.setClient({
-        //     customHeaders: {},
-        //     accessToken: process.env.SRC_ACCESS_TOKEN || '',
-        //     serverEndpoint: process.env.SRC_ENDPOINT || 'https://sourcegraph.com',
-        // })
+        vscode_shim.setWorkspaceDocuments(this.workspace)
 
         this.registerRequest('initialize', async client => {
             process.stderr.write(
                 `Cody Agent: handshake with client '${client.name}' (version '${client.version}') at workspace root path '${client.workspaceRootUri}'\n`
             )
             await initializeVscodeExtension()
-            this.workspaceRootUri = URI.parse(client.workspaceRootUri || `file://${client.workspaceRootPath}`)
+            this.workspace.workspaceRootUri = URI.parse(client.workspaceRootUri || `file://${client.workspaceRootPath}`)
             if (client.connectionConfiguration) {
                 this.setClient(client.connectionConfiguration)
             }
 
             const codyClient = await this.client
-            // This is needed to update the completions provider that was created with defaults
-            // during initializeVscodeExtension
-            for (const registeredCallback of vscode_shim.onDidChangeConfigurationCallbacks) {
-                registeredCallback(vscode_shim.configurationChangeEvent)
-            }
 
             if (!codyClient) {
                 return {
@@ -187,28 +177,35 @@ export class Agent extends MessageHandler {
         })
 
         this.registerNotification('textDocument/didFocus', document => {
-            this.activeDocumentFilePath = document.filePath
+            this.workspace.activeDocumentFilePath = document.filePath
+            vscode_shim.onDidChangeActiveTextEditor.fire(newTextEditor(this.workspace.agentTextDocument(document)))
         })
         this.registerNotification('textDocument/didOpen', document => {
-            this.documents.set(document.filePath, document)
-            this.activeDocumentFilePath = document.filePath
+            this.workspace.setDocument(document)
+            this.workspace.activeDocumentFilePath = document.filePath
+            const textDocument = this.workspace.agentTextDocument(document)
+            vscode_shim.onDidOpenTextDocument.fire(textDocument)
+            vscode_shim.onDidChangeActiveTextEditor.fire(newTextEditor(textDocument))
         })
         this.registerNotification('textDocument/didChange', document => {
-            if (document.content === undefined) {
-                document.content = this.documents.get(document.filePath)?.content
-            }
-            this.documents.set(document.filePath, document)
-            this.activeDocumentFilePath = document.filePath
+            const textDocument = this.workspace.agentTextDocument(document)
+            this.workspace.setDocument(document)
+            this.workspace.activeDocumentFilePath = document.filePath
+
+            vscode_shim.onDidChangeActiveTextEditor.fire(newTextEditor(textDocument))
+            vscode_shim.onDidChangeTextDocument.fire({
+                document: textDocument,
+                contentChanges: [], // TODO: implement this. It's only used by recipes, not autocomplete.
+                reason: undefined,
+            })
         })
         this.registerNotification('textDocument/didClose', document => {
-            this.documents.delete(document.filePath)
+            this.workspace.deleteDocument(document.filePath)
+            vscode_shim.onDidCloseTextDocument.fire(this.workspace.agentTextDocument(document))
         })
 
         this.registerNotification('connectionConfiguration/didChange', config => {
             this.setClient(config)
-            for (const registeredCallback of vscode_shim.onDidChangeConfigurationCallbacks) {
-                registeredCallback(vscode_shim.configurationChangeEvent)
-            }
         })
 
         this.registerRequest('recipes/list', () =>
@@ -225,6 +222,7 @@ export class Agent extends MessageHandler {
             if (!client) {
                 return null
             }
+
             await client.executeRecipe(data.id, {
                 humanChatInput: data.humanChatInput,
                 data: data.data,
@@ -238,19 +236,12 @@ export class Agent extends MessageHandler {
                 return { items: [] }
             }
             const token = new vscode.CancellationTokenSource().token
-            const document = this.documents.get(params.filePath)
+            const document = this.workspace.getDocument(params.filePath)
             if (!document) {
-                console.log('No document found for file path', params.filePath, [...this.documents.keys()])
+                console.log('No document found for file path', params.filePath, [...this.workspace.allFilePaths()])
                 return { items: [] }
             }
-            // const textDocument = vscode_document.TextDocument.create(
-            //     vscode.Uri.from({ scheme: 'file', path: params.filePath }).toString(),
-            //     'javascript',
-            //     1,
-            //     document.content ?? ''
-            // )
 
-            // ;(textDocument as any).fileName = params.filePath
             const textDocument = new AgentTextDocument(document)
 
             try {
@@ -273,6 +264,12 @@ export class Agent extends MessageHandler {
 
     private setClient(config: ConnectionConfiguration): void {
         vscode_shim.setConnectionConfig(config)
+        vscode_shim.onDidChangeConfiguration.fire({
+            affectsConfiguration: () =>
+                // assuming the return value below only impacts performance (not
+                // functionality), we return true to always triggger the callback.
+                true,
+        })
         vscode_shim.commands.executeCommand('cody.auth.sync')
         this.client = createClient({
             editor: new AgentEditor(this),

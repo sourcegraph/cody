@@ -29,14 +29,14 @@ export class AgentEditor implements Editor {
     }
 
     public getWorkspaceRootUri(): URI | null {
-        return this.agent.workspaceRootUri
+        return this.agent.workspace.workspaceRootUri
     }
 
     private activeDocument(): TextDocument | undefined {
-        if (this.agent.activeDocumentFilePath === null) {
+        if (this.agent.workspace.activeDocumentFilePath === null) {
             return undefined
         }
-        return this.agent.documents.get(this.agent.activeDocumentFilePath)
+        return this.agent.workspace.getDocument(this.agent.workspace.activeDocumentFilePath)
     }
 
     public getActiveTextEditor(): ActiveTextEditor | null {

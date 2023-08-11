@@ -568,5 +568,9 @@ export const vsCodeMocks = {
 
 export enum UIKind {
     Desktop = 1,
-    Web = 2
+    Web = 2,
+}
+
+export function emptyEvent<T>(): vscode_types.Event<T> {
+    return () => emptyDisposable
 }
