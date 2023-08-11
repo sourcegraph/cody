@@ -82,7 +82,7 @@ export class CustomPrompt implements Recipe {
         const codyPromptText = prompts.instruction.replace('{humanInput}', promptText)
 
         // Attach code selection to prompt text if only selection is needed as context
-        if (selection && isOnlySelectionRequired(isContextNeeded, selection.selectedText)) {
+        if (selection && isOnlySelectionRequired(isContextNeeded)) {
             const truncatedTextWithCode = promptTextWithCodeSelection(codyPromptText, selection)
             if (truncatedTextWithCode) {
                 return newInteraction({ text: truncatedTextWithCode, displayText })

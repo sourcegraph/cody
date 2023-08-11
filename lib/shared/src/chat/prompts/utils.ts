@@ -7,6 +7,24 @@ import { Interaction } from '../transcript/interaction'
 
 import { CodyPromptContext } from '.'
 
+export async function newInteraction(args: {
+    text?: string
+    displayText: string
+    contextMessages?: Promise<ContextMessage[]>
+    assistantText?: string
+    assistantDisplayText?: string
+}): Promise<Interaction> {
+    const { text, displayText, contextMessages, assistantText, assistantDisplayText } = args
+    return Promise.resolve(
+        new Interaction(
+            { speaker: 'human', text, displayText },
+            { speaker: 'assistant', text: assistantText, displayText: assistantDisplayText },
+            Promise.resolve(contextMessages || []),
+            []
+        )
+    )
+}
+
 /**
  * Returns a Promise resolving to an Interaction object representing an error response from the assistant.
  *
@@ -53,28 +71,7 @@ export function promptTextWithCodeSelection(
     return promptText
 }
 
-export async function newInteraction(args: {
-    text?: string
-    displayText: string
-    contextMessages?: Promise<ContextMessage[]>
-    assistantText?: string
-    assistantDisplayText?: string
-}): Promise<Interaction> {
-    const { text, displayText, contextMessages, assistantText, assistantDisplayText } = args
-    return Promise.resolve(
-        new Interaction(
-            { speaker: 'human', text, displayText },
-            { speaker: 'assistant', text: assistantText, displayText: assistantDisplayText },
-            Promise.resolve(contextMessages || []),
-            []
-        )
-    )
-}
-
-export function isOnlySelectionRequired(contextConfig: CodyPromptContext, selectedText: string): boolean {
-    return (
-        contextConfig.selection !== false &&
-        selectedText.trim().length > 0 &&
-        Object.entries(contextConfig).length === 1
-    )
+export function isOnlySelectionRequired(contextConfig: CodyPromptContext): boolean {
+    const contextConfigLength = Object.entries(contextConfig).length
+    return !contextConfig.none && ((contextConfig.selection && contextConfigLength === 1) || !contextConfigLength)
 }
