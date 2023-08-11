@@ -66,15 +66,50 @@ export class VSCodeEditor implements Editor<InlineController, FixupController, C
         }
     }
 
+    public getActiveInlineChatTextEditor(): ActiveTextEditor | null {
+        const inlineController = this.controllers.inline
+        const documentUri = inlineController?.thread?.uri
+        if (!inlineController?.isInProgress || !documentUri) {
+            return null
+        }
+        const documentSelection = inlineController?.selectionRange
+        // get text from the doc uri and selection range
+        const documentText = vscode.workspace.textDocuments
+            .find(doc => doc.uri.fsPath === documentUri.fsPath)
+            ?.getText(documentSelection)
+
+        return {
+            content: documentText || '',
+            filePath: documentUri.fsPath,
+            selectionRange: documentSelection,
+        }
+    }
+
+    public getActiveInlineChatSelection(): ActiveTextEditorSelection | null {
+        const inlineChatEditor = this.getActiveInlineChatTextEditor()
+        if (!inlineChatEditor) {
+            return null
+        }
+        const activeEditor = vscode.window.visibleTextEditors.find(
+            editor => editor.document.uri.fsPath === inlineChatEditor.filePath
+        )
+        const selectionRange = this.controllers.inline?.getSelectionRange()
+        if (!activeEditor || !selectionRange) {
+            return null
+        }
+        const selection = new vscode.Selection(selectionRange.start.line, 0, selectionRange.end.line + 1, 0)
+        return this.createActiveTextEditorSelection(activeEditor, selection)
+    }
+
     private getActiveTextEditorInstance(): vscode.TextEditor | null {
         const activeEditor = vscode.window.activeTextEditor
         return activeEditor ?? null
     }
 
     public getActiveTextEditorSelection(): ActiveTextEditorSelection | null {
-        // Skip this for Inline Chat tasks as the replace method uses selection tracked by the Inline Controller
+        // Get selection from Inline Controller if there is a Inline Task in progress
         if (this.controllers.inline?.isInProgress) {
-            return null
+            return this.getActiveInlineChatSelection()
         }
         const activeEditor = this.getActiveTextEditorInstance()
         if (!activeEditor) {
@@ -100,6 +135,10 @@ export class VSCodeEditor implements Editor<InlineController, FixupController, C
     }
 
     public getActiveTextEditorSelectionOrVisibleContent(): ActiveTextEditorSelection | null {
+        // Get selection from Inline Controller if there is a Inline Task in progress
+        if (this.controllers.inline?.isInProgress) {
+            return this.getActiveInlineChatSelection()
+        }
         const activeEditor = this.getActiveTextEditorInstance()
         if (!activeEditor) {
             return null
