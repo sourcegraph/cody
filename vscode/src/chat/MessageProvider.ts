@@ -138,12 +138,14 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         this.handleSuggestions([])
         this.sendTranscript()
         this.sendHistory()
+        this.telemetryService.log('CodyVSCodeExtension:chatReset:executed')
     }
 
     public async clearHistory(): Promise<void> {
         MessageProvider.chatHistory = {}
         MessageProvider.inputHistory = []
         await this.localStorage.removeChatHistory()
+        this.telemetryService.log('CodyVSCodeExtension:clearChatHistoryButton:clicked')
     }
 
     /**
@@ -157,6 +159,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         await this.transcript.toJSON()
         this.sendTranscript()
         this.sendHistory()
+        this.telemetryService.log('CodyVSCodeExtension:restoreChatHistoryButton:clicked')
     }
 
     private sendEnabledPlugins(plugins: string[]): void {
@@ -511,14 +514,13 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
             case 'menu':
                 await this.editor.controllers.command?.menu('custom')
                 await this.sendCodyCommands()
-                this.telemetryService.log('CodyVSCodeExtension:command:menu:opened')
                 break
             case 'add':
                 if (!type) {
                     break
                 }
                 await this.editor.controllers.command?.config('add', type)
-                this.telemetryService.log('CodyVSCodeExtension:command:addCommand')
+                this.telemetryService.log('CodyVSCodeExtension:addCommandButton:clicked')
                 break
         }
         // Get prompt details from controller by title then execute prompt's command
@@ -529,7 +531,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
             return
         }
         await this.executeRecipe('custom-prompt', promptText)
-        this.telemetryService.log('CodyVSCodeExtension:command:executedFromMenu')
+        this.telemetryService.log('CodyVSCodeExtension:command:started', { source: 'menu' })
         const starter = (await this.editor.controllers.command?.getCustomConfig())?.starter
         if (starter) {
             this.telemetryService.log('CodyVSCodeExtension:command:customStarter:applied')
@@ -546,25 +548,29 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
             return { text, recipeId }
         }
         const commandKey = text.split(' ')[0].replace('/', '')
-        this.telemetryService.log(`CodyVSCodeExtension:command:${commandKey}:filtering`)
         switch (true) {
             case text === '/':
-                return vscode.commands.executeCommand('cody.action.commands.menu')
+                return vscode.commands.executeCommand('cody.action.commands.menu', 'sidebar')
             case text === '/commands-settings':
+                this.telemetryService.log('CodyVSCodeExtension:command:configMenuButton:clicked', { source: 'sidebar' })
                 return vscode.commands.executeCommand('cody.settings.commands')
             case /^\/o(pen)?\s/.test(text) && this.editor.controllers.command !== undefined:
                 // open the user's ~/.vscode/cody.json file
                 await this.editor.controllers.command?.open(text.split(' ')[1])
+                this.telemetryService.log('CodyVSCodeExtension:command:openFile:executed')
                 return null
             case /^\/r(eset)?$/.test(text):
                 await this.clearAndRestartSession()
+                this.telemetryService.log('CodyVSCodeExtension:command:resetChat:executed')
                 return null
             case /^\/s(earch)?\s/.test(text):
                 return { text, recipeId: 'context-search' }
             case /^\/f(ix)?\s.*$/.test(text):
                 return { text, recipeId: 'fixup' }
             case /^\/(explain|doc|test|smell)$/.test(text):
-                this.telemetryService.log(`CodyVSCodeExtension:command:${text.replace('/', '')}:executed`)
+                this.telemetryService.log(`CodyVSCodeExtension:command:${commandKey}:called`, {
+                    source: 'chat',
+                })
             default: {
                 if (!this.editor.getActiveTextEditor()?.filePath) {
                     await this.addCustomInteraction('Command failed. Please open a file and try again.', text)
@@ -573,7 +579,6 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
                 const promptText = this.editor.controllers.command?.find(text, true)
                 await this.editor.controllers.command?.get('command')
                 if (promptText) {
-                    this.telemetryService.log(`CodyVSCodeExtension:command:${commandKey}:executing`)
                     return { text: promptText, recipeId: 'custom-prompt' }
                 }
                 // Inline chat has its own filter for slash commands
@@ -647,6 +652,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         delete MessageProvider.chatHistory[chatID]
         await this.localStorage.deleteChatHistory(chatID)
         this.sendHistory()
+        this.telemetryService.log('CodyVSCodeExtension:deleteChatHistoryButton:clicked')
     }
 
     /**

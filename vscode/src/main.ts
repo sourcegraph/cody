@@ -208,7 +208,7 @@ const register = async (
             return
         }
 
-        telemetryService.log('CodyVSCodeExtension:fixup')
+        telemetryService.log('CodyVSCodeExtension:fixup:created')
         const provider = fixupManager.getProviderForTask(task)
         return provider.startFix()
     }
@@ -236,18 +236,21 @@ const register = async (
 
             const inlineChatProvider = inlineChatManager.getProviderForThread(comment.thread)
             await inlineChatProvider.addChat(comment.text, false)
-            telemetryService.log('CodyVSCodeExtension:inline-assist:chat')
+            telemetryService.log('CodyVSCodeExtension:chat:submitted', { source: 'inline' })
         }),
         vscode.commands.registerCommand('cody.comment.delete', (thread: vscode.CommentThread) => {
             inlineChatManager.removeProviderForThread(thread)
+            telemetryService.log('CodyVSCodeExtension:inline-assist:deleteButton:clicked')
         }),
         vscode.commands.registerCommand('cody.comment.stop', async (comment: Comment) => {
             const inlineChatProvider = inlineChatManager.getProviderForThread(comment.parent)
             await inlineChatProvider.abortChat()
+            telemetryService.log('CodyVSCodeExtension:abortButton:clicked', { source: 'inline-chat' })
         }),
-        vscode.commands.registerCommand('cody.comment.collapse-all', () =>
-            vscode.commands.executeCommand('workbench.action.collapseAllComments')
-        ),
+        vscode.commands.registerCommand('cody.comment.collapse-all', () => {
+            void vscode.commands.executeCommand('workbench.action.collapseAllComments')
+            telemetryService.log('CodyVSCodeExtension:inline-assist:collapseButton:clicked')
+        }),
         vscode.commands.registerCommand('cody.comment.open-in-sidebar', async (thread: vscode.CommentThread) => {
             const inlineChatProvider = inlineChatManager.getProviderForThread(thread)
             // The inline chat is already saved in history, we just need to tell the sidebar chat to restore it
@@ -256,6 +259,7 @@ const register = async (
             await sidebarChatProvider.setWebviewView('chat')
             // Remove the inline chat
             inlineChatManager.removeProviderForThread(thread)
+            telemetryService.log('CodyVSCodeExtension:inline-assist:openInSidebarButton:clicked')
         }),
         vscode.commands.registerCommand(
             'cody.fixup.new',
@@ -287,27 +291,32 @@ const register = async (
         vscode.commands.registerCommand('cody.interactive.clear', async () => {
             await sidebarChatProvider.clearAndRestartSession()
             await sidebarChatProvider.setWebviewView('chat')
+            telemetryService.log('CodyVSCodeExtension:chatTitleButton:clicked', { name: 'reset' })
         }),
         vscode.commands.registerCommand('cody.focus', () => vscode.commands.executeCommand('cody.chat.focus')),
         vscode.commands.registerCommand('cody.settings.extension', () =>
             vscode.commands.executeCommand('workbench.action.openSettings', { query: '@ext:sourcegraph.cody-ai' })
         ),
-        vscode.commands.registerCommand('cody.history', async () => sidebarChatProvider.setWebviewView('history')),
+        vscode.commands.registerCommand('cody.history', async () => {
+            await sidebarChatProvider.setWebviewView('history')
+            telemetryService.log('CodyVSCodeExtension:chatTitleButton:clicked', { name: 'history' })
+        }),
         vscode.commands.registerCommand('cody.history.clear', async () => {
             await sidebarChatProvider.clearHistory()
         }),
         // Recipes
-        vscode.commands.registerCommand('cody.action.chat', input =>
-            executeRecipeInSidebar('chat-question', true, input)
-        ),
+        vscode.commands.registerCommand('cody.action.chat', async input => {
+            await executeRecipeInSidebar('chat-question', true, input)
+            telemetryService.log('CodyVSCodeExtension:chat:submitted', { source: 'menu' })
+        }),
         vscode.commands.registerCommand(
             'cody.action.fixup',
             (instruction: string, range: vscode.Range): Promise<void> => executeFixup({ instruction, range })
         ),
-        vscode.commands.registerCommand(
-            'cody.action.commands.menu',
-            showDesc => editor.controllers.command?.menu('default', showDesc)
-        ),
+        vscode.commands.registerCommand('cody.action.commands.menu', async caller => {
+            console.log(caller)
+            await editor.controllers.command?.menu('default')
+        }),
         vscode.commands.registerCommand(
             'cody.action.commands.custom.menu',
             () => editor.controllers.command?.menu('custom')
@@ -318,7 +327,6 @@ const register = async (
                 await sidebarChatProvider.setWebviewView('chat')
             }
             await sidebarChatProvider.executeCustomCommand(title)
-            telemetryService.log('CodyVSCodeExtension:command:custom:executed')
         }),
         vscode.commands.registerCommand('cody.command.explain-code', async () => {
             await executeRecipeInSidebar('custom-prompt', true, '/explain')
@@ -354,6 +362,7 @@ const register = async (
             vscode.env.openExternal(vscode.Uri.parse(CODY_FEEDBACK_URL.href))
         ),
         vscode.commands.registerCommand('cody.welcome', async () => {
+            telemetryService.log('CodyVSCodeExtension:walkthrough:clicked', { page: 'welcome' })
             // Hack: We have to run this twice to force VS Code to register the walkthrough
             // Open issue: https://github.com/microsoft/vscode/issues/186165
             await vscode.commands.executeCommand('workbench.action.openWalkthrough')
@@ -371,10 +380,12 @@ const register = async (
         ),
         vscode.commands.registerCommand('cody.walkthrough.showChat', () => sidebarChatProvider.setWebviewView('chat')),
         vscode.commands.registerCommand('cody.walkthrough.showFixup', () => sidebarChatProvider.setWebviewView('chat')),
-        vscode.commands.registerCommand('cody.walkthrough.showExplain', () =>
-            sidebarChatProvider.setWebviewView('chat')
-        ),
+        vscode.commands.registerCommand('cody.walkthrough.showExplain', async () => {
+            telemetryService.log('CodyVSCodeExtension:walkthrough:clicked', { page: 'showExplain' })
+            await sidebarChatProvider.setWebviewView('chat')
+        }),
         vscode.commands.registerCommand('cody.walkthrough.enableInlineChat', async () => {
+            telemetryService.log('CodyVSCodeExtension:walkthrough:clicked', { page: 'enableInlineChat' })
             await workspaceConfig.update('cody.inlineChat', true, vscode.ConfigurationTarget.Global)
             // Open VSCode setting view. Provides visual confirmation that the setting is enabled.
             return vscode.commands.executeCommand('workbench.action.openSettings', {

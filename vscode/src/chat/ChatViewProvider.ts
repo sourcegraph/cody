@@ -43,6 +43,7 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
             case 'edit':
                 this.transcript.removeLastInteraction()
                 await this.onHumanMessageSubmitted(message.text, 'user')
+                this.telemetryService.log('CodyVSCodeExtension:editChatButton:clicked')
                 break
             case 'abort':
                 await this.abortCompletion()
@@ -90,6 +91,7 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
                 break
             case 'reload':
                 await this.authProvider.reloadAuthStatus()
+                this.telemetryService.log('CodyVSCodeExtension:authReloadButton:clicked')
                 break
             case 'openFile':
                 await this.openFilePath(message.filePath)
@@ -105,11 +107,12 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
 
     private async onHumanMessageSubmitted(text: string, submitType: 'user' | 'suggestion'): Promise<void> {
         debug('ChatViewProvider:onHumanMessageSubmitted', '', { verbose: { text, submitType } })
+        this.telemetryService.log('CodyVSCodeExtension:chat:submitted', { source: 'sidebar' })
         if (submitType === 'suggestion') {
             this.telemetryService.log('CodyVSCodeExtension:chatPredictions:used')
         }
         if (text === '/') {
-            this.telemetryService.log('CodyVSCodeExtension:custom-command-menu:clicked')
+            this.telemetryService.log('CodyVSCodeExtension:command:menu:opened', { source: 'chat' })
             void vscode.commands.executeCommand('cody.action.commands.menu', true)
             return
         }
@@ -124,7 +127,7 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
      * Process custom command click
      */
     private async onCustomPromptClicked(title: string, commandType: CodyPromptType = 'user'): Promise<void> {
-        this.telemetryService.log('CodyVSCodeExtension:custom-command:clicked')
+        this.telemetryService.log('CodyVSCodeExtension:command:customMenu:clicked')
         debug('ChatViewProvider:onCustomPromptClicked', title)
         if (!this.isCustomCommandAction(title)) {
             await this.setWebviewView('chat')

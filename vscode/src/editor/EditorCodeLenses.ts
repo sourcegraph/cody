@@ -70,7 +70,7 @@ export class EditorCodeLenses implements vscode.CodeLensProvider {
         if (activeEditor) {
             activeEditor.selection = lens.selection
         }
-        await vscode.commands.executeCommand(lens.name, false)
+        await vscode.commands.executeCommand(lens.name, 'codeLens')
     }
     /**
      * Gets the code lenses for the specified document.
