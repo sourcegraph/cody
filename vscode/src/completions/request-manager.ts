@@ -44,6 +44,11 @@ export interface RequestManagerResult {
 export class RequestManager {
     private cache = new RequestCache()
     private readonly inflightRequests: Set<InflightRequest> = new Set()
+    private completeSuggestWidgetSelection = false
+
+    constructor({ completeSuggestWidgetSelection = false }: { completeSuggestWidgetSelection: boolean }) {
+        this.completeSuggestWidgetSelection = completeSuggestWidgetSelection
+    }
 
     public async request(
         params: RequestParams,
@@ -131,6 +136,7 @@ export class RequestManager {
                 lastCandidate,
                 docContext: request.params.docContext,
                 context: request.params.context,
+                completeSuggestWidgetSelection: this.completeSuggestWidgetSelection,
             })
 
             if (synthesizedCandidate) {

@@ -51,6 +51,9 @@ export interface InlineCompletionsParams {
     // Execution
     abortSignal?: AbortSignal
     tracer?: (data: Partial<ProvideInlineCompletionsItemTraceData>) => void
+
+    // Feature flags
+    completeSuggestWidgetSelection?: boolean
 }
 
 /**
@@ -151,6 +154,7 @@ async function doGetInlineCompletions({
     setIsLoading,
     abortSignal,
     tracer,
+    completeSuggestWidgetSelection = false,
 }: InlineCompletionsParams): Promise<InlineCompletionsResult | null> {
     tracer?.({ params: { document, position, context } })
 
@@ -167,7 +171,13 @@ async function doGetInlineCompletions({
     // Check if the user is typing as suggested by the last candidate completion (that is shown as
     // ghost text in the editor), and reuse it if it is still valid.
     const resultToReuse = lastCandidate
-        ? reuseLastCandidate({ document, position, lastCandidate, docContext, context })
+        ? reuseLastCandidate({
+              document,
+              position,
+              lastCandidate,
+              docContext,
+              completeSuggestWidgetSelection,
+          })
         : null
     if (resultToReuse) {
         return resultToReuse

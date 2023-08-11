@@ -19,13 +19,24 @@ export function reuseLastCandidate({
         ...lastCandidate
     },
     docContext: { currentLinePrefix, currentLineSuffix, nextNonEmptyLine },
-}: Required<Pick<InlineCompletionsParams, 'document' | 'position' | 'context' | 'lastCandidate'>> & {
+    completeSuggestWidgetSelection,
+}: Required<
+    Pick<
+        InlineCompletionsParams,
+        'document' | 'position' | 'context' | 'lastCandidate' | 'completeSuggestWidgetSelection'
+    >
+> & {
     docContext: DocumentContext
 }): InlineCompletionsResult | null {
     const isSameDocument = lastCandidate.uri.toString() === document.uri.toString()
     const isSameLine = lastTriggerPosition.line === position.line
     const isSameNextNonEmptyLine = lastTriggerNextNonEmptyLine === nextNonEmptyLine
-    const isSameTriggerSelectedInfoItem = lastTriggerSelectedInfoItem === context.selectedCompletionInfo?.text
+
+    // If completeSuggestWidgetSelection is enabled, we have to compare that a last candidate is
+    // only reused if it is has same completion info selected.
+    const isSameTriggerSelectedInfoItem = completeSuggestWidgetSelection
+        ? lastTriggerSelectedInfoItem === context.selectedCompletionInfo?.text
+        : true
 
     if (!isSameDocument || !isSameLine || !isSameNextNonEmptyLine || !isSameTriggerSelectedInfoItem) {
         return null

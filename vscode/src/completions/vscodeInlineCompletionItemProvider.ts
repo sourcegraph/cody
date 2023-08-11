@@ -91,7 +91,9 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
         this.maxPrefixChars = Math.floor(this.promptChars * this.config.prefixPercentage)
         this.maxSuffixChars = Math.floor(this.promptChars * this.config.suffixPercentage)
 
-        this.requestManager = new RequestManager()
+        this.requestManager = new RequestManager({
+            completeSuggestWidgetSelection: this.config.completeSuggestWidgetSelection,
+        })
 
         debug('CodyCompletionProvider:initialized', `provider: ${this.config.providerConfig.identifier}`)
     }
@@ -177,7 +179,12 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
                                   new vscode.Range(position, document.lineAt(document.lineCount - 1).range.end)
                               )
                           ),
-                          lastTriggerSelectedInfoItem: context?.selectedCompletionInfo?.text,
+                          // We only need to persist the lastTriggerSelectedInfoItem if we have the
+                          // completeSuggestWidgetSelection option enabled since otherwise we do not
+                          // take the selection widget into account for the completion.
+                          lastTriggerSelectedInfoItem: this.config.completeSuggestWidgetSelection
+                              ? context?.selectedCompletionInfo?.text
+                              : undefined,
                           result: {
                               logId: result.logId,
                               items: result.items,
@@ -227,11 +234,11 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
             const currentLinePrefix = document.getText(currentLine.range.with({ end: position }))
             let insertText = completion.insertText
 
-            // Append any eventual inline completion context item to the prefix
-            if (context.selectedCompletionInfo) {
+            // Append any eventual inline completion context item to the prefix if
+            // completeSuggestWidgetSelection is enabled.
+            if (this.config.completeSuggestWidgetSelection && context.selectedCompletionInfo) {
                 const { range, text } = context.selectedCompletionInfo
                 insertText = text.slice(position.character - range.start.character) + insertText
-                console.log({ insertText })
             }
 
             // Return the completion from the start of the current line (instead of starting at the
