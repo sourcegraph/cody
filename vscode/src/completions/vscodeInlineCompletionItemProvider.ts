@@ -7,13 +7,14 @@ import { CodyStatusBar } from '../services/StatusBar'
 
 import { getContext, GetContextOptions, GetContextResult } from './context/context'
 import { DocumentHistory } from './context/history'
+import { DocumentContext, getCurrentDocContext } from './document'
 import {
     getInlineCompletions,
     InlineCompletionsParams,
     InlineCompletionsResultSource,
     LastInlineCompletionCandidate,
 } from './getInlineCompletions'
-import * as CompletionsLogger from './logger'
+import * as CompletionLogger from './logger'
 import { ProviderConfig } from './providers/provider'
 import { RequestManager } from './request-manager'
 import { ProvideInlineCompletionItemsTracer, ProvideInlineCompletionsItemTraceData } from './tracer'
@@ -37,7 +38,6 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
     private promptChars: number
     private maxPrefixChars: number
     private maxSuffixChars: number
-    private abortOpenCompletions: () => void = () => {}
 
     private readonly config: Required<CodyCompletionItemProviderConfig>
 
@@ -106,7 +106,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
         context: vscode.InlineCompletionContext,
         // Making it optional here to execute multiple suggestion in parallel from the CLI script.
         token?: vscode.CancellationToken
-    ): Promise<vscode.InlineCompletionList> {
+    ): Promise<vscode.InlineCompletionList | null> {
         const tracer = this.config.tracer ? createTracerForInvocation(this.config.tracer) : undefined
 
         let stopLoading: () => void | undefined
@@ -119,22 +119,24 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
         }
 
         const abortController = new AbortController()
-        this.abortOpenCompletions()
         if (token) {
             if (token.isCancellationRequested) {
                 abortController.abort()
             }
             token.onCancellationRequested(() => abortController.abort())
-            this.abortOpenCompletions = () => abortController.abort()
+        }
+
+        const docContext = getCurrentDocContext(document, position, this.maxPrefixChars, this.maxSuffixChars)
+        if (!docContext) {
+            return null
         }
 
         const result = await this.getInlineCompletions({
             document,
             position,
             context,
+            docContext,
             promptChars: this.promptChars,
-            maxPrefixChars: this.maxPrefixChars,
-            maxSuffixChars: this.maxSuffixChars,
             providerConfig: this.config.providerConfig,
             responsePercentage: this.config.responsePercentage,
             prefixPercentage: this.config.prefixPercentage,
@@ -152,12 +154,16 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
             tracer,
         })
 
+        if (!result) {
+            return null
+        }
+
         // Track the last candidate completion (that is shown as ghost text in the editor) so that
         // we can reuse it if the user types in such a way that it is still valid (such as by typing
         // `ab` if the ghost text suggests `abcd`).
-        if (result && result.source !== InlineCompletionsResultSource.LastCandidate) {
+        if (result.source !== InlineCompletionsResultSource.LastCandidate) {
             // this.lastCandidate =
-            //     result?.items.length > 0
+            //     result.items.length > 0
             //         ? {
             //               uri: document.uri,
             //               lastTriggerPosition: position,
@@ -175,6 +181,26 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
             //         : undefined
         }
 
+        // A completion that won't be visible in VS Code will not be returned and not be logged.
+        if (
+            !isCompletionVisible(
+                result?.items,
+                document,
+                docContext,
+                context,
+                this.config.providerConfig,
+                abortController.signal
+            )
+        ) {
+            return null
+        }
+
+        if (result.items.length > 0) {
+            CompletionLogger.suggested(result.logId, InlineCompletionsResultSource[result.source])
+        } else {
+            CompletionLogger.noResponse(result.logId)
+        }
+
         return {
             items: result
                 ? this.processInlineCompletionsForVSCode(result.logId, document, position, result.items, context)
@@ -187,7 +213,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
         // log id is never reused if the completion is accepted.
         this.lastCandidate = undefined
 
-        CompletionsLogger.accept(logId, lines)
+        CompletionLogger.accept(logId, lines)
     }
 
     /**
@@ -246,4 +272,79 @@ function createTracerForInvocation(tracer: ProvideInlineCompletionItemsTracer): 
         data = { ...data, ...update }
         tracer(data)
     }
+}
+
+function isCompletionVisible(
+    completions: InlineCompletionItem[],
+    document: vscode.TextDocument,
+    docContext: DocumentContext,
+    context: vscode.InlineCompletionContext,
+    providerConfig: ProviderConfig,
+    abortSignal: AbortSignal | undefined
+): boolean {
+    // There are these cases when a completion is being returned here but won't
+    // be displayed by VS Code.
+    //
+    // - When the abort signal was already triggered and a new completion
+    //   request was stared.
+    // - When the VS Code completion popup is open and we suggest a completion
+    //   that does not match the currently selected completion. For now we make
+    //   sure to not log these completions as displayed.
+    //   TODO: Take this into account when creating the completion prefix.
+    // - When no completions contains characters in the current line that are
+    //   not in the current line suffix. Since VS Code will try to merge
+    //   completion with the suffix, we have to do a per-character diff to test
+    //   this.
+    const isAborted = abortSignal ? abortSignal.aborted : false
+    const isMatchingPopupItem = completionMatchesPopupItem(completions, document, context)
+    const isMatchingSuffix = completionMatchesSuffix(completions, docContext, providerConfig)
+    const isVisible = !isAborted && isMatchingPopupItem && isMatchingSuffix
+
+    return isVisible
+}
+
+function completionMatchesPopupItem(
+    completions: InlineCompletionItem[],
+    document: vscode.TextDocument,
+    context: vscode.InlineCompletionContext
+): boolean {
+    if (context.selectedCompletionInfo) {
+        const currentText = document.getText(context.selectedCompletionInfo.range)
+        const selectedText = context.selectedCompletionInfo.text
+        if (completions.length > 0 && !(currentText + completions[0].insertText).startsWith(selectedText)) {
+            return false
+        }
+    }
+    return true
+}
+
+function completionMatchesSuffix(
+    completions: InlineCompletionItem[],
+    docContext: DocumentContext,
+    providerConfig: ProviderConfig
+): boolean {
+    // Models that support infilling do not replace an existing suffix but
+    // instead insert the completion only at the current cursor position. Thus,
+    // we do not need to compare the suffix
+    if (providerConfig.supportsInfilling) {
+        return true
+    }
+
+    const suffix = docContext.currentLineSuffix
+
+    for (const completion of completions) {
+        const insertion = completion.insertText
+        let j = 0
+        // eslint-disable-next-line @typescript-eslint/prefer-for-of
+        for (let i = 0; i < insertion.length; i++) {
+            if (insertion[i] === suffix[j]) {
+                j++
+            }
+        }
+        if (j === suffix.length) {
+            return true
+        }
+    }
+
+    return false
 }
