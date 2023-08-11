@@ -36,7 +36,7 @@ export function getCurrentDocContext(
     position: vscode.Position,
     maxPrefixLength: number,
     maxSuffixLength: number,
-    context: vscode.InlineCompletionContext
+    context: vscode.InlineCompletionContext | null = null
 ): DocumentContext {
     const offset = document.offsetAt(position)
 
@@ -46,7 +46,7 @@ export function getCurrentDocContext(
     const completeSuffix = document.getText(new vscode.Range(position, document.positionAt(document.getText().length)))
 
     // Patch the document to contain the selected completion from the popup dialog already
-    if (context.selectedCompletionInfo) {
+    if (context?.selectedCompletionInfo) {
         const { range, text } = context.selectedCompletionInfo
         completePrefix = completePrefix.slice(0, range.start.character - position.character) + text
     }
