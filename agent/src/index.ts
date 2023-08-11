@@ -1,4 +1,3 @@
-// import * as vscode from './vscode-shim'
 import { Agent } from './agent'
 
 process.stderr.write('Starting Cody Agent...\n')

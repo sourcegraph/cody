@@ -51,6 +51,7 @@ export class DocumentOffsets {
     }
     public position(offset: number): { line: number; character: number } {
         let line = 0
+        // TODO: use binary search to optimize this part.
         while (line < this.lines.length - 1 && offset >= this.lines[line + 1]) {
             line++
         }
