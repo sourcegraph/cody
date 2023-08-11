@@ -112,7 +112,6 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
             this.telemetryService.log('CodyVSCodeExtension:chatPredictions:used')
         }
         if (text === '/') {
-            this.telemetryService.log('CodyVSCodeExtension:command:menu:opened', { source: 'chat' })
             void vscode.commands.executeCommand('cody.action.commands.menu', true)
             return
         }

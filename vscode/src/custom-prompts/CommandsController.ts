@@ -164,7 +164,7 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
     /**
      * Menu Controller
      */
-    public async menu(type: 'custom' | 'config' | 'default', showDesc?: boolean): Promise<void> {
+    public async menu(type: 'custom' | 'config' | 'default', showDesc = true): Promise<void> {
         this.telemetryService.log('CodyVSCodeExtension:command:menu:opened', { type })
         await this.refresh()
         switch (type) {
@@ -196,7 +196,7 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
     /**
      * Main Menu: Cody Commands
      */
-    public async mainCommandMenu(showDesc = false): Promise<void> {
+    public async mainCommandMenu(showDesc = true): Promise<void> {
         try {
             const commandItems = [menu_separators.inline, menu_options.chat, menu_options.fix, menu_separators.commands]
             const allCommands = this.default.getGroupedCommands(true)
