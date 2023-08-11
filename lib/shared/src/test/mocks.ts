@@ -122,6 +122,14 @@ export class MockEditor implements Editor {
         return this.mocks.getActiveTextEditor?.() ?? null
     }
 
+    public getActiveInlineChatTextEditor(): ActiveTextEditor | null {
+        return this.mocks.getActiveTextEditor?.() ?? null
+    }
+
+    public getActiveInlineChatSelection(): ActiveTextEditorSelection | null {
+        return this.mocks.getActiveTextEditorSelection?.() ?? null
+    }
+
     public getActiveTextEditorVisibleContent(): ActiveTextEditorVisibleContent | null {
         return this.mocks.getActiveTextEditorVisibleContent?.() ?? null
     }

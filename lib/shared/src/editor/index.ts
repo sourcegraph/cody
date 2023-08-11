@@ -99,6 +99,9 @@ export interface Editor<
     getActiveTextEditor(): ActiveTextEditor | null
     getActiveTextEditorSelection(): ActiveTextEditorSelection | null
 
+    getActiveInlineChatTextEditor(): ActiveTextEditor | null
+    getActiveInlineChatSelection(): ActiveTextEditorSelection | null
+
     /**
      * Gets the active text editor's selection, or the entire file if the selected range is empty.
      */
@@ -141,6 +144,14 @@ export class NoopEditor implements Editor {
     }
 
     public getActiveTextEditorSelection(): ActiveTextEditorSelection | null {
+        return null
+    }
+
+    public getActiveInlineChatTextEditor(): ActiveTextEditor | null {
+        return null
+    }
+
+    public getActiveInlineChatSelection(): ActiveTextEditorSelection | null {
         return null
     }
 

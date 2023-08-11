@@ -107,7 +107,7 @@ export class VSCodeEditor implements Editor<InlineController, FixupController, C
     }
 
     public getActiveTextEditorSelection(): ActiveTextEditorSelection | null {
-        // Get selection from Inline Controller if there is a Inline Task in progress
+        // Get selection from Inline Controller if there is an inline task in progress
         if (this.controllers.inline?.isInProgress) {
             return this.getActiveInlineChatSelection()
         }
@@ -135,7 +135,7 @@ export class VSCodeEditor implements Editor<InlineController, FixupController, C
     }
 
     public getActiveTextEditorSelectionOrVisibleContent(): ActiveTextEditorSelection | null {
-        // Get selection from Inline Controller if there is a Inline Task in progress
+        // Get selection from Inline Controller if there is an inline task in progress
         if (this.controllers.inline?.isInProgress) {
             return this.getActiveInlineChatSelection()
         }
