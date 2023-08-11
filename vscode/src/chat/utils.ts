@@ -82,3 +82,31 @@ export function newAuthStatus(
     authStatus.isLoggedIn = isLoggedIn && isAllowed
     return authStatus
 }
+
+/**
+ * Counts the number of lines and characters in code blocks in a given string.
+ *
+ * @param text - The string to search for code blocks.
+ * @returns An object with the total lineCount and charCount of code in code blocks,
+ * or null if no code blocks are found.
+ */
+export const countGeneratedCode = (text: string): { lineCount: number; charCount: number } | null => {
+    const codeBlockRegex = /```[\S\s]*?```/g
+    const codeBlocks = text.match(codeBlockRegex)
+    if (!codeBlocks) {
+        return null
+    }
+    const count = { lineCount: 0, charCount: 0 }
+    const backticks = '```'
+    for (const block of codeBlocks) {
+        const lines = block.split('\n')
+        const codeLines = lines.filter(line => !line.startsWith(backticks))
+        const lineCount = codeLines.length
+        const language = lines[0].replace(backticks, '')
+        // 2 backticks + 2 newline
+        const charCount = block.length - language.length - backticks.length * 2 - 2
+        count.charCount += charCount
+        count.lineCount += lineCount
+    }
+    return count
+}

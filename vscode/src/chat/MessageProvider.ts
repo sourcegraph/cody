@@ -28,6 +28,7 @@ import { LocalStorage } from '../services/LocalStorageProvider'
 import { TestSupport } from '../test-support'
 
 import { ContextProvider } from './ContextProvider'
+import { countGeneratedCode } from './utils'
 
 /**
  * The problem with a token limit for the prompt is that we can only
@@ -197,6 +198,10 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
                     this.transcript.addAssistantResponse(text || '', displayText)
                 }
                 await this.onCompletionEnd()
+                // Count code generated from response
+                const codeCount = countGeneratedCode(text)
+                const op = codeCount ? 'hasCode' : 'noCode'
+                this.telemetryService.log('CodyVSCodeExtension:chatResponse:' + op, codeCount || {})
             },
         })
 
