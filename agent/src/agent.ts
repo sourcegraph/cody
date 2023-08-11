@@ -155,6 +155,11 @@ export class Agent extends MessageHandler {
             }
 
             const codyClient = await this.client
+            // This is needed to update the completions provider that was created with defaults
+            // during initializeVscodeExtension
+            for (const registeredCallback of vscode_shim.onDidChangeConfigurationCallbacks) {
+                registeredCallback(vscode_shim.configurationChangeEvent)
+            }
 
             if (!codyClient) {
                 return {

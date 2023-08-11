@@ -74,7 +74,6 @@ const configuration: vscode.WorkspaceConfiguration = {
             case 'cody.autocomplete.enabled':
                 return true
             case 'cody.autocomplete.advanced.provider':
-                console.error(`provider - ${connectionConfig?.autocompleteAdvancedProvider}`)
                 return connectionConfig?.autocompleteAdvancedProvider
             case 'cody.autocomplete.advanced.serverEndpoint':
                 return connectionConfig?.autocompleteAdvancedServerEndpoint
