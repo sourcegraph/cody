@@ -187,9 +187,12 @@ export class Agent extends MessageHandler {
                     { triggerKind: vscode.InlineCompletionTriggerKind.Automatic, selectedCompletionInfo: undefined },
                     token
                 )
-                const items: AutocompleteItem[] = result.items.flatMap(({ insertText, range }) =>
-                    typeof insertText === 'string' && range !== undefined ? [{ insertText, range }] : []
-                )
+                const items: AutocompleteItem[] =
+                    result === null
+                        ? []
+                        : result.items.flatMap(({ insertText, range }) =>
+                              typeof insertText === 'string' && range !== undefined ? [{ insertText, range }] : []
+                          )
                 return { items }
             } catch (error) {
                 console.log('autocomplete failed', error)
