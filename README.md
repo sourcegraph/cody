@@ -18,7 +18,7 @@
 
 ## Get started
 
-[⭐ **Install Cody from the VS Code Marketplace**](https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai), then check out the [demos](#demos) to see what you can do.
+[⭐ **Install Cody from the VS Code Marketplace**](https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai) or the [JetBrains Marketplace](https://plugins.jetbrains.com/plugin/9682-cody-ai-by-sourcegraph), then check out the [demos](#demos) to see what you can do.
 
 _&mdash; or &mdash;_
 
@@ -29,7 +29,9 @@ _&mdash; or &mdash;_
 
 Cody is a free, open-source AI coding assistant that can write and fix code, provide AI-generated autocomplete, and answer your coding questions. Cody fetches relevant code context from across your entire codebase to write better code that uses more of your codebase's APIs, impls, and idioms, with less hallucination.
 
-Cody is currently in Beta. See [cody.dev](https://cody.dev) for more info.
+Cody is currently in Beta and available for [VS Code](https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai) and [JetBrains](https://plugins.jetbrains.com/plugin/9682-cody-ai-by-sourcegraph).
+
+See [cody.dev](https://cody.dev) for more info.
 
 ## What can Cody do?
 
