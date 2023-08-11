@@ -24,11 +24,7 @@
     "@sourcegraph/cody-shared": "workspace:*",
     "vscode-uri": "^3.0.7"
   },
-  "engines": {
-    "vscode": "^1.79.0"
-  },
   "devDependencies": {
-    "vscode-languageserver-textdocument": "1.0.8",
     "pkg": "^5.8.1",
     "@types/vscode": "^1.80.0",
     "esbuild-plugin-alias-path": "^2.0.2",
