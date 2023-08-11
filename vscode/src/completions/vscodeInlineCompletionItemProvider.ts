@@ -235,7 +235,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
             const start = currentLine.range.start
 
             // The completion will always exclude the same line suffix, so it has to overwrite the
-            // current range.
+            // current same line suffix and reach to the end of the line.
             const end = currentLine.range.end
 
             return new vscode.InlineCompletionItem(
