@@ -133,9 +133,6 @@ importers:
       pkg:
         specifier: ^5.8.1
         version: 5.8.1
-      vscode-languageserver-textdocument:
-        specifier: 1.0.8
-        version: 1.0.8
 
   cli:
     dependencies:
@@ -16631,6 +16628,7 @@ packages:
 
   /vscode-languageserver-textdocument@1.0.8:
     resolution: {integrity: sha512-1bonkGqQs5/fxGT5UchTgjGVnfysL0O8v1AYMBjqTbWQTFn721zaPGDYFkOKtfDgFiSgXM3KwaG3FMGfW4Ed9Q==}
+    dev: false
 
   /vscode-uri@3.0.7:
     resolution: {integrity: sha512-eOpPHogvorZRobNqJGhapa0JdwaxpjVvyBp0QIUMRMSf8ZAlqOdEquKuRmw9Qwu0qXtJIWqFtMkmvJjUZmMjVA==}
