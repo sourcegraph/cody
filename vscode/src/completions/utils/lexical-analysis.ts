@@ -1,8 +1,11 @@
 import path from 'path'
 
-import Parser, { Point, SyntaxNode, Tree } from 'web-tree-sitter'
+import type { Point, SyntaxNode, Tree } from 'web-tree-sitter'
 
 import { GenericLexem, getLanguageLexems, SupportedLanguage } from './grammars'
+
+// eslint-disable-next-line @typescript-eslint/no-require-imports,@typescript-eslint/no-var-requires
+const Parser = require('web-tree-sitter')
 
 export { SupportedLanguage, GenericLexem }
 
@@ -39,7 +42,7 @@ const SUPPORTED_LANGUAGES: Record<SupportedLanguage, GrammarPath> = {
  * and load language grammar only once, first time we need parser for a specific
  * language, next time we read it from this cache.
  * */
-const PARSERS_LOCAL_CACHE: Partial<Record<SupportedLanguage, Parser>> = {}
+const PARSERS_LOCAL_CACHE: Partial<Record<SupportedLanguage, typeof Parser>> = {}
 
 interface ParserSettings {
     language: SupportedLanguage
