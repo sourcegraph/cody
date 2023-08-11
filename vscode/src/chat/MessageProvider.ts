@@ -567,7 +567,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
                 this.telemetryService.log(`CodyVSCodeExtension:command:${text.replace('/', '')}:executed`)
             default: {
                 if (!this.editor.getActiveTextEditor()?.filePath) {
-                    await this.addCustomInteraction('Command failed. please open a file and try again.', text)
+                    await this.addCustomInteraction('Command failed. Please open a file and try again.', text)
                     return null
                 }
                 const promptText = this.editor.controllers.command?.find(text, true)
