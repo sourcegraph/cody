@@ -84,6 +84,7 @@ export class InlineChatViewProvider extends MessageProvider {
         this.editor.controllers.inline?.abort()
         await this.abortCompletion()
         void vscode.commands.executeCommand('setContext', 'cody.inline.reply.pending', false)
+        this.telemetryService.log('CodyVSCodeExtension:abortButton:clicked', { source: 'inline-chat' })
     }
 
     /**

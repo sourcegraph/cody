@@ -46,6 +46,7 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
                 break
             case 'abort':
                 await this.abortCompletion()
+                this.telemetryService.log('CodyVSCodeExtension:abortButton:clicked', { source: 'sidebar' })
                 break
             case 'executeRecipe':
                 await this.setWebviewView('chat')
