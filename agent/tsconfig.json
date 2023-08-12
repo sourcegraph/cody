@@ -4,8 +4,13 @@
     "module": "commonjs",
     "rootDir": ".",
     "outDir": "dist",
+    "target": "es2019",
+    "allowJs": true,
+    // "paths": {
+    //   "vscode": ["./src/vscode-shim.ts"],
+    // },
   },
   "include": ["**/*", ".*", "package.json"],
   "exclude": ["dist"],
-  "references": [{ "path": "../lib/shared" }],
+  "references": [{ "path": "../lib/shared" }, { "path": "../vscode" }],
 }

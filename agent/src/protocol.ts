@@ -32,6 +32,8 @@ export type Requests = {
     // client <-- chat/updateMessageInProgress --- server
     'recipes/execute': [ExecuteRecipeParams, null]
 
+    'autocomplete/execute': [AutocompleteParams, AutocompleteResult]
+
     // ================
     // Server -> Client
     // ================
@@ -79,6 +81,20 @@ export type Notifications = {
     'chat/updateMessageInProgress': [ChatMessage | null]
 }
 
+export interface AutocompleteParams {
+    filePath: string
+    position: Position
+}
+
+export interface AutocompleteResult {
+    items: AutocompleteItem[]
+}
+
+export interface AutocompleteItem {
+    insertText: string
+    range: Range
+}
+
 export interface ClientInfo {
     name: string
     version: string
@@ -110,6 +126,10 @@ export interface ConnectionConfiguration {
     serverEndpoint: string
     accessToken: string
     customHeaders: Record<string, string>
+    autocompleteAdvancedProvider: string
+    autocompleteAdvancedServerEndpoint: string | null
+    autocompleteAdvancedAccessToken: string | null
+    autocompleteAdvancedEmbeddings: boolean
 }
 
 export interface Position {
