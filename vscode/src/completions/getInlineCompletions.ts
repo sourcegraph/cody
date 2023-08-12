@@ -116,8 +116,8 @@ export async function getInlineCompletions(params: InlineCompletionsParams): Pro
 
         params.tracer?.({ error: error.toString() })
 
+        debug('getInlineCompletions:error', error.message, { verbose: error })
         if (isAbortError(error)) {
-            debug('getInlineCompletions:error', error.message, { verbose: error })
             return null
         }
 
