@@ -42,7 +42,7 @@ export class AgentTextDocument implements vscode.TextDocument {
             )
         )
         let firstNonWhitespaceCharacterIndex = 0
-        while (firstNonWhitespaceCharacterIndex < text.length && /s/.test(text[firstNonWhitespaceCharacterIndex])) {
+        while (firstNonWhitespaceCharacterIndex < text.length && /\s/.test(text[firstNonWhitespaceCharacterIndex])) {
             firstNonWhitespaceCharacterIndex++
         }
         return {
@@ -68,7 +68,9 @@ export class AgentTextDocument implements vscode.TextDocument {
         return new vscode_shim.Position(line, character)
     }
     public getText(range?: vscode.Range | undefined): string {
-        if (range === undefined) return this.content
+        if (range === undefined) {
+            return this.content
+        }
         const start = this.offsets.offset(range.start)
         const end = this.offsets.offset(range.end)
         const text = this.content.slice(start, end)

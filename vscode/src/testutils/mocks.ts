@@ -1,3 +1,8 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/explicit-member-accessibility */
+/* eslint-disable import/no-duplicates */
 /* eslint-disable @typescript-eslint/no-empty-function */
 // TODO: use implements vscode.XXX on mocked classes to ensure they match the real vscode API.
 import type {
@@ -21,7 +26,7 @@ export class Uri {
         return base.with({ path: [base.path, ...pathSegments].join('/') })
     }
 
-    static from(components: {
+    public static from(components: {
         readonly scheme: string
         readonly authority?: string
         readonly path?: string
@@ -87,7 +92,7 @@ export class Disposable implements VSCodeDisposable {
         })
     }
     constructor(private readonly callOnDispose: () => any) {}
-    dispose() {
+    public dispose(): void {
         this.callOnDispose()
     }
 }
@@ -132,7 +137,7 @@ export enum OverviewRulerLane {
 }
 
 export class CodeLens {
-    readonly isResolved = true
+    public readonly isResolved = true
     constructor(
         public readonly range: Range,
         public readonly command?: vscode_types.Command
@@ -157,13 +162,13 @@ export class MarkdownString implements vscode_types.MarkdownString {
     supportThemeIcons?: boolean | undefined
     supportHtml?: boolean | undefined
     baseUri?: vscode_types.Uri | undefined
-    appendText(value: string): vscode_types.MarkdownString {
+    appendText(): vscode_types.MarkdownString {
         throw new Error('Method not implemented.')
     }
-    appendMarkdown(value: string): vscode_types.MarkdownString {
+    appendMarkdown(): vscode_types.MarkdownString {
         throw new Error('Method not implemented.')
     }
-    appendCodeblock(value: string, language?: string | undefined): vscode_types.MarkdownString {
+    appendCodeblock(): vscode_types.MarkdownString {
         throw new Error('Method not implemented.')
     }
 }
@@ -259,9 +264,9 @@ export class CodeActionKind {
     constructor(public readonly value: string) {}
 }
 
+// eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export class QuickInputButtons {
     public static readonly Back: vscode_types.QuickInputButton = { iconPath: Uri.parse('file://foobar') }
-    constructor() {}
 }
 
 export class TreeItem {
@@ -278,7 +283,8 @@ export class RelativePattern implements vscode_types.RelativePattern {
         _base: vscode_types.WorkspaceFolder | Uri | string,
         public readonly pattern: string
     ) {
-        this.base = `${_base}`
+        // eslint-disable-next-line @typescript-eslint/no-base-to-string
+        this.base = _base.toString()
     }
 }
 
@@ -419,7 +425,7 @@ export class Selection extends Range {
     /**
      * A selection is reversed if its {@link Selection.anchor anchor} is the {@link Selection.end end} position.
      */
-    isReversed: boolean = false
+    isReversed = false
 }
 
 export class InlineCompletionItem {
@@ -445,13 +451,13 @@ interface Callback {
     handler: (arg?: any) => any
     thisArg?: any
 }
-function invokeCallback(callback: Callback, arg?: any) {
+function invokeCallback(callback: Callback, arg?: any): any {
     return callback.thisArg ? callback.handler.bind(callback.thisArg)(arg) : callback.handler(arg)
 }
 export const emptyDisposable = new Disposable(() => {})
 
 export class EventEmitter<T> implements vscode_types.EventEmitter<T> {
-    public on = () => undefined
+    public on = (): undefined => undefined
 
     constructor() {
         this.on = () => undefined

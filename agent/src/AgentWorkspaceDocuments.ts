@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import type * as vscode from 'vscode'
 import { URI } from 'vscode-uri'
 
@@ -36,7 +38,6 @@ export class AgentWorkspaceDocuments implements vscode_shim.WorkspaceDocuments {
     public setDocument(document: TextDocument): void {
         this.documents.set(document.filePath, this.loadedDocument(document))
         const tabs: readonly vscode.Tab[] = this.allFilePaths().map(filePath => this.vscodeTab(filePath))
-        this.activeDocumentFilePath ?? ''
         vscode_shim.tabGroups.all = [
             {
                 tabs,
@@ -46,7 +47,9 @@ export class AgentWorkspaceDocuments implements vscode_shim.WorkspaceDocuments {
             },
         ]
 
-        while (vscode_shim.visibleTextEditors.length > 0) vscode_shim.visibleTextEditors.pop()
+        while (vscode_shim.visibleTextEditors.length > 0) {
+            vscode_shim.visibleTextEditors.pop()
+        }
         for (const document of this.allDocuments()) {
             vscode_shim.visibleTextEditors.push(newTextEditor(this.agentTextDocument(document)))
         }
@@ -59,7 +62,9 @@ export class AgentWorkspaceDocuments implements vscode_shim.WorkspaceDocuments {
             input: {
                 uri: filePath,
             },
-        } as vscode.Tab
+            label: 'label',
+            group: { activeTab: undefined, isActive: false, tabs: [], viewColumn: -1 },
+        } as any
     }
 
     public openTextDocument(filePath: string): Promise<vscode.TextDocument> {

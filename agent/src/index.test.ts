@@ -83,7 +83,7 @@ describe('StandardAgent', () => {
         const content = 'function sum(a, b) {\n    \n}'
         client.notify('textDocument/didOpen', { filePath, content })
         const completions = await client.request('autocomplete/execute', {
-            filePath: filePath,
+            filePath,
             position: { line: 1, character: 4 },
         })
         assert(completions.items.length > 0)

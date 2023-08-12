@@ -12,6 +12,9 @@ describe('AgentTextDocument', () => {
     const noEndOfFileNewline = new AgentTextDocument({ filePath: 'foo', content: 'a\nb' })
     const emptyFirstLine = new AgentTextDocument({ filePath: 'foo', content: '\nb' })
     const emptyFirstLineCrlf = new AgentTextDocument({ filePath: 'foo', content: '\r\nb' })
+    const noIndentation = new AgentTextDocument({ filePath: 'foo', content: 'sss\n' })
+    const indentation = new AgentTextDocument({ filePath: 'foo', content: '  a\n' })
+    const indentationTab = new AgentTextDocument({ filePath: 'foo', content: '\t\tab\n' })
 
     it('getText(Range)', () => {
         assert.equal(basic.getText(new vscode.Range(0, 0, 0, 1)), 'a')
@@ -61,5 +64,11 @@ describe('AgentTextDocument', () => {
         assert.equal(emptyFirstLineCrlf.getText(emptyFirstLineCrlf.lineAt(0).rangeIncludingLineBreak), '\r\n')
         assert.equal(emptyFirstLineCrlf.getText(emptyFirstLineCrlf.lineAt(1).range), 'b')
         assert.equal(emptyFirstLineCrlf.getText(emptyFirstLineCrlf.lineAt(1).rangeIncludingLineBreak), 'b')
+    })
+
+    it('lineAt().firstNonWhitespaceCharacterIndex', () => {
+        assert.equal(noIndentation.lineAt(0).firstNonWhitespaceCharacterIndex, 0)
+        assert.equal(indentation.lineAt(0).firstNonWhitespaceCharacterIndex, 2)
+        assert.equal(indentationTab.lineAt(0).firstNonWhitespaceCharacterIndex, 2)
     })
 })

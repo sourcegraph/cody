@@ -56,7 +56,7 @@ export class DocumentOffsets {
             line++
         }
         return {
-            line: line,
+            line,
             character: offset - this.lines[line],
         }
     }

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-empty-function */
 import type * as vscode from 'vscode'
 
 // <VERY IMPORTANT - PLEASE READ>
@@ -73,7 +74,7 @@ const emptyFileWatcher: vscode.FileSystemWatcher = {
     ignoreChangeEvents: true,
     ignoreCreateEvents: true,
     ignoreDeleteEvents: true,
-    dispose() {},
+    dispose(): void {},
 }
 
 export let connectionConfig: ConnectionConfiguration | undefined
@@ -275,7 +276,7 @@ const commentController: vscode.CommentController = {
     },
     id: 'commentController.id',
     label: 'commentController.label',
-    dispose() {},
+    dispose: () => {},
 }
 const _comments: Partial<typeof vscode.comments> = {
     createCommentController: () => commentController,

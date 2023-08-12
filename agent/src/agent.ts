@@ -19,8 +19,8 @@ import * as vscode_shim from './vscode-shim'
 
 const secretStorage = new Map<string, string>()
 
-async function initializeVscodeExtension(): Promise<void> {
-    await activate({
+function initializeVscodeExtension(): void {
+    activate({
         asAbsolutePath(relativePath) {
             return path.resolve(process.cwd(), relativePath)
         },
@@ -64,7 +64,6 @@ async function initializeVscodeExtension(): Promise<void> {
         storagePath: {} as any,
         globalStoragePath: {} as any,
     })
-    return vscode_shim.completionProvider as any
 }
 
 export class Agent extends MessageHandler {
@@ -79,7 +78,7 @@ export class Agent extends MessageHandler {
             process.stderr.write(
                 `Cody Agent: handshake with client '${client.name}' (version '${client.version}') at workspace root path '${client.workspaceRootUri}'\n`
             )
-            await initializeVscodeExtension()
+            initializeVscodeExtension()
             this.workspace.workspaceRootUri = URI.parse(client.workspaceRootUri || `file://${client.workspaceRootPath}`)
             if (client.connectionConfiguration) {
                 this.setClient(client.connectionConfiguration)
@@ -209,7 +208,10 @@ export class Agent extends MessageHandler {
                 // functionality), we return true to always triggger the callback.
                 true,
         })
-        vscode_shim.commands.executeCommand('cody.auth.sync')
+        vscode_shim.commands.executeCommand('cody.auth.sync').then(
+            () => {},
+            () => {}
+        )
         this.client = createClient({
             editor: new AgentEditor(this),
             config: { ...config, useContext: 'none' },
