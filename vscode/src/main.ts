@@ -95,7 +95,7 @@ const register = async (
     // Controller for inline Chat
     const commentController = new InlineController(context.extensionPath, telemetryService)
     // Controller for Non-Stop Cody
-    const fixup = new FixupController()
+    const fixup = new FixupController(telemetryService)
     disposables.push(fixup)
     if (TestSupport.instance) {
         TestSupport.instance.fixupController.set(fixup)

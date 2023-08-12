@@ -52,3 +52,9 @@ export async function editDocByUri(
     await vscode.workspace.applyEdit(edit)
     return new vscode.Range(lines.start, 0, lines.start + lineDiff, 0)
 }
+
+export function countCode(code: string): { lineCount: number; charCount: number } {
+    const lineCount = code.split('\n').length
+    const charCount = code.length
+    return { lineCount, charCount }
+}

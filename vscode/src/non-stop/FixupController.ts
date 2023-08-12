@@ -1,6 +1,9 @@
 import * as vscode from 'vscode'
 
 import { VsCodeFixupController, VsCodeFixupTaskRecipeData } from '@sourcegraph/cody-shared/src/editor'
+import { TelemetryService } from '@sourcegraph/cody-shared/src/telemetry'
+
+import { countCode } from '../services/InlineAssist'
 
 import { computeDiff, Diff } from './diff'
 import { FixupCodeLenses } from './FixupCodeLenses'
@@ -39,7 +42,7 @@ export class FixupController
 
     private _disposables: vscode.Disposable[] = []
 
-    constructor() {
+    constructor(private telemetryService: TelemetryService) {
         // Register commands
         this._disposables.push(
             vscode.workspace.registerTextDocumentContentProvider('cody-fixup', this.contentStore),
@@ -118,6 +121,7 @@ export class FixupController
 
     // Apply single fixup from task ID. Public for testing.
     public async apply(id: taskID): Promise<void> {
+        this.telemetryService.log('CodyVSCodeExtension:fixup:codeLens:clicked', { op: 'apply' })
         console.log(id + ' applying')
         const task = this.tasks.get(id)
         if (!task) {
@@ -200,6 +204,11 @@ export class FixupController
             void vscode.window.showWarningMessage('edit did not apply')
             return
         }
+        const replacementText = task.replacement
+        if (replacementText) {
+            const { lineCount, charCount } = countCode(replacementText)
+            this.telemetryService.log('CodyVSCodeExtension:fixup:applied', { lineCount, charCount })
+        }
 
         // TODO: is this the right transition for being all done?
         // TODO: Consider keeping tasks around to resurrect them if the user
@@ -242,6 +251,7 @@ export class FixupController
     }
 
     private cancel(id: taskID): void {
+        this.telemetryService.log('CodyVSCodeExtension:fixup:codeLens:clicked', { op: 'cancel' })
         const task = this.tasks.get(id)
         if (!task) {
             return
@@ -436,6 +446,7 @@ export class FixupController
 
     // Show diff between before and after edits
     private async diff(id: taskID): Promise<void> {
+        this.telemetryService.log('CodyVSCodeExtension:fixup:codeLens:clicked', { op: 'diff' })
         const task = this.tasks.get(id)
         if (!task) {
             return
