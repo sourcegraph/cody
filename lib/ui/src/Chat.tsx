@@ -44,6 +44,7 @@ interface ChatProps extends ChatClassNames {
     codyNotEnabledNotice?: React.FunctionComponent
     abortMessageInProgressComponent?: React.FunctionComponent<{ onAbortMessageInProgress: () => void }>
     onAbortMessageInProgress?: () => void
+    serverEndpoint: string
     isCodyEnabled: boolean
     ChatButtonComponent?: React.FunctionComponent<ChatButtonProps>
     pluginsDevMode?: boolean
@@ -156,6 +157,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
     contextStatusComponentProps = {},
     abortMessageInProgressComponent: AbortMessageInProgressButton,
     onAbortMessageInProgress = () => {},
+    serverEndpoint,
     isCodyEnabled,
     ChatButtonComponent,
     pluginsDevMode,
@@ -358,6 +360,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                     messageInProgress={messageInProgress}
                     messageBeingEdited={messageBeingEdited}
                     setMessageBeingEdited={setMessageBeingEdited}
+                    serverEndpoint={serverEndpoint}
                     fileLinkComponent={fileLinkComponent}
                     codeBlocksCopyButtonClassName={codeBlocksCopyButtonClassName}
                     codeBlocksInsertButtonClassName={codeBlocksInsertButtonClassName}
@@ -450,7 +453,10 @@ function welcomeText({
     helpMarkdown = 'See [Cody documentation](https://docs.sourcegraph.com/cody) for help and tips.',
     afterMarkdown,
 }: WelcomeTextOptions): string {
-    return ["Hello! I'm Cody. I can write code and answer questions for you. " + helpMarkdown, afterMarkdown]
+    return [
+        "Hello! I'm Intelligent Cody. I can write code and answer questions for you. " + helpMarkdown,
+        afterMarkdown,
+    ]
         .filter(isDefined)
         .join('\n\n')
 }

@@ -180,6 +180,25 @@ mutation LogEventMutation($event: String!, $userCookieID: String!, $url: String!
 	}
 }`
 
+export const PRECISE_CONTEXT = `
+query GetPreciseContext($input: PreciseContextInput!) {
+    getPreciseContext(input: $input) {
+        context {
+            symbol {
+                scipName
+                scipDescriptorSuffix
+                fuzzyName
+            }
+            definitionSnippet
+            repositoryName
+            filepath
+            canonicalLocationURL
+        }
+        traceLogs
+    }
+}
+`
+
 export const LOG_EVENT_MUTATION = `
 mutation LogEventMutation($event: String!, $userCookieID: String!, $url: String!, $source: EventSource!, $argument: String, $publicArgument: String, $client: String, $connectedSiteID: String, $hashedLicenseKey: String) {
     logEvent(

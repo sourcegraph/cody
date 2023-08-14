@@ -1,4 +1,4 @@
-import { ContextFile, ContextMessage, OldContextMessage } from '../../codebase-context/messages'
+import { ContextFile, ContextMessage, OldContextMessage, PreciseContext } from '../../codebase-context/messages'
 import { PluginFunctionExecutionInfo } from '../../plugins/api/types'
 import { CHARS_PER_TOKEN, MAX_AVAILABLE_PROMPT_LENGTH } from '../../prompt/constants'
 import { PromptMixin } from '../../prompt/prompt-mixin'
@@ -35,6 +35,7 @@ export class Transcript {
                     context,
                     fullContext,
                     usedContextFiles,
+                    usedPreciseContext,
                     timestamp,
                     pluginExecutionInfos,
                 }) => {
@@ -59,6 +60,7 @@ export class Transcript {
                             })
                         ),
                         usedContextFiles || [],
+                        usedPreciseContext || [],
                         timestamp || new Date().toISOString(),
                         pluginExecutionInfos || []
                     )
@@ -166,9 +168,9 @@ export class Transcript {
         maxPromptLength: number = MAX_AVAILABLE_PROMPT_LENGTH,
         pluginsPrompt: Message[] = [],
         onlyHumanMessages: boolean = false
-    ): Promise<{ prompt: Message[]; contextFiles: ContextFile[] }> {
+    ): Promise<{ prompt: Message[]; contextFiles: ContextFile[]; preciseContexts: PreciseContext[] }> {
         if (this.interactions.length === 0) {
-            return { prompt: [], contextFiles: [] }
+            return { prompt: [], contextFiles: [], preciseContexts: [] }
         }
 
         const lastInteractionWithContextIndex = await this.getLastInteractionWithContextIndex()
@@ -193,10 +195,16 @@ export class Transcript {
         )
         // Return what context fits in the window
         const contextFiles: ContextFile[] = []
+        const preciseContexts: PreciseContext[] = []
         for (const msg of truncatedMessages) {
             const contextFile = (msg as ContextMessage).file
             if (contextFile) {
                 contextFiles.push(contextFile)
+            }
+
+            const preciseContext = (msg as ContextMessage).preciseContext
+            if (preciseContext) {
+                preciseContexts.push(preciseContext)
             }
         }
 
@@ -206,17 +214,23 @@ export class Transcript {
         return {
             prompt: [...preamble, ...truncatedMessages],
             contextFiles,
+            preciseContexts,
         }
     }
 
     public setUsedContextFilesForLastInteraction(
         contextFiles: ContextFile[],
+        preciseContexts: PreciseContext[] = [],
         pluginExecutionInfos: PluginFunctionExecutionInfo[] = []
     ): void {
         if (this.interactions.length === 0) {
             throw new Error('Cannot set context files for empty transcript')
         }
-        this.interactions[this.interactions.length - 1].setUsedContext(contextFiles, pluginExecutionInfos)
+        this.interactions[this.interactions.length - 1].setUsedContext(
+            contextFiles,
+            pluginExecutionInfos,
+            preciseContexts
+        )
     }
 
     public toChat(): ChatMessage[] {

@@ -10,6 +10,7 @@ import styles from './TranscriptAction.module.css'
 export interface TranscriptActionStep {
     verb: string
     object: string | JSX.Element
+    hoverText?: string
 
     /**
      * The SVG path of an icon.
@@ -44,12 +45,12 @@ export const TranscriptAction: React.FunctionComponent<{
             </button>
             {open && (
                 <ol className={styles.steps}>
-                    {steps.map((step, index) => (
+                    {steps.map(({ icon, object, verb, hoverText }, index) => (
                         // eslint-disable-next-line react/no-array-index-key
-                        <li key={index} className={styles.step}>
-                            {step.icon && <Icon svgPath={step.icon} className={styles.stepIcon} />}{' '}
+                        <li key={index} className={styles.step} title={hoverText}>
+                            {icon && <Icon svgPath={icon} className={styles.stepIcon} />}{' '}
                             <span className={styles.stepObject}>
-                                {step.verb} {step.object}
+                                {verb} {object}
                             </span>
                         </li>
                     ))}

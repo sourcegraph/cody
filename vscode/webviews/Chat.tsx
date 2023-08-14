@@ -27,6 +27,7 @@ import { VSCodeWrapper } from './utils/VSCodeApi'
 import styles from './Chat.module.css'
 
 interface ChatboxProps {
+    serverEndpoint: string
     messageInProgress: ChatMessage | null
     messageBeingEdited: boolean
     setMessageBeingEdited: (input: boolean) => void
@@ -47,6 +48,7 @@ interface ChatboxProps {
 }
 
 export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>> = ({
+    serverEndpoint,
     messageInProgress,
     messageBeingEdited,
     setMessageBeingEdited,
@@ -149,6 +151,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             abortMessageInProgressComponent={AbortMessageInProgress}
             onAbortMessageInProgress={abortMessageInProgress}
             isTranscriptError={isTranscriptError}
+            serverEndpoint={serverEndpoint}
             // TODO: We should fetch this from the server and pass a pretty component
             // down here to render cody is disabled on the instance nicely.
             isCodyEnabled={true}

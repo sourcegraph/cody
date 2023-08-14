@@ -1,5 +1,6 @@
 import { Configuration } from '../configuration'
 import { EmbeddingsSearch } from '../embeddings'
+import { GraphContextFetcher } from '../graph-context'
 import { ContextResult, FilenameContextFetcher, KeywordContextFetcher } from '../local-context'
 import { isMarkdownFile, populateCodeContextTemplate, populateMarkdownContextTemplate } from '../prompt/templates'
 import { Message } from '../sourcegraph-api'
@@ -22,6 +23,7 @@ export class CodebaseContext {
         private embeddings: EmbeddingsSearch | null,
         private keywords: KeywordContextFetcher | null,
         private filenames: FilenameContextFetcher | null,
+        private graph: GraphContextFetcher | null,
         private unifiedContextFetcher?: UnifiedContextFetcher | null,
         private rerank?: (query: string, results: ContextResult[]) => Promise<ContextResult[]>
     ) {}
@@ -207,6 +209,41 @@ export class CodebaseContext {
         }
         const results = await this.filenames.getContext(query, options.numCodeResults + options.numTextResults)
         return results
+    }
+
+    public async getGraphContextMessages(): Promise<ContextMessage[]> {
+        // NOTE(auguste): I recommend checking out populateCodeContextTemplate and using
+        // that in the long-term, but this will do for now :)
+
+        if (!this.graph) {
+            return Promise.resolve([])
+        }
+
+        const contextMessages: ContextMessage[] = []
+        for (const preciseContext of await this.graph.getContext()) {
+            contextMessages.push({
+                speaker: 'human',
+                file: {
+                    repoName: preciseContext.repositoryName,
+                    fileName: preciseContext.filepath,
+                },
+                preciseContext,
+                text: `
+                As my coding assistant, use this context to help me answer the question asked:
+                Here is the precise snippet of code that is relevant to the current active file: ${preciseContext.definitionSnippet}
+                ## Instruction
+                - Do not enclose your answer with tags.
+                - Do not remove code that might be being used by the other part of the code that was not shared.
+                - Your answers and suggestions should based on the provided context only.
+                - Make references to other part of the shared code.
+                - Do not suggest code that are not related to any of the shared context.
+                - Do not suggest anything that would break the working code.
+                `,
+            })
+            contextMessages.push({ speaker: 'assistant', text: 'okay' })
+        }
+
+        return contextMessages
     }
 }
 

@@ -15,8 +15,21 @@ export interface ContextFile {
     source?: ContextFileSource
 }
 
+export interface PreciseContext {
+    symbol: {
+        scipName: string
+        scipDescriptorSuffix: string
+        fuzzyName?: string
+    }
+    definitionSnippet: string
+    repositoryName: string
+    filepath: string
+    canonicalLocationURL: string
+}
+
 export interface ContextMessage extends Message {
     file?: ContextFile
+    preciseContext?: PreciseContext
 }
 
 export interface OldContextMessage extends Message {
