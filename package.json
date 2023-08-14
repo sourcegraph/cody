@@ -12,6 +12,9 @@
     "node": "^v20.4.0",
     "pnpm": "^8.6.7"
   },
+  "browser": {
+    "fs": false
+  },
   "scripts": {
     "build": "tsc --build",
     "watch": "tsc --build --watch",

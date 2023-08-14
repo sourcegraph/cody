@@ -97,3 +97,14 @@ code --user-data-dir=/tmp/separate-vscode-instance --profile-temp
 To open the Cody sidebar, autocomplete trace view, etc., when debugging starts, you can set hidden
 VS Code user settings. See [`src/dev/helpers.ts`](src/dev/helpers.ts) for a list of available
 options.
+
+### Wasm tree sitter modules
+
+We use tree-sitter parser for a better code analysis in post completion process. In order to be able
+to run these modules in VSCode runtime we have to use their wasm version. Wasm modules are not common
+modules, you can't just inline them into the bundle by default, you have to load them separately and
+connect them with special `load` wasm API.
+
+We don't keep these modules in .git tree, but instead we load them manually from our google cloud bucket.
+In order to do it you can run `./scripts/download-wasm-modules.ts` or just `pnpm download-wasm` before
+running you vscode locally.

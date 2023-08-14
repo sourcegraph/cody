@@ -32,7 +32,7 @@ export class NextQuestions implements Recipe {
                     prefix: assistantResponsePrefix,
                     text: assistantResponsePrefix,
                 },
-                this.getContextMessages(promptMessage, context.editor, context.intentDetector, context.codebaseContext),
+                this.getContextMessages(truncatedText, context.editor, context.intentDetector, context.codebaseContext),
                 []
             )
         )

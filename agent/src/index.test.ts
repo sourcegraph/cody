@@ -1,5 +1,5 @@
 import assert from 'assert'
-import { spawn } from 'child_process'
+import { execSync, spawn } from 'child_process'
 import path from 'path'
 
 import { afterAll, describe, it } from 'vitest'
@@ -15,6 +15,15 @@ export class TestClient extends MessageHandler {
             version: 'v1',
             workspaceRootUri: 'file:///path/to/foo',
             workspaceRootPath: '/path/to/foo',
+            connectionConfiguration: {
+                accessToken: process.env.SRC_ACCESS_TOKEN ?? 'invalid',
+                serverEndpoint: process.env.SRC_ENDPOINT ?? 'invalid',
+                customHeaders: {},
+                autocompleteAdvancedProvider: '',
+                autocompleteAdvancedAccessToken: '',
+                autocompleteAdvancedServerEndpoint: '',
+                autocompleteAdvancedEmbeddings: true,
+            },
         })
         this.notify('initialized', null)
         return info
@@ -43,7 +52,11 @@ describe('StandardAgent', () => {
         return
     }
     const client = new TestClient()
-    const agentProcess = spawn('node', [path.join(__dirname, '../dist/agent.js')], {
+
+    // Bundle the agent. When running `pnpm run test`, vitest doesn't re-run this step.
+    execSync('pnpm run build')
+
+    const agentProcess = spawn('node', ['--inspect', path.join(__dirname, '../dist/index.js'), '--inspect'], {
         stdio: 'pipe',
     })
 
@@ -62,7 +75,18 @@ describe('StandardAgent', () => {
 
     it('lists recipes correctly', async () => {
         const recipes = await client.listRecipes()
-        assert(recipes.length === 8)
+        assert.equal(9, recipes.length)
+    })
+
+    it('returns non-empty autocomplete', async () => {
+        const filePath = '/path/to/foo/file.js'
+        const content = 'function sum(a, b) {\n    \n}'
+        client.notify('textDocument/didOpen', { filePath, content })
+        const completions = await client.request('autocomplete/execute', {
+            filePath,
+            position: { line: 1, character: 4 },
+        })
+        assert(completions.items.length > 0)
     })
 
     const streamingChatMessages = new Promise<void>(resolve => {

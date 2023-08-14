@@ -29,6 +29,7 @@ export interface Configuration {
     autocompleteExperimentalCompleteSuggestWidgetSelection?: boolean
     pluginsEnabled?: boolean
     pluginsDebugEnabled?: boolean
+    isRunningInsideAgent?: boolean
     pluginsConfig?: {
         confluence?: {
             baseUrl: string
