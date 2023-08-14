@@ -232,22 +232,24 @@ const _commands: Partial<typeof vscode.commands> = {
             }
         })
     },
-    executeCommand: async (command, args) => {
+    executeCommand: (command, args) => {
         const registered = registeredCommands.get(command)
         if (registered) {
             try {
                 if (args) {
-                    return await wrapIntoPromise(registered.callback(...args))
+                    return promisify(registered.callback(...args))
                 }
-                return await wrapIntoPromise(registered.callback())
+                return promisify(registered.callback())
             } catch (error) {
                 console.error(error)
             }
         }
+
+        return Promise.resolve(undefined)
     },
 }
 
-function wrapIntoPromise(value: any): Promise<any> {
+function promisify(value: any): Promise<any> {
     return value instanceof Promise ? value : Promise.resolve(value)
 }
 

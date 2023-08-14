@@ -394,8 +394,8 @@ const register = async (
             completionsProvider = null
             if (config.isRunningInsideAgent) {
                 throw new Error(
-                    'config.autocomplete evaluated to false, it must be true when running inside the agent. ' +
-                        'To fix this problem, make sure that the settin cody.autocomplete.enabled has the value true.'
+                    'The setting `config.autocomplete` evaluated to `false`. It must be true when running inside the agent. ' +
+                        'To fix this problem, make sure that the setting cody.autocomplete.enabled has the value true.'
                 )
             }
             return
@@ -477,7 +477,7 @@ function createCompletionsProvider(
         )
     } else if (config.isRunningInsideAgent) {
         throw new Error(
-            "Can't register completion provider because providerConfig evaluated to null. " +
+            "Can't register completion provider because `providerConfig` evaluated to `null`. " +
                 'To fix this problem, debug why createProviderConfig returned null instead of ProviderConfig.'
         )
     }
