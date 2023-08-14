@@ -6,9 +6,6 @@
     "outDir": "dist",
     "target": "es2019",
     "allowJs": true,
-    // "paths": {
-    //   "vscode": ["./src/vscode-shim.ts"],
-    // },
   },
   "include": ["**/*", ".*", "package.json"],
   "exclude": ["dist"],

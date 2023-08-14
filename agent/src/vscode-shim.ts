@@ -102,8 +102,9 @@ const configuration: vscode.WorkspaceConfiguration = {
                 return connectionConfig?.autocompleteAdvancedAccessToken
             case 'cody.autocomplete.advanced.embeddings':
                 return connectionConfig?.autocompleteAdvancedEmbeddings
+            case 'cody.advanced.agent.running':
+                return true
             default:
-                // console.log({ section })
                 return defaultValue
         }
     },
@@ -231,20 +232,25 @@ const _commands: Partial<typeof vscode.commands> = {
             }
         })
     },
-    executeCommand: (command, args) => {
+    executeCommand: async (command, args) => {
         const registered = registeredCommands.get(command)
         if (registered) {
             try {
                 if (args) {
-                    return registered.callback(...args)
+                    return await wrapIntoPromise(registered.callback(...args))
                 }
-                return registered.callback()
+                return await wrapIntoPromise(registered.callback())
             } catch (error) {
                 console.error(error)
             }
         }
     },
 }
+
+function wrapIntoPromise(value: any): Promise<any> {
+    return value instanceof Promise ? value : Promise.resolve(value)
+}
+
 export const commands = _commands as typeof vscode.commands
 
 const _env: Partial<typeof vscode.env> = {

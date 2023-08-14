@@ -41,15 +41,11 @@ function initializeVscodeExtension(): void {
             onDidChange: vscode_shim.emptyEvent(),
             get(key) {
                 if (key === 'cody.access-token' && vscode_shim.connectionConfig) {
-                    // console.log('MATCH')
                     return Promise.resolve(vscode_shim.connectionConfig.accessToken)
                 }
-                // console.log({ key })
-
                 return Promise.resolve(secretStorage.get(key))
             },
             store(key, value) {
-                // console.log({ key, value })
                 secretStorage.set(key, value)
                 return Promise.resolve()
             },
@@ -181,7 +177,7 @@ export class Agent extends MessageHandler {
 
             try {
                 const result = await provider.provideInlineCompletionItems(
-                    textDocument as any,
+                    textDocument,
                     new vscode.Position(params.position.line, params.position.character),
                     { triggerKind: vscode.InlineCompletionTriggerKind.Automatic, selectedCompletionInfo: undefined },
                     token

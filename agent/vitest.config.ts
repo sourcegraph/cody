@@ -12,7 +12,6 @@ const shimFromRootDirectory = path.resolve(process.cwd(), 'agent', 'src', 'vscod
 // we're running tests from the root directory of the cody repo or from the
 // agent/ subdirectory.
 function shimDirectory(): string {
-    console.log({ shimFromRootDirectory })
     try {
         if (statSync(shimFromRootDirectory + '.ts').isFile()) {
             return shimFromRootDirectory
