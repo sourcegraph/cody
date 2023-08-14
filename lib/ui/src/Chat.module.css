@@ -4,6 +4,10 @@
     height: 100%;
 }
 
+.transcript-container {
+    flex: 1;
+}
+
 .input-row {
     position: relative;
     display: flex;
