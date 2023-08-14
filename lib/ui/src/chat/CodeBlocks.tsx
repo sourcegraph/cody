@@ -118,7 +118,7 @@ export const CodeBlocks: React.FunctionComponent<CodeBlocksProps> = React.memo(f
                 // capture copy events (right click or keydown) on code block
                 preElement.addEventListener('copy', () => {
                     if (CopyButtonProps) {
-                        CopyButtonProps(preText, false, 'Key')
+                        CopyButtonProps(preText, false, 'Keydown')
                     }
                 })
             }

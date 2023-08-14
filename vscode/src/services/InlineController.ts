@@ -8,7 +8,7 @@ import { TelemetryService } from '@sourcegraph/cody-shared/src/telemetry'
 import { CodyTaskState } from '../non-stop/utils'
 
 import { CodeLensProvider } from './CodeLensProvider'
-import { editDocByUri, getIconPath, updateRangeOnDocChange } from './InlineAssist'
+import { countCode, editDocByUri, getIconPath, updateRangeOnDocChange } from './InlineAssist'
 
 const initPost = new vscode.Position(0, 0)
 const initRange = new vscode.Range(initPost, initPost)
@@ -56,6 +56,10 @@ export class InlineController implements VsCodeInlineController {
     public isInProgress = false
     private codeLenses: Map<string, CodeLensProvider> = new Map()
 
+    // Track acceptance of generated code by Cody in Inline Chat
+    private lastCopiedCode = { code: 'init', lineCount: 0, charCount: 0 }
+    private lastPastedCode = { code: 'init', lineCount: 0, charCount: 0 }
+
     constructor(
         private extensionPath: string,
         private telemetryService: TelemetryService
@@ -99,8 +103,9 @@ export class InlineController implements VsCodeInlineController {
         // Track and update line diff when a task for the current selected range is being processed (this.isInProgress)
         // This makes sure the comment range and highlights are also updated correctly
         vscode.workspace.onDidChangeTextDocument(e => {
-            // don't track
+            // don't track if inline chat is not enabled or not in progress
             if (
+                !this.commentController ||
                 !this.isInProgress ||
                 !this.selectionRange ||
                 e.document.uri.scheme !== 'file' ||
@@ -114,6 +119,7 @@ export class InlineController implements VsCodeInlineController {
         })
         // Remove all the threads from current file on file close
         vscode.workspace.onDidCloseTextDocument(doc => {
+            // Skip if the document is not a file
             if (doc.uri.scheme !== 'file') {
                 return
             }
@@ -122,6 +128,27 @@ export class InlineController implements VsCodeInlineController {
                 this.delete(thread)
             }
         })
+        // Track paste event - it checks if the copied text is part of the text string
+        vscode.workspace.onDidChangeTextDocument(e => {
+            // Skip if inline chat is not enabled or if the document is not a file
+            if (!this.commentController || e.document.uri.scheme !== 'file') {
+                return
+            }
+            const { code, lineCount, charCount } = this.lastCopiedCode
+            if (code && e.document.uri.fsPath === this.thread?.uri.fsPath) {
+                const changedText = e.contentChanges[0]?.text
+                if (changedText === code) {
+                    const op = 'paste'
+                    this.telemetryService.log('CodyVSCodeExtension:inlineChat:event:detected', {
+                        op,
+                        lineCount,
+                        charCount,
+                    })
+                    this.lastPastedCode = this.lastCopiedCode
+                }
+            }
+        })
+        // Register commands for inline chat buttons
         this._disposables.push(
             vscode.commands.registerCommand('cody.inline.decorations.remove', id => this.removeLens(id)),
             vscode.commands.registerCommand('cody.inline.fix.undo', id => this.undo(id))
@@ -231,7 +258,59 @@ export class InlineController implements VsCodeInlineController {
             void vscode.commands.executeCommand('setContext', 'cody.replied', true)
             this.isInProgress = false
         }
+
+        if (state === 'complete') {
+            this.createCopyEventListener(text)
+        }
     }
+
+    private createCopyEventListener(text: string): void {
+        // get the code inside a code block with three backticks
+        // get the text between the backticks
+        let groupedText = ''
+        const regex = /```.*\n[\S\s]*?\n```/g
+        text.match(regex)?.map(match => {
+            groupedText += match.replace(/```.*\n/i, '').replace('```', '')
+        })
+        if (!groupedText) {
+            return
+        }
+        // check if the text is copied from the code block on document change
+        vscode.window.onDidChangeTextEditorSelection(async e => {
+            const documentUri = e.textEditor.document.uri
+            const copiedText = this.lastCopiedCode.code
+            if (documentUri.fsPath === this.thread?.uri.fsPath) {
+                // check if the current range is within the selection range of the thread
+                const selectionRange = this.getSelectionRange()
+                if (!selectionRange.contains(e.selections[0])) {
+                    return
+                }
+                const clipboardText = await vscode.env.clipboard.readText()
+                // check if the clipboard text is the same as the last pasted text
+                if (clipboardText === this.lastPastedCode.code) {
+                    return
+                }
+                // check if the clipboard text is part of the text string
+                if (copiedText !== clipboardText && groupedText.includes(clipboardText)) {
+                    const op = 'copy'
+                    const { lineCount, charCount } = this.setLastCopiedCode(clipboardText)
+                    this.telemetryService.log('CodyVSCodeExtension:inlineChat:event:detected', {
+                        op,
+                        lineCount,
+                        charCount,
+                    })
+                }
+            }
+        })
+    }
+
+    public setLastCopiedCode(code: string): { code: string; lineCount: number; charCount: number } {
+        const { lineCount, charCount } = countCode(code)
+        const codeCount = { code, lineCount, charCount }
+        this.lastCopiedCode = codeCount
+        return codeCount
+    }
+
     public abort(): void {
         this.setResponsePending(false)
         const latestReply = this.getLatestReply()

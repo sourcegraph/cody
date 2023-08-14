@@ -23,7 +23,8 @@ export type WebviewMessage =
     | { command: 'links'; value: string }
     | { command: 'openFile'; filePath: string }
     | { command: 'edit'; text: string }
-    | { command: 'insert'; text: string }
+    | { command: 'insert'; eventType: 'Button' | 'Keydown'; text: string }
+    | { command: 'copy'; eventType: 'Button' | 'Keydown'; text: string }
     | {
           command: 'auth'
           type: 'signin' | 'signout' | 'support' | 'app' | 'callback'

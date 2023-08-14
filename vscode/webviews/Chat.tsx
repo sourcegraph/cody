@@ -100,18 +100,14 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     )
 
     const onCopyBtnClick = useCallback(
-        (text: string, isInsert = false, eventType = 'Button') => {
-            if (isInsert) {
-                vscodeAPI.postMessage({ command: 'insert', text })
-            }
+        (text: string, isInsert = false, eventType: 'Button' | 'Keydown' = 'Button') => {
             const op = isInsert ? 'insert' : 'copy'
-            const lineCount = text.split('\n').length - 1
-            const charCount = text.length - 1
-            const eventName = op + eventType
-            const args = { op, charCount, lineCount }
-            telemetryService.log(`CodyVSCodeExtension:${eventName}:clicked`, args)
+            // remove the additional /n added by the text area at the end of the text
+            const code = eventType === 'Button' ? text.replace(/\n$/, '') : text
+            // Log the event type and text to telemetry in chat view
+            vscodeAPI.postMessage({ command: op, eventType, text: code })
         },
-        [telemetryService, vscodeAPI]
+        [vscodeAPI]
     )
 
     return (

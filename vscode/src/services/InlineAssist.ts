@@ -54,7 +54,16 @@ export async function editDocByUri(
 }
 
 export function countCode(code: string): { lineCount: number; charCount: number } {
-    const lineCount = code.split('\n').length
+    const lineCount = code.split(/\r\n|\r|\n/).length
     const charCount = code.length
     return { lineCount, charCount }
+}
+
+export function matchCodeSnippets(copiedText: string, changedText: string): boolean {
+    // remove all white spaces and new lines from the copied code and changed text
+    // as formatting on paste may change the spacing
+    const copiedTextNoSpace = copiedText.replace(/\s/g, '')
+    const changedTextNoSpace = changedText?.replace(/\s/g, '')
+    // check if the copied code is the same as the changed text without spaces
+    return copiedTextNoSpace === changedTextNoSpace
 }
