@@ -22,6 +22,7 @@ describe('getConfiguration', () => {
             experimentalChatPredictions: false,
             experimentalGuardrails: false,
             inlineChat: true,
+            isRunningInsideAgent: false,
             experimentalNonStop: false,
             customHeaders: {},
             debugEnable: false,
@@ -91,6 +92,8 @@ describe('getConfiguration', () => {
                         }
                     case 'cody.plugins.debug.enabled':
                         return false
+                    case 'cody.advanced.agent.running':
+                        return false
                     default:
                         throw new Error(`unexpected key: ${key}`)
                 }
@@ -113,6 +116,7 @@ describe('getConfiguration', () => {
             experimentalEditorTitleCommandIcon: true,
             experimentalGuardrails: true,
             inlineChat: true,
+            isRunningInsideAgent: false,
             experimentalNonStop: true,
             debugEnable: true,
             debugVerbose: true,
