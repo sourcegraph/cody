@@ -135,7 +135,15 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
             return null
         }
 
-        const docContext = getCurrentDocContext(document, position, this.maxPrefixChars, this.maxSuffixChars, context)
+        const docContext = getCurrentDocContext(
+            document,
+            position,
+            this.maxPrefixChars,
+            this.maxSuffixChars,
+            // We ignore the current context selection if completeSuggestWidgetSelection is not
+            // enabled
+            this.config.completeSuggestWidgetSelection ? context : undefined
+        )
 
         const result = await this.getInlineCompletions({
             document,
@@ -179,12 +187,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
                                   new vscode.Range(position, document.lineAt(document.lineCount - 1).range.end)
                               )
                           ),
-                          // We only need to persist the lastTriggerSelectedInfoItem if we have the
-                          // completeSuggestWidgetSelection option enabled since otherwise we do not
-                          // take the selection widget into account for the completion.
-                          lastTriggerSelectedInfoItem: this.config.completeSuggestWidgetSelection
-                              ? context?.selectedCompletionInfo?.text
-                              : undefined,
+                          lastTriggerSelectedInfoItem: context?.selectedCompletionInfo?.text,
                           result: {
                               logId: result.logId,
                               items: result.items,
@@ -196,7 +199,17 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
         const items = this.processInlineCompletionsForVSCode(result.logId, document, position, result.items, context)
 
         // A completion that won't be visible in VS Code will not be returned and not be logged.
-        if (!isCompletionVisible(items, docContext, this.config.providerConfig, abortController.signal)) {
+        if (
+            !isCompletionVisible(
+                items,
+                document,
+                docContext,
+                context,
+                this.config.providerConfig,
+                this.config.completeSuggestWidgetSelection,
+                abortController.signal
+            )
+        ) {
             return null
         }
 
@@ -277,8 +290,11 @@ function createTracerForInvocation(tracer: ProvideInlineCompletionItemsTracer): 
 
 function isCompletionVisible(
     completions: vscode.InlineCompletionItem[],
+    document: vscode.TextDocument,
     docContext: DocumentContext,
+    context: vscode.InlineCompletionContext,
     providerConfig: ProviderConfig,
+    completeSuggestWidgetSelection: boolean,
     abortSignal: AbortSignal | undefined
 ): boolean {
     // There are these cases when a completion is being returned here but won't
@@ -286,22 +302,41 @@ function isCompletionVisible(
     //
     // - When the abort signal was already triggered and a new completion
     //   request was stared.
+    //
     // - When the VS Code completion popup is open and we suggest a completion
     //   that does not match the currently selected completion. For now we make
     //   sure to not log these completions as displayed.
-    //   TODO: Take this into account when creating the completion prefix.
+    //
+    //   This check is only needed if we do not already take the completion
+    //   popup into account when generating completions as we do with the
+    //   completeSuggestWidgetSelection flag
+    //
     // - When no completions contains characters in the current line that are
     //   not in the current line suffix. Since VS Code will try to merge
     //   completion with the suffix, we have to do a per-character diff to test
     //   this.
     const isAborted = abortSignal ? abortSignal.aborted : false
-    // const isMatchingPopupItem = completionMatchesPopupItem(completions, document, context)
+    const isMatchingPopupItem = completeSuggestWidgetSelection
+        ? true
+        : completionMatchesPopupItem(completions, document, context)
     const isMatchingSuffix = completionMatchesSuffix(completions, docContext, providerConfig)
-    const isVisible = !isAborted && isMatchingSuffix
+    const isVisible = !isAborted && isMatchingSuffix && isMatchingPopupItem
 
     return isVisible
 }
 
+// Check if the current text in the editor overlaps with the currently selected
+// item in the completion widget.
+//
+// If it won't VS Code will never show an inline completions.
+//
+// Here's an example of how to trigger this case:
+//
+//  1. Type the text `console.l` in a TypeScript file.
+//  2. Use the arrow keys to navigate to a suggested method that start with a
+//     different letter like `console.dir`.
+//  3. Since it is impossible to render a suggestion with `.dir` when the
+//     editor already has `.l` in the text, VS Code won't ever render it.
 function currentEditorContentMatchesPopupItem(
     document: vscode.TextDocument,
     context: vscode.InlineCompletionContext
@@ -312,6 +347,31 @@ function currentEditorContentMatchesPopupItem(
 
         if (!selectedText.startsWith(currentText)) {
             return false
+        }
+    }
+    return true
+}
+
+// Checks if the currently selected completion widget item overlaps with the
+// proposed completion.
+//
+// VS Code won't show a completion if it won't.
+function completionMatchesPopupItem(
+    completions: vscode.InlineCompletionItem[],
+    document: vscode.TextDocument,
+    context: vscode.InlineCompletionContext
+): boolean {
+    if (context.selectedCompletionInfo) {
+        const currentText = document.getText(context.selectedCompletionInfo.range)
+        const selectedText = context.selectedCompletionInfo.text
+        if (completions.length > 0) {
+            const visibleCompletion = completions[0]
+            if (
+                typeof visibleCompletion.insertText === 'string' &&
+                !(currentText + visibleCompletion.insertText).startsWith(selectedText)
+            ) {
+                return false
+            }
         }
     }
     return true

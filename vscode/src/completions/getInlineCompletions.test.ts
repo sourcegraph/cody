@@ -309,29 +309,6 @@ describe('getInlineCompletions', () => {
                 source: InlineCompletionsResultSource.Network,
             }))
 
-        test('not reused when selected item info differs', async () =>
-            // The user types `console`, sees the context menu pop up and receives a completion for
-            // the first item. They now use the arrow keys to select the second item. The original
-            // ghost text should not be reused as it won't be rendered anyways
-            expect(
-                await getInlineCompletions(
-                    params('console█', [], {
-                        lastCandidate: lastCandidate('console█', ' = 1', 'log'),
-                        context: {
-                            triggerKind: vsCodeMocks.InlineCompletionTriggerKind.Automatic,
-                            selectedCompletionInfo: {
-                                text: 'dir',
-                                range: range(0, 0, 0, 0),
-                            },
-                        },
-                        completeSuggestWidgetSelection: true,
-                    })
-                )
-            ).toEqual<V>({
-                items: [],
-                source: InlineCompletionsResultSource.Network,
-            }))
-
         test('not reused when the the next non-empty line has changed', async () => {
             // The user accepts a completion and then moves the cursor to the previous line and hits
             // enter again, causing a full suffix match with the previous completion that was
@@ -473,6 +450,31 @@ describe('getInlineCompletions', () => {
                 items: [{ insertText: 'x\ny' }],
                 source: InlineCompletionsResultSource.LastCandidate,
             }))
+
+        describe('completeSuggestWidgetSelection', () => {
+            test('not reused when selected item info differs', async () =>
+                // The user types `console`, sees the context menu pop up and receives a completion for
+                // the first item. They now use the arrow keys to select the second item. The original
+                // ghost text should not be reused as it won't be rendered anyways
+                expect(
+                    await getInlineCompletions(
+                        params('console█', [], {
+                            lastCandidate: lastCandidate('console█', ' = 1', 'log'),
+                            context: {
+                                triggerKind: vsCodeMocks.InlineCompletionTriggerKind.Automatic,
+                                selectedCompletionInfo: {
+                                    text: 'dir',
+                                    range: range(0, 0, 0, 0),
+                                },
+                            },
+                            completeSuggestWidgetSelection: true,
+                        })
+                    )
+                ).toEqual<V>({
+                    items: [],
+                    source: InlineCompletionsResultSource.Network,
+                }))
+        })
     })
 
     describe('bad completion starts', () => {

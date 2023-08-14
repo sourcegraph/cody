@@ -1,6 +1,6 @@
 import dedent from 'dedent'
 import { describe, expect, test, vi } from 'vitest'
-import type * as vscode from 'vscode'
+import * as vscode from 'vscode'
 
 import { vsCodeMocks } from '../testutils/mocks'
 
@@ -223,7 +223,7 @@ describe('InlineCompletionItemProvider', () => {
             const provider = new MockableInlineCompletionItemProvider(fn)
             await provider.provideInlineCompletionItems(document, position, {
                 triggerKind: vsCodeMocks.InlineCompletionTriggerKind.Automatic,
-                selectedCompletionInfo: { text: 'dir', range: new vsCodeMocks.Range(0, 6, 0, 8) },
+                selectedCompletionInfo: { text: 'dir', range: new vsCodeMocks.Range(0, 8, 0, 8) },
             })
 
             expect(spy).not.toHaveBeenCalled()
@@ -259,6 +259,94 @@ describe('InlineCompletionItemProvider', () => {
             await provider.provideInlineCompletionItems(document, position, DUMMY_CONTEXT)
 
             expect(spy).not.toHaveBeenCalled()
+        })
+    })
+
+    describe('completeSuggestWidgetSelection', () => {
+        test('appends the current selected widget item to the doc context for the completer and removes the injected prefix from the result', async () => {
+            const { document, position } = documentAndPosition(
+                dedent`
+                    function foo() {
+                        console.l█
+                        console.foo()
+                    }
+                `,
+                'typescript'
+            )
+            const fn = vi.fn(getInlineCompletions).mockResolvedValue({
+                logId: '1',
+                items: [{ insertText: "('hello world!')", range: new vsCodeMocks.Range(1, 12, 1, 13) }],
+                source: InlineCompletionsResultSource.Network,
+            })
+
+            const provider = new MockableInlineCompletionItemProvider(fn, { completeSuggestWidgetSelection: true })
+            const items = await provider.provideInlineCompletionItems(document, position, {
+                triggerKind: vsCodeMocks.InlineCompletionTriggerKind.Automatic,
+                selectedCompletionInfo: { text: 'log', range: new vsCodeMocks.Range(1, 12, 1, 13) },
+            })
+
+            expect(fn).toBeCalledWith(
+                expect.objectContaining({
+                    docContext: expect.objectContaining({
+                        prefix: 'function foo() {\n    console.log',
+                        suffix: '\n    console.foo()\n}',
+                        currentLinePrefix: '    console.log',
+                        currentLineSuffix: '',
+                        nextNonEmptyLine: '    console.foo()',
+                        prevNonEmptyLine: 'function foo() {',
+                    }),
+                })
+            )
+            expect(items).toMatchInlineSnapshot(`
+              {
+                "items": [
+                  InlineCompletionItem {
+                    "insertText": "    console.log('hello world!')",
+                    "range": Range {
+                      "end": Position {
+                        "character": 13,
+                        "line": 1,
+                      },
+                      "start": Position {
+                        "character": 0,
+                        "line": 1,
+                      },
+                    },
+                  },
+                ],
+              }
+            `)
+        })
+
+        test('does not trigger a completion request if the current document context would not allow a suggestion to be shown', async () => {
+            // This case happens when the selected item in the dropdown does not start with the
+            // exact characters that are already in the document.
+            // Here, the user has `console.l` in the document but the selected item is `dir`. There
+            // is no way to trigger an inline completion in VS Code for this scenario right now so
+            // we skip the request entirely.
+            const { document, position } = documentAndPosition(
+                dedent`
+                    function foo() {
+                        console.l█
+                        console.foo()
+                    }
+                `,
+                'typescript'
+            )
+            const fn = vi.fn(getInlineCompletions).mockResolvedValue({
+                logId: '1',
+                items: [{ insertText: 'dir', range: new vsCodeMocks.Range(position, position) }],
+                source: InlineCompletionsResultSource.Network,
+            })
+
+            const provider = new MockableInlineCompletionItemProvider(fn, { completeSuggestWidgetSelection: true })
+            const items = await provider.provideInlineCompletionItems(document, position, {
+                triggerKind: vsCodeMocks.InlineCompletionTriggerKind.Automatic,
+                selectedCompletionInfo: { text: 'dir', range: new vsCodeMocks.Range(1, 12, 1, 13) },
+            })
+
+            expect(fn).not.toHaveBeenCalled()
+            expect(items).toBe(null)
         })
     })
 })

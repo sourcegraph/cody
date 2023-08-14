@@ -223,6 +223,7 @@ export const vsCodeMocks = {
                             return ''
                     }
                 },
+                update(): void {},
             }
         },
         openTextDocument: (uri: string) => ({
