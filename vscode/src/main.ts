@@ -469,8 +469,8 @@ function createCompletionsProvider(
         })
 
         disposables.push(
-            vscode.commands.registerCommand('cody.autocomplete.inline.accepted', ({ codyLogId, codyLines }) => {
-                completionsProvider.handleDidAcceptCompletionItem(codyLogId, codyLines)
+            vscode.commands.registerCommand('cody.autocomplete.inline.accepted', ({ codyLogId, codyCompletion }) => {
+                completionsProvider.handleDidAcceptCompletionItem(codyLogId, codyCompletion)
             }),
             vscode.languages.registerInlineCompletionItemProvider('*', completionsProvider),
             registerAutocompleteTraceView(completionsProvider)
