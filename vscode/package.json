@@ -28,7 +28,7 @@
     "lint": "pnpm run lint:js",
     "lint:js": "eslint --cache '**/*.[tj]s?(x)'",
     "release": "ts-node ./scripts/release.ts",
-    "download-wasm": "ts-node ./scripts/download-wasm-modules.ts && mkdir -p ./dist && cp ./resources/wasm/* ./dist",
+    "download-wasm": "ts-node ./scripts/download-wasm-modules.ts",
     "release:dry-run": "pnpm run download-wasm && CODY_RELEASE_DRY_RUN=1 ts-node ./scripts/release.ts",
     "storybook": "storybook dev -p 6007 --no-open --no-version-updates --no-release-notes",
     "test:e2e": "pnpm exec playwright install && tsc --build && pnpm run -s build:dev:desktop && playwright test",

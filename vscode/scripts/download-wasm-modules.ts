@@ -1,9 +1,10 @@
-import fs, { existsSync, mkdirSync, WriteStream } from 'fs'
+import fs, { copyFileSync, existsSync, mkdirSync, readdirSync, WriteStream } from 'fs'
 import http from 'https'
 import path from 'path'
 
 import ProgressBar from 'progress'
 
+const DIST_DIRECTORY = path.join(path.resolve(__dirname), '..', 'dist')
 const WASM_DIRECTORY = path.join(path.resolve(__dirname), '..', 'resources', 'wasm')
 
 const urls = [
@@ -31,6 +32,7 @@ export async function main(): Promise<void> {
     const filesToDownload = getMissingFiles(urls)
 
     if (filesToDownload.length === 0) {
+        copyFilesToDistDir()
         console.log('All wasm modules are in place, have a good day!')
         return
     }
@@ -39,6 +41,7 @@ export async function main(): Promise<void> {
 
     try {
         await Promise.all(filesToDownload.map(downloadFile))
+        copyFilesToDistDir()
         console.log('All files were successful downloaded, check resources/wasm directory')
     } catch (error) {
         console.error('Some error occurred', error)
@@ -47,6 +50,20 @@ export async function main(): Promise<void> {
 }
 
 void main()
+
+function copyFilesToDistDir(): void {
+    const hasDistDir = existsSync(DIST_DIRECTORY)
+
+    if (!hasDistDir) {
+        mkdirSync(DIST_DIRECTORY)
+    }
+
+    const files = readdirSync(WASM_DIRECTORY)
+
+    for (const file of files) {
+        copyFileSync(path.join(WASM_DIRECTORY, file), path.join(DIST_DIRECTORY, file))
+    }
+}
 
 function getMissingFiles(urls: string[]): string[] {
     const missingFiles = []
