@@ -132,8 +132,8 @@ export interface ConnectionConfiguration {
     autocompleteAdvancedServerEndpoint: string | null
     autocompleteAdvancedAccessToken: string | null
     autocompleteAdvancedEmbeddings: boolean
-    debug: boolean
-    verboseDebug: boolean
+    debug?: boolean
+    verboseDebug?: boolean
 }
 
 export interface Position {

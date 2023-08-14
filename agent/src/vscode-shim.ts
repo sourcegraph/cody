@@ -106,9 +106,9 @@ const configuration: vscode.WorkspaceConfiguration = {
             case 'cody.advanced.agent.running':
                 return true
             case 'cody.debug.enable':
-                return connectionConfig?.debug
+                return connectionConfig?.debug ?? false
             case 'cody.debug.verbose':
-                return connectionConfig?.verboseDebug
+                return connectionConfig?.verboseDebug ?? false
             default:
                 return defaultValue
         }
