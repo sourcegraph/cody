@@ -26,6 +26,7 @@ import {
     Uri,
 } from '../../vscode/src/testutils/mocks'
 
+import { Agent } from './agent'
 import { AgentTabGroups } from './AgentTabGroups'
 import type { ConnectionConfiguration } from './protocol'
 
@@ -104,6 +105,10 @@ const configuration: vscode.WorkspaceConfiguration = {
                 return connectionConfig?.autocompleteAdvancedEmbeddings
             case 'cody.advanced.agent.running':
                 return true
+            case 'cody.debug.enable':
+                return connectionConfig?.debug
+            case 'cody.debug.verbose':
+                return connectionConfig?.verboseDebug
             default:
                 return defaultValue
         }
@@ -161,6 +166,10 @@ const statusBarItem: Partial<vscode.StatusBarItem> = {
 export const visibleTextEditors: vscode.TextEditor[] = []
 
 export const tabGroups = new AgentTabGroups()
+let agent: Agent | undefined
+export function setAgent(newAgent: Agent): void {
+    agent = newAgent
+}
 
 const _window: Partial<typeof vscode.window> = {
     tabGroups,
@@ -196,9 +205,21 @@ const _window: Partial<typeof vscode.window> = {
     createOutputChannel: ((name: string) =>
         ({
             name,
-            append: () => {},
-            appendLine: () => {},
-            replace: () => {},
+            append: message => {
+                if (agent) {
+                    agent.notify('debug/message', { channel: name, message })
+                }
+            },
+            appendLine: message => {
+                if (agent) {
+                    agent.notify('debug/message', { channel: name, message })
+                }
+            },
+            replace: message => {
+                if (agent) {
+                    agent.notify('debug/message', { channel: name, message })
+                }
+            },
             clear: () => {},
             show: () => {},
             hide: () => {},
