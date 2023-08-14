@@ -79,6 +79,8 @@ export type Notifications = {
     // request. The server should never send this notification outside of a
     // 'chat/executeRecipe' request.
     'chat/updateMessageInProgress': [ChatMessage | null]
+
+    'debug/message': [DebugMessage]
 }
 
 export interface AutocompleteParams {
@@ -130,6 +132,8 @@ export interface ConnectionConfiguration {
     autocompleteAdvancedServerEndpoint: string | null
     autocompleteAdvancedAccessToken: string | null
     autocompleteAdvancedEmbeddings: boolean
+    debug?: boolean
+    verboseDebug?: boolean
 }
 
 export interface Position {
@@ -159,4 +163,9 @@ export interface ExecuteRecipeParams {
     id: RecipeID
     humanChatInput: string
     data?: any
+}
+
+export interface DebugMessage {
+    channel: string
+    message: string
 }
