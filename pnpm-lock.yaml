@@ -392,21 +392,6 @@ importers:
       stream-json:
         specifier: ^1.8.0
         version: 1.8.0
-      tree-sitter-go:
-        specifier: ^0.20.0
-        version: 0.20.0
-      tree-sitter-java:
-        specifier: ^0.19.1
-        version: 0.19.1
-      tree-sitter-javascript:
-        specifier: ^0.19.0
-        version: 0.19.0
-      tree-sitter-python:
-        specifier: ^0.20.3
-        version: 0.20.3
-      tree-sitter-typescript:
-        specifier: ^0.20.1
-        version: 0.20.1
       uuid:
         specifier: ^9.0.0
         version: 9.0.0
@@ -9722,15 +9707,6 @@ packages:
       jsonfile: 6.0.1
       universalify: 2.0.0
 
-  /fs-extra@11.1.0:
-    resolution: {integrity: sha512-0rcTq621PD5jM/e0a3EJoGC/1TC5ZBCERW82LQuwfGnCa1V8w7dpYH1yNu+SLb6E5dkeCBzKEyLGlFrnr+dUyw==}
-    engines: {node: '>=14.14'}
-    dependencies:
-      graceful-fs: 4.2.11
-      jsonfile: 6.0.1
-      universalify: 2.0.0
-    dev: false
-
   /fs-extra@11.1.1:
     resolution: {integrity: sha512-MGIE4HOvQCeUCzmlHs0vXpih4ysz4wg9qiSAu6cd42lVwPbTM1TjV7RusoyQqMmk/95gdQZX72u+YW+c3eEpFQ==}
     engines: {node: '>=14.14'}
@@ -15826,41 +15802,6 @@ packages:
     resolution: {integrity: sha512-L0Orpi8qGpRG//Nd+H90vFB+3iHnue1zSSGmNOOCh1GLJ7rUKVwV2HvijphGQS2UmhUZewS9VgvxYIdgr+fG1A==}
     hasBin: true
     dev: true
-
-  /tree-sitter-go@0.20.0:
-    resolution: {integrity: sha512-5OBBND9ykffXZnaKrVpk8RnSaZJ26Si8yCfJKPSkEypWrywqCmZOZ74NveqMY0ogmHK2X8mFFuIL5jUnxOKyYw==}
-    requiresBuild: true
-    dependencies:
-      nan: 2.17.0
-    dev: false
-
-  /tree-sitter-java@0.19.1:
-    resolution: {integrity: sha512-yVm+4q1D4niaHcEf2iqhOcIaiSp3wxHjeC4eoLAqSQNVxSrhThmT1FEfM4yDgHV4XaxH+62xpKHCwYG9NzRt6Q==}
-    requiresBuild: true
-    dependencies:
-      nan: 2.17.0
-    dev: false
-
-  /tree-sitter-javascript@0.19.0:
-    resolution: {integrity: sha512-SNykDdNgmlJZhX02ZIu0TQF9P7t847jV7769SxA9XrZ2QXjofQsVTMEi9+LpXZKsI0UoFYI25FnZm3fFm0z2yw==}
-    requiresBuild: true
-    dependencies:
-      nan: 2.17.0
-    dev: false
-
-  /tree-sitter-python@0.20.3:
-    resolution: {integrity: sha512-8R+00dCgTCBo2x9e53s3QnSoQhjrGJcxXHSfKSBcWwwZLTbiHqj/YKj7Ey6pYqPCgjCVPJ+bEIUCH3jTtTGzqA==}
-    requiresBuild: true
-    dependencies:
-      nan: 2.17.0
-    dev: false
-
-  /tree-sitter-typescript@0.20.1:
-    resolution: {integrity: sha512-wqpnhdVYX26ATNXeZtprib4+mF2GlYQB1cjRPibYGxDRiugx5OfjWwLE4qPPxEGdp2ZLSmZVesGUjLWzfKo6rA==}
-    requiresBuild: true
-    dependencies:
-      nan: 2.17.0
-    dev: false
 
   /trim-newlines@4.1.1:
     resolution: {integrity: sha512-jRKj0n0jXWo6kh62nA5TEh3+4igKDXLvzBJcPpiizP7oOolUrYIxmVBG9TOtHYFHoddUk6YvAkGeGoSVTXfQXQ==}
