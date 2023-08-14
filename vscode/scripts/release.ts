@@ -1,4 +1,6 @@
 import { execFileSync } from 'child_process'
+import fs from 'fs'
+import path from 'path'
 
 import semver from 'semver'
 
@@ -11,8 +13,11 @@ import semver from 'semver'
  * All release types are triggered by the CI and should not be run locally.
  */
 
-// eslint-disable-next-line  @typescript-eslint/no-require-imports, @typescript-eslint/no-var-requires, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
-const packageJSONVersionString: string = require('../package.json').version
+const packageJSONPath = path.join(__dirname, '../package.json')
+const packageJSONBody = fs.readFileSync(packageJSONPath, 'utf-8')
+const packageJSON = JSON.parse(packageJSONBody)
+const packageJSONVersionString: string = packageJSON.version
+let packageJSONWasModified = false
 
 // Check version validity.
 const packageJSONVersion = semver.valid(packageJSONVersionString)
@@ -43,6 +48,39 @@ function validateReleaseType(releaseType: string | undefined): asserts releaseTy
 validateReleaseType(releaseType)
 
 const dryRun = Boolean(process.env.CODY_RELEASE_DRY_RUN)
+const customDefaultSettingsFile = process.env.CODY_RELEASE_CUSTOM_DEFAULT_SETTINGS_FILE
+if (customDefaultSettingsFile) {
+    // Override settings defaults in this build from a provided settings file.
+    // The settings file is expected to contain JSON of an object with settings
+    // key-value properties.
+    const settingsDefaults = loadJsonFileSync(customDefaultSettingsFile)
+    console.log(`Applying custom default settings from ${customDefaultSettingsFile}`)
+    const configurationProperties = packageJSON.contributes.configuration.properties
+
+    const missingSettings = []
+    for (const [name, value] of Object.entries(settingsDefaults)) {
+        const foundProperty = configurationProperties[name] as { default: any }
+        if (foundProperty) {
+            console.log(`\t- Setting custom default setting for "${name}" with value "${value}"`)
+            foundProperty.default = value
+            packageJSONWasModified = true
+        } else {
+            missingSettings.push(name)
+        }
+    }
+
+    if (missingSettings.length > 0) {
+        console.error(
+            'Failed to apply all custom settings. These settings were not found in the configuration in package.json:'
+        )
+        for (const name of missingSettings) {
+            console.error(`\t- ${name}`)
+        }
+        process.exit(1)
+    }
+
+    writeJsonFileSync('package.json', packageJSON)
+}
 
 // Tokens are stored in the GitHub repository's secrets.
 const tokens = {
@@ -120,4 +158,23 @@ if (dryRun) {
     )
 }
 
+if (packageJSONWasModified) {
+    // Restore original package.json, only if it was modified during build.
+    fs.writeFileSync(packageJSONPath, packageJSONBody)
+}
+
 console.error('Done!')
+
+function loadJsonFileSync(filename: string): any {
+    const filepath = path.join(process.cwd(), filename)
+    // eslint-disable-next-line no-sync
+    const body = fs.readFileSync(filepath, 'utf-8')
+    return JSON.parse(body)
+}
+
+function writeJsonFileSync(filename: string, data: any): void {
+    const filepath = path.join(process.cwd(), filename)
+    const body = JSON.stringify(data, null, 2)
+    // eslint-disable-next-line no-sync
+    return fs.writeFileSync(filepath, body, 'utf8')
+}
