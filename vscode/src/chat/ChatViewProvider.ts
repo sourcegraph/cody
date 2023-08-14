@@ -198,6 +198,7 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
         if (!editor || !selectionRange) {
             return
         }
+
         const edit = new vscode.WorkspaceEdit()
         // trimEnd() to remove new line added by Cody
         edit.replace(editor.document.uri, selectionRange, text.trimEnd())
@@ -205,7 +206,6 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
 
         // Log insert event
         const op = 'insert'
-
         const { lineCount, charCount } = countCode(text)
         const eventName = op + 'Button'
         const args = { op, charCount, lineCount }
@@ -222,9 +222,10 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
     private async handleCopiedCode(text: string, eventType: 'Button' | 'Keydown'): Promise<void> {
         // If it's a Button event, then the text is already passed in from the whole code block
         const copiedCode = eventType === 'Button' ? text : await vscode.env.clipboard.readText()
-        const { lineCount, charCount } = countCode(copiedCode)
+
         // Log Copy event
         const op = 'copy'
+        const { lineCount, charCount } = countCode(copiedCode)
         const eventName = op + eventType
         const args = { op, charCount, lineCount }
         this.telemetryService.log(`CodyVSCodeExtension:${eventName}:clicked`, args)

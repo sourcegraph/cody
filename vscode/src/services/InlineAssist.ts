@@ -59,9 +59,16 @@ export function countCode(code: string): { lineCount: number; charCount: number 
     return { lineCount, charCount }
 }
 
+/**
+ * Handle edge cases for code snippets where code is not pasted correctly
+ * or code is multiline and the formatting is changed on paste
+ */
 export function matchCodeSnippets(copiedText: string, changedText: string): boolean {
-    // remove all white spaces and new lines from the copied code and changed text
-    // as formatting on paste may change the spacing
+    if (!changedText || !copiedText) {
+        return false
+    }
+    // Code can be multiline, so we need to remove all new lines and spaces
+    // from the copied code and changed text as formatting on paste may change the spacing
     const copiedTextNoSpace = copiedText.replace(/\s/g, '')
     const changedTextNoSpace = changedText?.replace(/\s/g, '')
     // check if the copied code is the same as the changed text without spaces
