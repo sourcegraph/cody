@@ -181,6 +181,9 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
         void this.webview?.postMessage({ type: 'errors', errors: errorMsg })
     }
 
+    /**
+     * Prevent logging insert events as paste events on doc change
+     */
     private isInsertEvent = false
 
     /**

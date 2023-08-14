@@ -206,8 +206,8 @@ export class FixupController
         }
         const replacementText = task.replacement
         if (replacementText) {
-            const { lineCount, charCount } = countCode(replacementText)
-            this.telemetryService.log('CodyVSCodeExtension:fixup:applied', { lineCount, charCount })
+            const tokenCount = countCode(replacementText)
+            this.telemetryService.log('CodyVSCodeExtension:fixup:applied', tokenCount)
         }
 
         // TODO: is this the right transition for being all done?
@@ -324,6 +324,7 @@ export class FixupController
                 task.inProgressReplacement = undefined
                 task.replacement = text
                 this.setTaskState(task, CodyTaskState.ready)
+                this.telemetryService.log('CodyVSCodeExtension:fixupResponse:hasCode', countCode(text))
                 break
         }
         this.textDidChange(task)
