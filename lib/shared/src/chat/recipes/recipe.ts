@@ -15,6 +15,7 @@ export interface RecipeContext {
 
 export type RecipeID =
     | 'chat-question'
+    | 'code-question'
     | 'context-search'
     | 'explain-code-detailed'
     | 'explain-code-high-level'
@@ -26,14 +27,14 @@ export type RecipeID =
     | 'git-history'
     | 'improve-variable-names'
     | 'inline-chat'
-    | 'my-prompt'
+    | 'custom-prompt'
     | 'next-questions'
-    | 'non-stop'
     | 'pr-description'
     | 'release-notes'
     | 'translate-to-language'
 
 export interface Recipe {
     id: RecipeID
+    multiplexerTopic?: string
     getInteraction(humanChatInput: string, context: RecipeContext): Promise<Interaction | null>
 }

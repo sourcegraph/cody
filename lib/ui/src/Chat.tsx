@@ -2,7 +2,7 @@ import React, { useCallback, useMemo, useState } from 'react'
 
 import classNames from 'classnames'
 
-import { ChatButton, ChatContextStatus, ChatMessage, isDefined } from '@sourcegraph/cody-shared'
+import { ChatButton, ChatContextStatus, ChatMessage, CodyPrompt, isDefined } from '@sourcegraph/cody-shared'
 
 import { FileLinkProps } from './chat/ContextFiles'
 import { ChatInputContext } from './chat/inputContext/ChatInputContext'
@@ -21,9 +21,11 @@ interface ChatProps extends ChatClassNames {
     setFormInput: (input: string) => void
     inputHistory: string[]
     setInputHistory: (history: string[]) => void
-    onSubmit: (text: string, submitType: 'user' | 'suggestion') => void
+    onSubmit: (text: string, submitType: 'user' | 'suggestion' | 'example') => void
     contextStatusComponent?: React.FunctionComponent<any>
     contextStatusComponentProps?: any
+    gettingStartedComponent?: React.FunctionComponent<any>
+    gettingStartedComponentProps?: any
     textAreaComponent: React.FunctionComponent<ChatUITextAreaProps>
     submitButtonComponent: React.FunctionComponent<ChatUISubmitButtonProps>
     suggestionButtonComponent?: React.FunctionComponent<ChatUISuggestionButtonProps>
@@ -47,6 +49,9 @@ interface ChatProps extends ChatClassNames {
     isCodyEnabled: boolean
     ChatButtonComponent?: React.FunctionComponent<ChatButtonProps>
     pluginsDevMode?: boolean
+    chatCommands?: [string, CodyPrompt][] | null
+    ChatCommandsComponent?: React.FunctionComponent<ChatCommandsProps>
+    isTranscriptError?: boolean
 }
 
 interface ChatClassNames extends TranscriptItemClassNames {
@@ -100,6 +105,14 @@ export interface FeedbackButtonsProps {
 export interface CopyButtonProps {
     copyButtonOnSubmit: (text: string, insert?: boolean) => void
 }
+
+export interface ChatCommandsProps {
+    setFormInput: (input: string) => void
+    setSelectedChatCommand: (index: number) => void
+    chatCommands?: [string, CodyPrompt][] | null
+    selectedChatCommand?: number
+    onSubmit: (input: string, inputType: 'user' | 'suggestion') => void
+}
 /**
  * The Cody chat interface, with a transcript of all messages and a message form.
  */
@@ -143,17 +156,50 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
     needsEmailVerificationNotice: NeedsEmailVerificationNotice,
     contextStatusComponent: ContextStatusComponent,
     contextStatusComponentProps = {},
+    gettingStartedComponent: GettingStartedComponent,
+    gettingStartedComponentProps = {},
     abortMessageInProgressComponent: AbortMessageInProgressButton,
     onAbortMessageInProgress = () => {},
     isCodyEnabled,
     ChatButtonComponent,
     pluginsDevMode,
+    chatCommands,
+    ChatCommandsComponent,
+    isTranscriptError,
 }) => {
     const [inputRows, setInputRows] = useState(1)
+    const [displayCommands, setDisplayCommands] = useState<[string, CodyPrompt][] | null>(chatCommands || null)
+    const [selectedChatCommand, setSelectedChatCommand] = useState(-1)
     const [historyIndex, setHistoryIndex] = useState(inputHistory.length)
+
+    // Handles selecting a chat command when the user types a slash in the chat input.
+    const chatCommentSelectionHandler = useCallback(
+        (inputValue: string): void => {
+            if (!chatCommands || !ChatCommandsComponent) {
+                return
+            }
+            if (inputValue === '/') {
+                setDisplayCommands(chatCommands)
+                setSelectedChatCommand(chatCommands.length)
+                return
+            }
+            if (inputValue.startsWith('/')) {
+                const filteredCommands = chatCommands.filter(
+                    ([_, prompt]) => prompt.slashCommand?.startsWith(inputValue)
+                )
+                setDisplayCommands(filteredCommands)
+                setSelectedChatCommand(0)
+                return
+            }
+            setDisplayCommands(null)
+            setSelectedChatCommand(-1)
+        },
+        [ChatCommandsComponent, chatCommands]
+    )
 
     const inputHandler = useCallback(
         (inputValue: string): void => {
+            chatCommentSelectionHandler(inputValue)
             const rowsCount = (inputValue.match(/\n/g)?.length || 0) + 1
             setInputRows(rowsCount > 25 ? 25 : rowsCount)
             setFormInput(inputValue)
@@ -161,19 +207,20 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                 setHistoryIndex(inputHistory.length)
             }
         },
-        [historyIndex, inputHistory, setFormInput]
+        [chatCommentSelectionHandler, historyIndex, inputHistory, setFormInput]
     )
 
     const submitInput = useCallback(
-        (input: string, submitType: 'user' | 'suggestion'): void => {
+        (input: string, submitType: 'user' | 'suggestion' | 'example'): void => {
             if (messageInProgress) {
                 return
             }
-
             onSubmit(input, submitType)
             setSuggestions?.(undefined)
             setHistoryIndex(inputHistory.length + 1)
             setInputHistory([...inputHistory, input])
+            setDisplayCommands(null)
+            setSelectedChatCommand(-1)
         },
         [inputHistory, messageInProgress, onSubmit, setInputHistory, setSuggestions]
     )
@@ -189,8 +236,8 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
         // Submit chat only when input is not empty and not in progress
         if (formInput.trim() && !messageInProgress) {
             setInputRows(1)
-            setFormInput('')
             submitInput(formInput, 'user')
+            setFormInput('')
         }
     }, [formInput, messageInProgress, setFormInput, submitInput])
 
@@ -203,12 +250,51 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                 !event.shiftKey &&
                 !event.nativeEvent.isComposing &&
                 formInput &&
-                formInput.trim()
+                formInput.trim() &&
+                !displayCommands?.length
             ) {
                 event.preventDefault()
                 event.stopPropagation()
                 setMessageBeingEdited(false)
                 onChatSubmit()
+            }
+
+            // Ignore alt + c key combination for editor to avoid conflict with cody shortcut
+            if (event.altKey && event.key === 'c') {
+                event.preventDefault()
+                event.stopPropagation()
+            }
+
+            // Handles cycling through chat command suggestions using the up and down arrow keys
+            if (displayCommands && formInput.startsWith('/')) {
+                if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
+                    const commandsLength = displayCommands?.length
+                    const newIndex = event.key === 'ArrowUp' ? selectedChatCommand - 1 : selectedChatCommand + 1
+                    const newCommandIndex = newIndex < 0 ? commandsLength : newIndex > commandsLength ? 0 : newIndex
+                    setSelectedChatCommand(newCommandIndex)
+                    const newInput = displayCommands?.[newCommandIndex]?.[1]?.slashCommand
+                    setFormInput(newInput || formInput)
+                }
+                // close the chat command suggestions on escape key
+                if (event.key === 'Escape') {
+                    setDisplayCommands(null)
+                    setSelectedChatCommand(-1)
+                    setFormInput('')
+                }
+
+                // tab/enter to complete
+                if (
+                    (event.key === 'Tab' || event.key === 'Enter') &&
+                    selectedChatCommand > -1 &&
+                    displayCommands.length
+                ) {
+                    event.preventDefault()
+                    event.stopPropagation()
+                    const newInput = displayCommands?.[selectedChatCommand]?.[1]?.slashCommand
+                    setFormInput(newInput || formInput)
+                    setDisplayCommands(null)
+                    setSelectedChatCommand(-1)
+                }
             }
 
             // Loop through input history on up arrow press
@@ -235,7 +321,17 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                 }
             }
         },
-        [inputHistory, historyIndex, setFormInput, onChatSubmit, onSubmit, formInput, setMessageBeingEdited]
+        [
+            formInput,
+            selectedChatCommand,
+            displayCommands,
+            inputHistory,
+            historyIndex,
+            setMessageBeingEdited,
+            onChatSubmit,
+            setFormInput,
+            onSubmit,
+        ]
     )
 
     const transcriptWithWelcome = useMemo<ChatMessage[]>(
@@ -249,6 +345,8 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
         ],
         [helpMarkdown, afterMarkdown, gettingStartedButtons, transcript]
     )
+
+    const isGettingStartedComponentVisible = transcript.length === 0 && GettingStartedComponent !== undefined
 
     return (
         <div className={classNames(className, styles.innerContainer)}>
@@ -273,7 +371,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                     humanTranscriptItemClassName={humanTranscriptItemClassName}
                     transcriptItemParticipantClassName={transcriptItemParticipantClassName}
                     transcriptActionClassName={transcriptActionClassName}
-                    className={styles.transcriptContainer}
+                    className={!isGettingStartedComponentVisible ? 'flex-1' : undefined}
                     textAreaComponent={TextArea}
                     EditButtonContainer={EditButtonContainer}
                     editButtonOnSubmit={editButtonOnSubmit}
@@ -284,11 +382,16 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                     chatInputClassName={chatInputClassName}
                     ChatButtonComponent={ChatButtonComponent}
                     pluginsDevMode={pluginsDevMode}
+                    isTranscriptError={isTranscriptError}
                 />
             )}
 
+            {isGettingStartedComponentVisible && (
+                <GettingStartedComponent {...gettingStartedComponentProps} submitInput={submitInput} />
+            )}
+
             <form className={classNames(styles.inputRow, inputRowClassName)}>
-                {suggestions !== undefined && suggestions.length !== 0 && SuggestionButton ? (
+                {!displayCommands && suggestions !== undefined && suggestions.length !== 0 && SuggestionButton ? (
                     <div className={styles.suggestions}>
                         {suggestions.map((suggestion: string) =>
                             suggestion.trim().length > 0 ? (
@@ -301,6 +404,15 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                         )}
                     </div>
                 ) : null}
+                {displayCommands && ChatCommandsComponent && formInput && (
+                    <ChatCommandsComponent
+                        chatCommands={displayCommands}
+                        selectedChatCommand={selectedChatCommand}
+                        setFormInput={setFormInput}
+                        setSelectedChatCommand={setSelectedChatCommand}
+                        onSubmit={onSubmit}
+                    />
+                )}
                 {messageInProgress && AbortMessageInProgressButton && (
                     <div className={classNames(styles.abortButtonContainer)}>
                         <AbortMessageInProgressButton onAbortMessageInProgress={onAbortMessageInProgress} />
@@ -320,7 +432,9 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                     <SubmitButton
                         className={styles.submitButton}
                         onClick={onChatSubmit}
-                        disabled={!!messageInProgress || needsEmailVerification || !isCodyEnabled}
+                        disabled={
+                            !!messageInProgress || needsEmailVerification || !isCodyEnabled || formInput.length === 0
+                        }
                     />
                 </div>
                 {ContextStatusComponent ? (

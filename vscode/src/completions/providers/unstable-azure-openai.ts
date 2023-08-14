@@ -1,7 +1,6 @@
 import { logger } from '../../log'
-import { ReferenceSnippet } from '../context'
 import { getHeadAndTail } from '../text-processing'
-import { Completion } from '../vscodeInlineCompletionItemProvider'
+import { Completion, ContextSnippet } from '../types'
 
 import { Provider, ProviderConfig, ProviderOptions } from './provider'
 
@@ -43,7 +42,7 @@ export class UnstableAzureOpenAIProvider extends Provider {
         this.accessToken = unstableAzureOpenAIOptions.accessToken
     }
 
-    public async generateCompletions(abortSignal: AbortSignal, snippets: ReferenceSnippet[]): Promise<Completion[]> {
+    public async generateCompletions(abortSignal: AbortSignal, snippets: ContextSnippet[]): Promise<Completion[]> {
         const { head, tail } = getHeadAndTail(this.options.prefix)
 
         // Create prompt
@@ -120,5 +119,6 @@ export function createProviderConfig(unstableAzureOpenAIOptions: UnstableAzureOp
         maximumContextCharacters: contextWindowChars,
         enableExtendedMultilineTriggers: false,
         identifier: PROVIDER_IDENTIFIER,
+        supportsInfilling: false,
     }
 }

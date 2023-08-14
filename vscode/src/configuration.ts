@@ -36,25 +36,9 @@ export function getConfiguration(config: ConfigGetter): Configuration {
         debugRegex = new RegExp('.*')
     }
 
-    let autocompleteAdvancedProvider = config.get<
-        'anthropic' | 'unstable-codegen' | 'unstable-huggingface' | 'unstable-fireworks' | 'unstable-azure-openai'
-    >(CONFIG_KEY.autocompleteAdvancedProvider, 'anthropic')
-
-    if (
-        autocompleteAdvancedProvider !== 'anthropic' &&
-        autocompleteAdvancedProvider !== 'unstable-codegen' &&
-        autocompleteAdvancedProvider !== 'unstable-huggingface' &&
-        autocompleteAdvancedProvider !== 'unstable-fireworks' &&
-        autocompleteAdvancedProvider !== 'unstable-azure-openai'
-    ) {
-        autocompleteAdvancedProvider = 'anthropic'
-        void vscode.window.showInformationMessage(
-            `Unrecognized ${CONFIG_KEY.autocompleteAdvancedProvider}, defaulting to 'anthropic'`
-        )
-    }
-
     return {
         // NOTE: serverEndpoint is now stored in Local Storage instead but we will still keep supporting the one in confg
+        // to use as fallback for users who do not have access to local storage
         serverEndpoint: sanitizeServerEndpoint(config.get(CONFIG_KEY.serverEndpoint, '')),
         codebase: sanitizeCodebase(config.get(CONFIG_KEY.codebase)),
         customHeaders: config.get<object>(CONFIG_KEY.customHeaders, {}) as Record<string, string>,
@@ -67,15 +51,15 @@ export function getConfiguration(config: ConfigGetter): Configuration {
         experimentalChatPredictions: config.get(CONFIG_KEY.experimentalChatPredictions, isTesting),
         inlineChat: config.get(CONFIG_KEY.inlineChatEnabled, true),
         experimentalGuardrails: config.get(CONFIG_KEY.experimentalGuardrails, isTesting),
-        experimentalNonStop: config.get('cody.experimental.nonStop' as any, isTesting),
-        experimentalCustomRecipes: config.get(CONFIG_KEY.experimentalCustomRecipes, isTesting),
-        autocompleteAdvancedProvider,
+        experimentalNonStop: config.get(CONFIG_KEY.experimentalNonStop, isTesting),
+        experimentalCommandLenses: config.get(CONFIG_KEY.experimentalCommandLenses, false),
+        experimentalEditorTitleCommandIcon: config.get(CONFIG_KEY.experimentalEditorTitleCommandIcon, false),
+        autocompleteAdvancedProvider: config.get(CONFIG_KEY.autocompleteAdvancedProvider, 'anthropic'),
         autocompleteAdvancedServerEndpoint: config.get<string | null>(
             CONFIG_KEY.autocompleteAdvancedServerEndpoint,
             null
         ),
         autocompleteAdvancedAccessToken: config.get<string | null>(CONFIG_KEY.autocompleteAdvancedAccessToken, null),
-        autocompleteAdvancedCache: config.get(CONFIG_KEY.autocompleteAdvancedCache, true),
         autocompleteAdvancedEmbeddings: config.get(CONFIG_KEY.autocompleteAdvancedEmbeddings, true),
         autocompleteExperimentalCompleteSuggestWidgetSelection: config.get(
             CONFIG_KEY.autocompleteExperimentalCompleteSuggestWidgetSelection,
@@ -84,6 +68,15 @@ export function getConfiguration(config: ConfigGetter): Configuration {
         pluginsEnabled: config.get<boolean>(CONFIG_KEY.pluginsEnabled, false),
         pluginsDebugEnabled: config.get<boolean>(CONFIG_KEY.pluginsDebugEnabled, true),
         pluginsConfig: config.get(CONFIG_KEY.pluginsConfig, {}),
+
+        // Note: the setting below only exists for the agent to provide more
+        // helpful error messages when something goes wrong. In spirit, we try
+        // to minimize agent-specific code paths in the VSC extension but we
+        // make an exception for improved debug logging because it makes a huge
+        // difference when troubleshooting an issue like "the completion
+        // provider never got registered", which manifests by default with a
+        // silent timeout.
+        isRunningInsideAgent: config.get('cody.advanced.agent.running' as any, false),
     }
 }
 

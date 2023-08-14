@@ -1,9 +1,8 @@
 import fetch from 'isomorphic-fetch'
 
 import { logger } from '../../log'
-import { ReferenceSnippet } from '../context'
 import { getLanguageConfig } from '../language'
-import { Completion } from '../types'
+import { Completion, ContextSnippet } from '../types'
 import { isAbortError } from '../utils'
 
 import { Provider, ProviderConfig, ProviderOptions } from './provider'
@@ -27,8 +26,9 @@ export class UnstableHuggingFaceProvider extends Provider {
         this.accessToken = unstableHuggingFaceOptions.accessToken
     }
 
-    private createPrompt(snippets: ReferenceSnippet[]): string {
+    private createPrompt(snippets: ContextSnippet[]): string {
         const maxPromptChars = CONTEXT_WINDOW_CHARS - CONTEXT_WINDOW_CHARS * this.options.responsePercentage
+        const { prefix, suffix } = this.options
 
         const intro: string[] = []
         let prompt = ''
@@ -51,8 +51,10 @@ export class UnstableHuggingFaceProvider extends Provider {
                     .map(line => (languageConfig ? languageConfig.commentStart + line : ''))
                     .join('\n') + '\n'
 
+            const suffixAfterFirstNewline = suffix.slice(suffix.indexOf('\n'))
+
             // Prompt format is taken form https://huggingface.co/bigcode/starcoder#fill-in-the-middle
-            const nextPrompt = `<fim_prefix>${introString}${this.options.prefix}<fim_suffix>${this.options.suffix}<fim_middle>`
+            const nextPrompt = `<fim_prefix>${introString}${prefix}<fim_suffix>${suffixAfterFirstNewline}<fim_middle>`
 
             if (nextPrompt.length >= maxPromptChars) {
                 return prompt
@@ -64,7 +66,7 @@ export class UnstableHuggingFaceProvider extends Provider {
         return prompt
     }
 
-    public async generateCompletions(abortSignal: AbortSignal, snippets: ReferenceSnippet[]): Promise<Completion[]> {
+    public async generateCompletions(abortSignal: AbortSignal, snippets: ContextSnippet[]): Promise<Completion[]> {
         const prompt = this.createPrompt(snippets)
 
         const request = {
@@ -140,5 +142,6 @@ export function createProviderConfig(unstableHuggingFaceOptions: UnstableHugging
         maximumContextCharacters: CONTEXT_WINDOW_CHARS,
         enableExtendedMultilineTriggers: true,
         identifier: PROVIDER_IDENTIFIER,
+        supportsInfilling: true,
     }
 }

@@ -1,0 +1,87 @@
+.container {
+    position: absolute;
+    bottom: 100%;
+    box-sizing: border-box;
+    /* 2px above the input */
+    transform: translateY(calc(var(--spacing) - 5px));
+    /* Match the input width */
+    width: calc(100vw - 1.5rem);
+
+    max-height: 250%;
+    z-index: 99;
+    background: var(--vscode-sideBar-background);
+    color: var(--vscode-sideBar-foreground);
+    border: 1px solid var(--vscode-widget-border);
+    box-shadow: 0 0 8px 2px var(--vscode-widget-shadow);
+    border-radius: 6px;
+
+    display: flex;
+    flex-direction: column;
+}
+
+.heading-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.25rem 0.25rem 0 0.5rem;
+}
+
+.heading {
+    font-size: smaller;
+    opacity: 0.6;
+    font-weight: 500;
+    margin: 0;
+}
+
+.commands-container {
+    display: flex;
+    flex-direction: column;
+
+    overflow-x: scroll;
+}
+
+.command-item {
+    display: flex;
+    align-items: baseline;
+    font-size: inherit;
+    width: 100%;
+    cursor: pointer;
+    border: none;
+    color: currentColor;
+    background: transparent;
+    padding: 0.25rem 0.5rem;
+
+    white-space: nowrap;
+}
+
+.command-title,
+.command-description {
+    margin: 0;
+}
+
+.command-description {
+    margin-left: 0.25rem;
+    font-size: smaller;
+    opacity: 0.7;
+
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
+}
+
+.command-item:hover {
+    color: var(--vscode-list-hoverForeground);
+    background-color: var(--vscode-list-hoverBackground);
+}
+
+.selected,
+.selected.command-item:hover {
+    color: var(--vscode-list-activeSelectionForeground);
+    background: var(--vscode-list-activeSelectionBackground);
+}
+
+body[data-vscode-theme-kind='vscode-high-contrast-light'] .selected,
+body[data-vscode-theme-kind='vscode-high-contrast'] .selected {
+    outline: 1px dashed var(--vscode-contrastActiveBorder);
+    outline-offset: -1px;
+}

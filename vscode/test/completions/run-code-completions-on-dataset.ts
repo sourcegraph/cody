@@ -11,8 +11,8 @@ import { NoopEditor } from '@sourcegraph/cody-shared/src/editor'
 import { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/nodeClient'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/cody-shared/src/telemetry'
 
-import { GetContextResult } from '../../src/completions/context'
-import { VSCodeDocumentHistory } from '../../src/completions/history'
+import { GetContextResult } from '../../src/completions/context/context'
+import { VSCodeDocumentHistory } from '../../src/completions/context/history'
 import { createProviderConfig } from '../../src/completions/providers/createProvider'
 import { InlineCompletionItemProvider } from '../../src/completions/vscodeInlineCompletionItemProvider'
 import { getFullConfig } from '../../src/configuration'
@@ -52,7 +52,10 @@ async function initCompletionsProvider(context: GetContextResult): Promise<Inlin
 
     const history = new VSCodeDocumentHistory()
 
-    const providerConfig = createProviderConfig(initialConfig, console.error, completionsClient)
+    const providerConfig = createProviderConfig(initialConfig, completionsClient)
+    if (!providerConfig) {
+        throw new Error('invalid completion config: no provider')
+    }
 
     const completionsProvider = new InlineCompletionItemProvider({
         providerConfig,
@@ -61,9 +64,7 @@ async function initCompletionsProvider(context: GetContextResult): Promise<Inlin
             dispose: () => {},
         },
         history,
-        codebaseContext,
-        disableTimeouts: true,
-        cache: null,
+        getCodebaseContext: () => codebaseContext,
         isEmbeddingsContextEnabled: true,
         contextFetcher: () => Promise.resolve(context),
     })
@@ -137,9 +138,11 @@ async function generateCompletionsForDataset(codeSamples: Sample[]): Promise<voi
                 undefined
             )
 
-            const completions = ('items' in completionItems ? completionItems.items : completionItems).map(item =>
-                typeof item.insertText === 'string' ? item.insertText : ''
-            )
+            const completions = completionItems
+                ? ('items' in completionItems ? completionItems.items : completionItems).map(item =>
+                      typeof item.insertText === 'string' ? item.insertText : ''
+                  )
+                : []
             console.error(`#${index}@i=${i}`, completions)
             codeSampleResults.push({
                 completions,
@@ -164,6 +167,7 @@ async function generateCompletionsForDataset(codeSamples: Sample[]): Promise<voi
         throw new Error('No provider name')
     }
     const filename = path.join(ENVIRONMENT_CONFIG.OUTPUT_PATH, `${providerName}-${timestamp}.json`)
+    fs.mkdirSync(ENVIRONMENT_CONFIG.OUTPUT_PATH, { recursive: true })
     fs.writeFileSync(filename, JSON.stringify(results, null, 2))
     console.log('\n✅ Completions saved to:', filename)
 }

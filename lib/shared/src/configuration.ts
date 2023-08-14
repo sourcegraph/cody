@@ -13,7 +13,8 @@ export interface Configuration {
     autocomplete: boolean
     experimentalChatPredictions: boolean
     inlineChat: boolean
-    experimentalCustomRecipes: boolean
+    experimentalCommandLenses: boolean
+    experimentalEditorTitleCommandIcon: boolean
     experimentalGuardrails: boolean
     experimentalNonStop: boolean
     autocompleteAdvancedProvider:
@@ -24,11 +25,11 @@ export interface Configuration {
         | 'unstable-azure-openai'
     autocompleteAdvancedServerEndpoint: string | null
     autocompleteAdvancedAccessToken: string | null
-    autocompleteAdvancedCache: boolean
     autocompleteAdvancedEmbeddings: boolean
     autocompleteExperimentalCompleteSuggestWidgetSelection?: boolean
     pluginsEnabled?: boolean
     pluginsDebugEnabled?: boolean
+    isRunningInsideAgent?: boolean
     pluginsConfig?: {
         confluence?: {
             baseUrl: string

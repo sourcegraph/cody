@@ -52,6 +52,7 @@ export class InlineController implements VsCodeInlineController {
     public selection: ActiveTextEditorSelection | null = null
     public selectionRange = initRange
     // Inline Tasks States
+    // If a task is in progress, the editor will use the selection range tracked by the controller
     public isInProgress = false
     private codeLenses: Map<string, CodeLensProvider> = new Map()
 
@@ -150,7 +151,7 @@ export class InlineController implements VsCodeInlineController {
     /**
      * Create a new thread (the first comment of a thread)
      */
-    public create(humanInput: string): vscode.CommentReply | null {
+    public create(humanInput: string, range: vscode.Range): vscode.CommentReply | null {
         if (!this.commentController) {
             return null
         }
@@ -158,7 +159,7 @@ export class InlineController implements VsCodeInlineController {
         if (!editor || !humanInput || editor.document.uri.scheme !== 'file') {
             return null
         }
-        this.thread = this.commentController.createCommentThread(editor?.document.uri, editor.selection, [])
+        this.thread = this.commentController.createCommentThread(editor?.document.uri, range, [])
         this.thread.collapsibleState = vscode.CommentThreadCollapsibleState.Collapsed
         const threads = {
             text: humanInput,
@@ -174,7 +175,7 @@ export class InlineController implements VsCodeInlineController {
         // disable reply until the task is completed
         thread.canReply = false
         thread.label = this.threadLabel
-        thread.collapsibleState = vscode.CommentThreadCollapsibleState.Collapsed
+        thread.collapsibleState = vscode.CommentThreadCollapsibleState.Expanded
 
         const comment = new Comment(reply, 'Me', this.userIcon, thread)
         thread.comments = [...thread.comments, comment]
@@ -228,6 +229,7 @@ export class InlineController implements VsCodeInlineController {
             this.thread.state = state === 'error' ? 1 : 0
             this.thread.canReply = state !== 'error'
             void vscode.commands.executeCommand('setContext', 'cody.replied', true)
+            this.isInProgress = false
         }
     }
     public abort(): void {
@@ -235,6 +237,7 @@ export class InlineController implements VsCodeInlineController {
         const latestReply = this.getLatestReply()
         if (latestReply instanceof Comment) {
             latestReply.abort()
+            this.isInProgress = false
         }
     }
     /**
@@ -294,6 +297,7 @@ export class InlineController implements VsCodeInlineController {
         this.reply(`Cody was unable to complete your ${requestType}. ${message}`, 'error')
         if (fixupInProgress) {
             await this.stopFixMode(true)
+            this.isInProgress = false
         }
     }
     /**
@@ -312,7 +316,6 @@ export class InlineController implements VsCodeInlineController {
      * so that they could update accordingly
      */
     private async stopFixMode(error = false, newRange?: vscode.Range): Promise<void> {
-        this.isInProgress = false
         if (!this.currentTaskId) {
             return
         }
@@ -329,6 +332,7 @@ export class InlineController implements VsCodeInlineController {
         if (!error) {
             await vscode.commands.executeCommand('workbench.action.collapseAllComments')
         }
+        this.isInProgress = false
     }
     /**
      * Get current selected lines from the comment thread.
@@ -362,6 +366,7 @@ export class InlineController implements VsCodeInlineController {
             selectedText: activeDocument.getText(selectionRange) || ' ',
             precedingText,
             followingText,
+            selectionRange,
         }
         this.selectionRange = selectionRange
         this.selection = selection

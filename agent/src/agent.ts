@@ -1,33 +1,81 @@
+import path from 'path'
+
+import * as vscode from 'vscode'
 import { URI } from 'vscode-uri'
 
 import { Client, createClient } from '@sourcegraph/cody-shared/src/chat/client'
 import { registeredRecipes } from '@sourcegraph/cody-shared/src/chat/recipes/agent-recipes'
 import { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/nodeClient'
 
+import { activate } from '../../vscode/src/extension.node'
+
+import { AgentTextDocument } from './AgentTextDocument'
+import { newTextEditor } from './AgentTextEditor'
+import { AgentWorkspaceDocuments } from './AgentWorkspaceDocuments'
 import { AgentEditor } from './editor'
 import { MessageHandler } from './jsonrpc'
-import { ConnectionConfiguration, TextDocument } from './protocol'
+import { AutocompleteItem, ConnectionConfiguration } from './protocol'
+import * as vscode_shim from './vscode-shim'
+
+const secretStorage = new Map<string, string>()
+
+function initializeVscodeExtension(): void {
+    activate({
+        asAbsolutePath(relativePath) {
+            return path.resolve(process.cwd(), relativePath)
+        },
+        environmentVariableCollection: {} as any,
+        extension: {} as any,
+        extensionMode: {} as any,
+        extensionPath: {} as any,
+        extensionUri: {} as any,
+        globalState: {
+            keys: () => [],
+            get: () => undefined,
+            update: (key, value) => Promise.resolve(),
+            setKeysForSync: keys => {},
+        },
+        logUri: {} as any,
+        logPath: {} as any,
+        secrets: {
+            onDidChange: vscode_shim.emptyEvent(),
+            get(key) {
+                if (key === 'cody.access-token' && vscode_shim.connectionConfig) {
+                    return Promise.resolve(vscode_shim.connectionConfig.accessToken)
+                }
+                return Promise.resolve(secretStorage.get(key))
+            },
+            store(key, value) {
+                secretStorage.set(key, value)
+                return Promise.resolve()
+            },
+            delete(key) {
+                return Promise.resolve()
+            },
+        },
+        storageUri: {} as any,
+        subscriptions: [],
+        workspaceState: {} as any,
+        globalStorageUri: {} as any,
+        storagePath: {} as any,
+        globalStoragePath: {} as any,
+    })
+}
 
 export class Agent extends MessageHandler {
     private client: Promise<Client | null> = Promise.resolve(null)
-    public workspaceRootUri: URI | null = null
-    public activeDocumentFilePath: string | null = null
-    public documents: Map<string, TextDocument> = new Map()
+    public workspace = new AgentWorkspaceDocuments()
 
     constructor() {
         super()
-
-        this.setClient({
-            customHeaders: {},
-            accessToken: process.env.SRC_ACCESS_TOKEN || '',
-            serverEndpoint: process.env.SRC_ENDPOINT || 'https://sourcegraph.com',
-        })
-
+        vscode_shim.setWorkspaceDocuments(this.workspace)
+        vscode_shim.setAgent(this)
         this.registerRequest('initialize', async client => {
             process.stderr.write(
                 `Cody Agent: handshake with client '${client.name}' (version '${client.version}') at workspace root path '${client.workspaceRootUri}'\n`
             )
-            this.workspaceRootUri = URI.parse(client.workspaceRootUri || `file://${client.workspaceRootPath}`)
+            initializeVscodeExtension()
+            this.workspace.workspaceRootUri = URI.parse(client.workspaceRootUri || `file://${client.workspaceRootPath}`)
             if (client.connectionConfiguration) {
                 this.setClient(client.connectionConfiguration)
             }
@@ -60,21 +108,31 @@ export class Agent extends MessageHandler {
         })
 
         this.registerNotification('textDocument/didFocus', document => {
-            this.activeDocumentFilePath = document.filePath
+            this.workspace.activeDocumentFilePath = document.filePath
+            vscode_shim.onDidChangeActiveTextEditor.fire(newTextEditor(this.workspace.agentTextDocument(document)))
         })
         this.registerNotification('textDocument/didOpen', document => {
-            this.documents.set(document.filePath, document)
-            this.activeDocumentFilePath = document.filePath
+            this.workspace.setDocument(document)
+            this.workspace.activeDocumentFilePath = document.filePath
+            const textDocument = this.workspace.agentTextDocument(document)
+            vscode_shim.onDidOpenTextDocument.fire(textDocument)
+            vscode_shim.onDidChangeActiveTextEditor.fire(newTextEditor(textDocument))
         })
         this.registerNotification('textDocument/didChange', document => {
-            if (document.content === undefined) {
-                document.content = this.documents.get(document.filePath)?.content
-            }
-            this.documents.set(document.filePath, document)
-            this.activeDocumentFilePath = document.filePath
+            const textDocument = this.workspace.agentTextDocument(document)
+            this.workspace.setDocument(document)
+            this.workspace.activeDocumentFilePath = document.filePath
+
+            vscode_shim.onDidChangeActiveTextEditor.fire(newTextEditor(textDocument))
+            vscode_shim.onDidChangeTextDocument.fire({
+                document: textDocument,
+                contentChanges: [], // TODO: implement this. It's only used by recipes, not autocomplete.
+                reason: undefined,
+            })
         })
         this.registerNotification('textDocument/didClose', document => {
-            this.documents.delete(document.filePath)
+            this.workspace.deleteDocument(document.filePath)
+            vscode_shim.onDidCloseTextDocument.fire(this.workspace.agentTextDocument(document))
         })
 
         this.registerNotification('connectionConfiguration/didChange', config => {
@@ -95,15 +153,61 @@ export class Agent extends MessageHandler {
             if (!client) {
                 return null
             }
+
             await client.executeRecipe(data.id, {
                 humanChatInput: data.humanChatInput,
                 data: data.data,
             })
             return null
         })
+        this.registerRequest('autocomplete/execute', async params => {
+            const provider = await vscode_shim.completionProvider
+            if (!provider) {
+                console.log('Completion provider is not initialized')
+                return { items: [] }
+            }
+            const token = new vscode.CancellationTokenSource().token
+            const document = this.workspace.getDocument(params.filePath)
+            if (!document) {
+                console.log('No document found for file path', params.filePath, [...this.workspace.allFilePaths()])
+                return { items: [] }
+            }
+
+            const textDocument = new AgentTextDocument(document)
+
+            try {
+                const result = await provider.provideInlineCompletionItems(
+                    textDocument,
+                    new vscode.Position(params.position.line, params.position.character),
+                    { triggerKind: vscode.InlineCompletionTriggerKind.Automatic, selectedCompletionInfo: undefined },
+                    token
+                )
+                const items: AutocompleteItem[] =
+                    result === null
+                        ? []
+                        : result.items.flatMap(({ insertText, range }) =>
+                              typeof insertText === 'string' && range !== undefined ? [{ insertText, range }] : []
+                          )
+                return { items }
+            } catch (error) {
+                console.log('autocomplete failed', error)
+                return { items: [] }
+            }
+        })
     }
 
     private setClient(config: ConnectionConfiguration): void {
+        vscode_shim.setConnectionConfig(config)
+        vscode_shim.onDidChangeConfiguration.fire({
+            affectsConfiguration: () =>
+                // assuming the return value below only impacts performance (not
+                // functionality), we return true to always triggger the callback.
+                true,
+        })
+        vscode_shim.commands.executeCommand('cody.auth.sync').then(
+            () => {},
+            () => {}
+        )
         this.client = createClient({
             editor: new AgentEditor(this),
             config: { ...config, useContext: 'none' },

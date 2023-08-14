@@ -52,3 +52,7 @@ function createTextLine(text: string, range: Range): TextLine {
         isEmptyOrWhitespace: /^\s*$/.test(text),
     }
 }
+
+export function range(startLine: number, startCharacter: number, endLine?: number, endCharacter?: number): Range {
+    return new vsCodeMocks.Range(startLine, startCharacter, endLine || startLine, endCharacter || 0)
+}

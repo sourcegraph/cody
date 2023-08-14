@@ -32,6 +32,8 @@ export type Requests = {
     // client <-- chat/updateMessageInProgress --- server
     'recipes/execute': [ExecuteRecipeParams, null]
 
+    'autocomplete/execute': [AutocompleteParams, AutocompleteResult]
+
     // ================
     // Server -> Client
     // ================
@@ -77,6 +79,22 @@ export type Notifications = {
     // request. The server should never send this notification outside of a
     // 'chat/executeRecipe' request.
     'chat/updateMessageInProgress': [ChatMessage | null]
+
+    'debug/message': [DebugMessage]
+}
+
+export interface AutocompleteParams {
+    filePath: string
+    position: Position
+}
+
+export interface AutocompleteResult {
+    items: AutocompleteItem[]
+}
+
+export interface AutocompleteItem {
+    insertText: string
+    range: Range
 }
 
 export interface ClientInfo {
@@ -110,6 +128,12 @@ export interface ConnectionConfiguration {
     serverEndpoint: string
     accessToken: string
     customHeaders: Record<string, string>
+    autocompleteAdvancedProvider: string
+    autocompleteAdvancedServerEndpoint: string | null
+    autocompleteAdvancedAccessToken: string | null
+    autocompleteAdvancedEmbeddings: boolean
+    debug?: boolean
+    verboseDebug?: boolean
 }
 
 export interface Position {
@@ -139,4 +163,9 @@ export interface ExecuteRecipeParams {
     id: RecipeID
     humanChatInput: string
     data?: any
+}
+
+export interface DebugMessage {
+    channel: string
+    message: string
 }

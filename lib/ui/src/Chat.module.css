@@ -4,16 +4,12 @@
     height: 100%;
 }
 
-.transcript-container {
-    flex: 1;
-}
-
 .input-row {
     position: relative;
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
-    padding: 1rem;
+    gap: 0.25rem;
+    padding: 0.5rem;
 }
 
 .text-area-container {
