@@ -26,7 +26,7 @@ import {
     Uri,
 } from '../../vscode/src/testutils/mocks'
 
-import { Agent } from './agent'
+import type { Agent } from './agent'
 import { AgentTabGroups } from './AgentTabGroups'
 import type { ConnectionConfiguration } from './protocol'
 

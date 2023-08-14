@@ -19,7 +19,7 @@ export class TestClient extends MessageHandler {
                 accessToken: process.env.SRC_ACCESS_TOKEN ?? 'invalid',
                 serverEndpoint: process.env.SRC_ENDPOINT ?? 'invalid',
                 customHeaders: {},
-                autocompleteAdvancedProvider: '',
+                autocompleteAdvancedProvider: 'anthropic',
                 autocompleteAdvancedAccessToken: '',
                 autocompleteAdvancedServerEndpoint: '',
                 autocompleteAdvancedEmbeddings: true,
