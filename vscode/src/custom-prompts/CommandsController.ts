@@ -206,6 +206,7 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
                 menu_options.fix,
                 menu_options.doc,
                 menu_options.test,
+                menu_options.refactor,
                 menu_separators.commands,
             ]
             const allCommands = this.default.getGroupedCommands(true)
@@ -244,6 +245,8 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
                     return await vscode.commands.executeCommand('cody.fixup.new')
                 case selectedCommandID === menu_options.doc.label:
                     return await vscode.commands.executeCommand('cody.action.generate-documentation')
+                case selectedCommandID === menu_options.refactor.label:
+                    return await vscode.commands.executeCommand('cody.action.refactor-code')
                 case selectedCommandID === menu_options.test.label:
                     return await vscode.commands.executeCommand('cody.action.generate-test')
                 case selectedCommandID === menu_options.submitChat.label:

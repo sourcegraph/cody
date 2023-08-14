@@ -14,6 +14,7 @@ const chatOption: QuickPickItem = { label: 'Ask a Question' }
 const fixOption: QuickPickItem = { label: 'Refactor This Code' }
 const docOption: QuickPickItem = { label: 'Generate Documentation' }
 const testOption: QuickPickItem = { label: 'Generate Tests' }
+const refactorOption: QuickPickItem = { label: 'Refactor Code' }
 const commandsSeparator: QuickPickItem = { kind: -1, label: 'commands' }
 const customCommandsSeparator: QuickPickItem = { kind: -1, label: 'custom commands' }
 const configOption: QuickPickItem = { label: 'Configure Custom Commands...' }
@@ -38,6 +39,7 @@ export const menu_options = {
     fix: fixOption,
     doc: docOption,
     test: testOption,
+    refactor: refactorOption,
     config: configOption,
     add: addOption,
     submitChat: chatSubmitOption,

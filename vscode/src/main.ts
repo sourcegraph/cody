@@ -315,6 +315,9 @@ const register = async (
         vscode.commands.registerCommand('cody.action.generate-documentation', () =>
             executeFixup({ partialInstruction: 'Generate documentation for the selected code' })
         ),
+        vscode.commands.registerCommand('cody.action.refactor-code', () =>
+            executeFixup({ partialInstruction: 'Refactor the selected code' })
+        ),
         vscode.commands.registerCommand(
             'cody.action.commands.custom.menu',
             () => editor.controllers.command?.menu('custom')
