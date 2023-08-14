@@ -181,12 +181,15 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
         void this.webview?.postMessage({ type: 'errors', errors: errorMsg })
     }
 
+    private isInsertEvent = false
+
     /**
      * Handles insert event to insert text from code block at cursor position
      * Replace selection if there is one and then log insert event
      * Note: Using workspaceEdit instead of 'editor.action.insertSnippet' as the later reformats the text incorrectly
      */
     private async handleInsertAtCursor(text: string): Promise<void> {
+        this.isInsertEvent = true
         const selectionRange = vscode.window.activeTextEditor?.selection
         const editor = vscode.window.activeTextEditor
         if (!editor || !selectionRange) {
@@ -204,6 +207,7 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
         const eventName = op + 'Button'
         const args = { op, charCount, lineCount }
         this.telemetryService.log(`CodyVSCodeExtension:${eventName}:clicked`, args)
+        this.isInsertEvent = false
     }
 
     /**
@@ -228,7 +232,7 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
             // check if the copied code is the same as the changed text without spaces
             const isMatched = matchCodeSnippets(copiedCode, changedText)
             // Log paste event when the copied code is pasted
-            if (isMatched) {
+            if (!this.isInsertEvent && isMatched) {
                 this.telemetryService.log('CodyVSCodeExtension:pasteKeydown:clicked', {
                     ...args,
                     op: 'paste',
