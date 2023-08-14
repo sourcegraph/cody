@@ -29,7 +29,7 @@
   },
   "dependencies": {
     "@mdi/js": "^7.2.96",
-    "@sourcegraph/cody-shared": "workspace:*",
+    "@sourcegraph/cody-shared": "https://github.com/sourcegraph/cody/releases/download/codyintel6/sourcegraph-cody-shared-0.0.0-codyintel.experimental.10.tgz",
     "classnames": "^2.3.2"
   }
 }
