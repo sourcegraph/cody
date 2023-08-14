@@ -12,7 +12,7 @@ Starting from `0.2.0`, Cody is using `major.EVEN_NUMBER.patch` for release versi
 
 ### Changed
 
-- Include the number of accepted characters per autocomplete suggestion. []()
+- Include the number of accepted characters per autocomplete suggestion. [pull/674](https://github.com/sourcegraph/cody/pull/674)
 
 ## [0.6.6]
 
