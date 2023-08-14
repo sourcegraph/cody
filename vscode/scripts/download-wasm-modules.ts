@@ -35,7 +35,7 @@ export async function main(): Promise<void> {
         return
     }
 
-    console.log(`We miss ${filesToDownload.length} files.`)
+    console.log(`We are missing ${filesToDownload.length} files.`)
 
     try {
         await Promise.all(filesToDownload.map(downloadFile))
