@@ -324,6 +324,7 @@ describe('getInlineCompletions', () => {
                                 range: range(0, 0, 0, 0),
                             },
                         },
+                        completeSuggestWidgetSelection: true,
                     })
                 )
             ).toEqual<V>({

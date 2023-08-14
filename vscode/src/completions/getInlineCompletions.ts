@@ -176,6 +176,7 @@ async function doGetInlineCompletions({
               position,
               lastCandidate,
               docContext,
+              context,
               completeSuggestWidgetSelection,
           })
         : null

@@ -46,7 +46,11 @@ export class RequestManager {
     private readonly inflightRequests: Set<InflightRequest> = new Set()
     private completeSuggestWidgetSelection = false
 
-    constructor({ completeSuggestWidgetSelection = false }: { completeSuggestWidgetSelection: boolean }) {
+    constructor(
+        { completeSuggestWidgetSelection = false }: { completeSuggestWidgetSelection: boolean } = {
+            completeSuggestWidgetSelection: false,
+        }
+    ) {
         this.completeSuggestWidgetSelection = completeSuggestWidgetSelection
     }
 

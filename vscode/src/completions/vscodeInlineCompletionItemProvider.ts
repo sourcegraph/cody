@@ -309,7 +309,6 @@ function currentEditorContentMatchesPopupItem(
     if (context.selectedCompletionInfo) {
         const currentText = document.getText(context.selectedCompletionInfo.range)
         const selectedText = context.selectedCompletionInfo.text
-        console.log({ currentText, selectedText })
 
         if (!selectedText.startsWith(currentText)) {
             return false
