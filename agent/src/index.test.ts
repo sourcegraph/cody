@@ -23,6 +23,8 @@ export class TestClient extends MessageHandler {
                 autocompleteAdvancedAccessToken: '',
                 autocompleteAdvancedServerEndpoint: '',
                 autocompleteAdvancedEmbeddings: true,
+                debug: false,
+                verboseDebug: false,
             },
         })
         this.notify('initialized', null)
