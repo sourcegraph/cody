@@ -24,7 +24,8 @@ interface ChatProps extends ChatClassNames {
     onSubmit: (text: string, submitType: 'user' | 'suggestion' | 'example') => void
     contextStatusComponent?: React.FunctionComponent<any>
     contextStatusComponentProps?: any
-    gettingStartedComponent?: React.FunctionComponent
+    gettingStartedComponent?: React.FunctionComponent<any>
+    gettingStartedComponentProps?: any
     textAreaComponent: React.FunctionComponent<ChatUITextAreaProps>
     submitButtonComponent: React.FunctionComponent<ChatUISubmitButtonProps>
     suggestionButtonComponent?: React.FunctionComponent<ChatUISuggestionButtonProps>
@@ -156,6 +157,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
     contextStatusComponent: ContextStatusComponent,
     contextStatusComponentProps = {},
     gettingStartedComponent: GettingStartedComponent,
+    gettingStartedComponentProps = {},
     abortMessageInProgressComponent: AbortMessageInProgressButton,
     onAbortMessageInProgress = () => {},
     isCodyEnabled,
@@ -374,7 +376,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
             )}
 
             {isGettingStartedComponentVisible && (
-                <GettingStartedComponent {...contextStatusComponentProps} submitInput={submitInput} />
+                <GettingStartedComponent {...gettingStartedComponentProps} submitInput={submitInput} />
             )}
 
             <form className={classNames(styles.inputRow, inputRowClassName)}>
