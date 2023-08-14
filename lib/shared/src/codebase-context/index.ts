@@ -221,6 +221,16 @@ export class CodebaseContext {
 
         const contextMessages: ContextMessage[] = []
         for (const preciseContext of await this.graph.getContext()) {
+            const fence = '```'
+            const symbolName = `${preciseContext.symbol.scipName} (${preciseContext.symbol.scipDescriptorSuffix})`
+            // TODO - check comparison value
+            const repo =
+                preciseContext.repositoryName !== this.getCodebase()
+                    ? ` in repository ${preciseContext.repositoryName}`
+                    : ''
+            const text = `The symbol ${symbolName} is defined in the file ${preciseContext.filepath}${repo} as:\n\n${fence}${preciseContext.definitionSnippet}${fence}`
+            console.log({ text }) // DEBUGGING
+
             contextMessages.push({
                 speaker: 'human',
                 file: {
@@ -228,17 +238,7 @@ export class CodebaseContext {
                     fileName: preciseContext.filepath,
                 },
                 preciseContext,
-                text: `
-                As my coding assistant, use this context to help me answer the question asked:
-                Here is the precise snippet of code that is relevant to the current active file: ${preciseContext.definitionSnippet}
-                ## Instruction
-                - Do not enclose your answer with tags.
-                - Do not remove code that might be being used by the other part of the code that was not shared.
-                - Your answers and suggestions should based on the provided context only.
-                - Make references to other part of the shared code.
-                - Do not suggest code that are not related to any of the shared context.
-                - Do not suggest anything that would break the working code.
-                `,
+                text,
             })
             contextMessages.push({ speaker: 'assistant', text: 'okay' })
         }
