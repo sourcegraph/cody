@@ -207,12 +207,15 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
         }
     }
 
-    public handleDidAcceptCompletionItem(logId: string, lines: number): void {
+    public handleDidAcceptCompletionItem(logId: string, completion: InlineCompletionItem): void {
         // When a completion is accepted, the lastCandidate should be cleared. This makes sure the
         // log id is never reused if the completion is accepted.
         this.lastCandidate = undefined
 
-        CompletionLogger.accept(logId, lines)
+        const lines = completion.insertText.split(/\r\n|\r|\n/).length
+        const chars = completion.insertText.length
+
+        CompletionLogger.accept(logId, lines, chars)
     }
 
     /**

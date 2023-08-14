@@ -7,6 +7,7 @@ import {
     MyPrompts,
 } from '@sourcegraph/cody-shared/src/chat/prompts'
 import { VsCodeCommandsController } from '@sourcegraph/cody-shared/src/editor'
+import { TelemetryService } from '@sourcegraph/cody-shared/src/telemetry'
 
 import { debug } from '../log'
 import { LocalStorage } from '../services/LocalStorageProvider'
@@ -42,7 +43,8 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
 
     constructor(
         context: vscode.ExtensionContext,
-        private localStorage: LocalStorage
+        private localStorage: LocalStorage,
+        private telemetryService: TelemetryService
     ) {
         this.tools = new ToolsProvider(context)
         const user = this.tools.getUserInfo()
@@ -110,6 +112,8 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
             this.lastUsedCommands.add(id)
         }
 
+        const commandName = myPrompt?.type === 'default' ? myPrompt.slashCommand?.replace('/', '') : 'custom'
+        this.telemetryService.log(`CodyVSCodeExtension:command:${commandName}:called`)
         return myPrompt?.prompt || ''
     }
 
@@ -153,7 +157,8 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
     /**
      * Menu Controller
      */
-    public async menu(type: 'custom' | 'config' | 'default', showDesc?: boolean): Promise<void> {
+    public async menu(type: 'custom' | 'config' | 'default', showDesc = true): Promise<void> {
+        this.telemetryService.log('CodyVSCodeExtension:command:menu:opened', { type })
         await this.refresh()
         switch (type) {
             case 'custom':
@@ -184,7 +189,7 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
     /**
      * Main Menu: Cody Commands
      */
-    public async mainCommandMenu(showDesc = false): Promise<void> {
+    public async mainCommandMenu(showDesc = true): Promise<void> {
         try {
             const commandItems = [menu_separators.inline, menu_options.chat, menu_options.fix, menu_separators.commands]
             const allCommands = this.default.getGroupedCommands(true)

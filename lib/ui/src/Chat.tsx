@@ -101,7 +101,7 @@ export interface FeedbackButtonsProps {
 
 // TODO: Rename to CodeBlockActionsProps
 export interface CopyButtonProps {
-    copyButtonOnSubmit: (text: string, insert?: boolean) => void
+    copyButtonOnSubmit: (text: string, insert?: boolean, event?: 'Keydown' | 'Button') => void
 }
 
 export interface ChatCommandsProps {
