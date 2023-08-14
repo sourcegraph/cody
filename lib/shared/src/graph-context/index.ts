@@ -15,7 +15,7 @@ export class GraphContextFetcher {
     public async getContext(): Promise<PreciseContextResult[]> {
         const {
             repoName: repository = '',
-            revision: commitID = 'HEAD',
+            revision: commitID = '',
             filePath = '',
             content = '',
             selectionRange,
@@ -26,7 +26,7 @@ export class GraphContextFetcher {
 
         const response = await this.graphqlClient.getPreciseContext(
             repository,
-            commitID,
+            commitID || 'HEAD',
             pathRelativeToRoot(filePath, this.editor.getWorkspaceRootPath() || ''),
             content,
             getActiveSelectionRange(selectionRange)
