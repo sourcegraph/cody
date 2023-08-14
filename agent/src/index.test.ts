@@ -75,7 +75,7 @@ describe('StandardAgent', () => {
 
     it('lists recipes correctly', async () => {
         const recipes = await client.listRecipes()
-        assert(recipes.length === 8)
+        assert.equal(9, recipes.length)
     })
 
     it('returns non-empty autocomplete', async () => {
