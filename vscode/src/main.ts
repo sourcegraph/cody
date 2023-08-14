@@ -403,6 +403,12 @@ const register = async (
         if (!config.autocomplete) {
             completionsProvider?.dispose()
             completionsProvider = null
+            if (config.isRunningInsideAgent) {
+                throw new Error(
+                    'The setting `config.autocomplete` evaluated to `false`. It must be true when running inside the agent. ' +
+                        'To fix this problem, make sure that the setting cody.autocomplete.enabled has the value true.'
+                )
+            }
             return
         }
 
@@ -474,11 +480,18 @@ function createCompletionsProvider(
         })
 
         disposables.push(
-            vscode.commands.registerCommand('cody.autocomplete.inline.accepted', ({ codyLogId, codyLines }) => {
-                completionsProvider.handleDidAcceptCompletionItem(codyLogId, codyLines)
+            vscode.commands.registerCommand('cody.autocomplete.inline.accepted', ({ codyLogId, codyCompletion }) => {
+                completionsProvider.handleDidAcceptCompletionItem(codyLogId, codyCompletion)
             }),
             vscode.languages.registerInlineCompletionItemProvider('*', completionsProvider),
             registerAutocompleteTraceView(completionsProvider)
+        )
+    } else if (config.isRunningInsideAgent) {
+        throw new Error(
+            "Can't register completion provider because `providerConfig` evaluated to `null`. " +
+                'To fix this problem, debug why createProviderConfig returned null instead of ProviderConfig. ' +
+                'To further debug this problem, here is the configuration:\n' +
+                JSON.stringify(config, null, 2)
         )
     }
 

@@ -114,7 +114,7 @@ export function suggested(id: string, source: string): void {
     }
 }
 
-export function accept(id: string, lines: number): void {
+export function accept(id: string, lines: number, chars: number): void {
     const completionEvent = displayedCompletions.get(id)
     if (!completionEvent || completionEvent.acceptedAt) {
         // Log a debug event, this case should not happen in production
@@ -140,6 +140,7 @@ export function accept(id: string, lines: number): void {
     logCompletionEvent('accepted', {
         ...completionEvent.params,
         lines,
+        chars,
         otherCompletionProviderEnabled: otherCompletionProviderEnabled(),
     })
 }

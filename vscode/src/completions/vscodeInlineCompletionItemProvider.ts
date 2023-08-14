@@ -21,7 +21,7 @@ import { ProvideInlineCompletionItemsTracer, ProvideInlineCompletionsItemTraceDa
 import { InlineCompletionItem } from './types'
 import { getNextNonEmptyLine } from './utils/text-utils'
 
-interface CodyCompletionItemProviderConfig {
+export interface CodyCompletionItemProviderConfig {
     providerConfig: ProviderConfig
     history: DocumentHistory
     statusBar: CodyStatusBar
@@ -207,12 +207,15 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
         }
     }
 
-    public handleDidAcceptCompletionItem(logId: string, lines: number): void {
+    public handleDidAcceptCompletionItem(logId: string, completion: InlineCompletionItem): void {
         // When a completion is accepted, the lastCandidate should be cleared. This makes sure the
         // log id is never reused if the completion is accepted.
         this.lastCandidate = undefined
 
-        CompletionLogger.accept(logId, lines)
+        const lines = completion.insertText.split(/\r\n|\r|\n/).length
+        const chars = completion.insertText.length
+
+        CompletionLogger.accept(logId, lines, chars)
     }
 
     /**
@@ -244,7 +247,12 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
                 {
                     title: 'Completion accepted',
                     command: 'cody.autocomplete.inline.accepted',
-                    arguments: [{ codyLogId: logId, codyLines: completion.insertText.split(/\r\n|\r|\n/).length }],
+                    arguments: [
+                        {
+                            codyLogId: logId,
+                            codyCompletion: completion,
+                        },
+                    ],
                 }
             )
         })

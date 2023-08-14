@@ -21,9 +21,11 @@ interface ChatProps extends ChatClassNames {
     setFormInput: (input: string) => void
     inputHistory: string[]
     setInputHistory: (history: string[]) => void
-    onSubmit: (text: string, submitType: 'user' | 'suggestion') => void
+    onSubmit: (text: string, submitType: 'user' | 'suggestion' | 'example') => void
     contextStatusComponent?: React.FunctionComponent<any>
     contextStatusComponentProps?: any
+    gettingStartedComponent?: React.FunctionComponent<any>
+    gettingStartedComponentProps?: any
     textAreaComponent: React.FunctionComponent<ChatUITextAreaProps>
     submitButtonComponent: React.FunctionComponent<ChatUISubmitButtonProps>
     suggestionButtonComponent?: React.FunctionComponent<ChatUISuggestionButtonProps>
@@ -154,6 +156,8 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
     needsEmailVerificationNotice: NeedsEmailVerificationNotice,
     contextStatusComponent: ContextStatusComponent,
     contextStatusComponentProps = {},
+    gettingStartedComponent: GettingStartedComponent,
+    gettingStartedComponentProps = {},
     abortMessageInProgressComponent: AbortMessageInProgressButton,
     onAbortMessageInProgress = () => {},
     isCodyEnabled,
@@ -207,7 +211,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
     )
 
     const submitInput = useCallback(
-        (input: string, submitType: 'user' | 'suggestion'): void => {
+        (input: string, submitType: 'user' | 'suggestion' | 'example'): void => {
             if (messageInProgress) {
                 return
             }
@@ -342,6 +346,8 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
         [helpMarkdown, afterMarkdown, gettingStartedButtons, transcript]
     )
 
+    const isGettingStartedComponentVisible = transcript.length === 0 && GettingStartedComponent !== undefined
+
     return (
         <div className={classNames(className, styles.innerContainer)}>
             {!isCodyEnabled && CodyNotEnabledNotice ? (
@@ -365,7 +371,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                     humanTranscriptItemClassName={humanTranscriptItemClassName}
                     transcriptItemParticipantClassName={transcriptItemParticipantClassName}
                     transcriptActionClassName={transcriptActionClassName}
-                    className={styles.transcriptContainer}
+                    className={!isGettingStartedComponentVisible ? 'flex-1' : undefined}
                     textAreaComponent={TextArea}
                     EditButtonContainer={EditButtonContainer}
                     editButtonOnSubmit={editButtonOnSubmit}
@@ -378,6 +384,10 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                     pluginsDevMode={pluginsDevMode}
                     isTranscriptError={isTranscriptError}
                 />
+            )}
+
+            {isGettingStartedComponentVisible && (
+                <GettingStartedComponent {...gettingStartedComponentProps} submitInput={submitInput} />
             )}
 
             <form className={classNames(styles.inputRow, inputRowClassName)}>

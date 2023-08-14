@@ -220,13 +220,14 @@ export class MessageHandler {
                     },
                     error => {
                         const message = error instanceof Error ? error.message : `${error}`
+                        const stack = error instanceof Error ? `\n${error.stack}` : ''
                         const data: ResponseMessage<any> = {
                             jsonrpc: '2.0',
                             id: msg.id,
                             error: {
                                 code: ErrorCode.InternalError,
                                 message,
-                                data: JSON.stringify(error),
+                                data: JSON.stringify({ error, stack }),
                             },
                         }
                         this.messageEncoder.send(data)

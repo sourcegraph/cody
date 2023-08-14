@@ -109,7 +109,7 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
         }
     }
 
-    private async onHumanMessageSubmitted(text: string, submitType: 'user' | 'suggestion'): Promise<void> {
+    private async onHumanMessageSubmitted(text: string, submitType: 'user' | 'suggestion' | 'example'): Promise<void> {
         debug('ChatViewProvider:onHumanMessageSubmitted', '', { verbose: { text, submitType } })
         this.telemetryService.log('CodyVSCodeExtension:chat:submitted', { source: 'sidebar' })
         if (submitType === 'suggestion') {
