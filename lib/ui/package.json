@@ -1,6 +1,6 @@
 {
   "name": "@sourcegraph/cody-ui",
-  "version": "0.0.0-codyintel.experimental.1",
+  "version": "0.0.0-codyintel.experimental.10",
   "description": "Cody UI shared library",
   "license": "Apache-2.0",
   "repository": {
