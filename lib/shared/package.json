@@ -1,6 +1,6 @@
 {
   "name": "@sourcegraph/cody-shared",
-  "version": "0.0.0-codyintel.experimental.3",
+  "version": "0.0.0-codyintel.experimental.10",
   "description": "Cody shared library",
   "license": "Apache-2.0",
   "repository": {
