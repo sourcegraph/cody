@@ -139,7 +139,7 @@ export class InlineController implements VsCodeInlineController {
                 const changedText = e.contentChanges[0]?.text
                 if (changedText === code) {
                     const op = 'paste'
-                    this.telemetryService.log('CodyVSCodeExtension:inlineChat:event:detected', {
+                    this.telemetryService.log('CodyVSCodeExtension:inlineChat:Paste:detected', {
                         op,
                         lineCount,
                         charCount,
@@ -294,7 +294,7 @@ export class InlineController implements VsCodeInlineController {
                 if (copiedText !== clipboardText && groupedText.includes(clipboardText)) {
                     const op = 'copy'
                     const { lineCount, charCount } = this.setLastCopiedCode(clipboardText)
-                    this.telemetryService.log('CodyVSCodeExtension:inlineChat:event:detected', {
+                    this.telemetryService.log('CodyVSCodeExtension:inlineChat:Copy:detected', {
                         op,
                         lineCount,
                         charCount,
