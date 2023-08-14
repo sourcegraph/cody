@@ -939,6 +939,7 @@
     }
   },
   "dependencies": {
+    "https-proxy-agent": "^7.0.1",
     "@anthropic-ai/sdk": "^0.4.2",
     "@sourcegraph/cody-shared": "workspace:*",
     "@sourcegraph/cody-ui": "workspace:*",

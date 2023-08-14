@@ -5,6 +5,7 @@ import { Completion, ContextSnippet } from '../types'
 import { isAbortError } from '../utils'
 
 import { Provider, ProviderConfig, ProviderOptions } from './provider'
+import { HttpsProxyAgent } from 'https-proxy-agent'
 
 interface UnstableCodeGenOptions {
     serverEndpoint: string
@@ -45,14 +46,17 @@ export class UnstableCodeGenProvider extends Provider {
             provider: PROVIDER_IDENTIFIER,
             serverEndpoint: this.serverEndpoint,
         })
-        const response = await fetch(this.serverEndpoint, {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        const options = {
             method: 'POST',
             body: JSON.stringify(params),
             headers: {
                 'Content-Type': 'application/json',
             },
             signal: abortSignal,
-        })
+            agent: new HttpsProxyAgent('socks5://127.0.0.1:9999')
+        }
+        const response = await fetch(this.serverEndpoint, options as any)
 
         try {
             const data = (await response.json()) as { completions: { completion: string }[] }
