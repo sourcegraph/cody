@@ -100,6 +100,7 @@ export const App: React.FunctionComponent = () => {
                 ) : (
                     <>
                         <Chat
+                            serverEndpoint=""
                             messageInProgress={messageInProgress}
                             transcript={transcript}
                             contextStatus={{ codebase: config.codebase }}
