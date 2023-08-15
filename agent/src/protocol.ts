@@ -103,7 +103,7 @@ export interface ClientInfo {
     workspaceRootUri: string
 
     /** @deprecated Use `workspaceRootUri` instead. */
-    workspaceRootPath: string
+    workspaceRootPath?: string
 
     connectionConfiguration?: ConnectionConfiguration
     capabilities?: ClientCapabilities

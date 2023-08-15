@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import type * as vscode from 'vscode'
-import { URI } from 'vscode-uri'
 
 import { AgentTextDocument } from './AgentTextDocument'
 import { newTextEditor } from './AgentTextEditor'
@@ -10,7 +9,7 @@ import * as vscode_shim from './vscode-shim'
 
 export class AgentWorkspaceDocuments implements vscode_shim.WorkspaceDocuments {
     private readonly documents: Map<string, TextDocument> = new Map()
-    public workspaceRootUri: URI | null = null
+    public workspaceRootUri: vscode_shim.Uri | undefined
     public activeDocumentFilePath: string | null = null
     public loadedDocument(document: TextDocument): TextDocument {
         const fromCache = this.documents.get(document.filePath)
@@ -22,6 +21,13 @@ export class AgentWorkspaceDocuments implements vscode_shim.WorkspaceDocuments {
         }
         return document
     }
+
+    public setActiveTextEditor(textEditor: vscode.TextEditor): void {
+        this.activeDocumentFilePath = textEditor.document.fileName
+        vscode_shim.onDidChangeActiveTextEditor.fire(textEditor)
+        vscode_shim.window.activeTextEditor = textEditor
+    }
+
     public agentTextDocument(document: TextDocument): AgentTextDocument {
         return new AgentTextDocument(this.loadedDocument(document))
     }

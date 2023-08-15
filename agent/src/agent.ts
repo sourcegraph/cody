@@ -1,7 +1,6 @@
 import path from 'path'
 
 import * as vscode from 'vscode'
-import { URI } from 'vscode-uri'
 
 import { Client, createClient } from '@sourcegraph/cody-shared/src/chat/client'
 import { registeredRecipes } from '@sourcegraph/cody-shared/src/chat/recipes/agent-recipes'
@@ -75,7 +74,9 @@ export class Agent extends MessageHandler {
                 `Cody Agent: handshake with client '${client.name}' (version '${client.version}') at workspace root path '${client.workspaceRootUri}'\n`
             )
             initializeVscodeExtension()
-            this.workspace.workspaceRootUri = URI.parse(client.workspaceRootUri || `file://${client.workspaceRootPath}`)
+            this.workspace.workspaceRootUri = client.workspaceRootUri
+                ? vscode_shim.Uri.parse(client.workspaceRootUri)
+                : vscode_shim.Uri.from({ scheme: 'file', path: client.workspaceRootPath })
             if (client.connectionConfiguration) {
                 this.setClient(client.connectionConfiguration)
             }
@@ -108,22 +109,18 @@ export class Agent extends MessageHandler {
         })
 
         this.registerNotification('textDocument/didFocus', document => {
-            this.workspace.activeDocumentFilePath = document.filePath
-            vscode_shim.onDidChangeActiveTextEditor.fire(newTextEditor(this.workspace.agentTextDocument(document)))
+            this.workspace.setActiveTextEditor(newTextEditor(this.workspace.agentTextDocument(document)))
         })
         this.registerNotification('textDocument/didOpen', document => {
             this.workspace.setDocument(document)
-            this.workspace.activeDocumentFilePath = document.filePath
             const textDocument = this.workspace.agentTextDocument(document)
             vscode_shim.onDidOpenTextDocument.fire(textDocument)
-            vscode_shim.onDidChangeActiveTextEditor.fire(newTextEditor(textDocument))
+            this.workspace.setActiveTextEditor(newTextEditor(textDocument))
         })
         this.registerNotification('textDocument/didChange', document => {
             const textDocument = this.workspace.agentTextDocument(document)
             this.workspace.setDocument(document)
-            this.workspace.activeDocumentFilePath = document.filePath
-
-            vscode_shim.onDidChangeActiveTextEditor.fire(newTextEditor(textDocument))
+            this.workspace.setActiveTextEditor(newTextEditor(textDocument))
             vscode_shim.onDidChangeTextDocument.fire({
                 document: textDocument,
                 contentChanges: [], // TODO: implement this. It's only used by recipes, not autocomplete.
