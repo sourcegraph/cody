@@ -6,9 +6,10 @@ export interface IncrementalTextConsumer {
     update: (content: string) => void
 
     /**
-     * Notify the consumer that the text is complete.
+     * Notify the consumer that the text is complete. Consumer can delay
+     * continuing with the Promise result.
      */
-    close: () => void
+    close: () => Promise<void>
 }
 
 // Maximum/minimum amount of time to wait between character chunks
@@ -19,15 +20,13 @@ const MIN_CHAR_CHUNK_SIZE = 1
 
 export class Typewriter implements IncrementalTextConsumer {
     private upstreamClosed = false
-    private resolveFinished: (s: string) => void = () => {}
-    private rejectFinished: (err: any) => void = () => {}
 
-    /**
-     * Promise indicating the typewriter is done "typing". Resolved with the
-     * complete text when available; rejects if the typewriter was stopped
-     * prematurely.
-     */
-    public readonly finished: Promise<string>
+    // Promise indicating the typewriter is done "typing". Resolved with the
+    // complete text when available; rejects if the typewriter was stopped
+    // prematurely.
+    private readonly finished: Promise<void>
+    private resolveFinished: () => void = () => {}
+    private rejectFinished: (err: any) => void = () => {}
 
     private text = ''
     private i = 0
@@ -41,7 +40,9 @@ export class Typewriter implements IncrementalTextConsumer {
      */
     constructor(private readonly consumer: IncrementalTextConsumer) {
         this.finished = new Promise((resolve, reject) => {
-            this.resolveFinished = resolve
+            this.resolveFinished = () => {
+                resolve(this.consumer.close())
+            }
             this.rejectFinished = reject
         })
     }
@@ -98,15 +99,15 @@ export class Typewriter implements IncrementalTextConsumer {
                 this.interval = undefined
 
                 if (this.upstreamClosed) {
-                    this.consumer.close()
-                    this.resolveFinished(this.text)
+                    this.resolveFinished()
                 }
             }
         }, dynamicDelay)
     }
 
-    public close(): void {
+    public close(): Promise<void> {
         this.upstreamClosed = true
+        return this.finished
     }
 
     /** Stop the typewriter, immediately emit any remaining text */
@@ -122,8 +123,7 @@ export class Typewriter implements IncrementalTextConsumer {
         }
         // Clean up the consumer, finished promise.
         if (this.upstreamClosed) {
-            this.consumer.close()
-            this.resolveFinished(this.text)
+            this.resolveFinished()
         } else {
             this.rejectFinished(new Error('Typewriter stopped'))
         }

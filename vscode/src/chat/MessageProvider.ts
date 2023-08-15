@@ -7,9 +7,9 @@ import { CodyPrompt, CodyPromptType } from '@sourcegraph/cody-shared/src/chat/pr
 import { newInteraction } from '@sourcegraph/cody-shared/src/chat/prompts/utils'
 import { Recipe, RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 import { Transcript } from '@sourcegraph/cody-shared/src/chat/transcript'
-import { Interaction } from '@sourcegraph/cody-shared/src/chat/transcript/interaction'
+import { Interaction, ResponseHandling } from '@sourcegraph/cody-shared/src/chat/transcript/interaction'
 import { ChatHistory, ChatMessage, UserLocalHistory } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
-import { Typewriter } from '@sourcegraph/cody-shared/src/chat/typewriter'
+import { IncrementalTextConsumer, Typewriter } from '@sourcegraph/cody-shared/src/chat/typewriter'
 import { reformatBotMessage } from '@sourcegraph/cody-shared/src/chat/viewHelpers'
 import { annotateAttribution, Guardrails } from '@sourcegraph/cody-shared/src/guardrails'
 import { IntentDetector } from '@sourcegraph/cody-shared/src/intent-detector'
@@ -180,29 +180,41 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         this.cancelCompletion()
         void vscode.commands.executeCommand('setContext', 'cody.reply.pending', true)
 
-        const typewriter = new Typewriter({
-            update: content => {
-                const displayText = reformatBotMessage(content, responsePrefix)
-                this.transcript.addAssistantResponse(displayText)
-                this.sendTranscript()
-            },
-            close: () => {},
-        })
+        const lastInteraction = this.transcript.getLastInteraction()
+        let consumer: IncrementalTextConsumer
+        if (lastInteraction && lastInteraction.responseHandling === ResponseHandling.HIDE) {
+            consumer = {
+                update: content => {
+                    this.transcript.addAssistantResponse(content, '')
+                },
+                close: (): Promise<void> => Promise.resolve(),
+            }
+        } else {
+            consumer = new Typewriter({
+                update: content => {
+                    const displayText = reformatBotMessage(content, responsePrefix)
+                    this.transcript.addAssistantResponse(displayText)
+                    this.sendTranscript()
+                },
+                close: (): Promise<void> => Promise.resolve(),
+            })
+        }
 
         let text = ''
 
         this.multiplexer.sub(multiplexerTopic, {
             onResponse: (content: string) => {
                 text += content
-                typewriter.update(text)
+                consumer.update(text)
                 return Promise.resolve()
             },
             onTurnComplete: async () => {
-                typewriter.close()
-                await typewriter.finished
+                await consumer.close()
                 const lastInteraction = this.transcript.getLastInteraction()
-                if (lastInteraction) {
-                    let displayText = reformatBotMessage(text, responsePrefix)
+                let displayText
+                if (lastInteraction && lastInteraction.responseHandling === ResponseHandling.DISPLAY) {
+                    // Steps which only apply when the response is being displayed.
+                    displayText = reformatBotMessage(text, responsePrefix)
                     // TODO(keegancsmith) guardrails may be slow, we need to make this async update the interaction.
                     displayText = await this.guardrailsAnnotateAttributions(displayText)
                     this.transcript.addAssistantResponse(text || '', displayText)
@@ -212,6 +224,12 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
                 const codeCount = countGeneratedCode(text)
                 const op = codeCount ? 'hasCode' : 'noCode'
                 this.telemetryService.log('CodyVSCodeExtension:chatResponse:' + op, codeCount || {})
+
+                const nextInteraction = lastInteraction?.getNextInteraction()
+                if (nextInteraction) {
+                    // TODO: Skip this when canceling
+                    void this.executeInteraction(nextInteraction)
+                }
             },
         })
 
@@ -380,8 +398,6 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
             await this.addCustomInteraction(errorMsg, '', interaction)
             return
         }
-        this.isMessageInProgress = true
-        this.transcript.addInteraction(interaction)
 
         let pluginsPrompt: Message[] = []
         let pluginExecutionInfos: PluginFunctionExecutionInfo[] = []
@@ -400,24 +416,36 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
                 await this.onCompletionEnd()
                 break
             default: {
-                this.sendTranscript()
-
-                const myPremade = (await this.editor.controllers.command?.getCustomConfig())?.premade
-                if (myPremade) {
-                    this.telemetryService.log('CodyVSCodeExtension:command:customPremade:applied')
-                }
-
-                const { prompt, contextFiles } = await this.transcript.getPromptForLastInteraction(
-                    getPreamble(this.contextProvider.context.getCodebase(), myPremade),
-                    this.maxPromptTokens,
-                    pluginsPrompt
-                )
-                this.transcript.setUsedContextFilesForLastInteraction(contextFiles, pluginExecutionInfos)
-                this.sendPrompt(prompt, interaction.getAssistantMessage().prefix ?? '', recipe.multiplexerTopic)
-                await this.saveTranscriptToChatHistory()
+                await this.executeInteraction(interaction, recipe.multiplexerTopic, pluginsPrompt, pluginExecutionInfos)
+                break
             }
         }
         this.telemetryService.log(`CodyVSCodeExtension:recipe:${recipe.id}:executed`)
+    }
+
+    // For recipes with multiple interaction steps, runs the next interaction.
+    protected async executeInteraction(
+        interaction: Interaction,
+        topic?: string,
+        pluginsPrompt?: Message[],
+        pluginExecutionInfos?: PluginFunctionExecutionInfo[]
+    ): Promise<void> {
+        this.isMessageInProgress = true
+        // TODO: Add a way to hide these interactions in the chat view.
+        this.transcript.addInteraction(interaction)
+        this.sendTranscript()
+        const premade = (await this.editor.controllers.command?.getCustomConfig())?.premade
+        if (premade) {
+            this.telemetryService.log('CodyVSCodeExtension:command:customPremade:applied')
+        }
+        const { prompt, contextFiles } = await this.transcript.getPromptForLastInteraction(
+            getPreamble(this.contextProvider.context.getCodebase(), premade),
+            this.maxPromptTokens,
+            pluginsPrompt
+        )
+        this.transcript.setUsedContextFilesForLastInteraction(contextFiles, pluginExecutionInfos)
+        this.sendPrompt(prompt, interaction.getAssistantMessage().prefix ?? '', topic)
+        await this.saveTranscriptToChatHistory()
     }
 
     protected async runRecipeForSuggestion(recipeId: RecipeID, humanChatInput: string = ''): Promise<void> {
@@ -582,11 +610,13 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
                 return null
             case /^\/symf(?:\s|$)/.test(text):
                 return { text, recipeId: 'local-indexed-keyword-search' }
+            case /^\/e(xplain)?\s*/.test(text):
+                return { text, recipeId: 'explain-code-high-level' }
             case /^\/s(earch)?\s/.test(text):
                 return { text, recipeId: 'context-search' }
             case /^\/f(ix)?\s.*$/.test(text):
                 return { text, recipeId: 'fixup' }
-            case /^\/(explain|doc|test|smell)$/.test(text):
+            case /^\/(doc|test|smell)$/.test(text):
                 this.telemetryService.log(`CodyVSCodeExtension:command:${commandKey}:called`, {
                     source: 'chat',
                 })
@@ -601,7 +631,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
                     return { text: promptText, recipeId: 'custom-prompt' }
                 }
                 // Inline chat has its own filter for slash commands
-                if (recipeId === 'inline-chat') {
+                if (recipeId === 'inline-chat' || recipeId === 'explain-code-high-level') {
                     return { text, recipeId }
                 }
                 // If no command found, send error message to view

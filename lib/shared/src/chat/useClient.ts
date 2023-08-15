@@ -331,15 +331,10 @@ export const useClient = ({
                         transcript.addAssistantResponse(text)
                         setChatMessagesState(transcript.toChat())
                     },
-                    close() {
-                        transcript
-                            .toChatPromise()
-                            .then(messages => {
-                                setChatMessagesState(messages)
-                                setIsMessageInProgressState(false)
-                            })
-                            .catch(() => null)
-
+                    async close(): Promise<void> {
+                        const messages = await transcript.toChatPromise()
+                        setChatMessagesState(messages)
+                        setIsMessageInProgressState(false)
                         resolve(transcript)
                     },
                 })
