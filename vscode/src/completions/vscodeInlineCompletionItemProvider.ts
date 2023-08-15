@@ -250,7 +250,12 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
                 {
                     title: 'Completion accepted',
                     command: 'cody.autocomplete.inline.accepted',
-                    arguments: [{ codyLogId: logId, codyLines: completion.insertText.split(/\r\n|\r|\n/).length }],
+                    arguments: [
+                        {
+                            codyLogId: logId,
+                            codyCompletion: completion,
+                        },
+                    ],
                 }
             )
         })
