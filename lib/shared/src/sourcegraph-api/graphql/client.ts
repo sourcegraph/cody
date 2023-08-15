@@ -172,7 +172,10 @@ export class SourcegraphGraphQLAPIClient {
     private dotcomUrl = 'https://sourcegraph.com'
 
     constructor(
-        private config: Pick<ConfigurationWithAccessToken, 'serverEndpoint' | 'accessToken' | 'customHeaders' | 'isRunningInsideAgent'>
+        private config: Pick<
+            ConfigurationWithAccessToken,
+            'serverEndpoint' | 'accessToken' | 'customHeaders' | 'isRunningInsideAgent'
+        >
     ) {}
 
     public onConfigurationChange(
