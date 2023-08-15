@@ -130,6 +130,7 @@ export const onDidRenameFiles = new EventEmitter<vscode.FileRenameEvent>()
 export const onDidDeleteFiles = new EventEmitter<vscode.FileDeleteEvent>()
 
 export interface WorkspaceDocuments {
+    workspaceRootUri?: Uri
     openTextDocument: (filePath: string) => Promise<vscode.TextDocument>
 }
 let workspaceDocuments: WorkspaceDocuments | undefined
@@ -144,6 +145,18 @@ const _workspace: Partial<typeof vscode.workspace> = {
         // properly pass around URIs once the agent protocol supports URIs
         const filePath = uri instanceof Uri ? uri.path : uri?.toString() ?? ''
         return workspaceDocuments ? workspaceDocuments.openTextDocument(filePath) : ('missingWorkspaceDocuments' as any)
+    },
+    getWorkspaceFolder: () => {
+        if (workspaceDocuments?.workspaceRootUri === undefined) {
+            throw new Error(
+                'workspaceDocuments is undefined. To fix this problem, make sure that the agent has been initialized.'
+            )
+        }
+        return {
+            uri: workspaceDocuments.workspaceRootUri,
+            index: 0,
+            name: workspaceDocuments.workspaceRootUri?.path,
+        }
     },
     onDidChangeWorkspaceFolders: (() => ({})) as any,
     onDidOpenTextDocument: onDidOpenTextDocument.event,

@@ -15,7 +15,7 @@ import type * as vscode_types from 'vscode'
 import { URI } from 'vscode-uri'
 
 export class Uri {
-    public static parse(value: string, strict?: boolean): URI {
+    public static parse(value: string, strict?: boolean): Uri {
         return Uri.from(URI.parse(value, strict).toJSON())
     }
     public static file(path: string): URI {
