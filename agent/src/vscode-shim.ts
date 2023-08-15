@@ -28,7 +28,7 @@ import {
 
 import type { Agent } from './agent'
 import { AgentTabGroups } from './AgentTabGroups'
-import type { ConnectionConfiguration } from './protocol'
+import type { ExtensionConfiguration } from './protocol'
 
 export {
     emptyEvent,
@@ -78,8 +78,8 @@ const emptyFileWatcher: vscode.FileSystemWatcher = {
     dispose(): void {},
 }
 
-export let connectionConfig: ConnectionConfiguration | undefined
-export function setConnectionConfig(newConfig: ConnectionConfiguration): void {
+export let connectionConfig: ExtensionConfiguration | undefined
+export function setConnectionConfig(newConfig: ExtensionConfiguration): void {
     connectionConfig = newConfig
 }
 
@@ -109,6 +109,8 @@ const configuration: vscode.WorkspaceConfiguration = {
                 return connectionConfig?.debug ?? false
             case 'cody.debug.verbose':
                 return connectionConfig?.verboseDebug ?? false
+            case 'cody.codebase':
+                return connectionConfig?.codebase
             default:
                 return defaultValue
         }
