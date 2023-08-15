@@ -1,14 +1,8 @@
 import { CodebaseContext } from '../../codebase-context'
 import { ContextMessage } from '../../codebase-context/messages'
 import { ActiveTextEditorSelection, Editor } from '../../editor'
-import {
-    MAX_HUMAN_INPUT_TOKENS,
-    MAX_RECIPE_INPUT_TOKENS,
-    MAX_RECIPE_SURROUNDING_TOKENS,
-    NUM_CODE_RESULTS,
-    NUM_TEXT_RESULTS,
-} from '../../prompt/constants'
-import { truncateText, truncateTextStart } from '../../prompt/truncation'
+import { MAX_HUMAN_INPUT_TOKENS, NUM_CODE_RESULTS, NUM_TEXT_RESULTS } from '../../prompt/constants'
+import { truncateText } from '../../prompt/truncation'
 import { CodyPromptContext, defaultCodyPromptContext } from '../prompts'
 import { prompts } from '../prompts/templates'
 import {
@@ -19,6 +13,7 @@ import {
 } from '../prompts/utils'
 import {
     getCurrentDirContext,
+    getCurrentFileContextFromEditorSelection,
     getEditorDirContext,
     getEditorOpenTabsContext,
     getEditorSelectionContext,
@@ -29,7 +24,7 @@ import {
 } from '../prompts/vscode-context'
 import { Interaction } from '../transcript/interaction'
 
-import { getContextMessagesFromSelection, getFileExtension, getNormalizedLanguageName, numResults } from './helpers'
+import { getFileExtension, getNormalizedLanguageName, numResults } from './helpers'
 import { Recipe, RecipeContext, RecipeID } from './recipe'
 
 /** ======================================================
@@ -160,16 +155,7 @@ export class CustomPrompt implements Recipe {
         // If currentFile is true, or when selection is true but there is no selected text
         // then we want to include the current file context
         if (selection && (isContextRequired.currentFile || (isContextRequired.selection && !selection?.selectedText))) {
-            const truncatedSelectedText = truncateText(selection.selectedText, MAX_RECIPE_INPUT_TOKENS)
-            const truncatedPrecedingText = truncateTextStart(selection.precedingText, MAX_RECIPE_SURROUNDING_TOKENS)
-            const truncatedFollowingText = truncateText(selection.followingText, MAX_RECIPE_SURROUNDING_TOKENS)
-            const contextMsg = await getContextMessagesFromSelection(
-                truncatedSelectedText,
-                truncatedPrecedingText,
-                truncatedFollowingText,
-                selection,
-                codebaseContext
-            )
+            const contextMsg = getCurrentFileContextFromEditorSelection(selection)
             currentFileContextStack.push(...contextMsg)
         }
 
