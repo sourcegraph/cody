@@ -83,6 +83,12 @@ export function setConnectionConfig(newConfig: ConnectionConfiguration): void {
     connectionConfig = newConfig
 }
 
+export function setConfigCodebase(codebase?: string): void {
+    if (connectionConfig) {
+        connectionConfig.codebase = codebase
+    }
+}
+
 const configuration: vscode.WorkspaceConfiguration = {
     has(section) {
         return true
@@ -109,6 +115,8 @@ const configuration: vscode.WorkspaceConfiguration = {
                 return connectionConfig?.debug ?? false
             case 'cody.debug.verbose':
                 return connectionConfig?.verboseDebug ?? false
+            case 'cody.codebase':
+                return connectionConfig?.codebase
             default:
                 return defaultValue
         }
