@@ -134,6 +134,7 @@ export interface ConnectionConfiguration {
     autocompleteAdvancedEmbeddings: boolean
     debug?: boolean
     verboseDebug?: boolean
+    codebase?: string
 }
 
 export interface Position {
@@ -152,6 +153,7 @@ export interface TextDocument {
     filePath: string
     content?: string
     selection?: Range
+    codebase?: string
 }
 
 export interface RecipeInfo {
