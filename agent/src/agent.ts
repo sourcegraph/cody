@@ -13,7 +13,7 @@ import { newTextEditor } from './AgentTextEditor'
 import { AgentWorkspaceDocuments } from './AgentWorkspaceDocuments'
 import { AgentEditor } from './editor'
 import { MessageHandler } from './jsonrpc'
-import { AutocompleteItem, ConnectionConfiguration } from './protocol'
+import { AutocompleteItem, ExtensionConfiguration } from './protocol'
 import * as vscode_shim from './vscode-shim'
 
 const secretStorage = new Map<string, string>()
@@ -193,7 +193,7 @@ export class Agent extends MessageHandler {
         })
     }
 
-    private setClient(config: ConnectionConfiguration): void {
+    private setClient(config: ExtensionConfiguration): void {
         vscode_shim.setConnectionConfig(config)
         vscode_shim.onDidChangeConfiguration.fire({
             affectsConfiguration: () =>

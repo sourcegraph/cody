@@ -55,7 +55,7 @@ export type Notifications = {
     // The server should use the provided connection configuration for all
     // subsequent requests/notications. The previous connection configuration
     // should no longer be used.
-    'connectionConfiguration/didChange': [ConnectionConfiguration]
+    'connectionConfiguration/didChange': [ExtensionConfiguration]
 
     // Lifecycle notifications for the client to notify the server about text
     // contents of documents and to notify which document is currently focused.
@@ -105,7 +105,7 @@ export interface ClientInfo {
     /** @deprecated Use `workspaceRootUri` instead. */
     workspaceRootPath?: string
 
-    connectionConfiguration?: ConnectionConfiguration
+    connectionConfiguration?: ExtensionConfiguration
     capabilities?: ClientCapabilities
 }
 
@@ -124,7 +124,7 @@ export interface ServerInfo {
 }
 export interface ServerCapabilities {}
 
-export interface ConnectionConfiguration {
+export interface ExtensionConfiguration {
     serverEndpoint: string
     accessToken: string
     customHeaders: Record<string, string>
