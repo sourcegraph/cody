@@ -188,6 +188,7 @@ const register = async (
         options: {
             document?: vscode.TextDocument
             instruction?: string
+            partialInstruction?: string
             range?: vscode.Range
         } = {}
     ): Promise<void> => {
@@ -203,7 +204,7 @@ const register = async (
 
         const task = options.instruction
             ? fixup.createTask(document.uri, options.instruction, range)
-            : await fixup.promptUserForTask()
+            : await fixup.promptUserForTask(options.partialInstruction)
         if (!task) {
             return
         }
@@ -265,10 +266,11 @@ const register = async (
             'cody.fixup.new',
             (range: vscode.Range): Promise<void> => executeFixup({ range })
         ),
-        vscode.commands.registerCommand('cody.inline.new', async () => {
+        vscode.commands.registerCommand('cody.inline.new', async (inputText: string = '') => {
             // move focus line to the end of the current selection
             await vscode.commands.executeCommand('cursorLineEndSelect')
             await vscode.commands.executeCommand('workbench.action.addComment')
+            await vscode.commands.executeCommand('type', { text: inputText })
         }),
         vscode.commands.registerCommand('cody.inline.add', async (instruction: string, range: vscode.Range) => {
             const comment = commentController.create(instruction, range)
@@ -313,6 +315,15 @@ const register = async (
             'cody.action.fixup',
             (instruction: string, range: vscode.Range): Promise<void> => executeFixup({ instruction, range })
         ),
+        vscode.commands.registerCommand('cody.action.generate-test', () =>
+            executeFixup({ partialInstruction: 'Generate a unit test for the selected code' })
+        ),
+        vscode.commands.registerCommand('cody.action.generate-documentation', () =>
+            executeFixup({ partialInstruction: 'Generate documentation for the selected code' })
+        ),
+        vscode.commands.registerCommand('cody.action.refactor-code', () =>
+            executeFixup({ partialInstruction: 'Refactor the selected code' })
+        ),
         vscode.commands.registerCommand('cody.action.commands.menu', async caller => {
             console.log(caller)
             await editor.controllers.command?.menu('default')
@@ -344,6 +355,12 @@ const register = async (
             await executeRecipeInSidebar('custom-prompt', true, '/smell')
             telemetryService.log('CodyVSCodeExtension:recipe:find-code-smells:executed')
         }),
+        vscode.commands.registerCommand('cody.command.explain-code', () =>
+            executeRecipeInSidebar('custom-prompt', true, '/explain')
+        ),
+        vscode.commands.registerCommand('cody.recipe.explain-code', () =>
+            executeRecipeInSidebar('explain-code-detailed')
+        ),
         vscode.commands.registerCommand('cody.command.inline-touch', () =>
             executeRecipeInSidebar('inline-touch', false)
         ),

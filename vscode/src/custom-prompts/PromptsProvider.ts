@@ -10,9 +10,8 @@ export class PromptsProvider {
     // The commands grouped by default prompts and custom prompts
     private allCommands = new Map<string, CodyPrompt>()
 
-    constructor() {
-        // add the default prompts to the all commands map
-        this.groupCommands(this.defaultPromptsMap)
+    constructor({ includeDefaultCommands }: { includeDefaultCommands?: boolean } = {}) {
+        this.groupCommands(this.defaultPromptsMap, includeDefaultCommands)
     }
 
     /**
@@ -41,10 +40,15 @@ export class PromptsProvider {
     /**
      * Group the default prompts with the custom prompts and add a separator
      */
-    public groupCommands(customCommands = new Map<string, CodyPrompt>()): void {
-        const combinedMap = new Map([...this.defaultPromptsMap])
-        combinedMap.set('separator', { prompt: 'separator' })
-        this.allCommands = new Map([...combinedMap, ...customCommands])
+    public groupCommands(customCommands = new Map<string, CodyPrompt>(), includeDefault = true): void {
+        if (includeDefault) {
+            const combinedMap = new Map([...this.defaultPromptsMap])
+            combinedMap.set('separator', { prompt: 'separator' })
+            this.allCommands = new Map([...combinedMap, ...customCommands])
+            return
+        }
+
+        this.allCommands = customCommands
     }
 
     // dispose and reset the controller and builder

@@ -10,8 +10,11 @@ export const NewCustomCommandConfigMenuOptions = {
 }
 
 const inlineSeparator: QuickPickItem = { kind: -1, label: 'inline' }
-const chatOption: QuickPickItem = { label: 'Ask a Question' }
+const chatOption: QuickPickItem = { label: 'Explain code' }
 const fixOption: QuickPickItem = { label: 'Refactor This Code' }
+const docOption: QuickPickItem = { label: 'Generate Documentation' }
+const testOption: QuickPickItem = { label: 'Generate a test' }
+const refactorOption: QuickPickItem = { label: 'Refactor Code' }
 const commandsSeparator: QuickPickItem = { kind: -1, label: 'commands' }
 const customCommandsSeparator: QuickPickItem = { kind: -1, label: 'custom commands' }
 const configOption: QuickPickItem = { label: 'Configure Custom Commands...' }
@@ -34,6 +37,9 @@ export const menu_separators = {
 export const menu_options = {
     chat: chatOption,
     fix: fixOption,
+    doc: docOption,
+    test: testOption,
+    refactor: refactorOption,
     config: configOption,
     add: addOption,
     submitChat: chatSubmitOption,
@@ -51,7 +57,6 @@ const workspaceItem: QuickPickItem = {
     detail: 'Project-specific and shared with anyone using this workspace',
     description: '.vscode/cody.json',
 }
-
 const openIconButton = { iconPath: new ThemeIcon('go-to-file'), tooltip: 'open/create', id: 'open' }
 const trashIconButton = { iconPath: new ThemeIcon('trash'), tooltip: 'delete', id: 'delete' }
 const gearIconButton = { iconPath: new ThemeIcon('gear'), tooltip: 'Configure Custom Commands...', id: 'config' }
