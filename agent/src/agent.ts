@@ -134,7 +134,7 @@ export class Agent extends MessageHandler {
             vscode_shim.onDidCloseTextDocument.fire(this.workspace.agentTextDocument(document))
         })
 
-        const configurationDidChange = (config: ExtensionConfiguration) => {
+        const configurationDidChange = (config: ExtensionConfiguration): void => {
             this.setClient(config)
         }
 
