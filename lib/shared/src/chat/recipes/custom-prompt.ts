@@ -29,7 +29,7 @@ import {
 } from '../prompts/vscode-context'
 import { Interaction } from '../transcript/interaction'
 
-import { getContextMessagesFromSelection, numResults } from './helpers'
+import { getContextMessagesFromSelection, getFileExtension, getNormalizedLanguageName, numResults } from './helpers'
 import { Recipe, RecipeContext, RecipeID } from './recipe'
 
 /** ======================================================
@@ -78,8 +78,11 @@ export class CustomPrompt implements Recipe {
         const displayText = selection?.fileName
             ? getHumanDisplayTextWithFileName(slashCommand, selection, context.editor.getWorkspaceRootUri())
             : slashCommand
+        const languageName = selection?.fileName ? getNormalizedLanguageName(getFileExtension(selection?.fileName)) : ''
         // Prompt text to share with Cody but not display to human
-        const codyPromptText = prompts.instruction.replace('{humanInput}', promptText)
+        const codyPromptText = prompts.instruction
+            .replace('{humanInput}', promptText)
+            .replaceAll('{languageName}', languageName)
 
         // Attach code selection to prompt text if only selection is needed as context
         if (selection && isOnlySelectionRequired(isContextNeeded)) {

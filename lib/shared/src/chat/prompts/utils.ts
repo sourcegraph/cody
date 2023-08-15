@@ -64,10 +64,10 @@ export function promptTextWithCodeSelection(
     // Use the whole context window for the prompt because we're attaching no files
     const maxTokenCount = MAX_AVAILABLE_PROMPT_LENGTH - (codePrefix.length + prompt.length) / CHARS_PER_TOKEN
     const truncatedCode = truncateText(selection.selectedText, Math.min(maxTokenCount, MAX_RECIPE_INPUT_TOKENS))
-    const promptText = `${codePrefix}\n\n<selected>\n${truncatedCode}\n</selected>\n\n${prompt.replace(
+    const promptText = `${codePrefix}\n\n<selected>\n${truncatedCode}\n</selected>\n\n${prompt}`.replaceAll(
         '{languageName}',
         languageName
-    )}`
+    )
     return promptText
 }
 
