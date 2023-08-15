@@ -172,7 +172,7 @@ export class SourcegraphGraphQLAPIClient {
     private dotcomUrl = 'https://sourcegraph.com'
 
     constructor(
-        private config: Pick<ConfigurationWithAccessToken, 'serverEndpoint' | 'accessToken' | 'customHeaders'>
+        private config: Pick<ConfigurationWithAccessToken, 'serverEndpoint' | 'accessToken' | 'customHeaders' | 'isRunningInsideAgent'>
     ) {}
 
     public onConfigurationChange(
@@ -333,6 +333,9 @@ export class SourcegraphGraphQLAPIClient {
     public async logEvent(event: event): Promise<LogEventResponse | Error> {
         if (process.env.CODY_TESTING === 'true') {
             console.log(`not logging ${event.event} in test mode`)
+            return {}
+        }
+        if (this.config.isRunningInsideAgent) {
             return {}
         }
         if (this.config.serverEndpoint === this.dotcomUrl) {

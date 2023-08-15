@@ -69,13 +69,10 @@ export function getConfiguration(config: ConfigGetter): Configuration {
         pluginsDebugEnabled: config.get<boolean>(CONFIG_KEY.pluginsDebugEnabled, true),
         pluginsConfig: config.get(CONFIG_KEY.pluginsConfig, {}),
 
-        // Note: the setting below only exists for the agent to provide more
-        // helpful error messages when something goes wrong. In spirit, we try
-        // to minimize agent-specific code paths in the VSC extension but we
-        // make an exception for improved debug logging because it makes a huge
-        // difference when troubleshooting an issue like "the completion
-        // provider never got registered", which manifests by default with a
-        // silent timeout.
+        // Note: In spirit, we try to minimize agent-specific code paths in the VSC extension.
+        // We currently use this flag for the agent to provide more helpful error messages
+        // when something goes wrong, and to suppress event logging in the agent.
+        // Rely on this flag sparingly.
         isRunningInsideAgent: config.get('cody.advanced.agent.running' as any, false),
     }
 }
