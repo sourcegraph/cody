@@ -9,6 +9,7 @@ import { MAX_CURRENT_FILE_TOKENS } from '../../prompt/constants'
 import {
     populateCodeContextTemplate,
     populateCurrentEditorContextTemplate,
+    populateCurrentFileFromEditorSelectionContextTemplate,
     populateCurrentSelectedCodeContextTemplate,
     populateTerminalOutputContextTemplate,
 } from '../../prompt/templates'
@@ -345,4 +346,19 @@ export function getHumanDisplayTextWithFileName(
     const fileUri = vscode.Uri.joinPath(workspaceRoot, fileName)
     const fileLink = `vscode://file${fileUri.fsPath}:${startLineNumber}`
     return `${humanInput}\n\nFile: [_${fileName}:${fileRange}_](${fileLink})`
+}
+
+/**
+ * Gets context messages for the current open file's content based on the editor selection if any (or use visible content)
+ */
+export function getCurrentFileContextFromEditorSelection(selection: ActiveTextEditorSelection): ContextMessage[] {
+    if (!selection.selectedText) {
+        return []
+    }
+
+    return getContextMessageWithResponse(
+        populateCurrentFileFromEditorSelectionContextTemplate(selection, selection.fileName),
+        selection,
+        answers.file
+    )
 }

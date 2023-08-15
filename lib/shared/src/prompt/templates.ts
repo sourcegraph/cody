@@ -1,7 +1,10 @@
 import path from 'path'
 
 import { getFileExtension, getNormalizedLanguageName } from '../chat/recipes/helpers'
-import { ActiveTextEditorDiagnostic } from '../editor'
+import { ActiveTextEditorDiagnostic, ActiveTextEditorSelection } from '../editor'
+
+import { MAX_CURRENT_FILE_TOKENS, MAX_RECIPE_INPUT_TOKENS, MAX_RECIPE_SURROUNDING_TOKENS } from './constants'
+import { truncateText, truncateTextStart } from './truncation'
 
 const CODE_CONTEXT_TEMPLATE = `Use following code snippet from file \`{filePath}\`:
 \`\`\`{language}
@@ -131,4 +134,28 @@ export function populateCurrentSelectedCodeContextTemplate(code: string, filePat
         .replace('{code}', code)
         .replace(/{filePath}/g, filePath)
         .replace('{languageName}', languageName)
+}
+
+const CURRENT_FILE_CONTEXT_TEMPLATE = `"This is the {languageName} file \`{filePath}\` I am looking at, with my selected code in <selected> tags:
+{precedingText}<selected>
+{selectedText}
+</selected>{followingText}`
+
+export function populateCurrentFileFromEditorSelectionContextTemplate(
+    selection: ActiveTextEditorSelection,
+    filePath: string
+): string {
+    const extension = getFileExtension(filePath)
+    const languageName = getNormalizedLanguageName(extension)
+    const truncatedSelectedText = truncateText(selection.selectedText, MAX_RECIPE_INPUT_TOKENS) || ''
+    const truncatedPrecedingText = truncateTextStart(selection.precedingText, MAX_RECIPE_SURROUNDING_TOKENS)
+    const truncatedFollowingText = truncateText(selection.followingText, MAX_RECIPE_SURROUNDING_TOKENS)
+
+    const fileContext = CURRENT_FILE_CONTEXT_TEMPLATE.replace('{languageName}', languageName)
+        .replace(/{filePath}/g, filePath)
+        .replace('{followingText}', truncatedFollowingText)
+        .replace('{selectedText}', truncatedSelectedText)
+        .replace('{precedingText}', truncatedPrecedingText)
+
+    return truncateText(fileContext, MAX_CURRENT_FILE_TOKENS)
 }
