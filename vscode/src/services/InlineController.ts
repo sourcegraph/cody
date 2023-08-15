@@ -149,7 +149,7 @@ export class InlineController implements VsCodeInlineController {
             // the copied code should be the same as the clipboard text
             if (matchCodeSnippets(code, clipboardText) && matchCodeSnippets(code, changedText)) {
                 const op = 'paste'
-                const eventType = eventName === 'inlineChat' ? 'inlineChat' : 'keyDown'
+                const eventType = eventName.startsWith('inlineChat') ? 'inlineChat' : 'keyDown'
                 // 'CodyVSCodeExtension:inlineChat:Paste:clicked' or 'CodyVSCodeExtension:keyDown:Paste:clicked'
                 this.telemetryService.log(`CodyVSCodeExtension:${eventType}:Paste:clicked`, {
                     op,
@@ -302,22 +302,15 @@ export class InlineController implements VsCodeInlineController {
             const lastClipboardText = this.lastClipboardText
             if (e && documentUri?.fsPath === this.thread?.uri.fsPath) {
                 // check if the current range is within the selection range of the thread
-                const selectionRange = this.getSelectionRange()
                 const clipboardText = await vscode.env.clipboard.readText()
-                if (!selectionRange.contains(e.selections[0]) || clipboardText === lastClipboardText) {
+                if (clipboardText === this.lastCopiedCode.code || clipboardText === lastClipboardText) {
                     return
                 }
                 // check if the clipboard text is part of the text string
                 if (groupedText.includes(clipboardText)) {
                     this.lastClipboardText = clipboardText
-                    const eventName = 'inlineChat'
-                    const op = 'copy'
-                    const { lineCount, charCount } = this.setLastCopiedCode(clipboardText, eventName)
-                    this.telemetryService.log('CodyVSCodeExtension:inlineChat:Copy:clicked', {
-                        op,
-                        lineCount,
-                        charCount,
-                    })
+                    const eventName = 'inlineChat:Copy'
+                    this.setLastCopiedCode(clipboardText, eventName)
                 }
             }
         })
