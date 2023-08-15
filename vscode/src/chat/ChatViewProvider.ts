@@ -212,9 +212,10 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
     private async handleCopiedCode(text: string, eventType: 'Button' | 'Keydown'): Promise<void> {
         // If it's a Button event, then the text is already passed in from the whole code block
         const copiedCode = eventType === 'Button' ? text : await vscode.env.clipboard.readText()
+        const eventName = eventType === 'Button' ? 'copyButton' : 'keyDown:Copy'
         // Send to Inline Controller for tracking
         if (copiedCode) {
-            this.editor.controllers.inline?.setLastCopiedCode(copiedCode, 'copyButton')
+            this.editor.controllers.inline?.setLastCopiedCode(copiedCode, eventName)
         }
     }
 
