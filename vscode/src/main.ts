@@ -333,8 +333,7 @@ const register = async (
             'cody.action.fixup',
             (instruction: string, range: vscode.Range): Promise<void> => executeFixup({ instruction, range })
         ),
-        vscode.commands.registerCommand('cody.action.commands.menu', async caller => {
-            console.log(caller)
+        vscode.commands.registerCommand('cody.action.commands.menu', async () => {
             await editor.controllers.command?.menu('default')
         }),
         vscode.commands.registerCommand(
@@ -350,15 +349,12 @@ const register = async (
         }),
         vscode.commands.registerCommand('cody.command.explain-code', async () => {
             await executeRecipeInSidebar('custom-prompt', true, '/explain')
-            telemetryService.log('CodyVSCodeExtension:recipe:explain-code-high-level:executed')
         }),
         vscode.commands.registerCommand('cody.command.generate-unit-test', async () => {
             await executeRecipeInSidebar('custom-prompt', true, '/test')
-            telemetryService.log('CodyVSCodeExtension:recipe:generate-unit-test:executed')
         }),
         vscode.commands.registerCommand('cody.command.generate-docstring', async () => {
             await executeRecipeInSidebar('custom-prompt', true, '/doc')
-            telemetryService.log('CodyVSCodeExtension:recipe:generate-docstring:executed')
         }),
         vscode.commands.registerCommand('cody.command.inline-touch', () =>
             executeRecipeInSidebar('inline-touch', false)
