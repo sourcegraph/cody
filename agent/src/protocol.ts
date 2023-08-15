@@ -52,10 +52,19 @@ export type Notifications = {
     // The 'exit' notification must be sent after the client receives the 'shutdown' response.
     exit: [null]
 
-    // The server should use the provided connection configuration for all
-    // subsequent requests/notications. The previous connection configuration
+    // The server should use the provided extension configuration for all
+    // subsequent requests/notifications. The previous extension configuration
     // should no longer be used.
+    // This notification is functionally equivalent to extensionConfiguration/didChange
+    // and exists to match the previous naming of configuration
     'connectionConfiguration/didChange': [ExtensionConfiguration]
+
+    // The server should use the provided connection configuration for all
+    // subsequent requests/notifications. The previous extension configuration
+    // should no longer be used.
+    // This notification is functionally equivalent to connectionConfiguration/didChange
+    // and provided to match the updated configuration naming
+    'extensionConfiguration/didChange': [ExtensionConfiguration]
 
     // Lifecycle notifications for the client to notify the server about text
     // contents of documents and to notify which document is currently focused.
@@ -105,7 +114,9 @@ export interface ClientInfo {
     /** @deprecated Use `workspaceRootUri` instead. */
     workspaceRootPath?: string
 
+    /** @deprecated Use `extensionConfiguration` instead. */
     connectionConfiguration?: ExtensionConfiguration
+    extensionConfiguration?: ExtensionConfiguration
     capabilities?: ClientCapabilities
 }
 

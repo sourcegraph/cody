@@ -77,8 +77,10 @@ export class Agent extends MessageHandler {
             this.workspace.workspaceRootUri = client.workspaceRootUri
                 ? vscode_shim.Uri.parse(client.workspaceRootUri)
                 : vscode_shim.Uri.from({ scheme: 'file', path: client.workspaceRootPath })
-            if (client.connectionConfiguration) {
-                this.setClient(client.connectionConfiguration)
+
+            const extensionConfig = client.extensionConfiguration ?? client.connectionConfiguration
+            if (extensionConfig) {
+                this.setClient(extensionConfig)
             }
 
             const codyClient = await this.client
@@ -132,9 +134,12 @@ export class Agent extends MessageHandler {
             vscode_shim.onDidCloseTextDocument.fire(this.workspace.agentTextDocument(document))
         })
 
-        this.registerNotification('connectionConfiguration/didChange', config => {
+        const configurationDidChange = (config: ExtensionConfiguration) => {
             this.setClient(config)
-        })
+        }
+
+        this.registerNotification('connectionConfiguration/didChange', configurationDidChange)
+        this.registerNotification('extensionConfiguration/didChange', configurationDidChange)
 
         this.registerRequest('recipes/list', () =>
             Promise.resolve(
