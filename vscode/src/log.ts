@@ -30,7 +30,7 @@ export function debug(filterLabel: string, text: string, ...args: unknown[]): vo
     const workspaceConfig = vscode.workspace.getConfiguration()
     const config = getConfiguration(workspaceConfig)
 
-    const debugEnable = process.env.CODY_DEBUG_ENABLE === 'true' || config.debugEnable
+    const debugEnable = true // process.env.CODY_DEBUG_ENABLE === 'true' || config.debugEnable
 
     if (!outputChannel || !debugEnable) {
         return
