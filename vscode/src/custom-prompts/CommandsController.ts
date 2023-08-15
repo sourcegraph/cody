@@ -118,10 +118,8 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
             this.lastUsedCommands.add(id)
         }
 
-        if (myPrompt?.type === 'default') {
-            this.telemetryService.log(`CodyVSCodeExtension:command:${myPrompt.slashCommand}:executed`)
-        }
-
+        const commandName = myPrompt?.type === 'default' ? myPrompt.slashCommand?.replace('/', '') : 'custom'
+        this.telemetryService.log(`CodyVSCodeExtension:command:${commandName}:called`)
         return myPrompt?.prompt || ''
     }
 
@@ -166,8 +164,8 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
     /**
      * Menu Controller
      */
-    public async menu(type: 'custom' | 'config' | 'default', showDesc?: boolean): Promise<void> {
-        this.telemetryService.log(`CodyVSCodeExtension:command:menu:${type}`)
+    public async menu(type: 'custom' | 'config' | 'default', showDesc = true): Promise<void> {
+        this.telemetryService.log('CodyVSCodeExtension:command:menu:opened', { type })
         await this.refresh()
         switch (type) {
             case 'custom':
@@ -198,7 +196,7 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
     /**
      * Main Menu: Cody Commands
      */
-    public async mainCommandMenu(showDesc = false): Promise<void> {
+    public async mainCommandMenu(showDesc = true): Promise<void> {
         try {
             const commandItems = [
                 menu_separators.inline,

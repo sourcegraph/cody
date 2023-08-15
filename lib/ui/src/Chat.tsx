@@ -103,7 +103,7 @@ export interface FeedbackButtonsProps {
 
 // TODO: Rename to CodeBlockActionsProps
 export interface CopyButtonProps {
-    copyButtonOnSubmit: (text: string, insert?: boolean) => void
+    copyButtonOnSubmit: (text: string, insert?: boolean, event?: 'Keydown' | 'Button') => void
 }
 
 export interface ChatCommandsProps {
@@ -371,7 +371,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                     humanTranscriptItemClassName={humanTranscriptItemClassName}
                     transcriptItemParticipantClassName={transcriptItemParticipantClassName}
                     transcriptActionClassName={transcriptActionClassName}
-                    className={!isGettingStartedComponentVisible ? 'flex-1' : undefined}
+                    className={styles.transcriptContainer}
                     textAreaComponent={TextArea}
                     EditButtonContainer={EditButtonContainer}
                     editButtonOnSubmit={editButtonOnSubmit}
