@@ -329,7 +329,7 @@ const register = async (
             await sidebarChatProvider.executeCustomCommand(title)
         }),
         vscode.commands.registerCommand('cody.command.explain-code', async () => {
-            await executeRecipeInSidebar('custom-prompt', true, '/explain')
+            await executeRecipeInSidebar('explain-code-high-level', true, '/explain')
             telemetryService.log('CodyVSCodeExtension:recipe:explain-code-high-level:executed')
         }),
         vscode.commands.registerCommand('cody.command.generate-tests', async () => {

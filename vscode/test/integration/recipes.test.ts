@@ -20,10 +20,13 @@ suite('Recipes', function () {
         // Run the "explain" command
         await vscode.commands.executeCommand('cody.command.explain-code')
 
-        // Check the chat transcript contains markdown
-        const humanMessage = await getTranscript(0)
-        assert.match(humanMessage.displayText || '', /^\/explain/)
+        // Check the transcript contains messages from two steps.
+        let humanMessage = await getTranscript(0)
+        assert.match(humanMessage.displayText || '', /^Reading Main\.java and related code\./)
 
-        assert.match((await getTranscript(1)).displayText || '', /^hello from the assistant$/)
+        humanMessage = await getTranscript(2)
+        assert.match(humanMessage.displayText || '', /^Explaining it\./)
+
+        assert.match((await getTranscript(3)).displayText || '', /^hello from the assistant$/)
     })
 })

@@ -15,6 +15,11 @@ export interface InteractionJSON {
     context?: ContextMessage[]
 }
 
+export enum ResponseHandling {
+    DISPLAY = 1,
+    HIDE = 2,
+}
+
 export class Interaction {
     constructor(
         private readonly humanMessage: InteractionMessage,
@@ -22,7 +27,8 @@ export class Interaction {
         private fullContext: Promise<ContextMessage[]>,
         private usedContextFiles: ContextFile[],
         public readonly timestamp: string = new Date().toISOString(),
-        private pluginExecutionInfos: PluginFunctionExecutionInfo[] = []
+        private pluginExecutionInfos: PluginFunctionExecutionInfo[] = [],
+        public readonly responseHandling: ResponseHandling = ResponseHandling.DISPLAY
     ) {}
 
     public getAssistantMessage(): InteractionMessage {
@@ -80,5 +86,13 @@ export class Interaction {
             pluginExecutionInfos: this.pluginExecutionInfos,
             timestamp: this.timestamp,
         }
+    }
+
+    /**
+     * When the interaction is complete, asks whether another LLM turn is
+     * needed.
+     */
+    public getNextInteraction(): Interaction | undefined {
+        return undefined
     }
 }
