@@ -262,10 +262,11 @@ const register = async (
             'cody.fixup.new',
             (range: vscode.Range): Promise<void> => executeFixup({ range })
         ),
-        vscode.commands.registerCommand('cody.inline.new', async () => {
+        vscode.commands.registerCommand('cody.inline.new', async (inputText: string = '') => {
             // move focus line to the end of the current selection
             await vscode.commands.executeCommand('cursorLineEndSelect')
             await vscode.commands.executeCommand('workbench.action.addComment')
+            await vscode.commands.executeCommand('type', { text: inputText })
         }),
         vscode.commands.registerCommand('cody.inline.add', async (instruction: string, range: vscode.Range) => {
             const comment = commentController.create(instruction, range)

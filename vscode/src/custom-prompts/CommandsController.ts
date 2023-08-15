@@ -203,7 +203,6 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
             const commandItems = [
                 menu_separators.inline,
                 menu_options.chat,
-                menu_options.fix,
                 menu_options.doc,
                 menu_options.test,
                 menu_options.refactor,
@@ -240,7 +239,7 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
                 case selectedCommandID === menu_options.config.label:
                     return await vscode.commands.executeCommand('cody.settings.commands')
                 case selectedCommandID === menu_options.chat.label:
-                    return await vscode.commands.executeCommand('cody.inline.new')
+                    return await vscode.commands.executeCommand('cody.inline.new', 'Explain the selected code')
                 case selectedCommandID === menu_options.fix.label:
                     return await vscode.commands.executeCommand('cody.fixup.new')
                 case selectedCommandID === menu_options.doc.label:
@@ -248,7 +247,7 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
                 case selectedCommandID === menu_options.refactor.label:
                     return await vscode.commands.executeCommand('cody.action.refactor-code')
                 case selectedCommandID === menu_options.test.label:
-                    return await vscode.commands.executeCommand('cody.action.generate-test')
+                    return await vscode.commands.executeCommand('cody.inline.new', 'Generate a unit test for this code')
                 case selectedCommandID === menu_options.submitChat.label:
                     return await vscode.commands.executeCommand('cody.action.chat', userPrompt)
                 case selectedCommandID === menu_options.submitFix.label:
