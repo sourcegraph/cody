@@ -15,6 +15,7 @@ import {
     LastInlineCompletionCandidate,
 } from './getInlineCompletions'
 import * as CompletionLogger from './logger'
+import { logCompletionEvent } from './logger'
 import { ProviderConfig } from './providers/provider'
 import { RequestManager } from './request-manager'
 import { ProvideInlineCompletionItemsTracer, ProvideInlineCompletionsItemTraceData } from './tracer'
@@ -241,20 +242,22 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
             // current same line suffix and reach to the end of the line.
             const end = currentLine.range.end
 
-            return new vscode.InlineCompletionItem(
-                currentLinePrefix + completion.insertText,
-                new vscode.Range(start, end),
-                {
-                    title: 'Completion accepted',
-                    command: 'cody.autocomplete.inline.accepted',
-                    arguments: [
-                        {
-                            codyLogId: logId,
-                            codyCompletion: completion,
-                        },
-                    ],
-                }
-            )
+            // Log suggested text token count
+            const suggestedText = currentLinePrefix + completion.insertText
+            const lineCount = suggestedText.split(/\r\n|\r|\n/).length
+            const charCount = suggestedText.length
+            logCompletionEvent('suggested', { lineCount, charCount })
+
+            return new vscode.InlineCompletionItem(suggestedText, new vscode.Range(start, end), {
+                title: 'Completion accepted',
+                command: 'cody.autocomplete.inline.accepted',
+                arguments: [
+                    {
+                        codyLogId: logId,
+                        codyCompletion: completion,
+                    },
+                ],
+            })
         })
     }
 }
