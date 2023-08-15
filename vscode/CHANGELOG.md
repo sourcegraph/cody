@@ -8,9 +8,13 @@ Starting from `0.2.0`, Cody is using `major.EVEN_NUMBER.patch` for release versi
 
 ### Added
 
+- Include token count for code generated and button click events. [pull/675](https://github.com/sourcegraph/cody/pull/675)
+
 ### Fixed
 
 ### Changed
+
+- Include the number of accepted characters per autocomplete suggestion. [pull/674](https://github.com/sourcegraph/cody/pull/674)
 
 ## [0.6.6]
 
