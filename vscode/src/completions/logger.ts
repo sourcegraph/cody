@@ -136,6 +136,8 @@ export function accept(id: string, lineCount: number, charCount: number): void {
 
     completionEvent.acceptedAt = performance.now()
 
+    logSuggestionEvents()
+    clear()
     logCompletionEvent('accepted', {
         ...completionEvent.params,
         lineCount,
