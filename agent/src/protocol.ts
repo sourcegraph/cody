@@ -153,7 +153,6 @@ export interface TextDocument {
     filePath: string
     content?: string
     selection?: Range
-    codebase?: string
 }
 
 export interface RecipeInfo {

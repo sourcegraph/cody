@@ -112,14 +112,12 @@ export class Agent extends MessageHandler {
             this.workspace.setActiveTextEditor(newTextEditor(this.workspace.agentTextDocument(document)))
         })
         this.registerNotification('textDocument/didOpen', document => {
-            vscode_shim.setConfigCodebase(document.codebase)
             this.workspace.setDocument(document)
             const textDocument = this.workspace.agentTextDocument(document)
             vscode_shim.onDidOpenTextDocument.fire(textDocument)
             this.workspace.setActiveTextEditor(newTextEditor(textDocument))
         })
         this.registerNotification('textDocument/didChange', document => {
-            vscode_shim.setConfigCodebase(document.codebase)
             const textDocument = this.workspace.agentTextDocument(document)
             this.workspace.setDocument(document)
             this.workspace.setActiveTextEditor(newTextEditor(textDocument))
