@@ -1,13 +1,12 @@
 # AI that knows your entire codebase
 
-[Cody](https://cody.dev) is a free and [open-source](https://github.com/sourcegraph/cody) AI coding assistant that can write, understand and fix your code. Cody is powered by Sourcegraph’s code graph, and has knowledge of your entire codebase. Install Cody to get started with free AI-powered autocomplete, chat, commands, and more. 
+[Cody](https://cody.dev) is a free and [open-source](https://github.com/sourcegraph/cody) AI coding assistant that can write, understand and fix your code. Cody is powered by Sourcegraph’s code graph, and has knowledge of your entire codebase. Install Cody to get started with free AI-powered autocomplete, chat, commands, and more.
 
 ## Autocomplete
 
 Cody autocompletes single lines, or whole functions, in any programming language, configuration file, or documentation. It’s powered by latest instant LLM models, for accuracy and performance.
 
 <img src="https://storage.googleapis.com/sourcegraph-assets/website/Product%20Animations/GIFS/cody-completions-may2023-optim.gif" width="480" alt="Cody autocomplete">
-
 
 ## Chat
 
@@ -18,6 +17,7 @@ Ask Cody questions in the chat view, or inline with code, and it will use Source
 <img src="https://storage.googleapis.com/sourcegraph-assets/website/Product%20Animations/GIFS/cody-chat-may2023-optim.gif" width="480" alt="Cody Chat">
 
 And because Cody has access to the entire code graph, you can:
+
 - Ask Cody to generate an API call. Cody can gather context on your API schema to inform the code it writes.
 - Ask Cody to find where within your codebase a specific component is defined. Cody can retrieve and describe the exact files where that component is written.
 - Ask Cody questions that require an understanding of multiple files, such as how data is populated in a React app. Cody can find the React component definitions to understand what data is being passed and where it originates
@@ -67,6 +67,7 @@ Embeddings for free Cody users are generated via the [Cody desktop app](https://
 Cody Enterprise requires the use of a Sourcegraph Enterprise instance, and gives you access to AI coding tools across your entire organization.
 
 If you’re a Sourcegraph Enterprise customer and would like to try Cody Enterprise, contact your technical advisor. If you’d like to set up a trial, [contact us](https://about.sourcegraph.com/contact/request-info) to discuss pricing and options.
+
 ## Feedback
 
 - [Issue tracker](https://github.com/sourcegraph/cody/issues)
