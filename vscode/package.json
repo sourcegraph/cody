@@ -320,6 +320,14 @@
         "icon": "$(history)"
       },
       {
+        "command": "cody.status-bar.interacted",
+        "category": "Cody",
+        "title": "Cody Settings",
+        "group": "Cody",
+        "icon": "$(settings-gear)",
+        "when": "cody.activated"
+      },
+      {
         "command": "cody.comment.add",
         "title": "Ask Cody",
         "category": "Cody Inline Chat",
@@ -614,6 +622,11 @@
           "group": "navigation@2"
         },
         {
+          "command": "cody.status-bar.interacted",
+          "when": "view == cody.chat && cody.activated",
+          "group": "navigation@4"
+        },
+        {
           "command": "cody.feedback",
           "when": "view == cody.chat",
           "group": "7_cody@0"
@@ -632,11 +645,6 @@
           "command": "cody.auth.signin",
           "when": "view == cody.chat && cody.activated",
           "group": "9_cody@0"
-        },
-        {
-          "command": "cody.settings.extension",
-          "when": "view == cody.chat",
-          "group": "8_cody@1"
         },
         {
           "command": "cody.fixup.apply-all",
