@@ -217,3 +217,9 @@ export const GET_FEATURE_FLAGS_QUERY = `
           }
     }
 `
+
+export const EVALUATE_FEATURE_FLAG_QUERY = `
+    query EvaluateFeatureFlag($flagName: String!) {
+        evaluateFeatureFlag(flagName: $flagName)
+    }
+`

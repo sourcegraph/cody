@@ -19,8 +19,20 @@ export class FeatureFlagProvider {
         }
     }
 
-    public evaluateFeatureFlag(featureName: string): boolean {
-        return this.featureFlags[featureName] ?? false
+    public async evaluateFeatureFlag(flagName: string): Promise<boolean> {
+        const cachedValue = this.featureFlags[flagName]
+        if (cachedValue) {
+            // Won't work if flag value changes during the current session
+            return cachedValue
+        }
+
+        const value = await this.sourcegraphGraphQLAPIClient.evaluateFeatureFlag(flagName)
+        if (value === null || isError(value)) {
+            return false
+        }
+
+        this.featureFlags[flagName] = value
+        return value
     }
 
     public syncAuthStatus(): void {

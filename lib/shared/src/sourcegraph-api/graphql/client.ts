@@ -11,6 +11,7 @@ import {
     CURRENT_SITE_VERSION_QUERY,
     CURRENT_USER_ID_AND_VERIFIED_EMAIL_QUERY,
     CURRENT_USER_ID_QUERY,
+    EVALUATE_FEATURE_FLAG_QUERY,
     GET_CODY_CONTEXT_QUERY,
     GET_FEATURE_FLAGS_QUERY,
     IS_CONTEXT_REQUIRED_QUERY,
@@ -151,6 +152,10 @@ interface EvaluatedFeatureFlag {
 
 interface EvaluatedFeatureFlagsResponse {
     evaluatedFeatureFlags: EvaluatedFeatureFlag[]
+}
+
+interface EvaluateFeatureFlagResponse {
+    evaluateFeatureFlag: boolean
 }
 
 function extractDataOrError<T, R>(response: APIResponse<T> | Error, extract: (data: T) => R): R | Error {
@@ -461,6 +466,12 @@ export class SourcegraphGraphQLAPIClient {
                     )
                 )
         )
+    }
+
+    public async evaluateFeatureFlag(flagName: string): Promise<boolean | null | Error> {
+        return this.fetchSourcegraphAPI<APIResponse<EvaluateFeatureFlagResponse>>(EVALUATE_FEATURE_FLAG_QUERY, {
+            flagName,
+        }).then(response => extractDataOrError(response, data => data.evaluateFeatureFlag))
     }
 
     private fetchSourcegraphAPI<T>(query: string, variables: Record<string, any> = {}): Promise<T | Error> {

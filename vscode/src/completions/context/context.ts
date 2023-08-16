@@ -37,7 +37,7 @@ export async function getContext(options: GetContextOptions): Promise<GetContext
     const start = performance.now()
 
     // TODO: remove this!
-    const isSomeFlagEnabled = featureFlagProvider.evaluateFeatureFlag('search-ranking')
+    const isSomeFlagEnabled = await featureFlagProvider.evaluateFeatureFlag('arnold')
     if (isSomeFlagEnabled) {
         // some feature-specific logic
     }
