@@ -1,7 +1,6 @@
 import path from 'path'
 
 import * as vscode from 'vscode'
-import { URI } from 'vscode-uri'
 
 import { Client, createClient } from '@sourcegraph/cody-shared/src/chat/client'
 import { registeredRecipes } from '@sourcegraph/cody-shared/src/chat/recipes/agent-recipes'
@@ -14,7 +13,7 @@ import { newTextEditor } from './AgentTextEditor'
 import { AgentWorkspaceDocuments } from './AgentWorkspaceDocuments'
 import { AgentEditor } from './editor'
 import { MessageHandler } from './jsonrpc'
-import { AutocompleteItem, ConnectionConfiguration } from './protocol'
+import { AutocompleteItem, ExtensionConfiguration } from './protocol'
 import * as vscode_shim from './vscode-shim'
 
 const secretStorage = new Map<string, string>()
@@ -75,9 +74,13 @@ export class Agent extends MessageHandler {
                 `Cody Agent: handshake with client '${client.name}' (version '${client.version}') at workspace root path '${client.workspaceRootUri}'\n`
             )
             initializeVscodeExtension()
-            this.workspace.workspaceRootUri = URI.parse(client.workspaceRootUri || `file://${client.workspaceRootPath}`)
-            if (client.connectionConfiguration) {
-                this.setClient(client.connectionConfiguration)
+            this.workspace.workspaceRootUri = client.workspaceRootUri
+                ? vscode_shim.Uri.parse(client.workspaceRootUri)
+                : vscode_shim.Uri.from({ scheme: 'file', path: client.workspaceRootPath })
+
+            const extensionConfig = client.extensionConfiguration ?? client.connectionConfiguration
+            if (extensionConfig) {
+                this.setClient(extensionConfig)
             }
 
             const codyClient = await this.client
@@ -108,22 +111,18 @@ export class Agent extends MessageHandler {
         })
 
         this.registerNotification('textDocument/didFocus', document => {
-            this.workspace.activeDocumentFilePath = document.filePath
-            vscode_shim.onDidChangeActiveTextEditor.fire(newTextEditor(this.workspace.agentTextDocument(document)))
+            this.workspace.setActiveTextEditor(newTextEditor(this.workspace.agentTextDocument(document)))
         })
         this.registerNotification('textDocument/didOpen', document => {
             this.workspace.setDocument(document)
-            this.workspace.activeDocumentFilePath = document.filePath
             const textDocument = this.workspace.agentTextDocument(document)
             vscode_shim.onDidOpenTextDocument.fire(textDocument)
-            vscode_shim.onDidChangeActiveTextEditor.fire(newTextEditor(textDocument))
+            this.workspace.setActiveTextEditor(newTextEditor(textDocument))
         })
         this.registerNotification('textDocument/didChange', document => {
             const textDocument = this.workspace.agentTextDocument(document)
             this.workspace.setDocument(document)
-            this.workspace.activeDocumentFilePath = document.filePath
-
-            vscode_shim.onDidChangeActiveTextEditor.fire(newTextEditor(textDocument))
+            this.workspace.setActiveTextEditor(newTextEditor(textDocument))
             vscode_shim.onDidChangeTextDocument.fire({
                 document: textDocument,
                 contentChanges: [], // TODO: implement this. It's only used by recipes, not autocomplete.
@@ -135,9 +134,12 @@ export class Agent extends MessageHandler {
             vscode_shim.onDidCloseTextDocument.fire(this.workspace.agentTextDocument(document))
         })
 
-        this.registerNotification('connectionConfiguration/didChange', config => {
+        const configurationDidChange = (config: ExtensionConfiguration): void => {
             this.setClient(config)
-        })
+        }
+
+        this.registerNotification('connectionConfiguration/didChange', configurationDidChange)
+        this.registerNotification('extensionConfiguration/didChange', configurationDidChange)
 
         this.registerRequest('recipes/list', () =>
             Promise.resolve(
@@ -196,7 +198,7 @@ export class Agent extends MessageHandler {
         })
     }
 
-    private setClient(config: ConnectionConfiguration): void {
+    private setClient(config: ExtensionConfiguration): void {
         vscode_shim.setConnectionConfig(config)
         vscode_shim.onDidChangeConfiguration.fire({
             affectsConfiguration: () =>

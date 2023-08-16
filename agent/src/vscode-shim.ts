@@ -28,7 +28,7 @@ import {
 
 import type { Agent } from './agent'
 import { AgentTabGroups } from './AgentTabGroups'
-import type { ConnectionConfiguration } from './protocol'
+import type { ExtensionConfiguration } from './protocol'
 
 export {
     emptyEvent,
@@ -78,8 +78,8 @@ const emptyFileWatcher: vscode.FileSystemWatcher = {
     dispose(): void {},
 }
 
-export let connectionConfig: ConnectionConfiguration | undefined
-export function setConnectionConfig(newConfig: ConnectionConfiguration): void {
+export let connectionConfig: ExtensionConfiguration | undefined
+export function setConnectionConfig(newConfig: ExtensionConfiguration): void {
     connectionConfig = newConfig
 }
 
@@ -109,6 +109,8 @@ const configuration: vscode.WorkspaceConfiguration = {
                 return connectionConfig?.debug ?? false
             case 'cody.debug.verbose':
                 return connectionConfig?.verboseDebug ?? false
+            case 'cody.codebase':
+                return connectionConfig?.codebase
             default:
                 return defaultValue
         }
@@ -130,6 +132,7 @@ export const onDidRenameFiles = new EventEmitter<vscode.FileRenameEvent>()
 export const onDidDeleteFiles = new EventEmitter<vscode.FileDeleteEvent>()
 
 export interface WorkspaceDocuments {
+    workspaceRootUri?: Uri
     openTextDocument: (filePath: string) => Promise<vscode.TextDocument>
 }
 let workspaceDocuments: WorkspaceDocuments | undefined
@@ -144,6 +147,18 @@ const _workspace: Partial<typeof vscode.workspace> = {
         // properly pass around URIs once the agent protocol supports URIs
         const filePath = uri instanceof Uri ? uri.path : uri?.toString() ?? ''
         return workspaceDocuments ? workspaceDocuments.openTextDocument(filePath) : ('missingWorkspaceDocuments' as any)
+    },
+    getWorkspaceFolder: () => {
+        if (workspaceDocuments?.workspaceRootUri === undefined) {
+            throw new Error(
+                'workspaceDocuments is undefined. To fix this problem, make sure that the agent has been initialized.'
+            )
+        }
+        return {
+            uri: workspaceDocuments.workspaceRootUri,
+            index: 0,
+            name: workspaceDocuments.workspaceRootUri?.path,
+        }
     },
     onDidChangeWorkspaceFolders: (() => ({})) as any,
     onDidOpenTextDocument: onDidOpenTextDocument.event,

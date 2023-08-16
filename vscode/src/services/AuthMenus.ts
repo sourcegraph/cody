@@ -77,15 +77,15 @@ export async function showAccessTokenInputBox(endpoint: string): Promise<string 
 export const AuthMenuOptions = {
     signin: {
         title: 'Other Sign in Options',
-        placeholder: 'Select a sign in option',
+        placeholder: 'Choose a sign in option',
     },
     signout: {
         title: 'Sign Out',
-        placeHolder: 'Select instance to sign out',
+        placeHolder: 'Choose instance to sign out',
     },
     switch: {
         title: 'Switch Account',
-        placeHolder: 'Press Esc to cancel',
+        placeHolder: 'Choose an account',
     },
 }
 
