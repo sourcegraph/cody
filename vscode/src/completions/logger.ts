@@ -44,6 +44,8 @@ const displayedCompletions = new LRUCache<string, CompletionEvent>({
     max: 100, // Maximum number of completions that we are keeping track of
 })
 
+let completionsStartedSinceLastSuggestion = 0
+
 export function logCompletionEvent(name: string, params?: TelemetryEventProperties): void {
     logEvent(`CodyVSCodeExtension:completion:${name}`, params)
 }
@@ -76,7 +78,7 @@ export function start(id: string): void {
     const event = displayedCompletions.get(id)
     if (event && !event.startLoggedAt) {
         event.startLoggedAt = performance.now()
-        logCompletionEvent('started', event.params)
+        completionsStartedSinceLastSuggestion++
     }
 }
 
@@ -188,7 +190,9 @@ function logSuggestionEvents(): void {
             read: accepted || read,
             accepted,
             otherCompletionProviderEnabled: otherCompletionProviderEnabled(),
+            completionsStartedSinceLastSuggestion,
         })
+        completionsStartedSinceLastSuggestion = 0
     })
 
     // Completions are kept in the LRU cache for longer. This is because they
