@@ -20,7 +20,7 @@ Starting from `0.2.0`, Cody is using `major.EVEN_NUMBER.patch` for release versi
 
 - `Explain Code` command now includes visible content of the current file when no code is selected. [pull/602](https://github.com/sourcegraph/cody/pull/602)
 - Cody Commands: Show errors in chat view instead of notification windows. [pull/602](https://github.com/sourcegraph/cody/pull/602)
-- Cody Commands: Match commands on description in menu []()
+- Cody Commands: Match commands on description in menu [pull/702](https://github.com/sourcegraph/cody/pull/702)
 
 ## [0.6.7]
 
