@@ -55,7 +55,6 @@ export async function showCustomCommandMenu(items: QuickPickItem[]): Promise<Qui
     const CustomCommandsMenuOptions: QuickPickOptions = {
         title: 'Cody Custom Commands (Experimental)',
         placeHolder: 'Search command to run...',
-        ignoreFocusOut: true,
     }
 
     return new Promise(resolve => {
