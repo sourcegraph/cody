@@ -6,6 +6,7 @@ import { TelemetryEventProperties } from '@sourcegraph/cody-shared/src/telemetry
 import { logEvent } from '../services/EventLogger'
 
 import { ContextSummary } from './context/context'
+import { InlineCompletionItem } from './types'
 
 interface CompletionEvent {
     params: {
@@ -17,6 +18,8 @@ interface CompletionEvent {
         contextSummary?: ContextSummary
         source?: string
         id: string
+        lines?: number
+        chars?: number
     }
     // The timestamp when the completion request started
     startedAt: number
@@ -104,19 +107,22 @@ export function loaded(id: string): void {
 // Suggested completions will not be logged immediately. Instead, we log them when we either hide
 // them again (they are NOT accepted) or when they ARE accepted. This way, we can calculate the
 // duration they were actually visible for.
-export function suggested(id: string, source: string): void {
+export function suggested(id: string, source: string, completion: InlineCompletionItem): void {
     const event = displayedCompletions.get(id)
     if (!event) {
         return
     }
 
     if (!event.suggestedAt) {
+        const { lines, chars } = linesAndChars(completion)
         event.params.source = source
+        event.params.lines = lines
+        event.params.chars = chars
         event.suggestedAt = performance.now()
     }
 }
 
-export function accept(id: string, lineCount: number, charCount: number): void {
+export function accept(id: string, completion: InlineCompletionItem): void {
     const completionEvent = displayedCompletions.get(id)
     if (!completionEvent || completionEvent.acceptedAt) {
         // Log a debug event, this case should not happen in production
@@ -141,8 +147,9 @@ export function accept(id: string, lineCount: number, charCount: number): void {
     logSuggestionEvents()
     logCompletionEvent('accepted', {
         ...completionEvent.params,
-        lineCount,
-        charCount,
+        // We overwrite the existing lines and chars in the params and rely on the accepted one in
+        // case the popover is used to insert a completion different from the one that was suggested
+        ...linesAndChars(completion),
         otherCompletionProviderEnabled: otherCompletionProviderEnabled(),
     })
 }
@@ -214,4 +221,10 @@ const otherCompletionProviders = [
 ]
 function otherCompletionProviderEnabled(): boolean {
     return !!otherCompletionProviders.find(id => vscode.extensions.getExtension(id)?.isActive)
+}
+
+function linesAndChars({ insertText }: InlineCompletionItem): { lines: number; chars: number } {
+    const lines = insertText.split(/\r\n|\r|\n/).length
+    const chars = insertText.length
+    return { lines, chars }
 }
