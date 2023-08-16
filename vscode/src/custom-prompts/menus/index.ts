@@ -25,6 +25,7 @@ export async function showCommandMenu(items: QuickPickItem[]): Promise<CommandMe
         quickPick.items = items
         quickPick.title = options.title
         quickPick.placeholder = options.placeHolder
+        quickPick.matchOnDescription = true
         quickPick.ignoreFocusOut = options.ignoreFocusOut
 
         quickPick.buttons = [menu_buttons.gear]
