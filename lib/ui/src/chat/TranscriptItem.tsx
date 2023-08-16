@@ -17,6 +17,7 @@ import { BlinkingCursor } from './BlinkingCursor'
 import { CodeBlocks } from './CodeBlocks'
 import { ContextFiles, FileLinkProps } from './ContextFiles'
 import { PluginExecutionInfos } from './PluginExecutionInfos'
+import { PreciseContexts, SymbolLinkProps } from './PreciseContext'
 
 import styles from './TranscriptItem.module.css'
 
@@ -43,6 +44,7 @@ export const TranscriptItem: React.FunctionComponent<
         beingEdited: boolean
         setBeingEdited: (input: boolean) => void
         fileLinkComponent: React.FunctionComponent<FileLinkProps>
+        symbolLinkComponent: React.FunctionComponent<SymbolLinkProps>
         textAreaComponent?: React.FunctionComponent<ChatUITextAreaProps>
         EditButtonContainer?: React.FunctionComponent<EditButtonProps>
         editButtonOnSubmit?: (text: string) => void
@@ -63,6 +65,7 @@ export const TranscriptItem: React.FunctionComponent<
     beingEdited,
     setBeingEdited,
     fileLinkComponent,
+    symbolLinkComponent,
     transcriptItemClassName,
     humanTranscriptItemClassName,
     transcriptItemParticipantClassName,
@@ -150,6 +153,15 @@ export const TranscriptItem: React.FunctionComponent<
                     <ContextFiles
                         contextFiles={message.contextFiles}
                         fileLinkComponent={fileLinkComponent}
+                        className={transcriptActionClassName}
+                    />
+                </div>
+            )}
+            {message.preciseContext && message.preciseContext.length > 0 && (
+                <div className={styles.actions}>
+                    <PreciseContexts
+                        preciseContexts={message.preciseContext}
+                        symbolLinkComponent={symbolLinkComponent}
                         className={transcriptActionClassName}
                     />
                 </div>

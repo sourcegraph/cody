@@ -22,6 +22,13 @@ export type WebviewMessage =
     | { command: 'deleteHistory'; chatID: string }
     | { command: 'links'; value: string }
     | { command: 'openFile'; filePath: string }
+    | {
+          command: 'openLocalFileWithRange'
+          filePath: string
+          // Note: we're not using vscode.Range objects or nesting here, as the protocol
+          // tends ot munge the type in a weird way (nested fields become array indices).
+          range?: { startLine: number; startCharacter: number; endLine: number; endCharacter: number }
+      }
     | { command: 'edit'; text: string }
     | { command: 'insert'; eventType: 'Button' | 'Keydown'; text: string }
     | { command: 'copy'; eventType: 'Button' | 'Keydown'; text: string }

@@ -14,6 +14,7 @@ import {
 } from '../Chat'
 
 import { FileLinkProps } from './ContextFiles'
+import { SymbolLinkProps } from './PreciseContext'
 import { TranscriptItem, TranscriptItemClassNames } from './TranscriptItem'
 
 import styles from './Transcript.module.css'
@@ -25,6 +26,7 @@ export const Transcript: React.FunctionComponent<
         messageBeingEdited: boolean
         setMessageBeingEdited: (input: boolean) => void
         fileLinkComponent: React.FunctionComponent<FileLinkProps>
+        symbolLinkComponent: React.FunctionComponent<SymbolLinkProps>
         className?: string
         textAreaComponent?: React.FunctionComponent<ChatUITextAreaProps>
         EditButtonContainer?: React.FunctionComponent<EditButtonProps>
@@ -43,6 +45,7 @@ export const Transcript: React.FunctionComponent<
     messageBeingEdited,
     setMessageBeingEdited,
     fileLinkComponent,
+    symbolLinkComponent,
     className,
     codeBlocksCopyButtonClassName,
     codeBlocksInsertButtonClassName,
@@ -107,6 +110,7 @@ export const Transcript: React.FunctionComponent<
                             beingEdited={index > 0 && transcript.length - index === 2 && messageBeingEdited}
                             setBeingEdited={setMessageBeingEdited}
                             fileLinkComponent={fileLinkComponent}
+                            symbolLinkComponent={symbolLinkComponent}
                             codeBlocksCopyButtonClassName={codeBlocksCopyButtonClassName}
                             codeBlocksInsertButtonClassName={codeBlocksInsertButtonClassName}
                             transcriptItemClassName={transcriptItemClassName}
@@ -135,6 +139,7 @@ export const Transcript: React.FunctionComponent<
                     beingEdited={false}
                     setBeingEdited={setMessageBeingEdited}
                     fileLinkComponent={fileLinkComponent}
+                    symbolLinkComponent={symbolLinkComponent}
                     codeBlocksCopyButtonClassName={codeBlocksCopyButtonClassName}
                     codeBlocksInsertButtonClassName={codeBlocksInsertButtonClassName}
                     transcriptItemClassName={transcriptItemClassName}

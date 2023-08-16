@@ -3,6 +3,7 @@ import { ConfigurationWithAccessToken } from '../configuration'
 import { Editor } from '../editor'
 import { PrefilledOptions, withPreselectedOptions } from '../editor/withPreselectedOptions'
 import { SourcegraphEmbeddingsSearchClient } from '../embeddings/client'
+import { GraphContextFetcher } from '../graph-context'
 import { SourcegraphIntentDetectorClient } from '../intent-detector/client'
 import { SourcegraphBrowserCompletionsClient } from '../sourcegraph-api/completions/browserClient'
 import { CompletionsClientConfig, SourcegraphCompletionsClient } from '../sourcegraph-api/completions/client'
@@ -23,7 +24,7 @@ export { Transcript }
 
 export type ClientInitConfig = Pick<
     ConfigurationWithAccessToken,
-    'serverEndpoint' | 'codebase' | 'useContext' | 'accessToken' | 'customHeaders'
+    'serverEndpoint' | 'codebase' | 'useContext' | 'accessToken' | 'customHeaders' | 'experimentalLocalSymbols'
 >
 
 export interface ClientInit {
@@ -86,8 +87,8 @@ export async function createClient({
         }
 
         const embeddingsSearch = repoId ? new SourcegraphEmbeddingsSearchClient(graphqlClient, repoId, true) : null
-
-        const codebaseContext = new CodebaseContext(config, config.codebase, embeddingsSearch, null, null)
+        const graphContext = new GraphContextFetcher(graphqlClient, editor)
+        const codebaseContext = new CodebaseContext(config, config.codebase, embeddingsSearch, null, null, graphContext)
 
         const intentDetector = new SourcegraphIntentDetectorClient(graphqlClient, completionsClient)
 
@@ -141,8 +142,10 @@ export async function createClient({
             isMessageInProgress = true
             transcript.addInteraction(interaction)
 
-            const { prompt, contextFiles } = await transcript.getPromptForLastInteraction(getPreamble(config.codebase))
-            transcript.setUsedContextFilesForLastInteraction(contextFiles)
+            const { prompt, contextFiles, preciseContexts } = await transcript.getPromptForLastInteraction(
+                getPreamble(config.codebase)
+            )
+            transcript.setUsedContextFilesForLastInteraction(contextFiles, preciseContexts)
 
             const responsePrefix = interaction.getAssistantMessage().prefix ?? ''
             let rawText = ''

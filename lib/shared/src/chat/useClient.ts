@@ -5,6 +5,7 @@ import { isErrorLike } from '../common'
 import { ConfigurationWithAccessToken } from '../configuration'
 import { Editor, NoopEditor } from '../editor'
 import { PrefilledOptions, withPreselectedOptions } from '../editor/withPreselectedOptions'
+import { GraphContextFetcher } from '../graph-context'
 import { SourcegraphIntentDetectorClient } from '../intent-detector/client'
 import { SourcegraphBrowserCompletionsClient } from '../sourcegraph-api/completions/browserClient'
 import { SourcegraphGraphQLAPIClient } from '../sourcegraph-api/graphql'
@@ -22,7 +23,7 @@ import { reformatBotMessage } from './viewHelpers'
 
 export type CodyClientConfig = Pick<
     ConfigurationWithAccessToken,
-    'serverEndpoint' | 'useContext' | 'accessToken' | 'customHeaders'
+    'serverEndpoint' | 'useContext' | 'accessToken' | 'customHeaders' | 'experimentalLocalSymbols'
 > & { debugEnable: boolean; needsEmailVerification: boolean }
 
 export interface CodyClientScope {
@@ -279,6 +280,7 @@ export const useClient = ({
                 }
             }
 
+            const graphContext = new GraphContextFetcher(graphqlClient, editor)
             const unifiedContextFetcherClient = new UnifiedContextFetcherClient(graphqlClient, repoIds)
             const codebaseContext = new CodebaseContext(
                 config,
@@ -286,6 +288,7 @@ export const useClient = ({
                 null,
                 null,
                 null,
+                graphContext,
                 unifiedContextFetcherClient
             )
 
@@ -307,10 +310,10 @@ export const useClient = ({
             setIsMessageInProgressState(true)
             onEvent?.('submit')
 
-            const { prompt, contextFiles } = await transcript.getPromptForLastInteraction(
+            const { prompt, contextFiles, preciseContexts } = await transcript.getPromptForLastInteraction(
                 getMultiRepoPreamble(repoNames)
             )
-            transcript.setUsedContextFilesForLastInteraction(contextFiles)
+            transcript.setUsedContextFilesForLastInteraction(contextFiles, preciseContexts)
 
             const responsePrefix = interaction.getAssistantMessage().prefix ?? ''
             let rawText = ''

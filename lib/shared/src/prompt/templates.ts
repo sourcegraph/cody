@@ -23,6 +23,18 @@ export function populateCodeContextTemplate(code: string, filePath: string, repo
         .replace('{text}', code)
 }
 
+const PRECISE_CONTEXT_TEMPLATE = `The symbol '{symbol}' is defined in the file {filePath} as:
+\`\`\`{language}
+{text}
+\`\`\``
+
+export function populatePreciseCodeContextTemplate(symbol: string, filePath: string, code: string): string {
+    return PRECISE_CONTEXT_TEMPLATE.replace('{symbol}', symbol)
+        .replace('{filePath}', filePath)
+        .replace('{language}', getExtension(filePath))
+        .replace('{text}', code)
+}
+
 const MARKDOWN_CONTEXT_TEMPLATE = 'Use the following text from file `{filePath}`:\n{text}'
 
 const MARKDOWN_CONTEXT_TEMPLATE_WITH_REPO =
