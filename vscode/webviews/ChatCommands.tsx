@@ -45,20 +45,18 @@ export const ChatCommandsComponent: React.FunctionComponent<React.PropsWithChild
             <div className={classNames(styles.commandsContainer)}>
                 {chatCommands &&
                     selectedChatCommand >= 0 &&
-                    chatCommands
-                        ?.filter(command => command[1]?.slashCommand)
-                        ?.map(([command, prompt], i) => (
-                            <button
-                                className={classNames(styles.commandItem, selectedChatCommand === i && styles.selected)}
-                                key={prompt.slashCommand}
-                                onClick={() => onCommandClick(prompt.slashCommand)}
-                                type="button"
-                                ref={i === selectedChatCommand ? selectionRef : null}
-                            >
-                                <p className={styles.commandTitle}>{prompt.slashCommand}</p>
-                                <p className={styles.commandDescription}>{command}</p>
-                            </button>
-                        ))}
+                    chatCommands?.map(([command, prompt], i) => (
+                        <button
+                            className={classNames(styles.commandItem, selectedChatCommand === i && styles.selected)}
+                            key={prompt.slashCommand}
+                            onClick={() => onCommandClick(prompt.slashCommand)}
+                            type="button"
+                            ref={i === selectedChatCommand ? selectionRef : null}
+                        >
+                            <p className={styles.commandTitle}>{prompt.slashCommand}</p>
+                            <p className={styles.commandDescription}>{command}</p>
+                        </button>
+                    ))}
             </div>
         </div>
     )

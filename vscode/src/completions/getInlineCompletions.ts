@@ -7,7 +7,7 @@ import { debug } from '../log'
 
 import { GetContextOptions, GetContextResult } from './context/context'
 import { DocumentHistory } from './context/history'
-import { DocumentContext, getCurrentDocContext } from './document'
+import { DocumentContext } from './document'
 import * as CompletionLogger from './logger'
 import { detectMultiline } from './multiline'
 import { CompletionProviderTracer, Provider, ProviderConfig, ProviderOptions } from './providers/provider'
@@ -22,11 +22,10 @@ export interface InlineCompletionsParams {
     document: vscode.TextDocument
     position: vscode.Position
     context: vscode.InlineCompletionContext
+    docContext: DocumentContext
 
     // Prompt parameters
     promptChars: number
-    maxPrefixChars: number
-    maxSuffixChars: number
     providerConfig: ProviderConfig
     responsePercentage: number
     prefixPercentage: number
@@ -109,11 +108,6 @@ export enum InlineCompletionsResultSource {
 export async function getInlineCompletions(params: InlineCompletionsParams): Promise<InlineCompletionsResult | null> {
     try {
         const result = await doGetInlineCompletions(params)
-        if (result) {
-            debug('getInlineCompletions:result', InlineCompletionsResultSource[result.source])
-        } else {
-            debug('getInlineCompletions:noResult', '')
-        }
         params.tracer?.({ result })
         return result
     } catch (unknownError: unknown) {
@@ -122,8 +116,8 @@ export async function getInlineCompletions(params: InlineCompletionsParams): Pro
 
         params.tracer?.({ error: error.toString() })
 
+        debug('getInlineCompletions:error', error.message, { verbose: error })
         if (isAbortError(error)) {
-            debug('getInlineCompletions:error', error.message, { verbose: error })
             return null
         }
 
@@ -137,9 +131,8 @@ async function doGetInlineCompletions({
     document,
     position,
     context,
+    docContext,
     promptChars,
-    maxPrefixChars,
-    maxSuffixChars,
     providerConfig,
     responsePercentage,
     prefixPercentage,
@@ -157,11 +150,6 @@ async function doGetInlineCompletions({
     tracer,
 }: InlineCompletionsParams): Promise<InlineCompletionsResult | null> {
     tracer?.({ params: { document, position, context } })
-
-    const docContext = getCurrentDocContext(document, position, maxPrefixChars, maxSuffixChars)
-    if (!docContext) {
-        return null
-    }
 
     // If we have a suffix in the same line as the cursor and the suffix contains any word
     // characters, do not attempt to make a completion. This means we only make completions if
@@ -235,7 +223,7 @@ async function doGetInlineCompletions({
     })
     tracer?.({ completers: completionProviders.map(({ options }) => options) })
 
-    CompletionLogger.networkRequestStarted(logId, contextResult?.logSummary ?? null)
+    CompletionLogger.networkRequestStarted(logId, contextResult?.logSummary)
 
     const reqContext: RequestParams = {
         document,
@@ -253,17 +241,19 @@ async function doGetInlineCompletions({
         tracer ? createCompletionProviderTracer(tracer) : undefined
     )
 
-    logCompletions(logId, completions, document, docContext, context, providerConfig, abortSignal)
+    const source =
+        cacheHit === 'hit'
+            ? InlineCompletionsResultSource.Cache
+            : cacheHit === 'hit-after-request-started'
+            ? InlineCompletionsResultSource.CacheAfterRequestStart
+            : InlineCompletionsResultSource.Network
+
+    CompletionLogger.loaded(logId)
 
     return {
         logId,
         items: completions,
-        source:
-            cacheHit === 'hit'
-                ? InlineCompletionsResultSource.Cache
-                : cacheHit === 'hit-after-request-started'
-                ? InlineCompletionsResultSource.CacheAfterRequestStart
-                : InlineCompletionsResultSource.Network,
+        source,
     }
 }
 
@@ -377,88 +367,4 @@ function createCompletionProviderTracer(
             result: data => tracer({ completionProviderCallResult: data }),
         }
     )
-}
-
-function logCompletions(
-    logId: string,
-    completions: InlineCompletionItem[],
-    document: vscode.TextDocument,
-    docContext: DocumentContext,
-    context: vscode.InlineCompletionContext,
-    providerConfig: ProviderConfig,
-    abortSignal: AbortSignal | undefined
-): void {
-    CompletionLogger.loaded(logId)
-
-    // There are these cases when a completion is being returned here but won't
-    // be displayed by VS Code.
-    //
-    // - When the abort signal was already triggered and a new completion
-    //   request was stared.
-    // - When the VS Code completion popup is open and we suggest a completion
-    //   that does not match the currently selected completion. For now we make
-    //   sure to not log these completions as displayed.
-    //   TODO: Take this into account when creating the completion prefix.
-    // - When no completions contains characters in the current line that are
-    //   not in the current line suffix. Since VS Code will try to merge
-    //   completion with the suffix, we have to do a per-character diff to test
-    //   this.
-    const isAborted = abortSignal ? abortSignal.aborted : false
-    const isMatchingPopupItem = completionMatchesPopupItem(completions, document, context)
-    const isMatchingSuffix = completionMatchesSuffix(completions, docContext, providerConfig)
-    const isVisible = !isAborted && isMatchingPopupItem && isMatchingSuffix
-
-    if (isVisible) {
-        if (completions.length > 0) {
-            CompletionLogger.suggested(logId)
-        } else {
-            CompletionLogger.noResponse(logId)
-        }
-    }
-}
-
-function completionMatchesPopupItem(
-    completions: InlineCompletionItem[],
-    document: vscode.TextDocument,
-    context: vscode.InlineCompletionContext
-): boolean {
-    if (context.selectedCompletionInfo) {
-        const currentText = document.getText(context.selectedCompletionInfo.range)
-        const selectedText = context.selectedCompletionInfo.text
-        if (completions.length > 0 && !(currentText + completions[0].insertText).startsWith(selectedText)) {
-            return false
-        }
-    }
-    return true
-}
-
-function completionMatchesSuffix(
-    completions: InlineCompletionItem[],
-    docContext: DocumentContext,
-    providerConfig: ProviderConfig
-): boolean {
-    // Models that support infilling do not replace an existing suffix but
-    // instead insert the completion only at the current cursor position. Thus,
-    // we do not need to compare the suffix
-    if (providerConfig.supportsInfilling) {
-        return true
-    }
-
-    const suffix = docContext.currentLineSuffix
-
-    for (const completion of completions) {
-        const insertion = completion.insertText
-        let j = 0
-        // eslint-disable-next-line @typescript-eslint/prefer-for-of
-        for (let i = 0; i < insertion.length; i++) {
-            if (insertion[i] === suffix[j]) {
-                j++
-            }
-        }
-        if (j === suffix.length) {
-            return true
-        }
-    }
-
-    return false
 }

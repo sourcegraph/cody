@@ -21,6 +21,7 @@ interface LoginProps {
     callbackScheme?: string
     appOS?: string
     appArch?: string
+    uiKindIsWeb?: boolean
     onLoginRedirect: (uri: string) => void
 }
 
@@ -47,6 +48,7 @@ export const Login: React.FunctionComponent<React.PropsWithChildren<LoginProps>>
     callbackScheme,
     appOS,
     appArch,
+    uiKindIsWeb,
     isAppInstalled = false,
     isAppRunning = false,
     onLoginRedirect,
@@ -80,8 +82,12 @@ export const Login: React.FunctionComponent<React.PropsWithChildren<LoginProps>>
 
     const NoAppConnect: React.FunctionComponent = () => (
         <section className={classNames(styles.section, styles.codyGradient)}>
-            <h2 className={styles.sectionHeader}>Cody App for {appOS} coming soon</h2>
-            <p className={styles.openMessage}>{APP_DESC.comingSoon}</p>
+            {!uiKindIsWeb && (
+                <>
+                    <h2 className={styles.sectionHeader}>Cody App for {appOS} coming soon</h2>
+                    <p className={styles.openMessage}>{APP_DESC.comingSoon}</p>
+                </>
+            )}
             <VSCodeButton
                 className={styles.button}
                 type="button"
@@ -104,7 +110,7 @@ export const Login: React.FunctionComponent<React.PropsWithChildren<LoginProps>>
             {authStatus && <ErrorContainer authStatus={authStatus} isApp={isApp} endpoint={endpoint} />}
             {/* Signin Sections */}
             <div className={styles.sectionsContainer}>
-                <AppConnect />
+                {!uiKindIsWeb && <AppConnect />}
                 {!isOSSupported && <NoAppConnect />}
                 <div className={styles.otherSignInOptions}>
                     <VSCodeButton

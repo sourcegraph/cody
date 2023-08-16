@@ -93,10 +93,10 @@ export const isCustomType = (type: CodyPromptType): boolean => type === 'user' |
 export const isNonCustomType = (type: CodyPromptType): boolean => type === 'recently used' || type === 'default'
 
 export const outputWrapper = `
-Here is the output of the \`{command}\` command:
-\`\`\`sh
+Here is the output of the \`{command}\` command, inside <output> tags.:
+<output>
 {output}
-\`\`\``
+</output>`
 
 export const notificationOnDisabled = async (isEnabled: boolean): Promise<boolean> => {
     if (isEnabled) {

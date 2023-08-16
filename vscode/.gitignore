@@ -3,3 +3,4 @@ out/
 .vscode-test/
 dist/
 .vscode-test-web/
+resources/wasm/

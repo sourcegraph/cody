@@ -1,5 +1,3 @@
-import { URI } from 'vscode-uri'
-
 import {
     ActiveTextEditor,
     ActiveTextEditorDiagnostic,
@@ -12,6 +10,7 @@ import {
 import { Agent } from './agent'
 import { DocumentOffsets } from './offsets'
 import { TextDocument } from './protocol'
+import * as vscode_shim from './vscode-shim'
 
 export class AgentEditor implements Editor {
     public controllers?: ActiveTextEditorViewControllers | undefined
@@ -28,15 +27,15 @@ export class AgentEditor implements Editor {
         return uri?.scheme === 'file' ? uri.fsPath : null
     }
 
-    public getWorkspaceRootUri(): URI | null {
-        return this.agent.workspaceRootUri
+    public getWorkspaceRootUri(): vscode_shim.Uri | null {
+        return this.agent.workspace.workspaceRootUri ?? null
     }
 
     private activeDocument(): TextDocument | undefined {
-        if (this.agent.activeDocumentFilePath === null) {
+        if (this.agent.workspace.activeDocumentFilePath === null) {
             return undefined
         }
-        return this.agent.documents.get(this.agent.activeDocumentFilePath)
+        return this.agent.workspace.getDocument(this.agent.workspace.activeDocumentFilePath)
     }
 
     public getActiveTextEditor(): ActiveTextEditor | null {
@@ -77,6 +76,18 @@ export class AgentEditor implements Editor {
             }
         }
         return this.getActiveTextEditorSelection()
+    }
+
+    public getActiveInlineChatTextEditor(): ActiveTextEditor | null {
+        throw new Error('Method not implemented.')
+    }
+
+    public getActiveInlineChatSelection(): ActiveTextEditorSelection | null {
+        throw new Error('Method not implemented.')
+    }
+
+    public getActiveTextEditorSelectionOrVisibleContent(): ActiveTextEditorSelection | null {
+        throw new Error('Method not implemented.')
     }
 
     public getActiveTextEditorDiagnosticsForRange(): ActiveTextEditorDiagnostic[] | null {

@@ -52,7 +52,10 @@ async function initCompletionsProvider(context: GetContextResult): Promise<Inlin
 
     const history = new VSCodeDocumentHistory()
 
-    const providerConfig = createProviderConfig(initialConfig, console.error, completionsClient)
+    const providerConfig = createProviderConfig(initialConfig, completionsClient)
+    if (!providerConfig) {
+        throw new Error('invalid completion config: no provider')
+    }
 
     const completionsProvider = new InlineCompletionItemProvider({
         providerConfig,
@@ -135,9 +138,11 @@ async function generateCompletionsForDataset(codeSamples: Sample[]): Promise<voi
                 undefined
             )
 
-            const completions = ('items' in completionItems ? completionItems.items : completionItems).map(item =>
-                typeof item.insertText === 'string' ? item.insertText : ''
-            )
+            const completions = completionItems
+                ? ('items' in completionItems ? completionItems.items : completionItems).map(item =>
+                      typeof item.insertText === 'string' ? item.insertText : ''
+                  )
+                : []
             console.error(`#${index}@i=${i}`, completions)
             codeSampleResults.push({
                 completions,

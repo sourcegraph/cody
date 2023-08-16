@@ -52,14 +52,16 @@ const workspaceItem: QuickPickItem = {
     description: '.vscode/cody.json',
 }
 
-const openIconButton = { iconPath: new ThemeIcon('go-to-file'), tooltip: 'open / create', id: 'open' }
+const openIconButton = { iconPath: new ThemeIcon('go-to-file'), tooltip: 'open/create', id: 'open' }
 const trashIconButton = { iconPath: new ThemeIcon('trash'), tooltip: 'delete', id: 'delete' }
+const gearIconButton = { iconPath: new ThemeIcon('gear'), tooltip: 'Configure Custom Commands...', id: 'config' }
 const backIconButton = QuickInputButtons.Back
 
 export const menu_buttons = {
     open: openIconButton,
     trash: trashIconButton,
     back: backIconButton,
+    gear: gearIconButton,
 }
 
 export const CustomCommandTypes = {
@@ -192,6 +194,7 @@ export const CustomCommandConfigMenuItems = [
     {
         kind: 0,
         label: 'Open User Settings (JSON)',
+        detail: 'Stored on your machine and usable across all your workspaces',
         id: 'open',
         type: 'user',
         description: '~/.vscode/cody.json',
@@ -200,6 +203,7 @@ export const CustomCommandConfigMenuItems = [
     {
         kind: 0,
         label: 'Open Workspace Settings (JSON)',
+        detail: 'Project-specific and shared with anyone using this workspace',
         id: 'open',
         type: 'workspace',
         description: '.vscode/cody.json',

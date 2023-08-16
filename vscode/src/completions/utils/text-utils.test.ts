@@ -20,7 +20,7 @@ describe('getNextNonEmptyLine', () => {
 describe('getPrevNonEmptyLine', () => {
     it.each([
         ['foo\nbar', 'foo'],
-        ['foo\nbar\nbaz', 'foo'],
+        ['foo\nbar\nbaz', 'bar'],
         ['foo\n\nbar', 'foo'],
         ['foo\n  \nbar', 'foo'],
         ['bar', ''],

@@ -36,23 +36,6 @@ export function getConfiguration(config: ConfigGetter): Configuration {
         debugRegex = new RegExp('.*')
     }
 
-    let autocompleteAdvancedProvider = config.get<
-        'anthropic' | 'unstable-codegen' | 'unstable-huggingface' | 'unstable-fireworks' | 'unstable-azure-openai'
-    >(CONFIG_KEY.autocompleteAdvancedProvider, 'anthropic')
-
-    if (
-        autocompleteAdvancedProvider !== 'anthropic' &&
-        autocompleteAdvancedProvider !== 'unstable-codegen' &&
-        autocompleteAdvancedProvider !== 'unstable-huggingface' &&
-        autocompleteAdvancedProvider !== 'unstable-fireworks' &&
-        autocompleteAdvancedProvider !== 'unstable-azure-openai'
-    ) {
-        autocompleteAdvancedProvider = 'anthropic'
-        void vscode.window.showInformationMessage(
-            `Unrecognized ${CONFIG_KEY.autocompleteAdvancedProvider}, defaulting to 'anthropic'`
-        )
-    }
-
     return {
         // NOTE: serverEndpoint is now stored in Local Storage instead but we will still keep supporting the one in confg
         // to use as fallback for users who do not have access to local storage
@@ -71,7 +54,7 @@ export function getConfiguration(config: ConfigGetter): Configuration {
         experimentalNonStop: config.get(CONFIG_KEY.experimentalNonStop, isTesting),
         experimentalCommandLenses: config.get(CONFIG_KEY.experimentalCommandLenses, false),
         experimentalEditorTitleCommandIcon: config.get(CONFIG_KEY.experimentalEditorTitleCommandIcon, false),
-        autocompleteAdvancedProvider,
+        autocompleteAdvancedProvider: config.get(CONFIG_KEY.autocompleteAdvancedProvider, 'anthropic'),
         autocompleteAdvancedServerEndpoint: config.get<string | null>(
             CONFIG_KEY.autocompleteAdvancedServerEndpoint,
             null
@@ -85,6 +68,12 @@ export function getConfiguration(config: ConfigGetter): Configuration {
         pluginsEnabled: config.get<boolean>(CONFIG_KEY.pluginsEnabled, false),
         pluginsDebugEnabled: config.get<boolean>(CONFIG_KEY.pluginsDebugEnabled, true),
         pluginsConfig: config.get(CONFIG_KEY.pluginsConfig, {}),
+
+        // Note: In spirit, we try to minimize agent-specific code paths in the VSC extension.
+        // We currently use this flag for the agent to provide more helpful error messages
+        // when something goes wrong, and to suppress event logging in the agent.
+        // Rely on this flag sparingly.
+        isRunningInsideAgent: config.get('cody.advanced.agent.running' as any, false),
     }
 }
 
