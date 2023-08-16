@@ -1,8 +1,21 @@
 import { ConfigurationUseContext } from '@sourcegraph/cody-shared/src/configuration'
 
+export interface Fact {
+    type: 'literal' | 'regex'
+    value: string
+}
+
+export function literalFacts(...values: string[]): Fact[] {
+    return values.map(value => ({ type: 'literal', value }))
+}
+
+export function regexpFacts(...regexps: string[]): Fact[] {
+    return regexps.map(regexp => ({ type: 'regex', value: regexp }))
+}
+
 export interface InteractionTestCase {
     question: string
-    facts: string[]
+    facts: Fact[]
     answerSummary: string
 }
 
@@ -25,7 +38,6 @@ export function initialize(): void {
     require('./sourcegraph')
     require('./zoekt')
     require('./codesearchai')
-    require('./hf-transformers')
     /* eslint-enable @typescript-eslint/no-require-imports */
 }
 
