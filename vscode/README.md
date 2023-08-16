@@ -1,83 +1,76 @@
-# Cody: code AI with codebase context
+# AI that knows your entire codebase
 
-Cody is a free, [open-source](https://github.com/sourcegraph/cody) AI coding assistant that can write and fix code, provide AI-generated autocomplete, and answer your coding questions. Cody uses context to answer questions while referencing your own codebase’s APIs and idioms.
+[Cody](https://cody.dev) is a free and [open-source](https://github.com/sourcegraph/cody) AI coding assistant that can write, understand and fix your code. Cody is powered by Sourcegraph’s code graph, and has knowledge of your entire codebase. Install Cody to get started with free AI-powered autocomplete, chat, commands, and more.
 
-While other AI coding assistants use limited context of local files and projects, Cody’s broader context of your codebase allows it to answer far more complex questions and write more cohesive code. For example, Cody can:
+## Autocomplete
 
-- Tell you about the layout of entire repositories
-- Find where functions are defined within a repository
-- Write code that calls your own APIs
+Cody autocompletes single lines, or whole functions, in any programming language, configuration file, or documentation. It’s powered by latest instant LLM models, for accuracy and performance.
 
-Cody is currently in Beta and free for individual use with reasonable per-user rate limits. Cody is also available for Sourcegraph Enterprise users ([see below for more information](#whats-the-difference-between-using-cody-for-free-and-cody-enterprise)).
+<!-- prettier-ignore: Uses <img> so we can fix width to 480px so all images are consistent width and look sharp @2x -->
+<img src="https://storage.googleapis.com/sourcegraph-assets/website/Product%20Animations/GIFS/cody-completions-may2023-optim.gif" width="480" alt="Cody autocomplete">
 
-See [cody.dev](https://cody.dev) for more info.
+## Chat
 
-## What can Cody do?
+Ask Cody questions in the chat view, or inline with code, and it will use Sourcegraph’s code graph to answer using knowledge of your entire codebase.
 
-- **Chat:** Ask Cody questions about your entire codebase. Cody will use semantic search to retrieve files from your codebase and use context from those files to answer your questions.
-- **Autocomplete:** Cody makes single-line and multi-line suggestions as you type, speeding up your coding and shortcutting the need for you to hunt down function and variable names as you type.
-- **Inline Chat:** Ask Cody to fix or refactor code from anywhere in a file.
-- **Commands:** Cody has quick commands for common actions. Simply highlight a code snippet and run a command, like “Document code,” “Explain code,” or “Generate Unit Tests.”
-- **Swappable LLMs:** Support for Anthropic Claude, Claude 2, and OpenAI GPT-4/3.5, with more coming soon.
-  - **Free LLM usage included** (currently Anthropic Claude 2/OpenAI GPT-4) for individual devs on both personal and work code.
+<!-- prettier-ignore: Uses <img> so we can fix width to 480px so all images are consistent width and look sharp @2x -->
+<img src="https://storage.googleapis.com/sourcegraph-assets/website/Product%20Animations/GIFS/cody_inline_June23-sm.gif" width="480" alt="Cody Inline Chat">
 
-## Demos
+<!-- prettier-ignore: Uses <img> so we can fix width to 480px so all images are consistent width and look sharp @2x -->
+<img src="https://storage.googleapis.com/sourcegraph-assets/website/Product%20Animations/GIFS/cody-chat-may2023-optim.gif" width="480" alt="Cody Chat">
 
-**Autocomplete:**
-
-> ![Example of using code autocomplete](https://storage.googleapis.com/sourcegraph-assets/website/Product%20Animations/GIFS/cody-completions-may2023-optim.gif)
-
-**Inline chat:**
-
-> <img src="https://storage.googleapis.com/sourcegraph-assets/website/Product%20Animations/GIFS/cody_inline_June23-sm.gif" width=600>
-
-**Codebase-wide chat:**
-
-> ![Example of chatting with Cody](https://storage.googleapis.com/sourcegraph-assets/website/Product%20Animations/GIFS/cody-chat-may2023-optim.gif)
-
-[More demos](https://cody.dev)
-
-## What makes Cody different from other code AI solutions?
-
-Cody uses context of your codebase to extend its capabilities. By using context from multiple repositories, Cody is able to give more accurate answers and generate more idiomatic code that is relevant to you.
-
-This context opens up unique use cases for Cody:
+And because Cody has access to the entire code graph, you can:
 
 - Ask Cody to generate an API call. Cody can gather context on your API schema to inform the code it writes.
 - Ask Cody to find where within your codebase a specific component is defined. Cody can retrieve and describe the exact files where that component is written.
+- Ask Cody questions that require an understanding of multiple files, such as how data is populated in a React app. Cody can find the React component definitions to understand what data is being passed and where it originates
+
+## Built-In Commands
+
+Cody has quick commands for common actions, such as adding code documentation, generating unit tests, and detecting code smells.
+
+(insert image of chat command menu)
+
+## Custom Commands
+
+There's also experimental support for adding your own custom commands, defined as JSON within your repository:
+
+(insert image of custom command)
+
+## Swappable LLMs
+
+Support for Anthropic Claude, Claude 2, and OpenAI GPT-4/3.5, with more coming soon.
+
+## Free Usage
+
+Cody is currently in beta, and includes free LLM usage for individual users on both personal and work code. While in beta, Cody is also available for free for all Sourcegraph Enterprise customers.
+
+## Programming Languages
+
+Cody works for any programming language because it uses LLMs trained on broad data. Cody works great with Python, Go, JavaScript, and TypeScript code.
+
+## Code Graph
+
+Cody is powered by Sourcegraph’s code graph, and uses context of your codebase to extend its capabilities. By using context from the entire repository, Cody is able to give more accurate answers and generate idiomatic code.
+
+For example:
+
+- Ask Cody to generate an API call. Cody can gather context on your API schema to inform the code it writes.
+- Ask Cody to find where in your codebase a specific component is defined. Cody can retrieve and describe the exact files where that component is written.
 - Ask Cody questions that require an understanding of multiple files. For example, ask Cody how frontend data is populated in a React app; Cody can find the React component definitions to understand what data is being passed and where it originates.
 
-## Language Support
+## Embeddings
 
-Cody works for any programming language because it uses LLMs trained on broad data. You may find that Cody provides higher-quality answers for certain languages or frameworks.
+Cody indexes your entire repository and generates embeddings, which are a vector representation of your entire codebase. Cody queries this embeddings database on-demand, and passes that data to the LLM as context. Embeddings make up one part of Sourcegraph’s code graph.
 
-We’ve used Cody extensively for Python, Go, JavaScript, and TypeScript code, and we’re always testing it in new ways. Have a language that Cody isn’t working well for? [Send us your feedback](https://github.com/sourcegraph/cody/discussions)!
+Embeddings for free Cody users are generated via the [Cody desktop app](https://docs.sourcegraph.com/app). For Cody Enterprise customers the embeddings are generated by your Sourcegraph Enterprise instance.
 
-## How does Cody get context from a codebase?
+## Cody Enterprise
 
-Cody uses embeddings to turn repositories into context that can be semantically searched for retrieval. Sourcegraph refers to the corpus of embeddings (along with other data) as the **code graph**.
+Cody Enterprise requires the use of a Sourcegraph Enterprise instance, and gives you access to AI coding tools across your entire organization.
 
-Cody generates your code graph in different ways based on your implementation. For free Cody users, the code graph is generated via the Cody desktop app. For Cody Enterprise customers, the code graph is generated via a Sourcegraph Enterprise instance.
+If you’re a Sourcegraph Enterprise customer and would like to try Cody Enterprise, contact your technical advisor. If you’d like to set up a trial, [contact us](https://about.sourcegraph.com/contact/request-info) to discuss pricing and options.
 
-## What’s the difference between using Cody for free and Cody Enterprise?
-
-### Using Cody for free
-
-Cody can be used by anyone for free (up to daily, per-user rate limits). Simply download the IDE extension and sign in to a Sourcegraph.com account to get started. This method can be used for personal or work projects.
-
-Free users can optionally download the Cody desktop application as well. The Cody app creates a code graph from your local repositories (up to 10 repositories). This code graph is used to feed context to Cody in the IDE extension, which provides greater context awareness for Cody.
-
-You can also use Cody’s IDE extension without the Cody app, but Cody’s context will be limited to the project open in the IDE.
-
-Learn more about the [Cody app](https://docs.sourcegraph.com/app).
-
-### Cody Enterprise
-
-Cody Enterprise is designed to connect to all of your organization's code hosts and repositories. This gives Cody a large amount of context for answering questions accurately and idiomatically.
-
-Cody Enterprise requires the use of a Sourcegraph Enterprise instance. The Sourcegraph server will generate the code graph of all your code to power Cody, and the Cody IDE extensions will connect directly to the Sourcegraph server. The Cody desktop application is not used for this implementation.
-
-If you’re a Sourcegraph Enterprise customer and would like to try Cody Enterprise, contact your technical advisor. If you’re new to Sourcegraph, you can [contact us](https://about.sourcegraph.com/contact/request-info) to discuss pricing and options.
 ## Feedback
 
 - [Issue tracker](https://github.com/sourcegraph/cody/issues)
@@ -87,4 +80,8 @@ If you’re a Sourcegraph Enterprise customer and would like to try Cody Enterpr
 
 ## Development
 
-Cody for VS Code is developed in the open-source (Apache 2) [sourcegraph/cody repository](https://github.com/sourcegraph/cody).
+Cody for VS Code is open source (Apache 2), and available in the [sourcegraph/cody repository](https://github.com/sourcegraph/cody) on GitHub.
+
+## More Information
+
+See [https://cody.dev/](https://cody.dev/) for demos, information and more.
