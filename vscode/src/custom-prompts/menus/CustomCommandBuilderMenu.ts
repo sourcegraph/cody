@@ -83,6 +83,7 @@ export class CustomCommandsBuilderMenu {
             title: 'Select the context to include with the prompt for the new command',
             placeHolder: 'Tip: Providing limited but precise context helps Cody provide more relevant answers',
             canPickMany: true,
+            ignoreFocusOut: true,
             onDidSelectItem: (item: QuickPickItem) => {
                 item.picked = !item.picked
             },
