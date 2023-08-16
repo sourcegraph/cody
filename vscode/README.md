@@ -81,4 +81,4 @@ Cody for VS Code is open source (Apache 2), and available in the [sourcegraph/co
 
 ## More Information
 
-See https://cody.dev/ for demos, information and more.
+See <https://cody.dev/> for demos, information and more.
