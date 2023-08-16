@@ -322,7 +322,7 @@
       {
         "command": "cody.status-bar.interacted",
         "category": "Cody",
-        "title": "Chat Settings",
+        "title": "Cody Settings",
         "group": "Cody",
         "icon": "$(settings-gear)",
         "when": "cody.activated"
