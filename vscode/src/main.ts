@@ -23,6 +23,7 @@ import { FixupController } from './non-stop/FixupController'
 import { showSetupNotification } from './notifications/setup-notification'
 import { AuthProvider } from './services/AuthProvider'
 import { createOrUpdateEventLogger } from './services/EventLogger'
+import { FeatureFlagProvider } from './services/FeatureFlagProvider'
 import { showFeedbackSupportQuickPick } from './services/FeedbackOptions'
 import { GuardrailsProvider } from './services/GuardrailsProvider'
 import { Comment, InlineController } from './services/InlineController'
@@ -139,6 +140,9 @@ const register = async (
     disposables.push(contextProvider)
     await contextProvider.init()
 
+    const featureFlagProvider = new FeatureFlagProvider(sourcegraphGraphQLAPIClient)
+    await featureFlagProvider.init()
+
     // Shared configuration that is required for chat views to send and receive messages
     const messageProviderOptions: MessageProviderOptions = {
         chat: chatClient,
@@ -216,9 +220,6 @@ const register = async (
 
     const statusBar = createStatusBar()
 
-    const featureFlags = await sourcegraphGraphQLAPIClient.getEvaluatedFeatureFlags()
-    // TODO: use feature flags as logs argument where needed
-
     disposables.push(
         // Inline Chat Provider
         vscode.commands.registerCommand('cody.comment.add', async (comment: vscode.CommentReply) => {
@@ -291,6 +292,10 @@ const register = async (
         vscode.commands.registerCommand('cody.auth.signin', () => authProvider.signinMenu()),
         vscode.commands.registerCommand('cody.auth.signout', () => authProvider.signoutMenu()),
         vscode.commands.registerCommand('cody.auth.support', () => showFeedbackSupportQuickPick()),
+        vscode.commands.registerCommand('cody.auth.sync', () => {
+            void contextProvider.syncAuthStatus()
+            void featureFlagProvider.syncAuthStatus()
+        }),
         // Commands
         vscode.commands.registerCommand('cody.interactive.clear', async () => {
             await sidebarChatProvider.clearAndRestartSession()
@@ -417,7 +422,13 @@ const register = async (
             completionsProvider.dispose()
         }
 
-        completionsProvider = createCompletionsProvider(config, completionsClient, statusBar, contextProvider)
+        completionsProvider = createCompletionsProvider(
+            config,
+            completionsClient,
+            statusBar,
+            contextProvider,
+            featureFlagProvider
+        )
     }
     vscode.workspace.onDidChangeConfiguration(event => {
         if (event.affectsConfiguration('cody.autocomplete')) {
@@ -462,7 +473,8 @@ function createCompletionsProvider(
     config: Configuration,
     completionsClient: SourcegraphCompletionsClient,
     statusBar: CodyStatusBar,
-    contextProvider: ContextProvider
+    contextProvider: ContextProvider,
+    featureFlagProvider: FeatureFlagProvider
 ): vscode.Disposable {
     const disposables: vscode.Disposable[] = []
 
@@ -476,6 +488,7 @@ function createCompletionsProvider(
             getCodebaseContext: () => contextProvider.context,
             isEmbeddingsContextEnabled: config.autocompleteAdvancedEmbeddings,
             completeSuggestWidgetSelection: config.autocompleteExperimentalCompleteSuggestWidgetSelection,
+            featureFlagProvider,
         })
 
         disposables.push(

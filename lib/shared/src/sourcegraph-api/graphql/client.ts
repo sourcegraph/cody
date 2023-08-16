@@ -448,11 +448,7 @@ export class SourcegraphGraphQLAPIClient {
         }).then(response => extractDataOrError(response, data => data.isContextRequiredForChatQuery))
     }
 
-    public async getEvaluatedFeatureFlags(): Promise<Record<string, boolean> | null | Error> {
-        if (!this.isDotCom()) {
-            return null
-        }
-
+    public async getEvaluatedFeatureFlags(): Promise<Record<string, boolean> | Error> {
         return this.fetchSourcegraphAPI<APIResponse<EvaluatedFeatureFlagsResponse>>(GET_FEATURE_FLAGS_QUERY, {}).then(
             response =>
                 extractDataOrError(response, data =>
