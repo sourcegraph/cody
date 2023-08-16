@@ -18,7 +18,8 @@ export function getLensesForTask(task: FixupTask): vscode.CodeLens[] {
             const title = getReadyLens(codeLensRange, task.id)
             const apply = getApplyLens(codeLensRange, task.id)
             const diff = getDiffLens(codeLensRange, task.id)
-            return [title, apply, diff]
+            const discard = getDiscardLens(codeLensRange, task.id)
+            return [title, apply, diff, discard]
         }
         case CodyTaskState.applying: {
             const title = getApplyingLens(codeLensRange)
