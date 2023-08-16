@@ -12,6 +12,7 @@ import {
     CURRENT_USER_ID_AND_VERIFIED_EMAIL_QUERY,
     CURRENT_USER_ID_QUERY,
     GET_CODY_CONTEXT_QUERY,
+    GET_FEATURE_FLAGS_QUERY,
     IS_CONTEXT_REQUIRED_QUERY,
     LEGACY_SEARCH_EMBEDDINGS_QUERY,
     LOG_EVENT_MUTATION,
@@ -141,6 +142,15 @@ export interface CodyLLMSiteConfiguration {
 
 interface IsContextRequiredForChatQueryResponse {
     isContextRequiredForChatQuery: boolean
+}
+
+interface EvaluatedFeatureFlag {
+    name: string
+    value: boolean
+}
+
+interface EvaluatedFeatureFlagsResponse {
+    evaluatedFeatureFlags: EvaluatedFeatureFlag[]
 }
 
 function extractDataOrError<T, R>(response: APIResponse<T> | Error, extract: (data: T) => R): R | Error {
@@ -335,11 +345,14 @@ export class SourcegraphGraphQLAPIClient {
             console.log(`not logging ${event.event} in test mode`)
             return {}
         }
-        if (this.config.serverEndpoint === this.dotcomUrl) {
+        if (this.isDotCom()) {
             return this.sendEventLogRequestToDotComAPI(event)
         }
         const responses = await Promise.all([
             this.sendEventLogRequestToAPI(event),
+
+            // NOTE(taras-yemets): we log all the events to the dotcom API as well.
+            // Keep in mind when calculating in variant and in control user events metrics.
             this.sendEventLogRequestToDotComAPI(event),
         ])
         if (isError(responses[0]) && isError(responses[1])) {
@@ -427,6 +440,25 @@ export class SourcegraphGraphQLAPIClient {
         return this.fetchSourcegraphAPI<APIResponse<IsContextRequiredForChatQueryResponse>>(IS_CONTEXT_REQUIRED_QUERY, {
             query,
         }).then(response => extractDataOrError(response, data => data.isContextRequiredForChatQuery))
+    }
+
+    public async getEvaluatedFeatureFlags(): Promise<Record<string, boolean> | null | Error> {
+        if (!this.isDotCom()) {
+            return null
+        }
+
+        return this.fetchSourcegraphAPI<APIResponse<EvaluatedFeatureFlagsResponse>>(GET_FEATURE_FLAGS_QUERY, {}).then(
+            response =>
+                extractDataOrError(response, data =>
+                    data.evaluatedFeatureFlags.reduce(
+                        (acc, { name, value }) => {
+                            acc[name] = value
+                            return acc
+                        },
+                        {} as Record<string, boolean>
+                    )
+                )
+        )
     }
 
     private fetchSourcegraphAPI<T>(query: string, variables: Record<string, any> = {}): Promise<T | Error> {

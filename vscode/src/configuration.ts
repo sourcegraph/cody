@@ -90,6 +90,8 @@ function sanitizeCodebase(codebase: string | undefined): string {
 }
 
 function sanitizeServerEndpoint(serverEndpoint: string): string {
+    const trailingSlashRegexp = /\/$/
+
     if (!serverEndpoint) {
         // TODO(philipp-spiess): Find out why the config is not loaded properly in the integration
         // tests.
@@ -98,9 +100,8 @@ function sanitizeServerEndpoint(serverEndpoint: string): string {
             return 'http://localhost:49300/'
         }
 
-        return DOTCOM_URL.href
+        return DOTCOM_URL.href.replace(trailingSlashRegexp, '')
     }
-    const trailingSlashRegexp = /\/$/
     return serverEndpoint.trim().replace(trailingSlashRegexp, '')
 }
 

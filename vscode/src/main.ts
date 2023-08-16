@@ -112,6 +112,7 @@ const register = async (
     const config = getConfiguration(workspaceConfig)
 
     const {
+        sourcegraphGraphQLAPIClient,
         intentDetector,
         codebaseContext: initialCodebaseContext,
         chatClient,
@@ -214,6 +215,9 @@ const register = async (
     }
 
     const statusBar = createStatusBar()
+
+    const featureFlags = await sourcegraphGraphQLAPIClient.getEvaluatedFeatureFlags()
+    // TODO: use feature flags as logs argument where needed
 
     disposables.push(
         // Inline Chat Provider
