@@ -320,6 +320,14 @@
         "icon": "$(history)"
       },
       {
+        "command": "cody.status-bar.interacted",
+        "category": "Cody",
+        "title": "Chat Settings",
+        "group": "Cody",
+        "icon": "$(settings-gear)",
+        "when": "cody.activated"
+      },
+      {
         "command": "cody.comment.add",
         "title": "Ask Cody",
         "category": "Cody Inline Chat",
@@ -612,6 +620,11 @@
           "command": "cody.history",
           "when": "view == cody.chat && cody.activated",
           "group": "navigation@2"
+        },
+        {
+          "command": "cody.status-bar.interacted",
+          "when": "view == cody.chat && cody.activated",
+          "group": "navigation@4"
         },
         {
           "command": "cody.feedback",
