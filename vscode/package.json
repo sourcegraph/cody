@@ -647,11 +647,6 @@
           "group": "9_cody@0"
         },
         {
-          "command": "cody.settings.extension",
-          "when": "view == cody.chat",
-          "group": "8_cody@1"
-        },
-        {
           "command": "cody.fixup.apply-all",
           "when": "cody.nonstop.fixups.enabled && view == cody.fixup.tree.view && cody.activated",
           "group": "navigation"
