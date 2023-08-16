@@ -18,8 +18,8 @@ interface CompletionEvent {
         contextSummary?: ContextSummary
         source?: string
         id: string
-        lines?: number
-        chars?: number
+        lineCount?: number
+        charCount?: number
     }
     // The timestamp when the completion request started
     startedAt: number
@@ -114,10 +114,10 @@ export function suggested(id: string, source: string, completion: InlineCompleti
     }
 
     if (!event.suggestedAt) {
-        const { lines, chars } = linesAndChars(completion)
+        const { lineCount, charCount } = lineAndCharCount(completion)
         event.params.source = source
-        event.params.lines = lines
-        event.params.chars = chars
+        event.params.lineCount = lineCount
+        event.params.charCount = charCount
         event.suggestedAt = performance.now()
     }
 }
@@ -149,7 +149,7 @@ export function accept(id: string, completion: InlineCompletionItem): void {
         ...completionEvent.params,
         // We overwrite the existing lines and chars in the params and rely on the accepted one in
         // case the popover is used to insert a completion different from the one that was suggested
-        ...linesAndChars(completion),
+        ...lineAndCharCount(completion),
         otherCompletionProviderEnabled: otherCompletionProviderEnabled(),
     })
 }
@@ -223,8 +223,8 @@ function otherCompletionProviderEnabled(): boolean {
     return !!otherCompletionProviders.find(id => vscode.extensions.getExtension(id)?.isActive)
 }
 
-function linesAndChars({ insertText }: InlineCompletionItem): { lines: number; chars: number } {
-    const lines = insertText.split(/\r\n|\r|\n/).length
-    const chars = insertText.length
-    return { lines, chars }
+function lineAndCharCount({ insertText }: InlineCompletionItem): { lineCount: number; charCount: number } {
+    const lineCount = insertText.split(/\r\n|\r|\n/).length
+    const charCount = insertText.length
+    return { lineCount, charCount }
 }
