@@ -139,10 +139,10 @@ export interface ExtensionConfiguration {
     serverEndpoint: string
     accessToken: string
     customHeaders: Record<string, string>
-    autocompleteAdvancedProvider: string
-    autocompleteAdvancedServerEndpoint: string | null
-    autocompleteAdvancedAccessToken: string | null
-    autocompleteAdvancedEmbeddings: boolean
+    autocompleteAdvancedProvider?: string
+    autocompleteAdvancedServerEndpoint?: string | null
+    autocompleteAdvancedAccessToken?: string | null
+    autocompleteAdvancedEmbeddings?: boolean
     debug?: boolean
     verboseDebug?: boolean
     codebase?: string
