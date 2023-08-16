@@ -188,7 +188,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
         }
 
         if (result.items.length > 0) {
-            CompletionLogger.suggested(result.logId, InlineCompletionsResultSource[result.source])
+            CompletionLogger.suggested(result.logId, InlineCompletionsResultSource[result.source], result.items[0])
         } else {
             CompletionLogger.noResponse(result.logId)
         }
@@ -203,10 +203,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
         // log id is never reused if the completion is accepted.
         this.lastCandidate = undefined
 
-        const lines = completion.insertText.split(/\r\n|\r|\n/).length
-        const chars = completion.insertText.length
-
-        CompletionLogger.accept(logId, lines, chars)
+        CompletionLogger.accept(logId, completion)
     }
 
     /**
