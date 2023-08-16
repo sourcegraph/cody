@@ -113,8 +113,8 @@ export function createStatusBar(): CodyStatusBar {
                 ...FeedbackOptionItems,
             ],
             {
-                title: 'Cody Settings Menu',
-                placeHolder: 'Select an option',
+                title: 'Cody Settings',
+                placeHolder: 'Choose an option',
                 matchOnDescription: true,
             }
         )

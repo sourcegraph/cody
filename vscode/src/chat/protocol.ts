@@ -15,7 +15,7 @@ export type WebviewMessage =
     | { command: 'ready' }
     | { command: 'initialized' }
     | { command: 'event'; eventName: string; properties: TelemetryEventProperties | undefined } // new event log internal API (use createWebviewTelemetryService wrapper)
-    | { command: 'submit'; text: string; submitType: 'user' | 'suggestion' }
+    | { command: 'submit'; text: string; submitType: 'user' | 'suggestion' | 'example' }
     | { command: 'executeRecipe'; recipe: RecipeID }
     | { command: 'removeHistory' }
     | { command: 'restoreHistory'; chatID: string }
@@ -23,7 +23,8 @@ export type WebviewMessage =
     | { command: 'links'; value: string }
     | { command: 'openFile'; filePath: string }
     | { command: 'edit'; text: string }
-    | { command: 'insert'; text: string }
+    | { command: 'insert'; eventType: 'Button' | 'Keydown'; text: string }
+    | { command: 'copy'; eventType: 'Button' | 'Keydown'; text: string }
     | {
           command: 'auth'
           type: 'signin' | 'signout' | 'support' | 'app' | 'callback'

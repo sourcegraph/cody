@@ -74,8 +74,7 @@ export const ConfigFileName = {
     vscode: '.vscode/cody.json',
 }
 
-// Default to include selection context only
+// Default to not include codebase context
 export const defaultCodyPromptContext: CodyPromptContext = {
     codebase: false,
-    selection: true,
 }

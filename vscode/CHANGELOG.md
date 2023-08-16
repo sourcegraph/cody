@@ -8,17 +8,40 @@ Starting from `0.2.0`, Cody is using `major.EVEN_NUMBER.patch` for release versi
 
 ### Added
 
-- Adds experimental autocomplete based on the currently selection in the suggest widget when `cody.autocomplete.experimental.completeSuggestWidgetSelection` is enabled. [pull/636](https://github.com/sourcegraph/cody/pull/636)
+- Cody Commands: New `/smell` command, an improved version of the old `Find Code Smell` recipe. [pull/602](https://github.com/sourcegraph/cody/pull/602)
+- Cody Commands: Display of clickable file path for current selection in chat view after executing a command. [pull/602](https://github.com/sourcegraph/cody/pull/602)
+- Add a settings button to Cody pane header. [pull/701](https://github.com/sourcegraph/cody/pull/701)
+- Compute suggestions based on the currently selected option in the suggest widget when `cody.autocomplete.experimental.completeSuggestWidgetSelection` is enabled. [pull/636](https://github.com/sourcegraph/cody/pull/636)
+
+### Fixed
+
+- Inline Chat: Fix issue where state was not being set correctly, causing Cody Commands to use the selection range from the last created Inline Chat instead of the current selection. [pull/602](https://github.com/sourcegraph/cody/pull/602)
+- Cody Commands: Commands that use the current file as context now correctly generate context message for the current file instead of using codebase context generated from current selection. [pull/683](https://github.com/sourcegraph/cody/pull/683)
+
+### Changed
+
+- `Explain Code` command now includes visible content of the current file when no code is selected. [pull/602](https://github.com/sourcegraph/cody/pull/602)
+- Cody Commands: Show errors in chat view instead of notification windows. [pull/602](https://github.com/sourcegraph/cody/pull/602)
+- Cody Commands: Match commands on description in Cody menu [pull/702](https://github.com/sourcegraph/cody/pull/702)
+- Cody Commands: Don't require Esc to dismiss Cody menu. [pull/700](https://github.com/sourcegraph/cody/pull/700)
+
+## [0.6.7]
+
+### Added
+
+- Include token count for code generated and button click events. [pull/675](https://github.com/sourcegraph/cody/pull/675)
 
 ### Fixed
 
 ### Changed
 
+- Include the number of accepted characters per autocomplete suggestion. [pull/674](https://github.com/sourcegraph/cody/pull/674)
+
 ## [0.6.6]
 
 ### Added
 
-- Chat Commands: Add tab-to-complete behavior. [pull/606](https://github.com/sourcegraph/cody/pull/606)
+- Cody Commands: Add tab-to-complete & enter-to-complete behavior. [pull/606](https://github.com/sourcegraph/cody/pull/606)
 - Option to toggle `cody.experimental.editorTitleCommandIcon` setting through status bar. [pull/611](https://github.com/sourcegraph/cody/pull/611)
 - New walkthrough for Cody Commands. [pull/648](https://github.com/sourcegraph/cody/pull/648)
 
@@ -33,9 +56,8 @@ Starting from `0.2.0`, Cody is using `major.EVEN_NUMBER.patch` for release versi
 
 ### Changed
 
-- Removed beta labels from autocorrect and inine chat features. [pull/605](https://github.com/sourcegraph/cody/pull/605)
+- Removed beta labels from Autocomplete and Inline Chat features. [pull/605](https://github.com/sourcegraph/cody/pull/605)
 - Update shortcut for Cody Commands to `alt` + `c` due to conflict with existing keybinding for `fixup`. [pull/648](https://github.com/sourcegraph/cody/pull/648)
-- Removed beta labels from autocorrect and inline chat features. [pull/605](https://github.com/sourcegraph/cody/pull/605)
 
 ## [0.6.5]
 

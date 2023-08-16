@@ -43,9 +43,11 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
             case 'edit':
                 this.transcript.removeLastInteraction()
                 await this.onHumanMessageSubmitted(message.text, 'user')
+                this.telemetryService.log('CodyVSCodeExtension:editChatButton:clicked')
                 break
             case 'abort':
                 await this.abortCompletion()
+                this.telemetryService.log('CodyVSCodeExtension:abortButton:clicked', { source: 'sidebar' })
                 break
             case 'executeRecipe':
                 await this.setWebviewView('chat')
@@ -67,7 +69,10 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
                 await vscode.commands.executeCommand(`cody.auth.${message.type}`)
                 break
             case 'insert':
-                await this.insertAtCursor(message.text)
+                await this.handleInsertAtCursor(message.text)
+                break
+            case 'copy':
+                await this.handleCopiedCode(message.text, message.eventType)
                 break
             case 'event':
                 this.telemetryService.log(message.eventName, message.properties)
@@ -89,6 +94,7 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
                 break
             case 'reload':
                 await this.authProvider.reloadAuthStatus()
+                this.telemetryService.log('CodyVSCodeExtension:authReloadButton:clicked')
                 break
             case 'openFile':
                 await this.openFilePath(message.filePath)
@@ -102,13 +108,13 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
         }
     }
 
-    private async onHumanMessageSubmitted(text: string, submitType: 'user' | 'suggestion'): Promise<void> {
+    private async onHumanMessageSubmitted(text: string, submitType: 'user' | 'suggestion' | 'example'): Promise<void> {
         debug('ChatViewProvider:onHumanMessageSubmitted', '', { verbose: { text, submitType } })
+        this.telemetryService.log('CodyVSCodeExtension:chat:submitted', { source: 'sidebar' })
         if (submitType === 'suggestion') {
             this.telemetryService.log('CodyVSCodeExtension:chatPredictions:used')
         }
         if (text === '/') {
-            this.telemetryService.log('CodyVSCodeExtension:custom-command-menu:clicked')
             void vscode.commands.executeCommand('cody.action.commands.menu', true)
             return
         }
@@ -123,7 +129,7 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
      * Process custom command click
      */
     private async onCustomPromptClicked(title: string, commandType: CodyPromptType = 'user'): Promise<void> {
-        this.telemetryService.log('CodyVSCodeExtension:custom-command:clicked')
+        this.telemetryService.log('CodyVSCodeExtension:command:customMenu:clicked')
         debug('ChatViewProvider:onCustomPromptClicked', title)
         if (!this.isCustomCommandAction(title)) {
             await this.setWebviewView('chat')
@@ -175,20 +181,42 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
     }
 
     /**
-     * Insert text at cursor position
-     * Replace selection if there is one
+     * Handles insert event to insert text from code block at cursor position
+     * Replace selection if there is one and then log insert event
      * Note: Using workspaceEdit instead of 'editor.action.insertSnippet' as the later reformats the text incorrectly
      */
-    private async insertAtCursor(text: string): Promise<void> {
+    private async handleInsertAtCursor(text: string): Promise<void> {
         const selectionRange = vscode.window.activeTextEditor?.selection
         const editor = vscode.window.activeTextEditor
         if (!editor || !selectionRange) {
             return
         }
+
         const edit = new vscode.WorkspaceEdit()
         // trimEnd() to remove new line added by Cody
         edit.replace(editor.document.uri, selectionRange, text.trimEnd())
         await vscode.workspace.applyEdit(edit)
+
+        // Log insert event
+        const op = 'insert'
+        const eventName = op + 'Button'
+        this.editor.controllers.inline?.setLastCopiedCode(text, eventName)
+    }
+
+    /**
+     * Handles copying code and detecting a paste event.
+     *
+     * @param text - The text from code block when copy event is triggered
+     * @param eventType - Either 'Button' or 'Keydown'
+     */
+    private async handleCopiedCode(text: string, eventType: 'Button' | 'Keydown'): Promise<void> {
+        // If it's a Button event, then the text is already passed in from the whole code block
+        const copiedCode = eventType === 'Button' ? text : await vscode.env.clipboard.readText()
+        const eventName = eventType === 'Button' ? 'copyButton' : 'keyDown:Copy'
+        // Send to Inline Controller for tracking
+        if (copiedCode) {
+            this.editor.controllers.inline?.setLastCopiedCode(copiedCode, eventName)
+        }
     }
 
     protected handleEnabledPlugins(plugins: string[]): void {

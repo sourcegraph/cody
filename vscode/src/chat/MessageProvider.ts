@@ -4,8 +4,10 @@ import { BotResponseMultiplexer } from '@sourcegraph/cody-shared/src/chat/bot-re
 import { ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
 import { getPreamble } from '@sourcegraph/cody-shared/src/chat/preamble'
 import { CodyPrompt, CodyPromptType } from '@sourcegraph/cody-shared/src/chat/prompts'
+import { newInteraction } from '@sourcegraph/cody-shared/src/chat/prompts/utils'
 import { Recipe, RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 import { Transcript } from '@sourcegraph/cody-shared/src/chat/transcript'
+import { Interaction } from '@sourcegraph/cody-shared/src/chat/transcript/interaction'
 import { ChatHistory, ChatMessage, UserLocalHistory } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { reformatBotMessage } from '@sourcegraph/cody-shared/src/chat/viewHelpers'
 import { annotateAttribution, Guardrails } from '@sourcegraph/cody-shared/src/guardrails'
@@ -26,6 +28,7 @@ import { LocalStorage } from '../services/LocalStorageProvider'
 import { TestSupport } from '../test-support'
 
 import { ContextProvider } from './ContextProvider'
+import { countGeneratedCode } from './utils'
 
 /**
  * The problem with a token limit for the prompt is that we can only
@@ -136,12 +139,14 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         this.handleSuggestions([])
         this.sendTranscript()
         this.sendHistory()
+        this.telemetryService.log('CodyVSCodeExtension:chatReset:executed')
     }
 
     public async clearHistory(): Promise<void> {
         MessageProvider.chatHistory = {}
         MessageProvider.inputHistory = []
         await this.localStorage.removeChatHistory()
+        this.telemetryService.log('CodyVSCodeExtension:clearChatHistoryButton:clicked')
     }
 
     /**
@@ -155,6 +160,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         await this.transcript.toJSON()
         this.sendTranscript()
         this.sendHistory()
+        this.telemetryService.log('CodyVSCodeExtension:restoreChatHistoryButton:clicked')
     }
 
     private sendEnabledPlugins(plugins: string[]): void {
@@ -192,6 +198,10 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
                     this.transcript.addAssistantResponse(text || '', displayText)
                 }
                 await this.onCompletionEnd()
+                // Count code generated from response
+                const codeCount = countGeneratedCode(text)
+                const op = codeCount ? 'hasCode' : 'noCode'
+                this.telemetryService.log('CodyVSCodeExtension:chatResponse:' + op, codeCount || {})
             },
         })
 
@@ -355,6 +365,11 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         if (!interaction) {
             return
         }
+        const errorMsg = interaction?.getAssistantMessage()?.error
+        if (errorMsg !== undefined) {
+            await this.addCustomInteraction(errorMsg, '', interaction)
+            return
+        }
         this.isMessageInProgress = true
         this.transcript.addInteraction(interaction)
 
@@ -504,25 +519,24 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
             case 'menu':
                 await this.editor.controllers.command?.menu('custom')
                 await this.sendCodyCommands()
-                this.telemetryService.log('CodyVSCodeExtension:command:menu:opened')
                 break
             case 'add':
                 if (!type) {
                     break
                 }
                 await this.editor.controllers.command?.config('add', type)
-                this.telemetryService.log('CodyVSCodeExtension:command:addCommand')
+                this.telemetryService.log('CodyVSCodeExtension:addCommandButton:clicked')
                 break
         }
         // Get prompt details from controller by title then execute prompt's command
         const promptText = this.editor.controllers.command?.find(title)
         await this.editor.controllers.command?.get('command')
+        debug('executeCustomCommand:starting', title)
         if (!promptText) {
-            debug('executeCustomCommand:noPrompt', title)
             return
         }
         await this.executeRecipe('custom-prompt', promptText)
-        this.telemetryService.log(`CodyVSCodeExtension:command:${title}:executed`)
+        this.telemetryService.log('CodyVSCodeExtension:command:started', { source: 'menu' })
         const starter = (await this.editor.controllers.command?.getCustomConfig())?.starter
         if (starter) {
             this.telemetryService.log('CodyVSCodeExtension:command:customStarter:applied')
@@ -539,34 +553,69 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
             return { text, recipeId }
         }
         const commandKey = text.split(' ')[0].replace('/', '')
-        this.telemetryService.log(`CodyVSCodeExtension:command:${commandKey}:filtering`)
         switch (true) {
             case text === '/':
-                return vscode.commands.executeCommand('cody.action.commands.menu')
+                return vscode.commands.executeCommand('cody.action.commands.menu', 'sidebar')
             case text === '/commands-settings':
+                this.telemetryService.log('CodyVSCodeExtension:command:configMenuButton:clicked', { source: 'sidebar' })
                 return vscode.commands.executeCommand('cody.settings.commands')
             case /^\/o(pen)?\s/.test(text) && this.editor.controllers.command !== undefined:
                 // open the user's ~/.vscode/cody.json file
                 await this.editor.controllers.command?.open(text.split(' ')[1])
+                this.telemetryService.log('CodyVSCodeExtension:command:openFile:executed')
                 return null
             case /^\/r(eset)?$/.test(text):
                 await this.clearAndRestartSession()
+                this.telemetryService.log('CodyVSCodeExtension:command:resetChat:executed')
                 return null
             case /^\/s(earch)?\s/.test(text):
                 return { text, recipeId: 'context-search' }
             case /^\/f(ix)?\s.*$/.test(text):
                 return { text, recipeId: 'fixup' }
-            case /^\/(explain|doc|test)$/.test(text):
+            case /^\/(explain|doc|test|smell)$/.test(text):
+                this.telemetryService.log(`CodyVSCodeExtension:command:${commandKey}:called`, {
+                    source: 'chat',
+                })
             default: {
+                if (!this.editor.getActiveTextEditor()?.filePath) {
+                    await this.addCustomInteraction('Command failed. Please open a file and try again.', text)
+                    return null
+                }
                 const promptText = this.editor.controllers.command?.find(text, true)
                 await this.editor.controllers.command?.get('command')
                 if (promptText) {
-                    this.telemetryService.log(`CodyVSCodeExtension:command:${commandKey}:executing`)
                     return { text: promptText, recipeId: 'custom-prompt' }
                 }
-                return { text, recipeId }
+                // Inline chat has its own filter for slash commands
+                if (recipeId === 'inline-chat') {
+                    return { text, recipeId }
+                }
+                // If no command found, send error message to view
+                await this.addCustomInteraction(`__${text}__ is not a valid command`, text)
+                return null
             }
         }
+    }
+
+    /**
+     * Adds a custom interaction to the transcript.
+     *
+     * This method adds a new Interaction with the given assistant response and human input to the transcript.
+     * It then sends the updated transcript, checks for transcript errors, and saves the transcript to the chat history
+     */
+    private async addCustomInteraction(
+        assistantResponse: string,
+        humanInput: string,
+        interaction?: Interaction
+    ): Promise<void> {
+        const customInteraction = await newInteraction({
+            displayText: humanInput,
+            assistantDisplayText: assistantResponse,
+        })
+        this.transcript.addInteraction(interaction || customInteraction)
+        this.sendTranscript()
+        this.handleTranscriptErrors(true)
+        await this.saveTranscriptToChatHistory()
     }
 
     /**
@@ -608,6 +657,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         delete MessageProvider.chatHistory[chatID]
         await this.localStorage.deleteChatHistory(chatID)
         this.sendHistory()
+        this.telemetryService.log('CodyVSCodeExtension:deleteChatHistoryButton:clicked')
     }
 
     /**

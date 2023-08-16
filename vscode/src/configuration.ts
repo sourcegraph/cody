@@ -68,6 +68,12 @@ export function getConfiguration(config: ConfigGetter): Configuration {
         pluginsEnabled: config.get<boolean>(CONFIG_KEY.pluginsEnabled, false),
         pluginsDebugEnabled: config.get<boolean>(CONFIG_KEY.pluginsDebugEnabled, true),
         pluginsConfig: config.get(CONFIG_KEY.pluginsConfig, {}),
+
+        // Note: In spirit, we try to minimize agent-specific code paths in the VSC extension.
+        // We currently use this flag for the agent to provide more helpful error messages
+        // when something goes wrong, and to suppress event logging in the agent.
+        // Rely on this flag sparingly.
+        isRunningInsideAgent: config.get('cody.advanced.agent.running' as any, false),
     }
 }
 

@@ -21,9 +21,11 @@ interface ChatProps extends ChatClassNames {
     setFormInput: (input: string) => void
     inputHistory: string[]
     setInputHistory: (history: string[]) => void
-    onSubmit: (text: string, submitType: 'user' | 'suggestion') => void
+    onSubmit: (text: string, submitType: 'user' | 'suggestion' | 'example') => void
     contextStatusComponent?: React.FunctionComponent<any>
     contextStatusComponentProps?: any
+    gettingStartedComponent?: React.FunctionComponent<any>
+    gettingStartedComponentProps?: any
     textAreaComponent: React.FunctionComponent<ChatUITextAreaProps>
     submitButtonComponent: React.FunctionComponent<ChatUISubmitButtonProps>
     suggestionButtonComponent?: React.FunctionComponent<ChatUISuggestionButtonProps>
@@ -101,7 +103,7 @@ export interface FeedbackButtonsProps {
 
 // TODO: Rename to CodeBlockActionsProps
 export interface CopyButtonProps {
-    copyButtonOnSubmit: (text: string, insert?: boolean) => void
+    copyButtonOnSubmit: (text: string, insert?: boolean, event?: 'Keydown' | 'Button') => void
 }
 
 export interface ChatCommandsProps {
@@ -154,6 +156,8 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
     needsEmailVerificationNotice: NeedsEmailVerificationNotice,
     contextStatusComponent: ContextStatusComponent,
     contextStatusComponentProps = {},
+    gettingStartedComponent: GettingStartedComponent,
+    gettingStartedComponentProps = {},
     abortMessageInProgressComponent: AbortMessageInProgressButton,
     onAbortMessageInProgress = () => {},
     isCodyEnabled,
@@ -207,7 +211,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
     )
 
     const submitInput = useCallback(
-        (input: string, submitType: 'user' | 'suggestion'): void => {
+        (input: string, submitType: 'user' | 'suggestion' | 'example'): void => {
             if (messageInProgress) {
                 return
             }
@@ -247,7 +251,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                 !event.nativeEvent.isComposing &&
                 formInput &&
                 formInput.trim() &&
-                selectedChatCommand < 0
+                !displayCommands?.length
             ) {
                 event.preventDefault()
                 event.stopPropagation()
@@ -264,7 +268,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
             // Handles cycling through chat command suggestions using the up and down arrow keys
             if (displayCommands && formInput.startsWith('/')) {
                 if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
-                    const commandsLength = displayCommands?.length - 1
+                    const commandsLength = displayCommands?.length
                     const newIndex = event.key === 'ArrowUp' ? selectedChatCommand - 1 : selectedChatCommand + 1
                     const newCommandIndex = newIndex < 0 ? commandsLength : newIndex > commandsLength ? 0 : newIndex
                     setSelectedChatCommand(newCommandIndex)
@@ -277,8 +281,13 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                     setSelectedChatCommand(-1)
                     setFormInput('')
                 }
+
                 // tab/enter to complete
-                if ((event.key === 'Tab' || event.key === 'Enter') && selectedChatCommand > -1) {
+                if (
+                    (event.key === 'Tab' || event.key === 'Enter') &&
+                    selectedChatCommand > -1 &&
+                    displayCommands.length
+                ) {
                     event.preventDefault()
                     event.stopPropagation()
                     const newInput = displayCommands?.[selectedChatCommand]?.[1]?.slashCommand
@@ -337,6 +346,8 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
         [helpMarkdown, afterMarkdown, gettingStartedButtons, transcript]
     )
 
+    const isGettingStartedComponentVisible = transcript.length === 0 && GettingStartedComponent !== undefined
+
     return (
         <div className={classNames(className, styles.innerContainer)}>
             {!isCodyEnabled && CodyNotEnabledNotice ? (
@@ -360,7 +371,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                     humanTranscriptItemClassName={humanTranscriptItemClassName}
                     transcriptItemParticipantClassName={transcriptItemParticipantClassName}
                     transcriptActionClassName={transcriptActionClassName}
-                    className={styles.transcriptContainer}
+                    className={isGettingStartedComponentVisible ? undefined : styles.transcriptContainer}
                     textAreaComponent={TextArea}
                     EditButtonContainer={EditButtonContainer}
                     editButtonOnSubmit={editButtonOnSubmit}
@@ -373,6 +384,10 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                     pluginsDevMode={pluginsDevMode}
                     isTranscriptError={isTranscriptError}
                 />
+            )}
+
+            {isGettingStartedComponentVisible && (
+                <GettingStartedComponent {...gettingStartedComponentProps} submitInput={submitInput} />
             )}
 
             <form className={classNames(styles.inputRow, inputRowClassName)}>
