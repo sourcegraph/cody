@@ -1,8 +1,14 @@
 # Cody: code AI with codebase context
 
-Cody is a free, open-source AI coding assistant that can write and fix code, provide AI-generated autocomplete, and answer your coding questions. Cody uses context to answer questions while referencing your own codebase’s APIs and idioms.
+Cody is a free, [open-source](https://github.com/sourcegraph/cody) AI coding assistant that can write and fix code, provide AI-generated autocomplete, and answer your coding questions. Cody uses context to answer questions while referencing your own codebase’s APIs and idioms.
 
-Cody is currently in Beta. It is available for free for personal use and is also available for enterprise use as part of paid Sourcegraph plans.
+While other AI coding assistants use limited context of local files and projects, Cody’s broader context of your codebase allows it to answer far more complex questions and write more cohesive code. For example, Cody can:
+
+- Tell you about the layout of entire repositories
+- Find where functions are defined within a repository
+- Write code that calls your own APIs
+
+Cody is currently in Beta and free for individual use with reasonable per-user rate limits. Cody is also available for Sourcegraph Enterprise users ([see below for more information](#whats-the-difference-between-using-cody-for-free-and-cody-enterprise)).
 
 See [cody.dev](https://cody.dev) for more info.
 
@@ -13,7 +19,7 @@ See [cody.dev](https://cody.dev) for more info.
 - **Inline Chat:** Ask Cody to fix or refactor code from anywhere in a file.
 - **Commands:** Cody has quick commands for common actions. Simply highlight a code snippet and run a command, like “Document code,” “Explain code,” or “Generate Unit Tests.”
 - **Swappable LLMs:** Support for Anthropic Claude, Claude 2, and OpenAI GPT-4/3.5, with more coming soon.
-  - **Free LLM usage included** (currently Anthropic Claude 2/OpenAI GPT-4) for individual devs on both personal and work code, subject to reasonable per-user rate limits ([more info](#usage)).
+  - **Free LLM usage included** (currently Anthropic Claude 2/OpenAI GPT-4) for individual devs on both personal and work code.
 
 ## Demos
 
