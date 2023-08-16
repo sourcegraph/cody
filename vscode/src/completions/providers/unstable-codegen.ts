@@ -1,6 +1,6 @@
 import fetch from 'isomorphic-fetch'
 
-import { logger } from '../../log'
+import { debug, logger } from '../../log'
 import { Completion, ContextSnippet } from '../types'
 import { isAbortError } from '../utils'
 
@@ -45,6 +45,7 @@ export class UnstableCodeGenProvider extends Provider {
             provider: PROVIDER_IDENTIFIER,
             serverEndpoint: this.serverEndpoint,
         })
+        debug('unstable-codegen', 'request to ' + this.serverEndpoint)
         const response = await fetch(this.serverEndpoint, {
             method: 'POST',
             body: JSON.stringify(params),
