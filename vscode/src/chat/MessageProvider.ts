@@ -385,6 +385,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         // Ex: performing fuzzy / context-search does not require responses from LLM backend
         switch (recipeId) {
             case 'context-search':
+                this.sendTranscript()
                 await this.onCompletionEnd()
                 break
             default: {
