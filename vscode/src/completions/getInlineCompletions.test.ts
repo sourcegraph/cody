@@ -180,7 +180,7 @@ describe('getInlineCompletions', () => {
             source: InlineCompletionsResultSource.Network,
         }))
 
-    test.only('preserves leading whitespace when prefix has no trailing whitespace', async () =>
+    test('preserves leading whitespace when prefix has no trailing whitespace', async () =>
         expect(
             await getInlineCompletions(
                 params('const isLocalHost = window.location.host█', [completion`├ === 'localhost'┤`])
@@ -1475,6 +1475,7 @@ describe('getInlineCompletions', () => {
                         async onNetworkRequest(_params, onPartialResponse) {
                             onPartialResponse?.(completion`├13┤`)
                             await nextTick()
+                            expect(abortController.signal.aborted).toBe(false)
                             onPartialResponse?.(completion`├1337\n┤`)
                             await nextTick()
                             expect(abortController.signal.aborted).toBe(true)

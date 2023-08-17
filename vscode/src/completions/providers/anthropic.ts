@@ -233,8 +233,7 @@ export class AnthropicProvider extends Provider {
         // Remove bad symbols from the start of the completion string.
         completion = fixBadCompletionStart(completion)
 
-        // Trim start and end of the completion to remove all trailing whitespace.
-        return completion.trimEnd()
+        return completion
     }
 }
 

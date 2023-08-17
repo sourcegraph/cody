@@ -68,6 +68,9 @@ export function processItem(
     item.insertText = trimUntilSuffix(item.insertText, prefix, suffix, document.languageId)
     item.insertText = collapseDuplicativeWhitespace(prefix, item.insertText)
 
+    // Trim start and end of the completion to remove all trailing whitespace.
+    item.insertText = item.insertText.trimEnd()
+
     return item
 }
 
