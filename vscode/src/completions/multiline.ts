@@ -4,6 +4,7 @@ import { DocumentContext } from './document'
 import { getLanguageConfig } from './language'
 import { indentation } from './text-processing'
 import {
+    FUNCTION_KEYWORDS,
     FUNCTION_OR_METHOD_INVOCATION_REGEX,
     getEditorTabSize,
     OPENING_BRACKET_REGEX,
@@ -27,7 +28,10 @@ export function detectMultiline(
 
     // Don't fire multiline completion for method or function invocations
     // see https://github.com/sourcegraph/cody/discussions/358#discussioncomment-6519606
-    if ((currentLinePrefix + currentLineSuffix).match(FUNCTION_OR_METHOD_INVOCATION_REGEX)) {
+    if (
+        !currentLinePrefix.trim().match(FUNCTION_KEYWORDS) &&
+        (currentLinePrefix + currentLineSuffix).match(FUNCTION_OR_METHOD_INVOCATION_REGEX)
+    ) {
         return false
     }
 
