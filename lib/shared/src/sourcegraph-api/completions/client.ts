@@ -63,20 +63,24 @@ export abstract class SourcegraphCompletionsClient {
     ): Promise<CompletionResponse> {
         const log = this.logger?.startCompletion(params)
 
-        const isNode = typeof process !== 'undefined'
-
         const headers = new Headers(this.config.customHeaders)
         if (this.config.accessToken) {
             headers.set('Authorization', `token ${this.config.accessToken}`)
         }
 
+        // We enable streaming only for Node environments right now because it's hard to make the
+        // polyfilled fetch API work the same as it does in the browser.
+        //
+        // @TODO(philipp-spiess): Feature test if the response is a Node or a browser stream and
+        // implement SSE parsing for both.
+        const isNode = typeof process !== 'undefined'
+        const enableStreaming = !!isNode
+
         const response = await fetch(this.codeCompletionsEndpoint, {
             method: 'POST',
             body: JSON.stringify({
                 ...params,
-                // We enable streaming only for node right now because it's hard to make the
-                // polyfilled fetch API work the same in the browser.
-                stream: !!isNode,
+                stream: enableStreaming,
             }),
             headers,
             signal,
@@ -91,6 +95,8 @@ export abstract class SourcegraphCompletionsClient {
             throw new Error('No response body')
         }
 
+        // For backward compatibility, we have to check if the response is an SSE stream or a
+        // regular JSON payload. This ensures that the request also works against older backends
         const isStreamingResponse = response.headers.get('content-type') === 'text/event-stream'
 
         if (isStreamingResponse) {
