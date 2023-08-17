@@ -90,7 +90,7 @@ body[data-vscode-theme-kind='vscode-high-contrast'] .human-transcript-item {
     box-sizing: border-box;
     background-color: var(--vscode-input-background);
     color: var(--vscode-input-foreground);
-    border: none;
+    border: 1px solid transparent;
     border-radius: 2px;
     padding: 8px 8px 32px 8px;
     font: inherit;
@@ -101,6 +101,10 @@ body[data-vscode-theme-kind='vscode-high-contrast'] .human-transcript-item {
 
     /* Place on top of each other */
     grid-area: 1 / 1 / 2 / 2;
+}
+
+.chat-input {
+    border-color: var(--vscode-input-border, transparent);
 }
 
 .chat-input:focus,
