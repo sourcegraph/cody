@@ -21,6 +21,11 @@ export function detectMultiline(
     }
 
     if (enableExtendedTriggers && currentLinePrefix.match(OPENING_BRACKET_REGEX)) {
+        // @TODO: Use tree sitter to detect a method call instead of this
+        if (currentLinePrefix.match(/\..*\($/)) {
+            return false
+        }
+
         return true
     }
 
