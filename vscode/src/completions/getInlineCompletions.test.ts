@@ -583,6 +583,30 @@ describe('getInlineCompletions', () => {
             expect(requests[0].stopSequences).not.toContain('\n')
         })
 
+        test('does not trigger a multi-line completion at a function call', async () => {
+            const requests: CompletionParameters[] = []
+            await getInlineCompletions(
+                params('bar(█)', [], {
+                    onNetworkRequest(request) {
+                        requests.push(request)
+                    },
+                })
+            )
+            expect(requests).toHaveLength(1)
+        })
+
+        test('does not trigger a multi-line completion at a method call', async () => {
+            const requests: CompletionParameters[] = []
+            await getInlineCompletions(
+                params('foo.bar(█)', [], {
+                    onNetworkRequest(request) {
+                        requests.push(request)
+                    },
+                })
+            )
+            expect(requests).toHaveLength(1)
+        })
+
         test('uses an indentation based approach to cut-off completions', async () => {
             const items = await getInlineCompletionsInsertText(
                 params(
