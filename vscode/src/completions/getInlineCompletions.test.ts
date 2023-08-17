@@ -1426,6 +1426,30 @@ describe('getInlineCompletions', () => {
         expect(requests[0].stopSequences).toEqual(['\n\nHuman:', '</CODE5711>', '\n\n'])
     })
 
+    test('trims whitespace in the prefix but keeps one \n', async () => {
+        const requests: CompletionParameters[] = []
+        await getInlineCompletions(
+            params(
+                dedent`
+            class Range {
+
+
+                █
+            }
+        `,
+                [],
+                {
+                    onNetworkRequest(request) {
+                        requests.push(request)
+                    },
+                }
+            )
+        )
+        expect(requests).toHaveLength(3)
+        const messages = requests[0].messages
+        expect(messages[messages.length - 1].text).toBe('Here is the code: <CODE5711>class Range {\n')
+    })
+
     test('synthesizes a completion from a prior request', async () => {
         // Reuse the same request manager for both requests in this test
         const requestManager = new RequestManager()
