@@ -361,9 +361,6 @@ export class SourcegraphGraphQLAPIClient {
         }
         const responses = await Promise.all([
             this.sendEventLogRequestToAPI(event),
-
-            // NOTE(taras-yemets): we log all the events to the dotcom API as well.
-            // Keep in mind when calculating in variant and in control user events metrics.
             this.sendEventLogRequestToDotComAPI(event),
         ])
         if (isError(responses[0]) && isError(responses[1])) {
