@@ -9,6 +9,7 @@ import { TextDocument } from 'vscode-languageserver-textdocument'
 
 import { NoopEditor } from '@sourcegraph/cody-shared/src/editor'
 import { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/nodeClient'
+import { SourcegraphGraphQLAPIClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/cody-shared/src/telemetry'
 
 import { GetContextResult } from '../../src/completions/context/context'
@@ -17,6 +18,7 @@ import { createProviderConfig } from '../../src/completions/providers/createProv
 import { InlineCompletionItemProvider } from '../../src/completions/vscodeInlineCompletionItemProvider'
 import { getFullConfig } from '../../src/configuration'
 import { configureExternalServices } from '../../src/external-services'
+import { FeatureFlagProvider } from '../../src/services/FeatureFlagProvider'
 import { InMemorySecretStorage } from '../../src/services/SecretStorageProvider'
 import { wrapVSCodeTextDocument } from '../../src/testutils/textDocument'
 
@@ -67,6 +69,13 @@ async function initCompletionsProvider(context: GetContextResult): Promise<Inlin
         getCodebaseContext: () => codebaseContext,
         isEmbeddingsContextEnabled: true,
         contextFetcher: () => Promise.resolve(context),
+        featureFlagProvider: new FeatureFlagProvider(
+            new SourcegraphGraphQLAPIClient({
+                accessToken: 'access-token',
+                serverEndpoint: 'https://sourcegraph.com',
+                customHeaders: {},
+            })
+        ),
     })
 
     return completionsProvider
