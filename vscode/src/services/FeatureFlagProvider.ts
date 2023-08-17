@@ -12,6 +12,8 @@ export class FeatureFlagProvider {
             if (!isError(data)) {
                 this.featureFlags = data
             }
+        } else {
+            this.featureFlags = {}
         }
     }
 
