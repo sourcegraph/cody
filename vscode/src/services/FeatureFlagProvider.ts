@@ -1,6 +1,10 @@
 import { SourcegraphGraphQLAPIClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
 import { isError } from '@sourcegraph/cody-shared/src/utils'
 
+export enum FeatureFlag {
+    EmbeddingsContextEnabled = 'cody-embeddings-context-enabled',
+}
+
 export class FeatureFlagProvider {
     private featureFlags: Record<string, boolean> = {}
 
@@ -17,7 +21,7 @@ export class FeatureFlagProvider {
         }
     }
 
-    public async evaluateFeatureFlag(flagName: string): Promise<boolean> {
+    public async evaluateFeatureFlag(flagName: FeatureFlag): Promise<boolean> {
         if (!this.sourcegraphGraphQLAPIClient.isDotCom()) {
             return false
         }
