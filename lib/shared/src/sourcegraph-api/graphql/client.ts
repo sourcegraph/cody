@@ -170,7 +170,6 @@ interface event {
 
 export class SourcegraphGraphQLAPIClient {
     private dotcomUrl = 'https://sourcegraph.com'
-    private dotcomHostname = 'sourcegraph.com'
 
     constructor(
         private config: Pick<
@@ -342,7 +341,7 @@ export class SourcegraphGraphQLAPIClient {
         if (this.config.isRunningInsideAgent) {
             return {}
         }
-        if (new URL(this.config.serverEndpoint).hostname === this.dotcomHostname) {
+        if (new URL(this.config.serverEndpoint).hostname === new URL (this.dotcomUrl).hostname) {
             return this.sendEventLogRequestToDotComAPI(event)
         }
         const responses = await Promise.all([
