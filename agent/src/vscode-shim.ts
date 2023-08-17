@@ -299,6 +299,10 @@ const _env: Partial<typeof vscode.env> = {
     uriScheme: 'file',
     appRoot: process.cwd(),
     uiKind: UIKind.Web,
+    clipboard: {
+        readText: () => Promise.resolve(''),
+        writeText: () => Promise.resolve(),
+    },
 }
 export const env = _env as typeof vscode.env
 
