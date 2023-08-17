@@ -238,6 +238,7 @@ const TextArea: React.FunctionComponent<ChatUITextAreaProps> = ({
                 onInput={onInput}
                 onKeyDown={onTextAreaKeyDown}
                 placeholder={placeholder}
+                aria-label="Chat message"
                 title="" // Set to blank to avoid HTML5 error tooltip "Please fill in this field"
             />
             <div className={styles.chatInputActions}>
