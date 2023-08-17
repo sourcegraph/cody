@@ -21,7 +21,7 @@ export class FeatureFlagProvider {
         }
 
         const cachedValue = this.featureFlags[flagName]
-        if (cachedValue) {
+        if (cachedValue !== undefined) {
             // NOTE: This will still return "old" value if flag value changes during the current session.
             return cachedValue
         }
