@@ -280,12 +280,11 @@ function getCompletionProviders({
     prefixPercentage,
     suffixPercentage,
     multiline,
-    docContext: { prefix, suffix },
+    docContext,
     toWorkspaceRelativePath,
 }: GetCompletionProvidersParams): Provider[] {
     const sharedProviderOptions: Omit<ProviderOptions, 'id' | 'n' | 'multiline'> = {
-        prefix,
-        suffix,
+        docContext,
         fileName: toWorkspaceRelativePath(document.uri),
         languageId: document.languageId,
         responsePercentage,

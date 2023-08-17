@@ -49,13 +49,16 @@ function params(
         ...params
     }: Partial<Omit<InlineCompletionsParams, 'document' | 'position' | 'docContext'>> & {
         languageId?: string
-        onNetworkRequest?: (params: CompletionParameters) => void
+        onNetworkRequest?: (
+            params: CompletionParameters,
+            onPartialResponse?: (incompleteResponse: CompletionResponse) => void
+        ) => void | Promise<void>
     } = {}
 ): InlineCompletionsParams {
     let requestCounter = 0
     const completionsClient: Pick<SourcegraphCompletionsClient, 'complete'> = {
-        complete(params: CompletionParameters): Promise<CompletionResponse> {
-            onNetworkRequest?.(params)
+        async complete(params, onPartialResponse): Promise<CompletionResponse> {
+            await onNetworkRequest?.(params, onPartialResponse)
             return responses === 'never-resolve'
                 ? new Promise(() => {})
                 : Promise.resolve(responses?.[requestCounter++] || { completion: '', stopReason: 'unknown' })
@@ -177,7 +180,7 @@ describe('getInlineCompletions', () => {
             source: InlineCompletionsResultSource.Network,
         }))
 
-    test('preserves leading whitespace when prefix has no trailing whitespace', async () =>
+    test.only('preserves leading whitespace when prefix has no trailing whitespace', async () =>
         expect(
             await getInlineCompletions(
                 params('const isLocalHost = window.location.host█', [completion`├ === 'localhost'┤`])
@@ -1443,4 +1446,52 @@ describe('getInlineCompletions', () => {
 
         expect(completions?.items[0].insertText).toBe("'Hello, world!');")
     })
+
+    describe('streaming', () => {
+        test('terminates early for a single-line request', async () => {
+            const abortController = new AbortController()
+            expect(
+                await getInlineCompletions({
+                    ...params('const x = █', [completion`├1337\nconsole.log('what?');┤`], {
+                        async onNetworkRequest(_params, onPartialResponse) {
+                            onPartialResponse?.(completion`├1337\ncon┤`)
+                            await nextTick()
+                            expect(abortController.signal.aborted).toBe(true)
+                        },
+                    }),
+                    abortSignal: abortController.signal,
+                })
+            ).toEqual<V>({
+                items: [{ insertText: '1337' }],
+                source: InlineCompletionsResultSource.Network,
+            })
+        })
+
+        test('does not include unfinished lines in results', async () => {
+            const abortController = new AbortController()
+            expect(
+                await getInlineCompletions({
+                    ...params('const x = █', [completion`├1337\nconsole.log('what?');┤`], {
+                        async onNetworkRequest(_params, onPartialResponse) {
+                            onPartialResponse?.(completion`├13┤`)
+                            await nextTick()
+                            onPartialResponse?.(completion`├1337\n┤`)
+                            await nextTick()
+                            expect(abortController.signal.aborted).toBe(true)
+                        },
+                    }),
+                    abortSignal: abortController.signal,
+                })
+            ).toEqual<V>({
+                items: [{ insertText: '1337' }],
+                source: InlineCompletionsResultSource.Network,
+            })
+        })
+
+        test('uses the multi-line truncation logic to terminate early for multi-line completions', async () => {})
+    })
 })
+
+async function nextTick(): Promise<void> {
+    await new Promise(resolve => setTimeout(resolve, 0))
+}

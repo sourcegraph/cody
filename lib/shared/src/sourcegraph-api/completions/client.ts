@@ -56,45 +56,146 @@ export abstract class SourcegraphCompletionsClient {
         }
     }
 
-    public async complete(params: CompletionParameters, abortSignal?: AbortSignal): Promise<CompletionResponse> {
+    public async complete(
+        params: CompletionParameters,
+        onPartialResponse?: (incompleteResponse: CompletionResponse) => void,
+        signal?: AbortSignal
+    ): Promise<CompletionResponse> {
         const log = this.logger?.startCompletion(params)
 
-        const headers = new Headers(this.config.customHeaders as HeadersInit)
+        const isNode = typeof process !== 'undefined'
+
+        const headers = new Headers(this.config.customHeaders)
         if (this.config.accessToken) {
             headers.set('Authorization', `token ${this.config.accessToken}`)
         }
 
         const response = await fetch(this.codeCompletionsEndpoint, {
             method: 'POST',
-            body: JSON.stringify(params),
+            body: JSON.stringify({
+                ...params,
+                // We enable streaming only for node right now because it's hard to make the
+                // polyfilled fetch API work the same in the browser.
+                stream: !!isNode,
+            }),
             headers,
-            signal: abortSignal,
+            signal,
         })
-
-        const result = await response.text()
 
         // When rate-limiting occurs, the response is an error message
         if (response.status === 429) {
-            throw new Error(result)
+            throw new Error(await response.text())
         }
 
-        try {
-            const response = JSON.parse(result) as CompletionResponse
+        if (response.body === null) {
+            throw new Error('No response body')
+        }
 
-            if (typeof response.completion !== 'string' || typeof response.stopReason !== 'string') {
-                const message = `response does not satisfy CodeCompletionResponse: ${result}`
+        const isStreamingResponse = response.headers.get('content-type') === 'text/event-stream'
+
+        if (isStreamingResponse) {
+            try {
+                const iterator = createSSEDecoder(response.body as any)
+
+                let lastResponse: CompletionResponse | undefined
+                for await (const chunk of iterator) {
+                    if (chunk.event === 'completion') {
+                        lastResponse = JSON.parse(chunk.data) as CompletionResponse
+                        onPartialResponse?.(lastResponse)
+                    }
+                }
+
+                if (lastResponse === undefined) {
+                    throw new Error('No completion response received')
+                }
+
+                return lastResponse
+            } catch (error) {
+                const message = `error parsing streaming CodeCompletionResponse: ${error}`
                 log?.onError(message)
                 throw new Error(message)
-            } else {
-                log?.onComplete(response)
-                return response
             }
-        } catch (error) {
-            const message = `error parsing response CodeCompletionResponse: ${error}, response text: ${result}`
-            log?.onError(message)
-            throw new Error(message)
+        } else {
+            const result = await response.text()
+            try {
+                const response = JSON.parse(result) as CompletionResponse
+
+                if (typeof response.completion !== 'string' || typeof response.stopReason !== 'string') {
+                    const message = `response does not satisfy CodeCompletionResponse: ${result}`
+                    log?.onError(message)
+                    throw new Error(message)
+                } else {
+                    log?.onComplete(response)
+                    return response
+                }
+            } catch (error) {
+                const message = `error parsing response CodeCompletionResponse: ${error}, response text: ${result}`
+                log?.onError(message)
+                throw new Error(message)
+            }
         }
     }
 
     public abstract stream(params: CompletionParameters, cb: CompletionCallbacks): () => void
+}
+
+interface SSEMessage {
+    event: string
+    data: string
+}
+
+async function* createSSEDecoder(iterator: AsyncIterableIterator<BufferSource>): AsyncGenerator<SSEMessage> {
+    let buffer = ''
+    for await (const event of iterator) {
+        const messages: SSEMessage[] = []
+
+        const data = new TextDecoder().decode(event)
+        buffer += data
+
+        let index: number
+        while ((index = buffer.indexOf('\n\n')) >= 0) {
+            const message = buffer.slice(0, index)
+            buffer = buffer.slice(index + 2)
+            messages.push(parseSSEEvent(message))
+        }
+
+        // Here's a potential optimization because our current backend includes a repetition of the
+        // whole prior completion in each event. If more than one event is detected inside a chunk,
+        // we cam skip all but the last completion events.
+        for (let i = 0; i < messages.length; i++) {
+            if (
+                i + 1 < messages.length &&
+                messages[i].event === 'completion' &&
+                messages[i + 1].event === 'completion'
+            ) {
+                continue
+            }
+
+            yield messages[i]
+        }
+    }
+}
+
+function parseSSEEvent(message: string): SSEMessage {
+    const headers = message.split('\n')
+
+    let event = ''
+    let data = ''
+    for (const header of headers) {
+        const index = header.indexOf(': ')
+        const title = header.slice(0, index)
+        const rest = header.slice(index + 2)
+        switch (title) {
+            case 'event':
+                event = rest
+                break
+            case 'data':
+                data = rest
+                break
+            default:
+                console.error(`Unknown SSE event type: ${event}`)
+        }
+    }
+
+    return { event, data }
 }
