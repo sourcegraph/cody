@@ -74,28 +74,60 @@ body[data-vscode-theme-kind='vscode-high-contrast'] .human-transcript-item {
     padding: 0.75rem 0.75rem 1rem 0.75rem;
 }
 
-.chat-input-context {
-    opacity: 0.85;
+/* Container used for autogrowing, based on https://css-tricks.com/the-cleanest-trick-for-autogrowing-textareas/ */
+.chat-input-container {
+    display: grid;
 }
 
-.chat-input {
-    border: 1px solid var(--vscode-input-border, transparent);
-    border-radius: 2px;
-    --corner-radius: 2; /* Make sure the inner <textarea> gets the right border-radius */
+.chat-input-container::after {
+    content: attr(data-value) " ";
+    white-space: pre-wrap;
+    visibility: hidden;
+}
+
+/* Both elements need the same styling so the height matches */
+.chat-input, .chat-input-container::after {
     box-sizing: border-box;
-    height: 35px; /* Gross hack to remove the space below the input */
+    background-color: var(--vscode-input-background);
+    color: var(--vscode-input-foreground);
+    border: none;
+    border-radius: 2px;
+    padding: 8px 8px 32px 8px;
+    font: inherit;
+    width: 100%;
+    overflow: hidden;
+
+    min-height: 3.5rem;
+
+    /* Place on top of each other */
+    grid-area: 1 / 1 / 2 / 2;
 }
 
 .chat-input:focus,
 .chat-input:focus-visible,
 .chat-input:focus-within {
-    outline: 1px solid var(--vscode-inputOption-activeBorder);
+    outline: 1px solid var(--vscode-focusBorder);
     outline-offset: -1px;
+}
+
+.chat-input-actions {
+    position: absolute;
+    bottom: 4px;
+    left: 4px;
+    /* We default to no events, but then switch it back below if there's a not-disabled child */
+    pointer-events: none;
+}
+.chat-input-actions:not(:has([disabled])) {
+    pointer-events: auto;
 }
 
 .chat-button {
     margin-top: 0.5rem;
     padding: 0.25rem;
+}
+
+.chat-input-context {
+    opacity: 0.85;
 }
 
 .feedback-buttons {
@@ -134,13 +166,12 @@ body[data-vscode-theme-kind='vscode-high-contrast'] .human-transcript-item {
     color: var(--foreground);
 }
 
-.submit-button-disabled,
-.submit-button-disabled:hover {
-    cursor: default;
-    --button-icon-hover-background: none;
-    color: var(--vscode-icon-foreground);
-    opacity: 0.4;
-    pointer-events: none; /* Lets you focus the text area by clicking the disabled button */
+.submit-button, .submit-button-disabled {
+    margin-bottom: 0;
+}
+
+.submit-button[disabled] {
+    pointer-events: none;
 }
 
 .stop-generating-button {

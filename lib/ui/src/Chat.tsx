@@ -74,6 +74,7 @@ export interface ChatUITextAreaProps {
     required: boolean
     disabled?: boolean
     onInput: React.FormEventHandler<HTMLElement>
+    setValue?: (value: string) => void
     onKeyDown?: (event: React.KeyboardEvent<HTMLElement>, caretPosition: number | null) => void
 }
 
@@ -428,6 +429,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                         disabled={needsEmailVerification || !isCodyEnabled}
                         onInput={onChatInput}
                         onKeyDown={onChatKeyDown}
+                        setValue={value => inputHandler(value)}
                     />
                     <SubmitButton
                         className={styles.submitButton}
