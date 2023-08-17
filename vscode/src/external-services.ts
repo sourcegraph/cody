@@ -12,8 +12,6 @@ import { SourcegraphGraphQLAPIClient } from '@sourcegraph/cody-shared/src/source
 import { TelemetryService } from '@sourcegraph/cody-shared/src/telemetry'
 import { isError } from '@sourcegraph/cody-shared/src/utils'
 
-import { GraphContextFetcher } from '../../lib/shared/src/graph-context'
-
 import { PlatformContext } from './extension.common'
 import { logger } from './log'
 import { getRerankWithLog } from './logged-rerank'
@@ -71,7 +69,7 @@ export async function configureExternalServices(
             ? platform.createLocalKeywordContextFetcher?.(rgPath, editor, chatClient, telemetryService) ?? null
             : null,
         rgPath ? platform.createFilenameContextFetcher?.(rgPath, editor, chatClient) ?? null : null,
-        new GraphContextFetcher(client, editor),
+        null,
         undefined,
         getRerankWithLog(chatClient)
     )

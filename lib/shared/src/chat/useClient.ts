@@ -5,7 +5,6 @@ import { isErrorLike } from '../common'
 import { ConfigurationWithAccessToken } from '../configuration'
 import { Editor, NoopEditor } from '../editor'
 import { PrefilledOptions, withPreselectedOptions } from '../editor/withPreselectedOptions'
-import { GraphContextFetcher } from '../graph-context'
 import { SourcegraphIntentDetectorClient } from '../intent-detector/client'
 import { SourcegraphBrowserCompletionsClient } from '../sourcegraph-api/completions/browserClient'
 import { SourcegraphGraphQLAPIClient } from '../sourcegraph-api/graphql'
@@ -280,7 +279,6 @@ export const useClient = ({
                 }
             }
 
-            const graphContext = new GraphContextFetcher(graphqlClient, editor)
             const unifiedContextFetcherClient = new UnifiedContextFetcherClient(graphqlClient, repoIds)
             const codebaseContext = new CodebaseContext(
                 config,
@@ -288,7 +286,7 @@ export const useClient = ({
                 null,
                 null,
                 null,
-                graphContext,
+                null,
                 unifiedContextFetcherClient
             )
 
