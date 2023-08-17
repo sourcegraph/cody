@@ -169,7 +169,7 @@ interface event {
 }
 
 export class SourcegraphGraphQLAPIClient {
-    private dotcomUrl = 'https://sourcegraph.com'
+    private dotcomUrl = 'https://sourcegraph.com/'
 
     constructor(
         private config: Pick<
