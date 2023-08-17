@@ -6,15 +6,18 @@
 
 Cody autocompletes single lines, or whole functions, in any programming language, configuration file, or documentation. It’s powered by latest instant LLM models, for accuracy and performance.
 
-![Cody autocomplete](https://storage.googleapis.com/sourcegraph-assets/website/Product%20Animations/GIFS/cody-completions-may2023-optim.gif)
+<!-- prettier-ignore -->
+<img src="https://storage.googleapis.com/sourcegraph-assets/website/Product%20Animations/GIFS/cody-completions-may2023-optim.gif" width="480" alt="Cody autocomplete">
 
 ## Chat
 
 Ask Cody questions in the chat view, or inline with code, and it will use Sourcegraph’s code graph to answer using knowledge of your entire codebase.
 
-![Cody Inline Chat](https://storage.googleapis.com/sourcegraph-assets/website/Product%20Animations/GIFS/cody_inline_June23-sm.gif)
+<!-- prettier-ignore -->
+<img src="https://storage.googleapis.com/sourcegraph-assets/website/Product%20Animations/GIFS/cody_inline_June23-sm.gif" width="480" alt="Cody Inline Chat">
 
-![Cody Chat](https://storage.googleapis.com/sourcegraph-assets/website/Product%20Animations/GIFS/cody-chat-may2023-optim.gif)
+<!-- prettier-ignore -->
+<img src="https://storage.googleapis.com/sourcegraph-assets/website/Product%20Animations/GIFS/cody-chat-may2023-optim.gif" width="480" alt="Cody Chat">
 
 And because Cody has access to the entire code graph, you can:
 
@@ -81,4 +84,4 @@ Cody for VS Code is open source (Apache 2), and available in the [sourcegraph/co
 
 ## More Information
 
-See <https://cody.dev/> for demos, information and more.
+See [https://cody.dev/](https://cody.dev/) for demos, information and more.

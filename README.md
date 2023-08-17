@@ -42,7 +42,6 @@ See [cody.dev](https://cody.dev) for more info.
 - **Swappable LLMs:** Support for Anthropic Claude, Claude 2, and OpenAI GPT-4/3.5, with more coming soon.
   - **Free LLM usage included** (currently Anthropic Claude 2/OpenAI GPT-4) for individual devs on both personal and work code, subject to reasonable per-user rate limits ([more info](#usage)).
 
-
 ## Demos
 
 **Autocomplete**
