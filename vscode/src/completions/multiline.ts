@@ -3,7 +3,12 @@ import detectIndent from 'detect-indent'
 import { DocumentContext } from './document'
 import { getLanguageConfig } from './language'
 import { indentation } from './text-processing'
-import { getEditorTabSize, OPENING_BRACKET_REGEX, shouldIncludeClosingLine } from './utils/text-utils'
+import {
+    FUNCTION_OR_METHOD_INVOCATION_REGEX,
+    getEditorTabSize,
+    OPENING_BRACKET_REGEX,
+    shouldIncludeClosingLine,
+} from './utils/text-utils'
 
 export function detectMultiline(
     {
@@ -17,6 +22,12 @@ export function detectMultiline(
 ): boolean {
     const config = getLanguageConfig(languageId)
     if (!config) {
+        return false
+    }
+
+    // Don't fire multiline completion for method or function invocations
+    // see https://github.com/sourcegraph/cody/discussions/358#discussioncomment-6519606
+    if ((currentLinePrefix + currentLineSuffix).match(FUNCTION_OR_METHOD_INVOCATION_REGEX)) {
         return false
     }
 

@@ -2,6 +2,7 @@ import * as vscode from 'vscode'
 
 export const INDENTATION_REGEX = /^[\t ]*/
 export const OPENING_BRACKET_REGEX = /([([{])$/
+export const FUNCTION_OR_METHOD_INVOCATION_REGEX = /\b[^()]+\((.*)\)$/g
 
 export const BRACKET_PAIR = {
     '(': ')',
