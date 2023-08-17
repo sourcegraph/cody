@@ -1489,7 +1489,94 @@ describe('getInlineCompletions', () => {
             })
         })
 
-        test('uses the multi-line truncation logic to terminate early for multi-line completions', async () => {})
+        test('uses the multi-line truncation logic to terminate early for multi-line completions', async () => {
+            const abortController = new AbortController()
+            expect(
+                await getInlineCompletions({
+                    ...params(
+                        dedent`
+                            function myFun() {
+                                █
+                            }
+                        `,
+                        [
+                            completion`
+                                    ├console.log('what?')
+                                }
+
+                                function never(){}┤
+                            `,
+                        ],
+                        {
+                            async onNetworkRequest(_params, onPartialResponse) {
+                                onPartialResponse?.(completion`
+                                        ├console.log('what?')┤
+                                    ┴┴┴┴
+                                `)
+                                await nextTick()
+                                expect(abortController.signal.aborted).toBe(false)
+                                onPartialResponse?.(completion`
+                                        ├console.log('what?')
+                                    }
+                                    ┤
+                                `)
+                                await nextTick()
+                                expect(abortController.signal.aborted).toBe(true)
+                            },
+                        }
+                    ),
+                    abortSignal: abortController.signal,
+                })
+            ).toEqual<V>({
+                items: [{ insertText: "console.log('what?')" }],
+                source: InlineCompletionsResultSource.Network,
+            })
+        })
+
+        test('uses the next non-empty line comparison logic to terminate early for multi-line completions', async () => {
+            const abortController = new AbortController()
+            expect(
+                await getInlineCompletions({
+                    ...params(
+                        dedent`
+                            function myFun() {
+                                █
+                                console.log('oh no')
+                            }
+                        `,
+                        [
+                            completion`
+                                    ├const a = new Array()
+                                    console.log('oh no')
+                                }┤
+                            `,
+                        ],
+                        {
+                            async onNetworkRequest(_params, onPartialResponse) {
+                                onPartialResponse?.(completion`
+                                        ├const a = new Array()
+                                        console.log('oh no')┤
+                                    ┴┴┴┴
+                                `)
+                                await nextTick()
+                                expect(abortController.signal.aborted).toBe(false)
+                                onPartialResponse?.(completion`
+                                        ├const a = new Array()
+                                        console.log('oh no')
+                                    ┤
+                                `)
+                                await nextTick()
+                                expect(abortController.signal.aborted).toBe(true)
+                            },
+                        }
+                    ),
+                    abortSignal: abortController.signal,
+                })
+            ).toEqual<V>({
+                items: [{ insertText: 'const a = new Array()' }],
+                source: InlineCompletionsResultSource.Network,
+            })
+        })
     })
 })
 

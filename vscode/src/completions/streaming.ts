@@ -1,5 +1,6 @@
 import { truncateMultilineCompletion } from './multiline'
 import { ProcessInlineCompletionsParams } from './processInlineCompletions'
+import { trimUntilSuffix } from './text-processing'
 
 /**
  * Evaluates a partial completion response and returns true when we can already use it. This is used
@@ -10,7 +11,7 @@ import { ProcessInlineCompletionsParams } from './processInlineCompletions'
  *  1. When a single line completion is requested, it terminates after the first full line was
  *     received.
  *  2. For a multi-line completion, it terminates when the completion will be truncated based on the
- *     multi-line indentation logic.
+ *     multi-line indentation logic or an eventual match with a line already in the editor.
  */
 export function canUsePartialCompletion(
     partialResponse: string,
@@ -31,7 +32,9 @@ export function canUsePartialCompletion(
     const completion = partialResponse.slice(0, lastNlIndex)
 
     if (multiline) {
-        const truncated = truncateMultilineCompletion(completion, prefix, suffix, document.languageId)
+        let truncated = truncateMultilineCompletion(completion, prefix, suffix, document.languageId)
+        truncated = trimUntilSuffix(truncated, prefix, suffix, document.languageId)
+
         return truncated.split('\n').length < completion.split('\n').length
     }
 
