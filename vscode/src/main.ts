@@ -23,7 +23,7 @@ import { FixupController } from './non-stop/FixupController'
 import { showSetupNotification } from './notifications/setup-notification'
 import { AuthProvider } from './services/AuthProvider'
 import { createOrUpdateEventLogger } from './services/EventLogger'
-import { FeatureFlagProvider } from './services/FeatureFlagProvider'
+import { createFeatureFlagProvider, FeatureFlagProvider } from './services/FeatureFlagProvider'
 import { showFeedbackSupportQuickPick } from './services/FeedbackOptions'
 import { GuardrailsProvider } from './services/GuardrailsProvider'
 import { Comment, InlineController } from './services/InlineController'
@@ -122,6 +122,8 @@ const register = async (
         onConfigurationChange: externalServicesOnDidConfigurationChange,
     } = await configureExternalServices(initialConfig, rgPath, editor, telemetryService, platform)
 
+    const featureFlagProvider = await createFeatureFlagProvider(sourcegraphGraphQLAPIClient)
+
     const authProvider = new AuthProvider(initialConfig, secretStorage, localStorage, telemetryService)
     await authProvider.init()
 
@@ -139,9 +141,6 @@ const register = async (
     )
     disposables.push(contextProvider)
     await contextProvider.init()
-
-    const featureFlagProvider = new FeatureFlagProvider(sourcegraphGraphQLAPIClient)
-    await featureFlagProvider.init()
 
     // Shared configuration that is required for chat views to send and receive messages
     const messageProviderOptions: MessageProviderOptions = {

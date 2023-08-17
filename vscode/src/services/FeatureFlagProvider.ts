@@ -1,12 +1,8 @@
-import * as vscode from 'vscode'
-
 import { SourcegraphGraphQLAPIClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
 import { isError } from '@sourcegraph/cody-shared/src/utils'
 
 export class FeatureFlagProvider {
     private featureFlags: Record<string, boolean> = {}
-
-    protected disposables: vscode.Disposable[] = []
 
     constructor(private sourcegraphGraphQLAPIClient: SourcegraphGraphQLAPIClient) {}
 
@@ -20,9 +16,13 @@ export class FeatureFlagProvider {
     }
 
     public async evaluateFeatureFlag(flagName: string): Promise<boolean> {
+        if (!this.sourcegraphGraphQLAPIClient.isDotCom()) {
+            return false
+        }
+
         const cachedValue = this.featureFlags[flagName]
         if (cachedValue) {
-            // Won't work if flag value changes during the current session
+            // NOTE: This will still return "old" value if flag value changes during the current session.
             return cachedValue
         }
 
@@ -38,4 +38,12 @@ export class FeatureFlagProvider {
     public syncAuthStatus(): void {
         void this.init()
     }
+}
+
+export async function createFeatureFlagProvider(
+    sourcegraphGraphQLAPIClient: SourcegraphGraphQLAPIClient
+): Promise<FeatureFlagProvider> {
+    const provider = new FeatureFlagProvider(sourcegraphGraphQLAPIClient)
+    await provider.init()
+    return provider
 }
