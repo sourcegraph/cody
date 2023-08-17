@@ -26,11 +26,14 @@ export function detectMultiline(
         return false
     }
 
+    const checkInvocation =
+        currentLineSuffix.trim().length > 0 ? currentLinePrefix + currentLineSuffix : currentLinePrefix
+
     // Don't fire multiline completion for method or function invocations
     // see https://github.com/sourcegraph/cody/discussions/358#discussioncomment-6519606
     if (
         !currentLinePrefix.trim().match(FUNCTION_KEYWORDS) &&
-        (currentLinePrefix + currentLineSuffix).match(FUNCTION_OR_METHOD_INVOCATION_REGEX)
+        checkInvocation.match(FUNCTION_OR_METHOD_INVOCATION_REGEX)
     ) {
         return false
     }

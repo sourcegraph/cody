@@ -607,6 +607,18 @@ describe('getInlineCompletions', () => {
             expect(requests).toHaveLength(1)
         })
 
+        test('trigger a multi-line completion at a method declarations', async () => {
+            const requests: CompletionParameters[] = []
+            await getInlineCompletions(
+                params('method.hello () { █', [], {
+                    onNetworkRequest(request) {
+                        requests.push(request)
+                    },
+                })
+            )
+            expect(requests).toHaveLength(1)
+        })
+
         test('uses an indentation based approach to cut-off completions', async () => {
             const items = await getInlineCompletionsInsertText(
                 params(
