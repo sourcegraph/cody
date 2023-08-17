@@ -342,7 +342,7 @@ export class SourcegraphGraphQLAPIClient {
             return {}
         }
         if (new URL(this.config.serverEndpoint).hostname === new URL (this.dotcomUrl).hostname) {
-            return this.sendEventLogRequestToDotComAPI(event)
+            return this.sendEventLogRequestToAPI(event)
         }
         const responses = await Promise.all([
             this.sendEventLogRequestToAPI(event),
