@@ -165,9 +165,9 @@ async function* createSSEDecoder(iterator: AsyncIterableIterator<BufferSource>):
             messages.push(parseSSEEvent(message))
         }
 
-        // Here's a potential optimization because our current backend includes a repetition of the
+        // This is a potential optimization because our current backend includes a repetition of the
         // whole prior completion in each event. If more than one event is detected inside a chunk,
-        // we cam skip all but the last completion events.
+        // we can skip all but the last completion events.
         for (let i = 0; i < messages.length; i++) {
             if (
                 i + 1 < messages.length &&
