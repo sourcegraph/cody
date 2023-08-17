@@ -6,6 +6,12 @@ interface Typewriter {
     write: (incomingText: string) => void
     /** Stop the typewriter, immediately emit any remaining text */
     stop: () => void
+    /**
+     * Notify the typewriter that no more text will be written, but wait for the
+     * typewriter to finish emitting any remaining text. Returns a Promise with
+     * the completed text.
+     */
+    flush: () => Promise<string>
 }
 
 interface CreateTypewriterParams {
@@ -25,8 +31,30 @@ export const createTypewriter = ({ emit }: CreateTypewriterParams): Typewriter =
     let fullText = ''
     let processedText = ''
     let interval: ReturnType<typeof setInterval> | undefined
+    let done: undefined | ((s: string) => void)
+
+    function isComplete(): boolean {
+        return processedText.length === fullText.length
+    }
+
+    function writeAfterFlush(): void {
+        throw new Error('write after flush')
+    }
 
     return {
+        flush: async (): Promise<string> => {
+            if (done) {
+                throw new Error('Typewriter already flushed')
+            }
+            if (isComplete()) {
+                done = writeAfterFlush
+                return Promise.resolve(processedText)
+            }
+            return new Promise(resolve => {
+                done = resolve
+            })
+        },
+
         write: (updatedText: string) => {
             /** Keep text in sync with the latest update, so consumers can choose to `stop` early. */
             fullText = updatedText
@@ -65,10 +93,16 @@ export const createTypewriter = ({ emit }: CreateTypewriterParams): Typewriter =
             interval = setInterval(() => {
                 processedText += updatedText.slice(processedText.length, processedText.length + charChunkSize)
 
-                /** Clean up when we have reached the end of the known remaining text. */
-                if (processedText.length === updatedText.length && interval) {
-                    clearInterval(interval)
-                    interval = undefined
+                /** Clean up, notify when we have reached the end of the known remaining text. */
+                if (isComplete()) {
+                    if (interval) {
+                        clearInterval(interval)
+                        interval = undefined
+                    }
+                    if (done) {
+                        done(processedText)
+                        done = writeAfterFlush
+                    }
                 }
 
                 return emit(processedText)
