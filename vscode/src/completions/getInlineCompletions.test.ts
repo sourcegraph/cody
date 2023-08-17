@@ -8,7 +8,9 @@ import {
     CompletionParameters,
     CompletionResponse,
 } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
+import { SourcegraphGraphQLAPIClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
 
+import { FeatureFlagProvider } from '../services/FeatureFlagProvider'
 import { vsCodeMocks } from '../testutils/mocks'
 import { range } from '../testutils/textDocument'
 
@@ -86,6 +88,13 @@ function params(
         suffixPercentage: 0.3,
         toWorkspaceRelativePath: () => 'test.ts',
         requestManager: new RequestManager(),
+        featureFlagProvider: new FeatureFlagProvider(
+            new SourcegraphGraphQLAPIClient({
+                accessToken: 'access-token',
+                serverEndpoint: 'https://sourcegraph.com',
+                customHeaders: {},
+            })
+        ),
         ...params,
     }
 }
