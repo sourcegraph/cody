@@ -43,7 +43,7 @@ Support for Anthropic Claude, Claude 2, and OpenAI GPT-4/3.5, with more coming s
 
 ## Free Usage
 
-Cody is currently in beta, and includes free LLM usage for individual users on both personal and work code. While in beta, Cody is also available for free for all Sourcegraph Enterprise customers.
+Cody is currently in beta, and includes free LLM usage for individual users on both personal and work code. Fair use limits apply.
 
 ## Programming Languages
 
@@ -67,9 +67,7 @@ Embeddings for free Cody users are generated via the [Cody desktop app](https://
 
 ## Cody Enterprise
 
-Cody Enterprise requires the use of a Sourcegraph Enterprise instance, and gives you access to AI coding tools across your entire organization.
-
-If you’re a Sourcegraph Enterprise customer and would like to try Cody Enterprise, contact your technical advisor. If you’d like to set up a trial, [contact us](https://about.sourcegraph.com/contact/request-info) to discuss pricing and options.
+Cody Enterprise requires the use of a Sourcegraph Enterprise instance, and gives you access to AI coding tools across your entire organization. [Contact us](https://about.sourcegraph.com/contact/request-info) to set up a trial of Cody Enterprise. If you’re an existing Sourcegraph Enterprise customer, contact your technical advisor.
 
 ## Feedback
 
