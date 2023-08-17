@@ -6,17 +6,17 @@
 
 Cody autocompletes single lines, or whole functions, in any programming language, configuration file, or documentation. It’s powered by latest instant LLM models, for accuracy and performance.
 
-<!-- prettier-ignore -->
+<!-- prettier-ignore: Uses <img> so we can fix width to 480px so all images are consistent width and look sharp @2x -->
 <img src="https://storage.googleapis.com/sourcegraph-assets/website/Product%20Animations/GIFS/cody-completions-may2023-optim.gif" width="480" alt="Cody autocomplete">
 
 ## Chat
 
 Ask Cody questions in the chat view, or inline with code, and it will use Sourcegraph’s code graph to answer using knowledge of your entire codebase.
 
-<!-- prettier-ignore -->
+<!-- prettier-ignore: Uses <img> so we can fix width to 480px so all images are consistent width and look sharp @2x -->
 <img src="https://storage.googleapis.com/sourcegraph-assets/website/Product%20Animations/GIFS/cody_inline_June23-sm.gif" width="480" alt="Cody Inline Chat">
 
-<!-- prettier-ignore -->
+<!-- prettier-ignore: Uses <img> so we can fix width to 480px so all images are consistent width and look sharp @2x -->
 <img src="https://storage.googleapis.com/sourcegraph-assets/website/Product%20Animations/GIFS/cody-chat-may2023-optim.gif" width="480" alt="Cody Chat">
 
 And because Cody has access to the entire code graph, you can:
