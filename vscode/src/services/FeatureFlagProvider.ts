@@ -53,3 +53,12 @@ export async function createFeatureFlagProvider(
     await provider.init()
     return provider
 }
+
+// Used as a placeholder in tests
+export const dummyFeatureFlagProvider = new FeatureFlagProvider(
+    new SourcegraphGraphQLAPIClient({
+        accessToken: 'access-token',
+        serverEndpoint: 'https://sourcegraph.com',
+        customHeaders: {},
+    })
+)
