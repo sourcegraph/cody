@@ -78,7 +78,7 @@ export class UnstableFireworksProvider extends Provider {
             top_p: 0.95,
             n: this.options.n,
             echo: false,
-            model: 'accounts/fireworks/models/starcoder-7b-w8a16-1gpu',
+            model: 'accounts/fireworks/models/starcoder-7b-w8a16',
         }
 
         const log = logger.startCompletion({

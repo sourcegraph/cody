@@ -186,21 +186,12 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
         }
 
         // A completion that won't be visible in VS Code will not be returned and not be logged.
-        if (
-            !isCompletionVisible(
-                result?.items,
-                document,
-                docContext,
-                context,
-                this.config.providerConfig,
-                abortController.signal
-            )
-        ) {
+        if (!isCompletionVisible(result?.items, document, docContext, context, abortController.signal)) {
             return null
         }
 
         if (result.items.length > 0) {
-            CompletionLogger.suggested(result.logId, InlineCompletionsResultSource[result.source])
+            CompletionLogger.suggested(result.logId, InlineCompletionsResultSource[result.source], result.items[0])
         } else {
             CompletionLogger.noResponse(result.logId)
         }
@@ -215,10 +206,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
         // log id is never reused if the completion is accepted.
         this.lastCandidate = undefined
 
-        const lines = completion.insertText.split(/\r\n|\r|\n/).length
-        const chars = completion.insertText.length
-
-        CompletionLogger.accept(logId, lines, chars)
+        CompletionLogger.accept(logId, completion)
     }
 
     /**
@@ -282,7 +270,6 @@ function isCompletionVisible(
     document: vscode.TextDocument,
     docContext: DocumentContext,
     context: vscode.InlineCompletionContext,
-    providerConfig: ProviderConfig,
     abortSignal: AbortSignal | undefined
 ): boolean {
     // There are these cases when a completion is being returned here but won't
@@ -300,7 +287,7 @@ function isCompletionVisible(
     //   this.
     const isAborted = abortSignal ? abortSignal.aborted : false
     const isMatchingPopupItem = completionMatchesPopupItem(completions, document, context)
-    const isMatchingSuffix = completionMatchesSuffix(completions, docContext, providerConfig)
+    const isMatchingSuffix = completionMatchesSuffix(completions, docContext)
     const isVisible = !isAborted && isMatchingPopupItem && isMatchingSuffix
 
     return isVisible
@@ -321,18 +308,7 @@ function completionMatchesPopupItem(
     return true
 }
 
-function completionMatchesSuffix(
-    completions: InlineCompletionItem[],
-    docContext: DocumentContext,
-    providerConfig: ProviderConfig
-): boolean {
-    // Models that support infilling do not replace an existing suffix but
-    // instead insert the completion only at the current cursor position. Thus,
-    // we do not need to compare the suffix
-    if (providerConfig.supportsInfilling) {
-        return true
-    }
-
+function completionMatchesSuffix(completions: InlineCompletionItem[], docContext: DocumentContext): boolean {
     const suffix = docContext.currentLineSuffix
 
     for (const completion of completions) {

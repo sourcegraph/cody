@@ -1,5 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import assert from 'assert'
+import { appendFileSync, existsSync, mkdirSync, rmSync } from 'fs'
+import { dirname } from 'path'
 import { Readable, Writable } from 'stream'
 
 import { Notifications, Requests } from './protocol'
@@ -66,6 +68,12 @@ type Message = RequestMessage<any> & ResponseMessage<any> & NotificationMessage<
 
 type MessageHandlerCallback = (err: Error | null, msg: Message | null) => void
 
+/**
+ * Absolute path to a file where the agent can write low-level debugging logs to
+ * trace all incoming/outgoin JSON messages.
+ */
+const tracePath = process.env.CODY_AGENT_TRACE_PATH ?? ''
+
 class MessageDecoder extends Writable {
     private buffer: Buffer = Buffer.alloc(0)
     private contentLengthRemaining: number | null = null
@@ -73,6 +81,12 @@ class MessageDecoder extends Writable {
 
     constructor(public callback: MessageHandlerCallback) {
         super()
+        if (tracePath) {
+            if (existsSync(tracePath)) {
+                rmSync(tracePath)
+            }
+            mkdirSync(dirname(tracePath), { recursive: true })
+        }
     }
 
     public _write(chunk: Buffer, encoding: string, callback: (error?: Error | null) => void): void {
@@ -132,8 +146,14 @@ class MessageDecoder extends Writable {
                         const data = JSON.parse(this.contentBuffer.toString())
                         this.contentBuffer = Buffer.alloc(0)
                         this.contentLengthRemaining = null
+                        if (tracePath) {
+                            appendFileSync(tracePath, '<- ' + JSON.stringify(data, null, 4) + '\n')
+                        }
                         this.callback(null, data)
                     } catch (error: any) {
+                        if (tracePath) {
+                            appendFileSync(tracePath, '<- ' + JSON.stringify({ error }, null, 4) + '\n')
+                        }
                         this.callback(error, null)
                     }
 
@@ -163,6 +183,9 @@ class MessageEncoder extends Readable {
     private buffer: Buffer = Buffer.alloc(0)
 
     public send(data: any): void {
+        if (tracePath) {
+            appendFileSync(tracePath, '-> ' + JSON.stringify(data, null, 4) + '\n')
+        }
         this.pause()
 
         const content = Buffer.from(JSON.stringify(data), 'utf-8')
