@@ -143,9 +143,9 @@ export class Agent extends MessageHandler {
 
         this.registerRequest('recipes/list', () =>
             Promise.resolve(
-                Object.values(registeredRecipes).map(({ id }) => ({
+                Object.values(registeredRecipes).map(({ id, title }) => ({
                     id,
-                    title: id, // TODO: will be added in a follow PR
+                    title,
                 }))
             )
         )

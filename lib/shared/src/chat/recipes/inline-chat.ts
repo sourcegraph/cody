@@ -13,6 +13,7 @@ import { Recipe, RecipeContext, RecipeID } from './recipe'
 
 export class InlineChat implements Recipe {
     public id: RecipeID = 'inline-chat'
+    public title = 'Inline Chat'
 
     constructor(private debug: (filterLabel: string, text: string, ...args: unknown[]) => void) {}
 

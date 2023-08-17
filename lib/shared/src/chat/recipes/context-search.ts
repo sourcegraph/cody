@@ -27,6 +27,7 @@ Functionality:
 
 export class ContextSearch implements Recipe {
     public id: RecipeID = 'context-search'
+  public title = 'Codebase Context Search'
 
     public async getInteraction(humanChatInput: string, context: RecipeContext): Promise<Interaction | null> {
         const query =

@@ -17,6 +17,7 @@ import { Recipe, RecipeContext, RecipeID } from './recipe'
 ====================================================== **/
 export class InlineTouch implements Recipe {
     public id: RecipeID = 'inline-touch'
+    public title = 'Inline Touch'
     private workspacePath = vscode.workspace.workspaceFolders?.[0]?.uri
 
     constructor(private debug: (filterLabel: string, text: string, ...args: unknown[]) => void) {}

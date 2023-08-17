@@ -15,6 +15,7 @@ import { Recipe, RecipeContext, RecipeID } from './recipe'
 
 export class CodeQuestion implements Recipe {
     public id: RecipeID = 'code-question'
+  public title = 'Code Question'
 
     constructor(private debug: (filterLabel: string, text: string, ...args: unknown[]) => void) {}
 
