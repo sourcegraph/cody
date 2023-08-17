@@ -112,13 +112,19 @@ body[data-vscode-theme-kind='vscode-high-contrast'] .human-transcript-item {
 
 .chat-input-actions {
     position: absolute;
-    bottom: 4px;
+    bottom: 6px;
     left: 4px;
+
     /* We default to no events, but then switch it back below if there's a not-disabled child */
+    /* We need this on the container as well as the individual buttons */
     pointer-events: none;
 }
 .chat-input-actions:not(:has([disabled])) {
     pointer-events: auto;
+}
+
+.chat-input-actions [disabled] {
+    pointer-events: none;
 }
 
 .chat-button {

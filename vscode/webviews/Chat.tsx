@@ -225,7 +225,7 @@ const TextArea: React.FunctionComponent<ChatUITextAreaProps> = ({
             setValue('/')
             inputRef.current?.focus()
         }
-    }, [setValue])
+    }, [inputRef, setValue])
 
     return (
         <div className={classNames(styles.chatInputContainer)} data-value={value || placeholder}>
@@ -237,7 +237,6 @@ const TextArea: React.FunctionComponent<ChatUITextAreaProps> = ({
                 required={required}
                 onInput={onInput}
                 onKeyDown={onTextAreaKeyDown}
-                autoFocus={autoFocus}
                 placeholder={placeholder}
                 title="" // Set to blank to avoid HTML5 error tooltip "Please fill in this field"
             />
