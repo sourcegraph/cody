@@ -213,9 +213,7 @@ const TextArea: React.FunctionComponent<ChatUITextAreaProps> = ({
 
     const onTextAreaKeyDown = useCallback(
         (event: React.KeyboardEvent<HTMLElement>): void => {
-            if (onKeyDown) {
-                onKeyDown(event, inputRef.current?.selectionStart ?? null)
-            }
+            onKeyDown?.(event, inputRef.current?.selectionStart ?? null)
         },
         [inputRef, onKeyDown]
     )
