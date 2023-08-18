@@ -21,7 +21,7 @@ export const PreciseContexts: FunctionComponent<{
     preciseContexts: PreciseContext[]
     symbolLinkComponent: React.FunctionComponent<SymbolLinkProps>
     className?: string
-}> = memo(function PreciseContextsContent({ preciseContexts, symbolLinkComponent: SymbolLink, className }) {
+}> = ({ preciseContexts, symbolLinkComponent: SymbolLink, className }) => {
     const unique = new Map<string, JSX.Element>()
 
     for (const { symbol, filePath: filepath, range } of preciseContexts) {
