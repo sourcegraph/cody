@@ -66,7 +66,7 @@ class MockableInlineCompletionItemProvider extends InlineCompletionItemProvider 
                 completionsClient: null as any,
                 contextWindowTokens: 2048,
             }),
-            featureFlagProvider: dummyFeatureFlagProvider
+            featureFlagProvider: dummyFeatureFlagProvider,
 
             ...superArgs,
         })
