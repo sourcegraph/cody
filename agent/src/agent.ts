@@ -211,6 +211,13 @@ export class Agent extends MessageHandler {
         })
         this.registerRequest('graphql/logEvent', async event => {
             const client = await this.client
+            if (typeof event.argument === 'object') {
+                event.argument = JSON.stringify(event.argument)
+            }
+            if (typeof event.publicArgument === 'object') {
+                event.publicArgument = JSON.stringify(event.publicArgument)
+            }
+            console.error(JSON.stringify(event))
             await client?.graphqlClient.logEvent(event)
             return null
         })
