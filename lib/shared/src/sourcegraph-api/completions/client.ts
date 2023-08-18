@@ -1,3 +1,5 @@
+import fetch from 'isomorphic-fetch'
+
 import { ConfigurationWithAccessToken } from '../../configuration'
 
 import { CompletionCallbacks, CompletionParameters, CompletionResponse, Event } from './types'
