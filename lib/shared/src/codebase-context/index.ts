@@ -54,6 +54,10 @@ export class CodebaseContext {
         return Array.from(uniques.values())
     }
 
+   /**
+    * Returns context messages from both generic contexts and graph-based contexts.
+    * The final list is a combination of these two sets of messages.
+    */
     public async getCombinedContextMessages(query: string, options: ContextSearchOptions): Promise<ContextMessage[]> {
         const contextMessages = this.getContextMessages(query, options)
         const graphContextMessages = this.getGraphContextMessages()
