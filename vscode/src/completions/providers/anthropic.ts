@@ -186,6 +186,7 @@ export class AnthropicProvider extends Provider {
         params: CompletionParameters,
         abortSignal: AbortSignal
     ): Promise<CompletionResponse> {
+        // The Async executor is required to return the completion early if a partial result from SSE can be used.
         // eslint-disable-next-line @typescript-eslint/no-misused-promises, no-async-promise-executor
         return new Promise(async (resolve, reject) => {
             try {
