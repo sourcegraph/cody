@@ -3,6 +3,7 @@ import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
 import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
 import { Editor } from '@sourcegraph/cody-shared/src/editor'
 import { SourcegraphEmbeddingsSearchClient } from '@sourcegraph/cody-shared/src/embeddings/client'
+import { FeatureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
 import { Guardrails } from '@sourcegraph/cody-shared/src/guardrails'
 import { SourcegraphGuardrailsClient } from '@sourcegraph/cody-shared/src/guardrails/client'
 import { IntentDetector } from '@sourcegraph/cody-shared/src/intent-detector'
@@ -17,12 +18,12 @@ import { logger } from './log'
 import { getRerankWithLog } from './logged-rerank'
 
 interface ExternalServices {
-    sourcegraphGraphQLAPIClient: SourcegraphGraphQLAPIClient
     intentDetector: IntentDetector
     codebaseContext: CodebaseContext
     chatClient: ChatClient
     completionsClient: SourcegraphCompletionsClient
     guardrails: Guardrails
+    featureFlagProvider: FeatureFlagProvider
 
     /** Update configuration for all of the services in this interface. */
     onConfigurationChange: (newConfig: ExternalServicesConfiguration) => void
@@ -44,7 +45,8 @@ export async function configureExternalServices(
     >
 ): Promise<ExternalServices> {
     const client = new SourcegraphGraphQLAPIClient(initialConfig)
-    const completions = platform.createCompletionsClient(initialConfig, logger)
+    const featureFlagProvider = new FeatureFlagProvider(client)
+    const completions = platform.createCompletionsClient(initialConfig, featureFlagProvider, logger)
 
     const repoId = initialConfig.codebase ? await client.getRepoId(initialConfig.codebase) : null
     if (isError(repoId)) {
@@ -71,8 +73,8 @@ export async function configureExternalServices(
     const guardrails = new SourcegraphGuardrailsClient(client)
 
     return {
-        sourcegraphGraphQLAPIClient: client,
         intentDetector: new SourcegraphIntentDetectorClient(client, completions),
+        featureFlagProvider,
         codebaseContext,
         chatClient,
         completionsClient: completions,

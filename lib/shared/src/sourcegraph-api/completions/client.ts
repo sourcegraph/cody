@@ -1,6 +1,7 @@
 import fetch from 'isomorphic-fetch'
 
 import { ConfigurationWithAccessToken } from '../../configuration'
+import { FeatureFlag, FeatureFlagProvider } from '../../experimentation/FeatureFlagProvider'
 
 import { CompletionCallbacks, CompletionParameters, CompletionResponse, Event } from './types'
 
@@ -24,6 +25,7 @@ export abstract class SourcegraphCompletionsClient {
 
     constructor(
         protected config: CompletionsClientConfig,
+        protected featureFlagProvider?: FeatureFlagProvider,
         protected logger?: CompletionLogger
     ) {}
 
@@ -76,7 +78,10 @@ export abstract class SourcegraphCompletionsClient {
         // @TODO(philipp-spiess): Feature test if the response is a Node or a browser stream and
         // implement SSE parsing for both.
         const isNode = typeof process !== 'undefined'
-        const enableStreaming = !!isNode
+        const isFeatureFlagEnabled = this.featureFlagProvider
+            ? await this.featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteStreamingResponse)
+            : false
+        const enableStreaming = !!isNode && isFeatureFlagEnabled
 
         const response = await fetch(this.codeCompletionsEndpoint, {
             method: 'POST',

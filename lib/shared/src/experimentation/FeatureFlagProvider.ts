@@ -8,6 +8,7 @@ export enum FeatureFlag {
     TestFlagDoNotUse = 'test-flag-do-not-use',
 
     CodyAutocompleteIncreasedDebounceTimeEnabled = 'cody-autocomplete-increased-debounce-time-enabled',
+    CodyAutocompleteStreamingResponse = 'cody-autocomplete-streaming-response',
 }
 
 const ONE_HOUR = 60 * 60 * 1000
