@@ -42,16 +42,17 @@ export function getCurrentDocContext(
 
     // TODO(philipp-spiess): This requires us to read the whole document. Can we limit our ranges
     // instead?
-    let completePrefix = document.getText(new vscode.Range(new vscode.Position(0, 0), position))
+    const completePrefix = document.getText(new vscode.Range(new vscode.Position(0, 0), position))
     const completeSuffix = document.getText(new vscode.Range(position, document.positionAt(document.getText().length)))
 
     // Patch the document to contain the selected completion from the popup dialog already
+    let completePrefixWithContextCompletion = completePrefix
     if (context?.selectedCompletionInfo) {
         const { range, text } = context.selectedCompletionInfo
-        completePrefix = completePrefix.slice(0, range.start.character - position.character) + text
+        completePrefixWithContextCompletion = completePrefix.slice(0, range.start.character - position.character) + text
     }
 
-    const prefixLines = completePrefix.split('\n')
+    const prefixLines = completePrefixWithContextCompletion.split('\n')
     const suffixLines = completeSuffix.split('\n')
 
     const currentLinePrefix = prefixLines[prefixLines.length - 1]
@@ -70,7 +71,7 @@ export function getCurrentDocContext(
         }
         prefix = prefixLines.slice(startLine).join('\n')
     } else {
-        prefix = completePrefix
+        prefix = completePrefixWithContextCompletion
     }
 
     let totalSuffix = 0
