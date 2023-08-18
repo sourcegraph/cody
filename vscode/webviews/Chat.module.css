@@ -121,16 +121,17 @@ body[data-vscode-theme-kind='vscode-high-contrast'] .human-transcript-item {
     position: absolute;
     bottom: 6px;
     left: 4px;
-
-    /* We default to no events, but then switch it back below if there's a not-disabled child */
-    /* We need this on the container as well as the individual buttons */
+    /* This is a small detail, but we always want clicks to fall through the textarea if buttons are disabled */
     pointer-events: none;
 }
-.chat-input-actions:not(:has([disabled])) {
+
+.chat-input-actions > * {
+    /* We have to set this explicitly, otherwise it will use the parent's value */
     pointer-events: auto;
 }
 
 .chat-input-actions [disabled] {
+    /* Disabled buttons just send their clicks to the textarea, similar to Slack’s implementation */
     pointer-events: none;
 }
 
