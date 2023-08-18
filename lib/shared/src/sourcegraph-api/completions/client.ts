@@ -103,7 +103,13 @@ export abstract class SourcegraphCompletionsClient {
 
         if (isStreamingResponse) {
             try {
-                const iterator = createSSEDecoder(response.body as any)
+                // The any cast is necessary because `node-fetch` (The polyfill for fetch we use via
+                // `isomorphic-fetch`) does not implement a proper ReadableStream interface but
+                // instead exposes a Node Stream.
+                //
+                // Since we directly require from `isomporphic-fetch` and gate this branch out from
+                // non Node environments, the response.body will always be a Node Stream instead
+                const iterator = createSSEIterator(response.body as any as AsyncIterableIterator<BufferSource>)
 
                 let lastResponse: CompletionResponse | undefined
                 for await (const chunk of iterator) {
@@ -153,7 +159,7 @@ interface SSEMessage {
 }
 
 const SSE_TERMINATOR = '\n\n'
-async function* createSSEDecoder(iterator: AsyncIterableIterator<BufferSource>): AsyncGenerator<SSEMessage> {
+export async function* createSSEIterator(iterator: AsyncIterableIterator<BufferSource>): AsyncGenerator<SSEMessage> {
     let buffer = ''
     for await (const event of iterator) {
         const messages: SSEMessage[] = []
