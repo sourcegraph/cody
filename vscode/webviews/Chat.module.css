@@ -99,6 +99,7 @@ body[data-vscode-theme-kind='vscode-high-contrast'] .human-transcript-item {
     padding: 8px 8px 32px 8px;
     font: inherit;
     width: 100%;
+    overflow: hidden;
 
     min-height: 3.5rem;
 
