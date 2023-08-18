@@ -421,7 +421,13 @@ const register = async (
             completionsProvider.dispose()
         }
 
-        completionsProvider = createCompletionsProvider(config, completionsClient, statusBar, contextProvider)
+        completionsProvider = createCompletionsProvider(
+            config,
+            completionsClient,
+            statusBar,
+            contextProvider,
+            featureFlagProvider
+        )
     }
     vscode.workspace.onDidChangeConfiguration(event => {
         if (event.affectsConfiguration('cody.autocomplete')) {
