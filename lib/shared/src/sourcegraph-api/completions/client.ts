@@ -150,6 +150,7 @@ interface SSEMessage {
     data: string
 }
 
+const SSE_TERMINATOR = '\n\n'
 async function* createSSEDecoder(iterator: AsyncIterableIterator<BufferSource>): AsyncGenerator<SSEMessage> {
     let buffer = ''
     for await (const event of iterator) {
@@ -159,9 +160,9 @@ async function* createSSEDecoder(iterator: AsyncIterableIterator<BufferSource>):
         buffer += data
 
         let index: number
-        while ((index = buffer.indexOf('\n\n')) >= 0) {
+        while ((index = buffer.indexOf(SSE_TERMINATOR)) >= 0) {
             const message = buffer.slice(0, index)
-            buffer = buffer.slice(index + 2)
+            buffer = buffer.slice(index + SSE_TERMINATOR.length)
             messages.push(parseSSEEvent(message))
         }
 
