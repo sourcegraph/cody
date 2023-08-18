@@ -399,7 +399,7 @@ async function getGraphContextFromEditor(editor: Editor): Promise<PreciseContext
     }
 
     const label = 'precise context - vscode api'
-    console.time(label)
+    performance.mark(label)
 
     // Construct vscode.URI for the open file to interface with LSP queries
     const activeEditorFileUri = workspaceRootUri.with({ path: activeEditor.filePath })
@@ -484,6 +484,11 @@ async function getGraphContextFromEditor(editor: Editor): Promise<PreciseContext
         ])
     )
 
+    // NOTE: In order to make sure the loop below is unblocked we'll also force resolve the entirety
+    // of the folding range requests. That way we don't have a situation where the first iteration of
+    // the loop is waiting on the last promise to be resolved in the set.
+    await Promise.all([...foldingRangesMap.values()])
+
     // Piece everything together. For each matching definition, extract the relevant lines given the
     // containing document's content and folding range result. Downstream consumers of this function
     // are expected to filter and re-rank these results as needed for their specific use case.
@@ -495,8 +500,8 @@ async function getGraphContextFromEditor(editor: Editor): Promise<PreciseContext
         const foldingRangesPromise = foldingRangesMap.get(uri.fsPath)
 
         if (contentPromise && foldingRangesPromise) {
-            const content = await contentPromise
-            const foldingRanges = await foldingRangesPromise
+            const content = await contentPromise // note: already resolved
+            const foldingRanges = await foldingRangesPromise // note: already resolved
             const definitionSnippets = extractSnippets(content, foldingRanges, [range])
 
             for (const definitionSnippet of definitionSnippets) {
@@ -518,7 +523,7 @@ async function getGraphContextFromEditor(editor: Editor): Promise<PreciseContext
     }
 
     console.debug(`Retrieved ${contexts.length} non-file-local context snippets`)
-    console.timeEnd(label)
+    performance.mark(label)
     return contexts
 }
 
