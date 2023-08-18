@@ -9,7 +9,7 @@ test('open the Custom Commands in sidebar and add new user recipe', async ({ pag
 
     await expect(sidebar.getByText("Hello! I'm Cody.")).toBeVisible()
 
-    await sidebar.getByRole('textbox', { name: 'Text area' }).fill('/')
+    await sidebar.getByRole('textbox', { name: 'Chat message' }).fill('/')
     await sidebar.locator('vscode-button').getByRole('img').click()
 
     // Create Command via UI
