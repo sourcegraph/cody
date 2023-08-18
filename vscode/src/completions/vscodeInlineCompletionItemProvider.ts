@@ -1,6 +1,7 @@
 import * as vscode from 'vscode'
 
 import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
+import { FeatureFlag, FeatureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
 
 import { debug } from '../log'
 import { CodyStatusBar } from '../services/StatusBar'
@@ -33,6 +34,7 @@ export interface CodyCompletionItemProviderConfig {
     completeSuggestWidgetSelection?: boolean
     tracer?: ProvideInlineCompletionItemsTracer | null
     contextFetcher?: (options: GetContextOptions) => Promise<GetContextResult>
+    featureFlagProvider: FeatureFlagProvider
 }
 
 export class InlineCompletionItemProvider implements vscode.InlineCompletionItemProvider {
@@ -91,7 +93,9 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
         this.maxPrefixChars = Math.floor(this.promptChars * this.config.prefixPercentage)
         this.maxSuffixChars = Math.floor(this.promptChars * this.config.suffixPercentage)
 
-        this.requestManager = new RequestManager()
+        this.requestManager = new RequestManager({
+            completeSuggestWidgetSelection: this.config.completeSuggestWidgetSelection,
+        })
 
         debug('CodyCompletionProvider:initialized', `provider: ${this.config.providerConfig.identifier}`)
     }
@@ -127,10 +131,25 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
             token.onCancellationRequested(() => abortController.abort())
         }
 
-        const docContext = getCurrentDocContext(document, position, this.maxPrefixChars, this.maxSuffixChars)
-        if (!docContext) {
+        // When the user has the completions popup open and an item is selected that does not match
+        // the text that is already in the editor, VS Code will never render the completion.
+        if (!currentEditorContentMatchesPopupItem(document, context)) {
             return null
         }
+
+        const docContext = getCurrentDocContext(
+            document,
+            position,
+            this.maxPrefixChars,
+            this.maxSuffixChars,
+            // We ignore the current context selection if completeSuggestWidgetSelection is not
+            // enabled
+            this.config.completeSuggestWidgetSelection ? context : undefined
+        )
+
+        const isIncreasedDebounceTimeEnabled = await this.config.featureFlagProvider.evaluateFeatureFlag(
+            FeatureFlag.CodyAutocompleteIncreasedDebounceTimeEnabled
+        )
 
         const result = await this.getInlineCompletions({
             document,
@@ -149,7 +168,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
             documentHistory: this.config.history,
             requestManager: this.requestManager,
             lastCandidate: this.lastCandidate,
-            debounceInterval: { singleLine: 25, multiLine: 125 },
+            debounceInterval: { singleLine: isIncreasedDebounceTimeEnabled ? 75 : 25, multiLine: 125 },
             setIsLoading,
             abortSignal: abortController.signal,
             tracer,
@@ -174,6 +193,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
                                   new vscode.Range(position, document.lineAt(document.lineCount - 1).range.end)
                               )
                           ),
+                          lastTriggerSelectedInfoItem: context?.selectedCompletionInfo?.text,
                           result: {
                               logId: result.logId,
                               items: result.items,
@@ -182,19 +202,30 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
                     : undefined
         }
 
+        const items = this.processInlineCompletionsForVSCode(result.logId, document, position, result.items, context)
+
         // A completion that won't be visible in VS Code will not be returned and not be logged.
-        if (!isCompletionVisible(result?.items, document, docContext, context, abortController.signal)) {
+        if (
+            !isCompletionVisible(
+                items,
+                document,
+                docContext,
+                context,
+                this.config.completeSuggestWidgetSelection,
+                abortController.signal
+            )
+        ) {
             return null
         }
 
-        if (result.items.length > 0) {
-            CompletionLogger.suggested(result.logId, InlineCompletionsResultSource[result.source], result.items[0])
+        if (items.length > 0) {
+            CompletionLogger.suggested(result.logId, InlineCompletionsResultSource[result.source], items[0] as any)
         } else {
             CompletionLogger.noResponse(result.logId)
         }
 
         return {
-            items: result ? this.processInlineCompletionsForVSCode(result.logId, document, position, result.items) : [],
+            items,
         }
     }
 
@@ -213,11 +244,20 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
         logId: string,
         document: vscode.TextDocument,
         position: vscode.Position,
-        items: InlineCompletionItem[]
+        items: InlineCompletionItem[],
+        context: vscode.InlineCompletionContext
     ): vscode.InlineCompletionItem[] {
         return items.map(completion => {
             const currentLine = document.lineAt(position)
             const currentLinePrefix = document.getText(currentLine.range.with({ end: position }))
+            let insertText = completion.insertText
+
+            // Append any eventual inline completion context item to the prefix if
+            // completeSuggestWidgetSelection is enabled.
+            if (this.config.completeSuggestWidgetSelection && context.selectedCompletionInfo) {
+                const { range, text } = context.selectedCompletionInfo
+                insertText = text.slice(position.character - range.start.character) + insertText
+            }
 
             // Return the completion from the start of the current line (instead of starting at the
             // given position). This avoids UI jitter in VS Code; when typing or deleting individual
@@ -229,20 +269,16 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
             // current same line suffix and reach to the end of the line.
             const end = currentLine.range.end
 
-            return new vscode.InlineCompletionItem(
-                currentLinePrefix + completion.insertText,
-                new vscode.Range(start, end),
-                {
-                    title: 'Completion accepted',
-                    command: 'cody.autocomplete.inline.accepted',
-                    arguments: [
-                        {
-                            codyLogId: logId,
-                            codyCompletion: completion,
-                        },
-                    ],
-                }
-            )
+            return new vscode.InlineCompletionItem(currentLinePrefix + insertText, new vscode.Range(start, end), {
+                title: 'Completion accepted',
+                command: 'cody.autocomplete.inline.accepted',
+                arguments: [
+                    {
+                        codyLogId: logId,
+                        codyCompletion: completion,
+                    },
+                ],
+            })
         })
     }
 }
@@ -263,10 +299,11 @@ function createTracerForInvocation(tracer: ProvideInlineCompletionItemsTracer): 
 }
 
 function isCompletionVisible(
-    completions: InlineCompletionItem[],
+    completions: vscode.InlineCompletionItem[],
     document: vscode.TextDocument,
     docContext: DocumentContext,
     context: vscode.InlineCompletionContext,
+    completeSuggestWidgetSelection: boolean,
     abortSignal: AbortSignal | undefined
 ): boolean {
     // There are these cases when a completion is being returned here but won't
@@ -274,41 +311,88 @@ function isCompletionVisible(
     //
     // - When the abort signal was already triggered and a new completion
     //   request was stared.
+    //
     // - When the VS Code completion popup is open and we suggest a completion
     //   that does not match the currently selected completion. For now we make
     //   sure to not log these completions as displayed.
-    //   TODO: Take this into account when creating the completion prefix.
+    //
+    //   This check is only needed if we do not already take the completion
+    //   popup into account when generating completions as we do with the
+    //   completeSuggestWidgetSelection flag
+    //
     // - When no completions contains characters in the current line that are
     //   not in the current line suffix. Since VS Code will try to merge
     //   completion with the suffix, we have to do a per-character diff to test
     //   this.
     const isAborted = abortSignal ? abortSignal.aborted : false
-    const isMatchingPopupItem = completionMatchesPopupItem(completions, document, context)
+    const isMatchingPopupItem = completeSuggestWidgetSelection
+        ? true
+        : completionMatchesPopupItem(completions, document, context)
     const isMatchingSuffix = completionMatchesSuffix(completions, docContext)
     const isVisible = !isAborted && isMatchingPopupItem && isMatchingSuffix
 
     return isVisible
 }
 
-function completionMatchesPopupItem(
-    completions: InlineCompletionItem[],
+// Check if the current text in the editor overlaps with the currently selected
+// item in the completion widget.
+//
+// If it won't VS Code will never show an inline completions.
+//
+// Here's an example of how to trigger this case:
+//
+//  1. Type the text `console.l` in a TypeScript file.
+//  2. Use the arrow keys to navigate to a suggested method that start with a
+//     different letter like `console.dir`.
+//  3. Since it is impossible to render a suggestion with `.dir` when the
+//     editor already has `.l` in the text, VS Code won't ever render it.
+function currentEditorContentMatchesPopupItem(
     document: vscode.TextDocument,
     context: vscode.InlineCompletionContext
 ): boolean {
     if (context.selectedCompletionInfo) {
         const currentText = document.getText(context.selectedCompletionInfo.range)
         const selectedText = context.selectedCompletionInfo.text
-        if (completions.length > 0 && !(currentText + completions[0].insertText).startsWith(selectedText)) {
+
+        if (!selectedText.startsWith(currentText)) {
             return false
         }
     }
     return true
 }
 
-function completionMatchesSuffix(completions: InlineCompletionItem[], docContext: DocumentContext): boolean {
+// Checks if the currently selected completion widget item overlaps with the
+// proposed completion.
+//
+// VS Code won't show a completion if it won't.
+function completionMatchesPopupItem(
+    completions: vscode.InlineCompletionItem[],
+    document: vscode.TextDocument,
+    context: vscode.InlineCompletionContext
+): boolean {
+    if (context.selectedCompletionInfo) {
+        const currentText = document.getText(context.selectedCompletionInfo.range)
+        const selectedText = context.selectedCompletionInfo.text
+        if (completions.length > 0) {
+            const visibleCompletion = completions[0]
+            if (
+                typeof visibleCompletion.insertText === 'string' &&
+                !(currentText + visibleCompletion.insertText).startsWith(selectedText)
+            ) {
+                return false
+            }
+        }
+    }
+    return true
+}
+
+function completionMatchesSuffix(completions: vscode.InlineCompletionItem[], docContext: DocumentContext): boolean {
     const suffix = docContext.currentLineSuffix
 
     for (const completion of completions) {
+        if (typeof completion.insertText !== 'string') {
+            continue
+        }
         const insertion = completion.insertText
         let j = 0
         // eslint-disable-next-line @typescript-eslint/prefer-for-of

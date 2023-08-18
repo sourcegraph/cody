@@ -51,6 +51,9 @@ export interface InlineCompletionsParams {
     // Execution
     abortSignal?: AbortSignal
     tracer?: (data: Partial<ProvideInlineCompletionsItemTraceData>) => void
+
+    // Feature flags
+    completeSuggestWidgetSelection?: boolean
 }
 
 /**
@@ -68,6 +71,9 @@ export interface LastInlineCompletionCandidate {
 
     /** The next non-empty line in the suffix */
     lastTriggerNextNonEmptyLine: string
+
+    /** The selected info item. */
+    lastTriggerSelectedInfoItem: string | undefined
 
     /** The previously suggested result. */
     result: Pick<InlineCompletionsResult, 'logId' | 'items'>
@@ -148,6 +154,7 @@ async function doGetInlineCompletions({
     setIsLoading,
     abortSignal,
     tracer,
+    completeSuggestWidgetSelection = false,
 }: InlineCompletionsParams): Promise<InlineCompletionsResult | null> {
     tracer?.({ params: { document, position, context } })
 
@@ -163,7 +170,16 @@ async function doGetInlineCompletions({
 
     // Check if the user is typing as suggested by the last candidate completion (that is shown as
     // ghost text in the editor), and reuse it if it is still valid.
-    const resultToReuse = lastCandidate ? reuseLastCandidate({ document, position, lastCandidate, docContext }) : null
+    const resultToReuse = lastCandidate
+        ? reuseLastCandidate({
+              document,
+              position,
+              lastCandidate,
+              docContext,
+              context,
+              completeSuggestWidgetSelection,
+          })
+        : null
     if (resultToReuse) {
         return resultToReuse
     }
@@ -230,6 +246,7 @@ async function doGetInlineCompletions({
         docContext,
         position,
         multiline,
+        context,
     }
 
     // Get the processed completions from providers

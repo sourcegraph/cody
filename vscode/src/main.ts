@@ -3,6 +3,7 @@ import * as vscode from 'vscode'
 import { commandRegex } from '@sourcegraph/cody-shared/src/chat/recipes/helpers'
 import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 import { Configuration, ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
+import { FeatureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
 import { SourcegraphCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/client'
 
 import { ChatViewProvider } from './chat/ChatViewProvider'
@@ -23,7 +24,6 @@ import { FixupController } from './non-stop/FixupController'
 import { showSetupNotification } from './notifications/setup-notification'
 import { AuthProvider } from './services/AuthProvider'
 import { createOrUpdateEventLogger } from './services/EventLogger'
-import { FeatureFlagProvider } from './services/FeatureFlagProvider'
 import { showFeedbackSupportQuickPick } from './services/FeedbackOptions'
 import { GuardrailsProvider } from './services/GuardrailsProvider'
 import { Comment, InlineController } from './services/InlineController'
@@ -421,7 +421,13 @@ const register = async (
             completionsProvider.dispose()
         }
 
-        completionsProvider = createCompletionsProvider(config, completionsClient, statusBar, contextProvider)
+        completionsProvider = createCompletionsProvider(
+            config,
+            completionsClient,
+            statusBar,
+            contextProvider,
+            featureFlagProvider
+        )
     }
     vscode.workspace.onDidChangeConfiguration(event => {
         if (event.affectsConfiguration('cody.autocomplete')) {
@@ -466,7 +472,8 @@ function createCompletionsProvider(
     config: Configuration,
     completionsClient: SourcegraphCompletionsClient,
     statusBar: CodyStatusBar,
-    contextProvider: ContextProvider
+    contextProvider: ContextProvider,
+    featureFlagProvider: FeatureFlagProvider
 ): vscode.Disposable {
     const disposables: vscode.Disposable[] = []
 
@@ -480,6 +487,7 @@ function createCompletionsProvider(
             getCodebaseContext: () => contextProvider.context,
             isEmbeddingsContextEnabled: config.autocompleteAdvancedEmbeddings,
             completeSuggestWidgetSelection: config.autocompleteExperimentalCompleteSuggestWidgetSelection,
+            featureFlagProvider,
         })
 
         disposables.push(

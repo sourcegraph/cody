@@ -218,7 +218,11 @@ describe('getInlineCompletions', () => {
     })
 
     describe('reuseLastCandidate', () => {
-        function lastCandidate(code: string, insertText: string | string[]): LastInlineCompletionCandidate {
+        function lastCandidate(
+            code: string,
+            insertText: string | string[],
+            lastTriggerSelectedInfoItem?: string
+        ): LastInlineCompletionCandidate {
             const { document, position } = documentAndPosition(code)
             const suffix = document.getText(new Range(position, document.lineAt(document.lineCount - 1).range.end))
             const nextNonEmptyLine = getNextNonEmptyLine(suffix)
@@ -227,6 +231,7 @@ describe('getInlineCompletions', () => {
                 lastTriggerPosition: position,
                 lastTriggerCurrentLinePrefix: document.lineAt(position).text.slice(0, position.character),
                 lastTriggerNextNonEmptyLine: nextNonEmptyLine,
+                lastTriggerSelectedInfoItem,
                 result: {
                     logId: '1',
                     items: Array.isArray(insertText)
@@ -448,6 +453,31 @@ describe('getInlineCompletions', () => {
                 items: [{ insertText: 'x\ny' }],
                 source: InlineCompletionsResultSource.LastCandidate,
             }))
+
+        describe('completeSuggestWidgetSelection', () => {
+            test('not reused when selected item info differs', async () =>
+                // The user types `console`, sees the context menu pop up and receives a completion for
+                // the first item. They now use the arrow keys to select the second item. The original
+                // ghost text should not be reused as it won't be rendered anyways
+                expect(
+                    await getInlineCompletions(
+                        params('console█', [], {
+                            lastCandidate: lastCandidate('console█', ' = 1', 'log'),
+                            context: {
+                                triggerKind: vsCodeMocks.InlineCompletionTriggerKind.Automatic,
+                                selectedCompletionInfo: {
+                                    text: 'dir',
+                                    range: range(0, 0, 0, 0),
+                                },
+                            },
+                            completeSuggestWidgetSelection: true,
+                        })
+                    )
+                ).toEqual<V>({
+                    items: [],
+                    source: InlineCompletionsResultSource.Network,
+                }))
+        })
     })
 
     describe('bad completion starts', () => {

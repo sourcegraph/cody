@@ -93,6 +93,12 @@ const configuration: vscode.WorkspaceConfiguration = {
                 return connectionConfig?.serverEndpoint
             case 'cody.customHeaders':
                 return connectionConfig?.customHeaders
+            case 'cody.telemetry.level':
+                // Use the dedicated `graphql/logEvent` to send telemetry from
+                // agent clients.  The reason we disable telemetry via config is
+                // that we don't want to submit vscode-specific events when
+                // running inside the agent.
+                return 'off'
             case 'cody.autocomplete.enabled':
                 return true
             case 'cody.autocomplete.advanced.provider':
