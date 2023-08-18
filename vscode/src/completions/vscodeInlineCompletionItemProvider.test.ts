@@ -2,6 +2,9 @@ import dedent from 'dedent'
 import { describe, expect, test, vi } from 'vitest'
 import * as vscode from 'vscode'
 
+import { SourcegraphGraphQLAPIClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
+
+import { FeatureFlagProvider } from '../services/FeatureFlagProvider'
 import { vsCodeMocks } from '../testutils/mocks'
 
 import { getInlineCompletions, InlineCompletionsResultSource } from './getInlineCompletions'
@@ -34,6 +37,14 @@ const DUMMY_CONTEXT: vscode.InlineCompletionContext = {
     triggerKind: vsCodeMocks.InlineCompletionTriggerKind.Automatic,
 }
 
+const dummyFeatureFlagProvider = new FeatureFlagProvider(
+    new SourcegraphGraphQLAPIClient({
+        accessToken: 'access-token',
+        serverEndpoint: 'https://sourcegraph.com',
+        customHeaders: {},
+    })
+)
+
 class MockableInlineCompletionItemProvider extends InlineCompletionItemProvider {
     constructor(
         mockGetInlineCompletions: typeof getInlineCompletions,
@@ -55,6 +66,7 @@ class MockableInlineCompletionItemProvider extends InlineCompletionItemProvider 
                 completionsClient: null as any,
                 contextWindowTokens: 2048,
             }),
+            featureFlagProvider: dummyFeatureFlagProvider,
 
             ...superArgs,
         })
