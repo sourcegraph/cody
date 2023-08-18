@@ -3,6 +3,7 @@ import * as vscode from 'vscode'
 import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
 
 import { debug } from '../log'
+import { FeatureFlag, FeatureFlagProvider } from '../services/FeatureFlagProvider'
 import { CodyStatusBar } from '../services/StatusBar'
 
 import { getContext, GetContextOptions, GetContextResult } from './context/context'
@@ -33,6 +34,7 @@ export interface CodyCompletionItemProviderConfig {
     completeSuggestWidgetSelection?: boolean
     tracer?: ProvideInlineCompletionItemsTracer | null
     contextFetcher?: (options: GetContextOptions) => Promise<GetContextResult>
+    featureFlagProvider: FeatureFlagProvider
 }
 
 export class InlineCompletionItemProvider implements vscode.InlineCompletionItemProvider {
@@ -132,6 +134,10 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
             return null
         }
 
+        const isIncreasedDebounceTimeEnabled = await this.config.featureFlagProvider.evaluateFeatureFlag(
+            FeatureFlag.CodyAutocompleteIncreasedDebounceTimeEnabled
+        )
+
         const result = await this.getInlineCompletions({
             document,
             position,
@@ -149,7 +155,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
             documentHistory: this.config.history,
             requestManager: this.requestManager,
             lastCandidate: this.lastCandidate,
-            debounceInterval: { singleLine: 25, multiLine: 125 },
+            debounceInterval: { singleLine: isIncreasedDebounceTimeEnabled ? 75 : 25, multiLine: 125 },
             setIsLoading,
             abortSignal: abortController.signal,
             tracer,
