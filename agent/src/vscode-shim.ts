@@ -28,7 +28,7 @@ import {
 
 import type { Agent } from './agent'
 import { AgentTabGroups } from './AgentTabGroups'
-import type { ConnectionConfiguration } from './protocol'
+import type { ExtensionConfiguration } from './protocol'
 
 export {
     emptyEvent,
@@ -78,8 +78,8 @@ const emptyFileWatcher: vscode.FileSystemWatcher = {
     dispose(): void {},
 }
 
-export let connectionConfig: ConnectionConfiguration | undefined
-export function setConnectionConfig(newConfig: ConnectionConfiguration): void {
+export let connectionConfig: ExtensionConfiguration | undefined
+export function setConnectionConfig(newConfig: ExtensionConfiguration): void {
     connectionConfig = newConfig
 }
 
@@ -93,22 +93,34 @@ const configuration: vscode.WorkspaceConfiguration = {
                 return connectionConfig?.serverEndpoint
             case 'cody.customHeaders':
                 return connectionConfig?.customHeaders
+            case 'cody.telemetry.level':
+                // Use the dedicated `graphql/logEvent` to send telemetry from
+                // agent clients.  The reason we disable telemetry via config is
+                // that we don't want to submit vscode-specific events when
+                // running inside the agent.
+                return 'off'
             case 'cody.autocomplete.enabled':
                 return true
             case 'cody.autocomplete.advanced.provider':
-                return connectionConfig?.autocompleteAdvancedProvider
+                return connectionConfig?.autocompleteAdvancedProvider ?? 'anthropic'
             case 'cody.autocomplete.advanced.serverEndpoint':
                 return connectionConfig?.autocompleteAdvancedServerEndpoint
+                    ? connectionConfig?.autocompleteAdvancedServerEndpoint
+                    : null
             case 'cody.autocomplete.advanced.accessToken':
                 return connectionConfig?.autocompleteAdvancedAccessToken
+                    ? connectionConfig?.autocompleteAdvancedAccessToken
+                    : null
             case 'cody.autocomplete.advanced.embeddings':
-                return connectionConfig?.autocompleteAdvancedEmbeddings
+                return connectionConfig?.autocompleteAdvancedEmbeddings ?? true
             case 'cody.advanced.agent.running':
                 return true
             case 'cody.debug.enable':
                 return connectionConfig?.debug ?? false
             case 'cody.debug.verbose':
                 return connectionConfig?.verboseDebug ?? false
+            case 'cody.codebase':
+                return connectionConfig?.codebase
             default:
                 return defaultValue
         }
@@ -130,6 +142,7 @@ export const onDidRenameFiles = new EventEmitter<vscode.FileRenameEvent>()
 export const onDidDeleteFiles = new EventEmitter<vscode.FileDeleteEvent>()
 
 export interface WorkspaceDocuments {
+    workspaceRootUri?: Uri
     openTextDocument: (filePath: string) => Promise<vscode.TextDocument>
 }
 let workspaceDocuments: WorkspaceDocuments | undefined
@@ -144,6 +157,18 @@ const _workspace: Partial<typeof vscode.workspace> = {
         // properly pass around URIs once the agent protocol supports URIs
         const filePath = uri instanceof Uri ? uri.path : uri?.toString() ?? ''
         return workspaceDocuments ? workspaceDocuments.openTextDocument(filePath) : ('missingWorkspaceDocuments' as any)
+    },
+    getWorkspaceFolder: () => {
+        if (workspaceDocuments?.workspaceRootUri === undefined) {
+            throw new Error(
+                'workspaceDocuments is undefined. To fix this problem, make sure that the agent has been initialized.'
+            )
+        }
+        return {
+            uri: workspaceDocuments.workspaceRootUri,
+            index: 0,
+            name: workspaceDocuments.workspaceRootUri?.path,
+        }
     },
     onDidChangeWorkspaceFolders: (() => ({})) as any,
     onDidOpenTextDocument: onDidOpenTextDocument.event,
@@ -280,6 +305,10 @@ const _env: Partial<typeof vscode.env> = {
     uriScheme: 'file',
     appRoot: process.cwd(),
     uiKind: UIKind.Web,
+    clipboard: {
+        readText: () => Promise.resolve(''),
+        writeText: () => Promise.resolve(),
+    },
 }
 export const env = _env as typeof vscode.env
 

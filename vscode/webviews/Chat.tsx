@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 
-import { VSCodeButton, VSCodeLink, VSCodeTextArea } from '@vscode/webview-ui-toolkit/react'
+import { VSCodeButton, VSCodeLink } from '@vscode/webview-ui-toolkit/react'
 import classNames from 'classnames'
 
 import { ChatContextStatus } from '@sourcegraph/cody-shared/src/chat/context'
@@ -190,15 +190,17 @@ const TextArea: React.FunctionComponent<ChatUITextAreaProps> = ({
     className,
     autoFocus,
     value,
+    setValue,
     required,
     onInput,
     onKeyDown,
-    rows,
 }) => {
+    const inputRef = useRef<HTMLTextAreaElement>(null)
+    const placeholder = "Ask a question or type '/' for commands"
+
     // Focus the textarea when the webview gains focus (unless there is text selected). This makes
     // it so that the user can immediately start typing to Cody after invoking `Cody: Focus on Chat
     // View` with the keyboard.
-    const inputRef = useRef<HTMLTextAreaElement>(null)
     useEffect(() => {
         const handleFocus = (): void => {
             if (document.getSelection()?.isCollapsed) {
@@ -211,43 +213,52 @@ const TextArea: React.FunctionComponent<ChatUITextAreaProps> = ({
         }
     }, [])
 
-    // <VSCodeTextArea autofocus> does not work, so implement autofocus ourselves.
-    useEffect(() => {
-        if (autoFocus) {
+    const onTextAreaKeyDown = useCallback(
+        (event: React.KeyboardEvent<HTMLElement>): void => {
+            onKeyDown?.(event, inputRef.current?.selectionStart ?? null)
+        },
+        [inputRef, onKeyDown]
+    )
+
+    const onTextAreaCommandButtonClick = useCallback((): void => {
+        if (setValue && inputRef?.current?.value === '') {
+            setValue('/')
             inputRef.current?.focus()
         }
-    }, [autoFocus])
-
-    const handleKeyDown = (event: React.KeyboardEvent<HTMLElement>): void => {
-        if (onKeyDown) {
-            onKeyDown(event, (inputRef.current as any)?.control.selectionStart)
-        }
-    }
+    }, [inputRef, setValue])
 
     return (
-        <VSCodeTextArea
-            className={classNames(styles.chatInput, className)}
-            rows={rows}
-            ref={
-                // VSCodeTextArea has a very complex type.
-                //
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                inputRef as any
-            }
-            value={value}
-            autofocus={autoFocus}
-            required={required}
-            onInput={e => onInput(e as React.FormEvent<HTMLTextAreaElement>)}
-            placeholder="Ask a question or type '/' for commands"
-            onKeyDown={handleKeyDown}
-            title="" // Set to blank to avoid HTML5 error tooltip "Please fill in this field"
-        />
+        <div className={classNames(styles.chatInputContainer)} data-value={value || placeholder}>
+            <textarea
+                className={classNames(styles.chatInput, className)}
+                rows={1}
+                ref={inputRef}
+                value={value}
+                required={required}
+                onInput={onInput}
+                onKeyDown={onTextAreaKeyDown}
+                placeholder={placeholder}
+                aria-label="Chat message"
+                title="" // Set to blank to avoid HTML5 error tooltip "Please fill in this field"
+            />
+            <div className={styles.chatInputActions}>
+                <VSCodeButton
+                    appearance="icon"
+                    type="button"
+                    className={styles.chatInputCommandButton}
+                    onClick={onTextAreaCommandButtonClick}
+                    disabled={!!value}
+                >
+                    <i className="codicon codicon-terminal" />
+                </VSCodeButton>
+            </div>
+        </div>
     )
 }
 
 const SubmitButton: React.FunctionComponent<ChatUISubmitButtonProps> = ({ className, disabled, onClick }) => (
     <VSCodeButton
-        className={classNames(disabled ? styles.submitButtonDisabled : styles.submitButton, className)}
+        className={classNames(styles.submitButton, className)}
         appearance="icon"
         type="button"
         disabled={disabled}

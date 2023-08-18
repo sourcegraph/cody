@@ -1,5 +1,3 @@
-import { URI } from 'vscode-uri'
-
 import {
     ActiveTextEditor,
     ActiveTextEditorDiagnostic,
@@ -12,6 +10,7 @@ import {
 import { Agent } from './agent'
 import { DocumentOffsets } from './offsets'
 import { TextDocument } from './protocol'
+import * as vscode_shim from './vscode-shim'
 
 export class AgentEditor implements Editor {
     public controllers?: ActiveTextEditorViewControllers | undefined
@@ -28,8 +27,8 @@ export class AgentEditor implements Editor {
         return uri?.scheme === 'file' ? uri.fsPath : null
     }
 
-    public getWorkspaceRootUri(): URI | null {
-        return this.agent.workspace.workspaceRootUri
+    public getWorkspaceRootUri(): vscode_shim.Uri | null {
+        return this.agent.workspace.workspaceRootUri ?? null
     }
 
     private activeDocument(): TextDocument | undefined {
@@ -56,6 +55,14 @@ export class AgentEditor implements Editor {
             return null
         }
         const offsets = new DocumentOffsets(document)
+        if (!document.selection) {
+            return {
+                fileName: document.filePath ?? '',
+                precedingText: document.content ?? '',
+                selectedText: '',
+                followingText: '',
+            }
+        }
         const from = offsets.offset(document.selection.start)
         const to = offsets.offset(document.selection.end)
         return {

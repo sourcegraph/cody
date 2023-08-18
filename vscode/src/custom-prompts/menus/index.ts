@@ -16,7 +16,6 @@ export async function showCommandMenu(items: QuickPickItem[]): Promise<CommandMe
     const options = {
         title: 'Cody (Shortcut: ⌥C)',
         placeHolder: 'Search for a command or enter your question here...',
-        ignoreFocusOut: true,
     }
 
     return new Promise(resolve => {
@@ -25,14 +24,14 @@ export async function showCommandMenu(items: QuickPickItem[]): Promise<CommandMe
         quickPick.items = items
         quickPick.title = options.title
         quickPick.placeholder = options.placeHolder
-        quickPick.ignoreFocusOut = options.ignoreFocusOut
+        quickPick.matchOnDescription = true
 
         quickPick.buttons = [menu_buttons.gear]
 
         const labels = new Set(items.map(item => item.label))
         quickPick.onDidChangeValue(() => {
             if (quickPick.value && !labels.has(quickPick.value)) {
-                quickPick.items = [menu_options.submitChat, menu_options.submitFix, ...items]
+                quickPick.items = [...items, menu_options.submitChat, menu_options.submitFix]
                 input = quickPick.value
                 return
             }
@@ -57,7 +56,6 @@ export async function showCustomCommandMenu(items: QuickPickItem[]): Promise<Qui
     const CustomCommandsMenuOptions: QuickPickOptions = {
         title: 'Cody Custom Commands (Experimental)',
         placeHolder: 'Search command to run...',
-        ignoreFocusOut: true,
     }
 
     return new Promise(resolve => {

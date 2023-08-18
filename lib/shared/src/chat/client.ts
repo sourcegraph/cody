@@ -51,6 +51,7 @@ export interface Client {
     codebaseContext: CodebaseContext
     sourcegraphStatus: { authenticated: boolean; version: string }
     codyStatus: { enabled: boolean; version: string }
+    graphqlClient: SourcegraphGraphQLAPIClient
 }
 
 export async function createClient({
@@ -192,6 +193,7 @@ export async function createClient({
             codebaseContext,
             sourcegraphStatus,
             codyStatus,
+            graphqlClient,
         }
     }
 

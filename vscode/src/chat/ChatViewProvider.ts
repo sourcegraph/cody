@@ -5,7 +5,6 @@ import { ChatMessage, UserLocalHistory } from '@sourcegraph/cody-shared/src/chat
 
 import { View } from '../../webviews/NavBar'
 import { debug } from '../log'
-import { countCode, matchCodeSnippets } from '../services/InlineAssist'
 
 import { MessageProvider, MessageProviderOptions } from './MessageProvider'
 import { ExtensionMessage, WebviewMessage } from './protocol'
@@ -195,17 +194,11 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
     }
 
     /**
-     * Prevent logging insert events as paste events on doc change
-     */
-    private isInsertEvent = false
-
-    /**
      * Handles insert event to insert text from code block at cursor position
      * Replace selection if there is one and then log insert event
      * Note: Using workspaceEdit instead of 'editor.action.insertSnippet' as the later reformats the text incorrectly
      */
     private async handleInsertAtCursor(text: string): Promise<void> {
-        this.isInsertEvent = true
         const selectionRange = vscode.window.activeTextEditor?.selection
         const editor = vscode.window.activeTextEditor
         if (!editor || !selectionRange) {
@@ -219,11 +212,8 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
 
         // Log insert event
         const op = 'insert'
-        const { lineCount, charCount } = countCode(text)
         const eventName = op + 'Button'
-        const args = { op, charCount, lineCount }
-        this.telemetryService.log(`CodyVSCodeExtension:${eventName}:clicked`, args)
-        this.isInsertEvent = false
+        this.editor.controllers.inline?.setLastCopiedCode(text, eventName)
     }
 
     /**
@@ -235,27 +225,11 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
     private async handleCopiedCode(text: string, eventType: 'Button' | 'Keydown'): Promise<void> {
         // If it's a Button event, then the text is already passed in from the whole code block
         const copiedCode = eventType === 'Button' ? text : await vscode.env.clipboard.readText()
-
-        // Log Copy event
-        const op = 'copy'
-        const { lineCount, charCount } = countCode(copiedCode)
-        const eventName = op + eventType
-        const args = { op, charCount, lineCount }
-        this.telemetryService.log(`CodyVSCodeExtension:${eventName}:clicked`, args)
-
-        // Create listener for changes to the active text editor for paste event
-        vscode.workspace.onDidChangeTextDocument(e => {
-            const changedText = e.contentChanges[0]?.text
-            // check if the copied code is the same as the changed text without spaces
-            const isMatched = matchCodeSnippets(copiedCode, changedText)
-            // Log paste event when the copied code is pasted
-            if (!this.isInsertEvent && isMatched) {
-                this.telemetryService.log('CodyVSCodeExtension:pasteKeydown:clicked', {
-                    ...args,
-                    op: 'paste',
-                })
-            }
-        })
+        const eventName = eventType === 'Button' ? 'copyButton' : 'keyDown:Copy'
+        // Send to Inline Controller for tracking
+        if (copiedCode) {
+            this.editor.controllers.inline?.setLastCopiedCode(copiedCode, eventName)
+        }
     }
 
     protected handleEnabledPlugins(plugins: string[]): void {

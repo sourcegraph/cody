@@ -17,6 +17,7 @@ import { logger } from './log'
 import { getRerankWithLog } from './logged-rerank'
 
 interface ExternalServices {
+    sourcegraphGraphQLAPIClient: SourcegraphGraphQLAPIClient
     intentDetector: IntentDetector
     codebaseContext: CodebaseContext
     chatClient: ChatClient
@@ -77,6 +78,7 @@ export async function configureExternalServices(
     const guardrails = new SourcegraphGuardrailsClient(client)
 
     return {
+        sourcegraphGraphQLAPIClient: client,
         intentDetector: new SourcegraphIntentDetectorClient(client, completions),
         codebaseContext,
         chatClient,

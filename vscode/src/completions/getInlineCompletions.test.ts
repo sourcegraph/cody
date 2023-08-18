@@ -215,7 +215,11 @@ describe('getInlineCompletions', () => {
     })
 
     describe('reuseLastCandidate', () => {
-        function lastCandidate(code: string, insertText: string | string[]): LastInlineCompletionCandidate {
+        function lastCandidate(
+            code: string,
+            insertText: string | string[],
+            lastTriggerSelectedInfoItem?: string
+        ): LastInlineCompletionCandidate {
             const { document, position } = documentAndPosition(code)
             const suffix = document.getText(new Range(position, document.lineAt(document.lineCount - 1).range.end))
             const nextNonEmptyLine = getNextNonEmptyLine(suffix)
@@ -224,6 +228,7 @@ describe('getInlineCompletions', () => {
                 lastTriggerPosition: position,
                 lastTriggerCurrentLinePrefix: document.lineAt(position).text.slice(0, position.character),
                 lastTriggerNextNonEmptyLine: nextNonEmptyLine,
+                lastTriggerSelectedInfoItem,
                 result: {
                     logId: '1',
                     items: Array.isArray(insertText)
@@ -445,6 +450,31 @@ describe('getInlineCompletions', () => {
                 items: [{ insertText: 'x\ny' }],
                 source: InlineCompletionsResultSource.LastCandidate,
             }))
+
+        describe('completeSuggestWidgetSelection', () => {
+            test('not reused when selected item info differs', async () =>
+                // The user types `console`, sees the context menu pop up and receives a completion for
+                // the first item. They now use the arrow keys to select the second item. The original
+                // ghost text should not be reused as it won't be rendered anyways
+                expect(
+                    await getInlineCompletions(
+                        params('console█', [], {
+                            lastCandidate: lastCandidate('console█', ' = 1', 'log'),
+                            context: {
+                                triggerKind: vsCodeMocks.InlineCompletionTriggerKind.Automatic,
+                                selectedCompletionInfo: {
+                                    text: 'dir',
+                                    range: range(0, 0, 0, 0),
+                                },
+                            },
+                            completeSuggestWidgetSelection: true,
+                        })
+                    )
+                ).toEqual<V>({
+                    items: [],
+                    source: InlineCompletionsResultSource.Network,
+                }))
+        })
     })
 
     describe('bad completion starts', () => {
@@ -581,6 +611,42 @@ describe('getInlineCompletions', () => {
             )
             expect(requests).toHaveLength(3)
             expect(requests[0].stopSequences).not.toContain('\n')
+        })
+
+        test('does not trigger a multi-line completion at a function call', async () => {
+            const requests: CompletionParameters[] = []
+            await getInlineCompletions(
+                params('bar(█)', [], {
+                    onNetworkRequest(request) {
+                        requests.push(request)
+                    },
+                })
+            )
+            expect(requests).toHaveLength(1)
+        })
+
+        test('does not trigger a multi-line completion at a method call', async () => {
+            const requests: CompletionParameters[] = []
+            await getInlineCompletions(
+                params('foo.bar(█)', [], {
+                    onNetworkRequest(request) {
+                        requests.push(request)
+                    },
+                })
+            )
+            expect(requests).toHaveLength(1)
+        })
+
+        test('trigger a multi-line completion at a method declarations', async () => {
+            const requests: CompletionParameters[] = []
+            await getInlineCompletions(
+                params('method.hello () { █', [], {
+                    onNetworkRequest(request) {
+                        requests.push(request)
+                    },
+                })
+            )
+            expect(requests).toHaveLength(1)
         })
 
         test('uses an indentation based approach to cut-off completions', async () => {
@@ -1424,6 +1490,30 @@ describe('getInlineCompletions', () => {
             }
         `)
         expect(requests[0].stopSequences).toEqual(['\n\nHuman:', '</CODE5711>', '\n\n'])
+    })
+
+    test('trims whitespace in the prefix but keeps one \n', async () => {
+        const requests: CompletionParameters[] = []
+        await getInlineCompletions(
+            params(
+                dedent`
+            class Range {
+
+
+                █
+            }
+        `,
+                [],
+                {
+                    onNetworkRequest(request) {
+                        requests.push(request)
+                    },
+                }
+            )
+        )
+        expect(requests).toHaveLength(3)
+        const messages = requests[0].messages
+        expect(messages[messages.length - 1].text).toBe('Here is the code: <CODE5711>class Range {\n')
     })
 
     test('synthesizes a completion from a prior request', async () => {

@@ -10,16 +10,35 @@ import { InlineCompletionItem } from './types'
 export function reuseLastCandidate({
     document,
     position,
-    lastCandidate: { lastTriggerPosition, lastTriggerCurrentLinePrefix, lastTriggerNextNonEmptyLine, ...lastCandidate },
+    context,
+    lastCandidate: {
+        lastTriggerPosition,
+        lastTriggerCurrentLinePrefix,
+        lastTriggerNextNonEmptyLine,
+        lastTriggerSelectedInfoItem,
+        ...lastCandidate
+    },
     docContext: { currentLinePrefix, currentLineSuffix, nextNonEmptyLine },
-}: Required<Pick<InlineCompletionsParams, 'document' | 'position' | 'lastCandidate'>> & {
+    completeSuggestWidgetSelection,
+}: Required<
+    Pick<
+        InlineCompletionsParams,
+        'document' | 'position' | 'context' | 'lastCandidate' | 'completeSuggestWidgetSelection'
+    >
+> & {
     docContext: DocumentContext
 }): InlineCompletionsResult | null {
     const isSameDocument = lastCandidate.uri.toString() === document.uri.toString()
     const isSameLine = lastTriggerPosition.line === position.line
     const isSameNextNonEmptyLine = lastTriggerNextNonEmptyLine === nextNonEmptyLine
 
-    if (!isSameDocument || !isSameLine || !isSameNextNonEmptyLine) {
+    // If completeSuggestWidgetSelection is enabled, we have to compare that a last candidate is
+    // only reused if it is has same completion info selected.
+    const isSameTriggerSelectedInfoItem = completeSuggestWidgetSelection
+        ? lastTriggerSelectedInfoItem === context.selectedCompletionInfo?.text
+        : true
+
+    if (!isSameDocument || !isSameLine || !isSameNextNonEmptyLine || !isSameTriggerSelectedInfoItem) {
         return null
     }
 

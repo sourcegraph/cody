@@ -81,8 +81,7 @@ export class ContextProvider implements vscode.Disposable {
             }),
             vscode.workspace.onDidChangeWorkspaceFolders(async () => {
                 await this.updateCodebaseContext()
-            }),
-            vscode.commands.registerCommand('cody.auth.sync', () => this.syncAuthStatus())
+            })
         )
     }
 

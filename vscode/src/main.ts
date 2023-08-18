@@ -3,6 +3,7 @@ import * as vscode from 'vscode'
 import { commandRegex } from '@sourcegraph/cody-shared/src/chat/recipes/helpers'
 import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 import { Configuration, ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
+import { FeatureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
 import { SourcegraphCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/client'
 
 import { ChatViewProvider } from './chat/ChatViewProvider'
@@ -112,6 +113,7 @@ const register = async (
     const config = getConfiguration(workspaceConfig)
 
     const {
+        sourcegraphGraphQLAPIClient,
         intentDetector,
         codebaseContext: initialCodebaseContext,
         chatClient,
@@ -122,6 +124,8 @@ const register = async (
 
     const authProvider = new AuthProvider(initialConfig, secretStorage, localStorage, telemetryService)
     await authProvider.init()
+
+    const featureFlagProvider = new FeatureFlagProvider(sourcegraphGraphQLAPIClient)
 
     const contextProvider = new ContextProvider(
         initialConfig,
@@ -287,6 +291,10 @@ const register = async (
         vscode.commands.registerCommand('cody.auth.signin', () => authProvider.signinMenu()),
         vscode.commands.registerCommand('cody.auth.signout', () => authProvider.signoutMenu()),
         vscode.commands.registerCommand('cody.auth.support', () => showFeedbackSupportQuickPick()),
+        vscode.commands.registerCommand('cody.auth.sync', () => {
+            void contextProvider.syncAuthStatus()
+            void featureFlagProvider.syncAuthStatus()
+        }),
         // Commands
         vscode.commands.registerCommand('cody.interactive.clear', async () => {
             await sidebarChatProvider.clearAndRestartSession()
@@ -313,8 +321,7 @@ const register = async (
             'cody.action.fixup',
             (instruction: string, range: vscode.Range): Promise<void> => executeFixup({ instruction, range })
         ),
-        vscode.commands.registerCommand('cody.action.commands.menu', async caller => {
-            console.log(caller)
+        vscode.commands.registerCommand('cody.action.commands.menu', async () => {
             await editor.controllers.command?.menu('default')
         }),
         vscode.commands.registerCommand(
@@ -330,19 +337,15 @@ const register = async (
         }),
         vscode.commands.registerCommand('cody.command.explain-code', async () => {
             await executeRecipeInSidebar('custom-prompt', true, '/explain')
-            telemetryService.log('CodyVSCodeExtension:recipe:explain-code-high-level:executed')
         }),
         vscode.commands.registerCommand('cody.command.generate-tests', async () => {
             await executeRecipeInSidebar('custom-prompt', true, '/test')
-            telemetryService.log('CodyVSCodeExtension:recipe:generate-unit-test:executed')
         }),
         vscode.commands.registerCommand('cody.command.document-code', async () => {
             await executeRecipeInSidebar('custom-prompt', true, '/doc')
-            telemetryService.log('CodyVSCodeExtension:recipe:generate-docstring:executed')
         }),
         vscode.commands.registerCommand('cody.command.smell-code', async () => {
             await executeRecipeInSidebar('custom-prompt', true, '/smell')
-            telemetryService.log('CodyVSCodeExtension:recipe:find-code-smells:executed')
         }),
         vscode.commands.registerCommand('cody.command.inline-touch', () =>
             executeRecipeInSidebar('inline-touch', false)
@@ -418,7 +421,13 @@ const register = async (
             completionsProvider.dispose()
         }
 
-        completionsProvider = createCompletionsProvider(config, completionsClient, statusBar, contextProvider)
+        completionsProvider = createCompletionsProvider(
+            config,
+            completionsClient,
+            statusBar,
+            contextProvider,
+            featureFlagProvider
+        )
     }
     vscode.workspace.onDidChangeConfiguration(event => {
         if (event.affectsConfiguration('cody.autocomplete')) {
@@ -463,7 +472,8 @@ function createCompletionsProvider(
     config: Configuration,
     completionsClient: SourcegraphCompletionsClient,
     statusBar: CodyStatusBar,
-    contextProvider: ContextProvider
+    contextProvider: ContextProvider,
+    featureFlagProvider: FeatureFlagProvider
 ): vscode.Disposable {
     const disposables: vscode.Disposable[] = []
 
@@ -477,6 +487,7 @@ function createCompletionsProvider(
             getCodebaseContext: () => contextProvider.context,
             isEmbeddingsContextEnabled: config.autocompleteAdvancedEmbeddings,
             completeSuggestWidgetSelection: config.autocompleteExperimentalCompleteSuggestWidgetSelection,
+            featureFlagProvider,
         })
 
         disposables.push(

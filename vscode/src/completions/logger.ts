@@ -6,6 +6,7 @@ import { TelemetryEventProperties } from '@sourcegraph/cody-shared/src/telemetry
 import { logEvent } from '../services/EventLogger'
 
 import { ContextSummary } from './context/context'
+import { InlineCompletionItem } from './types'
 
 interface CompletionEvent {
     params: {
@@ -17,6 +18,8 @@ interface CompletionEvent {
         contextSummary?: ContextSummary
         source?: string
         id: string
+        lineCount?: number
+        charCount?: number
     }
     // The timestamp when the completion request started
     startedAt: number
@@ -43,6 +46,8 @@ const READ_TIMEOUT = 750
 const displayedCompletions = new LRUCache<string, CompletionEvent>({
     max: 100, // Maximum number of completions that we are keeping track of
 })
+
+let completionsStartedSinceLastSuggestion = 0
 
 export function logCompletionEvent(name: string, params?: TelemetryEventProperties): void {
     logEvent(`CodyVSCodeExtension:completion:${name}`, params)
@@ -76,7 +81,7 @@ export function start(id: string): void {
     const event = displayedCompletions.get(id)
     if (event && !event.startLoggedAt) {
         event.startLoggedAt = performance.now()
-        logCompletionEvent('started', event.params)
+        completionsStartedSinceLastSuggestion++
     }
 }
 
@@ -102,19 +107,22 @@ export function loaded(id: string): void {
 // Suggested completions will not be logged immediately. Instead, we log them when we either hide
 // them again (they are NOT accepted) or when they ARE accepted. This way, we can calculate the
 // duration they were actually visible for.
-export function suggested(id: string, source: string): void {
+export function suggested(id: string, source: string, completion: InlineCompletionItem): void {
     const event = displayedCompletions.get(id)
     if (!event) {
         return
     }
 
     if (!event.suggestedAt) {
+        const { lineCount, charCount } = lineAndCharCount(completion)
         event.params.source = source
+        event.params.lineCount = lineCount
+        event.params.charCount = charCount
         event.suggestedAt = performance.now()
     }
 }
 
-export function accept(id: string, lineCount: number, charCount: number): void {
+export function accept(id: string, completion: InlineCompletionItem): void {
     const completionEvent = displayedCompletions.get(id)
     if (!completionEvent || completionEvent.acceptedAt) {
         // Log a debug event, this case should not happen in production
@@ -139,8 +147,9 @@ export function accept(id: string, lineCount: number, charCount: number): void {
     logSuggestionEvents()
     logCompletionEvent('accepted', {
         ...completionEvent.params,
-        lineCount,
-        charCount,
+        // We overwrite the existing lines and chars in the params and rely on the accepted one in
+        // case the popover is used to insert a completion different from the one that was suggested
+        ...lineAndCharCount(completion),
         otherCompletionProviderEnabled: otherCompletionProviderEnabled(),
     })
 }
@@ -188,7 +197,9 @@ function logSuggestionEvents(): void {
             read: accepted || read,
             accepted,
             otherCompletionProviderEnabled: otherCompletionProviderEnabled(),
+            completionsStartedSinceLastSuggestion,
         })
+        completionsStartedSinceLastSuggestion = 0
     })
 
     // Completions are kept in the LRU cache for longer. This is because they
@@ -210,4 +221,10 @@ const otherCompletionProviders = [
 ]
 function otherCompletionProviderEnabled(): boolean {
     return !!otherCompletionProviders.find(id => vscode.extensions.getExtension(id)?.isActive)
+}
+
+function lineAndCharCount({ insertText }: InlineCompletionItem): { lineCount: number; charCount: number } {
+    const lineCount = insertText.split(/\r\n|\r|\n/).length
+    const charCount = insertText.length
+    return { lineCount, charCount }
 }
