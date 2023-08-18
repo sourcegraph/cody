@@ -263,20 +263,16 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
             // current same line suffix and reach to the end of the line.
             const end = currentLine.range.end
 
-            return new vscode.InlineCompletionItem(
-                currentLinePrefix + completion.insertText,
-                new vscode.Range(start, end),
-                {
-                    title: 'Completion accepted',
-                    command: 'cody.autocomplete.inline.accepted',
-                    arguments: [
-                        {
-                            codyLogId: logId,
-                            codyCompletion: completion,
-                        },
-                    ],
-                }
-            )
+            return new vscode.InlineCompletionItem(currentLinePrefix + insertText, new vscode.Range(start, end), {
+                title: 'Completion accepted',
+                command: 'cody.autocomplete.inline.accepted',
+                arguments: [
+                    {
+                        codyLogId: logId,
+                        codyCompletion: completion,
+                    },
+                ],
+            })
         })
     }
 }
