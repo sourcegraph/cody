@@ -11,7 +11,9 @@ import {
     CURRENT_SITE_VERSION_QUERY,
     CURRENT_USER_ID_AND_VERIFIED_EMAIL_QUERY,
     CURRENT_USER_ID_QUERY,
+    EVALUATE_FEATURE_FLAG_QUERY,
     GET_CODY_CONTEXT_QUERY,
+    GET_FEATURE_FLAGS_QUERY,
     IS_CONTEXT_REQUIRED_QUERY,
     LEGACY_SEARCH_EMBEDDINGS_QUERY,
     LOG_EVENT_MUTATION,
@@ -141,6 +143,19 @@ export interface CodyLLMSiteConfiguration {
 
 interface IsContextRequiredForChatQueryResponse {
     isContextRequiredForChatQuery: boolean
+}
+
+interface EvaluatedFeatureFlag {
+    name: string
+    value: boolean
+}
+
+interface EvaluatedFeatureFlagsResponse {
+    evaluatedFeatureFlags: EvaluatedFeatureFlag[]
+}
+
+interface EvaluateFeatureFlagResponse {
+    evaluateFeatureFlag: boolean
 }
 
 function extractDataOrError<T, R>(response: APIResponse<T> | Error, extract: (data: T) => R): R | Error {
@@ -341,8 +356,8 @@ export class SourcegraphGraphQLAPIClient {
         if (this.config.isRunningInsideAgent) {
             return {}
         }
-        if (this.config.serverEndpoint === this.dotcomUrl) {
-            return this.sendEventLogRequestToDotComAPI(event)
+        if (this.isDotCom()) {
+            return this.sendEventLogRequestToAPI(event)
         }
         const responses = await Promise.all([
             this.sendEventLogRequestToAPI(event),
@@ -433,6 +448,27 @@ export class SourcegraphGraphQLAPIClient {
         return this.fetchSourcegraphAPI<APIResponse<IsContextRequiredForChatQueryResponse>>(IS_CONTEXT_REQUIRED_QUERY, {
             query,
         }).then(response => extractDataOrError(response, data => data.isContextRequiredForChatQuery))
+    }
+
+    public async getEvaluatedFeatureFlags(): Promise<Record<string, boolean> | Error> {
+        return this.fetchSourcegraphAPI<APIResponse<EvaluatedFeatureFlagsResponse>>(GET_FEATURE_FLAGS_QUERY, {}).then(
+            response =>
+                extractDataOrError(response, data =>
+                    data.evaluatedFeatureFlags.reduce(
+                        (acc, { name, value }) => {
+                            acc[name] = value
+                            return acc
+                        },
+                        {} as Record<string, boolean>
+                    )
+                )
+        )
+    }
+
+    public async evaluateFeatureFlag(flagName: string): Promise<boolean | null | Error> {
+        return this.fetchSourcegraphAPI<APIResponse<EvaluateFeatureFlagResponse>>(EVALUATE_FEATURE_FLAG_QUERY, {
+            flagName,
+        }).then(response => extractDataOrError(response, data => data.evaluateFeatureFlag))
     }
 
     private fetchSourcegraphAPI<T>(query: string, variables: Record<string, any> = {}): Promise<T | Error> {
