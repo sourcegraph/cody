@@ -196,6 +196,24 @@ export class Agent extends MessageHandler {
                 return { items: [] }
             }
         })
+
+        this.registerRequest('graphql/currentUserId', async () => {
+            const client = await this.client
+            if (!client) {
+                throw new Error('Cody client not initialized')
+            }
+            const id = await client.graphqlClient.getCurrentUserId()
+            if (typeof id === 'string') {
+                return id
+            }
+
+            throw id
+        })
+        this.registerRequest('graphql/logEvent', async event => {
+            const client = await this.client
+            await client?.graphqlClient.logEvent(event)
+            return null
+        })
     }
 
     private setClient(config: ExtensionConfiguration): void {

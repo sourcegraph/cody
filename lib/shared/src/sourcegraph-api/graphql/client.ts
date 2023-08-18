@@ -171,7 +171,7 @@ function extractDataOrError<T, R>(response: APIResponse<T> | Error, extract: (da
     return extract(response.data)
 }
 
-interface event {
+export interface event {
     event: string
     userCookieID: string
     url: string

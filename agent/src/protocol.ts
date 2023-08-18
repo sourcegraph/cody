@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/consistent-type-definitions */
 import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 import { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
+import { event } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
 
 // This file documents the Cody Agent JSON-RPC protocol. Consult the JSON-RPC
 // specification to learn about how JSON-RPC works https://www.jsonrpc.org/specification
@@ -33,6 +34,9 @@ export type Requests = {
     'recipes/execute': [ExecuteRecipeParams, null]
 
     'autocomplete/execute': [AutocompleteParams, AutocompleteResult]
+
+    'graphql/currentUserId': [null, string]
+    'graphql/logEvent': [event, null]
 
     // ================
     // Server -> Client
