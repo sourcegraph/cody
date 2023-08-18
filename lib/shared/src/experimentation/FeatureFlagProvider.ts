@@ -1,7 +1,9 @@
-import { SourcegraphGraphQLAPIClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
-import { isError } from '@sourcegraph/cody-shared/src/utils'
+/* eslint-disable no-void */
+import { SourcegraphGraphQLAPIClient } from '../sourcegraph-api/graphql'
+import { isError } from '../utils'
 
 export enum FeatureFlag {
+    TestFlagDoNotUse = 'test-flag-do-not-use',
     EmbeddingsContextEnabled = 'cody-embeddings-context-enabled',
 }
 
@@ -11,18 +13,8 @@ export class FeatureFlagProvider {
     private featureFlags: Record<string, boolean> = {}
     private lastUpdated = 0
 
-    constructor(private sourcegraphGraphQLAPIClient: SourcegraphGraphQLAPIClient) {
+    constructor(private apiClient: SourcegraphGraphQLAPIClient) {
         void this.refreshFeatureFlags()
-    }
-
-    public async refreshFeatureFlags(): Promise<void> {
-        if (this.sourcegraphGraphQLAPIClient.isDotCom()) {
-            const data = await this.sourcegraphGraphQLAPIClient.getEvaluatedFeatureFlags()
-            this.featureFlags = isError(data) ? {} : data
-        } else {
-            this.featureFlags = {}
-        }
-        this.lastUpdated = Date.now()
     }
 
     private getFromCache(flagName: FeatureFlag): boolean | undefined {
@@ -36,7 +28,7 @@ export class FeatureFlagProvider {
     }
 
     public async evaluateFeatureFlag(flagName: FeatureFlag): Promise<boolean> {
-        if (!this.sourcegraphGraphQLAPIClient.isDotCom()) {
+        if (!this.apiClient.isDotCom()) {
             return false
         }
 
@@ -45,12 +37,22 @@ export class FeatureFlagProvider {
             return cachedValue
         }
 
-        const value = await this.sourcegraphGraphQLAPIClient.evaluateFeatureFlag(flagName)
+        const value = await this.apiClient.evaluateFeatureFlag(flagName)
         this.featureFlags[flagName] = value === null || isError(value) ? false : value
         return this.featureFlags[flagName]
     }
 
     public syncAuthStatus(): void {
         void this.refreshFeatureFlags()
+    }
+
+    private async refreshFeatureFlags(): Promise<void> {
+        if (this.apiClient.isDotCom()) {
+            const data = await this.apiClient.getEvaluatedFeatureFlags()
+            this.featureFlags = isError(data) ? {} : data
+        } else {
+            this.featureFlags = {}
+        }
+        this.lastUpdated = Date.now()
     }
 }
