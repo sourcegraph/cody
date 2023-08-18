@@ -229,13 +229,13 @@ export class CodebaseContext {
     }
 
     public async getGraphContextMessages(): Promise<ContextMessage[]> {
-        if (!this.config.experimentalLocalSymbols) {
+        if (!this.config.experimentalLocalSymbols || !this.graph) {
             return []
         }
         console.debug('Fetching graph context')
 
         const contextMessages: ContextMessage[] = []
-        for (const preciseContext of this.graph ? await this.graph.getContext() : []) {
+        for (const preciseContext of await this.graph.getContext()) {
             const text = populatePreciseCodeContextTemplate(
                 preciseContext.symbol.fuzzyName || 'unknown',
                 preciseContext.filePath,
