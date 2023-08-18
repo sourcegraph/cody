@@ -11,7 +11,9 @@ export class FeatureFlagProvider {
     private featureFlags: Record<string, boolean> = {}
     private lastUpdated = 0
 
-    constructor(private sourcegraphGraphQLAPIClient: SourcegraphGraphQLAPIClient) {}
+    constructor(private sourcegraphGraphQLAPIClient: SourcegraphGraphQLAPIClient) {
+        void this.refreshFeatureFlags()
+    }
 
     public async refreshFeatureFlags(): Promise<void> {
         if (this.sourcegraphGraphQLAPIClient.isDotCom()) {
@@ -23,11 +25,11 @@ export class FeatureFlagProvider {
         this.lastUpdated = Date.now()
     }
 
-    private async getFromCache(flagName: FeatureFlag): Promise<boolean | undefined> {
+    private getFromCache(flagName: FeatureFlag): boolean | undefined {
         const now = Date.now()
         if (now - this.lastUpdated > ONE_HOUR) {
             // Cache expired, refresh
-            await this.refreshFeatureFlags()
+            void this.refreshFeatureFlags()
         }
 
         return this.featureFlags[flagName]
@@ -38,7 +40,7 @@ export class FeatureFlagProvider {
             return false
         }
 
-        const cachedValue = await this.getFromCache(flagName)
+        const cachedValue = this.getFromCache(flagName)
         if (cachedValue !== undefined) {
             return cachedValue
         }
