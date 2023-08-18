@@ -65,7 +65,13 @@ body[data-vscode-theme-kind='vscode-high-contrast'] .human-transcript-item {
 
 .code-blocks-copy-button:hover,
 .code-blocks-insert-button:hover {
-    background-color: var(--vscode-button-secondaryHoverBackground);
+    /* Flip to the primary button hover styles because the secondary button
+     * hover background is transparent in many themes. The transparent
+     * background which doesn't work with the layered design.
+     */
+    background-color: var(--vscode-button-hoverBackground);
+    color: var(--vscode-button-foreground);
+    border-color: var(--vscode-button-border);
 }
 
 .input-row {
