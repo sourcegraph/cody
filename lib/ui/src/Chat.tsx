@@ -429,7 +429,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                         disabled={needsEmailVerification || !isCodyEnabled}
                         onInput={onChatInput}
                         onKeyDown={onChatKeyDown}
-                        setValue={value => inputHandler(value)}
+                        setValue={inputHandler}
                     />
                     <SubmitButton
                         className={styles.submitButton}
