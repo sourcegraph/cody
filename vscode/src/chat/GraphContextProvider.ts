@@ -212,7 +212,6 @@ export const gatherDefinitions = (
     const definitionMatches: SymbolDefinitionMatches[] = []
     for (const { start, end } of relevantDocumentSymbolRanges) {
         for (const [lineIndex, line] of activeEditorLines.slice(start.line, end.line + 1).entries()) {
-            console.log({ line })
             for (const match of line.matchAll(identifierPattern)) {
                 if (match.index === undefined || commonKeywords.has(match[0])) {
                     continue
