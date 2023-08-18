@@ -356,7 +356,7 @@ export class SourcegraphGraphQLAPIClient {
         if (this.config.isRunningInsideAgent) {
             return {}
         }
-        if (new URL(this.config.serverEndpoint).hostname === new URL(this.dotcomUrl).hostname) {
+        if (this.isDotCom()) {
             return this.sendEventLogRequestToAPI(event)
         }
         const responses = await Promise.all([
