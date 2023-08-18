@@ -183,19 +183,15 @@ export interface event {
     hashedLicenseKey?: string
 }
 
+type GraphQLAPIClientConfig = Pick<ConfigurationWithAccessToken, 'serverEndpoint' | 'accessToken' | 'customHeaders'> &
+    Pick<Partial<ConfigurationWithAccessToken>, 'telemetryLevel'>
+
 export class SourcegraphGraphQLAPIClient {
     private dotcomUrl = 'https://sourcegraph.com'
 
-    constructor(
-        private config: Pick<
-            ConfigurationWithAccessToken,
-            'serverEndpoint' | 'accessToken' | 'customHeaders' | 'isRunningInsideAgent'
-        >
-    ) {}
+    constructor(private config: GraphQLAPIClientConfig) {}
 
-    public onConfigurationChange(
-        newConfig: Pick<ConfigurationWithAccessToken, 'serverEndpoint' | 'accessToken' | 'customHeaders'>
-    ): void {
+    public onConfigurationChange(newConfig: GraphQLAPIClientConfig): void {
         this.config = newConfig
     }
 
@@ -353,7 +349,7 @@ export class SourcegraphGraphQLAPIClient {
             console.log(`not logging ${event.event} in test mode`)
             return {}
         }
-        if (this.config.isRunningInsideAgent) {
+        if (this.config?.telemetryLevel === 'off') {
             return {}
         }
         if (this.isDotCom()) {
