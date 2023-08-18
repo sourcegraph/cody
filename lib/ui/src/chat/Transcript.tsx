@@ -84,16 +84,22 @@ export const Transcript: React.FunctionComponent<
         if (!(root && container)) {
             return undefined
         }
+        let wasIntersecting = true
         const observer = new IntersectionObserver(
             entries => {
                 for (const entry of entries) {
-                    if (!entry.isIntersecting) {
+                    if (entry.rootBounds?.width === 0 || entries[0].rootBounds?.height === 0) {
+                        // After restoring a pane the root element hasn't been sized yet, and we
+                        // trivially overflow it. Ignore this.
+                        continue
+                    }
+                    if (wasIntersecting && !entry.isIntersecting) {
                         root.scrollTo({
                             top: root.scrollHeight,
                             behavior: 'smooth',
                         })
-                        break
                     }
+                    wasIntersecting = entry.isIntersecting
                 }
             },
             {
