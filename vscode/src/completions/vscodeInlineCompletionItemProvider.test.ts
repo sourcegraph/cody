@@ -2,9 +2,9 @@ import dedent from 'dedent'
 import { describe, expect, test, vi } from 'vitest'
 import * as vscode from 'vscode'
 
+import { FeatureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
 import { SourcegraphGraphQLAPIClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
 
-import { FeatureFlagProvider } from '../services/FeatureFlagProvider'
 import { vsCodeMocks } from '../testutils/mocks'
 
 import { getInlineCompletions, InlineCompletionsResultSource } from './getInlineCompletions'
