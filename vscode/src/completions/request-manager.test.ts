@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 
+import { vsCodeMocks } from '../testutils/mocks'
+
 import { Provider } from './providers/provider'
 import { RequestManager, RequestManagerResult, RequestParams } from './request-manager'
 import { documentAndPosition } from './testHelpers'
@@ -50,6 +52,10 @@ function docState(prefix: string, suffix: string = ';'): RequestParams {
             currentLineSuffix: suffix,
             prevNonEmptyLine: getPrevNonEmptyLine(prefix),
             nextNonEmptyLine: getNextNonEmptyLine(suffix),
+        },
+        context: {
+            triggerKind: vsCodeMocks.InlineCompletionTriggerKind.Automatic,
+            selectedCompletionInfo: undefined,
         },
         multiline: false,
     }
