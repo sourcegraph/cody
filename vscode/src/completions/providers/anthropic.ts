@@ -2,8 +2,12 @@ import * as anthropic from '@anthropic-ai/sdk'
 
 import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
 import { SourcegraphCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/client'
-import { CompletionParameters } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
+import {
+    CompletionParameters,
+    CompletionResponse,
+} from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
 
+import { canUsePartialCompletion } from '../streaming'
 import {
     CLOSING_CODE_TAG,
     extractFromCodeBlock,
@@ -14,7 +18,7 @@ import {
     trimLeadingWhitespaceUntilNewline,
 } from '../text-processing'
 import { Completion, ContextSnippet } from '../types'
-import { batchCompletions, messagesToText } from '../utils'
+import { forkSignal, messagesToText } from '../utils'
 
 import { CompletionProviderTracer, Provider, ProviderConfig, ProviderOptions } from './provider'
 
@@ -51,12 +55,12 @@ export class AnthropicProvider extends Provider {
 
     private createPromptPrefix(): { messages: Message[]; prefix: PrefixComponents } {
         // TODO(beyang): escape 'Human:' and 'Assistant:'
-        const prefixLines = this.options.prefix.split('\n')
+        const prefixLines = this.options.docContext.prefix.split('\n')
         if (prefixLines.length === 0) {
             throw new Error('no prefix lines')
         }
 
-        const { head, tail, overlap } = getHeadAndTail(this.options.prefix)
+        const { head, tail, overlap } = getHeadAndTail(this.options.docContext.prefix)
         const prefixMessages: Message[] = [
             {
                 speaker: 'human',
@@ -115,33 +119,6 @@ export class AnthropicProvider extends Provider {
         return { messages: [...referenceSnippetMessages, ...prefixMessages], prefix }
     }
 
-    private postProcess(rawResponse: string): string {
-        let completion = extractFromCodeBlock(rawResponse)
-
-        const trimmedPrefixContainNewline = this.options.prefix
-            .slice(this.options.prefix.trimEnd().length)
-            .includes('\n')
-        if (trimmedPrefixContainNewline) {
-            // The prefix already contains a `\n` that Claude was not aware of, so we remove any
-            // leading `\n` followed by whitespace that Claude might add.
-            completion = completion.replace(/^\s*\n\s*/, '')
-        } else {
-            completion = trimLeadingWhitespaceUntilNewline(completion)
-        }
-
-        // Remove bad symbols from the start of the completion string.
-        completion = fixBadCompletionStart(completion)
-
-        // Only keep a single line in single-line completions mode
-        if (!this.options.multiline) {
-            const lines = completion.split('\n')
-            completion = lines[0]
-        }
-
-        // Trim start and end of the completion to remove all trailing whitespace.
-        return completion.trimEnd()
-    }
-
     public async generateCompletions(
         abortSignal: AbortSignal,
         snippets: ContextSnippet[],
@@ -169,29 +146,95 @@ export class AnthropicProvider extends Provider {
         tracer?.params(args)
 
         // Issue request
-        const responses = await batchCompletions(this.completionsClient, args, this.options.n, abortSignal)
+        const responses = await this.batchAndProcessCompletions(
+            this.completionsClient,
+            args,
+            this.options.n,
+            abortSignal
+        )
 
         // Post-process
-        const ret = responses.map(resp => {
-            const content = this.postProcess(resp.completion)
-
-            if (content === null) {
-                return []
-            }
-
-            return [
-                {
-                    prefix: this.options.prefix,
-                    content,
-                    stopReason: resp.stopReason,
-                },
-            ]
-        })
+        const ret = responses.map(resp => [
+            {
+                prefix: this.options.docContext.prefix,
+                content: resp.completion,
+                stopReason: resp.stopReason,
+            },
+        ])
 
         const completions = ret.flat()
         tracer?.result({ rawResponses: responses, completions })
 
         return completions
+    }
+
+    private async batchAndProcessCompletions(
+        client: Pick<SourcegraphCompletionsClient, 'complete'>,
+        params: CompletionParameters,
+        n: number,
+        abortSignal: AbortSignal
+    ): Promise<CompletionResponse[]> {
+        const responses: Promise<CompletionResponse>[] = []
+        for (let i = 0; i < n; i++) {
+            responses.push(this.fetchAndProcessCompletions(client, params, abortSignal))
+        }
+        return Promise.all(responses)
+    }
+
+    private async fetchAndProcessCompletions(
+        client: Pick<SourcegraphCompletionsClient, 'complete'>,
+        params: CompletionParameters,
+        abortSignal: AbortSignal
+    ): Promise<CompletionResponse> {
+        // The Async executor is required to return the completion early if a partial result from SSE can be used.
+        // eslint-disable-next-line @typescript-eslint/no-misused-promises, no-async-promise-executor
+        return new Promise(async (resolve, reject) => {
+            try {
+                const abortController = forkSignal(abortSignal)
+
+                const result = await client.complete(
+                    params,
+                    (incompleteResponse: CompletionResponse) => {
+                        const processedCompletion = this.postProcess(incompleteResponse.completion)
+                        if (
+                            canUsePartialCompletion(processedCompletion, {
+                                document: { languageId: this.options.languageId },
+                                multiline: this.options.multiline,
+                                docContext: this.options.docContext,
+                            })
+                        ) {
+                            resolve({ ...incompleteResponse, completion: processedCompletion })
+                            abortController.abort()
+                        }
+                    },
+                    abortController.signal
+                )
+
+                resolve({ ...result, completion: this.postProcess(result.completion) })
+            } catch (error) {
+                reject(error)
+            }
+        })
+    }
+
+    private postProcess(rawResponse: string): string {
+        let completion = extractFromCodeBlock(rawResponse)
+
+        const trimmedPrefixContainNewline = this.options.docContext.prefix
+            .slice(this.options.docContext.prefix.trimEnd().length)
+            .includes('\n')
+        if (trimmedPrefixContainNewline) {
+            // The prefix already contains a `\n` that Claude was not aware of, so we remove any
+            // leading `\n` followed by whitespace that Claude might add.
+            completion = completion.replace(/^\s*\n\s*/, '')
+        } else {
+            completion = trimLeadingWhitespaceUntilNewline(completion)
+        }
+
+        // Remove bad symbols from the start of the completion string.
+        completion = fixBadCompletionStart(completion)
+
+        return completion
     }
 }
 

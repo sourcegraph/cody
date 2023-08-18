@@ -27,8 +27,7 @@ class MockProvider extends Provider {
 function createProvider(prefix: string) {
     return new MockProvider({
         id: 'mock-provider',
-        prefix,
-        suffix: '',
+        docContext: docState(prefix).docContext,
         fileName: '',
         languageId: 'typescript',
         multiline: false,

@@ -113,7 +113,7 @@ const register = async (
     const config = getConfiguration(workspaceConfig)
 
     const {
-        sourcegraphGraphQLAPIClient,
+        featureFlagProvider,
         intentDetector,
         codebaseContext: initialCodebaseContext,
         chatClient,
@@ -124,8 +124,6 @@ const register = async (
 
     const authProvider = new AuthProvider(initialConfig, secretStorage, localStorage, telemetryService)
     await authProvider.init()
-
-    const featureFlagProvider = new FeatureFlagProvider(sourcegraphGraphQLAPIClient)
 
     const contextProvider = new ContextProvider(
         initialConfig,

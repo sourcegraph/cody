@@ -237,7 +237,7 @@ export class Agent extends MessageHandler {
             setTranscript: () => {
                 // Not supported yet by agent.
             },
-            createCompletionsClient: config => new SourcegraphNodeCompletionsClient(config),
+            createCompletionsClient: (...args) => new SourcegraphNodeCompletionsClient(...args),
         })
     }
 }
