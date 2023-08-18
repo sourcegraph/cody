@@ -109,11 +109,35 @@ export function getHeadAndTail(s: string): PrefixComponents {
         }
     }
 
+    let headAndTail: PrefixComponents
     if (tailStart === -1) {
-        return { head: trimSpace(s), tail: trimSpace(s), overlap: s }
+        headAndTail = { head: trimSpace(s), tail: trimSpace(s), overlap: s }
+    } else {
+        headAndTail = {
+            head: trimSpace(lines.slice(0, tailStart).join('\n')),
+            tail: trimSpace(lines.slice(tailStart).join('\n')),
+        }
     }
 
-    return { head: trimSpace(lines.slice(0, tailStart).join('\n')), tail: trimSpace(lines.slice(tailStart).join('\n')) }
+    // We learned that Anthropic is giving us worse results with trailing whitespace in the prompt.
+    // To fix this, we started to trim the prompt.
+    //
+    // However, when the prefix includes a line break, the LLM needs to know that we do not want the
+    // current line to complete and instead start a new one. For this specific case, we're injecting
+    // a line break in the trimmed prefix.
+    //
+    // This will only be added if the existing line is otherwise empty and will help especially with
+    // cases like users typing a comment and asking the LLM to provide a suggestion for the next
+    // line of code:
+    //
+    //     // Write some code
+    //     █
+    //
+    if (headAndTail.tail.rearSpace.includes('\n')) {
+        headAndTail.tail.trimmed += '\n'
+    }
+
+    return headAndTail
 }
 
 function trimSpace(s: string): TrimmedString {
