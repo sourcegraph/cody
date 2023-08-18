@@ -4,7 +4,7 @@ import { isError } from '../utils'
 
 export enum FeatureFlag {
     TestFlagDoNotUse = 'test-flag-do-not-use',
-    EmbeddingsContextEnabled = 'cody-embeddings-context-enabled',
+    CodyAutocompleteIncreasedDebounceTimeEnabled = 'cody-autocomplete-increased-debounce-time-enabled',
 }
 
 const ONE_HOUR = 60 * 60 * 1000
