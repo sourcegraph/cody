@@ -7,26 +7,11 @@ import { afterAll, describe, it } from 'vitest'
 import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 
 import { MessageHandler } from './jsonrpc'
+import { ClientInfo } from './protocol'
 
 export class TestClient extends MessageHandler {
-    public async handshake() {
-        const info = await this.request('initialize', {
-            name: 'test-client',
-            version: 'v1',
-            workspaceRootUri: 'file:///path/to/foo',
-            workspaceRootPath: '/path/to/foo',
-            connectionConfiguration: {
-                accessToken: process.env.SRC_ACCESS_TOKEN ?? 'invalid',
-                serverEndpoint: process.env.SRC_ENDPOINT ?? 'invalid',
-                customHeaders: {},
-                autocompleteAdvancedProvider: 'anthropic',
-                autocompleteAdvancedAccessToken: '',
-                autocompleteAdvancedServerEndpoint: '',
-                autocompleteAdvancedEmbeddings: true,
-                debug: false,
-                verboseDebug: false,
-            },
-        })
+    public async handshake(clientInfo: ClientInfo) {
+        const info = await this.request('initialize', clientInfo)
         this.notify('initialized', null)
         return info
     }
@@ -48,7 +33,42 @@ export class TestClient extends MessageHandler {
     }
 }
 
-describe('StandardAgent', () => {
+describe.each([
+    {
+        name: 'FullConfig',
+        clientInfo: {
+            name: 'test-client',
+            version: 'v1',
+            workspaceRootUri: 'file:///path/to/foo',
+            workspaceRootPath: '/path/to/foo',
+            connectionConfiguration: {
+                accessToken: process.env.SRC_ACCESS_TOKEN ?? 'invalid',
+                serverEndpoint: process.env.SRC_ENDPOINT ?? 'invalid',
+                customHeaders: {},
+                autocompleteAdvancedProvider: 'anthropic',
+                autocompleteAdvancedAccessToken: '',
+                autocompleteAdvancedServerEndpoint: '',
+                autocompleteAdvancedEmbeddings: true,
+                debug: false,
+                verboseDebug: false,
+            },
+        },
+    },
+    {
+        name: 'MinimalConfig',
+        clientInfo: {
+            name: 'test-client',
+            version: 'v1',
+            workspaceRootUri: 'file:///path/to/foo',
+            workspaceRootPath: '/path/to/foo',
+            connectionConfiguration: {
+                accessToken: process.env.SRC_ACCESS_TOKEN ?? 'invalid',
+                serverEndpoint: process.env.SRC_ENDPOINT ?? 'invalid',
+                customHeaders: {},
+            },
+        },
+    },
+])('describe StandardAgent with $name', ({ clientInfo }) => {
     if (process.env.SRC_ACCESS_TOKEN === undefined || process.env.SRC_ENDPOINT === undefined) {
         it('no-op test because SRC_ACCESS_TOKEN is not set. To actually run the Cody Agent tests, set the environment variables SRC_ENDPOINT and SRC_ACCESS_TOKEN', () => {})
         return
@@ -70,7 +90,7 @@ describe('StandardAgent', () => {
     })
 
     it('initializes properly', async () => {
-        const serverInfo = await client.handshake()
+        const serverInfo = await client.handshake(clientInfo)
         assert.deepStrictEqual(serverInfo.name, 'cody-agent', 'Agent should be cody-agent')
         assert.deepStrictEqual(serverInfo.codyEnabled, true, 'Cody should be enabled')
     })

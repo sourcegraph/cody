@@ -23,6 +23,7 @@ import { FixupController } from './non-stop/FixupController'
 import { showSetupNotification } from './notifications/setup-notification'
 import { AuthProvider } from './services/AuthProvider'
 import { createOrUpdateEventLogger } from './services/EventLogger'
+import { FeatureFlagProvider } from './services/FeatureFlagProvider'
 import { showFeedbackSupportQuickPick } from './services/FeedbackOptions'
 import { GuardrailsProvider } from './services/GuardrailsProvider'
 import { Comment, InlineController } from './services/InlineController'
@@ -112,6 +113,7 @@ const register = async (
     const config = getConfiguration(workspaceConfig)
 
     const {
+        sourcegraphGraphQLAPIClient,
         intentDetector,
         codebaseContext: initialCodebaseContext,
         chatClient,
@@ -122,6 +124,8 @@ const register = async (
 
     const authProvider = new AuthProvider(initialConfig, secretStorage, localStorage, telemetryService)
     await authProvider.init()
+
+    const featureFlagProvider = new FeatureFlagProvider(sourcegraphGraphQLAPIClient)
 
     const contextProvider = new ContextProvider(
         initialConfig,
@@ -287,6 +291,10 @@ const register = async (
         vscode.commands.registerCommand('cody.auth.signin', () => authProvider.signinMenu()),
         vscode.commands.registerCommand('cody.auth.signout', () => authProvider.signoutMenu()),
         vscode.commands.registerCommand('cody.auth.support', () => showFeedbackSupportQuickPick()),
+        vscode.commands.registerCommand('cody.auth.sync', () => {
+            void contextProvider.syncAuthStatus()
+            void featureFlagProvider.syncAuthStatus()
+        }),
         // Commands
         vscode.commands.registerCommand('cody.interactive.clear', async () => {
             await sidebarChatProvider.clearAndRestartSession()

@@ -613,6 +613,42 @@ describe('getInlineCompletions', () => {
             expect(requests[0].stopSequences).not.toContain('\n')
         })
 
+        test('does not trigger a multi-line completion at a function call', async () => {
+            const requests: CompletionParameters[] = []
+            await getInlineCompletions(
+                params('bar(█)', [], {
+                    onNetworkRequest(request) {
+                        requests.push(request)
+                    },
+                })
+            )
+            expect(requests).toHaveLength(1)
+        })
+
+        test('does not trigger a multi-line completion at a method call', async () => {
+            const requests: CompletionParameters[] = []
+            await getInlineCompletions(
+                params('foo.bar(█)', [], {
+                    onNetworkRequest(request) {
+                        requests.push(request)
+                    },
+                })
+            )
+            expect(requests).toHaveLength(1)
+        })
+
+        test('trigger a multi-line completion at a method declarations', async () => {
+            const requests: CompletionParameters[] = []
+            await getInlineCompletions(
+                params('method.hello () { █', [], {
+                    onNetworkRequest(request) {
+                        requests.push(request)
+                    },
+                })
+            )
+            expect(requests).toHaveLength(1)
+        })
+
         test('uses an indentation based approach to cut-off completions', async () => {
             const items = await getInlineCompletionsInsertText(
                 params(
@@ -1454,6 +1490,30 @@ describe('getInlineCompletions', () => {
             }
         `)
         expect(requests[0].stopSequences).toEqual(['\n\nHuman:', '</CODE5711>', '\n\n'])
+    })
+
+    test('trims whitespace in the prefix but keeps one \n', async () => {
+        const requests: CompletionParameters[] = []
+        await getInlineCompletions(
+            params(
+                dedent`
+            class Range {
+
+
+                █
+            }
+        `,
+                [],
+                {
+                    onNetworkRequest(request) {
+                        requests.push(request)
+                    },
+                }
+            )
+        )
+        expect(requests).toHaveLength(3)
+        const messages = requests[0].messages
+        expect(messages[messages.length - 1].text).toBe('Here is the code: <CODE5711>class Range {\n')
     })
 
     test('synthesizes a completion from a prior request', async () => {

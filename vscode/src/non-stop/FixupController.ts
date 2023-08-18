@@ -3,6 +3,7 @@ import * as vscode from 'vscode'
 import { VsCodeFixupController, VsCodeFixupTaskRecipeData } from '@sourcegraph/cody-shared/src/editor'
 import { TelemetryService } from '@sourcegraph/cody-shared/src/telemetry'
 
+import { debug } from '../log'
 import { countCode } from '../services/InlineAssist'
 
 import { computeDiff, Diff } from './diff'
@@ -122,7 +123,7 @@ export class FixupController
     // Apply single fixup from task ID. Public for testing.
     public async apply(id: taskID): Promise<void> {
         this.telemetryService.log('CodyVSCodeExtension:fixup:codeLens:clicked', { op: 'apply' })
-        console.log(id + ' applying')
+        debug('FixupController:apply', 'applying', { verbose: { id } })
         const task = this.tasks.get(id)
         if (!task) {
             console.error('cannot find task')
@@ -494,7 +495,8 @@ export class FixupController
             // Not a transition--nothing to do.
             return
         }
-        console.log(task.id, 'changing state from', oldState, 'to', state)
+
+        debug('FixupController:setTaskState: ', 'changing state', { verbose: { task } })
         task.state = state
 
         // TODO: These state transition actions were moved from FixupTask, but

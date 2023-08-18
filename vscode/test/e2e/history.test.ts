@@ -15,7 +15,7 @@ test.skip('checks for the chat history and new session', async ({ page, sidebar 
     await page.click('[aria-label="Start a New Chat Session"]')
     await expect(sidebar.getByText("Hello! I'm Cody. I can write code and answer questions for you.")).toBeVisible()
 
-    await sidebar.getByRole('textbox', { name: 'Text area' }).fill('Hello')
+    await sidebar.getByRole('textbox', { name: 'Chat message' }).fill('Hello')
     await sidebar.locator('vscode-button').getByRole('img').click()
     await expect(sidebar.getByText('Hello')).toBeVisible()
     await page.getByRole('button', { name: 'Chat History' }).click()
