@@ -1,4 +1,4 @@
-import { FunctionComponent, memo } from 'react'
+import { FunctionComponent } from 'react'
 
 import { mdiGraphOutline, mdiMagnify } from '@mdi/js'
 
@@ -53,4 +53,4 @@ export const PreciseContexts: FunctionComponent<{
             className={className}
         />
     )
-})
+}
