@@ -23,7 +23,7 @@ import { FixupController } from './non-stop/FixupController'
 import { showSetupNotification } from './notifications/setup-notification'
 import { AuthProvider } from './services/AuthProvider'
 import { createOrUpdateEventLogger } from './services/EventLogger'
-import { createFeatureFlagProvider, FeatureFlagProvider } from './services/FeatureFlagProvider'
+import { FeatureFlagProvider } from './services/FeatureFlagProvider'
 import { showFeedbackSupportQuickPick } from './services/FeedbackOptions'
 import { GuardrailsProvider } from './services/GuardrailsProvider'
 import { Comment, InlineController } from './services/InlineController'
@@ -122,10 +122,10 @@ const register = async (
         onConfigurationChange: externalServicesOnDidConfigurationChange,
     } = await configureExternalServices(initialConfig, rgPath, editor, telemetryService, platform)
 
-    const featureFlagProvider = await createFeatureFlagProvider(sourcegraphGraphQLAPIClient)
-
     const authProvider = new AuthProvider(initialConfig, secretStorage, localStorage, telemetryService)
     await authProvider.init()
+
+    const featureFlagProvider = new FeatureFlagProvider(sourcegraphGraphQLAPIClient)
 
     const contextProvider = new ContextProvider(
         initialConfig,
