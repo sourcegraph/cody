@@ -1,9 +1,9 @@
 import * as vscode from 'vscode'
 
+import { FeatureFlag, FeatureFlagProvider } from '@sourcegraph/cody-shared'
 import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
 
 import { debug } from '../log'
-import { FeatureFlag, FeatureFlagProvider } from '../services/FeatureFlagProvider'
 import { CodyStatusBar } from '../services/StatusBar'
 
 import { getContext, GetContextOptions, GetContextResult } from './context/context'
