@@ -3,7 +3,6 @@ import * as vscode from 'vscode'
 import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
 
 import { debug } from '../log'
-import { FeatureFlagProvider } from '../services/FeatureFlagProvider'
 import { CodyStatusBar } from '../services/StatusBar'
 
 import { getContext, GetContextOptions, GetContextResult } from './context/context'
@@ -34,7 +33,6 @@ export interface CodyCompletionItemProviderConfig {
     completeSuggestWidgetSelection?: boolean
     tracer?: ProvideInlineCompletionItemsTracer | null
     contextFetcher?: (options: GetContextOptions) => Promise<GetContextResult>
-    featureFlagProvider: FeatureFlagProvider
 }
 
 export class InlineCompletionItemProvider implements vscode.InlineCompletionItemProvider {
@@ -155,7 +153,6 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
             setIsLoading,
             abortSignal: abortController.signal,
             tracer,
-            featureFlagProvider: this.config.featureFlagProvider,
         })
 
         if (!result) {

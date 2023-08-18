@@ -4,7 +4,6 @@ import { URI } from 'vscode-uri'
 import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
 
 import { debug } from '../log'
-import { FeatureFlagProvider } from '../services/FeatureFlagProvider'
 
 import { GetContextOptions, GetContextResult } from './context/context'
 import { DocumentHistory } from './context/history'
@@ -43,7 +42,6 @@ export interface InlineCompletionsParams {
 
     // Shared
     requestManager: RequestManager
-    featureFlagProvider: FeatureFlagProvider
 
     // UI state
     lastCandidate?: LastInlineCompletionCandidate
@@ -150,7 +148,6 @@ async function doGetInlineCompletions({
     setIsLoading,
     abortSignal,
     tracer,
-    featureFlagProvider,
 }: InlineCompletionsParams): Promise<InlineCompletionsResult | null> {
     tracer?.({ params: { document, position, context } })
 
@@ -206,7 +203,6 @@ async function doGetInlineCompletions({
         getCodebaseContext,
         documentHistory,
         docContext,
-        featureFlagProvider,
     })
     if (abortSignal?.aborted) {
         return null
@@ -327,7 +323,6 @@ interface GetCompletionContextParams
         | 'contextFetcher'
         | 'getCodebaseContext'
         | 'documentHistory'
-        | 'featureFlagProvider'
     > {
     docContext: DocumentContext
 }
@@ -340,7 +335,6 @@ async function getCompletionContext({
     getCodebaseContext,
     documentHistory,
     docContext: { prefix, suffix },
-    featureFlagProvider,
 }: GetCompletionContextParams): Promise<GetContextResult | null> {
     if (!contextFetcher) {
         return null
@@ -361,7 +355,6 @@ async function getCompletionContext({
         maxChars: promptChars,
         getCodebaseContext,
         isEmbeddingsContextEnabled,
-        featureFlagProvider,
     })
 }
 

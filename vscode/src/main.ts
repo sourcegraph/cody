@@ -421,13 +421,7 @@ const register = async (
             completionsProvider.dispose()
         }
 
-        completionsProvider = createCompletionsProvider(
-            config,
-            completionsClient,
-            statusBar,
-            contextProvider,
-            featureFlagProvider
-        )
+        completionsProvider = createCompletionsProvider(config, completionsClient, statusBar, contextProvider)
     }
     vscode.workspace.onDidChangeConfiguration(event => {
         if (event.affectsConfiguration('cody.autocomplete')) {
@@ -472,8 +466,7 @@ function createCompletionsProvider(
     config: Configuration,
     completionsClient: SourcegraphCompletionsClient,
     statusBar: CodyStatusBar,
-    contextProvider: ContextProvider,
-    featureFlagProvider: FeatureFlagProvider
+    contextProvider: ContextProvider
 ): vscode.Disposable {
     const disposables: vscode.Disposable[] = []
 
@@ -487,7 +480,6 @@ function createCompletionsProvider(
             getCodebaseContext: () => contextProvider.context,
             isEmbeddingsContextEnabled: config.autocompleteAdvancedEmbeddings,
             completeSuggestWidgetSelection: config.autocompleteExperimentalCompleteSuggestWidgetSelection,
-            featureFlagProvider,
         })
 
         disposables.push(

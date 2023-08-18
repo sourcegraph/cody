@@ -8,9 +8,7 @@ import {
     CompletionParameters,
     CompletionResponse,
 } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
-import { SourcegraphGraphQLAPIClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
 
-import { FeatureFlagProvider } from '../services/FeatureFlagProvider'
 import { vsCodeMocks } from '../testutils/mocks'
 import { range } from '../testutils/textDocument'
 
@@ -32,14 +30,6 @@ import { getNextNonEmptyLine } from './utils/text-utils'
 const T = '\t'
 
 const URI_FIXTURE = URI.parse('file:///test.ts')
-
-const dummyFeatureFlagProvider = new FeatureFlagProvider(
-    new SourcegraphGraphQLAPIClient({
-        accessToken: 'access-token',
-        serverEndpoint: 'https://sourcegraph.com',
-        customHeaders: {},
-    })
-)
 
 /**
  * A test helper to create the parameters for {@link getInlineCompletions}.
@@ -96,7 +86,6 @@ function params(
         suffixPercentage: 0.3,
         toWorkspaceRelativePath: () => 'test.ts',
         requestManager: new RequestManager(),
-        featureFlagProvider: dummyFeatureFlagProvider,
         ...params,
     }
 }

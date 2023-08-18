@@ -2,7 +2,6 @@ import * as vscode from 'vscode'
 
 import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
 
-import { FeatureFlag, FeatureFlagProvider } from '../../services/FeatureFlagProvider'
 import { ContextSnippet } from '../types'
 
 import { getContextFromEmbeddings } from './context-embeddings'
@@ -18,7 +17,6 @@ export interface GetContextOptions {
     maxChars: number
     getCodebaseContext: () => CodebaseContext
     isEmbeddingsContextEnabled?: boolean
-    featureFlagProvider: FeatureFlagProvider
 }
 
 export type ContextSummary = Readonly<{
@@ -33,17 +31,8 @@ export interface GetContextResult {
 }
 
 export async function getContext(options: GetContextOptions): Promise<GetContextResult> {
-    const {
-        maxChars,
-        isEmbeddingsContextEnabled: isEmbeddingsContextEnabledInVSCodeConfig,
-        featureFlagProvider,
-    } = options
+    const { maxChars, isEmbeddingsContextEnabled } = options
     const start = performance.now()
-
-    const isEmbeddingsContextFeatureFlagEnabled = await featureFlagProvider.evaluateFeatureFlag(
-        FeatureFlag.EmbeddingsContextEnabled
-    )
-    const isEmbeddingsContextEnabled = isEmbeddingsContextEnabledInVSCodeConfig && isEmbeddingsContextFeatureFlagEnabled
 
     /**
      * The embeddings context is sync to retrieve to keep the completions latency minimal. If it's
