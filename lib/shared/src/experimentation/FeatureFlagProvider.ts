@@ -3,7 +3,10 @@ import { SourcegraphGraphQLAPIClient } from '../sourcegraph-api/graphql'
 import { isError } from '../utils'
 
 export enum FeatureFlag {
+    // This flag is only used for testing the behavior of the provider and should not be used in
+    // product code
     TestFlagDoNotUse = 'test-flag-do-not-use',
+
     CodyAutocompleteIncreasedDebounceTimeEnabled = 'cody-autocomplete-increased-debounce-time-enabled',
 }
 
