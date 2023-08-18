@@ -574,9 +574,6 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
             case /^\/f(ix)?\s.*$/.test(text):
                 return { text, recipeId: 'fixup' }
             case /^\/(explain|doc|test|smell)$/.test(text):
-                this.telemetryService.log(`CodyVSCodeExtension:command:${commandKey}:called`, {
-                    source: 'chat',
-                })
             default: {
                 if (!this.editor.getActiveTextEditor()?.filePath) {
                     await this.addCustomInteraction('Command failed. Please open a file and try again.', text)
