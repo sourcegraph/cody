@@ -48,7 +48,7 @@ export class Typewriter implements IncrementalTextConsumer {
 
     // IncrementalTextConsumer implementation. The "write" side of the pipe.
 
-    update(content: string): void {
+    public update(content: string): void {
         if (this.upstreamClosed) {
             throw new Error('Typewriter already closed')
         }
@@ -105,12 +105,12 @@ export class Typewriter implements IncrementalTextConsumer {
         }, dynamicDelay)
     }
 
-    close(): void {
+    public close(): void {
         this.upstreamClosed = true
     }
 
     /** Stop the typewriter, immediately emit any remaining text */
-    stop(): void {
+    public stop(): void {
         // Stop the animation
         if (this.interval) {
             clearInterval(this.interval)
