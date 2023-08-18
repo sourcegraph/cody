@@ -18,7 +18,7 @@ export class GraphContextProvider implements GraphContextFetcher {
  * an active selection, we will cull the symbols to those referenced in intersecting document symbol
  * ranges.
  */
-export async function getGraphContextFromEditor(editor: Editor): Promise<PreciseContext[]> {
+export const getGraphContextFromEditor = async (editor: Editor): Promise<PreciseContext[]> => {
     const activeEditor = editor.getActiveTextEditor()
     const workspaceRootUri = editor.getWorkspaceRootUri()
     if (!activeEditor || !workspaceRootUri) {
@@ -82,16 +82,12 @@ export async function getGraphContextFromEditor(editor: Editor): Promise<Precise
  * will give us indication of where the user selection and cursor is located, which we
  * assume to be the most relevant code to the current question.
  */
-async function extractRelevantDocumentSymbolRanges(
+export const extractRelevantDocumentSymbolRanges = async (
     activeEditorFileUri: URI,
-    selectionRange?: ActiveTextEditorSelectionRange
-): Promise<vscode.Range[]> {
-    const documentSymbolRanges = (
-        await vscode.commands.executeCommand<(vscode.SymbolInformation | vscode.DocumentSymbol)[]>(
-            'vscode.executeDocumentSymbolProvider',
-            activeEditorFileUri
-        )
-    ).map(extractSymbolRange)
+    selectionRange?: ActiveTextEditorSelectionRange,
+    getDocumentSymbolRanges: typeof defaultGetDocumentSymbolRanges = defaultGetDocumentSymbolRanges
+): Promise<vscode.Range[]> => {
+    const documentSymbolRanges = await getDocumentSymbolRanges(activeEditorFileUri)
 
     // Filter the document symbol ranges to just those whose range intersects the selection.
     // If no selection exists, keep all symbols, we'll utilize all document symbol ranges.
@@ -205,16 +201,18 @@ interface SymbolDefinitionMatches {
  * and filter out common keywords. Each matching symbol is queried for definitions and returned as a
  * Promise which can be resolved by the caller in bulk.
  */
-const gatherDefinitions = (
+export const gatherDefinitions = (
     activeEditorFileUri: URI,
     activeEditorLines: string[],
-    relevantDocumentSymbolRanges: vscode.Range[]
+    relevantDocumentSymbolRanges: vscode.Range[],
+    getDefinitions: typeof defaultGetDefinitions = defaultGetDefinitions
 ): SymbolDefinitionMatches[] => {
     // Construct a list of symbol and definition location pairs by querying the LSP server
     // with all identifiers (heuristically chosen via regex) in the relevant code ranges.
     const definitionMatches: SymbolDefinitionMatches[] = []
     for (const { start, end } of relevantDocumentSymbolRanges) {
-        for (const [lineIndex, line] of activeEditorLines.slice(start.line, end.line).entries()) {
+        for (const [lineIndex, line] of activeEditorLines.slice(start.line, end.line + 1).entries()) {
+            console.log({ line })
             for (const match of line.matchAll(identifierPattern)) {
                 if (match.index === undefined || commonKeywords.has(match[0])) {
                     continue
@@ -222,13 +220,10 @@ const gatherDefinitions = (
 
                 definitionMatches.push({
                     symbolName: match[0],
-                    locations: vscode.commands
-                        .executeCommand<(vscode.Location | vscode.LocationLink)[]>(
-                            'vscode.executeDefinitionProvider',
-                            activeEditorFileUri,
-                            new vscode.Position(start.line + lineIndex, match.index + 1)
-                        )
-                        .then(locations => locations.flatMap(extractLocation)),
+                    locations: getDefinitions(
+                        activeEditorFileUri,
+                        new vscode.Position(start.line + lineIndex, match.index + 1)
+                    ),
                 })
             }
         }
@@ -242,20 +237,15 @@ const gatherDefinitions = (
  * is expected to hold the contents of the file indicated by the definition's location URI, and the file
  * is assumed to be open in the current VSCode workspace. Matches without such an entry are skipped.
  */
-async function extractDefinitionContexts(
+export const extractDefinitionContexts = async (
     matches: { symbolName: string; location: vscode.Location }[],
-    contentMap: Map<string, string[]>
-): Promise<PreciseContext[]> {
+    contentMap: Map<string, string[]>,
+    getDocumentSymbolRanges: typeof defaultGetDocumentSymbolRanges = defaultGetDocumentSymbolRanges
+): Promise<PreciseContext[]> => {
     // Retrieve document symbols for each of the open documents, which we will use to extract the relevant
     // definition "bounds" given the range of the definition symbol (which is contained within the range).
     const documentSymbolsMap = new Map(
-        [...contentMap.keys()].map(fsPath => [
-            fsPath,
-            vscode.commands.executeCommand<(vscode.SymbolInformation | vscode.DocumentSymbol)[]>(
-                'vscode.executeDocumentSymbolProvider',
-                vscode.Uri.file(fsPath)
-            ),
-        ])
+        [...contentMap.keys()].map(fsPath => [fsPath, getDocumentSymbolRanges(vscode.Uri.file(fsPath))])
     )
 
     // NOTE: In order to make sure the loop below is unblocked we'll also force resolve the entirety
@@ -275,8 +265,8 @@ async function extractDefinitionContexts(
 
         if (contentPromise && documentSymbolsPromises) {
             const content = contentPromise
-            const documentSymbols = await documentSymbolsPromises // NOTE: already resolved
-            const definitionSnippets = extractSnippets(content, documentSymbols.map(extractSymbolRange), [range])
+            const documentSymbols = await documentSymbolsPromises // NOTE: already resolved)
+            const definitionSnippets = extractSnippets(content, documentSymbols, [range])
 
             for (const definitionSnippet of definitionSnippets) {
                 contexts.push({
@@ -298,6 +288,26 @@ async function extractDefinitionContexts(
 
     return contexts
 }
+
+/**
+ *
+ * Shim for default LSP executeDocumentSymbolProvider call. Can be mocked for testing.
+ */
+const defaultGetDocumentSymbolRanges = async (uri: URI): Promise<vscode.Range[]> =>
+    (
+        await vscode.commands.executeCommand<(vscode.SymbolInformation | vscode.DocumentSymbol)[]>(
+            'vscode.executeDocumentSymbolProvider',
+            uri
+        )
+    ).map(extractSymbolRange)
+
+/**
+ * Shim for default LSP executeDefinitionProvider call. Can be mocked for testing.
+ */
+const defaultGetDefinitions = async (uri: URI, position: vscode.Position): Promise<vscode.Location[]> =>
+    vscode.commands
+        .executeCommand<(vscode.Location | vscode.LocationLink)[]>('vscode.executeDefinitionProvider', uri, position)
+        .then(locations => locations.flatMap(extractLocation))
 
 /**
  * Extract the definition range from the given symbol information or document symbol.
