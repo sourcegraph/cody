@@ -10,13 +10,13 @@ interface NoticesProps {
 }
 
 export const Notices: React.FunctionComponent<NoticesProps> = ({ extensionVersion }) => {
-    // TODO: Implement (true when version is different from last load — localstorage?)
+    // TODO: Implement (true when version is different from last load — localstorage?)
     const [showUpdateNotice, setShowUpdateNotice] = useState<boolean>(true)
     const handleUpdateNoticeClose = useCallback(() => {
         setShowUpdateNotice(false)
     }, [])
 
-    // TODO: Implement (true when user first accepts an autocomplete message — onMessage?)
+    // TODO: Implement (true when user first accepts an autocomplete message — onMessage?)
     const [showAutocompleteNotice, setShowAutocompleteNotice] = useState<boolean>(true)
     const handleAutocompleteNoticeClose = useCallback(() => {
         setShowAutocompleteNotice(false)
