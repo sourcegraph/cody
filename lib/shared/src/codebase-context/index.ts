@@ -1,6 +1,6 @@
 import { Configuration } from '../configuration'
 import { EmbeddingsSearch } from '../embeddings'
-import { ContextResult, FilenameContextFetcher, KeywordContextFetcher } from '../local-context'
+import { ContextResult, FilenameContextFetcher, IndexedKeywordContextFetcher, KeywordContextFetcher } from '../local-context'
 import { isMarkdownFile, populateCodeContextTemplate, populateMarkdownContextTemplate } from '../prompt/templates'
 import { Message } from '../sourcegraph-api'
 import { EmbeddingsSearchResult } from '../sourcegraph-api/graphql/client'
@@ -22,6 +22,7 @@ export class CodebaseContext {
         private embeddings: EmbeddingsSearch | null,
         private keywords: KeywordContextFetcher | null,
         private filenames: FilenameContextFetcher | null,
+        public symf?: IndexedKeywordContextFetcher | null,
         private unifiedContextFetcher?: UnifiedContextFetcher | null,
         private rerank?: (query: string, results: ContextResult[]) => Promise<ContextResult[]>
     ) {}

@@ -803,6 +803,18 @@
           "markdownDescription": "Experimental feature for internal use.",
           "default": false
         },
+        "cody.experimental.symf.path": {
+          "order": 99,
+          "type": "string",
+          "markdownDescription": "Path to symf binary",
+          "default": ""
+        },
+        "cody.experimental.symf.anthropicKey": {
+          "order": 99,
+          "type": "string",
+          "markdownDescription": "API key for Anthropic",
+          "default": ""
+        },
         "cody.debug.enable": {
           "order": 99,
           "type": "boolean",

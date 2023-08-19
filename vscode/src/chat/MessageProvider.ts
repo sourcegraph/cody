@@ -384,6 +384,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         // Check whether or not to connect to LLM backend for responses
         // Ex: performing fuzzy / context-search does not require responses from LLM backend
         switch (recipeId) {
+            case 'local-indexed-keyword-search':
             case 'context-search':
                 this.sendTranscript()
                 await this.onCompletionEnd()
@@ -569,6 +570,8 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
                 await this.clearAndRestartSession()
                 this.telemetryService.log('CodyVSCodeExtension:command:resetChat:executed')
                 return null
+            case /^\/symf(?:\s|$)/.test(text):
+                return { text, recipeId: 'local-indexed-keyword-search' }
             case /^\/s(earch)?\s/.test(text):
                 return { text, recipeId: 'context-search' }
             case /^\/f(ix)?\s.*$/.test(text):

@@ -120,7 +120,17 @@ const register = async (
         completionsClient,
         guardrails,
         onConfigurationChange: externalServicesOnDidConfigurationChange,
-    } = await configureExternalServices(initialConfig, rgPath, editor, telemetryService, platform)
+    } = await configureExternalServices(
+        initialConfig,
+        rgPath,
+        {
+            path: config.experimentalSymfPath,
+            anthropicKey: config.experimentalSymfAnthropicKey,
+        },
+        editor,
+        telemetryService,
+        platform
+    )
 
     const authProvider = new AuthProvider(initialConfig, secretStorage, localStorage, telemetryService)
     await authProvider.init()
@@ -133,6 +143,7 @@ const register = async (
         secretStorage,
         localStorage,
         rgPath,
+        { path: config.experimentalSymfPath, anthropicKey: config.experimentalSymfAnthropicKey },
         authProvider,
         telemetryService,
         platform
