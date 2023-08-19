@@ -1,0 +1,37 @@
+.notice {
+    box-sizing: border-box;
+    padding: 10px 10px 13px 10px;
+    width: 100%;
+
+    background: var(--vscode-sideBar-background);
+    color: var(--vscode-sideBar-foreground);
+    border: 1px solid var(--vscode-widget-border);
+    box-shadow: 0 0 8px 2px var(--vscode-widget-shadow);
+    border-radius: 6px;
+
+    display: flex;
+    flex-direction: row;
+    gap: 4px;
+}
+
+.notice h1,
+.notice p {
+    all: unset;
+}
+
+.notice-icon {
+    width: 24px;
+    height: 24px;
+}
+.notice-text {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex: auto;
+    font-weight: 500;
+}
+
+.notice-close {
+    margin-top: -5px;
+    margin-right: -5px;
+}
