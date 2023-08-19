@@ -12,6 +12,7 @@ import { isError } from '@sourcegraph/cody-shared/src/utils'
 import { getFullConfig } from '../configuration'
 import { VSCodeEditor } from '../editor/vscode-editor'
 import { PlatformContext } from '../extension.common'
+import { SymfRunner } from '../local-context/symf'
 import { debug } from '../log'
 import { getRerankWithLog } from '../logged-rerank'
 import { repositoryRemoteUrl } from '../repository/repositoryHelpers'
@@ -22,7 +23,6 @@ import { SecretStorage } from '../services/SecretStorageProvider'
 import { ChatViewProviderWebview } from './ChatViewProvider'
 import { ConfigurationSubsetForWebview, isLocalApp, LocalEnv } from './protocol'
 import { convertGitCloneURLToCodebaseName } from './utils'
-import { SymfRunner } from '../local-context/symf'
 
 export type Config = Pick<
     ConfigurationWithAccessToken,
@@ -68,7 +68,7 @@ export class ContextProvider implements vscode.Disposable {
         private secretStorage: SecretStorage,
         private localStorage: LocalStorage,
         private rgPath: string | null,
-        private symf: {path: string, anthropicKey: string} | null,
+        private symf: { path: string; anthropicKey: string } | null,
         private authProvider: AuthProvider,
         private telemetryService: TelemetryService,
         private platform: PlatformContext
@@ -121,7 +121,7 @@ export class ContextProvider implements vscode.Disposable {
             this.rgPath,
             this.symf && {
                 path: this.symf.path,
-                anthropicKey: this.symf.anthropicKey
+                anthropicKey: this.symf.anthropicKey,
             },
             this.editor,
             this.chat,
@@ -155,7 +155,7 @@ export class ContextProvider implements vscode.Disposable {
                 this.rgPath,
                 this.symf && {
                     path: this.symf.path,
-                    anthropicKey: this.symf.anthropicKey
+                    anthropicKey: this.symf.anthropicKey,
                 },
                 this.editor,
                 this.chat,
@@ -258,8 +258,8 @@ export async function getCodebaseContext(
     config: Config,
     rgPath: string | null,
     symf: {
-        path: string,
-        anthropicKey: string,
+        path: string
+        anthropicKey: string
     } | null,
     editor: Editor,
     chatClient: ChatClient,

@@ -39,6 +39,6 @@ export interface Result {
 }
 
 export interface IndexedKeywordContextFetcher {
-    getIndexReady(scopeDir: string, whenReadyFn: () => void): Promise<boolean> 
+    getIndexReady(scopeDir: string, whenReadyFn: () => void): Promise<boolean>
     getResults(query: string, scopeDir: string): Promise<Result[]>
 }

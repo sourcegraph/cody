@@ -1,6 +1,11 @@
 import { Configuration } from '../configuration'
 import { EmbeddingsSearch } from '../embeddings'
-import { ContextResult, FilenameContextFetcher, IndexedKeywordContextFetcher, KeywordContextFetcher } from '../local-context'
+import {
+    ContextResult,
+    FilenameContextFetcher,
+    IndexedKeywordContextFetcher,
+    KeywordContextFetcher,
+} from '../local-context'
 import { isMarkdownFile, populateCodeContextTemplate, populateMarkdownContextTemplate } from '../prompt/templates'
 import { Message } from '../sourcegraph-api'
 import { EmbeddingsSearchResult } from '../sourcegraph-api/graphql/client'

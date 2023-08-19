@@ -14,9 +14,9 @@ import { TelemetryService } from '@sourcegraph/cody-shared/src/telemetry'
 import { isError } from '@sourcegraph/cody-shared/src/utils'
 
 import { PlatformContext } from './extension.common'
+import { SymfRunner } from './local-context/symf'
 import { logger } from './log'
 import { getRerankWithLog } from './logged-rerank'
-import { SymfRunner } from './local-context/symf'
 
 interface ExternalServices {
     intentDetector: IntentDetector
@@ -71,12 +71,7 @@ export async function configureExternalServices(
             ? platform.createLocalKeywordContextFetcher?.(rgPath, editor, chatClient, telemetryService) ?? null
             : null,
         rgPath ? platform.createFilenameContextFetcher?.(rgPath, editor, chatClient) ?? null : null,
-        symf
-            ? new SymfRunner(
-                  symf.path,
-                  symf.anthropicKey,
-              )
-            : null,
+        symf ? new SymfRunner(symf.path, symf.anthropicKey) : null,
         undefined,
         getRerankWithLog(chatClient)
     )
