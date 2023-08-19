@@ -960,6 +960,7 @@
     "isomorphic-fetch": "^3.0.0",
     "lodash": "^4.17.21",
     "lru-cache": "^10.0.0",
+    "mkdirp": "^3.0.1",
     "mock-require": "^3.0.3",
     "openai": "^3.2.1",
     "stream-json": "^1.8.0",
