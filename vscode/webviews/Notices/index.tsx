@@ -1,16 +1,15 @@
 import { VersionUpdatedNotice } from './VersionUpdatedNotice'
 
-// import { OnboardingAutocompleteNotice } from './OnboardingAutocompleteNotice'
-
 import styles from './index.module.css'
 
 interface NoticesProps {
     extensionVersion: string
+    probablyNewInstall: boolean
 }
 
-export const Notices: React.FunctionComponent<NoticesProps> = ({ extensionVersion }) => (
+export const Notices: React.FunctionComponent<NoticesProps> = ({ extensionVersion, probablyNewInstall }) => (
     <NoticesContainer>
-        <VersionUpdatedNotice version={extensionVersion} />
+        <VersionUpdatedNotice version={extensionVersion} probablyNewInstall={probablyNewInstall} />
         {/* <OnboardingAutocompleteNotice /> */}
     </NoticesContainer>
 )

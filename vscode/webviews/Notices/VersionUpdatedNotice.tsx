@@ -13,16 +13,19 @@ const key = 'notices.last-dismissed-version'
  * The first time this is run on a fresh install, we consider the version
  * update as being dismissed.
  */
-const useShowNotice = (currentVersion: string): [boolean, () => void] => {
-    /* Only consider the first two components */
-    const version = currentVersion.split('.').slice(0, 2).join('.')
+const useShowNotice = (currentVersion: string, probablyNewInstall: boolean): [boolean, () => void] => {
+    /* If this is a new install, we consider the current version dismissed already */
+    if (probablyNewInstall) {
+        localStorage.setItem(key, currentVersion)
+    }
 
-    const lastDismissedVersion = localStorage.getItem(key)
-
-    const [showNotice, setShowNotice] = useState<boolean>(lastDismissedVersion !== version)
+    const [showNotice, setShowNotice] = useState<boolean>(
+        /* Version different to what's already dismissed means time for a notice */
+        localStorage.getItem(key) !== currentVersion
+    )
 
     const setDismissed = (): void => {
-        localStorage.setItem(key, version)
+        localStorage.setItem(key, currentVersion)
         setShowNotice(false)
     }
 
@@ -31,10 +34,17 @@ const useShowNotice = (currentVersion: string): [boolean, () => void] => {
 
 interface VersionUpdateNoticeProps {
     version: string
+    probablyNewInstall: boolean
 }
 
-export const VersionUpdatedNotice: React.FunctionComponent<VersionUpdateNoticeProps> = ({ version }) => {
-    const [showNotice, setDismissed] = useShowNotice(version)
+export const VersionUpdatedNotice: React.FunctionComponent<VersionUpdateNoticeProps> = ({
+    version,
+    probablyNewInstall,
+}) => {
+    /* Only consider the first two components */
+    const majorMinorVersion = version.split('.').slice(0, 2).join('.')
+
+    const [showNotice, setDismissed] = useShowNotice(majorMinorVersion, probablyNewInstall)
 
     if (!showNotice) {
         return undefined
