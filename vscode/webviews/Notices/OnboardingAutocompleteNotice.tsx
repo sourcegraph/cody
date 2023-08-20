@@ -1,20 +1,14 @@
-import { Notice, NoticeProps } from './Notice'
+import { Notice } from './Notice'
 
 import styles from './OnboardingAutocompleteNotice.module.css'
 
-interface OnboardingAutocompleteNoticeProps {
-    onDismiss: NoticeProps['onDismiss']
-}
-
-export const OnboardingAutocompleteNotice: React.FunctionComponent<OnboardingAutocompleteNoticeProps> = ({
-    onDismiss,
-}) => (
+export const OnboardingAutocompleteNotice: React.FunctionComponent = () => (
     <Notice
         icon={<Icon />}
         title="Congratulations! You just accepted your first Cody autocomplete."
-        linkText="Next: Run a Cody Command →"
+        linkText="Next: Run a Cody Command →"
         linkHref="command:cody.action.commands.menu"
-        onDismiss={onDismiss}
+        onDismiss={() => console.log('todo')}
         className={styles.notice}
     />
 )

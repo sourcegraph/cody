@@ -14,6 +14,11 @@
     gap: 4px;
 }
 
+/* When there's no notices we don't want the container taking up space and capturing clicks */
+.notice:empty {
+    display: none;
+}
+
 .notice h1,
 .notice p {
     all: unset;
