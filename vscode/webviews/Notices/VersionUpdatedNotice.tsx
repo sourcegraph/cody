@@ -46,7 +46,8 @@ export const VersionUpdatedNotice: React.FunctionComponent<VersionUpdateNoticePr
 
     const [showNotice, setDismissed] = useShowNotice(majorMinorVersion, probablyNewInstall)
 
-    if (!showNotice) {
+    /* Ignore 0.6, this all begins with 0.7+ */
+    if (!showNotice || majorMinorVersion === '0.6') {
         return undefined
     }
 
