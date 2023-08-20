@@ -15,6 +15,7 @@ describe('getConfiguration', () => {
             pluginsEnabled: false,
             serverEndpoint: DOTCOM_URL.href,
             codebase: '',
+            customHeaders: {},
             useContext: 'embeddings',
             autocomplete: true,
             experimentalCommandLenses: false,
@@ -67,6 +68,10 @@ describe('getConfiguration', () => {
                         return true
                     case 'cody.experimental.nonStop':
                         return true
+                    case 'cody.experimental.symf.anthropicKey':
+                        return 'anthropic_secret_key'
+                    case 'cody.experimental.symf.path':
+                        return '/usr/local/bin/symf'
                     case 'cody.debug.enable':
                         return true
                     case 'cody.debug.verbose':
@@ -119,6 +124,8 @@ describe('getConfiguration', () => {
             inlineChat: true,
             isRunningInsideAgent: false,
             experimentalNonStop: true,
+            experimentalSymfAnthropicKey: 'anthropic_secret_key',
+            experimentalSymfPath: '/usr/local/bin/symf',
             debugEnable: true,
             debugVerbose: true,
             debugFilter: /.*/,
