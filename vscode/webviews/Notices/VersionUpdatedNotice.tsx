@@ -53,7 +53,7 @@ export const VersionUpdatedNotice: React.FunctionComponent<VersionUpdateNoticePr
     return (
         <Notice
             icon={<Icon />}
-            title={`Cody updated to ${majorMinorVersion}!`}
+            title={`Cody updated to ${majorMinorVersion}`}
             /**
              * At the top of each GitHub release notes we include a link to the
              * release's blog post for that point release (e.g. 0.8.x). So even
