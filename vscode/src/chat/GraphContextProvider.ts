@@ -241,16 +241,16 @@ interface ResolvedSymbolDefinitionMatches {
  * in parallel before return.
  */
 export const gatherDefinitions = async (
-    activeEditorFileUri: URI,
-    activeEditorLines: string[],
-    relevantDocumentSymbolRanges: vscode.Range[],
+    uri: URI,
+    lines: string[],
+    ranges: vscode.Range[],
     getDefinitions: typeof defaultGetDefinitions = defaultGetDefinitions
 ): Promise<ResolvedSymbolDefinitionMatches[]> => {
     // Construct a list of symbol and definition location pairs by querying the LSP server
     // with all identifiers (heuristically chosen via regex) in the relevant code ranges.
     const definitionMatches: SymbolDefinitionMatches[] = []
-    for (const { start, end } of relevantDocumentSymbolRanges) {
-        for (const [lineIndex, line] of activeEditorLines.slice(start.line, end.line + 1).entries()) {
+    for (const { start, end } of ranges) {
+        for (const [lineIndex, line] of lines.slice(start.line, end.line + 1).entries()) {
             for (const match of line.matchAll(identifierPattern)) {
                 if (match.index === undefined || commonKeywords.has(match[0])) {
                     continue
@@ -258,10 +258,7 @@ export const gatherDefinitions = async (
 
                 definitionMatches.push({
                     symbolName: match[0],
-                    locations: getDefinitions(
-                        activeEditorFileUri,
-                        new vscode.Position(start.line + lineIndex, match.index + 1)
-                    ),
+                    locations: getDefinitions(uri, new vscode.Position(start.line + lineIndex, match.index + 1)),
                 })
             }
         }
