@@ -8,12 +8,8 @@ interface NoticesProps {
 }
 
 export const Notices: React.FunctionComponent<NoticesProps> = ({ extensionVersion, probablyNewInstall }) => (
-    <NoticesContainer>
+    <div className={styles.notices}>
         <VersionUpdatedNotice version={extensionVersion} probablyNewInstall={probablyNewInstall} />
         {/* <OnboardingAutocompleteNotice /> */}
-    </NoticesContainer>
-)
-
-const NoticesContainer: React.FunctionComponent<React.PropsWithChildren> = ({ children }) => (
-    <div className={styles.notices}>{children}</div>
+    </div>
 )
