@@ -17,6 +17,7 @@
     "webpack.config.js",
     "package.json",
     ".storybook/*.ts",
+    "../lib/shared/src/chat/typewriter.ts",
     "../lib/shared/src/telemetry/EventLogger.ts",
     "test/completions/completions-dataset.ts",
   ],

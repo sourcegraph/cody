@@ -11,11 +11,17 @@ export interface IncrementalTextConsumer {
     close: () => void
 }
 
-// Maximum/minimum amount of time to wait between character chunks
-const MAX_DELAY_MS = 200
-const MIN_DELAY_MS = 5
+// This is a ~700 WPM typing speed. Most people read much faster than they type.
+const DELAY_MS = 85
 
-const MIN_CHAR_CHUNK_SIZE = 1
+// Not all languages have spaces, and we don't have a word breaker, so use
+// chunks of characters. This is prime to reduce the likelihood we get an "n
+// columns" effect of successive chunks.
+const CHARS_PER_CHUNK_WITHOUT_SPACES = 7
+
+// For languages with spaces, this prefers whitespaces as break points but will
+// skip short words.
+const re = /\S{3,}\s+/g
 
 export class Typewriter implements IncrementalTextConsumer {
     private upstreamClosed = false
@@ -57,56 +63,14 @@ export class Typewriter implements IncrementalTextConsumer {
         }
         this.text = content
 
-        /**
-         * If we already have an interval running, stop it to avoid stacking
-         * multiple intervals on top of each other.
-         */
-        if (this.interval) {
-            clearInterval(this.interval)
-            this.interval = undefined
+        if (!this.interval) {
+            this.interval = setInterval(() => this.type(), DELAY_MS)
         }
-
-        /**
-         * Calculate the delay from the remaining characters we know we have left to process
-         * This ensures that the typewriter effect will speed up if we start to fall behind.
-         */
-        const calculatedDelay = MAX_DELAY_MS / (this.text.length - this.i)
-
-        /**
-         * We limit how small our delay can be to ensure we always have some form of typing effect.
-         */
-        const dynamicDelay = Math.max(calculatedDelay, MIN_DELAY_MS)
-
-        /**
-         * To ensure we still can keep up with the updated text, we instead increase the character chunk size.
-         * We calculate this by working out how many characters we would need to maintain the same minimum delay.
-         * This ensures we always keep up with the text, no matter how large the incoming chunks are.
-         *
-         * Note: For particularly large chunks, this will result in a character chunk size that is far bigger than you would expect for a typing effect.
-         * This is an accepted trade-off in order to ensure we stay in sync with the incoming text.
-         */
-        const charChunkSize =
-            calculatedDelay < MIN_DELAY_MS ? Math.round(MIN_DELAY_MS / calculatedDelay) : MIN_CHAR_CHUNK_SIZE
-
-        this.interval = setInterval(() => {
-            this.i = Math.min(this.text.length, this.i + charChunkSize)
-            this.consumer.update(this.text.slice(0, this.i))
-
-            /** Clean up, notify when we have reached the end of the known remaining text. */
-            if (this.i === this.text.length) {
-                clearInterval(this.interval)
-                this.interval = undefined
-
-                if (this.upstreamClosed) {
-                    this.consumer.close()
-                    this.resolveFinished(this.text)
-                }
-            }
-        }, dynamicDelay)
     }
 
     public close(): void {
         this.upstreamClosed = true
+        this.attemptFinish()
     }
 
     /** Stop the typewriter, immediately emit any remaining text */
@@ -127,5 +91,43 @@ export class Typewriter implements IncrementalTextConsumer {
         } else {
             this.rejectFinished(new Error('Typewriter stopped'))
         }
+    }
+
+    // Manages clearing the interval if there is no more text to output.
+    // Closes the downstream consumer once all text has been typed.
+    private attemptFinish(): void {
+        if (this.i === this.text.length) {
+            if (this.interval) {
+                clearInterval(this.interval)
+                this.interval = undefined
+            }
+            if (this.upstreamClosed) {
+                this.consumer.close()
+                this.resolveFinished(this.text)
+            }
+        }
+    }
+
+    private type(): void {
+        // Pick the next index to type up to
+        let next = this.i + CHARS_PER_CHUNK_WITHOUT_SPACES
+        if (next >= this.text.length) {
+            next = this.text.length
+        } else {
+            re.lastIndex = this.i
+            re.exec(this.text) // updates re.lastIndex to the end of the match
+            if (re.lastIndex) {
+                next = re.lastIndex
+            }
+        }
+
+        // Do the update, if any
+        if (next > this.i) {
+            this.i = next
+            this.consumer.update(this.text.slice(0, this.i))
+        }
+
+        // Clean up
+        this.attemptFinish()
     }
 }
