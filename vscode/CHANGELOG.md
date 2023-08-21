@@ -31,6 +31,7 @@ Starting from `0.2.0`, Cody is using `major.EVEN_NUMBER.patch` for release versi
 - Cody Commands: Match commands on description in Cody menu [pull/702](https://github.com/sourcegraph/cody/pull/702)
 - Cody Commands: Don't require Esc to dismiss Cody menu. [pull/700](https://github.com/sourcegraph/cody/pull/700)
 - Updated welcome chat words. [pull/748](https://github.com/sourcegraph/cody/pull/748)
+- Autocomplete: Reduce network bandwidth with requests are resolved by previous responses. [pull/762](https://github.com/sourcegraph/cody/pull/762)
 
 ## [0.6.7]
 
