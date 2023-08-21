@@ -9,12 +9,7 @@ import { TranscriptAction } from './actions/TranscriptAction'
 export interface SymbolLinkProps {
     symbol: string
     path: string
-    range?: {
-        startLine: number
-        startCharacter: number
-        endLine: number
-        endCharacter: number
-    }
+    range?: PreciseContext['range']
 }
 
 export const PreciseContexts: FunctionComponent<{
