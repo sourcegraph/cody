@@ -42,19 +42,28 @@ export const getGraphContextFromEditor = async (editor: Editor): Promise<Precise
     )
 
     // Extract identifiers from the relevant document symbol ranges and request their definitions
-    const definitionMatches = gatherDefinitions(activeEditorFileUri, activeEditorLines, relevantDocumentSymbolRanges)
+    const definitionMatches = await gatherDefinitions(
+        activeEditorFileUri,
+        activeEditorLines,
+        relevantDocumentSymbolRanges
+    )
 
     // Resolve, extract, and deduplicate the URIs distinct from the active editor file
-    const extractedUris = definitionMatches.map(async ({ locations }) => (await locations).map(({ uri }) => uri))
-    const allUris = (await Promise.all(extractedUris)).flat()
-    const uris = dedupeWith(allUris, uri => uri.fsPath).filter(uri => uri.fsPath !== activeEditorFileUri.fsPath)
-
-    // Resolve, extract, and deduplicate the symbol and location match pairs from the definition queries above
-    const extractedMatches = definitionMatches.map(async ({ symbolName, locations }) =>
-        (await locations).map(location => ({ symbolName, location }))
+    const uris = dedupeWith(
+        definitionMatches
+            .map(({ locations }) => locations.map(({ uri }) => uri))
+            .flat()
+            .filter(uri => uri.fsPath !== activeEditorFileUri.fsPath),
+        uri => uri.fsPath
     )
-    const allMatches = (await Promise.all(extractedMatches)).flat()
-    const matches = dedupeWith(allMatches, ({ location }) => locationKeyFn(location))
+
+    // Resolve, extract, and deduplicate the symbol and location match pairs from the definition matches
+    const matches = dedupeWith(
+        definitionMatches
+            .map(({ symbolName, locations }) => locations.map(location => ({ symbolName, location })))
+            .flat(),
+        ({ location }) => locationKeyFn(location)
+    )
 
     // Open each URI in the current workspace, and make the document content retrievable by filepath
     const contentMap = new Map(
@@ -196,17 +205,22 @@ interface SymbolDefinitionMatches {
     locations: Thenable<vscode.Location[]>
 }
 
+interface ResolvedSymbolDefinitionMatches {
+    symbolName: string
+    locations: vscode.Location[]
+}
+
 /**
  * Search the given lines of code for identifier definitions matching an a common identifier pattern
- * and filter out common keywords. Each matching symbol is queried for definitions and returned as a
- * Promise which can be resolved by the caller in bulk.
+ * and filter out common keywords. Each matching symbol is queried for definitions which are resolved
+ * in parallel before return.
  */
-export const gatherDefinitions = (
+export const gatherDefinitions = async (
     activeEditorFileUri: URI,
     activeEditorLines: string[],
     relevantDocumentSymbolRanges: vscode.Range[],
     getDefinitions: typeof defaultGetDefinitions = defaultGetDefinitions
-): SymbolDefinitionMatches[] => {
+): Promise<ResolvedSymbolDefinitionMatches[]> => {
     // Construct a list of symbol and definition location pairs by querying the LSP server
     // with all identifiers (heuristically chosen via regex) in the relevant code ranges.
     const definitionMatches: SymbolDefinitionMatches[] = []
@@ -228,7 +242,9 @@ export const gatherDefinitions = (
         }
     }
 
-    return definitionMatches
+    return Promise.all(
+        definitionMatches.map(async ({ symbolName, locations }) => ({ symbolName, locations: await locations }))
+    )
 }
 
 /**

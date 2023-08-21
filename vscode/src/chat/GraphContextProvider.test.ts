@@ -92,7 +92,7 @@ describe('extractRelevantDocumentSymbolRanges', () => {
 
 describe('gatherDefinitions', () => {
     test('returns definitions referencing multiple files', async () => {
-        const definitions = gatherDefinitions(
+        const definitions = await gatherDefinitions(
             Uri.parse('/test-3.test'),
             testFile3.split('\n').slice(1),
             [
@@ -124,9 +124,7 @@ describe('gatherDefinitions', () => {
             }
         )
 
-        expect(
-            await Promise.all(definitions.map(async v => ({ symbolName: v.symbolName, locations: await v.locations })))
-        ).toEqual([
+        expect(definitions).toEqual([
             { symbolName: 'Some', locations: [] },
             { symbolName: 'docstring', locations: [] },
             { symbolName: 'here', locations: [] },
