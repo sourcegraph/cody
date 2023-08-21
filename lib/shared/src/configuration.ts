@@ -17,6 +17,8 @@ export interface Configuration {
     experimentalEditorTitleCommandIcon: boolean
     experimentalGuardrails: boolean
     experimentalNonStop: boolean
+    experimentalSymfPath: string
+    experimentalSymfAnthropicKey: string
     autocompleteAdvancedProvider:
         | 'anthropic'
         | 'unstable-codegen'

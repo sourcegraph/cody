@@ -287,6 +287,7 @@ export const useClient = ({
                 null,
                 null,
                 null,
+                null,
                 unifiedContextFetcherClient
             )
 

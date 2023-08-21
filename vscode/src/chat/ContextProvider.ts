@@ -12,6 +12,7 @@ import { isError } from '@sourcegraph/cody-shared/src/utils'
 import { getFullConfig } from '../configuration'
 import { VSCodeEditor } from '../editor/vscode-editor'
 import { PlatformContext } from '../extension.common'
+import { SymfRunner } from '../local-context/symf'
 import { debug } from '../log'
 import { getRerankWithLog } from '../logged-rerank'
 import { repositoryRemoteUrl } from '../repository/repositoryHelpers'
@@ -67,6 +68,7 @@ export class ContextProvider implements vscode.Disposable {
         private secretStorage: SecretStorage,
         private localStorage: LocalStorage,
         private rgPath: string | null,
+        private symf: { path: string; anthropicKey: string } | null,
         private authProvider: AuthProvider,
         private telemetryService: TelemetryService,
         private platform: PlatformContext
@@ -117,6 +119,10 @@ export class ContextProvider implements vscode.Disposable {
         const codebaseContext = await getCodebaseContext(
             this.config,
             this.rgPath,
+            this.symf && {
+                path: this.symf.path,
+                anthropicKey: this.symf.anthropicKey,
+            },
             this.editor,
             this.chat,
             this.telemetryService,
@@ -147,6 +153,10 @@ export class ContextProvider implements vscode.Disposable {
             const codebaseContext = await getCodebaseContext(
                 newConfig,
                 this.rgPath,
+                this.symf && {
+                    path: this.symf.path,
+                    anthropicKey: this.symf.anthropicKey,
+                },
                 this.editor,
                 this.chat,
                 this.telemetryService,
@@ -247,6 +257,10 @@ export class ContextProvider implements vscode.Disposable {
 export async function getCodebaseContext(
     config: Config,
     rgPath: string | null,
+    symf: {
+        path: string
+        anthropicKey: string
+    } | null,
     editor: Editor,
     chatClient: ChatClient,
     telemetryService: TelemetryService,
@@ -280,6 +294,7 @@ export async function getCodebaseContext(
             ? platform.createLocalKeywordContextFetcher?.(rgPath, editor, chatClient, telemetryService) ?? null
             : null,
         rgPath ? platform.createFilenameContextFetcher?.(rgPath, editor, chatClient) ?? null : null,
+        symf ? new SymfRunner(symf.path, symf.anthropicKey) : null,
         undefined,
         getRerankWithLog(chatClient)
     )
