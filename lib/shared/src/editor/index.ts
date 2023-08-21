@@ -26,6 +26,7 @@ export interface ActiveTextEditorSelection {
     precedingText: string
     selectedText: string
     followingText: string
+    selectionRange?: ActiveTextEditorSelectionRange | null
 }
 
 export type ActiveTextEditorDiagnosticType = 'error' | 'warning' | 'information' | 'hint'
@@ -98,10 +99,17 @@ export interface Editor<
     getActiveTextEditor(): ActiveTextEditor | null
     getActiveTextEditorSelection(): ActiveTextEditorSelection | null
 
+    getActiveInlineChatTextEditor(): ActiveTextEditor | null
+    getActiveInlineChatSelection(): ActiveTextEditorSelection | null
+
     /**
      * Gets the active text editor's selection, or the entire file if the selected range is empty.
      */
     getActiveTextEditorSelectionOrEntireFile(): ActiveTextEditorSelection | null
+    /**
+     * Gets the active text editor's selection, or the visible content if the selected range is empty.
+     */
+    getActiveTextEditorSelectionOrVisibleContent(): ActiveTextEditorSelection | null
     /**
      * Get diagnostics (errors, warnings, hints) for a range within the active text editor.
      */
@@ -139,7 +147,19 @@ export class NoopEditor implements Editor {
         return null
     }
 
+    public getActiveInlineChatTextEditor(): ActiveTextEditor | null {
+        return null
+    }
+
+    public getActiveInlineChatSelection(): ActiveTextEditorSelection | null {
+        return null
+    }
+
     public getActiveTextEditorSelectionOrEntireFile(): ActiveTextEditorSelection | null {
+        return null
+    }
+
+    public getActiveTextEditorSelectionOrVisibleContent(): ActiveTextEditorSelection | null {
         return null
     }
 

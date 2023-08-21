@@ -21,11 +21,14 @@ export class UnstableCodeGenProvider extends Provider {
     }
 
     public async generateCompletions(abortSignal: AbortSignal, snippets: ContextSnippet[]): Promise<Completion[]> {
+        const { prefix, suffix } = this.options.docContext
+        const suffixAfterFirstNewline = suffix.slice(suffix.indexOf('\n'))
+
         const params = {
             debug_ext_path: 'cody',
             lang_prefix: `<|${mapVSCodeLanguageIdToModelId(this.options.languageId)}|>`,
-            prefix: this.options.prefix,
-            suffix: this.options.suffix,
+            prefix,
+            suffix: suffixAfterFirstNewline,
             top_p: 0.95,
             temperature: 0.2,
             max_tokens: this.options.multiline ? 128 : 40,
@@ -57,10 +60,7 @@ export class UnstableCodeGenProvider extends Provider {
             const completions: string[] = data.completions.map(c => postProcess(c.completion, this.options.multiline))
             log?.onComplete(completions)
 
-            return completions.map(content => ({
-                prefix: this.options.prefix,
-                content,
-            }))
+            return completions.map(content => ({ content }))
         } catch (error: any) {
             if (!isAbortError(error)) {
                 log?.onError(error)

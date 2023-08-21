@@ -4,7 +4,7 @@ import * as vscode from 'vscode'
 
 import { MessageProvider } from '../../src/chat/MessageProvider'
 
-import { afterIntegrationTest, beforeIntegrationTest, getExtensionAPI, getTranscript } from './helpers'
+import { afterIntegrationTest, beforeIntegrationTest, getExtensionAPI, getTranscript, waitUntil } from './helpers'
 
 async function getChatViewProvider(): Promise<MessageProvider> {
     const chatViewProvider = await getExtensionAPI().exports.testing?.messageProvider.get()
@@ -22,6 +22,6 @@ suite('Chat', function () {
         await chatView.executeRecipe('chat-question', 'hello from the human')
 
         assert.match((await getTranscript(0)).displayText || '', /^hello from the human$/)
-        assert.match((await getTranscript(1)).displayText || '', /^hello from the assistant$/)
+        await waitUntil(async () => /^hello from the assistant$/.test((await getTranscript(1)).displayText || ''))
     })
 })

@@ -6,6 +6,7 @@ import { ChatButton, ChatContextStatus, ChatMessage, CodyPrompt, isDefined } fro
 
 import { FileLinkProps } from './chat/ContextFiles'
 import { ChatInputContext } from './chat/inputContext/ChatInputContext'
+import { SymbolLinkProps } from './chat/PreciseContext'
 import { Transcript } from './chat/Transcript'
 import { CodyRecipesWidgetWrapper, TranscriptItemClassNames } from './chat/TranscriptItem'
 
@@ -21,13 +22,16 @@ interface ChatProps extends ChatClassNames {
     setFormInput: (input: string) => void
     inputHistory: string[]
     setInputHistory: (history: string[]) => void
-    onSubmit: (text: string, submitType: 'user' | 'suggestion') => void
+    onSubmit: (text: string, submitType: 'user' | 'suggestion' | 'example') => void
     contextStatusComponent?: React.FunctionComponent<any>
     contextStatusComponentProps?: any
+    gettingStartedComponent?: React.FunctionComponent<any>
+    gettingStartedComponentProps?: any
     textAreaComponent: React.FunctionComponent<ChatUITextAreaProps>
     submitButtonComponent: React.FunctionComponent<ChatUISubmitButtonProps>
     suggestionButtonComponent?: React.FunctionComponent<ChatUISuggestionButtonProps>
     fileLinkComponent: React.FunctionComponent<FileLinkProps>
+    symbolLinkComponent: React.FunctionComponent<SymbolLinkProps>
     helpMarkdown?: string
     afterMarkdown?: string
     gettingStartedButtons?: ChatButton[]
@@ -73,6 +77,7 @@ export interface ChatUITextAreaProps {
     required: boolean
     disabled?: boolean
     onInput: React.FormEventHandler<HTMLElement>
+    setValue?: (value: string) => void
     onKeyDown?: (event: React.KeyboardEvent<HTMLElement>, caretPosition: number | null) => void
 }
 
@@ -102,7 +107,7 @@ export interface FeedbackButtonsProps {
 
 // TODO: Rename to CodeBlockActionsProps
 export interface CopyButtonProps {
-    copyButtonOnSubmit: (text: string, insert?: boolean) => void
+    copyButtonOnSubmit: (text: string, insert?: boolean, event?: 'Keydown' | 'Button') => void
 }
 
 export interface ChatCommandsProps {
@@ -130,6 +135,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
     submitButtonComponent: SubmitButton,
     suggestionButtonComponent: SuggestionButton,
     fileLinkComponent,
+    symbolLinkComponent,
     helpMarkdown,
     afterMarkdown,
     gettingStartedButtons,
@@ -155,6 +161,8 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
     needsEmailVerificationNotice: NeedsEmailVerificationNotice,
     contextStatusComponent: ContextStatusComponent,
     contextStatusComponentProps = {},
+    gettingStartedComponent: GettingStartedComponent,
+    gettingStartedComponentProps = {},
     abortMessageInProgressComponent: AbortMessageInProgressButton,
     onAbortMessageInProgress = () => {},
     isCodyEnabled,
@@ -209,7 +217,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
     )
 
     const submitInput = useCallback(
-        (input: string, submitType: 'user' | 'suggestion'): void => {
+        (input: string, submitType: 'user' | 'suggestion' | 'example'): void => {
             if (messageInProgress) {
                 return
             }
@@ -249,7 +257,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                 !event.nativeEvent.isComposing &&
                 formInput &&
                 formInput.trim() &&
-                selectedChatCommand < 0
+                !displayCommands?.length
             ) {
                 event.preventDefault()
                 event.stopPropagation()
@@ -257,10 +265,16 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                 onChatSubmit()
             }
 
+            // Ignore alt + c key combination for editor to avoid conflict with cody shortcut
+            if (event.altKey && event.key === 'c') {
+                event.preventDefault()
+                event.stopPropagation()
+            }
+
             // Handles cycling through chat command suggestions using the up and down arrow keys
             if (displayCommands && formInput.startsWith('/')) {
                 if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
-                    const commandsLength = displayCommands?.length - 1
+                    const commandsLength = displayCommands?.length
                     const newIndex = event.key === 'ArrowUp' ? selectedChatCommand - 1 : selectedChatCommand + 1
                     const newCommandIndex = newIndex < 0 ? commandsLength : newIndex > commandsLength ? 0 : newIndex
                     setSelectedChatCommand(newCommandIndex)
@@ -273,8 +287,13 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                     setSelectedChatCommand(-1)
                     setFormInput('')
                 }
+
                 // tab/enter to complete
-                if ((event.key === 'Tab' || event.key === 'Enter') && selectedChatCommand > -1) {
+                if (
+                    (event.key === 'Tab' || event.key === 'Enter') &&
+                    selectedChatCommand > -1 &&
+                    displayCommands.length
+                ) {
                     event.preventDefault()
                     event.stopPropagation()
                     const newInput = displayCommands?.[selectedChatCommand]?.[1]?.slashCommand
@@ -333,6 +352,8 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
         [helpMarkdown, afterMarkdown, gettingStartedButtons, transcript]
     )
 
+    const isGettingStartedComponentVisible = transcript.length === 0 && GettingStartedComponent !== undefined
+
     return (
         <div className={classNames(className, styles.innerContainer)}>
             {!isCodyEnabled && CodyNotEnabledNotice ? (
@@ -350,13 +371,14 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                     messageBeingEdited={messageBeingEdited}
                     setMessageBeingEdited={setMessageBeingEdited}
                     fileLinkComponent={fileLinkComponent}
+                    symbolLinkComponent={symbolLinkComponent}
                     codeBlocksCopyButtonClassName={codeBlocksCopyButtonClassName}
                     codeBlocksInsertButtonClassName={codeBlocksInsertButtonClassName}
                     transcriptItemClassName={transcriptItemClassName}
                     humanTranscriptItemClassName={humanTranscriptItemClassName}
                     transcriptItemParticipantClassName={transcriptItemParticipantClassName}
                     transcriptActionClassName={transcriptActionClassName}
-                    className={styles.transcriptContainer}
+                    className={isGettingStartedComponentVisible ? undefined : styles.transcriptContainer}
                     textAreaComponent={TextArea}
                     EditButtonContainer={EditButtonContainer}
                     editButtonOnSubmit={editButtonOnSubmit}
@@ -370,6 +392,10 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                     RecipesWidgetWrapper={RecipesWidgetWrapper}
                     isTranscriptError={isTranscriptError}
                 />
+            )}
+
+            {isGettingStartedComponentVisible && (
+                <GettingStartedComponent {...gettingStartedComponentProps} submitInput={submitInput} />
             )}
 
             <form className={classNames(styles.inputRow, inputRowClassName)}>
@@ -410,6 +436,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                         disabled={needsEmailVerification || !isCodyEnabled}
                         onInput={onChatInput}
                         onKeyDown={onChatKeyDown}
+                        setValue={inputHandler}
                     />
                     <SubmitButton
                         className={styles.submitButton}

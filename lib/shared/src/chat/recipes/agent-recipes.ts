@@ -1,4 +1,5 @@
 import { ChatQuestion } from './chat-question'
+import { CodeQuestion } from './code-question'
 import { ExplainCodeDetailed } from './explain-code-detailed'
 import { ExplainCodeHighLevel } from './explain-code-high-level'
 import { FindCodeSmells } from './find-code-smells'
@@ -29,6 +30,7 @@ function init(): void {
 
     const recipes: Recipe[] = [
         new ChatQuestion(nullLog),
+        new CodeQuestion(nullLog),
         new ExplainCodeDetailed(),
         new ExplainCodeHighLevel(),
         new GenerateDocstring(),

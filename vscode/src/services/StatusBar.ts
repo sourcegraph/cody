@@ -104,7 +104,7 @@ export function createStatusBar(): CodyStatusBar {
                     },
                 },
                 {
-                    label: '$(terminal) Custom Commands Settings',
+                    label: '$(symbol-namespace) Custom Commands Settings',
                     async onSelect(): Promise<void> {
                         await vscode.commands.executeCommand('cody.settings.commands')
                     },
@@ -113,8 +113,8 @@ export function createStatusBar(): CodyStatusBar {
                 ...FeedbackOptionItems,
             ],
             {
-                title: 'Cody Settings Menu',
-                placeHolder: 'Select an option',
+                title: 'Cody Settings',
+                placeHolder: 'Choose an option',
                 matchOnDescription: true,
             }
         )

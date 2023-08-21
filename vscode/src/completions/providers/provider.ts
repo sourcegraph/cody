@@ -1,5 +1,6 @@
 import { CompletionParameters } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
 
+import { DocumentContext } from '../document'
 import { Completion, ContextSnippet } from '../types'
 
 export interface ProviderConfig {
@@ -37,11 +38,10 @@ export interface ProviderConfig {
 }
 
 export interface ProviderOptions {
-    /** A unique and descriptive identifier for the provider. */
+    // A unique and descriptive identifier for the provider.
     id: string
 
-    prefix: string
-    suffix: string
+    docContext: DocumentContext
     fileName: string
     languageId: string
     multiline: boolean

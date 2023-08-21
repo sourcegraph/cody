@@ -2,6 +2,8 @@ import * as vscode from 'vscode'
 
 export const INDENTATION_REGEX = /^[\t ]*/
 export const OPENING_BRACKET_REGEX = /([([{])$/
+export const FUNCTION_OR_METHOD_INVOCATION_REGEX = /\b[^()]+\((.*)\)$/g
+export const FUNCTION_KEYWORDS = /^(function|def|fn)/g
 
 export const BRACKET_PAIR = {
     '(': ')',
@@ -97,6 +99,6 @@ export function getPrevNonEmptyLine(prefix: string): string {
         prefix
             .slice(0, prevNewline)
             .split('\n')
-            .find(line => line.trim().length > 0) ?? ''
+            .findLast(line => line.trim().length > 0) ?? ''
     )
 }

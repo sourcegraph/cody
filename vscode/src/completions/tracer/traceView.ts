@@ -86,7 +86,7 @@ function renderWebviewHtml(data: ProvideInlineCompletionsItemTraceData | undefin
 ## Completers
 
 ${data.completers?.map(
-    ({ id, prefix, suffix, ...otherOptions }) =>
+    ({ id, docContext: { prefix, suffix }, ...otherOptions }) =>
         `
 ### ${id}
 
@@ -270,6 +270,6 @@ function jsonForDataset(data: ProvideInlineCompletionsItemTraceData | undefined)
         context: ${JSON.stringify(data?.context?.context.map(c => ({ fileName: c.fileName, content: c.content })))},
         fileName: ${JSON.stringify(completer.fileName)},
         languageId: ${JSON.stringify(completer.languageId)},
-        content: \`${completer.prefix}$\{CURSOR}${completer.suffix}\`,
+        content: \`${completer.docContext.prefix}$\{CURSOR}${completer.docContext.suffix}\`,
     }`
 }
