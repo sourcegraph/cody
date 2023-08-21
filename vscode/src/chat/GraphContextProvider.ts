@@ -73,12 +73,13 @@ export const getGraphContextFromEditor = async (editor: Editor): Promise<Precise
         ])
     )
 
-    // NOTE: Before asking for data about a document it must be opened in the workspace. Force a resolution
-    // here otherwise the following queries that require the document context will fail non-deterministically.
-    await Promise.all([...contentMap.values()])
+    // NOTE: Before asking for data about a document it must be opened in the workspace. This forces a
+    // resolution so that the following queries that require the document context will not fail with an
+    // unknown document.
+    const resolvedContentMap = await unwrapThenableMap(contentMap)
 
     // Extract definition text from our matches
-    const contexts = await extractDefinitionContexts(matches, await unwrapThenableMap(contentMap))
+    const contexts = await extractDefinitionContexts(matches, resolvedContentMap)
 
     // Debuggin'
     console.debug(`Retrieved ${contexts.length} non-file-local context snippets`)
@@ -372,6 +373,9 @@ const locationKeyFn = (location: vscode.Location): string =>
  * Convert a mapping from K -> Thenable<V> to a map of K -> V.
  */
 const unwrapThenableMap = async <K, V>(m: Map<K, Thenable<V>>): Promise<Map<K, V>> => {
+    // Force resolution so that the await in the loop below is unblocked.
+    await Promise.all(m.values())
+
     const resolved = new Map<K, V>()
     for (const [k, v] of [...m.entries()]) {
         resolved.set(k, await v)
