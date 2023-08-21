@@ -23,6 +23,7 @@ Starting from `0.2.0`, Cody is using `major.EVEN_NUMBER.patch` for release versi
 - Inline Chat: Fix issue where state was not being set correctly, causing Cody Commands to use the selection range from the last created Inline Chat instead of the current selection. [pull/602](https://github.com/sourcegraph/cody/pull/602)
 - Cody Commands: Commands that use the current file as context now correctly generate context message for the current file instead of using codebase context generated from current selection. [pull/683](https://github.com/sourcegraph/cody/pull/683)
 - Improves the autocomplete responses on a new line after a comment [pull/]()
+- Fixes an issue where the inline chat UI would render briefly when starting VS Code even when the feature is disabled. [pull/]()
 
 ### Changed
 

@@ -67,8 +67,15 @@ export class InlineController implements VsCodeInlineController {
     ) {
         this.codyIcon = getIconPath('cody', this.extensionPath)
         this.userIcon = getIconPath('user', this.extensionPath)
-        this.commentController = this.init()
-        this._disposables.push(this.commentController)
+
+        const config = vscode.workspace.getConfiguration('cody')
+        const enableInlineChat = config.get('inlineChat.enabled') as boolean
+
+        if (enableInlineChat) {
+            this.commentController = this.init()
+            this._disposables.push(this.commentController)
+        }
+
         // Toggle Inline Chat on Config Change
         vscode.workspace.onDidChangeConfiguration(e => {
             const config = vscode.workspace.getConfiguration('cody')
