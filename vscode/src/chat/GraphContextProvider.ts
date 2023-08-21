@@ -26,20 +26,46 @@ export const getGraphContextFromEditor = async (editor: Editor): Promise<Precise
     }
 
     // Debuggin'
-    const label = 'precise context - vscode api'
+    const label = 'precise context from editor'
     performance.mark(label)
 
-    // Construct vscode.URI for the open file to interface with LSP queries
-    const activeEditorFileUri = workspaceRootUri.with({ path: activeEditor.filePath })
+    const uri = workspaceRootUri.with({ path: activeEditor.filePath })
+    const contexts = await getGraphContextFromSelection(
+        { uri, range: activeEditor.selectionRange },
+        new Map([[uri.fsPath, activeEditor.content.split('\n')]])
+    )
 
-    // Split content of active editor into lines (we slice this many times array below)
-    const activeEditorLines = activeEditor.content.split('\n')
+    // Debuggin'
+    console.debug(`Retrieved ${contexts.length} non-file-local context snippets`)
+    performance.mark(label)
+    return contexts
+}
+
+interface Selection {
+    uri: URI
+    range?: ActiveTextEditorSelectionRange
+}
+
+/**
+ * Return the definitions of symbols that occur within the given selection ranges. If a selection has
+ * a defined range, we will cull the symbols to those referenced in intersecting document symbol ranges.
+ */
+const getGraphContextFromSelection = async (
+    selection: Selection,
+    initialContentMap: Map<string, string[]>
+): Promise<PreciseContext[]> => {
+    // Debuggin'
+    const label = 'precise context from selection'
+    performance.mark(label)
+
+    const { uri: activeEditorFileUri, range: selectionRange } = selection
+    const activeEditorLines = initialContentMap.get(activeEditorFileUri.fsPath)
+    if (!activeEditorLines) {
+        return []
+    }
 
     // Get the document symbols in the current file and extract their definition range
-    const relevantDocumentSymbolRanges = await extractRelevantDocumentSymbolRanges(
-        activeEditorFileUri,
-        activeEditor.selectionRange
-    )
+    const relevantDocumentSymbolRanges = await extractRelevantDocumentSymbolRanges(activeEditorFileUri, selectionRange)
 
     // Extract identifiers from the relevant document symbol ranges and request their definitions
     const definitionMatches = await gatherDefinitions(
@@ -82,7 +108,7 @@ export const getGraphContextFromEditor = async (editor: Editor): Promise<Precise
     const contexts = await extractDefinitionContexts(matches, resolvedContentMap)
 
     // Debuggin'
-    console.debug(`Retrieved ${contexts.length} non-file-local context snippets`)
+    console.debug(`Retrieved ${contexts.length} context snippets`)
     performance.mark(label)
     return contexts
 }
