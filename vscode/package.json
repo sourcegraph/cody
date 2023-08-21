@@ -92,7 +92,6 @@
     "vscode": "^1.79.0"
   },
   "main": "./dist/extension.node.js",
-  "browser": "./dist/extension.web.js",
   "activationEvents": [
     "onStartupFinished"
   ],
