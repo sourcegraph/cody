@@ -57,14 +57,11 @@ func bonk() => { return new bar().Bar(new foo().Foo(), baz.Foo()) }
 
 describe('extractRelevantDocumentSymbolRanges', () => {
     test('returns all document symbol ranges by default', async () => {
-        const ranges = await extractRelevantDocumentSymbolRanges(
-            URI.file('/test-1.test'),
-            undefined,
-            () =>
-                Promise.resolve([
-                    new vscode.Range(2, 0, 8, 1), // foo
-                    new vscode.Range(10, 0, 16, 1), // bar
-                ])
+        const ranges = await extractRelevantDocumentSymbolRanges(URI.file('/test-1.test'), undefined, () =>
+            Promise.resolve([
+                new vscode.Range(2, 0, 8, 1), // foo
+                new vscode.Range(10, 0, 16, 1), // bar
+            ])
         )
 
         expect(ranges).toEqual([
@@ -98,29 +95,26 @@ describe('gatherDefinitions', () => {
             [
                 new vscode.Range(4, 0, 7, 67), // bonk
             ],
-            (uri: URI, position: vscode.Position): Promise<vscode.Location[]> => {
+            // eslint-disable-next-line @typescript-eslint/require-await
+            async (uri: URI, position: vscode.Position): Promise<vscode.Location[]> => {
                 switch (position.character) {
                     case 6:
-                        return Promise.resolve([{ uri: Uri.file('/test-3.test'), range: new vscode.Range(7, 5, 7, 7) }])
+                        return [{ uri: Uri.file('/test-3.test'), range: new vscode.Range(7, 5, 7, 7) }]
                     case 29: // bar
-                        return Promise.resolve([
-                            { uri: Uri.file('/test-1.test'), range: new vscode.Range(10, 6, 10, 9) },
-                        ])
+                        return [{ uri: Uri.file('/test-1.test'), range: new vscode.Range(10, 6, 10, 9) }]
                     case 35: // Bar
-                        return Promise.resolve([
-                            { uri: Uri.file('/test-1.test'), range: new vscode.Range(11, 6, 11, 9) },
-                        ])
+                        return [{ uri: Uri.file('/test-1.test'), range: new vscode.Range(11, 6, 11, 9) }]
                     case 43: // foo
-                        return Promise.resolve([{ uri: Uri.file('/test-1.test'), range: new vscode.Range(2, 6, 2, 9) }])
+                        return [{ uri: Uri.file('/test-1.test'), range: new vscode.Range(2, 6, 2, 9) }]
                     case 49: // Foo
-                        return Promise.resolve([{ uri: Uri.file('/test-1.test'), range: new vscode.Range(3, 6, 3, 9) }])
+                        return [{ uri: Uri.file('/test-1.test'), range: new vscode.Range(3, 6, 3, 9) }]
                     case 56: // baz
-                        return Promise.resolve([{ uri: Uri.file('/test-2.test'), range: new vscode.Range(3, 6, 3, 8) }])
+                        return [{ uri: Uri.file('/test-2.test'), range: new vscode.Range(3, 6, 3, 8) }]
                     case 60: // Foo
-                        return Promise.resolve([{ uri: Uri.file('/test-1.test'), range: new vscode.Range(3, 6, 3, 9) }])
+                        return [{ uri: Uri.file('/test-1.test'), range: new vscode.Range(3, 6, 3, 9) }]
                 }
 
-                return Promise.resolve([])
+                return []
             }
         )
 
