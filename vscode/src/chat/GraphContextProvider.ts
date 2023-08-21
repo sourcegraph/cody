@@ -53,7 +53,7 @@ export const getGraphContextFromEditor = async (editor: Editor): Promise<Precise
         definitionMatches
             .map(({ locations }) => locations.map(({ uri }) => uri))
             .flat()
-            .filter(uri => uri.fsPath !== activeEditorFileUri.fsPath),
+            .filter(uri => uri.fsPath !== activeEditorFileUri.fsPath), // TODO - post-process, instead we should filter out locals in current scope
         uri => uri.fsPath
     )
 
