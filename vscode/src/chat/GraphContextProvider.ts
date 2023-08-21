@@ -65,19 +65,33 @@ const getGraphContextFromSelection = async (
     }
 
     // Get the document symbols in the current file and extract their definition range
-    const relevantDocumentSymbolRanges = await extractRelevantDocumentSymbolRanges([selection])
+    const definitionSelections = await extractRelevantDocumentSymbolRanges([selection])
 
     // Extract identifiers from the relevant document symbol ranges and request their definitions
-    const definitionMatches = await gatherDefinitions(activeEditorFileUri, relevantDocumentSymbolRanges, contentMap)
+    const definitionMatches = await gatherDefinitions(definitionSelections, contentMap)
 
-    // Resolve, extract, and deduplicate the URIs distinct from the active editor file
-    const uris = dedupeWith(
-        definitionMatches
-            .map(({ locations }) => locations.map(({ uri }) => uri))
-            .flat()
-            .filter(uri => uri.fsPath !== activeEditorFileUri.fsPath), // TODO - post-process, instead we should filter out locals in current scope
+    // Open each URI referenced by a definition match in the current workspace, and make the document
+    // content retrievable by filepath by adding it to the shared content map.
+    //
+    // NOTE: Before asking for data about a document it must be opened in the workspace. This forces
+    // a resolution so that the following queries that require the document context will not fail with
+    // an unknown document.
+
+    const unseenDefinitionUris = dedupeWith(
+        definitionMatches.map(({ locations }) => locations.map(({ uri }) => uri)).flat(),
         uri => uri.fsPath
+    ).filter(uri => !contentMap.has(uri.fsPath))
+
+    const newContentMap = new Map(
+        unseenDefinitionUris.map(uri => [
+            uri.fsPath,
+            vscode.workspace.openTextDocument(uri.fsPath).then(document => document.getText().split('\n')),
+        ])
     )
+
+    for (const [fsPath, lines] of await unwrapThenableMap(newContentMap)) {
+        contentMap.set(fsPath, lines)
+    }
 
     // Resolve, extract, and deduplicate the symbol and location match pairs from the definition matches
     const matches = dedupeWith(
@@ -86,22 +100,6 @@ const getGraphContextFromSelection = async (
             .flat(),
         ({ location }) => locationKeyFn(location)
     )
-
-    // Open each URI in the current workspace, and make the document content retrievable by filepath.
-    // Add the content of each newly opened document into the shared content map for recursive calls.
-    // NOTE: Before asking for data about a document it must be opened in the workspace. This forces
-    // a resolution so that the following queries that require the document context will not fail with
-    // an unknown document.
-    for (const [fsPath, lines] of await unwrapThenableMap(
-        new Map(
-            uris.map(uri => [
-                uri.fsPath,
-                vscode.workspace.openTextDocument(uri.fsPath).then(document => document.getText().split('\n')),
-            ])
-        )
-    )) {
-        contentMap.set(fsPath, lines)
-    }
 
     // Extract definition text from our matches
     const contexts = await extractDefinitionContexts(matches, contentMap)
@@ -121,7 +119,7 @@ const getGraphContextFromSelection = async (
 export const extractRelevantDocumentSymbolRanges = async (
     selections: Selection[],
     getDocumentSymbolRanges: typeof defaultGetDocumentSymbolRanges = defaultGetDocumentSymbolRanges
-): Promise<vscode.Range[]> => {
+): Promise<Selection[]> => {
     const rangeMap = await unwrapThenableMap(
         new Map(
             dedupeWith(
@@ -136,7 +134,7 @@ export const extractRelevantDocumentSymbolRanges = async (
         pathsByUri.set(uri.fsPath, [...(pathsByUri.get(uri.fsPath) ?? []), range])
     }
 
-    const combinedRanges: vscode.Range[] = []
+    const combinedRanges: Selection[] = []
     for (const [fsPath, ranges] of pathsByUri.entries()) {
         const documentSymbolRanges = rangeMap.get(fsPath)
         if (!documentSymbolRanges) {
@@ -152,7 +150,8 @@ export const extractRelevantDocumentSymbolRanges = async (
                 ? documentSymbolRanges
                 : documentSymbolRanges.filter(({ start, end }) =>
                       definedRanges.some(range => start.line <= range.end.line && range.start.line <= end.line)
-                  ))
+                  )
+            ).map(range => ({ uri: URI.file(fsPath), range }))
         )
     }
 
@@ -268,36 +267,61 @@ interface ResolvedSymbolDefinitionMatches {
  * return.
  */
 export const gatherDefinitions = async (
-    uri: URI,
-    ranges: vscode.Range[],
+    selections: Selection[],
     contentMap: Map<string, string[]>,
     getDefinitions: typeof defaultGetDefinitions = defaultGetDefinitions
 ): Promise<ResolvedSymbolDefinitionMatches[]> => {
-    const lines = contentMap.get(uri.fsPath)
-    if (!lines) {
-        return []
-    }
-
     // Construct a list of symbol and definition location pairs by querying the LSP server
     // with all identifiers (heuristically chosen via regex) in the relevant code ranges.
     const definitionMatches: SymbolDefinitionMatches[] = []
-    for (const { start, end } of ranges) {
-        for (const [lineIndex, line] of lines.slice(start.line, end.line + 1).entries()) {
-            for (const match of line.matchAll(identifierPattern)) {
-                if (match.index === undefined || commonKeywords.has(match[0])) {
-                    continue
-                }
 
-                definitionMatches.push({
-                    symbolName: match[0],
-                    locations: getDefinitions(uri, new vscode.Position(start.line + lineIndex, match.index + 1)),
-                })
+    for (const selection of selections) {
+        const { uri, range } = selection
+        const lines = contentMap.get(uri.fsPath)
+        if (!range || !lines) {
+            continue
+        }
+
+        for (const { start, end } of [range]) {
+            for (const [lineIndex, line] of lines.slice(start.line, end.line + 1).entries()) {
+                for (const match of line.matchAll(identifierPattern)) {
+                    if (match.index === undefined || commonKeywords.has(match[0])) {
+                        continue
+                    }
+
+                    definitionMatches.push({
+                        symbolName: match[0],
+                        locations: getDefinitions(uri, new vscode.Position(start.line + lineIndex, match.index + 1)),
+                    })
+                }
             }
         }
     }
 
-    return Promise.all(
+    // Resolve all in-flight promises in parallel
+    const resolvedDefinitionMatches = await Promise.all(
         definitionMatches.map(async ({ symbolName, locations }) => ({ symbolName, locations: await locations }))
+    )
+
+    return (
+        resolvedDefinitionMatches
+            // Remove definition ranges that exist within one fo the input definition selections
+            // These are locals and don't give us any additional information in the context window.
+            .map(({ symbolName, locations }) => ({
+                symbolName,
+                locations: locations.filter(
+                    ({ uri, range }) =>
+                        !selections.some(
+                            ({ uri: selectionUri, range: selectionRange }) =>
+                                uri.fsPath === selectionUri.fsPath &&
+                                (selectionRange === undefined ||
+                                    (selectionRange.start.line <= range.start.line &&
+                                        range.end.line <= selectionRange.end.line))
+                        )
+                ),
+            }))
+            // Remove empty locations
+            .filter(({ locations }) => locations.length !== 0)
     )
 }
 
