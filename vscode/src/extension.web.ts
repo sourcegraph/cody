@@ -49,5 +49,6 @@ export function activate(context: vscode.ExtensionContext): ExtensionApi {
     return activateCommon(context, {
         createCompletionsClient: (...args) => new SourcegraphBrowserCompletionsClient(...args),
         recipes: VSCODE_WEB_RECIPES,
+        // indexedKeywordContextFetcher:
     })
 }
