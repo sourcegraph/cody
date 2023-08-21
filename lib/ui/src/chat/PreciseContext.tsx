@@ -14,7 +14,7 @@ export interface SymbolLinkProps {
 
 export const PreciseContexts: FunctionComponent<{
     preciseContexts: PreciseContext[]
-    symbolLinkComponent: React.FunctionComponent<SymbolLinkProps>
+    symbolLinkComponent: FunctionComponent<SymbolLinkProps>
     className?: string
 }> = ({ preciseContexts, symbolLinkComponent: SymbolLink, className }) => {
     const unique = new Map<string, JSX.Element>()
