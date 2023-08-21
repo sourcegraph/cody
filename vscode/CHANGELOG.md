@@ -18,6 +18,7 @@ Starting from `0.2.0`, Cody is using `major.EVEN_NUMBER.patch` for release versi
 - Increased autocomplete debounce time feature flag support [pull/733](https://github.com/sourcegraph/cody/pull/733)
 - Show an update notice after extension updates. [pull/746](https://github.com/sourcegraph/cody/pull/746)
 - Experimental user setting `cody.experimental.localSymbols` to enable inclusion of symbol definitions in the LLM context window. [pull/692](https://github.com/sourcegraph/cody/pull/692)
+- Experimental command `/symf`, which uses a local keyword index to perform searches for symbols. Requires setting `cody.experimental.symf.path` and `cody.experimental.symf.anthropicKey`. [pull/728](https://github.com/sourcegraph/cody/pull/728).
 
 ### Fixed
 
