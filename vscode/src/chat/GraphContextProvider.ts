@@ -13,6 +13,8 @@ export class GraphContextProvider implements GraphContextFetcher {
     }
 }
 
+const recursionLimit = 1
+
 /**
  * Return the definitions of symbols that occur within the editor's active document. If there is
  * an active selection, we will cull the symbols to those referenced in intersecting document symbol
@@ -32,7 +34,8 @@ export const getGraphContextFromEditor = async (editor: Editor): Promise<Precise
     const uri = workspaceRootUri.with({ path: activeEditor.filePath })
     const contexts = await getGraphContextFromSelection(
         [{ uri, range: activeEditor.selectionRange }],
-        new Map([[uri.fsPath, activeEditor.content.split('\n')]])
+        new Map([[uri.fsPath, activeEditor.content.split('\n')]]),
+        recursionLimit
     )
 
     const nonLocalContexts = contexts.filter(({ filePath }) => filePath !== uri.fsPath)
@@ -54,7 +57,8 @@ interface Selection {
  */
 const getGraphContextFromSelection = async (
     selections: Selection[],
-    contentMap: Map<string, string[]>
+    contentMap: Map<string, string[]>,
+    recursionLimit: number = 0
 ): Promise<PreciseContext[]> => {
     // Debuggin'
     const label = 'precise context from selection'
@@ -103,6 +107,27 @@ const getGraphContextFromSelection = async (
     // Debuggin'
     console.debug(`Retrieved ${contexts.length} context snippets`)
     performance.mark(label)
+
+    if (recursionLimit > 0) {
+        contexts.push(
+            ...(await getGraphContextFromSelection(
+                contexts.map(c => ({
+                    uri: URI.file(c.filePath),
+                    range: c.range
+                        ? new vscode.Range(
+                              c.range.startLine,
+                              c.range.startCharacter,
+                              c.range.endLine,
+                              c.range.endCharacter
+                          )
+                        : undefined,
+                })),
+                contentMap,
+                recursionLimit - 1
+            ))
+        )
+    }
+
     return contexts
 }
 
