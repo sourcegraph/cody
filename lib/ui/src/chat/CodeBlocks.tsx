@@ -103,7 +103,7 @@ export const CodeBlocks: React.FunctionComponent<CodeBlocksProps> = React.memo(f
     copyButtonClassName,
     insertButtonClassName,
     CopyButtonProps,
-    RecipesWidgetWrapper,
+    RecipesWidgetWrapper = null,
 }) {
     const rootRef = useRef<HTMLDivElement>(null)
 
