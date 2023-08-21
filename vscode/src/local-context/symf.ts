@@ -1,9 +1,9 @@
-import { execFile as _execFile } from 'child_process'
-import fs from 'fs'
-import { rename, rm } from 'fs/promises'
-import os from 'os'
-import path from 'path'
-import { promisify } from 'util'
+import { execFile as _execFile } from 'node:child_process'
+import fs from 'node:fs'
+import { rename, rm } from 'node:fs/promises'
+import os from 'node:os'
+import path from 'node:path'
+import { promisify } from 'node:util'
 
 import { mkdirp } from 'mkdirp'
 import * as vscode from 'vscode'
@@ -19,7 +19,7 @@ export class SymfRunner implements IndexedKeywordContextFetcher {
     private indicesInProgress: Map<string, Promise<void>> = new Map()
 
     // Which indexes have already been built. Omission does not mean that the index hasn't been built;
-    // it just mpeans we haven't yet checked whether the index directory exists on disk.
+    // it just means we haven't yet checked whether the index directory exists on disk.
     private indicesReady: Map<string, boolean> = new Map()
 
     // The root of all symf index directories
