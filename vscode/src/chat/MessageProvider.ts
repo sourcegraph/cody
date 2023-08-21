@@ -9,6 +9,7 @@ import { Recipe, RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/reci
 import { Transcript } from '@sourcegraph/cody-shared/src/chat/transcript'
 import { Interaction } from '@sourcegraph/cody-shared/src/chat/transcript/interaction'
 import { ChatHistory, ChatMessage, UserLocalHistory } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
+import { Typewriter } from '@sourcegraph/cody-shared/src/chat/typewriter'
 import { reformatBotMessage } from '@sourcegraph/cody-shared/src/chat/viewHelpers'
 import { annotateAttribution, Guardrails } from '@sourcegraph/cody-shared/src/guardrails'
 import { IntentDetector } from '@sourcegraph/cody-shared/src/intent-detector'
@@ -179,17 +180,26 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         this.cancelCompletion()
         void vscode.commands.executeCommand('setContext', 'cody.reply.pending', true)
 
+        const typewriter = new Typewriter({
+            update: content => {
+                const displayText = reformatBotMessage(content, responsePrefix)
+                this.transcript.addAssistantResponse(displayText)
+                this.sendTranscript()
+            },
+            close: () => {},
+        })
+
         let text = ''
 
         this.multiplexer.sub(multiplexerTopic, {
             onResponse: (content: string) => {
                 text += content
-                const displayText = reformatBotMessage(text, responsePrefix)
-                this.transcript.addAssistantResponse(displayText)
-                this.sendTranscript()
+                typewriter.update(text)
                 return Promise.resolve()
             },
             onTurnComplete: async () => {
+                typewriter.close()
+                await typewriter.finished
                 const lastInteraction = this.transcript.getLastInteraction()
                 if (lastInteraction) {
                     let displayText = reformatBotMessage(text, responsePrefix)

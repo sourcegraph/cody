@@ -18,6 +18,7 @@ import { getRecipe } from './recipes/browser-recipes'
 import { RecipeID } from './recipes/recipe'
 import { Transcript } from './transcript'
 import { ChatMessage } from './transcript/messages'
+import { Typewriter } from './typewriter'
 import { reformatBotMessage } from './viewHelpers'
 
 export type CodyClientConfig = Pick<
@@ -316,8 +317,8 @@ export const useClient = ({
             let rawText = ''
 
             const updatedTranscript = await new Promise<Transcript | null>(resolve => {
-                const abort = chatClient.chat(prompt, {
-                    onChange(_rawText) {
+                const typewriter = new Typewriter({
+                    update(_rawText) {
                         if (transcript.id !== transcriptIdRef.current) {
                             abort()
                             resolve(transcript)
@@ -329,15 +330,7 @@ export const useClient = ({
                         transcript.addAssistantResponse(text)
                         setChatMessagesState(transcript.toChat())
                     },
-                    onComplete() {
-                        if (transcript.id !== transcriptIdRef.current) {
-                            abort()
-                            resolve(transcript)
-                            return
-                        }
-                        const text = reformatBotMessage(rawText, responsePrefix)
-                        transcript.addAssistantResponse(text)
-
+                    close() {
                         transcript
                             .toChatPromise()
                             .then(messages => {
@@ -346,33 +339,43 @@ export const useClient = ({
                             })
                             .catch(() => null)
 
-                        resolve(transcript)
-                    },
-                    onError(error) {
-                        if (transcript.id !== transcriptIdRef.current) {
-                            abort()
-                            resolve(transcript)
-                            return
-                        }
-                        // Display error message as assistant response
-                        transcript.addErrorAsAssistantResponse(error)
-
-                        console.error(`Completion request failed: ${error}`)
-
-                        transcript
-                            .toChatPromise()
-                            .then(messages => {
-                                setChatMessagesState(messages)
-                                setIsMessageInProgressState(false)
-                            })
-                            .catch(() => null)
-
-                        onEvent?.('error')
                         resolve(transcript)
                     },
                 })
 
+                const abort = chatClient.chat(prompt, {
+                    onChange(content) {
+                        if (transcript.id !== transcriptIdRef.current) {
+                            typewriter.stop()
+                            abort()
+                            resolve(transcript)
+                            return
+                        }
+
+                        typewriter.update(content)
+                    },
+                    onComplete() {
+                        if (transcript.id !== transcriptIdRef.current) {
+                            typewriter.stop()
+                            abort()
+                            resolve(transcript)
+                            return
+                        }
+
+                        typewriter.close()
+                    },
+                    onError(error) {
+                        // Display error message as assistant response
+                        transcript.addErrorAsAssistantResponse(error)
+                        console.error(`Completion request failed: ${error}`)
+                        onEvent?.('error')
+
+                        typewriter.close()
+                    },
+                })
+
                 setAbortMessageInProgress(() => () => {
+                    typewriter.stop()
                     abort()
                     resolve(transcript)
                 })
