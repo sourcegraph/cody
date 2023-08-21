@@ -6,7 +6,7 @@ addTestCase('PyTorch Model Training', {
     transcript: [
         {
             question: 'How do I train a model in PyTorch?',
-            facts: ['Model training, backpropagation, loss functions, optimizers'],
+            facts: ['Model training', 'backpropagation', 'loss functions', 'optimizers'],
             answerSummary: 'Explanation of how to train a model in PyTorch',
         },
         {
