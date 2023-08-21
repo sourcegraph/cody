@@ -151,6 +151,7 @@ export const Transcript: React.FunctionComponent<
                                 chatInputClassName={chatInputClassName}
                                 ChatButtonComponent={ChatButtonComponent}
                                 pluginsDevMode={pluginsDevMode}
+                                RecipesWidgetWrapper={RecipesWidgetWrapper}
                             />
                         )
                 )}
@@ -173,6 +174,7 @@ export const Transcript: React.FunctionComponent<
                         submitButtonComponent={submitButtonComponent}
                         chatInputClassName={chatInputClassName}
                         ChatButtonComponent={ChatButtonComponent}
+                        RecipesWidgetWrapper={RecipesWidgetWrapper}
                     />
                 )}
             </div>
