@@ -114,23 +114,21 @@ const getGraphContextFromSelection = async (
 }
 
 /**
- * Get the document symbols in the current file and extract their definition range. This
- * will give us indication of where the user selection and cursor is located, which we
+ * Get the document symbols in the open file indicated by the given URI and extract their definition
+ * range. This will give us indication of where the user selection and cursor is located, which we
  * assume to be the most relevant code to the current question.
  */
 export const extractRelevantDocumentSymbolRanges = async (
-    activeEditorFileUri: URI,
-    selectionRange?: ActiveTextEditorSelectionRange,
+    uri: URI,
+    range?: ActiveTextEditorSelectionRange,
     getDocumentSymbolRanges: typeof defaultGetDocumentSymbolRanges = defaultGetDocumentSymbolRanges
 ): Promise<vscode.Range[]> => {
-    const documentSymbolRanges = await getDocumentSymbolRanges(activeEditorFileUri)
+    const documentSymbolRanges = await getDocumentSymbolRanges(uri)
 
     // Filter the document symbol ranges to just those whose range intersects the selection.
     // If no selection exists, keep all symbols, we'll utilize all document symbol ranges.
-    return selectionRange
-        ? documentSymbolRanges.filter(
-              ({ start, end }) => start.line <= selectionRange.end.line && selectionRange.start.line <= end.line
-          )
+    return range
+        ? documentSymbolRanges.filter(({ start, end }) => start.line <= range.end.line && range.start.line <= end.line)
         : documentSymbolRanges
 }
 
