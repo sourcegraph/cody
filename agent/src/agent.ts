@@ -237,7 +237,7 @@ export class Agent extends MessageHandler {
         )
         this.client = createClient({
             editor: new AgentEditor(this),
-            config: { ...config, useContext: 'none' },
+            config: { ...config, useContext: 'none', experimentalLocalSymbols: false },
             setMessageInProgress: messageInProgress => {
                 this.notify('chat/updateMessageInProgress', messageInProgress)
             },

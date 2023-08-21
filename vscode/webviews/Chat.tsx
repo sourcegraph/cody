@@ -22,6 +22,7 @@ import { CODY_FEEDBACK_URL } from '../src/chat/protocol'
 
 import { ChatCommandsComponent } from './ChatCommands'
 import { FileLink } from './FileLink'
+import { SymbolLink } from './SymbolLink'
 import { VSCodeWrapper } from './utils/VSCodeApi'
 
 import styles from './Chat.module.css'
@@ -126,6 +127,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             submitButtonComponent={SubmitButton}
             suggestionButtonComponent={SuggestionButton}
             fileLinkComponent={FileLink}
+            symbolLinkComponent={SymbolLink}
             className={styles.innerContainer}
             codeBlocksCopyButtonClassName={styles.codeBlocksCopyButton}
             codeBlocksInsertButtonClassName={styles.codeBlocksInsertButton}

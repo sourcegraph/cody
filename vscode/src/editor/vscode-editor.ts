@@ -1,3 +1,5 @@
+import { spawnSync } from 'child_process'
+
 import * as vscode from 'vscode'
 
 import type {
@@ -11,6 +13,7 @@ import type {
     Editor,
 } from '@sourcegraph/cody-shared/src/editor'
 import { SURROUNDING_LINES } from '@sourcegraph/cody-shared/src/prompt/constants'
+import { convertGitCloneURLToCodebaseName } from '@sourcegraph/cody-shared/src/utils'
 
 import { CommandsController } from '../custom-prompts/CommandsController'
 import { FixupController } from '../non-stop/FixupController'
@@ -59,11 +62,22 @@ export class VSCodeEditor implements Editor<InlineController, FixupController, C
         const documentText = activeEditor.document.getText()
         const documentSelection = activeEditor.selection
 
-        return {
+        const args: ActiveTextEditor = {
             content: documentText,
             filePath: documentUri.fsPath,
             selectionRange: !documentSelection.isEmpty ? documentSelection : undefined,
         }
+
+        const workspaceRoot = this.getWorkspaceRootPath()
+        if (!workspaceRoot) {
+            return args
+        }
+
+        const remote = runGitCommand(['remote', 'get-url', 'origin'], workspaceRoot)
+        const repoName = convertGitCloneURLToCodebaseName(remote) || ''
+        const revision = runGitCommand(['rev-parse', 'HEAD'], workspaceRoot)
+
+        return { ...args, repoName, revision }
     }
 
     public getActiveInlineChatTextEditor(): ActiveTextEditor | null {
@@ -302,4 +316,8 @@ export class VSCodeEditor implements Editor<InlineController, FixupController, C
         }
         await this.controllers.fixups.didReceiveFixupText(id, text, state)
     }
+}
+
+function runGitCommand(args: string[], workspaceRoot: string): string {
+    return spawnSync('git', args, { cwd: workspaceRoot }).stdout.toString().trim()
 }

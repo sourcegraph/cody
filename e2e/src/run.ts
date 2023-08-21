@@ -23,6 +23,7 @@ async function runTestCase(testCase: TestCase): Promise<TestResult | Error> {
             codebase: testCase.codebase,
             useContext: testCase.context,
             customHeaders: {},
+            experimentalLocalSymbols: false,
         },
         setMessageInProgress: message => {
             latestMessage = message

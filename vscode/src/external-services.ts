@@ -32,7 +32,13 @@ interface ExternalServices {
 
 type ExternalServicesConfiguration = Pick<
     ConfigurationWithAccessToken,
-    'serverEndpoint' | 'codebase' | 'useContext' | 'customHeaders' | 'accessToken' | 'debugEnable'
+    | 'serverEndpoint'
+    | 'codebase'
+    | 'useContext'
+    | 'customHeaders'
+    | 'accessToken'
+    | 'debugEnable'
+    | 'experimentalLocalSymbols'
 >
 
 export async function configureExternalServices(
@@ -71,6 +77,7 @@ export async function configureExternalServices(
             ? platform.createLocalKeywordContextFetcher?.(rgPath, editor, chatClient, telemetryService) ?? null
             : null,
         rgPath ? platform.createFilenameContextFetcher?.(rgPath, editor, chatClient) ?? null : null,
+        null,
         symf ? new SymfRunner(symf.path, symf.anthropicKey) : null,
         undefined,
         getRerankWithLog(chatClient)

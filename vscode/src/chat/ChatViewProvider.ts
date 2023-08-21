@@ -99,6 +99,19 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
             case 'openFile':
                 await this.openFilePath(message.filePath)
                 break
+            case 'openLocalFileWithRange':
+                await this.openLocalFileWithRange(
+                    message.filePath,
+                    message.range
+                        ? new vscode.Range(
+                              message.range.startLine,
+                              message.range.startCharacter,
+                              message.range.endLine,
+                              message.range.endCharacter
+                          )
+                        : undefined
+                )
+                break
             case 'setEnabledPlugins':
                 await this.localStorage.setEnabledPlugins(message.plugins)
                 this.handleEnabledPlugins(message.plugins)
@@ -291,7 +304,6 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
             return
         }
         try {
-            // This opens the file in the active column.
             const doc = await vscode.workspace.openTextDocument(vscode.Uri.joinPath(rootUri, filePath))
             await vscode.window.showTextDocument(doc)
         } catch {
@@ -302,6 +314,14 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
             ).href
             void this.openExternalLinks(sourcegraphSearchURL)
         }
+    }
+
+    /**
+     * Open file in editor (assumed filePath is absolute) and optionally reveal a specific range
+     */
+    protected async openLocalFileWithRange(filePath: string, range?: vscode.Range): Promise<void> {
+        const doc = await vscode.workspace.openTextDocument(vscode.Uri.file(filePath))
+        await vscode.window.showTextDocument(doc, { selection: range })
     }
 
     /**

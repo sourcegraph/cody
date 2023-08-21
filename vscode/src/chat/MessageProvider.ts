@@ -407,12 +407,16 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
                     this.telemetryService.log('CodyVSCodeExtension:command:customPremade:applied')
                 }
 
-                const { prompt, contextFiles } = await this.transcript.getPromptForLastInteraction(
+                const { prompt, contextFiles, preciseContexts } = await this.transcript.getPromptForLastInteraction(
                     getPreamble(this.contextProvider.context.getCodebase(), myPremade),
                     this.maxPromptTokens,
                     pluginsPrompt
                 )
-                this.transcript.setUsedContextFilesForLastInteraction(contextFiles, pluginExecutionInfos)
+                this.transcript.setUsedContextFilesForLastInteraction(
+                    contextFiles,
+                    preciseContexts,
+                    pluginExecutionInfos
+                )
                 this.sendPrompt(prompt, interaction.getAssistantMessage().prefix ?? '', recipe.multiplexerTopic)
                 await this.saveTranscriptToChatHistory()
             }

@@ -22,6 +22,7 @@ describe('getConfiguration', () => {
             experimentalEditorTitleCommandIcon: false,
             experimentalChatPredictions: false,
             experimentalGuardrails: false,
+            experimentalLocalSymbols: false,
             inlineChat: true,
             isRunningInsideAgent: false,
             experimentalNonStop: false,
@@ -67,6 +68,8 @@ describe('getConfiguration', () => {
                     case 'cody.inlineChat.enabled':
                         return true
                     case 'cody.experimental.nonStop':
+                        return true
+                    case 'cody.experimental.localSymbols':
                         return true
                     case 'cody.experimental.symf.anthropicKey':
                         return 'anthropic_secret_key'
@@ -121,6 +124,7 @@ describe('getConfiguration', () => {
             experimentalCommandLenses: true,
             experimentalEditorTitleCommandIcon: true,
             experimentalGuardrails: true,
+            experimentalLocalSymbols: true,
             inlineChat: true,
             isRunningInsideAgent: false,
             experimentalNonStop: true,

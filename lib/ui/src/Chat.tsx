@@ -6,6 +6,7 @@ import { ChatButton, ChatContextStatus, ChatMessage, CodyPrompt, isDefined } fro
 
 import { FileLinkProps } from './chat/ContextFiles'
 import { ChatInputContext } from './chat/inputContext/ChatInputContext'
+import { SymbolLinkProps } from './chat/PreciseContext'
 import { Transcript } from './chat/Transcript'
 import { TranscriptItemClassNames } from './chat/TranscriptItem'
 
@@ -30,6 +31,7 @@ interface ChatProps extends ChatClassNames {
     submitButtonComponent: React.FunctionComponent<ChatUISubmitButtonProps>
     suggestionButtonComponent?: React.FunctionComponent<ChatUISuggestionButtonProps>
     fileLinkComponent: React.FunctionComponent<FileLinkProps>
+    symbolLinkComponent: React.FunctionComponent<SymbolLinkProps>
     helpMarkdown?: string
     afterMarkdown?: string
     gettingStartedButtons?: ChatButton[]
@@ -132,6 +134,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
     submitButtonComponent: SubmitButton,
     suggestionButtonComponent: SuggestionButton,
     fileLinkComponent,
+    symbolLinkComponent,
     helpMarkdown,
     afterMarkdown,
     gettingStartedButtons,
@@ -366,6 +369,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                     messageBeingEdited={messageBeingEdited}
                     setMessageBeingEdited={setMessageBeingEdited}
                     fileLinkComponent={fileLinkComponent}
+                    symbolLinkComponent={symbolLinkComponent}
                     codeBlocksCopyButtonClassName={codeBlocksCopyButtonClassName}
                     codeBlocksInsertButtonClassName={codeBlocksInsertButtonClassName}
                     transcriptItemClassName={transcriptItemClassName}

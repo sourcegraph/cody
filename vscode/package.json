@@ -803,6 +803,12 @@
           "markdownDescription": "Experimental feature for internal use.",
           "default": false
         },
+        "cody.experimental.localSymbols": {
+          "order": 9,
+          "type": "boolean",
+          "default": false,
+          "markdownDescription": "Experimental feature for internal use."
+        },
         "cody.experimental.symf.path": {
           "order": 99,
           "type": "string",
