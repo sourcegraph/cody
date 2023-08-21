@@ -39,7 +39,7 @@ addTestCase('Ufunc explanation', {
             question: 'Please provide a detailed explanation of ufuncs in NumPy',
             facts: ['Ufunc'],
             answerSummary:
-                'An explanatin of NumPy ufucs including what they are, common examples, and how they work under the hood',
+                'An explanation of NumPy ufuncs, including what they are, common examples, and how they work under the hood',
         },
     ],
 })
