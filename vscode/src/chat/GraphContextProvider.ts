@@ -35,10 +35,12 @@ export const getGraphContextFromEditor = async (editor: Editor): Promise<Precise
         new Map([[uri.fsPath, activeEditor.content.split('\n')]])
     )
 
+    const nonLocalContexts = contexts.filter(({ filePath }) => filePath !== uri.fsPath)
+
     // Debuggin'
-    console.debug(`Retrieved ${contexts.length} non-file-local context snippets`)
+    console.debug(`Retrieved ${nonLocalContexts.length} non-file-local context snippets`)
     performance.mark(label)
-    return contexts
+    return nonLocalContexts
 }
 
 interface Selection {
