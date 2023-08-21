@@ -56,7 +56,7 @@ export interface CodyClient {
         messageId?: string | undefined,
         scope?: CodyClientScope
     ) => Promise<Transcript | null>
-    initializeNewChat: () => Transcript | null
+    initializeNewChat: (newScope?: Partial<CodyClientScope>) => Transcript | null
     executeRecipe: (
         recipeId: RecipeID,
         options?: {
@@ -225,25 +225,28 @@ export const useClient = ({
         [graphqlClient]
     )
 
-    const initializeNewChat = useCallback((): Transcript | null => {
-        if (config.needsEmailVerification) {
-            return transcript
-        }
-        const newTranscript = new Transcript()
-        setIsMessageInProgressState(false)
-        setTranscriptState(newTranscript)
-        setChatMessagesState(newTranscript.toChat())
-        setScopeState(scope => ({
-            includeInferredRepository: true,
-            includeInferredFile: true,
-            repositories: [],
-            editor: scope.editor,
-        }))
+    const initializeNewChat = useCallback(
+        (initialScope?: Partial<CodyClientScope>): Transcript | null => {
+            if (config.needsEmailVerification) {
+                return transcript
+            }
+            const newTranscript = new Transcript()
+            setIsMessageInProgressState(false)
+            setTranscriptState(newTranscript)
+            setChatMessagesState(newTranscript.toChat())
+            setScopeState(scope => ({
+                includeInferredRepository: initialScope?.includeInferredFile ?? true,
+                includeInferredFile: initialScope?.includeInferredFile ?? true,
+                repositories: initialScope?.repositories ?? [],
+                editor: initialScope?.editor ?? scope.editor,
+            }))
 
-        onEvent?.('initializedNewChat')
+            onEvent?.('initializedNewChat')
 
-        return newTranscript
-    }, [onEvent, config.needsEmailVerification, transcript])
+            return newTranscript
+        },
+        [onEvent, config.needsEmailVerification, transcript]
+    )
 
     const executeRecipe = useCallback(
         async (
@@ -288,7 +291,7 @@ export const useClient = ({
                 null,
                 null,
                 null,
-                null,
+                undefined,
                 unifiedContextFetcherClient
             )
 

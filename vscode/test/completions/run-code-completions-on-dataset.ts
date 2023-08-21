@@ -55,7 +55,7 @@ async function initCompletionsProvider(context: GetContextResult): Promise<Inlin
     const { completionsClient, codebaseContext } = await configureExternalServices(
         initialConfig,
         'rg',
-        null,
+        undefined,
         new NoopEditor(),
         NOOP_TELEMETRY_SERVICE,
         { createCompletionsClient: (...args) => new SourcegraphNodeCompletionsClient(...args) }
