@@ -77,7 +77,7 @@ describe('extractRelevantDocumentSymbolRanges', () => {
         const ranges = await extractRelevantDocumentSymbolRanges(
             URI.file('/test-1.test'),
             new vscode.Range(4, 3, 5, 5),
-            (): Promise<vscode.Range[]> =>
+            () =>
                 Promise.resolve([
                     new vscode.Range(2, 0, 8, 1), // foo
                     new vscode.Range(10, 0, 16, 1), // bar
