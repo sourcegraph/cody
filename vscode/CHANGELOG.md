@@ -16,6 +16,7 @@ Starting from `0.2.0`, Cody is using `major.EVEN_NUMBER.patch` for release versi
 - Adds an experiment to stream autocomplete responses in order to improve latency. [pull/723](https://github.com/sourcegraph/cody/pull/723)
 - New chat message input, with auto-resizing and a command button. [pull/718](https://github.com/sourcegraph/cody/pull/718)
 - Increased autocomplete debounce time feature flag support [pull/733](https://github.com/sourcegraph/cody/pull/733)
+- Show an update notice after extension updates. [pull/746](https://github.com/sourcegraph/cody/pull/746)
 
 ### Fixed
 

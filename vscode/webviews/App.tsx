@@ -15,6 +15,7 @@ import { Chat } from './Chat'
 import { LoadingPage } from './LoadingPage'
 import { Login } from './Login'
 import { View } from './NavBar'
+import { Notices } from './Notices'
 import { Plugins } from './Plugins'
 import { UserHistory } from './UserHistory'
 import { createWebviewTelemetryService } from './utils/telemetry'
@@ -155,6 +156,10 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                 />
             ) : (
                 <>
+                    <Notices
+                        extensionVersion={config?.extensionVersion}
+                        probablyNewInstall={!!userHistory && Object.entries(userHistory).length === 0}
+                    />
                     {errorMessages && <ErrorBanner errors={errorMessages} setErrors={setErrorMessages} />}
                     {view === 'history' && (
                         <UserHistory
