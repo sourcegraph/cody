@@ -18,6 +18,8 @@ export interface Configuration {
     experimentalGuardrails: boolean
     experimentalNonStop: boolean
     experimentalLocalSymbols: boolean
+    experimentalSymfPath: string
+    experimentalSymfAnthropicKey: string
     autocompleteAdvancedProvider:
         | 'anthropic'
         | 'unstable-codegen'

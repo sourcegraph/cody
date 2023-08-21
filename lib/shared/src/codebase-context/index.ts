@@ -1,7 +1,12 @@
 import { Configuration } from '../configuration'
 import { EmbeddingsSearch } from '../embeddings'
 import { GraphContextFetcher } from '../graph-context'
-import { ContextResult, FilenameContextFetcher, KeywordContextFetcher } from '../local-context'
+import {
+    ContextResult,
+    FilenameContextFetcher,
+    IndexedKeywordContextFetcher,
+    KeywordContextFetcher,
+} from '../local-context'
 import {
     isMarkdownFile,
     populateCodeContextTemplate,
@@ -29,6 +34,7 @@ export class CodebaseContext {
         private keywords: KeywordContextFetcher | null,
         private filenames: FilenameContextFetcher | null,
         private graph: GraphContextFetcher | null,
+        public symf?: IndexedKeywordContextFetcher | null,
         private unifiedContextFetcher?: UnifiedContextFetcher | null,
         private rerank?: (query: string, results: ContextResult[]) => Promise<ContextResult[]>
     ) {}

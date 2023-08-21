@@ -404,7 +404,7 @@ export class InlineController implements VsCodeInlineController {
      */
     private async runFixMode(comment: Comment, thread: vscode.CommentThread): Promise<void> {
         const lens = await this.makeCodeLenses(comment.id, this.extensionPath, thread)
-        lens.updateState(CodyTaskState.asking, thread.range)
+        lens.updateState(CodyTaskState.working, thread.range)
         this.codeLenses.set(comment.id, lens)
         this.currentTaskId = comment.id
         void vscode.commands.executeCommand('workbench.action.collapseAllComments')

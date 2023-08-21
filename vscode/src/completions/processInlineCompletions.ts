@@ -35,7 +35,7 @@ export function processInlineCompletions(
     return rankedResults
 }
 
-function processItem(
+export function processItem(
     item: InlineCompletionItem,
     {
         document,
@@ -56,8 +56,20 @@ function processItem(
         item.insertText = truncateMultilineCompletion(item.insertText, prefix, suffix, document.languageId)
         item.insertText = removeTrailingWhitespace(item.insertText)
     }
+
+    if (!multiline) {
+        // Only keep a single line in single-line completions mode
+        const indexOfNl = item.insertText.indexOf('\n')
+        if (indexOfNl !== -1) {
+            item.insertText = item.insertText.slice(0, indexOfNl + 1)
+        }
+    }
+
     item.insertText = trimUntilSuffix(item.insertText, prefix, suffix, document.languageId)
     item.insertText = collapseDuplicativeWhitespace(prefix, item.insertText)
+
+    // Trim start and end of the completion to remove all trailing whitespace.
+    item.insertText = item.insertText.trimEnd()
 
     return item
 }

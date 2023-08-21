@@ -13,8 +13,10 @@ Starting from `0.2.0`, Cody is using `major.EVEN_NUMBER.patch` for release versi
 - Add a settings button to Cody pane header. [pull/701](https://github.com/sourcegraph/cody/pull/701)
 - Compute suggestions based on the currently selected option in the suggest widget when `cody.autocomplete.experimental.completeSuggestWidgetSelection` is enabled. [pull/636](https://github.com/sourcegraph/cody/pull/636)
 - Fixup: New `Discard` code lens to remove suggestions and decorations. [pull/711](https://github.com/sourcegraph/cody/pull/711)
+- Adds an experiment to stream autocomplete responses in order to improve latency. [pull/723](https://github.com/sourcegraph/cody/pull/723)
 - New chat message input, with auto-resizing and a command button. [pull/718](https://github.com/sourcegraph/cody/pull/718)
 - Increased autocomplete debounce time feature flag support [pull/733](https://github.com/sourcegraph/cody/pull/733)
+- Show an update notice after extension updates. [pull/746](https://github.com/sourcegraph/cody/pull/746)
 - Experimental user setting `cody.experimental.localSymbols` to enable inclusion of symbol definitions in the LLM context window. [pull/692](https://github.com/sourcegraph/cody/pull/692)
 
 ### Fixed
@@ -29,6 +31,7 @@ Starting from `0.2.0`, Cody is using `major.EVEN_NUMBER.patch` for release versi
 - Cody Commands: Show errors in chat view instead of notification windows. [pull/602](https://github.com/sourcegraph/cody/pull/602)
 - Cody Commands: Match commands on description in Cody menu [pull/702](https://github.com/sourcegraph/cody/pull/702)
 - Cody Commands: Don't require Esc to dismiss Cody menu. [pull/700](https://github.com/sourcegraph/cody/pull/700)
+- Updated welcome chat words. [pull/748](https://github.com/sourcegraph/cody/pull/748)
 
 ## [0.6.7]
 

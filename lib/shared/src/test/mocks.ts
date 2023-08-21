@@ -47,11 +47,15 @@ export class MockCompletionsClient extends SourcegraphCompletionsClient {
         throw new Error('mock stream is not implemented')
     }
 
-    public complete(params: CompletionParameters, abortSignal?: AbortSignal): Promise<CompletionResponse> {
+    public complete(
+        params: CompletionParameters,
+        onChunk?: (incompleteResponse: CompletionResponse) => void,
+        abortSignal?: AbortSignal
+    ): Promise<CompletionResponse> {
         if (!this.mocks.complete) {
             throw new Error('mock complete is not provided')
         }
-        return this.mocks.complete(params, abortSignal)
+        return this.mocks.complete(params, onChunk, abortSignal)
     }
 }
 

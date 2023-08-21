@@ -48,7 +48,7 @@ export class FixupTypingUI {
 
     private async getInstructionFromQuickPick({
         title = 'Cody',
-        placeholder = "Tell Cody what to do, or type ' / ' for commands",
+        placeholder = "Tell Cody what to do, or type '/' for commands",
         value = '',
         prefix = '',
     } = {}): Promise<string> {

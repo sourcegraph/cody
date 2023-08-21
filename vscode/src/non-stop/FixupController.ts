@@ -105,7 +105,7 @@ export class FixupController
         const fixupFile = this.files.forUri(documentUri)
         const task = new FixupTask(fixupFile, instruction, selectionRange)
         this.tasks.set(task.id, task)
-        this.setTaskState(task, CodyTaskState.asking)
+        this.setTaskState(task, CodyTaskState.working)
         return task
     }
 
@@ -167,7 +167,7 @@ export class FixupController
             return
         }
         void vscode.window.showInformationMessage('Cody will rewrite to include your changes')
-        this.setTaskState(task, CodyTaskState.asking)
+        this.setTaskState(task, CodyTaskState.working)
         return undefined
     }
 
@@ -310,7 +310,7 @@ export class FixupController
         if (!task) {
             return Promise.resolve()
         }
-        if (task.state !== CodyTaskState.asking) {
+        if (task.state !== CodyTaskState.working) {
             // TODO: Update this when we re-spin tasks with conflicts so that
             // we store the new text but can also display something reasonably
             // stable in the editor
@@ -502,10 +502,10 @@ export class FixupController
         // TODO: These state transition actions were moved from FixupTask, but
         // it is wrong for a single task to toggle the cody.fixup.running state.
         // There's more than one task.
-        if (oldState !== CodyTaskState.asking && task.state === CodyTaskState.asking) {
+        if (oldState !== CodyTaskState.working && task.state === CodyTaskState.working) {
             task.spinCount++
             void vscode.commands.executeCommand('setContext', 'cody.fixup.running', true)
-        } else if (oldState === CodyTaskState.asking && task.state !== CodyTaskState.asking) {
+        } else if (oldState === CodyTaskState.working && task.state !== CodyTaskState.working) {
             void vscode.commands.executeCommand('setContext', 'cody.fixup.running', false)
         }
 

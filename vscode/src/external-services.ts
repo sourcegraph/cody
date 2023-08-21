@@ -3,6 +3,7 @@ import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
 import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
 import { Editor } from '@sourcegraph/cody-shared/src/editor'
 import { SourcegraphEmbeddingsSearchClient } from '@sourcegraph/cody-shared/src/embeddings/client'
+import { FeatureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
 import { Guardrails } from '@sourcegraph/cody-shared/src/guardrails'
 import { SourcegraphGuardrailsClient } from '@sourcegraph/cody-shared/src/guardrails/client'
 import { IntentDetector } from '@sourcegraph/cody-shared/src/intent-detector'
@@ -13,16 +14,17 @@ import { TelemetryService } from '@sourcegraph/cody-shared/src/telemetry'
 import { isError } from '@sourcegraph/cody-shared/src/utils'
 
 import { PlatformContext } from './extension.common'
+import { SymfRunner } from './local-context/symf'
 import { logger } from './log'
 import { getRerankWithLog } from './logged-rerank'
 
 interface ExternalServices {
-    sourcegraphGraphQLAPIClient: SourcegraphGraphQLAPIClient
     intentDetector: IntentDetector
     codebaseContext: CodebaseContext
     chatClient: ChatClient
     completionsClient: SourcegraphCompletionsClient
     guardrails: Guardrails
+    featureFlagProvider: FeatureFlagProvider
 
     /** Update configuration for all of the services in this interface. */
     onConfigurationChange: (newConfig: ExternalServicesConfiguration) => void
@@ -42,6 +44,10 @@ type ExternalServicesConfiguration = Pick<
 export async function configureExternalServices(
     initialConfig: ExternalServicesConfiguration,
     rgPath: string | null,
+    symf: {
+        path: string
+        anthropicKey: string
+    } | null,
     editor: Editor,
     telemetryService: TelemetryService,
     platform: Pick<
@@ -50,7 +56,8 @@ export async function configureExternalServices(
     >
 ): Promise<ExternalServices> {
     const client = new SourcegraphGraphQLAPIClient(initialConfig)
-    const completions = platform.createCompletionsClient(initialConfig, logger)
+    const featureFlagProvider = new FeatureFlagProvider(client)
+    const completions = platform.createCompletionsClient(initialConfig, featureFlagProvider, logger)
 
     const repoId = initialConfig.codebase ? await client.getRepoId(initialConfig.codebase) : null
     if (isError(repoId)) {
@@ -71,6 +78,7 @@ export async function configureExternalServices(
             : null,
         rgPath ? platform.createFilenameContextFetcher?.(rgPath, editor, chatClient) ?? null : null,
         null,
+        symf ? new SymfRunner(symf.path, symf.anthropicKey) : null,
         undefined,
         getRerankWithLog(chatClient)
     )
@@ -78,8 +86,8 @@ export async function configureExternalServices(
     const guardrails = new SourcegraphGuardrailsClient(client)
 
     return {
-        sourcegraphGraphQLAPIClient: client,
         intentDetector: new SourcegraphIntentDetectorClient(client, completions),
+        featureFlagProvider,
         codebaseContext,
         chatClient,
         completionsClient: completions,
