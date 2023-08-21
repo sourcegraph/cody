@@ -68,12 +68,7 @@ export class RequestManager {
         const request = new InflightRequest(params)
         this.inflightRequests.add(request)
 
-        // We forward a different abort controller to the network request so we
-        // can cancel the network request independently of the user cancelling
-        // the completion.
-        const networkRequestAbortController = new AbortController()
-
-        Promise.all(providers.map(c => c.generateCompletions(networkRequestAbortController.signal, context, tracer)))
+        Promise.all(providers.map(c => c.generateCompletions(request.abortController.signal, context, tracer)))
             .then(res => res.flat())
             .then(completions =>
                 // Shared post-processing logic
@@ -148,6 +143,7 @@ export class RequestManager {
 
                 logCompletionEvent('synthesizedFromParallelRequest')
                 request.resolve({ completions: synthesizedItems, cacheHit: 'hit-after-request-started' })
+                request.abortController.abort()
                 this.inflightRequests.delete(request)
             }
         }
@@ -158,6 +154,7 @@ class InflightRequest {
     public promise: Promise<RequestManagerResult>
     public resolve: (result: RequestManagerResult) => void
     public reject: (error: Error) => void
+    public abortController: AbortController
 
     constructor(public params: RequestParams) {
         // The promise constructor is called synchronously, so this is just to
@@ -169,6 +166,10 @@ class InflightRequest {
             this.resolve = res
             this.reject = rej
         })
+        // We forward a different abort controller to the network request so we
+        // can cancel the network request independently of the user cancelling
+        // the completion.
+        this.abortController = new AbortController()
     }
 }
 
