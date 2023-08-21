@@ -52,14 +52,14 @@ interface Selection {
  */
 const getGraphContextFromSelection = async (
     selection: Selection,
-    initialContentMap: Map<string, string[]>
+    contentMap: Map<string, string[]>
 ): Promise<PreciseContext[]> => {
     // Debuggin'
     const label = 'precise context from selection'
     performance.mark(label)
 
     const { uri: activeEditorFileUri, range: selectionRange } = selection
-    const activeEditorLines = initialContentMap.get(activeEditorFileUri.fsPath)
+    const activeEditorLines = contentMap.get(activeEditorFileUri.fsPath)
     if (!activeEditorLines) {
         return []
     }
@@ -91,21 +91,24 @@ const getGraphContextFromSelection = async (
         ({ location }) => locationKeyFn(location)
     )
 
-    // Open each URI in the current workspace, and make the document content retrievable by filepath
-    const contentMap = new Map(
-        uris.map(uri => [
-            uri.fsPath,
-            vscode.workspace.openTextDocument(uri.fsPath).then(document => document.getText().split('\n')),
-        ])
-    )
-
-    // NOTE: Before asking for data about a document it must be opened in the workspace. This forces a
-    // resolution so that the following queries that require the document context will not fail with an
-    // unknown document.
-    const resolvedContentMap = await unwrapThenableMap(contentMap)
+    // Open each URI in the current workspace, and make the document content retrievable by filepath.
+    // Add the content of each newly opened document into the shared content map for recursive calls.
+    // NOTE: Before asking for data about a document it must be opened in the workspace. This forces
+    // a resolution so that the following queries that require the document context will not fail with
+    // an unknown document.
+    for (const [fsPath, lines] of await unwrapThenableMap(
+        new Map(
+            uris.map(uri => [
+                uri.fsPath,
+                vscode.workspace.openTextDocument(uri.fsPath).then(document => document.getText().split('\n')),
+            ])
+        )
+    )) {
+        contentMap.set(fsPath, lines)
+    }
 
     // Extract definition text from our matches
-    const contexts = await extractDefinitionContexts(matches, resolvedContentMap)
+    const contexts = await extractDefinitionContexts(matches, contentMap)
 
     // Debuggin'
     console.debug(`Retrieved ${contexts.length} context snippets`)
