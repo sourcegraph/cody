@@ -132,15 +132,12 @@ export const CodeBlocks: React.FunctionComponent<CodeBlocksProps> = React.memo(f
         }
     }, [displayText, CopyButtonProps, copyButtonClassName, insertButtonClassName, rootRef])
 
-    const RecipesWidgetWrapperWithProps = useMemo(
-        () => (props: { targetRef: RefObject<HTMLElement>; children: React.ReactNode }) => {
-            if (RecipesWidgetWrapper) {
-                return <RecipesWidgetWrapper {...props} />
-            }
-            return null
-        },
-        [rootRef]
-    )
+    const RecipesWidgetWrapperWithProps = useMemo(() => (props: { targetRef: RefObject<HTMLElement>; children: React.ReactNode }) => {
+        if (RecipesWidgetWrapper) {
+            return <RecipesWidgetWrapper {...props} />
+        }
+        return null
+    }, [RecipesWidgetWrapper, rootRef])
 
     return useMemo(() => {
         if (RecipesWidgetWrapper) {
