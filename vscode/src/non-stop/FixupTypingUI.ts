@@ -1,44 +1,7 @@
 import * as vscode from 'vscode'
 
-import { FixupIntent } from '@sourcegraph/cody-shared/src/chat/recipes/fixup'
-
 import { FixupTask } from './FixupTask'
 import { FixupTaskFactory } from './roles'
-
-type FixupCommand = `/${FixupIntent}`
-interface FixupQuickPickItem {
-    description: string
-    placeholder: string
-    /**
-     * Optional value to insert.
-     * Some commands (like /document) are self explanatory and a user might not want to write anything
-     **/
-    value?: string
-}
-
-const FixupCommands = new Map<FixupCommand, FixupQuickPickItem>([
-    [
-        '/fix',
-        {
-            description: 'Fix a problem in the selected code',
-            placeholder: 'Describe what you want Cody to fix',
-            value: 'Fix any problems in the selected code',
-        },
-    ],
-    [
-        '/document',
-        {
-            description: 'Generate documentation or comments for the selected code',
-            placeholder: 'Describe what you want Cody to do',
-            value: 'Generate documentation or comments for the selected code',
-        },
-    ],
-])
-
-const FixupQuickPickItems: vscode.QuickPickItem[] = [...FixupCommands].map(([command, item]) => ({
-    label: command,
-    ...item,
-}))
 
 /**
  * The UI for creating non-stop fixup tasks by typing instructions.
@@ -47,8 +10,8 @@ export class FixupTypingUI {
     constructor(private readonly taskFactory: FixupTaskFactory) {}
 
     private async getInstructionFromQuickPick({
-        title = 'Cody',
-        placeholder = "Tell Cody what to do, or type '/' for commands",
+        title = 'Cody: Refactoring...',
+        placeholder = 'Enter your refactoring instruction here...',
         value = '',
         prefix = '',
     } = {}): Promise<string> {
@@ -69,32 +32,10 @@ export class FixupTypingUI {
             quickPick.hide()
         })
 
-        quickPick.onDidChangeValue(value => {
-            if (value.startsWith('/')) {
-                quickPick.items = FixupQuickPickItems
-            } else {
-                // We show no items by default
-                quickPick.items = []
-            }
-        })
-
         quickPick.show()
 
         return new Promise(resolve =>
             quickPick.onDidAccept(() => {
-                const selectedItem = quickPick.selectedItems[0]?.label
-                const command = FixupCommands.get(selectedItem as FixupCommand)
-                if (command) {
-                    return resolve(
-                        this.getInstructionFromQuickPick({
-                            title: `Cody - ${selectedItem}`,
-                            placeholder: command.placeholder,
-                            value: command.value,
-                            prefix: selectedItem,
-                        })
-                    )
-                }
-
                 const instruction = quickPick.value.trim()
                 if (!instruction) {
                     // noop
