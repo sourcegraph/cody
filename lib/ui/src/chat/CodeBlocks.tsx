@@ -11,7 +11,7 @@ import styles from './CodeBlocks.module.css'
 export type CodyRecipesWidgetWrapper = React.ComponentType<{
     targetRef: RefObject<HTMLElement>
     children: React.ReactNode
-}> | null
+}>
 
 interface CodeBlocksProps {
     displayText: string
