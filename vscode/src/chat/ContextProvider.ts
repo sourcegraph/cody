@@ -1,3 +1,4 @@
+import { throttle } from 'lodash'
 import * as vscode from 'vscode'
 
 import { ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
@@ -194,10 +195,12 @@ export class ContextProvider implements vscode.Disposable {
                 },
             })
         }
-        this.disposables.push(this.configurationChangeEvent.event(() => send()))
-        this.disposables.push(vscode.window.onDidChangeActiveTextEditor(() => send()))
-        this.disposables.push(vscode.window.onDidChangeTextEditorSelection(() => send()))
-        return send()
+        const throttledSend = throttle(send, 250, { leading: true, trailing: true })
+
+        this.disposables.push(this.configurationChangeEvent.event(() => throttledSend()))
+        this.disposables.push(vscode.window.onDidChangeActiveTextEditor(() => throttledSend()))
+        this.disposables.push(vscode.window.onDidChangeTextEditorSelection(() => throttledSend()))
+        return throttledSend()
     }
 
     /**
