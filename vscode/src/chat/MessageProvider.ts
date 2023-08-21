@@ -183,11 +183,15 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         const lastInteraction = this.transcript.getLastInteraction()
         let consumer: IncrementalTextConsumer
         if (lastInteraction && lastInteraction.responseHandling === ResponseHandling.HIDE) {
+            let text = ''
             consumer = {
                 update: content => {
-                    this.transcript.addAssistantResponse(content, '')
+                    text = content
                 },
-                close: (): Promise<void> => Promise.resolve(),
+                close: (): Promise<void> => {
+                    this.transcript.addAssistantResponse(text, '')
+                    return Promise.resolve()
+                },
             }
         } else {
             consumer = new Typewriter({
