@@ -13,7 +13,7 @@ export class FixupTypingUI {
         title = 'Cody: Refactoring...',
         placeholder = 'Enter your refactoring instruction here...',
         value = '',
-        prefix = '',
+        prefix = '/fix',
     } = {}): Promise<string> {
         const quickPick = vscode.window.createQuickPick()
         quickPick.title = title
