@@ -15,7 +15,7 @@ import { RequestManager, RequestParams } from './request-manager'
 import { reuseLastCandidate } from './reuse-last-candidate'
 import { ProvideInlineCompletionsItemTraceData } from './tracer'
 import { InlineCompletionItem } from './types'
-import { isAbortError, isRateLimitError, SNIPPET_WINDOW_SIZE } from './utils'
+import { isAbortError, SNIPPET_WINDOW_SIZE } from './utils'
 
 export interface InlineCompletionsParams {
     // Context
@@ -122,13 +122,10 @@ export async function getInlineCompletions(params: InlineCompletionsParams): Pro
 
         params.tracer?.({ error: error.toString() })
         debug('getInlineCompletions:error', error.message, { verbose: error })
+        CompletionLogger.logError(error)
 
         if (isAbortError(error)) {
             return null
-        }
-
-        if (!isRateLimitError(error)) {
-            CompletionLogger.logCompletionEvent('error', { error: error.message })
         }
 
         throw error

@@ -7,6 +7,7 @@ import { logEvent } from '../services/EventLogger'
 
 import { ContextSummary } from './context/context'
 import { InlineCompletionItem } from './types'
+import { isAbortError, isRateLimitError } from './utils'
 
 interface CompletionEvent {
     params: {
@@ -227,4 +228,39 @@ function lineAndCharCount({ insertText }: InlineCompletionItem): { lineCount: nu
     const lineCount = insertText.split(/\r\n|\r|\n/).length
     const charCount = insertText.length
     return { lineCount, charCount }
+}
+
+/**
+ * To avoid overflowing our analytics pipeline, errors are throttled and logged as a cumulative
+ * count grouped by message every 10 minutes (with the first event being logged immediately so we
+ * can detect new errors faster)
+ *
+ * To do this, the first time an error is encountered it will be immediately logged and stored in
+ * the map with a count of `0`. Then for subsequent errors of the same type, the count is
+ * incremented and logged periodically. The count is reset to `0` after each log interval.
+ */
+const TEN_MINUTES = 1000 * 60 * 10
+const errorCounts: Map<string, number> = new Map()
+export function logError(error: Error): void {
+    if (isAbortError(error) || isRateLimitError(error)) {
+        return
+    }
+
+    const message = error.message
+
+    if (!errorCounts.has(message)) {
+        errorCounts.set(message, 0)
+        logCompletionEvent('error', { message, count: 1 })
+    }
+
+    const count = errorCounts.get(message)!
+    if (count === 0) {
+        // Start a new flush interval
+        setTimeout(() => {
+            const count = errorCounts.get(message)!
+            logCompletionEvent('error', { message, count })
+            errorCounts.set(message, 0)
+        }, TEN_MINUTES)
+    }
+    errorCounts.set(message, count + 1)
 }
