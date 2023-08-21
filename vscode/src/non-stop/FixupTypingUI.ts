@@ -1,5 +1,7 @@
 import * as vscode from 'vscode'
 
+import { menu_buttons } from '../custom-prompts/utils/menu'
+
 import { FixupTask } from './FixupTask'
 import { FixupTaskFactory } from './roles'
 
@@ -18,8 +20,7 @@ export class FixupTypingUI {
         const quickPick = vscode.window.createQuickPick()
         quickPick.title = title
         quickPick.placeholder = placeholder
-        quickPick.buttons = [{ tooltip: 'Cody', iconPath: new vscode.ThemeIcon('cody-logo-heavy') }]
-        quickPick.ignoreFocusOut = true
+        quickPick.buttons = [menu_buttons.back]
         quickPick.value = value
 
         // VS Code automatically sorts quick pick items by label.
@@ -28,7 +29,7 @@ export class FixupTypingUI {
         ;(quickPick as any).sortByLabel = false
 
         quickPick.onDidTriggerButton(() => {
-            void vscode.commands.executeCommand('cody.focus')
+            void vscode.commands.executeCommand('cody.action.commands.menu')
             quickPick.hide()
         })
 
