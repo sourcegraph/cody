@@ -13,6 +13,7 @@ import { activate as activateCommon } from './extension.common'
 import { VSCODE_WEB_RECIPES } from './extension.web'
 import { FilenameContextFetcher } from './local-context/filename-context-fetcher'
 import { LocalKeywordContextFetcher } from './local-context/local-keyword-context-fetcher'
+import { SymfRunner } from './local-context/symf'
 import { getRgPath } from './rg'
 
 /**
@@ -26,6 +27,7 @@ export function activate(context: vscode.ExtensionContext): ExtensionApi {
         createLocalKeywordContextFetcher: (...args) => new LocalKeywordContextFetcher(...args),
         createFilenameContextFetcher: (...args) => new FilenameContextFetcher(...args),
         createCompletionsClient: (...args) => new SourcegraphNodeCompletionsClient(...args),
+        createSymfRunner: (...args) => new SymfRunner(...args),
 
         // Include additional recipes that require Node packages (such as `child_process`).
         recipes: [

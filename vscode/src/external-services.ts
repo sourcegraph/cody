@@ -8,13 +8,13 @@ import { Guardrails } from '@sourcegraph/cody-shared/src/guardrails'
 import { SourcegraphGuardrailsClient } from '@sourcegraph/cody-shared/src/guardrails/client'
 import { IntentDetector } from '@sourcegraph/cody-shared/src/intent-detector'
 import { SourcegraphIntentDetectorClient } from '@sourcegraph/cody-shared/src/intent-detector/client'
+import { IndexedKeywordContextFetcher } from '@sourcegraph/cody-shared/src/local-context'
 import { SourcegraphCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/client'
 import { SourcegraphGraphQLAPIClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
 import { TelemetryService } from '@sourcegraph/cody-shared/src/telemetry'
 import { isError } from '@sourcegraph/cody-shared/src/utils'
 
 import { PlatformContext } from './extension.common'
-import { SymfRunner } from './local-context/symf'
 import { logger } from './log'
 import { getRerankWithLog } from './logged-rerank'
 
@@ -44,10 +44,7 @@ type ExternalServicesConfiguration = Pick<
 export async function configureExternalServices(
     initialConfig: ExternalServicesConfiguration,
     rgPath: string | null,
-    symf: {
-        path: string
-        anthropicKey: string
-    } | null,
+    symf: IndexedKeywordContextFetcher | undefined,
     editor: Editor,
     telemetryService: TelemetryService,
     platform: Pick<
@@ -78,7 +75,7 @@ export async function configureExternalServices(
             : null,
         rgPath ? platform.createFilenameContextFetcher?.(rgPath, editor, chatClient) ?? null : null,
         null,
-        symf ? new SymfRunner(symf.path, symf.anthropicKey) : null,
+        symf,
         undefined,
         getRerankWithLog(chatClient)
     )
