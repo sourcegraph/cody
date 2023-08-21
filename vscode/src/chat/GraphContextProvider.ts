@@ -65,7 +65,7 @@ const getGraphContextFromSelection = async (
     }
 
     // Get the document symbols in the current file and extract their definition range
-    const relevantDocumentSymbolRanges = await extractRelevantDocumentSymbolRanges(selection)
+    const relevantDocumentSymbolRanges = await extractRelevantDocumentSymbolRanges([selection])
 
     // Extract identifiers from the relevant document symbol ranges and request their definitions
     const definitionMatches = await gatherDefinitions(activeEditorFileUri, relevantDocumentSymbolRanges, contentMap)
@@ -113,23 +113,43 @@ const getGraphContextFromSelection = async (
 }
 
 /**
- * Get the document symbols in the open file indicated by the given URI and extract their definition
- * range. This will give us indication of where the user selection and cursor is located, which we
- * assume to be the most relevant code to the current question.
+ * Get the document symbols in file indicated by the given selections and extract the symbol ranges.
+ * This will give us indication of where either the user selection and cursor is located or the range
+ * of a relevant definition we've fetched in a previous iteration, which we assume to be the most
+ * relevant code to the current question.
  */
 export const extractRelevantDocumentSymbolRanges = async (
-    selection: Selection,
+    selections: Selection[],
     getDocumentSymbolRanges: typeof defaultGetDocumentSymbolRanges = defaultGetDocumentSymbolRanges
 ): Promise<vscode.Range[]> => {
-    const { uri, range } = selection
+    const rangeMap = await unwrapThenableMap(
+        new Map(
+            dedupeWith(
+                selections.map(({ uri }) => uri),
+                uri => uri.fsPath
+            ).map(uri => [uri.fsPath, getDocumentSymbolRanges(uri)])
+        )
+    )
 
-    const documentSymbolRanges = await getDocumentSymbolRanges(uri)
+    const ranges: vscode.Range[] = []
+    for (const { uri, range } of selections) {
+        const documentSymbolRanges = rangeMap.get(uri.fsPath)
+        if (!documentSymbolRanges) {
+            continue
+        }
 
-    // Filter the document symbol ranges to just those whose range intersects the selection.
-    // If no selection exists, keep all symbols, we'll utilize all document symbol ranges.
-    return range
-        ? documentSymbolRanges.filter(({ start, end }) => start.line <= range.end.line && range.start.line <= end.line)
-        : documentSymbolRanges
+        // Filter the document symbol ranges to just those whose range intersects the selection.
+        // If no selection exists, keep all symbols, we'll utilize all document symbol ranges.
+        ranges.push(
+            ...(range
+                ? documentSymbolRanges.filter(
+                      ({ start, end }) => start.line <= range.end.line && range.start.line <= end.line
+                  )
+                : documentSymbolRanges)
+        )
+    }
+
+    return ranges
 }
 
 const identifierPattern = /[$A-Z_a-z][\w$]*/g
