@@ -10,7 +10,7 @@ export class FixupTypingUI {
     constructor(private readonly taskFactory: FixupTaskFactory) {}
 
     private async getInstructionFromQuickPick({
-        title = 'Cody: Refactoring...',
+        title = 'Cody: Refactor Code',
         placeholder = 'Enter your refactoring instruction here...',
         value = '',
         prefix = '/fix',
