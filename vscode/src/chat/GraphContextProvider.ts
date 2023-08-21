@@ -1,7 +1,7 @@
 import * as vscode from 'vscode'
 import { URI } from 'vscode-uri'
 
-import { PreciseContext } from '@sourcegraph/cody-shared'
+import { isDefined, PreciseContext } from '@sourcegraph/cody-shared'
 import { ActiveTextEditorSelectionRange, Editor } from '@sourcegraph/cody-shared/src/editor'
 import { GraphContextFetcher } from '@sourcegraph/cody-shared/src/graph-context'
 
@@ -131,25 +131,32 @@ export const extractRelevantDocumentSymbolRanges = async (
         )
     )
 
-    const ranges: vscode.Range[] = []
+    const pathsByUri = new Map<string, (ActiveTextEditorSelectionRange | undefined)[]>()
     for (const { uri, range } of selections) {
-        const documentSymbolRanges = rangeMap.get(uri.fsPath)
+        pathsByUri.set(uri.fsPath, [...(pathsByUri.get(uri.fsPath) ?? []), range])
+    }
+
+    const combinedRanges: vscode.Range[] = []
+    for (const [fsPath, ranges] of pathsByUri.entries()) {
+        const documentSymbolRanges = rangeMap.get(fsPath)
         if (!documentSymbolRanges) {
             continue
         }
 
         // Filter the document symbol ranges to just those whose range intersects the selection.
-        // If no selection exists, keep all symbols, we'll utilize all document symbol ranges.
-        ranges.push(
-            ...(range
-                ? documentSymbolRanges.filter(
-                      ({ start, end }) => start.line <= range.end.line && range.start.line <= end.line
-                  )
-                : documentSymbolRanges)
+        // If no selection exists (if we have an undefined in the ranges list), keep all symbols,
+        // we'll utilize all document symbol ranges.
+        const definedRanges = ranges.filter(isDefined)
+        combinedRanges.push(
+            ...(definedRanges.length < ranges.length
+                ? documentSymbolRanges
+                : documentSymbolRanges.filter(({ start, end }) =>
+                      definedRanges.some(range => start.line <= range.end.line && range.start.line <= end.line)
+                  ))
         )
     }
 
-    return ranges
+    return combinedRanges
 }
 
 const identifierPattern = /[$A-Z_a-z][\w$]*/g
