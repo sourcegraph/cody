@@ -282,7 +282,9 @@ export const extractDefinitionContexts = async (
     // Retrieve document symbols for each of the open documents, which we will use to extract the relevant
     // definition "bounds" given the range of the definition symbol (which is contained within the range).
     const documentSymbolsMap = new Map(
-        [...contentMap.keys()].map(fsPath => [fsPath, getDocumentSymbolRanges(vscode.Uri.file(fsPath))])
+        [...contentMap.keys()]
+            .filter(fsPath => matches.some(({ location }) => location.uri.fsPath === fsPath))
+            .map(fsPath => [fsPath, getDocumentSymbolRanges(vscode.Uri.file(fsPath))])
     )
 
     // NOTE: In order to make sure the loop below is unblocked we'll also force resolve the entirety
