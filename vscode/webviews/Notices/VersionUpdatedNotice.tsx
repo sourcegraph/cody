@@ -32,6 +32,23 @@ const useShowNotice = (currentVersion: string, probablyNewInstall: boolean): [bo
     return [showNotice, setDismissed]
 }
 
+const whatsNewURL = (version: string): string => {
+    /**
+     * Our nightlies don't have tags or release notes on GH, so we just link to our
+     * GH releases page for lack of a better option
+     * */
+    if (version.includes('-')) {
+        return 'https://github.com/sourcegraph/cody/releases'
+    }
+
+    /**
+     * At the top of each GitHub release notes we include a link to the
+     * release's blog post for that point release (e.g. 0.8.x). So even
+     * if they update from 0.7.1 -> 0.8.3 they'll have a blog post link handy
+     */
+    return `https://github.com/sourcegraph/cody/releases/tag/vscode-v${version}`
+}
+
 interface VersionUpdateNoticeProps {
     version: string
     probablyNewInstall: boolean
@@ -55,12 +72,7 @@ export const VersionUpdatedNotice: React.FunctionComponent<VersionUpdateNoticePr
         <Notice
             icon={<Icon />}
             title={`Cody updated to ${majorMinorVersion}`}
-            /**
-             * At the top of each GitHub release notes we include a link to the
-             * release's blog post for that point release (e.g. 0.8.x). So even
-             * if they update from 0.7.1 -> 0.8.3 they'll have a blog post link handy
-             */
-            linkHref={`https://github.com/sourcegraph/cody/releases/tag/vscode-v${version}`}
+            linkHref={whatsNewURL(version)}
             linkText="See what’s new →"
             linkTarget="_blank"
             onDismiss={setDismissed}
