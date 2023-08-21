@@ -113,7 +113,7 @@ const getGraphContextFromSelection = async (
 }
 
 /**
- * Get the document symbols in file indicated by the given selections and extract the symbol ranges.
+ * Get the document symbols in files indicated by the given selections and extract the symbol ranges.
  * This will give us indication of where either the user selection and cursor is located or the range
  * of a relevant definition we've fetched in a previous iteration, which we assume to be the most
  * relevant code to the current question.
