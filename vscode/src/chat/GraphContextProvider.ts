@@ -58,21 +58,17 @@ const getGraphContextFromSelection = async (
     const label = 'precise context from selection'
     performance.mark(label)
 
-    const { uri: activeEditorFileUri, range: selectionRange } = selection
+    const { uri: activeEditorFileUri } = selection
     const activeEditorLines = contentMap.get(activeEditorFileUri.fsPath)
     if (!activeEditorLines) {
         return []
     }
 
     // Get the document symbols in the current file and extract their definition range
-    const relevantDocumentSymbolRanges = await extractRelevantDocumentSymbolRanges(activeEditorFileUri, selectionRange)
+    const relevantDocumentSymbolRanges = await extractRelevantDocumentSymbolRanges(selection)
 
     // Extract identifiers from the relevant document symbol ranges and request their definitions
-    const definitionMatches = await gatherDefinitions(
-        activeEditorFileUri,
-        activeEditorLines,
-        relevantDocumentSymbolRanges
-    )
+    const definitionMatches = await gatherDefinitions(activeEditorFileUri, relevantDocumentSymbolRanges, contentMap)
 
     // Resolve, extract, and deduplicate the URIs distinct from the active editor file
     const uris = dedupeWith(
@@ -122,10 +118,11 @@ const getGraphContextFromSelection = async (
  * assume to be the most relevant code to the current question.
  */
 export const extractRelevantDocumentSymbolRanges = async (
-    uri: URI,
-    range?: ActiveTextEditorSelectionRange,
+    selection: Selection,
     getDocumentSymbolRanges: typeof defaultGetDocumentSymbolRanges = defaultGetDocumentSymbolRanges
 ): Promise<vscode.Range[]> => {
+    const { uri, range } = selection
+
     const documentSymbolRanges = await getDocumentSymbolRanges(uri)
 
     // Filter the document symbol ranges to just those whose range intersects the selection.
@@ -239,16 +236,21 @@ interface ResolvedSymbolDefinitionMatches {
 }
 
 /**
- * Search the given lines of code for identifier definitions matching an a common identifier pattern
- * and filter out common keywords. Each matching symbol is queried for definitions which are resolved
- * in parallel before return.
+ * Search the given ranges identifier definitions matching an a common identifier pattern and filter out
+ * common keywords. Each matching symbol is queried for definitions which are resolved in parallel before
+ * return.
  */
 export const gatherDefinitions = async (
     uri: URI,
-    lines: string[],
     ranges: vscode.Range[],
+    contentMap: Map<string, string[]>,
     getDefinitions: typeof defaultGetDefinitions = defaultGetDefinitions
 ): Promise<ResolvedSymbolDefinitionMatches[]> => {
+    const lines = contentMap.get(uri.fsPath)
+    if (!lines) {
+        return []
+    }
+
     // Construct a list of symbol and definition location pairs by querying the LSP server
     // with all identifiers (heuristically chosen via regex) in the relevant code ranges.
     const definitionMatches: SymbolDefinitionMatches[] = []

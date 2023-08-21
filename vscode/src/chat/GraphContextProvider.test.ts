@@ -57,7 +57,7 @@ func bonk() => { return new bar().Bar(new foo().Foo(), baz.Foo()) }
 
 describe('extractRelevantDocumentSymbolRanges', () => {
     test('returns all document symbol ranges by default', async () => {
-        const ranges = await extractRelevantDocumentSymbolRanges(URI.file('/test-1.test'), undefined, () =>
+        const ranges = await extractRelevantDocumentSymbolRanges({ uri: URI.file('/test-1.test') }, () =>
             Promise.resolve([
                 new vscode.Range(2, 0, 8, 1), // foo
                 new vscode.Range(10, 0, 16, 1), // bar
@@ -72,8 +72,7 @@ describe('extractRelevantDocumentSymbolRanges', () => {
 
     test('returns partial document symbol ranges with selection range', async () => {
         const ranges = await extractRelevantDocumentSymbolRanges(
-            URI.file('/test-1.test'),
-            new vscode.Range(4, 3, 5, 5),
+            { uri: URI.file('/test-1.test'), range: new vscode.Range(4, 3, 5, 5) },
             () =>
                 Promise.resolve([
                     new vscode.Range(2, 0, 8, 1), // foo
@@ -89,12 +88,13 @@ describe('extractRelevantDocumentSymbolRanges', () => {
 
 describe('gatherDefinitions', () => {
     test('returns definitions referencing multiple files', async () => {
+        const uri = Uri.parse('/test-3.test')
         const definitions = await gatherDefinitions(
-            Uri.parse('/test-3.test'),
-            testFile3.split('\n').slice(1),
+            uri,
             [
                 new vscode.Range(4, 0, 7, 67), // bonk
             ],
+            new Map([[uri.fsPath, testFile3.split('\n').slice(1)]]),
             // eslint-disable-next-line @typescript-eslint/require-await
             async (uri: URI, position: vscode.Position): Promise<vscode.Location[]> => {
                 switch (position.character) {
