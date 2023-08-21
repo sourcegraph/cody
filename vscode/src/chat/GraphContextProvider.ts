@@ -31,7 +31,7 @@ export const getGraphContextFromEditor = async (editor: Editor): Promise<Precise
 
     const uri = workspaceRootUri.with({ path: activeEditor.filePath })
     const contexts = await getGraphContextFromSelection(
-        { uri, range: activeEditor.selectionRange },
+        [{ uri, range: activeEditor.selectionRange }],
         new Map([[uri.fsPath, activeEditor.content.split('\n')]])
     )
 
@@ -53,21 +53,15 @@ interface Selection {
  * a defined range, we will cull the symbols to those referenced in intersecting document symbol ranges.
  */
 const getGraphContextFromSelection = async (
-    selection: Selection,
+    selections: Selection[],
     contentMap: Map<string, string[]>
 ): Promise<PreciseContext[]> => {
     // Debuggin'
     const label = 'precise context from selection'
     performance.mark(label)
 
-    const { uri: activeEditorFileUri } = selection
-    const activeEditorLines = contentMap.get(activeEditorFileUri.fsPath)
-    if (!activeEditorLines) {
-        return []
-    }
-
     // Get the document symbols in the current file and extract their definition range
-    const definitionSelections = await extractRelevantDocumentSymbolRanges([selection])
+    const definitionSelections = await extractRelevantDocumentSymbolRanges(selections)
 
     // Extract identifiers from the relevant document symbol ranges and request their definitions
     const definitionMatches = await gatherDefinitions(definitionSelections, contentMap)
