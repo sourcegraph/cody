@@ -36,6 +36,10 @@ export function isAbortError(error: Error): boolean {
     )
 }
 
+export function isRateLimitError(error: Error): boolean {
+    return error.message.includes('you exceeded the rate limit')
+}
+
 /**
  * Creates a new signal that forks a parent signal. When the parent signal is aborted, the forked
  * signal will be aborted as well. This allows propagating abort signals across asynchronous
