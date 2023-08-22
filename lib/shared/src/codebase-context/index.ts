@@ -34,7 +34,7 @@ export class CodebaseContext {
         private keywords: KeywordContextFetcher | null,
         private filenames: FilenameContextFetcher | null,
         private graph: GraphContextFetcher | null,
-        public symf?: IndexedKeywordContextFetcher | null,
+        public symf?: IndexedKeywordContextFetcher,
         private unifiedContextFetcher?: UnifiedContextFetcher | null,
         private rerank?: (query: string, results: ContextResult[]) => Promise<ContextResult[]>
     ) {}

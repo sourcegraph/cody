@@ -6,6 +6,7 @@ import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
 import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
 import { Editor } from '@sourcegraph/cody-shared/src/editor'
 import { SourcegraphEmbeddingsSearchClient } from '@sourcegraph/cody-shared/src/embeddings/client'
+import { IndexedKeywordContextFetcher } from '@sourcegraph/cody-shared/src/local-context'
 import { SourcegraphGraphQLAPIClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
 import { TelemetryService } from '@sourcegraph/cody-shared/src/telemetry'
 import { convertGitCloneURLToCodebaseName, isError } from '@sourcegraph/cody-shared/src/utils'
@@ -13,7 +14,6 @@ import { convertGitCloneURLToCodebaseName, isError } from '@sourcegraph/cody-sha
 import { getFullConfig } from '../configuration'
 import { VSCodeEditor } from '../editor/vscode-editor'
 import { PlatformContext } from '../extension.common'
-import { SymfRunner } from '../local-context/symf'
 import { debug } from '../log'
 import { getRerankWithLog } from '../logged-rerank'
 import { repositoryRemoteUrl } from '../repository/repositoryHelpers'
@@ -70,7 +70,7 @@ export class ContextProvider implements vscode.Disposable {
         private secretStorage: SecretStorage,
         private localStorage: LocalStorage,
         private rgPath: string | null,
-        private symf: { path: string; anthropicKey: string } | null,
+        private symf: IndexedKeywordContextFetcher | undefined,
         private authProvider: AuthProvider,
         private telemetryService: TelemetryService,
         private platform: PlatformContext
@@ -121,10 +121,7 @@ export class ContextProvider implements vscode.Disposable {
         const codebaseContext = await getCodebaseContext(
             this.config,
             this.rgPath,
-            this.symf && {
-                path: this.symf.path,
-                anthropicKey: this.symf.anthropicKey,
-            },
+            this.symf,
             this.editor,
             this.chat,
             this.telemetryService,
@@ -155,10 +152,7 @@ export class ContextProvider implements vscode.Disposable {
             const codebaseContext = await getCodebaseContext(
                 newConfig,
                 this.rgPath,
-                this.symf && {
-                    path: this.symf.path,
-                    anthropicKey: this.symf.anthropicKey,
-                },
+                this.symf,
                 this.editor,
                 this.chat,
                 this.telemetryService,
@@ -261,10 +255,7 @@ export class ContextProvider implements vscode.Disposable {
 export async function getCodebaseContext(
     config: Config,
     rgPath: string | null,
-    symf: {
-        path: string
-        anthropicKey: string
-    } | null,
+    symf: IndexedKeywordContextFetcher | undefined,
     editor: Editor,
     chatClient: ChatClient,
     telemetryService: TelemetryService,
@@ -299,7 +290,7 @@ export async function getCodebaseContext(
             : null,
         rgPath ? platform.createFilenameContextFetcher?.(rgPath, editor, chatClient) ?? null : null,
         new GraphContextProvider(editor),
-        symf ? new SymfRunner(symf.path, symf.anthropicKey) : null,
+        symf,
         undefined,
         getRerankWithLog(chatClient)
     )
