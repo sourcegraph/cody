@@ -69,7 +69,7 @@ const getGraphContextFromSelection = async (
     const definitionSelections = await extractRelevantDocumentSymbolRanges(selections)
 
     // Extract identifiers from the relevant document symbol ranges and request their definitions
-    const definitionMatches = await gatherDefinitions(definitionSelections, contentMap)
+    const definitionMatches = await gatherSymbolsForSelections(definitionSelections, contentMap)
 
     // Open each URI referenced by a definition match in the current workspace, and make the document
     // content retrievable by filepath by adding it to the shared content map.
@@ -319,11 +319,10 @@ const symbolKindNameToIndex = new Map([...symbolKindNames.entries()].map(([index
 const symbolKindIndexToName = new Map([...symbolKindNames.entries()].map(([index, name]) => [index, name]))
 
 /**
- * Search the given ranges identifier definitions matching an a common identifier pattern and filter out
- * common keywords. Each matching symbol is queried for definitions which are resolved in parallel before
- * return.
+ * Search the given ranges for identifiers matching an a common pattern and filter out common keywords. Each
+ * matching symbol is queried for a related symbol definition which are resolved in parallel before return.
  */
-export const gatherDefinitions = async (
+export const gatherSymbolsForSelections = async (
     selections: Selection[],
     contentMap: Map<string, string[]>,
     getDefinitions: typeof defaultGetDefinitions = defaultGetDefinitions
