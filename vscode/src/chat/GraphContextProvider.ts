@@ -339,20 +339,34 @@ export const gatherDefinitions = async (
             continue
         }
 
+        const requestQueue: { symbolName: string; position: vscode.Position }[] = []
         for (const { start, end } of [range]) {
             for (const [lineIndex, line] of lines.slice(start.line, end.line + 1).entries()) {
-                for (const match of line.matchAll(identifierPattern)) {
+                // NOTE: pretty hacky - strip out C-style line comments and find everything
+                // that might look like it could be an identifier. If we end up running a
+                // VSCode provider over this cursor position and it's not a symbol we can
+                // use, we'll just get back an empty location list.
+                const identifierMatches = line.replace(/\/\/.*$/, '').matchAll(identifierPattern)
+
+                for (const match of identifierMatches) {
                     if (match.index === undefined || commonKeywords.has(match[0])) {
                         continue
                     }
 
-                    definitionMatches.push({
+                    requestQueue.push({
                         symbolName: match[0],
-                        locations: getDefinitions(uri, new vscode.Position(start.line + lineIndex, match.index + 1)),
-                        kind,
+                        position: new vscode.Position(start.line + lineIndex, match.index + 1),
                     })
                 }
             }
+        }
+
+        for (const { symbolName, position } of requestQueue) {
+            definitionMatches.push({
+                symbolName,
+                locations: getDefinitions(uri, position),
+                kind,
+            })
         }
     }
 
