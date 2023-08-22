@@ -71,7 +71,7 @@ export const VersionUpdatedNotice: React.FunctionComponent<VersionUpdateNoticePr
     return (
         <Notice
             icon={<Icon />}
-            title={`Cody updated to ${majorMinorVersion}`}
+            title={`Cody updated to v${majorMinorVersion}`}
             linkHref={whatsNewURL(version)}
             linkText="See what’s new →"
             linkTarget="_blank"
