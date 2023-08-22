@@ -246,6 +246,7 @@ const TextArea: React.FunctionComponent<ChatUITextAreaProps> = ({
                     className={styles.chatInputCommandButton}
                     onClick={onTextAreaCommandButtonClick}
                     disabled={!!value}
+                    title="Run a Command"
                 >
                     <i className="codicon codicon-terminal" />
                 </VSCodeButton>
