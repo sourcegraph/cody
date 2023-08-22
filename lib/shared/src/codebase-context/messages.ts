@@ -23,6 +23,7 @@ export interface ContextMessage extends Message {
 export interface PreciseContext {
     symbol: {
         fuzzyName?: string
+        kind?: string
     }
     definitionSnippet: string
     filePath: string

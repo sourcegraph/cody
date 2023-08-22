@@ -49,6 +49,7 @@ export const getGraphContextFromEditor = async (editor: Editor): Promise<Precise
 interface Selection {
     uri: URI
     range?: Range
+    kind?: vscode.SymbolKind
 }
 
 /**
@@ -95,9 +96,7 @@ const getGraphContextFromSelection = async (
 
     // Resolve, extract, and deduplicate the symbol and location match pairs from the definition matches
     const matches = dedupeWith(
-        definitionMatches
-            .map(({ symbolName, locations }) => locations.map(location => ({ symbolName, location })))
-            .flat(),
+        definitionMatches.map(({ locations, ...rest }) => locations.map(location => ({ location, ...rest }))).flat(),
         ({ location }) => locationKeyFn(location)
     )
 
@@ -111,16 +110,12 @@ const getGraphContextFromSelection = async (
     if (recursionLimit > 0) {
         contexts.push(
             ...(await getGraphContextFromSelection(
-                contexts.map(c => ({
-                    uri: URI.file(c.filePath),
-                    range: c.range
-                        ? new vscode.Range(
-                              c.range.startLine,
-                              c.range.startCharacter,
-                              c.range.endLine,
-                              c.range.endCharacter
-                          )
+                contexts.map(({ filePath, range, symbol }) => ({
+                    uri: URI.file(filePath),
+                    range: range
+                        ? new vscode.Range(range.startLine, range.startCharacter, range.endLine, range.endCharacter)
                         : undefined,
+                    kind: symbol.kind ? (symbolKindNameToIndex.get(symbol.kind) as vscode.SymbolKind) : undefined,
                 })),
                 contentMap,
                 recursionLimit - 1
@@ -150,13 +145,13 @@ export const extractRelevantDocumentSymbolRanges = async (
         )
     )
 
-    const pathsByUri = new Map<string, (Range | undefined)[]>()
-    for (const { uri, range } of selections) {
-        pathsByUri.set(uri.fsPath, [...(pathsByUri.get(uri.fsPath) ?? []), range])
+    const selectionByUri = new Map<string, Omit<Selection, 'uri'>[]>()
+    for (const { uri, ...rest } of selections) {
+        selectionByUri.set(uri.fsPath, [...(selectionByUri.get(uri.fsPath) ?? []), { ...rest }])
     }
 
     const combinedRanges: Selection[] = []
-    for (const [fsPath, ranges] of pathsByUri.entries()) {
+    for (const [fsPath, selections] of selectionByUri.entries()) {
         const documentSymbolMetadata = documentSymbolMetadataMap.get(fsPath)
         if (!documentSymbolMetadata) {
             continue
@@ -165,16 +160,18 @@ export const extractRelevantDocumentSymbolRanges = async (
         // Filter the document symbol ranges to just those whose range intersects the selection.
         // If no selection exists (if we have an undefined in the ranges list), keep all symbols,
         // we'll utilize all document symbol ranges.
-        const definedRanges = ranges.filter(isDefined)
+        const definedRanges = selections.filter(isDefined)
         combinedRanges.push(
-            ...(definedRanges.length < ranges.length
-                ? documentSymbolMetadata.map(metadata => metadata.range)
-                : documentSymbolMetadata
-                      .map(metadata => metadata.range)
-                      .filter(({ start, end }) =>
-                          definedRanges.some(range => start.line <= range.end.line && range.start.line <= end.line)
+            ...(definedRanges.length < selections.length
+                ? documentSymbolMetadata
+                : documentSymbolMetadata.filter(({ range: { start, end } }) =>
+                      definedRanges.some(selection =>
+                          selection.range
+                              ? start.line <= selection.range.end.line && selection.range.start.line <= end.line
+                              : true
                       )
-            ).map(range => ({ uri: URI.file(fsPath), range }))
+                  )
+            ).map(({ ...rest }) => ({ uri: URI.file(fsPath), ...rest }))
         )
     }
 
@@ -277,12 +274,49 @@ const commonKeywords = new Set([...goKeywords, ...typescriptKeywords])
 interface SymbolDefinitionMatches {
     symbolName: string
     locations: Thenable<vscode.Location[]>
+    kind?: vscode.SymbolKind
 }
 
-interface ResolvedSymbolDefinitionMatches {
-    symbolName: string
+interface ResolvedSymbolDefinitionMatches extends Omit<SymbolDefinitionMatches, 'locations'> {
     locations: vscode.Location[]
 }
+
+interface ResolvedSymbolDefinitionMatch extends Omit<SymbolDefinitionMatches, 'locations'> {
+    location: vscode.Location
+}
+
+// NOTE: this must be kept up-to-date with vscode.SymbolKind enum tags.
+const symbolKindNames = [
+    'File', //  0
+    'Module', //  1
+    'Namespace', //  2
+    'Package', //  3
+    'Class', //  4
+    'Method', //  5
+    'Property', //  6
+    'Field', //  7
+    'Constructor', //  8
+    'Enum', //  9
+    'Interface', // 10
+    'Function', // 11
+    'Variable', // 12
+    'Constant', // 13
+    'String', // 14
+    'Number', // 15
+    'Boolean', // 16
+    'Array', // 17
+    'Object', // 18
+    'Key', // 19
+    'Null', // 20
+    'EnumMember', // 21
+    'Struct', // 22
+    'Event', // 23
+    'Operator', // 24
+    'TypeParameter', // 25
+]
+
+const symbolKindNameToIndex = new Map([...symbolKindNames.entries()].map(([index, name]) => [name, index]))
+const symbolKindIndexToName = new Map([...symbolKindNames.entries()].map(([index, name]) => [index, name]))
 
 /**
  * Search the given ranges identifier definitions matching an a common identifier pattern and filter out
@@ -299,7 +333,7 @@ export const gatherDefinitions = async (
     const definitionMatches: SymbolDefinitionMatches[] = []
 
     for (const selection of selections) {
-        const { uri, range } = selection
+        const { uri, range, kind } = selection
         const lines = contentMap.get(uri.fsPath)
         if (!range || !lines) {
             continue
@@ -315,6 +349,7 @@ export const gatherDefinitions = async (
                     definitionMatches.push({
                         symbolName: match[0],
                         locations: getDefinitions(uri, new vscode.Position(start.line + lineIndex, match.index + 1)),
+                        kind,
                     })
                 }
             }
@@ -323,15 +358,14 @@ export const gatherDefinitions = async (
 
     // Resolve all in-flight promises in parallel
     const resolvedDefinitionMatches = await Promise.all(
-        definitionMatches.map(async ({ symbolName, locations }) => ({ symbolName, locations: await locations }))
+        definitionMatches.map(async ({ locations, ...rest }) => ({ locations: await locations, ...rest }))
     )
 
     // Remove definition ranges that exist within one fo the input definition selections
     // These are locals and don't give us any additional information in the context window.
     // Remove any remaining symbols that have an empty set of locations.
     const filteredDefinitionMatches = resolvedDefinitionMatches
-        .map(({ symbolName, locations }) => ({
-            symbolName,
+        .map(({ locations, ...rest }) => ({
             locations: locations.filter(
                 ({ uri, range }) =>
                     !selections.some(
@@ -342,6 +376,7 @@ export const gatherDefinitions = async (
                                     range.end.line <= selectionRange.end.line))
                     )
             ),
+            ...rest,
         }))
         .filter(({ locations }) => locations.length !== 0)
 
@@ -359,7 +394,7 @@ export const gatherDefinitions = async (
  * is assumed to be open in the current VSCode workspace. Matches without such an entry are skipped.
  */
 export const extractDefinitionContexts = async (
-    matches: { symbolName: string; location: vscode.Location }[],
+    matches: ResolvedSymbolDefinitionMatch[],
     contentMap: Map<string, string[]>,
     getDocumentSymbolMetadata: typeof defaultGetDocumentSymbolMetadata = defaultGetDocumentSymbolMetadata
 ): Promise<PreciseContext[]> => {
@@ -381,7 +416,7 @@ export const extractDefinitionContexts = async (
     // are expected to filter and re-rank these results as needed for their specific use case.
 
     const contexts: PreciseContext[] = []
-    for (const { symbolName, location } of matches) {
+    for (const { symbolName, location, kind } of matches) {
         const { uri, range } = location
         const contentPromise = contentMap.get(uri.fsPath)
         const documentSymbolMetadataPromises = documentSymbolMetadataMap.get(uri.fsPath)
@@ -399,6 +434,7 @@ export const extractDefinitionContexts = async (
                 contexts.push({
                     symbol: {
                         fuzzyName: symbolName,
+                        kind: kind ? symbolKindIndexToName.get(kind) : undefined,
                     },
                     filePath: uri.fsPath,
                     range: {
