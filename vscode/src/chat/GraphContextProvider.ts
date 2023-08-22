@@ -139,14 +139,14 @@ const getGraphContextFromSelection = async (
  */
 export const extractRelevantDocumentSymbolRanges = async (
     selections: Selection[],
-    getDocumentSymbolRanges: typeof defaultGetDocumentSymbolRanges = defaultGetDocumentSymbolRanges
+    getDocumentSymbolMetadata: typeof defaultGetDocumentSymbolMetadata = defaultGetDocumentSymbolMetadata
 ): Promise<Selection[]> => {
-    const rangeMap = await unwrapThenableMap(
+    const documentSymbolMetadataMap = await unwrapThenableMap(
         new Map(
             dedupeWith(
                 selections.map(({ uri }) => uri),
                 uri => uri.fsPath
-            ).map(uri => [uri.fsPath, getDocumentSymbolRanges(uri)])
+            ).map(uri => [uri.fsPath, getDocumentSymbolMetadata(uri)])
         )
     )
 
@@ -157,8 +157,8 @@ export const extractRelevantDocumentSymbolRanges = async (
 
     const combinedRanges: Selection[] = []
     for (const [fsPath, ranges] of pathsByUri.entries()) {
-        const documentSymbolRanges = rangeMap.get(fsPath)
-        if (!documentSymbolRanges) {
+        const documentSymbolMetadata = documentSymbolMetadataMap.get(fsPath)
+        if (!documentSymbolMetadata) {
             continue
         }
 
@@ -168,10 +168,12 @@ export const extractRelevantDocumentSymbolRanges = async (
         const definedRanges = ranges.filter(isDefined)
         combinedRanges.push(
             ...(definedRanges.length < ranges.length
-                ? documentSymbolRanges
-                : documentSymbolRanges.filter(({ start, end }) =>
-                      definedRanges.some(range => start.line <= range.end.line && range.start.line <= end.line)
-                  )
+                ? documentSymbolMetadata.map(metadata => metadata.range)
+                : documentSymbolMetadata
+                      .map(metadata => metadata.range)
+                      .filter(({ start, end }) =>
+                          definedRanges.some(range => start.line <= range.end.line && range.start.line <= end.line)
+                      )
             ).map(range => ({ uri: URI.file(fsPath), range }))
         )
     }
@@ -354,20 +356,20 @@ export const gatherDefinitions = async (
 export const extractDefinitionContexts = async (
     matches: { symbolName: string; location: vscode.Location }[],
     contentMap: Map<string, string[]>,
-    getDocumentSymbolRanges: typeof defaultGetDocumentSymbolRanges = defaultGetDocumentSymbolRanges
+    getDocumentSymbolMetadata: typeof defaultGetDocumentSymbolMetadata = defaultGetDocumentSymbolMetadata
 ): Promise<PreciseContext[]> => {
     // Retrieve document symbols for each of the open documents, which we will use to extract the relevant
     // definition "bounds" given the range of the definition symbol (which is contained within the range).
-    const documentSymbolsMap = new Map(
+    const documentSymbolMetadataMap = new Map(
         [...contentMap.keys()]
             .filter(fsPath => matches.some(({ location }) => location.uri.fsPath === fsPath))
-            .map(fsPath => [fsPath, getDocumentSymbolRanges(vscode.Uri.file(fsPath))])
+            .map(fsPath => [fsPath, getDocumentSymbolMetadata(vscode.Uri.file(fsPath))])
     )
 
     // NOTE: In order to make sure the loop below is unblocked we'll also force resolve the entirety
     // of the folding range requests. That way we don't have a situation where the first iteration of
     // the loop is waiting on the last promise to be resolved in the set.
-    await Promise.all([...documentSymbolsMap.values()])
+    await Promise.all([...documentSymbolMetadataMap.values()])
 
     // Piece everything together. For each matching definition, extract the relevant lines given the
     // containing document's content and folding range result. Downstream consumers of this function
@@ -377,12 +379,16 @@ export const extractDefinitionContexts = async (
     for (const { symbolName, location } of matches) {
         const { uri, range } = location
         const contentPromise = contentMap.get(uri.fsPath)
-        const documentSymbolsPromises = documentSymbolsMap.get(uri.fsPath)
+        const documentSymbolMetadataPromises = documentSymbolMetadataMap.get(uri.fsPath)
 
-        if (contentPromise && documentSymbolsPromises) {
+        if (contentPromise && documentSymbolMetadataPromises) {
             const content = contentPromise
-            const documentSymbols = await documentSymbolsPromises // NOTE: already resolved)
-            const definitionSnippets = extractSnippets(content, documentSymbols, [range])
+            const documentSymbolMetadata = await documentSymbolMetadataPromises // NOTE: already resolved)
+            const definitionSnippets = extractSnippets(
+                content,
+                documentSymbolMetadata.map(metadata => metadata.range),
+                [range]
+            )
 
             for (const definitionSnippet of definitionSnippets) {
                 contexts.push({
@@ -405,17 +411,22 @@ export const extractDefinitionContexts = async (
     return contexts
 }
 
+interface DocumentSymbolMetadata {
+    kind: vscode.SymbolKind
+    range: vscode.Range
+}
+
 /**
  *
  * Shim for default LSP executeDocumentSymbolProvider call. Can be mocked for testing.
  */
-const defaultGetDocumentSymbolRanges = async (uri: URI): Promise<vscode.Range[]> =>
+const defaultGetDocumentSymbolMetadata = async (uri: URI): Promise<DocumentSymbolMetadata[]> =>
     (
         await vscode.commands.executeCommand<(vscode.SymbolInformation | vscode.DocumentSymbol)[]>(
             'vscode.executeDocumentSymbolProvider',
             uri
         )
-    ).map(extractSymbolRange)
+    ).map(extractSymbolMetadata)
 
 /**
  * Shim for default LSP executeDefinitionProvider call. Can be mocked for testing.
@@ -428,8 +439,8 @@ const defaultGetDefinitions = async (uri: URI, position: vscode.Position): Promi
 /**
  * Extract the definition range from the given symbol information or document symbol.
  */
-const extractSymbolRange = (d: vscode.SymbolInformation | vscode.DocumentSymbol): vscode.Range =>
-    isDocumentSymbol(d) ? d.range : d.location.range
+const extractSymbolMetadata = (d: vscode.SymbolInformation | vscode.DocumentSymbol): DocumentSymbolMetadata =>
+    isDocumentSymbol(d) ? { kind: d.kind, range: d.range } : { kind: d.kind, range: d.location.range }
 
 const isDocumentSymbol = (s: vscode.SymbolInformation | vscode.DocumentSymbol): s is vscode.DocumentSymbol =>
     (s as vscode.DocumentSymbol).range !== undefined
