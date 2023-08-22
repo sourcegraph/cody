@@ -360,7 +360,11 @@ export const gatherSymbolsForSelections = async (
             }
         }
 
-        for (const { symbolName, position } of requestQueue) {
+        // NOTE: deduplicating here will save duplicate queries that are _likely_ to point to the
+        // same definition, but we may be culling aggressively here for some edge cases. I don't
+        // currently think that these are likely to be make-or-break a quality response on any
+        // significant segment of real world questions, though.
+        for (const { symbolName, position } of dedupeWith(requestQueue, ({ symbolName }) => symbolName)) {
             definitionMatches.push({
                 symbolName,
                 locations: getDefinitions(uri, position),
