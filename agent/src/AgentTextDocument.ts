@@ -1,5 +1,7 @@
 import * as vscode from 'vscode'
 
+import { getFileExtension, getNormalizedLanguageName } from '@sourcegraph/cody-shared/src/chat/recipes/helpers'
+
 import { DocumentOffsets } from './offsets'
 import { TextDocument } from './protocol'
 import * as vscode_shim from './vscode-shim'
@@ -14,7 +16,8 @@ export class AgentTextDocument implements vscode.TextDocument {
         this.uri = vscode_shim.Uri.from({ scheme: 'file', path: textDocument.filePath })
         this.fileName = textDocument.filePath
         this.isUntitled = false
-        this.languageId = this.fileName.split('.').splice(-1)[0]
+
+        this.languageId = getNormalizedLanguageName(getFileExtension(this.fileName))
         this.offsets = new DocumentOffsets(textDocument)
         this.lineCount = this.offsets.lineCount()
     }
