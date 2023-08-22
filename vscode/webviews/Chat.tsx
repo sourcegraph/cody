@@ -246,7 +246,7 @@ const TextArea: React.FunctionComponent<ChatUITextAreaProps> = ({
                     className={styles.chatInputCommandButton}
                     onClick={onTextAreaCommandButtonClick}
                     disabled={!!value}
-                    title="Run a Command"
+                    title="Commands"
                 >
                     <i className="codicon codicon-terminal" />
                 </VSCodeButton>
@@ -262,6 +262,7 @@ const SubmitButton: React.FunctionComponent<ChatUISubmitButtonProps> = ({ classN
         type="button"
         disabled={disabled}
         onClick={onClick}
+        title="Send Message"
     >
         <SubmitSvg />
     </VSCodeButton>
