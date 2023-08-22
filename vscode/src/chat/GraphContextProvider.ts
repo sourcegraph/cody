@@ -326,25 +326,30 @@ export const gatherDefinitions = async (
         definitionMatches.map(async ({ symbolName, locations }) => ({ symbolName, locations: await locations }))
     )
 
-    return (
-        resolvedDefinitionMatches
-            // Remove definition ranges that exist within one fo the input definition selections
-            // These are locals and don't give us any additional information in the context window.
-            .map(({ symbolName, locations }) => ({
-                symbolName,
-                locations: locations.filter(
-                    ({ uri, range }) =>
-                        !selections.some(
-                            ({ uri: selectionUri, range: selectionRange }) =>
-                                uri.fsPath === selectionUri.fsPath &&
-                                (selectionRange === undefined ||
-                                    (selectionRange.start.line <= range.start.line &&
-                                        range.end.line <= selectionRange.end.line))
-                        )
-                ),
-            }))
-            // Remove empty locations
-            .filter(({ locations }) => locations.length !== 0)
+    // Remove definition ranges that exist within one fo the input definition selections
+    // These are locals and don't give us any additional information in the context window.
+    // Remove any remaining symbols that have an empty set of locations.
+    const filteredDefinitionMatches = resolvedDefinitionMatches
+        .map(({ symbolName, locations }) => ({
+            symbolName,
+            locations: locations.filter(
+                ({ uri, range }) =>
+                    !selections.some(
+                        ({ uri: selectionUri, range: selectionRange }) =>
+                            uri.fsPath === selectionUri.fsPath &&
+                            (selectionRange === undefined ||
+                                (selectionRange.start.line <= range.start.line &&
+                                    range.end.line <= selectionRange.end.line))
+                    )
+            ),
+        }))
+        .filter(({ locations }) => locations.length !== 0)
+
+    // It's possible that there are many references to the same symbol in the given selection.
+    // Deduplicate such definitions early here.
+    return dedupeWith(
+        filteredDefinitionMatches,
+        match => `${match.symbolName}.${match.locations.map(locationKeyFn).join('.')}`
     )
 }
 

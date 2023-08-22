@@ -141,7 +141,9 @@ describe('gatherDefinitions', () => {
             { symbolName: 'foo', locations: [{ uri: Uri.file('/test-1.test'), range: new vscode.Range(2, 6, 2, 9) }] },
             { symbolName: 'Foo', locations: [{ uri: Uri.file('/test-1.test'), range: new vscode.Range(3, 6, 3, 9) }] },
             { symbolName: 'baz', locations: [{ uri: Uri.file('/test-2.test'), range: new vscode.Range(3, 6, 3, 8) }] },
-            { symbolName: 'Foo', locations: [{ uri: Uri.file('/test-1.test'), range: new vscode.Range(3, 6, 3, 9) }] },
+
+            // Duplicates are thrown out
+            // { symbolName: 'Foo', locations: [{ uri: Uri.file('/test-1.test'), range: new vscode.Range(3, 6, 3, 9) }] },
         ])
     })
 })
