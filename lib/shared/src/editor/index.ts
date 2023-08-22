@@ -8,7 +8,7 @@ export interface ActiveTextEditor {
     selectionRange?: ActiveTextEditorSelectionRange
 }
 
-export interface ActiveTextEditorSelectionRange {
+export interface Range {
     start: {
         line: number
         character: number
@@ -18,6 +18,8 @@ export interface ActiveTextEditorSelectionRange {
         character: number
     }
 }
+
+export type ActiveTextEditorSelectionRange = Range
 
 export interface ActiveTextEditorSelection {
     fileName: string
