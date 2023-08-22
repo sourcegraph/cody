@@ -483,7 +483,7 @@ const dedupeWith = <T>(items: T[], keyFn: (item: T) => string): T[] => [
  * Returns a key unique to a given location for use with `dedupeWith`.
  */
 const locationKeyFn = (location: vscode.Location): string =>
-    `${location.uri}?L${location.range.start.line}:${location.range.start.character}`
+    `${location.uri.fsPath}?L${location.range.start.line}:${location.range.start.character}`
 
 /**
  * Convert a mapping from K -> Thenable<V> to a map of K -> V.
