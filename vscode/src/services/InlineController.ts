@@ -73,7 +73,6 @@ export class InlineController implements VsCodeInlineController {
 
         if (enableInlineChat) {
             this.commentController = this.init()
-            this._disposables.push(this.commentController)
         }
 
         // Toggle Inline Chat on Config Change
@@ -171,7 +170,7 @@ export class InlineController implements VsCodeInlineController {
         vscode.window.onDidChangeVisibleTextEditors(async e => {
             // get the last editor from the event list
             const editor = e[e.length - 1]
-            if (this.commentController && !this.isInProgress && editor.document.uri.scheme === 'comment') {
+            if (this.commentController && !this.isInProgress && editor?.document?.uri?.scheme === 'comment') {
                 this.lastClipboardText = await vscode.env.clipboard.readText()
             }
         })
@@ -195,6 +194,7 @@ export class InlineController implements VsCodeInlineController {
                 return [new vscode.Range(0, 0, lineCount - 1, 0)]
             },
         }
+        this._disposables.push(commentController)
         return commentController
     }
     /**
