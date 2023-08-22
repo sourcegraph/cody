@@ -171,7 +171,7 @@ export class InlineController implements VsCodeInlineController {
         vscode.window.onDidChangeVisibleTextEditors(async e => {
             // get the last editor from the event list
             const editor = e[e.length - 1]
-            if (this.commentController && !this.isInProgress && editor.document.uri.scheme === 'comment') {
+            if (this.commentController && !this.isInProgress && editor?.document?.uri?.scheme === 'comment') {
                 this.lastClipboardText = await vscode.env.clipboard.readText()
             }
         })
