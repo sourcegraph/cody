@@ -26,6 +26,7 @@ export interface ActiveTextEditorSelection {
     precedingText: string
     selectedText: string
     followingText: string
+    selectionRange?: ActiveTextEditorSelectionRange | null
 }
 
 export type ActiveTextEditorDiagnosticType = 'error' | 'warning' | 'information' | 'hint'
@@ -50,38 +51,38 @@ export interface VsCodeInlineController {
     error(): Promise<void>
 }
 
-export interface VsCodeFixupController {
-    getTaskRecipeData(taskId: string): Promise<
-        | {
-              instruction: string
-              fileName: string
-              precedingText: string
-              selectedText: string
-              followingText: string
-          }
-        | undefined
-    >
+export interface VsCodeFixupTaskRecipeData {
+    instruction: string
+    fileName: string
+    precedingText: string
+    selectedText: string
+    followingText: string
+    selectionRange: ActiveTextEditorSelectionRange
 }
 
-export interface VsCodeMyPromptController {
+export interface VsCodeFixupController {
+    getTaskRecipeData(taskId: string): Promise<VsCodeFixupTaskRecipeData | undefined>
+}
+
+export interface VsCodeCommandsController {
     get(type?: string): Promise<string | null>
-    menu(): Promise<void>
+    menu(type: 'custom' | 'config' | 'default', showDesc?: boolean): Promise<void>
 }
 
 export interface ActiveTextEditorViewControllers<
     I extends VsCodeInlineController = VsCodeInlineController,
     F extends VsCodeFixupController = VsCodeFixupController,
-    P extends VsCodeMyPromptController = VsCodeMyPromptController,
+    C extends VsCodeCommandsController = VsCodeCommandsController,
 > {
     readonly inline?: I
     readonly fixups?: F
-    readonly prompt?: P
+    readonly command?: C
 }
 
 export interface Editor<
     I extends VsCodeInlineController = VsCodeInlineController,
     F extends VsCodeFixupController = VsCodeFixupController,
-    P extends VsCodeMyPromptController = VsCodeMyPromptController,
+    P extends VsCodeCommandsController = VsCodeCommandsController,
 > {
     controllers?: ActiveTextEditorViewControllers<I, F, P>
 
@@ -98,10 +99,17 @@ export interface Editor<
     getActiveTextEditor(): ActiveTextEditor | null
     getActiveTextEditorSelection(): ActiveTextEditorSelection | null
 
+    getActiveInlineChatTextEditor(): ActiveTextEditor | null
+    getActiveInlineChatSelection(): ActiveTextEditorSelection | null
+
     /**
      * Gets the active text editor's selection, or the entire file if the selected range is empty.
      */
     getActiveTextEditorSelectionOrEntireFile(): ActiveTextEditorSelection | null
+    /**
+     * Gets the active text editor's selection, or the visible content if the selected range is empty.
+     */
+    getActiveTextEditorSelectionOrVisibleContent(): ActiveTextEditorSelection | null
     /**
      * Get diagnostics (errors, warnings, hints) for a range within the active text editor.
      */
@@ -120,7 +128,7 @@ export interface Editor<
 
 export class NoopEditor implements Editor {
     public controllers?:
-        | ActiveTextEditorViewControllers<VsCodeInlineController, VsCodeFixupController, VsCodeMyPromptController>
+        | ActiveTextEditorViewControllers<VsCodeInlineController, VsCodeFixupController, VsCodeCommandsController>
         | undefined
 
     public getWorkspaceRootPath(): string | null {
@@ -139,7 +147,19 @@ export class NoopEditor implements Editor {
         return null
     }
 
+    public getActiveInlineChatTextEditor(): ActiveTextEditor | null {
+        return null
+    }
+
+    public getActiveInlineChatSelection(): ActiveTextEditorSelection | null {
+        return null
+    }
+
     public getActiveTextEditorSelectionOrEntireFile(): ActiveTextEditorSelection | null {
+        return null
+    }
+
+    public getActiveTextEditorSelectionOrVisibleContent(): ActiveTextEditorSelection | null {
         return null
     }
 

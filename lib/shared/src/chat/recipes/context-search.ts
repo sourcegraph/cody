@@ -18,7 +18,7 @@ Parameters:
 Functionality:
 - Gets a search query from the human input or a prompt.
 - Truncates the query to MAX_HUMAN_INPUT_TOKENS.
-- Searches the vactor database for code and text results matching the query.
+- Searches the vector database for code and text results matching the query.
 - If codebase is not embedded or if keyword context is selected, get local keyword context instead
 - Returns up to 12 code results and 3 text results.
 - Generates a markdown string displaying the results with file names linking to the search page for that file.
@@ -29,7 +29,10 @@ export class ContextSearch implements Recipe {
     public id: RecipeID = 'context-search'
 
     public async getInteraction(humanChatInput: string, context: RecipeContext): Promise<Interaction | null> {
-        const query = humanChatInput || (await context.editor.showInputBox('Enter your search query here...')) || ''
+        const query =
+            humanChatInput?.replace(/^\/s(earch)?(\s)?/i, '') ||
+            (await context.editor.showInputBox('Enter your search query here...')) ||
+            ''
         if (!query) {
             return null
         }

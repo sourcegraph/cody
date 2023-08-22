@@ -5,6 +5,7 @@ import './App.css'
 import { uniq, without } from 'lodash'
 
 import { ChatContextStatus } from '@sourcegraph/cody-shared/src/chat/context'
+import { CodyPrompt } from '@sourcegraph/cody-shared/src/chat/prompts'
 import { ChatHistory, ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { Configuration } from '@sourcegraph/cody-shared/src/configuration'
 
@@ -13,9 +14,9 @@ import { AuthStatus, defaultAuthStatus, LocalEnv } from '../src/chat/protocol'
 import { Chat } from './Chat'
 import { LoadingPage } from './LoadingPage'
 import { Login } from './Login'
-import { NavBar, View } from './NavBar'
+import { View } from './NavBar'
+import { Notices } from './Notices'
 import { Plugins } from './Plugins'
-import { Recipes } from './Recipes'
 import { UserHistory } from './UserHistory'
 import { createWebviewTelemetryService } from './utils/telemetry'
 import type { VSCodeWrapper } from './utils/VSCodeApi'
@@ -39,7 +40,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     const [suggestions, setSuggestions] = useState<string[] | undefined>()
     const [isAppInstalled, setIsAppInstalled] = useState<boolean>(false)
     const [enabledPlugins, setEnabledPlugins] = useState<string[]>([])
-    const [myPrompts, setMyPrompts] = useState<string[] | null>(null)
+    const [myPrompts, setMyPrompts] = useState<[string, CodyPrompt][] | null>(null)
     const [isTranscriptError, setIsTranscriptError] = useState<boolean>(false)
 
     useEffect(
@@ -89,8 +90,8 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                     case 'enabled-plugins':
                         setEnabledPlugins(message.plugins)
                         break
-                    case 'my-prompts':
-                        setMyPrompts(message.isEnabled ? message.prompts : null)
+                    case 'custom-prompts':
+                        setMyPrompts(message.prompts?.filter(command => command[1]?.slashCommand) || null)
                         break
                     case 'transcript-errors':
                         setIsTranscriptError(message.isTranscriptError)
@@ -149,12 +150,16 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                     telemetryService={telemetryService}
                     appOS={config?.os}
                     appArch={config?.arch}
+                    uiKindIsWeb={config?.uiKindIsWeb}
                     callbackScheme={config?.uriScheme}
                     onLoginRedirect={onLoginRedirect}
                 />
             ) : (
                 <>
-                    <NavBar view={view} setView={setView} pluginsEnabled={Boolean(config?.pluginsEnabled)} />
+                    <Notices
+                        extensionVersion={config?.extensionVersion}
+                        probablyNewInstall={!!userHistory && Object.entries(userHistory).length === 0}
+                    />
                     {errorMessages && <ErrorBanner errors={errorMessages} setErrors={setErrorMessages} />}
                     {view === 'history' && (
                         <UserHistory
@@ -165,7 +170,6 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                             vscodeAPI={vscodeAPI}
                         />
                     )}
-                    {view === 'recipes' && endpoint && <Recipes vscodeAPI={vscodeAPI} myPrompts={myPrompts} />}
                     {view === 'chat' && (
                         <Chat
                             messageInProgress={messageInProgress}
@@ -182,6 +186,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                             pluginsDevMode={Boolean(config?.pluginsDebugEnabled)}
                             setSuggestions={setSuggestions}
                             telemetryService={telemetryService}
+                            chatCommands={myPrompts || undefined}
                             isTranscriptError={isTranscriptError}
                             showOnboardingButtons={userHistory && Object.entries(userHistory).length === 0}
                         />

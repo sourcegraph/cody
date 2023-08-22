@@ -1,9 +1,10 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 
-import { VSCodeButton, VSCodeLink, VSCodeTextArea } from '@vscode/webview-ui-toolkit/react'
+import { VSCodeButton, VSCodeLink } from '@vscode/webview-ui-toolkit/react'
 import classNames from 'classnames'
 
 import { ChatContextStatus } from '@sourcegraph/cody-shared/src/chat/context'
+import { CodyPrompt } from '@sourcegraph/cody-shared/src/chat/prompts'
 import { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { TelemetryService } from '@sourcegraph/cody-shared/src/telemetry'
 import {
@@ -19,7 +20,9 @@ import { SubmitSvg } from '@sourcegraph/cody-ui/src/utils/icons'
 
 import { CODY_FEEDBACK_URL } from '../src/chat/protocol'
 
+import { ChatCommandsComponent } from './ChatCommands'
 import { FileLink } from './FileLink'
+import { SymbolLink } from './SymbolLink'
 import { VSCodeWrapper } from './utils/VSCodeApi'
 
 import styles from './Chat.module.css'
@@ -39,6 +42,7 @@ interface ChatboxProps {
     suggestions?: string[]
     setSuggestions?: (suggestions: undefined | string[]) => void
     pluginsDevMode?: boolean
+    chatCommands?: [string, CodyPrompt][]
     isTranscriptError: boolean
     showOnboardingButtons?: boolean | null
 }
@@ -58,6 +62,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     suggestions,
     setSuggestions,
     pluginsDevMode,
+    chatCommands,
     isTranscriptError,
     showOnboardingButtons,
 }) => {
@@ -70,7 +75,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     }, [abortMessageInProgressInternal, vscodeAPI])
 
     const onSubmit = useCallback(
-        (text: string, submitType: 'user' | 'suggestion') => {
+        (text: string, submitType: 'user' | 'suggestion' | 'example') => {
             vscodeAPI.postMessage({ command: 'submit', text, submitType })
         },
         [vscodeAPI]
@@ -96,22 +101,12 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     )
 
     const onCopyBtnClick = useCallback(
-        (text: string, isInsert = false) => {
-            if (isInsert) {
-                vscodeAPI.postMessage({ command: 'insert', text })
-            }
+        (text: string, isInsert = false, eventType: 'Button' | 'Keydown' = 'Button') => {
             const op = isInsert ? 'insert' : 'copy'
-            telemetryService.log(`CodyVSCodeExtension:${op}Button:clicked`, {
-                op,
-                textLength: text.length,
-            })
-        },
-        [telemetryService, vscodeAPI]
-    )
-
-    const onChatButtonClick = useCallback(
-        (which: string) => {
-            vscodeAPI.postMessage({ command: 'chat-button', action: which })
+            // remove the additional /n added by the text area at the end of the text
+            const code = eventType === 'Button' ? text.replace(/\n$/, '') : text
+            // Log the event type and text to telemetry in chat view
+            vscodeAPI.postMessage({ command: op, eventType, text: code })
         },
         [vscodeAPI]
     )
@@ -132,6 +127,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             submitButtonComponent={SubmitButton}
             suggestionButtonComponent={SuggestionButton}
             fileLinkComponent={FileLink}
+            symbolLinkComponent={SymbolLink}
             className={styles.innerContainer}
             codeBlocksCopyButtonClassName={styles.codeBlocksCopyButton}
             codeBlocksInsertButtonClassName={styles.codeBlocksInsertButton}
@@ -156,28 +152,12 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             // down here to render cody is disabled on the instance nicely.
             isCodyEnabled={true}
             codyNotEnabledNotice={undefined}
-            helpMarkdown={
-                showOnboardingButtons
-                    ? `See [Getting Started](command:cody.welcome) for help and tips.
-
-To get started, select some code and run one of Cody's recipes:`
-                    : 'See [Getting Started](command:cody.welcome) for help and tips.'
-            }
-            gettingStartedButtons={
-                showOnboardingButtons
-                    ? [
-                          {
-                              label: 'Explain code (high level)',
-                              action: 'explain-code-high-level',
-                              onClick: onChatButtonClick,
-                          },
-                          { label: 'Smell code', action: 'find-code-smells', onClick: onChatButtonClick },
-                          { label: 'Generate a unit test', action: 'generate-unit-test', onClick: onChatButtonClick },
-                      ]
-                    : undefined
-            }
+            afterMarkdown={welcomeMessageMarkdown}
+            helpMarkdown=""
             ChatButtonComponent={ChatButton}
             pluginsDevMode={pluginsDevMode}
+            chatCommands={chatCommands}
+            ChatCommandsComponent={ChatCommandsComponent}
         />
     )
 }
@@ -206,17 +186,19 @@ const ChatButton: React.FunctionComponent<ChatButtonProps> = ({ label, action, o
 
 const TextArea: React.FunctionComponent<ChatUITextAreaProps> = ({
     className,
-    rows,
     autoFocus,
     value,
+    setValue,
     required,
     onInput,
     onKeyDown,
 }) => {
+    const inputRef = useRef<HTMLTextAreaElement>(null)
+    const placeholder = "Ask a question or type '/' for commands"
+
     // Focus the textarea when the webview gains focus (unless there is text selected). This makes
     // it so that the user can immediately start typing to Cody after invoking `Cody: Focus on Chat
     // View` with the keyboard.
-    const inputRef = useRef<HTMLTextAreaElement>(null)
     useEffect(() => {
         const handleFocus = (): void => {
             if (document.getSelection()?.isCollapsed) {
@@ -229,45 +211,58 @@ const TextArea: React.FunctionComponent<ChatUITextAreaProps> = ({
         }
     }, [])
 
-    // <VSCodeTextArea autofocus> does not work, so implement autofocus ourselves.
-    useEffect(() => {
-        if (autoFocus) {
+    const onTextAreaKeyDown = useCallback(
+        (event: React.KeyboardEvent<HTMLElement>): void => {
+            onKeyDown?.(event, inputRef.current?.selectionStart ?? null)
+        },
+        [inputRef, onKeyDown]
+    )
+
+    const onTextAreaCommandButtonClick = useCallback((): void => {
+        if (setValue && inputRef?.current?.value === '') {
+            setValue('/')
             inputRef.current?.focus()
         }
-    }, [autoFocus])
-
-    const handleKeyDown = (event: React.KeyboardEvent<HTMLElement>): void => {
-        if (onKeyDown) {
-            onKeyDown(event, (inputRef.current as any)?.control.selectionStart)
-        }
-    }
+    }, [inputRef, setValue])
 
     return (
-        <VSCodeTextArea
-            className={classNames(styles.chatInput, className)}
-            rows={rows}
-            ref={
-                // VSCodeTextArea has a very complex type.
-                //
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                inputRef as any
-            }
-            value={value}
-            autofocus={autoFocus}
-            required={required}
-            onInput={e => onInput(e as React.FormEvent<HTMLTextAreaElement>)}
-            onKeyDown={handleKeyDown}
-        />
+        <div className={classNames(styles.chatInputContainer)} data-value={value || placeholder}>
+            <textarea
+                className={classNames(styles.chatInput, className)}
+                rows={1}
+                ref={inputRef}
+                value={value}
+                required={required}
+                onInput={onInput}
+                onKeyDown={onTextAreaKeyDown}
+                placeholder={placeholder}
+                aria-label="Chat message"
+                title="" // Set to blank to avoid HTML5 error tooltip "Please fill in this field"
+            />
+            <div className={styles.chatInputActions}>
+                <VSCodeButton
+                    appearance="icon"
+                    type="button"
+                    className={styles.chatInputCommandButton}
+                    onClick={onTextAreaCommandButtonClick}
+                    disabled={!!value}
+                    title="Commands"
+                >
+                    <i className="codicon codicon-terminal" />
+                </VSCodeButton>
+            </div>
+        </div>
     )
 }
 
 const SubmitButton: React.FunctionComponent<ChatUISubmitButtonProps> = ({ className, disabled, onClick }) => (
     <VSCodeButton
-        className={classNames(disabled ? styles.submitButtonDisabled : styles.submitButton, className)}
+        className={classNames(styles.submitButton, className)}
         appearance="icon"
         type="button"
         disabled={disabled}
         onClick={onClick}
+        title="Send Message"
     >
         <SubmitSvg />
     </VSCodeButton>
@@ -365,3 +360,10 @@ const FeedbackButtons: React.FunctionComponent<FeedbackButtonsProps> = ({ classN
         </div>
     )
 }
+
+const welcomeMessageMarkdown = `Start writing code and I’ll autocomplete lines and entire functions for you.
+
+You can ask me to explain, document and refactor code using the [Cody Commands](command:cody.action.commands.menu) action (⌥C), or by right-clicking on code and using the “Cody” menu.
+
+See the [Getting Started](command:cody.welcome) guide for more tips and tricks.
+`

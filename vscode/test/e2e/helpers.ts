@@ -129,7 +129,8 @@ function escapeToPath(text: string): string {
 export async function buildWorkSpaceSettings(workspaceDirectory: string): Promise<void> {
     const settings = {
         'cody.serverEndpoint': 'http://localhost:49300',
-        'cody.experimental.customRecipes': true,
+        'cody.experimental.commandLenses': true,
+        'cody.experimental.editorTitleCommandIcon': true,
     }
     // create a temporary directory with settings.json and add to the workspaceDirectory
     const workspaceSettingsPath = path.join(workspaceDirectory, '.vscode', 'settings.json')

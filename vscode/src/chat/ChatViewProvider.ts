@@ -1,10 +1,10 @@
 import * as vscode from 'vscode'
 
+import { CodyPrompt, CodyPromptType } from '@sourcegraph/cody-shared/src/chat/prompts'
 import { ChatMessage, UserLocalHistory } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 
 import { View } from '../../webviews/NavBar'
 import { debug } from '../log'
-import { CodyPromptType } from '../my-cody/types'
 
 import { MessageProvider, MessageProviderOptions } from './MessageProvider'
 import { ExtensionMessage, WebviewMessage } from './protocol'
@@ -43,9 +43,11 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
             case 'edit':
                 this.transcript.removeLastInteraction()
                 await this.onHumanMessageSubmitted(message.text, 'user')
+                this.telemetryService.log('CodyVSCodeExtension:editChatButton:clicked')
                 break
             case 'abort':
                 await this.abortCompletion()
+                this.telemetryService.log('CodyVSCodeExtension:abortButton:clicked', { source: 'sidebar' })
                 break
             case 'executeRecipe':
                 await this.setWebviewView('chat')
@@ -60,14 +62,17 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
                     break
                 }
                 if (message.type === 'callback' && message.endpoint) {
-                    await this.authProvider.redirectToEndpointLogin(message.endpoint)
+                    this.authProvider.redirectToEndpointLogin(message.endpoint)
                     break
                 }
                 // cody.auth.signin or cody.auth.signout
                 await vscode.commands.executeCommand(`cody.auth.${message.type}`)
                 break
             case 'insert':
-                await this.insertAtCursor(message.text)
+                await this.handleInsertAtCursor(message.text)
+                break
+            case 'copy':
+                await this.handleCopiedCode(message.text, message.eventType)
                 break
             case 'event':
                 this.telemetryService.log(message.eventName, message.properties)
@@ -84,44 +89,29 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
             case 'links':
                 void this.openExternalLinks(message.value)
                 break
-            case 'my-prompt':
-                await this.onCustomRecipeClicked(message.title, message.value)
+            case 'custom-prompt':
+                await this.onCustomPromptClicked(message.title, message.value)
                 break
             case 'reload':
                 await this.authProvider.reloadAuthStatus()
+                this.telemetryService.log('CodyVSCodeExtension:authReloadButton:clicked')
                 break
-            case 'openFile': {
-                const rootUri = this.editor.getWorkspaceRootUri()
-                if (!rootUri) {
-                    this.handleError('Failed to open file: missing rootUri')
-                    return
-                }
-                try {
-                    // This opens the file in the active column.
-                    const doc = await vscode.workspace.openTextDocument(vscode.Uri.joinPath(rootUri, message.filePath))
-                    await vscode.window.showTextDocument(doc)
-                } catch {
-                    // Try to open the file in the sourcegraph view
-                    const sourcegraphSearchURL = new URL(
-                        `/search?q=context:global+file:${message.filePath}`,
-                        this.contextProvider.config.serverEndpoint
-                    ).href
-                    void this.openExternalLinks(sourcegraphSearchURL)
-                }
+            case 'openFile':
+                await this.openFilePath(message.filePath)
                 break
-            }
-            case 'chat-button': {
-                switch (message.action) {
-                    case 'explain-code-high-level':
-                    case 'find-code-smells':
-                    case 'generate-unit-test':
-                        void this.executeRecipe(message.action)
-                        break
-                    default:
-                        break
-                }
+            case 'openLocalFileWithRange':
+                await this.openLocalFileWithRange(
+                    message.filePath,
+                    message.range
+                        ? new vscode.Range(
+                              message.range.startLine,
+                              message.range.startCharacter,
+                              message.range.endLine,
+                              message.range.endCharacter
+                          )
+                        : undefined
+                )
                 break
-            }
             case 'setEnabledPlugins':
                 await this.localStorage.setEnabledPlugins(message.plugins)
                 this.handleEnabledPlugins(message.plugins)
@@ -131,28 +121,33 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
         }
     }
 
-    private async onHumanMessageSubmitted(text: string, submitType: 'user' | 'suggestion'): Promise<void> {
+    private async onHumanMessageSubmitted(text: string, submitType: 'user' | 'suggestion' | 'example'): Promise<void> {
         debug('ChatViewProvider:onHumanMessageSubmitted', '', { verbose: { text, submitType } })
+        this.telemetryService.log('CodyVSCodeExtension:chat:submitted', { source: 'sidebar' })
         if (submitType === 'suggestion') {
             this.telemetryService.log('CodyVSCodeExtension:chatPredictions:used')
+        }
+        if (text === '/') {
+            void vscode.commands.executeCommand('cody.action.commands.menu', true)
+            return
         }
         MessageProvider.inputHistory.push(text)
         if (this.contextProvider.config.experimentalChatPredictions) {
             void this.runRecipeForSuggestion('next-questions', text)
         }
-        await this.executeCommands(text, 'chat-question')
+        await this.executeRecipe('chat-question', text)
     }
 
     /**
-     * Process custom recipe click
+     * Process custom command click
      */
-    private async onCustomRecipeClicked(title: string, recipeType: CodyPromptType = 'user'): Promise<void> {
-        this.telemetryService.log('CodyVSCodeExtension:custom-recipe:clicked')
-        debug('ChatViewProvider:onCustomRecipeClicked', title)
-        if (!this.isCustomRecipeAction(title)) {
+    private async onCustomPromptClicked(title: string, commandType: CodyPromptType = 'user'): Promise<void> {
+        this.telemetryService.log('CodyVSCodeExtension:command:customMenu:clicked')
+        debug('ChatViewProvider:onCustomPromptClicked', title)
+        if (!this.isCustomCommandAction(title)) {
             await this.setWebviewView('chat')
         }
-        await this.executeCustomRecipe(title, recipeType)
+        await this.executeCustomCommand(title, commandType)
     }
 
     /**
@@ -199,31 +194,52 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
     }
 
     /**
-     * Insert text at cursor position
-     * Replace selection if there is one
+     * Handles insert event to insert text from code block at cursor position
+     * Replace selection if there is one and then log insert event
      * Note: Using workspaceEdit instead of 'editor.action.insertSnippet' as the later reformats the text incorrectly
      */
-    private async insertAtCursor(text: string): Promise<void> {
+    private async handleInsertAtCursor(text: string): Promise<void> {
         const selectionRange = vscode.window.activeTextEditor?.selection
         const editor = vscode.window.activeTextEditor
         if (!editor || !selectionRange) {
             return
         }
+
         const edit = new vscode.WorkspaceEdit()
         // trimEnd() to remove new line added by Cody
         edit.replace(editor.document.uri, selectionRange, text.trimEnd())
         await vscode.workspace.applyEdit(edit)
+
+        // Log insert event
+        const op = 'insert'
+        const eventName = op + 'Button'
+        this.editor.controllers.inline?.setLastCopiedCode(text, eventName)
+    }
+
+    /**
+     * Handles copying code and detecting a paste event.
+     *
+     * @param text - The text from code block when copy event is triggered
+     * @param eventType - Either 'Button' or 'Keydown'
+     */
+    private async handleCopiedCode(text: string, eventType: 'Button' | 'Keydown'): Promise<void> {
+        // If it's a Button event, then the text is already passed in from the whole code block
+        const copiedCode = eventType === 'Button' ? text : await vscode.env.clipboard.readText()
+        const eventName = eventType === 'Button' ? 'copyButton' : 'keyDown:Copy'
+        // Send to Inline Controller for tracking
+        if (copiedCode) {
+            this.editor.controllers.inline?.setLastCopiedCode(copiedCode, eventName)
+        }
     }
 
     protected handleEnabledPlugins(plugins: string[]): void {
         void this.webview?.postMessage({ type: 'enabled-plugins', plugins })
     }
 
-    protected handleMyPrompts(prompts: string[], isEnabled: boolean): void {
+    protected handleCodyCommands(prompts: [string, CodyPrompt][]): void {
         void this.webview?.postMessage({
-            type: 'my-prompts',
+            type: 'custom-prompts',
             prompts,
-            isEnabled,
         })
     }
 
@@ -276,6 +292,36 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
 
         // Register webview
         this.disposables.push(webviewView.webview.onDidReceiveMessage(message => this.onDidReceiveMessage(message)))
+    }
+
+    /**
+     * Open file in editor or in sourcegraph
+     */
+    protected async openFilePath(filePath: string): Promise<void> {
+        const rootUri = this.editor.getWorkspaceRootUri()
+        if (!rootUri) {
+            this.handleError('Failed to open file: missing rootUri')
+            return
+        }
+        try {
+            const doc = await vscode.workspace.openTextDocument(vscode.Uri.joinPath(rootUri, filePath))
+            await vscode.window.showTextDocument(doc)
+        } catch {
+            // Try to open the file in the sourcegraph view
+            const sourcegraphSearchURL = new URL(
+                `/search?q=context:global+file:${filePath}`,
+                this.contextProvider.config.serverEndpoint
+            ).href
+            void this.openExternalLinks(sourcegraphSearchURL)
+        }
+    }
+
+    /**
+     * Open file in editor (assumed filePath is absolute) and optionally reveal a specific range
+     */
+    protected async openLocalFileWithRange(filePath: string, range?: vscode.Range): Promise<void> {
+        const doc = await vscode.workspace.openTextDocument(vscode.Uri.file(filePath))
+        await vscode.window.showTextDocument(doc, { selection: range })
     }
 
     /**

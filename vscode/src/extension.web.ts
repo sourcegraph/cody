@@ -2,6 +2,7 @@ import * as vscode from 'vscode'
 
 import { ChatQuestion } from '@sourcegraph/cody-shared/src/chat/recipes/chat-question'
 import { ContextSearch } from '@sourcegraph/cody-shared/src/chat/recipes/context-search'
+import { CustomPrompt } from '@sourcegraph/cody-shared/src/chat/recipes/custom-prompt'
 import { ExplainCodeDetailed } from '@sourcegraph/cody-shared/src/chat/recipes/explain-code-detailed'
 import { ExplainCodeHighLevel } from '@sourcegraph/cody-shared/src/chat/recipes/explain-code-high-level'
 import { FindCodeSmells } from '@sourcegraph/cody-shared/src/chat/recipes/find-code-smells'
@@ -11,9 +12,7 @@ import { GenerateTest } from '@sourcegraph/cody-shared/src/chat/recipes/generate
 import { ImproveVariableNames } from '@sourcegraph/cody-shared/src/chat/recipes/improve-variable-names'
 import { InlineChat } from '@sourcegraph/cody-shared/src/chat/recipes/inline-chat'
 import { InlineTouch } from '@sourcegraph/cody-shared/src/chat/recipes/inline-touch'
-import { MyPrompt } from '@sourcegraph/cody-shared/src/chat/recipes/my-prompt'
 import { NextQuestions } from '@sourcegraph/cody-shared/src/chat/recipes/next-questions'
-import { NonStop } from '@sourcegraph/cody-shared/src/chat/recipes/non-stop'
 import { Recipe } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 import { TranslateToLanguage } from '@sourcegraph/cody-shared/src/chat/recipes/translate'
 import { SourcegraphBrowserCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/browserClient'
@@ -27,7 +26,6 @@ import { debug } from './log'
  */
 export const VSCODE_WEB_RECIPES: Recipe[] = [
     new ChatQuestion(debug),
-    new ContextSearch(),
     new ExplainCodeDetailed(),
     new ExplainCodeHighLevel(),
     new FindCodeSmells(),
@@ -35,12 +33,12 @@ export const VSCODE_WEB_RECIPES: Recipe[] = [
     new GenerateDocstring(),
     new GenerateTest(),
     new ImproveVariableNames(),
-    new MyPrompt(),
+    new CustomPrompt(),
     new InlineChat(debug),
     new InlineTouch(debug),
     new NextQuestions(),
-    new NonStop(),
     new TranslateToLanguage(),
+    new ContextSearch(),
 ]
 
 /**

@@ -1,8 +1,7 @@
 import fetch from 'isomorphic-fetch'
 
 import { logger } from '../../log'
-import { ReferenceSnippet } from '../context'
-import { Completion } from '../types'
+import { Completion, ContextSnippet } from '../types'
 import { isAbortError } from '../utils'
 
 import { Provider, ProviderConfig, ProviderOptions } from './provider'
@@ -21,12 +20,15 @@ export class UnstableCodeGenProvider extends Provider {
         this.serverEndpoint = unstableCodeGenOptions.serverEndpoint
     }
 
-    public async generateCompletions(abortSignal: AbortSignal, snippets: ReferenceSnippet[]): Promise<Completion[]> {
+    public async generateCompletions(abortSignal: AbortSignal, snippets: ContextSnippet[]): Promise<Completion[]> {
+        const { prefix, suffix } = this.options.docContext
+        const suffixAfterFirstNewline = suffix.slice(suffix.indexOf('\n'))
+
         const params = {
             debug_ext_path: 'cody',
             lang_prefix: `<|${mapVSCodeLanguageIdToModelId(this.options.languageId)}|>`,
-            prefix: this.options.prefix,
-            suffix: this.options.suffix,
+            prefix,
+            suffix: suffixAfterFirstNewline,
             top_p: 0.95,
             temperature: 0.2,
             max_tokens: this.options.multiline ? 128 : 40,
@@ -58,10 +60,7 @@ export class UnstableCodeGenProvider extends Provider {
             const completions: string[] = data.completions.map(c => postProcess(c.completion, this.options.multiline))
             log?.onComplete(completions)
 
-            return completions.map(content => ({
-                prefix: this.options.prefix,
-                content,
-            }))
+            return completions.map(content => ({ content }))
         } catch (error: any) {
             if (!isAbortError(error)) {
                 log?.onError(error)
@@ -121,7 +120,7 @@ interface Context {
     }[]
 }
 
-function prepareContext(snippets: ReferenceSnippet[], fileName: string): Context {
+function prepareContext(snippets: ContextSnippet[], fileName: string): Context {
     const windows: Context['windows'] = []
 
     // the model expects a similarly to rank the order and priority to insert
@@ -153,5 +152,6 @@ export function createProviderConfig(unstableCodeGenOptions: UnstableCodeGenOpti
         maximumContextCharacters: contextWindowChars,
         enableExtendedMultilineTriggers: false,
         identifier: PROVIDER_IDENTIFIER,
+        supportsInfilling: true,
     }
 }

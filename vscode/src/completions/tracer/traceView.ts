@@ -3,6 +3,7 @@ import * as vscode from 'vscode'
 import { isDefined } from '@sourcegraph/cody-shared'
 import { renderMarkdown } from '@sourcegraph/cody-shared/src/common/markdown'
 
+import { InlineCompletionsResultSource } from '../getInlineCompletions'
 import { InlineCompletionItem } from '../types'
 import { InlineCompletionItemProvider } from '../vscodeInlineCompletionItemProvider'
 
@@ -70,6 +71,7 @@ function renderWebviewHtml(data: ProvideInlineCompletionsItemTraceData | undefin
 - ${markdownInlineCode(data.params.document.fileName)} @ ${data.params.position.line + 1}:${
                 data.params.position.character + 1
             }
+- triggerKind: ${vscode.InlineCompletionTriggerKind[data.params.context.triggerKind]}
 - selectedCompletionInfo: ${
                 data.params.context.selectedCompletionInfo
                     ? selectedCompletionInfoDescription(
@@ -84,7 +86,7 @@ function renderWebviewHtml(data: ProvideInlineCompletionsItemTraceData | undefin
 ## Completers
 
 ${data.completers?.map(
-    ({ id, prefix, suffix, ...otherOptions }) =>
+    ({ id, docContext: { prefix, suffix }, ...otherOptions }) =>
         `
 ### ${id}
 
@@ -126,11 +128,18 @@ ${
 `,
         data?.result !== undefined
             ? `
-## Completions (cache ${data.cacheHit === true ? 'hit' : data.cacheHit === false ? 'miss' : 'unknown'})
+## Completions
+
+${(data.result
+    ? [`- source: ${InlineCompletionsResultSource[data.result.source]}`, `- logId: \`${data.result.logId}\``]
+    : []
+).join('\n')}
 
 ${
-    data.result === null || data.result.items.length === 0
-        ? 'No completions.'
+    data.result === null
+        ? '`null`'
+        : data.result.items.length === 0
+        ? 'Empty completions.'
         : data.result.items
               .map(item => inlineCompletionItemDescription(item, data.params?.document))
               .join('\n\n---\n\n')
@@ -261,6 +270,6 @@ function jsonForDataset(data: ProvideInlineCompletionsItemTraceData | undefined)
         context: ${JSON.stringify(data?.context?.context.map(c => ({ fileName: c.fileName, content: c.content })))},
         fileName: ${JSON.stringify(completer.fileName)},
         languageId: ${JSON.stringify(completer.languageId)},
-        content: \`${completer.prefix}$\{CURSOR}${completer.suffix}\`,
+        content: \`${completer.docContext.prefix}$\{CURSOR}${completer.docContext.suffix}\`,
     }`
 }

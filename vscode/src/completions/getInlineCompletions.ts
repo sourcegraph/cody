@@ -2,18 +2,17 @@ import * as vscode from 'vscode'
 import { URI } from 'vscode-uri'
 
 import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
-import { isDefined } from '@sourcegraph/cody-shared/src/common'
 
 import { debug } from '../log'
 
-import { GetContextOptions, GetContextResult } from './context'
-import { DocumentContext, getCurrentDocContext } from './document'
-import { DocumentHistory } from './history'
+import { GetContextOptions, GetContextResult } from './context/context'
+import { DocumentHistory } from './context/history'
+import { DocumentContext } from './document'
 import * as CompletionLogger from './logger'
 import { detectMultiline } from './multiline'
-import { processInlineCompletions } from './processInlineCompletions'
 import { CompletionProviderTracer, Provider, ProviderConfig, ProviderOptions } from './providers/provider'
-import { RequestManager } from './request-manager'
+import { RequestManager, RequestParams } from './request-manager'
+import { reuseLastCandidate } from './reuse-last-candidate'
 import { ProvideInlineCompletionsItemTraceData } from './tracer'
 import { InlineCompletionItem } from './types'
 import { isAbortError, SNIPPET_WINDOW_SIZE } from './utils'
@@ -23,11 +22,10 @@ export interface InlineCompletionsParams {
     document: vscode.TextDocument
     position: vscode.Position
     context: vscode.InlineCompletionContext
+    docContext: DocumentContext
 
     // Prompt parameters
     promptChars: number
-    maxPrefixChars: number
-    maxSuffixChars: number
     providerConfig: ProviderConfig
     responsePercentage: number
     prefixPercentage: number
@@ -39,7 +37,7 @@ export interface InlineCompletionsParams {
 
     // Injected
     contextFetcher?: (options: GetContextOptions) => Promise<GetContextResult>
-    codebaseContext?: CodebaseContext
+    getCodebaseContext?: () => CodebaseContext
     documentHistory?: DocumentHistory
 
     // Shared
@@ -53,6 +51,9 @@ export interface InlineCompletionsParams {
     // Execution
     abortSignal?: AbortSignal
     tracer?: (data: Partial<ProvideInlineCompletionsItemTraceData>) => void
+
+    // Feature flags
+    completeSuggestWidgetSelection?: boolean
 }
 
 /**
@@ -63,10 +64,16 @@ export interface LastInlineCompletionCandidate {
     uri: URI
 
     /** The position at which this candidate was generated. */
-    originalTriggerPosition: vscode.Position
+    lastTriggerPosition: vscode.Position
 
     /** The prefix of the line (before the cursor position) where this candidate was generated. */
-    originalTriggerLinePrefix: string
+    lastTriggerCurrentLinePrefix: string
+
+    /** The next non-empty line in the suffix */
+    lastTriggerNextNonEmptyLine: string
+
+    /** The selected info item. */
+    lastTriggerSelectedInfoItem: string | undefined
 
     /** The previously suggested result. */
     result: Pick<InlineCompletionsResult, 'logId' | 'items'>
@@ -92,6 +99,7 @@ export interface InlineCompletionsResult {
 export enum InlineCompletionsResultSource {
     Network,
     Cache,
+    CacheAfterRequestStart,
 
     /**
      * The user is typing as suggested by the currently visible ghost text. For example, if the
@@ -106,11 +114,6 @@ export enum InlineCompletionsResultSource {
 export async function getInlineCompletions(params: InlineCompletionsParams): Promise<InlineCompletionsResult | null> {
     try {
         const result = await doGetInlineCompletions(params)
-        if (result) {
-            debug('getInlineCompletions:result', InlineCompletionsResultSource[result.source])
-        } else {
-            debug('getInlineCompletions:noResult', '')
-        }
         params.tracer?.({ result })
         return result
     } catch (unknownError: unknown) {
@@ -118,9 +121,10 @@ export async function getInlineCompletions(params: InlineCompletionsParams): Pro
         const error = unknownError instanceof Error ? unknownError : new Error(unknownError as any)
 
         params.tracer?.({ error: error.toString() })
+        debug('getInlineCompletions:error', error.message, { verbose: error })
+        CompletionLogger.logError(error)
 
         if (isAbortError(error)) {
-            debug('getInlineCompletions:error', error.message, { verbose: error })
             return null
         }
 
@@ -134,9 +138,8 @@ async function doGetInlineCompletions({
     document,
     position,
     context,
+    docContext,
     promptChars,
-    maxPrefixChars,
-    maxSuffixChars,
     providerConfig,
     responsePercentage,
     prefixPercentage,
@@ -144,21 +147,17 @@ async function doGetInlineCompletions({
     isEmbeddingsContextEnabled,
     toWorkspaceRelativePath,
     contextFetcher,
-    codebaseContext,
+    getCodebaseContext,
     documentHistory,
     requestManager,
-    lastCandidate: lastCandidate,
+    lastCandidate,
     debounceInterval,
     setIsLoading,
     abortSignal,
     tracer,
+    completeSuggestWidgetSelection = false,
 }: InlineCompletionsParams): Promise<InlineCompletionsResult | null> {
     tracer?.({ params: { document, position, context } })
-
-    const docContext = getCurrentDocContext(document, position, maxPrefixChars, maxSuffixChars)
-    if (!docContext) {
-        return null
-    }
 
     // If we have a suffix in the same line as the cursor and the suffix contains any word
     // characters, do not attempt to make a completion. This means we only make completions if
@@ -173,7 +172,14 @@ async function doGetInlineCompletions({
     // Check if the user is typing as suggested by the last candidate completion (that is shown as
     // ghost text in the editor), and reuse it if it is still valid.
     const resultToReuse = lastCandidate
-        ? reuseResultFromLastCandidate({ document, position, lastCandidate, docContext })
+        ? reuseLastCandidate({
+              document,
+              position,
+              lastCandidate,
+              docContext,
+              context,
+              completeSuggestWidgetSelection,
+          })
         : null
     if (resultToReuse) {
         return resultToReuse
@@ -211,7 +217,7 @@ async function doGetInlineCompletions({
         promptChars,
         isEmbeddingsContextEnabled,
         contextFetcher,
-        codebaseContext,
+        getCodebaseContext,
         documentHistory,
         docContext,
     })
@@ -234,99 +240,39 @@ async function doGetInlineCompletions({
     })
     tracer?.({ completers: completionProviders.map(({ options }) => options) })
 
-    CompletionLogger.networkRequestStarted(logId, contextResult?.logSummary ?? null)
+    CompletionLogger.networkRequestStarted(logId, contextResult?.logSummary)
 
-    // Get completions from providers
+    const reqContext: RequestParams = {
+        document,
+        docContext,
+        position,
+        multiline,
+        context,
+    }
+
+    // Get the processed completions from providers
     const { completions, cacheHit } = await requestManager.request(
-        { prefix: docContext.prefix },
+        reqContext,
         completionProviders,
         contextResult?.context ?? [],
-        abortSignal,
+
         tracer ? createCompletionProviderTracer(tracer) : undefined
     )
-    tracer?.({ cacheHit })
 
-    if (abortSignal?.aborted) {
-        return null
-    }
+    const source =
+        cacheHit === 'hit'
+            ? InlineCompletionsResultSource.Cache
+            : cacheHit === 'hit-after-request-started'
+            ? InlineCompletionsResultSource.CacheAfterRequestStart
+            : InlineCompletionsResultSource.Network
 
-    // Shared post-processing logic
-    const processedCompletions = processInlineCompletions(
-        completions.map(item => ({ insertText: item.content })),
-        {
-            document,
-            position,
-            multiline,
-            docContext,
-        }
-    )
-    logCompletions(logId, processedCompletions, document, context)
+    CompletionLogger.loaded(logId)
+
     return {
         logId,
-        items: processedCompletions,
-        source: cacheHit ? InlineCompletionsResultSource.Cache : InlineCompletionsResultSource.Network,
+        items: completions,
+        source,
     }
-}
-
-function isWhitespace(s: string): boolean {
-    return /^\s*$/.test(s)
-}
-
-/**
- * See test cases for the expected behaviors.
- */
-function reuseResultFromLastCandidate({
-    document,
-    position,
-    lastCandidate: { originalTriggerPosition, originalTriggerLinePrefix, ...lastCandidate },
-    docContext: { currentLinePrefix, currentLineSuffix },
-}: Required<Pick<InlineCompletionsParams, 'document' | 'position' | 'lastCandidate'>> & {
-    docContext: DocumentContext
-}): InlineCompletionsResult | null {
-    const isSameDocument = lastCandidate.uri.toString() === document.uri.toString()
-    const isSameLine = originalTriggerPosition.line === position.line
-
-    if (!isSameDocument || !isSameLine) {
-        return null
-    }
-
-    // There are 2 reasons we can reuse a candidate: typing-as-suggested or change-of-indentation.
-
-    const isIndentation = isWhitespace(currentLinePrefix) && currentLinePrefix.startsWith(originalTriggerLinePrefix)
-    const isDeindentation =
-        isWhitespace(originalTriggerLinePrefix) && originalTriggerLinePrefix.startsWith(currentLinePrefix)
-    const isIndentationChange = currentLineSuffix === '' && (isIndentation || isDeindentation)
-
-    const itemsToReuse = lastCandidate.result.items
-        .map((item): InlineCompletionItem | undefined => {
-            // Allow reuse if the user is (possibly) typing forward as suggested by the last
-            // candidate completion. We still need to filter the candidate items to see which ones
-            // the user's typing actually follows.
-            const originalCompletion = originalTriggerLinePrefix + item.insertText
-            const isTypingAsSuggested =
-                originalCompletion.startsWith(currentLinePrefix) && position.isAfterOrEqual(originalTriggerPosition)
-            if (isTypingAsSuggested) {
-                return { insertText: originalCompletion.slice(currentLinePrefix.length) }
-            }
-
-            // Allow reuse if only the indentation (leading whitespace) has changed.
-            if (isIndentationChange) {
-                return { insertText: originalTriggerLinePrefix.slice(currentLinePrefix.length) + item.insertText }
-            }
-
-            return undefined
-        })
-        .filter(isDefined)
-    return itemsToReuse.length > 0
-        ? {
-              // Reuse the logId to so that typing text of a displayed completion will not log a new
-              // completion on every keystroke.
-              logId: lastCandidate.result.logId,
-
-              source: InlineCompletionsResultSource.LastCandidate,
-              items: itemsToReuse,
-          }
-        : null
 }
 
 interface GetCompletionProvidersParams
@@ -352,12 +298,11 @@ function getCompletionProviders({
     prefixPercentage,
     suffixPercentage,
     multiline,
-    docContext: { prefix, suffix },
+    docContext,
     toWorkspaceRelativePath,
 }: GetCompletionProvidersParams): Provider[] {
     const sharedProviderOptions: Omit<ProviderOptions, 'id' | 'n' | 'multiline'> = {
-        prefix,
-        suffix,
+        docContext,
         fileName: toWorkspaceRelativePath(document.uri),
         languageId: document.languageId,
         responsePercentage,
@@ -393,7 +338,7 @@ interface GetCompletionContextParams
         | 'promptChars'
         | 'isEmbeddingsContextEnabled'
         | 'contextFetcher'
-        | 'codebaseContext'
+        | 'getCodebaseContext'
         | 'documentHistory'
     > {
     docContext: DocumentContext
@@ -404,15 +349,15 @@ async function getCompletionContext({
     promptChars,
     isEmbeddingsContextEnabled,
     contextFetcher,
-    codebaseContext,
+    getCodebaseContext,
     documentHistory,
     docContext: { prefix, suffix },
 }: GetCompletionContextParams): Promise<GetContextResult | null> {
     if (!contextFetcher) {
         return null
     }
-    if (!codebaseContext) {
-        throw new Error('codebaseContext is required if contextFetcher is provided')
+    if (!getCodebaseContext) {
+        throw new Error('getCodebaseContext is required if contextFetcher is provided')
     }
     if (!documentHistory) {
         throw new Error('documentHistory is required if contextFetcher is provided')
@@ -425,7 +370,7 @@ async function getCompletionContext({
         history: documentHistory,
         jaccardDistanceWindowSize: SNIPPET_WINDOW_SIZE,
         maxChars: promptChars,
-        codebaseContext,
+        getCodebaseContext,
         isEmbeddingsContextEnabled,
     })
 }
@@ -439,33 +384,4 @@ function createCompletionProviderTracer(
             result: data => tracer({ completionProviderCallResult: data }),
         }
     )
-}
-
-function logCompletions(
-    logId: string,
-    completions: InlineCompletionItem[],
-    document: vscode.TextDocument,
-    context: vscode.InlineCompletionContext
-): void {
-    if (completions.length > 0) {
-        // When the VS Code completion popup is open and we suggest a completion that does not match
-        // the currently selected completion, VS Code won't display it. For now we make sure to not
-        // log these completions as displayed.
-        //
-        // TODO: Take this into account when creating the completion prefix.
-        let isCompletionVisible = true
-        if (context.selectedCompletionInfo) {
-            const currentText = document.getText(context.selectedCompletionInfo.range)
-            const selectedText = context.selectedCompletionInfo.text
-            if (!(currentText + completions[0].insertText).startsWith(selectedText)) {
-                isCompletionVisible = false
-            }
-        }
-
-        if (isCompletionVisible) {
-            CompletionLogger.suggest(logId, isCompletionVisible)
-        }
-    } else {
-        CompletionLogger.noResponse(logId)
-    }
 }

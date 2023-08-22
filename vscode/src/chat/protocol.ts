@@ -1,4 +1,5 @@
 import { ChatContextStatus } from '@sourcegraph/cody-shared/src/chat/context'
+import { CodyPrompt, CodyPromptType } from '@sourcegraph/cody-shared/src/chat/prompts'
 import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 import { ChatMessage, UserLocalHistory } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { Configuration } from '@sourcegraph/cody-shared/src/configuration'
@@ -6,7 +7,6 @@ import { CodyLLMSiteConfiguration } from '@sourcegraph/cody-shared/src/sourcegra
 import type { TelemetryEventProperties } from '@sourcegraph/cody-shared/src/telemetry'
 
 import { View } from '../../webviews/NavBar'
-import { CodyPromptType } from '../my-cody/types'
 
 /**
  * A message sent from the webview to the extension host.
@@ -15,15 +15,23 @@ export type WebviewMessage =
     | { command: 'ready' }
     | { command: 'initialized' }
     | { command: 'event'; eventName: string; properties: TelemetryEventProperties | undefined } // new event log internal API (use createWebviewTelemetryService wrapper)
-    | { command: 'submit'; text: string; submitType: 'user' | 'suggestion' }
+    | { command: 'submit'; text: string; submitType: 'user' | 'suggestion' | 'example' }
     | { command: 'executeRecipe'; recipe: RecipeID }
     | { command: 'removeHistory' }
     | { command: 'restoreHistory'; chatID: string }
     | { command: 'deleteHistory'; chatID: string }
     | { command: 'links'; value: string }
     | { command: 'openFile'; filePath: string }
+    | {
+          command: 'openLocalFileWithRange'
+          filePath: string
+          // Note: we're not using vscode.Range objects or nesting here, as the protocol
+          // tends ot munge the type in a weird way (nested fields become array indices).
+          range?: { startLine: number; startCharacter: number; endLine: number; endCharacter: number }
+      }
     | { command: 'edit'; text: string }
-    | { command: 'insert'; text: string }
+    | { command: 'insert'; eventType: 'Button' | 'Keydown'; text: string }
+    | { command: 'copy'; eventType: 'Button' | 'Keydown'; text: string }
     | {
           command: 'auth'
           type: 'signin' | 'signout' | 'support' | 'app' | 'callback'
@@ -31,9 +39,8 @@ export type WebviewMessage =
           value?: string
       }
     | { command: 'abort' }
-    | { command: 'chat-button'; action: string }
     | { command: 'setEnabledPlugins'; plugins: string[] }
-    | { command: 'my-prompt'; title: string; value?: CodyPromptType }
+    | { command: 'custom-prompt'; title: string; value?: CodyPromptType }
     | { command: 'reload' }
 
 /**
@@ -50,7 +57,7 @@ export type ExtensionMessage =
     | { type: 'suggestions'; suggestions: string[] }
     | { type: 'app-state'; isInstalled: boolean }
     | { type: 'enabled-plugins'; plugins: string[] }
-    | { type: 'my-prompts'; prompts: string[]; isEnabled: boolean }
+    | { type: 'custom-prompts'; prompts: [string, CodyPrompt][] }
     | { type: 'transcript-errors'; isTranscriptError: boolean }
 
 /**
@@ -139,6 +146,9 @@ export interface LocalEnv {
     // The application name of the editor
     appName: string
     extensionVersion: string
+
+    /** Whether the extension is running in VS Code Web (as opposed to VS Code Desktop). */
+    uiKindIsWeb: boolean
 
     // App Local State
     hasAppJson: boolean

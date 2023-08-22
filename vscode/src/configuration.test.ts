@@ -15,14 +15,19 @@ describe('getConfiguration', () => {
             pluginsEnabled: false,
             serverEndpoint: DOTCOM_URL.href,
             codebase: '',
+            customHeaders: {},
             useContext: 'embeddings',
             autocomplete: true,
-            experimentalCustomRecipes: false,
+            experimentalCommandLenses: false,
+            experimentalEditorTitleCommandIcon: false,
             experimentalChatPredictions: false,
             experimentalGuardrails: false,
+            experimentalLocalSymbols: false,
             inlineChat: true,
+            isRunningInsideAgent: false,
             experimentalNonStop: false,
-            customHeaders: {},
+            experimentalSymfAnthropicKey: '',
+            experimentalSymfPath: 'symf',
             debugEnable: false,
             debugVerbose: false,
             debugFilter: null,
@@ -54,7 +59,9 @@ describe('getConfiguration', () => {
                         return false
                     case 'cody.experimental.chatPredictions':
                         return true
-                    case 'cody.experimental.customRecipes':
+                    case 'cody.experimental.commandLenses':
+                        return true
+                    case 'cody.experimental.editorTitleCommandIcon':
                         return true
                     case 'cody.experimental.guardrails':
                         return true
@@ -62,6 +69,12 @@ describe('getConfiguration', () => {
                         return true
                     case 'cody.experimental.nonStop':
                         return true
+                    case 'cody.experimental.localSymbols':
+                        return true
+                    case 'cody.experimental.symf.anthropicKey':
+                        return 'anthropic_secret_key'
+                    case 'cody.experimental.symf.path':
+                        return '/usr/local/bin/symf'
                     case 'cody.debug.enable':
                         return true
                     case 'cody.debug.verbose':
@@ -88,6 +101,8 @@ describe('getConfiguration', () => {
                         }
                     case 'cody.plugins.debug.enabled':
                         return false
+                    case 'cody.advanced.agent.running':
+                        return false
                     default:
                         throw new Error(`unexpected key: ${key}`)
                 }
@@ -106,10 +121,15 @@ describe('getConfiguration', () => {
             },
             autocomplete: false,
             experimentalChatPredictions: true,
-            experimentalCustomRecipes: true,
+            experimentalCommandLenses: true,
+            experimentalEditorTitleCommandIcon: true,
             experimentalGuardrails: true,
+            experimentalLocalSymbols: true,
             inlineChat: true,
+            isRunningInsideAgent: false,
             experimentalNonStop: true,
+            experimentalSymfAnthropicKey: 'anthropic_secret_key',
+            experimentalSymfPath: '/usr/local/bin/symf',
             debugEnable: true,
             debugVerbose: true,
             debugFilter: /.*/,

@@ -3,6 +3,7 @@ import * as vscode from 'vscode'
 
 import { version } from '../../package.json'
 import { isOsSupportedByApp, LOCAL_APP_URL, LocalEnv } from '../chat/protocol'
+import { constructFileUri } from '../custom-prompts/utils/helpers'
 import { debug } from '../log'
 
 import { AppJson, LOCAL_APP_LOCATIONS } from './LocalAppFsPaths'
@@ -32,7 +33,6 @@ export class LocalAppDetector implements vscode.Disposable {
         this.onChange = options.onChange
         this.localEnv = { ...envInit }
         this.localAppMarkers = LOCAL_APP_LOCATIONS[this.localEnv.os]
-        // Only Mac is supported for now
         this.isSupported =
             isOsSupportedByApp(this.localEnv.os, this.localEnv.arch) && this.localEnv.homeDir !== undefined
     }
@@ -60,8 +60,11 @@ export class LocalAppDetector implements vscode.Disposable {
         const markers = this.localAppMarkers
         for (const marker of markers) {
             const dirPath = expandHomeDir(marker.dir, homeDir)
-            const dirUri = vscode.Uri.file(dirPath)
-            const watchPattern = new vscode.RelativePattern(dirUri, marker.file)
+            const fileUri = constructFileUri(marker.file, marker.dir)
+            if (!fileUri) {
+                return
+            }
+            const watchPattern = new vscode.RelativePattern(fileUri, '*')
             const watcher = vscode.workspace.createFileSystemWatcher(watchPattern)
             watcher.onDidChange(() => this.fetchApp())
             this._watchers.push(watcher)
@@ -115,7 +118,6 @@ export class LocalAppDetector implements vscode.Disposable {
         try {
             const response = await fetch(`${LOCAL_APP_URL.href}__version`)
             if (response.status === 200) {
-                debug('LocalAppDetector:fetchServer', 'found')
                 this.localEnv.isAppRunning = true
                 await this.found('server')
             }
@@ -172,13 +174,14 @@ async function loadAppJson(uri: vscode.Uri): Promise<AppJson | null> {
     }
 }
 
-const envInit = {
+const envInit: LocalEnv = {
     os: process.platform,
     arch: process.arch,
     homeDir: process.env.HOME,
     uriScheme: vscode.env.uriScheme,
     appName: vscode.env.appName,
     extensionVersion: version,
+    uiKindIsWeb: vscode.env.uiKind === vscode.UIKind.Web,
     isAppInstalled: false,
     isAppRunning: false,
     hasAppJson: false,

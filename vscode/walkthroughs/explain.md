@@ -3,8 +3,10 @@
 <video autoPlay muted loop playsInline>
     <source
         type="video/mp4"
-        src="https://storage.googleapis.com/sourcegraph-assets/website/Product%20Animations/cody-explain-may2023.mp4"
+        src="https://storage.googleapis.com/sourcegraph-assets/website/Product%20Animations/cody-explain-code-aug2023.mp4"
     />
 </video>
 
-Cody can explain what code is doing—at a high level or in detail. Highlight any code block or an entire file and Cody will explain what’s happening in conversational language.
+Cody can explain code in an easy-to-understand manner. Highlight any code block and execute the `Explain Code` command from your right-click menu, and Cody will explain it to you in conversational language.
+
+You can also execute a command from the [Cody: Commands Menu (Shortcut: ⌥C)](command:cody.action.commands.menu).
