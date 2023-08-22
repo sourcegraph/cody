@@ -588,7 +588,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
                 return { text, recipeId: 'local-indexed-keyword-search' }
             case /^\/s(earch)?\s/.test(text):
                 return { text, recipeId: 'context-search' }
-            case /^\/f(ix)?\s.*$/.test(text):
+            case /^\/fix(\s)?/.test(text):
                 await vscode.commands.executeCommand('cody.fixup.new', { instruction: text })
                 return null
             case /^\/(explain|doc|test|smell)$/.test(text):
