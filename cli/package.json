@@ -24,7 +24,7 @@
     "prompts": "^2.4.2"
   },
   "devDependencies": {
-    "@types/prompts": "^2.4.4"
+    "@types/prompts": "2.4.4"
   },
   "main": "dist/program.js",
   "files": [
