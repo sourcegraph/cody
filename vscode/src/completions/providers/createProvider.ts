@@ -4,6 +4,7 @@ import { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/s
 import { debug } from '../../log'
 
 import { createProviderConfig as createAnthropicProviderConfig } from './anthropic'
+import { createAzureOpenAIProviderConfig } from './azure-openai'
 import { ProviderConfig } from './provider'
 import { createProviderConfig as createUnstableAzureOpenAiProviderConfig } from './unstable-azure-openai'
 import { createProviderConfig as createUnstableCodeGenProviderConfig } from './unstable-codegen'
@@ -62,6 +63,11 @@ export function createProviderConfig(
             return createUnstableAzureOpenAiProviderConfig({
                 serverEndpoint: config.autocompleteAdvancedServerEndpoint,
                 accessToken: config.autocompleteAdvancedAccessToken,
+            })
+        }
+        case 'azure-openai': {
+            return createAzureOpenAIProviderConfig({
+                completionsClient,
             })
         }
         case 'unstable-fireworks': {
