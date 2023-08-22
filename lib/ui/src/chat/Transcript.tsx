@@ -174,7 +174,7 @@ export const Transcript: React.FunctionComponent<
                     />
                 )}
             </div>
-            <div className={classNames(styles.scrollAnchor)}>&nbsp;</div>
+            {transcript.length > 1 && <div className={classNames(styles.scrollAnchor)}>&nbsp;</div>}
         </div>
     )
 })
