@@ -411,9 +411,9 @@ export const extractDefinitionContexts = async (
     return contexts
 }
 
-interface DocumentSymbolMetadata {
-    kind: vscode.SymbolKind
+export interface DocumentSymbolMetadata {
     range: vscode.Range
+    kind?: vscode.SymbolKind
 }
 
 /**

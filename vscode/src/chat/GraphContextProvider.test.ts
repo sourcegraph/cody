@@ -5,6 +5,7 @@ import { URI } from 'vscode-uri'
 import { Uri } from '../testutils/mocks'
 
 import {
+    DocumentSymbolMetadata,
     extractDefinitionContexts,
     extractRelevantDocumentSymbolRanges,
     gatherDefinitions,
@@ -60,8 +61,8 @@ describe('extractRelevantDocumentSymbolRanges', () => {
         const uri = URI.file('/test-1.test')
         const ranges = await extractRelevantDocumentSymbolRanges([{ uri }], () =>
             Promise.resolve([
-                new vscode.Range(2, 0, 8, 1), // foo
-                new vscode.Range(10, 0, 16, 1), // bar
+                { range: new vscode.Range(2, 0, 8, 1) }, // foo
+                { range: new vscode.Range(10, 0, 16, 1) }, // bar
             ])
         )
 
@@ -75,8 +76,8 @@ describe('extractRelevantDocumentSymbolRanges', () => {
         const uri = URI.file('/test-1.test')
         const ranges = await extractRelevantDocumentSymbolRanges([{ uri, range: new vscode.Range(4, 3, 5, 5) }], () =>
             Promise.resolve([
-                new vscode.Range(2, 0, 8, 1), // foo
-                new vscode.Range(10, 0, 16, 1), // bar
+                { range: new vscode.Range(2, 0, 8, 1) }, // foo
+                { range: new vscode.Range(10, 0, 16, 1) }, // bar
             ])
         )
 
@@ -171,22 +172,22 @@ describe('extractDefinitionContexts', () => {
                 ['/test-2.test', testFile2.split('\n').slice(1)], // baz
                 ['/test-3.test', testFile3.split('\n').slice(1)], // bonk
             ]),
-            (uri: URI): Promise<vscode.Range[]> => {
+            (uri: URI): Promise<DocumentSymbolMetadata[]> => {
                 switch (uri.fsPath) {
                     case '/test-1.test':
                         return Promise.resolve([
-                            new vscode.Range(2, 0, 8, 1), // foo
-                            new vscode.Range(10, 0, 16, 1), // bar
+                            { range: new vscode.Range(2, 0, 8, 1) }, // foo
+                            { range: new vscode.Range(10, 0, 16, 1) }, // bar
                         ])
 
                     case '/test-2.test':
                         return Promise.resolve([
-                            new vscode.Range(3, 0, 3, 20), // baz
+                            { range: new vscode.Range(3, 0, 3, 20) }, // baz
                         ])
 
                     case '/test-3.test':
                         return Promise.resolve([
-                            new vscode.Range(4, 0, 7, 67), // bonk
+                            { range: new vscode.Range(4, 0, 7, 67) }, // bonk
                         ])
                 }
 
