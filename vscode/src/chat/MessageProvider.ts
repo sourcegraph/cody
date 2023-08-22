@@ -589,7 +589,8 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
             case /^\/s(earch)?\s/.test(text):
                 return { text, recipeId: 'context-search' }
             case /^\/f(ix)?\s.*$/.test(text):
-                return { text, recipeId: 'fixup' }
+                await vscode.commands.executeCommand('cody.fixup.new', { instruction: text })
+                return null
             case /^\/(explain|doc|test|smell)$/.test(text):
                 this.telemetryService.log(`CodyVSCodeExtension:command:${commandKey}:called`, {
                     source: 'chat',
