@@ -2,7 +2,7 @@ import * as vscode from 'vscode'
 import { URI } from 'vscode-uri'
 
 import { isDefined, PreciseContext } from '@sourcegraph/cody-shared'
-import { ActiveTextEditorSelectionRange, Editor } from '@sourcegraph/cody-shared/src/editor'
+import { Editor, Range } from '@sourcegraph/cody-shared/src/editor'
 import { GraphContextFetcher } from '@sourcegraph/cody-shared/src/graph-context'
 
 export class GraphContextProvider implements GraphContextFetcher {
@@ -48,7 +48,7 @@ export const getGraphContextFromEditor = async (editor: Editor): Promise<Precise
 
 interface Selection {
     uri: URI
-    range?: ActiveTextEditorSelectionRange
+    range?: Range
 }
 
 /**
@@ -150,7 +150,7 @@ export const extractRelevantDocumentSymbolRanges = async (
         )
     )
 
-    const pathsByUri = new Map<string, (ActiveTextEditorSelectionRange | undefined)[]>()
+    const pathsByUri = new Map<string, (Range | undefined)[]>()
     for (const { uri, range } of selections) {
         pathsByUri.set(uri.fsPath, [...(pathsByUri.get(uri.fsPath) ?? []), range])
     }
