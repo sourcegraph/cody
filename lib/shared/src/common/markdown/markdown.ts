@@ -14,6 +14,144 @@ const escapeHTML = (html: string): string => {
 }
 
 /**
+ * All HTML tags in the list are treated as valid HTML that doesn't need to be escaped in markedjs.
+ * Unsafe tags like script are valid in here as they should only be removed by DOMPurify
+ */
+const HTML_TAGS_NO_ESCAPE: Set<string> = new Set([
+    'a',
+    'abbr',
+    'acronym',
+    'address',
+    'area',
+    'article',
+    'aside',
+    'audio',
+    'b',
+    'base',
+    'basefont',
+    'bdi',
+    'bdo',
+    'big',
+    'blockquote',
+    'body',
+    'br',
+    'button',
+    'canvas',
+    'caption',
+    'center',
+    'cite',
+    'code',
+    'col',
+    'colgroup',
+    'data',
+    'datalist',
+    'dd',
+    'del',
+    'details',
+    'dfn',
+    'dialog',
+    'div',
+    'dl',
+    'dt',
+    'em',
+    'embed',
+    'fieldset',
+    'figcaption',
+    'figure',
+    'footer',
+    'form',
+    'h1',
+    'h2',
+    'h3',
+    'h4',
+    'h5',
+    'h6',
+    'head',
+    'header',
+    'hr',
+    'html',
+    'i',
+    'iframe',
+    'img',
+    'input',
+    'ins',
+    'kbd',
+    'label',
+    'legend',
+    'li',
+    'link',
+    'main',
+    'map',
+    'mark',
+    'meta',
+    'meter',
+    'nav',
+    'noscript',
+    'object',
+    'ol',
+    'optgroup',
+    'option',
+    'output',
+    'p',
+    'param',
+    'picture',
+    'pre',
+    'progress',
+    'q',
+    'rp',
+    'rt',
+    'ruby',
+    's',
+    'samp',
+    'script',
+    'section',
+    'select',
+    'small',
+    'source',
+    'span',
+    'strong',
+    'style',
+    'sub',
+    'summary',
+    'sup',
+    'svg',
+    'table',
+    'tbody',
+    'td',
+    'template',
+    'textarea',
+    'tfoot',
+    'th',
+    'thead',
+    'time',
+    'title',
+    'tr',
+    'track',
+    'u',
+    'ul',
+])
+
+/**
+ * Checks if a given HTML tag is a valid, non-custom HTML tag
+ *
+ * @example isValidHTMLTag('a') and isValidHTMLTag('svg') will return true
+ * @example isValidHTMLTag('myTag') will return false
+ * @param tag A HTML tag (e.g. img, svg, my-custom-tag)
+ * @returns If the given tag is a valid HTML tag
+ */
+export const isValidHTMLTag = (tag: string): boolean => HTML_TAGS_NO_ESCAPE.has(tag.toLowerCase())
+
+/**
+ * Extracts the name of the HTML tag of a given HTML token
+ *
+ * @param htmlToken The text of the HTML token (e.g. <img> or </img> or <img someAttribute>)
+ * @returns The name of the HTML tag (e.g. img)
+ */
+export const extractHtmlTagName = (htmlToken: string): string =>
+    // matches the first word after the html opening tag, representing the html tag name
+    htmlToken.match(/(?<=(<|<\/))[A-Za-z-]+/g)?.[0] ?? ''
+
+/**
  * Attempts to syntax-highlight the given code.
  * If the language is not given, it is auto-detected.
  * If an error occurs, the code is returned as plain text with escaped HTML entities
@@ -77,11 +215,27 @@ export const renderMarkdown = (
         tokenizer.url = () => undefined as unknown as marked.Tokens.Link
     }
 
+    const renderer = options.renderer ?? new marked.Renderer()
+    renderer.options.walkTokens = (token: marked.Token) => {
+        if (token.type !== 'html') {
+            return
+        }
+
+        const tagName = extractHtmlTagName(token.text)
+        if (isValidHTMLTag(tagName)) {
+            return
+        }
+
+        // all custom HTML tags should be escaped as they are probably part of a text block or a regex.
+        // Otherwise they would be removed by the sanitizer
+        token.text = token.text.replaceAll('<', '&lt;').replaceAll('>', '&gt;')
+    }
+
     const rendered = marked(markdown, {
         gfm: true,
         breaks: options.breaks,
         highlight: (code, language) => highlightCodeSafe(code, language),
-        renderer: options.renderer,
+        renderer,
         headerPrefix: options.headerPrefix ?? '',
         tokenizer,
     })
