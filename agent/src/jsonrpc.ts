@@ -285,7 +285,7 @@ export class MessageHandler {
             // Notifications have methods
             if (
                 msg.method === '$/cancelRequest' &&
-                msg.params &&
+                msg?.params?.id &&
                 (typeof msg.params.id === 'string' || typeof msg.params.id === 'number')
             ) {
                 this.cancelTokens.get(msg.params.id)?.cancel()
