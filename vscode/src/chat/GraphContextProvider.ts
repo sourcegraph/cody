@@ -448,7 +448,7 @@ export const extractDefinitionContexts = async (
             const documentSymbolMetadata = await documentSymbolMetadataPromises // NOTE: already resolved)
             const definitionSnippets = extractSnippets(
                 content,
-                documentSymbolMetadata.map(metadata => metadata.range),
+                documentSymbolMetadata.map(({ range }) => range),
                 [range]
             )
 
@@ -521,12 +521,14 @@ const isLocationLink = (l: vscode.Location | vscode.LocationLink): l is vscode.L
  * Extract the content outlined by symbol ranges that intersect one of the target ranges.
  */
 const extractSnippets = (lines: string[], symbolRanges: vscode.Range[], targetRanges: vscode.Range[]): string[] => {
-    const intersectingRanges = symbolRanges.filter(fr =>
-        targetRanges.some(r => fr.start.line <= r.start.line && r.end.line <= fr.end.line)
+    const intersectingRanges = symbolRanges.filter(({ start, end }) =>
+        targetRanges.some(
+            ({ start: targetStart, end: targetEnd }) => start.line <= targetStart.line && targetEnd.line <= end.line
+        )
     )
 
     // NOTE: inclusive upper bound
-    return intersectingRanges.map(fr => lines.slice(fr.start.line, fr.end.line + 1).join('\n'))
+    return intersectingRanges.map(({ start, end }) => lines.slice(start.line, end.line + 1).join('\n'))
 }
 
 /**
