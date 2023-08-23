@@ -7,6 +7,7 @@ import {
     MyPrompts,
 } from '@sourcegraph/cody-shared/src/chat/prompts'
 import { VsCodeCommandsController } from '@sourcegraph/cody-shared/src/editor'
+import { TelemetryService } from '@sourcegraph/cody-shared/src/telemetry'
 
 import { debug } from '../log'
 import { LocalStorage } from '../services/LocalStorageProvider'
@@ -42,7 +43,8 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
 
     constructor(
         context: vscode.ExtensionContext,
-        private localStorage: LocalStorage
+        private localStorage: LocalStorage,
+        private telemetryService: TelemetryService
     ) {
         this.tools = new ToolsProvider(context)
         const user = this.tools.getUserInfo()
@@ -81,6 +83,8 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
                 return this.myPromptInProgress?.context?.codebase ? 'codebase' : null
             case 'output':
                 return this.myPromptInProgress?.context?.output || null
+            case 'slash':
+                return this.myPromptInProgress?.slashCommand || null
             case 'command':
                 // return the terminal output from the command for the prompt if any
                 return this.execCommand()
@@ -103,11 +107,20 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
     public find(id: string, isSlash = false): string {
         const myPrompt = this.default.get(id, isSlash)
 
-        debug('CommandsController:find:command', id, { verbose: myPrompt })
+        debug('CommandsController:command:finding', id, { verbose: myPrompt })
+
+        if (!myPrompt) {
+            this.telemetryService.log('CodyVSCodeExtension:command:find:invalid')
+        }
 
         if (myPrompt) {
             this.myPromptInProgress = myPrompt
             this.lastUsedCommands.add(id)
+        }
+
+        // Log custom command usage
+        if (myPrompt?.type !== 'default') {
+            this.telemetryService.log('CodyVSCodeExtension:command:custom:called')
         }
 
         return myPrompt?.prompt || ''
@@ -147,13 +160,15 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
         const commandOutput = await this.tools.exeCommand(fullCommand)
         currentContext.output = commandOutput
         this.myPromptInProgress.context = currentContext
+        this.telemetryService.log('CodyVSCodeExtension:command:execCommand')
         return commandOutput || null
     }
 
     /**
      * Menu Controller
      */
-    public async menu(type: 'custom' | 'config' | 'default', showDesc?: boolean): Promise<void> {
+    public async menu(type: 'custom' | 'config' | 'default', showDesc = true): Promise<void> {
+        this.telemetryService.log('CodyVSCodeExtension:command:menu:opened', { type })
         await this.refresh()
         switch (type) {
             case 'custom':
@@ -184,7 +199,7 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
     /**
      * Main Menu: Cody Commands
      */
-    public async mainCommandMenu(showDesc = false): Promise<void> {
+    public async mainCommandMenu(showDesc = true): Promise<void> {
         try {
             const commandItems = [
                 menu_separators.inline,

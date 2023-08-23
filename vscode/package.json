@@ -2,12 +2,13 @@
   "name": "cody-ai",
   "private": true,
   "displayName": "Cody AI",
-  "version": "0.6.4",
+  "version": "0.8.0",
   "publisher": "sourcegraph",
   "license": "Apache-2.0",
   "icon": "resources/cody.png",
   "description": "Code AI with codebase context",
   "scripts": {
+    "postinstall": "pnpm download-wasm",
     "dev": "pnpm run -s dev:desktop",
     "dev:insiders": "pnpm run -s dev:desktop:insiders",
     "dev:desktop": "pnpm run -s build:dev:desktop && CODY_FOCUS_SIDEBAR_ON_STARTUP=1 NODE_ENV=development code --extensionDevelopmentPath=$PWD --disable-extension=sourcegraph.cody-ai --disable-extension=github.copilot --disable-extension=github.copilot-nightly --inspect-extensions=9333 --new-window . --goto ./src/logged-rerank.ts:16:5",
@@ -27,7 +28,8 @@
     "lint": "pnpm run lint:js",
     "lint:js": "eslint --cache '**/*.[tj]s?(x)'",
     "release": "ts-node ./scripts/release.ts",
-    "release:dry-run": "CODY_RELEASE_DRY_RUN=1 ts-node ./scripts/release.ts",
+    "download-wasm": "ts-node ./scripts/download-wasm-modules.ts",
+    "release:dry-run": "pnpm run download-wasm && CODY_RELEASE_DRY_RUN=1 ts-node ./scripts/release.ts",
     "storybook": "storybook dev -p 6007 --no-open --no-version-updates --no-release-notes",
     "test:e2e": "pnpm exec playwright install && tsc --build && pnpm run -s build:dev:desktop && playwright test",
     "test:integration": "tsc --build ./test/integration && pnpm run -s build:dev:desktop && node --inspect -r ts-node/register dist/tsc/test/integration/main.js",
@@ -110,16 +112,24 @@
             }
           },
           {
+            "id": "commands",
+            "title": "Cody Commands",
+            "description": "You can use Cody commands to streamline your development process (e.g. generate unit tests, documentation, and more) with just a few clicks.\n[Open Commands Menu](command:cody.action.commands.menu)",
+            "media": {
+              "markdown": "walkthroughs/commands.md"
+            }
+          },
+          {
             "id": "explain",
             "title": "Explain Code",
-            "description": "Ask Cody to explain some code. Select some lines and use the \"Explain selected code\" recipe.\n[Open Commands](command:cody.action.commands.menu)",
+            "description": "Ask Cody to explain some code. Select some lines and use the \"Explain Code\" command.\n[Open Commands Menu](command:cody.action.commands.menu)",
             "media": {
               "markdown": "walkthroughs/explain.md"
             }
           },
           {
             "id": "inline-assist",
-            "title": "Inline Chat (Beta)",
+            "title": "Inline Chat",
             "description": "Chat with Cody without leaving your file. Click the + button next to any line number in a file to bring up Inline Chat.\n[Enable in Settings](command:cody.walkthrough.enableInlineChat)",
             "media": {
               "markdown": "walkthroughs/inline-assist.md"
@@ -127,7 +137,7 @@
           },
           {
             "id": "autocomplete",
-            "title": "Code Autocomplete (Beta)",
+            "title": "Code Autocomplete",
             "description": "Let Cody automatically write code for you. Start writing a comment or a line of code and Cody will suggest the next few lines.",
             "media": {
               "markdown": "walkthroughs/autocomplete.md"
@@ -253,14 +263,19 @@
         "title": "Explain Code"
       },
       {
-        "command": "cody.command.generate-unit-test",
+        "command": "cody.command.generate-tests",
         "category": "Ask Cody",
         "title": "Generate Unit Test"
       },
       {
-        "command": "cody.command.generate-docstring",
+        "command": "cody.command.document-code",
         "category": "Ask Cody",
         "title": "Document Code"
+      },
+      {
+        "command": "cody.command.smell-code",
+        "category": "Ask Cody",
+        "title": "Smell Code"
       },
       {
         "command": "cody.command.context-search",
@@ -303,6 +318,14 @@
         "title": "Chat History",
         "group": "Cody",
         "icon": "$(history)"
+      },
+      {
+        "command": "cody.status-bar.interacted",
+        "category": "Cody",
+        "title": "Cody Settings",
+        "group": "Cody",
+        "icon": "$(settings-gear)",
+        "when": "cody.activated"
       },
       {
         "command": "cody.comment.add",
@@ -415,7 +438,7 @@
       {
         "command": "cody.action.commands.menu",
         "category": "Cody",
-        "title": "Commands Menu",
+        "title": "Commands",
         "when": "cody.activated",
         "icon": "$(cody-logo)"
       },
@@ -452,9 +475,9 @@
       },
       {
         "command": "cody.action.commands.menu",
-        "key": "ctrl+shift+v",
-        "mac": "cmd+shift+v",
-        "when": "cody.activated && editorFocus"
+        "key": "alt+c",
+        "mac": "alt+c",
+        "when": "cody.activated"
       },
       {
         "command": "-github.copilot.generate",
@@ -471,7 +494,7 @@
       "commandPalette": [
         {
           "command": "cody.command.explain-code",
-          "when": "cody.activated && editorHasSelection"
+          "when": "cody.activated"
         },
         {
           "command": "cody.command.context-search",
@@ -482,12 +505,16 @@
           "when": "false"
         },
         {
-          "command": "cody.command.generate-unit-test",
-          "when": "cody.activated && editorHasSelection"
+          "command": "cody.command.smell-code",
+          "when": "cody.activated"
         },
         {
-          "command": "cody.command.generate-docstring",
-          "when": "cody.activated && editorHasSelection"
+          "command": "cody.command.generate-tests",
+          "when": "cody.activated"
+        },
+        {
+          "command": "cody.command.document-code",
+          "when": "cody.activated"
         },
         {
           "command": "cody.focus",
@@ -559,11 +586,15 @@
           "when": "cody.activated"
         },
         {
-          "command": "cody.command.generate-unit-test",
+          "command": "cody.command.generate-tests",
           "when": "cody.activated"
         },
         {
-          "command": "cody.command.generate-docstring",
+          "command": "cody.command.document-code",
+          "when": "cody.activated"
+        },
+        {
+          "command": "cody.command.smell-code",
           "when": "cody.activated"
         },
         {
@@ -591,6 +622,11 @@
           "group": "navigation@2"
         },
         {
+          "command": "cody.status-bar.interacted",
+          "when": "view == cody.chat && cody.activated",
+          "group": "navigation@4"
+        },
+        {
           "command": "cody.feedback",
           "when": "view == cody.chat",
           "group": "7_cody@0"
@@ -611,19 +647,9 @@
           "group": "9_cody@0"
         },
         {
-          "command": "cody.settings.extension",
-          "when": "view == cody.chat",
-          "group": "8_cody@1"
-        },
-        {
           "command": "cody.fixup.apply-all",
           "when": "cody.nonstop.fixups.enabled && view == cody.fixup.tree.view && cody.activated",
           "group": "navigation"
-        },
-        {
-          "command": "workbench.action.reloadWindow",
-          "title": "Reload",
-          "group": "8_cody@0"
         }
       ],
       "editor/title": [
@@ -777,6 +803,24 @@
           "markdownDescription": "Experimental feature for internal use.",
           "default": false
         },
+        "cody.experimental.localSymbols": {
+          "order": 9,
+          "type": "boolean",
+          "default": false,
+          "markdownDescription": "Experimental feature for internal use."
+        },
+        "cody.experimental.symf.path": {
+          "order": 99,
+          "type": "string",
+          "markdownDescription": "Path to symf binary",
+          "default": ""
+        },
+        "cody.experimental.symf.anthropicKey": {
+          "order": 99,
+          "type": "string",
+          "markdownDescription": "API key for Anthropic",
+          "default": ""
+        },
         "cody.debug.enable": {
           "order": 99,
           "type": "boolean",
@@ -816,15 +860,15 @@
             "unstable-fireworks",
             "unstable-azure-openai"
           ],
-          "markdownDescription": "Overwrite the provider used for code autocomplete."
+          "markdownDescription": "The provider used for code autocomplete. Most providers other than `anthropic` require the `cody.autocomplete.advanced.serverEndpoint` and `cody.autocomplete.advanced.accessToken` settings to also be set. Check the Cody output channel for error messages if autocomplete is not working as expected."
         },
         "cody.autocomplete.advanced.serverEndpoint": {
           "type": "string",
-          "markdownDescription": "Overwrite the server endpoint used for code autocomplete. This is only supported with a provider other than `anthropic`."
+          "markdownDescription": "The server endpoint used for code autocomplete. This is only supported with a provider other than `anthropic`."
         },
         "cody.autocomplete.advanced.accessToken": {
           "type": "string",
-          "markdownDescription": "Overwrite the access token used for code autocomplete. This is only supported with a provider other than `anthropic`."
+          "markdownDescription": "The access token used for code autocomplete. This is only supported with a provider other than `anthropic`."
         },
         "cody.autocomplete.advanced.embeddings": {
           "order": 99,
@@ -934,12 +978,14 @@
     "isomorphic-fetch": "^3.0.0",
     "lodash": "^4.17.21",
     "lru-cache": "^10.0.0",
+    "mkdirp": "^3.0.1",
     "mock-require": "^3.0.3",
     "openai": "^3.2.1",
     "stream-json": "^1.8.0",
     "uuid": "^9.0.0",
     "vscode-languageserver-textdocument": "^1.0.8",
     "vscode-uri": "^3.0.7",
+    "web-tree-sitter": "^0.20.8",
     "wink-eng-lite-web-model": "^1.5.0",
     "wink-nlp": "^1.13.1",
     "wink-nlp-utils": "^2.1.0"
@@ -953,6 +999,7 @@
     "@types/lodash": "^4.14.195",
     "@types/mocha": "^10.0.1",
     "@types/mock-require": "^2.0.1",
+    "@types/progress": "^2.0.5",
     "@types/semver": "^7.5.0",
     "@types/uuid": "^9.0.2",
     "@types/vscode": "^1.79.0",
@@ -969,6 +1016,7 @@
     "ovsx": "^0.8.2",
     "path-browserify": "^1.0.1",
     "playwright": "^1.33.0",
+    "progress": "^2.0.3",
     "semver": "^7.5.4"
   }
 }

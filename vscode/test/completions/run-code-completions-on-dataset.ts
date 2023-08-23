@@ -8,11 +8,13 @@ import * as vscode from 'vscode'
 import { TextDocument } from 'vscode-languageserver-textdocument'
 
 import { NoopEditor } from '@sourcegraph/cody-shared/src/editor'
+import { FeatureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
 import { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/nodeClient'
+import { SourcegraphGraphQLAPIClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/cody-shared/src/telemetry'
 
-import { GetContextResult } from '../../src/completions/context'
-import { VSCodeDocumentHistory } from '../../src/completions/history'
+import { GetContextResult } from '../../src/completions/context/context'
+import { VSCodeDocumentHistory } from '../../src/completions/context/history'
 import { createProviderConfig } from '../../src/completions/providers/createProvider'
 import { InlineCompletionItemProvider } from '../../src/completions/vscodeInlineCompletionItemProvider'
 import { getFullConfig } from '../../src/configuration'
@@ -26,6 +28,14 @@ import { findSubstringPosition } from './utils'
 
 let didLogConfig = false
 let providerName: string
+
+const dummyFeatureFlagProvider = new FeatureFlagProvider(
+    new SourcegraphGraphQLAPIClient({
+        accessToken: 'access-token',
+        serverEndpoint: 'https://sourcegraph.com',
+        customHeaders: {},
+    })
+)
 
 async function initCompletionsProvider(context: GetContextResult): Promise<InlineCompletionItemProvider> {
     const secretStorage = new InMemorySecretStorage()
@@ -45,6 +55,7 @@ async function initCompletionsProvider(context: GetContextResult): Promise<Inlin
     const { completionsClient, codebaseContext } = await configureExternalServices(
         initialConfig,
         'rg',
+        undefined,
         new NoopEditor(),
         NOOP_TELEMETRY_SERVICE,
         { createCompletionsClient: (...args) => new SourcegraphNodeCompletionsClient(...args) }
@@ -52,7 +63,10 @@ async function initCompletionsProvider(context: GetContextResult): Promise<Inlin
 
     const history = new VSCodeDocumentHistory()
 
-    const providerConfig = createProviderConfig(initialConfig, console.error, completionsClient)
+    const providerConfig = createProviderConfig(initialConfig, completionsClient)
+    if (!providerConfig) {
+        throw new Error('invalid completion config: no provider')
+    }
 
     const completionsProvider = new InlineCompletionItemProvider({
         providerConfig,
@@ -64,6 +78,7 @@ async function initCompletionsProvider(context: GetContextResult): Promise<Inlin
         getCodebaseContext: () => codebaseContext,
         isEmbeddingsContextEnabled: true,
         contextFetcher: () => Promise.resolve(context),
+        featureFlagProvider: dummyFeatureFlagProvider,
     })
 
     return completionsProvider
@@ -135,9 +150,11 @@ async function generateCompletionsForDataset(codeSamples: Sample[]): Promise<voi
                 undefined
             )
 
-            const completions = ('items' in completionItems ? completionItems.items : completionItems).map(item =>
-                typeof item.insertText === 'string' ? item.insertText : ''
-            )
+            const completions = completionItems
+                ? ('items' in completionItems ? completionItems.items : completionItems).map(item =>
+                      typeof item.insertText === 'string' ? item.insertText : ''
+                  )
+                : []
             console.error(`#${index}@i=${i}`, completions)
             codeSampleResults.push({
                 completions,

@@ -8,15 +8,6 @@
       },
       "note": "You must have git installed and authenticated to use this command. Runs this command before staging."
     },
-    "Compare Open Tabs": {
-      "prompt": "Please examine the code in the opened tabs. Then explain the relationship between the code samples by answering these questions: 1. What are the main tasks or functions the code is performing? 2. Are there any similarities in functions or logic across the samples? 3. Does one code snippet call or import another? If so, how do they interact? 4. Are there any notable differences in how they approach similar problems? 5. Overall, how are the code snippets related - do they work together as part of a larger program, solve variants of the same problem, or serve entirely different purposes?",
-      "slashCommand": "compare",
-      "context": {
-        "openTabs": true,
-        "selection": false
-      },
-      "note": "This command lets Cody analyze code from open tabs to provide insights on how they relate to each other."
-    },
     "Summarize the latest Cody Release": {
       "prompt": "What is the latest stable version of Cody? Can you briefly summarize the changes that were included in that release based on this CHANGELOG excerpt?",
       "context": {

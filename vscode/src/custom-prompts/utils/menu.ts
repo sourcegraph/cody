@@ -15,10 +15,10 @@ const fixOption: QuickPickItem = { label: 'Refactor This Code' }
 const docOption: QuickPickItem = { label: 'Generate Documentation' }
 const testOption: QuickPickItem = { label: 'Generate Tests' }
 const commandsSeparator: QuickPickItem = { kind: -1, label: 'commands' }
-const customCommandsSeparator: QuickPickItem = { kind: -1, label: 'custom commands' }
+const customCommandsSeparator: QuickPickItem = { kind: -1, label: 'custom commands (experimental)' }
 const configOption: QuickPickItem = { label: 'Configure Custom Commands...' }
 const settingsSeparator: QuickPickItem = { kind: -1, label: 'settings' }
-const addOption: QuickPickItem = { label: 'New Custom Command...', alwaysShow: true }
+const addOption: QuickPickItem = { label: 'New Custom User Command...', alwaysShow: true }
 const chatSubmitOption: QuickPickItem = { label: 'Submit Question', alwaysShow: true }
 const fixSubmitOption: QuickPickItem = { label: 'Submit Refactor Request', alwaysShow: true }
 
@@ -56,14 +56,16 @@ const workspaceItem: QuickPickItem = {
     description: '.vscode/cody.json',
 }
 
-const openIconButton = { iconPath: new ThemeIcon('go-to-file'), tooltip: 'open / create', id: 'open' }
+const openIconButton = { iconPath: new ThemeIcon('go-to-file'), tooltip: 'open/create', id: 'open' }
 const trashIconButton = { iconPath: new ThemeIcon('trash'), tooltip: 'delete', id: 'delete' }
+const gearIconButton = { iconPath: new ThemeIcon('gear'), tooltip: 'Configure Custom Commands...', id: 'config' }
 const backIconButton = QuickInputButtons.Back
 
 export const menu_buttons = {
     open: openIconButton,
     trash: trashIconButton,
     back: backIconButton,
+    gear: gearIconButton,
 }
 
 export const CustomCommandTypes = {
@@ -187,7 +189,7 @@ export async function showcommandTypeQuickPick(
 export const CustomCommandConfigMenuItems = [
     {
         kind: 0,
-        label: 'New Custom Command...',
+        label: 'New Custom User Command...',
         id: 'add',
         type: 'user',
         description: '',
@@ -195,7 +197,8 @@ export const CustomCommandConfigMenuItems = [
     { kind: -1, id: 'separator', label: '' },
     {
         kind: 0,
-        label: 'User Settings (JSON)',
+        label: 'Open User Settings (JSON)',
+        detail: 'Stored on your machine and usable across all your workspaces',
         id: 'open',
         type: 'user',
         description: '~/.vscode/cody.json',
@@ -203,7 +206,8 @@ export const CustomCommandConfigMenuItems = [
     },
     {
         kind: 0,
-        label: 'Workspace Settings (JSON)',
+        label: 'Open Workspace Settings (JSON)',
+        detail: 'Project-specific and shared with anyone using this workspace',
         id: 'open',
         type: 'workspace',
         description: '.vscode/cody.json',

@@ -1,4 +1,4 @@
-## Code Autocomplete (Beta)
+## Code Autocomplete
 
 <video autoPlay muted loop playsInline>
     <source

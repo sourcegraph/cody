@@ -15,6 +15,7 @@ import { Chat } from './Chat'
 import { LoadingPage } from './LoadingPage'
 import { Login } from './Login'
 import { View } from './NavBar'
+import { Notices } from './Notices'
 import { Plugins } from './Plugins'
 import { UserHistory } from './UserHistory'
 import { createWebviewTelemetryService } from './utils/telemetry'
@@ -90,7 +91,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                         setEnabledPlugins(message.plugins)
                         break
                     case 'custom-prompts':
-                        setMyPrompts(message.prompts || null)
+                        setMyPrompts(message.prompts?.filter(command => command[1]?.slashCommand) || null)
                         break
                     case 'transcript-errors':
                         setIsTranscriptError(message.isTranscriptError)
@@ -149,11 +150,16 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                     telemetryService={telemetryService}
                     appOS={config?.os}
                     appArch={config?.arch}
+                    uiKindIsWeb={config?.uiKindIsWeb}
                     callbackScheme={config?.uriScheme}
                     onLoginRedirect={onLoginRedirect}
                 />
             ) : (
                 <>
+                    <Notices
+                        extensionVersion={config?.extensionVersion}
+                        probablyNewInstall={!!userHistory && Object.entries(userHistory).length === 0}
+                    />
                     {errorMessages && <ErrorBanner errors={errorMessages} setErrors={setErrorMessages} />}
                     {view === 'history' && (
                         <UserHistory

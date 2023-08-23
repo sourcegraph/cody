@@ -39,6 +39,7 @@ const dummyVSCodeAPI: VSCodeWrapper = {
                 isAppInstalled: false,
                 isAppRunning: false,
                 hasAppJson: false,
+                uiKindIsWeb: false,
                 extensionVersion: '0.0.0',
             },
             authStatus: {

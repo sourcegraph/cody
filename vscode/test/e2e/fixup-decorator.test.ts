@@ -30,12 +30,12 @@ test('decorations from un-applied Cody changes appear', async ({ page, sidebar }
     await page.keyboard.press('ArrowDown')
 
     // Open the command palette by clicking on the Cody Icon
-    await page.getByRole('button', { name: 'Commands Menu' }).click()
+    await page.getByRole('button', { name: 'Commands' }).click()
     // Navigate to fixup input
     await page.getByRole('option', { name: 'Refactor This Code' }).click()
 
     // Wait for the input box to appear
-    await page.getByPlaceholder("Tell Cody what to do, or type ' / ' for commands").click()
+    await page.getByPlaceholder('Enter your refactoring instruction here...').click()
     // Type in the instruction for fixup
     await page.keyboard.type('replace hello with goodbye')
     // Press enter to submit the fixup

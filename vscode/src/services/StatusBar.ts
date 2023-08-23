@@ -30,7 +30,7 @@ export function createStatusBar(): CodyStatusBar {
 
         function createFeatureToggle(
             name: string,
-            description: string,
+            description: string | undefined,
             detail: string,
             setting: string,
             getValue: (config: Configuration) => boolean,
@@ -62,14 +62,14 @@ export function createStatusBar(): CodyStatusBar {
                 { label: 'enable/disable features', kind: vscode.QuickPickItemKind.Separator },
                 createFeatureToggle(
                     'Code Autocomplete',
-                    'Beta',
+                    undefined,
                     'Enable Cody-powered code autocompletions',
                     'cody.autocomplete.enabled',
                     c => c.autocomplete
                 ),
                 createFeatureToggle(
                     'Inline Chat',
-                    'Beta',
+                    undefined,
                     'Enable chatting and editing with Cody, directly in your code',
                     'cody.inlineChat.enabled',
                     c => c.inlineChat
@@ -89,6 +89,13 @@ export function createStatusBar(): CodyStatusBar {
                     'cody.experimental.commandLenses',
                     c => c.experimentalCommandLenses
                 ),
+                createFeatureToggle(
+                    'Editor Title Icon',
+                    'Experimental',
+                    'Enable Cody to appear in editor title menu for quick access to Cody commands',
+                    'cody.experimental.editorTitleCommandIcon',
+                    c => c.experimentalEditorTitleCommandIcon
+                ),
                 { label: 'settings', kind: vscode.QuickPickItemKind.Separator },
                 {
                     label: '$(gear) Cody Extension Settings',
@@ -97,7 +104,7 @@ export function createStatusBar(): CodyStatusBar {
                     },
                 },
                 {
-                    label: '$(terminal) Custom Commands Settings',
+                    label: '$(symbol-namespace) Custom Commands Settings',
                     async onSelect(): Promise<void> {
                         await vscode.commands.executeCommand('cody.settings.commands')
                     },
@@ -106,8 +113,8 @@ export function createStatusBar(): CodyStatusBar {
                 ...FeedbackOptionItems,
             ],
             {
-                title: 'Cody Settings Menu',
-                placeHolder: 'Select an option',
+                title: 'Cody Settings',
+                placeHolder: 'Choose an option',
                 matchOnDescription: true,
             }
         )

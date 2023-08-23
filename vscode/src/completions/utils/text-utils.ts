@@ -2,6 +2,8 @@ import * as vscode from 'vscode'
 
 export const INDENTATION_REGEX = /^[\t ]*/
 export const OPENING_BRACKET_REGEX = /([([{])$/
+export const FUNCTION_OR_METHOD_INVOCATION_REGEX = /\b[^()]+\((.*)\)$/g
+export const FUNCTION_KEYWORDS = /^(function|def|fn)/g
 
 export const BRACKET_PAIR = {
     '(': ')',
@@ -68,12 +70,35 @@ export function shouldIncludeClosingLine(prefixIndentationWithFirstCompletionLin
 
     const startIndent = indentation(prefixIndentationWithFirstCompletionLine)
 
-    const firstNewLineIndex = suffix.indexOf('\n') + 1
-    const nextNonEmptyLine =
-        suffix
-            .slice(firstNewLineIndex)
-            .split('\n')
-            .find(line => line.trim().length > 0) ?? ''
+    const nextNonEmptyLine = getNextNonEmptyLine(suffix)
 
     return indentation(nextNonEmptyLine) < startIndent || includeClosingLineBasedOnBrackets
+}
+
+export function getNextNonEmptyLine(suffix: string): string {
+    const nextNewline = suffix.indexOf('\n')
+    // There is no next line
+    if (nextNewline === -1) {
+        return ''
+    }
+    return (
+        suffix
+            .slice(nextNewline + 1)
+            .split('\n')
+            .find(line => line.trim().length > 0) ?? ''
+    )
+}
+
+export function getPrevNonEmptyLine(prefix: string): string {
+    const prevNewline = prefix.lastIndexOf('\n')
+    // There is no prev line
+    if (prevNewline === -1) {
+        return ''
+    }
+    return (
+        prefix
+            .slice(0, prevNewline)
+            .split('\n')
+            .findLast(line => line.trim().length > 0) ?? ''
+    )
 }

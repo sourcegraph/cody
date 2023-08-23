@@ -26,7 +26,6 @@ import { debug } from './log'
  */
 export const VSCODE_WEB_RECIPES: Recipe[] = [
     new ChatQuestion(debug),
-    new ContextSearch(),
     new ExplainCodeDetailed(),
     new ExplainCodeHighLevel(),
     new FindCodeSmells(),
@@ -39,6 +38,7 @@ export const VSCODE_WEB_RECIPES: Recipe[] = [
     new InlineTouch(debug),
     new NextQuestions(),
     new TranslateToLanguage(),
+    new ContextSearch(),
 ]
 
 /**

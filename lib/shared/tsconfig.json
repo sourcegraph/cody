@@ -6,6 +6,6 @@
     "outDir": "dist",
     "lib": ["ESNext", "DOM.Iterable"],
   },
-  "include": ["src", "src/telemetry/EventLogger.ts", "src/chat/prompts/default-prompts.json"],
+  "include": ["src", "src/chat/prompts/default-prompts.json"],
   "exclude": ["dist"],
 }

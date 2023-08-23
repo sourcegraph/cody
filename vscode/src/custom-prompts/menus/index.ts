@@ -1,9 +1,9 @@
-import { commands, QuickInputButtons, QuickPickItem, QuickPickOptions, window } from 'vscode'
+import { commands, QuickPickItem, QuickPickOptions, window } from 'vscode'
 
 import { CodyPrompt } from '@sourcegraph/cody-shared'
 
 import { CustomCommandsItem } from '../utils'
-import { CustomCommandConfigMenuItems, menu_options } from '../utils/menu'
+import { CustomCommandConfigMenuItems, menu_buttons, menu_options } from '../utils/menu'
 
 import { CodyCommand, CustomCommandsBuilderMenu } from './CustomCommandBuilderMenu'
 
@@ -14,9 +14,8 @@ interface CommandMenuResponse {
 
 export async function showCommandMenu(items: QuickPickItem[]): Promise<CommandMenuResponse> {
     const options = {
-        title: 'Cody Commands',
-        placeHolder: 'Search for a command',
-        ignoreFocusOut: true,
+        title: 'Cody (Shortcut: ⌥C)',
+        placeHolder: 'Search for a command or enter your question here...',
     }
 
     return new Promise(resolve => {
@@ -25,16 +24,23 @@ export async function showCommandMenu(items: QuickPickItem[]): Promise<CommandMe
         quickPick.items = items
         quickPick.title = options.title
         quickPick.placeholder = options.placeHolder
-        quickPick.ignoreFocusOut = options.ignoreFocusOut
+        quickPick.matchOnDescription = true
+
+        quickPick.buttons = [menu_buttons.gear]
 
         const labels = new Set(items.map(item => item.label))
         quickPick.onDidChangeValue(() => {
             if (quickPick.value && !labels.has(quickPick.value)) {
-                quickPick.items = [menu_options.submitChat, menu_options.submitFix, ...items]
+                quickPick.items = [...items, menu_options.submitChat, menu_options.submitFix]
                 input = quickPick.value
                 return
             }
             quickPick.items = items
+        })
+        // On gear icon click
+        quickPick.onDidTriggerButton(async () => {
+            quickPick.hide()
+            await commands.executeCommand('cody.settings.commands')
         })
 
         quickPick.onDidAccept(() => {
@@ -50,7 +56,6 @@ export async function showCustomCommandMenu(items: QuickPickItem[]): Promise<Qui
     const CustomCommandsMenuOptions: QuickPickOptions = {
         title: 'Cody Custom Commands (Experimental)',
         placeHolder: 'Search command to run...',
-        ignoreFocusOut: true,
     }
 
     return new Promise(resolve => {
@@ -84,7 +89,7 @@ export async function showCommandConfigMenu(): Promise<CustomCommandsItem> {
         quickPick.title = CustomCommandConfigMenuOptions.title
         quickPick.placeholder = CustomCommandConfigMenuOptions.placeHolder
 
-        quickPick.buttons = [QuickInputButtons.Back]
+        quickPick.buttons = [menu_buttons.back]
 
         // on item button click
         quickPick.onDidTriggerItemButton(item => {
@@ -101,8 +106,8 @@ export async function showCommandConfigMenu(): Promise<CustomCommandsItem> {
         })
 
         quickPick.onDidTriggerButton(async () => {
-            await commands.executeCommand('cody.action.commands.menu')
             quickPick.hide()
+            await commands.executeCommand('cody.action.commands.menu')
         })
 
         quickPick.show()

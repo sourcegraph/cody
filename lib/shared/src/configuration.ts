@@ -14,8 +14,12 @@ export interface Configuration {
     experimentalChatPredictions: boolean
     inlineChat: boolean
     experimentalCommandLenses: boolean
+    experimentalEditorTitleCommandIcon: boolean
     experimentalGuardrails: boolean
     experimentalNonStop: boolean
+    experimentalLocalSymbols: boolean
+    experimentalSymfPath: string
+    experimentalSymfAnthropicKey: string
     autocompleteAdvancedProvider:
         | 'anthropic'
         | 'unstable-codegen'
@@ -28,6 +32,7 @@ export interface Configuration {
     autocompleteExperimentalCompleteSuggestWidgetSelection?: boolean
     pluginsEnabled?: boolean
     pluginsDebugEnabled?: boolean
+    isRunningInsideAgent?: boolean
     pluginsConfig?: {
         confluence?: {
             baseUrl: string
