@@ -31,7 +31,12 @@ export async function showCommandMenu(items: QuickPickItem[]): Promise<CommandMe
         const labels = new Set(items.map(item => item.label))
         quickPick.onDidChangeValue(() => {
             if (quickPick.value && !labels.has(quickPick.value)) {
-                quickPick.items = [...items, menu_options.submitChat, menu_options.submitFix]
+                quickPick.items = [
+                    ...items,
+                    // TODO: debounce updates
+                    { ...menu_options.chat, description: quickPick.value },
+                    { ...menu_options.submitFix, description: quickPick.value },
+                ]
                 input = quickPick.value
                 return
             }
