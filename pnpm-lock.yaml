@@ -246,6 +246,9 @@ importers:
 
   lib/shared:
     dependencies:
+      '@flatten-js/interval-tree':
+        specifier: ^1.0.21
+        version: 1.0.21
       '@microsoft/fetch-event-source':
         specifier: ^2.0.1
         version: 2.0.1
@@ -3697,6 +3700,10 @@ packages:
   /@fal-works/esbuild-plugin-global-externals@2.1.2:
     resolution: {integrity: sha512-cEee/Z+I12mZcFJshKcCqC8tuX5hG3s+d+9nZ3LabqKF1vKdF41B92pJVCBggjAGORAeOzyyDDKrZwIkLffeOQ==}
     dev: true
+
+  /@flatten-js/interval-tree@1.0.21:
+    resolution: {integrity: sha512-TcxTNMkWBPqLicuFw9FViOZSVuug8MRRISUMDOCFzMI9FZ97BTjxiq8V168VifuEq9ERHhP2ltmGCovwS+KACw==}
+    dev: false
 
   /@fortaine/fetch-event-source@3.0.6:
     resolution: {integrity: sha512-621GAuLMvKtyZQ3IA6nlDWhV1V/7PGOTNIGLUifxt0KzM+dZIweJ6F3XvQF3QnqeNfS1N7WQ0Kil1Di/lhChEw==}

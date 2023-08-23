@@ -1,6 +1,6 @@
 import { CodebaseContext } from '../../codebase-context'
 import { ContextMessage, getContextMessageWithResponse } from '../../codebase-context/messages'
-import { Editor } from '../../editor'
+import { Editor, uriToPath } from '../../editor'
 import { IntentDetector } from '../../intent-detector'
 import { CHARS_PER_TOKEN, MAX_AVAILABLE_PROMPT_LENGTH, MAX_CURRENT_FILE_TOKENS } from '../../prompt/constants'
 import { populateCurrentEditorContextTemplate } from '../../prompt/templates'
@@ -60,14 +60,28 @@ export class NextQuestions implements Recipe {
     }
 
     private getEditorContext(editor: Editor): ContextMessage[] {
-        const visibleContent = editor.getActiveTextEditorVisibleContent()
+        const active = editor.getActiveTextDocument()
+
+        if (active === null) {
+            return []
+        }
+
+        const visibleContent = active.visible
         if (!visibleContent) {
             return []
         }
-        const truncatedContent = truncateText(visibleContent.content, MAX_CURRENT_FILE_TOKENS)
+        const truncatedContent = truncateText(active.content, MAX_CURRENT_FILE_TOKENS)
         return getContextMessageWithResponse(
-            populateCurrentEditorContextTemplate(truncatedContent, visibleContent.fileName, visibleContent.repoName),
-            visibleContent
+            populateCurrentEditorContextTemplate(
+                truncatedContent,
+                uriToPath(active.uri)!,
+                active.repoName ?? undefined
+            ),
+            {
+                fileName: uriToPath(active.uri)!,
+                repoName: active.repoName ?? undefined,
+                revision: active.revision ?? undefined,
+            }
         )
     }
 }

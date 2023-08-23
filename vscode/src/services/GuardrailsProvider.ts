@@ -9,13 +9,13 @@ export class GuardrailsProvider {
     ) {}
 
     public async debugEditorSelection(): Promise<void> {
-        const snippet = this.editor.getActiveTextEditorSelection()?.selectedText
+        const snippet = this.editor.getActiveTextDocumentSelectionText()?.selectedText
         if (snippet === undefined) {
             return
         }
 
         const msg = await this.client.searchAttribution(snippet).then(summariseAttribution)
 
-        await this.editor.showWarningMessage(msg)
+        await this.editor.warn(msg)
     }
 }

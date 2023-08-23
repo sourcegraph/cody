@@ -1,3 +1,4 @@
+import { Editor, uriToPath } from '../../editor'
 import { MAX_RECIPE_INPUT_TOKENS, MAX_RECIPE_SURROUNDING_TOKENS } from '../../prompt/constants'
 import { truncateText, truncateTextStart } from '../../prompt/truncation'
 import { Interaction } from '../transcript/interaction'
@@ -14,18 +15,22 @@ export class GenerateTest implements Recipe {
     public id: RecipeID = 'generate-unit-test'
 
     public async getInteraction(_humanChatInput: string, context: RecipeContext): Promise<Interaction | null> {
-        const selection = context.editor.getActiveTextEditorSelectionOrEntireFile()
+        const active = context.editor.getActiveTextDocument()!
+        const selection = Editor.getTextDocumentSelectionTextOrEntireFile(active)
+
         if (!selection) {
-            await context.editor.showWarningMessage('No code selected. Please select some code and try again.')
+            await context.editor.warn('No code selected. Please select some code and try again.')
             return Promise.resolve(null)
         }
+
+        const fileName = uriToPath(active.uri)!
 
         const truncatedSelectedText = truncateText(selection.selectedText, MAX_RECIPE_INPUT_TOKENS)
         const truncatedPrecedingText = truncateTextStart(selection.precedingText, MAX_RECIPE_SURROUNDING_TOKENS)
         const truncatedFollowingText = truncateText(selection.followingText, MAX_RECIPE_SURROUNDING_TOKENS)
-        const extension = getFileExtension(selection.fileName)
+        const extension = getFileExtension(fileName)
 
-        const languageName = getNormalizedLanguageName(selection.fileName)
+        const languageName = getNormalizedLanguageName(fileName)
         const promptMessage = `Generate a unit test in ${languageName} for the following code:\n\`\`\`${extension}\n${truncatedSelectedText}\n\`\`\`\n${MARKDOWN_FORMAT_PROMPT}`
         const assistantResponsePrefix = `Here is the generated unit test:\n\`\`\`${extension}\n`
 
@@ -42,7 +47,11 @@ export class GenerateTest implements Recipe {
                 truncatedSelectedText,
                 truncatedPrecedingText,
                 truncatedFollowingText,
-                selection,
+                {
+                    fileName,
+                    repoName: active.repoName ?? undefined,
+                    revision: active.revision ?? undefined,
+                },
                 context.codebaseContext
             ),
             []

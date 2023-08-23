@@ -11,13 +11,13 @@ export class TranslateToLanguage implements Recipe {
     public static options = languageNames
 
     public async getInteraction(_humanChatInput: string, context: RecipeContext): Promise<Interaction | null> {
-        const selection = context.editor.getActiveTextEditorSelectionOrEntireFile()
+        const selection = context.editor.getActiveTextDocumentSelectionTextOrEntireFile()
         if (!selection) {
-            await context.editor.showWarningMessage('No code selected. Please select some code and try again.')
+            await context.editor.warn('No code selected. Please select some code and try again.')
             return null
         }
 
-        const toLanguage = await context.editor.showQuickPick(languageNames)
+        const toLanguage = await context.editor.quickPick(languageNames)
         if (!toLanguage) {
             // TODO: Show the warning within the Chat UI.
             // editor.showWarningMessage('Must pick a language to translate to.')

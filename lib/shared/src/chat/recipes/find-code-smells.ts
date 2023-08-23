@@ -1,3 +1,4 @@
+import { Editor } from '../../editor'
 import { CHARS_PER_TOKEN, MAX_AVAILABLE_PROMPT_LENGTH, MAX_RECIPE_INPUT_TOKENS } from '../../prompt/constants'
 import { truncateText } from '../../prompt/truncation'
 import { Interaction } from '../transcript/interaction'
@@ -9,13 +10,15 @@ export class FindCodeSmells implements Recipe {
     public id: RecipeID = 'find-code-smells'
 
     public async getInteraction(_humanChatInput: string, context: RecipeContext): Promise<Interaction | null> {
-        const selection = context.editor.getActiveTextEditorSelectionOrEntireFile()
+        const active = context.editor.getActiveTextDocument()!
+        const selection = Editor.getTextDocumentSelectionTextOrEntireFile(active)
+
         if (!selection) {
-            await context.editor.showWarningMessage('No code selected. Please select some code and try again.')
+            await context.editor.warn('No code selected. Please select some code and try again.')
             return Promise.resolve(null)
         }
 
-        const languageName = getNormalizedLanguageName(selection.fileName)
+        const languageName = getNormalizedLanguageName(active.uri)
         const promptPrefix = `Find code smells, potential bugs, and unhandled errors in my ${languageName} code:`
         const promptSuffix = `List maximum five of them as a list (if you have more in mind, mention that these are the top five), with a short context, reasoning, and suggestion on each.
 If you have no ideas because the code looks fine, feel free to say that it already looks fine.`

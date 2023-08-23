@@ -1,3 +1,4 @@
+import { Editor, uriToPath } from '../../editor'
 import { MAX_RECIPE_INPUT_TOKENS, MAX_RECIPE_SURROUNDING_TOKENS } from '../../prompt/constants'
 import { truncateText, truncateTextStart } from '../../prompt/truncation'
 import { Interaction } from '../transcript/interaction'
@@ -14,9 +15,11 @@ export class GenerateDocstring implements Recipe {
     public id: RecipeID = 'generate-docstring'
 
     public async getInteraction(_humanChatInput: string, context: RecipeContext): Promise<Interaction | null> {
-        const selection = context.editor.getActiveTextEditorSelectionOrEntireFile()
+        const active = context.editor.getActiveTextDocument()!
+        const selection = Editor.getTextDocumentSelectionTextOrEntireFile(active)
+
         if (!selection) {
-            await context.editor.showWarningMessage('No code selected. Please select some code and try again.')
+            await context.editor.warn('No code selected. Please select some code and try again.')
             return Promise.resolve(null)
         }
 
@@ -24,8 +27,9 @@ export class GenerateDocstring implements Recipe {
         const truncatedPrecedingText = truncateTextStart(selection.precedingText, MAX_RECIPE_SURROUNDING_TOKENS)
         const truncatedFollowingText = truncateText(selection.followingText, MAX_RECIPE_SURROUNDING_TOKENS)
 
-        const extension = getFileExtension(selection.fileName)
-        const languageName = getNormalizedLanguageName(selection.fileName)
+        const extension = getFileExtension(active.uri)
+        const languageName = getNormalizedLanguageName(extension)
+
         const promptPrefix = `Generate a comment documenting the parameters and functionality of the following ${languageName} code:`
         let additionalInstructions = `Use the ${languageName} documentation style to generate a ${languageName} comment.`
         if (extension === 'java') {
@@ -58,7 +62,11 @@ export class GenerateDocstring implements Recipe {
                 truncatedSelectedText,
                 truncatedPrecedingText,
                 truncatedFollowingText,
-                selection,
+                {
+                    fileName: uriToPath(active.uri)!,
+                    repoName: active.repoName ?? undefined,
+                    revision: active.revision ?? undefined,
+                },
                 context.codebaseContext
             ),
             []
