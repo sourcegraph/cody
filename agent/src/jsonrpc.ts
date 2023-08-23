@@ -266,8 +266,8 @@ export class MessageHandler {
                         }
                     )
                     .finally(() => {
-                        this.cancelTokens.get(msg.params.id)?.dispose()
-                        this.cancelTokens.delete(msg.params.id)
+                        this.cancelTokens.get(msg.id)?.dispose()
+                        this.cancelTokens.delete(msg.id)
                     })
             } else {
                 console.error(`No handler for request with method ${msg.method}`)
