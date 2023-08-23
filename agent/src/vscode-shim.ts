@@ -34,6 +34,7 @@ export {
     emptyEvent,
     emptyDisposable,
     Range,
+    Location,
     Selection,
     Position,
     Disposable,

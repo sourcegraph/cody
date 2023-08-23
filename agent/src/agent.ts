@@ -162,13 +162,12 @@ export class Agent extends MessageHandler {
             })
             return null
         })
-        this.registerRequest('autocomplete/execute', async params => {
+        this.registerRequest('autocomplete/execute', async (params, token) => {
             const provider = await vscode_shim.completionProvider
             if (!provider) {
                 console.log('Completion provider is not initialized')
                 return { items: [] }
             }
-            const token = new vscode.CancellationTokenSource().token
             const document = this.workspace.getDocument(params.filePath)
             if (!document) {
                 console.log('No document found for file path', params.filePath, [...this.workspace.allFilePaths()])
