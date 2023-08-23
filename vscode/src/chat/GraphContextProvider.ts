@@ -422,19 +422,19 @@ export const extractDefinitionContexts = async (
 ): Promise<PreciseContext[]> => {
     // Retrieve document symbols for each of the open documents, which we will use to extract the relevant
     // definition "bounds" given the range of the definition symbol (which is contained within the range).
-    const documentSymbolMetadataMap = new Map(
+    const documentSymbolMetadataPromiseMap = new Map(
         [...contentMap.keys()]
             .filter(fsPath => matches.some(({ location }) => location.uri.fsPath === fsPath))
             .map(fsPath => [fsPath, getDocumentSymbolMetadata(vscode.Uri.file(fsPath))])
     )
 
     // NOTE: In order to make sure the loop below is unblocked we'll also force resolve the entirety
-    // of the folding range requests. That way we don't have a situation where the first iteration of
-    // the loop is waiting on the last promise to be resolved in the set.
-    await Promise.all([...documentSymbolMetadataMap.values()])
+    // of the document symbol requests. That way we don't have a situation where the first iteration
+    // of the loop is waiting on the last promise to be resolved in the set.
+    const documentSymbolMetadataMap = await unwrapThenableMap(documentSymbolMetadataPromiseMap)
 
     // Piece everything together. For each matching definition, extract the relevant lines given the
-    // containing document's content and folding range result. Downstream consumers of this function
+    // containing document's content and document symbol result. Downstream consumers of this function
     // are expected to filter and re-rank these results as needed for their specific use case.
 
     const contexts: PreciseContext[] = []
@@ -445,7 +445,7 @@ export const extractDefinitionContexts = async (
 
         if (contentPromise && documentSymbolMetadataPromises) {
             const content = contentPromise
-            const documentSymbolMetadata = await documentSymbolMetadataPromises // NOTE: already resolved)
+            const documentSymbolMetadata = documentSymbolMetadataPromises
             const definitionSnippets = extractSnippets(
                 content,
                 documentSymbolMetadata.map(({ range }) => range),
