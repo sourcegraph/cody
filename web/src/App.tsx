@@ -20,7 +20,19 @@ const editor: Editor = {
     getActiveTextEditorSelection() {
         return null
     },
+    getActiveInlineChatTextEditor() {
+        return null
+    },
+    getActiveInlineChatSelection() {
+        return null
+    },
     getActiveTextEditorSelectionOrEntireFile() {
+        return null
+    },
+    getActiveTextEditorSelectionOrVisibleContent() {
+        return null
+    },
+    getActiveTextEditorDiagnosticsForRange() {
         return null
     },
     getActiveTextEditorVisibleContent() {

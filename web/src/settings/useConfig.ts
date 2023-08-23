@@ -7,6 +7,7 @@ const DEFAULT_WEB_CONFIGURATION: WebConfiguration = {
     accessToken: null,
     useContext: 'embeddings',
     customHeaders: {},
+    experimentalLocalSymbols: false,
 }
 
 export type WebConfiguration = ClientInit['config']

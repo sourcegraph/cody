@@ -1,14 +1,23 @@
 import detectIndent from 'detect-indent'
 
+import { DocumentContext } from './document'
 import { getLanguageConfig } from './language'
 import { indentation } from './text-processing'
-import { getEditorTabSize, OPENING_BRACKET_REGEX, shouldIncludeClosingLine } from './utils/text-utils'
+import {
+    FUNCTION_KEYWORDS,
+    FUNCTION_OR_METHOD_INVOCATION_REGEX,
+    getEditorTabSize,
+    OPENING_BRACKET_REGEX,
+    shouldIncludeClosingLine,
+} from './utils/text-utils'
 
 export function detectMultiline(
-    prefix: string,
-    prevNonEmptyLine: string,
-    sameLinePrefix: string,
-    sameLineSuffix: string,
+    {
+        prefix,
+        prevNonEmptyLine,
+        currentLinePrefix,
+        currentLineSuffix,
+    }: Pick<DocumentContext, 'prefix' | 'prevNonEmptyLine' | 'currentLinePrefix' | 'currentLineSuffix'>,
     languageId: string,
     enableExtendedTriggers: boolean
 ): boolean {
@@ -17,17 +26,29 @@ export function detectMultiline(
         return false
     }
 
-    if (enableExtendedTriggers && sameLinePrefix.match(OPENING_BRACKET_REGEX)) {
+    const checkInvocation =
+        currentLineSuffix.trim().length > 0 ? currentLinePrefix + currentLineSuffix : currentLinePrefix
+
+    // Don't fire multiline completion for method or function invocations
+    // see https://github.com/sourcegraph/cody/discussions/358#discussioncomment-6519606
+    if (
+        !currentLinePrefix.trim().match(FUNCTION_KEYWORDS) &&
+        checkInvocation.match(FUNCTION_OR_METHOD_INVOCATION_REGEX)
+    ) {
+        return false
+    }
+
+    if (enableExtendedTriggers && currentLinePrefix.match(OPENING_BRACKET_REGEX)) {
         return true
     }
 
     if (
-        sameLinePrefix.trim() === '' &&
-        sameLineSuffix.trim() === '' &&
+        currentLinePrefix.trim() === '' &&
+        currentLineSuffix.trim() === '' &&
         // Only trigger multiline suggestions for the beginning of blocks
         prefix.trim().at(prefix.trim().length - config.blockStart.length) === config.blockStart &&
         // Only trigger multiline suggestions when the new current line is indented
-        indentation(prevNonEmptyLine) < indentation(sameLinePrefix)
+        indentation(prevNonEmptyLine) < indentation(currentLinePrefix)
     ) {
         return true
     }

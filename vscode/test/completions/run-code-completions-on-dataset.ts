@@ -5,29 +5,39 @@ import fs from 'fs'
 import path from 'path'
 
 import * as vscode from 'vscode'
-import { URI } from 'vscode-uri'
+import { TextDocument } from 'vscode-languageserver-textdocument'
 
 import { NoopEditor } from '@sourcegraph/cody-shared/src/editor'
+import { FeatureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
 import { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/nodeClient'
+import { SourcegraphGraphQLAPIClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/cody-shared/src/telemetry'
 
-import { CodyCompletionItemProvider } from '../../src/completions'
-import { GetContextResult } from '../../src/completions/context'
-import { History } from '../../src/completions/history'
+import { GetContextResult } from '../../src/completions/context/context'
+import { VSCodeDocumentHistory } from '../../src/completions/context/history'
 import { createProviderConfig } from '../../src/completions/providers/createProvider'
+import { InlineCompletionItemProvider } from '../../src/completions/vscodeInlineCompletionItemProvider'
 import { getFullConfig } from '../../src/configuration'
 import { configureExternalServices } from '../../src/external-services'
 import { InMemorySecretStorage } from '../../src/services/SecretStorageProvider'
+import { wrapVSCodeTextDocument } from '../../src/testutils/textDocument'
 
 import { completionsDataset, CURSOR, Sample } from './completions-dataset'
 import { ENVIRONMENT_CONFIG } from './environment-config'
 import { findSubstringPosition } from './utils'
-import { TextDocument } from './vscode-text-document'
 
 let didLogConfig = false
 let providerName: string
 
-async function initCompletionsProvider(context: GetContextResult): Promise<CodyCompletionItemProvider> {
+const dummyFeatureFlagProvider = new FeatureFlagProvider(
+    new SourcegraphGraphQLAPIClient({
+        accessToken: 'access-token',
+        serverEndpoint: 'https://sourcegraph.com',
+        customHeaders: {},
+    })
+)
+
+async function initCompletionsProvider(context: GetContextResult): Promise<InlineCompletionItemProvider> {
     const secretStorage = new InMemorySecretStorage()
     await secretStorage.store('cody.access-token', ENVIRONMENT_CONFIG.SOURCEGRAPH_ACCESS_TOKEN)
 
@@ -45,28 +55,30 @@ async function initCompletionsProvider(context: GetContextResult): Promise<CodyC
     const { completionsClient, codebaseContext } = await configureExternalServices(
         initialConfig,
         'rg',
+        undefined,
         new NoopEditor(),
         NOOP_TELEMETRY_SERVICE,
         { createCompletionsClient: (...args) => new SourcegraphNodeCompletionsClient(...args) }
     )
 
-    const history = new History()
+    const history = new VSCodeDocumentHistory()
 
-    const providerConfig = createProviderConfig(initialConfig, console.error, completionsClient)
+    const providerConfig = createProviderConfig(initialConfig, completionsClient)
+    if (!providerConfig) {
+        throw new Error('invalid completion config: no provider')
+    }
 
-    const completionsProvider = new CodyCompletionItemProvider({
+    const completionsProvider = new InlineCompletionItemProvider({
         providerConfig,
         statusBar: {
             startLoading: () => () => {},
             dispose: () => {},
         },
         history,
-        codebaseContext,
-        disableTimeouts: true,
-        triggerMoreEagerly: true,
-        cache: null,
+        getCodebaseContext: () => codebaseContext,
         isEmbeddingsContextEnabled: true,
         contextFetcher: () => Promise.resolve(context),
+        featureFlagProvider: dummyFeatureFlagProvider,
     })
 
     return completionsProvider
@@ -88,7 +100,7 @@ function prepareTextDocument(
 
     // Remove CURSOR marks from the code before processing it further.
     const completionReadyCode = code.replaceAll(CURSOR, '')
-    const textDocument = new TextDocument(URI.parse('file:///' + fileName), languageId, completionReadyCode)
+    const textDocument = TextDocument.create('file:///' + fileName, languageId, 0, completionReadyCode)
 
     return { textDocument, position }
 }
@@ -129,7 +141,7 @@ async function generateCompletionsForDataset(codeSamples: Sample[]): Promise<voi
 
             const completionsProvider = await initCompletionsProvider(context)
             const completionItems = await completionsProvider.provideInlineCompletionItems(
-                textDocument,
+                wrapVSCodeTextDocument(textDocument),
                 position,
                 {
                     triggerKind: 1,
@@ -138,9 +150,11 @@ async function generateCompletionsForDataset(codeSamples: Sample[]): Promise<voi
                 undefined
             )
 
-            const completions = ('items' in completionItems ? completionItems.items : completionItems).map(item =>
-                typeof item.insertText === 'string' ? item.insertText : ''
-            )
+            const completions = completionItems
+                ? ('items' in completionItems ? completionItems.items : completionItems).map(item =>
+                      typeof item.insertText === 'string' ? item.insertText : ''
+                  )
+                : []
             console.error(`#${index}@i=${i}`, completions)
             codeSampleResults.push({
                 completions,
@@ -165,6 +179,7 @@ async function generateCompletionsForDataset(codeSamples: Sample[]): Promise<voi
         throw new Error('No provider name')
     }
     const filename = path.join(ENVIRONMENT_CONFIG.OUTPUT_PATH, `${providerName}-${timestamp}.json`)
+    fs.mkdirSync(ENVIRONMENT_CONFIG.OUTPUT_PATH, { recursive: true })
     fs.writeFileSync(filename, JSON.stringify(results, null, 2))
     console.log('\n✅ Completions saved to:', filename)
 }

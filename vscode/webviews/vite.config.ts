@@ -18,7 +18,7 @@ export default defineConfig({
         target: 'esnext',
         assetsDir: '.',
         minify: false,
-        sourcemap: 'inline',
+        sourcemap: true,
         reportCompressedSize: false,
         rollupOptions: {
             watch: {

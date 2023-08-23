@@ -1,3 +1,4 @@
+import { throttle } from 'lodash'
 import * as vscode from 'vscode'
 
 import { ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
@@ -5,9 +6,10 @@ import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
 import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
 import { Editor } from '@sourcegraph/cody-shared/src/editor'
 import { SourcegraphEmbeddingsSearchClient } from '@sourcegraph/cody-shared/src/embeddings/client'
+import { IndexedKeywordContextFetcher } from '@sourcegraph/cody-shared/src/local-context'
 import { SourcegraphGraphQLAPIClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
 import { TelemetryService } from '@sourcegraph/cody-shared/src/telemetry'
-import { isError } from '@sourcegraph/cody-shared/src/utils'
+import { convertGitCloneURLToCodebaseName, isError } from '@sourcegraph/cody-shared/src/utils'
 
 import { getFullConfig } from '../configuration'
 import { VSCodeEditor } from '../editor/vscode-editor'
@@ -20,8 +22,8 @@ import { LocalStorage } from '../services/LocalStorageProvider'
 import { SecretStorage } from '../services/SecretStorageProvider'
 
 import { ChatViewProviderWebview } from './ChatViewProvider'
+import { GraphContextProvider } from './GraphContextProvider'
 import { ConfigurationSubsetForWebview, isLocalApp, LocalEnv } from './protocol'
-import { convertGitCloneURLToCodebaseName } from './utils'
 
 export type Config = Pick<
     ConfigurationWithAccessToken,
@@ -35,7 +37,9 @@ export type Config = Pick<
     | 'useContext'
     | 'experimentalChatPredictions'
     | 'experimentalGuardrails'
-    | 'experimentalCustomRecipes'
+    | 'experimentalCommandLenses'
+    | 'experimentalEditorTitleCommandIcon'
+    | 'experimentalLocalSymbols'
     | 'pluginsEnabled'
     | 'pluginsConfig'
     | 'pluginsDebugEnabled'
@@ -66,6 +70,7 @@ export class ContextProvider implements vscode.Disposable {
         private secretStorage: SecretStorage,
         private localStorage: LocalStorage,
         private rgPath: string | null,
+        private symf: IndexedKeywordContextFetcher | undefined,
         private authProvider: AuthProvider,
         private telemetryService: TelemetryService,
         private platform: PlatformContext
@@ -79,8 +84,7 @@ export class ContextProvider implements vscode.Disposable {
             }),
             vscode.workspace.onDidChangeWorkspaceFolders(async () => {
                 await this.updateCodebaseContext()
-            }),
-            vscode.commands.registerCommand('cody.auth.sync', () => this.syncAuthStatus())
+            })
         )
     }
 
@@ -89,6 +93,7 @@ export class ContextProvider implements vscode.Disposable {
     }
 
     public async init(): Promise<void> {
+        await this.updateCodebaseContext()
         await this.publishContextStatus()
     }
 
@@ -116,6 +121,7 @@ export class ContextProvider implements vscode.Disposable {
         const codebaseContext = await getCodebaseContext(
             this.config,
             this.rgPath,
+            this.symf,
             this.editor,
             this.chat,
             this.telemetryService,
@@ -131,7 +137,6 @@ export class ContextProvider implements vscode.Disposable {
 
         this.codebaseContext = codebaseContext
         await this.publishContextStatus()
-        this.editor.controllers.prompt?.setCodebase(codebaseContext.getCodebase())
     }
 
     /**
@@ -147,6 +152,7 @@ export class ContextProvider implements vscode.Disposable {
             const codebaseContext = await getCodebaseContext(
                 newConfig,
                 this.rgPath,
+                this.symf,
                 this.editor,
                 this.chat,
                 this.telemetryService,
@@ -184,9 +190,12 @@ export class ContextProvider implements vscode.Disposable {
                 },
             })
         }
-        this.disposables.push(this.configurationChangeEvent.event(() => send()))
-        this.disposables.push(vscode.window.onDidChangeTextEditorSelection(() => send()))
-        return send()
+        const throttledSend = throttle(send, 250, { leading: true, trailing: true })
+
+        this.disposables.push(this.configurationChangeEvent.event(() => throttledSend()))
+        this.disposables.push(vscode.window.onDidChangeActiveTextEditor(() => throttledSend()))
+        this.disposables.push(vscode.window.onDidChangeTextEditorSelection(() => throttledSend()))
+        return throttledSend()
     }
 
     /**
@@ -246,6 +255,7 @@ export class ContextProvider implements vscode.Disposable {
 export async function getCodebaseContext(
     config: Config,
     rgPath: string | null,
+    symf: IndexedKeywordContextFetcher | undefined,
     editor: Editor,
     chatClient: ChatClient,
     telemetryService: TelemetryService,
@@ -279,6 +289,8 @@ export async function getCodebaseContext(
             ? platform.createLocalKeywordContextFetcher?.(rgPath, editor, chatClient, telemetryService) ?? null
             : null,
         rgPath ? platform.createFilenameContextFetcher?.(rgPath, editor, chatClient) ?? null : null,
+        new GraphContextProvider(editor),
+        symf,
         undefined,
         getRerankWithLog(chatClient)
     )

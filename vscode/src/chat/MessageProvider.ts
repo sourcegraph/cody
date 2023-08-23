@@ -3,9 +3,13 @@ import * as vscode from 'vscode'
 import { BotResponseMultiplexer } from '@sourcegraph/cody-shared/src/chat/bot-response-multiplexer'
 import { ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
 import { getPreamble } from '@sourcegraph/cody-shared/src/chat/preamble'
+import { CodyPrompt, CodyPromptType } from '@sourcegraph/cody-shared/src/chat/prompts'
+import { newInteraction } from '@sourcegraph/cody-shared/src/chat/prompts/utils'
 import { Recipe, RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 import { Transcript } from '@sourcegraph/cody-shared/src/chat/transcript'
+import { Interaction } from '@sourcegraph/cody-shared/src/chat/transcript/interaction'
 import { ChatHistory, ChatMessage, UserLocalHistory } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
+import { Typewriter } from '@sourcegraph/cody-shared/src/chat/typewriter'
 import { reformatBotMessage } from '@sourcegraph/cody-shared/src/chat/viewHelpers'
 import { annotateAttribution, Guardrails } from '@sourcegraph/cody-shared/src/guardrails'
 import { IntentDetector } from '@sourcegraph/cody-shared/src/intent-detector'
@@ -19,14 +23,13 @@ import { TelemetryService } from '@sourcegraph/cody-shared/src/telemetry'
 import { VSCodeEditor } from '../editor/vscode-editor'
 import { PlatformContext } from '../extension.common'
 import { debug } from '../log'
-import { CodyPromptType } from '../my-cody/types'
 import { FixupTask } from '../non-stop/FixupTask'
-import { IdleRecipeRunner } from '../non-stop/roles'
 import { AuthProvider, isNetworkError } from '../services/AuthProvider'
 import { LocalStorage } from '../services/LocalStorageProvider'
 import { TestSupport } from '../test-support'
 
 import { ContextProvider } from './ContextProvider'
+import { countGeneratedCode } from './utils'
 
 /**
  * The problem with a token limit for the prompt is that we can only
@@ -52,7 +55,8 @@ abstract class MessageHandler {
     protected abstract handleError(errorMsg: string): void
     protected abstract handleSuggestions(suggestions: string[]): void
     protected abstract handleEnabledPlugins(plugins: string[]): void
-    protected abstract handleMyPrompts(prompts: string[], isEnabled: boolean): void
+    protected abstract handleCodyCommands(prompts: [string, CodyPrompt][]): void
+    protected abstract handleTranscriptErrors(transciptError: boolean): void
 }
 
 export interface MessageProviderOptions {
@@ -67,7 +71,7 @@ export interface MessageProviderOptions {
     platform: Pick<PlatformContext, 'recipes'>
 }
 
-export abstract class MessageProvider extends MessageHandler implements vscode.Disposable, IdleRecipeRunner {
+export abstract class MessageProvider extends MessageHandler implements vscode.Disposable {
     public currentChatID = ''
 
     // input and chat history are shared across all MessageProvider instances
@@ -113,8 +117,8 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         // chat id is used to identify chat session
         this.createNewChatID()
 
-        // Listen to configuration changes to possibly enable custom recipes
-        this.contextProvider.configurationChangeEvent.event(() => this.sendMyPrompts())
+        // Listen to configuration changes to possibly enable Custom Commands
+        this.contextProvider.configurationChangeEvent.event(() => this.sendCodyCommands())
     }
 
     protected async init(): Promise<void> {
@@ -124,51 +128,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         this.sendEnabledPlugins(this.localStorage.getEnabledPlugins() ?? [])
         await this.loadRecentChat()
         await this.contextProvider.init()
-        await this.sendMyPrompts()
-    }
-
-    private idleCallbacks_: (() => void)[] = []
-
-    private get isIdle(): boolean {
-        // TODO: Use a cooldown timer for typing and interaction
-        return !this.isMessageInProgress
-    }
-
-    private scheduleIdleRecipes(): void {
-        setTimeout(() => {
-            if (!this.isIdle) {
-                // We rely on the recipe ending re-scheduling idle recipes
-                return
-            }
-            const notifyIdle = this.idleCallbacks_.shift()
-            if (!notifyIdle) {
-                return
-            }
-            try {
-                notifyIdle()
-            } catch (error) {
-                console.error(error)
-            }
-            if (this.idleCallbacks_.length) {
-                this.scheduleIdleRecipes()
-            }
-        }, 1000)
-    }
-
-    public onIdle(callback: () => void): void {
-        if (this.isIdle) {
-            // Run "now", but not synchronously on this callstack.
-            void Promise.resolve().then(callback)
-        } else {
-            this.idleCallbacks_.push(callback)
-        }
-    }
-
-    public runIdleRecipe(recipeId: RecipeID, humanChatInput?: string): Promise<void> {
-        if (!this.isIdle) {
-            throw new Error('not idle')
-        }
-        return this.executeRecipe(recipeId, humanChatInput)
+        await this.sendCodyCommands()
     }
 
     public async clearAndRestartSession(): Promise<void> {
@@ -180,12 +140,14 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         this.handleSuggestions([])
         this.sendTranscript()
         this.sendHistory()
+        this.telemetryService.log('CodyVSCodeExtension:chatReset:executed')
     }
 
     public async clearHistory(): Promise<void> {
         MessageProvider.chatHistory = {}
         MessageProvider.inputHistory = []
         await this.localStorage.removeChatHistory()
+        this.telemetryService.log('CodyVSCodeExtension:clearChatHistoryButton:clicked')
     }
 
     /**
@@ -199,6 +161,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         await this.transcript.toJSON()
         this.sendTranscript()
         this.sendHistory()
+        this.telemetryService.log('CodyVSCodeExtension:restoreChatHistoryButton:clicked')
     }
 
     private sendEnabledPlugins(plugins: string[]): void {
@@ -209,21 +172,34 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         this.currentChatID = new Date(Date.now()).toUTCString()
     }
 
-    private sendPrompt(promptMessages: Message[], responsePrefix = ''): void {
+    private sendPrompt(
+        promptMessages: Message[],
+        responsePrefix = '',
+        multiplexerTopic = BotResponseMultiplexer.DEFAULT_TOPIC
+    ): void {
         this.cancelCompletion()
         void vscode.commands.executeCommand('setContext', 'cody.reply.pending', true)
 
-        let text = ''
-
-        this.multiplexer.sub(BotResponseMultiplexer.DEFAULT_TOPIC, {
-            onResponse: (content: string) => {
-                text += content
-                const displayText = reformatBotMessage(text, responsePrefix)
+        const typewriter = new Typewriter({
+            update: content => {
+                const displayText = reformatBotMessage(content, responsePrefix)
                 this.transcript.addAssistantResponse(displayText)
                 this.sendTranscript()
+            },
+            close: () => {},
+        })
+
+        let text = ''
+
+        this.multiplexer.sub(multiplexerTopic, {
+            onResponse: (content: string) => {
+                text += content
+                typewriter.update(text)
                 return Promise.resolve()
             },
             onTurnComplete: async () => {
+                typewriter.close()
+                await typewriter.finished
                 const lastInteraction = this.transcript.getLastInteraction()
                 if (lastInteraction) {
                     let displayText = reformatBotMessage(text, responsePrefix)
@@ -232,6 +208,10 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
                     this.transcript.addAssistantResponse(text || '', displayText)
                 }
                 await this.onCompletionEnd()
+                // Count code generated from response
+                const codeCount = countGeneratedCode(text)
+                const op = codeCount ? 'hasCode' : 'noCode'
+                this.telemetryService.log('CodyVSCodeExtension:chatResponse:' + op, codeCount || {})
             },
         })
 
@@ -252,8 +232,11 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
                 debug('ChatViewProvider:onError', err)
 
                 if (isAbortError(err)) {
+                    this.isMessageInProgress = false
+                    this.sendTranscript()
                     return
                 }
+
                 // Log users out on unauth error
                 if (statusCode && statusCode >= 400 && statusCode <= 410) {
                     this.authProvider
@@ -294,7 +277,6 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         if (!ignoreEmbeddingsError) {
             this.logEmbeddingsSearchErrors()
         }
-        this.scheduleIdleRecipes()
     }
 
     protected async abortCompletion(): Promise<void> {
@@ -360,11 +342,21 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
     }
 
     public async executeRecipe(recipeId: RecipeID, humanChatInput = ''): Promise<void> {
-        debug('ChatViewProvider:executeRecipe', recipeId, { verbose: humanChatInput })
         if (this.isMessageInProgress) {
             this.handleError('Cannot execute multiple recipes. Please wait for the current recipe to finish.')
             return
         }
+
+        // Filter the human input to check for chat commands and retrieve the correct recipe id
+        // e.g. /fix from 'chat-question' should be redirected to use the 'fixup' recipe
+        const command = await this.chatCommandsFilter(humanChatInput, recipeId)
+        if (!command) {
+            return
+        }
+        humanChatInput = command?.text
+        recipeId = command?.recipeId
+
+        debug('ChatViewProvider:executeRecipe', recipeId, { verbose: humanChatInput })
 
         const recipe = this.getRecipe(recipeId)
         if (!recipe) {
@@ -385,6 +377,11 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         if (!interaction) {
             return
         }
+        const errorMsg = interaction?.getAssistantMessage()?.error
+        if (errorMsg !== undefined) {
+            await this.addCustomInteraction(errorMsg, '', interaction)
+            return
+        }
         this.isMessageInProgress = true
         this.transcript.addInteraction(interaction)
 
@@ -399,20 +396,30 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         // Check whether or not to connect to LLM backend for responses
         // Ex: performing fuzzy / context-search does not require responses from LLM backend
         switch (recipeId) {
+            case 'local-indexed-keyword-search':
             case 'context-search':
+                this.sendTranscript()
                 await this.onCompletionEnd()
                 break
             default: {
                 this.sendTranscript()
 
-                const myPremade = this.editor.controllers.prompt?.getMyPrompts().premade
-                const { prompt, contextFiles } = await this.transcript.getPromptForLastInteraction(
+                const myPremade = (await this.editor.controllers.command?.getCustomConfig())?.premade
+                if (myPremade) {
+                    this.telemetryService.log('CodyVSCodeExtension:command:customPremade:applied')
+                }
+
+                const { prompt, contextFiles, preciseContexts } = await this.transcript.getPromptForLastInteraction(
                     getPreamble(this.contextProvider.context.getCodebase(), myPremade),
                     this.maxPromptTokens,
                     pluginsPrompt
                 )
-                this.transcript.setUsedContextFilesForLastInteraction(contextFiles, pluginExecutionInfos)
-                this.sendPrompt(prompt, interaction.getAssistantMessage().prefix ?? '')
+                this.transcript.setUsedContextFilesForLastInteraction(
+                    contextFiles,
+                    preciseContexts,
+                    pluginExecutionInfos
+                )
+                this.sendPrompt(prompt, interaction.getAssistantMessage().prefix ?? '', recipe.multiplexerTopic)
                 await this.saveTranscriptToChatHistory()
             }
         }
@@ -440,7 +447,11 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         }
         transcript.addInteraction(interaction)
 
-        const myPremade = this.editor.controllers.prompt?.getMyPrompts().premade
+        const myPremade = (await this.editor.controllers.command?.getCustomConfig())?.premade
+        if (myPremade) {
+            this.telemetryService.log('CodyVSCodeExtension:command:customPremade:applied')
+        }
+
         const { prompt, contextFiles } = await transcript.getPromptForLastInteraction(
             getPreamble(this.contextProvider.context.getCodebase(), myPremade),
             this.maxPromptTokens
@@ -508,73 +519,136 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         this.handleTranscript(chatTranscript, this.isMessageInProgress)
     }
 
-    public isCustomRecipeAction(title: string): boolean {
-        const customRecipeActions = ['add', 'get', 'menu']
-        return customRecipeActions.includes(title)
+    public isCustomCommandAction(title: string): boolean {
+        const customPromptActions = ['add', 'get', 'menu']
+        return customPromptActions.includes(title)
     }
 
-    public async executeCustomRecipe(title: string, type?: CodyPromptType): Promise<string | void> {
-        if (!this.contextProvider.config.experimentalCustomRecipes) {
-            return
-        }
-        // Send prompt names to display as recipe options
-        if (!title || title === 'get') {
-            await this.sendMyPrompts()
-            return
-        }
-        // Create a new recipe
-        if (title === 'menu') {
-            await this.editor.controllers.prompt?.menu()
-            await this.sendMyPrompts()
-            return
-        }
-        if (title === 'add' && type) {
-            try {
-                // copy the cody.json file from the extension path and move it to the workspace root directory
-                await this.editor.controllers.prompt?.addJSONFile(type)
-            } catch (error) {
-                void vscode.window.showErrorMessage(`Could not create a new cody.json file: ${error}`)
-            }
-            return
+    /**
+     * Handle instructions returned from webview in regard to a Cody Command
+     * Finds and execute a Cody command
+     */
+    public async executeCustomCommand(title: string, type?: CodyPromptType): Promise<void> {
+        title = title.trim()
+        switch (title) {
+            case 'get':
+                await this.sendCodyCommands()
+                break
+            case 'menu':
+                await this.editor.controllers.command?.menu('custom')
+                await this.sendCodyCommands()
+                break
+            case 'add':
+                if (!type) {
+                    break
+                }
+                await this.editor.controllers.command?.config('add', type)
+                this.telemetryService.log('CodyVSCodeExtension:addCommandButton:clicked')
+                break
         }
         // Get prompt details from controller by title then execute prompt's command
-        const promptText = this.editor.controllers.prompt?.find(title)
-        await this.editor.controllers.prompt?.get('command')
+        const promptText = this.editor.controllers.command?.find(title)
+        await this.editor.controllers.command?.get('command')
+        debug('executeCustomCommand:starting', title)
         if (!promptText) {
-            debug('executeCustomRecipe:noPrompt', title)
             return
         }
-        await this.executeCommands(promptText, 'my-prompt')
-        return promptText
+        await this.executeRecipe('custom-prompt', promptText)
+        this.telemetryService.log('CodyVSCodeExtension:command:started', { source: 'menu' })
+        const starter = (await this.editor.controllers.command?.getCustomConfig())?.starter
+        if (starter) {
+            this.telemetryService.log('CodyVSCodeExtension:command:customStarter:applied')
+        }
+        return
     }
 
-    protected async executeCommands(text: string, recipeID: RecipeID = 'chat-question'): Promise<void> {
+    protected async chatCommandsFilter(
+        text: string,
+        recipeId: RecipeID
+    ): Promise<{ text: string; recipeId: RecipeID } | null> {
+        text = text.trim()
+        if (!text?.startsWith('/')) {
+            return { text, recipeId }
+        }
+        const commandKey = text.split(' ')[0].replace('/', '')
         switch (true) {
-            case /^\/o(pen)?/i.test(text) && this.editor.controllers.prompt !== undefined:
+            case text === '/':
+                return vscode.commands.executeCommand('cody.action.commands.menu', 'sidebar')
+            case text === '/commands-settings':
+                this.telemetryService.log('CodyVSCodeExtension:command:configMenuButton:clicked', { source: 'sidebar' })
+                return vscode.commands.executeCommand('cody.settings.commands')
+            case /^\/o(pen)?\s/.test(text) && this.editor.controllers.command !== undefined:
                 // open the user's ~/.vscode/cody.json file
-                await this.editor.controllers.prompt?.open(text.split(' ')[1])
-                break
-            case /^\/r(eset)?/i.test(text):
+                await this.editor.controllers.command?.open(text.split(' ')[1])
+                this.telemetryService.log('CodyVSCodeExtension:command:openFile:executed')
+                return null
+            case /^\/r(eset)?$/.test(text):
                 await this.clearAndRestartSession()
-                break
-            case /^\/s(earch)?\s/i.test(text):
-                await this.executeRecipe('context-search', text)
-                break
-            default:
-                return this.executeRecipe(recipeID, text)
+                this.telemetryService.log('CodyVSCodeExtension:command:resetChat:executed')
+                return null
+            case /^\/symf(?:\s|$)/.test(text):
+                return { text, recipeId: 'local-indexed-keyword-search' }
+            case /^\/s(earch)?\s/.test(text):
+                return { text, recipeId: 'context-search' }
+            case /^\/fix(\s)?/.test(text):
+                await vscode.commands.executeCommand('cody.fixup.new', { instruction: text })
+                return null
+            case /^\/(explain|doc|test|smell)$/.test(text):
+                this.telemetryService.log(`CodyVSCodeExtension:command:${commandKey}:called`, {
+                    source: 'chat',
+                })
+            default: {
+                if (!this.editor.getActiveTextEditor()?.filePath) {
+                    await this.addCustomInteraction('Command failed. Please open a file and try again.', text)
+                    return null
+                }
+                const promptText = this.editor.controllers.command?.find(text, true)
+                await this.editor.controllers.command?.get('command')
+                if (promptText) {
+                    return { text: promptText, recipeId: 'custom-prompt' }
+                }
+                // Inline chat has its own filter for slash commands
+                if (recipeId === 'inline-chat') {
+                    return { text, recipeId }
+                }
+                // If no command found, send error message to view
+                await this.addCustomInteraction(`__${text}__ is not a valid command`, text)
+                return null
+            }
         }
     }
 
     /**
-     * Send custom recipe names to view
+     * Adds a custom interaction to the transcript.
+     *
+     * This method adds a new Interaction with the given assistant response and human input to the transcript.
+     * It then sends the updated transcript, checks for transcript errors, and saves the transcript to the chat history
      */
-    private async sendMyPrompts(): Promise<void> {
+    private async addCustomInteraction(
+        assistantResponse: string,
+        humanInput: string,
+        interaction?: Interaction
+    ): Promise<void> {
+        const customInteraction = await newInteraction({
+            displayText: humanInput,
+            assistantDisplayText: assistantResponse,
+        })
+        this.transcript.addInteraction(interaction || customInteraction)
+        this.sendTranscript()
+        this.handleTranscriptErrors(true)
+        await this.saveTranscriptToChatHistory()
+    }
+
+    /**
+     * Send list of Cody commands (default and custom) to webview
+     */
+    private async sendCodyCommands(): Promise<void> {
         const send = async (): Promise<void> => {
-            await this.editor.controllers.prompt?.refresh()
-            const prompts = this.editor.controllers.prompt?.getPromptList() ?? []
-            void this.handleMyPrompts(prompts, this.contextProvider.config.experimentalCustomRecipes)
+            await this.editor.controllers.command?.refresh()
+            const commands = (await this.editor.controllers.command?.getAllCommands()) || []
+            void this.handleCodyCommands(commands)
         }
-        this.editor.controllers.prompt?.setMessenger(send)
+        this.editor.controllers.command?.setMessenger(send)
         await send()
     }
 
@@ -604,6 +678,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         delete MessageProvider.chatHistory[chatID]
         await this.localStorage.deleteChatHistory(chatID)
         this.sendHistory()
+        this.telemetryService.log('CodyVSCodeExtension:deleteChatHistoryButton:clicked')
     }
 
     /**
@@ -653,6 +728,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         // Display error message as assistant response for users with indexed codebase but getting search errors
         if (this.contextProvider.context.checkEmbeddingsConnection() && searchErrors) {
             this.transcript.addErrorAsAssistantResponse(searchErrors)
+            this.handleTranscriptErrors(true)
             debug('ChatViewProvider:onLogEmbeddingsErrors', '', { verbose: searchErrors })
         }
     }

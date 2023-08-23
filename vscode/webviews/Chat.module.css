@@ -7,23 +7,24 @@
     font-size: var(--vscode-editor-font-size);
     font-family: var(--vscode-font-family);
     font-weight: var(--vscode-font-weight);
-    color: var(--vscode-input-foreground);
     border-color: var(--vscode-sideBarSectionHeader-border);
+    padding: 15px 15px 15px 20px;
+    color: var(--vscode-foreground);
 }
 
 /* Apply a slight tint to the assistant transcript item. */
-body[data-vscode-theme-kind='vscode-light'] .transcript-item:not(.human-transcript-item),
-body[data-vscode-theme-kind='vscode-high-contrast-light'] .transcript-item:not(.human-transcript-item) {
+body[data-vscode-theme-kind='vscode-light'] .human-transcript-item,
+body[data-vscode-theme-kind='vscode-high-contrast-light'] .human-transcript-item {
     background-color: rgba(0, 0, 0, 0.04); /* slight dark tint */
 }
 
-body[data-vscode-theme-kind='vscode-dark'] .transcript-item:not(.human-transcript-item),
-body[data-vscode-theme-kind='vscode-high-contrast'] .transcript-item:not(.human-transcript-item) {
+body[data-vscode-theme-kind='vscode-dark'] .human-transcript-item,
+body[data-vscode-theme-kind='vscode-high-contrast'] .human-transcript-item {
     background-color: rgba(255, 255, 255, 0.04); /* slight light tint */
 }
 
 .human-transcript-item:before {
-    background-color: var(--vscode-sideBarSectionHeader-border);
+    background-color: var(--vscode-sideBar-foreground, currentColor);
 }
 
 .transcript-item pre,
@@ -44,6 +45,7 @@ body[data-vscode-theme-kind='vscode-high-contrast'] .transcript-item:not(.human-
     background: var(--vscode-button-secondaryBackground);
     color: var(--vscode-button-secondaryForeground);
     font-size: var(--vscode-editor-font-size);
+    margin-top: 5px;
 }
 
 .transcript-action > button {
@@ -63,24 +65,90 @@ body[data-vscode-theme-kind='vscode-high-contrast'] .transcript-item:not(.human-
 
 .code-blocks-copy-button:hover,
 .code-blocks-insert-button:hover {
-    background-color: var(--vscode-button-secondaryHoverBackground);
+    /* Flip to the primary button hover styles because the secondary button
+     * hover background is transparent in many themes. The transparent
+     * background which doesn't work with the layered design.
+     */
+    background-color: var(--vscode-button-hoverBackground);
+    color: var(--vscode-button-foreground);
+    border-color: var(--vscode-button-border);
 }
 
 .input-row {
     border-top: solid 1px var(--vscode-sideBarSectionHeader-border);
+    gap: 0.3rem;
+    padding: 0.75rem 0.75rem 1rem 0.75rem;
 }
 
-.chat-input-context {
+/* Container used for autogrowing, based on https://css-tricks.com/the-cleanest-trick-for-autogrowing-textareas/ */
+.chat-input-container {
+    /* easy way to plop the elements on top of each other and have them both sized based on the tallest one's height */
+    display: grid;
+}
+
+.chat-input-container::after {
+    /* Note the weird space! Needed to preventy jumpy behavior */
+    content: attr(data-value) " ";
+    /* This is how textarea text behaves */
+    white-space: pre-wrap;
+    /* Hidden from view, clicks, and screen readers */
+    visibility: hidden;
+}
+
+/* Both elements need the same styling so the height matches */
+.chat-input, .chat-input-container::after {
+    box-sizing: border-box;
+    background-color: var(--vscode-input-background);
     color: var(--vscode-input-foreground);
+    border: 1px solid transparent;
+    border-radius: 2px;
+    padding: 8px 8px 32px 8px;
+    font: inherit;
+    width: 100%;
+    overflow: hidden;
+
+    min-height: 3.5rem;
+
+    /* Place on top of each other */
+    grid-area: 1 / 1 / 2 / 2;
 }
 
 .chat-input {
-    outline: none;
+    border-color: var(--vscode-input-border, transparent);
+}
+
+.chat-input:focus,
+.chat-input:focus-visible,
+.chat-input:focus-within {
+    outline: 1px solid var(--vscode-focusBorder);
+    outline-offset: -1px;
+}
+
+.chat-input-actions {
+    position: absolute;
+    bottom: 6px;
+    left: 4px;
+    /* This is a small detail, but we always want clicks to fall through the textarea if buttons are disabled */
+    pointer-events: none;
+}
+
+.chat-input-actions > * {
+    /* We have to set this explicitly, otherwise it will use the parent's value */
+    pointer-events: auto;
+}
+
+.chat-input-actions [disabled] {
+    /* Disabled buttons just send their clicks to the textarea, similar to Slack’s implementation */
+    pointer-events: none;
 }
 
 .chat-button {
     margin-top: 0.5rem;
     padding: 0.25rem;
+}
+
+.chat-input-context {
+    opacity: 0.85;
 }
 
 .feedback-buttons {
@@ -115,8 +183,16 @@ body[data-vscode-theme-kind='vscode-high-contrast'] .transcript-item:not(.human-
     margin-right: 3px;
 }
 
-.submit-button-disabled {
-    cursor: not-allowed;
+.submit-button {
+    color: var(--foreground);
+}
+
+.submit-button, .submit-button-disabled {
+    margin-bottom: 0;
+}
+
+.submit-button[disabled] {
+    pointer-events: none;
 }
 
 .stop-generating-button {
@@ -132,6 +208,20 @@ body[data-vscode-theme-kind='vscode-high-contrast'] .transcript-item:not(.human-
 
 .stop-generating-button:active {
     transition: all 0.5s linear;
+}
+
+.thumbs-down-feedback-container {
+    display: flex;
+    align-items: center;
+    gap: calc(var(--spacing) / 4);
+}
+
+.feedback-button[disabled] {
+    /* VSCodeButton's default cursor is not-allowed, but that's different to
+       native VS Code and feels off, especially when it quickly changes to
+       not-allowed after you submit feedback. So we reset it back to the
+       default cursor to fit in nicer with standard VS Code native behaviour */
+    cursor: default;
 }
 
 @keyframes fadeInSlideUp {

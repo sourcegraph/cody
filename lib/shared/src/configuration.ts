@@ -13,18 +13,26 @@ export interface Configuration {
     autocomplete: boolean
     experimentalChatPredictions: boolean
     inlineChat: boolean
-    experimentalCustomRecipes: boolean
+    experimentalCommandLenses: boolean
+    experimentalEditorTitleCommandIcon: boolean
     experimentalGuardrails: boolean
     experimentalNonStop: boolean
-    autocompleteAdvancedProvider: 'anthropic' | 'unstable-codegen' | 'unstable-huggingface' | 'unstable-fireworks'
+    experimentalLocalSymbols: boolean
+    experimentalSymfPath: string
+    experimentalSymfAnthropicKey: string
+    autocompleteAdvancedProvider:
+        | 'anthropic'
+        | 'unstable-codegen'
+        | 'unstable-huggingface'
+        | 'unstable-fireworks'
+        | 'unstable-azure-openai'
     autocompleteAdvancedServerEndpoint: string | null
     autocompleteAdvancedAccessToken: string | null
-    autocompleteAdvancedCache: boolean
     autocompleteAdvancedEmbeddings: boolean
-    autocompleteExperimentalTriggerMoreEagerly: boolean
     autocompleteExperimentalCompleteSuggestWidgetSelection?: boolean
     pluginsEnabled?: boolean
     pluginsDebugEnabled?: boolean
+    isRunningInsideAgent?: boolean
     pluginsConfig?: {
         confluence?: {
             baseUrl: string
