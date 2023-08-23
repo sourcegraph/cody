@@ -3,10 +3,11 @@ import { tmpdir } from 'os'
 import * as path from 'path'
 
 import { test as base, Frame, Page } from '@playwright/test'
-import { downloadAndUnzipVSCode } from '@vscode/test-electron'
 import { _electron as electron } from 'playwright'
 
 import { run } from '../fixtures/mock-server'
+
+import { installDeps } from './install-deps'
 
 export const test = base
     .extend<{}>({
@@ -15,7 +16,7 @@ export const test = base
 
             const codyRoot = path.resolve(__dirname, '..', '..')
 
-            const vscodeExecutablePath = await downloadAndUnzipVSCode('1.79.2')
+            const vscodeExecutablePath = await installDeps()
             const extensionDevelopmentPath = codyRoot
 
             const userDataDirectory = mkdtempSync(path.join(tmpdir(), 'cody-vsce'))
