@@ -71,37 +71,19 @@ const getGraphContextFromSelection = async (
     // Extract identifiers from the relevant document symbol ranges and request their definitions
     const definitionMatches = await gatherSymbolsForSelections(definitionSelections, contentMap)
 
-    // Open each URI referenced by a definition match in the current workspace, and make the document
-    // content retrievable by filepath by adding it to the shared content map.
+    // Open the documents not currently present in the workspace.
     //
     // NOTE: Before asking for data about a document it must be opened in the workspace. This forces
     // a resolution so that the following queries that require the document context will not fail with
     // an unknown document.
-
-    const unseenDefinitionUris = dedupeWith(
-        definitionMatches.map(({ locations }) => locations.map(({ uri }) => uri)).flat(),
-        uri => uri.fsPath
-    ).filter(uri => !contentMap.has(uri.fsPath))
-
-    const newContentMap = new Map(
-        unseenDefinitionUris.map(uri => [
-            uri.fsPath,
-            vscode.workspace.openTextDocument(uri.fsPath).then(document => document.getText().split('\n')),
-        ])
-    )
-
-    for (const [fsPath, lines] of await unwrapThenableMap(newContentMap)) {
-        contentMap.set(fsPath, lines)
-    }
-
-    // Resolve, extract, and deduplicate the symbol and location match pairs from the definition matches
-    const matches = dedupeWith(
-        definitionMatches.map(({ locations, ...rest }) => locations.map(location => ({ location, ...rest }))).flat(),
-        ({ location }) => locationKeyFn(location)
-    )
+    await openDocuments(definitionMatches, contentMap)
 
     // Extract definition text from our matches
-    const contexts = await extractDefinitionContexts(matches, contentMap)
+    const flattenedMatches = definitionMatches.flatMap(({ locations, ...rest }) =>
+        locations.map(location => ({ location, ...rest }))
+    )
+    const uniqueMatches = dedupeWith(flattenedMatches, ({ location }) => locationKeyFn(location))
+    const contexts = await extractDefinitionContexts(uniqueMatches, contentMap)
 
     // Debuggin'
     console.debug(`Retrieved ${contexts.length} context snippets`)
@@ -403,6 +385,29 @@ export const gatherSymbolsForSelections = async (
         filteredDefinitionMatches,
         match => `${match.symbolName}.${match.locations.map(locationKeyFn).join('.')}`
     )
+}
+
+/**
+ * Open each URI referenced by one of the given matches in the current workspace, and make the document
+ * content retrievable by filepath by adding it to the shared content map.
+ */
+const openDocuments = async (
+    matches: ResolvedSymbolDefinitionMatches[],
+    contentMap: Map<string, string[]>
+): Promise<void> => {
+    const uris = matches.map(({ locations }) => locations.map(({ uri }) => uri)).flat()
+    const uniqueUris = dedupeWith(uris, uri => uri.fsPath)
+    const unseenUris = uniqueUris.filter(uri => !contentMap.has(uri.fsPath))
+    const newContentMap = new Map(
+        unseenUris.map(uri => [
+            uri.fsPath,
+            vscode.workspace.openTextDocument(uri.fsPath).then(document => document.getText().split('\n')),
+        ])
+    )
+
+    for (const [fsPath, lines] of await unwrapThenableMap(newContentMap)) {
+        contentMap.set(fsPath, lines)
+    }
 }
 
 /**
