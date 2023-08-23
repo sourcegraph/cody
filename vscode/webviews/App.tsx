@@ -11,7 +11,7 @@ import { AuthStatus, defaultAuthStatus, LocalEnv } from '../src/chat/protocol'
 
 import { Chat } from './Chat'
 import { LoadingPage } from './LoadingPage'
-import { Login } from './Login'
+import { LoginAlternative } from './LoginAlternative'
 import { View } from './NavBar'
 import { Notices } from './Notices'
 import { UserHistory } from './UserHistory'
@@ -148,7 +148,9 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     return (
         <div className="outer-container">
             {view === 'login' || !authStatus.isLoggedIn ? (
-                <Login
+                <LoginAlternative />
+            ) : (
+                /* <Login
                     authStatus={authStatus}
                     endpoint={endpoint}
                     isAppInstalled={isAppInstalled}
@@ -160,8 +162,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                     uiKindIsWeb={config?.uiKindIsWeb}
                     callbackScheme={config?.uriScheme}
                     onLoginRedirect={onLoginRedirect}
-                />
-            ) : (
+                /> */
                 <>
                     <Notices
                         extensionVersion={config?.extensionVersion}
