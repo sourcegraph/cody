@@ -249,7 +249,7 @@ const _window: Partial<typeof vscode.window> = {
             show: () => {},
             hide: () => {},
             dispose: () => {},
-        } as vscode.OutputChannel)) as any,
+        }) as vscode.OutputChannel) as any,
     createTextEditorDecorationType: () => ({ key: 'foo', dispose: () => {} }),
 }
 
