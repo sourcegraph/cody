@@ -1,18 +1,8 @@
 import { Configuration } from '../configuration'
 import { EmbeddingsSearch } from '../embeddings'
 import { GraphContextFetcher } from '../graph-context'
-import {
-    ContextResult,
-    FilenameContextFetcher,
-    IndexedKeywordContextFetcher,
-    KeywordContextFetcher,
-} from '../local-context'
-import {
-    isMarkdownFile,
-    populateCodeContextTemplate,
-    populateMarkdownContextTemplate,
-    populatePreciseCodeContextTemplate,
-} from '../prompt/templates'
+import { ContextResult, FilenameContextFetcher, KeywordContextFetcher } from '../local-context'
+import { isMarkdownFile, populateCodeContextTemplate, populateMarkdownContextTemplate } from '../prompt/templates'
 import { Message } from '../sourcegraph-api'
 import { EmbeddingsSearchResult } from '../sourcegraph-api/graphql/client'
 import { UnifiedContextFetcher } from '../unified-context'
@@ -28,13 +18,12 @@ export interface ContextSearchOptions {
 export class CodebaseContext {
     private embeddingResultsError = ''
     constructor(
-        private config: Pick<Configuration, 'useContext' | 'serverEndpoint' | 'experimentalLocalSymbols'>,
+        private config: Pick<Configuration, 'useContext' | 'serverEndpoint'>,
         private codebase: string | undefined,
         private embeddings: EmbeddingsSearch | null,
         private keywords: KeywordContextFetcher | null,
         private filenames: FilenameContextFetcher | null,
         private graph: GraphContextFetcher | null,
-        public symf?: IndexedKeywordContextFetcher,
         private unifiedContextFetcher?: UnifiedContextFetcher | null,
         private rerank?: (query: string, results: ContextResult[]) => Promise<ContextResult[]>
     ) {}
@@ -58,18 +47,6 @@ export class CodebaseContext {
         }
 
         return Array.from(uniques.values())
-    }
-
-    /**
-     * Returns context messages from both generic contexts and graph-based contexts.
-     * The final list is a combination of these two sets of messages.
-     */
-    public async getCombinedContextMessages(query: string, options: ContextSearchOptions): Promise<ContextMessage[]> {
-        const contextMessages = this.getContextMessages(query, options)
-        const graphContextMessages = this.getGraphContextMessages()
-
-        // TODO(efritz) - open problem to figure out how to best rank these into a unified list
-        return [...(await contextMessages), ...(await graphContextMessages)]
     }
 
     /**
@@ -235,20 +212,35 @@ export class CodebaseContext {
     }
 
     public async getGraphContextMessages(): Promise<ContextMessage[]> {
-        if (!this.config.experimentalLocalSymbols || !this.graph) {
-            return []
+        // NOTE(auguste): I recommend checking out populateCodeContextTemplate and using
+        // that in the long-term, but this will do for now :)
+
+        if (!this.graph) {
+            return Promise.resolve([])
         }
-        console.debug('Fetching graph context')
 
         const contextMessages: ContextMessage[] = []
         for (const preciseContext of await this.graph.getContext()) {
-            const text = populatePreciseCodeContextTemplate(
-                preciseContext.symbol.fuzzyName || 'unknown',
-                preciseContext.filePath,
-                preciseContext.definitionSnippet
-            )
+            const fence = '```'
+            const symbolName = `${preciseContext.symbol.scipName} (${preciseContext.symbol.scipDescriptorSuffix})`
+            // TODO - check comparison value
+            const repo =
+                preciseContext.repositoryName !== this.getCodebase()
+                    ? ` in repository ${preciseContext.repositoryName}`
+                    : ''
+            const text = `The symbol ${symbolName} is defined in the file ${preciseContext.filepath}${repo} as:\n\n${fence}${preciseContext.definitionSnippet}${fence}`
+            console.log({ text }) // DEBUGGING
 
-            contextMessages.push({ speaker: 'human', preciseContext, text }, { speaker: 'assistant', text: 'okay' })
+            contextMessages.push({
+                speaker: 'human',
+                file: {
+                    repoName: preciseContext.repositoryName,
+                    fileName: preciseContext.filepath,
+                },
+                preciseContext,
+                text,
+            })
+            contextMessages.push({ speaker: 'assistant', text: 'okay' })
         }
 
         return contextMessages

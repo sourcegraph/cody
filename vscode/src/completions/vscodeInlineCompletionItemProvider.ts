@@ -61,6 +61,11 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
         tracer = null,
         ...config
     }: CodyCompletionItemProviderConfig) {
+        debug(
+            'embeddings',
+            'vscode.InlineCompletionItemProvider isEmbeddingsContextEnabled',
+            isEmbeddingsContextEnabled
+        )
         this.config = {
             ...config,
             responsePercentage,

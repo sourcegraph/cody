@@ -1,6 +1,7 @@
 import { spawnSync } from 'child_process'
 import path from 'path'
 
+import { Editor, uriToPath } from '../../editor'
 import { MAX_RECIPE_INPUT_TOKENS } from '../../prompt/constants'
 import { truncateText } from '../../prompt/truncation'
 import { Interaction } from '../transcript/interaction'
@@ -11,10 +12,12 @@ export class GitHistory implements Recipe {
     public id: RecipeID = 'git-history'
 
     public async getInteraction(_humanChatInput: string, context: RecipeContext): Promise<Interaction | null> {
-        const dirPath = context.editor.getWorkspaceRootPath()
-        if (!dirPath) {
-            return null
+        const wsRootUri = context.editor.getActiveWorkspace()?.root
+        if (!wsRootUri) {
+            return Promise.resolve(null)
         }
+
+        const wsRootPath = uriToPath(wsRootUri)!
 
         const logFormat = '--pretty="Commit author: %an%nCommit message: %s%nChange description:%b%n"'
         const items = [
@@ -34,16 +37,25 @@ export class GitHistory implements Recipe {
                 rawDisplayText: 'What changed in my codebase in the last week?',
             },
         ]
-        const selection = context.editor.getActiveTextEditorSelectionOrEntireFile()
+
+        const active = context.editor.getActiveTextDocument()
+
+        if (active === null) {
+            return null
+        }
+
+        const fileName = uriToPath(active.uri)!
+        const selection = Editor.getTextDocumentSelectionTextOrEntireFile(active)
+
         if (selection) {
-            const name = path.basename(selection.fileName)
+            const name = path.basename(fileName)
             items.push({
                 label: `Last 5 items for ${name}`,
-                args: ['log', '-n5', logFormat, '--', selection.fileName],
+                args: ['log', '-n5', logFormat, '--', fileName],
                 rawDisplayText: `What changed in ${name} in the last 5 commits`,
             })
         }
-        const selectedLabel = await context.editor.showQuickPick(items.map(e => e.label))
+        const selectedLabel = await context.editor.quickPick(items.map(e => e.label))
         if (!selectedLabel) {
             return null
         }
@@ -53,7 +65,7 @@ export class GitHistory implements Recipe {
 
         const { args: gitArgs, rawDisplayText } = selected
 
-        const gitLogCommand = spawnSync('git', ['--no-pager', ...gitArgs], { cwd: dirPath })
+        const gitLogCommand = spawnSync('git', ['--no-pager', ...gitArgs], { cwd: wsRootPath })
         const gitLogOutput = gitLogCommand.stdout.toString().trim()
 
         if (!gitLogOutput) {

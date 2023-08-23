@@ -3,6 +3,7 @@ import assert from 'assert'
 import { describe, it } from 'vitest'
 
 import { CodebaseContext } from '../../codebase-context'
+import { Workspace } from '../../editor'
 import { MAX_AVAILABLE_PROMPT_LENGTH } from '../../prompt/constants'
 import { Message } from '../../sourcegraph-api'
 import {
@@ -235,7 +236,24 @@ describe('Transcript', () => {
 
     it('includes currently visible content from the editor', async () => {
         const editor = new MockEditor({
-            getActiveTextEditorVisibleContent: () => ({ fileName: 'internal/lib.go', content: 'package lib' }),
+            getActiveWorkspace() {
+                return new Workspace('file:///')
+            },
+            getWorkspaceOf(uri) {
+                return new Workspace('file:///')
+            },
+            getActiveTextDocument: () => ({
+                uri: 'file:///internal/lib.go',
+                languageId: 'go',
+                content: 'package lib',
+                repoName: null,
+                revision: null,
+                visible: {
+                    start: { line: 0, character: 0 },
+                    end: { line: 0, character: 11 },
+                },
+                selection: null,
+            }),
         })
         const embeddings = new MockEmbeddingsClient({
             search: async () =>
@@ -292,7 +310,24 @@ describe('Transcript', () => {
 
     it('does not include currently visible content from the editor if no codebase context is required', async () => {
         const editor = new MockEditor({
-            getActiveTextEditorVisibleContent: () => ({ fileName: 'internal/lib.go', content: 'package lib' }),
+            getActiveWorkspace() {
+                return new Workspace('file:///')
+            },
+            getWorkspaceOf(uri) {
+                return new Workspace('file:///')
+            },
+            getActiveTextDocument: () => ({
+                uri: 'file:///internal/lib.go',
+                languageId: 'go',
+                content: 'package lib',
+                repoName: null,
+                revision: null,
+                visible: {
+                    start: { line: 0, character: 0 },
+                    end: { line: 0, character: 11 },
+                },
+                selection: null,
+            }),
         })
         const intentDetector = new MockIntentDetector({ isCodebaseContextRequired: async () => Promise.resolve(false) })
 

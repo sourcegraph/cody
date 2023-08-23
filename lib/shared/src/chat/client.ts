@@ -3,6 +3,7 @@ import { ConfigurationWithAccessToken } from '../configuration'
 import { Editor } from '../editor'
 import { PrefilledOptions, withPreselectedOptions } from '../editor/withPreselectedOptions'
 import { SourcegraphEmbeddingsSearchClient } from '../embeddings/client'
+import { GraphContextFetcher } from '../graph-context'
 import { SourcegraphIntentDetectorClient } from '../intent-detector/client'
 import { SourcegraphBrowserCompletionsClient } from '../sourcegraph-api/completions/browserClient'
 import { CompletionsClientConfig, SourcegraphCompletionsClient } from '../sourcegraph-api/completions/client'
@@ -23,7 +24,7 @@ export { Transcript }
 
 export type ClientInitConfig = Pick<
     ConfigurationWithAccessToken,
-    'serverEndpoint' | 'codebase' | 'useContext' | 'accessToken' | 'customHeaders' | 'experimentalLocalSymbols'
+    'serverEndpoint' | 'codebase' | 'useContext' | 'accessToken' | 'customHeaders'
 >
 
 export interface ClientInit {
@@ -51,7 +52,6 @@ export interface Client {
     codebaseContext: CodebaseContext
     sourcegraphStatus: { authenticated: boolean; version: string }
     codyStatus: { enabled: boolean; version: string }
-    graphqlClient: SourcegraphGraphQLAPIClient
 }
 
 export async function createClient({
@@ -87,7 +87,8 @@ export async function createClient({
         }
 
         const embeddingsSearch = repoId ? new SourcegraphEmbeddingsSearchClient(graphqlClient, repoId, true) : null
-        const codebaseContext = new CodebaseContext(config, config.codebase, embeddingsSearch, null, null, null)
+        const graphContext = new GraphContextFetcher(graphqlClient, editor)
+        const codebaseContext = new CodebaseContext(config, config.codebase, embeddingsSearch, null, null, graphContext)
 
         const intentDetector = new SourcegraphIntentDetectorClient(graphqlClient, completionsClient)
 
@@ -193,7 +194,6 @@ export async function createClient({
             codebaseContext,
             sourcegraphStatus,
             codyStatus,
-            graphqlClient,
         }
     }
 

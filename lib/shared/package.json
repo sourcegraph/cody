@@ -1,6 +1,6 @@
 {
   "name": "@sourcegraph/cody-shared",
-  "version": "0.0.6",
+  "version": "0.0.0-codyintel.experimental.10",
   "description": "Cody shared library",
   "license": "Apache-2.0",
   "repository": {
@@ -24,6 +24,7 @@
     "prepublishOnly": "tsc --build --clean && pnpm run build"
   },
   "dependencies": {
+    "@flatten-js/interval-tree": "^1.0.21",
     "@microsoft/fetch-event-source": "^2.0.1",
     "dompurify": "^3.0.4",
     "highlight.js": "^10.7.3",
@@ -34,11 +35,11 @@
     "x2js": "^3.4.4"
   },
   "devDependencies": {
-    "@types/dompurify": "^3.0.2",
-    "@types/highlight.js": "^9.12.4",
-    "@types/isomorphic-fetch": "^0.0.36",
-    "@types/lodash": "^4.14.195",
-    "@types/marked": "^5.0.0",
-    "@types/vscode": "^1.80.0"
+    "@types/dompurify": "3.0.2",
+    "@types/highlight.js": "9.12.4",
+    "@types/isomorphic-fetch": "0.0.36",
+    "@types/lodash": "4.14.195",
+    "@types/marked": "5.0.0",
+    "@types/vscode": "1.80.0"
   }
 }

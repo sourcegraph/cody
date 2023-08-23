@@ -21,6 +21,7 @@ export const Chat: React.FunctionComponent<
         | 'setMessageBeingEdited'
     >
 > = ({
+    serverEndpoint,
     messageInProgress,
     transcript,
     contextStatus,
@@ -31,6 +32,7 @@ export const Chat: React.FunctionComponent<
     onSubmit,
 }) => (
     <ChatUI
+        serverEndpoint={serverEndpoint}
         messageBeingEdited={false}
         setMessageBeingEdited={noop}
         messageInProgress={messageInProgress}

@@ -41,6 +41,19 @@ export type Requests = {
     // ================
     // Server -> Client
     // ================
+
+    // When cody would like the editor to select from a list of strings, this request
+    // is sent from the server to the client.
+    //
+    // For example, in Neovim, this can be used with `vim.ui.select` or in VSCode this
+    // is directly related to the showQuickPick().
+    //
+    // Example:
+    // server --- editor/quickpick ['Monday', 'Tuesday', ... ] -> client
+    // ... client shows some UI to select things, user selects 'Tuesday'
+    // client --- 'Tuesday' -> server
+    //
+    'editor/quickpick': [QuickPickParams, QuickPickSelection]
 }
 
 // The JSON-RPC notifications of the Cody Agent protocol. Notifications are
@@ -184,4 +197,18 @@ export interface ExecuteRecipeParams {
 export interface DebugMessage {
     channel: string
     message: string
+}
+
+export interface QuickPickParams {
+    items: QuickPickItem[]
+}
+
+export interface QuickPickItem {
+    id: string
+    title: string
+    default?: boolean
+}
+
+export interface QuickPickSelection {
+    item?: string
 }

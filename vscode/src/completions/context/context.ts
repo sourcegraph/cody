@@ -2,37 +2,43 @@ import * as vscode from 'vscode'
 
 import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
 
-import { ContextSnippet } from '../types'
-
 import { getContextFromEmbeddings } from './context-embeddings'
 import { getContextFromCurrentEditor } from './context-local'
-import { DocumentHistory } from './history'
+import { getContextFromCodeNav } from './context-nav'
+import { History } from './history'
+
+/**
+ * Keep property names in sync with the `EmbeddingsSearchResult` type.
+ */
+export interface ReferenceSnippet {
+    fileName: string
+    content: string
+}
 
 export interface GetContextOptions {
     document: vscode.TextDocument
-    history: DocumentHistory
+    position: vscode.Position
+    history: History
     prefix: string
     suffix: string
     jaccardDistanceWindowSize: number
     maxChars: number
-    getCodebaseContext: () => CodebaseContext
+    codebaseContext: CodebaseContext
     isEmbeddingsContextEnabled?: boolean
 }
 
-export type ContextSummary = Readonly<{
-    embeddings?: number
-    local?: number
-    duration: number
-}>
-
 export interface GetContextResult {
-    context: ContextSnippet[]
-    logSummary: ContextSummary
+    context: ReferenceSnippet[]
+    logSummary: {
+        embeddings?: number
+        local?: number
+        duration: number
+    }
 }
 
 export async function getContext(options: GetContextOptions): Promise<GetContextResult> {
     const { maxChars, isEmbeddingsContextEnabled } = options
-    const start = performance.now()
+    const start = Date.now()
 
     /**
      * The embeddings context is sync to retrieve to keep the completions latency minimal. If it's
@@ -40,17 +46,16 @@ export async function getContext(options: GetContextOptions): Promise<GetContext
      */
     const embeddingsMatches = isEmbeddingsContextEnabled ? getContextFromEmbeddings(options) : []
     const localMatches = await getContextFromCurrentEditor(options)
+    const codeNavMatches = await getContextFromCodeNav(options)
 
     /**
      * Iterate over matches and add them to the context.
      * Discard editor matches for files with embedding matches.
      */
     const usedFilenames = new Set<string>()
-    const context: ContextSnippet[] = []
+    const context: ReferenceSnippet[] = []
     let totalChars = 0
-    function addMatch(match: ContextSnippet): boolean {
-        // TODO(@philipp-spiess): We should de-dupe on the snippet range and not
-        // the file name to allow for more than one snippet of the same file
+    function addMatch(match: ReferenceSnippet): boolean {
         if (usedFilenames.has(match.fileName)) {
             return false
         }
@@ -64,8 +69,6 @@ export async function getContext(options: GetContextOptions): Promise<GetContext
         return true
     }
 
-    // TODO(@philipp-spiess): Rank embedding results against local context
-    // snippets instead of always appending embedding results at the top.
     let includedEmbeddingsMatches = 0
     for (const match of embeddingsMatches) {
         if (addMatch(match)) {
@@ -78,13 +81,20 @@ export async function getContext(options: GetContextOptions): Promise<GetContext
             includedLocalMatches++
         }
     }
+    let includedCodeNavMatches = 0
+    for (const match of codeNavMatches) {
+        if (addMatch(match)) {
+            includedCodeNavMatches++
+        }
+    }
 
     return {
         context,
         logSummary: {
             ...(includedEmbeddingsMatches ? { embeddings: includedEmbeddingsMatches } : {}),
             ...(includedLocalMatches ? { local: includedLocalMatches } : {}),
-            duration: performance.now() - start,
+            ...(includedCodeNavMatches ? { codeNav: includedCodeNavMatches } : {}),
+            duration: Date.now() - start,
         },
     }
 }

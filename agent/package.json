@@ -13,6 +13,7 @@
   "sideEffects": false,
   "scripts": {
     "build": "cd .. && pnpm build && cd agent && node ./src/esbuild.mjs",
+    "build-minify": "pnpm run build --minify",
     "agent": "pnpm run build && node dist/index.js",
     "build-ts": "tsc --build",
     "build-agent-binaries": "pnpm run build && cp dist/index.js dist/agent.js && pkg -t latest-linux-arm64,latest-linux-x64,latest-macos-arm64,latest-macos-x64,latest-win-x64 dist/agent.js --out-path ${AGENT_EXECUTABLE_TARGET_DIRECTORY:-dist}",
@@ -26,7 +27,7 @@
   },
   "devDependencies": {
     "pkg": "^5.8.1",
-    "@types/vscode": "^1.80.0",
+    "@types/vscode": "1.80.0",
     "esbuild-plugin-alias-path": "^2.0.2",
     "esbuild": "^0.18.19"
   }

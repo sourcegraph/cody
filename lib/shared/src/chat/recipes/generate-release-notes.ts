@@ -1,5 +1,6 @@
 import { spawnSync } from 'child_process'
 
+import { uriToPath } from '../../editor'
 import { MAX_RECIPE_INPUT_TOKENS } from '../../prompt/constants'
 import { truncateText } from '../../prompt/truncation'
 import { Interaction } from '../transcript/interaction'
@@ -10,16 +11,18 @@ export class ReleaseNotes implements Recipe {
     public id: RecipeID = 'release-notes'
 
     public async getInteraction(_humanChatInput: string, context: RecipeContext): Promise<Interaction | null> {
-        const dirPath = context.editor.getWorkspaceRootPath()
-        if (!dirPath) {
-            return null
+        const wsRootUri = context.editor.getActiveWorkspace()?.root
+        if (!wsRootUri) {
+            return Promise.resolve(null)
         }
+
+        const wsRootPath = uriToPath(wsRootUri)!
 
         let quickPickItems = []
         const logFormat = '--pretty="Commit author: %an%nCommit message: %s%nChange description:%b%n"'
 
         // check for tags first
-        const gitTagCommand = spawnSync('git', ['tag', '--sort=-creatordate'], { cwd: dirPath })
+        const gitTagCommand = spawnSync('git', ['tag', '--sort=-creatordate'], { cwd: wsRootPath })
         const gitTagOutput = gitTagCommand.stdout.toString().trim()
         let tagsPromptText = ''
 
@@ -50,7 +53,7 @@ export class ReleaseNotes implements Recipe {
             ]
         }
 
-        const selectedLabel = await context.editor.showQuickPick(quickPickItems.map(e => e.label))
+        const selectedLabel = await context.editor.quickPick(quickPickItems.map(e => e.label))
         if (!selectedLabel) {
             return null
         }
@@ -58,7 +61,7 @@ export class ReleaseNotes implements Recipe {
 
         const { args: gitArgs } = selected
 
-        const gitLogCommand = spawnSync('git', ['--no-pager', ...gitArgs], { cwd: dirPath })
+        const gitLogCommand = spawnSync('git', ['--no-pager', ...gitArgs], { cwd: wsRootPath })
         const gitLogOutput = gitLogCommand.stdout.toString().trim()
         const rawDisplayText = `Generate release notes for the changes made since ${selectedLabel}`
 

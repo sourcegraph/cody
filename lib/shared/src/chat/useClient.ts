@@ -5,6 +5,7 @@ import { isErrorLike } from '../common'
 import { ConfigurationWithAccessToken } from '../configuration'
 import { Editor, NoopEditor } from '../editor'
 import { PrefilledOptions, withPreselectedOptions } from '../editor/withPreselectedOptions'
+import { GraphContextFetcher } from '../graph-context'
 import { SourcegraphIntentDetectorClient } from '../intent-detector/client'
 import { SourcegraphBrowserCompletionsClient } from '../sourcegraph-api/completions/browserClient'
 import { SourcegraphGraphQLAPIClient } from '../sourcegraph-api/graphql'
@@ -18,12 +19,11 @@ import { getRecipe } from './recipes/browser-recipes'
 import { RecipeID } from './recipes/recipe'
 import { Transcript } from './transcript'
 import { ChatMessage } from './transcript/messages'
-import { Typewriter } from './typewriter'
 import { reformatBotMessage } from './viewHelpers'
 
 export type CodyClientConfig = Pick<
     ConfigurationWithAccessToken,
-    'serverEndpoint' | 'useContext' | 'accessToken' | 'customHeaders' | 'experimentalLocalSymbols'
+    'serverEndpoint' | 'useContext' | 'accessToken' | 'customHeaders'
 > & { debugEnable: boolean; needsEmailVerification: boolean }
 
 export interface CodyClientScope {
@@ -56,7 +56,7 @@ export interface CodyClient {
         messageId?: string | undefined,
         scope?: CodyClientScope
     ) => Promise<Transcript | null>
-    initializeNewChat: (newScope?: Partial<CodyClientScope>) => Transcript | null
+    initializeNewChat: () => Transcript | null
     executeRecipe: (
         recipeId: RecipeID,
         options?: {
@@ -150,10 +150,10 @@ export const useClient = ({
 
     const setEditorScope = useCallback(
         (editor: Editor) => {
-            const newRepoName = editor.getActiveTextEditor()?.repoName
+            const newRepoName = editor.getActiveTextDocument()?.repoName
 
             return setScopeState(scope => {
-                const oldRepoName = scope.editor.getActiveTextEditor()?.repoName
+                const oldRepoName = scope.editor.getActiveTextDocument()?.repoName
 
                 const resetInferredScope = newRepoName !== oldRepoName
 
@@ -183,7 +183,7 @@ export const useClient = ({
         [setScopeState]
     )
 
-    const activeEditor = useMemo(() => scope.editor.getActiveTextEditor(), [scope.editor])
+    const activeEditor = useMemo(() => scope.editor.getActiveTextDocument(), [scope.editor])
 
     const codebases: string[] = useMemo(() => {
         const repos = [...scope.repositories]
@@ -225,28 +225,25 @@ export const useClient = ({
         [graphqlClient]
     )
 
-    const initializeNewChat = useCallback(
-        (initialScope?: Partial<CodyClientScope>): Transcript | null => {
-            if (config.needsEmailVerification) {
-                return transcript
-            }
-            const newTranscript = new Transcript()
-            setIsMessageInProgressState(false)
-            setTranscriptState(newTranscript)
-            setChatMessagesState(newTranscript.toChat())
-            setScopeState(scope => ({
-                includeInferredRepository: initialScope?.includeInferredFile ?? true,
-                includeInferredFile: initialScope?.includeInferredFile ?? true,
-                repositories: initialScope?.repositories ?? [],
-                editor: initialScope?.editor ?? scope.editor,
-            }))
+    const initializeNewChat = useCallback((): Transcript | null => {
+        if (config.needsEmailVerification) {
+            return transcript
+        }
+        const newTranscript = new Transcript()
+        setIsMessageInProgressState(false)
+        setTranscriptState(newTranscript)
+        setChatMessagesState(newTranscript.toChat())
+        setScopeState(scope => ({
+            includeInferredRepository: true,
+            includeInferredFile: true,
+            repositories: [],
+            editor: scope.editor,
+        }))
 
-            onEvent?.('initializedNewChat')
+        onEvent?.('initializedNewChat')
 
-            return newTranscript
-        },
-        [onEvent, config.needsEmailVerification, transcript]
-    )
+        return newTranscript
+    }, [onEvent, config.needsEmailVerification, transcript])
 
     const executeRecipe = useCallback(
         async (
@@ -265,7 +262,7 @@ export const useClient = ({
             const repoNames = [...codebases]
             const repoIds = [...(await codebaseIds)]
             const editor = options?.scope?.editor || (scope.includeInferredFile ? scope.editor : new NoopEditor())
-            const activeEditor = editor.getActiveTextEditor()
+            const activeEditor = editor.getActiveTextDocument()
             if (activeEditor?.repoName && !repoNames.includes(activeEditor.repoName)) {
                 // NOTE(naman): We allow users to disable automatic inferrence of current file & repo
                 // using `includeInferredFile` and `includeInferredRepository` options. But for editor recipes
@@ -282,7 +279,7 @@ export const useClient = ({
                     repoNames.push(activeEditor.repoName)
                 }
             }
-
+            const graphContext = new GraphContextFetcher(graphqlClient, editor)
             const unifiedContextFetcherClient = new UnifiedContextFetcherClient(graphqlClient, repoIds)
             const codebaseContext = new CodebaseContext(
                 config,
@@ -290,8 +287,7 @@ export const useClient = ({
                 null,
                 null,
                 null,
-                null,
-                undefined,
+                graphContext,
                 unifiedContextFetcherClient
             )
 
@@ -322,8 +318,8 @@ export const useClient = ({
             let rawText = ''
 
             const updatedTranscript = await new Promise<Transcript | null>(resolve => {
-                const typewriter = new Typewriter({
-                    update(_rawText) {
+                const abort = chatClient.chat(prompt, {
+                    onChange(_rawText) {
                         if (transcript.id !== transcriptIdRef.current) {
                             abort()
                             resolve(transcript)
@@ -335,7 +331,15 @@ export const useClient = ({
                         transcript.addAssistantResponse(text)
                         setChatMessagesState(transcript.toChat())
                     },
-                    close() {
+                    onComplete() {
+                        if (transcript.id !== transcriptIdRef.current) {
+                            abort()
+                            resolve(transcript)
+                            return
+                        }
+                        const text = reformatBotMessage(rawText, responsePrefix)
+                        transcript.addAssistantResponse(text)
+
                         transcript
                             .toChatPromise()
                             .then(messages => {
@@ -346,41 +350,31 @@ export const useClient = ({
 
                         resolve(transcript)
                     },
-                })
-
-                const abort = chatClient.chat(prompt, {
-                    onChange(content) {
-                        if (transcript.id !== transcriptIdRef.current) {
-                            typewriter.stop()
-                            abort()
-                            resolve(transcript)
-                            return
-                        }
-
-                        typewriter.update(content)
-                    },
-                    onComplete() {
-                        if (transcript.id !== transcriptIdRef.current) {
-                            typewriter.stop()
-                            abort()
-                            resolve(transcript)
-                            return
-                        }
-
-                        typewriter.close()
-                    },
                     onError(error) {
+                        if (transcript.id !== transcriptIdRef.current) {
+                            abort()
+                            resolve(transcript)
+                            return
+                        }
                         // Display error message as assistant response
                         transcript.addErrorAsAssistantResponse(error)
-                        console.error(`Completion request failed: ${error}`)
-                        onEvent?.('error')
 
-                        typewriter.close()
+                        console.error(`Completion request failed: ${error}`)
+
+                        transcript
+                            .toChatPromise()
+                            .then(messages => {
+                                setChatMessagesState(messages)
+                                setIsMessageInProgressState(false)
+                            })
+                            .catch(() => null)
+
+                        onEvent?.('error')
+                        resolve(transcript)
                     },
                 })
 
                 setAbortMessageInProgress(() => () => {
-                    typewriter.stop()
                     abort()
                     resolve(transcript)
                 })

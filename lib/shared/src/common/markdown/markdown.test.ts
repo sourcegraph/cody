@@ -1,6 +1,6 @@
 import { describe, expect, it, test } from 'vitest'
 
-import { escapeMarkdown, registerHighlightContributions, renderMarkdown } from '.'
+import { escapeMarkdown, extractHtmlTagName, isValidHTMLTag, registerHighlightContributions, renderMarkdown } from '.'
 
 // TODO(sqs): copied from sourcegraph/sourcegraph. should dedupe.
 
@@ -121,6 +121,10 @@ describe('renderMarkdown', () => {
         const input = '<a href="data:text/plain,foobar" download>D</a>\n[D2](data:text/plain,foobar)'
         expect(renderMarkdown(input)).toBe('<p><a download="">D</a>\n<a>D2</a></p>')
     })
+    it('renders paragraphs containing regular expressions correctly', () => {
+        const input = '/^(?<myLabel>[A-Za-z]+).(?<myOtherLabel>[A-Za-z]+)/'
+        expect(renderMarkdown(input)).toBe('<p>/^(?&lt;myLabel&gt;[A-Za-z]+).(?&lt;myOtherLabel&gt;[A-Za-z]+)/</p>')
+    })
 })
 
 describe('escapeMarkdown', () => {
@@ -159,5 +163,36 @@ const someTypeScriptCode \\= funcCall\\(\\)
 &lt;b&gt;inline html&lt;\\/b&gt;
 
 Escaped \\\\\\* markdown and escaped html code \\\\\\&gt\\\\\\;`)
+    })
+})
+
+describe('extractHTMLTagName', () => {
+    it('extracts the tag name of a opening token', () => {
+        expect(extractHtmlTagName('<a someAttribute="1">')).toBe('a')
+    })
+
+    it('extracts the tag name of a closing token', () => {
+        expect(extractHtmlTagName('</a someAttribute="1">')).toBe('a')
+    })
+
+    it('correctly extracts custom html tags', () => {
+        expect(extractHtmlTagName('<my-custom-tag someAttribute="1">')).toBe('my-custom-tag')
+        expect(extractHtmlTagName('</my-custom-tag someAttribute="1">')).toBe('my-custom-tag')
+    })
+})
+
+describe('isValidHTMLTag', () => {
+    it('treats svg tags as valid HTML', () => {
+        expect(isValidHTMLTag('svg')).toBe(true)
+    })
+
+    it('is not case sensitive', () => {
+        expect(isValidHTMLTag('li')).toBe(true)
+        expect(isValidHTMLTag('LI')).toBe(true)
+        expect(isValidHTMLTag('Li')).toBe(true)
+    })
+
+    it('treats custom tags as invalid HTML', () => {
+        expect(isValidHTMLTag('myTag')).toBe(false)
     })
 })

@@ -1,4 +1,4 @@
-import { FunctionComponent } from 'react'
+import { FunctionComponent, memo } from 'react'
 
 import { mdiGraphOutline, mdiMagnify } from '@mdi/js'
 
@@ -6,23 +6,23 @@ import { pluralize, PreciseContext } from '@sourcegraph/cody-shared'
 
 import { TranscriptAction } from './actions/TranscriptAction'
 
-export interface SymbolLinkProps {
-    symbol: string
-    path: string
-    range?: PreciseContext['range']
-}
-
 export const PreciseContexts: FunctionComponent<{
     preciseContexts: PreciseContext[]
-    symbolLinkComponent: FunctionComponent<SymbolLinkProps>
+    serverEndpoint: string
     className?: string
-}> = ({ preciseContexts, symbolLinkComponent: SymbolLink, className }) => {
+}> = memo(function PreciseContextsContent({ preciseContexts, serverEndpoint, className }) {
     const unique = new Map<string, JSX.Element>()
 
-    for (const { symbol, filePath: filepath, range } of preciseContexts) {
+    for (const { symbol, canonicalLocationURL } of preciseContexts) {
+        const niceName = symbol.fuzzyName || symbol.scipDescriptorSuffix
+
         unique.set(
-            symbol.fuzzyName || '',
-            <SymbolLink symbol={symbol.fuzzyName || 'Unknown'} path={filepath} range={range} />
+            symbol.scipName,
+            serverEndpoint ? (
+                <a href={join(serverEndpoint, canonicalLocationURL)}>{niceName}</a>
+            ) : (
+                <span>{niceName}</span>
+            )
         )
     }
     const uniqueContext = Array.from(unique, ([hoverText, object]) => ({
@@ -48,4 +48,11 @@ export const PreciseContexts: FunctionComponent<{
             className={className}
         />
     )
-}
+})
+
+const join = (...parts: string[]): string =>
+    parts
+        .map(part => (part.startsWith('/') ? part.slice(1) : part))
+        .map(part => (part.endsWith('/') ? part.slice(0, -1) : part))
+        .filter(part => part !== '')
+        .join('/')

@@ -17,7 +17,7 @@ import { BlinkingCursor } from './BlinkingCursor'
 import { CodeBlocks } from './CodeBlocks'
 import { ContextFiles, FileLinkProps } from './ContextFiles'
 import { PluginExecutionInfos } from './PluginExecutionInfos'
-import { PreciseContexts, SymbolLinkProps } from './PreciseContext'
+import { PreciseContexts } from './PreciseContext'
 
 import styles from './TranscriptItem.module.css'
 
@@ -35,7 +35,7 @@ export interface TranscriptItemClassNames {
 }
 
 /**
- * A single message in the chat trans cript.
+ * A single message in the chat transcript.
  */
 export const TranscriptItem: React.FunctionComponent<
     {
@@ -43,8 +43,8 @@ export const TranscriptItem: React.FunctionComponent<
         inProgress: boolean
         beingEdited: boolean
         setBeingEdited: (input: boolean) => void
+        serverEndpoint: string
         fileLinkComponent: React.FunctionComponent<FileLinkProps>
-        symbolLinkComponent: React.FunctionComponent<SymbolLinkProps>
         textAreaComponent?: React.FunctionComponent<ChatUITextAreaProps>
         EditButtonContainer?: React.FunctionComponent<EditButtonProps>
         editButtonOnSubmit?: (text: string) => void
@@ -64,8 +64,8 @@ export const TranscriptItem: React.FunctionComponent<
     inProgress,
     beingEdited,
     setBeingEdited,
+    serverEndpoint,
     fileLinkComponent,
-    symbolLinkComponent,
     transcriptItemClassName,
     humanTranscriptItemClassName,
     transcriptItemParticipantClassName,
@@ -161,7 +161,7 @@ export const TranscriptItem: React.FunctionComponent<
                 <div className={styles.actions}>
                     <PreciseContexts
                         preciseContexts={message.preciseContext}
-                        symbolLinkComponent={symbolLinkComponent}
+                        serverEndpoint={serverEndpoint}
                         className={transcriptActionClassName}
                     />
                 </div>

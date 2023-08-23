@@ -47,6 +47,10 @@ export class PromptMixin {
  * End with a new statement to redirect Cody to the next prompt. This prevents Cody from responding to the language prompt.
  */
 export function languagePromptMixin(languageCode: string): PromptMixin {
+    if (!languageCode || languageCode.length === 0) {
+        return new PromptMixin('(Reply as Cody, a coding assistant developed by Sourcegraph) ')
+    }
+
     return new PromptMixin(
         `(Reply as Cody, a coding assistant developed by Sourcegraph, in the language with RFC5646/ISO language code "${languageCode}") `
     )
