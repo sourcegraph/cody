@@ -15,7 +15,7 @@ import { isError } from '@sourcegraph/cody-shared/src/utils'
 import { GraphContextFetcher } from '../../lib/shared/src/graph-context'
 
 import { PlatformContext } from './extension.common'
-import { logger } from './log'
+import { debug, logger } from './log'
 import { getRerankWithLog } from './logged-rerank'
 
 interface ExternalServices {
@@ -52,6 +52,7 @@ export async function configureExternalServices(
         const infoMessage =
             `Cody could not find the '${initialConfig.codebase}' repository on your Sourcegraph instance.\n` +
             'Please check that the repository exists. You can override the repository with the "cody.codebase" setting.'
+        debug('embeddings', infoMessage)
         console.info(infoMessage)
     }
     const embeddingsSearch = repoId && !isError(repoId) ? new SourcegraphEmbeddingsSearchClient(client, repoId) : null
