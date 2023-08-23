@@ -6,10 +6,13 @@ import { build } from 'esbuild'
 import { aliasPath } from 'esbuild-plugin-alias-path'
 
 ;(async () => {
+    const minify = process.argv.includes('--minify')
+
     /** @type {import('esbuild').BuildOptions} */
     const esbuildOptions = {
         entryPoints: ['./src/index.ts'],
         bundle: true,
+        minify,
         outfile: './dist/index.js',
         platform: 'node',
         format: 'cjs',

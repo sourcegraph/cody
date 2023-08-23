@@ -249,7 +249,7 @@ const _window: Partial<typeof vscode.window> = {
             show: () => {},
             hide: () => {},
             dispose: () => {},
-        }) as vscode.OutputChannel) as any,
+        } as vscode.OutputChannel)) as any,
     createTextEditorDecorationType: () => ({ key: 'foo', dispose: () => {} }),
 }
 
@@ -305,6 +305,7 @@ const _env: Partial<typeof vscode.env> = {
     uriScheme: 'file',
     appRoot: process.cwd(),
     uiKind: UIKind.Web,
+    language: process.env.language,
     clipboard: {
         readText: () => Promise.resolve(''),
         writeText: () => Promise.resolve(),
