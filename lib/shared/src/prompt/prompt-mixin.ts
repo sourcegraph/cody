@@ -48,9 +48,7 @@ export class PromptMixin {
  */
 export function languagePromptMixin(languageCode: string): PromptMixin {
     const languagePrompt = languageCode ? `, in the language with RFC5646/ISO language code "${languageCode}"` : ''
-    return new PromptMixin(
-        `(Reply as Cody, a coding assistant developed by Sourcegraph${languagePrompt}) `
-    )
+    return new PromptMixin(`(Reply as Cody, a coding assistant developed by Sourcegraph${languagePrompt}) `)
 }
 
 export function newPromptMixin(text: string): PromptMixin {
