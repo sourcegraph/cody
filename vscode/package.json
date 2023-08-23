@@ -991,6 +991,7 @@
     "wink-nlp-utils": "^2.1.0"
   },
   "devDependencies": {
+    "@google-cloud/pubsub": "^3.7.3",
     "@playwright/test": "^1.33.0",
     "@types/dedent": "0.7.0",
     "@types/express": "4.17.17",
