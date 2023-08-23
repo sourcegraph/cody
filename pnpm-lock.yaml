@@ -122,7 +122,7 @@ importers:
         version: 3.0.7
     devDependencies:
       '@types/vscode':
-        specifier: ^1.80.0
+        specifier: 1.80.0
         version: 1.80.0
       esbuild:
         specifier: ^0.18.19
@@ -147,7 +147,7 @@ importers:
         version: 2.4.2
     devDependencies:
       '@types/prompts':
-        specifier: ^2.4.4
+        specifier: 2.4.4
         version: 2.4.4
 
   completions-review-tool:
@@ -196,16 +196,16 @@ importers:
         specifier: ^1.17.0
         version: 1.17.0(@types/node@20.4.0)(ts-node@10.9.1)
       '@types/compression':
-        specifier: ^1.7.2
+        specifier: 1.7.2
         version: 1.7.2
       '@types/marked':
-        specifier: ^5.0.0
+        specifier: 5.0.0
         version: 5.0.0
       '@types/morgan':
-        specifier: ^1.9.4
+        specifier: 1.9.4
         version: 1.9.4
       '@types/react-table':
-        specifier: ^7.7.14
+        specifier: 7.7.14
         version: 7.7.14
       cross-env:
         specifier: ^7.0.3
@@ -272,22 +272,22 @@ importers:
         version: 3.4.4
     devDependencies:
       '@types/dompurify':
-        specifier: ^3.0.2
+        specifier: 3.0.2
         version: 3.0.2
       '@types/highlight.js':
-        specifier: ^9.12.4
+        specifier: 9.12.4
         version: 9.12.4
       '@types/isomorphic-fetch':
-        specifier: ^0.0.36
+        specifier: 0.0.36
         version: 0.0.36
       '@types/lodash':
-        specifier: ^4.14.195
+        specifier: 4.14.195
         version: 4.14.195
       '@types/marked':
-        specifier: ^5.0.0
+        specifier: 5.0.0
         version: 5.0.0
       '@types/vscode':
-        specifier: ^1.80.0
+        specifier: 1.80.0
         version: 1.80.0
 
   lib/ui:
@@ -339,7 +339,7 @@ importers:
         version: 4.3.1
     devDependencies:
       '@types/lodash':
-        specifier: ^4.14.195
+        specifier: 4.14.195
         version: 4.14.195
 
   vscode:
@@ -354,7 +354,7 @@ importers:
         specifier: workspace:*
         version: link:../lib/ui
       '@types/stream-json':
-        specifier: ^1.7.3
+        specifier: 1.7.3
         version: 1.7.3
       '@vscode/codicons':
         specifier: ^0.0.29
@@ -421,40 +421,40 @@ importers:
         specifier: ^1.33.0
         version: 1.33.0
       '@types/dedent':
-        specifier: ^0.7.0
+        specifier: 0.7.0
         version: 0.7.0
       '@types/express':
-        specifier: ^4.17.17
+        specifier: 4.17.17
         version: 4.17.17
       '@types/glob':
-        specifier: ^8.0.0
+        specifier: 8.1.0
         version: 8.1.0
       '@types/isomorphic-fetch':
-        specifier: ^0.0.36
+        specifier: 0.0.36
         version: 0.0.36
       '@types/lodash':
-        specifier: ^4.14.195
+        specifier: 4.14.195
         version: 4.14.195
       '@types/mocha':
-        specifier: ^10.0.1
+        specifier: 10.0.1
         version: 10.0.1
       '@types/mock-require':
-        specifier: ^2.0.1
+        specifier: 2.0.1
         version: 2.0.1
       '@types/progress':
-        specifier: ^2.0.5
+        specifier: 2.0.5
         version: 2.0.5
       '@types/semver':
-        specifier: ^7.5.0
+        specifier: 7.5.0
         version: 7.5.0
       '@types/uuid':
-        specifier: ^9.0.2
+        specifier: 9.0.2
         version: 9.0.2
       '@types/vscode':
-        specifier: ^1.79.0
+        specifier: 1.80.0
         version: 1.80.0
       '@types/vscode-webview':
-        specifier: ^1.57.1
+        specifier: 1.57.1
         version: 1.57.1
       '@vscode/test-electron':
         specifier: ^2.3.2
@@ -512,7 +512,7 @@ importers:
         version: 4.17.21
     devDependencies:
       '@types/lodash':
-        specifier: ^4.14.195
+        specifier: 4.14.195
         version: 4.14.195
 
 packages:
