@@ -57,24 +57,18 @@ export const test = base
             const page = await app.firstWindow()
 
             // Bring the cody sidebar to the foreground
-            await page.click('[aria-label="Sourcegraph Cody"]')
+            await page.click('[aria-label="Cody"]')
             // Ensure that we remove the hover from the activity icon
-            await page.getByRole('heading', { name: 'Sourcegraph Cody: Chat' }).hover()
+            await page.getByRole('heading', { name: 'Cody: Chat' }).hover()
             // Wait for Cody to become activated
             // TODO(philipp-spiess): Figure out which playwright matcher we can use that works for
             // the signed-in and signed-out cases
             await new Promise(resolve => setTimeout(resolve, 500))
 
-            const sidebar = await getCodySidebar(page)
-
             await run(async () => {
-                // Ensure we're logged out
-                // TODO(philipp-spiess): Find a way to access the extension host via the injected
-                // electron process so we can run the hidden command instead.
+                // Ensure we're signed out.
                 if (await page.isVisible('[aria-label="User Settings"]')) {
-                    await page.getByRole('button', { name: 'User Settings' }).click()
-                    await sidebar.getByRole('button', { name: 'Sign Out' }).click()
-                    await page.getByRole('combobox', { name: 'input' }).press('Enter')
+                    await signOut(page)
                 }
 
                 await use(page)
@@ -135,6 +129,8 @@ function escapeToPath(text: string): string {
 export async function buildWorkSpaceSettings(workspaceDirectory: string): Promise<void> {
     const settings = {
         'cody.serverEndpoint': 'http://localhost:49300',
+        'cody.experimental.commandLenses': true,
+        'cody.experimental.editorTitleCommandIcon': true,
     }
     // create a temporary directory with settings.json and add to the workspaceDirectory
     const workspaceSettingsPath = path.join(workspaceDirectory, '.vscode', 'settings.json')
@@ -149,4 +145,13 @@ export async function buildWorkSpaceSettings(workspaceDirectory: string): Promis
             }
         })
     })
+}
+
+export async function signOut(page: Page): Promise<void> {
+    // TODO(sqs): could simplify this further with a cody.auth.signoutAll command
+    await page.keyboard.press('F1')
+    await page.keyboard.type('cody.auth.signout')
+    await page.keyboard.press('Enter')
+    await page.waitForTimeout(1000)
+    await page.keyboard.press('Enter')
 }

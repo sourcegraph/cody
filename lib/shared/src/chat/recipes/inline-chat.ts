@@ -27,7 +27,7 @@ export class InlineChat implements Recipe {
             return new Fixup().getInteraction(humanChatInput.replace(commandRegex.fix, ''), context)
         }
 
-        const selection = context.editor.controllers?.inline.selection
+        const selection = context.editor.getActiveTextEditorSelection()
         if (!humanChatInput || !selection) {
             await context.editor.showWarningMessage('Failed to start Inline Chat: empty input or selection.')
             return null

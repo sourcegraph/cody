@@ -7,6 +7,7 @@ import { populateCurrentEditorContextTemplate } from '../../prompt/templates'
 import { truncateText } from '../../prompt/truncation'
 import { Interaction } from '../transcript/interaction'
 
+import { numResults } from './helpers'
 import { Recipe, RecipeContext, RecipeID } from './recipe'
 
 export class NextQuestions implements Recipe {
@@ -31,7 +32,7 @@ export class NextQuestions implements Recipe {
                     prefix: assistantResponsePrefix,
                     text: assistantResponsePrefix,
                 },
-                this.getContextMessages(promptMessage, context.editor, context.intentDetector, context.codebaseContext),
+                this.getContextMessages(truncatedText, context.editor, context.intentDetector, context.codebaseContext),
                 []
             )
         )
@@ -47,10 +48,7 @@ export class NextQuestions implements Recipe {
 
         const isCodebaseContextRequired = await intentDetector.isCodebaseContextRequired(text)
         if (isCodebaseContextRequired) {
-            const codebaseContextMessages = await codebaseContext.getContextMessages(text, {
-                numCodeResults: 12,
-                numTextResults: 3,
-            })
+            const codebaseContextMessages = await codebaseContext.getContextMessages(text, numResults)
             contextMessages.push(...codebaseContextMessages)
         }
 

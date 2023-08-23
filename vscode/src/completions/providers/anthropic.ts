@@ -1,24 +1,26 @@
 import * as anthropic from '@anthropic-ai/sdk'
 
 import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
-import { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/nodeClient'
-import { CompletionParameters } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
+import { SourcegraphCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/client'
+import {
+    CompletionParameters,
+    CompletionResponse,
+} from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
 
-import { Completion } from '..'
-import { ReferenceSnippet } from '../context'
+import { canUsePartialCompletion } from '../streaming'
 import {
     CLOSING_CODE_TAG,
     extractFromCodeBlock,
     fixBadCompletionStart,
     getHeadAndTail,
-    indentation,
     OPENING_CODE_TAG,
     PrefixComponents,
-    trimStartUntilNewline,
+    trimLeadingWhitespaceUntilNewline,
 } from '../text-processing'
-import { batchCompletions, lastNLines, messagesToText } from '../utils'
+import { Completion, ContextSnippet } from '../types'
+import { forkSignal, messagesToText } from '../utils'
 
-import { Provider, ProviderConfig, ProviderOptions } from './provider'
+import { CompletionProviderTracer, Provider, ProviderConfig, ProviderOptions } from './provider'
 
 const CHARS_PER_TOKEN = 4
 
@@ -28,13 +30,13 @@ function tokensToChars(tokens: number): number {
 
 interface AnthropicOptions {
     contextWindowTokens: number
-    completionsClient: SourcegraphNodeCompletionsClient
+    completionsClient: Pick<SourcegraphCompletionsClient, 'complete'>
 }
 
 export class AnthropicProvider extends Provider {
     private promptChars: number
     private responseTokens: number
-    private completionsClient: SourcegraphNodeCompletionsClient
+    private completionsClient: Pick<SourcegraphCompletionsClient, 'complete'>
 
     constructor(options: ProviderOptions, anthropicOptions: AnthropicOptions) {
         super(options)
@@ -53,16 +55,22 @@ export class AnthropicProvider extends Provider {
 
     private createPromptPrefix(): { messages: Message[]; prefix: PrefixComponents } {
         // TODO(beyang): escape 'Human:' and 'Assistant:'
-        const prefixLines = this.prefix.split('\n')
+        const prefixLines = this.options.docContext.prefix.split('\n')
         if (prefixLines.length === 0) {
             throw new Error('no prefix lines')
         }
 
-        const { head, tail, overlap } = getHeadAndTail(this.prefix)
+        const { head, tail, overlap } = getHeadAndTail(this.options.docContext.prefix)
         const prefixMessages: Message[] = [
             {
                 speaker: 'human',
-                text: `You are a code completion AI that writes high-quality code like a senior engineer. You write code in between tags like this:${OPENING_CODE_TAG}/* Code goes here */${CLOSING_CODE_TAG}`,
+                text: `You are a code completion AI that writes high-quality code like a senior engineer. You are looking at ${
+                    this.options.fileName
+                }. You write code in between tags like this: ${OPENING_CODE_TAG}${
+                    this.options.languageId === 'python' || this.options.languageId === 'ruby'
+                        ? '# Code goes here'
+                        : '/* Code goes here */'
+                }${CLOSING_CODE_TAG}.`,
             },
             {
                 speaker: 'assistant',
@@ -82,7 +90,7 @@ export class AnthropicProvider extends Provider {
 
     // Creates the resulting prompt and adds as many snippets from the reference
     // list as possible.
-    protected createPrompt(snippets: ReferenceSnippet[]): { messages: Message[]; prefix: PrefixComponents } {
+    protected createPrompt(snippets: ContextSnippet[]): { messages: Message[]; prefix: PrefixComponents } {
         const { messages: prefixMessages, prefix } = this.createPromptPrefix()
 
         const referenceSnippetMessages: Message[] = []
@@ -111,93 +119,122 @@ export class AnthropicProvider extends Provider {
         return { messages: [...referenceSnippetMessages, ...prefixMessages], prefix }
     }
 
+    public async generateCompletions(
+        abortSignal: AbortSignal,
+        snippets: ContextSnippet[],
+        tracer?: CompletionProviderTracer
+    ): Promise<Completion[]> {
+        // Create prompt
+        const { messages: prompt } = this.createPrompt(snippets)
+        if (prompt.length > this.promptChars) {
+            throw new Error(`prompt length (${prompt.length}) exceeded maximum character length (${this.promptChars})`)
+        }
+
+        const args: CompletionParameters = this.options.multiline
+            ? {
+                  temperature: 0.5,
+                  messages: prompt,
+                  maxTokensToSample: this.responseTokens,
+                  stopSequences: [anthropic.HUMAN_PROMPT, CLOSING_CODE_TAG],
+              }
+            : {
+                  temperature: 0.5,
+                  messages: prompt,
+                  maxTokensToSample: Math.min(50, this.responseTokens),
+                  stopSequences: [anthropic.HUMAN_PROMPT, CLOSING_CODE_TAG, '\n\n'],
+              }
+        tracer?.params(args)
+
+        // Issue request
+        const responses = await this.batchAndProcessCompletions(
+            this.completionsClient,
+            args,
+            this.options.n,
+            abortSignal
+        )
+
+        // Post-process
+        const ret = responses.map(resp => [
+            {
+                prefix: this.options.docContext.prefix,
+                content: resp.completion,
+                stopReason: resp.stopReason,
+            },
+        ])
+
+        const completions = ret.flat()
+        tracer?.result({ rawResponses: responses, completions })
+
+        return completions
+    }
+
+    private async batchAndProcessCompletions(
+        client: Pick<SourcegraphCompletionsClient, 'complete'>,
+        params: CompletionParameters,
+        n: number,
+        abortSignal: AbortSignal
+    ): Promise<CompletionResponse[]> {
+        const responses: Promise<CompletionResponse>[] = []
+        for (let i = 0; i < n; i++) {
+            responses.push(this.fetchAndProcessCompletions(client, params, abortSignal))
+        }
+        return Promise.all(responses)
+    }
+
+    private async fetchAndProcessCompletions(
+        client: Pick<SourcegraphCompletionsClient, 'complete'>,
+        params: CompletionParameters,
+        abortSignal: AbortSignal
+    ): Promise<CompletionResponse> {
+        // The Async executor is required to return the completion early if a partial result from SSE can be used.
+        // eslint-disable-next-line @typescript-eslint/no-misused-promises, no-async-promise-executor
+        return new Promise(async (resolve, reject) => {
+            try {
+                const abortController = forkSignal(abortSignal)
+
+                const result = await client.complete(
+                    params,
+                    (incompleteResponse: CompletionResponse) => {
+                        const processedCompletion = this.postProcess(incompleteResponse.completion)
+                        if (
+                            canUsePartialCompletion(processedCompletion, {
+                                document: { languageId: this.options.languageId },
+                                multiline: this.options.multiline,
+                                docContext: this.options.docContext,
+                            })
+                        ) {
+                            resolve({ ...incompleteResponse, completion: processedCompletion })
+                            abortController.abort()
+                        }
+                    },
+                    abortController.signal
+                )
+
+                resolve({ ...result, completion: this.postProcess(result.completion) })
+            } catch (error) {
+                reject(error)
+            }
+        })
+    }
+
     private postProcess(rawResponse: string): string {
         let completion = extractFromCodeBlock(rawResponse)
-        const startIndentation = indentation(lastNLines(this.prefix, 1) + completion.split('\n')[0])
 
-        const trimmedPrefixContainNewline = this.prefix.slice(this.prefix.trimEnd().length).includes('\n')
+        const trimmedPrefixContainNewline = this.options.docContext.prefix
+            .slice(this.options.docContext.prefix.trimEnd().length)
+            .includes('\n')
         if (trimmedPrefixContainNewline) {
             // The prefix already contains a `\n` that Claude was not aware of, so we remove any
-            // leading `\n` that claude might add.
-            completion = completion.trimStart()
+            // leading `\n` followed by whitespace that Claude might add.
+            completion = completion.replace(/^\s*\n\s*/, '')
         } else {
-            completion = trimStartUntilNewline(completion)
+            completion = trimLeadingWhitespaceUntilNewline(completion)
         }
 
         // Remove bad symbols from the start of the completion string.
         completion = fixBadCompletionStart(completion)
 
-        // Remove incomplete lines in single-line completions
-        if (this.multilineMode === null) {
-            let allowedNewlines = 2
-            const lines = completion.split('\n')
-            if (lines.length >= allowedNewlines) {
-                // Only select two lines if they have the same indentation, otherwise only show one
-                // line. This will then most-likely trigger a multi-line completion after accepting
-                // and result in a better experience.
-                if (lines.length > 1 && startIndentation !== indentation(lines[1])) {
-                    allowedNewlines = 1
-                }
-
-                completion = lines.slice(0, allowedNewlines).join('\n')
-            }
-        }
-
-        // Trim start and end of the completion to remove all trailing whitespace.
-        return completion.trimEnd()
-    }
-
-    public async generateCompletions(abortSignal: AbortSignal, snippets: ReferenceSnippet[]): Promise<Completion[]> {
-        // Create prompt
-        const { messages: prompt } = this.createPrompt(snippets)
-        if (prompt.length > this.promptChars) {
-            throw new Error('prompt length exceeded maximum alloted chars')
-        }
-
-        let args: CompletionParameters
-        switch (this.multilineMode) {
-            case 'block': {
-                args = {
-                    temperature: 0.5,
-                    messages: prompt,
-                    maxTokensToSample: this.responseTokens,
-                    stopSequences: [anthropic.HUMAN_PROMPT, CLOSING_CODE_TAG],
-                }
-                break
-            }
-            default: {
-                args = {
-                    temperature: 0.5,
-                    messages: prompt,
-                    maxTokensToSample: Math.min(100, this.responseTokens),
-                    stopSequences: [anthropic.HUMAN_PROMPT, CLOSING_CODE_TAG, '\n\n'],
-                }
-                break
-            }
-        }
-
-        // Issue request
-        const responses = await batchCompletions(this.completionsClient, args, this.n, abortSignal)
-
-        // Post-process
-        const ret = responses.map(resp => {
-            const content = this.postProcess(resp.completion)
-
-            if (content === null) {
-                return []
-            }
-
-            return [
-                {
-                    prefix: this.prefix,
-                    messages: prompt,
-                    content,
-                    stopReason: resp.stopReason,
-                },
-            ]
-        })
-
-        return ret.flat()
+        return completion
     }
 }
 
@@ -209,5 +246,6 @@ export function createProviderConfig(anthropicOptions: AnthropicOptions): Provid
         maximumContextCharacters: tokensToChars(anthropicOptions.contextWindowTokens),
         enableExtendedMultilineTriggers: true,
         identifier: 'anthropic',
+        supportsInfilling: false,
     }
 }

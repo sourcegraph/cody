@@ -20,13 +20,28 @@ const editor: Editor = {
     getActiveTextEditorSelection() {
         return null
     },
+    getActiveInlineChatTextEditor() {
+        return null
+    },
+    getActiveInlineChatSelection() {
+        return null
+    },
     getActiveTextEditorSelectionOrEntireFile() {
+        return null
+    },
+    getActiveTextEditorSelectionOrVisibleContent() {
+        return null
+    },
+    getActiveTextEditorDiagnosticsForRange() {
         return null
     },
     getActiveTextEditorVisibleContent() {
         return null
     },
     getWorkspaceRootPath() {
+        return null
+    },
+    getWorkspaceRootUri() {
         return null
     },
     replaceSelection(_fileName, _selectedText, _replacement) {
@@ -56,7 +71,7 @@ export const App: React.FunctionComponent = () => {
     const [formInput, setFormInput] = useState('')
     const [inputHistory, setInputHistory] = useState<string[] | []>([])
 
-    const [client, setClient] = useState<Client | ErrorLike>()
+    const [client, setClient] = useState<Client | null | ErrorLike>()
     useEffect(() => {
         setMessageInProgress(null)
         setTranscript([])

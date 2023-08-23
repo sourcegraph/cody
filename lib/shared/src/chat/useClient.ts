@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { CodebaseContext } from '../codebase-context'
 import { isErrorLike } from '../common'
@@ -18,11 +18,12 @@ import { getRecipe } from './recipes/browser-recipes'
 import { RecipeID } from './recipes/recipe'
 import { Transcript } from './transcript'
 import { ChatMessage } from './transcript/messages'
+import { Typewriter } from './typewriter'
 import { reformatBotMessage } from './viewHelpers'
 
 export type CodyClientConfig = Pick<
     ConfigurationWithAccessToken,
-    'serverEndpoint' | 'useContext' | 'accessToken' | 'customHeaders'
+    'serverEndpoint' | 'useContext' | 'accessToken' | 'customHeaders' | 'experimentalLocalSymbols'
 > & { debugEnable: boolean; needsEmailVerification: boolean }
 
 export interface CodyClientScope {
@@ -55,7 +56,7 @@ export interface CodyClient {
         messageId?: string | undefined,
         scope?: CodyClientScope
     ) => Promise<Transcript | null>
-    initializeNewChat: () => Transcript | null
+    initializeNewChat: (newScope?: Partial<CodyClientScope>) => Transcript | null
     executeRecipe: (
         recipeId: RecipeID,
         options?: {
@@ -96,6 +97,11 @@ export const useClient = ({
     const [isMessageInProgress, setIsMessageInProgressState] = useState<boolean>(false)
     const [abortMessageInProgressInternal, setAbortMessageInProgress] = useState<() => void>(() => () => undefined)
 
+    const transcriptIdRef = useRef<Transcript['id']>()
+    useEffect(() => {
+        transcriptIdRef.current = transcript?.id
+    }, [transcript])
+
     const messageInProgress: ChatMessage | null = useMemo(() => {
         if (isMessageInProgress) {
             const lastMessage = chatMessages[chatMessages.length - 1]
@@ -134,7 +140,7 @@ export const useClient = ({
         const completionsClient = new SourcegraphBrowserCompletionsClient(config)
         const chatClient = new ChatClient(completionsClient)
         const graphqlClient = new SourcegraphGraphQLAPIClient(config)
-        const intentDetector = new SourcegraphIntentDetectorClient(graphqlClient)
+        const intentDetector = new SourcegraphIntentDetectorClient(graphqlClient, completionsClient)
 
         return { graphqlClient, chatClient, intentDetector }
     }, [config])
@@ -219,25 +225,28 @@ export const useClient = ({
         [graphqlClient]
     )
 
-    const initializeNewChat = useCallback((): Transcript | null => {
-        if (config.needsEmailVerification) {
-            return transcript
-        }
-        const newTranscript = new Transcript()
-        setIsMessageInProgressState(false)
-        setTranscriptState(newTranscript)
-        setChatMessagesState(newTranscript.toChat())
-        setScopeState(scope => ({
-            includeInferredRepository: true,
-            includeInferredFile: true,
-            repositories: [],
-            editor: scope.editor,
-        }))
+    const initializeNewChat = useCallback(
+        (initialScope?: Partial<CodyClientScope>): Transcript | null => {
+            if (config.needsEmailVerification) {
+                return transcript
+            }
+            const newTranscript = new Transcript()
+            setIsMessageInProgressState(false)
+            setTranscriptState(newTranscript)
+            setChatMessagesState(newTranscript.toChat())
+            setScopeState(scope => ({
+                includeInferredRepository: initialScope?.includeInferredFile ?? true,
+                includeInferredFile: initialScope?.includeInferredFile ?? true,
+                repositories: initialScope?.repositories ?? [],
+                editor: initialScope?.editor ?? scope.editor,
+            }))
 
-        onEvent?.('initializedNewChat')
+            onEvent?.('initializedNewChat')
 
-        return newTranscript
-    }, [onEvent, config.needsEmailVerification, transcript])
+            return newTranscript
+        },
+        [onEvent, config.needsEmailVerification, transcript]
+    )
 
     const executeRecipe = useCallback(
         async (
@@ -281,6 +290,8 @@ export const useClient = ({
                 null,
                 null,
                 null,
+                null,
+                undefined,
                 unifiedContextFetcherClient
             )
 
@@ -302,27 +313,29 @@ export const useClient = ({
             setIsMessageInProgressState(true)
             onEvent?.('submit')
 
-            const { prompt, contextFiles } = await transcript.getPromptForLastInteraction(
+            const { prompt, contextFiles, preciseContexts } = await transcript.getPromptForLastInteraction(
                 getMultiRepoPreamble(repoNames)
             )
-            transcript.setUsedContextFilesForLastInteraction(contextFiles)
+            transcript.setUsedContextFilesForLastInteraction(contextFiles, preciseContexts)
 
             const responsePrefix = interaction.getAssistantMessage().prefix ?? ''
             let rawText = ''
 
             const updatedTranscript = await new Promise<Transcript | null>(resolve => {
-                const abort = chatClient.chat(prompt, {
-                    onChange(_rawText) {
+                const typewriter = new Typewriter({
+                    update(_rawText) {
+                        if (transcript.id !== transcriptIdRef.current) {
+                            abort()
+                            resolve(transcript)
+                            return
+                        }
                         rawText = _rawText
 
                         const text = reformatBotMessage(rawText, responsePrefix)
                         transcript.addAssistantResponse(text)
                         setChatMessagesState(transcript.toChat())
                     },
-                    onComplete() {
-                        const text = reformatBotMessage(rawText, responsePrefix)
-                        transcript.addAssistantResponse(text)
-
+                    close() {
                         transcript
                             .toChatPromise()
                             .then(messages => {
@@ -331,28 +344,43 @@ export const useClient = ({
                             })
                             .catch(() => null)
 
-                        resolve(transcript)
-                    },
-                    onError(error) {
-                        // Display error message as assistant response
-                        transcript.addErrorAsAssistantResponse(error)
-
-                        console.error(`Completion request failed: ${error}`)
-
-                        transcript
-                            .toChatPromise()
-                            .then(messages => {
-                                setChatMessagesState(messages)
-                                setIsMessageInProgressState(false)
-                            })
-                            .catch(() => null)
-
-                        onEvent?.('error')
                         resolve(transcript)
                     },
                 })
 
+                const abort = chatClient.chat(prompt, {
+                    onChange(content) {
+                        if (transcript.id !== transcriptIdRef.current) {
+                            typewriter.stop()
+                            abort()
+                            resolve(transcript)
+                            return
+                        }
+
+                        typewriter.update(content)
+                    },
+                    onComplete() {
+                        if (transcript.id !== transcriptIdRef.current) {
+                            typewriter.stop()
+                            abort()
+                            resolve(transcript)
+                            return
+                        }
+
+                        typewriter.close()
+                    },
+                    onError(error) {
+                        // Display error message as assistant response
+                        transcript.addErrorAsAssistantResponse(error)
+                        console.error(`Completion request failed: ${error}`)
+                        onEvent?.('error')
+
+                        typewriter.close()
+                    },
+                })
+
                 setAbortMessageInProgress(() => () => {
+                    typewriter.stop()
                     abort()
                     resolve(transcript)
                 })

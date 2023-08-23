@@ -8,12 +8,11 @@ import type {
 
 import { DOTCOM_URL } from './chat/protocol'
 import { CONFIG_KEY, ConfigKeys } from './configuration-keys'
-import { logEvent } from './event-logger'
 import { LocalStorage } from './services/LocalStorageProvider'
 import { getAccessToken, SecretStorage } from './services/SecretStorageProvider'
 
 interface ConfigGetter {
-    get<T>(section: typeof CONFIG_KEY[ConfigKeys], defaultValue?: T): T
+    get<T>(section: (typeof CONFIG_KEY)[ConfigKeys], defaultValue?: T): T
 }
 
 /**
@@ -37,23 +36,9 @@ export function getConfiguration(config: ConfigGetter): Configuration {
         debugRegex = new RegExp('.*')
     }
 
-    let autocompleteAdvancedProvider = config.get<'anthropic' | 'unstable-codegen' | 'unstable-huggingface'>(
-        CONFIG_KEY.autocompleteAdvancedProvider,
-        'anthropic'
-    )
-    if (
-        autocompleteAdvancedProvider !== 'anthropic' &&
-        autocompleteAdvancedProvider !== 'unstable-codegen' &&
-        autocompleteAdvancedProvider !== 'unstable-huggingface'
-    ) {
-        autocompleteAdvancedProvider = 'anthropic'
-        void vscode.window.showInformationMessage(
-            `Unrecognized ${CONFIG_KEY.autocompleteAdvancedProvider}, defaulting to 'anthropic'`
-        )
-    }
-
     return {
         // NOTE: serverEndpoint is now stored in Local Storage instead but we will still keep supporting the one in confg
+        // to use as fallback for users who do not have access to local storage
         serverEndpoint: sanitizeServerEndpoint(config.get(CONFIG_KEY.serverEndpoint, '')),
         codebase: sanitizeCodebase(config.get(CONFIG_KEY.codebase)),
         customHeaders: config.get<object>(CONFIG_KEY.customHeaders, {}) as Record<string, string>,
@@ -61,26 +46,37 @@ export function getConfiguration(config: ConfigGetter): Configuration {
         debugEnable: config.get<boolean>(CONFIG_KEY.debugEnable, false),
         debugVerbose: config.get<boolean>(CONFIG_KEY.debugVerbose, false),
         debugFilter: debugRegex,
+        telemetryLevel: config.get<'all' | 'off'>(CONFIG_KEY.telemetryLevel, 'all'),
         autocomplete: config.get(CONFIG_KEY.autocompleteEnabled, true),
         experimentalChatPredictions: config.get(CONFIG_KEY.experimentalChatPredictions, isTesting),
         inlineChat: config.get(CONFIG_KEY.inlineChatEnabled, true),
         experimentalGuardrails: config.get(CONFIG_KEY.experimentalGuardrails, isTesting),
-        experimentalNonStop: config.get('cody.experimental.nonStop' as any, isTesting),
-        autocompleteAdvancedProvider,
+        experimentalNonStop: config.get(CONFIG_KEY.experimentalNonStop, isTesting),
+        experimentalLocalSymbols: config.get(CONFIG_KEY.experimentalLocalSymbols, false),
+        experimentalCommandLenses: config.get(CONFIG_KEY.experimentalCommandLenses, false),
+        experimentalEditorTitleCommandIcon: config.get(CONFIG_KEY.experimentalEditorTitleCommandIcon, false),
+        autocompleteAdvancedProvider: config.get(CONFIG_KEY.autocompleteAdvancedProvider, 'anthropic'),
+        experimentalSymfPath: config.get<string>(CONFIG_KEY.experimentalSymfPath, 'symf'),
+        experimentalSymfAnthropicKey: config.get<string>(CONFIG_KEY.experimentalSymfAnthropicKey, ''),
         autocompleteAdvancedServerEndpoint: config.get<string | null>(
             CONFIG_KEY.autocompleteAdvancedServerEndpoint,
             null
         ),
         autocompleteAdvancedAccessToken: config.get<string | null>(CONFIG_KEY.autocompleteAdvancedAccessToken, null),
-        autocompleteAdvancedCache: config.get(CONFIG_KEY.autocompleteAdvancedCache, true),
         autocompleteAdvancedEmbeddings: config.get(CONFIG_KEY.autocompleteAdvancedEmbeddings, true),
-        autocompleteExperimentalTriggerMoreEagerly: config.get(
-            CONFIG_KEY.autocompleteExperimentalTriggerMoreEagerly,
+        autocompleteExperimentalCompleteSuggestWidgetSelection: config.get(
+            CONFIG_KEY.autocompleteExperimentalCompleteSuggestWidgetSelection,
             false
         ),
         pluginsEnabled: config.get<boolean>(CONFIG_KEY.pluginsEnabled, false),
         pluginsDebugEnabled: config.get<boolean>(CONFIG_KEY.pluginsDebugEnabled, true),
         pluginsConfig: config.get(CONFIG_KEY.pluginsConfig, {}),
+
+        // Note: In spirit, we try to minimize agent-specific code paths in the VSC extension.
+        // We currently use this flag for the agent to provide more helpful error messages
+        // when something goes wrong, and to suppress event logging in the agent.
+        // Rely on this flag sparingly.
+        isRunningInsideAgent: config.get('cody.advanced.agent.running' as any, false),
     }
 }
 
@@ -124,62 +120,4 @@ export const getFullConfig = async (
     config.serverEndpoint = localStorage?.getEndpoint() || config.serverEndpoint
     const accessToken = (await getAccessToken(secretStorage)) || null
     return { ...config, accessToken }
-}
-
-// We run this callback on extension startup
-export async function migrateConfiguration(): Promise<void> {
-    let didMigrate = false
-    didMigrate ||= await migrateDeprecatedConfigOption(
-        CONFIG_KEY.experimentalSuggestions,
-        CONFIG_KEY.autocompleteEnabled
-    )
-    didMigrate ||= await migrateDeprecatedConfigOption(
-        CONFIG_KEY.completionsAdvancedProvider,
-        CONFIG_KEY.autocompleteAdvancedProvider
-    )
-    didMigrate ||= await migrateDeprecatedConfigOption(
-        CONFIG_KEY.completionsAdvancedServerEndpoint,
-        CONFIG_KEY.autocompleteAdvancedServerEndpoint
-    )
-    didMigrate ||= await migrateDeprecatedConfigOption(
-        CONFIG_KEY.completionsAdvancedAccessToken,
-        CONFIG_KEY.autocompleteAdvancedAccessToken
-    )
-    didMigrate ||= await migrateDeprecatedConfigOption(
-        CONFIG_KEY.completionsAdvancedCache,
-        CONFIG_KEY.autocompleteAdvancedCache
-    )
-    didMigrate ||= await migrateDeprecatedConfigOption(
-        CONFIG_KEY.completionsAdvancedEmbeddings,
-        CONFIG_KEY.autocompleteAdvancedEmbeddings
-    )
-
-    if (didMigrate) {
-        logEvent('CodyVSCodeExtension:configMigrator:migrated')
-    }
-}
-
-async function migrateDeprecatedConfigOption(
-    oldKey: typeof CONFIG_KEY[ConfigKeys],
-    newKey: typeof CONFIG_KEY[ConfigKeys]
-): Promise<boolean> {
-    const config = vscode.workspace.getConfiguration()
-    const value = config.get(oldKey)
-    const inspect = config.inspect(oldKey)
-
-    if (inspect === undefined || value === inspect.defaultValue) {
-        return false
-    }
-
-    const scope =
-        inspect.workspaceFolderValue !== undefined
-            ? vscode.ConfigurationTarget.WorkspaceFolder
-            : inspect?.workspaceValue !== undefined
-            ? vscode.ConfigurationTarget.Workspace
-            : vscode.ConfigurationTarget.Global
-
-    await config.update(newKey, value, scope)
-    await config.update(oldKey, undefined, scope)
-
-    return true
 }

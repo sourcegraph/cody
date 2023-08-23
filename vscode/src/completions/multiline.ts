@@ -1,48 +1,59 @@
 import detectIndent from 'detect-indent'
 
-import { getEditorTabSize, indentation, PrefixComponents } from './text-processing'
+import { DocumentContext } from './document'
+import { getLanguageConfig } from './language'
+import { indentation } from './text-processing'
+import {
+    FUNCTION_KEYWORDS,
+    FUNCTION_OR_METHOD_INVOCATION_REGEX,
+    getEditorTabSize,
+    OPENING_BRACKET_REGEX,
+    shouldIncludeClosingLine,
+} from './utils/text-utils'
 
-const BRACKET_PAIR = {
-    '(': ')',
-    '[': ']',
-    '{': '}',
-} as const
-const OPENING_BRACKET_REGEX = /([([{])$/
-export function detectMultilineMode(
-    prefix: string,
-    prevNonEmptyLine: string,
-    sameLinePrefix: string,
-    sameLineSuffix: string,
+export function detectMultiline(
+    {
+        prefix,
+        prevNonEmptyLine,
+        currentLinePrefix,
+        currentLineSuffix,
+    }: Pick<DocumentContext, 'prefix' | 'prevNonEmptyLine' | 'currentLinePrefix' | 'currentLineSuffix'>,
     languageId: string,
     enableExtendedTriggers: boolean
-): null | 'block' {
+): boolean {
     const config = getLanguageConfig(languageId)
     if (!config) {
-        return null
+        return false
     }
 
-    if (enableExtendedTriggers && sameLinePrefix.match(OPENING_BRACKET_REGEX)) {
-        return 'block'
+    const checkInvocation =
+        currentLineSuffix.trim().length > 0 ? currentLinePrefix + currentLineSuffix : currentLinePrefix
+
+    // Don't fire multiline completion for method or function invocations
+    // see https://github.com/sourcegraph/cody/discussions/358#discussioncomment-6519606
+    if (
+        !currentLinePrefix.trim().match(FUNCTION_KEYWORDS) &&
+        checkInvocation.match(FUNCTION_OR_METHOD_INVOCATION_REGEX)
+    ) {
+        return false
+    }
+
+    if (enableExtendedTriggers && currentLinePrefix.match(OPENING_BRACKET_REGEX)) {
+        return true
     }
 
     if (
-        sameLinePrefix.trim() === '' &&
-        sameLineSuffix.trim() === '' &&
+        currentLinePrefix.trim() === '' &&
+        currentLineSuffix.trim() === '' &&
         // Only trigger multiline suggestions for the beginning of blocks
         prefix.trim().at(prefix.trim().length - config.blockStart.length) === config.blockStart &&
         // Only trigger multiline suggestions when the new current line is indented
-        indentation(prevNonEmptyLine) < indentation(sameLinePrefix)
+        indentation(prevNonEmptyLine) < indentation(currentLinePrefix)
     ) {
-        return 'block'
+        return true
     }
 
-    return null
-}
-
-// Detect if completion starts with a space followed by any non-space character.
-export const ODD_INDENTATION_REGEX = /^ [^ ]/
-export function checkOddIndentation(completion: string, prefix: PrefixComponents): boolean {
-    return completion.length > 0 && ODD_INDENTATION_REGEX.test(completion) && prefix.tail.rearSpace.length > 0
+    return false
 }
 
 /**
@@ -84,52 +95,6 @@ function ensureSameOrLargerIndentation(completion: string): string {
     }
 
     return completion
-}
-
-/**
- * If a completion starts with an opening bracket and a suffix starts with
- * the corresponding closing bracket, we include the last closing bracket of the completion.
- * E.g., function foo(__CURSOR__)
- *
- * We can do this because we know that the existing block is already closed, which means that
- * new blocks need to be closed separately.
- * E.g. function foo() { console.log('hello') }
- */
-function shouldIncludeClosingLineBasedOnBrackets(
-    prefixIndentationWithFirstCompletionLine: string,
-    suffix: string
-): boolean {
-    const matches = prefixIndentationWithFirstCompletionLine.match(OPENING_BRACKET_REGEX)
-
-    if (matches && matches.length > 0) {
-        const openingBracket = matches[0] as keyof typeof BRACKET_PAIR
-        const closingBracket = BRACKET_PAIR[openingBracket]
-
-        return Boolean(openingBracket) && suffix.startsWith(closingBracket)
-    }
-
-    return false
-}
-
-/**
- * Only include a closing line (e.g. `}`) if the block is empty yet if the block is already closed.
- * We detect this by looking at the indentation of the next non-empty line.
- */
-function shouldIncludeClosingLine(prefixIndentationWithFirstCompletionLine: string, suffix: string): boolean {
-    const includeClosingLineBasedOnBrackets = shouldIncludeClosingLineBasedOnBrackets(
-        prefixIndentationWithFirstCompletionLine,
-        suffix
-    )
-    const startIndent = indentation(prefixIndentationWithFirstCompletionLine)
-
-    const firstNewLineIndex = suffix.indexOf('\n') + 1
-    const nextNonEmptyLine =
-        suffix
-            .slice(firstNewLineIndex)
-            .split('\n')
-            .find(line => line.trim().length > 0) ?? ''
-
-    return indentation(nextNonEmptyLine) < startIndent || includeClosingLineBasedOnBrackets
 }
 
 export function truncateMultilineCompletion(
@@ -192,37 +157,4 @@ export function truncateMultilineCompletion(
     }
 
     return lines.slice(0, cutOffIndex).join('\n')
-}
-
-interface LanguageConfig {
-    blockStart: string
-    blockElseTest: RegExp
-    blockEnd: string | null
-}
-function getLanguageConfig(languageId: string): LanguageConfig | null {
-    switch (languageId) {
-        case 'c':
-        case 'cpp':
-        case 'csharp':
-        case 'go':
-        case 'java':
-        case 'javascript':
-        case 'javascriptreact':
-        case 'typescript':
-        case 'typescriptreact':
-            return {
-                blockStart: '{',
-                blockElseTest: /^[\t ]*} else/,
-                blockEnd: '}',
-            }
-        case 'python': {
-            return {
-                blockStart: ':',
-                blockElseTest: /^[\t ]*(elif |else:)/,
-                blockEnd: null,
-            }
-        }
-        default:
-            return null
-    }
 }

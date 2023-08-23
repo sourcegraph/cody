@@ -10,6 +10,7 @@ import {
 import { truncateText } from '../../prompt/truncation'
 import { Interaction } from '../transcript/interaction'
 
+import { isSingleWord, numResults } from './helpers'
 import { Recipe, RecipeContext, RecipeID } from './recipe'
 
 export class ChatQuestion implements Recipe {
@@ -46,15 +47,18 @@ export class ChatQuestion implements Recipe {
         selection: ActiveTextEditorSelection | null
     ): Promise<ContextMessage[]> {
         const contextMessages: ContextMessage[] = []
+        // If input is less than 2 words, it means it's most likely a statement or a follow-up question that does not require additional context
+        // e,g. "hey", "hi", "why", "explain" etc.
+        const isTextTooShort = isSingleWord(text)
+        if (isTextTooShort) {
+            return contextMessages
+        }
 
         const isCodebaseContextRequired = firstInteraction || (await intentDetector.isCodebaseContextRequired(text))
 
         this.debug('ChatQuestion:getContextMessages', 'isCodebaseContextRequired', isCodebaseContextRequired)
         if (isCodebaseContextRequired) {
-            const codebaseContextMessages = await codebaseContext.getContextMessages(text, {
-                numCodeResults: 12,
-                numTextResults: 3,
-            })
+            const codebaseContextMessages = await codebaseContext.getCombinedContextMessages(text, numResults)
             contextMessages.push(...codebaseContextMessages)
         }
 

@@ -15,22 +15,28 @@ describe('getConfiguration', () => {
             pluginsEnabled: false,
             serverEndpoint: DOTCOM_URL.href,
             codebase: '',
+            customHeaders: {},
             useContext: 'embeddings',
             autocomplete: true,
+            experimentalCommandLenses: false,
+            experimentalEditorTitleCommandIcon: false,
             experimentalChatPredictions: false,
             experimentalGuardrails: false,
+            experimentalLocalSymbols: false,
             inlineChat: true,
+            isRunningInsideAgent: false,
             experimentalNonStop: false,
-            customHeaders: {},
+            experimentalSymfAnthropicKey: '',
+            experimentalSymfPath: 'symf',
             debugEnable: false,
             debugVerbose: false,
             debugFilter: null,
+            telemetryLevel: 'all',
             autocompleteAdvancedProvider: 'anthropic',
             autocompleteAdvancedServerEndpoint: null,
             autocompleteAdvancedAccessToken: null,
-            autocompleteAdvancedCache: true,
             autocompleteAdvancedEmbeddings: true,
-            autocompleteExperimentalTriggerMoreEagerly: false,
+            autocompleteExperimentalCompleteSuggestWidgetSelection: false,
         })
     })
 
@@ -53,29 +59,39 @@ describe('getConfiguration', () => {
                         return false
                     case 'cody.experimental.chatPredictions':
                         return true
+                    case 'cody.experimental.commandLenses':
+                        return true
+                    case 'cody.experimental.editorTitleCommandIcon':
+                        return true
                     case 'cody.experimental.guardrails':
                         return true
                     case 'cody.inlineChat.enabled':
                         return true
                     case 'cody.experimental.nonStop':
                         return true
+                    case 'cody.experimental.localSymbols':
+                        return true
+                    case 'cody.experimental.symf.anthropicKey':
+                        return 'anthropic_secret_key'
+                    case 'cody.experimental.symf.path':
+                        return '/usr/local/bin/symf'
                     case 'cody.debug.enable':
                         return true
                     case 'cody.debug.verbose':
                         return true
                     case 'cody.debug.filter':
                         return /.*/
+                    case 'cody.telemetry.level':
+                        return 'off'
                     case 'cody.autocomplete.advanced.provider':
                         return 'unstable-codegen'
                     case 'cody.autocomplete.advanced.serverEndpoint':
                         return 'https://example.com/llm'
                     case 'cody.autocomplete.advanced.accessToken':
                         return 'foobar'
-                    case 'cody.autocomplete.advanced.cache':
-                        return false
                     case 'cody.autocomplete.advanced.embeddings':
                         return false
-                    case 'cody.autocomplete.experimental.triggerMoreEagerly':
+                    case 'cody.autocomplete.experimental.completeSuggestWidgetSelection':
                         return false
                     case 'cody.plugins.enabled':
                         return true
@@ -84,6 +100,8 @@ describe('getConfiguration', () => {
                             foo: 'bar',
                         }
                     case 'cody.plugins.debug.enabled':
+                        return false
+                    case 'cody.advanced.agent.running':
                         return false
                     default:
                         throw new Error(`unexpected key: ${key}`)
@@ -103,18 +121,24 @@ describe('getConfiguration', () => {
             },
             autocomplete: false,
             experimentalChatPredictions: true,
+            experimentalCommandLenses: true,
+            experimentalEditorTitleCommandIcon: true,
             experimentalGuardrails: true,
+            experimentalLocalSymbols: true,
             inlineChat: true,
+            isRunningInsideAgent: false,
             experimentalNonStop: true,
+            experimentalSymfAnthropicKey: 'anthropic_secret_key',
+            experimentalSymfPath: '/usr/local/bin/symf',
             debugEnable: true,
             debugVerbose: true,
             debugFilter: /.*/,
+            telemetryLevel: 'off',
             autocompleteAdvancedProvider: 'unstable-codegen',
             autocompleteAdvancedServerEndpoint: 'https://example.com/llm',
             autocompleteAdvancedAccessToken: 'foobar',
-            autocompleteAdvancedCache: false,
             autocompleteAdvancedEmbeddings: false,
-            autocompleteExperimentalTriggerMoreEagerly: false,
+            autocompleteExperimentalCompleteSuggestWidgetSelection: false,
         })
     })
 })

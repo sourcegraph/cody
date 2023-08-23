@@ -1,5 +1,7 @@
-import { Completion } from '..'
-import { ReferenceSnippet } from '../context'
+import { CompletionParameters } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
+
+import { DocumentContext } from '../document'
+import { Completion, ContextSnippet } from '../types'
 
 export interface ProviderConfig {
     /**
@@ -28,17 +30,21 @@ export interface ProviderConfig {
      * A string identifier for the provider config used in event logs.
      */
     identifier: string
+
+    /**
+     * Indicating whether the provider supports infilling.
+     */
+    supportsInfilling: boolean
 }
 
 export interface ProviderOptions {
-    /** A unique and descriptive identifier for the provider. */
+    // A unique and descriptive identifier for the provider.
     id: string
 
-    prefix: string
-    suffix: string
+    docContext: DocumentContext
     fileName: string
     languageId: string
-    multilineMode: null | 'block'
+    multiline: boolean
     // Relative length to `maximumContextCharacters`
     responsePercentage: number
     prefixPercentage: number
@@ -48,40 +54,30 @@ export interface ProviderOptions {
 }
 
 export abstract class Provider {
-    public readonly id: string
-    protected prefix: string
-    protected suffix: string
-    protected fileName: string
-    protected languageId: string
-    protected multilineMode: null | 'block'
-    protected responsePercentage: number
-    protected prefixPercentage: number
-    protected suffixPercentage: number
-    protected n: number
+    constructor(public readonly options: Readonly<ProviderOptions>) {}
 
-    constructor({
-        id,
-        prefix,
-        suffix,
-        fileName,
-        languageId,
-        multilineMode,
-        responsePercentage,
-        prefixPercentage,
-        suffixPercentage,
-        n = 1,
-    }: ProviderOptions) {
-        this.id = id
-        this.prefix = prefix
-        this.suffix = suffix
-        this.fileName = fileName
-        this.languageId = languageId
-        this.multilineMode = multilineMode
-        this.responsePercentage = responsePercentage
-        this.prefixPercentage = prefixPercentage
-        this.suffixPercentage = suffixPercentage
-        this.n = n
-    }
+    public abstract generateCompletions(
+        abortSignal: AbortSignal,
+        snippets: ContextSnippet[],
+        tracer?: CompletionProviderTracer
+    ): Promise<Completion[]>
+}
 
-    public abstract generateCompletions(abortSignal: AbortSignal, snippets: ReferenceSnippet[]): Promise<Completion[]>
+/**
+ * Tracer for {@link Provider}.
+ */
+export interface CompletionProviderTracer {
+    /** Called with the params passed to the LLM. */
+    params(params: CompletionParameters): void
+
+    /** Called with the result from the LLM. */
+    result(data: CompletionProviderTracerResultData): void
+}
+
+export interface CompletionProviderTracerResultData {
+    /** The raw response from the LLM. */
+    rawResponses: unknown
+
+    /** The post-processed completions that are returned by the provider. */
+    completions: Completion[]
 }

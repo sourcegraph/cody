@@ -18,9 +18,18 @@ jobs:
       - uses: pnpm/action-setup@v2
         with:
           run_install: true
-      - run: xvfb-run -a pnpm run test
+      - run: pnpm run test
+      - run: xvfb-run -a pnpm -C vscode run test:integration
+      - run: xvfb-run -a pnpm -C vscode run test:e2e
       - run: CODY_RELEASE_TYPE=insiders pnpm -C vscode run release
         if: github.ref == 'refs/heads/main' && github.repository == 'sourcegraph/cody'
         env:
           VSCODE_MARKETPLACE_TOKEN: ${{ secrets.VSCODE_MARKETPLACE_TOKEN }}
           VSCODE_OPENVSX_TOKEN: ${{ secrets.VSCODE_OPENVSX_TOKEN }}
+      - name: Slack Notification
+        if: ${{ failure() }}
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_CHANNEL: wg-cody-vscode
+          SLACK_ICON: https://github.com/sourcegraph.png?size=48
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}

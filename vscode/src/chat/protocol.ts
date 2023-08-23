@@ -1,8 +1,10 @@
 import { ChatContextStatus } from '@sourcegraph/cody-shared/src/chat/context'
+import { CodyPrompt, CodyPromptType } from '@sourcegraph/cody-shared/src/chat/prompts'
 import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 import { ChatMessage, UserLocalHistory } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { Configuration } from '@sourcegraph/cody-shared/src/configuration'
 import { CodyLLMSiteConfiguration } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
+import type { TelemetryEventProperties } from '@sourcegraph/cody-shared/src/telemetry'
 
 import { View } from '../../webviews/NavBar'
 
@@ -12,40 +14,51 @@ import { View } from '../../webviews/NavBar'
 export type WebviewMessage =
     | { command: 'ready' }
     | { command: 'initialized' }
-    | { command: 'event'; event: string; value: string }
-    | { command: 'submit'; text: string; submitType: 'user' | 'suggestion' }
+    | { command: 'event'; eventName: string; properties: TelemetryEventProperties | undefined } // new event log internal API (use createWebviewTelemetryService wrapper)
+    | { command: 'submit'; text: string; submitType: 'user' | 'suggestion' | 'example' }
     | { command: 'executeRecipe'; recipe: RecipeID }
-    | { command: 'settings'; serverEndpoint: string; accessToken: string }
     | { command: 'removeHistory' }
     | { command: 'restoreHistory'; chatID: string }
     | { command: 'deleteHistory'; chatID: string }
     | { command: 'links'; value: string }
     | { command: 'openFile'; filePath: string }
+    | {
+          command: 'openLocalFileWithRange'
+          filePath: string
+          // Note: we're not using vscode.Range objects or nesting here, as the protocol
+          // tends ot munge the type in a weird way (nested fields become array indices).
+          range?: { startLine: number; startCharacter: number; endLine: number; endCharacter: number }
+      }
     | { command: 'edit'; text: string }
-    | { command: 'insert'; text: string }
-    | { command: 'auth'; type: 'signin' | 'signout' | 'support' | 'app' | 'callback'; endpoint?: string }
+    | { command: 'insert'; eventType: 'Button' | 'Keydown'; text: string }
+    | { command: 'copy'; eventType: 'Button' | 'Keydown'; text: string }
+    | {
+          command: 'auth'
+          type: 'signin' | 'signout' | 'support' | 'app' | 'callback'
+          endpoint?: string
+          value?: string
+      }
     | { command: 'abort' }
-    | { command: 'chat-button'; action: string }
     | { command: 'setEnabledPlugins'; plugins: string[] }
-    | { command: 'my-prompt'; title: string }
+    | { command: 'custom-prompt'; title: string; value?: CodyPromptType }
+    | { command: 'reload' }
 
 /**
  * A message sent from the extension host to the webview.
  */
 export type ExtensionMessage =
-    | { type: 'showTab'; tab: string }
     | { type: 'config'; config: ConfigurationSubsetForWebview & LocalEnv; authStatus: AuthStatus }
     | { type: 'login'; authStatus: AuthStatus }
     | { type: 'history'; messages: UserLocalHistory | null }
     | { type: 'transcript'; messages: ChatMessage[]; isMessageInProgress: boolean }
-    | { type: 'debug'; message: string }
     | { type: 'contextStatus'; contextStatus: ChatContextStatus }
     | { type: 'view'; messages: View }
     | { type: 'errors'; errors: string }
     | { type: 'suggestions'; suggestions: string[] }
     | { type: 'app-state'; isInstalled: boolean }
     | { type: 'enabled-plugins'; plugins: string[] }
-    | { type: 'my-prompts'; prompts: string[] }
+    | { type: 'custom-prompts'; prompts: [string, CodyPrompt][] }
+    | { type: 'transcript-errors'; isTranscriptError: boolean }
 
 /**
  * The subset of configuration that is visible to the webview.
@@ -85,6 +98,7 @@ export interface AuthStatus {
     siteHasCodyEnabled: boolean
     siteVersion: string
     configOverwrites?: CodyLLMSiteConfiguration
+    showNetworkError?: boolean
 }
 
 export const defaultAuthStatus = {
@@ -109,6 +123,17 @@ export const unauthenticatedStatus = {
     siteVersion: '',
 }
 
+export const networkErrorAuthStatus = {
+    showInvalidAccessTokenError: false,
+    authenticated: false,
+    isLoggedIn: false,
+    hasVerifiedEmail: false,
+    showNetworkError: true,
+    requiresVerifiedEmail: false,
+    siteHasCodyEnabled: false,
+    siteVersion: '',
+}
+
 /** The local environment of the editor. */
 export interface LocalEnv {
     // The operating system kind
@@ -121,6 +146,9 @@ export interface LocalEnv {
     // The application name of the editor
     appName: string
     extensionVersion: string
+
+    /** Whether the extension is running in VS Code Web (as opposed to VS Code Desktop). */
+    uiKindIsWeb: boolean
 
     // App Local State
     hasAppJson: boolean

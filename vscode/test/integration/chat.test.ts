@@ -2,12 +2,12 @@ import * as assert from 'assert'
 
 import * as vscode from 'vscode'
 
-import { ChatViewProvider } from '../../src/chat/ChatViewProvider'
+import { MessageProvider } from '../../src/chat/MessageProvider'
 
-import { afterIntegrationTest, beforeIntegrationTest, getExtensionAPI, getTranscript } from './helpers'
+import { afterIntegrationTest, beforeIntegrationTest, getExtensionAPI, getTranscript, waitUntil } from './helpers'
 
-async function getChatViewProvider(): Promise<ChatViewProvider> {
-    const chatViewProvider = await getExtensionAPI().exports.testing?.chatViewProvider.get()
+async function getChatViewProvider(): Promise<MessageProvider> {
+    const chatViewProvider = await getExtensionAPI().exports.testing?.messageProvider.get()
     assert.ok(chatViewProvider)
     return chatViewProvider
 }
@@ -22,6 +22,6 @@ suite('Chat', function () {
         await chatView.executeRecipe('chat-question', 'hello from the human')
 
         assert.match((await getTranscript(0)).displayText || '', /^hello from the human$/)
-        assert.match((await getTranscript(1)).displayText || '', /^hello from the assistant$/)
+        await waitUntil(async () => /^hello from the assistant$/.test((await getTranscript(1)).displayText || ''))
     })
 })
