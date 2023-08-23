@@ -20,7 +20,6 @@ export class ChatQuestion implements Recipe {
 
     public async getInteraction(humanChatInput: string, context: RecipeContext): Promise<Interaction | null> {
         const truncatedText = truncateText(humanChatInput, MAX_HUMAN_INPUT_TOKENS)
-
         return Promise.resolve(
             new Interaction(
                 { speaker: 'human', text: truncatedText, displayText: humanChatInput },
@@ -60,6 +59,9 @@ export class ChatQuestion implements Recipe {
         if (isCodebaseContextRequired) {
             const codebaseContextMessages = await codebaseContext.getCombinedContextMessages(text, numResults)
             contextMessages.push(...codebaseContextMessages)
+            // TODO: Put this in getContextMessages?
+            // Let's leave this here for now :)
+            contextMessages.push(...(await codebaseContext.getGraphContextMessages()))
         }
 
         const isEditorContextRequired = intentDetector.isEditorContextRequired(text)

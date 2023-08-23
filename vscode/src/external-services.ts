@@ -3,16 +3,16 @@ import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
 import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
 import { Editor } from '@sourcegraph/cody-shared/src/editor'
 import { SourcegraphEmbeddingsSearchClient } from '@sourcegraph/cody-shared/src/embeddings/client'
-import { FeatureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
 import { Guardrails } from '@sourcegraph/cody-shared/src/guardrails'
 import { SourcegraphGuardrailsClient } from '@sourcegraph/cody-shared/src/guardrails/client'
 import { IntentDetector } from '@sourcegraph/cody-shared/src/intent-detector'
 import { SourcegraphIntentDetectorClient } from '@sourcegraph/cody-shared/src/intent-detector/client'
-import { IndexedKeywordContextFetcher } from '@sourcegraph/cody-shared/src/local-context'
 import { SourcegraphCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/client'
 import { SourcegraphGraphQLAPIClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
 import { TelemetryService } from '@sourcegraph/cody-shared/src/telemetry'
 import { isError } from '@sourcegraph/cody-shared/src/utils'
+
+import { GraphContextFetcher } from '../../lib/shared/src/graph-context'
 
 import { PlatformContext } from './extension.common'
 import { logger } from './log'
@@ -24,7 +24,6 @@ interface ExternalServices {
     chatClient: ChatClient
     completionsClient: SourcegraphCompletionsClient
     guardrails: Guardrails
-    featureFlagProvider: FeatureFlagProvider
 
     /** Update configuration for all of the services in this interface. */
     onConfigurationChange: (newConfig: ExternalServicesConfiguration) => void
@@ -32,19 +31,12 @@ interface ExternalServices {
 
 type ExternalServicesConfiguration = Pick<
     ConfigurationWithAccessToken,
-    | 'serverEndpoint'
-    | 'codebase'
-    | 'useContext'
-    | 'customHeaders'
-    | 'accessToken'
-    | 'debugEnable'
-    | 'experimentalLocalSymbols'
+    'serverEndpoint' | 'codebase' | 'useContext' | 'customHeaders' | 'accessToken' | 'debugEnable'
 >
 
 export async function configureExternalServices(
     initialConfig: ExternalServicesConfiguration,
     rgPath: string | null,
-    symf: IndexedKeywordContextFetcher | undefined,
     editor: Editor,
     telemetryService: TelemetryService,
     platform: Pick<
@@ -53,8 +45,7 @@ export async function configureExternalServices(
     >
 ): Promise<ExternalServices> {
     const client = new SourcegraphGraphQLAPIClient(initialConfig)
-    const featureFlagProvider = new FeatureFlagProvider(client)
-    const completions = platform.createCompletionsClient(initialConfig, featureFlagProvider, logger)
+    const completions = platform.createCompletionsClient(initialConfig, logger)
 
     const repoId = initialConfig.codebase ? await client.getRepoId(initialConfig.codebase) : null
     if (isError(repoId)) {
@@ -74,8 +65,7 @@ export async function configureExternalServices(
             ? platform.createLocalKeywordContextFetcher?.(rgPath, editor, chatClient, telemetryService) ?? null
             : null,
         rgPath ? platform.createFilenameContextFetcher?.(rgPath, editor, chatClient) ?? null : null,
-        null,
-        symf,
+        new GraphContextFetcher(client, editor),
         undefined,
         getRerankWithLog(chatClient)
     )
@@ -84,7 +74,6 @@ export async function configureExternalServices(
 
     return {
         intentDetector: new SourcegraphIntentDetectorClient(client, completions),
-        featureFlagProvider,
         codebaseContext,
         chatClient,
         completionsClient: completions,

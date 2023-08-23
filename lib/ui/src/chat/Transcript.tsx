@@ -14,7 +14,6 @@ import {
 } from '../Chat'
 
 import { FileLinkProps } from './ContextFiles'
-import { SymbolLinkProps } from './PreciseContext'
 import { TranscriptItem, TranscriptItemClassNames } from './TranscriptItem'
 
 import styles from './Transcript.module.css'
@@ -26,7 +25,7 @@ export const Transcript: React.FunctionComponent<
         messageBeingEdited: boolean
         setMessageBeingEdited: (input: boolean) => void
         fileLinkComponent: React.FunctionComponent<FileLinkProps>
-        symbolLinkComponent: React.FunctionComponent<SymbolLinkProps>
+        serverEndpoint: string
         className?: string
         textAreaComponent?: React.FunctionComponent<ChatUITextAreaProps>
         EditButtonContainer?: React.FunctionComponent<EditButtonProps>
@@ -44,8 +43,8 @@ export const Transcript: React.FunctionComponent<
     messageInProgress,
     messageBeingEdited,
     setMessageBeingEdited,
+    serverEndpoint,
     fileLinkComponent,
-    symbolLinkComponent,
     className,
     codeBlocksCopyButtonClassName,
     codeBlocksInsertButtonClassName,
@@ -65,116 +64,94 @@ export const Transcript: React.FunctionComponent<
     pluginsDevMode,
     isTranscriptError,
 }) {
-    // Scroll down whenever a new human message is received as input.
     const transcriptContainerRef = useRef<HTMLDivElement>(null)
-    const scrollAnchoredContainerRef = useRef<HTMLDivElement>(null)
-    const humanMessageCount = transcript.filter(message => message.speaker === 'human').length
     useEffect(() => {
         if (transcriptContainerRef.current) {
-            transcriptContainerRef.current?.scrollTo({
-                top: transcriptContainerRef.current.scrollHeight,
-                behavior: 'smooth',
-            })
-        }
-    }, [humanMessageCount, transcriptContainerRef])
-
-    // When the content was not scrollable, then becomes scrollable, manually
-    // scroll the anchor into view. This overrides the browser's default
-    // behavior of initially anchoring to the top until a scroll occurs.
-    useEffect(() => {
-        const root = transcriptContainerRef.current
-        const container = scrollAnchoredContainerRef.current
-        if (!(root && container)) {
-            return undefined
-        }
-        let wasIntersecting = true
-        const observer = new IntersectionObserver(
-            entries => {
-                for (const entry of entries) {
-                    if (entry.rootBounds?.width === 0 || entries[0].rootBounds?.height === 0) {
-                        // After restoring a pane the root element hasn't been sized yet, and we
-                        // trivially overflow it. Ignore this.
-                        continue
-                    }
-                    if (wasIntersecting && !entry.isIntersecting) {
-                        root.scrollTo({
-                            top: root.scrollHeight,
-                            behavior: 'smooth',
-                        })
-                    }
-                    wasIntersecting = entry.isIntersecting
-                }
-            },
-            {
-                root,
-                threshold: 1,
+            // Only scroll if the user didn't scroll up manually more than the scrolling threshold.
+            // That is so that you can freely copy content or read up on older content while new
+            // content is being produced.
+            //
+            // We allow some small threshold for "what is considered not scrolled up" so that
+            // minimal scroll doesn't affect it (ie. if I'm not all the way scrolled down by like a
+            // pixel or two, I probably still want it to scroll).
+            const SCROLL_THRESHOLD = 50
+            const delta = Math.abs(
+                transcriptContainerRef.current.scrollHeight -
+                    transcriptContainerRef.current.offsetHeight -
+                    transcriptContainerRef.current.scrollTop
+            )
+            if (delta < SCROLL_THRESHOLD) {
+                transcriptContainerRef.current.scrollTo({
+                    top: transcriptContainerRef.current.scrollHeight,
+                })
             }
-        )
-        observer.observe(container)
-        return () => {
-            observer.disconnect()
         }
-    }, [transcriptContainerRef, scrollAnchoredContainerRef])
+    }, [transcript, transcriptContainerRef])
+
+    // Scroll down whenever a new message is received.
+    const lastMessageSpeaker = transcript[transcript.length - 1]?.speaker
+    useEffect(() => {
+        transcriptContainerRef.current?.scrollTo({
+            top: transcriptContainerRef.current.scrollHeight,
+        })
+    }, [lastMessageSpeaker])
 
     return (
         <div ref={transcriptContainerRef} className={classNames(className, styles.container)}>
-            <div ref={scrollAnchoredContainerRef} className={classNames(styles.scrollAnchoredContainer)}>
-                {transcript.map(
-                    (message, index) =>
-                        message?.displayText && (
-                            <TranscriptItem
-                                // eslint-disable-next-line react/no-array-index-key
-                                key={index}
-                                message={message}
-                                inProgress={false}
-                                beingEdited={index > 0 && transcript.length - index === 2 && messageBeingEdited}
-                                setBeingEdited={setMessageBeingEdited}
-                                fileLinkComponent={fileLinkComponent}
-                                symbolLinkComponent={symbolLinkComponent}
-                                codeBlocksCopyButtonClassName={codeBlocksCopyButtonClassName}
-                                codeBlocksInsertButtonClassName={codeBlocksInsertButtonClassName}
-                                transcriptItemClassName={transcriptItemClassName}
-                                humanTranscriptItemClassName={humanTranscriptItemClassName}
-                                transcriptItemParticipantClassName={transcriptItemParticipantClassName}
-                                transcriptActionClassName={transcriptActionClassName}
-                                textAreaComponent={textAreaComponent}
-                                EditButtonContainer={EditButtonContainer}
-                                editButtonOnSubmit={editButtonOnSubmit}
-                                showEditButton={index > 0 && transcript.length - index === 2}
-                                FeedbackButtonsContainer={FeedbackButtonsContainer}
-                                feedbackButtonsOnSubmit={feedbackButtonsOnSubmit}
-                                copyButtonOnSubmit={copyButtonOnSubmit}
-                                showFeedbackButtons={index !== 0 && !isTranscriptError}
-                                submitButtonComponent={submitButtonComponent}
-                                chatInputClassName={chatInputClassName}
-                                ChatButtonComponent={ChatButtonComponent}
-                                pluginsDevMode={pluginsDevMode}
-                            />
-                        )
-                )}
-                {messageInProgress && messageInProgress.speaker === 'assistant' && (
-                    <TranscriptItem
-                        message={messageInProgress}
-                        inProgress={true}
-                        beingEdited={false}
-                        setBeingEdited={setMessageBeingEdited}
-                        fileLinkComponent={fileLinkComponent}
-                        symbolLinkComponent={symbolLinkComponent}
-                        codeBlocksCopyButtonClassName={codeBlocksCopyButtonClassName}
-                        codeBlocksInsertButtonClassName={codeBlocksInsertButtonClassName}
-                        transcriptItemClassName={transcriptItemClassName}
-                        transcriptItemParticipantClassName={transcriptItemParticipantClassName}
-                        transcriptActionClassName={transcriptActionClassName}
-                        showEditButton={false}
-                        showFeedbackButtons={false}
-                        copyButtonOnSubmit={copyButtonOnSubmit}
-                        submitButtonComponent={submitButtonComponent}
-                        chatInputClassName={chatInputClassName}
-                        ChatButtonComponent={ChatButtonComponent}
-                    />
-                )}
-            </div>
-            <div className={classNames(styles.scrollAnchor)}>&nbsp;</div>
+            {transcript.map(
+                (message, index) =>
+                    message?.displayText && (
+                        <TranscriptItem
+                            // eslint-disable-next-line react/no-array-index-key
+                            key={index}
+                            message={message}
+                            inProgress={false}
+                            beingEdited={index > 0 && transcript.length - index === 2 && messageBeingEdited}
+                            setBeingEdited={setMessageBeingEdited}
+                            serverEndpoint={serverEndpoint}
+                            fileLinkComponent={fileLinkComponent}
+                            codeBlocksCopyButtonClassName={codeBlocksCopyButtonClassName}
+                            codeBlocksInsertButtonClassName={codeBlocksInsertButtonClassName}
+                            transcriptItemClassName={transcriptItemClassName}
+                            humanTranscriptItemClassName={humanTranscriptItemClassName}
+                            transcriptItemParticipantClassName={transcriptItemParticipantClassName}
+                            transcriptActionClassName={transcriptActionClassName}
+                            textAreaComponent={textAreaComponent}
+                            EditButtonContainer={EditButtonContainer}
+                            editButtonOnSubmit={editButtonOnSubmit}
+                            showEditButton={index > 0 && transcript.length - index === 2}
+                            FeedbackButtonsContainer={FeedbackButtonsContainer}
+                            feedbackButtonsOnSubmit={feedbackButtonsOnSubmit}
+                            copyButtonOnSubmit={copyButtonOnSubmit}
+                            showFeedbackButtons={index !== 0 && !isTranscriptError}
+                            submitButtonComponent={submitButtonComponent}
+                            chatInputClassName={chatInputClassName}
+                            ChatButtonComponent={ChatButtonComponent}
+                            pluginsDevMode={pluginsDevMode}
+                        />
+                    )
+            )}
+            {messageInProgress && messageInProgress.speaker === 'assistant' && (
+                <TranscriptItem
+                    message={messageInProgress}
+                    inProgress={true}
+                    beingEdited={false}
+                    setBeingEdited={setMessageBeingEdited}
+                    serverEndpoint={serverEndpoint}
+                    fileLinkComponent={fileLinkComponent}
+                    codeBlocksCopyButtonClassName={codeBlocksCopyButtonClassName}
+                    codeBlocksInsertButtonClassName={codeBlocksInsertButtonClassName}
+                    transcriptItemClassName={transcriptItemClassName}
+                    transcriptItemParticipantClassName={transcriptItemParticipantClassName}
+                    transcriptActionClassName={transcriptActionClassName}
+                    showEditButton={false}
+                    showFeedbackButtons={false}
+                    copyButtonOnSubmit={copyButtonOnSubmit}
+                    submitButtonComponent={submitButtonComponent}
+                    chatInputClassName={chatInputClassName}
+                    ChatButtonComponent={ChatButtonComponent}
+                />
+            )}
         </div>
     )
 })

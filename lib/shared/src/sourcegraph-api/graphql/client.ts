@@ -18,6 +18,7 @@ import {
     LEGACY_SEARCH_EMBEDDINGS_QUERY,
     LOG_EVENT_MUTATION,
     LOG_EVENT_MUTATION_DEPRECATED,
+    PRECISE_CONTEXT,
     REPOSITORY_EMBEDDING_EXISTS_QUERY,
     REPOSITORY_ID_QUERY,
     REPOSITORY_IDS_QUERY,
@@ -102,6 +103,33 @@ type GetCodyContextResult = CodyFileChunkContext | null
 
 interface GetCodyContextResponse {
     getCodyContext: GetCodyContextResult[]
+}
+
+export interface PreciseContextResult {
+    symbol: {
+        scipName: string
+        scipDescriptorSuffix: string
+        fuzzyName?: string
+    }
+    definitionSnippet: string
+    repositoryName: string
+    filepath: string
+    canonicalLocationURL: string
+}
+
+interface PreciseContextResponse {
+    getPreciseContext: PreciseContext
+}
+interface PreciseContext {
+    context: PreciseContextResult[]
+    traceLogs: string
+}
+
+export interface ActiveFileSelectionRange {
+    startLine: number
+    startCharacter: number
+    endLine: number
+    endCharacter: number
 }
 
 interface SearchAttributionResponse {
@@ -195,6 +223,10 @@ export class SourcegraphGraphQLAPIClient {
         this.config = newConfig
     }
 
+    public serverEndpoint(): string {
+        return this.config.serverEndpoint
+    }
+
     public isDotCom(): boolean {
         return new URL(this.config.serverEndpoint).origin === new URL(this.dotcomUrl).origin
     }
@@ -248,6 +280,24 @@ export class SourcegraphGraphQLAPIClient {
                 data.currentUser ? data.currentUser.id : new Error('current user not found')
             )
         )
+    }
+
+    public async getPreciseContext(
+        repositoryName: string,
+        closestRemoteCommitSHA: string,
+        activeFile: string,
+        activeFileContent: string,
+        activeFileSelectionRange: ActiveFileSelectionRange | null
+    ): Promise<PreciseContext | Error> {
+        return this.fetchSourcegraphAPI<APIResponse<PreciseContextResponse>>(PRECISE_CONTEXT, {
+            input: {
+                repositoryName,
+                closestRemoteCommitSHA,
+                activeFile,
+                activeFileContent,
+                ...(activeFileSelectionRange && { activeFileSelectionRange }),
+            },
+        }).then(response => extractDataOrError(response, data => data.getPreciseContext))
     }
 
     public async getCurrentUserIdAndVerifiedEmail(): Promise<{ id: string; hasVerifiedEmail: boolean } | Error> {

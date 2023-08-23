@@ -172,6 +172,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                     )}
                     {view === 'chat' && (
                         <Chat
+                            serverEndpoint={endpoint || ''}
                             messageInProgress={messageInProgress}
                             messageBeingEdited={messageBeingEdited}
                             setMessageBeingEdited={setMessageBeingEdited}
