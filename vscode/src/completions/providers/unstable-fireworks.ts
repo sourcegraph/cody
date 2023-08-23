@@ -28,7 +28,7 @@ export class UnstableFireworksProvider extends Provider {
 
     private createPrompt(snippets: ContextSnippet[]): string {
         const maxPromptChars = CONTEXT_WINDOW_CHARS - CONTEXT_WINDOW_CHARS * this.options.responsePercentage
-        const { prefix, suffix } = this.options
+        const { prefix, suffix } = this.options.docContext
 
         const intro: string[] = []
         let prompt = ''
@@ -78,7 +78,7 @@ export class UnstableFireworksProvider extends Provider {
             top_p: 0.95,
             n: this.options.n,
             echo: false,
-            model: 'accounts/fireworks/models/starcoder-7b-w8a16-1gpu',
+            model: 'accounts/fireworks/models/starcoder-7b-w8a16',
         }
 
         const log = logger.startCompletion({
@@ -113,7 +113,6 @@ export class UnstableFireworksProvider extends Provider {
             log?.onComplete(completions.map(c => c.content))
 
             return completions.map(c => ({
-                prefix: this.options.prefix,
                 content: c.content,
                 stopReason: c.stopReason,
             }))

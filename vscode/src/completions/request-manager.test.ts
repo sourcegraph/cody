@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 
+import { vsCodeMocks } from '../testutils/mocks'
+
 import { Provider } from './providers/provider'
 import { RequestManager, RequestManagerResult, RequestParams } from './request-manager'
 import { documentAndPosition } from './testHelpers'
@@ -8,6 +10,7 @@ import { getNextNonEmptyLine, getPrevNonEmptyLine } from './utils/text-utils'
 
 class MockProvider extends Provider {
     public didFinishNetworkRequest = false
+    public didAbort = false
     protected resolve: (completion: Completion[]) => void = () => {}
 
     public resolveRequest(completions: string[]): void {
@@ -15,7 +18,10 @@ class MockProvider extends Provider {
         this.resolve(completions.map(content => ({ content })))
     }
 
-    public generateCompletions(): Promise<Completion[]> {
+    public generateCompletions(abortSignal: AbortSignal): Promise<Completion[]> {
+        abortSignal.addEventListener('abort', () => {
+            this.didAbort = true
+        })
         return new Promise(resolve => {
             this.resolve = resolve
         })
@@ -25,8 +31,7 @@ class MockProvider extends Provider {
 function createProvider(prefix: string) {
     return new MockProvider({
         id: 'mock-provider',
-        prefix,
-        suffix: '',
+        docContext: docState(prefix).docContext,
         fileName: '',
         languageId: 'typescript',
         multiline: false,
@@ -50,6 +55,10 @@ function docState(prefix: string, suffix: string = ';'): RequestParams {
             currentLineSuffix: suffix,
             prevNonEmptyLine: getPrevNonEmptyLine(prefix),
             nextNonEmptyLine: getNextNonEmptyLine(suffix),
+        },
+        context: {
+            triggerKind: vsCodeMocks.InlineCompletionTriggerKind.Automatic,
+            selectedCompletionInfo: undefined,
         },
         multiline: false,
     }
@@ -155,5 +164,23 @@ describe('RequestManager', () => {
 
         // Ensure that the completed network request does not cause issues
         provider2.resolveRequest(["'world')"])
+    })
+
+    it('aborts a newer request if a prior request resolves it', async () => {
+        const prefix1 = 'console.'
+        const provider1 = createProvider(prefix1)
+        const promise1 = createRequest(prefix1, provider1)
+
+        const prefix2 = 'console.log('
+        const provider2 = createProvider(prefix2)
+        const promise2 = createRequest(prefix2, provider2)
+
+        provider1.resolveRequest(["log('hello')"])
+
+        expect((await promise1).completions[0].insertText).toBe("log('hello')")
+        const { completions } = await promise2
+        expect(completions[0].insertText).toBe("'hello')")
+
+        expect(provider2.didAbort).toBe(true)
     })
 })

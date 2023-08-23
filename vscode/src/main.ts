@@ -3,6 +3,7 @@ import * as vscode from 'vscode'
 import { commandRegex } from '@sourcegraph/cody-shared/src/chat/recipes/helpers'
 import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 import { Configuration, ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
+import { FeatureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
 import { SourcegraphCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/client'
 
 import { ChatViewProvider } from './chat/ChatViewProvider'
@@ -95,7 +96,7 @@ const register = async (
     // Controller for inline Chat
     const commentController = new InlineController(context.extensionPath, telemetryService)
     // Controller for Non-Stop Cody
-    const fixup = new FixupController()
+    const fixup = new FixupController(telemetryService)
     disposables.push(fixup)
     if (TestSupport.instance) {
         TestSupport.instance.fixupController.set(fixup)
@@ -104,21 +105,24 @@ const register = async (
     const editor = new VSCodeEditor({
         inline: commentController,
         fixups: fixup,
-        command: platform.createCommandsController?.(context, localStorage),
+        command: platform.createCommandsController?.(context, localStorage, telemetryService),
     })
 
     // Could we use the `initialConfig` instead?
     const workspaceConfig = vscode.workspace.getConfiguration()
     const config = getConfiguration(workspaceConfig)
 
+    const symfRunner = platform.createSymfRunner?.(config.experimentalSymfPath, config.experimentalSymfAnthropicKey)
+
     const {
+        featureFlagProvider,
         intentDetector,
         codebaseContext: initialCodebaseContext,
         chatClient,
         completionsClient,
         guardrails,
         onConfigurationChange: externalServicesOnDidConfigurationChange,
-    } = await configureExternalServices(initialConfig, rgPath, editor, telemetryService, platform)
+    } = await configureExternalServices(initialConfig, rgPath, symfRunner, editor, telemetryService, platform)
 
     const authProvider = new AuthProvider(initialConfig, secretStorage, localStorage, telemetryService)
     await authProvider.init()
@@ -131,6 +135,7 @@ const register = async (
         secretStorage,
         localStorage,
         rgPath,
+        symfRunner,
         authProvider,
         telemetryService,
         platform
@@ -201,14 +206,14 @@ const register = async (
             return
         }
 
-        const task = options.instruction
+        const task = options.instruction?.replace('/fix', '').trim()
             ? fixup.createTask(document.uri, options.instruction, range)
             : await fixup.promptUserForTask()
         if (!task) {
             return
         }
 
-        telemetryService.log('CodyVSCodeExtension:fixup')
+        telemetryService.log('CodyVSCodeExtension:fixup:created')
         const provider = fixupManager.getProviderForTask(task)
         return provider.startFix()
     }
@@ -236,18 +241,21 @@ const register = async (
 
             const inlineChatProvider = inlineChatManager.getProviderForThread(comment.thread)
             await inlineChatProvider.addChat(comment.text, false)
-            telemetryService.log('CodyVSCodeExtension:inline-assist:chat')
+            telemetryService.log('CodyVSCodeExtension:chat:submitted', { source: 'inline' })
         }),
         vscode.commands.registerCommand('cody.comment.delete', (thread: vscode.CommentThread) => {
             inlineChatManager.removeProviderForThread(thread)
+            telemetryService.log('CodyVSCodeExtension:inline-assist:deleteButton:clicked')
         }),
         vscode.commands.registerCommand('cody.comment.stop', async (comment: Comment) => {
             const inlineChatProvider = inlineChatManager.getProviderForThread(comment.parent)
             await inlineChatProvider.abortChat()
+            telemetryService.log('CodyVSCodeExtension:abortButton:clicked', { source: 'inline-chat' })
         }),
-        vscode.commands.registerCommand('cody.comment.collapse-all', () =>
-            vscode.commands.executeCommand('workbench.action.collapseAllComments')
-        ),
+        vscode.commands.registerCommand('cody.comment.collapse-all', () => {
+            void vscode.commands.executeCommand('workbench.action.collapseAllComments')
+            telemetryService.log('CodyVSCodeExtension:inline-assist:collapseButton:clicked')
+        }),
         vscode.commands.registerCommand('cody.comment.open-in-sidebar', async (thread: vscode.CommentThread) => {
             const inlineChatProvider = inlineChatManager.getProviderForThread(thread)
             // The inline chat is already saved in history, we just need to tell the sidebar chat to restore it
@@ -256,10 +264,12 @@ const register = async (
             await sidebarChatProvider.setWebviewView('chat')
             // Remove the inline chat
             inlineChatManager.removeProviderForThread(thread)
+            telemetryService.log('CodyVSCodeExtension:inline-assist:openInSidebarButton:clicked')
         }),
         vscode.commands.registerCommand(
             'cody.fixup.new',
-            (range: vscode.Range): Promise<void> => executeFixup({ range })
+            (options: { range?: vscode.Range; instruction?: string; document?: vscode.TextDocument }) =>
+                executeFixup(options)
         ),
         vscode.commands.registerCommand('cody.inline.new', async () => {
             // move focus line to the end of the current selection
@@ -283,31 +293,39 @@ const register = async (
         vscode.commands.registerCommand('cody.auth.signin', () => authProvider.signinMenu()),
         vscode.commands.registerCommand('cody.auth.signout', () => authProvider.signoutMenu()),
         vscode.commands.registerCommand('cody.auth.support', () => showFeedbackSupportQuickPick()),
+        vscode.commands.registerCommand('cody.auth.sync', () => {
+            void contextProvider.syncAuthStatus()
+            void featureFlagProvider.syncAuthStatus()
+        }),
         // Commands
         vscode.commands.registerCommand('cody.interactive.clear', async () => {
             await sidebarChatProvider.clearAndRestartSession()
             await sidebarChatProvider.setWebviewView('chat')
+            telemetryService.log('CodyVSCodeExtension:chatTitleButton:clicked', { name: 'reset' })
         }),
         vscode.commands.registerCommand('cody.focus', () => vscode.commands.executeCommand('cody.chat.focus')),
         vscode.commands.registerCommand('cody.settings.extension', () =>
             vscode.commands.executeCommand('workbench.action.openSettings', { query: '@ext:sourcegraph.cody-ai' })
         ),
-        vscode.commands.registerCommand('cody.history', async () => sidebarChatProvider.setWebviewView('history')),
+        vscode.commands.registerCommand('cody.history', async () => {
+            await sidebarChatProvider.setWebviewView('history')
+            telemetryService.log('CodyVSCodeExtension:chatTitleButton:clicked', { name: 'history' })
+        }),
         vscode.commands.registerCommand('cody.history.clear', async () => {
             await sidebarChatProvider.clearHistory()
         }),
         // Recipes
-        vscode.commands.registerCommand('cody.action.chat', input =>
-            executeRecipeInSidebar('chat-question', true, input)
-        ),
+        vscode.commands.registerCommand('cody.action.chat', async input => {
+            await executeRecipeInSidebar('chat-question', true, input)
+            telemetryService.log('CodyVSCodeExtension:chat:submitted', { source: 'menu' })
+        }),
         vscode.commands.registerCommand(
             'cody.action.fixup',
             (instruction: string, range: vscode.Range): Promise<void> => executeFixup({ instruction, range })
         ),
-        vscode.commands.registerCommand(
-            'cody.action.commands.menu',
-            showDesc => editor.controllers.command?.menu('default', showDesc)
-        ),
+        vscode.commands.registerCommand('cody.action.commands.menu', async () => {
+            await editor.controllers.command?.menu('default')
+        }),
         vscode.commands.registerCommand(
             'cody.action.commands.custom.menu',
             () => editor.controllers.command?.menu('custom')
@@ -321,15 +339,15 @@ const register = async (
         }),
         vscode.commands.registerCommand('cody.command.explain-code', async () => {
             await executeRecipeInSidebar('custom-prompt', true, '/explain')
-            telemetryService.log('CodyVSCodeExtension:recipe:explain-code-high-level:executed')
         }),
-        vscode.commands.registerCommand('cody.command.generate-unit-test', async () => {
+        vscode.commands.registerCommand('cody.command.generate-tests', async () => {
             await executeRecipeInSidebar('custom-prompt', true, '/test')
-            telemetryService.log('CodyVSCodeExtension:recipe:generate-unit-test:executed')
         }),
-        vscode.commands.registerCommand('cody.command.generate-docstring', async () => {
+        vscode.commands.registerCommand('cody.command.document-code', async () => {
             await executeRecipeInSidebar('custom-prompt', true, '/doc')
-            telemetryService.log('CodyVSCodeExtension:recipe:generate-docstring:executed')
+        }),
+        vscode.commands.registerCommand('cody.command.smell-code', async () => {
+            await executeRecipeInSidebar('custom-prompt', true, '/smell')
         }),
         vscode.commands.registerCommand('cody.command.inline-touch', () =>
             executeRecipeInSidebar('inline-touch', false)
@@ -349,6 +367,7 @@ const register = async (
             vscode.env.openExternal(vscode.Uri.parse(CODY_FEEDBACK_URL.href))
         ),
         vscode.commands.registerCommand('cody.welcome', async () => {
+            telemetryService.log('CodyVSCodeExtension:walkthrough:clicked', { page: 'welcome' })
             // Hack: We have to run this twice to force VS Code to register the walkthrough
             // Open issue: https://github.com/microsoft/vscode/issues/186165
             await vscode.commands.executeCommand('workbench.action.openWalkthrough')
@@ -366,10 +385,12 @@ const register = async (
         ),
         vscode.commands.registerCommand('cody.walkthrough.showChat', () => sidebarChatProvider.setWebviewView('chat')),
         vscode.commands.registerCommand('cody.walkthrough.showFixup', () => sidebarChatProvider.setWebviewView('chat')),
-        vscode.commands.registerCommand('cody.walkthrough.showExplain', () =>
-            sidebarChatProvider.setWebviewView('chat')
-        ),
+        vscode.commands.registerCommand('cody.walkthrough.showExplain', async () => {
+            telemetryService.log('CodyVSCodeExtension:walkthrough:clicked', { page: 'showExplain' })
+            await sidebarChatProvider.setWebviewView('chat')
+        }),
         vscode.commands.registerCommand('cody.walkthrough.enableInlineChat', async () => {
+            telemetryService.log('CodyVSCodeExtension:walkthrough:clicked', { page: 'enableInlineChat' })
             await workspaceConfig.update('cody.inlineChat', true, vscode.ConfigurationTarget.Global)
             // Open VSCode setting view. Provides visual confirmation that the setting is enabled.
             return vscode.commands.executeCommand('workbench.action.openSettings', {
@@ -387,6 +408,12 @@ const register = async (
         if (!config.autocomplete) {
             completionsProvider?.dispose()
             completionsProvider = null
+            if (config.isRunningInsideAgent) {
+                throw new Error(
+                    'The setting `config.autocomplete` evaluated to `false`. It must be true when running inside the agent. ' +
+                        'To fix this problem, make sure that the setting cody.autocomplete.enabled has the value true.'
+                )
+            }
             return
         }
 
@@ -396,7 +423,13 @@ const register = async (
             completionsProvider.dispose()
         }
 
-        completionsProvider = createCompletionsProvider(config, completionsClient, statusBar, contextProvider)
+        completionsProvider = createCompletionsProvider(
+            config,
+            completionsClient,
+            statusBar,
+            contextProvider,
+            featureFlagProvider
+        )
     }
     vscode.workspace.onDidChangeConfiguration(event => {
         if (event.affectsConfiguration('cody.autocomplete')) {
@@ -441,7 +474,8 @@ function createCompletionsProvider(
     config: Configuration,
     completionsClient: SourcegraphCompletionsClient,
     statusBar: CodyStatusBar,
-    contextProvider: ContextProvider
+    contextProvider: ContextProvider,
+    featureFlagProvider: FeatureFlagProvider
 ): vscode.Disposable {
     const disposables: vscode.Disposable[] = []
 
@@ -455,14 +489,22 @@ function createCompletionsProvider(
             getCodebaseContext: () => contextProvider.context,
             isEmbeddingsContextEnabled: config.autocompleteAdvancedEmbeddings,
             completeSuggestWidgetSelection: config.autocompleteExperimentalCompleteSuggestWidgetSelection,
+            featureFlagProvider,
         })
 
         disposables.push(
-            vscode.commands.registerCommand('cody.autocomplete.inline.accepted', ({ codyLogId, codyLines }) => {
-                completionsProvider.handleDidAcceptCompletionItem(codyLogId, codyLines)
+            vscode.commands.registerCommand('cody.autocomplete.inline.accepted', ({ codyLogId, codyCompletion }) => {
+                completionsProvider.handleDidAcceptCompletionItem(codyLogId, codyCompletion)
             }),
             vscode.languages.registerInlineCompletionItemProvider('*', completionsProvider),
             registerAutocompleteTraceView(completionsProvider)
+        )
+    } else if (config.isRunningInsideAgent) {
+        throw new Error(
+            "Can't register completion provider because `providerConfig` evaluated to `null`. " +
+                'To fix this problem, debug why createProviderConfig returned null instead of ProviderConfig. ' +
+                'To further debug this problem, here is the configuration:\n' +
+                JSON.stringify(config, null, 2)
         )
     }
 

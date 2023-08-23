@@ -1,6 +1,10 @@
 import * as vscode from 'vscode'
 
 import { VsCodeFixupController, VsCodeFixupTaskRecipeData } from '@sourcegraph/cody-shared/src/editor'
+import { TelemetryService } from '@sourcegraph/cody-shared/src/telemetry'
+
+import { debug } from '../log'
+import { countCode } from '../services/InlineAssist'
 
 import { computeDiff, Diff } from './diff'
 import { FixupCodeLenses } from './FixupCodeLenses'
@@ -39,7 +43,7 @@ export class FixupController
 
     private _disposables: vscode.Disposable[] = []
 
-    constructor() {
+    constructor(private telemetryService: TelemetryService) {
         // Register commands
         this._disposables.push(
             vscode.workspace.registerTextDocumentContentProvider('cody-fixup', this.contentStore),
@@ -101,7 +105,7 @@ export class FixupController
         const fixupFile = this.files.forUri(documentUri)
         const task = new FixupTask(fixupFile, instruction, selectionRange)
         this.tasks.set(task.id, task)
-        this.setTaskState(task, CodyTaskState.asking)
+        this.setTaskState(task, CodyTaskState.working)
         return task
     }
 
@@ -118,7 +122,8 @@ export class FixupController
 
     // Apply single fixup from task ID. Public for testing.
     public async apply(id: taskID): Promise<void> {
-        console.log(id + ' applying')
+        this.telemetryService.log('CodyVSCodeExtension:fixup:codeLens:clicked', { op: 'apply' })
+        debug('FixupController:apply', 'applying', { verbose: { id } })
         const task = this.tasks.get(id)
         if (!task) {
             console.error('cannot find task')
@@ -162,7 +167,7 @@ export class FixupController
             return
         }
         void vscode.window.showInformationMessage('Cody will rewrite to include your changes')
-        this.setTaskState(task, CodyTaskState.asking)
+        this.setTaskState(task, CodyTaskState.working)
         return undefined
     }
 
@@ -199,6 +204,11 @@ export class FixupController
             // TODO: Try to recover, for example by respinning
             void vscode.window.showWarningMessage('edit did not apply')
             return
+        }
+        const replacementText = task.replacement
+        if (replacementText) {
+            const tokenCount = countCode(replacementText)
+            this.telemetryService.log('CodyVSCodeExtension:fixup:applied', tokenCount)
         }
 
         // TODO: is this the right transition for being all done?
@@ -242,6 +252,7 @@ export class FixupController
     }
 
     private cancel(id: taskID): void {
+        this.telemetryService.log('CodyVSCodeExtension:fixup:codeLens:clicked', { op: 'cancel' })
         const task = this.tasks.get(id)
         if (!task) {
             return
@@ -299,7 +310,7 @@ export class FixupController
         if (!task) {
             return Promise.resolve()
         }
-        if (task.state !== CodyTaskState.asking) {
+        if (task.state !== CodyTaskState.working) {
             // TODO: Update this when we re-spin tasks with conflicts so that
             // we store the new text but can also display something reasonably
             // stable in the editor
@@ -314,6 +325,7 @@ export class FixupController
                 task.inProgressReplacement = undefined
                 task.replacement = text
                 this.setTaskState(task, CodyTaskState.ready)
+                this.telemetryService.log('CodyVSCodeExtension:fixupResponse:hasCode', countCode(text))
                 break
         }
         this.textDidChange(task)
@@ -436,6 +448,7 @@ export class FixupController
 
     // Show diff between before and after edits
     private async diff(id: taskID): Promise<void> {
+        this.telemetryService.log('CodyVSCodeExtension:fixup:codeLens:clicked', { op: 'diff' })
         const task = this.tasks.get(id)
         if (!task) {
             return
@@ -482,16 +495,17 @@ export class FixupController
             // Not a transition--nothing to do.
             return
         }
-        console.log(task.id, 'changing state from', oldState, 'to', state)
+
+        debug('FixupController:setTaskState: ', 'changing state', { verbose: { task } })
         task.state = state
 
         // TODO: These state transition actions were moved from FixupTask, but
         // it is wrong for a single task to toggle the cody.fixup.running state.
         // There's more than one task.
-        if (oldState !== CodyTaskState.asking && task.state === CodyTaskState.asking) {
+        if (oldState !== CodyTaskState.working && task.state === CodyTaskState.working) {
             task.spinCount++
             void vscode.commands.executeCommand('setContext', 'cody.fixup.running', true)
-        } else if (oldState === CodyTaskState.asking && task.state !== CodyTaskState.asking) {
+        } else if (oldState === CodyTaskState.working && task.state !== CodyTaskState.working) {
             void vscode.commands.executeCommand('setContext', 'cody.fixup.running', false)
         }
 

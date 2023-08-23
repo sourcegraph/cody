@@ -51,6 +51,9 @@ export interface InlineCompletionsParams {
     // Execution
     abortSignal?: AbortSignal
     tracer?: (data: Partial<ProvideInlineCompletionsItemTraceData>) => void
+
+    // Feature flags
+    completeSuggestWidgetSelection?: boolean
 }
 
 /**
@@ -68,6 +71,9 @@ export interface LastInlineCompletionCandidate {
 
     /** The next non-empty line in the suffix */
     lastTriggerNextNonEmptyLine: string
+
+    /** The selected info item. */
+    lastTriggerSelectedInfoItem: string | undefined
 
     /** The previously suggested result. */
     result: Pick<InlineCompletionsResult, 'logId' | 'items'>
@@ -115,9 +121,10 @@ export async function getInlineCompletions(params: InlineCompletionsParams): Pro
         const error = unknownError instanceof Error ? unknownError : new Error(unknownError as any)
 
         params.tracer?.({ error: error.toString() })
+        debug('getInlineCompletions:error', error.message, { verbose: error })
+        CompletionLogger.logError(error)
 
         if (isAbortError(error)) {
-            debug('getInlineCompletions:error', error.message, { verbose: error })
             return null
         }
 
@@ -148,6 +155,7 @@ async function doGetInlineCompletions({
     setIsLoading,
     abortSignal,
     tracer,
+    completeSuggestWidgetSelection = false,
 }: InlineCompletionsParams): Promise<InlineCompletionsResult | null> {
     tracer?.({ params: { document, position, context } })
 
@@ -163,7 +171,16 @@ async function doGetInlineCompletions({
 
     // Check if the user is typing as suggested by the last candidate completion (that is shown as
     // ghost text in the editor), and reuse it if it is still valid.
-    const resultToReuse = lastCandidate ? reuseLastCandidate({ document, position, lastCandidate, docContext }) : null
+    const resultToReuse = lastCandidate
+        ? reuseLastCandidate({
+              document,
+              position,
+              lastCandidate,
+              docContext,
+              context,
+              completeSuggestWidgetSelection,
+          })
+        : null
     if (resultToReuse) {
         return resultToReuse
     }
@@ -230,6 +247,7 @@ async function doGetInlineCompletions({
         docContext,
         position,
         multiline,
+        context,
     }
 
     // Get the processed completions from providers
@@ -280,12 +298,11 @@ function getCompletionProviders({
     prefixPercentage,
     suffixPercentage,
     multiline,
-    docContext: { prefix, suffix },
+    docContext,
     toWorkspaceRelativePath,
 }: GetCompletionProvidersParams): Provider[] {
     const sharedProviderOptions: Omit<ProviderOptions, 'id' | 'n' | 'multiline'> = {
-        prefix,
-        suffix,
+        docContext,
         fileName: toWorkspaceRelativePath(document.uri),
         languageId: document.languageId,
         responsePercentage,

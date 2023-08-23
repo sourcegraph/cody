@@ -4,6 +4,7 @@ import { noop } from 'lodash'
 
 import { Chat as ChatUI, ChatUISubmitButtonProps, ChatUITextAreaProps } from '@sourcegraph/cody-ui/src/Chat'
 import { FileLinkProps } from '@sourcegraph/cody-ui/src/chat/ContextFiles'
+import { SymbolLinkProps } from '@sourcegraph/cody-ui/src/chat/PreciseContext'
 import { CODY_TERMS_MARKDOWN } from '@sourcegraph/cody-ui/src/terms'
 import { SubmitSvg } from '@sourcegraph/cody-ui/src/utils/icons'
 
@@ -15,6 +16,7 @@ export const Chat: React.FunctionComponent<
         | 'textAreaComponent'
         | 'submitButtonComponent'
         | 'fileLinkComponent'
+        | 'symbolLinkComponent'
         | 'messageBeingEdited'
         | 'setMessageBeingEdited'
     >
@@ -44,6 +46,7 @@ export const Chat: React.FunctionComponent<
         textAreaComponent={TextArea}
         submitButtonComponent={SubmitButton}
         fileLinkComponent={FileLink}
+        symbolLinkComponent={SymbolLink}
         afterMarkdown={CODY_TERMS_MARKDOWN}
         transcriptItemClassName={styles.transcriptItem}
         humanTranscriptItemClassName={styles.humanTranscriptItem}
@@ -93,3 +96,4 @@ const SubmitButton: React.FunctionComponent<ChatUISubmitButtonProps> = ({ classN
 )
 
 const FileLink: React.FunctionComponent<FileLinkProps> = ({ path }) => <>{path}</>
+const SymbolLink: React.FunctionComponent<SymbolLinkProps> = ({ symbol }) => <>{symbol}</>

@@ -57,7 +57,7 @@ export class ChatQuestion implements Recipe {
 
         this.debug('ChatQuestion:getContextMessages', 'isCodebaseContextRequired', isCodebaseContextRequired)
         if (isCodebaseContextRequired) {
-            const codebaseContextMessages = await codebaseContext.getContextMessages(text, numResults)
+            const codebaseContextMessages = await codebaseContext.getCombinedContextMessages(text, numResults)
             contextMessages.push(...codebaseContextMessages)
             // TODO: Put this in getContextMessages?
             // Let's leave this here for now :)

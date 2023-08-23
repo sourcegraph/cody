@@ -52,9 +52,12 @@ export function getConfiguration(config: ConfigGetter): Configuration {
         inlineChat: config.get(CONFIG_KEY.inlineChatEnabled, true),
         experimentalGuardrails: config.get(CONFIG_KEY.experimentalGuardrails, isTesting),
         experimentalNonStop: config.get(CONFIG_KEY.experimentalNonStop, isTesting),
+        experimentalLocalSymbols: config.get(CONFIG_KEY.experimentalLocalSymbols, false),
         experimentalCommandLenses: config.get(CONFIG_KEY.experimentalCommandLenses, false),
         experimentalEditorTitleCommandIcon: config.get(CONFIG_KEY.experimentalEditorTitleCommandIcon, false),
         autocompleteAdvancedProvider: config.get(CONFIG_KEY.autocompleteAdvancedProvider, 'anthropic'),
+        experimentalSymfPath: config.get<string>(CONFIG_KEY.experimentalSymfPath, 'symf'),
+        experimentalSymfAnthropicKey: config.get<string>(CONFIG_KEY.experimentalSymfAnthropicKey, ''),
         autocompleteAdvancedServerEndpoint: config.get<string | null>(
             CONFIG_KEY.autocompleteAdvancedServerEndpoint,
             null
@@ -68,6 +71,12 @@ export function getConfiguration(config: ConfigGetter): Configuration {
         pluginsEnabled: config.get<boolean>(CONFIG_KEY.pluginsEnabled, false),
         pluginsDebugEnabled: config.get<boolean>(CONFIG_KEY.pluginsDebugEnabled, true),
         pluginsConfig: config.get(CONFIG_KEY.pluginsConfig, {}),
+
+        // Note: In spirit, we try to minimize agent-specific code paths in the VSC extension.
+        // We currently use this flag for the agent to provide more helpful error messages
+        // when something goes wrong, and to suppress event logging in the agent.
+        // Rely on this flag sparingly.
+        isRunningInsideAgent: config.get('cody.advanced.agent.running' as any, false),
     }
 }
 

@@ -8,7 +8,9 @@ import * as vscode from 'vscode'
 import { TextDocument } from 'vscode-languageserver-textdocument'
 
 import { NoopEditor } from '@sourcegraph/cody-shared/src/editor'
+import { FeatureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
 import { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/nodeClient'
+import { SourcegraphGraphQLAPIClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/cody-shared/src/telemetry'
 
 import { GetContextResult } from '../../src/completions/context/context'
@@ -26,6 +28,14 @@ import { findSubstringPosition } from './utils'
 
 let didLogConfig = false
 let providerName: string
+
+const dummyFeatureFlagProvider = new FeatureFlagProvider(
+    new SourcegraphGraphQLAPIClient({
+        accessToken: 'access-token',
+        serverEndpoint: 'https://sourcegraph.com',
+        customHeaders: {},
+    })
+)
 
 async function initCompletionsProvider(context: GetContextResult): Promise<InlineCompletionItemProvider> {
     const secretStorage = new InMemorySecretStorage()
@@ -45,6 +55,7 @@ async function initCompletionsProvider(context: GetContextResult): Promise<Inlin
     const { completionsClient, codebaseContext } = await configureExternalServices(
         initialConfig,
         'rg',
+        undefined,
         new NoopEditor(),
         NOOP_TELEMETRY_SERVICE,
         { createCompletionsClient: (...args) => new SourcegraphNodeCompletionsClient(...args) }
@@ -67,6 +78,7 @@ async function initCompletionsProvider(context: GetContextResult): Promise<Inlin
         getCodebaseContext: () => codebaseContext,
         isEmbeddingsContextEnabled: true,
         contextFetcher: () => Promise.resolve(context),
+        featureFlagProvider: dummyFeatureFlagProvider,
     })
 
     return completionsProvider

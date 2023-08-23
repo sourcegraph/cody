@@ -49,13 +49,16 @@ function params(
         ...params
     }: Partial<Omit<InlineCompletionsParams, 'document' | 'position' | 'docContext'>> & {
         languageId?: string
-        onNetworkRequest?: (params: CompletionParameters) => void
+        onNetworkRequest?: (
+            params: CompletionParameters,
+            onPartialResponse?: (incompleteResponse: CompletionResponse) => void
+        ) => void | Promise<void>
     } = {}
 ): InlineCompletionsParams {
     let requestCounter = 0
     const completionsClient: Pick<SourcegraphCompletionsClient, 'complete'> = {
-        complete(params: CompletionParameters): Promise<CompletionResponse> {
-            onNetworkRequest?.(params)
+        async complete(params, onPartialResponse): Promise<CompletionResponse> {
+            await onNetworkRequest?.(params, onPartialResponse)
             return responses === 'never-resolve'
                 ? new Promise(() => {})
                 : Promise.resolve(responses?.[requestCounter++] || { completion: '', stopReason: 'unknown' })
@@ -215,7 +218,11 @@ describe('getInlineCompletions', () => {
     })
 
     describe('reuseLastCandidate', () => {
-        function lastCandidate(code: string, insertText: string | string[]): LastInlineCompletionCandidate {
+        function lastCandidate(
+            code: string,
+            insertText: string | string[],
+            lastTriggerSelectedInfoItem?: string
+        ): LastInlineCompletionCandidate {
             const { document, position } = documentAndPosition(code)
             const suffix = document.getText(new Range(position, document.lineAt(document.lineCount - 1).range.end))
             const nextNonEmptyLine = getNextNonEmptyLine(suffix)
@@ -224,6 +231,7 @@ describe('getInlineCompletions', () => {
                 lastTriggerPosition: position,
                 lastTriggerCurrentLinePrefix: document.lineAt(position).text.slice(0, position.character),
                 lastTriggerNextNonEmptyLine: nextNonEmptyLine,
+                lastTriggerSelectedInfoItem,
                 result: {
                     logId: '1',
                     items: Array.isArray(insertText)
@@ -445,6 +453,31 @@ describe('getInlineCompletions', () => {
                 items: [{ insertText: 'x\ny' }],
                 source: InlineCompletionsResultSource.LastCandidate,
             }))
+
+        describe('completeSuggestWidgetSelection', () => {
+            test('not reused when selected item info differs', async () =>
+                // The user types `console`, sees the context menu pop up and receives a completion for
+                // the first item. They now use the arrow keys to select the second item. The original
+                // ghost text should not be reused as it won't be rendered anyways
+                expect(
+                    await getInlineCompletions(
+                        params('console█', [], {
+                            lastCandidate: lastCandidate('console█', ' = 1', 'log'),
+                            context: {
+                                triggerKind: vsCodeMocks.InlineCompletionTriggerKind.Automatic,
+                                selectedCompletionInfo: {
+                                    text: 'dir',
+                                    range: range(0, 0, 0, 0),
+                                },
+                            },
+                            completeSuggestWidgetSelection: true,
+                        })
+                    )
+                ).toEqual<V>({
+                    items: [],
+                    source: InlineCompletionsResultSource.Network,
+                }))
+        })
     })
 
     describe('bad completion starts', () => {
@@ -581,6 +614,42 @@ describe('getInlineCompletions', () => {
             )
             expect(requests).toHaveLength(3)
             expect(requests[0].stopSequences).not.toContain('\n')
+        })
+
+        test('does not trigger a multi-line completion at a function call', async () => {
+            const requests: CompletionParameters[] = []
+            await getInlineCompletions(
+                params('bar(█)', [], {
+                    onNetworkRequest(request) {
+                        requests.push(request)
+                    },
+                })
+            )
+            expect(requests).toHaveLength(1)
+        })
+
+        test('does not trigger a multi-line completion at a method call', async () => {
+            const requests: CompletionParameters[] = []
+            await getInlineCompletions(
+                params('foo.bar(█)', [], {
+                    onNetworkRequest(request) {
+                        requests.push(request)
+                    },
+                })
+            )
+            expect(requests).toHaveLength(1)
+        })
+
+        test('trigger a multi-line completion at a method declarations', async () => {
+            const requests: CompletionParameters[] = []
+            await getInlineCompletions(
+                params('method.hello () { █', [], {
+                    onNetworkRequest(request) {
+                        requests.push(request)
+                    },
+                })
+            )
+            expect(requests).toHaveLength(1)
         })
 
         test('uses an indentation based approach to cut-off completions', async () => {
@@ -1426,6 +1495,30 @@ describe('getInlineCompletions', () => {
         expect(requests[0].stopSequences).toEqual(['\n\nHuman:', '</CODE5711>', '\n\n'])
     })
 
+    test('trims whitespace in the prefix but keeps one \n', async () => {
+        const requests: CompletionParameters[] = []
+        await getInlineCompletions(
+            params(
+                dedent`
+            class Range {
+
+
+                █
+            }
+        `,
+                [],
+                {
+                    onNetworkRequest(request) {
+                        requests.push(request)
+                    },
+                }
+            )
+        )
+        expect(requests).toHaveLength(3)
+        const messages = requests[0].messages
+        expect(messages[messages.length - 1].text).toBe('Here is the code: <CODE5711>class Range {\n')
+    })
+
     test('synthesizes a completion from a prior request', async () => {
         // Reuse the same request manager for both requests in this test
         const requestManager = new RequestManager()
@@ -1443,4 +1536,140 @@ describe('getInlineCompletions', () => {
 
         expect(completions?.items[0].insertText).toBe("'Hello, world!');")
     })
+
+    describe('streaming', () => {
+        test('terminates early for a single-line request', async () => {
+            const abortController = new AbortController()
+            expect(
+                await getInlineCompletions({
+                    ...params('const x = █', [completion`├1337\nconsole.log('what?');┤`], {
+                        async onNetworkRequest(_params, onPartialResponse) {
+                            onPartialResponse?.(completion`├1337\ncon┤`)
+                            await nextTick()
+                            expect(abortController.signal.aborted).toBe(true)
+                        },
+                    }),
+                    abortSignal: abortController.signal,
+                })
+            ).toEqual<V>({
+                items: [{ insertText: '1337' }],
+                source: InlineCompletionsResultSource.Network,
+            })
+        })
+
+        test('does not include unfinished lines in results', async () => {
+            const abortController = new AbortController()
+            expect(
+                await getInlineCompletions({
+                    ...params('const x = █', [completion`├1337\nconsole.log('what?');┤`], {
+                        async onNetworkRequest(_params, onPartialResponse) {
+                            onPartialResponse?.(completion`├13┤`)
+                            await nextTick()
+                            expect(abortController.signal.aborted).toBe(false)
+                            onPartialResponse?.(completion`├1337\n┤`)
+                            await nextTick()
+                            expect(abortController.signal.aborted).toBe(true)
+                        },
+                    }),
+                    abortSignal: abortController.signal,
+                })
+            ).toEqual<V>({
+                items: [{ insertText: '1337' }],
+                source: InlineCompletionsResultSource.Network,
+            })
+        })
+
+        test('uses the multi-line truncation logic to terminate early for multi-line completions', async () => {
+            const abortController = new AbortController()
+            expect(
+                await getInlineCompletions({
+                    ...params(
+                        dedent`
+                            function myFun() {
+                                █
+                            }
+                        `,
+                        [
+                            completion`
+                                    ├console.log('what?')
+                                }
+
+                                function never(){}┤
+                            `,
+                        ],
+                        {
+                            async onNetworkRequest(_params, onPartialResponse) {
+                                onPartialResponse?.(completion`
+                                        ├console.log('what?')┤
+                                    ┴┴┴┴
+                                `)
+                                await nextTick()
+                                expect(abortController.signal.aborted).toBe(false)
+                                onPartialResponse?.(completion`
+                                        ├console.log('what?')
+                                    }
+                                    ┤
+                                `)
+                                await nextTick()
+                                expect(abortController.signal.aborted).toBe(true)
+                            },
+                        }
+                    ),
+                    abortSignal: abortController.signal,
+                })
+            ).toEqual<V>({
+                items: [{ insertText: "console.log('what?')" }],
+                source: InlineCompletionsResultSource.Network,
+            })
+        })
+
+        test('uses the next non-empty line comparison logic to terminate early for multi-line completions', async () => {
+            const abortController = new AbortController()
+            expect(
+                await getInlineCompletions({
+                    ...params(
+                        dedent`
+                            function myFun() {
+                                █
+                                console.log('oh no')
+                            }
+                        `,
+                        [
+                            completion`
+                                    ├const a = new Array()
+                                    console.log('oh no')
+                                }┤
+                            `,
+                        ],
+                        {
+                            async onNetworkRequest(_params, onPartialResponse) {
+                                onPartialResponse?.(completion`
+                                        ├const a = new Array()
+                                        console.log('oh no')┤
+                                    ┴┴┴┴
+                                `)
+                                await nextTick()
+                                expect(abortController.signal.aborted).toBe(false)
+                                onPartialResponse?.(completion`
+                                        ├const a = new Array()
+                                        console.log('oh no')
+                                    ┤
+                                `)
+                                await nextTick()
+                                expect(abortController.signal.aborted).toBe(true)
+                            },
+                        }
+                    ),
+                    abortSignal: abortController.signal,
+                })
+            ).toEqual<V>({
+                items: [{ insertText: 'const a = new Array()' }],
+                source: InlineCompletionsResultSource.Network,
+            })
+        })
+    })
 })
+
+async function nextTick(): Promise<void> {
+    await new Promise(resolve => setTimeout(resolve, 0))
+}

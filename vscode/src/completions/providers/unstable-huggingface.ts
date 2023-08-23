@@ -28,7 +28,7 @@ export class UnstableHuggingFaceProvider extends Provider {
 
     private createPrompt(snippets: ContextSnippet[]): string {
         const maxPromptChars = CONTEXT_WINDOW_CHARS - CONTEXT_WINDOW_CHARS * this.options.responsePercentage
-        const { prefix, suffix } = this.options
+        const { prefix, suffix } = this.options.docContext
 
         const intro: string[] = []
         let prompt = ''
@@ -109,7 +109,6 @@ export class UnstableHuggingFaceProvider extends Provider {
             log?.onComplete(completions)
 
             return completions.map(content => ({
-                prefix: this.options.prefix,
                 content,
             }))
         } catch (error: any) {

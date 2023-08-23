@@ -22,6 +22,7 @@ export interface ChatMessage extends Message {
 export interface InteractionMessage extends Message {
     displayText?: string
     prefix?: string
+    error?: string
 }
 
 export interface UserLocalHistory {

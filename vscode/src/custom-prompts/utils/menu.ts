@@ -13,7 +13,7 @@ const inlineSeparator: QuickPickItem = { kind: -1, label: 'inline' }
 const chatOption: QuickPickItem = { label: 'Ask a Question' }
 const fixOption: QuickPickItem = { label: 'Refactor This Code' }
 const commandsSeparator: QuickPickItem = { kind: -1, label: 'commands' }
-const customCommandsSeparator: QuickPickItem = { kind: -1, label: 'custom commands' }
+const customCommandsSeparator: QuickPickItem = { kind: -1, label: 'custom commands (experimental)' }
 const configOption: QuickPickItem = { label: 'Configure Custom Commands...' }
 const settingsSeparator: QuickPickItem = { kind: -1, label: 'settings' }
 const addOption: QuickPickItem = { label: 'New Custom User Command...', alwaysShow: true }
@@ -52,14 +52,16 @@ const workspaceItem: QuickPickItem = {
     description: '.vscode/cody.json',
 }
 
-const openIconButton = { iconPath: new ThemeIcon('go-to-file'), tooltip: 'open / create', id: 'open' }
+const openIconButton = { iconPath: new ThemeIcon('go-to-file'), tooltip: 'open/create', id: 'open' }
 const trashIconButton = { iconPath: new ThemeIcon('trash'), tooltip: 'delete', id: 'delete' }
+const gearIconButton = { iconPath: new ThemeIcon('gear'), tooltip: 'Configure Custom Commands...', id: 'config' }
 const backIconButton = QuickInputButtons.Back
 
 export const menu_buttons = {
     open: openIconButton,
     trash: trashIconButton,
     back: backIconButton,
+    gear: gearIconButton,
 }
 
 export const CustomCommandTypes = {

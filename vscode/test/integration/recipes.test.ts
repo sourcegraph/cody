@@ -2,7 +2,7 @@ import * as assert from 'assert'
 
 import * as vscode from 'vscode'
 
-import { afterIntegrationTest, beforeIntegrationTest, getTranscript } from './helpers'
+import { afterIntegrationTest, beforeIntegrationTest, getTranscript, waitUntil } from './helpers'
 
 suite('Recipes', function () {
     this.beforeEach(() => beforeIntegrationTest())
@@ -22,8 +22,8 @@ suite('Recipes', function () {
 
         // Check the chat transcript contains markdown
         const humanMessage = await getTranscript(0)
-        assert.match(humanMessage.displayText || '', /^.*Explain Code/)
+        assert.match(humanMessage.displayText || '', /^\/explain/)
 
-        assert.match((await getTranscript(1)).displayText || '', /^hello from the assistant$/)
+        await waitUntil(async () => /^hello from the assistant$/.test((await getTranscript(1)).displayText || ''))
     })
 })
