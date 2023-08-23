@@ -18,7 +18,7 @@ const configOption: QuickPickItem = { label: 'Configure Custom Commands...' }
 const settingsSeparator: QuickPickItem = { kind: -1, label: 'settings' }
 const addOption: QuickPickItem = { label: 'New Custom User Command...', alwaysShow: true }
 const chatSubmitOption: QuickPickItem = { label: 'Submit Question', alwaysShow: true }
-const fixSubmitOption: QuickPickItem = { label: 'Submit Refactor Request', alwaysShow: true }
+const fixSubmitOption: QuickPickItem = { label: 'Refactor', alwaysShow: true }
 
 export const recentlyUsedSeparatorAsPrompt: [string, CodyPrompt][] = [
     ['separator', { prompt: 'separator', type: 'recently used' }],
