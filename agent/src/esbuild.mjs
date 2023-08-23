@@ -16,6 +16,8 @@ import { aliasPath } from 'esbuild-plugin-alias-path'
         outfile: './dist/index.js',
         platform: 'node',
         format: 'cjs',
+        sourcemap: 'inline',
+        keepNames: true,
         plugins: [
             aliasPath({
                 alias: { vscode: path.resolve(process.cwd(), './src/vscode-shim.ts') },
