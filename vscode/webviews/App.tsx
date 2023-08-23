@@ -1,25 +1,24 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import './App.css'
 
 import { uniq, without } from 'lodash'
 
 import { ChatContextStatus } from '@sourcegraph/cody-shared/src/chat/context'
+import { CodyPrompt } from '@sourcegraph/cody-shared/src/chat/prompts'
 import { ChatHistory, ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { Configuration } from '@sourcegraph/cody-shared/src/configuration'
 
 import { AuthStatus, defaultAuthStatus, LocalEnv } from '../src/chat/protocol'
 
 import { Chat } from './Chat'
-import { Debug } from './Debug'
-import { Header } from './Header'
 import { LoadingPage } from './LoadingPage'
 import { Login } from './Login'
-import { NavBar, View } from './NavBar'
+import { View } from './NavBar'
+import { Notices } from './Notices'
 import { Plugins } from './Plugins'
-import { Recipes } from './Recipes'
-import { Settings } from './Settings'
 import { UserHistory } from './UserHistory'
+import { createWebviewTelemetryService } from './utils/telemetry'
 import type { VSCodeWrapper } from './utils/VSCodeApi'
 
 export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vscodeAPI }) => {
@@ -28,7 +27,6 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
         | null
     >(null)
     const [endpoint, setEndpoint] = useState<string | null>(null)
-    const [debugLog, setDebugLog] = useState<string[]>([])
     const [view, setView] = useState<View | undefined>()
     const [messageInProgress, setMessageInProgress] = useState<ChatMessage | null>(null)
     const [messageBeingEdited, setMessageBeingEdited] = useState<boolean>(false)
@@ -42,7 +40,8 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     const [suggestions, setSuggestions] = useState<string[] | undefined>()
     const [isAppInstalled, setIsAppInstalled] = useState<boolean>(false)
     const [enabledPlugins, setEnabledPlugins] = useState<string[]>([])
-    const [myPrompts, setMyPrompts] = useState<string[]>([])
+    const [myPrompts, setMyPrompts] = useState<[string, CodyPrompt][] | null>(null)
+    const [isTranscriptError, setIsTranscriptError] = useState<boolean>(false)
 
     useEffect(
         () =>
@@ -53,6 +52,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                             const msgLength = message.messages.length - 1
                             setTranscript(message.messages.slice(0, msgLength))
                             setMessageInProgress(message.messages[msgLength])
+                            setIsTranscriptError(false)
                         } else {
                             setTranscript(message.messages)
                             setMessageInProgress(null)
@@ -68,14 +68,6 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                         break
                     case 'login':
                         break
-                    case 'showTab':
-                        if (message.tab === 'chat') {
-                            setView('chat')
-                        }
-                        break
-                    case 'debug':
-                        setDebugLog([...debugLog, message.message])
-                        break
                     case 'history':
                         setInputHistory(message.messages?.input ?? [])
                         setUserHistory(message.messages?.chat ?? null)
@@ -85,7 +77,6 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                         break
                     case 'errors':
                         setErrorMessages([...errorMessages, message.errors].slice(-5))
-                        setDebugLog([...debugLog, message.errors])
                         break
                     case 'view':
                         setView(message.messages)
@@ -99,12 +90,15 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                     case 'enabled-plugins':
                         setEnabledPlugins(message.plugins)
                         break
-                    case 'my-prompts':
-                        setMyPrompts(message.prompts)
+                    case 'custom-prompts':
+                        setMyPrompts(message.prompts?.filter(command => command[1]?.slashCommand) || null)
+                        break
+                    case 'transcript-errors':
+                        setIsTranscriptError(message.isTranscriptError)
                         break
                 }
             }),
-        [debugLog, errorMessages, view, vscodeAPI]
+        [errorMessages, view, vscodeAPI]
     )
 
     useEffect(() => {
@@ -117,14 +111,6 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
             vscodeAPI.postMessage({ command: 'initialized' })
         }
     }, [view, vscodeAPI])
-
-    const onLogout = useCallback(() => {
-        setConfig(null)
-        setEndpoint(null)
-        setAuthStatus(defaultAuthStatus)
-        setView('login')
-        vscodeAPI.postMessage({ command: 'auth', type: 'signout' })
-    }, [vscodeAPI])
 
     const onLoginRedirect = useCallback(
         (uri: string) => {
@@ -146,13 +132,14 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
         [enabledPlugins, vscodeAPI]
     )
 
+    const telemetryService = useMemo(() => createWebviewTelemetryService(vscodeAPI), [vscodeAPI])
+
     if (!view || !authStatus || !config) {
         return <LoadingPage />
     }
 
     return (
         <div className="outer-container">
-            <Header endpoint={authStatus.isLoggedIn ? endpoint : null} />
             {view === 'login' || !authStatus.isLoggedIn ? (
                 <Login
                     authStatus={authStatus}
@@ -160,21 +147,20 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                     isAppInstalled={isAppInstalled}
                     isAppRunning={config?.isAppRunning}
                     vscodeAPI={vscodeAPI}
+                    telemetryService={telemetryService}
                     appOS={config?.os}
                     appArch={config?.arch}
+                    uiKindIsWeb={config?.uiKindIsWeb}
                     callbackScheme={config?.uriScheme}
                     onLoginRedirect={onLoginRedirect}
                 />
             ) : (
                 <>
-                    <NavBar
-                        view={view}
-                        setView={setView}
-                        devMode={Boolean(config?.debugEnable)}
-                        pluginsEnabled={Boolean(config?.pluginsEnabled)}
+                    <Notices
+                        extensionVersion={config?.extensionVersion}
+                        probablyNewInstall={!!userHistory && Object.entries(userHistory).length === 0}
                     />
                     {errorMessages && <ErrorBanner errors={errorMessages} setErrors={setErrorMessages} />}
-                    {view === 'debug' && config?.debugEnable && <Debug debugLog={debugLog} />}
                     {view === 'history' && (
                         <UserHistory
                             userHistory={userHistory}
@@ -183,12 +169,6 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                             setView={setView}
                             vscodeAPI={vscodeAPI}
                         />
-                    )}
-                    {view === 'recipes' && endpoint && (
-                        <Recipes vscodeAPI={vscodeAPI} myPrompts={myPrompts} endpoint={endpoint} />
-                    )}
-                    {view === 'settings' && endpoint && (
-                        <Settings onLogout={onLogout} endpoint={endpoint} version={config?.extensionVersion} />
                     )}
                     {view === 'chat' && (
                         <Chat
@@ -205,6 +185,10 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                             suggestions={suggestions}
                             pluginsDevMode={Boolean(config?.pluginsDebugEnabled)}
                             setSuggestions={setSuggestions}
+                            telemetryService={telemetryService}
+                            chatCommands={myPrompts || undefined}
+                            isTranscriptError={isTranscriptError}
+                            showOnboardingButtons={userHistory && Object.entries(userHistory).length === 0}
                         />
                     )}
                 </>

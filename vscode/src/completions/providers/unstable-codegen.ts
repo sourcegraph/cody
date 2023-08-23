@@ -1,8 +1,7 @@
 import fetch from 'isomorphic-fetch'
 
-import { Completion } from '..'
 import { logger } from '../../log'
-import { ReferenceSnippet } from '../context'
+import { Completion, ContextSnippet } from '../types'
 import { isAbortError } from '../utils'
 
 import { Provider, ProviderConfig, ProviderOptions } from './provider'
@@ -21,20 +20,23 @@ export class UnstableCodeGenProvider extends Provider {
         this.serverEndpoint = unstableCodeGenOptions.serverEndpoint
     }
 
-    public async generateCompletions(abortSignal: AbortSignal, snippets: ReferenceSnippet[]): Promise<Completion[]> {
+    public async generateCompletions(abortSignal: AbortSignal, snippets: ContextSnippet[]): Promise<Completion[]> {
+        const { prefix, suffix } = this.options.docContext
+        const suffixAfterFirstNewline = suffix.slice(suffix.indexOf('\n'))
+
         const params = {
             debug_ext_path: 'cody',
-            lang_prefix: `<|${mapVSCodeLanguageIdToModelId(this.languageId)}|>`,
-            prefix: this.prefix,
-            suffix: this.suffix,
+            lang_prefix: `<|${mapVSCodeLanguageIdToModelId(this.options.languageId)}|>`,
+            prefix,
+            suffix: suffixAfterFirstNewline,
             top_p: 0.95,
             temperature: 0.2,
-            max_tokens: this.multilineMode === null ? 40 : 128,
+            max_tokens: this.options.multiline ? 128 : 40,
             // The backend expects an even number of requests since it will
             // divide it into two different batches.
             batch_size: makeEven(4),
             // TODO: Figure out the exact format to attach context
-            context: JSON.stringify(prepareContext(snippets, this.fileName)),
+            context: JSON.stringify(prepareContext(snippets, this.options.fileName)),
             completion_type: 'automatic',
         }
 
@@ -55,13 +57,10 @@ export class UnstableCodeGenProvider extends Provider {
         try {
             const data = (await response.json()) as { completions: { completion: string }[] }
 
-            const completions: string[] = data.completions.map(c => postProcess(c.completion, this.multilineMode))
+            const completions: string[] = data.completions.map(c => postProcess(c.completion, this.options.multiline))
             log?.onComplete(completions)
 
-            return completions.map(content => ({
-                prefix: this.prefix,
-                content,
-            }))
+            return completions.map(content => ({ content }))
         } catch (error: any) {
             if (!isAbortError(error)) {
                 log?.onError(error)
@@ -72,10 +71,10 @@ export class UnstableCodeGenProvider extends Provider {
     }
 }
 
-function postProcess(content: string, multilineMode: null | 'block'): string {
+function postProcess(content: string, multiline: boolean): string {
     // The model might return multiple lines for single line completions because
     // we are only able to specify a token limit.
-    if (multilineMode === null && content.includes('\n')) {
+    if (!multiline && content.includes('\n')) {
         content = content.slice(0, content.indexOf('\n'))
     }
 
@@ -121,7 +120,7 @@ interface Context {
     }[]
 }
 
-function prepareContext(snippets: ReferenceSnippet[], fileName: string): Context {
+function prepareContext(snippets: ContextSnippet[], fileName: string): Context {
     const windows: Context['windows'] = []
 
     // the model expects a similarly to rank the order and priority to insert
@@ -153,5 +152,6 @@ export function createProviderConfig(unstableCodeGenOptions: UnstableCodeGenOpti
         maximumContextCharacters: contextWindowChars,
         enableExtendedMultilineTriggers: false,
         identifier: PROVIDER_IDENTIFIER,
+        supportsInfilling: true,
     }
 }

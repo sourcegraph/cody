@@ -14,6 +14,9 @@ export interface CodyStatusBar {
 const DEFAULT_TEXT = '$(cody-logo-heavy)'
 const DEFAULT_TOOLTIP = 'Cody Settings'
 
+const QUICK_PICK_ITEM_CHECKED_PREFIX = '$(check) '
+const QUICK_PICK_ITEM_EMPTY_INDENT_PREFIX = '\u00A0\u00A0\u00A0\u00A0 '
+
 export function createStatusBar(): CodyStatusBar {
     const statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right)
     statusBarItem.text = DEFAULT_TEXT
@@ -27,7 +30,7 @@ export function createStatusBar(): CodyStatusBar {
 
         function createFeatureToggle(
             name: string,
-            description: string,
+            description: string | undefined,
             detail: string,
             setting: string,
             getValue: (config: Configuration) => boolean,
@@ -35,9 +38,9 @@ export function createStatusBar(): CodyStatusBar {
         ): vscode.QuickPickItem & { onSelect: () => Promise<void> } {
             const isEnabled = getValue(config)
             return {
-                label: (isEnabled ? '$(check) ' : '') + name,
+                label: (isEnabled ? QUICK_PICK_ITEM_CHECKED_PREFIX : QUICK_PICK_ITEM_EMPTY_INDENT_PREFIX) + name,
                 description,
-                detail,
+                detail: QUICK_PICK_ITEM_EMPTY_INDENT_PREFIX + detail,
                 onSelect: async () => {
                     await workspaceConfig.update(setting, !isEnabled, vscode.ConfigurationTarget.Global)
 
@@ -59,19 +62,18 @@ export function createStatusBar(): CodyStatusBar {
                 { label: 'enable/disable features', kind: vscode.QuickPickItemKind.Separator },
                 createFeatureToggle(
                     'Code Autocomplete',
-                    'Beta',
+                    undefined,
                     'Enable Cody-powered code autocompletions',
                     'cody.autocomplete.enabled',
                     c => c.autocomplete
                 ),
                 createFeatureToggle(
                     'Inline Chat',
-                    'Beta',
+                    undefined,
                     'Enable chatting and editing with Cody, directly in your code',
                     'cody.inlineChat.enabled',
                     c => c.inlineChat
                 ),
-
                 createFeatureToggle(
                     'Chat Suggestions',
                     'Experimental',
@@ -80,18 +82,39 @@ export function createStatusBar(): CodyStatusBar {
                     c => c.experimentalChatPredictions,
                     true
                 ),
+                createFeatureToggle(
+                    'Code Lenses',
+                    'Experimental',
+                    'Enable Code Lenses in documents for quick access to Cody commands',
+                    'cody.experimental.commandLenses',
+                    c => c.experimentalCommandLenses
+                ),
+                createFeatureToggle(
+                    'Editor Title Icon',
+                    'Experimental',
+                    'Enable Cody to appear in editor title menu for quick access to Cody commands',
+                    'cody.experimental.editorTitleCommandIcon',
+                    c => c.experimentalEditorTitleCommandIcon
+                ),
                 { label: 'settings', kind: vscode.QuickPickItemKind.Separator },
                 {
-                    label: '$(gear) Cody Settings',
+                    label: '$(gear) Cody Extension Settings',
                     async onSelect(): Promise<void> {
                         await vscode.commands.executeCommand('cody.settings.extension')
+                    },
+                },
+                {
+                    label: '$(symbol-namespace) Custom Commands Settings',
+                    async onSelect(): Promise<void> {
+                        await vscode.commands.executeCommand('cody.settings.commands')
                     },
                 },
                 { label: 'feedback & support', kind: vscode.QuickPickItemKind.Separator },
                 ...FeedbackOptionItems,
             ],
             {
-                placeHolder: 'Select an option',
+                title: 'Cody Settings',
+                placeHolder: 'Choose an option',
                 matchOnDescription: true,
             }
         )

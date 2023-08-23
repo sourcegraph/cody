@@ -29,8 +29,7 @@
     background-image: linear-gradient(to bottom, #b200f8, #ff5543, #00cbec);
 }
 
-.row:hover > .header-container,
-.row:hover > .footer-container {
+.row:hover>.header-container {
     visibility: visible;
 }
 
@@ -86,11 +85,7 @@
 }
 
 .footer-container {
-    position: absolute;
-    bottom: calc(var(--spacing) / 4);
-    right: var(--spacing);
-
-    visibility: hidden;
+    padding-top: calc(var(--spacing) / 2);
 }
 
 .feedback-edit-buttons-container {

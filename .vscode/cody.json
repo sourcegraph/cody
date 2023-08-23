@@ -1,36 +1,19 @@
 {
-  "description": "This file is used for building custom workspace recipes for Cody by Sourcegraph.",
-  "recipes": {
-    "Spell Checker": {
-      "prompt": "Spell check the selected code and let me know if I have any typos or non-standard usage.",
+  "commands": {
+    "Commit Message Suggestion": {
+      "prompt": "Suggest a informative commit message by summarizing code changes from the shared command output. The commit message should follow the conventional commit format and provide meaningful context for future readers.",
       "context": {
-        "codebase": false
-      }
+        "selection": false,
+        "command": "git diff"
+      },
+      "note": "You must have git installed and authenticated to use this command. Runs this command before staging."
     },
-    "Refactor Code": {
-      "prompt": "Suggest ways to refactor the selected code to improve readability and maintainability",
+    "Summarize the latest Cody Release": {
+      "prompt": "What is the latest stable version of Cody? Can you briefly summarize the changes that were included in that release based on this CHANGELOG excerpt?",
       "context": {
-        "currentDir": true
+        "selection": false,
+        "command": "curl https://raw.githubusercontent.com/sourcegraph/cody/main/vscode/CHANGELOG.md | head -n 50"
       }
-    },
-    "Compare Files in Opened Tabs": {
-      "prompt": "Compare the code from the shared files and explain how they are related",
-      "context": {
-        "openTabs": true,
-        "excludeSelection": true
-      }
-    },
-    "GH Search: Deploy Repoes not owned by Sourcegraph": {
-      "prompt": "What are the names of repositories that are used for deploying Sourcegraph, but is not directly owned by Sourcegraph?",
-      "command": "gh",
-      "args": ["search", "repos", "sourcegraph", "deploy"],
-      "note": "You must have gh command installed and authenticated to use this recipe"
-    },
-    "Last Git Commit Info": {
-      "prompt": "Who made the last commit to this repository and what did they change?",
-      "command": "git",
-      "args": ["log", "-1"],
-      "note": "You must have git command installed and authenticated to use this recipe"
     }
   }
 }

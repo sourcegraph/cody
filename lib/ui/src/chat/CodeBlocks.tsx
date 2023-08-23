@@ -67,7 +67,7 @@ function createCopyButton(
         button.textContent = 'Copied'
         setTimeout(() => (button.textContent = 'Copy'), 3000)
         if (copyButtonOnSubmit) {
-            copyButtonOnSubmit('copyButton')
+            copyButtonOnSubmit(text, false)
         }
     })
     return button
@@ -87,31 +87,9 @@ function createInsertButton(
     button.title = 'Insert text at current cursor position'
     button.className = classNames(styles.insertButton, className)
     button.addEventListener('click', () => {
-        const selectedText = getSelectedTextWithin(container.querySelector('pre'))
-        copyButtonOnSubmit(selectedText || text, true)
+        copyButtonOnSubmit(text, true)
     })
     return button
-}
-
-function getSelectedTextWithin(element: HTMLElement | null): string | null {
-    if (!element) {
-        return null
-    }
-
-    const selection = document.getSelection()
-    if (!selection) {
-        return null
-    }
-
-    const range = selection.getRangeAt(0)
-    const startContainer = range.startContainer
-    const endContainer = range.endContainer
-
-    if (element.contains(startContainer) && element.contains(endContainer)) {
-        return selection.toString()
-    }
-
-    return null
 }
 
 export const CodeBlocks: React.FunctionComponent<CodeBlocksProps> = React.memo(function CodeBlocksContent({
@@ -137,6 +115,12 @@ export const CodeBlocks: React.FunctionComponent<CodeBlocksProps> = React.memo(f
                     preElement,
                     createButtons(preText, copyButtonClassName, CopyButtonProps, insertButtonClassName)
                 )
+                // capture copy events (right click or keydown) on code block
+                preElement.addEventListener('copy', () => {
+                    if (CopyButtonProps) {
+                        CopyButtonProps(preText, false, 'Keydown')
+                    }
+                })
             }
         }
     }, [displayText, CopyButtonProps, copyButtonClassName, insertButtonClassName, rootRef])

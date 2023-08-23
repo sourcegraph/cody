@@ -1,0 +1,13 @@
+{
+  "extends": "../tsconfig.base.json",
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "module": "commonjs",
+    "rootDir": ".",
+    "outDir": "dist",
+    "baseUrl": "./src",
+    "lib": ["DOM"],
+  },
+  "exclude": ["dist"],
+  "include": ["globals.d.ts", "remix.env.d.ts", "**/*.ts", "**/*.tsx", "*.js"],
+}

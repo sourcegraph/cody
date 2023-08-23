@@ -26,7 +26,7 @@ export async function beforeIntegrationTest(): Promise<void> {
     // Configure extension.
     const config = vscode.workspace.getConfiguration()
     await config.update('cody.serverEndpoint', mockServer.SERVER_URL)
-    await ensureExecuteCommand('cody.test.token', [mockServer.VALID_TOKEN])
+    await ensureExecuteCommand('cody.test.token', mockServer.VALID_TOKEN)
 }
 
 /**
@@ -46,7 +46,7 @@ export async function ensureExecuteCommand<T>(command: string, ...args: any[]): 
     return result
 }
 
-async function waitUntil(predicate: () => Promise<boolean>): Promise<void> {
+export async function waitUntil(predicate: () => Promise<boolean>): Promise<void> {
     let delay = 10
     while (!(await predicate())) {
         await new Promise(resolve => setTimeout(resolve, delay))

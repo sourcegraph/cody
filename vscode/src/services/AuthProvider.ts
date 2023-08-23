@@ -1,25 +1,25 @@
-import fetch from 'isomorphic-fetch'
 import * as vscode from 'vscode'
 
 import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
 import { SourcegraphGraphQLAPIClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
+import { TelemetryService } from '@sourcegraph/cody-shared/src/telemetry'
 import { isError } from '@sourcegraph/cody-shared/src/utils'
 
+import { ChatViewProviderWebview } from '../chat/ChatViewProvider'
 import {
     AuthStatus,
     defaultAuthStatus,
     DOTCOM_URL,
-    ExtensionMessage,
     isLoggedIn as isAuthed,
     isLocalApp,
     LOCAL_APP_URL,
+    networkErrorAuthStatus,
     unauthenticatedStatus,
 } from '../chat/protocol'
 import { newAuthStatus } from '../chat/utils'
-import { logEvent } from '../event-logger'
 import { debug } from '../log'
 
-import { AuthMenu, LoginStepInputBox, TokenInputBox } from './AuthMenus'
+import { AuthMenu, showAccessTokenInputBox, showInstanceURLInputBox } from './AuthMenus'
 import { LocalAppDetector } from './LocalAppDetector'
 import { LocalStorage } from './LocalStorageProvider'
 import { SecretStorage } from './SecretStorageProvider'
@@ -32,14 +32,13 @@ export class AuthProvider {
     public appDetector: LocalAppDetector
 
     private authStatus: AuthStatus = defaultAuthStatus
-    public webview?: Omit<vscode.Webview, 'postMessage'> & {
-        postMessage(message: ExtensionMessage): Thenable<boolean>
-    }
+    public webview?: ChatViewProviderWebview
 
     constructor(
         private config: Pick<ConfigurationWithAccessToken, 'serverEndpoint' | 'accessToken' | 'customHeaders'>,
         private secretStorage: SecretStorage,
-        private localStorage: LocalStorage
+        private localStorage: LocalStorage,
+        private telemetryService: TelemetryService
     ) {
         this.authStatus.endpoint = 'init'
         this.loadEndpointHistory()
@@ -63,32 +62,32 @@ export class AuthProvider {
     public async signinMenu(type?: 'enterprise' | 'dotcom' | 'token' | 'app', uri?: string): Promise<void> {
         const mode = this.authStatus.isLoggedIn ? 'switch' : 'signin'
         debug('AuthProvider:signinMenu', mode)
-        logEvent('CodyVSCodeExtension:login:clicked')
+        this.telemetryService.log('CodyVSCodeExtension:login:clicked')
         const item = await AuthMenu(mode, this.endpointHistory)
         if (!item) {
             return
         }
         const menuID = type || item?.id
+        this.telemetryService.log('CodyVSCodeExtension:auth:selectSigninMenu', { menuID })
         switch (menuID) {
             case 'enterprise': {
-                const input = await LoginStepInputBox(item.uri, 1, false)
-                if (!input?.endpoint) {
+                const instanceUrl = await showInstanceURLInputBox(item.uri)
+                if (!instanceUrl) {
                     return
                 }
-                this.authStatus.endpoint = input.endpoint
-                await this.redirectToEndpointLogin(input.endpoint)
+                this.authStatus.endpoint = instanceUrl
+                this.redirectToEndpointLogin(instanceUrl)
                 break
             }
             case 'dotcom':
-                await this.redirectToEndpointLogin(DOTCOM_URL.href)
+                this.redirectToEndpointLogin(DOTCOM_URL.href)
                 break
             case 'token': {
-                const endpoint = uri || item.uri
-                const input = await LoginStepInputBox(endpoint, 1, true)
-                if (!input?.endpoint || !input?.token) {
+                const instanceUrl = await showInstanceURLInputBox(uri || item.uri)
+                if (!instanceUrl) {
                     return
                 }
-                await this.auth(input.endpoint, input.token)
+                await this.signinMenuForInstanceUrl(instanceUrl)
                 break
             }
             case 'app': {
@@ -105,13 +104,24 @@ export class AuthProvider {
                 const authStatus = await this.auth(selectedEndpoint, token || null)
                 this.showIsLoggedIn(authStatus?.authStatus || null)
                 if (!authStatus?.isLoggedIn) {
-                    const input = await TokenInputBox(item.uri)
-                    const authStatusFromToken = await this.auth(selectedEndpoint, input?.token || null)
+                    const newToken = await showAccessTokenInputBox(item.uri)
+                    const authStatusFromToken = await this.auth(selectedEndpoint, newToken || null)
                     this.showIsLoggedIn(authStatusFromToken?.authStatus || null)
                 }
                 debug('AuthProvider:signinMenu', mode, selectedEndpoint)
             }
         }
+    }
+
+    private async signinMenuForInstanceUrl(instanceUrl: string): Promise<void> {
+        const accessToken = await showAccessTokenInputBox(instanceUrl)
+        if (!accessToken) {
+            return
+        }
+        const authState = await this.auth(instanceUrl, accessToken)
+        this.telemetryService.log('CodyVSCodeExtension:auth:fromToken', {
+            success: Boolean(authState?.isLoggedIn),
+        })
     }
 
     private showIsLoggedIn(authStatus: AuthStatus | null): void {
@@ -139,7 +149,7 @@ export class AuthProvider {
 
     // Display quickpick to select endpoint to sign out of
     public async signoutMenu(): Promise<void> {
-        logEvent('CodyVSCodeExtension:logout:clicked')
+        this.telemetryService.log('CodyVSCodeExtension:logout:clicked')
         const endpointQuickPickItem = this.authStatus.endpoint ? [this.authStatus.endpoint] : []
         const endpoint = await AuthMenu('signout', endpointQuickPickItem)
         if (!endpoint?.uri) {
@@ -188,6 +198,14 @@ export class AuthProvider {
         if (!isDotComOrApp) {
             const currentUserID = await this.client.getCurrentUserId()
             const hasVerifiedEmail = false
+
+            // check first if it's a network error
+            if (isError(currentUserID)) {
+                if (isNetworkError(currentUserID.message)) {
+                    return { ...networkErrorAuthStatus, endpoint }
+                }
+            }
+
             return newAuthStatus(
                 endpoint,
                 isDotComOrApp,
@@ -200,6 +218,14 @@ export class AuthProvider {
         }
         const userInfo = await this.client.getCurrentUserIdAndVerifiedEmail()
         const isCodyEnabled = true
+
+        // check first if it's a network error
+        if (isError(userInfo)) {
+            if (isNetworkError(userInfo.message)) {
+                return { ...networkErrorAuthStatus, endpoint }
+            }
+        }
+
         return isError(userInfo)
             ? { ...unauthenticatedStatus, endpoint }
             : newAuthStatus(
@@ -236,6 +262,11 @@ export class AuthProvider {
         await this.syncAuthStatus(authStatus)
         await vscode.commands.executeCommand('setContext', 'cody.activated', isLoggedIn)
         return { authStatus, isLoggedIn }
+    }
+
+    // Set auth status in case of reload
+    public async reloadAuthStatus(): Promise<void> {
+        await this.auth(this.config.serverEndpoint, this.config.accessToken, this.config.customHeaders)
     }
 
     // Set auth status and share it with chatview
@@ -280,37 +311,41 @@ export class AuthProvider {
             return
         }
         const authState = await this.auth(endpoint, token, customHeaders)
+        this.telemetryService.log('CodyVSCodeExtension:auth:fromCallback', {
+            type: 'callback',
+            from: isApp ? 'app' : 'web',
+            success: Boolean(authState?.isLoggedIn),
+        })
         if (authState?.isLoggedIn) {
             const successMessage = isApp ? 'Connected to Cody App' : `Signed in to ${endpoint}`
             await vscode.window.showInformationMessage(successMessage)
         }
     }
 
-    // Open callback URL in browser to get token from instance
-    public async redirectToEndpointLogin(uri: string): Promise<void> {
+    /** Open callback URL in browser to get token from instance. */
+    public redirectToEndpointLogin(uri: string): void {
         const endpoint = formatURL(uri)
-        const isDotComOrApp = uri === LOCAL_APP_URL.href || uri === DOTCOM_URL.href
         if (!endpoint) {
             return
         }
-        await fetch(endpoint)
-            .then(async res => {
-                // Read the string response body
-                const version = await res.text()
-                if (!isDotComOrApp && version < '5.1.0') {
-                    void this.signinMenu('token', uri)
-                    return
-                }
-                const authUri = new URL('/user/settings/tokens/new/callback', endpoint)
-                authUri.searchParams.append(
-                    'requestFrom',
-                    this.appScheme === 'vscode-insiders' ? 'CODY_INSIDERS' : 'CODY'
-                )
-                this.authStatus.endpoint = endpoint
-                // open external link
-                void vscode.env.openExternal(vscode.Uri.parse(authUri.href))
-            })
-            .catch(error => console.error(error))
+
+        if (vscode.env.uiKind === vscode.UIKind.Web) {
+            // VS Code Web needs a different kind of callback using asExternalUri and changes to our
+            // UserSettingsCreateAccessTokenCallbackPage.tsx page in the Sourcegraph web app. So,
+            // just require manual token entry for now.
+            const newTokenNoCallbackUrl = new URL('/user/settings/tokens/new', endpoint)
+            void vscode.env.openExternal(vscode.Uri.parse(newTokenNoCallbackUrl.href))
+            void this.signinMenuForInstanceUrl(endpoint)
+            return
+        }
+
+        const newTokenCallbackUrl = new URL('/user/settings/tokens/new/callback', endpoint)
+        newTokenCallbackUrl.searchParams.append(
+            'requestFrom',
+            this.appScheme === 'vscode-insiders' ? 'CODY_INSIDERS' : 'CODY'
+        )
+        this.authStatus.endpoint = endpoint
+        void vscode.env.openExternal(vscode.Uri.parse(newTokenCallbackUrl.href))
     }
 
     // Refresh current endpoint history with the one from local storage
@@ -320,7 +355,6 @@ export class AuthProvider {
 
     // Store endpoint in local storage, token in secret storage, and update endpoint history
     private async storeAuthInfo(endpoint: string | null | undefined, token: string | null | undefined): Promise<void> {
-        debug('AuthProvider:storeAuthInfo:init', endpoint || '')
         if (!endpoint) {
             return
         }
@@ -329,8 +363,16 @@ export class AuthProvider {
             await this.secretStorage.storeToken(endpoint, token)
         }
         this.loadEndpointHistory()
-        debug('AuthProvider:storeAuthInfo:stored', endpoint || '')
     }
+}
+
+export function isNetworkError(error: string): boolean {
+    return (
+        error.includes('ENOTFOUND') ||
+        error.includes('ECONNREFUSED') ||
+        error.includes('ECONNRESET') ||
+        error.includes('EHOSTUNREACH')
+    )
 }
 
 function formatURL(uri: string): string | null {

@@ -17,6 +17,21 @@ export interface ContextFile {
 
 export interface ContextMessage extends Message {
     file?: ContextFile
+    preciseContext?: PreciseContext
+}
+
+export interface PreciseContext {
+    symbol: {
+        fuzzyName?: string
+    }
+    definitionSnippet: string
+    filePath: string
+    range?: {
+        startLine: number
+        startCharacter: number
+        endLine: number
+        endCharacter: number
+    }
 }
 
 export interface OldContextMessage extends Message {

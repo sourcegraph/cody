@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/consistent-type-definitions */
 import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 import { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
+import { event } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
 
 // This file documents the Cody Agent JSON-RPC protocol. Consult the JSON-RPC
 // specification to learn about how JSON-RPC works https://www.jsonrpc.org/specification
@@ -31,6 +32,11 @@ export type Requests = {
     //             ....
     // client <-- chat/updateMessageInProgress --- server
     'recipes/execute': [ExecuteRecipeParams, null]
+
+    'autocomplete/execute': [AutocompleteParams, AutocompleteResult]
+
+    'graphql/currentUserId': [null, string]
+    'graphql/logEvent': [event, null]
 
     // ================
     // Server -> Client
@@ -63,10 +69,19 @@ export type Notifications = {
     // The 'exit' notification must be sent after the client receives the 'shutdown' response.
     exit: [null]
 
-    // The server should use the provided connection configuration for all
-    // subsequent requests/notications. The previous connection configuration
+    // The server should use the provided extension configuration for all
+    // subsequent requests/notifications. The previous extension configuration
     // should no longer be used.
-    'connectionConfiguration/didChange': [ConnectionConfiguration]
+    // This notification is functionally equivalent to extensionConfiguration/didChange
+    // and exists to match the previous naming of configuration
+    'connectionConfiguration/didChange': [ExtensionConfiguration]
+
+    // The server should use the provided connection configuration for all
+    // subsequent requests/notifications. The previous extension configuration
+    // should no longer be used.
+    // This notification is functionally equivalent to connectionConfiguration/didChange
+    // and provided to match the updated configuration naming
+    'extensionConfiguration/didChange': [ExtensionConfiguration]
 
     // Lifecycle notifications for the client to notify the server about text
     // contents of documents and to notify which document is currently focused.
@@ -90,13 +105,35 @@ export type Notifications = {
     // request. The server should never send this notification outside of a
     // 'chat/executeRecipe' request.
     'chat/updateMessageInProgress': [ChatMessage | null]
+
+    'debug/message': [DebugMessage]
+}
+
+export interface AutocompleteParams {
+    filePath: string
+    position: Position
+}
+
+export interface AutocompleteResult {
+    items: AutocompleteItem[]
+}
+
+export interface AutocompleteItem {
+    insertText: string
+    range: Range
 }
 
 export interface ClientInfo {
     name: string
     version: string
-    workspaceRootPath: string
-    connectionConfiguration?: ConnectionConfiguration
+    workspaceRootUri: string
+
+    /** @deprecated Use `workspaceRootUri` instead. */
+    workspaceRootPath?: string
+
+    /** @deprecated Use `extensionConfiguration` instead. */
+    connectionConfiguration?: ExtensionConfiguration
+    extensionConfiguration?: ExtensionConfiguration
     capabilities?: ClientCapabilities
 }
 
@@ -108,14 +145,24 @@ export interface ClientCapabilities {
 
 export interface ServerInfo {
     name: string
+    authenticated: boolean
+    codyEnabled: boolean
+    codyVersion: string | null
     capabilities?: ServerCapabilities
 }
 export interface ServerCapabilities {}
 
-export interface ConnectionConfiguration {
+export interface ExtensionConfiguration {
     serverEndpoint: string
     accessToken: string
     customHeaders: Record<string, string>
+    autocompleteAdvancedProvider?: string
+    autocompleteAdvancedServerEndpoint?: string | null
+    autocompleteAdvancedAccessToken?: string | null
+    autocompleteAdvancedEmbeddings?: boolean
+    debug?: boolean
+    verboseDebug?: boolean
+    codebase?: string
 }
 
 export interface Position {
@@ -144,6 +191,12 @@ export interface RecipeInfo {
 export interface ExecuteRecipeParams {
     id: RecipeID
     humanChatInput: string
+    data?: any
+}
+
+export interface DebugMessage {
+    channel: string
+    message: string
 }
 
 export interface QuickPickParams {

@@ -1,7 +1,9 @@
 packages:
+  - e2e
   - agent
   - cli
   - lib/*
   - slack
   - vscode
   - web
+  - completions-review-tool

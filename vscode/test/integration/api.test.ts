@@ -1,8 +1,9 @@
 import * as assert from 'assert'
+import path from 'path'
 
 import * as vscode from 'vscode'
 
-import { History } from '../../src/completions/history'
+import { VSCodeDocumentHistory } from '../../src/completions/context/history'
 
 suite('API tests', () => {
     test('Cody registers some commands', async () => {
@@ -12,7 +13,7 @@ suite('API tests', () => {
     })
 
     test('History', () => {
-        const h = new History(() => null)
+        const h = new VSCodeDocumentHistory(() => null)
         h.addItem({
             document: {
                 uri: vscode.Uri.file('foo.ts'),
@@ -33,7 +34,7 @@ suite('API tests', () => {
         })
         assert.deepStrictEqual(
             h.lastN(20).map(h => h.document.uri.fsPath),
-            ['/foo.ts', '/bar.ts']
+            [path.sep + 'foo.ts', path.sep + 'bar.ts']
         )
     })
 })
