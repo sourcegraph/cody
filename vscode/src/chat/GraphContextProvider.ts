@@ -441,11 +441,10 @@ export const extractDefinitionContexts = async (
     for (const { symbolName, location, kind } of matches) {
         const { uri, range } = location
         const contentPromise = contentMap.get(uri.fsPath)
-        const documentSymbolMetadataPromises = documentSymbolMetadataMap.get(uri.fsPath)
+        const documentSymbolMetadata = documentSymbolMetadataMap.get(uri.fsPath)
 
-        if (contentPromise && documentSymbolMetadataPromises) {
+        if (contentPromise && documentSymbolMetadata) {
             const content = contentPromise
-            const documentSymbolMetadata = documentSymbolMetadataPromises
             const definitionSnippets = extractSnippets(
                 content,
                 documentSymbolMetadata.map(({ range }) => range),
