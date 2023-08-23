@@ -34,6 +34,7 @@ export {
     emptyEvent,
     emptyDisposable,
     Range,
+    Location,
     Selection,
     Position,
     Disposable,
@@ -305,6 +306,7 @@ const _env: Partial<typeof vscode.env> = {
     uriScheme: 'file',
     appRoot: process.cwd(),
     uiKind: UIKind.Web,
+    language: process.env.language,
     clipboard: {
         readText: () => Promise.resolve(''),
         writeText: () => Promise.resolve(),

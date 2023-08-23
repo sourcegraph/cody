@@ -85,6 +85,8 @@ export type Notifications = {
     // Only the 'uri' property is required, other properties are ignored.
     'textDocument/didClose': [TextDocument]
 
+    '$/cancelRequest': [CancelParams]
+
     // ================
     // Server -> Client
     // ================
@@ -94,6 +96,10 @@ export type Notifications = {
     'chat/updateMessageInProgress': [ChatMessage | null]
 
     'debug/message': [DebugMessage]
+}
+
+export interface CancelParams {
+    id: string | number
 }
 
 export interface AutocompleteParams {
