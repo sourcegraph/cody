@@ -1,11 +1,11 @@
-import * as vscode from 'vscode'
+import { URI, Utils } from 'vscode-uri'
 
 import { CodebaseContext } from '../../codebase-context'
 import { MAX_HUMAN_INPUT_TOKENS } from '../../prompt/constants'
 import { truncateText } from '../../prompt/truncation'
 import { Interaction } from '../transcript/interaction'
 
-import { getFileExtension } from './helpers'
+import { getFileExtension, numResults } from './helpers'
 import { Recipe, RecipeContext, RecipeID } from './recipe'
 
 /*
@@ -18,7 +18,7 @@ Parameters:
 Functionality:
 - Gets a search query from the human input or a prompt.
 - Truncates the query to MAX_HUMAN_INPUT_TOKENS.
-- Searches the vactor database for code and text results matching the query.
+- Searches the vector database for code and text results matching the query.
 - If codebase is not embedded or if keyword context is selected, get local keyword context instead
 - Returns up to 12 code results and 3 text results.
 - Generates a markdown string displaying the results with file names linking to the search page for that file.
@@ -29,12 +29,15 @@ export class ContextSearch implements Recipe {
     public id: RecipeID = 'context-search'
 
     public async getInteraction(humanChatInput: string, context: RecipeContext): Promise<Interaction | null> {
-        const query = humanChatInput || (await context.editor.showInputBox('Enter your search query here...')) || ''
+        const query =
+            humanChatInput?.replace(/^\/s(earch)?(\s)?/i, '') ||
+            (await context.editor.showInputBox('Enter your search query here...')) ||
+            ''
         if (!query) {
             return null
         }
         const truncatedText = truncateText(query.replace('/search ', '').replace('/s ', ''), MAX_HUMAN_INPUT_TOKENS)
-        const wsRootPath = context.editor.getWorkspaceRootPath()
+        const workspaceRootUri = context.editor.getWorkspaceRootUri()
         return new Interaction(
             {
                 speaker: 'human',
@@ -44,7 +47,7 @@ export class ContextSearch implements Recipe {
             {
                 speaker: 'assistant',
                 text: '',
-                displayText: await this.displaySearchResults(truncatedText, context.codebaseContext, wsRootPath),
+                displayText: await this.displaySearchResults(truncatedText, context.codebaseContext, workspaceRootUri),
             },
             new Promise(resolve => resolve([])),
             []
@@ -54,12 +57,9 @@ export class ContextSearch implements Recipe {
     private async displaySearchResults(
         text: string,
         codebaseContext: CodebaseContext,
-        wsRootPath: string | null
+        workspaceRootUri: URI | null
     ): Promise<string> {
-        const resultContext = await codebaseContext.getSearchResults(text, {
-            numCodeResults: 12,
-            numTextResults: 3,
-        })
+        const resultContext = await codebaseContext.getSearchResults(text, numResults)
         const endpointUri = resultContext.endpoint
 
         let snippets = `Here are the code snippets for: ${text}\n\n`
@@ -70,11 +70,12 @@ export class ContextSearch implements Recipe {
             if (extension.match(ignoreFilesExtension)) {
                 continue
             }
-            let uri = new URL(`/search?q=context:global+file:${file.fileName}`, endpointUri).href
+            let uri: string = new URL(`/search?q=context:global+file:${file.fileName}`, endpointUri).href
 
-            if (wsRootPath) {
-                const fileUri = vscode.Uri.joinPath(vscode.Uri.file(wsRootPath), file.fileName)
-                uri = vscode.Uri.parse(`vscode://file${fileUri.path}`).toString()
+            if (workspaceRootUri) {
+                const fileUri = Utils.joinPath(workspaceRootUri, file.fileName)
+                // TODO: make this open non-file: URIs
+                uri = `vscode://file${fileUri.fsPath}`
             }
 
             snippets +=

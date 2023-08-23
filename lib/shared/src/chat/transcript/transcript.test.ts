@@ -77,10 +77,15 @@ describe('Transcript', () => {
                     isCodebaseContextRequired: async () => Promise.resolve(true),
                 }),
                 codebaseContext: new CodebaseContext(
-                    { useContext: 'embeddings', serverEndpoint: 'https://example.com' },
+                    {
+                        useContext: 'embeddings',
+                        serverEndpoint: 'https://example.com',
+                        experimentalLocalSymbols: false,
+                    },
                     'dummy-codebase',
                     embeddings,
                     defaultKeywordContextFetcher,
+                    null,
                     null
                 ),
             })
@@ -114,10 +119,15 @@ describe('Transcript', () => {
             'how do access tokens work in sourcegraph',
             newRecipeContext({
                 codebaseContext: new CodebaseContext(
-                    { useContext: 'embeddings', serverEndpoint: 'https://example.com' },
+                    {
+                        useContext: 'embeddings',
+                        serverEndpoint: 'https://example.com',
+                        experimentalLocalSymbols: false,
+                    },
                     'dummy-codebase',
                     embeddings,
                     defaultKeywordContextFetcher,
+                    null,
                     null
                 ),
                 firstInteraction: true,
@@ -149,10 +159,11 @@ describe('Transcript', () => {
         })
         const intentDetector = new MockIntentDetector({ isCodebaseContextRequired: async () => Promise.resolve(true) })
         const codebaseContext = new CodebaseContext(
-            { useContext: 'embeddings', serverEndpoint: 'https://example.com' },
+            { useContext: 'embeddings', serverEndpoint: 'https://example.com', experimentalLocalSymbols: false },
             'dummy-codebase',
             embeddings,
             defaultKeywordContextFetcher,
+            null,
             null
         )
 
@@ -235,10 +246,11 @@ describe('Transcript', () => {
         })
         const intentDetector = new MockIntentDetector({ isCodebaseContextRequired: async () => Promise.resolve(true) })
         const codebaseContext = new CodebaseContext(
-            { useContext: 'embeddings', serverEndpoint: 'https://example.com' },
+            { useContext: 'embeddings', serverEndpoint: 'https://example.com', experimentalLocalSymbols: false },
             'dummy-codebase',
             embeddings,
             defaultKeywordContextFetcher,
+            null,
             null
         )
 
@@ -312,10 +324,11 @@ describe('Transcript', () => {
         })
         const intentDetector = new MockIntentDetector({ isCodebaseContextRequired: async () => Promise.resolve(true) })
         const codebaseContext = new CodebaseContext(
-            { useContext: 'embeddings', serverEndpoint: 'https://example.com' },
+            { useContext: 'embeddings', serverEndpoint: 'https://example.com', experimentalLocalSymbols: false },
             'dummy-codebase',
             embeddings,
             defaultKeywordContextFetcher,
+            null,
             null
         )
 

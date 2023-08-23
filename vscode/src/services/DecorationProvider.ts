@@ -24,7 +24,11 @@ export class DecorationProvider {
     private _onDidChange: vscode.EventEmitter<void> = new vscode.EventEmitter<void>()
     public readonly onDidChange: vscode.Event<void> = this._onDidChange.event
 
-    constructor(public id: string, private extPath: string, private fileUri: vscode.Uri) {
+    constructor(
+        public id: string,
+        private extPath: string,
+        private fileUri: vscode.Uri
+    ) {
         this.editor = vscode.window.visibleTextEditors.find(editor => editor.document.uri.fsPath === fileUri.fsPath)
         // set up icon and register decoration types
         this.iconPath = getIconPath('cody', this.extPath)
@@ -90,7 +94,7 @@ export class DecorationProvider {
      */
     public setState(status: CodyTaskState, newRange: vscode.Range): void {
         this.status = status
-        this.range = new vscode.Range(newRange.start.line, 0, Math.max(0, newRange.end.line - 1), 0)
+        this.range = new vscode.Range(newRange.start.line, 0, Math.max(0, newRange.end.line), 0)
         this.decorate()
         this._onDidChange.fire()
     }

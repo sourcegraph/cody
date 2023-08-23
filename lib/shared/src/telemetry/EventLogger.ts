@@ -1,122 +1,103 @@
-import * as vscode from 'vscode'
-
+import { ConfigurationWithAccessToken } from '../configuration'
 import { SourcegraphGraphQLAPIClient } from '../sourcegraph-api/graphql'
+import { isError } from '../utils'
 
-function getServerEndpointFromConfig(config: vscode.WorkspaceConfiguration): string {
-    return config.get<string>('cody.serverEndpoint', '')
-}
+import { TelemetryEventProperties } from '.'
 
-function getUseContextFromConfig(config: vscode.WorkspaceConfiguration): string {
-    if (!config) {
-        return ''
-    }
-    return config.get<string>('cody.useContext', '')
-}
+export interface ExtensionDetails {
+    ide: 'VSCode' | 'JetBrains' | 'Neovim' | 'Emacs'
+    ideExtensionType: 'Cody' | 'CodeSearch'
 
-function getChatPredictionsFromConfig(config: vscode.WorkspaceConfiguration): boolean {
-    if (!config) {
-        return false
-    }
-    return config.get<boolean>('cody.experimental.chatPredictions', false)
-}
-
-function getInlineFromConfig(config: vscode.WorkspaceConfiguration): boolean {
-    if (!config) {
-        return false
-    }
-    return config.get<boolean>('cody.inlineChat.enabled', false)
-}
-
-function getNonStopFromConfig(config: vscode.WorkspaceConfiguration): boolean {
-    if (!config) {
-        return false
-    }
-    return config.get<boolean>('cody.experimental.nonStop', false)
-}
-
-function getSuggestionsFromConfig(config: vscode.WorkspaceConfiguration): boolean {
-    if (!config) {
-        return false
-    }
-    return config.get<boolean>('cody.experimental.suggestions', false)
-}
-
-function getGuardrailsFromConfig(config: vscode.WorkspaceConfiguration): boolean {
-    if (!config) {
-        return false
-    }
-    return config.get<boolean>('cody.experimental.guardrails', false)
+    /** Version number for the extension. */
+    version: string
 }
 
 export class EventLogger {
-    private serverEndpoint = getServerEndpointFromConfig(vscode.workspace.getConfiguration())
-    private extensionDetails = { ide: 'VSCode', ideExtensionType: 'Cody' }
-    private constructor(private gqlAPIClient: SourcegraphGraphQLAPIClient) {}
+    private gqlAPIClient: SourcegraphGraphQLAPIClient
+    private client: string
+    private siteIdentification?: { siteid: string; hashedLicenseKey: string }
 
-    public static create(gqlAPIClient: SourcegraphGraphQLAPIClient): EventLogger {
-        return new EventLogger(gqlAPIClient)
+    constructor(
+        private serverEndpoint: string,
+        private extensionDetails: ExtensionDetails,
+        private config: ConfigurationWithAccessToken
+    ) {
+        this.gqlAPIClient = new SourcegraphGraphQLAPIClient(this.config)
+        this.setSiteIdentification().catch(error => console.error(error))
+        if (this.extensionDetails.ide === 'VSCode' && this.extensionDetails.ideExtensionType === 'Cody') {
+            this.client = 'VSCODE_CODY_EXTENSION'
+        } else {
+            throw new Error('new extension type not yet accounted for')
+        }
     }
 
-    public configurationDetails = {
-        contextSelection: getUseContextFromConfig(vscode.workspace.getConfiguration()),
-        chatPredictions: getChatPredictionsFromConfig(vscode.workspace.getConfiguration()),
-        inline: getInlineFromConfig(vscode.workspace.getConfiguration()),
-        nonStop: getNonStopFromConfig(vscode.workspace.getConfiguration()),
-        suggestions: getSuggestionsFromConfig(vscode.workspace.getConfiguration()),
-        guardrails: getGuardrailsFromConfig(vscode.workspace.getConfiguration()),
+    public onConfigurationChange(
+        newServerEndpoint: string,
+        newExtensionDetails: ExtensionDetails,
+        newConfig: ConfigurationWithAccessToken
+    ): void {
+        this.serverEndpoint = newServerEndpoint
+        this.extensionDetails = newExtensionDetails
+        this.config = newConfig
+        this.gqlAPIClient.onConfigurationChange(newConfig)
+        this.setSiteIdentification().catch(error => console.error(error))
     }
 
-    public onConfigurationChange(newconfig: vscode.WorkspaceConfiguration): void {
-        this.configurationDetails = {
-            contextSelection: getUseContextFromConfig(newconfig),
-            chatPredictions: getChatPredictionsFromConfig(newconfig),
-            inline: getInlineFromConfig(newconfig),
-            nonStop: getNonStopFromConfig(newconfig),
-            suggestions: getSuggestionsFromConfig(newconfig),
-            guardrails: getGuardrailsFromConfig(newconfig),
+    private async setSiteIdentification(): Promise<void> {
+        const siteIdentification = await this.gqlAPIClient.getSiteIdentification()
+        if (isError(siteIdentification)) {
+            /**
+             * Swallow errors. Any instance with a version before https://github.com/sourcegraph/sourcegraph/commit/05184f310f631bb36c6d726792e49ff9d122e4af
+             * will return an error here due to it not having new parameters in its GraphQL schema or database schema.
+             */
+        } else {
+            this.siteIdentification = siteIdentification
         }
     }
 
     /**
-     * Logs an event.
+     * Log a telemetry event.
      *
-     * PRIVACY: Do NOT include any potentially private information in this
-     * field. These properties get sent to our analytics tools for Cloud, so
-     * must not include private information, such as search queries or
-     * repository names.
+     * PRIVACY: Do NOT include any potentially private information in `eventProperties`. These
+     * properties may get sent to analytics tools, so must not include private information, such as
+     * search queries or repository names.
      *
      * @param eventName The name of the event.
      * @param anonymousUserID The randomly generated unique user ID.
-     * @param eventProperties The additional argument information.
-     * @param publicProperties Public argument information.
+     * @param properties Event properties. Do NOT include any private information, such as full
+     * URLs that may contain private repository names or search queries.
      */
-    public log(eventName: string, anonymousUserID: string, eventProperties?: any, publicProperties?: any): void {
-        const argument = {
-            ...eventProperties,
-            serverEndpoint: this.serverEndpoint,
-            extensionDetails: this.extensionDetails,
-            configurationDetails: this.configurationDetails,
-        }
+    public log(eventName: string, anonymousUserID: string, properties?: TelemetryEventProperties): void {
         const publicArgument = {
-            ...publicProperties,
+            ...properties,
             serverEndpoint: this.serverEndpoint,
             extensionDetails: this.extensionDetails,
-            configurationDetails: this.configurationDetails,
+            configurationDetails: {
+                contextSelection: this.config.useContext,
+                chatPredictions: this.config.experimentalChatPredictions,
+                inline: this.config.inlineChat,
+                nonStop: this.config.experimentalNonStop,
+                guardrails: this.config.experimentalGuardrails,
+            },
+            version: this.extensionDetails.version, // for backcompat
         }
-        try {
-            this.gqlAPIClient
-                .logEvent({
-                    event: eventName,
-                    userCookieID: anonymousUserID,
-                    source: 'IDEEXTENSION',
-                    url: '',
-                    argument: JSON.stringify(argument),
-                    publicArgument: JSON.stringify(publicArgument),
-                })
-                .then(() => {})
-                .catch(() => {})
-        } catch (error) {
-            console.log(error)
-        }
+        this.gqlAPIClient
+            .logEvent({
+                event: eventName,
+                userCookieID: anonymousUserID,
+                source: 'IDEEXTENSION',
+                url: '',
+                argument: '{}',
+                publicArgument: JSON.stringify(publicArgument),
+                client: this.client,
+                connectedSiteID: this.siteIdentification?.siteid,
+                hashedLicenseKey: this.siteIdentification?.hashedLicenseKey,
+            })
+            .then(response => {
+                if (isError(response)) {
+                    console.error('Error logging event', response)
+                }
+            })
+            .catch(error => console.error('Error logging event', error))
     }
 }

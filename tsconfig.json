@@ -4,16 +4,25 @@
     "noEmit": true
   },
   "files": [],
-  "include": [".eslintrc.js", ".prettierrc.js", "vitest.workspace.js", "lib/shared/vitest.config.ts"],
+  "include": [
+    ".eslintrc.js",
+    ".prettierrc.js",
+    "vitest.workspace.js",
+    "lib/shared/vitest.config.ts",
+    "cli/vitest.config.ts"
+  ],
   "exclude": ["dist", "node_modules"],
   "references": [
+    { "path": "e2e" },
     { "path": "agent" },
+    { "path": "completions-review-tool" },
     { "path": "cli" },
     { "path": "lib/shared" },
     { "path": "lib/ui" },
     { "path": "slack" },
     { "path": "vscode" },
     { "path": "vscode/test/integration" },
+    { "path": "vscode/test/completions" },
     { "path": "vscode/scripts" },
     { "path": "web" }
   ]

@@ -1,0 +1,11 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "module": "CommonJS",
+    "rootDir": ".",
+    "outDir": "../../dist/tsc/test/completions",
+  },
+  "references": [{ "path": "../../" }],
+  "include": ["*.ts"],
+  "exclude": [],
+}

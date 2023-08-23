@@ -16,16 +16,19 @@ const config = {
     },
     EXPERIMENTAL_useSourceOfProjectReferenceRedirect: true,
     project: [
-      'agent/tsconfig.json',
-      'cli/tsconfig.json',
-      'lib/ui/tsconfig.json',
-      'lib/shared/tsconfig.json',
-      'slack/tsconfig.json',
-      'vscode/tsconfig.json',
-      'vscode/test/integration/tsconfig.json',
-      'vscode/scripts/tsconfig.json',
-      'web/tsconfig.json',
-      'tsconfig.json',
+      __dirname + '/e2e/tsconfig.json',
+      __dirname + '/agent/tsconfig.json',
+      __dirname + '/cli/tsconfig.json',
+      __dirname + '/lib/ui/tsconfig.json',
+      __dirname + '/lib/shared/tsconfig.json',
+      __dirname + '/slack/tsconfig.json',
+      __dirname + '/vscode/tsconfig.json',
+      __dirname + '/vscode/test/integration/tsconfig.json',
+      __dirname + '/vscode/test/completions/tsconfig.json',
+      __dirname + '/vscode/scripts/tsconfig.json',
+      __dirname + '/web/tsconfig.json',
+      __dirname + '/tsconfig.json',
+      __dirname + '/completions-review-tool/tsconfig.json',
     ],
   },
   settings: {
@@ -36,6 +39,7 @@ const config = {
   rules: {
     'import/order': 'off',
     'id-length': 'off',
+    'etc/no-deprecated': 'off', // slow
   },
   overrides: [
     {
@@ -53,7 +57,7 @@ const config = {
       },
     },
     {
-      files: ['vitest.workspace.js', 'vite.config.ts', 'vitest.config.ts', 'vitest.config.ts', 'playwright.config.ts'],
+      files: ['vitest.workspace.js', 'vite.config.ts', 'vitest.config.ts', 'playwright.config.ts'],
       rules: {
         'import/no-default-export': 'off',
       },

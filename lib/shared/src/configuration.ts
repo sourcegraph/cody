@@ -7,18 +7,48 @@ export interface Configuration {
     debugEnable: boolean
     debugFilter: RegExp | null
     debugVerbose: boolean
+    telemetryLevel: 'all' | 'off'
     useContext: ConfigurationUseContext
     customHeaders: Record<string, string>
     autocomplete: boolean
     experimentalChatPredictions: boolean
     inlineChat: boolean
+    experimentalCommandLenses: boolean
+    experimentalEditorTitleCommandIcon: boolean
     experimentalGuardrails: boolean
     experimentalNonStop: boolean
-    autocompleteAdvancedProvider: 'anthropic' | 'unstable-codegen' | 'unstable-huggingface'
+    experimentalLocalSymbols: boolean
+    experimentalSymfPath: string
+    experimentalSymfAnthropicKey: string
+    autocompleteAdvancedProvider:
+        | 'anthropic'
+        | 'unstable-codegen'
+        | 'unstable-huggingface'
+        | 'unstable-fireworks'
+        | 'unstable-azure-openai'
     autocompleteAdvancedServerEndpoint: string | null
     autocompleteAdvancedAccessToken: string | null
-    autocompleteAdvancedCache: boolean
     autocompleteAdvancedEmbeddings: boolean
+    autocompleteExperimentalCompleteSuggestWidgetSelection?: boolean
+    pluginsEnabled?: boolean
+    pluginsDebugEnabled?: boolean
+    isRunningInsideAgent?: boolean
+    pluginsConfig?: {
+        confluence?: {
+            baseUrl: string
+            email?: string
+            apiToken?: string
+        }
+        github?: {
+            apiToken?: string
+            baseURL?: string
+            org?: string
+            repo?: string
+        }
+        apiNinjas?: {
+            apiKey?: string
+        }
+    }
 }
 
 export interface ConfigurationWithAccessToken extends Configuration {

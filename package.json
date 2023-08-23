@@ -9,8 +9,11 @@
     "url": "https://github.com/sourcegraph/cody"
   },
   "engines": {
-    "node": "^v18.9.0",
-    "pnpm": "^8.6.6"
+    "node": "^v20.4.0",
+    "pnpm": "^8.6.7"
+  },
+  "browser": {
+    "fs": false
   },
   "scripts": {
     "build": "tsc --build",
@@ -26,7 +29,7 @@
     "test:e2e": "pnpm -C vscode test:e2e"
   },
   "devDependencies": {
-    "@ianvs/prettier-plugin-sort-imports": "^4.0.2",
+    "@ianvs/prettier-plugin-sort-imports": "^4.1.0",
     "@sourcegraph/eslint-config": "0.33.0",
     "@sourcegraph/prettierrc": "^3.0.3",
     "@sourcegraph/tsconfig": "^4.0.1",
@@ -38,29 +41,29 @@
     "@storybook/react-vite": "^7.0.26",
     "@storybook/testing-library": "^0.0.14-next.2",
     "@types/node": "20.4.0",
-    "@types/prettier": "^2.7.2",
-    "@types/react": "18.0.8",
-    "@types/react-dom": "18.0.2",
+    "@types/prettier": "2.7.3",
+    "@types/react": "18.2.18",
+    "@types/react-dom": "18.2.7",
     "@vitejs/plugin-react": "^4.0.2",
     "esbuild": "^0.18.11",
     "eslint": "^8.13.0",
     "eslint-plugin-storybook": "^0.6.12",
     "jsdom": "^22.1.0",
-    "prettier": "2.8.1",
+    "prettier": "3.0.1",
     "storybook": "^7.0.26",
-    "stylelint": "^15.10.1",
+    "stylelint": "^15.10.2",
     "stylelint-config-prettier": "^9.0.5",
     "stylelint-config-standard": "^34.0.0",
     "ts-node": "^10.9.1",
-    "typescript": "^5.0.2",
-    "vite": "^4.4.1",
+    "typescript": "^5.1.6",
+    "vite": "^4.4.3",
     "vitest": "^0.33.0"
   },
   "dependencies": {
-    "react": "18.1.0",
-    "react-dom": "18.1.0"
+    "react": "18.2.0",
+    "react-dom": "18.2.0"
   },
-  "packageManager": "pnpm@8.6.6",
+  "packageManager": "pnpm@8.6.7",
   "resolutions": {
     "tslib": "2.1.0"
   },
@@ -72,6 +75,10 @@
           "tslib": "^2.1.0"
         }
       }
-    }
+    },
+    "neverBuiltDependencies": [
+      "deasync",
+      "playwright"
+    ]
   }
 }

@@ -7,13 +7,17 @@ import {
     CURRENT_SITE_CODY_LLM_CONFIGURATION,
     CURRENT_SITE_GRAPHQL_FIELDS_QUERY,
     CURRENT_SITE_HAS_CODY_ENABLED_QUERY,
+    CURRENT_SITE_IDENTIFICATION,
     CURRENT_SITE_VERSION_QUERY,
     CURRENT_USER_ID_AND_VERIFIED_EMAIL_QUERY,
     CURRENT_USER_ID_QUERY,
+    EVALUATE_FEATURE_FLAG_QUERY,
     GET_CODY_CONTEXT_QUERY,
+    GET_FEATURE_FLAGS_QUERY,
     IS_CONTEXT_REQUIRED_QUERY,
     LEGACY_SEARCH_EMBEDDINGS_QUERY,
     LOG_EVENT_MUTATION,
+    LOG_EVENT_MUTATION_DEPRECATED,
     REPOSITORY_EMBEDDING_EXISTS_QUERY,
     REPOSITORY_ID_QUERY,
     REPOSITORY_IDS_QUERY,
@@ -30,6 +34,10 @@ interface APIResponse<T> {
 
 interface SiteVersionResponse {
     site: { productVersion: string } | null
+}
+
+interface SiteIdentificationResponse {
+    site: { siteID: string; productSubscription: { license: { hashedKey: string } } } | null
 }
 
 interface SiteGraphqlFieldsResponse {
@@ -137,6 +145,19 @@ interface IsContextRequiredForChatQueryResponse {
     isContextRequiredForChatQuery: boolean
 }
 
+interface EvaluatedFeatureFlag {
+    name: string
+    value: boolean
+}
+
+interface EvaluatedFeatureFlagsResponse {
+    evaluatedFeatureFlags: EvaluatedFeatureFlag[]
+}
+
+interface EvaluateFeatureFlagResponse {
+    evaluateFeatureFlag: boolean
+}
+
 function extractDataOrError<T, R>(response: APIResponse<T> | Error, extract: (data: T) => R): R | Error {
     if (isError(response)) {
         return response
@@ -150,16 +171,27 @@ function extractDataOrError<T, R>(response: APIResponse<T> | Error, extract: (da
     return extract(response.data)
 }
 
+export interface event {
+    event: string
+    userCookieID: string
+    url: string
+    source: string
+    argument?: string | {}
+    publicArgument?: string | {}
+    client: string
+    connectedSiteID?: string
+    hashedLicenseKey?: string
+}
+
+type GraphQLAPIClientConfig = Pick<ConfigurationWithAccessToken, 'serverEndpoint' | 'accessToken' | 'customHeaders'> &
+    Pick<Partial<ConfigurationWithAccessToken>, 'telemetryLevel'>
+
 export class SourcegraphGraphQLAPIClient {
     private dotcomUrl = 'https://sourcegraph.com'
 
-    constructor(
-        private config: Pick<ConfigurationWithAccessToken, 'serverEndpoint' | 'accessToken' | 'customHeaders'>
-    ) {}
+    constructor(private config: GraphQLAPIClientConfig) {}
 
-    public onConfigurationChange(
-        newConfig: Pick<ConfigurationWithAccessToken, 'serverEndpoint' | 'accessToken' | 'customHeaders'>
-    ): void {
+    public onConfigurationChange(newConfig: GraphQLAPIClientConfig): void {
         this.config = newConfig
     }
 
@@ -174,6 +206,23 @@ export class SourcegraphGraphQLAPIClient {
                     // Example values: "5.1.0" or "222587_2023-05-30_5.0-39cbcf1a50f0" for insider builds
                     data.site?.productVersion ? data.site?.productVersion : new Error('site version not found')
                 )
+        )
+    }
+
+    public async getSiteIdentification(): Promise<{ siteid: string; hashedLicenseKey: string } | Error> {
+        const response = await this.fetchSourcegraphAPI<APIResponse<SiteIdentificationResponse>>(
+            CURRENT_SITE_IDENTIFICATION,
+            {}
+        )
+        return extractDataOrError(response, data =>
+            data.site?.siteID
+                ? data.site?.productSubscription?.license?.hashedKey
+                    ? {
+                          siteid: data.site?.siteID,
+                          hashedLicenseKey: data.site?.productSubscription?.license?.hashedKey,
+                      }
+                    : new Error('site hashed license key not found')
+                : new Error('site ID not found')
         )
     }
 
@@ -295,42 +344,51 @@ export class SourcegraphGraphQLAPIClient {
         return { enabled: insiderBuild || betaVersion, version: siteVersion }
     }
 
-    public async logEvent(event: {
-        event: string
-        userCookieID: string
-        url: string
-        source: string
-        argument?: string | {}
-        publicArgument?: string | {}
-    }): Promise<void | Error> {
+    public async logEvent(event: event): Promise<LogEventResponse | Error> {
         if (process.env.CODY_TESTING === 'true') {
             console.log(`not logging ${event.event} in test mode`)
-            return
+            return {}
         }
-        try {
-            if (this.config.serverEndpoint === this.dotcomUrl) {
-                await this.fetchSourcegraphAPI<APIResponse<LogEventResponse>>(LOG_EVENT_MUTATION, event).then(
-                    response => {
-                        extractDataOrError(response, data => {})
-                    }
-                )
-            } else {
-                await Promise.all([
-                    this.fetchSourcegraphAPI<APIResponse<LogEventResponse>>(LOG_EVENT_MUTATION, event).then(
-                        response => {
-                            extractDataOrError(response, data => {})
-                        }
-                    ),
-                    this.fetchSourcegraphDotcomAPI<APIResponse<LogEventResponse>>(LOG_EVENT_MUTATION, event).then(
-                        response => {
-                            extractDataOrError(response, data => {})
-                        }
-                    ),
-                ])
-            }
-        } catch (error: any) {
-            return error
+        if (this.config?.telemetryLevel === 'off') {
+            return {}
         }
+        if (this.isDotCom()) {
+            return this.sendEventLogRequestToAPI(event)
+        }
+        const responses = await Promise.all([
+            this.sendEventLogRequestToAPI(event),
+            this.sendEventLogRequestToDotComAPI(event),
+        ])
+        if (isError(responses[0]) && isError(responses[1])) {
+            return new Error('Errors logging events: ' + responses[0].toString() + ', ' + responses[1].toString())
+        }
+        if (isError(responses[0])) {
+            return responses[0]
+        }
+        if (isError(responses[1])) {
+            return responses[1]
+        }
+        return {}
+    }
+
+    private async sendEventLogRequestToDotComAPI(event: event): Promise<LogEventResponse | Error> {
+        const response = await this.fetchSourcegraphDotcomAPI<APIResponse<LogEventResponse>>(LOG_EVENT_MUTATION, event)
+        return extractDataOrError(response, data => data)
+    }
+
+    private async sendEventLogRequestToAPI(event: event): Promise<LogEventResponse | Error> {
+        const initialResponse = await this.fetchSourcegraphAPI<APIResponse<LogEventResponse>>(LOG_EVENT_MUTATION, event)
+        const initialDataOrError = extractDataOrError(initialResponse, data => data)
+
+        if (isError(initialDataOrError)) {
+            const secondResponse = await this.fetchSourcegraphAPI<APIResponse<LogEventResponse>>(
+                LOG_EVENT_MUTATION_DEPRECATED,
+                event
+            )
+            return extractDataOrError(secondResponse, data => data)
+        }
+
+        return initialDataOrError
     }
 
     public async getCodyContext(
@@ -386,6 +444,27 @@ export class SourcegraphGraphQLAPIClient {
         return this.fetchSourcegraphAPI<APIResponse<IsContextRequiredForChatQueryResponse>>(IS_CONTEXT_REQUIRED_QUERY, {
             query,
         }).then(response => extractDataOrError(response, data => data.isContextRequiredForChatQuery))
+    }
+
+    public async getEvaluatedFeatureFlags(): Promise<Record<string, boolean> | Error> {
+        return this.fetchSourcegraphAPI<APIResponse<EvaluatedFeatureFlagsResponse>>(GET_FEATURE_FLAGS_QUERY, {}).then(
+            response =>
+                extractDataOrError(response, data =>
+                    data.evaluatedFeatureFlags.reduce(
+                        (acc, { name, value }) => {
+                            acc[name] = value
+                            return acc
+                        },
+                        {} as Record<string, boolean>
+                    )
+                )
+        )
+    }
+
+    public async evaluateFeatureFlag(flagName: string): Promise<boolean | null | Error> {
+        return this.fetchSourcegraphAPI<APIResponse<EvaluateFeatureFlagResponse>>(EVALUATE_FEATURE_FLAG_QUERY, {
+            flagName,
+        }).then(response => extractDataOrError(response, data => data.evaluateFeatureFlag))
     }
 
     private fetchSourcegraphAPI<T>(query: string, variables: Record<string, any> = {}): Promise<T | Error> {

@@ -1,17 +1,16 @@
-// VS Code Docs https://code.visualstudio.com/api/references/vscode-api#Memento
-// A memento represents a storage utility. It can store and retrieve values.
 import * as uuid from 'uuid'
-// import * as vscode from 'vscode'
 import { Memento } from 'vscode'
 
 import { UserLocalHistory } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 
 export class LocalStorage {
     // Bump this on storage changes so we don't handle incorrectly formatted data
-    private KEY_LOCAL_HISTORY = 'cody-local-chatHistory-v2'
-    private ANONYMOUS_USER_ID_KEY = 'sourcegraphAnonymousUid'
-    private LAST_USED_ENDPOINT = 'SOURCEGRAPH_CODY_ENDPOINT'
-    private CODY_ENDPOINT_HISTORY = 'SOURCEGRAPH_CODY_ENDPOINT_HISTORY'
+    protected KEY_LOCAL_HISTORY = 'cody-local-chatHistory-v2'
+    protected ANONYMOUS_USER_ID_KEY = 'sourcegraphAnonymousUid'
+    protected LAST_USED_ENDPOINT = 'SOURCEGRAPH_CODY_ENDPOINT'
+    protected CODY_ENDPOINT_HISTORY = 'SOURCEGRAPH_CODY_ENDPOINT_HISTORY'
+    protected KEY_ENABLED_PLUGINS = 'KEY_ENABLED_PLUGINS'
+    protected KEY_LAST_USED_RECIPES = 'SOURCEGRAPH_CODY_LAST_USED_RECIPE_NAMES'
 
     constructor(private storage: Memento) {}
 
@@ -85,24 +84,50 @@ export class LocalStorage {
         }
     }
 
-    public getAnonymousUserID(): string | null {
-        const anonUserID = this.storage.get(this.ANONYMOUS_USER_ID_KEY, null)
-        return anonUserID
+    /**
+     * Return the anonymous user ID stored in local storage or create one if none exists (which
+     * occurs on a fresh installation).
+     */
+    public async anonymousUserID(): Promise<{ anonymousUserID: string; created: boolean }> {
+        let id = this.storage.get<string>(this.ANONYMOUS_USER_ID_KEY)
+        let created = false
+        if (!id) {
+            created = true
+            id = uuid.v4()
+            try {
+                await this.storage.update(this.ANONYMOUS_USER_ID_KEY, id)
+            } catch (error) {
+                console.error(error)
+            }
+        }
+        return { anonymousUserID: id, created }
     }
 
-    public async setAnonymousUserID(): Promise<string | null> {
-        let status: string | null = null
-        let anonUserID = this.storage.get(this.ANONYMOUS_USER_ID_KEY)
-        if (!anonUserID) {
-            anonUserID = uuid.v4()
-            status = 'installed'
-        }
+    public async setEnabledPlugins(plugins: string[]): Promise<void> {
         try {
-            await this.storage.update(this.ANONYMOUS_USER_ID_KEY, anonUserID)
+            await this.storage.update(this.KEY_ENABLED_PLUGINS, plugins)
         } catch (error) {
             console.error(error)
         }
-        return status
+    }
+
+    public getEnabledPlugins(): string[] | null {
+        return this.storage.get<string[] | null>(this.KEY_ENABLED_PLUGINS, null)
+    }
+
+    public async setLastUsedCommands(recipes: string[]): Promise<void> {
+        if (recipes.length === 0) {
+            return
+        }
+        try {
+            await this.storage.update(this.KEY_LAST_USED_RECIPES, recipes)
+        } catch (error) {
+            console.error(error)
+        }
+    }
+
+    public getLastUsedCommands(): string[] | null {
+        return this.storage.get<string[] | null>(this.KEY_LAST_USED_RECIPES, null)
     }
 
     public get(key: string): string | null {

@@ -1,7 +1,6 @@
 export enum CodyTaskState {
-    'idle' = 0,
-    'waiting' = 1,
-    'asking' = 2,
+    'idle' = 1,
+    'working' = 2,
     'ready' = 3,
     'applying' = 4,
     'fixed' = 5,
@@ -25,14 +24,8 @@ export const fixupTaskList: CodyTaskList = {
         icon: 'clock',
         description: 'Initial state',
     },
-    [CodyTaskState.waiting]: {
-        id: 'waiting',
-        // TODO: Per Figma, this should be a Cody wink
-        icon: 'debug-pause',
-        description: 'The task is waiting to be processed by Cody',
-    },
-    [CodyTaskState.asking]: {
-        id: 'asking',
+    [CodyTaskState.working]: {
+        id: 'working',
         icon: 'sync~spin',
         description: 'Cody is preparing a response',
     },

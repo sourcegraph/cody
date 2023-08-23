@@ -1,10 +1,21 @@
+import { URI } from 'vscode-uri'
+
 import { BotResponseMultiplexer } from '../chat/bot-response-multiplexer'
 import { RecipeContext } from '../chat/recipes/recipe'
 import { CodebaseContext } from '../codebase-context'
-import { ActiveTextEditor, ActiveTextEditorSelection, ActiveTextEditorVisibleContent, Editor } from '../editor'
+import {
+    ActiveTextEditor,
+    ActiveTextEditorDiagnostic,
+    ActiveTextEditorSelection,
+    ActiveTextEditorSelectionRange,
+    ActiveTextEditorVisibleContent,
+    Editor,
+} from '../editor'
 import { EmbeddingsSearch } from '../embeddings'
-import { IntentDetector } from '../intent-detector'
+import { IntentClassificationOption, IntentDetector } from '../intent-detector'
 import { ContextResult, KeywordContextFetcher } from '../local-context'
+import { SourcegraphCompletionsClient } from '../sourcegraph-api/completions/client'
+import { CompletionParameters, CompletionResponse } from '../sourcegraph-api/completions/types'
 import { EmbeddingsSearchResults } from '../sourcegraph-api/graphql'
 
 export class MockEmbeddingsClient implements EmbeddingsSearch {
@@ -22,6 +33,32 @@ export class MockEmbeddingsClient implements EmbeddingsSearch {
     }
 }
 
+export class MockCompletionsClient extends SourcegraphCompletionsClient {
+    constructor(private mocks: Partial<Pick<SourcegraphCompletionsClient, 'complete' | 'stream'>>) {
+        super({
+            accessToken: null,
+            customHeaders: {},
+            debugEnable: false,
+            serverEndpoint: 'https://example.com',
+        })
+    }
+
+    public stream(): () => void {
+        throw new Error('mock stream is not implemented')
+    }
+
+    public complete(
+        params: CompletionParameters,
+        onChunk?: (incompleteResponse: CompletionResponse) => void,
+        abortSignal?: AbortSignal
+    ): Promise<CompletionResponse> {
+        if (!this.mocks.complete) {
+            throw new Error('mock complete is not provided')
+        }
+        return this.mocks.complete(params, onChunk, abortSignal)
+    }
+}
+
 export class MockIntentDetector implements IntentDetector {
     constructor(private mocks: Partial<IntentDetector> = {}) {}
 
@@ -31,6 +68,14 @@ export class MockIntentDetector implements IntentDetector {
 
     public isEditorContextRequired(input: string): boolean | Error {
         return this.mocks.isEditorContextRequired?.(input) ?? false
+    }
+
+    public classifyIntentFromOptions<Intent extends string>(
+        input: string,
+        options: IntentClassificationOption<Intent>[],
+        fallback: Intent
+    ): Promise<Intent> {
+        return Promise.resolve(fallback)
     }
 }
 
@@ -55,6 +100,10 @@ export class MockEditor implements Editor {
         return this.mocks.getWorkspaceRootPath?.() ?? null
     }
 
+    public getWorkspaceRootUri(): URI | null {
+        return this.mocks.getWorkspaceRootUri?.() ?? null
+    }
+
     public getActiveTextEditorSelection(): ActiveTextEditorSelection | null {
         return this.mocks.getActiveTextEditorSelection?.() ?? null
     }
@@ -63,8 +112,26 @@ export class MockEditor implements Editor {
         return this.mocks.getActiveTextEditorSelection?.() ?? null
     }
 
+    public getActiveTextEditorSelectionOrVisibleContent(): ActiveTextEditorSelection | null {
+        return this.mocks.getActiveTextEditorSelection?.() ?? null
+    }
+
+    public getActiveTextEditorDiagnosticsForRange(
+        range: ActiveTextEditorSelectionRange
+    ): ActiveTextEditorDiagnostic[] | null {
+        return this.mocks.getActiveTextEditorDiagnosticsForRange?.(range) ?? null
+    }
+
     public getActiveTextEditor(): ActiveTextEditor | null {
         return this.mocks.getActiveTextEditor?.() ?? null
+    }
+
+    public getActiveInlineChatTextEditor(): ActiveTextEditor | null {
+        return this.mocks.getActiveTextEditor?.() ?? null
+    }
+
+    public getActiveInlineChatSelection(): ActiveTextEditorSelection | null {
+        return this.mocks.getActiveTextEditorSelection?.() ?? null
     }
 
     public getActiveTextEditorVisibleContent(): ActiveTextEditorVisibleContent | null {
@@ -108,10 +175,11 @@ export function newRecipeContext(args?: Partial<RecipeContext>): RecipeContext {
         codebaseContext:
             args.codebaseContext ||
             new CodebaseContext(
-                { useContext: 'none', serverEndpoint: 'https://example.com' },
+                { useContext: 'none', serverEndpoint: 'https://example.com', experimentalLocalSymbols: false },
                 'dummy-codebase',
                 defaultEmbeddingsClient,
                 defaultKeywordContextFetcher,
+                null,
                 null
             ),
         responseMultiplexer: args.responseMultiplexer || new BotResponseMultiplexer(),

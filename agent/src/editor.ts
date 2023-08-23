@@ -1,5 +1,6 @@
 import {
     ActiveTextEditor,
+    ActiveTextEditorDiagnostic,
     ActiveTextEditorSelection,
     ActiveTextEditorViewControllers,
     ActiveTextEditorVisibleContent,
@@ -9,6 +10,7 @@ import {
 import { Agent } from './agent'
 import { DocumentOffsets } from './offsets'
 import { TextDocument } from './protocol'
+import * as vscode_shim from './vscode-shim'
 
 export class AgentEditor implements Editor {
     public controllers?: ActiveTextEditorViewControllers | undefined
@@ -19,15 +21,21 @@ export class AgentEditor implements Editor {
         throw new Error('Method not implemented.')
     }
 
+    /** @deprecated Use {@link AgentEditor.getWorkspaceRootUri} instead. */
     public getWorkspaceRootPath(): string | null {
-        return this.agent.workspaceRootPath
+        const uri = this.getWorkspaceRootUri()
+        return uri?.scheme === 'file' ? uri.fsPath : null
+    }
+
+    public getWorkspaceRootUri(): vscode_shim.Uri | null {
+        return this.agent.workspace.workspaceRootUri ?? null
     }
 
     private activeDocument(): TextDocument | undefined {
-        if (this.agent.activeDocumentFilePath === null) {
+        if (this.agent.workspace.activeDocumentFilePath === null) {
             return undefined
         }
-        return this.agent.documents.get(this.agent.activeDocumentFilePath)
+        return this.agent.workspace.getDocument(this.agent.workspace.activeDocumentFilePath)
     }
 
     public getActiveTextEditor(): ActiveTextEditor | null {
@@ -47,6 +55,14 @@ export class AgentEditor implements Editor {
             return null
         }
         const offsets = new DocumentOffsets(document)
+        if (!document.selection) {
+            return {
+                fileName: document.filePath ?? '',
+                precedingText: document.content ?? '',
+                selectedText: '',
+                followingText: '',
+            }
+        }
         const from = offsets.offset(document.selection.start)
         const to = offsets.offset(document.selection.end)
         return {
@@ -68,6 +84,22 @@ export class AgentEditor implements Editor {
             }
         }
         return this.getActiveTextEditorSelection()
+    }
+
+    public getActiveInlineChatTextEditor(): ActiveTextEditor | null {
+        throw new Error('Method not implemented.')
+    }
+
+    public getActiveInlineChatSelection(): ActiveTextEditorSelection | null {
+        throw new Error('Method not implemented.')
+    }
+
+    public getActiveTextEditorSelectionOrVisibleContent(): ActiveTextEditorSelection | null {
+        throw new Error('Method not implemented.')
+    }
+
+    public getActiveTextEditorDiagnosticsForRange(): ActiveTextEditorDiagnostic[] | null {
+        throw new Error('Method not implemented.')
     }
 
     public getActiveTextEditorVisibleContent(): ActiveTextEditorVisibleContent | null {

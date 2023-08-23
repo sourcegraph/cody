@@ -2,6 +2,7 @@ import path from 'path'
 
 import { CodebaseContext } from '../../codebase-context'
 import { ContextMessage, getContextMessageWithResponse } from '../../codebase-context/messages'
+import { NUM_CODE_RESULTS, NUM_TEXT_RESULTS } from '../../prompt/constants'
 import { populateCodeContextTemplate } from '../../prompt/templates'
 
 export const MARKDOWN_FORMAT_PROMPT = 'Enclose code snippets with three backticks like so: ```.'
@@ -15,6 +16,15 @@ const EXTENSION_TO_LANGUAGE: { [key: string]: string } = {
     ts: 'Typescript',
     jsx: 'JSX',
     tsx: 'TSX',
+    go: 'Go',
+    java: 'Java',
+    c: 'C',
+    cpp: 'C++',
+    cs: 'C#',
+    css: 'CSS',
+    html: 'HTML',
+    json: 'JSON',
+    rs: 'Rust',
 }
 
 export const commandRegex = {
@@ -62,11 +72,20 @@ export function getFileExtension(fileName: string): string {
 // ex. Remove  `tags:` that Cody sometimes include in the returned content
 // It also removes all spaces before a new line to keep the indentations
 export function contentSanitizer(text: string): string {
-    let output = text + '\n'
+    let output = text.replace(/<\/selection>\s$/, '')
     const tagsIndex = text.indexOf('tags:')
     if (tagsIndex !== -1) {
         // NOTE: 6 is the length of `tags:` + 1 space
         output = output.slice(tagsIndex + 6)
     }
     return output.replace(/^\s*\n/, '')
+}
+
+export const numResults = {
+    numCodeResults: NUM_CODE_RESULTS,
+    numTextResults: NUM_TEXT_RESULTS,
+}
+
+export function isSingleWord(str: string): boolean {
+    return str.trim().split(/\s+/).length === 1
 }

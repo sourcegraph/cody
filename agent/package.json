@@ -12,17 +12,22 @@
   "main": "src/index.ts",
   "sideEffects": false,
   "scripts": {
-    "build": "esbuild ./src/index.ts --bundle --outfile=dist/agent.js --format=cjs --platform=node",
+    "build": "cd .. && pnpm build && cd agent && node ./src/esbuild.mjs",
+    "agent": "pnpm run build && node dist/index.js",
     "build-ts": "tsc --build",
-    "build-agent-binaries": "pnpm run build && pkg -t node16-linux-arm64,node16-linux-x64,node16-macos-arm64,node16-macos-x64,node16-win-x64 dist/agent.js --out-path ${AGENT_EXECUTABLE_TARGET_DIRECTORY:-dist}",
+    "build-agent-binaries": "pnpm run build && cp dist/index.js dist/agent.js && pkg -t latest-linux-arm64,latest-linux-x64,latest-macos-arm64,latest-macos-x64,latest-win-x64 dist/agent.js --out-path ${AGENT_EXECUTABLE_TARGET_DIRECTORY:-dist}",
     "lint": "pnpm run lint:js",
     "lint:js": "eslint --cache '**/*.[tj]s?(x)'",
     "test": "pnpm run build && vitest"
   },
   "dependencies": {
-    "@sourcegraph/cody-shared": "workspace:*"
+    "@sourcegraph/cody-shared": "workspace:*",
+    "vscode-uri": "^3.0.7"
   },
   "devDependencies": {
-    "pkg": "^5.8.1"
+    "pkg": "^5.8.1",
+    "@types/vscode": "^1.80.0",
+    "esbuild-plugin-alias-path": "^2.0.2",
+    "esbuild": "^0.18.19"
   }
 }

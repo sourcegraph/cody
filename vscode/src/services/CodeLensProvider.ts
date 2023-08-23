@@ -16,7 +16,11 @@ export class CodeLensProvider implements vscode.CodeLensProvider {
     private _onDidChangeCodeLenses: vscode.EventEmitter<void> = new vscode.EventEmitter<void>()
     public readonly onDidChangeCodeLenses: vscode.Event<void> = this._onDidChangeCodeLenses.event
 
-    constructor(public id: string, private extPath: string, private thread: vscode.CommentThread) {
+    constructor(
+        public id: string,
+        private extPath: string,
+        private thread: vscode.CommentThread
+    ) {
         this.provideCodeLenses = this.provideCodeLenses.bind(this)
         this.decorator = new DecorationProvider(this.id, this.extPath, this.thread.uri)
         vscode.workspace.onDidChangeTextDocument(e => {
@@ -42,7 +46,7 @@ export class CodeLensProvider implements vscode.CodeLensProvider {
         vscode.workspace.onDidCloseTextDocument(e => this.removeOnFSPath(e.uri))
         vscode.workspace.onDidSaveTextDocument(e => this.removeOnFSPath(e.uri))
 
-        this.updateState(CodyTaskState.asking, thread.range)
+        this.updateState(CodyTaskState.working, thread.range)
     }
 
     /**
@@ -111,7 +115,7 @@ export class CodeLensProvider implements vscode.CodeLensProvider {
      * Check if the file path is the same
      */
     private removeOnFSPath(uri: vscode.Uri): void {
-        if (this.status === CodyTaskState.asking) {
+        if (this.status === CodyTaskState.working) {
             return
         }
         if (uri.fsPath === this.thread.uri.fsPath) {
@@ -122,7 +126,7 @@ export class CodeLensProvider implements vscode.CodeLensProvider {
      * Check if it is in pending state
      */
     public isPending(): boolean {
-        return this.status === CodyTaskState.asking
+        return this.status === CodyTaskState.working
     }
     /**
      * Dispose the disposables
@@ -139,7 +143,7 @@ function getLenses(id: string, codeLensRange: vscode.Range, isPending: boolean):
     const title = new vscode.CodeLens(codeLensRange)
     // Open Chat View
     title.command = {
-        title: isPending ? '$(sync~spin) Asking Cody...' : '✨ Edited by Cody',
+        title: isPending ? '$(sync~spin) Cody is working...' : '✨ Edited by Cody',
         tooltip: 'Open Cody chat view',
         command: 'cody.focus',
     }

@@ -1,5 +1,5 @@
 import assert from 'assert'
-import { spawn } from 'child_process'
+import { execSync, spawn } from 'child_process'
 import path from 'path'
 
 import { afterAll, describe, it } from 'vitest'
@@ -7,14 +7,11 @@ import { afterAll, describe, it } from 'vitest'
 import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 
 import { MessageHandler } from './jsonrpc'
+import { ClientInfo } from './protocol'
 
 export class TestClient extends MessageHandler {
-    public async handshake() {
-        const info = await this.request('initialize', {
-            name: 'test-client',
-            version: 'v1',
-            workspaceRootPath: '/path/to/foo',
-        })
+    public async handshake(clientInfo: ClientInfo) {
+        const info = await this.request('initialize', clientInfo)
         this.notify('initialized', null)
         return info
     }
@@ -36,13 +33,52 @@ export class TestClient extends MessageHandler {
     }
 }
 
-describe('StandardAgent', () => {
+describe.each([
+    {
+        name: 'FullConfig',
+        clientInfo: {
+            name: 'test-client',
+            version: 'v1',
+            workspaceRootUri: 'file:///path/to/foo',
+            workspaceRootPath: '/path/to/foo',
+            connectionConfiguration: {
+                accessToken: process.env.SRC_ACCESS_TOKEN ?? 'invalid',
+                serverEndpoint: process.env.SRC_ENDPOINT ?? 'invalid',
+                customHeaders: {},
+                autocompleteAdvancedProvider: 'anthropic',
+                autocompleteAdvancedAccessToken: '',
+                autocompleteAdvancedServerEndpoint: '',
+                autocompleteAdvancedEmbeddings: true,
+                debug: false,
+                verboseDebug: false,
+            },
+        },
+    },
+    {
+        name: 'MinimalConfig',
+        clientInfo: {
+            name: 'test-client',
+            version: 'v1',
+            workspaceRootUri: 'file:///path/to/foo',
+            workspaceRootPath: '/path/to/foo',
+            connectionConfiguration: {
+                accessToken: process.env.SRC_ACCESS_TOKEN ?? 'invalid',
+                serverEndpoint: process.env.SRC_ENDPOINT ?? 'invalid',
+                customHeaders: {},
+            },
+        },
+    },
+])('describe StandardAgent with $name', ({ clientInfo }) => {
     if (process.env.SRC_ACCESS_TOKEN === undefined || process.env.SRC_ENDPOINT === undefined) {
         it('no-op test because SRC_ACCESS_TOKEN is not set. To actually run the Cody Agent tests, set the environment variables SRC_ENDPOINT and SRC_ACCESS_TOKEN', () => {})
         return
     }
     const client = new TestClient()
-    const agentProcess = spawn('node', [path.join(__dirname, '../dist/agent.js')], {
+
+    // Bundle the agent. When running `pnpm run test`, vitest doesn't re-run this step.
+    execSync('pnpm run build')
+
+    const agentProcess = spawn('node', ['--inspect', path.join(__dirname, '../dist/index.js'), '--inspect'], {
         stdio: 'pipe',
     })
 
@@ -54,12 +90,25 @@ describe('StandardAgent', () => {
     })
 
     it('initializes properly', async () => {
-        assert.deepStrictEqual(await client.handshake(), { name: 'cody-agent' }, 'Agent should be cody-agent')
+        const serverInfo = await client.handshake(clientInfo)
+        assert.deepStrictEqual(serverInfo.name, 'cody-agent', 'Agent should be cody-agent')
+        assert.deepStrictEqual(serverInfo.codyEnabled, true, 'Cody should be enabled')
     })
 
     it('lists recipes correctly', async () => {
         const recipes = await client.listRecipes()
-        assert(recipes.length === 8)
+        assert.equal(9, recipes.length)
+    })
+
+    it('returns non-empty autocomplete', async () => {
+        const filePath = '/path/to/foo/file.js'
+        const content = 'function sum(a, b) {\n    \n}'
+        client.notify('textDocument/didOpen', { filePath, content })
+        const completions = await client.request('autocomplete/execute', {
+            filePath,
+            position: { line: 1, character: 4 },
+        })
+        assert(completions.items.length > 0)
     })
 
     const streamingChatMessages = new Promise<void>(resolve => {

@@ -2,23 +2,55 @@
   "version": "0.1.0",
   "configurations": [
     {
-      "name": "Launch VS Code Extension",
+      "name": "Launch VS Code Extension (Desktop)",
       "type": "extensionHost",
       "request": "launch",
       "runtimeExecutable": "${execPath}",
-      "preLaunchTask": "Build VS Code Extension",
+      "preLaunchTask": "Build VS Code Extension (Desktop)",
+      "args": ["--extensionDevelopmentPath=${workspaceRoot}/vscode"],
+      "sourceMaps": true,
+      "outFiles": ["${workspaceRoot}/vscode/dist/**/*.js"],
+      "env": {
+        "NODE_ENV": "development",
+        "CODY_DEBUG_ENABLE": "true"
+      }
+    },
+    {
+      "name": "Launch VS Code Extension (Desktop; Separate Instance)",
+      "type": "extensionHost",
+      "request": "launch",
+      "runtimeExecutable": "${execPath}",
+      "preLaunchTask": "Build VS Code Extension (Desktop)",
       "args": [
-        "--extensionDevelopmentPath=${workspaceRoot}/vscode",
-        "--disable-extension=sourcegraph.cody-ai",
-        "--disable-extension=github.copilot",
-        "--disable-extension=github.copilot-nightly"
+        "--user-data-dir=/tmp/vscode-cody-extension-dev-host",
+        "--profile-temp",
+        "--extensionDevelopmentPath=${workspaceRoot}/vscode"
       ],
       "sourceMaps": true,
       "outFiles": ["${workspaceRoot}/vscode/dist/**/*.js"],
       "env": {
         "NODE_ENV": "development",
-        "CODY_FOCUS_ON_STARTUP": "1"
+        "CODY_PROFILE_TEMP": "true",
+        "CODY_DEBUG_ENABLE": "true"
       }
+    },
+    {
+      "name": "Launch VS Code Extension (Web, in Browser)",
+      "type": "node",
+      "request": "launch",
+      "preLaunchTask": "Build VS Code Extension (Web)",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["-C", "${workspaceFolder}/vscode", "run", "--silent", "_dev:vscode-test-web"],
+      "outFiles": ["${workspaceFolder}/vscode/dist/**/*.js"]
+    },
+    {
+      "name": "Launch VS Code Extension (Web Extension Host)",
+      "type": "pwa-extensionHost",
+      "debugWebWorkerHost": true,
+      "request": "launch",
+      "preLaunchTask": "Build VS Code Extension (Web)",
+      "outFiles": ["${workspaceFolder}/vscode/dist/**/*.js"],
+      "args": ["--extensionDevelopmentPath=${workspaceRoot}/vscode", "--extensionDevelopmentKind=web"]
     }
   ]
 }

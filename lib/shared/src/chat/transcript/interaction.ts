@@ -1,4 +1,5 @@
-import { ContextFile, ContextMessage } from '../../codebase-context/messages'
+import { ContextFile, ContextMessage, PreciseContext } from '../../codebase-context/messages'
+import { PluginFunctionExecutionInfo } from '../../plugins/api/types'
 
 import { ChatMessage, InteractionMessage } from './messages'
 
@@ -7,6 +8,8 @@ export interface InteractionJSON {
     assistantMessage: InteractionMessage
     fullContext: ContextMessage[]
     usedContextFiles: ContextFile[]
+    usedPreciseContext: PreciseContext[]
+    pluginExecutionInfos: PluginFunctionExecutionInfo[]
     timestamp: string
 
     // DEPRECATED: Legacy field for backcompat, renamed to `fullContext`
@@ -19,7 +22,9 @@ export class Interaction {
         private assistantMessage: InteractionMessage,
         private fullContext: Promise<ContextMessage[]>,
         private usedContextFiles: ContextFile[],
-        public readonly timestamp: string = new Date().toISOString()
+        private usedPreciseContext: PreciseContext[] = [],
+        public readonly timestamp: string = new Date().toISOString(),
+        private pluginExecutionInfos: PluginFunctionExecutionInfo[] = []
     ) {}
 
     public getAssistantMessage(): InteractionMessage {
@@ -44,15 +49,29 @@ export class Interaction {
         return contextMessages.length > 0
     }
 
-    public setUsedContext(usedContextFiles: ContextFile[]): void {
+    public setUsedContext(
+        usedContextFiles: ContextFile[],
+        pluginExecutionInfos: PluginFunctionExecutionInfo[],
+        usedPreciseContext: PreciseContext[]
+    ): void {
         this.usedContextFiles = usedContextFiles
+        this.pluginExecutionInfos = pluginExecutionInfos
+        this.usedPreciseContext = usedPreciseContext
     }
 
     /**
      * Converts the interaction to chat message pair: one message from a human, one from an assistant.
      */
     public toChat(): ChatMessage[] {
-        return [this.humanMessage, { ...this.assistantMessage, contextFiles: this.usedContextFiles }]
+        return [
+            this.humanMessage,
+            {
+                ...this.assistantMessage,
+                contextFiles: this.usedContextFiles,
+                preciseContext: this.usedPreciseContext,
+                pluginExecutionInfos: this.pluginExecutionInfos,
+            },
+        ]
     }
 
     public async toChatPromise(): Promise<ChatMessage[]> {
@@ -66,6 +85,8 @@ export class Interaction {
             assistantMessage: this.assistantMessage,
             fullContext: await this.fullContext,
             usedContextFiles: this.usedContextFiles,
+            usedPreciseContext: this.usedPreciseContext,
+            pluginExecutionInfos: this.pluginExecutionInfos,
             timestamp: this.timestamp,
         }
     }

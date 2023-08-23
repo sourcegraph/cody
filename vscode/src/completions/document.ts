@@ -1,5 +1,20 @@
 import * as vscode from 'vscode'
 
+import { getNextNonEmptyLine, getPrevNonEmptyLine } from './utils/text-utils'
+
+export interface DocumentContext {
+    prefix: string
+    suffix: string
+
+    /** Text before the cursor on the same line. */
+    currentLinePrefix: string
+    /** Text after the cursor on the same line. */
+    currentLineSuffix: string
+
+    prevNonEmptyLine: string
+    nextNonEmptyLine: string
+}
+
 /**
  * Get the current document context based on the cursor position in the current document.
  *
@@ -8,7 +23,6 @@ import * as vscode from 'vscode'
  * The prefix and suffix are obtained by looking around the current position up to a max length
  * defined by `maxPrefixLength` and `maxSuffixLength` respectively. If the length of the entire
  * document content in either direction is smaller than these parameters, the entire content will be used.
- *w
  *
  * @param document - A `vscode.TextDocument` object, the document in which to find the context.
  * @param position - A `vscode.Position` object, the position in the document from which to find the context.
@@ -21,47 +35,28 @@ export function getCurrentDocContext(
     document: vscode.TextDocument,
     position: vscode.Position,
     maxPrefixLength: number,
-    maxSuffixLength: number
-): {
-    prefix: string
-    suffix: string
-    prevLine: string
-    prevNonEmptyLine: string
-    nextNonEmptyLine: string
-} | null {
+    maxSuffixLength: number,
+    context?: vscode.InlineCompletionContext
+): DocumentContext {
     const offset = document.offsetAt(position)
 
-    const prefixLines = document.getText(new vscode.Range(new vscode.Position(0, 0), position)).split('\n')
+    // TODO(philipp-spiess): This requires us to read the whole document. Can we limit our ranges
+    // instead?
+    const completePrefix = document.getText(new vscode.Range(new vscode.Position(0, 0), position))
+    const completeSuffix = document.getText(new vscode.Range(position, document.positionAt(document.getText().length)))
 
-    if (prefixLines.length === 0) {
-        console.error('no lines')
-        return null
+    // Patch the document to contain the selected completion from the popup dialog already
+    let completePrefixWithContextCompletion = completePrefix
+    if (context?.selectedCompletionInfo) {
+        const { range, text } = context.selectedCompletionInfo
+        completePrefixWithContextCompletion = completePrefix.slice(0, range.start.character - position.character) + text
     }
 
-    const suffixLines = document
-        .getText(new vscode.Range(position, document.positionAt(document.getText().length)))
-        .split('\n')
+    const prefixLines = completePrefixWithContextCompletion.split('\n')
+    const suffixLines = completeSuffix.split('\n')
 
-    let nextNonEmptyLine = ''
-    if (suffixLines.length > 0) {
-        for (const line of suffixLines) {
-            if (line.trim().length > 0) {
-                nextNonEmptyLine = line
-                break
-            }
-        }
-    }
-
-    let prevNonEmptyLine = ''
-    for (let i = prefixLines.length - 1; i >= 0; i--) {
-        const line = prefixLines[i]
-        if (line.trim().length > 0) {
-            prevNonEmptyLine = line
-            break
-        }
-    }
-
-    const prevLine = prefixLines[prefixLines.length - 1]
+    const currentLinePrefix = prefixLines[prefixLines.length - 1]
+    const currentLineSuffix = suffixLines[0]
 
     let prefix: string
     if (offset > maxPrefixLength) {
@@ -76,7 +71,7 @@ export function getCurrentDocContext(
         }
         prefix = prefixLines.slice(startLine).join('\n')
     } else {
-        prefix = document.getText(new vscode.Range(new vscode.Position(0, 0), position))
+        prefix = completePrefixWithContextCompletion
     }
 
     let totalSuffix = 0
@@ -90,10 +85,14 @@ export function getCurrentDocContext(
     }
     const suffix = suffixLines.slice(0, endLine).join('\n')
 
+    const prevNonEmptyLine = getPrevNonEmptyLine(prefix)
+    const nextNonEmptyLine = getNextNonEmptyLine(suffix)
+
     return {
         prefix,
         suffix,
-        prevLine,
+        currentLinePrefix,
+        currentLineSuffix,
         prevNonEmptyLine,
         nextNonEmptyLine,
     }
