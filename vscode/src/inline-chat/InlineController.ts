@@ -32,14 +32,10 @@ export class InlineController implements VsCodeInlineController {
     private readonly codyIcon: vscode.Uri
     private readonly userIcon: vscode.Uri
     private _disposables: vscode.Disposable[] = []
-    // Constroller State
-    private commentController: vscode.CommentController | null = null
-    public thread: vscode.CommentThread | null = null // a thread is a comment
-    private threads = new Map<string, InlineInteraction>()
 
-    // Inline Tasks States
-    // If a task is in progress, the editor will use the selection range tracked by the controller
-    public isInProgress = false
+    // Controller State
+    private commentController: vscode.CommentController | null = null
+    private threads = new Map<string, InlineInteraction>()
 
     // Track acceptance of generated code by Cody in Inline Chat
     private lastCopiedCode = { code: 'init', lineCount: 0, charCount: 0, eventName: '' }
@@ -108,7 +104,7 @@ export class InlineController implements VsCodeInlineController {
         vscode.window.onDidChangeVisibleTextEditors(async e => {
             // get the last editor from the event list
             const editor = e[e.length - 1]
-            if (this.commentController && !this.isInProgress && editor?.document?.uri?.scheme === 'comment') {
+            if (this.commentController && editor?.document?.uri?.scheme === 'comment') {
                 this.lastClipboardText = await vscode.env.clipboard.readText()
             }
         })
@@ -199,7 +195,6 @@ export class InlineController implements VsCodeInlineController {
      * List response from Human as comment
      */
     public chat(reply: string, thread: vscode.CommentThread): void {
-        this.isInProgress = true
         // disable reply until the task is completed
         thread.canReply = false
         thread.label = this.threadLabel
@@ -240,15 +235,14 @@ export class InlineController implements VsCodeInlineController {
             thread.state = state === 'error' ? 1 : 0
             thread.canReply = state !== 'error'
             void vscode.commands.executeCommand('setContext', 'cody.replied', true)
-            this.isInProgress = false
         }
 
         if (state === 'complete') {
-            this.createCopyEventListener(text)
+            this.createCopyEventListener(text, thread)
         }
     }
 
-    private createCopyEventListener(text: string): void {
+    private createCopyEventListener(text: string, thread: vscode.CommentThread): void {
         // get the code inside a code block with three backticks
         // get the text between the backticks
         let groupedText = ''
@@ -263,7 +257,7 @@ export class InlineController implements VsCodeInlineController {
         vscode.window.onDidChangeTextEditorSelection(async e => {
             const documentUri = e.textEditor.document.uri
             const lastClipboardText = this.lastClipboardText
-            if (e && documentUri?.fsPath === this.thread?.uri.fsPath) {
+            if (e && documentUri?.fsPath === thread.uri.fsPath) {
                 // check if the current range is within the selection range of the thread
                 const clipboardText = await vscode.env.clipboard.readText()
                 if (clipboardText === this.lastCopiedCode.code || clipboardText === lastClipboardText) {
@@ -298,7 +292,6 @@ export class InlineController implements VsCodeInlineController {
         const latestReply = this.getLatestReply(thread)
         if (latestReply instanceof Comment) {
             latestReply.abort()
-            this.isInProgress = false
         }
     }
 
