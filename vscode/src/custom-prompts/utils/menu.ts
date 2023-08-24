@@ -18,7 +18,6 @@ const customCommandsSeparator: QuickPickItem = { kind: -1, label: 'custom comman
 const configOption: QuickPickItem = { label: 'Configure Custom Commands...' }
 const settingsSeparator: QuickPickItem = { kind: -1, label: 'settings' }
 const addOption: QuickPickItem = { label: 'New Custom User Command...', alwaysShow: true }
-const fixSubmitOption: QuickPickItem = { label: '/fix', description: 'Submit Refactor Request', alwaysShow: true }
 
 export const recentlyUsedSeparatorAsPrompt: [string, CodyPrompt][] = [
     ['separator', { prompt: 'separator', type: 'recently used' }],
@@ -36,7 +35,6 @@ export const menu_options = {
     fix: fixOption,
     config: configOption,
     add: addOption,
-    submitFix: fixSubmitOption,
 }
 
 const userItem: QuickPickItem = {

@@ -260,8 +260,6 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
                     }
                     return await vscode.commands.executeCommand('cody.fixup.new')
                 }
-                case selectedCommandID === menu_options.submitFix.label:
-                    return await vscode.commands.executeCommand('cody.action.fixup', userPrompt)
             }
 
             // Run the prompt

@@ -34,7 +34,7 @@ export async function showCommandMenu(items: QuickPickItem[]): Promise<CommandMe
                 quickPick.items = [
                     ...items,
                     { ...menu_options.chat, description: quickPick.value },
-                    { ...menu_options.submitFix, description: quickPick.value },
+                    { ...menu_options.fix, description: quickPick.value },
                 ]
                 input = quickPick.value
                 return
