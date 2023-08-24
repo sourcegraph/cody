@@ -1,5 +1,8 @@
 # Cody E2E Testing
 
+These tests interact with the VScode user interface and test Cody from a mock
+server through to VScode UI.
+
 ### Commands
 
 #### All Tests
