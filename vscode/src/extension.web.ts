@@ -34,7 +34,7 @@ export const VSCODE_WEB_RECIPES: Recipe[] = [
     new GenerateTest(),
     new ImproveVariableNames(),
     new CustomPrompt(),
-    new InlineChat(debug),
+    new InlineChat(),
     new InlineTouch(debug),
     new NextQuestions(),
     new TranslateToLanguage(),

@@ -69,6 +69,8 @@ interface InlineChatViewProviderOptions extends MessageProviderOptions {
 
 export class InlineChatViewProvider extends MessageProvider {
     private thread: vscode.CommentThread
+    // A repeating, text-based, loading indicator ("." -> ".." -> "...")
+    private responsePendingInterval: NodeJS.Timeout | null = null
 
     constructor({ thread, ...options }: InlineChatViewProviderOptions) {
         super(options)
@@ -87,7 +89,7 @@ export class InlineChatViewProvider extends MessageProvider {
          * We should detect intent here (through regex and then `classifyIntentFromOptions`) and run the correct recipe/controller instead.
          */
         this.editor.controllers.inline?.chat(reply, this.thread)
-        this.editor.controllers.inline?.setResponsePending(true, this.thread)
+        this.setResponsePending(true)
         await this.executeRecipe('inline-chat', interaction.id)
     }
 
@@ -96,8 +98,33 @@ export class InlineChatViewProvider extends MessageProvider {
     }
 
     public async abortChat(): Promise<void> {
+        this.setResponsePending(false)
         this.editor.controllers.inline?.abort(this.thread)
         await this.abortCompletion()
+    }
+
+    /**
+     * Display a "..." loading style reply from Cody.
+     */
+    public setResponsePending(isResponsePending: boolean): void {
+        let iterations = 0
+
+        if (!isResponsePending) {
+            if (this.responsePendingInterval) {
+                clearInterval(this.responsePendingInterval)
+                this.responsePendingInterval = null
+                iterations = 0
+            }
+            return
+        }
+
+        const dot = '.'
+        this.editor.controllers.inline?.reply(dot, this.thread, 'loading')
+        this.responsePendingInterval = setInterval(() => {
+            iterations++
+            const replyText = dot.repeat((iterations % 3) + 1)
+            this.editor.controllers.inline?.reply(replyText, this.thread, 'loading')
+        }, 500)
     }
 
     /**
@@ -112,7 +139,7 @@ export class InlineChatViewProvider extends MessageProvider {
         }
 
         if (lastMessage.displayText) {
-            this.editor.controllers.inline?.setResponsePending(false, this.thread)
+            this.setResponsePending(false)
             this.editor.controllers.inline?.reply(
                 lastMessage.displayText,
                 this.thread,

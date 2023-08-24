@@ -37,9 +37,6 @@ export class InlineController implements VsCodeInlineController {
     public thread: vscode.CommentThread | null = null // a thread is a comment
     private threads = new Map<string, InlineInteraction>()
 
-    // A repeating, text-based, loading indicator ("." -> ".." -> "...")
-    private responsePendingInterval: NodeJS.Timeout | null = null
-
     // Inline Tasks States
     // If a task is in progress, the editor will use the selection range tracked by the controller
     public isInProgress = false
@@ -298,36 +295,11 @@ export class InlineController implements VsCodeInlineController {
     }
 
     public abort(thread: vscode.CommentThread): void {
-        this.setResponsePending(false, thread)
         const latestReply = this.getLatestReply(thread)
         if (latestReply instanceof Comment) {
             latestReply.abort()
             this.isInProgress = false
         }
-    }
-
-    /**
-     * Display a "..." loading style reply from Cody.
-     */
-    public setResponsePending(isResponsePending: boolean, thread: vscode.CommentThread): void {
-        let iterations = 0
-
-        if (!isResponsePending) {
-            if (this.responsePendingInterval) {
-                clearInterval(this.responsePendingInterval)
-                this.responsePendingInterval = null
-                iterations = 0
-            }
-            return
-        }
-
-        const dot = '.'
-        this.reply(dot, thread, 'loading')
-        this.responsePendingInterval = setInterval(() => {
-            iterations++
-            const replyText = dot.repeat((iterations % 3) + 1)
-            this.reply(replyText, thread, 'loading')
-        }, 500)
     }
 
     /**
