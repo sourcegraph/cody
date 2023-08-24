@@ -244,11 +244,16 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
                     break
                 case selectedCommandID === menu_options.config.label:
                     return await vscode.commands.executeCommand('cody.settings.commands')
-                case selectedCommandID === menu_options.chat.label:
-                    return await vscode.commands.executeCommand(
-                        'cody.action.chat',
-                        userPrompt.trim() || (await showAskQuestionQuickPick())
-                    )
+                case selectedCommandID === menu_options.chat.label: {
+                    let input = userPrompt.trim()
+                    if (input) {
+                        return await vscode.commands.executeCommand('cody.action.chat', input)
+                    }
+                    input = await showAskQuestionQuickPick()
+                    await vscode.commands.executeCommand('cody.chat.focus')
+                    return await vscode.commands.executeCommand('cody.action.chat', input)
+                }
+
                 case selectedCommandID === menu_options.fix.label: {
                     if (userPrompt.trim()) {
                         return await vscode.commands.executeCommand('cody.action.fixup', userPrompt)
