@@ -150,7 +150,7 @@ export class Agent extends MessageHandler {
             )
         )
 
-        this.registerRequest('recipes/execute', async data => {
+        this.registerRequest('recipes/execute', async (data, token) => {
             const client = await this.client
             if (!client) {
                 return null
@@ -189,7 +189,7 @@ export class Agent extends MessageHandler {
                         : result.items.flatMap(({ insertText, range }) =>
                               typeof insertText === 'string' && range !== undefined ? [{ insertText, range }] : []
                           )
-                return { items }
+                return { items, completionEvent: (result as any)?.completionEvent }
             } catch (error) {
                 console.log('autocomplete failed', error)
                 return { items: [] }

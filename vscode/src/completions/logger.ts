@@ -9,7 +9,7 @@ import { ContextSummary } from './context/context'
 import { InlineCompletionItem } from './types'
 import { isAbortError, isRateLimitError } from './utils'
 
-interface CompletionEvent {
+export interface CompletionEvent {
     params: {
         type: 'inline'
         multiline: boolean
@@ -153,6 +153,10 @@ export function accept(id: string, completion: InlineCompletionItem): void {
         ...lineAndCharCount(completion),
         otherCompletionProviderEnabled: otherCompletionProviderEnabled(),
     })
+}
+
+export function completionEvent(id: string): CompletionEvent | undefined {
+    return displayedCompletions.get(id)
 }
 
 export function noResponse(id: string): void {
