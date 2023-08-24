@@ -33,7 +33,6 @@ export async function showCommandMenu(items: QuickPickItem[]): Promise<CommandMe
             if (quickPick.value && !labels.has(quickPick.value)) {
                 quickPick.items = [
                     ...items,
-                    // TODO: debounce updates
                     { ...menu_options.chat, description: quickPick.value },
                     { ...menu_options.submitFix, description: quickPick.value },
                 ]

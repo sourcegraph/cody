@@ -249,8 +249,12 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
                         'cody.action.chat',
                         userPrompt.trim() || (await showAskQuestionQuickPick())
                     )
-                case selectedCommandID === menu_options.fix.label:
+                case selectedCommandID === menu_options.fix.label: {
+                    if (userPrompt.trim()) {
+                        return await vscode.commands.executeCommand('cody.action.fixup', userPrompt)
+                    }
                     return await vscode.commands.executeCommand('cody.fixup.new')
+                }
                 case selectedCommandID === menu_options.submitFix.label:
                     return await vscode.commands.executeCommand('cody.action.fixup', userPrompt)
             }
