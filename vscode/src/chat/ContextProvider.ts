@@ -99,7 +99,7 @@ export class ContextProvider implements vscode.Disposable {
     }
 
     public onConfigurationChange(newConfig: Config): void {
-        debug('ContextProvider:onConfigurationChange', '')
+        debug('ContextProvider:onConfigurationChange', 'using codebase', newConfig.codebase)
         this.config = newConfig
         const authStatus = this.authProvider.getAuthStatus()
         if (authStatus.endpoint) {
