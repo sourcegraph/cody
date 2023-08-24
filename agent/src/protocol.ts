@@ -3,6 +3,8 @@ import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 import { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { event } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
 
+import { CompletionEvent } from '../../vscode/src/completions/logger'
+
 // This file documents the Cody Agent JSON-RPC protocol. Consult the JSON-RPC
 // specification to learn about how JSON-RPC works https://www.jsonrpc.org/specification
 // The Cody Agent server only supports transport via stdout/stdin.
@@ -109,6 +111,7 @@ export interface AutocompleteParams {
 
 export interface AutocompleteResult {
     items: AutocompleteItem[]
+    completionEvent?: CompletionEvent
 }
 
 export interface AutocompleteItem {
