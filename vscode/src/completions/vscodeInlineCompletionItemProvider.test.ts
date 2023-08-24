@@ -311,6 +311,7 @@ describe('InlineCompletionItemProvider', () => {
             )
             expect(items).toMatchInlineSnapshot(`
               {
+                "completionEvent": undefined,
                 "items": [
                   InlineCompletionItem {
                     "insertText": "    console.log('hello world!')",
