@@ -1,6 +1,7 @@
 import fetch from 'isomorphic-fetch'
+import { SocksProxyAgent } from 'socks-proxy-agent'
 
-import { logger } from '../../log'
+import { debug, logger } from '../../log'
 import { Completion, ContextSnippet } from '../types'
 import { isAbortError } from '../utils'
 
@@ -45,6 +46,7 @@ export class UnstableCodeGenProvider extends Provider {
             provider: PROVIDER_IDENTIFIER,
             serverEndpoint: this.serverEndpoint,
         })
+        debug('unstable-codegen', 'request to ' + this.serverEndpoint)
         const response = await fetch(this.serverEndpoint, {
             method: 'POST',
             body: JSON.stringify(params),
@@ -52,7 +54,8 @@ export class UnstableCodeGenProvider extends Provider {
                 'Content-Type': 'application/json',
             },
             signal: abortSignal,
-        })
+            agent: new SocksProxyAgent('socks5://127.0.0.1:9999'),
+        } as any)
 
         try {
             const data = (await response.json()) as { completions: { completion: string }[] }
