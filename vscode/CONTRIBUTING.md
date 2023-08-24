@@ -11,8 +11,7 @@ Tip: Enable `cody.debug.enable` and `cody.debug.verbose` in VS Code settings dur
 
 - `src`: source code of the components for the extension host
 - `webviews`: source code of the extension sidebar webviews, built with Vite
-- `test/integration`: code for integration tests
-- `test/e2e`: code for playwright UI tests
+- `test`: [tests](test/README.md)
 - `dist`: build outputs from both webpack and vite
 - `resources`: everything in this directory will be move to the ./dist directory automatically during build time for easy packaging
 - `index.html`: the entry file that Vite looks for to build the webviews. The extension host reads this file at run time and replace the variables inside the file with webview specific uri and info

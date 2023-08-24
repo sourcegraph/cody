@@ -6,7 +6,7 @@ Cody VScode has four kinds of tests:
    They are written in vitest and use VScode mocks. Run them with `pnpm test:unit`.
 
 2. Storybook. These are in the `webviews` directory in files named `.story.tsx`.
-   These render UI widgets and use VScode mocks.
+   These render UI widgets and use VScode mocks. Run them with `pnpm storybook`.
 
 3. Integration tests, in `integration`. These run VScode and communicate with
    the Cody extension directly through a "testing" API returned by the extension
