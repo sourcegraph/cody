@@ -10,6 +10,7 @@ if (require.main === module) {
     const timeout = setTimeout(
         () => {
             console.error('timed out waiting to install dependencies')
+            process.exit(1)
         },
         5 * 60 * 1000 // 5 minutes
     )
