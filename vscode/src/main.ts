@@ -20,13 +20,13 @@ import { getConfiguration, getFullConfig } from './configuration'
 import { VSCodeEditor } from './editor/vscode-editor'
 import { PlatformContext } from './extension.common'
 import { configureExternalServices } from './external-services'
+import { Comment, InlineController } from './inline-chat/InlineController'
 import { FixupController } from './non-stop/FixupController'
 import { showSetupNotification } from './notifications/setup-notification'
 import { AuthProvider } from './services/AuthProvider'
 import { createOrUpdateEventLogger } from './services/EventLogger'
 import { showFeedbackSupportQuickPick } from './services/FeedbackOptions'
 import { GuardrailsProvider } from './services/GuardrailsProvider'
-import { Comment, InlineController } from './services/InlineController'
 import { LocalStorage } from './services/LocalStorageProvider'
 import {
     CODY_ACCESS_TOKEN_SECRET,
@@ -240,7 +240,7 @@ const register = async (
             }
 
             const inlineChatProvider = inlineChatManager.getProviderForThread(comment.thread)
-            await inlineChatProvider.addChat(comment.text, false)
+            await inlineChatProvider.addChat(comment.text)
             telemetryService.log('CodyVSCodeExtension:chat:submitted', { source: 'inline' })
         }),
         vscode.commands.registerCommand('cody.comment.delete', (thread: vscode.CommentThread) => {
@@ -277,12 +277,12 @@ const register = async (
             await vscode.commands.executeCommand('workbench.action.addComment')
         }),
         vscode.commands.registerCommand('cody.inline.add', async (instruction: string, range: vscode.Range) => {
-            const comment = commentController.create(instruction, range)
+            const comment = commentController.createThread(instruction, range)
             if (!comment) {
                 return Promise.resolve()
             }
             const inlineChatProvider = inlineChatManager.getProviderForThread(comment.thread)
-            void inlineChatProvider.addChat(comment.text, false)
+            void inlineChatProvider.addChat(comment.text)
         }),
         // Tests
         // Access token - this is only used in configuration tests

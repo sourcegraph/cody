@@ -3,8 +3,8 @@ import * as vscode from 'vscode'
 import { VsCodeFixupController, VsCodeFixupTaskRecipeData } from '@sourcegraph/cody-shared/src/editor'
 import { TelemetryService } from '@sourcegraph/cody-shared/src/telemetry'
 
+import { countCode } from '../inline-chat/InlineAssist'
 import { debug } from '../log'
-import { countCode } from '../services/InlineAssist'
 
 import { computeDiff, Diff } from './diff'
 import { FixupCodeLenses } from './FixupCodeLenses'

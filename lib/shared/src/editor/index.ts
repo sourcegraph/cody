@@ -45,9 +45,17 @@ export interface ActiveTextEditorVisibleContent {
     revision?: string
 }
 
+export interface VsCodeInlineInteractionRecipeData {
+    instruction: string
+    fileName: string
+    precedingText: string
+    selectedText: string
+    followingText: string
+    selectionRange: ActiveTextEditorSelectionRange
+}
+
 export interface VsCodeInlineController {
-    selection: ActiveTextEditorSelection | null
-    selectionRange: ActiveTextEditorSelectionRange | null
+    getThreadRecipeData(taskId: string): Promise<VsCodeFixupTaskRecipeData | undefined>
     error(): Promise<void>
 }
 
@@ -99,9 +107,6 @@ export interface Editor<
     getActiveTextEditor(): ActiveTextEditor | null
     getActiveTextEditorSelection(): ActiveTextEditorSelection | null
 
-    getActiveInlineChatTextEditor(): ActiveTextEditor | null
-    getActiveInlineChatSelection(): ActiveTextEditorSelection | null
-
     /**
      * Gets the active text editor's selection, or the entire file if the selected range is empty.
      */
@@ -144,14 +149,6 @@ export class NoopEditor implements Editor {
     }
 
     public getActiveTextEditorSelection(): ActiveTextEditorSelection | null {
-        return null
-    }
-
-    public getActiveInlineChatTextEditor(): ActiveTextEditor | null {
-        return null
-    }
-
-    public getActiveInlineChatSelection(): ActiveTextEditorSelection | null {
         return null
     }
 

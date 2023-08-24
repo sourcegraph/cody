@@ -1,6 +1,6 @@
 import * as vscode from 'vscode'
 
-import { getSingleLineRange } from '../services/InlineAssist'
+import { getSingleLineRange } from '../inline-chat/InlineAssist'
 
 import { FixupTask } from './FixupTask'
 import { CodyTaskState } from './utils'

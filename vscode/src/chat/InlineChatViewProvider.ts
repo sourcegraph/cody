@@ -18,6 +18,20 @@ export class InlineChatViewManager implements vscode.Disposable {
                 providedCodeActionKinds: ExplainCodeAction.providedCodeActionKinds,
             })
         )
+
+        // Remove all the threads from current file on file close
+        vscode.workspace.onDidCloseTextDocument(doc => {
+            // Skip if the document is not a file
+            if (doc.uri.scheme !== 'file') {
+                return
+            }
+            const threadsInDoc = [...this.inlineChatThreadProviders.keys()].filter(
+                thread => thread.uri.fsPath === doc.uri.fsPath
+            )
+            for (const thread of threadsInDoc) {
+                this.removeProviderForThread(thread)
+            }
+        })
     }
 
     public getProviderForThread(thread: vscode.CommentThread): InlineChatViewProvider {
@@ -61,19 +75,20 @@ export class InlineChatViewProvider extends MessageProvider {
         this.thread = thread
     }
 
-    public async addChat(reply: string, isFixMode: boolean): Promise<void> {
-        // TODO(umpox): We use `inline.reply.pending` to gate against multiple inline chats being sent at once.
-        // We need to update the comment controller to support more than one active thread at a time.
-        void vscode.commands.executeCommand('setContext', 'cody.inline.reply.pending', true)
+    public async addChat(reply: string): Promise<void> {
+        const interaction = this.editor.controllers.inline?.createInteraction(reply, this.thread)
+        if (!interaction) {
+            return
+        }
 
         /**
          * TODO(umpox):
          * We create a new comment and trigger the inline chat recipe, but may end up closing this comment and running a fix instead
          * We should detect intent here (through regex and then `classifyIntentFromOptions`) and run the correct recipe/controller instead.
          */
-        await this.editor.controllers.inline?.chat(reply, this.thread, isFixMode)
-        this.editor.controllers.inline?.setResponsePending(true)
-        await this.executeRecipe('inline-chat', reply.trimStart())
+        this.editor.controllers.inline?.chat(reply, this.thread)
+        this.editor.controllers.inline?.setResponsePending(true, this.thread)
+        await this.executeRecipe('inline-chat', interaction.id)
     }
 
     public removeChat(): void {
@@ -81,9 +96,8 @@ export class InlineChatViewProvider extends MessageProvider {
     }
 
     public async abortChat(): Promise<void> {
-        this.editor.controllers.inline?.abort()
+        this.editor.controllers.inline?.abort(this.thread)
         await this.abortCompletion()
-        void vscode.commands.executeCommand('setContext', 'cody.inline.reply.pending', false)
     }
 
     /**
@@ -98,16 +112,12 @@ export class InlineChatViewProvider extends MessageProvider {
         }
 
         if (lastMessage.displayText) {
-            this.editor.controllers.inline?.setResponsePending(false)
+            this.editor.controllers.inline?.setResponsePending(false, this.thread)
             this.editor.controllers.inline?.reply(
                 lastMessage.displayText,
+                this.thread,
                 isMessageInProgress ? 'streaming' : 'complete'
             )
-        }
-
-        if (!isMessageInProgress) {
-            // Finished responding, we can allow users to send another inline chat message.
-            void vscode.commands.executeCommand('setContext', 'cody.inline.reply.pending', false)
         }
     }
 
@@ -117,7 +127,7 @@ export class InlineChatViewProvider extends MessageProvider {
      * TODO(umpox): Should we render these differently for inline chat? We are limited in UI options.
      */
     protected handleError(errorMsg: string): void {
-        void this.editor.controllers.inline?.error(errorMsg)
+        void this.editor.controllers.inline?.error(errorMsg, this.thread)
     }
 
     protected handleHistory(): void {
