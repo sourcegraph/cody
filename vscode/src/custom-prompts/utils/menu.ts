@@ -11,8 +11,8 @@ export const NewCustomCommandConfigMenuOptions = {
 }
 
 const inlineSeparator: QuickPickItem = { kind: -1, label: 'inline' }
-const chatOption: QuickPickItem = { label: '/ask', description: 'Ask a Question' }
-const fixOption: QuickPickItem = { label: '/fix', description: 'Refactor This Code' }
+const chatOption: QuickPickItem = { label: '/ask', description: 'Ask a Question', alwaysShow: true }
+const fixOption: QuickPickItem = { label: '/fix', description: 'Refactor This Code', alwaysShow: true }
 const commandsSeparator: QuickPickItem = { kind: -1, label: 'commands' }
 const customCommandsSeparator: QuickPickItem = { kind: -1, label: 'custom commands (experimental)' }
 const configOption: QuickPickItem = { label: 'Configure Custom Commands...' }
