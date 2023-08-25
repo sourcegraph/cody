@@ -34,6 +34,7 @@ describe('getConfiguration', () => {
             telemetryLevel: 'all',
             autocompleteAdvancedProvider: 'anthropic',
             autocompleteAdvancedServerEndpoint: null,
+            autocompleteAdvancedModel: null,
             autocompleteAdvancedAccessToken: null,
             autocompleteAdvancedEmbeddings: true,
             autocompleteExperimentalCompleteSuggestWidgetSelection: false,
@@ -87,6 +88,8 @@ describe('getConfiguration', () => {
                         return 'unstable-codegen'
                     case 'cody.autocomplete.advanced.serverEndpoint':
                         return 'https://example.com/llm'
+                    case 'cody.autocomplete.advanced.model':
+                        return 'starcoder-32b'
                     case 'cody.autocomplete.advanced.accessToken':
                         return 'foobar'
                     case 'cody.autocomplete.advanced.embeddings':
@@ -136,6 +139,7 @@ describe('getConfiguration', () => {
             telemetryLevel: 'off',
             autocompleteAdvancedProvider: 'unstable-codegen',
             autocompleteAdvancedServerEndpoint: 'https://example.com/llm',
+            autocompleteAdvancedModel: 'starcoder-32b',
             autocompleteAdvancedAccessToken: 'foobar',
             autocompleteAdvancedEmbeddings: false,
             autocompleteExperimentalCompleteSuggestWidgetSelection: false,

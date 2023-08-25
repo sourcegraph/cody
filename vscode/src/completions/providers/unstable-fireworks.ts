@@ -10,23 +10,40 @@ import { Provider, ProviderConfig, ProviderOptions } from './provider'
 interface UnstableFireworksOptions {
     serverEndpoint: string
     accessToken: null | string
+    model: null | string
 }
 
 const PROVIDER_IDENTIFIER = 'fireworks'
 const STOP_WORD = '<|endoftext|>'
 const CONTEXT_WINDOW_CHARS = 5000 // ~ 2000 token limit
 
+const MODEL_MAP = {
+    'starcoder-16b': 'accounts/fireworks/models/starcoder-16b-w8a16',
+    'starcoder-7b': 'accounts/fireworks/models/starcoder-7b-w4a8',
+    'starcoder-3b': 'accounts/fireworks/models/starcoder-3b-w2a4',
+    'starcoder-1b': 'accounts/fireworks/models/starcoder-1b-w1a2',
+    'llama-code-13b-instruct': 'accounts/fireworks/models/llama-v2-13b-code-instruct',
+}
+
 export class UnstableFireworksProvider extends Provider {
     private serverEndpoint: string
     private accessToken: null | string
+    private model: keyof typeof MODEL_MAP
 
-    constructor(options: ProviderOptions, unstableFireworksOptions: UnstableFireworksOptions) {
+    constructor(options: ProviderOptions, { serverEndpoint, accessToken, model }: UnstableFireworksOptions) {
         super(options)
-        this.serverEndpoint = unstableFireworksOptions.serverEndpoint
-        this.accessToken = unstableFireworksOptions.accessToken
+        this.serverEndpoint = serverEndpoint
+        this.accessToken = accessToken
+        if (model === null) {
+            this.model = 'starcoder-7b'
+        } else if (Object.prototype.hasOwnProperty.call(MODEL_MAP, model)) {
+            this.model = model as any
+        } else {
+            throw new Error(`Unknown model: \`${model}\``)
+        }
     }
 
-    private createPrompt(snippets: ContextSnippet[], model: string): string {
+    private createPrompt(snippets: ContextSnippet[]): string {
         const maxPromptChars = CONTEXT_WINDOW_CHARS - CONTEXT_WINDOW_CHARS * this.options.responsePercentage
         const { prefix, suffix } = this.options.docContext
 
@@ -53,7 +70,7 @@ export class UnstableFireworksProvider extends Provider {
 
             const suffixAfterFirstNewline = suffix.slice(suffix.indexOf('\n'))
 
-            const nextPrompt = createInfillingPrompt(model, introString, prefix, suffixAfterFirstNewline)
+            const nextPrompt = this.createInfillingPrompt(introString, prefix, suffixAfterFirstNewline)
 
             if (nextPrompt.length >= maxPromptChars) {
                 return prompt
@@ -66,8 +83,8 @@ export class UnstableFireworksProvider extends Provider {
     }
 
     public async generateCompletions(abortSignal: AbortSignal, snippets: ContextSnippet[]): Promise<Completion[]> {
-        const model = 'accounts/fireworks/models/llama-v2-13b-code-instruct'
-        const prompt = this.createPrompt(snippets, model)
+        console.log({ m: this.model })
+        const prompt = this.createPrompt(snippets)
 
         const request = {
             prompt,
@@ -78,7 +95,7 @@ export class UnstableFireworksProvider extends Provider {
             top_p: 0.95,
             n: this.options.n,
             echo: false,
-            model,
+            model: MODEL_MAP[this.model],
         }
 
         const log = logger.startCompletion({
@@ -124,6 +141,20 @@ export class UnstableFireworksProvider extends Provider {
             throw error
         }
     }
+
+    private createInfillingPrompt(intro: string, prefix: string, suffix: string): string {
+        if (this.model.startsWith('starcoder')) {
+            // c.f. https://starcoder.co/bigcode/starcoder#fill-in-the-middle
+            return `<fim_prefix>${intro}${prefix}<fim_suffix>${suffix}<fim_middle>`
+        }
+        if (this.model.startsWith('llama-code')) {
+            // c.f. https://github.com/facebookresearch/codellama/blob/main/llama/generation.py#L402
+            return `<PRE> ${intro}${prefix} <SUF>${suffix} <MID>`
+        }
+
+        console.error('Could not generate infilling prompt for', this.model)
+        return `${intro}${prefix}`
+    }
 }
 
 function postProcess(content: string, multiline: boolean): string {
@@ -148,18 +179,4 @@ export function createProviderConfig(unstableFireworksOptions: UnstableFireworks
         identifier: PROVIDER_IDENTIFIER,
         supportsInfilling: true,
     }
-}
-
-function createInfillingPrompt(model: string, intro: string, prefix: string, suffix: string): string {
-    if (model.startsWith('accounts/fireworks/models/starcoder')) {
-        // c.f. https://starcoder.co/bigcode/starcoder#fill-in-the-middle
-        return `<fim_prefix>${intro}${prefix}<fim_suffix>${suffix}<fim_middle>`
-    }
-    if (model.startsWith('accounts/fireworks/models/llama')) {
-        // c.f. https://github.com/facebookresearch/codellama/blob/main/llama/generation.py#L402
-        return `<PRE> ${intro}${prefix} <SUF>${suffix} <MID>`
-    }
-
-    console.error('Could not generate infilling prompt for', model)
-    return `${intro}${prefix}`
 }
