@@ -696,7 +696,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
      */
     public async exportHistory(): Promise<void> {
         this.telemetryService.log('CodyVSCodeExtension:exportChatHistoryButton:clicked')
-        const historyJson = await this.transcript.toJSON()
+        const historyJson = MessageProvider.chatHistory
         const exportPath = await vscode.window.showSaveDialog({ filters: { 'Chat History': ['json'] } })
         if (!exportPath) {
             return
