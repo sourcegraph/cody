@@ -17,7 +17,13 @@ import { showCommandConfigMenu, showCommandMenu, showCustomCommandMenu, showNewC
 import { PromptsProvider } from './PromptsProvider'
 import { ToolsProvider } from './ToolsProvider'
 import { constructFileUri, createFileWatchers, createQuickPickItem, openCustomCommandDocsLink } from './utils/helpers'
-import { menu_options, menu_separators, showcommandTypeQuickPick, showRemoveConfirmationInput } from './utils/menu'
+import {
+    menu_options,
+    menu_separators,
+    showAskQuestionQuickPick,
+    showcommandTypeQuickPick,
+    showRemoveConfirmationInput,
+} from './utils/menu'
 
 /**
  * Manage commands built with prompts from CustomPromptsStore and PromptsProvider
@@ -167,7 +173,7 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
     /**
      * Menu Controller
      */
-    public async menu(type: 'custom' | 'config' | 'default', showDesc = true): Promise<void> {
+    public async menu(type: 'custom' | 'config' | 'default'): Promise<void> {
         this.telemetryService.log('CodyVSCodeExtension:command:menu:opened', { type })
         await this.refresh()
         switch (type) {
@@ -178,7 +184,7 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
                 await this.configMenu()
                 break
             case 'default':
-                await this.mainCommandMenu(showDesc)
+                await this.mainCommandMenu()
                 break
             default:
                 break
@@ -199,29 +205,35 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
     /**
      * Main Menu: Cody Commands
      */
-    public async mainCommandMenu(showDesc = true): Promise<void> {
+    public async mainCommandMenu(): Promise<void> {
         try {
-            const commandItems = [menu_separators.inline, menu_options.chat, menu_options.fix, menu_separators.commands]
-            const allCommands = this.default.getGroupedCommands(true)
-            const allCommandItems = [...allCommands]?.map(commandItem => {
-                const command = commandItem[1]
+            const commands = this.default.getGroupedCommands(true)?.map(([name, command]) => {
                 if (command.prompt === 'separator') {
                     return menu_separators.customCommands
                 }
-                const description =
-                    showDesc && command.slashCommand && command.type === 'default'
-                        ? command.slashCommand
-                        : command.type !== 'default'
-                        ? command.type
-                        : ''
+                let label: string | undefined
+                let description: string | undefined
 
-                return createQuickPickItem(command.name || commandItem[0], description)
+                if (command.slashCommand) {
+                    label = command.slashCommand
+                    description = command.name || name
+                } else {
+                    label = command.name || name
+                    description = command.type === 'default' ? '' : command.type
+                }
+
+                return createQuickPickItem(label, description)
             })
-            commandItems.push(...allCommandItems, menu_options.config)
 
             // Show the list of prompts to the user using a quick pick menu
-            // const selectedPrompt = await vscode.window.showQuickPick([...commandItems], CodyMenu_CodyCommands)
-            const { selectedItem: selectedPrompt, input: userPrompt } = await showCommandMenu([...commandItems])
+            const { selectedItem: selectedPrompt, input: userPrompt } = await showCommandMenu([
+                menu_separators.commands,
+                menu_options.chat,
+                menu_options.fix,
+                ...commands,
+                menu_separators.settings,
+                menu_options.config,
+            ])
             if (!selectedPrompt) {
                 return
             }
@@ -232,14 +244,22 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
                     break
                 case selectedCommandID === menu_options.config.label:
                     return await vscode.commands.executeCommand('cody.settings.commands')
-                case selectedCommandID === menu_options.chat.label:
-                    return await vscode.commands.executeCommand('cody.inline.new')
-                case selectedCommandID === menu_options.fix.label:
+                case selectedCommandID === menu_options.chat.label: {
+                    let input = userPrompt.trim()
+                    if (input) {
+                        return await vscode.commands.executeCommand('cody.action.chat', input)
+                    }
+                    input = await showAskQuestionQuickPick()
+                    await vscode.commands.executeCommand('cody.chat.focus')
+                    return await vscode.commands.executeCommand('cody.action.chat', input)
+                }
+
+                case selectedCommandID === menu_options.fix.label: {
+                    if (userPrompt.trim()) {
+                        return await vscode.commands.executeCommand('cody.action.fixup', userPrompt)
+                    }
                     return await vscode.commands.executeCommand('cody.fixup.new')
-                case selectedCommandID === menu_options.submitChat.label:
-                    return await vscode.commands.executeCommand('cody.action.chat', userPrompt)
-                case selectedCommandID === menu_options.submitFix.label:
-                    return await vscode.commands.executeCommand('cody.action.fixup', userPrompt)
+                }
             }
 
             // Run the prompt

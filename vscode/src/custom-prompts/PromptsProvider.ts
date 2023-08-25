@@ -29,7 +29,7 @@ export class PromptsProvider {
     }
 
     /**
-     * Retuen default and custom commands without the separator which is added for quick pick menu
+     * Return default and custom commands without the separator which is added for quick pick menu
      */
     public getGroupedCommands(keepSeparator: boolean): [string, CodyPrompt][] {
         if (keepSeparator) {

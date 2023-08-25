@@ -3,7 +3,7 @@ import { commands, QuickPickItem, QuickPickOptions, window } from 'vscode'
 import { CodyPrompt } from '@sourcegraph/cody-shared'
 
 import { CustomCommandsItem } from '../utils'
-import { CustomCommandConfigMenuItems, menu_buttons, menu_options } from '../utils/menu'
+import { CustomCommandConfigMenuItems, menu_buttons } from '../utils/menu'
 
 import { CodyCommand, CustomCommandsBuilderMenu } from './CustomCommandBuilderMenu'
 
@@ -19,7 +19,6 @@ export async function showCommandMenu(items: QuickPickItem[]): Promise<CommandMe
     }
 
     return new Promise(resolve => {
-        let input = ''
         const quickPick = window.createQuickPick()
         quickPick.items = items
         quickPick.title = options.title
@@ -27,16 +26,6 @@ export async function showCommandMenu(items: QuickPickItem[]): Promise<CommandMe
         quickPick.matchOnDescription = true
 
         quickPick.buttons = [menu_buttons.gear]
-
-        const labels = new Set(items.map(item => item.label))
-        quickPick.onDidChangeValue(() => {
-            if (quickPick.value && !labels.has(quickPick.value)) {
-                quickPick.items = [...items, menu_options.submitChat, menu_options.submitFix]
-                input = quickPick.value
-                return
-            }
-            quickPick.items = items
-        })
         // On gear icon click
         quickPick.onDidTriggerButton(async () => {
             quickPick.hide()
@@ -45,7 +34,7 @@ export async function showCommandMenu(items: QuickPickItem[]): Promise<CommandMe
 
         quickPick.onDidAccept(() => {
             const selection = quickPick.activeItems[0]
-            resolve({ selectedItem: selection, input })
+            resolve({ selectedItem: selection, input: quickPick.value })
             quickPick.hide()
         })
         quickPick.show()
