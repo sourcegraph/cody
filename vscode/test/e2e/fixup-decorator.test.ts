@@ -35,7 +35,7 @@ test('decorations from un-applied Cody changes appear', async ({ page, sidebar }
     await page.getByRole('option', { name: 'Refactor This Code' }).click()
 
     // Wait for the input box to appear
-    await page.getByPlaceholder('Enter your refactoring instruction here...').click()
+    await page.getByPlaceholder('Your instructions').click()
     // Type in the instruction for fixup
     await page.keyboard.type('replace hello with goodbye')
     // Press enter to submit the fixup

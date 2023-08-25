@@ -13,7 +13,7 @@ export class FixupTypingUI {
 
     private async getInstructionFromQuickPick({
         title = '/fix',
-        placeholder = 'Enter your refactoring instruction here...',
+        placeholder = 'Your instructions',
         value = '',
         prefix = '/fix',
     } = {}): Promise<string> {
