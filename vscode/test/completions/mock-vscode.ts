@@ -27,11 +27,13 @@ const vscodeMock = {
                         case 'cody.serverEndpoint':
                             return 'https://sourcegraph.com/'
                         case 'cody.autocomplete.advanced.provider':
-                            return 'unstable-fireworks'
-                        case 'cody.autocomplete.advanced.accessToken':
-                            return ''
-                        case 'cody.autocomplete.advanced.serverEndpoint':
-                            return 'https://api.fireworks.ai/inference/v1/completions'
+                            return 'anthropic'
+                        // case 'cody.autocomplete.advanced.provider':
+                        //     return 'unstable-fireworks'
+                        // case 'cody.autocomplete.advanced.accessToken':
+                        //     return ''
+                        // case 'cody.autocomplete.advanced.serverEndpoint':
+                        //     return 'https://api.fireworks.ai/inference/v1/completions'
                         default:
                             return undefined
                     }
