@@ -8,13 +8,15 @@ import { FixupTask } from '../non-stop/FixupTask'
 
 import { MessageProvider, MessageProviderOptions } from './MessageProvider'
 
+interface FixupManagerOptions extends MessageProviderOptions {}
+
 export class FixupManager implements vscode.Disposable {
     private fixupProviders = new Map<FixupTask, FixupProvider>()
-    private messageProviderOptions: MessageProviderOptions
+    private options: FixupManagerOptions
     private disposables: vscode.Disposable[] = []
 
-    constructor(options: MessageProviderOptions) {
-        this.messageProviderOptions = options
+    constructor(options: FixupManagerOptions) {
+        this.options = options
         this.disposables.push(
             vscode.languages.registerCodeActionsProvider('*', new FixupCodeAction(), {
                 providedCodeActionKinds: FixupCodeAction.providedCodeActionKinds,
@@ -22,11 +24,45 @@ export class FixupManager implements vscode.Disposable {
         )
     }
 
+    public async createFixup(
+        options: {
+            document?: vscode.TextDocument
+            instruction?: string
+            range?: vscode.Range
+        } = {}
+    ): Promise<void> {
+        const fixupController = this.options.editor.controllers.fixups
+        if (!fixupController) {
+            return
+        }
+
+        const document = options.document || vscode.window.activeTextEditor?.document
+        if (!document) {
+            return
+        }
+
+        const range = options.range || vscode.window.activeTextEditor?.selection
+        if (!range) {
+            return
+        }
+
+        const task = options.instruction?.replace('/fix', '').trim()
+            ? fixupController.createTask(document.uri, options.instruction, range)
+            : await fixupController.promptUserForTask()
+        if (!task) {
+            return
+        }
+
+        this.options.telemetryService.log('CodyVSCodeExtension:fixup:created')
+        const provider = this.getProviderForTask(task)
+        return provider.startFix()
+    }
+
     public getProviderForTask(task: FixupTask): FixupProvider {
         let provider = this.fixupProviders.get(task)
 
         if (!provider) {
-            provider = new FixupProvider({ task, ...this.messageProviderOptions })
+            provider = new FixupProvider({ task, ...this.options })
             this.fixupProviders.set(task, provider)
         }
 

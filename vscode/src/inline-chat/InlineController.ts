@@ -126,10 +126,10 @@ export class InlineController implements VsCodeInlineController {
         return commentController
     }
 
-    public async getThreadRecipeData(id: string): Promise<VsCodeInlineInteractionRecipeData | undefined> {
+    public async getThreadRecipeData(id: string): Promise<VsCodeInlineInteractionRecipeData | null> {
         const thread = this.threads.get(id)
         if (!thread) {
-            return undefined
+            return null
         }
         const document = await vscode.workspace.openTextDocument(thread.thread.uri)
         const precedingText = document.getText(

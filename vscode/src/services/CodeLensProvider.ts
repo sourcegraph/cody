@@ -1,9 +1,9 @@
 import * as vscode from 'vscode'
 
+import { editDocByUri, getSingleLineRange, updateRangeOnDocChange } from '../inline-chat/InlineAssist'
 import { CodyTaskState } from '../non-stop/utils'
 
 import { DecorationProvider } from './DecorationProvider'
-import { editDocByUri, getSingleLineRange, updateRangeOnDocChange } from './InlineAssist'
 
 export class CodeLensProvider implements vscode.CodeLensProvider {
     private selectionRange: vscode.Range | null = null

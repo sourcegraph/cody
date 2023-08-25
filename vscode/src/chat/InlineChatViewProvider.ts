@@ -14,11 +14,11 @@ interface InlineChatViewManagerOptions extends MessageProviderOptions {
 
 export class InlineChatViewManager implements vscode.Disposable {
     private inlineChatThreadProviders = new Map<vscode.CommentThread, InlineChatViewProvider>()
-    private inlineChatOptions: InlineChatViewManagerOptions
+    private options: InlineChatViewManagerOptions
     private disposables: vscode.Disposable[] = []
 
     constructor(options: InlineChatViewManagerOptions) {
-        this.inlineChatOptions = options
+        this.options = options
         this.disposables.push(
             vscode.languages.registerCodeActionsProvider('*', new ExplainCodeAction(), {
                 providedCodeActionKinds: ExplainCodeAction.providedCodeActionKinds,
@@ -44,7 +44,7 @@ export class InlineChatViewManager implements vscode.Disposable {
         let provider = this.inlineChatThreadProviders.get(thread)
 
         if (!provider) {
-            provider = new InlineChatViewProvider({ thread, ...this.inlineChatOptions })
+            provider = new InlineChatViewProvider({ thread, ...this.options })
             this.inlineChatThreadProviders.set(thread, provider)
         }
 
@@ -75,7 +75,7 @@ const InlineIntentClassification: IntentClassificationOption<InlineIntent>[] = [
         id: 'fix',
         rawCommand: '/fix',
         description: 'Edit part of the selected code',
-        examplePrompts: ['simplify this', 'add comments', ''],
+        examplePrompts: ['simplify this', 'add comments'],
     },
     {
         id: 'chat',
@@ -130,12 +130,7 @@ export class InlineChatViewProvider extends MessageProvider {
     private async startFix(instruction: string): Promise<void> {
         this.removeChat()
         const activeDocument = await vscode.workspace.openTextDocument(this.thread.uri)
-        const task = this.editor.controllers.fixups?.createTask(activeDocument.uri, instruction, this.thread.range)
-        if (!task) {
-            return
-        }
-        const provider = this.fixupManager.getProviderForTask(task)
-        return provider.startFix()
+        return this.fixupManager.createFixup({ document: activeDocument, instruction, range: this.thread.range })
     }
 
     public removeChat(): void {

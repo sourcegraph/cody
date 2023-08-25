@@ -1,8 +1,7 @@
 import * as vscode from 'vscode'
 
+import { getIconPath, getSingleLineRange } from '../inline-chat/InlineAssist'
 import { CodyTaskState } from '../non-stop/utils'
-
-import { getIconPath, getSingleLineRange } from './InlineAssist'
 
 const initDecorationType = vscode.window.createTextEditorDecorationType({})
 

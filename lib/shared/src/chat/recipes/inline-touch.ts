@@ -22,17 +22,13 @@ export class InlineTouch implements Recipe {
     constructor(private debug: (filterLabel: string, text: string, ...args: unknown[]) => void) {}
 
     public async getInteraction(humanChatInput: string, context: RecipeContext): Promise<Interaction | null> {
-        // const selection = context.editor.getActiveTextEditorSelection() || context.editor.controllers?.inline?.selection
-        // TODO, allow recipe consume to provide a selection, ala fixup task?
         const selection = context.editor.getActiveTextEditorSelection()
         if (!selection || !this.workspacePath) {
-            await context.editor.controllers?.inline?.error()
             await context.editor.showWarningMessage('Failed to start Inline Chat: empty selection.')
             return null
         }
         const humanInput = humanChatInput.trim() || (await this.getInstructionFromInput()).trim()
         if (!humanInput) {
-            await context.editor.controllers?.inline?.error()
             await context.editor.showWarningMessage('Failed to start Inline Chat: empty input.')
             return null
         }
@@ -73,7 +69,6 @@ export class InlineTouch implements Recipe {
             'selection',
             new BufferedBotResponseSubscriber(async content => {
                 if (!content) {
-                    await context.editor.controllers?.inline?.error()
                     await context.editor.showWarningMessage(
                         'Cody did not suggest any code updates. Please try again with a different question.'
                     )

@@ -188,35 +188,6 @@ const register = async (
         await sidebarChatProvider.executeRecipe(recipe, humanInput)
     }
 
-    const executeFixup = async (
-        options: {
-            document?: vscode.TextDocument
-            instruction?: string
-            range?: vscode.Range
-        } = {}
-    ): Promise<void> => {
-        const document = options.document || vscode.window.activeTextEditor?.document
-        if (!document) {
-            return
-        }
-
-        const range = options.range || vscode.window.activeTextEditor?.selection
-        if (!range) {
-            return
-        }
-
-        const task = options.instruction?.replace('/fix', '').trim()
-            ? fixup.createTask(document.uri, options.instruction, range)
-            : await fixup.promptUserForTask()
-        if (!task) {
-            return
-        }
-
-        telemetryService.log('CodyVSCodeExtension:fixup:created')
-        const provider = fixupManager.getProviderForTask(task)
-        return provider.startFix()
-    }
-
     const statusBar = createStatusBar()
 
     disposables.push(
@@ -252,7 +223,7 @@ const register = async (
         vscode.commands.registerCommand(
             'cody.fixup.new',
             (options: { range?: vscode.Range; instruction?: string; document?: vscode.TextDocument }) =>
-                executeFixup(options)
+                fixupManager.createFixup(options)
         ),
         vscode.commands.registerCommand('cody.inline.new', async () => {
             // move focus line to the end of the current selection
@@ -304,7 +275,8 @@ const register = async (
         }),
         vscode.commands.registerCommand(
             'cody.action.fixup',
-            (instruction: string, range: vscode.Range): Promise<void> => executeFixup({ instruction, range })
+            (instruction: string, range: vscode.Range): Promise<void> =>
+                fixupManager.createFixup({ instruction, range })
         ),
         vscode.commands.registerCommand('cody.action.commands.menu', async () => {
             await editor.controllers.command?.menu('default')
@@ -336,7 +308,7 @@ const register = async (
             executeRecipeInSidebar('inline-touch', false)
         ),
         vscode.commands.registerCommand('cody.command.context-search', () => executeRecipeInSidebar('context-search')),
-        vscode.commands.registerCommand('cody.command.edit-code', () => executeFixup()),
+        vscode.commands.registerCommand('cody.command.edit-code', () => fixupManager.createFixup()),
 
         // Register URI Handler (vscode://sourcegraph.cody-ai)
         vscode.window.registerUriHandler({

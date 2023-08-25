@@ -55,8 +55,7 @@ export interface VsCodeInlineInteractionRecipeData {
 }
 
 export interface VsCodeInlineController {
-    getThreadRecipeData(taskId: string): Promise<VsCodeFixupTaskRecipeData | undefined>
-    error(): Promise<void>
+    getThreadRecipeData(taskId: string): Promise<VsCodeFixupTaskRecipeData | null>
 }
 
 export interface VsCodeFixupTaskRecipeData {
