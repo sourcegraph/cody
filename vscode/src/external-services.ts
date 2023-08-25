@@ -9,11 +9,11 @@ import { SourcegraphGuardrailsClient } from '@sourcegraph/cody-shared/src/guardr
 import { IntentDetector } from '@sourcegraph/cody-shared/src/intent-detector'
 import { SourcegraphIntentDetectorClient } from '@sourcegraph/cody-shared/src/intent-detector/client'
 import { IndexedKeywordContextFetcher } from '@sourcegraph/cody-shared/src/local-context'
-import { SourcegraphCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/client'
 import { SourcegraphGraphQLAPIClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
 import { TelemetryService } from '@sourcegraph/cody-shared/src/telemetry'
 import { isError } from '@sourcegraph/cody-shared/src/utils'
 
+import { CodeCompletionsClient, createClient as createCodeCompletionsClint } from './completions/client'
 import { PlatformContext } from './extension.common'
 import { logger } from './log'
 import { getRerankWithLog } from './logged-rerank'
@@ -22,7 +22,7 @@ interface ExternalServices {
     intentDetector: IntentDetector
     codebaseContext: CodebaseContext
     chatClient: ChatClient
-    completionsClient: SourcegraphCompletionsClient
+    codeCompletionsClient: CodeCompletionsClient
     guardrails: Guardrails
     featureFlagProvider: FeatureFlagProvider
 
@@ -54,7 +54,8 @@ export async function configureExternalServices(
 ): Promise<ExternalServices> {
     const client = new SourcegraphGraphQLAPIClient(initialConfig)
     const featureFlagProvider = new FeatureFlagProvider(client)
-    const completions = platform.createCompletionsClient(initialConfig, featureFlagProvider, logger)
+    const completionsClient = platform.createCompletionsClient(initialConfig, featureFlagProvider, logger)
+    const codeCompletionsClient = createCodeCompletionsClint(initialConfig)
 
     const repoId = initialConfig.codebase ? await client.getRepoId(initialConfig.codebase) : null
     if (isError(repoId)) {
@@ -65,7 +66,7 @@ export async function configureExternalServices(
     }
     const embeddingsSearch = repoId && !isError(repoId) ? new SourcegraphEmbeddingsSearchClient(client, repoId) : null
 
-    const chatClient = new ChatClient(completions)
+    const chatClient = new ChatClient(completionsClient)
     const codebaseContext = new CodebaseContext(
         initialConfig,
         initialConfig.codebase,
@@ -83,15 +84,17 @@ export async function configureExternalServices(
     const guardrails = new SourcegraphGuardrailsClient(client)
 
     return {
-        intentDetector: new SourcegraphIntentDetectorClient(client, completions),
+        intentDetector: new SourcegraphIntentDetectorClient(client, completionsClient),
         featureFlagProvider,
         codebaseContext,
         chatClient,
-        completionsClient: completions,
+        completionsClient,
+        codeCompletionsClient,
         guardrails,
         onConfigurationChange: newConfig => {
             client.onConfigurationChange(newConfig)
-            completions.onConfigurationChange(newConfig)
+            completionsClient.onConfigurationChange(newConfig)
+            codeCompletionsClient.onConfigurationChange(newConfig)
             codebaseContext.onConfigurationChange(newConfig)
         },
     }

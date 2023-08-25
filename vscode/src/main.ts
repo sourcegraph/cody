@@ -2,9 +2,7 @@ import * as vscode from 'vscode'
 
 import { commandRegex } from '@sourcegraph/cody-shared/src/chat/recipes/helpers'
 import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
-import { Configuration, ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
-import { FeatureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
-import { SourcegraphCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/client'
+import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
 
 import { ChatViewProvider } from './chat/ChatViewProvider'
 import { ContextProvider } from './chat/ContextProvider'
@@ -12,10 +10,7 @@ import { FixupManager } from './chat/FixupViewProvider'
 import { InlineChatViewManager } from './chat/InlineChatViewProvider'
 import { MessageProviderOptions } from './chat/MessageProvider'
 import { CODY_FEEDBACK_URL } from './chat/protocol'
-import { VSCodeDocumentHistory } from './completions/context/history'
-import { createProviderConfig } from './completions/providers/createProvider'
-import { registerAutocompleteTraceView } from './completions/tracer/traceView'
-import { InlineCompletionItemProvider } from './completions/vscodeInlineCompletionItemProvider'
+import { createInlineCompletionItemProvider } from './completions/createVSCodeInlineCompletionItemProvider'
 import { getConfiguration, getFullConfig } from './configuration'
 import { VSCodeEditor } from './editor/vscode-editor'
 import { PlatformContext } from './extension.common'
@@ -34,7 +29,7 @@ import {
     SecretStorage,
     VSCodeSecretStorage,
 } from './services/SecretStorageProvider'
-import { CodyStatusBar, createStatusBar } from './services/StatusBar'
+import { createStatusBar } from './services/StatusBar'
 import { createVSCodeTelemetryService } from './services/telemetry'
 import { TestSupport } from './test-support'
 
@@ -119,7 +114,7 @@ const register = async (
         intentDetector,
         codebaseContext: initialCodebaseContext,
         chatClient,
-        completionsClient,
+        codeCompletionsClient,
         guardrails,
         onConfigurationChange: externalServicesOnDidConfigurationChange,
     } = await configureExternalServices(initialConfig, rgPath, symfRunner, editor, telemetryService, platform)
@@ -423,9 +418,9 @@ const register = async (
             completionsProvider.dispose()
         }
 
-        completionsProvider = createCompletionsProvider(
+        completionsProvider = createInlineCompletionItemProvider(
             config,
-            completionsClient,
+            codeCompletionsClient,
             statusBar,
             contextProvider,
             featureFlagProvider
@@ -466,53 +461,6 @@ const register = async (
             contextProvider.onConfigurationChange(newConfig)
             externalServicesOnDidConfigurationChange(newConfig)
             void createOrUpdateEventLogger(newConfig, localStorage, isExtensionModeDevOrTest)
-        },
-    }
-}
-
-function createCompletionsProvider(
-    config: Configuration,
-    completionsClient: SourcegraphCompletionsClient,
-    statusBar: CodyStatusBar,
-    contextProvider: ContextProvider,
-    featureFlagProvider: FeatureFlagProvider
-): vscode.Disposable {
-    const disposables: vscode.Disposable[] = []
-
-    const providerConfig = createProviderConfig(config, completionsClient)
-    if (providerConfig) {
-        const history = new VSCodeDocumentHistory()
-        const completionsProvider = new InlineCompletionItemProvider({
-            providerConfig,
-            history,
-            statusBar,
-            getCodebaseContext: () => contextProvider.context,
-            isEmbeddingsContextEnabled: config.autocompleteAdvancedEmbeddings,
-            completeSuggestWidgetSelection: config.autocompleteExperimentalCompleteSuggestWidgetSelection,
-            featureFlagProvider,
-        })
-
-        disposables.push(
-            vscode.commands.registerCommand('cody.autocomplete.inline.accepted', ({ codyLogId, codyCompletion }) => {
-                completionsProvider.handleDidAcceptCompletionItem(codyLogId, codyCompletion)
-            }),
-            vscode.languages.registerInlineCompletionItemProvider('*', completionsProvider),
-            registerAutocompleteTraceView(completionsProvider)
-        )
-    } else if (config.isRunningInsideAgent) {
-        throw new Error(
-            "Can't register completion provider because `providerConfig` evaluated to `null`. " +
-                'To fix this problem, debug why createProviderConfig returned null instead of ProviderConfig. ' +
-                'To further debug this problem, here is the configuration:\n' +
-                JSON.stringify(config, null, 2)
-        )
-    }
-
-    return {
-        dispose: () => {
-            for (const disposable of disposables) {
-                disposable.dispose()
-            }
         },
     }
 }

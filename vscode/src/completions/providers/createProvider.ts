@@ -1,7 +1,7 @@
 import { Configuration } from '@sourcegraph/cody-shared/src/configuration'
-import { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/nodeClient'
 
 import { debug } from '../../log'
+import { CodeCompletionsClient } from '../client'
 
 import { createProviderConfig as createAnthropicProviderConfig } from './anthropic'
 import { ProviderConfig } from './provider'
@@ -10,10 +10,7 @@ import { createProviderConfig as createUnstableCodeGenProviderConfig } from './u
 import { createProviderConfig as createUnstableFireworksProviderConfig } from './unstable-fireworks'
 import { createProviderConfig as createUnstableHuggingFaceProviderConfig } from './unstable-huggingface'
 
-export function createProviderConfig(
-    config: Configuration,
-    completionsClient: SourcegraphNodeCompletionsClient
-): ProviderConfig | null {
+export function createProviderConfig(config: Configuration, client: CodeCompletionsClient): ProviderConfig | null {
     switch (config.autocompleteAdvancedProvider) {
         case 'unstable-codegen': {
             if (config.autocompleteAdvancedServerEndpoint !== null) {
@@ -81,7 +78,7 @@ export function createProviderConfig(
         }
         case 'anthropic': {
             return createAnthropicProviderConfig({
-                completionsClient,
+                client,
                 contextWindowTokens: 2048,
             })
         }

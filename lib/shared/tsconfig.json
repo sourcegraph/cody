@@ -6,6 +6,6 @@
     "outDir": "dist",
     "lib": ["ESNext", "DOM.Iterable"],
   },
-  "include": ["src", "src/chat/prompts/default-prompts.json"],
+  "include": ["src", "src/chat/prompts/default-prompts.json", "../../vscode/src/completions/client.test.ts"],
   "exclude": ["dist"],
 }
