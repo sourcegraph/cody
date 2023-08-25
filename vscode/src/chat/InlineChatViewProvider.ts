@@ -1,18 +1,24 @@
 import * as vscode from 'vscode'
 
 import { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
+import { IntentClassificationOption } from '@sourcegraph/cody-shared/src/intent-detector'
 
 import { ExplainCodeAction } from '../code-actions/explain'
 
+import { FixupManager } from './FixupViewProvider'
 import { MessageProvider, MessageProviderOptions } from './MessageProvider'
+
+interface InlineChatViewManagerOptions extends MessageProviderOptions {
+    fixupManager: FixupManager
+}
 
 export class InlineChatViewManager implements vscode.Disposable {
     private inlineChatThreadProviders = new Map<vscode.CommentThread, InlineChatViewProvider>()
-    private messageProviderOptions: MessageProviderOptions
+    private inlineChatOptions: InlineChatViewManagerOptions
     private disposables: vscode.Disposable[] = []
 
-    constructor(options: MessageProviderOptions) {
-        this.messageProviderOptions = options
+    constructor(options: InlineChatViewManagerOptions) {
+        this.inlineChatOptions = options
         this.disposables.push(
             vscode.languages.registerCodeActionsProvider('*', new ExplainCodeAction(), {
                 providedCodeActionKinds: ExplainCodeAction.providedCodeActionKinds,
@@ -38,7 +44,7 @@ export class InlineChatViewManager implements vscode.Disposable {
         let provider = this.inlineChatThreadProviders.get(thread)
 
         if (!provider) {
-            provider = new InlineChatViewProvider({ thread, ...this.messageProviderOptions })
+            provider = new InlineChatViewProvider({ thread, ...this.inlineChatOptions })
             this.inlineChatThreadProviders.set(thread, provider)
         }
 
@@ -63,34 +69,73 @@ export class InlineChatViewManager implements vscode.Disposable {
     }
 }
 
-interface InlineChatViewProviderOptions extends MessageProviderOptions {
+export type InlineIntent = 'fix' | 'chat'
+const InlineIntentClassification: IntentClassificationOption<InlineIntent>[] = [
+    {
+        id: 'fix',
+        rawCommand: '/fix',
+        description: 'Edit part of the selected code',
+        examplePrompts: ['simplify this', 'add comments', ''],
+    },
+    {
+        id: 'chat',
+        rawCommand: '/chat',
+        description: 'Ask a question about the selected code',
+        examplePrompts: [
+            'How can I improve this?',
+            'what does this do',
+            'how does this work',
+            'Find bugs in this code',
+        ],
+    },
+]
+
+interface InlineChatViewProviderOptions extends InlineChatViewManagerOptions {
     thread: vscode.CommentThread
 }
 
 export class InlineChatViewProvider extends MessageProvider {
     private thread: vscode.CommentThread
+    private fixupManager: FixupManager
     // A repeating, text-based, loading indicator ("." -> ".." -> "...")
     private responsePendingInterval: NodeJS.Timeout | null = null
 
-    constructor({ thread, ...options }: InlineChatViewProviderOptions) {
+    constructor({ thread, fixupManager, ...options }: InlineChatViewProviderOptions) {
         super(options)
         this.thread = thread
+        this.fixupManager = fixupManager
     }
 
     public async addChat(reply: string): Promise<void> {
-        const interaction = this.editor.controllers.inline?.createInteraction(reply, this.thread)
+        this.editor.controllers.inline?.chat(reply, this.thread)
+        const intent = await this.intentDetector.classifyIntentFromOptions(reply, InlineIntentClassification, 'fix')
+        switch (intent) {
+            case 'fix':
+                return this.startFix(reply)
+            case 'chat':
+                this.setResponsePending(true)
+                return this.startChat(reply)
+        }
+    }
+
+    private async startChat(instruction: string): Promise<void> {
+        const interaction = this.editor.controllers.inline?.createInteraction(instruction, this.thread)
         if (!interaction) {
             return
         }
 
-        /**
-         * TODO(umpox):
-         * We create a new comment and trigger the inline chat recipe, but may end up closing this comment and running a fix instead
-         * We should detect intent here (through regex and then `classifyIntentFromOptions`) and run the correct recipe/controller instead.
-         */
-        this.editor.controllers.inline?.chat(reply, this.thread)
-        this.setResponsePending(true)
-        await this.executeRecipe('inline-chat', interaction.id)
+        return this.executeRecipe('inline-chat', interaction.id)
+    }
+
+    private async startFix(instruction: string): Promise<void> {
+        this.removeChat()
+        const activeDocument = await vscode.workspace.openTextDocument(this.thread.uri)
+        const task = this.editor.controllers.fixups?.createTask(activeDocument.uri, instruction, this.thread.range)
+        if (!task) {
+            return
+        }
+        const provider = this.fixupManager.getProviderForTask(task)
+        return provider.startFix()
     }
 
     public removeChat(): void {

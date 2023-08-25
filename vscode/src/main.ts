@@ -1,6 +1,5 @@
 import * as vscode from 'vscode'
 
-import { commandRegex } from '@sourcegraph/cody-shared/src/chat/recipes/helpers'
 import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 import { Configuration, ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
 import { FeatureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
@@ -156,8 +155,8 @@ const register = async (
         platform,
     }
 
-    const inlineChatManager = new InlineChatViewManager(messageProviderOptions)
     const fixupManager = new FixupManager(messageProviderOptions)
+    const inlineChatManager = new InlineChatViewManager({ ...messageProviderOptions, fixupManager })
     const sidebarChatProvider = new ChatViewProvider({
         ...messageProviderOptions,
         extensionUri: context.extensionUri,
@@ -223,22 +222,6 @@ const register = async (
     disposables.push(
         // Inline Chat Provider
         vscode.commands.registerCommand('cody.comment.add', async (comment: vscode.CommentReply) => {
-            const isFixMode = commandRegex.fix.test(comment.text.trimStart())
-
-            /**
-             * TODO: Should we make fix the default for comments?
-             * /chat or /ask could trigger a chat
-             */
-            if (isFixMode) {
-                void vscode.commands.executeCommand('workbench.action.collapseAllComments')
-                const activeDocument = await vscode.workspace.openTextDocument(comment.thread.uri)
-                return executeFixup({
-                    document: activeDocument,
-                    instruction: comment.text.replace(commandRegex.fix, ''),
-                    range: comment.thread.range,
-                })
-            }
-
             const inlineChatProvider = inlineChatManager.getProviderForThread(comment.thread)
             await inlineChatProvider.addChat(comment.text)
             telemetryService.log('CodyVSCodeExtension:chat:submitted', { source: 'inline' })

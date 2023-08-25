@@ -21,13 +21,12 @@ enum CodyInlineStateContextValue {
 export class InlineController implements VsCodeInlineController {
     // Controller init
     private readonly id = 'cody-inline-chat'
-    private readonly label = 'Cody: Inline Chat'
+    private readonly label = 'Cody: Inline'
     private readonly threadLabel =
         '[TIPS] New Inline Chat: `ctrl + shift + c` | Submit: `cmd + enter` | Hide: `shift + esc`'
     private options = {
-        prompt: 'Cody Inline Chat - Ask Cody a question or request inline fix with `/fix` or `/touch`.',
-        placeHolder:
-            'Examples: "How can I improve this?", "/fix convert tabs to spaces", "/touch Create 5 different versions of this function". "What does this regex do?"',
+        prompt: "Cody Inline - Tell Cody what to change or ask a question. Use /fix or /chat to override Cody's intent detection.",
+        placeHolder: 'Examples: "Simplify this code", "What does this regex do?", "Add comments to this function"',
     }
     private readonly codyIcon: vscode.Uri
     private readonly userIcon: vscode.Uri
