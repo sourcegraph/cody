@@ -30,17 +30,21 @@ export async function createJSONFile(
 
 // Add context from the sample files to the .vscode/cody.json file
 export async function saveJSONFile(context: string, filePath: vscode.Uri, isSaveMode = false): Promise<void> {
-    const workspaceEditor = new vscode.WorkspaceEdit()
-    // Clear the file before writing to it
-    workspaceEditor.deleteFile(filePath, { ignoreIfNotExists: true })
-    workspaceEditor.createFile(filePath, { ignoreIfExists: isSaveMode })
-    workspaceEditor.insert(filePath, new vscode.Position(0, 0), context)
-    await vscode.workspace.applyEdit(workspaceEditor)
-    // Save the file
-    const doc = await vscode.workspace.openTextDocument(filePath)
-    await doc.save()
-    if (!isSaveMode) {
-        await vscode.window.showTextDocument(filePath)
+    try {
+        const workspaceEditor = new vscode.WorkspaceEdit()
+        // Clear the file before writing to it
+        workspaceEditor.deleteFile(filePath, { ignoreIfNotExists: true })
+        workspaceEditor.createFile(filePath, { ignoreIfExists: isSaveMode })
+        workspaceEditor.insert(filePath, new vscode.Position(0, 0), context)
+        await vscode.workspace.applyEdit(workspaceEditor)
+        // Save the file
+        const doc = await vscode.workspace.openTextDocument(filePath)
+        await doc.save()
+        if (!isSaveMode) {
+            await vscode.window.showTextDocument(filePath)
+        }
+    } catch (error) {
+        throw new Error(`Failed to save your Custom Commands to a JSON file: ${error}`)
     }
 }
 
@@ -93,7 +97,7 @@ export const isCustomType = (type: CodyPromptType): boolean => type === 'user' |
 export const isNonCustomType = (type: CodyPromptType): boolean => type === 'recently used' || type === 'default'
 
 export const outputWrapper = `
-Here is the output of the \`{command}\` command, inside <output> tags.:
+Here is the output of \`{command}\` command from my terminal inside <output> tags:
 <output>
 {output}
 </output>`
