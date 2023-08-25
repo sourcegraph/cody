@@ -154,6 +154,7 @@ export interface ExtensionConfiguration {
     customHeaders: Record<string, string>
     autocompleteAdvancedProvider?: string
     autocompleteAdvancedServerEndpoint?: string | null
+    autocompleteAdvancedServerSocksProxy?: string | null
     autocompleteAdvancedAccessToken?: string | null
     autocompleteAdvancedEmbeddings?: boolean
     debug?: boolean

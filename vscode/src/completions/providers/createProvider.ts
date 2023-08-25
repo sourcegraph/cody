@@ -19,6 +19,7 @@ export function createProviderConfig(
             if (config.autocompleteAdvancedServerEndpoint !== null) {
                 return createUnstableCodeGenProviderConfig({
                     serverEndpoint: config.autocompleteAdvancedServerEndpoint,
+                    socksProxy: config.autocompleteAdvancedServerSocksProxy || undefined,
                 })
             }
 

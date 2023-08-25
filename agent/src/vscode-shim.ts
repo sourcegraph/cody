@@ -108,6 +108,10 @@ const configuration: vscode.WorkspaceConfiguration = {
                 return connectionConfig?.autocompleteAdvancedServerEndpoint
                     ? connectionConfig?.autocompleteAdvancedServerEndpoint
                     : null
+            case 'cody.autocomplete.advanced.serverSocksProxy':
+                return connectionConfig?.autocompleteAdvancedServerSocksProxy
+                    ? connectionConfig?.autocompleteAdvancedServerSocksProxy
+                    : null
             case 'cody.autocomplete.advanced.accessToken':
                 return connectionConfig?.autocompleteAdvancedAccessToken
                     ? connectionConfig?.autocompleteAdvancedAccessToken

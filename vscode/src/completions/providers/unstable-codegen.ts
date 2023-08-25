@@ -16,14 +16,12 @@ const PROVIDER_IDENTIFIER = 'codegen'
 
 export class UnstableCodeGenProvider extends Provider {
     private serverEndpoint: string
-    private agentRequestInit: any
+    private proxyAddress?: string
 
     constructor(options: ProviderOptions, unstableCodeGenOptions: UnstableCodeGenOptions) {
         super(options)
         this.serverEndpoint = unstableCodeGenOptions.serverEndpoint
-        this.agentRequestInit = unstableCodeGenOptions.socksProxy
-            ? { agent: new SocksProxyAgent(unstableCodeGenOptions.socksProxy) }
-            : {}
+        this.proxyAddress = unstableCodeGenOptions.socksProxy || undefined
     }
 
     public async generateCompletions(abortSignal: AbortSignal, snippets: ContextSnippet[]): Promise<Completion[]> {
@@ -59,15 +57,31 @@ export class UnstableCodeGenProvider extends Provider {
             },
             signal: abortSignal,
         }
-        const response = await fetch(this.serverEndpoint, { ...requestInit, ...this.agentRequestInit })
+        const agentRequestInit =
+            this.proxyAddress !== undefined
+                ? {
+                      agent: new SocksProxyAgent(this.proxyAddress),
+                  }
+                : {}
+        if (this.proxyAddress !== undefined) {
+            console.log(`got proxy ${this.proxyAddress}`)
+        } else {
+            console.log('no proxy')
+        }
+        const response = await fetch(this.serverEndpoint, { ...requestInit, ...agentRequestInit })
         try {
+            console.log('text', await response.text())
             const data = (await response.json()) as { completions: { completion: string }[] }
 
             const completions: string[] = data.completions.map(c => postProcess(c.completion, this.options.multiline))
             log?.onComplete(completions)
 
-            return completions.map(content => ({ content }))
+            return completions.map(content => {
+                console.log(`got completion: ${content}`)
+                return { content }
+            })
         } catch (error: any) {
+            console.log('error', error)
             if (!isAbortError(error)) {
                 log?.onError(error)
             }

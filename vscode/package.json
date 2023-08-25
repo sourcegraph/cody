@@ -866,6 +866,10 @@
           "type": "string",
           "markdownDescription": "The server endpoint used for code autocomplete. This is only supported with a provider other than `anthropic`."
         },
+        "cody.autocomplete.advanced.serverSocksProxy": {
+          "type": "string",
+          "markdownDescription": "The SOCKS proxy endpoint to access server endpoint. This is only supported with a provider other than `anthropic`."
+        },
         "cody.autocomplete.advanced.accessToken": {
           "type": "string",
           "markdownDescription": "The access token used for code autocomplete. This is only supported with a provider other than `anthropic`."
