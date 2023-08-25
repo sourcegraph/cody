@@ -77,8 +77,13 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
             case 'event':
                 this.telemetryService.log(message.eventName, message.properties)
                 break
-            case 'removeHistory':
-                await this.clearHistory()
+            case 'history':
+                if (message.action === 'clear') {
+                    await this.clearHistory()
+                }
+                if (message.action === 'export') {
+                    await this.exportHistory()
+                }
                 break
             case 'restoreHistory':
                 await this.restoreSession(message.chatID)
