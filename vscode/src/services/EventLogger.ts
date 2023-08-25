@@ -24,9 +24,9 @@ const extensionDetails: ExtensionDetails = {
 export async function createOrUpdateEventLogger(
     config: ConfigurationWithAccessToken,
     localStorage: LocalStorage,
-    isExtensionModeDevOrTest: boolean
+    isExtensionModeDev: boolean
 ): Promise<void> {
-    if (config.telemetryLevel === 'off' || isExtensionModeDevOrTest) {
+    if (config.telemetryLevel === 'off' || isExtensionModeDev) {
         eventLogger = null
         return
     }

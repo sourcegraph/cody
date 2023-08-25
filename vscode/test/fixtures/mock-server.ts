@@ -34,9 +34,8 @@ export async function run<T>(around: () => Promise<T>): Promise<T> {
 
     // endpoint which will accept the data that you want to send in that you will add your pubsub code
     app.post('/.api/testLogging', (req, res) => {
-        // ignore return value
-        void logTestingData(JSON.stringify(req.body))
-        res.send('eventLogged')
+        void logTestingData(req.body)
+        res.status(200)
     })
 
     app.post('/.api/completions/stream', (req, res) => {
@@ -96,13 +95,13 @@ export async function run<T>(around: () => Promise<T>): Promise<T> {
 export async function logTestingData(data: string): Promise<void> {
     // create a pubsub client
     const pubSubClient = new PubSub({
-        projectId: 'secret',
+        projectId: 'sourcegraph-telligent-testing',
     })
 
     const message = {
         event: data,
         timestamp: new Date().getTime(),
-        // aditya todo: pass in the E2E test nama
+        // aditya todo: pass in the E2E test name
         test_name: 'test_name',
         UID: uuid.v4(),
     }
@@ -113,7 +112,9 @@ export async function logTestingData(data: string): Promise<void> {
     // todo: remove all console.logs before merging
     console.log('Publishing message to pubsub')
     try {
-        await pubSubClient.topic('projects/secret/topics/secret-topic').publishMessage({ data: dataBuffer })
+        await pubSubClient
+            .topic('projects/sourcegraph-telligent-testing/topics/e2e-testing')
+            .publishMessage({ data: dataBuffer })
         console.log('Message published.')
     } catch (error) {
         console.error('Received error while publishing:', error)

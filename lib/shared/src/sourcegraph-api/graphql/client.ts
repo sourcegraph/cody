@@ -346,16 +346,7 @@ export class SourcegraphGraphQLAPIClient {
 
     public async logEvent(event: event): Promise<LogEventResponse | Error> {
         if (process.env.CODY_TESTING === 'true') {
-            try {
-                await this.fetchSourcegraphTestingAPI<APIResponse<LogEventResponse>>(LOG_EVENT_MUTATION, event).then(
-                    response => {
-                        extractDataOrError(response, data => {})
-                    }
-                )
-            } catch (error: any) {
-                console.log('Error Logging Test Cody Event', error)
-                return error
-            }
+            return this.sendEventLogRequestToTestingAPI(event)
         }
         if (this.config?.telemetryLevel === 'off') {
             return {}
@@ -393,6 +384,18 @@ export class SourcegraphGraphQLAPIClient {
                 LOG_EVENT_MUTATION_DEPRECATED,
                 event
             )
+            return extractDataOrError(secondResponse, data => data)
+        }
+
+        return initialDataOrError
+    }
+
+    private async sendEventLogRequestToTestingAPI(event: event): Promise<LogEventResponse | Error> {
+        const initialResponse = await this.fetchSourcegraphTestingAPI<APIResponse<LogEventResponse>>(event)
+        const initialDataOrError = extractDataOrError(initialResponse, data => data)
+
+        if (isError(initialDataOrError)) {
+            const secondResponse = await this.fetchSourcegraphTestingAPI<APIResponse<LogEventResponse>>(event)
             return extractDataOrError(secondResponse, data => data)
         }
 
@@ -506,11 +509,21 @@ export class SourcegraphGraphQLAPIClient {
     }
 
     // make an anonymous request to the Testing API
-    private fetchSourcegraphTestingAPI<T>(query: string, variables: Record<string, any>): Promise<T | Error> {
-        const url = buildGraphQLUrl({ request: query, baseUrl: 'http://localhost:49300/.api/testLogging' })
+    private fetchSourcegraphTestingAPI<T>(body: Record<string, any>): Promise<T | Error> {
+        console.log('sending body', JSON.stringify(body))
+        const url = 'http://localhost:49300/.api/testLogging'
+        console.log(
+            fetch(url, {
+                method: 'POST',
+                body: JSON.stringify(body),
+            })
+        )
         return fetch(url, {
             method: 'POST',
-            body: JSON.stringify({ query, variables }),
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(body),
         })
             .then(verifyResponseCode)
             .then(response => response.json() as T)
