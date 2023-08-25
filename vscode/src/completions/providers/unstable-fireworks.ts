@@ -26,7 +26,7 @@ export class UnstableFireworksProvider extends Provider {
         this.accessToken = unstableFireworksOptions.accessToken
     }
 
-    private createPrompt(snippets: ContextSnippet[]): string {
+    private createPrompt(snippets: ContextSnippet[], model: string): string {
         const maxPromptChars = CONTEXT_WINDOW_CHARS - CONTEXT_WINDOW_CHARS * this.options.responsePercentage
         const { prefix, suffix } = this.options.docContext
 
@@ -53,8 +53,7 @@ export class UnstableFireworksProvider extends Provider {
 
             const suffixAfterFirstNewline = suffix.slice(suffix.indexOf('\n'))
 
-            // Prompt format is taken form https://starcoder.co/bigcode/starcoder#fill-in-the-middle
-            const nextPrompt = `<fim_prefix>${introString}${prefix}<fim_suffix>${suffixAfterFirstNewline}<fim_middle>`
+            const nextPrompt = createInfillingPrompt(model, introString, prefix, suffixAfterFirstNewline)
 
             if (nextPrompt.length >= maxPromptChars) {
                 return prompt
@@ -67,7 +66,8 @@ export class UnstableFireworksProvider extends Provider {
     }
 
     public async generateCompletions(abortSignal: AbortSignal, snippets: ContextSnippet[]): Promise<Completion[]> {
-        const prompt = this.createPrompt(snippets)
+        const model = 'accounts/fireworks/models/llama-v2-13b-code-instruct'
+        const prompt = this.createPrompt(snippets, model)
 
         const request = {
             prompt,
@@ -78,7 +78,7 @@ export class UnstableFireworksProvider extends Provider {
             top_p: 0.95,
             n: this.options.n,
             echo: false,
-            model: 'accounts/fireworks/models/starcoder-7b-w8a16',
+            model,
         }
 
         const log = logger.startCompletion({
@@ -148,4 +148,18 @@ export function createProviderConfig(unstableFireworksOptions: UnstableFireworks
         identifier: PROVIDER_IDENTIFIER,
         supportsInfilling: true,
     }
+}
+
+function createInfillingPrompt(model: string, intro: string, prefix: string, suffix: string): string {
+    if (model.startsWith('accounts/fireworks/models/starcoder')) {
+        // c.f. https://starcoder.co/bigcode/starcoder#fill-in-the-middle
+        return `<fim_prefix>${intro}${prefix}<fim_suffix>${suffix}<fim_middle>`
+    }
+    if (model.startsWith('accounts/fireworks/models/llama')) {
+        // c.f. https://github.com/facebookresearch/codellama/blob/main/llama/generation.py#L402
+        return `<PRE> ${intro}${prefix} <SUF>${suffix} <MID>`
+    }
+
+    console.error('Could not generate infilling prompt for', model)
+    return `${intro}${prefix}`
 }
