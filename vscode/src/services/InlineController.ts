@@ -168,12 +168,13 @@ export class InlineController implements VsCodeInlineController {
         // Track clipboard text before a new inline chat is created
         // This is used for comparing the clipboard text when switching between editors to look for copy events
         vscode.window.onDidChangeVisibleTextEditors(async e => {
-            if (!this.commentController || !e.length) {
+            if (!this.commentController || !e.length || this.isInProgress) {
                 return
             }
+
             // get the last editor from the event list
             const editor = e[e.length - 1]
-            if (this.commentController && !this.isInProgress && editor?.document?.uri?.scheme === 'comment') {
+            if (editor?.document?.uri?.scheme === 'comment') {
                 this.lastClipboardText = await vscode.env.clipboard.readText()
             }
         })
