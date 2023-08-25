@@ -201,8 +201,8 @@ export class InlineController implements VsCodeInlineController {
 
         const comment = new Comment(reply, 'Me', this.userIcon, thread)
         thread.comments = [...thread.comments, comment]
-
-        void vscode.commands.executeCommand('setContext', 'cody.replied', false)
+        // Clear out any previous 'cody-replied' context value
+        thread.contextValue = undefined
     }
 
     private getLatestReply(thread: vscode.CommentThread): vscode.Comment | undefined {
@@ -233,7 +233,7 @@ export class InlineController implements VsCodeInlineController {
         if (state === 'complete' || state === 'error') {
             thread.state = state === 'error' ? 1 : 0
             thread.canReply = state !== 'error'
-            void vscode.commands.executeCommand('setContext', 'cody.replied', true)
+            thread.contextValue = 'cody-replied'
         }
 
         if (state === 'complete') {

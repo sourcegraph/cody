@@ -676,12 +676,12 @@
         {
           "command": "cody.comment.delete",
           "group": "inline@1",
-          "when": "cody.activated && commentController =~ /^cody-inline/ && cody.replied && !commentThreadIsEmpty && config.cody.inlineChat.enabled"
+          "when": "cody.activated && commentController =~ /^cody-inline/ && commentThread =~ /^cody-replied/ && !commentThreadIsEmpty && config.cody.inlineChat.enabled"
         },
         {
           "command": "cody.comment.open-in-sidebar",
           "group": "inline@2",
-          "when": "cody.activated && commentController =~ /^cody-inline/ && cody.replied && config.cody.inlineChat.enabled"
+          "when": "cody.activated && commentController =~ /^cody-inline/ && commentThread =~ /^cody-replied/ && config.cody.inlineChat.enabled"
         },
         {
           "command": "cody.comment.collapse-all",
