@@ -34,6 +34,8 @@ const vscodeMock = {
                         //     return ''
                         // case 'cody.autocomplete.advanced.serverEndpoint':
                         //     return 'https://api.fireworks.ai/inference/v1/completions'
+                        // case 'cody.autocomplete.advanced.model':
+                        //     return 'llama-code-13b-instruct'
                         default:
                             return undefined
                     }

@@ -19,9 +19,9 @@ const CONTEXT_WINDOW_CHARS = 5000 // ~ 2000 token limit
 
 const MODEL_MAP = {
     'starcoder-16b': 'accounts/fireworks/models/starcoder-16b-w8a16',
-    'starcoder-7b': 'accounts/fireworks/models/starcoder-7b-w4a8',
-    'starcoder-3b': 'accounts/fireworks/models/starcoder-3b-w2a4',
-    'starcoder-1b': 'accounts/fireworks/models/starcoder-1b-w1a2',
+    'starcoder-7b': 'accounts/fireworks/models/starcoder-7b-w8a16',
+    'starcoder-3b': 'accounts/fireworks/models/starcoder-3b-w8a16',
+    'starcoder-1b': 'accounts/fireworks/models/starcoder-1b-w8a16',
     'llama-code-13b-instruct': 'accounts/fireworks/models/llama-v2-13b-code-instruct',
 }
 
@@ -34,7 +34,7 @@ export class UnstableFireworksProvider extends Provider {
         super(options)
         this.serverEndpoint = serverEndpoint
         this.accessToken = accessToken
-        if (model === null) {
+        if (model === null || model === '') {
             this.model = 'starcoder-7b'
         } else if (Object.prototype.hasOwnProperty.call(MODEL_MAP, model)) {
             this.model = model as any
@@ -83,7 +83,6 @@ export class UnstableFireworksProvider extends Provider {
     }
 
     public async generateCompletions(abortSignal: AbortSignal, snippets: ContextSnippet[]): Promise<Completion[]> {
-        console.log({ m: this.model })
         const prompt = this.createPrompt(snippets)
 
         const request = {
@@ -148,6 +147,9 @@ export class UnstableFireworksProvider extends Provider {
             return `<fim_prefix>${intro}${prefix}<fim_suffix>${suffix}<fim_middle>`
         }
         if (this.model.startsWith('llama-code')) {
+            // @TODO(philipp-spiess): FIM prompt is not working yet, we're working with Fireworks to
+            // get this sorted
+            //
             // c.f. https://github.com/facebookresearch/codellama/blob/main/llama/generation.py#L402
             return `<PRE> ${intro}${prefix} <SUF>${suffix} <MID>`
         }
