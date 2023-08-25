@@ -216,7 +216,7 @@ export class Agent extends MessageHandler {
             if (typeof event.publicArgument === 'object') {
                 event.publicArgument = JSON.stringify(event.publicArgument)
             }
-            console.error(JSON.stringify(event))
+
             await client?.graphqlClient.logEvent(event)
             return null
         })
