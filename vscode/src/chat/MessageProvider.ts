@@ -554,7 +554,6 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
             return
         }
         await this.executeRecipe('custom-prompt', promptText)
-        this.telemetryService.log('CodyVSCodeExtension:command:started', { source: 'menu' })
         const starter = (await this.editor.controllers.command?.getCustomConfig())?.starter
         if (starter) {
             this.telemetryService.log('CodyVSCodeExtension:command:customStarter:applied')

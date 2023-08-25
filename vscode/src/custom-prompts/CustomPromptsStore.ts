@@ -70,19 +70,22 @@ export class CustomPromptsStore implements vscode.Disposable {
      * Get the formatted context from the json config file
      */
     public async refresh(): Promise<MyPrompts> {
-        if (!this.isActive) {
-            return { commands: this.myPromptsMap, premade: this.myPremade, starter: this.myStarter }
-        }
-        // reset map and set
-        this.myPromptsMap = new Map<string, CodyPrompt>()
-        this.promptSize = { ...promptSizeInit }
-        // user prompts
-        if (this.homeDir) {
-            await this.build('user')
-        }
-        // workspace prompts
-        if (this.workspaceRoot) {
-            await this.build('workspace')
+        try {
+            if (this.isActive) {
+                // reset map and set
+                this.myPromptsMap = new Map<string, CodyPrompt>()
+                this.promptSize = { ...promptSizeInit }
+                // user prompts
+                if (this.homeDir) {
+                    await this.build('user')
+                }
+                // workspace prompts
+                if (this.workspaceRoot) {
+                    await this.build('workspace')
+                }
+            }
+        } catch (error) {
+            debug('CustomPromptsStore:refresh', 'failed', { verbose: error })
         }
         return { commands: this.myPromptsMap, premade: this.myPremade, starter: this.myStarter }
     }
@@ -98,35 +101,39 @@ export class CustomPromptsStore implements vscode.Disposable {
      * Build the map of prompts using the json string
      */
     public async build(type: CodyPromptType): Promise<Map<string, CodyPrompt> | null> {
-        const content = await this.getPromptsFromFileSystem(type)
-        if (!content) {
-            return null
-        }
-        const json = JSON.parse(content) as MyPromptsJSON
-        const prompts = json.commands || json.recipes
-        for (const key in prompts) {
-            if (Object.prototype.hasOwnProperty.call(prompts, key)) {
-                const prompt = prompts[key]
-                prompt.name = key
-                prompt.type = type
-                // replace any '/' from the start
-                const slashCommand = prompt.slashCommand?.replace(/^\//, '')
-                if (slashCommand?.length) {
-                    prompt.slashCommand = `/${slashCommand}`
-                }
-                this.myPromptsMap.set(key, prompt)
+        try {
+            const content = await this.getPromptsFromFileSystem(type)
+            if (!content) {
+                return null
             }
+            const json = JSON.parse(content) as MyPromptsJSON
+            const prompts = json.commands || json.recipes
+            for (const key in prompts) {
+                if (Object.prototype.hasOwnProperty.call(prompts, key)) {
+                    const prompt = prompts[key]
+                    prompt.name = key
+                    prompt.type = type
+                    // replace any '/' from the start
+                    const slashCommand = prompt.slashCommand?.replace(/^\//, '')
+                    if (slashCommand?.length) {
+                        prompt.slashCommand = `/${slashCommand}`
+                    }
+                    this.myPromptsMap.set(key, prompt)
+                }
+            }
+            this.myPremade = json.premade
+            // avoid duplicate starter prompts
+            if (json.starter && json?.starter !== this.myStarter) {
+                PromptMixin.addCustom(newPromptMixin(json.starter))
+                this.myStarter = json.starter
+            }
+            if (type === 'user') {
+                this.myPromptsJSON = json
+            }
+            this.promptSize[type] = this.myPromptsMap.size - 1
+        } catch (error) {
+            debug('CustomPromptsStore:build', 'failed', { verbose: error })
         }
-        this.myPremade = json.premade
-        // avoid duplicate starter prompts
-        if (json.starter && json?.starter !== this.myStarter) {
-            PromptMixin.addCustom(newPromptMixin(json.starter))
-            this.myStarter = json.starter
-        }
-        if (type === 'user') {
-            this.myPromptsJSON = json
-        }
-        this.promptSize[type] = this.myPromptsMap.size - 1
         return this.myPromptsMap
     }
 
@@ -148,6 +155,7 @@ export class CustomPromptsStore implements vscode.Disposable {
         const filtered = new Map<string, CodyPrompt>()
         for (const [key, value] of this.myPromptsMap) {
             if (value.type === 'user' && value.prompt !== 'separator') {
+                value.type = undefined
                 filtered.set(key, value)
             }
         }
@@ -156,14 +164,17 @@ export class CustomPromptsStore implements vscode.Disposable {
         // turn prompt map into json
         const jsonContext = { ...this.myPromptsJSON }
         jsonContext.commands = Object.fromEntries(filtered)
-        const jsonString = JSON.stringify(jsonContext)
-        const rootDirPath = type === 'user' ? this.jsonFileUris.user : this.jsonFileUris.workspace
-        if (!rootDirPath || !jsonString) {
-            void vscode.window.showErrorMessage('Failed to save to cody.json file.')
-            return
+        try {
+            const jsonString = JSON.stringify(jsonContext)
+            const rootDirPath = type === 'user' ? this.jsonFileUris.user : this.jsonFileUris.workspace
+            if (!rootDirPath || !jsonString) {
+                throw new Error('Invalid file path or json string')
+            }
+            const isSaveMode = true
+            await saveJSONFile(jsonString, rootDirPath, isSaveMode)
+        } catch (error) {
+            void vscode.window.showErrorMessage(`Failed to save to cody.json file: ${error}`)
         }
-        const isSaveMode = true
-        await saveJSONFile(jsonString, rootDirPath, isSaveMode)
     }
 
     /**
