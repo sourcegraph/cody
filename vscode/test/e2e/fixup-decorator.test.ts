@@ -32,7 +32,7 @@ test('decorations from un-applied Cody changes appear', async ({ page, sidebar }
     // Open the command palette by clicking on the Cody Icon
     await page.getByRole('button', { name: 'Commands' }).click()
     // Navigate to fixup input
-    await page.getByRole('option', { name: 'Refactor This Code' }).click()
+    await page.getByRole('option', { name: 'Refactor Selected Code' }).click()
 
     // Wait for the input box to appear
     await page.getByPlaceholder('Your instructions').click()
