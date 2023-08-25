@@ -12,8 +12,8 @@ export class FixupTypingUI {
     constructor(private readonly taskFactory: FixupTaskFactory) {}
 
     private async getInstructionFromQuickPick({
-        title = 'Cody: Refactor Code',
-        placeholder = 'Enter your refactoring instruction here...',
+        title = '/fix',
+        placeholder = 'Your instructions',
         value = '',
         prefix = '/fix',
     } = {}): Promise<string> {

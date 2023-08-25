@@ -15,6 +15,7 @@ import { Recipe, RecipeContext, RecipeID } from './recipe'
 
 export class ChatQuestion implements Recipe {
     public id: RecipeID = 'chat-question'
+    public title = 'Chat Question'
 
     constructor(private debug: (filterLabel: string, text: string, ...args: unknown[]) => void) {}
 

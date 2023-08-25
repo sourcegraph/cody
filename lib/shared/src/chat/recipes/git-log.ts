@@ -9,6 +9,7 @@ import { Recipe, RecipeContext, RecipeID } from './recipe'
 
 export class GitHistory implements Recipe {
     public id: RecipeID = 'git-history'
+    public title = 'Summarize Recent Code Changes'
 
     public async getInteraction(_humanChatInput: string, context: RecipeContext): Promise<Interaction | null> {
         const dirPath = context.editor.getWorkspaceRootPath()
