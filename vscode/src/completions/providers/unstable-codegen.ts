@@ -1,7 +1,7 @@
 import fetch from 'isomorphic-fetch'
 import { SocksProxyAgent } from 'socks-proxy-agent'
 
-import { debug, logger } from '../../log'
+import { logger } from '../../log'
 import { Completion, ContextSnippet } from '../types'
 import { isAbortError } from '../utils'
 
@@ -9,16 +9,21 @@ import { Provider, ProviderConfig, ProviderOptions } from './provider'
 
 interface UnstableCodeGenOptions {
     serverEndpoint: string
+    socksProxy?: string // If set, `serverEndpoint` is reached out to via the proxy.
 }
 
 const PROVIDER_IDENTIFIER = 'codegen'
 
 export class UnstableCodeGenProvider extends Provider {
     private serverEndpoint: string
+    private agentRequestInit: any
 
     constructor(options: ProviderOptions, unstableCodeGenOptions: UnstableCodeGenOptions) {
         super(options)
         this.serverEndpoint = unstableCodeGenOptions.serverEndpoint
+        this.agentRequestInit = unstableCodeGenOptions.socksProxy
+            ? { agent: new SocksProxyAgent(unstableCodeGenOptions.socksProxy) }
+            : {}
     }
 
     public async generateCompletions(abortSignal: AbortSignal, snippets: ContextSnippet[]): Promise<Completion[]> {
@@ -46,17 +51,15 @@ export class UnstableCodeGenProvider extends Provider {
             provider: PROVIDER_IDENTIFIER,
             serverEndpoint: this.serverEndpoint,
         })
-        debug('unstable-codegen', 'request to ' + this.serverEndpoint)
-        const response = await fetch(this.serverEndpoint, {
+        const requestInit: RequestInit = {
             method: 'POST',
             body: JSON.stringify(params),
             headers: {
                 'Content-Type': 'application/json',
             },
             signal: abortSignal,
-            agent: new SocksProxyAgent('socks5://127.0.0.1:9999'),
-        } as any)
-
+        }
+        const response = await fetch(this.serverEndpoint, { ...requestInit, ...this.agentRequestInit })
         try {
             const data = (await response.json()) as { completions: { completion: string }[] }
 
