@@ -13,7 +13,7 @@ import { newTextEditor } from './AgentTextEditor'
 import { AgentWorkspaceDocuments } from './AgentWorkspaceDocuments'
 import { AgentEditor } from './editor'
 import { MessageHandler } from './jsonrpc'
-import { AutocompleteItem, ExtensionConfiguration } from './protocol'
+import { AutocompleteItem, ExtensionConfiguration, RecipeInfo } from './protocol'
 import * as vscode_shim from './vscode-shim'
 
 const secretStorage = new Map<string, string>()
@@ -143,9 +143,9 @@ export class Agent extends MessageHandler {
 
         this.registerRequest('recipes/list', () =>
             Promise.resolve(
-                Object.values(registeredRecipes).map(({ id }) => ({
+                Object.values<RecipeInfo>(registeredRecipes).map(({ id, title }) => ({
                     id,
-                    title: id, // TODO: will be added in a follow PR
+                    title,
                 }))
             )
         )

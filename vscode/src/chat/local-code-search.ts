@@ -14,6 +14,7 @@ import { truncateText } from '@sourcegraph/cody-shared/src/prompt/truncation'
  */
 export class LocalIndexedKeywordSearch implements Recipe {
     public id: RecipeID = 'local-indexed-keyword-search'
+    public title = 'Local indexed keyword search'
 
     public async getInteraction(humanChatInput: string, context: RecipeContext): Promise<Interaction | null> {
         const { symf } = context.codebaseContext

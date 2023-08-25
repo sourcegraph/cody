@@ -181,7 +181,7 @@ export interface TextDocument {
 
 export interface RecipeInfo {
     id: RecipeID
-    title: string
+    title: string // Title Case
 }
 
 export interface ExecuteRecipeParams {

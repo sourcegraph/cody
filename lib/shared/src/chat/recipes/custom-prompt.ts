@@ -33,6 +33,7 @@ import { Recipe, RecipeContext, RecipeID } from './recipe'
 ====================================================== **/
 export class CustomPrompt implements Recipe {
     public id: RecipeID = 'custom-prompt'
+    public title = 'Custom Prompt'
 
     /**
      * Retrieves an Interaction object based on the humanChatInput and RecipeContext provided.

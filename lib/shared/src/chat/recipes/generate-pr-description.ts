@@ -10,6 +10,7 @@ import { Recipe, RecipeContext, RecipeID } from './recipe'
 
 export class PrDescription implements Recipe {
     public id: RecipeID = 'pr-description'
+    public title = 'Generate PR Description'
 
     public async getInteraction(_humanChatInput: string, context: RecipeContext): Promise<Interaction | null> {
         const dirPath = context.editor.getWorkspaceRootPath()
