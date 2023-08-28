@@ -32,7 +32,7 @@ describe('getConfiguration', () => {
             debugVerbose: false,
             debugFilter: null,
             telemetryLevel: 'all',
-            autocompleteAdvancedProvider: 'anthropic',
+            autocompleteAdvancedProvider: null,
             autocompleteAdvancedServerEndpoint: null,
             autocompleteAdvancedModel: null,
             autocompleteAdvancedAccessToken: null,

@@ -16,6 +16,7 @@ import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/cody-shared/src/telemetry'
 import { GetContextResult } from '../../src/completions/context/context'
 import { VSCodeDocumentHistory } from '../../src/completions/context/history'
 import { createProviderConfig } from '../../src/completions/providers/createProvider'
+import { ProviderConfig } from '../../src/completions/providers/provider'
 import { InlineCompletionItemProvider } from '../../src/completions/vscodeInlineCompletionItemProvider'
 import { getFullConfig } from '../../src/configuration'
 import { configureExternalServices } from '../../src/external-services'
@@ -27,7 +28,7 @@ import { ENVIRONMENT_CONFIG } from './environment-config'
 import { findSubstringPosition } from './utils'
 
 let didLogConfig = false
-let providerName: string
+let providerConfig: ProviderConfig | null
 
 const dummyFeatureFlagProvider = new FeatureFlagProvider(
     new SourcegraphGraphQLAPIClient({
@@ -42,7 +43,6 @@ async function initCompletionsProvider(context: GetContextResult): Promise<Inlin
     await secretStorage.store('cody.access-token', ENVIRONMENT_CONFIG.SOURCEGRAPH_ACCESS_TOKEN)
 
     const initialConfig = await getFullConfig(secretStorage)
-    providerName = initialConfig.autocompleteAdvancedProvider
     if (!didLogConfig) {
         console.error('Running `initCompletionsProvider` with config:', initialConfig)
         didLogConfig = true
@@ -63,7 +63,7 @@ async function initCompletionsProvider(context: GetContextResult): Promise<Inlin
 
     const history = new VSCodeDocumentHistory()
 
-    const providerConfig = createProviderConfig(initialConfig, completionsClient)
+    providerConfig = createProviderConfig(initialConfig, completionsClient)
     if (!providerConfig) {
         throw new Error('invalid completion config: no provider')
     }
@@ -175,10 +175,10 @@ async function generateCompletionsForDataset(codeSamples: Sample[]): Promise<voi
     // TODO: prettify path management
     // Save results to a JSON file in the completions-review-tool/data folder to be used by the review tool:
     // pnpm --filter @sourcegraph/completions-review-tool run dev
-    if (!providerName) {
+    if (providerConfig === null) {
         throw new Error('No provider name')
     }
-    const filename = path.join(ENVIRONMENT_CONFIG.OUTPUT_PATH, `${providerName}-${timestamp}.json`)
+    const filename = path.join(ENVIRONMENT_CONFIG.OUTPUT_PATH, `${providerConfig.identifier}-${timestamp}.json`)
     fs.mkdirSync(ENVIRONMENT_CONFIG.OUTPUT_PATH, { recursive: true })
     fs.writeFileSync(filename, JSON.stringify(results, null, 2))
     console.log('\n✅ Completions saved to:', filename)
