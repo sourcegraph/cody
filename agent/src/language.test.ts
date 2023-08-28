@@ -34,7 +34,7 @@ describe('getLanguageForFileName', () => {
 
 describe('language-file-extensions.json mappings', () => {
     it('has no duplicates', () => {
-        const mappings = new Map<String, String>()
+        const mappings = new Map<string, string>()
         for (const [language, extensions] of Object.entries(extensionMapping)) {
             for (const extension of extensions) {
                 expect(mappings.get(extension)).toBeUndefined()
