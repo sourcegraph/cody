@@ -1,168 +1,42 @@
 {
-  "actionscript": [
-    "as"
-  ],
-  "ada": [
-    "adb",
-    "ada",
-    "ads"
-  ],
-  "apache": [
-    "apacheconf"
-  ],
-  "apex": [
-    "cls",
-    "apex",
-    "trigger"
-  ],
-  "applescript": [
-    "applescript",
-    "scpt"
-  ],
-  "beancount": [
-    "beancount"
-  ],
-  "bibtex": [
-    "bib"
-  ],
-  "clojure": [
-    "clj",
-    "cljs",
-    "cljx"
-  ],
-  "cmake": [
-    "cmake",
-    "cmake.in",
-    "in"
-  ],
-  "coffescript": [
-    "coffee",
-    "cake",
-    "cson",
-    "cjsx",
-    "iced"
-  ],
-  "cpp": [
-    "c",
-    "cc",
-    "cpp",
-    "cxx",
-    "c++",
-    "h++",
-    "hh",
-    "h",
-    "hpp",
-    "pc",
-    "pcc"
-  ],
-  "csharp": [
-    "cs",
-    "csx"
-  ],
-  "css": [
-    "css"
-  ],
-  "cuda": [
-    "cu",
-    "cuh"
-  ],
-  "d": [
-    "d"
-  ],
-  "dot": [
-    "dot"
-  ],
-  "dart": [
-    "dart"
-  ],
-  "diff": [
-    "diff",
-    "patch"
-  ],
-  "dockerfile": [
-    "Dockerfile"
-  ],
-  "django": [
-    "jinja"
-  ],
-  "dos": [
-    "bat",
-    "cmd"
-  ],
-  "elixir": [
-    "ex",
-    "exs"
-  ],
-  "elm": [
-    "elm"
-  ],
-  "erlang": [
-    "erl"
-  ],
-  "fortran": [
-    "f",
-    "for",
-    "frt",
-    "fr",
-    "forth",
-    "4th",
-    "fth"
-  ],
-  "fsharp": [
-    "fs"
-  ],
-  "go": [
-    "go"
-  ],
-  "graphql": [
-    "graphql"
-  ],
-  "groovy": [
-    "groovy"
-  ],
-  "haml": [
-    "haml"
-  ],
-  "handlebars": [
-    "hbs",
-    "handlebars"
-  ],
-  "haskell": [
-    "hs",
-    "hsc"
-  ],
-  "hcl": [
-    "hcl",
-    "nomad",
-    "tf",
-    "tfvars",
-    "workflow"
-  ],
-  "html": [
-    "htm",
-    "html",
-    "xhtml"
-  ],
-  "ini": [
-    "ini",
-    "cfg",
-    "prefs",
-    "pro",
-    "properties"
-  ],
-  "java": [
-    "java"
-  ],
-  "javascript": [
-    "js",
-    "es",
-    "es6",
-    "jss",
-    "jsm"
-  ],
-  "javascriptreact": [
-    "jsx"
-  ],
+  "actionscript": ["as"],
+  "ada": ["adb", "ada", "ads"],
+  "apache": ["apacheconf"],
+  "apex": ["cls", "apex", "trigger"],
+  "applescript": ["applescript", "scpt"],
+  "beancount": ["beancount"],
+  "bibtex": ["bib"],
+  "clojure": ["clj", "cljs", "cljx"],
+  "cmake": ["cmake", "cmake.in", "in"],
+  "coffescript": ["coffee", "cake", "cson", "cjsx", "iced"],
+  "cpp": ["c", "cc", "cpp", "cxx", "c++", "h++", "hh", "h", "hpp", "pc", "pcc"],
+  "csharp": ["cs", "csx"],
+  "css": ["css"],
+  "cuda": ["cu", "cuh"],
+  "d": ["d"],
+  "dot": ["dot"],
+  "dart": ["dart"],
+  "diff": ["diff", "patch"],
+  "dockerfile": ["Dockerfile"],
+  "django": ["jinja"],
+  "dos": ["bat", "cmd"],
+  "elixir": ["ex", "exs"],
+  "elm": ["elm"],
+  "erlang": ["erl"],
+  "fortran": ["f", "for", "frt", "fr", "forth", "4th", "fth"],
+  "fsharp": ["fs"],
+  "go": ["go"],
+  "graphql": ["graphql"],
+  "groovy": ["groovy"],
+  "haml": ["haml"],
+  "handlebars": ["hbs", "handlebars"],
+  "haskell": ["hs", "hsc"],
+  "hcl": ["hcl", "nomad", "tf", "tfvars", "workflow"],
+  "html": ["htm", "html", "xhtml"],
+  "ini": ["ini", "cfg", "prefs", "pro", "properties"],
+  "java": ["java"],
+  "javascript": ["js", "es", "es6", "jss", "jsm"],
+  "javascriptreact": ["jsx"],
   "json": [
     "json",
     "sublime_metrics",
@@ -173,117 +47,25 @@
     "sublime-settings",
     "sublime-workspace"
   ],
-  "jsonnet": [
-    "jsonnet",
-    "libsonnet"
-  ],
-  "julia": [
-    "jl"
-  ],
-  "kotlin": [
-    "kt",
-    "ktm",
-    "kts"
-  ],
-  "less": [
-    "less"
-  ],
-  "lisp": [
-    "lisp",
-    "asd",
-    "cl",
-    "lsp",
-    "l",
-    "ny",
-    "podsl",
-    "sexp",
-    "el"
-  ],
-  "lua": [
-    "lua",
-    "fcgi",
-    "nse",
-    "pd_lua",
-    "rbxs",
-    "wlua"
-  ],
-  "makefile": [
-    "mk",
-    "mak"
-  ],
-  "markdown": [
-    "md",
-    "mkdown",
-    "mkd"
-  ],
-  "nginx": [
-    "nginxconf"
-  ],
-  "objectivec": [
-    "m",
-    "mm"
-  ],
-  "ocaml": [
-    "ml",
-    "eliom",
-    "eliomi",
-    "ml4",
-    "mli",
-    "mll",
-    "mly",
-    "re"
-  ],
-  "pascal": [
-    "p",
-    "pas",
-    "pp"
-  ],
-  "perl": [
-    "pl",
-    "al",
-    "cgi",
-    "perl",
-    "ph",
-    "plx",
-    "pm",
-    "pod",
-    "psgi",
-    "t"
-  ],
-  "php": [
-    "php",
-    "phtml",
-    "php3",
-    "php4",
-    "php5",
-    "php6",
-    "php7",
-    "phps"
-  ],
-  "powershell": [
-    "ps1",
-    "psd1",
-    "psm1"
-  ],
-  "protobuf": [
-    "proto"
-  ],
-  "python": [
-    "py",
-    "pyc",
-    "pyd",
-    "pyo",
-    "pyw",
-    "pyz"
-  ],
-  "r": [
-    "r",
-    "rd",
-    "rsx"
-  ],
-  "repro": [
-    "repro"
-  ],
+  "jsonnet": ["jsonnet", "libsonnet"],
+  "julia": ["jl"],
+  "kotlin": ["kt", "ktm", "kts"],
+  "less": ["less"],
+  "lisp": ["lisp", "asd", "cl", "lsp", "l", "ny", "podsl", "sexp", "el"],
+  "lua": ["lua", "fcgi", "nse", "pd_lua", "rbxs", "wlua"],
+  "makefile": ["mk", "mak"],
+  "markdown": ["md", "mkdown", "mkd"],
+  "nginx": ["nginxconf"],
+  "objectivec": ["m", "mm"],
+  "ocaml": ["ml", "eliom", "eliomi", "ml4", "mli", "mll", "mly", "re"],
+  "pascal": ["p", "pas", "pp"],
+  "perl": ["pl", "al", "cgi", "perl", "ph", "plx", "pm", "pod", "psgi", "t"],
+  "php": ["php", "phtml", "php3", "php4", "php5", "php6", "php7", "phps"],
+  "powershell": ["ps1", "psd1", "psm1"],
+  "protobuf": ["proto"],
+  "python": ["py", "pyc", "pyd", "pyo", "pyw", "pyz"],
+  "r": ["r", "rd", "rsx"],
+  "repro": ["repro"],
   "ruby": [
     "rb",
     "rbi",
@@ -306,87 +88,27 @@
     "thor",
     "watchr"
   ],
-  "rust": [
-    "rs",
-    "rs.in"
-  ],
-  "scala": [
-    "sbt",
-    "sc",
-    "scala"
-  ],
-  "scheme": [
-    "scm",
-    "sch",
-    "sls",
-    "sps",
-    "ss"
-  ],
-  "scss": [
-    "sass",
-    "scss"
-  ],
-  "shell": [
-    "sh",
-    "bash",
-    "zsh"
-  ],
-  "smalltalk": [
-    "st"
-  ],
-  "sql": [
-    "sql"
-  ],
-  "starlark": [
-    "bzl",
-    "bazel",
-    "BUILD",
-    "WORKSPACE"
-  ],
-  "stylus": [
-    "styl"
-  ],
-  "svelte": [
-    "svelte"
-  ],
-  "swift": [
-    "swift"
-  ],
-  "thrift": [
-    "thrift"
-  ],
-  "toml": [
-    "toml"
-  ],
-  "twig": [
-    "twig"
-  ],
-  "typescript": [
-    "ts"
-  ],
-  "typescriptreact": [
-    "tsx"
-  ],
-  "vbnet": [
-    "vb"
-  ],
-  "vbscrip": [
-    "vbs"
-  ],
-  "verilog": [
-    "v",
-    "veo",
-    "sv",
-    "svh",
-    "svi"
-  ],
-  "vhdl": [
-    "vhd",
-    "vhdl"
-  ],
-  "vim": [
-    "vim"
-  ],
+  "rust": ["rs", "rs.in"],
+  "scala": ["sbt", "sc", "scala"],
+  "scheme": ["scm", "sch", "sls", "sps", "ss"],
+  "scss": ["sass", "scss"],
+  "shell": ["sh", "bash", "zsh"],
+  "smalltalk": ["st"],
+  "sql": ["sql"],
+  "starlark": ["bzl", "bazel", "BUILD", "WORKSPACE"],
+  "stylus": ["styl"],
+  "svelte": ["svelte"],
+  "swift": ["swift"],
+  "thrift": ["thrift"],
+  "toml": ["toml"],
+  "twig": ["twig"],
+  "typescript": ["ts"],
+  "typescriptreact": ["tsx"],
+  "vbnet": ["vb"],
+  "vbscrip": ["vbs"],
+  "verilog": ["v", "veo", "sv", "svh", "svi"],
+  "vhdl": ["vhd", "vhdl"],
+  "vim": ["vim"],
   "xml": [
     "xml",
     "adml",
@@ -476,8 +198,5 @@
     "xul",
     "zcml"
   ],
-  "yaml": [
-    "yml",
-    "yaml"
-  ]
+  "yaml": ["yml", "yaml"]
 }
