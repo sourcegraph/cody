@@ -148,7 +148,6 @@ export class AnthropicProvider extends Provider {
         // Issue request
         const responses = await this.batchAndProcessCompletions(this.client, args, this.options.n, abortSignal)
 
-        // Post-process
         const ret = responses.map(resp => [
             {
                 prefix: this.options.docContext.prefix,

@@ -183,12 +183,13 @@ export interface event {
     hashedLicenseKey?: string
 }
 
+const DOTCOM_URL = 'https://sourcegraph.com'
+
 type GraphQLAPIClientConfig = Pick<ConfigurationWithAccessToken, 'serverEndpoint' | 'accessToken' | 'customHeaders'> &
     Pick<Partial<ConfigurationWithAccessToken>, 'telemetryLevel'>
 
 export class SourcegraphGraphQLAPIClient {
-    private dotcomUrl = 'https://sourcegraph.com'
-
+    private dotcomUrl = DOTCOM_URL
     constructor(private config: GraphQLAPIClientConfig) {}
 
     public onConfigurationChange(newConfig: GraphQLAPIClientConfig): void {
@@ -196,7 +197,7 @@ export class SourcegraphGraphQLAPIClient {
     }
 
     public isDotCom(): boolean {
-        return new URL(this.config.serverEndpoint).origin === new URL(this.dotcomUrl).origin
+        return isDotCom(this.config.serverEndpoint)
     }
 
     public async getSiteVersion(): Promise<string | Error> {
@@ -507,3 +508,7 @@ function verifyResponseCode(response: Response): Response {
 
 class RepoNotFoundError extends Error {}
 export const isRepoNotFoundError = (value: unknown): value is RepoNotFoundError => value instanceof RepoNotFoundError
+
+export function isDotCom(serverEndpoint: string): boolean {
+    return new URL(serverEndpoint).origin === new URL(DOTCOM_URL).origin
+}

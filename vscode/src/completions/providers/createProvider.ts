@@ -1,4 +1,5 @@
 import { Configuration } from '@sourcegraph/cody-shared/src/configuration'
+import { isDotCom } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
 
 import { debug } from '../../log'
 import { CodeCompletionsClient } from '../client'
@@ -62,19 +63,17 @@ export function createProviderConfig(config: Configuration, client: CodeCompleti
             })
         }
         case 'unstable-fireworks': {
-            if (config.autocompleteAdvancedServerEndpoint !== null) {
-                return createUnstableFireworksProviderConfig({
-                    serverEndpoint: config.autocompleteAdvancedServerEndpoint,
-                    accessToken: config.autocompleteAdvancedAccessToken,
-                    model: config.autocompleteAdvancedModel,
-                })
+            if (!isDotCom(config.serverEndpoint)) {
+                debug(
+                    'createProviderConfig',
+                    'Provider `unstable-fireworks` is currently only available when connected to sourcegraph.com'
+                )
+                return null
             }
-
-            debug(
-                'createProviderConfig',
-                'Provider `unstable-fireworks` can not be used without configuring `cody.autocomplete.advanced.serverEndpoint`.'
-            )
-            return null
+            return createUnstableFireworksProviderConfig({
+                client,
+                model: config.autocompleteAdvancedModel,
+            })
         }
         case 'anthropic': {
             return createAnthropicProviderConfig({
