@@ -348,7 +348,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         }
 
         // Filter the human input to check for chat commands and retrieve the correct recipe id
-        // e.g. /edit from 'chat-question' should be redirected to use the 'fixup' recipe
+        // e.g. /fix from 'chat-question' should be redirected to use the 'fixup' recipe
         const command = await this.chatCommandsFilter(humanChatInput, recipeId)
         if (!command) {
             return
@@ -589,7 +589,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
                 return { text, recipeId: 'local-indexed-keyword-search' }
             case /^\/s(earch)?\s/.test(text):
                 return { text, recipeId: 'context-search' }
-            case /^\/edit(\s)?/.test(text):
+            case /^\/fix(\s)?/.test(text):
                 await vscode.commands.executeCommand('cody.fixup.new', { instruction: text })
                 return null
             case /^\/(explain|doc|test|smell)$/.test(text):
