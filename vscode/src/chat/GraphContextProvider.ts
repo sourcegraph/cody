@@ -2,9 +2,7 @@ import * as vscode from 'vscode'
 import { URI } from 'vscode-uri'
 
 import { isDefined, PreciseContext } from '@sourcegraph/cody-shared'
-import { Editor, Range , ActiveTextEditorSelectionRange, Editor } from '@sourcegraph/cody-shared/src/editor'
-import { PreciseContext } from '@sourcegraph/cody-shared/src/codebase-context/messages'
-import { isDefined } from '@sourcegraph/cody-shared/src/common'
+import { Editor, Range } from '@sourcegraph/cody-shared/src/editor'
 import { GraphContextFetcher } from '@sourcegraph/cody-shared/src/graph-context'
 
 export class GraphContextProvider implements GraphContextFetcher {
