@@ -105,13 +105,11 @@ const configuration: vscode.WorkspaceConfiguration = {
             case 'cody.autocomplete.advanced.provider':
                 return connectionConfig?.autocompleteAdvancedProvider ?? 'anthropic'
             case 'cody.autocomplete.advanced.serverEndpoint':
-                return connectionConfig?.autocompleteAdvancedServerEndpoint
-                    ? connectionConfig?.autocompleteAdvancedServerEndpoint
-                    : null
+                return connectionConfig?.autocompleteAdvancedServerEndpoint ?? null
+            case 'cody.autocomplete.advanced.model':
+                return connectionConfig?.autocompleteAdvancedModel ?? null
             case 'cody.autocomplete.advanced.accessToken':
-                return connectionConfig?.autocompleteAdvancedAccessToken
-                    ? connectionConfig?.autocompleteAdvancedAccessToken
-                    : null
+                return connectionConfig?.autocompleteAdvancedAccessToken ?? null
             case 'cody.autocomplete.advanced.embeddings':
                 return connectionConfig?.autocompleteAdvancedEmbeddings ?? true
             case 'cody.advanced.agent.running':

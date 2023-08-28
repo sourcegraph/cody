@@ -48,6 +48,7 @@ describe.each([
                 autocompleteAdvancedProvider: 'anthropic',
                 autocompleteAdvancedAccessToken: '',
                 autocompleteAdvancedServerEndpoint: '',
+                autocompleteAdvancedServerModel: null,
                 autocompleteAdvancedEmbeddings: true,
                 debug: false,
                 verboseDebug: false,
