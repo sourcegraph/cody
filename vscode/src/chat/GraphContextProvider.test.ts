@@ -8,7 +8,7 @@ import {
     DocumentSymbolMetadata,
     extractDefinitionContexts,
     extractRelevantDocumentSymbolRanges,
-    gatherSymbolsForSelections,
+    gatherDefinitionSymbolsForSelections,
 } from './GraphContextProvider'
 
 const testFile1 = `
@@ -90,7 +90,7 @@ describe('extractRelevantDocumentSymbolRanges', () => {
 describe('gatherDefinitions', () => {
     test('returns definitions referencing multiple files', async () => {
         const uri = Uri.parse('/test-3.test')
-        const definitions = await gatherSymbolsForSelections(
+        const definitions = await gatherDefinitionSymbolsForSelections(
             [
                 {
                     uri,

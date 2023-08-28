@@ -17,18 +17,15 @@ export const PreciseContexts: FunctionComponent<{
     symbolLinkComponent: FunctionComponent<SymbolLinkProps>
     className?: string
 }> = ({ preciseContexts, symbolLinkComponent: SymbolLink, className }) => {
-    const unique = new Map<string, JSX.Element>()
+    const uniqueContext: { hoverText: string; object: JSX.Element }[] = []
+    for (const { symbol, filePath, range } of preciseContexts) {
+        const name = symbol.fuzzyName ? symbol.fuzzyName : 'unknown'
 
-    for (const { symbol, filePath: filepath, range } of preciseContexts) {
-        unique.set(
-            symbol.fuzzyName || '',
-            <SymbolLink symbol={symbol.fuzzyName || 'Unknown'} path={filepath} range={range} />
-        )
+        uniqueContext.push({
+            hoverText: name,
+            object: <SymbolLink symbol={name} path={filePath} range={range} />,
+        })
     }
-    const uniqueContext = Array.from(unique, ([hoverText, object]) => ({
-        object,
-        hoverText,
-    }))
 
     return (
         <TranscriptAction

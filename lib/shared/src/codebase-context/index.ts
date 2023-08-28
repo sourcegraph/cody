@@ -243,7 +243,7 @@ export class CodebaseContext {
         const contextMessages: ContextMessage[] = []
         for (const preciseContext of await this.graph.getContext()) {
             const text = populatePreciseCodeContextTemplate(
-                preciseContext.symbol.fuzzyName || 'unknown',
+                preciseContext.symbol.fuzzyName ? preciseContext.symbol.fuzzyName : 'unknown',
                 preciseContext.filePath,
                 preciseContext.definitionSnippet
             )

@@ -52,6 +52,10 @@ interface Selection {
     kind?: vscode.SymbolKind
 }
 
+interface PreciseContextWithSourceLocation extends PreciseContext {
+    sourceLocation?: SourceLocation
+}
+
 /**
  * Return the definitions of symbols that occur within the given selection ranges. If a selection has
  * a defined range, we will cull the symbols to those referenced in intersecting document symbol ranges.
@@ -60,33 +64,37 @@ const getGraphContextFromSelection = async (
     selections: Selection[],
     contentMap: Map<string, string[]>,
     recursionLimit: number = 0
-): Promise<PreciseContext[]> => {
+): Promise<PreciseContextWithSourceLocation[]> => {
     // Debuggin'
     const label = 'precise context from selection'
     performance.mark(label)
 
     // Get the document symbols in the current file and extract their definition range
-    const definitionSelections = await extractRelevantDocumentSymbolRanges(selections)
+    const documentSymbolSelections = await extractRelevantDocumentSymbolRanges(selections)
 
     // Extract identifiers from the relevant document symbol ranges and request their definitions
-    const definitionMatches = await gatherSymbolsForSelections(definitionSelections, contentMap)
+    const definitionMatches = await gatherDefinitionSymbolsForSelections(documentSymbolSelections, contentMap)
+    const definitionContexts = await openDocumentsAndExtractDefinitionContexts(contentMap, definitionMatches)
 
-    // Open the documents not currently present in the workspace.
-    //
-    // NOTE: Before asking for data about a document it must be opened in the workspace. This forces
-    // a resolution so that the following queries that require the document context will not fail with
-    // an unknown document.
-    await openDocuments(definitionMatches, contentMap)
-
-    // Extract definition text from our matches
-    const flattenedMatches = definitionMatches.flatMap(({ locations, ...rest }) =>
-        locations.map(location => ({ location, ...rest }))
-    )
-    const uniqueMatches = dedupeWith(flattenedMatches, ({ location }) => locationKeyFn(location))
-    const contexts = await extractDefinitionContexts(uniqueMatches, contentMap)
+    // Partition contexts contexts into interfaces and non-interface values
+    const ifaceContexts = definitionContexts.filter(context => context.symbol.kind === 'Interface')
+    const nonIfaceContexts = definitionContexts.filter(context => context.symbol.kind !== 'Interface')
 
     // Debuggin'
-    console.debug(`Retrieved ${contexts.length} context snippets`)
+    performance.mark(label)
+
+    // Re-query the definitions of interfaces to go directly to their implementation rather than the
+    // definition of the interface (which doesn't include any internal information, just the shape).
+    const implMatches = await gatherImplementationSymbolsForSelection(documentSymbolSelections, ifaceContexts)
+    const implContexts = await openDocumentsAndExtractDefinitionContexts(contentMap, implMatches)
+
+    // Merge relevant contexts back together into a unified list
+    const contexts = [...nonIfaceContexts, ...implContexts /* , ...ifaceContexts */]
+
+    // Debuggin'
+    console.debug(
+        `Retrieved ${definitionContexts.length} non-interface context snippets and ${ifaceContexts.length} interface context snippets`
+    )
     performance.mark(label)
 
     if (recursionLimit > 0) {
@@ -253,17 +261,23 @@ const typescriptKeywords = new Set([
 
 const commonKeywords = new Set([...goKeywords, ...typescriptKeywords])
 
-interface SymbolDefinitionMatches {
+interface SymbolMatch {
     symbolName: string
     locations: Thenable<vscode.Location[]>
     kind?: vscode.SymbolKind
+    sourceLocation?: SourceLocation
 }
 
-interface ResolvedSymbolDefinitionMatches extends Omit<SymbolDefinitionMatches, 'locations'> {
+interface SourceLocation {
+    uri: URI
+    position: vscode.Position
+}
+
+interface ResolvedSymbolMatches extends Omit<SymbolMatch, 'locations'> {
     locations: vscode.Location[]
 }
 
-interface ResolvedSymbolDefinitionMatch extends Omit<SymbolDefinitionMatches, 'locations'> {
+interface ResolvedSymbolMatch extends Omit<SymbolMatch, 'locations'> {
     location: vscode.Location
 }
 
@@ -304,14 +318,14 @@ const symbolKindIndexToName = new Map([...symbolKindNames.entries()].map(([index
  * Search the given ranges for identifiers matching an a common pattern and filter out common keywords. Each
  * matching symbol is queried for a related symbol definition which are resolved in parallel before return.
  */
-export const gatherSymbolsForSelections = async (
+export const gatherDefinitionSymbolsForSelections = async (
     selections: Selection[],
     contentMap: Map<string, string[]>,
     getDefinitions: typeof defaultGetDefinitions = defaultGetDefinitions
-): Promise<ResolvedSymbolDefinitionMatches[]> => {
+): Promise<ResolvedSymbolMatches[]> => {
     // Construct a list of symbol and definition location pairs by querying the LSP server
     // with all identifiers (heuristically chosen via regex) in the relevant code ranges.
-    const definitionMatches: SymbolDefinitionMatches[] = []
+    const definitionMatches: SymbolMatch[] = []
 
     for (const selection of selections) {
         const { uri, range, kind } = selection
@@ -351,19 +365,71 @@ export const gatherSymbolsForSelections = async (
                 symbolName,
                 locations: getDefinitions(uri, position),
                 kind,
+                sourceLocation: {
+                    uri,
+                    position,
+                },
             })
         }
     }
 
+    return gatherSymbolsFromMatches(selections, definitionMatches)
+}
+
+/**
+ * Query each given context position for a related symbol implementation which are resolved
+ * in parallel before return.
+ */
+export const gatherImplementationSymbolsForSelection = async (
+    selections: Selection[],
+    contexts: PreciseContextWithSourceLocation[],
+    getImplementations: typeof defaultGetImplementations = defaultGetImplementations
+): Promise<ResolvedSymbolMatches[]> => {
+    // Construct a list of symbol and implementation location pairs by querying the LSP
+    // server with the positions within the given contexts. These are "second-round" queries
+    // to find additional relevant context.
+    const implementationMatches: SymbolMatch[] = []
+
+    for (const {
+        symbol: { fuzzyName, kind },
+        sourceLocation,
+    } of contexts) {
+        if (!sourceLocation) {
+            continue
+        }
+
+        const { uri, position } = sourceLocation
+
+        implementationMatches.push({
+            symbolName: fuzzyName ? `${fuzzyName} (impl)` : 'unknown',
+            locations: getImplementations(uri, position),
+            kind: kind ? symbolKindNameToIndex.get(kind) : undefined,
+            sourceLocation: {
+                uri,
+                position,
+            },
+        })
+    }
+
+    return gatherSymbolsFromMatches(selections, implementationMatches)
+}
+
+/**
+ * Resolve the given matches and filter out the results in one of the given input selections.
+ */
+const gatherSymbolsFromMatches = async (
+    selections: Selection[],
+    matches: SymbolMatch[]
+): Promise<ResolvedSymbolMatches[]> => {
     // Resolve all in-flight promises in parallel
-    const resolvedDefinitionMatches = await Promise.all(
-        definitionMatches.map(async ({ locations, ...rest }) => ({ locations: await locations, ...rest }))
+    const resolvedMatches = await Promise.all(
+        matches.map(async ({ locations, ...rest }) => ({ locations: await locations, ...rest }))
     )
 
-    // Remove definition ranges that exist within one fo the input definition selections
-    // These are locals and don't give us any additional information in the context window.
-    // Remove any remaining symbols that have an empty set of locations.
-    const filteredDefinitionMatches = resolvedDefinitionMatches
+    // Remove ranges that exist within one of the input selections. These are locals and
+    // don't give us any additional information in the context window. Remove any remaining
+    // symbols that have an empty set of locations.
+    const filteredMatches = resolvedMatches
         .map(({ locations, ...rest }) => ({
             locations: locations.filter(
                 ({ uri, range }) =>
@@ -380,21 +446,38 @@ export const gatherSymbolsForSelections = async (
         .filter(({ locations }) => locations.length !== 0)
 
     // It's possible that there are many references to the same symbol in the given selection.
-    // Deduplicate such definitions early here.
-    return dedupeWith(
-        filteredDefinitionMatches,
-        match => `${match.symbolName}.${match.locations.map(locationKeyFn).join('.')}`
+    // Deduplicate such target locations early here.
+    return dedupeWith(filteredMatches, resolvedSymbolMatchKeyFn)
+}
+
+/**
+ * Open the URIs present in the given definition matches and extract the definition text from the given
+ * map of file contents.
+ */
+const openDocumentsAndExtractDefinitionContexts = async (
+    contentMap: Map<string, string[]>,
+    definitionMatches: ResolvedSymbolMatches[]
+): Promise<PreciseContextWithSourceLocation[]> => {
+    // Open the documents not currently present in the workspace.
+    //
+    // NOTE: Before asking for data about a document it must be opened in the workspace. This forces
+    // a resolution so that the following queries that require the document context will not fail with
+    // an unknown document.
+    await openDocuments(definitionMatches, contentMap)
+
+    // Extract definition text from our matches
+    const flattenedMatches = definitionMatches.flatMap(({ locations, ...rest }) =>
+        locations.map(location => ({ location, ...rest }))
     )
+    const uniqueMatches = dedupeWith(flattenedMatches, ({ location }) => locationKeyFn(location))
+    return extractDefinitionContexts(uniqueMatches, contentMap)
 }
 
 /**
  * Open each URI referenced by one of the given matches in the current workspace, and make the document
  * content retrievable by filepath by adding it to the shared content map.
  */
-const openDocuments = async (
-    matches: ResolvedSymbolDefinitionMatches[],
-    contentMap: Map<string, string[]>
-): Promise<void> => {
+const openDocuments = async (matches: ResolvedSymbolMatches[], contentMap: Map<string, string[]>): Promise<void> => {
     const uris = matches.map(({ locations }) => locations.map(({ uri }) => uri)).flat()
     const uniqueUris = dedupeWith(uris, uri => uri.fsPath)
     const unseenUris = uniqueUris.filter(uri => !contentMap.has(uri.fsPath))
@@ -416,10 +499,10 @@ const openDocuments = async (
  * is assumed to be open in the current VSCode workspace. Matches without such an entry are skipped.
  */
 export const extractDefinitionContexts = async (
-    matches: ResolvedSymbolDefinitionMatch[],
+    matches: ResolvedSymbolMatch[],
     contentMap: Map<string, string[]>,
     getDocumentSymbolMetadata: typeof defaultGetDocumentSymbolMetadata = defaultGetDocumentSymbolMetadata
-): Promise<PreciseContext[]> => {
+): Promise<PreciseContextWithSourceLocation[]> => {
     // Retrieve document symbols for each of the open documents, which we will use to extract the relevant
     // definition "bounds" given the range of the definition symbol (which is contained within the range).
     const documentSymbolMetadataPromiseMap = new Map(
@@ -437,21 +520,17 @@ export const extractDefinitionContexts = async (
     // containing document's content and document symbol result. Downstream consumers of this function
     // are expected to filter and re-rank these results as needed for their specific use case.
 
-    const contexts: PreciseContext[] = []
-    for (const { symbolName, location, kind } of matches) {
+    const contexts: PreciseContextWithSourceLocation[] = []
+    for (const { symbolName, location, sourceLocation } of matches) {
         const { uri, range } = location
         const contentPromise = contentMap.get(uri.fsPath)
         const documentSymbolMetadata = documentSymbolMetadataMap.get(uri.fsPath)
 
         if (contentPromise && documentSymbolMetadata) {
             const content = contentPromise
-            const definitionSnippets = extractSnippets(
-                content,
-                documentSymbolMetadata.map(({ range }) => range),
-                [range]
-            )
+            const definitionSnippets = extractSnippets(content, documentSymbolMetadata, [range])
 
-            for (const definitionSnippet of definitionSnippets) {
+            for (const { snippet, kind } of definitionSnippets) {
                 contexts.push({
                     symbol: {
                         fuzzyName: symbolName,
@@ -464,7 +543,8 @@ export const extractDefinitionContexts = async (
                         endLine: range.end.line,
                         endCharacter: range.end.character,
                     },
-                    definitionSnippet,
+                    definitionSnippet: snippet,
+                    sourceLocation,
                 })
             }
         }
@@ -499,6 +579,18 @@ const defaultGetDefinitions = async (uri: URI, position: vscode.Position): Promi
         .then(locations => locations.flatMap(extractLocation))
 
 /**
+ * Shim for default LSP executeImplementationProvider call. Can be mocked for testing.
+ */
+const defaultGetImplementations = async (uri: URI, position: vscode.Position): Promise<vscode.Location[]> =>
+    vscode.commands
+        .executeCommand<(vscode.Location | vscode.LocationLink)[]>(
+            'vscode.executeImplementationProvider',
+            uri,
+            position
+        )
+        .then(locations => locations.flatMap(extractLocation))
+
+/**
  * Extract the definition range from the given symbol information or document symbol.
  */
 const extractSymbolMetadata = (d: vscode.SymbolInformation | vscode.DocumentSymbol): DocumentSymbolMetadata =>
@@ -519,15 +611,22 @@ const isLocationLink = (l: vscode.Location | vscode.LocationLink): l is vscode.L
 /**
  * Extract the content outlined by symbol ranges that intersect one of the target ranges.
  */
-const extractSnippets = (lines: string[], symbolRanges: vscode.Range[], targetRanges: vscode.Range[]): string[] => {
-    const intersectingRanges = symbolRanges.filter(({ start, end }) =>
+const extractSnippets = (
+    lines: string[],
+    documentSymbolMetadata: DocumentSymbolMetadata[],
+    targetRanges: vscode.Range[]
+): { snippet: string; kind?: vscode.SymbolKind }[] => {
+    const intersectingRanges = documentSymbolMetadata.filter(({ range: { start, end } }) =>
         targetRanges.some(
             ({ start: targetStart, end: targetEnd }) => start.line <= targetStart.line && targetEnd.line <= end.line
         )
     )
 
     // NOTE: inclusive upper bound
-    return intersectingRanges.map(({ start, end }) => lines.slice(start.line, end.line + 1).join('\n'))
+    return intersectingRanges.map(({ range: { start, end }, kind }) => ({
+        snippet: lines.slice(start.line, end.line + 1).join('\n'),
+        kind,
+    }))
 }
 
 /**
@@ -537,6 +636,12 @@ const extractSnippets = (lines: string[], symbolRanges: vscode.Range[], targetRa
 const dedupeWith = <T>(items: T[], keyFn: (item: T) => string): T[] => [
     ...new Map(items.map(item => [keyFn(item), item])).values(),
 ]
+
+/**
+ * Returns a key unique to a given symbol definition match.
+ */
+const resolvedSymbolMatchKeyFn = (match: ResolvedSymbolMatches): string =>
+    `${match.symbolName}.${match.locations.map(locationKeyFn).join('.')}`
 
 /**
  * Returns a key unique to a given location for use with `dedupeWith`.
