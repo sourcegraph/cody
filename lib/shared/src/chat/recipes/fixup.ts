@@ -18,14 +18,14 @@ const FixupIntentClassification: IntentClassificationOption<FixupIntent>[] = [
     {
         id: 'edit',
         rawCommand: '/edit',
-        description: 'Edit part of the selected code',
-        examplePrompts: ['Edit this code', 'Change this code', 'Update this code'],
-    },
-    {
-        id: 'fix',
-        rawCommand: '/fix',
-        description: 'Fix a problem in a part of the selected code',
-        examplePrompts: ['Implement this TODO', 'Fix this code'],
+        description: 'Fix a problem or edit part of the selected code',
+        examplePrompts: [
+            'Edit this code',
+            'Change this code',
+            'Update this code',
+            'Implement this TODO',
+            'Fix this code',
+        ],
     },
     {
         id: 'document',
