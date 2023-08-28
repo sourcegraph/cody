@@ -15,6 +15,7 @@ export interface CompletionEvent {
         multiline: boolean
         multilineMode: null | 'block'
         providerIdentifier: string
+        providerModel: string
         languageId: string
         contextSummary?: ContextSummary
         source?: string

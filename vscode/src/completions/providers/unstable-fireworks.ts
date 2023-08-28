@@ -10,7 +10,7 @@ import { Provider, ProviderConfig, ProviderOptions } from './provider'
 interface UnstableFireworksOptions {
     serverEndpoint: string
     accessToken: null | string
-    model: null | string
+    model: keyof typeof MODEL_MAP
 }
 
 const PROVIDER_IDENTIFIER = 'fireworks'
@@ -36,13 +36,7 @@ export class UnstableFireworksProvider extends Provider {
         super(options)
         this.serverEndpoint = serverEndpoint
         this.accessToken = accessToken
-        if (model === null || model === '') {
-            this.model = 'starcoder-7b'
-        } else if (Object.prototype.hasOwnProperty.call(MODEL_MAP, model)) {
-            this.model = model as keyof typeof MODEL_MAP
-        } else {
-            throw new Error(`Unknown model: \`${model}\``)
-        }
+        this.model = model
     }
 
     private createPrompt(snippets: ContextSnippet[]): string {
@@ -173,14 +167,28 @@ function postProcess(content: string, multiline: boolean): string {
     return content.trim()
 }
 
-export function createProviderConfig(unstableFireworksOptions: UnstableFireworksOptions): ProviderConfig {
+export function createProviderConfig(
+    unstableFireworksOptions: Omit<UnstableFireworksOptions, 'model'> & { model: string | null }
+): ProviderConfig {
+    const model =
+        unstableFireworksOptions.model === null || unstableFireworksOptions.model === ''
+            ? 'starcoder-7b'
+            : Object.prototype.hasOwnProperty.call(MODEL_MAP, unstableFireworksOptions.model)
+            ? unstableFireworksOptions.model
+            : null
+
+    if (model === null) {
+        throw new Error(`Unknown model: \`${unstableFireworksOptions.model}\``)
+    }
+
     return {
         create(options: ProviderOptions) {
-            return new UnstableFireworksProvider(options, unstableFireworksOptions)
+            return new UnstableFireworksProvider(options, { ...unstableFireworksOptions, model })
         },
         maximumContextCharacters: CONTEXT_WINDOW_CHARS,
         enableExtendedMultilineTriggers: true,
         identifier: PROVIDER_IDENTIFIER,
         supportsInfilling: true,
+        model,
     }
 }
