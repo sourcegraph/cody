@@ -70,6 +70,7 @@ export function createProviderConfig(
                 return createUnstableFireworksProviderConfig({
                     serverEndpoint: config.autocompleteAdvancedServerEndpoint,
                     accessToken: config.autocompleteAdvancedAccessToken,
+                    model: config.autocompleteAdvancedModel,
                 })
             }
 

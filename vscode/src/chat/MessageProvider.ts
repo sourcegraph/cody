@@ -692,6 +692,30 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
     }
 
     /**
+     * Export chat history to file system
+     */
+    public async exportHistory(): Promise<void> {
+        this.telemetryService.log('CodyVSCodeExtension:exportChatHistoryButton:clicked')
+        const historyJson = MessageProvider.chatHistory
+        const exportPath = await vscode.window.showSaveDialog({ filters: { 'Chat History': ['json'] } })
+        if (!exportPath) {
+            return
+        }
+        try {
+            const logContent = new TextEncoder().encode(JSON.stringify(historyJson))
+            await vscode.workspace.fs.writeFile(exportPath, logContent)
+            // Display message and ask if user wants to open file
+            void vscode.window.showInformationMessage('Chat history exported successfully.', 'Open').then(choice => {
+                if (choice === 'Open') {
+                    void vscode.commands.executeCommand('vscode.open', exportPath)
+                }
+            })
+        } catch (error) {
+            debug('MessageProvider:exportHistory', 'Failed to export chat history', error)
+        }
+    }
+
+    /**
      * Loads the most recent chat
      */
     private async loadRecentChat(): Promise<void> {

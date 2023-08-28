@@ -17,7 +17,7 @@ export type WebviewMessage =
     | { command: 'event'; eventName: string; properties: TelemetryEventProperties | undefined } // new event log internal API (use createWebviewTelemetryService wrapper)
     | { command: 'submit'; text: string; submitType: 'user' | 'suggestion' | 'example' }
     | { command: 'executeRecipe'; recipe: RecipeID }
-    | { command: 'removeHistory' }
+    | { command: 'history'; action: 'clear' | 'export' }
     | { command: 'restoreHistory'; chatID: string }
     | { command: 'deleteHistory'; chatID: string }
     | { command: 'links'; value: string }

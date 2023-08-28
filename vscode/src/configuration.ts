@@ -66,6 +66,7 @@ export function getConfiguration(config: ConfigGetter): Configuration {
             CONFIG_KEY.autocompleteAdvancedServerSocksProxy,
             null
         ),
+        autocompleteAdvancedModel: config.get<string | null>(CONFIG_KEY.autocompleteAdvancedModel, null),
         autocompleteAdvancedAccessToken: config.get<string | null>(CONFIG_KEY.autocompleteAdvancedAccessToken, null),
         autocompleteAdvancedEmbeddings: config.get(CONFIG_KEY.autocompleteAdvancedEmbeddings, true),
         autocompleteExperimentalCompleteSuggestWidgetSelection: config.get(

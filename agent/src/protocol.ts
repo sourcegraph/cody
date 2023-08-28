@@ -155,6 +155,7 @@ export interface ExtensionConfiguration {
     autocompleteAdvancedProvider?: string
     autocompleteAdvancedServerEndpoint?: string | null
     autocompleteAdvancedServerSocksProxy?: string | null
+    autocompleteAdvancedModel?: string | null
     autocompleteAdvancedAccessToken?: string | null
     autocompleteAdvancedEmbeddings?: boolean
     debug?: boolean
