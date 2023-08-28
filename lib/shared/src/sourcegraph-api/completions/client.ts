@@ -56,3 +56,28 @@ export abstract class SourcegraphCompletionsClient {
 
     public abstract stream(params: CompletionParameters, cb: CompletionCallbacks): () => void
 }
+
+/**
+ * A helper function that calls the streaming API but will buffer the result
+ * until the stream has completed.
+ */
+export function bufferStream(
+    client: Pick<SourcegraphCompletionsClient, 'stream'>,
+    params: CompletionParameters
+): Promise<string> {
+    return new Promise((resolve, reject) => {
+        let buffer = ''
+        const callbacks: CompletionCallbacks = {
+            onChange(text: string) {
+                buffer = text
+            },
+            onComplete() {
+                resolve(buffer)
+            },
+            onError(message: string, code?: number) {
+                reject(new Error(code ? `${message} (code ${code})` : message))
+            },
+        }
+        client.stream(params, callbacks)
+    })
+}

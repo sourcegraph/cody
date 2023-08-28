@@ -164,7 +164,7 @@ export class AnthropicProvider extends Provider {
     }
 
     private async batchAndProcessCompletions(
-        client: CodeCompletionsClient,
+        client: Pick<CodeCompletionsClient, 'complete'>,
         params: CompletionParameters,
         n: number,
         abortSignal: AbortSignal
@@ -177,7 +177,7 @@ export class AnthropicProvider extends Provider {
     }
 
     private async fetchAndProcessCompletions(
-        client: CodeCompletionsClient,
+        client: Pick<CodeCompletionsClient, 'complete'>,
         params: CompletionParameters,
         abortSignal: AbortSignal
     ): Promise<CompletionResponse> {

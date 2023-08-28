@@ -88,7 +88,6 @@ export async function configureExternalServices(
         featureFlagProvider,
         codebaseContext,
         chatClient,
-        completionsClient,
         codeCompletionsClient,
         guardrails,
         onConfigurationChange: newConfig => {
