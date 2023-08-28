@@ -1,10 +1,17 @@
+import path from 'path'
+
 import dedent from 'dedent'
 import type { Position as VSCodePosition, TextDocument as VSCodeTextDocument } from 'vscode'
 import { TextDocument } from 'vscode-languageserver-textdocument'
+import Parser, { QueryCapture, QueryMatch } from 'web-tree-sitter'
 
+import { ROOT_PATH } from '@sourcegraph/cody-shared/src/common'
 import { CompletionResponse } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
 
 import { wrapVSCodeTextDocument } from '../testutils/textDocument'
+
+import { SupportedLanguage } from './tree-sitter/grammars'
+import { createParser } from './tree-sitter/parser'
 
 /**
  * A tag function for creating a {@link CompletionResponse}, for use in tests only.
@@ -13,8 +20,7 @@ import { wrapVSCodeTextDocument } from '../testutils/textDocument'
  * - `┤` end of the inline completion to insert
  * - `┴` use for indent placeholder, should be placed at last line after `┤`
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function completion(string: TemplateStringsArray, ...values: any): CompletionResponse {
+export function completion(string: TemplateStringsArray, ...values: unknown[]): CompletionResponse {
     const raw = dedent(string, ...values)
     let completion = raw
 
@@ -49,4 +55,37 @@ export function documentAndPosition(
     const document = wrapVSCodeTextDocument(TextDocument.create(uriString, languageId, 0, codeWithoutCursor))
     const position = document.positionAt(cursorIndex)
     return { document, position }
+}
+
+export const CUSTOM_WASM_LANGUAGE_DIR = path.resolve(ROOT_PATH, 'vscode/resources/wasm')
+
+export function initTreeSitterParser(language = SupportedLanguage.TypeScript): Promise<Parser> {
+    return createParser({
+        language,
+        grammarDirectory: CUSTOM_WASM_LANGUAGE_DIR,
+    })
+}
+
+interface FormattedMatch {
+    pattern: number
+    captures: FormattedCapture[]
+}
+
+export function formatMatches(matches: QueryMatch[]): FormattedMatch[] {
+    return matches.map(({ pattern, captures }) => ({
+        pattern,
+        captures: formatCaptures(captures),
+    }))
+}
+
+interface FormattedCapture {
+    name: string
+    text: string
+}
+
+function formatCaptures(captures: QueryCapture[]): FormattedCapture[] {
+    return captures.map(capture => ({
+        name: capture.name,
+        text: capture.node.text,
+    }))
 }

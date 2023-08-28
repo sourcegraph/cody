@@ -489,6 +489,7 @@ function createCompletionsProvider(
             getCodebaseContext: () => contextProvider.context,
             isEmbeddingsContextEnabled: config.autocompleteAdvancedEmbeddings,
             completeSuggestWidgetSelection: config.autocompleteExperimentalCompleteSuggestWidgetSelection,
+            completeExperimentalSyntacticPostProcessing: config.autocompleteExperimentalSyntacticPostProcessing,
             featureFlagProvider,
         })
 

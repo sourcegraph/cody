@@ -69,6 +69,10 @@ export function getConfiguration(config: ConfigGetter): Configuration {
             CONFIG_KEY.autocompleteExperimentalCompleteSuggestWidgetSelection,
             false
         ),
+        autocompleteExperimentalSyntacticPostProcessing: config.get(
+            CONFIG_KEY.autocompleteExperimentalSyntacticPostProcessing,
+            false
+        ),
         pluginsEnabled: config.get<boolean>(CONFIG_KEY.pluginsEnabled, false),
         pluginsDebugEnabled: config.get<boolean>(CONFIG_KEY.pluginsDebugEnabled, true),
         pluginsConfig: config.get(CONFIG_KEY.pluginsConfig, {}),

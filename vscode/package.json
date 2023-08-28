@@ -821,6 +821,12 @@
           "markdownDescription": "API key for Anthropic",
           "default": ""
         },
+        "cody.experimental.autocomplete": {
+          "order": 9,
+          "type": "boolean",
+          "default": false,
+          "markdownDescription": "Experimental feature for internal use."
+        },
         "cody.debug.enable": {
           "order": 99,
           "type": "boolean",
@@ -891,6 +897,11 @@
           "type": "boolean",
           "default": false,
           "markdownDescription": "Autocomplete based on the currently selection in the suggest widget. Requires the VS Code user setting `editor.inlineSuggest.suppressSuggestions` set to true and will change it to true in user settings if it is not true."
+        },
+        "cody.autocomplete.experimental.syntacticPostProcessing": {
+          "type": "boolean",
+          "default": false,
+          "markdownDescription": "Rank autocomplete results with tree-sitter."
         },
         "cody.plugins.enabled": {
           "type": "boolean",

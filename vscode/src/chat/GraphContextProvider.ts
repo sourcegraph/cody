@@ -2,7 +2,7 @@ import * as vscode from 'vscode'
 import { URI } from 'vscode-uri'
 
 import { PreciseContext } from '@sourcegraph/cody-shared/src/codebase-context/messages'
-import { isDefined } from '@sourcegraph/cody-shared/src/common'
+import { dedupeBy, isDefined } from '@sourcegraph/cody-shared/src/common'
 import { ActiveTextEditorSelectionRange, Editor } from '@sourcegraph/cody-shared/src/editor'
 import { GraphContextFetcher } from '@sourcegraph/cody-shared/src/graph-context'
 
@@ -78,7 +78,7 @@ const getGraphContextFromSelection = async (
     // a resolution so that the following queries that require the document context will not fail with
     // an unknown document.
 
-    const unseenDefinitionUris = dedupeWith(
+    const unseenDefinitionUris = dedupeBy(
         definitionMatches.map(({ locations }) => locations.map(({ uri }) => uri)).flat(),
         uri => uri.fsPath
     ).filter(uri => !contentMap.has(uri.fsPath))
@@ -95,7 +95,7 @@ const getGraphContextFromSelection = async (
     }
 
     // Resolve, extract, and deduplicate the symbol and location match pairs from the definition matches
-    const matches = dedupeWith(
+    const matches = dedupeBy(
         definitionMatches
             .map(({ symbolName, locations }) => locations.map(location => ({ symbolName, location })))
             .flat(),
@@ -144,7 +144,7 @@ export const extractRelevantDocumentSymbolRanges = async (
 ): Promise<Selection[]> => {
     const rangeMap = await unwrapThenableMap(
         new Map(
-            dedupeWith(
+            dedupeBy(
                 selections.map(({ uri }) => uri),
                 uri => uri.fsPath
             ).map(uri => [uri.fsPath, getDocumentSymbolRanges(uri)])
@@ -457,15 +457,7 @@ const extractSnippets = (lines: string[], symbolRanges: vscode.Range[], targetRa
 }
 
 /**
- * Return a filtered version of the given array, de-duplicating items based on the given key function.
- * The order of the filtered array is not guaranteed to be related to the input ordering.
- */
-const dedupeWith = <T>(items: T[], keyFn: (item: T) => string): T[] => [
-    ...new Map(items.map(item => [keyFn(item), item])).values(),
-]
-
-/**
- * Returns a key unique to a given location for use with `dedupeWith`.
+ * Returns a key unique to a given location for use with `dedupeBy`.
  */
 const locationKeyFn = (location: vscode.Location): string =>
     `${location.uri}?L${location.range.start.line}:${location.range.start.character}`

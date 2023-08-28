@@ -1,12 +1,15 @@
-import type { Position, TextDocument } from 'vscode'
+import { Position, Range, TextDocument } from 'vscode'
 
-import { DocumentContext } from './document'
+import { dedupeBy } from '@sourcegraph/cody-shared'
+
+import { DocumentContext } from './get-current-doc-context'
 import { truncateMultilineCompletion } from './multiline'
 import { collapseDuplicativeWhitespace, removeTrailingWhitespace, trimUntilSuffix } from './text-processing'
+import { getCachedParseTreeForDocument } from './tree-sitter/parse-tree-cache'
 import { InlineCompletionItem } from './types'
 
 export interface ProcessInlineCompletionsParams {
-    document: Pick<TextDocument, 'languageId'>
+    document: TextDocument
     position: Position
     multiline: boolean
     docContext: DocumentContext
@@ -23,14 +26,19 @@ export function processInlineCompletions(
     // Shared post-processing logic
     const processedCompletions = items.map(item => processItem(item, { document, position, multiline, docContext }))
 
-    // Filter results
-    const visibleResults = filterCompletions(processedCompletions)
+    // Remove empty results
+    const visibleResults = removeEmptyCompletions(processedCompletions)
 
     // Remove duplicate results
-    const uniqueResults = [...new Map(visibleResults.map(item => [item.insertText, item])).values()]
+    const uniqueResults = dedupeBy(visibleResults, 'insertText')
+
+    // Add parse errors info to completions
+    // Does nothing if `cody.autocomplete.experimental.syntacticPostProcessing` is not enabled.
+    // TODO: add explicit configuration check here when it's possible to avoid prop-drilling for config values.
+    const withParseInfo = addParseInfoToCompletions(uniqueResults, { document, position, docContext })
 
     // Rank results
-    const rankedResults = rankCompletions(uniqueResults)
+    const rankedResults = rankCompletions(withParseInfo)
 
     return rankedResults
 }
@@ -74,6 +82,11 @@ export function processItem(
     return item
 }
 
+interface AdjustRangeToOverwriteOverlappingCharactersParams {
+    position: Position
+    docContext: Pick<DocumentContext, 'currentLineSuffix'>
+}
+
 /**
  * Return a copy of item with an adjusted range to overwrite duplicative characters after the
  * completion on the first line.
@@ -84,12 +97,7 @@ export function processItem(
  */
 export function adjustRangeToOverwriteOverlappingCharacters(
     item: InlineCompletionItem,
-    {
-        position,
-        docContext: { currentLineSuffix },
-    }: Pick<ProcessInlineCompletionsParams, 'position'> & {
-        docContext: Pick<DocumentContext, 'currentLineSuffix'>
-    }
+    { position, docContext: { currentLineSuffix } }: AdjustRangeToOverwriteOverlappingCharactersParams
 ): InlineCompletionItem {
     // TODO(sqs): This is a very naive implementation that will not work for many cases. It always
     // just clobbers the rest of the line.
@@ -101,11 +109,81 @@ export function adjustRangeToOverwriteOverlappingCharacters(
     return item
 }
 
-function rankCompletions(completions: InlineCompletionItem[]): InlineCompletionItem[] {
-    // TODO(philipp-spiess): Improve ranking to something more complex then just length
-    return completions.sort((a, b) => b.insertText.split('\n').length - a.insertText.split('\n').length)
+interface CompletionWithParseInfo extends InlineCompletionItem {
+    hasParseErrors: boolean
 }
 
-function filterCompletions(completions: InlineCompletionItem[]): InlineCompletionItem[] {
+export function addParseInfoToCompletions(
+    items: InlineCompletionItem[],
+    { document, position, docContext }: Omit<ProcessInlineCompletionsParams, 'multiline'>
+): CompletionWithParseInfo[] {
+    const parseTreeCache = getCachedParseTreeForDocument(document)
+
+    // Do nothig if the syntactic post-processing is not enabled.
+    if (!parseTreeCache) {
+        return items.map(item => ({ ...item, hasParseErrors: false }))
+    }
+
+    const { parser } = parseTreeCache
+    const query = parser.getLanguage().query('(ERROR) @error')
+
+    return items.map(completion => {
+        const { range, insertText } = completion
+
+        // Adjust suffix and prefix based on completion insert range.
+        const prefix = range
+            ? document.getText(new Range(new Position(0, 0), range.start as Position))
+            : docContext.prefix
+        const suffix = range
+            ? document.getText(new Range(range.end as Position, document.positionAt(document.getText().length)))
+            : docContext.prefix
+
+        const textWithCompletion = prefix + insertText + suffix
+
+        // TODO: consider parsing only the changed part of the document to improve performance.
+        // TODO: move document parsing to a `onDidChangeTextDocument` handler to leverage incremental parsing.
+        // parser.parse(textWithCompletion, tree, { includedRanges: [...]})
+        const treeWithCompletion = parser.parse(textWithCompletion)
+
+        const completionPositionEnd = position.translate(undefined, insertText.length)
+
+        // Search for ERROR nodes in the completion range.
+        const matches = query.matches(
+            treeWithCompletion.rootNode,
+            {
+                row: position.line,
+                column: position.character,
+            },
+            {
+                row: completionPositionEnd.line,
+                column: completionPositionEnd.character,
+            }
+        )
+
+        return {
+            ...completion,
+            hasParseErrors: matches.length > 0,
+        }
+    })
+}
+
+function rankCompletions(completions: CompletionWithParseInfo[]): InlineCompletionItem[] {
+    return completions
+        .sort((a, b) => {
+            // Prioritize completions without parse errors
+            if (a.hasParseErrors && !b.hasParseErrors) {
+                return 1 // b comes first
+            }
+            if (!a.hasParseErrors && b.hasParseErrors) {
+                return -1 // a comes first
+            }
+
+            // If both have or don't have parse errors, compare by insertText length
+            return b.insertText.split('\n').length - a.insertText.split('\n').length
+        })
+        .map(({ hasParseErrors, ...rest }) => rest)
+}
+
+function removeEmptyCompletions(completions: InlineCompletionItem[]): InlineCompletionItem[] {
     return completions.filter(c => c.insertText.trim() !== '')
 }
