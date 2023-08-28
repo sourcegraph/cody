@@ -1,6 +1,7 @@
 {
   "commands": {
-    "Commit Message Suggestion": {
+    "/commit-message": {
+      "description": "Commit Message Suggestion",
       "prompt": "Suggest a informative commit message by summarizing code changes from the shared command output. The commit message should follow the conventional commit format and provide meaningful context for future readers.",
       "context": {
         "selection": false,
@@ -8,7 +9,8 @@
       },
       "note": "You must have git installed and authenticated to use this command. Runs this command before staging."
     },
-    "Summarize the latest Cody Release": {
+    "/summarize-latest-release": {
+      "description": "Summarize the latest Cody Release",
       "prompt": "What is the latest stable version of Cody? Can you briefly summarize the changes that were included in that release based on this CHANGELOG excerpt?",
       "context": {
         "selection": false,
