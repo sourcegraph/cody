@@ -879,7 +879,7 @@
             "starcoder-1b",
             "llama-code-13b-instruct"
           ],
-          "markdownDescription": "Overwrite the default model used for code autocompletion inference. THis is only supported with the `unstable-fireworks` provider"
+          "markdownDescription": "Overwrite the default model used for code autocompletion inference. This is only supported with the `unstable-fireworks` provider"
         },
         "cody.autocomplete.advanced.embeddings": {
           "order": 99,

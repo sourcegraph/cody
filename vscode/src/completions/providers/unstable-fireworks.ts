@@ -17,6 +17,8 @@ const PROVIDER_IDENTIFIER = 'fireworks'
 const STOP_WORD = '<|endoftext|>'
 const CONTEXT_WINDOW_CHARS = 5000 // ~ 2000 token limit
 
+// Model identifiers can be found in https://docs.fireworks.ai/explore/ and in our internal
+// conversations
 const MODEL_MAP = {
     'starcoder-16b': 'accounts/fireworks/models/starcoder-16b-w8a16',
     'starcoder-7b': 'accounts/fireworks/models/starcoder-7b-w8a16',
@@ -37,7 +39,7 @@ export class UnstableFireworksProvider extends Provider {
         if (model === null || model === '') {
             this.model = 'starcoder-7b'
         } else if (Object.prototype.hasOwnProperty.call(MODEL_MAP, model)) {
-            this.model = model as any
+            this.model = model as keyof typeof MODEL_MAP
         } else {
             throw new Error(`Unknown model: \`${model}\``)
         }
