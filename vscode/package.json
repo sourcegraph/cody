@@ -868,7 +868,7 @@
         },
         "cody.autocomplete.advanced.serverSocksProxy": {
           "type": "string",
-          "markdownDescription": "The SOCKS proxy endpoint to access server endpoint. This is only supported with a provider other than `anthropic`."
+          "markdownDeprecationMessage": "The SOCKS proxy endpoint to access server endpoint. This is only supported with `unstable-codegen` provider and only for use with the Cody Agent (for instance with JetBrains plugin). For VS Code please use http.proxy instead."
         },
         "cody.autocomplete.advanced.accessToken": {
           "type": "string",
