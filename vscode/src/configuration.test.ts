@@ -34,6 +34,7 @@ describe('getConfiguration', () => {
             telemetryLevel: 'all',
             autocompleteAdvancedProvider: 'anthropic',
             autocompleteAdvancedServerEndpoint: null,
+            autocompleteAdvancedServerSocksProxy: null,
             autocompleteAdvancedModel: null,
             autocompleteAdvancedAccessToken: null,
             autocompleteAdvancedEmbeddings: true,
@@ -88,6 +89,8 @@ describe('getConfiguration', () => {
                         return 'unstable-codegen'
                     case 'cody.autocomplete.advanced.serverEndpoint':
                         return 'https://example.com/llm'
+                    case 'cody.autocomplete.advanced.serverSocksProxy':
+                        return 'socks5://127.0.0.1:9999'
                     case 'cody.autocomplete.advanced.model':
                         return 'starcoder-32b'
                     case 'cody.autocomplete.advanced.accessToken':
@@ -139,6 +142,7 @@ describe('getConfiguration', () => {
             telemetryLevel: 'off',
             autocompleteAdvancedProvider: 'unstable-codegen',
             autocompleteAdvancedServerEndpoint: 'https://example.com/llm',
+            autocompleteAdvancedServerSocksProxy: 'socks5://127.0.0.1:9999',
             autocompleteAdvancedModel: 'starcoder-32b',
             autocompleteAdvancedAccessToken: 'foobar',
             autocompleteAdvancedEmbeddings: false,
