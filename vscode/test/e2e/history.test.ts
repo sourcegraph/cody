@@ -1,11 +1,14 @@
 import { expect } from '@playwright/test'
 
+import { sendTestInfo } from '../fixtures/mock-server'
+
 import { sidebarSignin } from './common'
 import { test } from './helpers'
 
-test.skip('checks for the chat history and new session', async ({ page, sidebar }) => {
+test.skip('checks for the chat history and new session', async ({ page, sidebar }, testInfo) => {
+    sendTestInfo(testInfo.title, testInfo.testId)
     // Sign into Cody
-    await sidebarSignin(page, sidebar)
+    await sidebarSignin(page, sidebar, sendTestInfo)
 
     await page.click('[aria-label="Chat History"]')
     await expect(sidebar.getByText('Chat History')).toBeVisible()
