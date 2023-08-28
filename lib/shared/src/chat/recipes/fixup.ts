@@ -44,6 +44,7 @@ const PromptIntentInstruction: Record<Exclude<FixupIntent, 'add'>, string> = {
 
 export class Fixup implements Recipe {
     public id: RecipeID = 'fixup'
+    public title = 'Fixup'
     public multiplexerTopic = 'selection'
 
     public async getInteraction(taskId: string, context: RecipeContext): Promise<Interaction | null> {

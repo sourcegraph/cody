@@ -4,6 +4,8 @@ import { appendFileSync, existsSync, mkdirSync, rmSync } from 'fs'
 import { dirname } from 'path'
 import { Readable, Writable } from 'stream'
 
+import * as vscode from 'vscode'
+
 import { Notifications, Requests } from './protocol'
 
 // This file is a standalone implementation of JSON-RPC for Node.js
@@ -201,7 +203,10 @@ class MessageEncoder extends Readable {
     }
 }
 
-type RequestCallback<M extends RequestMethodName> = (params: ParamsOf<M>) => Promise<ResultOf<M>>
+type RequestCallback<M extends RequestMethodName> = (
+    params: ParamsOf<M>,
+    cancelToken: vscode.CancellationToken
+) => Promise<ResultOf<M>>
 type NotificationCallback<M extends NotificationMethodName> = (params: ParamsOf<M>) => void
 
 /**
@@ -211,6 +216,7 @@ type NotificationCallback<M extends NotificationMethodName> = (params: ParamsOf<
 export class MessageHandler {
     private id = 0
     private requestHandlers: Map<RequestMethodName, RequestCallback<any>> = new Map()
+    private cancelTokens: Map<Id, vscode.CancellationTokenSource> = new Map()
     private notificationHandlers: Map<NotificationMethodName, NotificationCallback<any>> = new Map()
     private responseHandlers: Map<Id, (params: any) => void> = new Map()
 
@@ -231,31 +237,38 @@ export class MessageHandler {
             // Requests have ids and methods
             const handler = this.requestHandlers.get(msg.method)
             if (handler) {
-                handler(msg.params).then(
-                    result => {
-                        const data: ResponseMessage<any> = {
-                            jsonrpc: '2.0',
-                            id: msg.id,
-                            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-                            result,
+                const cancelToken = new vscode.CancellationTokenSource()
+                this.cancelTokens.set(msg.id, cancelToken)
+                handler(msg.params, cancelToken.token)
+                    .then(
+                        result => {
+                            const data: ResponseMessage<any> = {
+                                jsonrpc: '2.0',
+                                id: msg.id,
+                                // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+                                result,
+                            }
+                            this.messageEncoder.send(data)
+                        },
+                        error => {
+                            const message = error instanceof Error ? error.message : `${error}`
+                            const stack = error instanceof Error ? `\n${error.stack}` : ''
+                            const data: ResponseMessage<any> = {
+                                jsonrpc: '2.0',
+                                id: msg.id,
+                                error: {
+                                    code: ErrorCode.InternalError,
+                                    message,
+                                    data: JSON.stringify({ error, stack }),
+                                },
+                            }
+                            this.messageEncoder.send(data)
                         }
-                        this.messageEncoder.send(data)
-                    },
-                    error => {
-                        const message = error instanceof Error ? error.message : `${error}`
-                        const stack = error instanceof Error ? `\n${error.stack}` : ''
-                        const data: ResponseMessage<any> = {
-                            jsonrpc: '2.0',
-                            id: msg.id,
-                            error: {
-                                code: ErrorCode.InternalError,
-                                message,
-                                data: JSON.stringify({ error, stack }),
-                            },
-                        }
-                        this.messageEncoder.send(data)
-                    }
-                )
+                    )
+                    .finally(() => {
+                        this.cancelTokens.get(msg.id)?.dispose()
+                        this.cancelTokens.delete(msg.id)
+                    })
             } else {
                 console.error(`No handler for request with method ${msg.method}`)
             }
@@ -270,11 +283,20 @@ export class MessageHandler {
             }
         } else if (msg.method) {
             // Notifications have methods
-            const notificationHandler = this.notificationHandlers.get(msg.method)
-            if (notificationHandler) {
-                notificationHandler(msg.params)
+            if (
+                msg.method === '$/cancelRequest' &&
+                msg.params &&
+                (typeof msg.params.id === 'string' || typeof msg.params.id === 'number')
+            ) {
+                this.cancelTokens.get(msg.params.id)?.cancel()
+                this.cancelTokens.delete(msg.params.id)
             } else {
-                console.error(`No handler for notification with method ${msg.method}`)
+                const notificationHandler = this.notificationHandlers.get(msg.method)
+                if (notificationHandler) {
+                    notificationHandler(msg.params)
+                } else {
+                    console.error(`No handler for notification with method ${msg.method}`)
+                }
             }
         }
     })

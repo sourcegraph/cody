@@ -22,7 +22,7 @@
 
 _&mdash; or &mdash;_
 
-- Build and run VS Code extension locally: `pnpm install && cd vscode && pnpm run dev`
+- Build and run the VS Code extension locally: `pnpm install && cd vscode && pnpm run dev`
 - See [all supported editors](https://cody.dev)
 
 ## What is Cody?

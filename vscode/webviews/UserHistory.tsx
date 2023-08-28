@@ -37,13 +37,18 @@ export const UserHistory: React.FunctionComponent<React.PropsWithChildren<Histor
         [userHistory, setUserHistory, vscodeAPI]
     )
 
-    const onRemoveHistoryClick = useCallback(() => {
-        if (userHistory) {
-            vscodeAPI.postMessage({ command: 'removeHistory' })
-            setUserHistory(null)
-            setInputHistory([])
-        }
-    }, [setInputHistory, userHistory, setUserHistory, vscodeAPI])
+    const onAllHistoryClick = useCallback(
+        (action: 'clear' | 'export') => {
+            if (userHistory) {
+                vscodeAPI.postMessage({ command: 'history', action })
+                if (action === 'clear') {
+                    setUserHistory(null)
+                    setInputHistory([])
+                }
+            }
+        },
+        [setInputHistory, userHistory, setUserHistory, vscodeAPI]
+    )
 
     function restoreMetadata(chatID: string): void {
         vscodeAPI.postMessage({ command: 'restoreHistory', chatID })
@@ -55,14 +60,22 @@ export const UserHistory: React.FunctionComponent<React.PropsWithChildren<Histor
             <div className={chatStyles.nonTranscriptContainer}>
                 <div className={styles.headingContainer}>
                     <h3>Chat History</h3>
-                    <div className={styles.clearButtonContainer}>
+                    <div className={styles.headingButtonContainer}>
                         <VSCodeButton
-                            className={styles.clearButton}
+                            className={styles.headingButton}
                             type="button"
-                            onClick={onRemoveHistoryClick}
+                            onClick={() => onAllHistoryClick('export')}
                             disabled={!userHistory || !Object.keys(userHistory).length}
                         >
-                            Clear History
+                            Export
+                        </VSCodeButton>
+                        <VSCodeButton
+                            className={styles.headingButton}
+                            type="button"
+                            onClick={() => onAllHistoryClick('clear')}
+                            disabled={!userHistory || !Object.keys(userHistory).length}
+                        >
+                            Clear
                         </VSCodeButton>
                     </div>
                 </div>

@@ -206,7 +206,7 @@ const register = async (
             return
         }
 
-        const task = options.instruction
+        const task = options.instruction?.replace('/fix', '').trim()
             ? fixup.createTask(document.uri, options.instruction, range)
             : await fixup.promptUserForTask()
         if (!task) {
@@ -268,7 +268,8 @@ const register = async (
         }),
         vscode.commands.registerCommand(
             'cody.fixup.new',
-            (range: vscode.Range): Promise<void> => executeFixup({ range })
+            (options: { range?: vscode.Range; instruction?: string; document?: vscode.TextDocument }) =>
+                executeFixup(options)
         ),
         vscode.commands.registerCommand('cody.inline.new', async () => {
             // move focus line to the end of the current selection

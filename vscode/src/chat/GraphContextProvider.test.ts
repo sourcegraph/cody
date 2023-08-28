@@ -87,7 +87,7 @@ describe('extractRelevantDocumentSymbolRanges', () => {
     })
 })
 
-describe('gatherDefinitions', () => {
+describe('gatherDefinitionSymbolsForSelections', () => {
     test('returns definitions referencing multiple files', async () => {
         const uri = Uri.parse('/test-3.test')
         const definitions = await gatherDefinitionSymbolsForSelections(

@@ -13,7 +13,7 @@ import { newTextEditor } from './AgentTextEditor'
 import { AgentWorkspaceDocuments } from './AgentWorkspaceDocuments'
 import { AgentEditor } from './editor'
 import { MessageHandler } from './jsonrpc'
-import { AutocompleteItem, ExtensionConfiguration } from './protocol'
+import { AutocompleteItem, ExtensionConfiguration, RecipeInfo } from './protocol'
 import * as vscode_shim from './vscode-shim'
 
 const secretStorage = new Map<string, string>()
@@ -143,14 +143,14 @@ export class Agent extends MessageHandler {
 
         this.registerRequest('recipes/list', () =>
             Promise.resolve(
-                Object.values(registeredRecipes).map(({ id }) => ({
+                Object.values<RecipeInfo>(registeredRecipes).map(({ id, title }) => ({
                     id,
-                    title: id, // TODO: will be added in a follow PR
+                    title,
                 }))
             )
         )
 
-        this.registerRequest('recipes/execute', async data => {
+        this.registerRequest('recipes/execute', async (data, token) => {
             const client = await this.client
             if (!client) {
                 return null
@@ -162,13 +162,12 @@ export class Agent extends MessageHandler {
             })
             return null
         })
-        this.registerRequest('autocomplete/execute', async params => {
+        this.registerRequest('autocomplete/execute', async (params, token) => {
             const provider = await vscode_shim.completionProvider
             if (!provider) {
                 console.log('Completion provider is not initialized')
                 return { items: [] }
             }
-            const token = new vscode.CancellationTokenSource().token
             const document = this.workspace.getDocument(params.filePath)
             if (!document) {
                 console.log('No document found for file path', params.filePath, [...this.workspace.allFilePaths()])
@@ -190,7 +189,7 @@ export class Agent extends MessageHandler {
                         : result.items.flatMap(({ insertText, range }) =>
                               typeof insertText === 'string' && range !== undefined ? [{ insertText, range }] : []
                           )
-                return { items }
+                return { items, completionEvent: (result as any)?.completionEvent }
             } catch (error) {
                 console.log('autocomplete failed', error)
                 return { items: [] }
@@ -217,7 +216,7 @@ export class Agent extends MessageHandler {
             if (typeof event.publicArgument === 'object') {
                 event.publicArgument = JSON.stringify(event.publicArgument)
             }
-            console.error(JSON.stringify(event))
+
             await client?.graphqlClient.logEvent(event)
             return null
         })
@@ -237,7 +236,7 @@ export class Agent extends MessageHandler {
         )
         this.client = createClient({
             editor: new AgentEditor(this),
-            config: { ...config, useContext: 'none', experimentalLocalSymbols: false },
+            config: { ...config, useContext: 'embeddings', experimentalLocalSymbols: false },
             setMessageInProgress: messageInProgress => {
                 this.notify('chat/updateMessageInProgress', messageInProgress)
             },

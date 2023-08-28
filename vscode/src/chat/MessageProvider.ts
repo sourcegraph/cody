@@ -230,11 +230,13 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
             onError: (err, statusCode) => {
                 // TODO notify the multiplexer of the error
                 debug('ChatViewProvider:onError', err)
-                // When the user has initiated the abortion of the message, isMessageInProgress would have set to false by abortCompletion() and we can safely ignore this error.
-                // If isMessageInProgeress is true, then user did not abort the message and we will treat it as an error.
-                if (isAbortError(err) && !this.isMessageInProgress) {
+
+                if (isAbortError(err)) {
+                    this.isMessageInProgress = false
+                    this.sendTranscript()
                     return
                 }
+
                 // Log users out on unauth error
                 if (statusCode && statusCode >= 400 && statusCode <= 410) {
                     this.authProvider
@@ -552,7 +554,6 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
             return
         }
         await this.executeRecipe('custom-prompt', promptText)
-        this.telemetryService.log('CodyVSCodeExtension:command:started', { source: 'menu' })
         const starter = (await this.editor.controllers.command?.getCustomConfig())?.starter
         if (starter) {
             this.telemetryService.log('CodyVSCodeExtension:command:customStarter:applied')
@@ -588,8 +589,9 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
                 return { text, recipeId: 'local-indexed-keyword-search' }
             case /^\/s(earch)?\s/.test(text):
                 return { text, recipeId: 'context-search' }
-            case /^\/f(ix)?\s.*$/.test(text):
-                return { text, recipeId: 'fixup' }
+            case /^\/fix(\s)?/.test(text):
+                await vscode.commands.executeCommand('cody.fixup.new', { instruction: text })
+                return null
             case /^\/(explain|doc|test|smell)$/.test(text):
                 this.telemetryService.log(`CodyVSCodeExtension:command:${commandKey}:called`, {
                     source: 'chat',
@@ -686,6 +688,30 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         if (localHistory) {
             MessageProvider.chatHistory = localHistory?.chat
             MessageProvider.inputHistory = localHistory.input
+        }
+    }
+
+    /**
+     * Export chat history to file system
+     */
+    public async exportHistory(): Promise<void> {
+        this.telemetryService.log('CodyVSCodeExtension:exportChatHistoryButton:clicked')
+        const historyJson = MessageProvider.chatHistory
+        const exportPath = await vscode.window.showSaveDialog({ filters: { 'Chat History': ['json'] } })
+        if (!exportPath) {
+            return
+        }
+        try {
+            const logContent = new TextEncoder().encode(JSON.stringify(historyJson))
+            await vscode.workspace.fs.writeFile(exportPath, logContent)
+            // Display message and ask if user wants to open file
+            void vscode.window.showInformationMessage('Chat history exported successfully.', 'Open').then(choice => {
+                if (choice === 'Open') {
+                    void vscode.commands.executeCommand('vscode.open', exportPath)
+                }
+            })
+        } catch (error) {
+            debug('MessageProvider:exportHistory', 'Failed to export chat history', error)
         }
     }
 

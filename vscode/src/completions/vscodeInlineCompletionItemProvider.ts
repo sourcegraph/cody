@@ -218,15 +218,18 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
             return null
         }
 
+        const event = CompletionLogger.completionEvent(result.logId)
         if (items.length > 0) {
             CompletionLogger.suggested(result.logId, InlineCompletionsResultSource[result.source], items[0] as any)
         } else {
             CompletionLogger.noResponse(result.logId)
         }
 
-        return {
-            items,
-        }
+        const completionResult: vscode.InlineCompletionList = { items }
+
+        ;(completionResult as any).completionEvent = event
+
+        return completionResult
     }
 
     public handleDidAcceptCompletionItem(logId: string, completion: InlineCompletionItem): void {
