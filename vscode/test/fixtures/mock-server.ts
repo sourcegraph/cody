@@ -34,6 +34,7 @@ export async function run<T>(around: () => Promise<T>): Promise<T> {
 
     // endpoint which will accept the data that you want to send in that you will add your pubsub code
     app.post('/.api/testLogging', (req, res) => {
+        console.log(req.body)
         void logTestingData(req.body)
         res.status(200)
     })
@@ -102,15 +103,14 @@ export async function logTestingData(data: string): Promise<void> {
         event: data,
         timestamp: new Date().getTime(),
         // aditya todo: pass in the E2E test name
-        test_name: 'test_name',
+        test_name: currentTestName,
+        test_id: currentTestID,
         UID: uuid.v4(),
     }
 
     // Publishes the message as a string
     const dataBuffer = Buffer.from(JSON.stringify(message))
 
-    // todo: remove all console.logs before merging
-    console.log('Publishing message to pubsub')
     try {
         await pubSubClient
             .topic('projects/sourcegraph-telligent-testing/topics/e2e-testing')
@@ -119,4 +119,12 @@ export async function logTestingData(data: string): Promise<void> {
     } catch (error) {
         console.error('Received error while publishing:', error)
     }
+}
+
+let currentTestName: string
+let currentTestID: string
+
+export function sendTestInfo(testName: string, testID: string): void {
+    currentTestName = testName || ''
+    currentTestID = testID || ''
 }
