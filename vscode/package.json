@@ -821,12 +821,6 @@
           "markdownDescription": "API key for Anthropic",
           "default": ""
         },
-        "cody.experimental.autocomplete": {
-          "order": 9,
-          "type": "boolean",
-          "default": false,
-          "markdownDescription": "Experimental feature for internal use."
-        },
         "cody.debug.enable": {
           "order": 99,
           "type": "boolean",
