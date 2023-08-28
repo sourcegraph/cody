@@ -18,5 +18,5 @@ function getMapping(): Map<string, string> {
 export function getLanguageForFileName(filename: string): string {
     const extension = filename.split('.').splice(-1)[0]
     const language = getMapping().get(extension)
-    return language ? language : extension
+    return language || extension
 }
