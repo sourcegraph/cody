@@ -174,7 +174,7 @@ export function createProviderConfig(
         unstableFireworksOptions.model === null || unstableFireworksOptions.model === ''
             ? 'starcoder-7b'
             : Object.prototype.hasOwnProperty.call(MODEL_MAP, unstableFireworksOptions.model)
-            ? unstableFireworksOptions.model
+            ? (unstableFireworksOptions.model as keyof typeof MODEL_MAP)
             : null
 
     if (model === null) {
