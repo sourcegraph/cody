@@ -70,7 +70,6 @@ export class UnstableCodeGenProvider extends Provider {
         }
         const response = await fetch(this.serverEndpoint, { ...requestInit, ...agentRequestInit })
         try {
-            console.log('text', await response.text())
             const data = (await response.json()) as { completions: { completion: string }[] }
 
             const completions: string[] = data.completions.map(c => postProcess(c.completion, this.options.multiline))
