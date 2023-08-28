@@ -1,5 +1,4 @@
 import { Configuration } from '@sourcegraph/cody-shared/src/configuration'
-import { isDotCom } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
 
 import { debug } from '../../log'
 import { CodeCompletionsClient } from '../client'
@@ -63,13 +62,6 @@ export function createProviderConfig(config: Configuration, client: CodeCompleti
             })
         }
         case 'unstable-fireworks': {
-            if (!isDotCom(config.serverEndpoint)) {
-                debug(
-                    'createProviderConfig',
-                    'Provider `unstable-fireworks` is currently only available when connected to sourcegraph.com'
-                )
-                return null
-            }
             return createUnstableFireworksProviderConfig({
                 client,
                 model: config.autocompleteAdvancedModel,

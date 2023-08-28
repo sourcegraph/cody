@@ -55,7 +55,7 @@ export async function configureExternalServices(
     const client = new SourcegraphGraphQLAPIClient(initialConfig)
     const featureFlagProvider = new FeatureFlagProvider(client)
     const completionsClient = platform.createCompletionsClient(initialConfig, featureFlagProvider, logger)
-    const codeCompletionsClient = createCodeCompletionsClint(initialConfig)
+    const codeCompletionsClient = createCodeCompletionsClint(initialConfig, featureFlagProvider, logger)
 
     const repoId = initialConfig.codebase ? await client.getRepoId(initialConfig.codebase) : null
     if (isError(repoId)) {

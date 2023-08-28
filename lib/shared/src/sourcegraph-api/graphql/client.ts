@@ -512,3 +512,8 @@ export const isRepoNotFoundError = (value: unknown): value is RepoNotFoundError 
 export function isDotCom(serverEndpoint: string): boolean {
     return new URL(serverEndpoint).origin === new URL(DOTCOM_URL).origin
 }
+
+export function isLocalhost(serverEndpoint: string): boolean {
+    const host = new URL(serverEndpoint).host
+    return host === 'localhost' || host === 'sourcegraph.test'
+}
