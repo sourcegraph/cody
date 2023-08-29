@@ -8,7 +8,6 @@
     "completions-review-tool/data/*": true
   },
   "files.exclude": {
-    "**/dist": true,
     "**/.eslintcache": true,
     "**/.vscode-test": true,
     "**/.vscode-test-web": true
