@@ -289,7 +289,7 @@ export async function getCodebaseContext(
             ? platform.createLocalKeywordContextFetcher?.(rgPath, editor, chatClient, telemetryService) ?? null
             : null,
         rgPath ? platform.createFilenameContextFetcher?.(rgPath, editor, chatClient) ?? null : null,
-        new GraphContextProvider(editor),
+        new GraphContextProvider(editor, chatClient),
         symf,
         undefined,
         getRerankWithLog(chatClient)

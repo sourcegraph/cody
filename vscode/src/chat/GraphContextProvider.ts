@@ -2,25 +2,30 @@ import * as vscode from 'vscode'
 import { URI } from 'vscode-uri'
 
 import { isDefined, PreciseContext } from '@sourcegraph/cody-shared'
+import { ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
 import { Editor, Range } from '@sourcegraph/cody-shared/src/editor'
 import { GraphContextFetcher } from '@sourcegraph/cody-shared/src/graph-context'
 
 export class GraphContextProvider implements GraphContextFetcher {
-    constructor(private editor: Editor) {}
+    constructor(
+        private editor: Editor,
+
+        private chatClient: ChatClient
+    ) {}
 
     public getContext(): Promise<PreciseContext[]> {
-        return getGraphContextFromEditor(this.editor)
+        return getGraphContextFromEditor(this.editor, this.chatClient)
     }
 }
 
-const recursionLimit = 1
+const recursionLimit = 0 // TODO(efritz): re-enable
 
 /**
  * Return the definitions of symbols that occur within the editor's active document. If there is
  * an active selection, we will cull the symbols to those referenced in intersecting document symbol
  * ranges.
  */
-export const getGraphContextFromEditor = async (editor: Editor): Promise<PreciseContext[]> => {
+export const getGraphContextFromEditor = async (editor: Editor, chatClient: ChatClient): Promise<PreciseContext[]> => {
     const activeEditor = editor.getActiveTextEditor()
     const workspaceRootUri = editor.getWorkspaceRootUri()
     if (!activeEditor || !workspaceRootUri) {
@@ -33,6 +38,7 @@ export const getGraphContextFromEditor = async (editor: Editor): Promise<Precise
 
     const uri = workspaceRootUri.with({ path: activeEditor.filePath })
     const contexts = await getGraphContextFromSelection(
+        chatClient,
         [{ uri, range: activeEditor.selectionRange }],
         new Map([[uri.fsPath, activeEditor.content.split('\n')]]),
         recursionLimit
@@ -61,6 +67,7 @@ interface PreciseContextWithSourceLocation extends PreciseContext {
  * a defined range, we will cull the symbols to those referenced in intersecting document symbol ranges.
  */
 const getGraphContextFromSelection = async (
+    chatClient: ChatClient,
     selections: Selection[],
     contentMap: Map<string, string[]>,
     recursionLimit: number = 0
@@ -73,7 +80,11 @@ const getGraphContextFromSelection = async (
     const documentSymbolSelections = await extractRelevantDocumentSymbolRanges(selections)
 
     // Extract identifiers from the relevant document symbol ranges and request their definitions
-    const definitionMatches = await gatherDefinitionSymbolsForSelections(documentSymbolSelections, contentMap)
+    const definitionMatches = await gatherDefinitionSymbolsForSelections(
+        chatClient,
+        documentSymbolSelections,
+        contentMap
+    )
     const definitionContexts = await openDocumentsAndExtractDefinitionContexts(contentMap, definitionMatches)
 
     // Partition contexts contexts into interfaces and non-interface values
@@ -100,6 +111,7 @@ const getGraphContextFromSelection = async (
     if (recursionLimit > 0) {
         contexts.push(
             ...(await getGraphContextFromSelection(
+                chatClient,
                 contexts.map(({ filePath, range, symbol }) => ({
                     uri: URI.file(filePath),
                     range: range
@@ -319,6 +331,7 @@ const symbolKindIndexToName = new Map([...symbolKindNames.entries()].map(([index
  * matching symbol is queried for a related symbol definition which are resolved in parallel before return.
  */
 export const gatherDefinitionSymbolsForSelections = async (
+    chatClient: ChatClient | undefined, // TODO - temporary
     selections: Selection[],
     contentMap: Map<string, string[]>,
     getDefinitions: typeof defaultGetDefinitions = defaultGetDefinitions
@@ -327,12 +340,16 @@ export const gatherDefinitionSymbolsForSelections = async (
     // with all identifiers (heuristically chosen via regex) in the relevant code ranges.
     const definitionMatches: SymbolMatch[] = []
 
+    console.log('S')
+
     for (const selection of selections) {
         const { uri, range, kind } = selection
         const lines = contentMap.get(uri.fsPath)
         if (!range || !lines) {
             continue
         }
+
+        const selectionLines: string[] = []
 
         const requestQueue: { symbolName: string; position: vscode.Position }[] = []
         for (const { start, end } of [range]) {
@@ -353,14 +370,70 @@ export const gatherDefinitionSymbolsForSelections = async (
                         position: new vscode.Position(start.line + lineIndex, match.index + 1),
                     })
                 }
+
+                selectionLines.push(line)
             }
         }
+
+        console.log('A')
+        const out = (
+            await new Promise<string>((resolve, reject) => {
+                if (chatClient === undefined) {
+                    return resolve('')
+                }
+
+                let responseText = ''
+
+                chatClient.chat(
+                    [
+                        {
+                            speaker: 'human',
+                            text: `I need to understand the following code:\n\n\`\`\`${selectionLines.join(
+                                '\n'
+                            )}\n\`\`\`\n\nThe following symbols are candidates: ${[
+                                ...new Set(requestQueue.map(s => s.symbolName)),
+                            ]
+                                .sort()
+                                .join(
+                                    ', '
+                                )}. Which of these symbols are most important to understand this code? Ignore symbols defined locally. Respond with a comma-separated list of the most important symbol names.`,
+                        },
+                    ],
+                    {
+                        onChange: (text: string) => {
+                            responseText = text
+                        },
+                        onComplete: () => {
+                            resolve(responseText)
+                        },
+                        onError: (message: string, statusCode?: number) => {
+                            reject(new Error(`Status code ${statusCode}: ${message}`))
+                        },
+                    },
+                    {
+                        temperature: 0,
+                        fast: true,
+                    }
+                )
+            })
+        )
+            .split(',')
+            .map(s => s.trim())
+
+        console.log('B')
+        const filteredRequestQueue =
+            out.length === 0 ? requestQueue : requestQueue.filter(rq => out.includes(rq.symbolName))
+        console.log(`Filtered out ${requestQueue.length - filteredRequestQueue.length} candidate symbols.`)
+        console.log({
+            all: requestQueue.map(rq => rq.symbolName),
+            filtered: filteredRequestQueue.map(rq => rq.symbolName),
+        })
 
         // NOTE: deduplicating here will save duplicate queries that are _likely_ to point to the
         // same definition, but we may be culling aggressively here for some edge cases. I don't
         // currently think that these are likely to be make-or-break a quality response on any
         // significant segment of real world questions, though.
-        for (const { symbolName, position } of dedupeWith(requestQueue, ({ symbolName }) => symbolName)) {
+        for (const { symbolName, position } of dedupeWith(filteredRequestQueue, ({ symbolName }) => symbolName)) {
             definitionMatches.push({
                 symbolName,
                 locations: getDefinitions(uri, position),
@@ -463,7 +536,7 @@ const openDocumentsAndExtractDefinitionContexts = async (
     // NOTE: Before asking for data about a document it must be opened in the workspace. This forces
     // a resolution so that the following queries that require the document context will not fail with
     // an unknown document.
-    await openDocuments(definitionMatches, contentMap)
+    await openDocuments(definitionMatches.map(({ locations }) => locations.map(({ uri }) => uri)).flat(), contentMap)
 
     // Extract definition text from our matches
     const flattenedMatches = definitionMatches.flatMap(({ locations, ...rest }) =>
@@ -477,8 +550,7 @@ const openDocumentsAndExtractDefinitionContexts = async (
  * Open each URI referenced by one of the given matches in the current workspace, and make the document
  * content retrievable by filepath by adding it to the shared content map.
  */
-const openDocuments = async (matches: ResolvedSymbolMatches[], contentMap: Map<string, string[]>): Promise<void> => {
-    const uris = matches.map(({ locations }) => locations.map(({ uri }) => uri)).flat()
+const openDocuments = async (uris: vscode.Uri[], contentMap: Map<string, string[]>): Promise<void> => {
     const uniqueUris = dedupeWith(uris, uri => uri.fsPath)
     const unseenUris = uniqueUris.filter(uri => !contentMap.has(uri.fsPath))
     const newContentMap = new Map(
