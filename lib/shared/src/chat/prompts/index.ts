@@ -7,8 +7,8 @@ export function getDefaultCommandsMap(editorCommands: CodyPrompt[] = []): Map<st
 
     // Add editor specifc commands
     for (const command of editorCommands) {
-        if (command.name) {
-            map.set(command.name, command)
+        if (command.slashCommand) {
+            map.set(command.slashCommand, command)
         }
     }
 
@@ -17,12 +17,8 @@ export function getDefaultCommandsMap(editorCommands: CodyPrompt[] = []): Map<st
     for (const key in prompts) {
         if (Object.prototype.hasOwnProperty.call(prompts, key)) {
             const prompt = prompts[key] as CodyPrompt
-            prompt.name = key
             prompt.type = 'default'
-            if (prompt.slashCommand) {
-                const slashCommand = '/' + prompt.slashCommand
-                prompt.slashCommand = slashCommand
-            }
+            prompt.slashCommand = key.startsWith('/') ? key : '/' + key
             map.set(key, prompt)
         }
     }
@@ -57,11 +53,11 @@ export interface CodyPremade {
 }
 
 export interface CodyPrompt {
-    name?: string
+    description?: string
     prompt: string
     context?: CodyPromptContext
     type?: CodyPromptType
-    slashCommand?: string
+    slashCommand: string
 }
 
 // Type of context available for prompt building

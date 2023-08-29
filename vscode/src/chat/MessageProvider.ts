@@ -601,7 +601,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
                     await this.addCustomInteraction('Command failed. Please open a file and try again.', text)
                     return null
                 }
-                const promptText = this.editor.controllers.command?.find(text, true)
+                const promptText = this.editor.controllers.command?.find(text)
                 await this.editor.controllers.command?.get('command')
                 if (promptText) {
                     return { text: promptText, recipeId: 'custom-prompt' }

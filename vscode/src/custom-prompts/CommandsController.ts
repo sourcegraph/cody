@@ -95,7 +95,7 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
                 // return the terminal output from the command for the prompt if any
                 return this.execCommand()
             case 'current':
-                return this.myPromptInProgress?.name || null
+                return this.myPromptInProgress?.description || null
             default:
                 return this.myPromptInProgress?.prompt || null
         }
@@ -110,8 +110,8 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
      *
      * @returns The prompt text for the command if found, empty string otherwise
      */
-    public find(id: string, isSlash = false): string {
-        const myPrompt = this.default.get(id, isSlash)
+    public find(id: string): string {
+        const myPrompt = this.default.get(id)
 
         debug('CommandsController:command:finding', id, { verbose: myPrompt })
 
@@ -216,9 +216,9 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
 
                 if (command.slashCommand) {
                     label = command.slashCommand
-                    description = command.name || name
+                    description = command.description || name
                 } else {
-                    label = command.name || name
+                    label = command.description || name
                     description = command.type === 'default' ? '' : command.type
                 }
 
@@ -295,7 +295,7 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
                 .map(commandItem => {
                     const command = commandItem[1]
                     const description = command.type
-                    return createQuickPickItem(command.name || commandItem[0], description)
+                    return createQuickPickItem(command.description || commandItem[0], description)
                 })
 
             const configOption = menu_options.config

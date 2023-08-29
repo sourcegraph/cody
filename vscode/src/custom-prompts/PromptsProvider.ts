@@ -3,7 +3,7 @@ import { CodyPrompt, getDefaultCommandsMap } from '@sourcegraph/cody-shared/src/
 import { debug } from '../log'
 
 // Manage default commands created by the prompts in prompts.json
-const editorCommands = [{ name: 'Refactor Selected Code', prompt: '/fix', slashCommand: '/fix' }]
+const editorCommands: CodyPrompt[] = [{ description: 'Refactor Selected Code', prompt: '/fix', slashCommand: '/fix' }]
 export class PromptsProvider {
     // The default prompts
     private defaultPromptsMap = getDefaultCommandsMap(editorCommands)
@@ -19,12 +19,12 @@ export class PromptsProvider {
     /**
      * Find a prompt by its id
      */
-    public get(id: string, isSlashCommand = false): CodyPrompt | undefined {
-        if (id.startsWith('/') || isSlashCommand) {
-            const commands = [...this.allCommands]
-            const slashCommand = commands.find(command => command[1].slashCommand === id)
-            return slashCommand ? slashCommand[1] : this.allCommands.get(id)
-        }
+    public get(id: string): CodyPrompt | undefined {
+        // if (id.startsWith('/') || isSlashCommand) {
+        //     const commands = [...this.allCommands]
+        //     const slashCommand = commands.find(command => command[1].slashCommand === id)
+        //     return slashCommand ? slashCommand[1] : this.allCommands.get(id)
+        // }
 
         return this.allCommands.get(id)
     }
