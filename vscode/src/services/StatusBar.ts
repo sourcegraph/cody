@@ -6,16 +6,23 @@ import { getConfiguration } from '../configuration'
 
 import { FeedbackOptionItems } from './FeedbackOptions'
 
+interface StatusBarError {
+    title: string
+    description: string
+    onSelect?: () => void
+}
+
 export interface CodyStatusBar {
     dispose(): void
     startLoading(label: string): () => void
+    addError(error: StatusBarError): void
 }
 
 const DEFAULT_TEXT = '$(cody-logo-heavy)'
 const DEFAULT_TOOLTIP = 'Cody Settings'
 
 const QUICK_PICK_ITEM_CHECKED_PREFIX = '$(check) '
-const QUICK_PICK_ITEM_EMPTY_INDENT_PREFIX = '\u00A0\u00A0\u00A0\u00A0 '
+const QUICK_PICK_ITEM_EMPTY_INDENT_PREFIX = '\u00A0\u00A0\u00A0\u00A0\u00A0 '
 
 export function createStatusBar(): CodyStatusBar {
     const statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right)
@@ -59,6 +66,23 @@ export function createStatusBar(): CodyStatusBar {
         const option = await vscode.window.showQuickPick(
             // These description should stay in sync with the settings in package.json
             [
+                ...(errors.length > 0
+                    ? [
+                          { label: 'notice', kind: vscode.QuickPickItemKind.Separator },
+                          ...errors.map(error => ({
+                              label: `$(alert) ${error.title}`,
+                              description: '',
+                              detail: QUICK_PICK_ITEM_EMPTY_INDENT_PREFIX + error.description,
+                              onSelect(): Promise<void> {
+                                  error.onSelect?.()
+                                  const index = errors.indexOf(error)
+                                  errors.splice(index)
+                                  rerender()
+                                  return Promise.resolve()
+                              },
+                          })),
+                      ]
+                    : []),
                 { label: 'enable/disable features', kind: vscode.QuickPickItemKind.Separator },
                 createFeatureToggle(
                     'Code Autocomplete',
@@ -129,11 +153,29 @@ export function createStatusBar(): CodyStatusBar {
     // TODO: Ensure the label is always set to the right value too.
     let openLoadingLeases = 0
 
+    const errors: StatusBarError[] = []
+
+    function rerender(): void {
+        if (openLoadingLeases > 0) {
+            statusBarItem.text = '$(loading~spin)'
+        } else {
+            statusBarItem.text = DEFAULT_TEXT
+            statusBarItem.tooltip = DEFAULT_TOOLTIP
+        }
+
+        if (errors.length > 0) {
+            statusBarItem.backgroundColor = new vscode.ThemeColor('statusBarItem.warningBackground')
+            statusBarItem.tooltip = errors[0].title
+        } else {
+            statusBarItem.backgroundColor = new vscode.ThemeColor('statusBarItem.activeBackground')
+        }
+    }
+
     return {
         startLoading(label: string) {
             openLoadingLeases++
-            statusBarItem.text = '$(loading~spin)'
             statusBarItem.tooltip = label
+            rerender()
 
             let didClose = false
             return () => {
@@ -143,11 +185,12 @@ export function createStatusBar(): CodyStatusBar {
                 didClose = true
 
                 openLoadingLeases--
-                if (openLoadingLeases === 0) {
-                    statusBarItem.text = DEFAULT_TEXT
-                    statusBarItem.tooltip = DEFAULT_TOOLTIP
-                }
+                rerender()
             }
+        },
+        addError(error: StatusBarError) {
+            errors.push(error)
+            rerender()
         },
         dispose() {
             statusBarItem.dispose()

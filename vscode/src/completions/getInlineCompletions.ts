@@ -2,6 +2,7 @@ import * as vscode from 'vscode'
 import { URI } from 'vscode-uri'
 
 import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
+import { isAbortError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
 
 import { debug } from '../log'
 
@@ -15,7 +16,7 @@ import { RequestManager, RequestParams } from './request-manager'
 import { reuseLastCandidate } from './reuse-last-candidate'
 import { ProvideInlineCompletionsItemTraceData } from './tracer'
 import { InlineCompletionItem } from './types'
-import { isAbortError, SNIPPET_WINDOW_SIZE } from './utils'
+import { SNIPPET_WINDOW_SIZE } from './utils'
 
 export interface InlineCompletionsParams {
     // Context

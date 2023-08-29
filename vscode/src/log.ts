@@ -9,7 +9,7 @@ import {
 
 import { getConfiguration } from './configuration'
 
-const outputChannel: vscode.OutputChannel = vscode.window.createOutputChannel('Cody by Sourcegraph', 'json')
+export const outputChannel: vscode.OutputChannel = vscode.window.createOutputChannel('Cody by Sourcegraph', 'json')
 
 /**
  * Logs text for debugging purposes to the "Cody by Sourcegraph" output channel.

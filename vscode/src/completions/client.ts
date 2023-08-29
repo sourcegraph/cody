@@ -7,6 +7,7 @@ import type {
     CompletionParameters,
     CompletionResponse,
 } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
+import { RateLimitError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
 
 export type CodeCompletionsParams = Omit<CompletionParameters, 'fast'>
 
@@ -63,7 +64,13 @@ export function createClient(
 
             // When rate-limiting occurs, the response is an error message
             if (response.status === 429) {
-                throw new Error(await response.text())
+                const retryAfter = response.headers.get('retry-after')
+                const limit = response.headers.get('x-ratelimit-limit')
+                throw new RateLimitError(
+                    await response.text(),
+                    limit ? parseInt(limit, 10) : undefined,
+                    retryAfter ? new Date(retryAfter) : undefined
+                )
             }
 
             if (response.body === null) {
