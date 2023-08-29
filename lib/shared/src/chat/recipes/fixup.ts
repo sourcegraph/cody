@@ -13,7 +13,7 @@ import { Recipe, RecipeContext, RecipeID } from './recipe'
  * The intent classification.
  * This is either provided by the user, or inferred from their instructions
  */
-export type FixupIntent = 'add' | 'edit' | 'fix' | 'document'
+export type FixupIntent = 'add' | 'edit' | 'document'
 const FixupIntentClassification: IntentClassificationOption<FixupIntent>[] = [
     {
         id: 'edit',
@@ -36,8 +36,7 @@ const FixupIntentClassification: IntentClassificationOption<FixupIntent>[] = [
 ]
 
 const PromptIntentInstruction: Record<Exclude<FixupIntent, 'add'>, string> = {
-    edit: 'The user wants you to replace parts of the selected code by following their instructions.',
-    fix: 'The user wants you to correct a problem in the selected code by following their instructions.',
+    edit: 'The user wants you to replace parts of the selected code or correct a problem by following their instructions.',
     document:
         'The user wants you to add documentation or comments to the selected code by following their instructions.',
 }
