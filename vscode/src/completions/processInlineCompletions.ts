@@ -136,7 +136,7 @@ export function addParseInfoToCompletions(
             : docContext.prefix
         const suffix = range
             ? document.getText(new Range(range.end as Position, document.positionAt(document.getText().length)))
-            : docContext.prefix
+            : docContext.suffix
 
         const textWithCompletion = prefix + insertText + suffix
 
