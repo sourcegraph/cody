@@ -142,6 +142,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
         }
 
         // Init tree-sitter parser asynchronously so we can use it later in the post-processing logic.
+        // If the parser won't be ready in time, we'll skip the tree-sitter post-processing.
         // TODO: move to `onDidChangeTextDocument` handler.
         if (this.config.completeExperimentalSyntacticPostProcessing) {
             void initParser(document)
