@@ -26,6 +26,7 @@ export interface Configuration {
         | 'unstable-huggingface'
         | 'unstable-fireworks'
         | 'unstable-azure-openai'
+        | null
     autocompleteAdvancedServerEndpoint: string | null
     autocompleteAdvancedModel: string | null
     autocompleteAdvancedAccessToken: string | null
