@@ -18,6 +18,9 @@ export type CompletionsClientConfig = Pick<
     'serverEndpoint' | 'accessToken' | 'debugEnable' | 'customHeaders'
 >
 
+/**
+ * Access the chat based LLM APIs via a Sourcegraph server instance.
+ */
 export abstract class SourcegraphCompletionsClient {
     private errorEncountered = false
 

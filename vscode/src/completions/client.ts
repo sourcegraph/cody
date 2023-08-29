@@ -19,6 +19,9 @@ export interface CodeCompletionsClient {
     onConfigurationChange(newConfig: CompletionsClientConfig): void
 }
 
+/**
+ * Access the code completion LLM APIs via a Sourcegraph server instance.
+ */
 export function createClient(
     config: CompletionsClientConfig,
     featureFlagProvider?: FeatureFlagProvider,
