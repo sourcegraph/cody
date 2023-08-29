@@ -12,7 +12,7 @@ import { vsCodeMocks } from '../testutils/mocks'
 import { range } from '../testutils/textDocument'
 
 import { CodeCompletionsClient } from './client'
-import { getCurrentDocContext } from './document'
+import { getCurrentDocContext } from './get-current-doc-context'
 import {
     getInlineCompletions as _getInlineCompletions,
     InlineCompletionsParams,
