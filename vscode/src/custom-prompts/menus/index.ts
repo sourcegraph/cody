@@ -1,9 +1,10 @@
+import { debounce } from 'lodash'
 import { commands, QuickPickItem, QuickPickOptions, window } from 'vscode'
 
 import { CodyPrompt } from '@sourcegraph/cody-shared'
 
 import { CustomCommandsItem } from '../utils'
-import { CustomCommandConfigMenuItems, menu_buttons } from '../utils/menu'
+import { CustomCommandConfigMenuItems, menu_buttons, menu_options } from '../utils/menu'
 
 import { CodyCommand, CustomCommandsBuilderMenu } from './CustomCommandBuilderMenu'
 
@@ -26,6 +27,27 @@ export async function showCommandMenu(items: QuickPickItem[]): Promise<CommandMe
         quickPick.matchOnDescription = true
 
         quickPick.buttons = [menu_buttons.gear]
+
+        const fallbackCommands = [menu_options.chat.label, menu_options.fix.label]
+        const updateItems = debounce((value: string, matchingItemsFound: boolean) => {
+            const fallbackItems: QuickPickItem[] = fallbackCommands.map(command => ({
+                label: command,
+                description: value,
+                alwaysShow: true,
+            }))
+            quickPick.items = matchingItemsFound ? items : fallbackItems
+        }, 200)
+        quickPick.onDidChangeValue(value => {
+            const matchingItemsFound =
+                !value.length ||
+                items.some(item =>
+                    [item.label, item.description].some(str => str?.toLowerCase().includes(value.toLowerCase()))
+                )
+
+            quickPick.matchOnDescription = matchingItemsFound
+            updateItems(value, matchingItemsFound)
+        })
+
         // On gear icon click
         quickPick.onDidTriggerButton(async () => {
             quickPick.hide()

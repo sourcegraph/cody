@@ -222,7 +222,7 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
                     description = command.type === 'default' ? '' : command.type
                 }
 
-                return createQuickPickItem(label, description, label === '/fix')
+                return createQuickPickItem(label, description)
             })
 
             // Show the list of prompts to the user using a quick pick menu
