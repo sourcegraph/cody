@@ -122,7 +122,7 @@ export async function getInlineCompletions(params: InlineCompletionsParams): Pro
         const err = unknownError instanceof Error ? unknownError : new Error(unknownError as any)
 
         params.tracer?.({ error: err.toString() })
-        error('getInlineCompletions:error', err.message, { verbose: err })
+        error('getInlineCompletions:error', err.message, err.stack, { verbose: { params, err } })
         CompletionLogger.logError(err)
 
         if (isAbortError(err)) {
