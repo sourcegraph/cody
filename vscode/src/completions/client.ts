@@ -49,7 +49,7 @@ export function createClient(
             const isFeatureFlagEnabled = featureFlagProvider
                 ? await featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteStreamingResponse)
                 : false
-            const enableStreaming = !!isNode && isFeatureFlagEnabled
+            const enableStreaming = false // !!isNode && isFeatureFlagEnabled
 
             const response = await fetch(getCodeCompletionsEndpoint(), {
                 method: 'POST',

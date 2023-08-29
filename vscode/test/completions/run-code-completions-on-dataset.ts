@@ -44,7 +44,7 @@ async function initCompletionsProvider(context: GetContextResult): Promise<Inlin
 
     const initialConfig = await getFullConfig(secretStorage)
     if (!didLogConfig) {
-        console.error('Running `initCompletionsProvider` with config:', initialConfig)
+        // console.error('Running `initCompletionsProvider` with config:', initialConfig)
         didLogConfig = true
     }
 
@@ -119,6 +119,8 @@ const iterationsPerCodeSample = parseInt(process.env.ITER || '1', 10)
 // See vscode/src/completions/context.ts:10:23
 async function generateCompletionsForDataset(codeSamples: Sample[]): Promise<void> {
     const timestamp = Date.now().toString()
+
+    const timings: any = {}
     const results: CompletionResult[] = []
     for (const [index, sample] of codeSamples.entries()) {
         const { content, fileName, languageId } = sample
@@ -155,7 +157,9 @@ async function generateCompletionsForDataset(codeSamples: Sample[]): Promise<voi
                       typeof item.insertText === 'string' ? item.insertText : ''
                   )
                 : []
-            console.error(`#${index}@i=${i}`, completions)
+            // console.error(`#${index}@i=${i}`, completions)
+
+            timings[index] = Date.now() - start
             codeSampleResults.push({
                 completions,
                 elapsed: Date.now() - start,
@@ -182,6 +186,10 @@ async function generateCompletionsForDataset(codeSamples: Sample[]): Promise<voi
     fs.mkdirSync(ENVIRONMENT_CONFIG.OUTPUT_PATH, { recursive: true })
     fs.writeFileSync(filename, JSON.stringify(results, null, 2))
     console.log('\n✅ Completions saved to:', filename)
+
+    for (const key in timings) {
+        console.error(key, timings[key])
+    }
 }
 
 generateCompletionsForDataset(completionsDataset).catch(console.error)

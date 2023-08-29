@@ -17,7 +17,7 @@ interface UnstableFireworksOptions {
 }
 
 const PROVIDER_IDENTIFIER = 'fireworks'
-const CONTEXT_WINDOW_CHARS = 5000 // ~ 2000 token limit
+const CONTEXT_WINDOW_CHARS = 8000 // ~ 2000 token limit
 
 const EOT_STARCODER = '<|endoftext|>'
 const EOT_LLAMA_CODE = ' <EOT>'
@@ -93,7 +93,7 @@ export class UnstableFireworksProvider extends Provider {
             messages: [{ speaker: 'human', text: prompt }],
             // To speed up sample generation in single-line case, we request a lower token limit
             // since we can't terminate on the first `\n`.
-            maxTokensToSample: this.options.multiline ? 256 : 30,
+            maxTokensToSample: this.options.multiline ? 204 : 50,
             temperature: 0.4,
             topP: 0.95,
             model: MODEL_MAP[this.model],
