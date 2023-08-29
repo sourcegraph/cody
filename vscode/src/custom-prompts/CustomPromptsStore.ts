@@ -10,7 +10,7 @@ import {
 } from '@sourcegraph/cody-shared/src/chat/prompts'
 import { newPromptMixin, PromptMixin } from '@sourcegraph/cody-shared/src/prompt/prompt-mixin'
 
-import { debug } from '../log'
+import { debug, error } from '../log'
 
 import {
     constructFileUri,
@@ -84,8 +84,8 @@ export class CustomPromptsStore implements vscode.Disposable {
                     await this.build('workspace')
                 }
             }
-        } catch (error) {
-            debug('CustomPromptsStore:refresh', 'failed', { verbose: error })
+        } catch (error_) {
+            error('CustomPromptsStore:refresh', 'failed', { verbose: error_ })
         }
         return { commands: this.myPromptsMap, premade: this.myPremade, starter: this.myStarter }
     }
@@ -207,7 +207,7 @@ export class CustomPromptsStore implements vscode.Disposable {
             void vscode.window.showInformationMessage(
                 'Fail: try deleting the .vscode/cody.json file in your repository or home directory manually.'
             )
-            debug('CustomPromptsStore:clear:error:', 'Failed to remove cody.json file for' + type)
+            error('CustomPromptsStore:clear:error:', 'Failed to remove cody.json file for' + type)
         }
         await deleteFile(uri)
     }

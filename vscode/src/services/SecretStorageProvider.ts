@@ -2,7 +2,7 @@ import * as vscode from 'vscode'
 
 import { isLocalApp } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
 
-import { debug } from '../log'
+import { debug, error } from '../log'
 
 export const CODY_ACCESS_TOKEN_SECRET = 'cody.access-token'
 
@@ -13,12 +13,12 @@ export async function getAccessToken(secretStorage: SecretStorage): Promise<stri
             return token
         }
         throw new Error('token not found')
-    } catch (error) {
-        debug('VSCodeSecretStorage:getAccessToken', 'failed', { verbose: error })
+    } catch (error_) {
+        error('VSCodeSecretStorage:getAccessToken', 'failed', { verbose: error_ })
         // Remove corrupted token from secret storage
         await secretStorage.delete(CODY_ACCESS_TOKEN_SECRET)
         // Display system notification because the error was caused by system storage
-        console.error(`Failed to retrieve access token for Cody from secret storage: ${error}`)
+        console.error(`Failed to retrieve access token for Cody from secret storage: ${error_}`)
         return null
     }
 }
@@ -67,8 +67,8 @@ export class VSCodeSecretStorage implements SecretStorage {
             if (value?.length > 0) {
                 await this.secretStorage.store(key, value)
             }
-        } catch (error) {
-            debug('VSCodeSecretStorage:store:failed', key, { verbose: error })
+        } catch (error_) {
+            error('VSCodeSecretStorage:store:failed', key, { verbose: error_ })
         }
     }
 
@@ -173,8 +173,8 @@ async function getAccessTokenFromFsPath(fsPath: string): Promise<string | null> 
         }
         debug('VSCodeSecretStorage:getAccessTokenFromFsPath', 'retrieved')
         return json.token
-    } catch (error) {
-        debug('VSCodeSecretStorage:getAccessTokenFromFsPath', 'failed', { verbose: error })
+    } catch (error_) {
+        error('VSCodeSecretStorage:getAccessTokenFromFsPath', 'failed', { verbose: error_ })
         return null
     }
 }

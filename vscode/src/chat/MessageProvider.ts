@@ -22,7 +22,7 @@ import { TelemetryService } from '@sourcegraph/cody-shared/src/telemetry'
 
 import { VSCodeEditor } from '../editor/vscode-editor'
 import { PlatformContext } from '../extension.common'
-import { debug } from '../log'
+import { debug, error } from '../log'
 import { FixupTask } from '../non-stop/FixupTask'
 import { AuthProvider, isNetworkError } from '../services/AuthProvider'
 import { LocalStorage } from '../services/LocalStorageProvider'
@@ -229,7 +229,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
             },
             onError: (err, statusCode) => {
                 // TODO notify the multiplexer of the error
-                debug('ChatViewProvider:onError', err)
+                error('ChatViewProvider:onError', err)
 
                 if (isAbortError(err)) {
                     this.isMessageInProgress = false
@@ -246,7 +246,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
                             this.contextProvider.config.customHeaders
                         )
                         .catch(error => console.error(error))
-                    debug('ChatViewProvider:onError:unauthUser', err, { verbose: { statusCode } })
+                    error('ChatViewProvider:onError:unauthUser', err, { verbose: { statusCode } })
                 }
 
                 if (isNetworkError(err)) {
@@ -710,8 +710,8 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
                     void vscode.commands.executeCommand('vscode.open', exportPath)
                 }
             })
-        } catch (error) {
-            debug('MessageProvider:exportHistory', 'Failed to export chat history', error)
+        } catch (error_) {
+            error('MessageProvider:exportHistory', 'Failed to export chat history', error_)
         }
     }
 
@@ -752,7 +752,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         if (this.contextProvider.context.checkEmbeddingsConnection() && searchErrors) {
             this.transcript.addErrorAsAssistantResponse(searchErrors)
             this.handleTranscriptErrors(true)
-            debug('ChatViewProvider:onLogEmbeddingsErrors', '', { verbose: searchErrors })
+            error('ChatViewProvider:onLogEmbeddingsErrors', '', { verbose: searchErrors })
         }
     }
 

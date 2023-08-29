@@ -6,7 +6,7 @@ import { LOCAL_APP_URL } from '@sourcegraph/cody-shared/src/sourcegraph-api/envi
 import { version } from '../../package.json'
 import { isOsSupportedByApp, LocalEnv } from '../chat/protocol'
 import { constructFileUri } from '../custom-prompts/utils/helpers'
-import { debug } from '../log'
+import { debug, error } from '../log'
 
 import { AppJson, LOCAL_APP_LOCATIONS } from './LocalAppFsPaths'
 import { SecretStorage } from './SecretStorageProvider'
@@ -55,7 +55,7 @@ export class LocalAppDetector implements vscode.Disposable {
         const homeDir = this.localEnv.homeDir
         // if conditions are not met, this will be a noop
         if (!this.isSupported || !homeDir) {
-            debug('LocalAppDetector:init:failed', 'osNotSupported')
+            error('LocalAppDetector:init:failed', 'osNotSupported')
             return
         }
         // Create filePaths and file watchers

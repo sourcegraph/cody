@@ -9,7 +9,7 @@ import {
 import { VsCodeCommandsController } from '@sourcegraph/cody-shared/src/editor'
 import { TelemetryService } from '@sourcegraph/cody-shared/src/telemetry'
 
-import { debug } from '../log'
+import { debug, error } from '../log'
 import { LocalStorage } from '../services/LocalStorageProvider'
 
 import { CustomPromptsStore } from './CustomPromptsStore'
@@ -268,8 +268,8 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
             }
 
             await vscode.commands.executeCommand('cody.action.commands.exec', selectedCommandID)
-        } catch (error) {
-            debug('CommandsController:commandQuickPicker', 'error', { verbose: error })
+        } catch (error_) {
+            error('CommandsController:commandQuickPicker', 'error', { verbose: error_ })
         }
     }
 
@@ -322,8 +322,8 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
             }
 
             debug('CommandsController:promptsQuickPicker:selectedPrompt', promptTitle)
-        } catch (error) {
-            debug('CommandsController:promptsQuickPicker', 'error', { verbose: error })
+        } catch (error_) {
+            error('CommandsController:promptsQuickPicker', 'error', { verbose: error_ })
         }
     }
 

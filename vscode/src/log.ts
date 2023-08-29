@@ -12,31 +12,54 @@ import { getConfiguration } from './configuration'
 export const outputChannel: vscode.OutputChannel = vscode.window.createOutputChannel('Cody by Sourcegraph', 'json')
 
 /**
- * Logs text for debugging purposes to the "Cody by Sourcegraph" output channel.
+ * Logs a debug message to the "Cody by Sourcegraph" output channel.
+ *
+ * Usage:
+ *
+ *   debug('label', 'this is a message')
+ *   debug('label', 'this is a message', 'some', 'args')
+ *   debug('label', 'this is a message', 'some', 'args', { verbose: 'verbose info goes here' })
+ */
+export function debug(filterLabel: string, text: string, ...args: unknown[]): void {
+    log('error', filterLabel, text, ...args)
+}
+
+/**
+ * Logs an error message to the "Cody by Sourcegraph" output channel.
+ *
+ * Usage:
+ *
+ *   debug('label', 'this is an error')
+ *   debug('label', 'this is an error', 'some', 'args')
+ *   debug('label', 'this is an error', 'some', 'args', { verbose: 'verbose info goes here' })
+ */
+export function error(filterLabel: string, text: string, ...args: unknown[]): void {
+    log('error', filterLabel, text, ...args)
+}
+
+/**
  *
  * There are three config settings that alter the behavior of this function.
- * A window refresh may be needed if these settings are changed for the behavior
- * change to take effect.
+ *
+ * A window refresh may be needed if these settings are changed for the behavior change to take
+ * effect.
+ *
  * - cody.debug.enabled: toggles debug logging on or off
  * - cody.debug.filter: sets a regex filter that opts-in messages with labels matching the regex
  * - cody.debug.verbose: prints out the text in the `verbose` field of the last argument
  *
- * Usage:
- * debug('label', 'this is a message')
- * debug('label', 'this is a message', 'some', 'args')
- * debug('label', 'this is a message', 'some', 'args', { verbose: 'verbose info goes here' })
  */
-export function debug(filterLabel: string, text: string, ...args: unknown[]): void {
+function log(level: 'debug' | 'error', filterLabel: string, text: string, ...args: unknown[]): void {
     const workspaceConfig = vscode.workspace.getConfiguration()
     const config = getConfiguration(workspaceConfig)
 
     const debugEnable = process.env.CODY_DEBUG_ENABLE === 'true' || config.debugEnable
 
-    if (!outputChannel || !debugEnable) {
+    if (!outputChannel || (level === 'debug' && !debugEnable)) {
         return
     }
 
-    if (config.debugFilter && !config.debugFilter.test(filterLabel)) {
+    if (level === 'debug' && config.debugFilter && !config.debugFilter.test(filterLabel)) {
         return
     }
 
@@ -80,18 +103,18 @@ export const logger: CompletionLogger = {
         let hasFinished = false
         let lastCompletion = ''
 
-        function onError(error: string): void {
+        function onError(err: string): void {
             if (hasFinished) {
                 return
             }
             hasFinished = true
-            debug(
+            error(
                 'CompletionLogger:onError',
                 JSON.stringify({
                     type,
                     status: 'error',
                     duration: Date.now() - start,
-                    error,
+                    err,
                 }),
                 { verbose: { params } }
             )

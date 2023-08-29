@@ -4,7 +4,7 @@ import { URI } from 'vscode-uri'
 import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
 import { isAbortError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
 
-import { debug } from '../log'
+import { error } from '../log'
 
 import { GetContextOptions, GetContextResult } from './context/context'
 import { DocumentHistory } from './context/history'
@@ -119,17 +119,17 @@ export async function getInlineCompletions(params: InlineCompletionsParams): Pro
         return result
     } catch (unknownError: unknown) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const error = unknownError instanceof Error ? unknownError : new Error(unknownError as any)
+        const err = unknownError instanceof Error ? unknownError : new Error(unknownError as any)
 
-        params.tracer?.({ error: error.toString() })
-        debug('getInlineCompletions:error', error.message, { verbose: error })
-        CompletionLogger.logError(error)
+        params.tracer?.({ error: err.toString() })
+        error('getInlineCompletions:error', err.message, { verbose: err })
+        CompletionLogger.logError(err)
 
-        if (isAbortError(error)) {
+        if (isAbortError(err)) {
             return null
         }
 
-        throw error
+        throw err
     } finally {
         params.setIsLoading?.(false)
     }
