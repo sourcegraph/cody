@@ -2,7 +2,7 @@ import * as vscode from 'vscode'
 import { URI } from 'vscode-uri'
 
 import { PreciseContext } from '@sourcegraph/cody-shared/src/codebase-context/messages'
-import { dedupeBy, isDefined } from '@sourcegraph/cody-shared/src/common'
+import { dedupeWith, isDefined } from '@sourcegraph/cody-shared/src/common'
 import { ActiveTextEditorSelectionRange, Editor } from '@sourcegraph/cody-shared/src/editor'
 import { GraphContextFetcher } from '@sourcegraph/cody-shared/src/graph-context'
 
@@ -78,7 +78,7 @@ const getGraphContextFromSelection = async (
     // a resolution so that the following queries that require the document context will not fail with
     // an unknown document.
 
-    const unseenDefinitionUris = dedupeBy(
+    const unseenDefinitionUris = dedupeWith(
         definitionMatches.map(({ locations }) => locations.map(({ uri }) => uri)).flat(),
         uri => uri.fsPath
     ).filter(uri => !contentMap.has(uri.fsPath))
@@ -95,7 +95,7 @@ const getGraphContextFromSelection = async (
     }
 
     // Resolve, extract, and deduplicate the symbol and location match pairs from the definition matches
-    const matches = dedupeBy(
+    const matches = dedupeWith(
         definitionMatches
             .map(({ symbolName, locations }) => locations.map(location => ({ symbolName, location })))
             .flat(),
@@ -144,7 +144,7 @@ export const extractRelevantDocumentSymbolRanges = async (
 ): Promise<Selection[]> => {
     const rangeMap = await unwrapThenableMap(
         new Map(
-            dedupeBy(
+            dedupeWith(
                 selections.map(({ uri }) => uri),
                 uri => uri.fsPath
             ).map(uri => [uri.fsPath, getDocumentSymbolRanges(uri)])
@@ -457,7 +457,7 @@ const extractSnippets = (lines: string[], symbolRanges: vscode.Range[], targetRa
 }
 
 /**
- * Returns a key unique to a given location for use with `dedupeBy`.
+ * Returns a key unique to a given location for use with `dedupeWith`.
  */
 const locationKeyFn = (location: vscode.Location): string =>
     `${location.uri}?L${location.range.start.line}:${location.range.start.character}`

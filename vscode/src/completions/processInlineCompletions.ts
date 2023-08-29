@@ -1,6 +1,6 @@
 import { Position, Range, TextDocument } from 'vscode'
 
-import { dedupeBy } from '@sourcegraph/cody-shared'
+import { dedupeWith } from '@sourcegraph/cody-shared'
 
 import { DocumentContext } from './get-current-doc-context'
 import { truncateMultilineCompletion } from './multiline'
@@ -30,7 +30,7 @@ export function processInlineCompletions(
     const visibleResults = removeEmptyCompletions(processedCompletions)
 
     // Remove duplicate results
-    const uniqueResults = dedupeBy(visibleResults, 'insertText')
+    const uniqueResults = dedupeWith(visibleResults, 'insertText')
 
     // Add parse errors info to completions
     // Does nothing if `cody.autocomplete.experimental.syntacticPostProcessing` is not enabled.
