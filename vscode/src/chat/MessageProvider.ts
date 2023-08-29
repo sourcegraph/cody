@@ -147,6 +147,9 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         MessageProvider.chatHistory = {}
         MessageProvider.inputHistory = []
         await this.localStorage.removeChatHistory()
+        // Reset the current transcript
+        this.transcript = new Transcript()
+        await this.clearAndRestartSession()
         this.telemetryService.log('CodyVSCodeExtension:clearChatHistoryButton:clicked')
     }
 
@@ -657,6 +660,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         }
         MessageProvider.chatHistory[this.currentChatID] = await this.transcript.toJSON()
         await this.saveChatHistory()
+        this.sendHistory()
     }
 
     /**
