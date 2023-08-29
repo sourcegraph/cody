@@ -870,6 +870,17 @@
           "type": "string",
           "markdownDescription": "The access token used for code autocomplete. This is only supported with a provider other than `anthropic`."
         },
+        "cody.autocomplete.advanced.model": {
+          "type": "string",
+          "enum": [
+            "starcoder-16b",
+            "starcoder-7b",
+            "starcoder-3b",
+            "starcoder-1b",
+            "llama-code-13b-instruct"
+          ],
+          "markdownDescription": "Overwrite the default model used for code autocompletion inference. This is only supported with the `unstable-fireworks` provider"
+        },
         "cody.autocomplete.advanced.embeddings": {
           "order": 99,
           "type": "boolean",
