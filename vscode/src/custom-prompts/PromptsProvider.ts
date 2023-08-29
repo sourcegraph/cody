@@ -20,12 +20,6 @@ export class PromptsProvider {
      * Find a prompt by its id
      */
     public get(id: string): CodyPrompt | undefined {
-        // if (id.startsWith('/') || isSlashCommand) {
-        //     const commands = [...this.allCommands]
-        //     const slashCommand = commands.find(command => command[1].slashCommand === id)
-        //     return slashCommand ? slashCommand[1] : this.allCommands.get(id)
-        // }
-
         return this.allCommands.get(id)
     }
 
