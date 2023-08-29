@@ -1,7 +1,7 @@
 import { LRUCache } from 'lru-cache'
 import * as vscode from 'vscode'
 
-import { DocumentContext } from './document'
+import { DocumentContext } from './get-current-doc-context'
 import { LastInlineCompletionCandidate } from './getInlineCompletions'
 import { logCompletionEvent } from './logger'
 import { processInlineCompletions } from './processInlineCompletions'

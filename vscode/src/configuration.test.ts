@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import type * as vscode from 'vscode'
 
-import { DOTCOM_URL } from './chat/protocol'
+import { DOTCOM_URL } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
+
 import { getConfiguration } from './configuration'
 
 describe('getConfiguration', () => {
@@ -32,12 +33,13 @@ describe('getConfiguration', () => {
             debugVerbose: false,
             debugFilter: null,
             telemetryLevel: 'all',
-            autocompleteAdvancedProvider: 'anthropic',
+            autocompleteAdvancedProvider: null,
             autocompleteAdvancedServerEndpoint: null,
             autocompleteAdvancedModel: null,
             autocompleteAdvancedAccessToken: null,
             autocompleteAdvancedEmbeddings: true,
             autocompleteExperimentalCompleteSuggestWidgetSelection: false,
+            autocompleteExperimentalSyntacticPostProcessing: false,
         })
     })
 
@@ -96,6 +98,8 @@ describe('getConfiguration', () => {
                         return false
                     case 'cody.autocomplete.experimental.completeSuggestWidgetSelection':
                         return false
+                    case 'cody.autocomplete.experimental.syntacticPostProcessing':
+                        return false
                     case 'cody.plugins.enabled':
                         return true
                     case 'cody.plugins.config':
@@ -143,6 +147,7 @@ describe('getConfiguration', () => {
             autocompleteAdvancedAccessToken: 'foobar',
             autocompleteAdvancedEmbeddings: false,
             autocompleteExperimentalCompleteSuggestWidgetSelection: false,
+            autocompleteExperimentalSyntacticPostProcessing: false,
         })
     })
 })

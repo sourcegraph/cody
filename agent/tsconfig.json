@@ -7,7 +7,7 @@
     "target": "es2019",
     "allowJs": true,
   },
-  "include": ["**/*", ".*", "package.json"],
+  "include": ["**/*", ".*", "package.json", "src/language-file-extensions.json"],
   "exclude": ["dist"],
   "references": [{ "path": "../lib/shared" }, { "path": "../vscode" }],
 }

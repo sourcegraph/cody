@@ -7,7 +7,7 @@ import { debug } from '../log'
 
 import { GetContextOptions, GetContextResult } from './context/context'
 import { DocumentHistory } from './context/history'
-import { DocumentContext } from './document'
+import { DocumentContext } from './get-current-doc-context'
 import * as CompletionLogger from './logger'
 import { detectMultiline } from './multiline'
 import { CompletionProviderTracer, Provider, ProviderConfig, ProviderOptions } from './providers/provider'
@@ -194,6 +194,7 @@ async function doGetInlineCompletions({
     const logId = CompletionLogger.create({
         multiline,
         providerIdentifier: providerConfig.identifier,
+        providerModel: providerConfig.model,
         languageId: document.languageId,
     })
 

@@ -1,16 +1,19 @@
-import fetch from 'isomorphic-fetch'
+import {
+    CompletionParameters,
+    CompletionResponse,
+} from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
 
-import { logger } from '../../log'
+import { CodeCompletionsClient } from '../client'
 import { getLanguageConfig } from '../language'
+import { canUsePartialCompletion } from '../streaming'
 import { Completion, ContextSnippet } from '../types'
-import { isAbortError } from '../utils'
+import { forkSignal } from '../utils'
 
-import { Provider, ProviderConfig, ProviderOptions } from './provider'
+import { CompletionProviderTracer, Provider, ProviderConfig, ProviderOptions } from './provider'
 
 interface UnstableFireworksOptions {
-    serverEndpoint: string
-    accessToken: null | string
-    model: null | string
+    client: Pick<CodeCompletionsClient, 'complete'>
+    model: keyof typeof MODEL_MAP
 }
 
 const PROVIDER_IDENTIFIER = 'fireworks'
@@ -20,29 +23,21 @@ const CONTEXT_WINDOW_CHARS = 5000 // ~ 2000 token limit
 // Model identifiers can be found in https://docs.fireworks.ai/explore/ and in our internal
 // conversations
 const MODEL_MAP = {
-    'starcoder-16b': 'accounts/fireworks/models/starcoder-16b-w8a16',
-    'starcoder-7b': 'accounts/fireworks/models/starcoder-7b-w8a16',
-    'starcoder-3b': 'accounts/fireworks/models/starcoder-3b-w8a16',
-    'starcoder-1b': 'accounts/fireworks/models/starcoder-1b-w8a16',
-    'llama-code-13b-instruct': 'accounts/fireworks/models/llama-v2-13b-code-instruct',
+    'starcoder-16b': 'fireworks/accounts/fireworks/models/starcoder-16b-w8a16',
+    'starcoder-7b': 'fireworks/accounts/fireworks/models/starcoder-7b-w8a16',
+    'starcoder-3b': 'fireworks/accounts/fireworks/models/starcoder-3b-w8a16',
+    'starcoder-1b': 'fireworks/accounts/fireworks/models/starcoder-1b-w8a16',
+    'llama-code-13b-instruct': 'fireworks/accounts/fireworks/models/llama-v2-13b-code-instruct',
 }
 
 export class UnstableFireworksProvider extends Provider {
-    private serverEndpoint: string
-    private accessToken: null | string
+    private client: Pick<CodeCompletionsClient, 'complete'>
     private model: keyof typeof MODEL_MAP
 
-    constructor(options: ProviderOptions, { serverEndpoint, accessToken, model }: UnstableFireworksOptions) {
+    constructor(options: ProviderOptions, { client, model }: UnstableFireworksOptions) {
         super(options)
-        this.serverEndpoint = serverEndpoint
-        this.accessToken = accessToken
-        if (model === null || model === '') {
-            this.model = 'starcoder-7b'
-        } else if (Object.prototype.hasOwnProperty.call(MODEL_MAP, model)) {
-            this.model = model as keyof typeof MODEL_MAP
-        } else {
-            throw new Error(`Unknown model: \`${model}\``)
-        }
+        this.client = client
+        this.model = model
     }
 
     private createPrompt(snippets: ContextSnippet[]): string {
@@ -84,63 +79,40 @@ export class UnstableFireworksProvider extends Provider {
         return prompt
     }
 
-    public async generateCompletions(abortSignal: AbortSignal, snippets: ContextSnippet[]): Promise<Completion[]> {
+    public async generateCompletions(
+        abortSignal: AbortSignal,
+        snippets: ContextSnippet[],
+        tracer?: CompletionProviderTracer
+    ): Promise<Completion[]> {
         const prompt = this.createPrompt(snippets)
 
-        const request = {
-            prompt,
+        const args: CompletionParameters = {
+            messages: [{ speaker: 'human', text: prompt }],
             // To speed up sample generation in single-line case, we request a lower token limit
             // since we can't terminate on the first `\n`.
-            max_tokens: this.options.multiline ? 256 : 30,
+            maxTokensToSample: this.options.multiline ? 256 : 30,
             temperature: 0.4,
-            top_p: 0.95,
-            n: this.options.n,
-            echo: false,
+            topP: 0.95,
             model: MODEL_MAP[this.model],
         }
 
-        const log = logger.startCompletion({
-            request,
-            provider: PROVIDER_IDENTIFIER,
-            serverEndpoint: this.serverEndpoint,
-        })
+        tracer?.params(args)
 
-        const response = await fetch(this.serverEndpoint, {
-            method: 'POST',
-            body: JSON.stringify(request),
-            headers: {
-                'Content-Type': 'application/json',
-                Authorization: `Bearer ${this.accessToken}`,
+        // Issue request
+        const responses = await this.batchAndProcessCompletions(this.client, args, this.options.n, abortSignal)
+
+        const ret = responses.map(resp => [
+            {
+                prefix: this.options.docContext.prefix,
+                content: resp.completion,
+                stopReason: resp.stopReason,
             },
-            signal: abortSignal,
-        })
+        ])
 
-        try {
-            const data = (await response.json()) as
-                | { choices: { text: string; finish_reason: string }[] }
-                | { error: { message: string } }
+        const completions = ret.flat()
+        tracer?.result({ rawResponses: responses, completions })
 
-            if ('error' in data) {
-                throw new Error(data.error.message)
-            }
-
-            const completions = data.choices.map(c => ({
-                content: postProcess(c.text, this.options.multiline),
-                stopReason: c.finish_reason,
-            }))
-            log?.onComplete(completions.map(c => c.content))
-
-            return completions.map(c => ({
-                content: c.content,
-                stopReason: c.stopReason,
-            }))
-        } catch (error: any) {
-            if (!isAbortError(error)) {
-                log?.onError(error)
-            }
-
-            throw error
-        }
+        return completions
     }
 
     private createInfillingPrompt(intro: string, prefix: string, suffix: string): string {
@@ -159,28 +131,83 @@ export class UnstableFireworksProvider extends Provider {
         console.error('Could not generate infilling prompt for', this.model)
         return `${intro}${prefix}`
     }
-}
 
-function postProcess(content: string, multiline: boolean): string {
-    content = content.replace(STOP_WORD, '')
-
-    // The model might return multiple lines for single line completions because
-    // we are only able to specify a token limit.
-    if (!multiline && content.includes('\n')) {
-        content = content.slice(0, content.indexOf('\n'))
+    private async batchAndProcessCompletions(
+        client: Pick<CodeCompletionsClient, 'complete'>,
+        params: CompletionParameters,
+        n: number,
+        abortSignal: AbortSignal
+    ): Promise<CompletionResponse[]> {
+        const responses: Promise<CompletionResponse>[] = []
+        for (let i = 0; i < n; i++) {
+            responses.push(this.fetchAndProcessCompletions(client, params, abortSignal))
+        }
+        return Promise.all(responses)
     }
 
-    return content.trim()
+    private async fetchAndProcessCompletions(
+        client: Pick<CodeCompletionsClient, 'complete'>,
+        params: CompletionParameters,
+        abortSignal: AbortSignal
+    ): Promise<CompletionResponse> {
+        // The Async executor is required to return the completion early if a partial result from SSE can be used.
+        // eslint-disable-next-line @typescript-eslint/no-misused-promises, no-async-promise-executor
+        return new Promise(async (resolve, reject) => {
+            try {
+                const abortController = forkSignal(abortSignal)
+
+                const result = await client.complete(
+                    params,
+                    (incompleteResponse: CompletionResponse) => {
+                        const processedCompletion = postProcess(incompleteResponse.completion)
+                        if (
+                            canUsePartialCompletion(processedCompletion, {
+                                document: { languageId: this.options.languageId },
+                                multiline: this.options.multiline,
+                                docContext: this.options.docContext,
+                            })
+                        ) {
+                            resolve({ ...incompleteResponse, completion: processedCompletion })
+                            abortController.abort()
+                        }
+                    },
+                    abortController.signal
+                )
+
+                resolve({ ...result, completion: postProcess(result.completion) })
+            } catch (error) {
+                reject(error)
+            }
+        })
+    }
 }
 
-export function createProviderConfig(unstableFireworksOptions: UnstableFireworksOptions): ProviderConfig {
+function postProcess(content: string): string {
+    return content.replace(STOP_WORD, '')
+}
+
+export function createProviderConfig(
+    unstableFireworksOptions: Omit<UnstableFireworksOptions, 'model'> & { model: string | null }
+): ProviderConfig {
+    const model =
+        unstableFireworksOptions.model === null || unstableFireworksOptions.model === ''
+            ? 'starcoder-7b'
+            : Object.prototype.hasOwnProperty.call(MODEL_MAP, unstableFireworksOptions.model)
+            ? (unstableFireworksOptions.model as keyof typeof MODEL_MAP)
+            : null
+
+    if (model === null) {
+        throw new Error(`Unknown model: \`${unstableFireworksOptions.model}\``)
+    }
+
     return {
         create(options: ProviderOptions) {
-            return new UnstableFireworksProvider(options, unstableFireworksOptions)
+            return new UnstableFireworksProvider(options, { ...unstableFireworksOptions, model })
         },
         maximumContextCharacters: CONTEXT_WINDOW_CHARS,
         enableExtendedMultilineTriggers: true,
         identifier: PROVIDER_IDENTIFIER,
         supportsInfilling: true,
+        model,
     }
 }

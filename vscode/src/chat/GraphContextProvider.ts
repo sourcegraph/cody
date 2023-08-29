@@ -2,7 +2,7 @@ import * as vscode from 'vscode'
 import { URI } from 'vscode-uri'
 
 import { PreciseContext } from '@sourcegraph/cody-shared/src/codebase-context/messages'
-import { isDefined } from '@sourcegraph/cody-shared/src/common'
+import { dedupeWith, isDefined } from '@sourcegraph/cody-shared/src/common'
 import { ActiveTextEditorSelectionRange, Editor } from '@sourcegraph/cody-shared/src/editor'
 import { GraphContextFetcher } from '@sourcegraph/cody-shared/src/graph-context'
 
@@ -455,14 +455,6 @@ const extractSnippets = (lines: string[], symbolRanges: vscode.Range[], targetRa
     // NOTE: inclusive upper bound
     return intersectingRanges.map(fr => lines.slice(fr.start.line, fr.end.line + 1).join('\n'))
 }
-
-/**
- * Return a filtered version of the given array, de-duplicating items based on the given key function.
- * The order of the filtered array is not guaranteed to be related to the input ordering.
- */
-const dedupeWith = <T>(items: T[], keyFn: (item: T) => string): T[] => [
-    ...new Map(items.map(item => [keyFn(item), item])).values(),
-]
 
 /**
  * Returns a key unique to a given location for use with `dedupeWith`.

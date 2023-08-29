@@ -1,6 +1,6 @@
 import detectIndent from 'detect-indent'
 
-import { DocumentContext } from './document'
+import { DocumentContext } from './get-current-doc-context'
 import { getLanguageConfig } from './language'
 import { indentation } from './text-processing'
 import {
