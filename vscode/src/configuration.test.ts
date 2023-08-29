@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import type * as vscode from 'vscode'
 
-import { DOTCOM_URL } from './chat/protocol'
+import { DOTCOM_URL } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
+
 import { getConfiguration } from './configuration'
 
 describe('getConfiguration', () => {
@@ -32,7 +33,7 @@ describe('getConfiguration', () => {
             debugVerbose: false,
             debugFilter: null,
             telemetryLevel: 'all',
-            autocompleteAdvancedProvider: 'anthropic',
+            autocompleteAdvancedProvider: null,
             autocompleteAdvancedServerEndpoint: null,
             autocompleteAdvancedModel: null,
             autocompleteAdvancedAccessToken: null,

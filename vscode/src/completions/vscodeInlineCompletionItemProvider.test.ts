@@ -63,7 +63,7 @@ class MockableInlineCompletionItemProvider extends InlineCompletionItemProvider 
             statusBar: null as any,
             providerConfig: createProviderConfig({
                 // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-explicit-any
-                completionsClient: null as any,
+                client: null as any,
                 contextWindowTokens: 2048,
             }),
             featureFlagProvider: dummyFeatureFlagProvider,

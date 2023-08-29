@@ -1,6 +1,7 @@
 import * as vscode from 'vscode'
 
 import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
+import { DOTCOM_URL, isLocalApp, LOCAL_APP_URL } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
 import { SourcegraphGraphQLAPIClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
 import { TelemetryService } from '@sourcegraph/cody-shared/src/telemetry'
 import { isError } from '@sourcegraph/cody-shared/src/utils'
@@ -9,10 +10,7 @@ import { ChatViewProviderWebview } from '../chat/ChatViewProvider'
 import {
     AuthStatus,
     defaultAuthStatus,
-    DOTCOM_URL,
     isLoggedIn as isAuthed,
-    isLocalApp,
-    LOCAL_APP_URL,
     networkErrorAuthStatus,
     unauthenticatedStatus,
 } from '../chat/protocol'

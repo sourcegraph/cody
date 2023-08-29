@@ -1,6 +1,6 @@
 import * as vscode from 'vscode'
 
-import { isDotCom, isLocalApp } from '../chat/protocol'
+import { isDotCom, isLocalApp } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
 
 export interface LoginMenuItem {
     id: string
