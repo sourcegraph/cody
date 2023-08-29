@@ -7,6 +7,7 @@ import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/confi
 import { Editor } from '@sourcegraph/cody-shared/src/editor'
 import { SourcegraphEmbeddingsSearchClient } from '@sourcegraph/cody-shared/src/embeddings/client'
 import { IndexedKeywordContextFetcher } from '@sourcegraph/cody-shared/src/local-context'
+import { isLocalApp } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
 import { SourcegraphGraphQLAPIClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
 import { TelemetryService } from '@sourcegraph/cody-shared/src/telemetry'
 import { convertGitCloneURLToCodebaseName, isError } from '@sourcegraph/cody-shared/src/utils'
@@ -23,7 +24,7 @@ import { SecretStorage } from '../services/SecretStorageProvider'
 
 import { ChatViewProviderWebview } from './ChatViewProvider'
 import { GraphContextProvider } from './GraphContextProvider'
-import { ConfigurationSubsetForWebview, isLocalApp, LocalEnv } from './protocol'
+import { ConfigurationSubsetForWebview, LocalEnv } from './protocol'
 
 export type Config = Pick<
     ConfigurationWithAccessToken,

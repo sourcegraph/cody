@@ -52,7 +52,7 @@ async function initCompletionsProvider(context: GetContextResult): Promise<Inlin
         throw new Error('`cody.autocomplete` is not true!')
     }
 
-    const { completionsClient, codebaseContext } = await configureExternalServices(
+    const { codeCompletionsClient, codebaseContext } = await configureExternalServices(
         initialConfig,
         'rg',
         undefined,
@@ -63,7 +63,7 @@ async function initCompletionsProvider(context: GetContextResult): Promise<Inlin
 
     const history = new VSCodeDocumentHistory()
 
-    providerConfig = await createProviderConfig(initialConfig, completionsClient)
+    providerConfig = await createProviderConfig(initialConfig, codeCompletionsClient)
     if (!providerConfig) {
         throw new Error('invalid completion config: no provider')
     }

@@ -1,12 +1,12 @@
 import * as anthropic from '@anthropic-ai/sdk'
 
 import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
-import { SourcegraphCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/client'
 import {
     CompletionParameters,
     CompletionResponse,
 } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
 
+import { CodeCompletionsClient } from '../client'
 import { canUsePartialCompletion } from '../streaming'
 import {
     CLOSING_CODE_TAG,
@@ -30,13 +30,13 @@ function tokensToChars(tokens: number): number {
 
 interface AnthropicOptions {
     contextWindowTokens: number
-    completionsClient: Pick<SourcegraphCompletionsClient, 'complete'>
+    client: Pick<CodeCompletionsClient, 'complete'>
 }
 
 export class AnthropicProvider extends Provider {
     private promptChars: number
     private responseTokens: number
-    private completionsClient: Pick<SourcegraphCompletionsClient, 'complete'>
+    private client: Pick<CodeCompletionsClient, 'complete'>
 
     constructor(options: ProviderOptions, anthropicOptions: AnthropicOptions) {
         super(options)
@@ -44,7 +44,7 @@ export class AnthropicProvider extends Provider {
             tokensToChars(anthropicOptions.contextWindowTokens) -
             Math.floor(tokensToChars(anthropicOptions.contextWindowTokens) * options.responsePercentage)
         this.responseTokens = Math.floor(anthropicOptions.contextWindowTokens * options.responsePercentage)
-        this.completionsClient = anthropicOptions.completionsClient
+        this.client = anthropicOptions.client
     }
 
     public emptyPromptLength(): number {
@@ -146,14 +146,8 @@ export class AnthropicProvider extends Provider {
         tracer?.params(args)
 
         // Issue request
-        const responses = await this.batchAndProcessCompletions(
-            this.completionsClient,
-            args,
-            this.options.n,
-            abortSignal
-        )
+        const responses = await this.batchAndProcessCompletions(this.client, args, this.options.n, abortSignal)
 
-        // Post-process
         const ret = responses.map(resp => [
             {
                 prefix: this.options.docContext.prefix,
@@ -169,7 +163,7 @@ export class AnthropicProvider extends Provider {
     }
 
     private async batchAndProcessCompletions(
-        client: Pick<SourcegraphCompletionsClient, 'complete'>,
+        client: Pick<CodeCompletionsClient, 'complete'>,
         params: CompletionParameters,
         n: number,
         abortSignal: AbortSignal
@@ -182,7 +176,7 @@ export class AnthropicProvider extends Provider {
     }
 
     private async fetchAndProcessCompletions(
-        client: Pick<SourcegraphCompletionsClient, 'complete'>,
+        client: Pick<CodeCompletionsClient, 'complete'>,
         params: CompletionParameters,
         abortSignal: AbortSignal
     ): Promise<CompletionResponse> {

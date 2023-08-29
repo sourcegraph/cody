@@ -3,7 +3,6 @@ import { describe, expect, test } from 'vitest'
 import { Range } from 'vscode'
 import { URI } from 'vscode-uri'
 
-import { SourcegraphCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/client'
 import {
     CompletionParameters,
     CompletionResponse,
@@ -12,6 +11,7 @@ import {
 import { vsCodeMocks } from '../testutils/mocks'
 import { range } from '../testutils/textDocument'
 
+import { CodeCompletionsClient } from './client'
 import { getCurrentDocContext } from './document'
 import {
     getInlineCompletions as _getInlineCompletions,
@@ -56,7 +56,7 @@ function params(
     } = {}
 ): InlineCompletionsParams {
     let requestCounter = 0
-    const completionsClient: Pick<SourcegraphCompletionsClient, 'complete'> = {
+    const client: Pick<CodeCompletionsClient, 'complete'> = {
         async complete(params, onPartialResponse): Promise<CompletionResponse> {
             await onNetworkRequest?.(params, onPartialResponse)
             return responses === 'never-resolve'
@@ -65,7 +65,7 @@ function params(
         },
     }
     const providerConfig = createProviderConfig({
-        completionsClient,
+        client,
         contextWindowTokens: 2048,
     })
 

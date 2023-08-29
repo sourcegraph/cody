@@ -1,8 +1,8 @@
 import { Configuration } from '@sourcegraph/cody-shared/src/configuration'
 import { FeatureFlag, FeatureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
-import { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/nodeClient'
 
 import { debug } from '../../log'
+import { CodeCompletionsClient } from '../client'
 
 import { createProviderConfig as createAnthropicProviderConfig } from './anthropic'
 import { ProviderConfig } from './provider'
@@ -13,7 +13,7 @@ import { createProviderConfig as createUnstableHuggingFaceProviderConfig } from 
 
 export async function createProviderConfig(
     config: Configuration,
-    completionsClient: SourcegraphNodeCompletionsClient,
+    client: CodeCompletionsClient,
     featureFlagProvider?: FeatureFlagProvider
 ): Promise<ProviderConfig | null> {
     const provider = await resolveDefaultProvider(config.autocompleteAdvancedProvider, featureFlagProvider)
@@ -68,23 +68,14 @@ export async function createProviderConfig(
             })
         }
         case 'unstable-fireworks': {
-            if (config.autocompleteAdvancedServerEndpoint !== null) {
-                return createUnstableFireworksProviderConfig({
-                    serverEndpoint: config.autocompleteAdvancedServerEndpoint,
-                    accessToken: config.autocompleteAdvancedAccessToken,
-                    model: config.autocompleteAdvancedModel,
-                })
-            }
-
-            debug(
-                'createProviderConfig',
-                'Provider `unstable-fireworks` can not be used without configuring `cody.autocomplete.advanced.serverEndpoint`.'
-            )
-            return null
+            return createUnstableFireworksProviderConfig({
+                client,
+                model: config.autocompleteAdvancedModel,
+            })
         }
         case 'anthropic': {
             return createAnthropicProviderConfig({
-                completionsClient,
+                client,
                 contextWindowTokens: 2048,
             })
         }

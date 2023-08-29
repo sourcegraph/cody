@@ -1,6 +1,8 @@
 import { VSCodeButton } from '@vscode/webview-ui-toolkit/react'
 
-import { AuthStatus, isLocalApp } from '../src/chat/protocol'
+import { isLocalApp } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
+
+import { AuthStatus } from '../src/chat/protocol'
 
 import { getVSCodeAPI } from './utils/VSCodeApi'
 
