@@ -69,17 +69,15 @@ export interface ConfigurationSubsetForWebview
 /**
  * URLs for the Sourcegraph instance and app.
  */
-export const DOTCOM_URL = new URL('https://sourcegraph.com')
 export const DOTCOM_CALLBACK_URL = new URL('https://sourcegraph.com/user/settings/tokens/new/callback')
 export const CODY_DOC_URL = new URL('https://docs.sourcegraph.com/cody')
-export const INTERNAL_S2_URL = new URL('https://sourcegraph.sourcegraph.com/')
+
 // Community and support
 export const DISCORD_URL = new URL('https://discord.gg/s2qDtYGnAE')
 export const CODY_FEEDBACK_URL = new URL(
     'https://github.com/sourcegraph/cody/discussions/new?category=product-feedback&labels=vscode'
 )
 // APP
-export const LOCAL_APP_URL = new URL('http://localhost:3080')
 export const APP_LANDING_URL = new URL('https://about.sourcegraph.com/app')
 export const APP_CALLBACK_URL = new URL('sourcegraph://user/settings/tokens/new/callback')
 
@@ -161,30 +159,6 @@ export function isLoggedIn(authStatus: AuthStatus): boolean {
         return false
     }
     return authStatus.authenticated && (authStatus.requiresVerifiedEmail ? authStatus.hasVerifiedEmail : true)
-}
-
-export function isLocalApp(url: string): boolean {
-    try {
-        return new URL(url).origin === LOCAL_APP_URL.origin
-    } catch {
-        return false
-    }
-}
-
-export function isDotCom(url: string): boolean {
-    try {
-        return new URL(url).origin === DOTCOM_URL.origin
-    } catch {
-        return false
-    }
-}
-
-export function isInternalUser(url: string): boolean {
-    try {
-        return new URL(url).origin === INTERNAL_S2_URL.origin
-    } catch {
-        return false
-    }
 }
 
 // The OS and Arch support for Cody app

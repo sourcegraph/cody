@@ -5,8 +5,8 @@ import type {
     ConfigurationUseContext,
     ConfigurationWithAccessToken,
 } from '@sourcegraph/cody-shared/src/configuration'
+import { DOTCOM_URL } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
 
-import { DOTCOM_URL } from './chat/protocol'
 import { CONFIG_KEY, ConfigKeys } from './configuration-keys'
 import { LocalStorage } from './services/LocalStorageProvider'
 import { getAccessToken, SecretStorage } from './services/SecretStorageProvider'

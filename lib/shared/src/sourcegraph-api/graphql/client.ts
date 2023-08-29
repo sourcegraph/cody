@@ -2,6 +2,7 @@ import fetch from 'isomorphic-fetch'
 
 import { ConfigurationWithAccessToken } from '../../configuration'
 import { isError } from '../../utils'
+import { DOTCOM_URL, isDotCom } from '../environments'
 
 import {
     CURRENT_SITE_CODY_LLM_CONFIGURATION,
@@ -182,8 +183,6 @@ export interface event {
     connectedSiteID?: string
     hashedLicenseKey?: string
 }
-
-const DOTCOM_URL = 'https://sourcegraph.com'
 
 type GraphQLAPIClientConfig = Pick<ConfigurationWithAccessToken, 'serverEndpoint' | 'accessToken' | 'customHeaders'> &
     Pick<Partial<ConfigurationWithAccessToken>, 'telemetryLevel'>
@@ -488,7 +487,7 @@ export class SourcegraphGraphQLAPIClient {
 
     // make an anonymous request to the dotcom API
     private fetchSourcegraphDotcomAPI<T>(query: string, variables: Record<string, any>): Promise<T | Error> {
-        const url = buildGraphQLUrl({ request: query, baseUrl: this.dotcomUrl })
+        const url = buildGraphQLUrl({ request: query, baseUrl: this.dotcomUrl.href })
         return fetch(url, {
             method: 'POST',
             body: JSON.stringify({ query, variables }),
@@ -508,12 +507,3 @@ function verifyResponseCode(response: Response): Response {
 
 class RepoNotFoundError extends Error {}
 export const isRepoNotFoundError = (value: unknown): value is RepoNotFoundError => value instanceof RepoNotFoundError
-
-export function isDotCom(serverEndpoint: string): boolean {
-    return new URL(serverEndpoint).origin === new URL(DOTCOM_URL).origin
-}
-
-export function isLocalhost(serverEndpoint: string): boolean {
-    const host = new URL(serverEndpoint).host
-    return host === 'localhost' || host === 'sourcegraph.test'
-}

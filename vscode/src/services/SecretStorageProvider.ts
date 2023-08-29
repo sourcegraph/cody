@@ -1,6 +1,7 @@
 import * as vscode from 'vscode'
 
-import { isLocalApp } from '../chat/protocol'
+import { isLocalApp } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
+
 import { debug } from '../log'
 
 export const CODY_ACCESS_TOKEN_SECRET = 'cody.access-token'
