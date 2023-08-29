@@ -1,4 +1,5 @@
 import { Configuration } from '@sourcegraph/cody-shared/src/configuration'
+import { FeatureFlag, FeatureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
 
 import { debug } from '../../log'
 import { CodeCompletionsClient } from '../client'
@@ -10,8 +11,13 @@ import { createProviderConfig as createUnstableCodeGenProviderConfig } from './u
 import { createProviderConfig as createUnstableFireworksProviderConfig } from './unstable-fireworks'
 import { createProviderConfig as createUnstableHuggingFaceProviderConfig } from './unstable-huggingface'
 
-export function createProviderConfig(config: Configuration, client: CodeCompletionsClient): ProviderConfig | null {
-    switch (config.autocompleteAdvancedProvider) {
+export async function createProviderConfig(
+    config: Configuration,
+    client: CodeCompletionsClient,
+    featureFlagProvider?: FeatureFlagProvider
+): Promise<ProviderConfig | null> {
+    const provider = await resolveDefaultProvider(config.autocompleteAdvancedProvider, featureFlagProvider)
+    switch (provider) {
         case 'unstable-codegen': {
             if (config.autocompleteAdvancedServerEndpoint !== null) {
                 return createUnstableCodeGenProviderConfig({
@@ -77,4 +83,19 @@ export function createProviderConfig(config: Configuration, client: CodeCompleti
             debug('createProviderConfig', `Unrecognized provider '${config.autocompleteAdvancedProvider}' configured.`)
             return null
     }
+}
+
+async function resolveDefaultProvider(
+    configuredProvider: string | null,
+    featureFlagProvider?: FeatureFlagProvider
+): Promise<string> {
+    if (configuredProvider) {
+        return configuredProvider
+    }
+
+    if (await featureFlagProvider?.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteDefaultProviderFireworks)) {
+        return 'unstable-fireworks'
+    }
+
+    return 'anthropic'
 }

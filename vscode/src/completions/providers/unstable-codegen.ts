@@ -153,5 +153,6 @@ export function createProviderConfig(unstableCodeGenOptions: UnstableCodeGenOpti
         enableExtendedMultilineTriggers: false,
         identifier: PROVIDER_IDENTIFIER,
         supportsInfilling: true,
+        model: 'codegen',
     }
 }

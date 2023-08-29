@@ -194,6 +194,7 @@ async function doGetInlineCompletions({
     const logId = CompletionLogger.create({
         multiline,
         providerIdentifier: providerConfig.identifier,
+        providerModel: providerConfig.model,
         languageId: document.languageId,
     })
 

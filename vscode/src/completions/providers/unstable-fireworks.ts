@@ -13,7 +13,7 @@ import { CompletionProviderTracer, Provider, ProviderConfig, ProviderOptions } f
 
 interface UnstableFireworksOptions {
     client: Pick<CodeCompletionsClient, 'complete'>
-    model: null | string
+    model: keyof typeof MODEL_MAP
 }
 
 const PROVIDER_IDENTIFIER = 'fireworks'
@@ -37,13 +37,7 @@ export class UnstableFireworksProvider extends Provider {
     constructor(options: ProviderOptions, { client, model }: UnstableFireworksOptions) {
         super(options)
         this.client = client
-        if (model === null || model === '') {
-            this.model = 'starcoder-7b'
-        } else if (Object.prototype.hasOwnProperty.call(MODEL_MAP, model)) {
-            this.model = model as keyof typeof MODEL_MAP
-        } else {
-            throw new Error(`Unknown model: \`${model}\``)
-        }
+        this.model = model
     }
 
     private createPrompt(snippets: ContextSnippet[]): string {
@@ -192,14 +186,28 @@ function postProcess(content: string): string {
     return content.replace(STOP_WORD, '')
 }
 
-export function createProviderConfig(unstableFireworksOptions: UnstableFireworksOptions): ProviderConfig {
+export function createProviderConfig(
+    unstableFireworksOptions: Omit<UnstableFireworksOptions, 'model'> & { model: string | null }
+): ProviderConfig {
+    const model =
+        unstableFireworksOptions.model === null || unstableFireworksOptions.model === ''
+            ? 'starcoder-7b'
+            : Object.prototype.hasOwnProperty.call(MODEL_MAP, unstableFireworksOptions.model)
+            ? (unstableFireworksOptions.model as keyof typeof MODEL_MAP)
+            : null
+
+    if (model === null) {
+        throw new Error(`Unknown model: \`${unstableFireworksOptions.model}\``)
+    }
+
     return {
         create(options: ProviderOptions) {
-            return new UnstableFireworksProvider(options, unstableFireworksOptions)
+            return new UnstableFireworksProvider(options, { ...unstableFireworksOptions, model })
         },
         maximumContextCharacters: CONTEXT_WINDOW_CHARS,
         enableExtendedMultilineTriggers: true,
         identifier: PROVIDER_IDENTIFIER,
         supportsInfilling: true,
+        model,
     }
 }

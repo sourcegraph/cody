@@ -201,7 +201,7 @@ const register = async (
             return
         }
 
-        const task = options.instruction?.replace('/edit', '').trim()
+        const task = options.instruction?.replace('/fix', '').trim()
             ? fixup.createTask(document.uri, options.instruction, range)
             : await fixup.promptUserForTask()
         if (!task) {
@@ -397,7 +397,7 @@ const register = async (
 
     let completionsProvider: vscode.Disposable | null = null
     disposables.push({ dispose: () => completionsProvider?.dispose() })
-    const setupAutocomplete = (): void => {
+    const setupAutocomplete = async (): Promise<void> => {
         const config = getConfiguration(vscode.workspace.getConfiguration())
 
         if (!config.autocomplete) {
@@ -418,7 +418,7 @@ const register = async (
             completionsProvider.dispose()
         }
 
-        completionsProvider = createInlineCompletionItemProvider(
+        completionsProvider = await createInlineCompletionItemProvider(
             config,
             codeCompletionsClient,
             statusBar,
@@ -428,10 +428,10 @@ const register = async (
     }
     vscode.workspace.onDidChangeConfiguration(event => {
         if (event.affectsConfiguration('cody.autocomplete')) {
-            setupAutocomplete()
+            void setupAutocomplete()
         }
     })
-    setupAutocomplete()
+    await setupAutocomplete()
 
     // Initiate inline chat when feature flag is on
     if (!initialConfig.inlineChat) {

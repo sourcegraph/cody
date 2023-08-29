@@ -12,16 +12,16 @@ import { createProviderConfig } from './providers/createProvider'
 import { registerAutocompleteTraceView } from './tracer/traceView'
 import { InlineCompletionItemProvider } from './vscodeInlineCompletionItemProvider'
 
-export function createInlineCompletionItemProvider(
+export async function createInlineCompletionItemProvider(
     config: Configuration,
     client: CodeCompletionsClient,
     statusBar: CodyStatusBar,
     contextProvider: ContextProvider,
     featureFlagProvider: FeatureFlagProvider
-): vscode.Disposable {
+): Promise<vscode.Disposable> {
     const disposables: vscode.Disposable[] = []
 
-    const providerConfig = createProviderConfig(config, client)
+    const providerConfig = await createProviderConfig(config, client)
     if (providerConfig) {
         const history = new VSCodeDocumentHistory()
         const completionsProvider = new InlineCompletionItemProvider({

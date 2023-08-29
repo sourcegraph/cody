@@ -120,5 +120,6 @@ export function createProviderConfig(unstableAzureOpenAIOptions: UnstableAzureOp
         enableExtendedMultilineTriggers: false,
         identifier: PROVIDER_IDENTIFIER,
         supportsInfilling: false,
+        model: 'gpt-35-turbo',
     }
 }

@@ -241,5 +241,6 @@ export function createProviderConfig(anthropicOptions: AnthropicOptions): Provid
         enableExtendedMultilineTriggers: true,
         identifier: 'anthropic',
         supportsInfilling: false,
+        model: 'claude-instant-1',
     }
 }
