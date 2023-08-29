@@ -11,7 +11,8 @@ import { AuthStatus, defaultAuthStatus, LocalEnv } from '../src/chat/protocol'
 
 import { Chat } from './Chat'
 import { LoadingPage } from './LoadingPage'
-import { LoginAlternative } from './LoginAlternative'
+import { Login } from './Login'
+import { LoginExperimentArm, LoginVariant } from './LoginExperiment'
 import { View } from './NavBar'
 import { Notices } from './Notices'
 import { UserHistory } from './UserHistory'
@@ -39,6 +40,9 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
         [string, CodyPrompt & { isLastInGroup?: boolean; instruction?: string }][] | null
     >(null)
     const [isTranscriptError, setIsTranscriptError] = useState<boolean>(false)
+
+    // TODO: Use the experiment framework to pick an arm.
+    const loginArm = LoginExperimentArm.Variant
 
     useEffect(
         () =>
@@ -148,21 +152,24 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     return (
         <div className="outer-container">
             {view === 'login' || !authStatus.isLoggedIn ? (
-                <LoginAlternative />
+                loginArm === LoginExperimentArm.Variant ? (
+                    <LoginVariant />
+                ) : (
+                    <Login
+                        authStatus={authStatus}
+                        endpoint={endpoint}
+                        isAppInstalled={isAppInstalled}
+                        isAppRunning={config?.isAppRunning}
+                        vscodeAPI={vscodeAPI}
+                        telemetryService={telemetryService}
+                        appOS={config?.os}
+                        appArch={config?.arch}
+                        uiKindIsWeb={config?.uiKindIsWeb}
+                        callbackScheme={config?.uriScheme}
+                        onLoginRedirect={onLoginRedirect}
+                    />
+                )
             ) : (
-                /* <Login
-                    authStatus={authStatus}
-                    endpoint={endpoint}
-                    isAppInstalled={isAppInstalled}
-                    isAppRunning={config?.isAppRunning}
-                    vscodeAPI={vscodeAPI}
-                    telemetryService={telemetryService}
-                    appOS={config?.os}
-                    appArch={config?.arch}
-                    uiKindIsWeb={config?.uiKindIsWeb}
-                    callbackScheme={config?.uriScheme}
-                    onLoginRedirect={onLoginRedirect}
-                /> */
                 <>
                     <Notices
                         extensionVersion={config?.extensionVersion}
