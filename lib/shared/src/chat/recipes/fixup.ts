@@ -154,24 +154,13 @@ export class Fixup implements Recipe {
                             )
                         )
                     )
+
             /**
-             * Very broad set of possible instructions.
-             * Fetch context from the users' selection and use context from current file.
+             * Broad set of possible instructions.
+             * Fetch context from the users' selection, use any errors/warnings in said selection, and use context from current file.
              * Non-code files are not considered as including Markdown syntax seems to lead to more hallucinations and poorer output quality.
              */
             case 'edit':
-                return getContextMessagesFromSelection(
-                    task.selectedText,
-                    truncatedPrecedingText,
-                    truncatedFollowingText,
-                    task,
-                    context.codebaseContext
-                )
-            /**
-             * Similar to `edit` with a narrower set of instructions.
-             * Fetch context from the users' selection, use any errors/warnings in said selection, and use context from current file.
-             */
-            case 'fix':
                 const range = task.selectionRange
                 const diagnostics = range ? context.editor.getActiveTextEditorDiagnosticsForRange(range) || [] : []
                 const errorsAndWarnings = diagnostics.filter(({ type }) => type === 'error' || type === 'warning')
