@@ -1,6 +1,6 @@
 import { CompletionParameters } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
 
-import { DocumentContext } from '../document'
+import { DocumentContext } from '../get-current-doc-context'
 import { Completion, ContextSnippet } from '../types'
 
 export interface ProviderConfig {

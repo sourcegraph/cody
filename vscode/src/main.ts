@@ -201,7 +201,7 @@ const register = async (
             return
         }
 
-        const task = options.instruction?.replace('/fix', '').trim()
+        const task = options.instruction?.replace('/edit', '').trim()
             ? fixup.createTask(document.uri, options.instruction, range)
             : await fixup.promptUserForTask()
         if (!task) {
@@ -218,18 +218,18 @@ const register = async (
     disposables.push(
         // Inline Chat Provider
         vscode.commands.registerCommand('cody.comment.add', async (comment: vscode.CommentReply) => {
-            const isFixMode = commandRegex.fix.test(comment.text.trimStart())
+            const isEditMode = commandRegex.edit.test(comment.text.trimStart())
 
             /**
              * TODO: Should we make fix the default for comments?
              * /chat or /ask could trigger a chat
              */
-            if (isFixMode) {
+            if (isEditMode) {
                 void vscode.commands.executeCommand('workbench.action.collapseAllComments')
                 const activeDocument = await vscode.workspace.openTextDocument(comment.thread.uri)
                 return executeFixup({
                     document: activeDocument,
-                    instruction: comment.text.replace(commandRegex.fix, ''),
+                    instruction: comment.text.replace(commandRegex.edit, ''),
                     range: comment.thread.range,
                 })
             }

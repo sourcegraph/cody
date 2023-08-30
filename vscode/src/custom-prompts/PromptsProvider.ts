@@ -3,7 +3,7 @@ import { CodyPrompt, getDefaultCommandsMap } from '@sourcegraph/cody-shared/src/
 import { debug } from '../log'
 
 // Manage default commands created by the prompts in prompts.json
-const editorCommands = [{ name: 'Refactor Selected Code', prompt: '/fix', slashCommand: '/fix' }]
+const editorCommands = [{ name: 'Request a Code Edit', prompt: '/edit', slashCommand: '/edit' }]
 export class PromptsProvider {
     // The default prompts
     private defaultPromptsMap = getDefaultCommandsMap(editorCommands)

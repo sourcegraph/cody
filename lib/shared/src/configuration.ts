@@ -32,6 +32,7 @@ export interface Configuration {
     autocompleteAdvancedAccessToken: string | null
     autocompleteAdvancedEmbeddings: boolean
     autocompleteExperimentalCompleteSuggestWidgetSelection?: boolean
+    autocompleteExperimentalSyntacticPostProcessing?: boolean
     pluginsEnabled?: boolean
     pluginsDebugEnabled?: boolean
     isRunningInsideAgent?: boolean
