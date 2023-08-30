@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "build": "tsc index.ts && node index.js"
+    "build": "ts-node index_file.ts"
   },
   "author": "",
   "license": "ISC",
