@@ -2,16 +2,16 @@ import { readFileSync } from 'node:fs'
 import { cwd } from 'process'
 
 import { Command } from 'commander'
+import { TextDocument } from 'vscode-languageserver-textdocument'
+
+import { AutocompleteItem, AutocompleteResult } from '@sourcegraph/cody-agent/src/protocol'
 
 import { Client, getClient } from '../../client'
 import { GlobalOptions } from '../../program'
 
-interface CompleteOptions {
-    diffFile?: string
-    otherCommits: boolean
-    dryRun: boolean
-    all: boolean
-}
+import { codyAgentComplete } from './agent'
+
+interface CompleteOptions {}
 
 export const completeCommand = new Command('complete')
     .description('Complete code in a file at a cursor location. Expects CompleteRequest data on stdin.')
@@ -54,6 +54,7 @@ interface CompleteResponse {
         fileContent: string
         range: { start: { line: number; character: number }; end: { line: number; character: number } }
     }[]
+    completionEvent?: AutocompleteResult['completionEvent']
 }
 
 export async function run(
@@ -61,16 +62,23 @@ export async function run(
     { cwd, stdin, client }: CompleteEnvironment,
     globalOptions: Pick<GlobalOptions, 'debug'>
 ): Promise<CompleteResponse> {
+    const request = JSON.parse(stdin) as CompleteRequest
+    const result = await codyAgentComplete({
+        filePath: request.uri.replace(/^file:\/\//, ''),
+        content: request.content,
+        position: request.position,
+    })
     return {
-        items: [
-            {
-                text: 'n.map(n => n * 2)',
-                fileContent: '/** multiply nums by 2 */\nfunction times2() {\n  return n.map(n => n*2)\n}',
-                range: {
-                    start: { line: 1, character: 10 },
-                    end: { line: 1, character: 23 },
-                },
-            },
-        ],
+        items: result.items.map(item => ({
+            text: item.insertText,
+            range: item.range,
+            fileContent: fileContentWithInsertText(request.content, item),
+        })),
+        completionEvent: result.completionEvent,
     }
+}
+
+function fileContentWithInsertText(content: string, item: AutocompleteItem): string {
+    const doc = TextDocument.create('file:///tmp.txt', 'typescript', 1, content)
+    return TextDocument.applyEdits(doc, [{ newText: item.insertText, range: item.range }])
 }

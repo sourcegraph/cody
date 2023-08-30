@@ -18,6 +18,7 @@ import { aliasPath } from 'esbuild-plugin-alias-path'
         format: 'cjs',
         plugins: [
             aliasPath({
+                // TODO(sqs): can just use esbuild --alias:vscode=src/vscode-shim.ts
                 alias: { vscode: path.resolve(process.cwd(), './src/vscode-shim.ts') },
             }),
         ],

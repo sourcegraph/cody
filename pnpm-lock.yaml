@@ -136,6 +136,9 @@ importers:
 
   cli:
     dependencies:
+      '@sourcegraph/cody-agent':
+        specifier: workspace:*
+        version: link:../agent
       '@sourcegraph/cody-shared':
         specifier: workspace:*
         version: link:../lib/shared
@@ -145,6 +148,9 @@ importers:
       prompts:
         specifier: ^2.4.2
         version: 2.4.2
+      vscode-languageserver-textdocument:
+        specifier: ^1.0.8
+        version: 1.0.8
     devDependencies:
       '@types/prompts':
         specifier: ^2.4.4
