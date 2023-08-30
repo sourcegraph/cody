@@ -11,6 +11,7 @@ import { InlineChatViewManager } from './chat/InlineChatViewProvider'
 import { MessageProviderOptions } from './chat/MessageProvider'
 import { CODY_FEEDBACK_URL } from './chat/protocol'
 import { createInlineCompletionItemProvider } from './completions/createVSCodeInlineCompletionItemProvider'
+import { parseAllVisibleDocuments, updateParseTreeOnEdit } from './completions/tree-sitter/parse-tree-cache'
 import { getConfiguration, getFullConfig } from './configuration'
 import { VSCodeEditor } from './editor/vscode-editor'
 import { PlatformContext } from './extension.common'
@@ -106,6 +107,12 @@ const register = async (
     // Could we use the `initialConfig` instead?
     const workspaceConfig = vscode.workspace.getConfiguration()
     const config = getConfiguration(workspaceConfig)
+
+    if (config.autocompleteExperimentalSyntacticPostProcessing) {
+        parseAllVisibleDocuments()
+        vscode.window.onDidChangeVisibleTextEditors(parseAllVisibleDocuments)
+        vscode.workspace.onDidChangeTextDocument(updateParseTreeOnEdit)
+    }
 
     const symfRunner = platform.createSymfRunner?.(config.experimentalSymfPath, config.experimentalSymfAnthropicKey)
 

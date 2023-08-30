@@ -1,11 +1,11 @@
 import { LRUCache } from 'lru-cache'
+import * as vscode from 'vscode'
 import { TextDocument } from 'vscode'
 import Parser, { Tree } from 'web-tree-sitter'
 
 import { getParseLanguage, SupportedLanguage } from './grammars'
 import { createParser, getParser } from './parser'
 
-// TODO: update parse-tree cache in the `onDidChangeTextDocument` handler.
 const parseTreesPerFile = new LRUCache<string, Tree>({
     max: 10,
 })
@@ -13,6 +13,7 @@ const parseTreesPerFile = new LRUCache<string, Tree>({
 interface ParseTreeCache {
     tree: Tree
     parser: Parser
+    cacheKey: string
 }
 
 export function getCachedParseTreeForDocument(document: TextDocument): ParseTreeCache | null {
@@ -23,16 +24,17 @@ export function getCachedParseTreeForDocument(document: TextDocument): ParseTree
     }
 
     const parser = getParser(parseLanguage)
-    const tree = parseTreesPerFile.get(document.uri.toString())
+    const cacheKey = document.uri.toString()
+    const tree = parseTreesPerFile.get(cacheKey)
 
     if (!tree || !parser) {
         return null
     }
 
-    return { tree, parser }
+    return { tree, parser, cacheKey }
 }
 
-export async function initParser(document: TextDocument): Promise<void> {
+export async function parseDocument(document: TextDocument): Promise<void> {
     const parseLanguage = getLanguageIfTreeSitterEnabled(document)
 
     if (!parseLanguage) {
@@ -64,4 +66,52 @@ function getLanguageIfTreeSitterEnabled(document: TextDocument): SupportedLangua
     }
 
     return null
+}
+
+export function updateParseTreeOnEdit(edit: vscode.TextDocumentChangeEvent) {
+    const { document, contentChanges } = edit
+    if (edit.contentChanges.length == 0) {
+        return
+    }
+
+    const cache = getCachedParseTreeForDocument(document)
+    if (!cache) {
+        return
+    }
+
+    const { tree, parser, cacheKey } = cache
+
+    for (const change of contentChanges) {
+        const startIndex = change.rangeOffset
+        const oldEndIndex = change.rangeOffset + change.rangeLength
+        const newEndIndex = change.rangeOffset + change.text.length
+        const startPosition = edit.document.positionAt(startIndex)
+        const oldEndPosition = edit.document.positionAt(oldEndIndex)
+        const newEndPosition = edit.document.positionAt(newEndIndex)
+        const startPoint = asPoint(startPosition)
+        const oldEndPoint = asPoint(oldEndPosition)
+        const newEndPoint = asPoint(newEndPosition)
+
+        tree.edit({
+            startIndex,
+            oldEndIndex,
+            newEndIndex,
+            startPosition: startPoint,
+            oldEndPosition: oldEndPoint,
+            newEndPosition: newEndPoint,
+        })
+    }
+
+    const updatedTree = parser.parse(document.getText(), tree)
+    parseTreesPerFile.set(cacheKey, updatedTree)
+}
+
+export function asPoint(position: vscode.Position): Parser.Point {
+    return { row: position.line, column: position.character }
+}
+
+export function parseAllVisibleDocuments() {
+    for (const editor of vscode.window.visibleTextEditors) {
+        parseDocument(editor.document)
+    }
 }
