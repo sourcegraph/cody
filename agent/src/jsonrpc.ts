@@ -193,7 +193,6 @@ class MessageEncoder extends Readable {
         const content = Buffer.from(JSON.stringify(data), 'utf-8')
         const header = Buffer.from(`Content-Length: ${content.byteLength}\r\n\r\n`, 'utf-8')
         this.buffer = Buffer.concat([this.buffer, header, content])
-
         this.resume()
     }
 
@@ -321,7 +320,6 @@ export class MessageHandler {
             params,
         }
         this.messageEncoder.send(data)
-
         return new Promise(resolve => {
             this.responseHandlers.set(id, resolve)
         })
@@ -334,5 +332,37 @@ export class MessageHandler {
             params,
         }
         this.messageEncoder.send(data)
+    }
+
+    /**
+     * @returns A JSON-RPC client to interact directly with this agent instance.
+     * Useful when we want to use the agent in-process without stdout/stdin
+     * transport mechanism.
+     */
+    public clientForThisInstance(): JsonrpcClient {
+        return new JsonrpcClient(this.requestHandlers, this.notificationHandlers)
+    }
+}
+
+export class JsonrpcClient {
+    constructor(
+        private readonly requestHandlers: Map<RequestMethodName, RequestCallback<any>>,
+        private readonly notificationHandlers: Map<NotificationMethodName, NotificationCallback<any>>
+    ) {}
+
+    public request<M extends RequestMethodName>(method: M, params: ParamsOf<M>): Promise<ResultOf<M>> {
+        const handler = this.requestHandlers.get(method)
+        if (handler) {
+            return handler(params)
+        }
+        throw new Error('No such request handler: ' + method)
+    }
+
+    public notify<M extends NotificationMethodName>(method: M, params: ParamsOf<M>): void {
+        const handler = this.notificationHandlers.get(method)
+        if (handler) {
+            return handler(params)
+        }
+        throw new Error('No such notification handler: ' + method)
     }
 }

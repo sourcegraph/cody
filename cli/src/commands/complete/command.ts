@@ -15,23 +15,23 @@ interface CompleteOptions {}
 
 export const completeCommand = new Command('complete')
     .description('Complete code in a file at a cursor location. Expects CompleteRequest data on stdin.')
-    .action(async (options, program: Command) =>
-        console.log(
-            JSON.stringify(
-                await run(
-                    options,
-                    {
-                        cwd: cwd(),
-                        stdin: readFileSync(process.stdin.fd, 'utf-8'),
-                        client: await getClient(program.optsWithGlobals<GlobalOptions>()),
-                    },
-                    program.optsWithGlobals<GlobalOptions>()
-                ),
-                null,
-                2
+    .action(async (options, program: Command) => {
+        try {
+            const result = await run(
+                options,
+                {
+                    cwd: cwd(),
+                    stdin: readFileSync(process.stdin.fd, 'utf-8'),
+                    client: await getClient(program.optsWithGlobals<GlobalOptions>()),
+                },
+                program.optsWithGlobals<GlobalOptions>()
             )
-        )
-    )
+            console.log(JSON.stringify(result, null, 2))
+        } catch (error) {
+            console.error('Error:', error)
+            process.exit(1)
+        }
+    })
 
 interface CompleteEnvironment {
     cwd: string
