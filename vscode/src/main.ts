@@ -110,8 +110,9 @@ const register = async (
 
     if (config.autocompleteExperimentalSyntacticPostProcessing) {
         parseAllVisibleDocuments()
-        vscode.window.onDidChangeVisibleTextEditors(parseAllVisibleDocuments)
-        vscode.workspace.onDidChangeTextDocument(updateParseTreeOnEdit)
+
+        disposables.push(vscode.window.onDidChangeVisibleTextEditors(parseAllVisibleDocuments))
+        disposables.push(vscode.workspace.onDidChangeTextDocument(updateParseTreeOnEdit))
     }
 
     const symfRunner = platform.createSymfRunner?.(config.experimentalSymfPath, config.experimentalSymfAnthropicKey)
