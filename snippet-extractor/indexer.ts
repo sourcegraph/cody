@@ -47,13 +47,13 @@ function extract(lines: string[], start: Point, end: Point): string {
     return name
 }
 
-interface GOTEM {
+interface ReturnedIdentNode {
     node: SyntaxNode
     identifier: string
 }
 
-function find(lines: string[], node: SyntaxNode): GOTEM[] {
-    let returnNodes: GOTEM[] = []
+function find(lines: string[], node: SyntaxNode): ReturnedIdentNode[] {
+    let returnNodes: ReturnedIdentNode[] = []
 
     for (let idx in node.children) {
         let child = node.children[idx]
