@@ -446,7 +446,7 @@ const recentlySpokenMessages: string[] = []
 const recentlySpokenMemoryWindow = 24
 
 const say = (message: string): void => {
-    console.log('Saying', message)
+    console.log(`Cody is thinking: ${message}`)
     spawn('say', [message])
 }
 
