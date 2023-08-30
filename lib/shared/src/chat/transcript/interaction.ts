@@ -16,6 +16,39 @@ export interface InteractionJSON {
     context?: ContextMessage[]
 }
 
+// Use case:
+// - I want to understand what context was sent to Cody
+// -- opening a context file highlights exactly what was used in the context
+// => Add a highlighter to files to show what context was sent
+// - I want to manually edit context and replay Cody responses
+// - I want to stuff context for Cody to use
+//
+// TODO:
+// Capture context as it happens in chat
+// - for now, interactions.setUsedContext or toChat
+// Q: How would you replay a message from the chat?
+// A: Something like MessageProvider executeRecipe
+// Need to plumb:
+// chat view UX -> ChatViewProvider onDidReceiveMessage -> MessageProvider
+// like ChatViewProvider onDidReceiveMessage 'edit' which does:
+// this.transcript.removeLastInteraction()
+// await this.onHumanMessageSubmitted(message.text, 'user')
+//
+// ContextFiles.tsx is the file context display
+// problem/opportunity: ContextFiles doesn't have the region in the file that is used
+// so lib/shared/src/codebase-context/messages.ts add ranges to this file
+//
+// transcript/index.ts getPromptForLastInteraction has the transcript truncation
+// code
+//
+// Add a command to "add to context" which pushes an item to the pending context
+// Add something to slurp the pending context into the used context
+//
+// Implement a viewer for those messages
+// Link to the viewer in the "read files" box
+// Implement replay, edit, add
+// Instrument the construction of: ContextFile, PreciseContext, ContextMessage
+
 export class Interaction {
     constructor(
         private readonly humanMessage: InteractionMessage,
