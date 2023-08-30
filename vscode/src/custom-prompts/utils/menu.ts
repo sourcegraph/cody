@@ -207,7 +207,7 @@ export const CustomCommandConfigMenuItems = [
 
 export async function showAskQuestionQuickPick(): Promise<string> {
     const quickPick = vscode.window.createQuickPick()
-    quickPick.title = '/ask'
+    quickPick.title = 'Ask question (/ask)'
     quickPick.placeholder = 'Your question'
     quickPick.buttons = [menu_buttons.back]
 

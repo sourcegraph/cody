@@ -70,7 +70,7 @@ export async function showCommandMenu(
             if (isSlashCommand(normalizedValue)) {
                 const [slashCommand] = normalizedValue.split(' ')
                 const matchingCommand = defaultItems.find(
-                    item => 'slashCommand' in item && item.slashCommand.toLowerCase().startsWith(slashCommand)
+                    item => 'slashCommand' in item && item.slashCommand?.toLowerCase().startsWith(slashCommand)
                 )
                 if (matchingCommand) {
                     // show only item for a matching slash command (ignore other label or description matches)
