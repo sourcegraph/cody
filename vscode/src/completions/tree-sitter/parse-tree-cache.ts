@@ -70,7 +70,7 @@ function getLanguageIfTreeSitterEnabled(document: TextDocument): SupportedLangua
 
 export function updateParseTreeOnEdit(edit: vscode.TextDocumentChangeEvent) {
     const { document, contentChanges } = edit
-    if (edit.contentChanges.length == 0) {
+    if (contentChanges.length == 0) {
         return
     }
 
@@ -85,9 +85,9 @@ export function updateParseTreeOnEdit(edit: vscode.TextDocumentChangeEvent) {
         const startIndex = change.rangeOffset
         const oldEndIndex = change.rangeOffset + change.rangeLength
         const newEndIndex = change.rangeOffset + change.text.length
-        const startPosition = edit.document.positionAt(startIndex)
-        const oldEndPosition = edit.document.positionAt(oldEndIndex)
-        const newEndPosition = edit.document.positionAt(newEndIndex)
+        const startPosition = document.positionAt(startIndex)
+        const oldEndPosition = document.positionAt(oldEndIndex)
+        const newEndPosition = document.positionAt(newEndIndex)
         const startPoint = asPoint(startPosition)
         const oldEndPoint = asPoint(oldEndPosition)
         const newEndPoint = asPoint(newEndPosition)
