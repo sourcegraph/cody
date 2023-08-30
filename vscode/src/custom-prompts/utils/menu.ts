@@ -10,9 +10,15 @@ export const NewCustomCommandConfigMenuOptions = {
     title: 'Cody Custom Commands (Experimental) - New User Command',
 }
 
+export type QuickPickItemWithSlashCommand = QuickPickItem & { slashCommand: string }
+
 const inlineSeparator: QuickPickItem = { kind: -1, label: 'inline' }
-const chatOption: QuickPickItem = { label: '/ask', description: 'Ask a Question' }
-const fixOption: QuickPickItem = { label: '/edit', description: 'Request a Code Edit' }
+const chatOption: QuickPickItemWithSlashCommand = { label: '/ask', description: 'Ask a Question', slashCommand: '/ask' }
+const fixOption: QuickPickItemWithSlashCommand = {
+    label: '/edit',
+    description: 'Request a Code Edit',
+    slashCommand: '/edit',
+}
 const commandsSeparator: QuickPickItem = { kind: -1, label: 'commands' }
 const customCommandsSeparator: QuickPickItem = { kind: -1, label: 'custom commands (experimental)' }
 const configOption: QuickPickItem = { label: 'Configure Custom Commands...' }

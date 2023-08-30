@@ -213,16 +213,18 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
                 }
                 let label: string | undefined
                 let description: string | undefined
+                let slashCommand: string | undefined
 
                 if (command.slashCommand) {
                     label = command.slashCommand
                     description = command.name || name
+                    slashCommand = command.slashCommand
                 } else {
                     label = command.name || name
                     description = command.type === 'default' ? '' : command.type
                 }
 
-                return createQuickPickItem(label, description)
+                return { label, description, slashCommand }
             })
 
             // Show the list of prompts to the user using a quick pick menu
@@ -237,13 +239,14 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
                 return
             }
 
-            const selectedCommandID = selectedPrompt.label
+            const selectedCommandID =
+                'slashCommand' in selectedPrompt ? selectedPrompt.slashCommand : selectedPrompt.label
             switch (true) {
                 case !selectedCommandID:
                     break
                 case selectedCommandID === menu_options.config.label:
                     return await vscode.commands.executeCommand('cody.settings.commands')
-                case selectedCommandID === menu_options.chat.label: {
+                case selectedCommandID === menu_options.chat.slashCommand: {
                     let input = userPrompt.trim()
                     if (input) {
                         return await vscode.commands.executeCommand('cody.action.chat', input)
@@ -252,8 +255,7 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
                     await vscode.commands.executeCommand('cody.chat.focus')
                     return await vscode.commands.executeCommand('cody.action.chat', input)
                 }
-
-                case selectedCommandID === menu_options.fix.label: {
+                case selectedCommandID === menu_options.fix.slashCommand: {
                     if (userPrompt.trim()) {
                         return await vscode.commands.executeCommand('cody.action.fixup', userPrompt)
                     }
