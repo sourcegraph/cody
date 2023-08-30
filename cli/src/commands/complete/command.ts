@@ -4,12 +4,11 @@ import { cwd } from 'process'
 import { Command } from 'commander'
 import { TextDocument } from 'vscode-languageserver-textdocument'
 
-import { AutocompleteItem, AutocompleteResult } from '@sourcegraph/cody-agent/src/protocol'
+import { Agent } from '@sourcegraph/cody-agent/src/agent'
+import { AutocompleteItem, AutocompleteParams, AutocompleteResult } from '@sourcegraph/cody-agent/src/protocol'
 
 import { Client, getClient } from '../../client'
 import { GlobalOptions } from '../../program'
-
-import { codyAgentComplete } from './agent'
 
 interface CompleteOptions {}
 
@@ -76,6 +75,37 @@ export async function run(
         })),
         completionEvent: result.completionEvent,
     }
+}
+
+interface CodyAgentCompleteParams {
+    filePath: string
+    content: string
+    position: AutocompleteParams['position']
+}
+
+async function codyAgentComplete({
+    filePath,
+    content,
+    position,
+}: CodyAgentCompleteParams): Promise<AutocompleteResult> {
+    const agent = new Agent()
+    const client = agent.clientForThisInstance()
+    await client.request('initialize', {
+        name: 'cody-cli',
+        version: '0.0.1',
+        workspaceRootUri: 'file:///tmp',
+        extensionConfiguration: {
+            accessToken: process.env.SRC_ACCESS_TOKEN ?? 'invalid',
+            serverEndpoint: process.env.SRC_ENDPOINT ?? 'invalid',
+            customHeaders: {},
+        },
+    })
+    client.notify('initialized', null)
+    client.notify('textDocument/didOpen', { filePath, content })
+    return client.request('autocomplete/execute', {
+        filePath,
+        position,
+    })
 }
 
 function fileContentWithInsertText(content: string, item: AutocompleteItem): string {
