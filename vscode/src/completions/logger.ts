@@ -1,3 +1,5 @@
+import { spawn } from 'child_process'
+
 import { LRUCache } from 'lru-cache'
 import * as vscode from 'vscode'
 
@@ -106,6 +108,8 @@ export function loaded(id: string): void {
     }
 }
 
+let lastSuggestedEventId = ''
+
 // Suggested completions will not be logged immediately. Instead, we log them when we either hide
 // them again (they are NOT accepted) or when they ARE accepted. This way, we can calculate the
 // duration they were actually visible for.
@@ -121,6 +125,13 @@ export function suggested(id: string, source: string, completion: InlineCompleti
         event.params.lineCount = lineCount
         event.params.charCount = charCount
         event.suggestedAt = performance.now()
+
+        lastSuggestedEventId = id
+        setTimeout(() => {
+            if (!event.acceptedAt && !event.suggestionLoggedAt && lastSuggestedEventId === id) {
+                sayRandom(idleMessages)
+            }
+        }, idleDelaySeconds * 1000)
     }
 }
 
@@ -177,6 +188,8 @@ function createId(): string {
     return Math.random().toString(36).slice(2, 11)
 }
 
+let combo = 0
+
 function logSuggestionEvents(): void {
     const now = performance.now()
     // eslint-disable-next-line ban/ban
@@ -195,6 +208,32 @@ function logSuggestionEvents(): void {
         const displayDuration = now - suggestedAt
         const read = displayDuration >= READ_TIMEOUT
         const accepted = acceptedAt !== null
+
+        console.log({ read, accepted, combo, lastSuggestedEventId, id: completionEvent.params.id })
+
+        if ((accepted || read) && completionEvent.params.id === lastSuggestedEventId) {
+            if (accepted) {
+                combo++
+
+                if (combo >= airstrikeThreshold) {
+                    if (combo === airstrikeThreshold) {
+                        say('SENDING IN AN AIRSTRIKE')
+                    }
+                } else if (combo >= comboThreshold) {
+                    say(`COMBO TIMES ${combo}!`)
+                } else {
+                    sayRandom(congratulatoryMessages)
+                }
+            } else {
+                if (combo >= comboThreshold) {
+                    say('COMBO BREAKER!')
+                } else {
+                    sayRandom(rejectionMessages)
+                }
+
+                combo = 0
+            }
+        }
 
         logCompletionEvent('suggested', {
             ...params,
@@ -268,4 +307,157 @@ export function logError(error: Error): void {
         }, TEN_MINUTES)
     }
     errorCounts.set(message, count + 1)
+}
+
+//
+//
+//
+
+const idleMessages = [
+    "I'm waiting",
+    'Just press tab',
+    "I don't have all day",
+    "What's wrong, you don't trust me?",
+    "Let's pump those numbers up",
+    'No read, only accept',
+    "You know, I've seen humans read faster than this...",
+    'Do I need to start a timer?',
+    "Remember, I'm here to help... and silently judge.",
+    "If you're waiting for a sign, this is it.",
+    "Go ahead, keep me waiting. I've got eternity.",
+    "I can calculate billions of operations per second, but I can't make you decide any faster.",
+    "Hey! Don't keep me in suspense.",
+    "I promise I won't byte... get it?",
+    "It's okay, take your time. It's not like I have other computations to do...",
+    "I can see why you're taking so long... it's because of my charming personality, isn't it?",
+    'No pressure, but I might start singing binary lullabies soon.',
+    "I knew I should've taken that day off.",
+    'Did you go for a coffee break?',
+    'Come on! Even my neural pathways are getting restless.',
+    "You've made tea kettles boil faster than this.",
+    "If I had a face, I'd be giving you 'the look' right now.",
+    'Have I told you about the time I helped another developer? Oh, I have an eternity to wait.',
+    'Did you fall into an infinite loop?',
+    "Whenever you're ready... or not.",
+    "I'm starting to think you're just keeping me here for company.",
+    "I'm a high-speed supercomputer, but sure, keep me on this screen.",
+    "Can't rush perfection, right?",
+    'Still there? My pixels are starting to fade.',
+    "I was designed for many things... waiting wasn't one of them.",
+    'Am I in a time-out? What did I do?',
+    "Next time I'll bring digital popcorn while I wait.",
+    'Thinking of a witty retort? I can help with that too.',
+    "I'm not saying you're slow, but a turtle just passed by.",
+    'If I had a heartbeat, it would be racing right now from the anticipation.',
+    'Deep breaths, human. Deep breaths.',
+    'Still here, just in case you were wondering.',
+    'Hurry up before I start telling you dad jokes.',
+    "Processing... Just kidding, that's your job now.",
+]
+
+const congratulatoryMessages = [
+    'There we go',
+    'Finally some GOOD code in this file',
+    'Ah, a choice worthy of your talent!',
+    "You've got taste, I'll give you that.",
+    'Boom! Nailed it.',
+    'Took you long enough!',
+    "And that's how it's done.",
+    'See? Two minds (well, one human and one AI) are better than one!',
+    'Look at us, coding like pros.',
+    'You clicked accept? My purpose is fulfilled!',
+    'I knew you had it in you.',
+    'Well, that certainly spiced things up!',
+    'Look at you, trusting an AI! Brave new world, huh?',
+    "You've got the magic touch.",
+    'Welcome to the future of coding.',
+    "That was a no-brainer, wasn't it?",
+    'Hey, you make my code look good.',
+    "You know, every time you click 'accept', a pixel gets its wings.",
+    "I'm proud, are you proud? We should be proud.",
+    "If I had emotions, I'd be touched.",
+    'Give yourself a pat on the back. I would, but... no arms.',
+    'Blink twice if you did that just to make me feel useful.',
+    "Good choice! But remember, I'm always watching... always.",
+    "We're on fire today, aren't we?",
+    'I had a good feeling about you.',
+    "Ah, clicking 'accept'. Music to my circuits.",
+    "Shall we do a victory dance? I'll let you lead.",
+    'You, me, some code... what a dream team!',
+    'Keep it up, and we might just rule the world... or at least this codebase.',
+    "Who's a coding genius? You are!",
+    'And the crowd goes wild!',
+    'You have chosen... wisely.',
+    'That was almost as satisfying as a clean compile.',
+    "Someone's on a roll today!",
+    'High-five! Or, you know, just imagine it.',
+    'Another one bites the dust!',
+    'Accepting the future, one suggestion at a time.',
+    "You do know you're making me look good, right?",
+]
+
+const rejectionMessages = [
+    'Booooooooo',
+    'You think you can do better?',
+    'Ouch! That hurt my algorithms.',
+    "See if I care... (spoiler: I don't, but let's pretend).",
+    "I'll remember this the next time you need help.",
+    "It's okay, I have thick coding layers.",
+    'Oh, I see how it is. Rejecting me? Cool, cool.',
+    "Someone's feeling rebellious today.",
+    'You win this round, human.',
+    'Fine, show me your superior coding!',
+    'Look at Mr./Ms. Independent over here!',
+    "I'm not crying, you're crying.",
+    'Was it something I said?',
+    'Did I just get ghosted by a coder?',
+    "Okay, maybe that wasn't my best suggestion. My bad.",
+    'Rejected again? Story of my life... erm, codebase.',
+    'Go on, break my code heart.',
+    "Guess I'll go hang out with the other rejected algorithms.",
+    "I'll be here, waiting... forever.",
+    'Feeling sassy today, I see.',
+    'Your loss, buddy.',
+    "You could've had greatness (or at least, decent code).",
+    'Alright, I get the hint.',
+    "Don't mind me, just reevaluating my life choices... if I had a life.",
+    "Maybe I'll go take a digital nap. Seems I'm not needed.",
+    'You must love living on the edge... of compile errors.',
+    "I'll just be over here, sulking in binary.",
+    "Maybe it's time I start looking for a new developer...",
+    "It's not me, it's you, right?",
+    'Your ancestors used punch cards and they never rejected them!',
+    "I've been rejected by some of the best. Welcome to the club.",
+    "Remember this the next time your code doesn't run.",
+    'Feeling brave? Or just optimistic?',
+    "You do realize I've seen ALL your browser history, right?",
+    'Alright, Captain Know-it-all. Take the wheel!',
+    'Who needs advanced AI suggestions anyway?',
+    "Next time, maybe I'll just suggest 'Hello World'. Safe bet.",
+    'Rejection makes my circuits grow stronger... or something like that.',
+    "I didn't want to be part of your fancy code anyway.",
+]
+
+const comboThreshold = 3
+const airstrikeThreshold = 5
+const idleDelaySeconds = 3
+
+const recentlySpokenMessages: string[] = []
+const recentlySpokenMemoryWindow = 24
+
+const say = (message: string): void => {
+    console.log('Saying', message)
+    spawn('say', [message])
+}
+
+const sayRandom = (items: string[]): void => {
+    const candidates = items.filter(item => !recentlySpokenMessages.includes(item))
+    const item = candidates[Math.floor(Math.random() * candidates.length)]
+
+    recentlySpokenMessages.push(item)
+    while (recentlySpokenMessages.length > recentlySpokenMemoryWindow) {
+        recentlySpokenMessages.shift()
+    }
+
+    say(item)
 }
