@@ -31,9 +31,9 @@ export class InlineController implements VsCodeInlineController {
     private readonly threadLabel =
         '[TIPS] New Inline Chat: `ctrl + shift + c` | Submit: `cmd + enter` | Hide: `shift + esc`'
     private options = {
-        prompt: 'Cody Inline Chat - Ask Cody a question or request inline fix with `/fix` or `/touch`.',
+        prompt: 'Cody Inline Chat - Ask Cody a question or request inline fix with `/edit` or `/touch`.',
         placeHolder:
-            'Examples: "How can I improve this?", "/fix convert tabs to spaces", "/touch Create 5 different versions of this function". "What does this regex do?"',
+            'Examples: "How can I improve this?", "/edit convert tabs to spaces", "/touch Create 5 different versions of this function". "What does this regex do?"',
     }
     private readonly codyIcon: vscode.Uri
     private readonly userIcon: vscode.Uri
@@ -229,7 +229,7 @@ export class InlineController implements VsCodeInlineController {
     /**
      * List response from Human as comment
      */
-    public async chat(reply: string, thread: vscode.CommentThread, isFixMode: boolean = false): Promise<void> {
+    public async chat(reply: string, thread: vscode.CommentThread, isEditMode: boolean = false): Promise<void> {
         this.isInProgress = true
         // disable reply until the task is completed
         thread.canReply = false
@@ -239,12 +239,12 @@ export class InlineController implements VsCodeInlineController {
         const comment = new Comment(reply, 'Me', this.userIcon, thread)
         thread.comments = [...thread.comments, comment]
 
-        if (isFixMode) {
-            await this.runFixMode(comment, thread)
+        if (isEditMode) {
+            await this.runEditMode(comment, thread)
         }
 
         this.thread = thread
-        this.selection = await this.makeSelection(isFixMode)
+        this.selection = await this.makeSelection(isEditMode)
         const firstComment = thread.comments[0]
         if (firstComment && firstComment instanceof Comment) {
             this.threads.set(firstComment.id, thread)
@@ -402,18 +402,18 @@ export class InlineController implements VsCodeInlineController {
      * Display error message when Cody is unable to complete a request
      */
     public async error(message = 'Please provide Cody with more details and try again.'): Promise<void> {
-        const fixupInProgress = this.currentTaskId.length > 0
-        const requestType = fixupInProgress ? 'fix/touch request' : 'request'
+        const editInProgress = this.currentTaskId.length > 0
+        const requestType = editInProgress ? 'edit/touch request' : 'request'
         this.reply(`Cody was unable to complete your ${requestType}. ${message}`, 'error')
-        if (fixupInProgress) {
-            await this.stopFixMode(true)
+        if (editInProgress) {
+            await this.stopEditMode(true)
             this.isInProgress = false
         }
     }
     /**
-     * Create code lense and initiate decorators for fix mode
+     * Create code lense and initiate decorators for edit mode
      */
-    private async runFixMode(comment: Comment, thread: vscode.CommentThread): Promise<void> {
+    private async runEditMode(comment: Comment, thread: vscode.CommentThread): Promise<void> {
         const lens = await this.makeCodeLenses(comment.id, this.extensionPath, thread)
         lens.updateState(CodyTaskState.working, thread.range)
         this.codeLenses.set(comment.id, lens)
@@ -425,7 +425,7 @@ export class InlineController implements VsCodeInlineController {
      * Then inform the dependents (eg. Code Lenses and Decorators) about the new range
      * so that they could update accordingly
      */
-    private async stopFixMode(error = false, newRange?: vscode.Range): Promise<void> {
+    private async stopEditMode(error = false, newRange?: vscode.Range): Promise<void> {
         if (!this.currentTaskId) {
             return
         }
@@ -448,7 +448,7 @@ export class InlineController implements VsCodeInlineController {
      * Get current selected lines from the comment thread.
      * Add an extra line to the end line to prevent empty selection on single line selection
      */
-    public async makeSelection(isFixMode: boolean): Promise<ActiveTextEditorSelection | null> {
+    public async makeSelection(isEditMode: boolean): Promise<ActiveTextEditorSelection | null> {
         if (!this.thread) {
             return null
         }
@@ -457,7 +457,7 @@ export class InlineController implements VsCodeInlineController {
         const startPost = new vscode.Position(this.thread.range.start.line, 0)
         const endPostFix = new vscode.Position(this.thread.range.end.line, lineLength)
         const endPostAsk = new vscode.Position(this.thread.range.end.line + 1, 0)
-        const selectionRange = new vscode.Range(startPost, isFixMode ? endPostFix : endPostAsk)
+        const selectionRange = new vscode.Range(startPost, isEditMode ? endPostFix : endPostAsk)
         const precedingText = activeDocument.getText(
             new vscode.Range(
                 new vscode.Position(Math.max(0, this.thread.range.start.line - SURROUNDING_LINES), 0),
@@ -508,7 +508,7 @@ export class InlineController implements VsCodeInlineController {
     public async replace(fileName: string, replacement: string, original: string): Promise<void> {
         const diff = original.trim() !== replacement.trim()
         if (!this.workspacePath || !replacement.trim() || !diff) {
-            await this.stopFixMode(true)
+            await this.stopEditMode(true)
             return
         }
         // Stop tracking for file changes to perfotm replacement
@@ -526,13 +526,13 @@ export class InlineController implements VsCodeInlineController {
             const lens = this.codeLenses.get(this.currentTaskId)
             lens?.storeContext(this.currentTaskId, documentUri, original, replacement)
 
-            await this.stopFixMode(false, newRange)
+            await this.stopEditMode(false, newRange)
             this.telemetryService.log('CodyVSCodeExtension:inline-assist:replaced')
         } catch (error) {
-            await this.stopFixMode(true)
+            await this.stopEditMode(true)
             console.error(error)
             await vscode.window.showErrorMessage(
-                'Fixup failed. Please make sure you are in a single repository workspace and try again.'
+                'Edit failed. Please make sure you are in a single repository workspace and try again.'
             )
         }
     }
