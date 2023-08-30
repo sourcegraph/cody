@@ -34,7 +34,27 @@ export interface SecretStorage {
 
 export class VSCodeSecretStorage implements SecretStorage {
     private fsPath: string | null = null
-    constructor(private secretStorage: vscode.SecretStorage) {
+
+    /**
+     * Should be set on extension activation via `secretStorage.setStorage(context.secrets)`
+     * Done to avoid passing the secret storage around as a parameter and instead
+     * access it as a singleton via the module import.
+     */
+    private _secretStorage: vscode.SecretStorage | null = null
+
+    private get secretStorage(): vscode.SecretStorage {
+        if (!this._secretStorage) {
+            throw new Error('SecretStorage not initialized')
+        }
+
+        return this._secretStorage
+    }
+
+    public setStorage(secretStorage: vscode.SecretStorage): void {
+        this._secretStorage = secretStorage
+    }
+
+    constructor() {
         const config = vscode.workspace.getConfiguration('cody')
         // For user that does not have secret storage implemented in their sever
         this.fsPath = config.get('experimental.localTokenPath') || null
@@ -42,6 +62,7 @@ export class VSCodeSecretStorage implements SecretStorage {
             debug('VSCodeSecretStorage:experimental.localTokenPath', 'enabled', { verbose: this.fsPath })
         }
     }
+
     // Catch corrupted token in secret storage
     public async get(key: string): Promise<string | undefined> {
         // If fsPath is provided, get token from fsPath instead of secret storage
@@ -181,3 +202,12 @@ async function getAccessTokenFromFsPath(fsPath: string): Promise<string | null> 
 interface ConfigJson {
     token: string
 }
+
+/**
+ * Singleton instance of the secret storage provider.
+ * The underlying storage is set on extension activation via `secretStorage.setStorage(context.secrets)`.
+ */
+export const secretStorage =
+    process.env.CODY_TESTING === 'true' || process.env.CODY_PROFILE_TEMP === 'true'
+        ? new InMemorySecretStorage()
+        : new VSCodeSecretStorage()

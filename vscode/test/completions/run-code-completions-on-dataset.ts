@@ -42,7 +42,7 @@ async function initCompletionsProvider(context: GetContextResult): Promise<Inlin
     const secretStorage = new InMemorySecretStorage()
     await secretStorage.store('cody.access-token', ENVIRONMENT_CONFIG.SOURCEGRAPH_ACCESS_TOKEN)
 
-    const initialConfig = await getFullConfig(secretStorage)
+    const initialConfig = await getFullConfig()
     if (!didLogConfig) {
         console.error('Running `initCompletionsProvider` with config:', initialConfig)
         didLogConfig = true
