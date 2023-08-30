@@ -12,7 +12,7 @@ import { AuthStatus, defaultAuthStatus, LocalEnv } from '../src/chat/protocol'
 import { Chat } from './Chat'
 import { LoadingPage } from './LoadingPage'
 import { Login } from './Login'
-import { LoginExperimentArm, LoginVariant } from './LoginExperiment'
+import { LoginExperimentArm, LoginSimplified } from './LoginExperiment'
 import { View } from './NavBar'
 import { Notices } from './Notices'
 import { UserHistory } from './UserHistory'
@@ -42,7 +42,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     const [isTranscriptError, setIsTranscriptError] = useState<boolean>(false)
 
     // TODO: Use the experiment framework to pick an arm.
-    const loginArm = LoginExperimentArm.Variant
+    const loginArm = LoginExperimentArm.Simplified
 
     useEffect(
         () =>
@@ -152,8 +152,12 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     return (
         <div className="outer-container">
             {view === 'login' || !authStatus.isLoggedIn ? (
-                loginArm === LoginExperimentArm.Variant ? (
-                    <LoginVariant />
+                loginArm === LoginExperimentArm.Simplified ? (
+                    <LoginSimplified
+                        onLoginRedirect={onLoginRedirect}
+                        telemetryService={telemetryService}
+                        uriScheme={config?.uriScheme}
+                    />
                 ) : (
                     <Login
                         authStatus={authStatus}

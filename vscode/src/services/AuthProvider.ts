@@ -312,6 +312,7 @@ export class AuthProvider {
         const isApp = params.get('type') === 'app'
         const token = params.get('code')
         const endpoint = isApp ? LOCAL_APP_URL.href : this.authStatus.endpoint
+        // TODO: Need to set authStatus.endpoint to dotcom
         if (!token || !endpoint) {
             return
         }
