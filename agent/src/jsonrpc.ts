@@ -209,6 +209,33 @@ type RequestCallback<M extends RequestMethodName> = (
 ) => Promise<ResultOf<M>>
 type NotificationCallback<M extends NotificationMethodName> = (params: ParamsOf<M>) => void
 
+export class JsonrpcClient {
+    constructor(
+        private readonly requestHandlers: Map<RequestMethodName, RequestCallback<any>>,
+        private readonly notificationHandlers: Map<NotificationMethodName, NotificationCallback<any>>
+    ) {}
+
+    public request<M extends RequestMethodName>(
+        method: M,
+        params: ParamsOf<M>,
+        token: vscode.CancellationToken
+    ): Promise<ResultOf<M>> {
+        const handler = this.requestHandlers.get(method)
+        if (handler) {
+            return handler(params, token)
+        }
+        throw new Error('No such request handler: ' + method)
+    }
+
+    public notify<M extends NotificationMethodName>(method: M, params: ParamsOf<M>): void {
+        const handler = this.notificationHandlers.get(method)
+        if (handler) {
+            return handler(params)
+        }
+        throw new Error('No such notification handler: ' + method)
+    }
+}
+
 /**
  * Only exported API in this file. MessageHandler exposes a public `messageDecoder` property
  * that can be piped with ReadStream/WriteStream.
@@ -334,5 +361,14 @@ export class MessageHandler {
             params,
         }
         this.messageEncoder.send(data)
+    }
+
+    /**
+     * @returns A JSON-RPC client to interact directly with this agent instance.
+     * Useful when we want to use the agent in-process without stdout/stdin
+     * transport mechanism.
+     */
+    public clientForThisInstance(): JsonrpcClient {
+        return new JsonrpcClient(this.requestHandlers, this.notificationHandlers)
     }
 }

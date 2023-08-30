@@ -6,6 +6,7 @@ import { afterAll, describe, it } from 'vitest'
 
 import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 
+import { AgentTextDocument } from './AgentTextDocument'
 import { MessageHandler } from './jsonrpc'
 import { ClientInfo } from './protocol'
 
@@ -107,12 +108,17 @@ describe.each([
 
     it('returns non-empty autocomplete', async () => {
         const filePath = '/path/to/foo/file.ts'
-        const content = 'function sum(a: number, b: number) {\n    \n}'
+        const caretContent = 'function sum(a: number, b: number) {\n  return Math.min({@@})\n}'
+        const offset = caretContent.indexOf('@@')
+        const content = caretContent.replace('@@', '')
+        const doc = new AgentTextDocument({ filePath, content: content })
+        const position = doc.positionAt(offset)
         client.notify('textDocument/didOpen', { filePath, content })
         const completions = await client.request('autocomplete/execute', {
             filePath,
-            position: { line: 1, character: 4 },
+            position,
         })
+
         assert(completions.items.length > 0)
     })
 

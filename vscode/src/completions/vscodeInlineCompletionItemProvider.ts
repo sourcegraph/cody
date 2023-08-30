@@ -144,8 +144,8 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
         }
         if (this.config.strategy === 'fuzzy-based') {
             return new FuzzyInlineCompletionItemProvider(
-                this.config.client,
-                abortController.signal
+                this.config.client
+                // abortController.signal
             ).provideInlineCompletionItems(
                 document,
                 position,
