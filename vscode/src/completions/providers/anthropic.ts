@@ -78,7 +78,7 @@ export class AnthropicProvider extends Provider {
             },
             {
                 speaker: 'human',
-                text: `Complete this code: ${OPENING_CODE_TAG}${head.trimmed}${CLOSING_CODE_TAG}.`,
+                text: `Complete this : ${OPENING_CODE_TAG}${head.trimmed}${CLOSING_CODE_TAG}.`,
             },
             {
                 speaker: 'assistant',
@@ -185,7 +185,7 @@ export class AnthropicProvider extends Provider {
         return new Promise(async (resolve, reject) => {
             try {
                 const abortController = forkSignal(abortSignal)
-
+                console.log({ params })
                 const result = await client.complete(
                     params,
                     (incompleteResponse: CompletionResponse) => {

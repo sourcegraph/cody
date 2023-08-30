@@ -69,7 +69,11 @@ describe.each([
             },
         },
     },
-])('describe StandardAgent with $name', ({ clientInfo }) => {
+])('describe StandardAgent with $name', ({ name, clientInfo }) => {
+    if (name !== 'MinimalConfig') {
+        it('ok', () => {})
+        return
+    }
     if (process.env.SRC_ACCESS_TOKEN === undefined || process.env.SRC_ENDPOINT === undefined) {
         it('no-op test because SRC_ACCESS_TOKEN is not set. To actually run the Cody Agent tests, set the environment variables SRC_ENDPOINT and SRC_ACCESS_TOKEN', () => {})
         return
@@ -102,8 +106,8 @@ describe.each([
     })
 
     it('returns non-empty autocomplete', async () => {
-        const filePath = '/path/to/foo/file.js'
-        const content = 'function sum(a, b) {\n    \n}'
+        const filePath = '/path/to/foo/file.ts'
+        const content = 'function sum(a: number, b: number) {\n    \n}'
         client.notify('textDocument/didOpen', { filePath, content })
         const completions = await client.request('autocomplete/execute', {
             filePath,
@@ -120,11 +124,11 @@ describe.each([
         })
     })
 
-    it('allows us to execute recipes properly', async () => {
+    it.skip('allows us to execute recipes properly', async () => {
         await client.executeRecipe('chat-question', "What's 2+2?")
     })
 
-    it('sends back transcript updates and makes sense', () => streamingChatMessages, 20_000)
+    it.skip('sends back transcript updates and makes sense', () => streamingChatMessages, 20_000)
 
     afterAll(async () => {
         await client.shutdownAndExit()

@@ -112,6 +112,8 @@ const configuration: vscode.WorkspaceConfiguration = {
                 return connectionConfig?.autocompleteAdvancedAccessToken ?? null
             case 'cody.autocomplete.advanced.embeddings':
                 return connectionConfig?.autocompleteAdvancedEmbeddings ?? true
+            case 'cody.autocomplete.advanced.strategy':
+                return 'fuzzy-based'
             case 'cody.advanced.agent.running':
                 return true
             case 'cody.debug.enable':

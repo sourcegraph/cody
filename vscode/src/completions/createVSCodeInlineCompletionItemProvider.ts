@@ -27,6 +27,7 @@ export async function createInlineCompletionItemProvider(
 
         const completionsProvider = new InlineCompletionItemProvider({
             strategy: config.autocompleteAdvancedStrategy,
+            client,
             providerConfig,
             history,
             statusBar,

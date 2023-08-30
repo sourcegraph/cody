@@ -6,8 +6,10 @@ import { FeatureFlag, FeatureFlagProvider } from '@sourcegraph/cody-shared/src/e
 import { debug } from '../log'
 import { CodyStatusBar } from '../services/StatusBar'
 
+import { CodeCompletionsClient } from './client'
 import { getContext, GetContextOptions, GetContextResult } from './context/context'
 import { DocumentHistory } from './context/history'
+import { FuzzyInlineCompletionItemProvider } from './fuzzyInlineCompletionItemProvider'
 import { DocumentContext, getCurrentDocContext } from './get-current-doc-context'
 import {
     getInlineCompletions,
@@ -24,6 +26,7 @@ import { InlineCompletionItem } from './types'
 import { getNextNonEmptyLine } from './utils/text-utils'
 
 export interface CodyCompletionItemProviderConfig {
+    client?: CodeCompletionsClient
     strategy?: string | null
     providerConfig: ProviderConfig
     history: DocumentHistory
@@ -63,12 +66,14 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
         completeSuggestWidgetSelection = false,
         completeExperimentalSyntacticPostProcessing = false,
         tracer = null,
+        client = undefined,
         strategy = null,
         ...config
     }: CodyCompletionItemProviderConfig) {
         this.config = {
             ...config,
             strategy,
+            client: client ?? (null as any),
             responsePercentage,
             prefixPercentage,
             suffixPercentage,
@@ -120,7 +125,6 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
         token?: vscode.CancellationToken
     ): Promise<vscode.InlineCompletionList | null> {
         const tracer = this.config.tracer ? createTracerForInvocation(this.config.tracer) : undefined
-        console.log({ strategy: this.config.strategy })
 
         let stopLoading: () => void | undefined
         const setIsLoading = (isLoading: boolean): void => {
@@ -137,6 +141,17 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
                 abortController.abort()
             }
             token.onCancellationRequested(() => abortController.abort())
+        }
+        if (this.config.strategy === 'fuzzy-based') {
+            return new FuzzyInlineCompletionItemProvider(
+                this.config.client,
+                abortController.signal
+            ).provideInlineCompletionItems(
+                document,
+                position,
+                context,
+                token ?? new vscode.CancellationTokenSource().token
+            )
         }
 
         // When the user has the completions popup open and an item is selected that does not match
