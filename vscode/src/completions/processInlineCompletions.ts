@@ -1,6 +1,6 @@
 import { Position, Range, TextDocument } from 'vscode'
 
-import { dedupeWith } from '@sourcegraph/cody-shared'
+import { dedupeWith } from '@sourcegraph/cody-shared/src/common'
 
 import { DocumentContext } from './get-current-doc-context'
 import { truncateMultilineCompletion } from './multiline'
