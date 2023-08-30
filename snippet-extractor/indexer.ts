@@ -5,16 +5,34 @@ const Typescript = require('tree-sitter-typescript').typescript;
 
 var fs = require('fs');
 
-const filePath = process.argv[2]
+export function indexFile(filePath: string): CompleteRequest[] {
+    const sourceCode: string = fs.readFileSync(filePath, { encoding: 'utf-8' })
 
-const sourceCode: string = fs.readFileSync(filePath, { encoding: 'utf-8' })
+    const parser = new Parser();
+    parser.setLanguage(Typescript);
 
-const parser = new Parser();
-parser.setLanguage(Typescript);
+    const tree = parser.parse(sourceCode);
 
-const tree = parser.parse(sourceCode);
+    const lines = sourceCode.split("\n")
 
-const lines = sourceCode.split("\n")
+    let returnNodes = find(lines, tree.rootNode)
+
+    let reqs: CompleteRequest[] = []
+
+    for (let r of returnNodes) {
+      reqs.push({
+        uri: "file://" + filePath,
+        content: sourceCode,
+        position: {
+          line: r.node.startPosition.row,
+          character: r.node.startPosition.column,
+        },
+        identifier: r.identifier
+      })
+    }
+
+    return reqs
+}
 
 interface CompleteRequest {
   uri: string
@@ -23,11 +41,8 @@ interface CompleteRequest {
   identifier: string
 }
 
-function extract(start: Point, end: Point): string {
+function extract(lines: string[], start: Point, end: Point): string {
   let line = lines[start.row]
-  console.log(`"${line}"`)
-  console.error(start)
-  console.error(end)
   let name = line.slice(start.column, end.column)
   return name
 }
@@ -37,7 +52,7 @@ interface GOTEM {
   identifier: string
 }
 
-function find(node: SyntaxNode): GOTEM[] {
+function find(lines: string[], node: SyntaxNode): GOTEM[] {
   let returnNodes: GOTEM[] = []
 
   for (let idx in node.children) {
@@ -46,7 +61,7 @@ function find(node: SyntaxNode): GOTEM[] {
       let returnNode = child.children[0]
       let identifierMaybe = child.children[1]
       if (returnNode.type == "return" && identifierMaybe.type == "identifier") {
-        let name = extract(identifierMaybe.startPosition, identifierMaybe.endPosition)
+        let name = extract(lines, identifierMaybe.startPosition, identifierMaybe.endPosition)
         returnNodes.push({ node: child, identifier: name })
       }
       else {
@@ -54,7 +69,7 @@ function find(node: SyntaxNode): GOTEM[] {
       }
     }
 
-    let recurse = find(child)
+    let recurse = find(lines, child)
 
     returnNodes = returnNodes.concat(recurse)
   }
@@ -62,18 +77,3 @@ function find(node: SyntaxNode): GOTEM[] {
   return returnNodes
 }
 
-let returnNodes = find(tree.rootNode)
-
-for (let r of returnNodes) {
-  const req: CompleteRequest = {
-    uri: "file://" + filePath,
-    content: sourceCode,
-    position: {
-      line: r.node.startPosition.row,
-      character: r.node.startPosition.column,
-    },
-    identifier: r.identifier
-  }
-
-  console.log(JSON.stringify(req))
-}
