@@ -68,9 +68,9 @@ function getLanguageIfTreeSitterEnabled(document: TextDocument): SupportedLangua
     return null
 }
 
-export function updateParseTreeOnEdit(edit: vscode.TextDocumentChangeEvent) {
+export function updateParseTreeOnEdit(edit: vscode.TextDocumentChangeEvent): void {
     const { document, contentChanges } = edit
-    if (contentChanges.length == 0) {
+    if (contentChanges.length === 0) {
         return
     }
 
@@ -110,8 +110,8 @@ export function asPoint(position: Pick<vscode.Position, 'line' | 'character'>): 
     return { row: position.line, column: position.character }
 }
 
-export function parseAllVisibleDocuments() {
+export function parseAllVisibleDocuments(): void {
     for (const editor of vscode.window.visibleTextEditors) {
-        parseDocument(editor.document)
+        void parseDocument(editor.document)
     }
 }
