@@ -1,4 +1,5 @@
 import Anthropic from '@anthropic-ai/sdk'
+import { AzureKeyCredential, OpenAIClient } from '@azure/openai'
 
 export interface LLMJudgement {
     answerMatchesSummary: 'yes' | 'no' | 'partial' | 'unknown'
@@ -43,15 +44,27 @@ export async function llmJudge(
         'Think step by step. Conclude your thought process with YES, NO, or PARTIAL in all capital letters as the final judgement.',
     ].join('')
 
-    const completion = await anthropic.completions.create({
-        model: 'claude-2',
-        max_tokens_to_sample: 300,
-        prompt: `${Anthropic.HUMAN_PROMPT}${instructions}${Anthropic.AI_PROMPT}Thought:`,
-    })
+    // 1. https://portal.azure.com > Azure OpenAI > sourcegraph-test-oai > Keys and Endpoint
+    // 2. Copy the key and export AZURE_API_KEY="<paste the key here>"
+    const azureApiKey = process.env.AZURE_API_KEY as string
+    const endpoint = 'https://sourcegraph-test-oai.openai.azure.com/'
+
+    const prompt = [instructions]
+
+    const client = new OpenAIClient(endpoint, new AzureKeyCredential(azureApiKey))
+    const deploymentId = 'gpt-35-turbo-test'
+    const result = await client.getCompletions(deploymentId, prompt, { maxTokens: 128 })
+    const [response] = result.choices
+
+    // const completion = await anthropic.completions.create({
+    //     model: 'claude-2',
+    //     max_tokens_to_sample: 300,
+    //     prompt: `${Anthropic.HUMAN_PROMPT}${instructions}${Anthropic.AI_PROMPT}Thought:`,
+    // })
 
     return {
-        answerMatchesSummary: doesAnswerMatchSummary(completion.completion),
-        answerMatchesSummaryJudgement: completion.completion,
+        answerMatchesSummary: doesAnswerMatchSummary(response.text),
+        answerMatchesSummaryJudgement: response.text,
     }
 }
 
