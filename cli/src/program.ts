@@ -19,7 +19,11 @@ const program = new Command()
     .version('0.0.1')
     .description('Cody CLI')
     .option('-c, --codebase <value>', 'Codebase to use for context fetching', 'github.com/sourcegraph/cody')
-    .option('-e, --endpoint <value>', 'Sourcegraph instance to connect to', 'https://sourcegraph.com')
+    .option(
+        '-e, --endpoint <value>',
+        'Sourcegraph instance to connect to',
+        process.env.SRC_ENDPOINT ?? 'https://sourcegraph.com'
+    )
     .option('--context [embeddings,keyword,none,blended]', 'How Cody fetches context', 'blended')
     .option('--debug', 'Enable debug logging', false)
     .addCommand(replCommand)

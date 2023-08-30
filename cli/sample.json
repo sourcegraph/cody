@@ -1,0 +1,1 @@
+{"uri":"file://sample.js","content":"function helloworld() {\n const msg = 'Hello World!'\n return \n}\n","position":{"line":2,"character":8},"identifier":"msg"}
