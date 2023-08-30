@@ -27,6 +27,7 @@ export interface Configuration {
         | 'unstable-fireworks'
         | 'unstable-azure-openai'
         | null
+    autocompleteAdvancedStrategy: string | null
     autocompleteAdvancedServerEndpoint: string | null
     autocompleteAdvancedModel: string | null
     autocompleteAdvancedAccessToken: string | null

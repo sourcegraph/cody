@@ -24,6 +24,7 @@ import { InlineCompletionItem } from './types'
 import { getNextNonEmptyLine } from './utils/text-utils'
 
 export interface CodyCompletionItemProviderConfig {
+    strategy?: string | null
     providerConfig: ProviderConfig
     history: DocumentHistory
     statusBar: CodyStatusBar
@@ -62,10 +63,12 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
         completeSuggestWidgetSelection = false,
         completeExperimentalSyntacticPostProcessing = false,
         tracer = null,
+        strategy = null,
         ...config
     }: CodyCompletionItemProviderConfig) {
         this.config = {
             ...config,
+            strategy,
             responsePercentage,
             prefixPercentage,
             suffixPercentage,
@@ -117,6 +120,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
         token?: vscode.CancellationToken
     ): Promise<vscode.InlineCompletionList | null> {
         const tracer = this.config.tracer ? createTracerForInvocation(this.config.tracer) : undefined
+        console.log({ strategy: this.config.strategy })
 
         let stopLoading: () => void | undefined
         const setIsLoading = (isLoading: boolean): void => {

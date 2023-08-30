@@ -852,6 +852,15 @@
           "markdownDescription": "Controls the telemetry about Cody usage and errors. See [Cody usage and privacy notice](https://about.sourcegraph.com/terms/cody-notice).",
           "default": "all"
         },
+        "cody.autocomplete.advanced.strategy": {
+          "type": "string",
+          "default": "prefix-based",
+          "enum": [
+            "prefix-based",
+            "fuzzy-based"
+          ],
+          "markdownDescription": "The strategy used to provide autocomplete suggestions. The fuzzy strategy works by using tree-sitter to collect candidate parse trees, and then fuzzy matching to filter and rank candidates. The prefix strategy works by displaying only completions that match the prefix before the cursor."
+        },
         "cody.autocomplete.advanced.provider": {
           "type": "string",
           "default": "anthropic",

@@ -58,6 +58,7 @@ export function getConfiguration(config: ConfigGetter): Configuration {
         autocompleteAdvancedProvider: config.get(CONFIG_KEY.autocompleteAdvancedProvider, null),
         experimentalSymfPath: config.get<string>(CONFIG_KEY.experimentalSymfPath, 'symf'),
         experimentalSymfAnthropicKey: config.get<string>(CONFIG_KEY.experimentalSymfAnthropicKey, ''),
+        autocompleteAdvancedStrategy: config.get<string | null>(CONFIG_KEY.autocompleteAdvancedStrategy, null),
         autocompleteAdvancedServerEndpoint: config.get<string | null>(
             CONFIG_KEY.autocompleteAdvancedServerEndpoint,
             null

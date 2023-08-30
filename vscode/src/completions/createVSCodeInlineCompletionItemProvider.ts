@@ -24,7 +24,9 @@ export async function createInlineCompletionItemProvider(
     const providerConfig = await createProviderConfig(config, client)
     if (providerConfig) {
         const history = new VSCodeDocumentHistory()
+
         const completionsProvider = new InlineCompletionItemProvider({
+            strategy: config.autocompleteAdvancedStrategy,
             providerConfig,
             history,
             statusBar,
