@@ -184,4 +184,8 @@ async function generateCompletionsForDataset(codeSamples: Sample[]): Promise<voi
     console.log('\n✅ Completions saved to:', filename)
 }
 
-generateCompletionsForDataset(completionsDataset).catch(console.error)
+void (async function () {
+    for (let i = 0; i < 10; i++) {
+        await generateCompletionsForDataset(completionsDataset).catch(console.error)
+    }
+})()

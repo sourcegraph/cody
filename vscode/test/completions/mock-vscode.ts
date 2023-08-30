@@ -26,6 +26,7 @@ const vscodeMock = {
                             return true
                         case 'cody.serverEndpoint':
                             return 'https://sourcegraph.com/'
+<<<<<<< Updated upstream
                         case 'cody.autocomplete.advanced.provider':
                             return 'anthropic'
                         // case 'cody.autocomplete.advanced.provider':
@@ -36,6 +37,21 @@ const vscodeMock = {
                         //     return 'https://api.fireworks.ai/inference/v1/completions'
                         // case 'cody.autocomplete.advanced.model':
                         //     return 'llama-code-13b-instruct'
+||||||| Stash base
+                        // case 'cody.autocomplete.advanced.provider':
+                        //     return 'anthropic'
+                        case 'cody.autocomplete.advanced.provider':
+                            return 'unstable-fireworks'
+                        case 'cody.autocomplete.advanced.model':
+                            return 'starcoder-7b'
+=======
+                        // case 'cody.autocomplete.advanced.provider':
+                        //     return 'anthropic'
+                        // case 'cody.autocomplete.advanced.provider':
+                        //     return 'unstable-fireworks'
+                        // case 'cody.autocomplete.advanced.model':
+                        //     return 'starcoder-7b'
+>>>>>>> Stashed changes
                         default:
                             return undefined
                     }
