@@ -1,9 +1,17 @@
-import fetch from 'isomorphic-fetch'
+import { HttpsAgent } from 'agentkeepalive'
+import fetch from 'node-fetch'
 
 import { ConfigurationWithAccessToken } from '../../configuration'
 import { FeatureFlag, FeatureFlagProvider } from '../../experimentation/FeatureFlagProvider'
 
 import { CompletionCallbacks, CompletionParameters, CompletionResponse, Event } from './types'
+
+const keepaliveAgent = new HttpsAgent({
+    maxSockets: 100,
+    maxFreeSockets: 10,
+    timeout: 60000, // active socket keepalive for 60 seconds
+    freeSocketTimeout: 30000, // free socket keepalive for 30 seconds
+})
 
 export interface CompletionLogger {
     startCompletion(params: CompletionParameters | {}):
@@ -83,15 +91,22 @@ export abstract class SourcegraphCompletionsClient {
             : false
         const enableStreaming = !!isNode && isFeatureFlagEnabled
 
+        const nowTime = performance.now()
         const response = await fetch(this.codeCompletionsEndpoint, {
             method: 'POST',
             body: JSON.stringify({
                 ...params,
                 stream: enableStreaming,
             }),
+            // Note: Need to set http.proxySupport to 'fallback' to test this.
+            // VS Code issue: https://github.com/microsoft/vscode/issues/173861
+            agent: keepaliveAgent,
             headers,
             signal,
         })
+        const endTime = performance.now()
+        console.log('Duration:', endTime - nowTime)
+        console.log('Agent sockets', keepaliveAgent.getCurrentStatus().sockets)
 
         // When rate-limiting occurs, the response is an error message
         if (response.status === 429) {

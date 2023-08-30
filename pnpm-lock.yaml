@@ -249,6 +249,9 @@ importers:
       '@microsoft/fetch-event-source':
         specifier: ^2.0.1
         version: 2.0.1
+      agentkeepalive:
+        specifier: ^4.5.0
+        version: 4.5.0
       dompurify:
         specifier: ^3.0.4
         version: 3.0.4
@@ -264,6 +267,9 @@ importers:
       marked:
         specifier: ^4.0.16
         version: 4.0.16
+      node-fetch:
+        specifier: ^3.3.2
+        version: 3.3.2
       vscode-uri:
         specifier: ^3.0.7
         version: 3.0.7
@@ -6661,6 +6667,13 @@ packages:
       humanize-ms: 1.2.1
     transitivePeerDependencies:
       - supports-color
+    dev: false
+
+  /agentkeepalive@4.5.0:
+    resolution: {integrity: sha512-5GG/5IbQQpC9FpkRGsSvZI5QYeSCzlJHdpBQntCsuTOxhKD8lqKhrleg2Yi7yvMIf82Ycmmqln9U8V9qwEiJew==}
+    engines: {node: '>= 8.0.0'}
+    dependencies:
+      humanize-ms: 1.2.1
     dev: false
 
   /aggregate-error@3.1.0:
