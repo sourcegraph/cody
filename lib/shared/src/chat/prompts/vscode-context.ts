@@ -1,4 +1,4 @@
-import { basename, dirname } from 'path'
+import { dirname } from 'path'
 
 import * as vscode from 'vscode'
 import { URI } from 'vscode-uri'
@@ -8,15 +8,27 @@ import { ActiveTextEditorSelection } from '../../editor'
 import { MAX_CURRENT_FILE_TOKENS } from '../../prompt/constants'
 import {
     populateCodeContextTemplate,
+    populateContextTemplateFromText,
     populateCurrentEditorContextTemplate,
     populateCurrentFileFromEditorSelectionContextTemplate,
     populateCurrentSelectedCodeContextTemplate,
+    populateListOfFilesContextTemplate,
     populateTerminalOutputContextTemplate,
 } from '../../prompt/templates'
 import { truncateText } from '../../prompt/truncation'
 import { getFileExtension } from '../recipes/helpers'
 
 import { answers, displayFileName } from './templates'
+
+/**
+ * Checks if a file URI is part of the current workspace.
+ *
+ * @param fileToCheck - The file URI to check
+ * @returns True if the file URI belongs to a workspace folder, false otherwise
+ */
+export function isInWorkspace(fileToCheck: URI): boolean {
+    return vscode.workspace.getWorkspaceFolder(fileToCheck) !== undefined
+}
 
 /**
  * Gets files from a directory, optionally filtering for test files only.
@@ -26,18 +38,23 @@ import { answers, displayFileName } from './templates'
  * @returns A Promise resolving to an array of [fileName, fileType] tuples.
  */
 export const getFilesFromDir = async (dirUri: vscode.Uri, testOnly: boolean): Promise<[string, vscode.FileType][]> => {
-    const filesInDir = await vscode.workspace.fs.readDirectory(dirUri)
+    try {
+        const filesInDir = await vscode.workspace.fs.readDirectory(dirUri)
 
-    // Filter out directories, non-test files, and dot files
-    return filesInDir.filter(file => {
-        const fileName = file[0]
-        const fileType = file[1]
-        const isDirectory = fileType === vscode.FileType.Directory
-        const isHiddenFile = fileName.startsWith('.')
-        const isTestFile = testOnly ? fileName.includes('test') : true
+        // Filter out directories, non-test files, and dot files
+        return filesInDir.filter(file => {
+            const fileName = file[0]
+            const fileType = file[1]
+            const isDirectory = fileType === vscode.FileType.Directory
+            const isHiddenFile = fileName.startsWith('.')
+            const isTestFile = testOnly ? fileName.includes('test') : true
 
-        return !isDirectory && !isHiddenFile && isTestFile
-    })
+            return !isDirectory && !isHiddenFile && isTestFile
+        })
+    } catch (error) {
+        console.error(error)
+        return []
+    }
 }
 
 /**
@@ -60,7 +77,7 @@ export async function getFilePathContext(filePath: string): Promise<ContextMessa
             fileName,
         })
     } catch (error) {
-        console.log(error)
+        console.error(error)
         return []
     }
 }
@@ -104,113 +121,95 @@ export async function getCurrentDirContext(isTestOnly: boolean): Promise<Context
     return getEditorDirContext(currentDir, currentFile, isTestOnly)
 }
 
-/**
- * Gets editor directory context.
- *
- * @param directoryPath - The path to the directory to get context for.
- * @param currentFileName - Optional current file name.
- * @param onlyTests - Whether to only include test files in the context.
- * Default is false.
- *
- * @returns A promise that resolves to the context messages for the directory.
- */
 export async function getEditorDirContext(
     directoryPath: string,
     currentFileName?: string,
-    onlyTests = false
+    testFilesOnly = false
 ): Promise<ContextMessage[]> {
-    try {
-        const directoryUri = vscode.Uri.file(directoryPath)
-        const filteredFiles = await getFilesFromDir(directoryUri, onlyTests)
+    const directoryUri = vscode.Uri.file(directoryPath)
+    const filteredFiles = await getFilteredFiles(directoryUri, testFilesOnly)
 
-        const contextMessages: ContextMessage[] = []
-
-        if (onlyTests) {
-            contextMessages.push(...(await populateVscodeDirContextMessage(directoryUri, filteredFiles)))
-
-            if (filteredFiles.length > 1) {
-                return contextMessages
-            }
-
-            const parentDirectoryName = basename(dirname(directoryPath))
-            const fileExtension = currentFileName ? getFileExtension(currentFileName) : '*'
-
-            // Search for test files in directory
-            const testFilesPattern = `**/{test,tests}/**/*test*.${fileExtension}`
-            const testFilesContext = await getEditorFoundFilesContext(testFilesPattern)
-            contextMessages.push(...testFilesContext)
-
-            if (!contextMessages.length) {
-                // Search for test files in parent directory
-                const filePattern = `**/${parentDirectoryName}/**/*test*.${fileExtension}`
-                const fileContext = await getEditorFoundFilesContext(filePattern)
-                contextMessages.push(...fileContext)
-            }
-
-            // Return context messages if any
-            if (contextMessages.length) {
-                return contextMessages
-            }
+    if (testFilesOnly && currentFileName) {
+        const context = await getCurrentDirFilteredContext(directoryUri, filteredFiles, currentFileName)
+        if (context.length > 0) {
+            return context
         }
 
-        // Get first 10 files in directory
-        const firstFiles = filteredFiles.slice(0, 10)
-        return await populateVscodeDirContextMessage(directoryUri, firstFiles)
-    } catch {
-        return []
+        const testFileContext = await getEditorTestContext(currentFileName)
+        if (testFileContext.length > 0) {
+            return testFileContext
+        }
     }
+
+    // Default to first 10 files
+    const firstFiles = filteredFiles.slice(0, 10)
+    return getDirContextMessages(directoryUri, firstFiles)
 }
 
-export async function getEditorFoundFilesContext(globalPattern: string): Promise<ContextMessage[]> {
-    const parentTestFiles = await vscode.workspace.findFiles(globalPattern, undefined, 2)
-    return getContextMessageFromFiles(parentTestFiles)
+export async function getEditorTestContext(fileName: string): Promise<ContextMessage[]> {
+    const currentTestFile = await getCurrentTestFileContext(fileName)
+    console.log(currentTestFile)
+    const codebaseTestFiles = await getCodebaseTestFilesContext(fileName)
+    console.log(codebaseTestFiles)
+    return [...codebaseTestFiles, ...currentTestFile]
 }
 
-/**
- * Gets package.json context from the workspace.
- *
- * @param filePath - Optional file path to use instead of the active text editor's file.
- * @returns A Promise resolving to ContextMessage[] containing package.json context.
- * Returns empty array if package.json is not found.
- */
-export async function getPackageJsonContext(filePath?: string): Promise<ContextMessage[]> {
-    const currentFilePath = filePath || vscode.window.activeTextEditor?.document.uri.fsPath
-    if (!currentFilePath) {
-        return []
-    }
-    // Search for the package.json from the root of the repository
-    const packageJsonPath = await vscode.workspace.findFiles('**/package.json', '**/node_modules/**', 1)
-    if (!packageJsonPath.length) {
-        return []
-    }
+export const getFilteredFiles = async (dirUri: vscode.Uri, testOnly: boolean): Promise<[string, vscode.FileType][]> => {
     try {
-        const packageJsonUri = packageJsonPath[0]
-        const packageJsonContent = await vscode.workspace.fs.readFile(packageJsonUri)
-        const decoded = new TextDecoder('utf-8').decode(packageJsonContent)
-        // Turn the content into a json and get the scripts object only
-        const packageJson = JSON.parse(decoded) as Record<string, unknown>
-        const scripts = packageJson.scripts
-        const devDependencies = packageJson.devDependencies
-        // stringify the scripts object with devDependencies
-        const context = JSON.stringify({ scripts, devDependencies })
-        const truncatedContent = truncateText(context.toString() || decoded.toString(), MAX_CURRENT_FILE_TOKENS)
-        const fileName = vscode.workspace.asRelativePath(packageJsonUri.fsPath)
-        return getContextMessageWithResponse(populateCodeContextTemplate(truncatedContent, fileName), {
-            fileName,
+        const filesInDir = await vscode.workspace.fs.readDirectory(dirUri)
+
+        // Filter out directories, non-test files, and dot files
+        return filesInDir.filter(file => {
+            const fileName = file[0]
+            const fileType = file[1]
+            const isDirectory = fileType === vscode.FileType.Directory
+            const isHiddenFile = fileName.startsWith('.')
+            const isTestFile = testOnly ? fileName.includes('test') : true
+
+            return !isDirectory && !isHiddenFile && isTestFile
         })
-    } catch {
+    } catch (error) {
+        console.error(error)
         return []
     }
 }
 
-/**
- * Generates context messages for each file in a given directory.
- *
- * @param dirUri - The URI representing the directory to be analyzed.
- * @param filesInDir - An array of tuples containing the name and type of each file in the directory.
- * @returns An array of context messages, one for each file in the directory.
- */
-export async function populateVscodeDirContextMessage(
+// Get context for test file in current directory
+// TODO bee find matches using regex based on language
+export async function getCurrentTestFileContext(fileName: string): Promise<ContextMessage[]> {
+    const filePathParts = fileName.split('/')
+    const fileNameWithoutExtension = filePathParts.pop()?.split('.').shift() || ''
+    const fileExtension = getFileExtension(fileName)
+
+    // pattern to search for file with same name
+    const searchPattern = `${filePathParts[0]}/*${fileNameWithoutExtension}*.${fileExtension}`
+    const foundFiles = await vscode.workspace.findFiles(searchPattern, undefined, 3)
+    const testFile = foundFiles.find(file => file.fsPath.includes('test'))
+    if (testFile) {
+        const contextMessage = await getFilePathContext(testFile.fsPath)
+        return contextMessage
+    }
+
+    const searchTestPattern = `${filePathParts[0]}/*test*.${fileExtension}`
+    const foundTestFiles = await vscode.workspace.findFiles(searchTestPattern, undefined, 10)
+    const testFilesContextMessages = await getContextMessageFromFiles(foundTestFiles)
+    return testFilesContextMessages
+}
+
+// Get context for test file in current directory
+async function getCodebaseTestFilesContext(fileName: string): Promise<ContextMessage[]> {
+    // exclude any files in the path with e2e or integration in the directory name
+    const excludePattern = '**/*{e2e,integration}*/**'
+
+    // search for test files
+    const fileExtension = fileName ? getFileExtension(fileName) : '*'
+    const testFilesPattern = `**/*test*.${fileExtension}`
+
+    return getEditorFoundFilesContext(testFilesPattern, excludePattern)
+}
+
+// populate context messages
+export async function getDirContextMessages(
     dirUri: vscode.Uri,
     filesInDir: [string, vscode.FileType][]
 ): Promise<ContextMessage[]> {
@@ -229,11 +228,116 @@ export async function populateVscodeDirContextMessage(
             const fileContent = await vscode.workspace.fs.readFile(fileUri)
             const decoded = new TextDecoder('utf-8').decode(fileContent)
             const truncatedContent = truncateText(decoded, MAX_CURRENT_FILE_TOKENS)
+
+            const templateText = 'Codebase context from file path {fileName}: '
             const contextMessage = getContextMessageWithResponse(
-                populateCurrentEditorContextTemplate(truncatedContent, fileName),
+                populateContextTemplateFromText(templateText, truncatedContent, fileName),
                 { fileName }
             )
             contextMessages.push(...contextMessage)
+        } catch (error) {
+            console.error(error)
+        }
+    }
+    return contextMessages
+}
+
+/**
+ * Gets context messages for files found matching a global pattern.
+ */
+export async function getEditorFoundFilesContext(
+    globalPattern: string,
+    excludePattern?: string,
+    numResults = 3
+): Promise<ContextMessage[]> {
+    const parentTestFiles = await vscode.workspace.findFiles(globalPattern, excludePattern, numResults)
+    return getContextMessageFromFiles(parentTestFiles)
+}
+
+/**
+ * Gets package.json context from the workspace.
+ *
+ * @param filePath - Optional file path to use instead of the active text editor's file.
+ * @returns A Promise resolving to ContextMessage[] containing package.json context.
+ * Returns empty array if package.json is not found.
+ */
+export async function getPackageJsonContext(filePath?: string): Promise<ContextMessage[]> {
+    const currentFilePath = filePath || vscode.window.activeTextEditor?.document.uri.fsPath
+    if (!currentFilePath) {
+        return []
+    }
+    // Search for the package.json from the base path
+    const packageJsonPath = await vscode.workspace.findFiles('**/package.json', undefined, 1)
+    if (!packageJsonPath.length) {
+        return []
+    }
+    try {
+        const packageJsonUri = packageJsonPath[0]
+        const packageJsonContent = await vscode.workspace.fs.readFile(packageJsonUri)
+        const decoded = new TextDecoder('utf-8').decode(packageJsonContent)
+        // Turn the content into a json and get the scripts object only
+        const packageJson = JSON.parse(decoded) as Record<string, unknown>
+        const scripts = packageJson.scripts
+        const devDependencies = packageJson.devDependencies
+        // stringify the scripts object with devDependencies
+        const context = JSON.stringify({ scripts, devDependencies })
+        const truncatedContent = truncateText(context.toString() || decoded.toString(), MAX_CURRENT_FILE_TOKENS)
+        const fileName = vscode.workspace.asRelativePath(packageJsonUri.fsPath)
+        const templateText = 'Here are the scripts and devDependencies from the package.json file for the codebase: '
+
+        return getContextMessageWithResponse(
+            populateContextTemplateFromText(templateText, truncatedContent, fileName),
+            { fileName },
+            answers.packageJson
+        )
+    } catch {
+        return []
+    }
+}
+
+/**
+ * Generates context messages for each file in a given directory.
+ *
+ * @param dirUri - The URI representing the directory to be analyzed.
+ * @param filesInDir - An array of tuples containing the name and type of each file in the directory.
+ * @returns An array of context messages, one for each file in the directory.
+ */
+export async function getCurrentDirFilteredContext(
+    dirUri: vscode.Uri,
+    filesInDir: [string, vscode.FileType][],
+    currentFileName: string
+): Promise<ContextMessage[]> {
+    const contextMessages: ContextMessage[] = []
+
+    const filePathParts = currentFileName.split('/')
+    const currentFileNameWithoutExtension = filePathParts.pop()?.split('.').shift() || ''
+
+    for (const file of filesInDir) {
+        // Get the context from each file
+        const fileUri = vscode.Uri.joinPath(dirUri, file[0])
+        const fileName = vscode.workspace.asRelativePath(fileUri.fsPath)
+        // check file size before opening the file
+        // skip file if it's larger than 1MB
+        const fileSize = await vscode.workspace.fs.stat(fileUri)
+        if (fileSize.size > 1000000 || !fileSize.size) {
+            continue
+        }
+        try {
+            const fileContent = await vscode.workspace.fs.readFile(fileUri)
+            const decoded = new TextDecoder('utf-8').decode(fileContent)
+            const truncatedContent = truncateText(decoded, MAX_CURRENT_FILE_TOKENS)
+
+            const templateText = 'Codebase context from file path {fileName}: '
+            const contextMessage = getContextMessageWithResponse(
+                populateContextTemplateFromText(templateText, truncatedContent, fileName),
+                { fileName }
+            )
+            contextMessages.push(...contextMessage)
+
+            // return context directly if the file name matches the current file name
+            if (file[0].includes(currentFileNameWithoutExtension)) {
+                return contextMessages
+            }
         } catch (error) {
             console.error(error)
         }
@@ -277,6 +381,13 @@ export async function getEditorOpenTabsContext(skipDirectory?: string): Promise<
 
         // Skip tabs in skipDirectory
         if (skipDirectory && tab.uri.fsPath.includes(skipDirectory)) {
+            continue
+        }
+
+        // Get context using file path for files not in the current workspace
+        if (!isInWorkspace(tab.uri)) {
+            const contextMessage = await getFilePathContext(tab.uri.fsPath)
+            contextMessages.push(...contextMessage)
             continue
         }
 
@@ -330,7 +441,7 @@ export function getHumanDisplayTextWithFileName(
 ): string {
     const fileName = selectionInfo?.fileName
     if (!fileName) {
-        return ''
+        return humanInput
     }
 
     const startLineNumber = selectionInfo?.selectionRange ? `${selectionInfo?.selectionRange?.start.line + 1}` : ''
@@ -342,9 +453,13 @@ export function getHumanDisplayTextWithFileName(
         return humanInput + displayFileName + fileName + fileRange
     }
 
+    // check if fileName is a workspace file or not
+    const isFileWorkspaceFile = isInWorkspace(URI.file(fileName)) !== undefined
+
     // Create markdown link to the file
-    const fileUri = vscode.Uri.joinPath(workspaceRoot, fileName)
+    const fileUri = isFileWorkspaceFile ? vscode.Uri.joinPath(workspaceRoot, fileName) : URI.file(fileName)
     const fileLink = `vscode://file${fileUri.fsPath}:${startLineNumber}`
+
     return `${humanInput}\n\nFile: [_${fileName}:${fileRange}_](${fileLink})`
 }
 
@@ -361,4 +476,85 @@ export function getCurrentFileContextFromEditorSelection(selection: ActiveTextEd
         selection,
         answers.file
     )
+}
+
+/**
+ * Gets the current open file's content and adds it to the context.
+ */
+export function getCurrentFileContext(): ContextMessage[] {
+    const currentFile = vscode.window.activeTextEditor?.document
+    const currentFileText = currentFile?.getText()
+    if (!currentFileText || !currentFile?.fileName) {
+        return []
+    }
+
+    const truncatedContent = truncateText(currentFileText, MAX_CURRENT_FILE_TOKENS)
+    const fileName = vscode.workspace.asRelativePath(currentFile.fileName)
+
+    return getContextMessageWithResponse(populateCodeContextTemplate(truncatedContent, fileName), {
+        fileName,
+    })
+}
+
+/**
+ * Create a context message to include a list of file names from the directory that contains the file
+ */
+export async function getDirectoryFileListContext(
+    workspaceRootUri: vscode.Uri,
+    fileName?: string
+): Promise<ContextMessage[]> {
+    try {
+        if (!workspaceRootUri) {
+            throw new Error('No workspace root found')
+        }
+
+        const fileUri = fileName ? vscode.Uri.joinPath(workspaceRootUri, fileName) : workspaceRootUri
+        const directoryUri = !fileName ? workspaceRootUri : vscode.Uri.joinPath(fileUri, '..')
+        const directoryFiles = await getFilesFromDir(directoryUri, false)
+        const fileNames = directoryFiles.map(file => file[0])
+        const truncatedFileNames = truncateText(fileNames.join(', '), MAX_CURRENT_FILE_TOKENS)
+        const fsPath = fileName || 'root'
+
+        return [
+            {
+                speaker: 'human',
+                text: populateListOfFilesContextTemplate(truncatedFileNames, fsPath),
+            },
+            {
+                speaker: 'assistant',
+                text: answers.fileList.replace('{fileName}', fsPath),
+            },
+        ]
+    } catch (error) {
+        console.error(error)
+        return []
+    }
+}
+
+/**
+ * Finds the test file corresponding to the given file name.
+ *
+ * @param fileName - The name of the file to find the test file for
+ * @returns The path to the found test file, or an empty string if none found
+ */
+export async function getTestFileOfCurrentFileContext(fileName: string): Promise<ContextMessage[]> {
+    const filePathParts = fileName.split('/')
+    const fileNameWithoutExtension = filePathParts.pop()?.split('.').shift() || ''
+    const fileExtension = getFileExtension(fileName)
+
+    // pattern to search for file with same name
+    const searchPattern = `${filePathParts[0]}/*${fileNameWithoutExtension}*.${fileExtension}`
+
+    // find matching files
+    const foundFiles = await vscode.workspace.findFiles(searchPattern, undefined, 3)
+
+    // find test file from matches
+    const testFile = foundFiles.find(file => file.fsPath.includes('test'))
+
+    if (testFile) {
+        const contextMessage = await getFilePathContext(testFile.fsPath)
+        return contextMessage
+    }
+
+    return []
 }

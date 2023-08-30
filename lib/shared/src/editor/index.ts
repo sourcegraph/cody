@@ -1,5 +1,7 @@
 import { URI } from 'vscode-uri'
 
+import { CodyPrompt } from '../chat/prompts'
+
 export interface ActiveTextEditor {
     content: string
     filePath: string
@@ -66,7 +68,8 @@ export interface VsCodeFixupController {
 
 export interface VsCodeCommandsController {
     get(type?: string): Promise<string | null>
-    menu(type: 'custom' | 'config' | 'default'): Promise<void>
+    getCurrentCommand(fileName?: string): CodyPrompt | null
+    menu(type: 'custom' | 'config' | 'default', showDesc?: boolean): Promise<void>
 }
 
 export interface ActiveTextEditorViewControllers<

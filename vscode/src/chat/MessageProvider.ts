@@ -206,6 +206,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
                     // TODO(keegancsmith) guardrails may be slow, we need to make this async update the interaction.
                     displayText = await this.guardrailsAnnotateAttributions(displayText)
                     this.transcript.addAssistantResponse(text || '', displayText)
+                    void this.editor.controllers.command?.onCompletion(text)
                 }
                 await this.onCompletionEnd()
                 // Count code generated from response

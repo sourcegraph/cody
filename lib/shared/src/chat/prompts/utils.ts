@@ -6,7 +6,11 @@ import { getFileExtension, getNormalizedLanguageName } from '../recipes/helpers'
 import { Interaction } from '../transcript/interaction'
 
 import { CodyPromptContext } from '.'
+import { prompts } from './templates'
 
+/**
+ * Creates a new Interaction object with the given parameters.
+ */
 export async function newInteraction(args: {
     text?: string
     displayText: string
@@ -44,7 +48,7 @@ export async function newInteractionWithError(errorMsg: string, displayText = ''
 }
 
 /**
- * Generates a prompt text string with the provided prompt and code selection.
+ * Generates a prompt text string with the provided prompt and code
  *
  * @param prompt - The prompt text to include after the code snippet.
  * @param selection - The ActiveTextEditorSelection containing the code snippet.
@@ -59,7 +63,7 @@ export function promptTextWithCodeSelection(
     }
     const extension = getFileExtension(selection.fileName)
     const languageName = getNormalizedLanguageName(extension)
-    const codePrefix = `I have this ${languageName} code selected in my editor from ${selection.fileName}:`
+    const codePrefix = `I have this ${languageName} code selected in my editor from my codebase file ${selection.fileName}:`
 
     // Use the whole context window for the prompt because we're attaching no files
     const maxTokenCount = MAX_AVAILABLE_PROMPT_LENGTH - (codePrefix.length + prompt.length) / CHARS_PER_TOKEN
@@ -74,4 +78,19 @@ export function promptTextWithCodeSelection(
 export function isOnlySelectionRequired(contextConfig: CodyPromptContext): boolean {
     const contextConfigLength = Object.entries(contextConfig).length
     return !contextConfig.none && ((contextConfig.selection && contextConfigLength === 1) || !contextConfigLength)
+}
+
+// Extract the word "unit" / "e2e" / "integration" from a test prompt text
+export function extractTestType(text: string): string {
+    // match "unit", "e2e", or "integration" that is follow by the word test, but don't include the word test in the matches
+    const testTypeRegex = /(unit|e2e|integration)(?= test)/i
+    return text.match(testTypeRegex)?.[0] || ''
+}
+
+export function getHumanTextForCommand(text: string, fileName?: string): string {
+    const promptText = prompts.instruction.replace('{humanInput}', text)
+    if (!fileName) {
+        return promptText
+    }
+    return promptText.replaceAll('{languageName}', getNormalizedLanguageName(getFileExtension(fileName)))
 }
