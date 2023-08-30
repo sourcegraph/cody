@@ -4,6 +4,7 @@ import { Command } from 'commander'
 import { ConfigurationUseContext } from '@sourcegraph/cody-shared/src/configuration'
 
 import { commitCommand } from './commands/commit'
+import { completeCommand } from './commands/complete'
 import { replCommand } from './commands/repl'
 
 export interface GlobalOptions {
@@ -23,6 +24,7 @@ const program = new Command()
     .option('--debug', 'Enable debug logging', false)
     .addCommand(replCommand)
     .addCommand(commitCommand)
+    .addCommand(completeCommand)
 
 // Make `repl` the default subcommand.
 const args = process.argv.slice(2)
