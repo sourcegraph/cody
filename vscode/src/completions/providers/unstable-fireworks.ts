@@ -27,6 +27,7 @@ const MODEL_MAP = {
     'starcoder-7b': 'fireworks/accounts/fireworks/models/starcoder-7b-w8a16',
     'starcoder-3b': 'fireworks/accounts/fireworks/models/starcoder-3b-w8a16',
     'starcoder-1b': 'fireworks/accounts/fireworks/models/starcoder-1b-w8a16',
+    'llama-code-13b': 'fireworks/accounts/fireworks/models/llama-v2-13b-code',
     'llama-code-13b-instruct': 'fireworks/accounts/fireworks/models/llama-v2-13b-code-instruct',
 }
 
@@ -121,9 +122,6 @@ export class UnstableFireworksProvider extends Provider {
             return `<fim_prefix>${intro}${prefix}<fim_suffix>${suffix}<fim_middle>`
         }
         if (this.model.startsWith('llama-code')) {
-            // @TODO(philipp-spiess): FIM prompt is not working yet, we're working with Fireworks to
-            // get this sorted
-            //
             // c.f. https://github.com/facebookresearch/codellama/blob/main/llama/generation.py#L402
             return `<PRE> ${intro}${prefix} <SUF>${suffix} <MID>`
         }
