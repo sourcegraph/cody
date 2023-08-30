@@ -41,7 +41,7 @@ process.on('uncaughtException', (err, origin) => {
 })
 
 process.on('unhandledRejection', (err, promise) => {
-    console.error('Unhandled promise rejection. Please handle!', promise, err.stack || err)
+    console.error('Unhandled promise rejection. Please handle!', promise, err instanceof Error ? err.stack : err)
 })
 
 process.on('warning', warning => {
