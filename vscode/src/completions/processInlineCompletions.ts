@@ -147,7 +147,7 @@ export function addParseInfoToCompletions(
             oldEndIndex: prefix.length,
             newEndIndex: prefix.length + insertText.length,
             startPosition: asPoint(position),
-            oldEndPosition: asPoint(position),
+            oldEndPosition: asPoint(range?.end || position),
             newEndPosition: asPoint(completionEndPosition),
         })
 

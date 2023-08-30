@@ -106,7 +106,7 @@ export function updateParseTreeOnEdit(edit: vscode.TextDocumentChangeEvent) {
     parseTreesPerFile.set(cacheKey, updatedTree)
 }
 
-export function asPoint(position: vscode.Position): Parser.Point {
+export function asPoint(position: Pick<vscode.Position, 'line' | 'character'>): Parser.Point {
     return { row: position.line, column: position.character }
 }
 
