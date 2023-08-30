@@ -2,7 +2,7 @@ import * as vscode from 'vscode'
 
 import { BotResponseMultiplexer } from '@sourcegraph/cody-shared/src/chat/bot-response-multiplexer'
 import { ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
-import { getPreamble } from '@sourcegraph/cody-shared/src/chat/preamble'
+import { getPreamble, Preamble } from '@sourcegraph/cody-shared/src/chat/preamble'
 import { CodyPrompt, CodyPromptType } from '@sourcegraph/cody-shared/src/chat/prompts'
 import { newInteraction } from '@sourcegraph/cody-shared/src/chat/prompts/utils'
 import { Recipe, RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
@@ -20,6 +20,7 @@ import { ANSWER_TOKENS, DEFAULT_MAX_TOKENS } from '@sourcegraph/cody-shared/src/
 import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
 import { TelemetryService } from '@sourcegraph/cody-shared/src/telemetry'
 
+import { ContextDecorator } from '../context-inspector/ContextDecorator'
 import { VSCodeEditor } from '../editor/vscode-editor'
 import { PlatformContext } from '../extension.common'
 import { debug } from '../log'
@@ -97,12 +98,18 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
     protected telemetryService: TelemetryService
     protected platform: Pick<PlatformContext, 'recipes'>
 
+    private contextInspector: ContextDecorator
+
     constructor(options: MessageProviderOptions) {
         super()
 
         if (TestSupport.instance) {
             TestSupport.instance.messageProvider.set(this)
         }
+
+        // TODO: Inject this dependency instead of creating it here
+        this.contextInspector = new ContextDecorator()
+        this.disposables.push(this.contextInspector)
 
         this.chat = options.chat
         this.intentDetector = options.intentDetector
@@ -409,21 +416,30 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
                     this.telemetryService.log('CodyVSCodeExtension:command:customPremade:applied')
                 }
 
-                const { prompt, contextFiles, preciseContexts } = await this.transcript.getPromptForLastInteraction(
-                    getPreamble(this.contextProvider.context.getCodebase(), myPremade),
-                    this.maxPromptTokens,
-                    pluginsPrompt
-                )
-                this.transcript.setUsedContextFilesForLastInteraction(
-                    contextFiles,
-                    preciseContexts,
-                    pluginExecutionInfos
-                )
+                const prompt = await this.applyContext(this.transcript, myPremade, pluginsPrompt, pluginExecutionInfos)
                 this.sendPrompt(prompt, interaction.getAssistantMessage().prefix ?? '', recipe.multiplexerTopic)
                 await this.saveTranscriptToChatHistory()
             }
         }
         this.telemetryService.log(`CodyVSCodeExtension:recipe:${recipe.id}:executed`)
+    }
+
+    // Truncates the provided context, updates the transcript with the context that was actually used,
+    // and mints the finished messages of the prompt.
+    private async applyContext(
+        transcript: Transcript,
+        myPremade: Preamble | undefined,
+        pluginsPrompt: Message[],
+        pluginExecutionInfos: PluginFunctionExecutionInfo[]
+    ): Promise<Message[]> {
+        const { prompt, contextFiles, preciseContexts } = await transcript.getPromptForLastInteraction(
+            getPreamble(this.contextProvider.context.getCodebase(), myPremade),
+            this.maxPromptTokens,
+            pluginsPrompt
+        )
+        transcript.setUsedContextFilesForLastInteraction(contextFiles, preciseContexts, pluginExecutionInfos)
+        this.contextInspector.didUseContext(contextFiles, preciseContexts)
+        return prompt
     }
 
     protected async runRecipeForSuggestion(recipeId: RecipeID, humanChatInput: string = ''): Promise<void> {
@@ -452,11 +468,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
             this.telemetryService.log('CodyVSCodeExtension:command:customPremade:applied')
         }
 
-        const { prompt, contextFiles } = await transcript.getPromptForLastInteraction(
-            getPreamble(this.contextProvider.context.getCodebase(), myPremade),
-            this.maxPromptTokens
-        )
-        transcript.setUsedContextFilesForLastInteraction(contextFiles)
+        const prompt = await this.applyContext(transcript, undefined, [], [])
 
         this.telemetryService.log(`CodyVSCodeExtension:recipe:${recipe.id}:executed`)
 
