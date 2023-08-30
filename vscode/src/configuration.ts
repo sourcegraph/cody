@@ -7,6 +7,8 @@ import type {
 } from '@sourcegraph/cody-shared/src/configuration'
 import { DOTCOM_URL } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
 
+import packageJson from '../package.json'
+
 import { CONFIG_KEY, ConfigKeys } from './configuration-keys'
 import { localStorage } from './services/LocalStorageProvider'
 import { getAccessToken, secretStorage } from './services/SecretStorageProvider'
@@ -72,6 +74,10 @@ export function getConfiguration(config: ConfigGetter = vscode.workspace.getConf
         autocompleteExperimentalSyntacticPostProcessing: config.get(
             CONFIG_KEY.autocompleteExperimentalSyntacticPostProcessing,
             false
+        ),
+        autocompleteExperimentalOllamaOptions: config.get(
+            CONFIG_KEY.autocompleteExperimentalOllamaOptions,
+            packageJson.contributes.configuration.properties['cody.autocomplete.experimental.ollamaOptions'].default
         ),
 
         // Note: In spirit, we try to minimize agent-specific code paths in the VSC extension.

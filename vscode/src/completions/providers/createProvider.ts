@@ -5,6 +5,7 @@ import { logError } from '../../log'
 import { CodeCompletionsClient } from '../client'
 
 import { createProviderConfig as createAnthropicProviderConfig } from './anthropic'
+import { createOllamaProviderConfig as createUnstableOllamaProviderConfig } from './ollama'
 import { ProviderConfig } from './provider'
 import { createProviderConfig as createUnstableAzureOpenAiProviderConfig } from './unstable-azure-openai'
 import { createProviderConfig as createUnstableCodeGenProviderConfig } from './unstable-codegen'
@@ -64,6 +65,16 @@ export async function createProviderConfig(
                 client,
                 model: config.autocompleteAdvancedModel,
             })
+        }
+        case 'ollama-experimental': {
+            if (!config.autocompleteExperimentalOllamaOptions) {
+                logError(
+                    'createProviderConfig',
+                    'No Ollama options provided (in cody.autocomplete.experimental.ollamaOptions settings property).'
+                )
+                return null
+            }
+            return createUnstableOllamaProviderConfig(config.autocompleteExperimentalOllamaOptions)
         }
         case 'anthropic': {
             return createAnthropicProviderConfig({

@@ -172,7 +172,8 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
                 documentHistory: this.config.history,
                 requestManager: this.requestManager,
                 lastCandidate: this.lastCandidate,
-                debounceInterval: { singleLine: isIncreasedDebounceTimeEnabled ? 75 : 25, multiLine: 125 },
+                debounceInterval: { singleLine: 500, multiLine: 500 }, // TODO(sqs)
+                // debounceInterval: { singleLine: isIncreasedDebounceTimeEnabled ? 75 : 25, multiLine: 125 },
                 setIsLoading,
                 abortSignal: abortController.signal,
                 tracer,

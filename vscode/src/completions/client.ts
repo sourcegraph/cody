@@ -66,7 +66,7 @@ export function createClient(
             const enableStreaming = !!isNode && !!streamingResponseFlagEnable
 
             const url = getCodeCompletionsEndpoint()
-            const response: Response = await fetch(url, {
+            const response = await fetch(url, {
                 method: 'POST',
                 body: JSON.stringify({
                     ...params,
