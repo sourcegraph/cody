@@ -213,6 +213,7 @@ const goKeywords = new Set([
 const typescriptKeywords = new Set([
     'any',
     'as',
+    'async',
     'boolean',
     'break',
     'case',
@@ -428,7 +429,7 @@ export const extractDefinitionContexts = async (
  *
  * Shim for default LSP executeDocumentSymbolProvider call. Can be mocked for testing.
  */
-const defaultGetDocumentSymbolRanges = async (uri: URI): Promise<vscode.Range[]> =>
+export const defaultGetDocumentSymbolRanges = async (uri: URI): Promise<vscode.Range[]> =>
     (
         await vscode.commands.executeCommand<(vscode.SymbolInformation | vscode.DocumentSymbol)[]>(
             'vscode.executeDocumentSymbolProvider',
@@ -493,4 +494,49 @@ const unwrapThenableMap = async <K, V>(m: Map<K, Thenable<V>>): Promise<Map<K, V
     }
 
     return resolved
+}
+
+export interface DocumentSection {
+    fuzzyName: string | null
+    range: vscode.Range
+    subSections: DocumentSection[]
+}
+/**
+ * Creates a top level map of a document's sections based on symbol ranges
+ *
+ * TODO(philipp-spiess): We need advanced heuristics here so that for very large sections we can
+ * divide them into subsections. Because of this, sections are layed out as a tree already
+ */
+export async function getDocumentSections(
+    document: vscode.TextDocument,
+    getDocumentSymbolRanges: typeof defaultGetDocumentSymbolRanges = defaultGetDocumentSymbolRanges
+): Promise<DocumentSection[]> {
+    const label = 'build document symbols map'
+    performance.mark(label)
+    console.log(document.uri)
+    const ranges = await getDocumentSymbolRanges(document.uri)
+
+    const sections: DocumentSection[] = []
+
+    for (const range of ranges) {
+        sections.push({
+            fuzzyName: extractFuzzyName(document, range),
+            range,
+            subSections: [],
+        })
+    }
+    performance.mark(label)
+    return sections
+}
+
+function extractFuzzyName(document: vscode.TextDocument, range: vscode.Range): string | null {
+    const content = document.getText(range)
+
+    for (const match of content.matchAll(identifierPattern)) {
+        if (match.index === undefined || commonKeywords.has(match[0])) {
+            continue
+        }
+        return match[0]
+    }
+    return null
 }

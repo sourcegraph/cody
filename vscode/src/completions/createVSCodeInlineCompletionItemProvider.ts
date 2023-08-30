@@ -8,6 +8,7 @@ import { CodyStatusBar } from '../services/StatusBar'
 
 import { CodeCompletionsClient } from './client'
 import { VSCodeDocumentHistory } from './context/history'
+import { createSectionObserver } from './context/precise/section-observer'
 import { createProviderConfig } from './providers/createProvider'
 import { registerAutocompleteTraceView } from './tracer/traceView'
 import { InlineCompletionItemProvider } from './vscodeInlineCompletionItemProvider'
@@ -39,7 +40,8 @@ export async function createInlineCompletionItemProvider(
                 completionsProvider.handleDidAcceptCompletionItem(codyLogId, codyCompletion)
             }),
             vscode.languages.registerInlineCompletionItemProvider('*', completionsProvider),
-            registerAutocompleteTraceView(completionsProvider)
+            registerAutocompleteTraceView(completionsProvider),
+            createSectionObserver()
         )
     } else if (config.isRunningInsideAgent) {
         throw new Error(
