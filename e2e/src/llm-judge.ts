@@ -1,6 +1,8 @@
 import Anthropic from '@anthropic-ai/sdk'
 import { AzureKeyCredential, OpenAIClient } from '@azure/openai'
 
+import { CLIOptions } from '.'
+
 export interface LLMJudgement {
     answerMatchesSummary: 'yes' | 'no' | 'partial' | 'unknown'
     answerMatchesSummaryJudgement: string
@@ -24,6 +26,7 @@ function serializeConversationTranscript(transcript: { question: string; answer:
 }
 
 export async function llmJudge(
+    provider: CLIOptions['provider'],
     transcript: { question: string; answer: string }[],
     question: string,
     answerSummary: string,
@@ -44,23 +47,37 @@ export async function llmJudge(
         'Think step by step. Conclude your thought process with YES, NO, or PARTIAL in all capital letters as the final judgement.',
     ].join('')
 
+    switch (provider) {
+        case 'anthropic':
+            return anthropicJudge(instructions)
+        case 'azure':
+            return azureJudge(instructions)
+    }
+}
+
+async function anthropicJudge(instructions: string): Promise<LLMJudgement> {
+    const completion = await anthropic.completions.create({
+        model: 'claude-2',
+        max_tokens_to_sample: 300,
+        prompt: `${Anthropic.HUMAN_PROMPT}${instructions}${Anthropic.AI_PROMPT}Thought:`,
+    })
+    return {
+        answerMatchesSummary: doesAnswerMatchSummary(completion.completion),
+        answerMatchesSummaryJudgement: completion.completion,
+    }
+}
+
+async function azureJudge(instructions: string): Promise<LLMJudgement> {
     // 1. https://portal.azure.com > Azure OpenAI > sourcegraph-test-oai > Keys and Endpoint
     // 2. Copy the key and export AZURE_API_KEY="<paste the key here>"
     const azureApiKey = process.env.AZURE_API_KEY as string
     const endpoint = 'https://sourcegraph-test-oai.openai.azure.com/'
 
-    const prompt = [instructions]
-
     const client = new OpenAIClient(endpoint, new AzureKeyCredential(azureApiKey))
     const deploymentId = 'gpt-35-turbo-test'
-    const result = await client.getCompletions(deploymentId, prompt, { maxTokens: 128 })
+    const result = await client.getCompletions(deploymentId, [instructions], { maxTokens: 128 })
+    // Pick the first choice. Probably we can do something better here?
     const [response] = result.choices
-
-    // const completion = await anthropic.completions.create({
-    //     model: 'claude-2',
-    //     max_tokens_to_sample: 300,
-    //     prompt: `${Anthropic.HUMAN_PROMPT}${instructions}${Anthropic.AI_PROMPT}Thought:`,
-    // })
 
     return {
         answerMatchesSummary: doesAnswerMatchSummary(response.text),
