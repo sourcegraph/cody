@@ -6,7 +6,7 @@ import { LOCAL_APP_URL } from '@sourcegraph/cody-shared/src/sourcegraph-api/envi
 import { version } from '../../package.json'
 import { isOsSupportedByApp, LocalEnv } from '../chat/protocol'
 import { constructFileUri } from '../custom-prompts/utils/helpers'
-import { debug, error } from '../log'
+import { logDebug, logError } from '../log'
 
 import { AppJson, LOCAL_APP_LOCATIONS } from './LocalAppFsPaths'
 import { SecretStorage } from './SecretStorageProvider'
@@ -51,11 +51,11 @@ export class LocalAppDetector implements vscode.Disposable {
         // Start with init state
         this.dispose()
         this.localEnv = { ...envInit }
-        debug('LocalAppDetector', 'initializing')
+        logDebug('LocalAppDetector', 'initializing')
         const homeDir = this.localEnv.homeDir
         // if conditions are not met, this will be a noop
         if (!this.isSupported || !homeDir) {
-            error('LocalAppDetector:init:failed', 'osNotSupported')
+            logError('LocalAppDetector:init:failed', 'osNotSupported')
             return
         }
         // Create filePaths and file watchers
@@ -136,7 +136,7 @@ export class LocalAppDetector implements vscode.Disposable {
     private async found(type: 'app' | 'token' | 'server'): Promise<void> {
         this.localEnv.isAppInstalled = true
         await this.onChange(type)
-        debug('LocalAppDetector:found', type)
+        logDebug('LocalAppDetector:found', type)
     }
 
     // We can dispose the file watcher when app is found or when user has logged in

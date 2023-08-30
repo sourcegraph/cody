@@ -24,6 +24,8 @@ const DEFAULT_TOOLTIP = 'Cody Settings'
 const QUICK_PICK_ITEM_CHECKED_PREFIX = '$(check) '
 const QUICK_PICK_ITEM_EMPTY_INDENT_PREFIX = '\u00A0\u00A0\u00A0\u00A0\u00A0 '
 
+const ONE_HOUR = 60 * 60 * 1000
+
 export function createStatusBar(): CodyStatusBar {
     const statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right)
     statusBarItem.text = DEFAULT_TEXT
@@ -70,11 +72,11 @@ export function createStatusBar(): CodyStatusBar {
                     ? [
                           { label: 'notice', kind: vscode.QuickPickItemKind.Separator },
                           ...errors.map(error => ({
-                              label: `$(alert) ${error.title}`,
+                              label: `$(alert) ${error.error.title}`,
                               description: '',
-                              detail: QUICK_PICK_ITEM_EMPTY_INDENT_PREFIX + error.description,
+                              detail: QUICK_PICK_ITEM_EMPTY_INDENT_PREFIX + error.error.description,
                               onSelect(): Promise<void> {
-                                  error.onSelect?.()
+                                  error.error.onSelect?.()
                                   const index = errors.indexOf(error)
                                   errors.splice(index)
                                   rerender()
@@ -153,7 +155,7 @@ export function createStatusBar(): CodyStatusBar {
     // TODO: Ensure the label is always set to the right value too.
     let openLoadingLeases = 0
 
-    const errors: StatusBarError[] = []
+    const errors: { error: StatusBarError; createdAt: number }[] = []
 
     function rerender(): void {
         if (openLoadingLeases > 0) {
@@ -165,10 +167,22 @@ export function createStatusBar(): CodyStatusBar {
 
         if (errors.length > 0) {
             statusBarItem.backgroundColor = new vscode.ThemeColor('statusBarItem.warningBackground')
-            statusBarItem.tooltip = errors[0].title
+            statusBarItem.tooltip = errors[0].error.title
         } else {
             statusBarItem.backgroundColor = new vscode.ThemeColor('statusBarItem.activeBackground')
         }
+    }
+
+    // Clean up all errors after a certain time so they don't accumulate forever
+    function clearOutdatedErrors(): void {
+        const now = Date.now()
+        for (let i = errors.length - 1; i >= 0; i--) {
+            const error = errors[i]
+            if (now - error.createdAt >= ONE_HOUR) {
+                errors.splice(i, 1)
+            }
+        }
+        rerender()
     }
 
     return {
@@ -189,7 +203,8 @@ export function createStatusBar(): CodyStatusBar {
             }
         },
         addError(error: StatusBarError) {
-            errors.push(error)
+            errors.push({ error, createdAt: Date.now() })
+            setTimeout(clearOutdatedErrors, ONE_HOUR)
             rerender()
         },
         dispose() {

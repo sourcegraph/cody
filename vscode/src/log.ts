@@ -16,11 +16,11 @@ export const outputChannel: vscode.OutputChannel = vscode.window.createOutputCha
  *
  * Usage:
  *
- *   debug('label', 'this is a message')
- *   debug('label', 'this is a message', 'some', 'args')
- *   debug('label', 'this is a message', 'some', 'args', { verbose: 'verbose info goes here' })
+ *   logDebug('label', 'this is a message')
+ *   logDebug('label', 'this is a message', 'some', 'args')
+ *   logDebug('label', 'this is a message', 'some', 'args', { verbose: 'verbose info goes here' })
  */
-export function debug(filterLabel: string, text: string, ...args: unknown[]): void {
+export function logDebug(filterLabel: string, text: string, ...args: unknown[]): void {
     log('error', filterLabel, text, ...args)
 }
 
@@ -29,11 +29,11 @@ export function debug(filterLabel: string, text: string, ...args: unknown[]): vo
  *
  * Usage:
  *
- *   debug('label', 'this is an error')
- *   debug('label', 'this is an error', 'some', 'args')
- *   debug('label', 'this is an error', 'some', 'args', { verbose: 'verbose info goes here' })
+ *   logError('label', 'this is an error')
+ *   logError('label', 'this is an error', 'some', 'args')
+ *   logError('label', 'this is an error', 'some', 'args', { verbose: 'verbose info goes here' })
  */
-export function error(filterLabel: string, text: string, ...args: unknown[]): void {
+export function logError(filterLabel: string, text: string, ...args: unknown[]): void {
     log('error', filterLabel, text, ...args)
 }
 
@@ -108,7 +108,7 @@ export const logger: CompletionLogger = {
                 return
             }
             hasFinished = true
-            error(
+            logError(
                 'CompletionLogger:onError',
                 JSON.stringify({
                     type,
@@ -126,7 +126,7 @@ export const logger: CompletionLogger = {
             }
             hasFinished = true
 
-            debug(
+            logDebug(
                 'CompletionLogger:onComplete',
                 JSON.stringify({
                     type,

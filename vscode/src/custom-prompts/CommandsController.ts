@@ -9,7 +9,7 @@ import {
 import { VsCodeCommandsController } from '@sourcegraph/cody-shared/src/editor'
 import { TelemetryService } from '@sourcegraph/cody-shared/src/telemetry'
 
-import { debug, error } from '../log'
+import { logDebug, logError } from '../log'
 import { LocalStorage } from '../services/LocalStorageProvider'
 
 import { CustomPromptsStore } from './CustomPromptsStore'
@@ -113,7 +113,7 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
     public find(id: string, isSlash = false): string {
         const myPrompt = this.default.get(id, isSlash)
 
-        debug('CommandsController:command:finding', id, { verbose: myPrompt })
+        logDebug('CommandsController:command:finding', id, { verbose: myPrompt })
 
         if (!myPrompt) {
             this.telemetryService.log('CodyVSCodeExtension:command:find:invalid')
@@ -268,8 +268,8 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
             }
 
             await vscode.commands.executeCommand('cody.action.commands.exec', selectedCommandID)
-        } catch (error_) {
-            error('CommandsController:commandQuickPicker', 'error', { verbose: error_ })
+        } catch (error) {
+            logError('CommandsController:commandQuickPicker', 'error', { verbose: error })
         }
     }
 
@@ -321,9 +321,9 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
                     break
             }
 
-            debug('CommandsController:promptsQuickPicker:selectedPrompt', promptTitle)
-        } catch (error_) {
-            error('CommandsController:promptsQuickPicker', 'error', { verbose: error_ })
+            logDebug('CommandsController:promptsQuickPicker:selectedPrompt', promptTitle)
+        } catch (error) {
+            logError('CommandsController:promptsQuickPicker', 'error', { verbose: error })
         }
     }
 
@@ -342,7 +342,7 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
             return this.customCommandMenu()
         }
 
-        debug('CommandsController:customPrompts:menu', action)
+        logDebug('CommandsController:customPrompts:menu', action)
 
         switch (action) {
             case 'delete':
@@ -412,7 +412,7 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
         await this.custom.save(newCommand.title, newCommand.prompt)
         await this.refresh()
 
-        debug('CommandsController:updateUserCommandQuick:newPrompt:', 'saved', { verbose: newCommand })
+        logDebug('CommandsController:updateUserCommandQuick:newPrompt:', 'saved', { verbose: newCommand })
     }
 
     /**
@@ -499,7 +499,7 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
             )
         }
 
-        debug('CommandsController:fileWatcherInit', 'watchers created')
+        logDebug('CommandsController:fileWatcherInit', 'watchers created')
     }
 
     /**
@@ -517,6 +517,6 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
         this.fileWatcherDisposables = []
         this.disposables = []
         this.myPromptsMap = new Map<string, CodyPrompt>()
-        debug('CommandsController:dispose', 'disposed')
+        logDebug('CommandsController:dispose', 'disposed')
     }
 }

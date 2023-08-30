@@ -5,7 +5,7 @@ import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
 import { FeatureFlag, FeatureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
 import { RateLimitError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
 
-import { debug, outputChannel } from '../log'
+import { logDebug, outputChannel } from '../log'
 import { CodyStatusBar } from '../services/StatusBar'
 
 import { getContext, GetContextOptions, GetContextResult } from './context/context'
@@ -41,11 +41,13 @@ export interface CodyCompletionItemProviderConfig {
     featureFlagProvider: FeatureFlagProvider
 }
 
+const ONE_HOUR = 1000 * 60 * 60
+
 export class InlineCompletionItemProvider implements vscode.InlineCompletionItemProvider {
     private promptChars: number
     private maxPrefixChars: number
     private maxSuffixChars: number
-    private reportedErrorMessages: Set<string> = new Set()
+    private reportedErrorMessages: Map<string, number> = new Map()
     private resetRateLimitErrorsAfter: number | null = null
 
     private readonly config: Required<CodyCompletionItemProviderConfig>
@@ -105,7 +107,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
             completeSuggestWidgetSelection: this.config.completeSuggestWidgetSelection,
         })
 
-        debug('CodyCompletionProvider:initialized', `provider: ${this.config.providerConfig.identifier}`)
+        logDebug('CodyCompletionProvider:initialized', `provider: ${this.config.providerConfig.identifier}`)
     }
 
     /** Set the tracer (or unset it with `null`). */
@@ -251,7 +253,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
             ;(completionResult as any).completionEvent = event
 
             return completionResult
-        } catch (error: unknown) {
+        } catch (error) {
             this.onError(error as Error)
             throw error
         }
@@ -335,10 +337,14 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
             return
         }
 
-        if (this.reportedErrorMessages.has(error.message)) {
+        const now = Date.now()
+        if (
+            this.reportedErrorMessages.has(error.message) &&
+            this.reportedErrorMessages.get(error.message)! + ONE_HOUR >= now
+        ) {
             return
         }
-        this.reportedErrorMessages.add(error.message)
+        this.reportedErrorMessages.set(error.message, now)
         this.config.statusBar.addError({
             title: 'Cody Autocomplete Encountered an Unexpected Error',
             description: error.message,

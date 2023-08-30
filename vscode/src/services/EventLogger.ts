@@ -5,7 +5,7 @@ import { TelemetryEventProperties } from '@sourcegraph/cody-shared/src/telemetry
 import { EventLogger, ExtensionDetails } from '@sourcegraph/cody-shared/src/telemetry/EventLogger'
 
 import { version as packageVersion } from '../../package.json'
-import { debug } from '../log'
+import { logDebug } from '../log'
 
 import { LocalStorage } from './LocalStorageProvider'
 
@@ -62,7 +62,7 @@ export async function createOrUpdateEventLogger(
  * @deprecated Use TelemetryService instead.
  */
 export function logEvent(eventName: string, properties?: TelemetryEventProperties): void {
-    debug(`logEvent${eventLogger === null ? ' (telemetry disabled)' : ''}`, eventName, JSON.stringify(properties))
+    logDebug(`logEvent${eventLogger === null ? ' (telemetry disabled)' : ''}`, eventName, JSON.stringify(properties))
     if (!eventLogger || !globalAnonymousUserID) {
         return
     }
