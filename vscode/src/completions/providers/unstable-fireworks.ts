@@ -119,7 +119,6 @@ export class UnstableFireworksProvider extends Provider {
     }
 
     private createInfillingPrompt(intro: string, prefix: string, suffix: string): string {
-        console.log({ prefix, suffix })
         if (this.model.startsWith('starcoder')) {
             // c.f. https://starcoder.co/bigcode/starcoder#fill-in-the-middle
             return `<fim_prefix>${intro}${prefix}<fim_suffix>${suffix}<fim_middle>`
