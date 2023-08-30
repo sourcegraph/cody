@@ -34,7 +34,7 @@ export function indexFile(filePath: string): CompleteRequest[] {
     return reqs
 }
 
-interface CompleteRequest {
+export interface CompleteRequest {
   uri: string
   content: string
   position: { line: number; character: number },
