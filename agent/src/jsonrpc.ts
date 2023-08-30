@@ -350,10 +350,14 @@ export class JsonrpcClient {
         private readonly notificationHandlers: Map<NotificationMethodName, NotificationCallback<any>>
     ) {}
 
-    public request<M extends RequestMethodName>(method: M, params: ParamsOf<M>): Promise<ResultOf<M>> {
+    public request<M extends RequestMethodName>(
+        method: M,
+        params: ParamsOf<M>,
+        cancelToken: vscode.CancellationToken = new vscode.CancellationTokenSource().token
+    ): Promise<ResultOf<M>> {
         const handler = this.requestHandlers.get(method)
         if (handler) {
-            return handler(params)
+            return handler(params, cancelToken)
         }
         throw new Error('No such request handler: ' + method)
     }
@@ -361,7 +365,8 @@ export class JsonrpcClient {
     public notify<M extends NotificationMethodName>(method: M, params: ParamsOf<M>): void {
         const handler = this.notificationHandlers.get(method)
         if (handler) {
-            return handler(params)
+            handler(params)
+            return
         }
         throw new Error('No such notification handler: ' + method)
     }
