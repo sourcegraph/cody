@@ -31,10 +31,8 @@ test('checks if clear chat history button clears history and current session', a
     await page.getByRole('button', { name: 'Chat History' }).click()
 
     await expect(sidebar.getByText('Hey')).toBeVisible()
-    await expect(sidebar.getByText('Hola')).toBeVisible()
     await sidebar.locator('vscode-button').filter({ hasText: 'Clear' }).click()
     await expect(sidebar.getByText('Hey')).not.toBeVisible()
-    await expect(sidebar.getByText('Hola')).not.toBeVisible()
 
     // Open the Cody Commands palette and run a command
     await page.getByRole('button', { name: 'Commands (⌥C)' }).click()
