@@ -1,8 +1,3 @@
-import { Agent as HTTPAgent } from 'http'
-import { Agent as HTTPSAgent } from 'https'
-
-import fetch from 'isomorphic-fetch'
-
 import { FeatureFlag, type FeatureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
 import type {
     CompletionLogger,
@@ -13,15 +8,9 @@ import type {
     CompletionResponse,
 } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
 
+import { fetch } from '../fetch'
+
 export type CodeCompletionsParams = Omit<CompletionParameters, 'fast'>
-
-const httpAgent = new HTTPAgent({
-    keepAlive: true,
-})
-
-const httpsAgent = new HTTPSAgent({
-    keepAlive: true,
-})
 
 export interface CodeCompletionsClient {
     complete(
@@ -71,14 +60,8 @@ export function createClient(
                     stream: enableStreaming,
                 }),
                 headers,
-                agent(parsedURL: URL) {
-                    if (parsedURL.protocol === 'http:') {
-                        return httpAgent
-                    }
-                    return httpsAgent
-                },
                 signal,
-            } as RequestInit)
+            })
 
             // When rate-limiting occurs, the response is an error message
             if (response.status === 429) {

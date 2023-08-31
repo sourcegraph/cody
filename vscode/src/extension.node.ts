@@ -11,6 +11,7 @@ import { CommandsController } from './custom-prompts/CommandsController'
 import { ExtensionApi } from './extension-api'
 import { activate as activateCommon } from './extension.common'
 import { VSCODE_WEB_RECIPES } from './extension.web'
+import { initializeNetworkAgent } from './fetch.node'
 import { FilenameContextFetcher } from './local-context/filename-context-fetcher'
 import { LocalKeywordContextFetcher } from './local-context/local-keyword-context-fetcher'
 import { SymfRunner } from './local-context/symf'
@@ -21,6 +22,8 @@ import { getRgPath } from './rg'
  * (Node.js/Electron).
  */
 export function activate(context: vscode.ExtensionContext): ExtensionApi {
+    initializeNetworkAgent()
+
     return activateCommon(context, {
         getRgPath,
         createCommandsController: (...args) => new CommandsController(...args),

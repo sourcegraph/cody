@@ -20,6 +20,7 @@ import { ProviderConfig } from '../../src/completions/providers/provider'
 import { InlineCompletionItemProvider } from '../../src/completions/vscodeInlineCompletionItemProvider'
 import { getFullConfig } from '../../src/configuration'
 import { configureExternalServices } from '../../src/external-services'
+import { initializeNetworkAgent } from '../../src/fetch.node'
 import { InMemorySecretStorage } from '../../src/services/SecretStorageProvider'
 import { wrapVSCodeTextDocument } from '../../src/testutils/textDocument'
 
@@ -37,6 +38,8 @@ const dummyFeatureFlagProvider = new FeatureFlagProvider(
         customHeaders: {},
     })
 )
+
+initializeNetworkAgent()
 
 async function initCompletionsProvider(context: GetContextResult): Promise<InlineCompletionItemProvider> {
     const secretStorage = new InMemorySecretStorage()
@@ -184,8 +187,4 @@ async function generateCompletionsForDataset(codeSamples: Sample[]): Promise<voi
     console.log('\n✅ Completions saved to:', filename)
 }
 
-void (async function () {
-    for (let i = 0; i < 10; i++) {
-        await generateCompletionsForDataset(completionsDataset).catch(console.error)
-    }
-})()
+generateCompletionsForDataset(completionsDataset).catch(console.error)
