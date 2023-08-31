@@ -46,7 +46,11 @@ async function initCompletionsProvider(context: GetContextResult): Promise<Inlin
     await secretStorage.store('cody.access-token', ENVIRONMENT_CONFIG.SOURCEGRAPH_ACCESS_TOKEN)
 
     // Optional for completions provider. Mock to make TS happy.
-    localStorage.setStorage({ get() {} } as any as vscode.Memento)
+    localStorage.setStorage({
+        get() {
+            return undefined
+        },
+    } as any as vscode.Memento)
 
     const initialConfig = await getFullConfig()
     if (!didLogConfig) {
