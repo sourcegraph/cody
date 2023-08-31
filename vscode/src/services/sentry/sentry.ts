@@ -7,10 +7,10 @@ import { isDotCom } from '@sourcegraph/cody-shared/src/sourcegraph-api/environme
 export * from '@sentry/core'
 export const SENTRY_DSN = 'https://f565373301c9c7ef18448a1c60dfde8d@o19358.ingest.sentry.io/4505743319564288'
 
-export type SentryOptions = Parameters<typeof nodeInit | typeof browserInit>[0]
+export type SentryOptions = NonNullable<Parameters<typeof nodeInit | typeof browserInit>[0]>
 
 export abstract class SentryService {
-    constructor(protected config: Pick<Configuration, 'serverEndpoint'>) {
+    constructor(protected config: Pick<Configuration, 'serverEndpoint' | 'isRunningInsideAgent'>) {
         this.prepareReconfigure()
     }
 
@@ -37,11 +37,13 @@ export abstract class SentryService {
 
             // The extension host is shared across other extensions, so listening on the default
             // unhandled error listeners would not be helpful in case other extensions or VS Code
-            // throw.
+            // throw. Instead, use the manual `captureException` API.
             //
-            // Instead, use the manual `captureException` API.
-            defaultIntegrations: false,
+            // When running inside Agent, we control the whole Node environment so we can safely
+            // listen to unhandled errors/rejections.
+            ...(this.config.isRunningInsideAgent ? {} : { defaultIntegrations: false }),
         }
+
         this.reconfigure(options)
     }
 
