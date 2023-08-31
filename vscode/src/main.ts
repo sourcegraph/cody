@@ -195,7 +195,6 @@ const register = async (
         vscode.commands.registerCommand('cody.comment.add', async (comment: vscode.CommentReply) => {
             const inlineChatProvider = inlineChatManager.getProviderForThread(comment.thread)
             await inlineChatProvider.addChat(comment.text)
-            telemetryService.log('CodyVSCodeExtension:chat:submitted', { source: 'inline' })
         }),
         vscode.commands.registerCommand('cody.comment.delete', (thread: vscode.CommentThread) => {
             inlineChatManager.removeProviderForThread(thread)
@@ -275,8 +274,9 @@ const register = async (
         }),
         vscode.commands.registerCommand(
             'cody.action.fixup',
-            (instruction: string, range: vscode.Range): Promise<void> =>
-                fixupManager.createFixup({ instruction, range })
+            async (instruction: string, range: vscode.Range): Promise<void> => {
+                await fixupManager.createFixup({ instruction, range })
+            }
         ),
         vscode.commands.registerCommand('cody.action.commands.menu', async () => {
             await editor.controllers.command?.menu('default')

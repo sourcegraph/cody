@@ -1,6 +1,6 @@
 import * as vscode from 'vscode'
 
-import { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
+import { ChatMessage } from '@sourcegraph/cody-shared'
 import { IntentClassificationOption } from '@sourcegraph/cody-shared/src/intent-detector'
 
 import { ExplainCodeAction } from '../code-actions/explain'
@@ -81,12 +81,7 @@ const InlineIntentClassification: IntentClassificationOption<InlineIntent>[] = [
         id: 'chat',
         rawCommand: '/chat',
         description: 'Ask a question about the selected code',
-        examplePrompts: [
-            'How can I improve this?',
-            'what does this do',
-            'how does this work',
-            'Find bugs in this code',
-        ],
+        examplePrompts: ['How can I improve this?', 'what does this do', 'how does this work'],
     },
 ]
 
@@ -97,6 +92,8 @@ interface InlineChatViewProviderOptions extends InlineChatViewManagerOptions {
 export class InlineChatViewProvider extends MessageProvider {
     private thread: vscode.CommentThread
     private fixupManager: FixupManager
+    private chatCommandName = 'cody-comment-repeat'
+    private chatCommand?: vscode.Disposable
     // A repeating, text-based, loading indicator ("." -> ".." -> "...")
     private responsePendingInterval: NodeJS.Timeout | null = null
 
@@ -107,33 +104,59 @@ export class InlineChatViewProvider extends MessageProvider {
     }
 
     public async addChat(reply: string): Promise<void> {
+        // Prefer `/fix` for new chats, prefer `/chat` if there is already an ongoing chat.
+        const defaultIntent = this.thread.comments.length === 0 ? 'fix' : 'chat'
         this.editor.controllers.inline?.chat(reply, this.thread)
-        const intent = await this.intentDetector.classifyIntentFromOptions(reply, InlineIntentClassification, 'fix')
+        const intent = await this.intentDetector.classifyIntentFromOptions(
+            reply,
+            InlineIntentClassification,
+            defaultIntent
+        )
         switch (intent) {
             case 'fix':
                 return this.startFix(reply)
             case 'chat':
-                this.setResponsePending(true)
                 return this.startChat(reply)
         }
     }
 
     private async startChat(instruction: string): Promise<void> {
+        this.setResponsePending(true)
         const interaction = this.editor.controllers.inline?.createInteraction(instruction, this.thread)
         if (!interaction) {
             return
         }
 
+        this.telemetryService.log('CodyVSCodeExtension:chat:submitted', { source: 'inline' })
         return this.executeRecipe('inline-chat', interaction.id)
     }
 
     private async startFix(instruction: string): Promise<void> {
-        this.removeChat()
         const activeDocument = await vscode.workspace.openTextDocument(this.thread.uri)
-        return this.fixupManager.createFixup({ document: activeDocument, instruction, range: this.thread.range })
+        const fixup = await this.fixupManager.createFixup({
+            document: activeDocument,
+            instruction,
+            range: this.thread.range,
+        })
+        if (!fixup) {
+            return
+        }
+
+        this.chatCommand = vscode.commands.registerCommand(`${this.chatCommandName}-${fixup.id}`, () => {
+            this.chatCommand?.dispose()
+            return this.startChat(`/chat ${instruction}`)
+        })
+        // User may want to reference previous conversation, close chat and leave a message
+        await vscode.commands.executeCommand('workbench.action.collapseAllComments')
+        this.editor.controllers.inline?.reply(
+            `Check your document for updates from Cody.\n\n**Ask again with [/chat](command:${this.chatCommandName})**`,
+            this.thread,
+            'complete'
+        )
     }
 
     public removeChat(): void {
+        this.chatCommand?.dispose()
         this.editor.controllers.inline?.delete(this.thread)
     }
 

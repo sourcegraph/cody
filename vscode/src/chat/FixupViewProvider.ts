@@ -30,32 +30,33 @@ export class FixupManager implements vscode.Disposable {
             instruction?: string
             range?: vscode.Range
         } = {}
-    ): Promise<void> {
+    ): Promise<FixupTask | null> {
         const fixupController = this.options.editor.controllers.fixups
         if (!fixupController) {
-            return
+            return null
         }
 
         const document = options.document || vscode.window.activeTextEditor?.document
         if (!document) {
-            return
+            return null
         }
 
         const range = options.range || vscode.window.activeTextEditor?.selection
         if (!range) {
-            return
+            return null
         }
 
         const task = options.instruction?.replace('/fix', '').trim()
             ? fixupController.createTask(document.uri, options.instruction, range)
             : await fixupController.promptUserForTask()
         if (!task) {
-            return
+            return null
         }
 
         this.options.telemetryService.log('CodyVSCodeExtension:fixup:created')
         const provider = this.getProviderForTask(task)
-        return provider.startFix()
+        await provider.startFix()
+        return task
     }
 
     public getProviderForTask(task: FixupTask): FixupProvider {

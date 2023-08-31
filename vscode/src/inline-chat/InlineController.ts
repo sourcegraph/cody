@@ -298,9 +298,6 @@ export class InlineController implements VsCodeInlineController {
      * Remove a comment thread / conversation
      */
     public delete(thread: vscode.CommentThread): void {
-        if (!thread) {
-            return
-        }
         thread.dispose()
     }
 
