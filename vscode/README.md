@@ -1,3 +1,8 @@
+Hackathon hacks, can't work out how the tiktoken depdenency's wasm module gets copied into resources
+so just manually copied it:
+
+cp ../node_modules/.pnpm/tiktoken@1.0.10/node_modules/tiktoken/tiktoken_bg.wasm resources/wasm
+
 # AI that knows your entire codebase
 
 [Cody](https://cody.dev) is a free and [open-source](https://github.com/sourcegraph/cody) AI coding assistant that can write, understand and fix your code. Cody is powered by Sourcegraph’s code graph, and has knowledge of your entire codebase. Install Cody to get started with free AI-powered autocomplete, chat, commands, and more.

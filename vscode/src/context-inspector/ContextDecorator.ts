@@ -2,6 +2,8 @@ import * as vscode from 'vscode'
 
 import { ContextInspectorRecord } from '@sourcegraph/cody-shared/src/chat/context-inspector/context-inspector'
 
+import { countToken2 } from './PromptDocumentProvider'
+
 // TODO: Multi-repo context has a repoName argument; plumb that through and
 // use it to point to the correct file
 function filePathToUri(filePath: string): vscode.Uri {
@@ -73,6 +75,7 @@ export class ContextDecorator implements vscode.Disposable {
             }
             // TODO: need to provide the actual context string here; this contains the context prompt string
             specs.push(record)
+            console.log('token count:', countToken2(record.text))
         }
         // Actually we changed the decorations, not the editors, but the
         // functionality is the same

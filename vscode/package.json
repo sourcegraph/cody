@@ -985,6 +985,7 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.4.2",
+    "@anthropic-ai/tokenizer": "^0.0.4",
     "@sourcegraph/cody-shared": "workspace:*",
     "@sourcegraph/cody-ui": "workspace:*",
     "@types/stream-json": "^1.7.3",
@@ -1001,6 +1002,7 @@
     "mock-require": "^3.0.3",
     "openai": "^3.2.1",
     "stream-json": "^1.8.0",
+    "tiktoken": "^1.0.10",
     "uuid": "^9.0.0",
     "vscode-languageserver-textdocument": "^1.0.8",
     "vscode-uri": "^3.0.7",

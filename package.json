@@ -60,6 +60,7 @@
     "vitest": "^0.33.0"
   },
   "dependencies": {
+    "@anthropic-ai/tokenizer": "^0.0.4",
     "react": "18.2.0",
     "react-dom": "18.2.0"
   },
