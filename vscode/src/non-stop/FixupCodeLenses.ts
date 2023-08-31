@@ -1,6 +1,6 @@
 import * as vscode from 'vscode'
 
-import { debug } from '../log'
+import { logDebug } from '../log'
 
 import { getLensesForTask } from './codelenses'
 import { FixupTask } from './FixupTask'
@@ -37,7 +37,7 @@ export class FixupCodeLenses implements vscode.CodeLensProvider {
         for (const task of this.files.tasksForFile(file)) {
             lenses.push(...(this.taskLenses.get(task) || []))
         }
-        debug('FixupCodeLenses:provideCodeLenses', 'CodeLenses', {
+        logDebug('FixupCodeLenses:provideCodeLenses', 'CodeLenses', {
             verbose: { lens: `${document.uri} (${lenses.length})` },
         })
         return lenses

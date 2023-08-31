@@ -1,13 +1,13 @@
 import { LRUCache } from 'lru-cache'
 import * as vscode from 'vscode'
 
+import { isAbortError, isRateLimitError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
 import { TelemetryEventProperties } from '@sourcegraph/cody-shared/src/telemetry'
 
 import { logEvent } from '../services/EventLogger'
 
 import { ContextSummary } from './context/context'
 import { InlineCompletionItem } from './types'
-import { isAbortError, isRateLimitError } from './utils'
 
 export interface CompletionEvent {
     params: {
