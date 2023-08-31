@@ -30,6 +30,24 @@ export class PromptDocumentProvider implements vscode.Disposable, vscode.TextDoc
                 })
             })
         )
+
+        this.disposables.push(
+            vscode.languages.registerHoverProvider(
+                { scheme: 'cody-context' },
+                {
+                    provideHover(
+                        document: vscode.TextDocument,
+                        position: vscode.Position,
+                        token: vscode.CancellationToken
+                    ): vscode.ProviderResult<vscode.Hover> {
+                        // TODO: This is approximate because the tokenizer is not greedy
+                        const prefix = document.getText(new vscode.Range(new vscode.Position(0, 0), position))
+                        const numTokens = tokenizer.countTokens(prefix)
+                        return new vscode.Hover(`(Approx) token ${numTokens}`)
+                    },
+                }
+            )
+        )
     }
 
     public dispose(): void {
