@@ -28,8 +28,8 @@ export function createClient(
     featureFlagProvider?: FeatureFlagProvider,
     logger?: CompletionLogger
 ): CodeCompletionsClient {
-    function getCodeCompletionsEndpoint(): string {
-        return new URL('/.api/completions/code', config.serverEndpoint).href
+    function getCodeCompletionsEndpoint(tracing?: boolean): string {
+        return new URL('/.api/completions/code' + (tracing ? '?trace=1' : ''), config.serverEndpoint).href
     }
 
     return {
@@ -41,18 +41,25 @@ export function createClient(
                 headers.set('Authorization', `token ${config.accessToken}`)
             }
 
+            const [tracingFlagEnabled, streamingResponseFlagEnable] = featureFlagProvider
+                ? await Promise.all([
+                      true, // featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteTracing),
+                      featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteStreamingResponse),
+                  ])
+                : [false, false]
+
             // We enable streaming only for Node environments right now because it's hard to make the
             // polyfilled fetch API work the same as it does in the browser.
             //
             // @TODO(philipp-spiess): Feature test if the response is a Node or a browser stream and
             // implement SSE parsing for both.
             const isNode = typeof process !== 'undefined'
-            const isFeatureFlagEnabled = featureFlagProvider
-                ? await featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteStreamingResponse)
-                : false
-            const enableStreaming = !!isNode && isFeatureFlagEnabled
 
-            const response = await fetch(getCodeCompletionsEndpoint(), {
+            const enableStreaming = !!isNode && !!streamingResponseFlagEnable
+
+            const url = getCodeCompletionsEndpoint(tracingFlagEnabled)
+            console.log({ url })
+            const response: Response = await fetch(url, {
                 method: 'POST',
                 body: JSON.stringify({
                     ...params,
@@ -61,6 +68,10 @@ export function createClient(
                 headers,
                 signal,
             })
+
+            const traceId = response.headers.get('x-trace') ?? undefined
+
+            console.log([...response.headers])
 
             // When rate-limiting occurs, the response is an error message
             if (response.status === 429) {
