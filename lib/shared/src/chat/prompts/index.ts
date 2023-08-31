@@ -2,8 +2,17 @@ import { Preamble } from '../preamble'
 
 import * as defaultPrompts from './default-prompts.json'
 
-export function getDefaultCommandsMap(): Map<string, CodyPrompt> {
+export function getDefaultCommandsMap(editorCommands: CodyPrompt[] = []): Map<string, CodyPrompt> {
     const map = new Map<string, CodyPrompt>()
+
+    // Add editor specifc commands
+    for (const command of editorCommands) {
+        if (command.name) {
+            map.set(command.name, command)
+        }
+    }
+
+    // Add default commands
     const prompts = defaultPrompts.commands as Record<string, unknown>
     for (const key in prompts) {
         if (Object.prototype.hasOwnProperty.call(prompts, key)) {
@@ -17,6 +26,7 @@ export function getDefaultCommandsMap(): Map<string, CodyPrompt> {
             map.set(key, prompt)
         }
     }
+
     return map
 }
 

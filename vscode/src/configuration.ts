@@ -5,8 +5,8 @@ import type {
     ConfigurationUseContext,
     ConfigurationWithAccessToken,
 } from '@sourcegraph/cody-shared/src/configuration'
+import { DOTCOM_URL } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
 
-import { DOTCOM_URL } from './chat/protocol'
 import { CONFIG_KEY, ConfigKeys } from './configuration-keys'
 import { LocalStorage } from './services/LocalStorageProvider'
 import { getAccessToken, SecretStorage } from './services/SecretStorageProvider'
@@ -52,17 +52,25 @@ export function getConfiguration(config: ConfigGetter): Configuration {
         inlineChat: config.get(CONFIG_KEY.inlineChatEnabled, true),
         experimentalGuardrails: config.get(CONFIG_KEY.experimentalGuardrails, isTesting),
         experimentalNonStop: config.get(CONFIG_KEY.experimentalNonStop, isTesting),
+        experimentalLocalSymbols: config.get(CONFIG_KEY.experimentalLocalSymbols, false),
         experimentalCommandLenses: config.get(CONFIG_KEY.experimentalCommandLenses, false),
         experimentalEditorTitleCommandIcon: config.get(CONFIG_KEY.experimentalEditorTitleCommandIcon, false),
-        autocompleteAdvancedProvider: config.get(CONFIG_KEY.autocompleteAdvancedProvider, 'anthropic'),
+        autocompleteAdvancedProvider: config.get(CONFIG_KEY.autocompleteAdvancedProvider, null),
+        experimentalSymfPath: config.get<string>(CONFIG_KEY.experimentalSymfPath, 'symf'),
+        experimentalSymfAnthropicKey: config.get<string>(CONFIG_KEY.experimentalSymfAnthropicKey, ''),
         autocompleteAdvancedServerEndpoint: config.get<string | null>(
             CONFIG_KEY.autocompleteAdvancedServerEndpoint,
             null
         ),
+        autocompleteAdvancedModel: config.get<string | null>(CONFIG_KEY.autocompleteAdvancedModel, null),
         autocompleteAdvancedAccessToken: config.get<string | null>(CONFIG_KEY.autocompleteAdvancedAccessToken, null),
         autocompleteAdvancedEmbeddings: config.get(CONFIG_KEY.autocompleteAdvancedEmbeddings, true),
         autocompleteExperimentalCompleteSuggestWidgetSelection: config.get(
             CONFIG_KEY.autocompleteExperimentalCompleteSuggestWidgetSelection,
+            false
+        ),
+        autocompleteExperimentalSyntacticPostProcessing: config.get(
+            CONFIG_KEY.autocompleteExperimentalSyntacticPostProcessing,
             false
         ),
         pluginsEnabled: config.get<boolean>(CONFIG_KEY.pluginsEnabled, false),

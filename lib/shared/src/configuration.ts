@@ -17,16 +17,22 @@ export interface Configuration {
     experimentalEditorTitleCommandIcon: boolean
     experimentalGuardrails: boolean
     experimentalNonStop: boolean
+    experimentalLocalSymbols: boolean
+    experimentalSymfPath: string
+    experimentalSymfAnthropicKey: string
     autocompleteAdvancedProvider:
         | 'anthropic'
         | 'unstable-codegen'
         | 'unstable-huggingface'
         | 'unstable-fireworks'
         | 'unstable-azure-openai'
+        | null
     autocompleteAdvancedServerEndpoint: string | null
+    autocompleteAdvancedModel: string | null
     autocompleteAdvancedAccessToken: string | null
     autocompleteAdvancedEmbeddings: boolean
     autocompleteExperimentalCompleteSuggestWidgetSelection?: boolean
+    autocompleteExperimentalSyntacticPostProcessing?: boolean
     pluginsEnabled?: boolean
     pluginsDebugEnabled?: boolean
     isRunningInsideAgent?: boolean

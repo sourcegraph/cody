@@ -1,7 +1,8 @@
 import * as vscode from 'vscode'
 
-import { isLocalApp } from '../chat/protocol'
-import { debug } from '../log'
+import { isLocalApp } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
+
+import { logDebug, logError } from '../log'
 
 export const CODY_ACCESS_TOKEN_SECRET = 'cody.access-token'
 
@@ -13,7 +14,7 @@ export async function getAccessToken(secretStorage: SecretStorage): Promise<stri
         }
         throw new Error('token not found')
     } catch (error) {
-        debug('VSCodeSecretStorage:getAccessToken', 'failed', { verbose: error })
+        logError('VSCodeSecretStorage:getAccessToken', 'failed', { verbose: error })
         // Remove corrupted token from secret storage
         await secretStorage.delete(CODY_ACCESS_TOKEN_SECRET)
         // Display system notification because the error was caused by system storage
@@ -38,7 +39,7 @@ export class VSCodeSecretStorage implements SecretStorage {
         // For user that does not have secret storage implemented in their sever
         this.fsPath = config.get('experimental.localTokenPath') || null
         if (this.fsPath) {
-            debug('VSCodeSecretStorage:experimental.localTokenPath', 'enabled', { verbose: this.fsPath })
+            logDebug('VSCodeSecretStorage:experimental.localTokenPath', 'enabled', { verbose: this.fsPath })
         }
     }
     // Catch corrupted token in secret storage
@@ -67,7 +68,7 @@ export class VSCodeSecretStorage implements SecretStorage {
                 await this.secretStorage.store(key, value)
             }
         } catch (error) {
-            debug('VSCodeSecretStorage:store:failed', key, { verbose: error })
+            logError('VSCodeSecretStorage:store:failed', key, { verbose: error })
         }
     }
 
@@ -170,10 +171,10 @@ async function getAccessTokenFromFsPath(fsPath: string): Promise<string | null> 
         if (!json.token) {
             throw new Error('Failed to retrieve token from: ' + fsPath)
         }
-        debug('VSCodeSecretStorage:getAccessTokenFromFsPath', 'retrieved')
+        logDebug('VSCodeSecretStorage:getAccessTokenFromFsPath', 'retrieved')
         return json.token
     } catch (error) {
-        debug('VSCodeSecretStorage:getAccessTokenFromFsPath', 'failed', { verbose: error })
+        logError('VSCodeSecretStorage:getAccessTokenFromFsPath', 'failed', { verbose: error })
         return null
     }
 }

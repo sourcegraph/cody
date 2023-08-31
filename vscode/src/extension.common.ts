@@ -10,6 +10,7 @@ import { onActivationDevelopmentHelpers } from './dev/helpers'
 import { ExtensionApi } from './extension-api'
 import type { FilenameContextFetcher } from './local-context/filename-context-fetcher'
 import type { LocalKeywordContextFetcher } from './local-context/local-keyword-context-fetcher'
+import type { SymfRunner } from './local-context/symf'
 import { start } from './main'
 import type { getRgPath } from './rg'
 
@@ -22,6 +23,7 @@ export interface PlatformContext {
     getRgPath?: typeof getRgPath
     createCommandsController?: Constructor<typeof CommandsController>
     createLocalKeywordContextFetcher?: Constructor<typeof LocalKeywordContextFetcher>
+    createSymfRunner?: Constructor<typeof SymfRunner>
     createFilenameContextFetcher?: Constructor<typeof FilenameContextFetcher>
     createCompletionsClient:
         | Constructor<typeof SourcegraphBrowserCompletionsClient>

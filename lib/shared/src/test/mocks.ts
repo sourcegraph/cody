@@ -14,8 +14,6 @@ import {
 import { EmbeddingsSearch } from '../embeddings'
 import { IntentClassificationOption, IntentDetector } from '../intent-detector'
 import { ContextResult, KeywordContextFetcher } from '../local-context'
-import { SourcegraphCompletionsClient } from '../sourcegraph-api/completions/client'
-import { CompletionParameters, CompletionResponse } from '../sourcegraph-api/completions/types'
 import { EmbeddingsSearchResults } from '../sourcegraph-api/graphql'
 
 export class MockEmbeddingsClient implements EmbeddingsSearch {
@@ -30,28 +28,6 @@ export class MockEmbeddingsClient implements EmbeddingsSearch {
             this.mocks.search?.(query, codeResultsCount, textResultsCount) ??
             Promise.resolve({ codeResults: [], textResults: [] })
         )
-    }
-}
-
-export class MockCompletionsClient extends SourcegraphCompletionsClient {
-    constructor(private mocks: Partial<Pick<SourcegraphCompletionsClient, 'complete' | 'stream'>>) {
-        super({
-            accessToken: null,
-            customHeaders: {},
-            debugEnable: false,
-            serverEndpoint: 'https://example.com',
-        })
-    }
-
-    public stream(): () => void {
-        throw new Error('mock stream is not implemented')
-    }
-
-    public complete(params: CompletionParameters, abortSignal?: AbortSignal): Promise<CompletionResponse> {
-        if (!this.mocks.complete) {
-            throw new Error('mock complete is not provided')
-        }
-        return this.mocks.complete(params, abortSignal)
     }
 }
 
@@ -171,10 +147,11 @@ export function newRecipeContext(args?: Partial<RecipeContext>): RecipeContext {
         codebaseContext:
             args.codebaseContext ||
             new CodebaseContext(
-                { useContext: 'none', serverEndpoint: 'https://example.com' },
+                { useContext: 'none', serverEndpoint: 'https://example.com', experimentalLocalSymbols: false },
                 'dummy-codebase',
                 defaultEmbeddingsClient,
                 defaultKeywordContextFetcher,
+                null,
                 null
             ),
         responseMultiplexer: args.responseMultiplexer || new BotResponseMultiplexer(),

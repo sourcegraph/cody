@@ -1,6 +1,6 @@
 import * as vscode from 'vscode'
 
-import { isDotCom, isLocalApp } from '../chat/protocol'
+import { isDotCom, isLocalApp } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
 
 export interface LoginMenuItem {
     id: string
@@ -52,26 +52,36 @@ export const AuthMenu = async (type: AuthMenuType, historyItems: string[]): Prom
  * Show a VS Code input box to ask the user to enter a Sourcegraph instance URL.
  */
 export async function showInstanceURLInputBox(title: string): Promise<string | undefined> {
-    return vscode.window.showInputBox({
+    const result = await vscode.window.showInputBox({
         title,
         prompt: 'Enter the URL of the Sourcegraph instance',
         placeHolder: 'https://sourcegraph.example.com',
         password: false,
         ignoreFocusOut: true,
     })
+
+    if (typeof result === 'string') {
+        return result.trim()
+    }
+    return result
 }
 
 /**
  * Show a VS Code input box to ask the user to enter an access token.
  */
 export async function showAccessTokenInputBox(endpoint: string): Promise<string | undefined> {
-    return vscode.window.showInputBox({
+    const result = await vscode.window.showInputBox({
         title: endpoint,
         prompt: 'Paste your access token. To create an access token, go to "Settings" and then "Access tokens" on the Sourcegraph instance.',
         placeHolder: 'Access Token',
         password: true,
         ignoreFocusOut: true,
     })
+
+    if (typeof result === 'string') {
+        return result.trim()
+    }
+    return result
 }
 
 export const AuthMenuOptions = {

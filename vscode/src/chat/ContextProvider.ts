@@ -1,3 +1,4 @@
+import { throttle } from 'lodash'
 import * as vscode from 'vscode'
 
 import { ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
@@ -5,14 +6,16 @@ import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
 import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
 import { Editor } from '@sourcegraph/cody-shared/src/editor'
 import { SourcegraphEmbeddingsSearchClient } from '@sourcegraph/cody-shared/src/embeddings/client'
+import { IndexedKeywordContextFetcher } from '@sourcegraph/cody-shared/src/local-context'
+import { isLocalApp } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
 import { SourcegraphGraphQLAPIClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
 import { TelemetryService } from '@sourcegraph/cody-shared/src/telemetry'
-import { isError } from '@sourcegraph/cody-shared/src/utils'
+import { convertGitCloneURLToCodebaseName, isError } from '@sourcegraph/cody-shared/src/utils'
 
 import { getFullConfig } from '../configuration'
 import { VSCodeEditor } from '../editor/vscode-editor'
 import { PlatformContext } from '../extension.common'
-import { debug } from '../log'
+import { logDebug } from '../log'
 import { getRerankWithLog } from '../logged-rerank'
 import { repositoryRemoteUrl } from '../repository/repositoryHelpers'
 import { AuthProvider } from '../services/AuthProvider'
@@ -20,8 +23,8 @@ import { LocalStorage } from '../services/LocalStorageProvider'
 import { SecretStorage } from '../services/SecretStorageProvider'
 
 import { ChatViewProviderWebview } from './ChatViewProvider'
-import { ConfigurationSubsetForWebview, isLocalApp, LocalEnv } from './protocol'
-import { convertGitCloneURLToCodebaseName } from './utils'
+import { GraphContextProvider } from './GraphContextProvider'
+import { ConfigurationSubsetForWebview, LocalEnv } from './protocol'
 
 export type Config = Pick<
     ConfigurationWithAccessToken,
@@ -37,6 +40,7 @@ export type Config = Pick<
     | 'experimentalGuardrails'
     | 'experimentalCommandLenses'
     | 'experimentalEditorTitleCommandIcon'
+    | 'experimentalLocalSymbols'
     | 'pluginsEnabled'
     | 'pluginsConfig'
     | 'pluginsDebugEnabled'
@@ -67,6 +71,7 @@ export class ContextProvider implements vscode.Disposable {
         private secretStorage: SecretStorage,
         private localStorage: LocalStorage,
         private rgPath: string | null,
+        private symf: IndexedKeywordContextFetcher | undefined,
         private authProvider: AuthProvider,
         private telemetryService: TelemetryService,
         private platform: PlatformContext
@@ -80,8 +85,7 @@ export class ContextProvider implements vscode.Disposable {
             }),
             vscode.workspace.onDidChangeWorkspaceFolders(async () => {
                 await this.updateCodebaseContext()
-            }),
-            vscode.commands.registerCommand('cody.auth.sync', () => this.syncAuthStatus())
+            })
         )
     }
 
@@ -95,7 +99,7 @@ export class ContextProvider implements vscode.Disposable {
     }
 
     public onConfigurationChange(newConfig: Config): void {
-        debug('ContextProvider:onConfigurationChange', '')
+        logDebug('ContextProvider:onConfigurationChange', '')
         this.config = newConfig
         const authStatus = this.authProvider.getAuthStatus()
         if (authStatus.endpoint) {
@@ -118,6 +122,7 @@ export class ContextProvider implements vscode.Disposable {
         const codebaseContext = await getCodebaseContext(
             this.config,
             this.rgPath,
+            this.symf,
             this.editor,
             this.chat,
             this.telemetryService,
@@ -148,6 +153,7 @@ export class ContextProvider implements vscode.Disposable {
             const codebaseContext = await getCodebaseContext(
                 newConfig,
                 this.rgPath,
+                this.symf,
                 this.editor,
                 this.chat,
                 this.telemetryService,
@@ -185,10 +191,12 @@ export class ContextProvider implements vscode.Disposable {
                 },
             })
         }
-        this.disposables.push(this.configurationChangeEvent.event(() => send()))
-        this.disposables.push(vscode.window.onDidChangeActiveTextEditor(() => send()))
-        this.disposables.push(vscode.window.onDidChangeTextEditorSelection(() => send()))
-        return send()
+        const throttledSend = throttle(send, 250, { leading: true, trailing: true })
+
+        this.disposables.push(this.configurationChangeEvent.event(() => throttledSend()))
+        this.disposables.push(vscode.window.onDidChangeActiveTextEditor(() => throttledSend()))
+        this.disposables.push(vscode.window.onDidChangeTextEditorSelection(() => throttledSend()))
+        return throttledSend()
     }
 
     /**
@@ -212,7 +220,7 @@ export class ContextProvider implements vscode.Disposable {
             // update codebase context on configuration change
             await this.updateCodebaseContext()
             await this.webview?.postMessage({ type: 'config', config: configForWebview, authStatus })
-            debug('Cody:publishConfig', 'configForWebview', { verbose: configForWebview })
+            logDebug('Cody:publishConfig', 'configForWebview', { verbose: configForWebview })
         }
 
         await send()
@@ -248,6 +256,7 @@ export class ContextProvider implements vscode.Disposable {
 export async function getCodebaseContext(
     config: Config,
     rgPath: string | null,
+    symf: IndexedKeywordContextFetcher | undefined,
     editor: Editor,
     chatClient: ChatClient,
     telemetryService: TelemetryService,
@@ -281,6 +290,8 @@ export async function getCodebaseContext(
             ? platform.createLocalKeywordContextFetcher?.(rgPath, editor, chatClient, telemetryService) ?? null
             : null,
         rgPath ? platform.createFilenameContextFetcher?.(rgPath, editor, chatClient) ?? null : null,
+        new GraphContextProvider(editor),
+        symf,
         undefined,
         getRerankWithLog(chatClient)
     )

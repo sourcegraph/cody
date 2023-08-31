@@ -10,6 +10,12 @@ export interface Completion {
  */
 export interface InlineCompletionItem {
     insertText: string
+    /**
+     * The range to replace.
+     * Must begin and end on the same line.
+     *
+     * Prefer replacements over insertions to provide a better experience when the user deletes typed text.
+     */
     range?: Range
 }
 

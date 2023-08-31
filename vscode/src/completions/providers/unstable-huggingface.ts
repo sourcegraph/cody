@@ -1,9 +1,10 @@
 import fetch from 'isomorphic-fetch'
 
+import { isAbortError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
+
 import { logger } from '../../log'
 import { getLanguageConfig } from '../language'
 import { Completion, ContextSnippet } from '../types'
-import { isAbortError } from '../utils'
 
 import { Provider, ProviderConfig, ProviderOptions } from './provider'
 
@@ -12,6 +13,7 @@ interface UnstableHuggingFaceOptions {
     accessToken: null | string
 }
 
+const MODEL = 'starcoder'
 const PROVIDER_IDENTIFIER = 'huggingface'
 const STOP_WORD = '<|endoftext|>'
 const CONTEXT_WINDOW_CHARS = 3500 // ~ 1280 token limit
@@ -28,7 +30,7 @@ export class UnstableHuggingFaceProvider extends Provider {
 
     private createPrompt(snippets: ContextSnippet[]): string {
         const maxPromptChars = CONTEXT_WINDOW_CHARS - CONTEXT_WINDOW_CHARS * this.options.responsePercentage
-        const { prefix, suffix } = this.options
+        const { prefix, suffix } = this.options.docContext
 
         const intro: string[] = []
         let prompt = ''
@@ -105,11 +107,10 @@ export class UnstableHuggingFaceProvider extends Provider {
                 throw new Error(data.error)
             }
 
-            const completions: string[] = data.map(c => postProcess(c.generated_text, this.options.multiline))
+            const completions: string[] = data.map(c => postProcess(c.generated_text))
             log?.onComplete(completions)
 
             return completions.map(content => ({
-                prefix: this.options.prefix,
                 content,
             }))
         } catch (error: any) {
@@ -122,16 +123,8 @@ export class UnstableHuggingFaceProvider extends Provider {
     }
 }
 
-function postProcess(content: string, multiline: boolean): string {
-    content = content.replace(STOP_WORD, '')
-
-    // The model might return multiple lines for single line completions because
-    // we are only able to specify a token limit.
-    if (!multiline && content.includes('\n')) {
-        content = content.slice(0, content.indexOf('\n'))
-    }
-
-    return content.trim()
+function postProcess(content: string): string {
+    return content.replace(STOP_WORD, '')
 }
 
 export function createProviderConfig(unstableHuggingFaceOptions: UnstableHuggingFaceOptions): ProviderConfig {
@@ -143,5 +136,6 @@ export function createProviderConfig(unstableHuggingFaceOptions: UnstableHugging
         enableExtendedMultilineTriggers: true,
         identifier: PROVIDER_IDENTIFIER,
         supportsInfilling: true,
+        model: MODEL,
     }
 }

@@ -29,7 +29,7 @@ const EXTENSION_TO_LANGUAGE: { [key: string]: string } = {
 
 export const commandRegex = {
     chat: new RegExp(/^(?!.*\/n(ew)?\s|.*\/f(ix)?\s)/i), // For now, if the input does not start with /n or /f, it is a chat
-    fix: new RegExp(/^\/f(ix)?\s/i),
+    edit: new RegExp(/^\/e(dit)?\s/i),
     touch: new RegExp(/^\/t(ouch)?\s/i),
     touchNeedFileName: new RegExp(/^\/t(ouch)?\s(?!.*test(s)?\s)/i), // Has /touch or /t but no test or tests in the string
     noTest: new RegExp(/^(?!.*test)/i),

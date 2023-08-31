@@ -43,7 +43,7 @@ export class UnstableAzureOpenAIProvider extends Provider {
     }
 
     public async generateCompletions(abortSignal: AbortSignal, snippets: ContextSnippet[]): Promise<Completion[]> {
-        const { head, tail } = getHeadAndTail(this.options.prefix)
+        const { head, tail } = getHeadAndTail(this.options.docContext.prefix)
 
         // Create prompt
         // Although we are using gpt-35-turbo in text completion
@@ -94,7 +94,7 @@ export class UnstableAzureOpenAIProvider extends Provider {
         const results = json.choices
             .map(choice => ({
                 messages: prompt,
-                prefix: this.options.prefix,
+                prefix: this.options.docContext.prefix,
                 content: postProcess(choice.text),
             }))
             // Omit any empty completion
@@ -120,5 +120,6 @@ export function createProviderConfig(unstableAzureOpenAIOptions: UnstableAzureOp
         enableExtendedMultilineTriggers: false,
         identifier: PROVIDER_IDENTIFIER,
         supportsInfilling: false,
+        model: 'gpt-35-turbo',
     }
 }

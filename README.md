@@ -18,27 +18,29 @@
 
 ## Get started
 
-[⭐ **Install Cody from the VS Code Marketplace**](https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai), then check out the [demos](#demos) to see what you can do.
+[⭐ **Install Cody from the VS Code Marketplace**](https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai) or the [JetBrains Marketplace](https://plugins.jetbrains.com/plugin/9682-cody-ai-by-sourcegraph), then check out the [demos](#demos) to see what you can do.
 
 _&mdash; or &mdash;_
 
-- Build and run VS Code extension locally: `pnpm install && cd vscode && pnpm run dev`
+- Build and run the VS Code extension locally: `pnpm install && cd vscode && pnpm run dev`
 - See [all supported editors](https://cody.dev)
 
 ## What is Cody?
 
-Cody is a code AI tool that autocompletes, writes, fixes, and refactors code (and answers code questions), with:
+Cody is a free, open-source AI coding assistant that can write and fix code, provide AI-generated autocomplete, and answer your coding questions. Cody fetches relevant code context from across your entire codebase to write better code that uses more of your codebase's APIs, impls, and idioms, with less hallucination.
 
-- **Codebase context:** Cody fetches relevant code context from across your entire codebase to write better code that uses more of your codebase's APIs, impls, and idioms, with less hallucination.
-- **Editor features:** Popular extensions for [VS Code](https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai) and [JetBrains](https://plugins.jetbrains.com/plugin/9682-cody-ai-by-sourcegraph) (and WIP support for Neovim and Emacs).
-  - **Autocomplete:** with better suggestions based on your entire codebase, not just a few recently opened files
-  - **Inline chat:** refactor code based on natural language input, ask questions about code snippets, etc.
-  - **Recipes:** explain code, generate unit test, generate docstring, and many more (contribute your own!)
-  - **Codebase-wide chat:** ask questions about your entire codebase
-- **Swappable LLMs:** Support for Anthropic Claude and OpenAI GPT-4/3.5, highly experimental support for self-hosted LLMs, and more soon.
-  - **Free LLM usage included** (currently Anthropic Claude/OpenAI GPT-4) for individual devs on both personal and work code, subject to reasonable per-user rate limits ([more info](#usage)).
+Cody is currently in Beta and available for [VS Code](https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai) and [JetBrains](https://plugins.jetbrains.com/plugin/9682-cody-ai-by-sourcegraph).
 
 See [cody.dev](https://cody.dev) for more info.
+
+## What can Cody do?
+
+- **Chat:** Ask Cody questions about your entire codebase. Cody will use semantic search to retrieve files from your codebase and use context from those files to answer your questions.
+- **Autocomplete:** Cody makes single-line and multi-line suggestions as you type, speeding up your coding and shortcutting the need for you to hunt down function and variable names as you type.
+- **Inline Chat:** Ask Cody to fix or refactor code from anywhere in a file.
+- **Commands:** Cody has quick commands for common actions. Simply highlight a code snippet and run a command, like “Document code,” “Explain code,” or “Generate Unit Tests.”
+- **Swappable LLMs:** Support for Anthropic Claude, Claude 2, and OpenAI GPT-4/3.5, with more coming soon.
+  - **Free LLM usage included** (currently Anthropic Claude 2/OpenAI GPT-4) for individual devs on both personal and work code, subject to reasonable per-user rate limits ([more info](#usage)).
 
 ## Demos
 
@@ -48,9 +50,11 @@ See [cody.dev](https://cody.dev) for more info.
 
 **Inline chat**
 
-> <img src="https://storage.googleapis.com/sourcegraph-assets/website/Product%20Animations/GIFS/cody_inline_June23-sm.gif" width=600>
+> <img src="https://storage.googleapis.com/sourcegraph-assets/website/Product%20Animations/GIFS/cody_inline_June23-sm.gif" width=400>
 
-[More demos](https://cody.dev)
+**Codebase-wide chat:**
+
+> <img src="https://storage.googleapis.com/sourcegraph-assets/website/Product%20Animations/GIFS/cody-chat-may2023-optim.gif" width=400>
 
 ## Contributing
 

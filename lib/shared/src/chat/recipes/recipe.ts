@@ -17,6 +17,7 @@ export type RecipeID =
     | 'chat-question'
     | 'code-question'
     | 'context-search'
+    | 'local-indexed-keyword-search'
     | 'explain-code-detailed'
     | 'explain-code-high-level'
     | 'inline-touch'
@@ -35,6 +36,7 @@ export type RecipeID =
 
 export interface Recipe {
     id: RecipeID
+    title: string // Title Case
     multiplexerTopic?: string
     getInteraction(humanChatInput: string, context: RecipeContext): Promise<Interaction | null>
 }

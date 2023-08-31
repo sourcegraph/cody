@@ -13,7 +13,7 @@ import { newTextEditor } from './AgentTextEditor'
 import { AgentWorkspaceDocuments } from './AgentWorkspaceDocuments'
 import { AgentEditor } from './editor'
 import { MessageHandler } from './jsonrpc'
-import { AutocompleteItem, ExtensionConfiguration } from './protocol'
+import { AutocompleteItem, ExtensionConfiguration, RecipeInfo } from './protocol'
 import * as vscode_shim from './vscode-shim'
 
 const secretStorage = new Map<string, string>()
@@ -143,14 +143,14 @@ export class Agent extends MessageHandler {
 
         this.registerRequest('recipes/list', () =>
             Promise.resolve(
-                Object.values(registeredRecipes).map(({ id }) => ({
+                Object.values<RecipeInfo>(registeredRecipes).map(({ id, title }) => ({
                     id,
-                    title: id, // TODO: will be added in a follow PR
+                    title,
                 }))
             )
         )
 
-        this.registerRequest('recipes/execute', async data => {
+        this.registerRequest('recipes/execute', async (data, token) => {
             const client = await this.client
             if (!client) {
                 return null
@@ -162,13 +162,12 @@ export class Agent extends MessageHandler {
             })
             return null
         })
-        this.registerRequest('autocomplete/execute', async params => {
+        this.registerRequest('autocomplete/execute', async (params, token) => {
             const provider = await vscode_shim.completionProvider
             if (!provider) {
                 console.log('Completion provider is not initialized')
                 return { items: [] }
             }
-            const token = new vscode.CancellationTokenSource().token
             const document = this.workspace.getDocument(params.filePath)
             if (!document) {
                 console.log('No document found for file path', params.filePath, [...this.workspace.allFilePaths()])
@@ -190,11 +189,36 @@ export class Agent extends MessageHandler {
                         : result.items.flatMap(({ insertText, range }) =>
                               typeof insertText === 'string' && range !== undefined ? [{ insertText, range }] : []
                           )
-                return { items }
+                return { items, completionEvent: (result as any)?.completionEvent }
             } catch (error) {
                 console.log('autocomplete failed', error)
                 return { items: [] }
             }
+        })
+
+        this.registerRequest('graphql/currentUserId', async () => {
+            const client = await this.client
+            if (!client) {
+                throw new Error('Cody client not initialized')
+            }
+            const id = await client.graphqlClient.getCurrentUserId()
+            if (typeof id === 'string') {
+                return id
+            }
+
+            throw id
+        })
+        this.registerRequest('graphql/logEvent', async event => {
+            const client = await this.client
+            if (typeof event.argument === 'object') {
+                event.argument = JSON.stringify(event.argument)
+            }
+            if (typeof event.publicArgument === 'object') {
+                event.publicArgument = JSON.stringify(event.publicArgument)
+            }
+
+            await client?.graphqlClient.logEvent(event)
+            return null
         })
     }
 
@@ -212,14 +236,14 @@ export class Agent extends MessageHandler {
         )
         this.client = createClient({
             editor: new AgentEditor(this),
-            config: { ...config, useContext: 'none' },
+            config: { ...config, useContext: 'embeddings', experimentalLocalSymbols: false },
             setMessageInProgress: messageInProgress => {
                 this.notify('chat/updateMessageInProgress', messageInProgress)
             },
             setTranscript: () => {
                 // Not supported yet by agent.
             },
-            createCompletionsClient: config => new SourcegraphNodeCompletionsClient(config),
+            createCompletionsClient: (...args) => new SourcegraphNodeCompletionsClient(...args),
         })
     }
 }

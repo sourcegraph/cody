@@ -1,4 +1,5 @@
 import { getLanguageConfig } from './language'
+import { logCompletionEvent } from './logger'
 import { isAlmostTheSameString } from './utils/string-comparator'
 import { getEditorTabSize } from './utils/text-utils'
 
@@ -6,35 +7,37 @@ export const OPENING_CODE_TAG = '<CODE5711>'
 export const CLOSING_CODE_TAG = '</CODE5711>'
 
 /**
- * This extracts the generated code from the response from Anthropic. The generated code is
- * bookended by <CODE5711></CODE5711> tags (the '5711' ensures the tags are not interpreted as HTML
- * tags and this seems to yield better results).
+ * This extracts the generated code from the response from Anthropic. The generated code is book
+ * ended by <CODE5711></CODE5711> tags (the '5711' ensures the tags are not interpreted as HTML tags
+ * and this seems to yield better results).
  *
- * Any trailing whitespace is trimmed, but leading whitespace is preserved.
- * Trailing whitespace seems irrelevant to the user experience.
- * Leading whitespace is important, as leading newlines and indentation are relevant.
+ * Any trailing whitespace is trimmed, but leading whitespace is preserved. Trailing whitespace
+ * seems irrelevant to the user experience. Leading whitespace is important, as leading newlines and
+ * indentation are relevant.
  *
  * @param completion The raw completion result received from Anthropic
  * @returns the extracted code block
  */
 export function extractFromCodeBlock(completion: string): string {
     if (completion.includes(OPENING_CODE_TAG)) {
-        // TODO(valery): use logger here instead.
-        // console.error('invalid code completion response, should not contain opening tag <CODE5711>')
+        logCompletionEvent('containsOpeningTag')
         return ''
     }
 
-    const [result] = completion.split(CLOSING_CODE_TAG)
+    const index = completion.indexOf(CLOSING_CODE_TAG)
+    if (index === -1) {
+        return completion
+    }
 
-    return result.trimEnd()
+    return completion.slice(0, index)
 }
 
 const INDENTATION_REGEX = /^[\t ]*/
 /**
  * Counts space or tabs in the beginning of a line.
  *
- * Since Cody can sometimes respond in a mix of tab and spaces, this function
- * normalizes the whitespace first using the currently enabled tabSize option.
+ * Since Cody can sometimes respond in a mix of tab and spaces, this function normalizes the
+ * whitespace first using the currently enabled tabSize option.
  */
 export function indentation(line: string): number {
     const tabSize = getEditorTabSize()
@@ -109,11 +112,35 @@ export function getHeadAndTail(s: string): PrefixComponents {
         }
     }
 
+    let headAndTail: PrefixComponents
     if (tailStart === -1) {
-        return { head: trimSpace(s), tail: trimSpace(s), overlap: s }
+        headAndTail = { head: trimSpace(s), tail: trimSpace(s), overlap: s }
+    } else {
+        headAndTail = {
+            head: trimSpace(lines.slice(0, tailStart).join('\n')),
+            tail: trimSpace(lines.slice(tailStart).join('\n')),
+        }
     }
 
-    return { head: trimSpace(lines.slice(0, tailStart).join('\n')), tail: trimSpace(lines.slice(tailStart).join('\n')) }
+    // We learned that Anthropic is giving us worse results with trailing whitespace in the prompt.
+    // To fix this, we started to trim the prompt.
+    //
+    // However, when the prefix includes a line break, the LLM needs to know that we do not want the
+    // current line to complete and instead start a new one. For this specific case, we're injecting
+    // a line break in the trimmed prefix.
+    //
+    // This will only be added if the existing line is otherwise empty and will help especially with
+    // cases like users typing a comment and asking the LLM to provide a suggestion for the next
+    // line of code:
+    //
+    //     // Write some code
+    //     █
+    //
+    if (headAndTail.tail.rearSpace.includes('\n')) {
+        headAndTail.tail.trimmed += '\n'
+    }
+
+    return headAndTail
 }
 
 function trimSpace(s: string): TrimmedString {

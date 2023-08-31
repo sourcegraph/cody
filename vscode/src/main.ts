@@ -2,8 +2,7 @@ import * as vscode from 'vscode'
 
 import { commandRegex } from '@sourcegraph/cody-shared/src/chat/recipes/helpers'
 import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
-import { Configuration, ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
-import { SourcegraphCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/client'
+import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
 
 import { ChatViewProvider } from './chat/ChatViewProvider'
 import { ContextProvider } from './chat/ContextProvider'
@@ -11,10 +10,8 @@ import { FixupManager } from './chat/FixupViewProvider'
 import { InlineChatViewManager } from './chat/InlineChatViewProvider'
 import { MessageProviderOptions } from './chat/MessageProvider'
 import { CODY_FEEDBACK_URL } from './chat/protocol'
-import { VSCodeDocumentHistory } from './completions/context/history'
-import { createProviderConfig } from './completions/providers/createProvider'
-import { registerAutocompleteTraceView } from './completions/tracer/traceView'
-import { InlineCompletionItemProvider } from './completions/vscodeInlineCompletionItemProvider'
+import { createInlineCompletionItemProvider } from './completions/createVSCodeInlineCompletionItemProvider'
+import { parseAllVisibleDocuments, updateParseTreeOnEdit } from './completions/tree-sitter/parse-tree-cache'
 import { getConfiguration, getFullConfig } from './configuration'
 import { VSCodeEditor } from './editor/vscode-editor'
 import { PlatformContext } from './extension.common'
@@ -33,7 +30,7 @@ import {
     SecretStorage,
     VSCodeSecretStorage,
 } from './services/SecretStorageProvider'
-import { CodyStatusBar, createStatusBar } from './services/StatusBar'
+import { createStatusBar } from './services/StatusBar'
 import { createVSCodeTelemetryService } from './services/telemetry'
 import { TestSupport } from './test-support'
 
@@ -111,14 +108,24 @@ const register = async (
     const workspaceConfig = vscode.workspace.getConfiguration()
     const config = getConfiguration(workspaceConfig)
 
+    if (config.autocompleteExperimentalSyntacticPostProcessing) {
+        parseAllVisibleDocuments()
+
+        disposables.push(vscode.window.onDidChangeVisibleTextEditors(parseAllVisibleDocuments))
+        disposables.push(vscode.workspace.onDidChangeTextDocument(updateParseTreeOnEdit))
+    }
+
+    const symfRunner = platform.createSymfRunner?.(config.experimentalSymfPath, config.experimentalSymfAnthropicKey)
+
     const {
+        featureFlagProvider,
         intentDetector,
         codebaseContext: initialCodebaseContext,
         chatClient,
-        completionsClient,
+        codeCompletionsClient,
         guardrails,
         onConfigurationChange: externalServicesOnDidConfigurationChange,
-    } = await configureExternalServices(initialConfig, rgPath, editor, telemetryService, platform)
+    } = await configureExternalServices(initialConfig, rgPath, symfRunner, editor, telemetryService, platform)
 
     const authProvider = new AuthProvider(initialConfig, secretStorage, localStorage, telemetryService)
     await authProvider.init()
@@ -131,6 +138,7 @@ const register = async (
         secretStorage,
         localStorage,
         rgPath,
+        symfRunner,
         authProvider,
         telemetryService,
         platform
@@ -201,7 +209,7 @@ const register = async (
             return
         }
 
-        const task = options.instruction
+        const task = options.instruction?.replace('/edit', '').trim()
             ? fixup.createTask(document.uri, options.instruction, range)
             : await fixup.promptUserForTask()
         if (!task) {
@@ -218,18 +226,18 @@ const register = async (
     disposables.push(
         // Inline Chat Provider
         vscode.commands.registerCommand('cody.comment.add', async (comment: vscode.CommentReply) => {
-            const isFixMode = commandRegex.fix.test(comment.text.trimStart())
+            const isEditMode = commandRegex.edit.test(comment.text.trimStart())
 
             /**
              * TODO: Should we make fix the default for comments?
              * /chat or /ask could trigger a chat
              */
-            if (isFixMode) {
+            if (isEditMode) {
                 void vscode.commands.executeCommand('workbench.action.collapseAllComments')
                 const activeDocument = await vscode.workspace.openTextDocument(comment.thread.uri)
                 return executeFixup({
                     document: activeDocument,
-                    instruction: comment.text.replace(commandRegex.fix, ''),
+                    instruction: comment.text.replace(commandRegex.edit, ''),
                     range: comment.thread.range,
                 })
             }
@@ -263,7 +271,8 @@ const register = async (
         }),
         vscode.commands.registerCommand(
             'cody.fixup.new',
-            (range: vscode.Range): Promise<void> => executeFixup({ range })
+            (options: { range?: vscode.Range; instruction?: string; document?: vscode.TextDocument }) =>
+                executeFixup(options)
         ),
         vscode.commands.registerCommand('cody.inline.new', async () => {
             // move focus line to the end of the current selection
@@ -287,6 +296,10 @@ const register = async (
         vscode.commands.registerCommand('cody.auth.signin', () => authProvider.signinMenu()),
         vscode.commands.registerCommand('cody.auth.signout', () => authProvider.signoutMenu()),
         vscode.commands.registerCommand('cody.auth.support', () => showFeedbackSupportQuickPick()),
+        vscode.commands.registerCommand('cody.auth.sync', () => {
+            void contextProvider.syncAuthStatus()
+            void featureFlagProvider.syncAuthStatus()
+        }),
         // Commands
         vscode.commands.registerCommand('cody.interactive.clear', async () => {
             await sidebarChatProvider.clearAndRestartSession()
@@ -392,7 +405,7 @@ const register = async (
 
     let completionsProvider: vscode.Disposable | null = null
     disposables.push({ dispose: () => completionsProvider?.dispose() })
-    const setupAutocomplete = (): void => {
+    const setupAutocomplete = async (): Promise<void> => {
         const config = getConfiguration(vscode.workspace.getConfiguration())
 
         if (!config.autocomplete) {
@@ -413,14 +426,20 @@ const register = async (
             completionsProvider.dispose()
         }
 
-        completionsProvider = createCompletionsProvider(config, completionsClient, statusBar, contextProvider)
+        completionsProvider = await createInlineCompletionItemProvider(
+            config,
+            codeCompletionsClient,
+            statusBar,
+            contextProvider,
+            featureFlagProvider
+        )
     }
     vscode.workspace.onDidChangeConfiguration(event => {
         if (event.affectsConfiguration('cody.autocomplete')) {
-            setupAutocomplete()
+            void setupAutocomplete()
         }
     })
-    setupAutocomplete()
+    await setupAutocomplete()
 
     // Initiate inline chat when feature flag is on
     if (!initialConfig.inlineChat) {
@@ -450,51 +469,6 @@ const register = async (
             contextProvider.onConfigurationChange(newConfig)
             externalServicesOnDidConfigurationChange(newConfig)
             void createOrUpdateEventLogger(newConfig, localStorage, isExtensionModeDevOrTest)
-        },
-    }
-}
-
-function createCompletionsProvider(
-    config: Configuration,
-    completionsClient: SourcegraphCompletionsClient,
-    statusBar: CodyStatusBar,
-    contextProvider: ContextProvider
-): vscode.Disposable {
-    const disposables: vscode.Disposable[] = []
-
-    const providerConfig = createProviderConfig(config, completionsClient)
-    if (providerConfig) {
-        const history = new VSCodeDocumentHistory()
-        const completionsProvider = new InlineCompletionItemProvider({
-            providerConfig,
-            history,
-            statusBar,
-            getCodebaseContext: () => contextProvider.context,
-            isEmbeddingsContextEnabled: config.autocompleteAdvancedEmbeddings,
-            completeSuggestWidgetSelection: config.autocompleteExperimentalCompleteSuggestWidgetSelection,
-        })
-
-        disposables.push(
-            vscode.commands.registerCommand('cody.autocomplete.inline.accepted', ({ codyLogId, codyCompletion }) => {
-                completionsProvider.handleDidAcceptCompletionItem(codyLogId, codyCompletion)
-            }),
-            vscode.languages.registerInlineCompletionItemProvider('*', completionsProvider),
-            registerAutocompleteTraceView(completionsProvider)
-        )
-    } else if (config.isRunningInsideAgent) {
-        throw new Error(
-            "Can't register completion provider because `providerConfig` evaluated to `null`. " +
-                'To fix this problem, debug why createProviderConfig returned null instead of ProviderConfig. ' +
-                'To further debug this problem, here is the configuration:\n' +
-                JSON.stringify(config, null, 2)
-        )
-    }
-
-    return {
-        dispose: () => {
-            for (const disposable of disposables) {
-                disposable.dispose()
-            }
         },
     }
 }

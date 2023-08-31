@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import type * as vscode from 'vscode'
 
-import { DOTCOM_URL } from './chat/protocol'
+import { DOTCOM_URL } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
+
 import { getConfiguration } from './configuration'
 
 describe('getConfiguration', () => {
@@ -15,25 +16,30 @@ describe('getConfiguration', () => {
             pluginsEnabled: false,
             serverEndpoint: DOTCOM_URL.href,
             codebase: '',
+            customHeaders: {},
             useContext: 'embeddings',
             autocomplete: true,
             experimentalCommandLenses: false,
             experimentalEditorTitleCommandIcon: false,
             experimentalChatPredictions: false,
             experimentalGuardrails: false,
+            experimentalLocalSymbols: false,
             inlineChat: true,
             isRunningInsideAgent: false,
             experimentalNonStop: false,
-            customHeaders: {},
+            experimentalSymfAnthropicKey: '',
+            experimentalSymfPath: 'symf',
             debugEnable: false,
             debugVerbose: false,
             debugFilter: null,
             telemetryLevel: 'all',
-            autocompleteAdvancedProvider: 'anthropic',
+            autocompleteAdvancedProvider: null,
             autocompleteAdvancedServerEndpoint: null,
+            autocompleteAdvancedModel: null,
             autocompleteAdvancedAccessToken: null,
             autocompleteAdvancedEmbeddings: true,
             autocompleteExperimentalCompleteSuggestWidgetSelection: false,
+            autocompleteExperimentalSyntacticPostProcessing: false,
         })
     })
 
@@ -66,6 +72,12 @@ describe('getConfiguration', () => {
                         return true
                     case 'cody.experimental.nonStop':
                         return true
+                    case 'cody.experimental.localSymbols':
+                        return true
+                    case 'cody.experimental.symf.anthropicKey':
+                        return 'anthropic_secret_key'
+                    case 'cody.experimental.symf.path':
+                        return '/usr/local/bin/symf'
                     case 'cody.debug.enable':
                         return true
                     case 'cody.debug.verbose':
@@ -78,11 +90,15 @@ describe('getConfiguration', () => {
                         return 'unstable-codegen'
                     case 'cody.autocomplete.advanced.serverEndpoint':
                         return 'https://example.com/llm'
+                    case 'cody.autocomplete.advanced.model':
+                        return 'starcoder-32b'
                     case 'cody.autocomplete.advanced.accessToken':
                         return 'foobar'
                     case 'cody.autocomplete.advanced.embeddings':
                         return false
                     case 'cody.autocomplete.experimental.completeSuggestWidgetSelection':
+                        return false
+                    case 'cody.autocomplete.experimental.syntacticPostProcessing':
                         return false
                     case 'cody.plugins.enabled':
                         return true
@@ -115,18 +131,23 @@ describe('getConfiguration', () => {
             experimentalCommandLenses: true,
             experimentalEditorTitleCommandIcon: true,
             experimentalGuardrails: true,
+            experimentalLocalSymbols: true,
             inlineChat: true,
             isRunningInsideAgent: false,
             experimentalNonStop: true,
+            experimentalSymfAnthropicKey: 'anthropic_secret_key',
+            experimentalSymfPath: '/usr/local/bin/symf',
             debugEnable: true,
             debugVerbose: true,
             debugFilter: /.*/,
             telemetryLevel: 'off',
             autocompleteAdvancedProvider: 'unstable-codegen',
             autocompleteAdvancedServerEndpoint: 'https://example.com/llm',
+            autocompleteAdvancedModel: 'starcoder-32b',
             autocompleteAdvancedAccessToken: 'foobar',
             autocompleteAdvancedEmbeddings: false,
             autocompleteExperimentalCompleteSuggestWidgetSelection: false,
+            autocompleteExperimentalSyntacticPostProcessing: false,
         })
     })
 })

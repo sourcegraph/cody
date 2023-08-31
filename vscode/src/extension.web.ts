@@ -19,14 +19,13 @@ import { SourcegraphBrowserCompletionsClient } from '@sourcegraph/cody-shared/sr
 
 import { ExtensionApi } from './extension-api'
 import { activate as activateCommon } from './extension.common'
-import { debug } from './log'
+import { logDebug } from './log'
 
 /**
  * Recipes that can run in VS Code Web (and do not rely on Node packages such as `child_process`).
  */
 export const VSCODE_WEB_RECIPES: Recipe[] = [
-    new ChatQuestion(debug),
-    new ContextSearch(),
+    new ChatQuestion(logDebug),
     new ExplainCodeDetailed(),
     new ExplainCodeHighLevel(),
     new FindCodeSmells(),
@@ -35,10 +34,11 @@ export const VSCODE_WEB_RECIPES: Recipe[] = [
     new GenerateTest(),
     new ImproveVariableNames(),
     new CustomPrompt(),
-    new InlineChat(debug),
-    new InlineTouch(debug),
+    new InlineChat(logDebug),
+    new InlineTouch(logDebug),
     new NextQuestions(),
     new TranslateToLanguage(),
+    new ContextSearch(),
 ]
 
 /**

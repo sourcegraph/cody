@@ -23,7 +23,7 @@ export { Transcript }
 
 export type ClientInitConfig = Pick<
     ConfigurationWithAccessToken,
-    'serverEndpoint' | 'codebase' | 'useContext' | 'accessToken' | 'customHeaders'
+    'serverEndpoint' | 'codebase' | 'useContext' | 'accessToken' | 'customHeaders' | 'experimentalLocalSymbols'
 >
 
 export interface ClientInit {
@@ -51,6 +51,7 @@ export interface Client {
     codebaseContext: CodebaseContext
     sourcegraphStatus: { authenticated: boolean; version: string }
     codyStatus: { enabled: boolean; version: string }
+    graphqlClient: SourcegraphGraphQLAPIClient
 }
 
 export async function createClient({
@@ -86,8 +87,7 @@ export async function createClient({
         }
 
         const embeddingsSearch = repoId ? new SourcegraphEmbeddingsSearchClient(graphqlClient, repoId, true) : null
-
-        const codebaseContext = new CodebaseContext(config, config.codebase, embeddingsSearch, null, null)
+        const codebaseContext = new CodebaseContext(config, config.codebase, embeddingsSearch, null, null, null)
 
         const intentDetector = new SourcegraphIntentDetectorClient(graphqlClient, completionsClient)
 
@@ -141,8 +141,10 @@ export async function createClient({
             isMessageInProgress = true
             transcript.addInteraction(interaction)
 
-            const { prompt, contextFiles } = await transcript.getPromptForLastInteraction(getPreamble(config.codebase))
-            transcript.setUsedContextFilesForLastInteraction(contextFiles)
+            const { prompt, contextFiles, preciseContexts } = await transcript.getPromptForLastInteraction(
+                getPreamble(config.codebase)
+            )
+            transcript.setUsedContextFilesForLastInteraction(contextFiles, preciseContexts)
 
             const responsePrefix = interaction.getAssistantMessage().prefix ?? ''
             let rawText = ''
@@ -191,6 +193,7 @@ export async function createClient({
             codebaseContext,
             sourcegraphStatus,
             codyStatus,
+            graphqlClient,
         }
     }
 

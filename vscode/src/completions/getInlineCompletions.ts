@@ -2,12 +2,13 @@ import * as vscode from 'vscode'
 import { URI } from 'vscode-uri'
 
 import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
+import { isAbortError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
 
-import { debug } from '../log'
+import { logError } from '../log'
 
 import { GetContextOptions, GetContextResult } from './context/context'
 import { DocumentHistory } from './context/history'
-import { DocumentContext } from './document'
+import { DocumentContext } from './get-current-doc-context'
 import * as CompletionLogger from './logger'
 import { detectMultiline } from './multiline'
 import { CompletionProviderTracer, Provider, ProviderConfig, ProviderOptions } from './providers/provider'
@@ -15,7 +16,7 @@ import { RequestManager, RequestParams } from './request-manager'
 import { reuseLastCandidate } from './reuse-last-candidate'
 import { ProvideInlineCompletionsItemTraceData } from './tracer'
 import { InlineCompletionItem } from './types'
-import { isAbortError, SNIPPET_WINDOW_SIZE } from './utils'
+import { SNIPPET_WINDOW_SIZE } from './utils'
 
 export interface InlineCompletionsParams {
     // Context
@@ -51,6 +52,9 @@ export interface InlineCompletionsParams {
     // Execution
     abortSignal?: AbortSignal
     tracer?: (data: Partial<ProvideInlineCompletionsItemTraceData>) => void
+
+    // Feature flags
+    completeSuggestWidgetSelection?: boolean
 }
 
 /**
@@ -68,6 +72,9 @@ export interface LastInlineCompletionCandidate {
 
     /** The next non-empty line in the suffix */
     lastTriggerNextNonEmptyLine: string
+
+    /** The selected info item. */
+    lastTriggerSelectedInfoItem: string | undefined
 
     /** The previously suggested result. */
     result: Pick<InlineCompletionsResult, 'logId' | 'items'>
@@ -115,8 +122,9 @@ export async function getInlineCompletions(params: InlineCompletionsParams): Pro
         const error = unknownError instanceof Error ? unknownError : new Error(unknownError as any)
 
         params.tracer?.({ error: error.toString() })
+        logError('getInlineCompletions:error', error.message, error.stack, { verbose: { params, error } })
+        CompletionLogger.logError(error)
 
-        debug('getInlineCompletions:error', error.message, { verbose: error })
         if (isAbortError(error)) {
             return null
         }
@@ -148,6 +156,7 @@ async function doGetInlineCompletions({
     setIsLoading,
     abortSignal,
     tracer,
+    completeSuggestWidgetSelection = false,
 }: InlineCompletionsParams): Promise<InlineCompletionsResult | null> {
     tracer?.({ params: { document, position, context } })
 
@@ -163,7 +172,16 @@ async function doGetInlineCompletions({
 
     // Check if the user is typing as suggested by the last candidate completion (that is shown as
     // ghost text in the editor), and reuse it if it is still valid.
-    const resultToReuse = lastCandidate ? reuseLastCandidate({ document, position, lastCandidate, docContext }) : null
+    const resultToReuse = lastCandidate
+        ? reuseLastCandidate({
+              document,
+              position,
+              lastCandidate,
+              docContext,
+              context,
+              completeSuggestWidgetSelection,
+          })
+        : null
     if (resultToReuse) {
         return resultToReuse
     }
@@ -177,6 +195,7 @@ async function doGetInlineCompletions({
     const logId = CompletionLogger.create({
         multiline,
         providerIdentifier: providerConfig.identifier,
+        providerModel: providerConfig.model,
         languageId: document.languageId,
     })
 
@@ -230,6 +249,7 @@ async function doGetInlineCompletions({
         docContext,
         position,
         multiline,
+        context,
     }
 
     // Get the processed completions from providers
@@ -280,12 +300,11 @@ function getCompletionProviders({
     prefixPercentage,
     suffixPercentage,
     multiline,
-    docContext: { prefix, suffix },
+    docContext,
     toWorkspaceRelativePath,
 }: GetCompletionProvidersParams): Provider[] {
     const sharedProviderOptions: Omit<ProviderOptions, 'id' | 'n' | 'multiline'> = {
-        prefix,
-        suffix,
+        docContext,
         fileName: toWorkspaceRelativePath(document.uri),
         languageId: document.languageId,
         responsePercentage,

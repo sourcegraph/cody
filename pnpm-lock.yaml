@@ -124,12 +124,6 @@ importers:
       '@types/vscode':
         specifier: ^1.80.0
         version: 1.80.0
-      esbuild:
-        specifier: ^0.18.19
-        version: 0.18.19
-      esbuild-plugin-alias-path:
-        specifier: ^2.0.2
-        version: 2.0.2(esbuild@0.18.19)
       pkg:
         specifier: ^5.8.1
         version: 5.8.1
@@ -395,6 +389,9 @@ importers:
       lru-cache:
         specifier: ^10.0.0
         version: 10.0.0
+      mkdirp:
+        specifier: ^3.0.1
+        version: 3.0.1
       mock-require:
         specifier: ^3.0.3
         version: 3.0.3
@@ -8595,17 +8592,6 @@ packages:
     resolution: {integrity: sha512-MEl9uirslVwqQU369iHNWZXsI8yaZYGg/D65aOgZkeyFJwHYSxilf7rQzXKI7DdDuBPrBXbfk3sl9hJhmd5AUw==}
     dev: true
 
-  /esbuild-plugin-alias-path@2.0.2(esbuild@0.18.19):
-    resolution: {integrity: sha512-YK8H9bzx6/CG6YBV11XjoNLjRhNZP0Ta4xZ3ATHhPn7pN8ljQGg+zne4d47DpIzF8/sX2qM+xQWev0CvaD2rSQ==}
-    peerDependencies:
-      esbuild: '>= 0.14.0'
-    dependencies:
-      esbuild: 0.18.19
-      find-up: 5.0.0
-      fs-extra: 10.1.0
-      jsonfile: 6.1.0
-    dev: true
-
   /esbuild-plugin-alias@0.2.1:
     resolution: {integrity: sha512-jyfL/pwPqaFXyKnj8lP8iLk6Z0m099uXR45aSN8Av1XD4vhvQutxxPzgA2bTcAwQpa1zCXDcWOlhFgyP3GKqhQ==}
     dev: true
@@ -11246,14 +11232,6 @@ packages:
     optionalDependencies:
       graceful-fs: 4.2.11
 
-  /jsonfile@6.1.0:
-    resolution: {integrity: sha512-5dgndWOriYSm5cnYaJNhalLNDKOqFwyDB/rr1E9ZsGciGvKPs8R2xYGCacuf3z6K1YKDz182fd+fY3cn3pMqXQ==}
-    dependencies:
-      universalify: 2.0.0
-    optionalDependencies:
-      graceful-fs: 4.2.11
-    dev: true
-
   /jsonpointer@5.0.1:
     resolution: {integrity: sha512-p/nXbhSEcu3pZRdkW1OfJhpsVtW1gd4Wa1fnQc9YLiTfAjn0312eMKimbdIQzuZl9aa9xUGaRlP9T/CJE/ditQ==}
     engines: {node: '>=0.10.0'}
@@ -12731,6 +12709,12 @@ packages:
     resolution: {integrity: sha512-vVqVZQyf3WLx2Shd0qJ9xuvqgAyKPLAiqITEtqW0oIUjzo3PePDd6fW9iFz30ef7Ysp/oiWqbhszeGWW2T6Gzw==}
     engines: {node: '>=10'}
     hasBin: true
+
+  /mkdirp@3.0.1:
+    resolution: {integrity: sha512-+NsyUUAZDmo6YVHzL/stxSu3t9YS1iljliy3BSDrXJ/dkn1KYdmtZODGGjLcc9XLgVVpH4KshHB8XmZgMhaBXg==}
+    engines: {node: '>=10'}
+    hasBin: true
+    dev: false
 
   /ml-array-mean@1.1.6:
     resolution: {integrity: sha512-MIdf7Zc8HznwIisyiJGRH9tRigg3Yf4FldW8DxKxpCCv/g5CafTw0RRu51nojVEOXuCQC7DRVVu5c7XXO/5joQ==}

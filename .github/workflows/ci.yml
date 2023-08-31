@@ -28,6 +28,7 @@ jobs:
           key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
           restore-keys: ${{ runner.os }}-pnpm-store-
       - run: pnpm install
+      - run: pnpm build
       - run: pnpm run test:unit --run
 
   test-integration:
@@ -106,5 +107,6 @@ jobs:
           restore-keys: ${{ runner.os }}-pnpm-store-
       - run: pnpm install
       - run: pnpm run build
+      - run: pnpm -C vscode run build
       - run: pnpm run lint
       - run: pnpm run format:check

@@ -15,6 +15,7 @@ import { Recipe, RecipeContext, RecipeID } from './recipe'
 
 export class ChatQuestion implements Recipe {
     public id: RecipeID = 'chat-question'
+    public title = 'Chat Question'
 
     constructor(private debug: (filterLabel: string, text: string, ...args: unknown[]) => void) {}
 
@@ -58,7 +59,7 @@ export class ChatQuestion implements Recipe {
 
         this.debug('ChatQuestion:getContextMessages', 'isCodebaseContextRequired', isCodebaseContextRequired)
         if (isCodebaseContextRequired) {
-            const codebaseContextMessages = await codebaseContext.getContextMessages(text, numResults)
+            const codebaseContextMessages = await codebaseContext.getCombinedContextMessages(text, numResults)
             contextMessages.push(...codebaseContextMessages)
         }
 

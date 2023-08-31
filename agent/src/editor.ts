@@ -55,6 +55,14 @@ export class AgentEditor implements Editor {
             return null
         }
         const offsets = new DocumentOffsets(document)
+        if (!document.selection) {
+            return {
+                fileName: document.filePath ?? '',
+                precedingText: document.content ?? '',
+                selectedText: '',
+                followingText: '',
+            }
+        }
         const from = offsets.offset(document.selection.start)
         const to = offsets.offset(document.selection.end)
         return {

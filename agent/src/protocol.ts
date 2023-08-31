@@ -1,6 +1,9 @@
 /* eslint-disable @typescript-eslint/consistent-type-definitions */
 import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 import { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
+import { event } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
+
+import { CompletionEvent } from '../../vscode/src/completions/logger'
 
 // This file documents the Cody Agent JSON-RPC protocol. Consult the JSON-RPC
 // specification to learn about how JSON-RPC works https://www.jsonrpc.org/specification
@@ -33,6 +36,9 @@ export type Requests = {
     'recipes/execute': [ExecuteRecipeParams, null]
 
     'autocomplete/execute': [AutocompleteParams, AutocompleteResult]
+
+    'graphql/currentUserId': [null, string]
+    'graphql/logEvent': [event, null]
 
     // ================
     // Server -> Client
@@ -81,6 +87,8 @@ export type Notifications = {
     // Only the 'uri' property is required, other properties are ignored.
     'textDocument/didClose': [TextDocument]
 
+    '$/cancelRequest': [CancelParams]
+
     // ================
     // Server -> Client
     // ================
@@ -92,6 +100,10 @@ export type Notifications = {
     'debug/message': [DebugMessage]
 }
 
+export interface CancelParams {
+    id: string | number
+}
+
 export interface AutocompleteParams {
     filePath: string
     position: Position
@@ -99,6 +111,7 @@ export interface AutocompleteParams {
 
 export interface AutocompleteResult {
     items: AutocompleteItem[]
+    completionEvent?: CompletionEvent
 }
 
 export interface AutocompleteItem {
@@ -139,10 +152,11 @@ export interface ExtensionConfiguration {
     serverEndpoint: string
     accessToken: string
     customHeaders: Record<string, string>
-    autocompleteAdvancedProvider: string
-    autocompleteAdvancedServerEndpoint: string | null
-    autocompleteAdvancedAccessToken: string | null
-    autocompleteAdvancedEmbeddings: boolean
+    autocompleteAdvancedProvider?: string
+    autocompleteAdvancedServerEndpoint?: string | null
+    autocompleteAdvancedModel?: string | null
+    autocompleteAdvancedAccessToken?: string | null
+    autocompleteAdvancedEmbeddings?: boolean
     debug?: boolean
     verboseDebug?: boolean
     codebase?: string
@@ -168,7 +182,7 @@ export interface TextDocument {
 
 export interface RecipeInfo {
     id: RecipeID
-    title: string
+    title: string // Title Case
 }
 
 export interface ExecuteRecipeParams {

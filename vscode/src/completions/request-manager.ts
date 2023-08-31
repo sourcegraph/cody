@@ -1,7 +1,7 @@
 import { LRUCache } from 'lru-cache'
 import * as vscode from 'vscode'
 
-import { DocumentContext } from './document'
+import { DocumentContext } from './get-current-doc-context'
 import { LastInlineCompletionCandidate } from './getInlineCompletions'
 import { logCompletionEvent } from './logger'
 import { processInlineCompletions } from './processInlineCompletions'
@@ -15,6 +15,9 @@ export interface RequestParams {
 
     /** The request's document context **/
     docContext: DocumentContext
+
+    /** The request's inline completion context. **/
+    context: vscode.InlineCompletionContext
 
     /** The cursor position in the source file where the completion request was triggered. **/
     position: vscode.Position
@@ -41,6 +44,15 @@ export interface RequestManagerResult {
 export class RequestManager {
     private cache = new RequestCache()
     private readonly inflightRequests: Set<InflightRequest> = new Set()
+    private completeSuggestWidgetSelection = false
+
+    constructor(
+        { completeSuggestWidgetSelection = false }: { completeSuggestWidgetSelection: boolean } = {
+            completeSuggestWidgetSelection: false,
+        }
+    ) {
+        this.completeSuggestWidgetSelection = completeSuggestWidgetSelection
+    }
 
     public async request(
         params: RequestParams,
@@ -56,12 +68,7 @@ export class RequestManager {
         const request = new InflightRequest(params)
         this.inflightRequests.add(request)
 
-        // We forward a different abort controller to the network request so we
-        // can cancel the network request independently of the user cancelling
-        // the completion.
-        const networkRequestAbortController = new AbortController()
-
-        Promise.all(providers.map(c => c.generateCompletions(networkRequestAbortController.signal, context, tracer)))
+        Promise.all(providers.map(c => c.generateCompletions(request.abortController.signal, context, tracer)))
             .then(res => res.flat())
             .then(completions =>
                 // Shared post-processing logic
@@ -100,12 +107,13 @@ export class RequestManager {
         resolvedRequest: InflightRequest,
         items: InlineCompletionItem[]
     ): void {
-        const { document, position, docContext } = resolvedRequest.params
+        const { document, position, docContext, context } = resolvedRequest.params
         const lastCandidate: LastInlineCompletionCandidate = {
             uri: document.uri,
             lastTriggerPosition: position,
             lastTriggerCurrentLinePrefix: docContext.currentLinePrefix,
             lastTriggerNextNonEmptyLine: docContext.nextNonEmptyLine,
+            lastTriggerSelectedInfoItem: context?.selectedCompletionInfo?.text,
             result: {
                 logId: '',
                 items,
@@ -126,6 +134,8 @@ export class RequestManager {
                 position: request.params.position,
                 lastCandidate,
                 docContext: request.params.docContext,
+                context: request.params.context,
+                completeSuggestWidgetSelection: this.completeSuggestWidgetSelection,
             })
 
             if (synthesizedCandidate) {
@@ -133,6 +143,7 @@ export class RequestManager {
 
                 logCompletionEvent('synthesizedFromParallelRequest')
                 request.resolve({ completions: synthesizedItems, cacheHit: 'hit-after-request-started' })
+                request.abortController.abort()
                 this.inflightRequests.delete(request)
             }
         }
@@ -143,6 +154,7 @@ class InflightRequest {
     public promise: Promise<RequestManagerResult>
     public resolve: (result: RequestManagerResult) => void
     public reject: (error: Error) => void
+    public abortController: AbortController
 
     constructor(public params: RequestParams) {
         // The promise constructor is called synchronously, so this is just to
@@ -154,6 +166,10 @@ class InflightRequest {
             this.resolve = res
             this.reject = rej
         })
+        // We forward a different abort controller to the network request so we
+        // can cancel the network request independently of the user cancelling
+        // the completion.
+        this.abortController = new AbortController()
     }
 }
 

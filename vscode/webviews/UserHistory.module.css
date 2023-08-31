@@ -9,8 +9,12 @@
     margin: 0;
 }
 
-.clear-button-container {
+.heading-button-container {
     margin-left: auto;
+}
+
+.heading-button {
+    margin-left: 1rem;
 }
 
 .items-container {
@@ -23,19 +27,19 @@
 .item-button {
     display: block;
     position: relative;
-    padding-top: .5rem;
-    padding-bottom: .5rem;
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
 }
 
 .item-button-inner-container {
     text-align: left;
-    padding-top: .25rem;
-    padding-bottom: .25rem;
+    padding-top: 0.25rem;
+    padding-bottom: 0.25rem;
 }
 
 .item-date {
     font-size: smaller;
-    margin-bottom: .25rem;
+    margin-bottom: 0.25rem;
 }
 
 .item-delete {

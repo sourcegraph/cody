@@ -34,6 +34,7 @@ export {
     emptyEvent,
     emptyDisposable,
     Range,
+    Location,
     Selection,
     Position,
     Disposable,
@@ -93,16 +94,24 @@ const configuration: vscode.WorkspaceConfiguration = {
                 return connectionConfig?.serverEndpoint
             case 'cody.customHeaders':
                 return connectionConfig?.customHeaders
+            case 'cody.telemetry.level':
+                // Use the dedicated `graphql/logEvent` to send telemetry from
+                // agent clients.  The reason we disable telemetry via config is
+                // that we don't want to submit vscode-specific events when
+                // running inside the agent.
+                return 'off'
             case 'cody.autocomplete.enabled':
                 return true
             case 'cody.autocomplete.advanced.provider':
-                return connectionConfig?.autocompleteAdvancedProvider
+                return connectionConfig?.autocompleteAdvancedProvider ?? 'anthropic'
             case 'cody.autocomplete.advanced.serverEndpoint':
-                return connectionConfig?.autocompleteAdvancedServerEndpoint
+                return connectionConfig?.autocompleteAdvancedServerEndpoint ?? null
+            case 'cody.autocomplete.advanced.model':
+                return connectionConfig?.autocompleteAdvancedModel ?? null
             case 'cody.autocomplete.advanced.accessToken':
-                return connectionConfig?.autocompleteAdvancedAccessToken
+                return connectionConfig?.autocompleteAdvancedAccessToken ?? null
             case 'cody.autocomplete.advanced.embeddings':
-                return connectionConfig?.autocompleteAdvancedEmbeddings
+                return connectionConfig?.autocompleteAdvancedEmbeddings ?? true
             case 'cody.advanced.agent.running':
                 return true
             case 'cody.debug.enable':
@@ -295,6 +304,11 @@ const _env: Partial<typeof vscode.env> = {
     uriScheme: 'file',
     appRoot: process.cwd(),
     uiKind: UIKind.Web,
+    language: process.env.language,
+    clipboard: {
+        readText: () => Promise.resolve(''),
+        writeText: () => Promise.resolve(),
+    },
 }
 export const env = _env as typeof vscode.env
 

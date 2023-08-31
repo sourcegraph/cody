@@ -38,6 +38,9 @@ export function initialize(): void {
     require('./sourcegraph')
     require('./zoekt')
     require('./codesearchai')
+    require('./hf-transformers')
+    require('./numpy')
+    require('./pytorch')
     /* eslint-enable @typescript-eslint/no-require-imports */
 }
 
