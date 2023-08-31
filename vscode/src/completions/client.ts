@@ -7,7 +7,7 @@ import type {
     CompletionParameters,
     CompletionResponse,
 } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
-import { RateLimitError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
+import { NetworkError, RateLimitError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
 
 export type CodeCompletionsParams = Omit<CompletionParameters, 'fast'>
 
@@ -43,7 +43,7 @@ export function createClient(
 
             const [tracingFlagEnabled, streamingResponseFlagEnable] = featureFlagProvider
                 ? await Promise.all([
-                      true, // featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteTracing),
+                      featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteTracing),
                       featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteStreamingResponse),
                   ])
                 : [false, false]
@@ -58,7 +58,6 @@ export function createClient(
             const enableStreaming = !!isNode && !!streamingResponseFlagEnable
 
             const url = getCodeCompletionsEndpoint(tracingFlagEnabled)
-            console.log({ url })
             const response: Response = await fetch(url, {
                 method: 'POST',
                 body: JSON.stringify({
@@ -70,8 +69,6 @@ export function createClient(
             })
 
             const traceId = response.headers.get('x-trace') ?? undefined
-
-            console.log([...response.headers])
 
             // When rate-limiting occurs, the response is an error message
             if (response.status === 429) {
@@ -85,7 +82,7 @@ export function createClient(
             }
 
             if (response.body === null) {
-                throw new Error('No response body')
+                throw new NetworkError('No response body', traceId)
             }
 
             // For backward compatibility, we have to check if the response is an SSE stream or a
@@ -111,14 +108,14 @@ export function createClient(
                     }
 
                     if (lastResponse === undefined) {
-                        throw new Error('No completion response received')
+                        throw new NetworkError('No completion response received', traceId)
                     }
 
                     return lastResponse
                 } catch (error) {
                     const message = `error parsing streaming CodeCompletionResponse: ${error}`
                     log?.onError(message)
-                    throw new Error(message)
+                    throw new NetworkError(message, traceId)
                 }
             } else {
                 const result = await response.text()
@@ -128,7 +125,7 @@ export function createClient(
                     if (typeof response.completion !== 'string' || typeof response.stopReason !== 'string') {
                         const message = `response does not satisfy CodeCompletionResponse: ${result}`
                         log?.onError(message)
-                        throw new Error(message)
+                        throw new NetworkError(message, traceId)
                     } else {
                         log?.onComplete(response)
                         return response
@@ -136,7 +133,7 @@ export function createClient(
                 } catch (error) {
                     const message = `error parsing response CodeCompletionResponse: ${error}, response text: ${result}`
                     log?.onError(message)
-                    throw new Error(message)
+                    throw new NetworkError(message, traceId)
                 }
             }
         },
