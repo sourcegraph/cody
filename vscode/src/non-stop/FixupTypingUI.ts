@@ -12,10 +12,10 @@ export class FixupTypingUI {
     constructor(private readonly taskFactory: FixupTaskFactory) {}
 
     private async getInstructionFromQuickPick({
-        title = '/fix',
+        title = 'Edit code (/edit)',
         placeholder = 'Your instructions',
         value = '',
-        prefix = '/fix',
+        prefix = '/edit',
     } = {}): Promise<string> {
         const quickPick = vscode.window.createQuickPick()
         quickPick.title = title

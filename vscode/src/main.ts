@@ -11,6 +11,7 @@ import { InlineChatViewManager } from './chat/InlineChatViewProvider'
 import { MessageProviderOptions } from './chat/MessageProvider'
 import { CODY_FEEDBACK_URL } from './chat/protocol'
 import { createInlineCompletionItemProvider } from './completions/createVSCodeInlineCompletionItemProvider'
+import { parseAllVisibleDocuments, updateParseTreeOnEdit } from './completions/tree-sitter/parse-tree-cache'
 import { getConfiguration, getFullConfig } from './configuration'
 import { VSCodeEditor } from './editor/vscode-editor'
 import { PlatformContext } from './extension.common'
@@ -107,6 +108,13 @@ const register = async (
     const workspaceConfig = vscode.workspace.getConfiguration()
     const config = getConfiguration(workspaceConfig)
 
+    if (config.autocompleteExperimentalSyntacticPostProcessing) {
+        parseAllVisibleDocuments()
+
+        disposables.push(vscode.window.onDidChangeVisibleTextEditors(parseAllVisibleDocuments))
+        disposables.push(vscode.workspace.onDidChangeTextDocument(updateParseTreeOnEdit))
+    }
+
     const symfRunner = platform.createSymfRunner?.(config.experimentalSymfPath, config.experimentalSymfAnthropicKey)
 
     const {
@@ -201,7 +209,7 @@ const register = async (
             return
         }
 
-        const task = options.instruction?.replace('/fix', '').trim()
+        const task = options.instruction?.replace('/edit', '').trim()
             ? fixup.createTask(document.uri, options.instruction, range)
             : await fixup.promptUserForTask()
         if (!task) {
@@ -218,18 +226,18 @@ const register = async (
     disposables.push(
         // Inline Chat Provider
         vscode.commands.registerCommand('cody.comment.add', async (comment: vscode.CommentReply) => {
-            const isFixMode = commandRegex.fix.test(comment.text.trimStart())
+            const isEditMode = commandRegex.edit.test(comment.text.trimStart())
 
             /**
              * TODO: Should we make fix the default for comments?
              * /chat or /ask could trigger a chat
              */
-            if (isFixMode) {
+            if (isEditMode) {
                 void vscode.commands.executeCommand('workbench.action.collapseAllComments')
                 const activeDocument = await vscode.workspace.openTextDocument(comment.thread.uri)
                 return executeFixup({
                     document: activeDocument,
-                    instruction: comment.text.replace(commandRegex.fix, ''),
+                    instruction: comment.text.replace(commandRegex.edit, ''),
                     range: comment.thread.range,
                 })
             }
