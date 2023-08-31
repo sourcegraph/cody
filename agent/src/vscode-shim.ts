@@ -42,6 +42,7 @@ export {
     EndOfLine,
     EventEmitter,
     InlineCompletionItem,
+    InlineCompletionList,
     InlineCompletionTriggerKind,
     WorkspaceEdit,
     QuickPickItemKind,

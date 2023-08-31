@@ -120,6 +120,7 @@ describe.each([
         })
 
         assert(completions.items.length > 0)
+        console.log({ completions })
     })
 
     const streamingChatMessages = new Promise<void>(resolve => {

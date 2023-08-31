@@ -453,6 +453,10 @@ export class InlineCompletionItem {
     }
 }
 
+export class InlineCompletionList {
+    constructor(public readonly items: InlineCompletionItem[]) {}
+}
+
 // TODO(abeatrix): Implement delete and insert mocks
 export class WorkspaceEdit {
     public delete(uri: Uri, range: Range): Range {
