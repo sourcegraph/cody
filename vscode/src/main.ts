@@ -106,7 +106,7 @@ const register = async (
         onConfigurationChange: externalServicesOnDidConfigurationChange,
     } = await configureExternalServices(initialConfig, rgPath, symfRunner, editor, telemetryService, platform)
 
-    const authProvider = new AuthProvider(initialConfig, secretStorage, localStorage, telemetryService)
+    const authProvider = new AuthProvider(initialConfig, telemetryService)
     await authProvider.init()
 
     const contextProvider = new ContextProvider(
