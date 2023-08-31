@@ -19,7 +19,6 @@ import * as CompletionLogger from './logger'
 import { ProviderConfig } from './providers/provider'
 import { RequestManager } from './request-manager'
 import { ProvideInlineCompletionItemsTracer, ProvideInlineCompletionsItemTraceData } from './tracer'
-import { initParser } from './tree-sitter/parse-tree-cache'
 import { InlineCompletionItem } from './types'
 import { getNextNonEmptyLine } from './utils/text-utils'
 
@@ -33,7 +32,6 @@ export interface CodyCompletionItemProviderConfig {
     suffixPercentage?: number
     isEmbeddingsContextEnabled?: boolean
     completeSuggestWidgetSelection?: boolean
-    completeExperimentalSyntacticPostProcessing?: boolean
     tracer?: ProvideInlineCompletionItemsTracer | null
     contextFetcher?: (options: GetContextOptions) => Promise<GetContextResult>
     featureFlagProvider: FeatureFlagProvider
@@ -60,7 +58,6 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
         suffixPercentage = 0.1,
         isEmbeddingsContextEnabled = true,
         completeSuggestWidgetSelection = false,
-        completeExperimentalSyntacticPostProcessing = false,
         tracer = null,
         ...config
     }: CodyCompletionItemProviderConfig) {
@@ -71,7 +68,6 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
             suffixPercentage,
             isEmbeddingsContextEnabled,
             completeSuggestWidgetSelection,
-            completeExperimentalSyntacticPostProcessing,
             tracer,
             contextFetcher: config.contextFetcher ?? getContext,
         }
@@ -139,13 +135,6 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
         // the text that is already in the editor, VS Code will never render the completion.
         if (!currentEditorContentMatchesPopupItem(document, context)) {
             return null
-        }
-
-        // Init tree-sitter parser asynchronously so we can use it later in the post-processing logic.
-        // If the parser won't be ready in time, we'll skip the tree-sitter post-processing.
-        // TODO: move to `onDidChangeTextDocument` handler.
-        if (this.config.completeExperimentalSyntacticPostProcessing) {
-            void initParser(document)
         }
 
         const docContext = getCurrentDocContext(

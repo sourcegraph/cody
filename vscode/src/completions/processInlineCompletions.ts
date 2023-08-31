@@ -1,11 +1,11 @@
 import { Position, Range, TextDocument } from 'vscode'
 
-import { dedupeWith } from '@sourcegraph/cody-shared'
+import { dedupeWith } from '@sourcegraph/cody-shared/src/common'
 
 import { DocumentContext } from './get-current-doc-context'
 import { truncateMultilineCompletion } from './multiline'
 import { collapseDuplicativeWhitespace, removeTrailingWhitespace, trimUntilSuffix } from './text-processing'
-import { getCachedParseTreeForDocument } from './tree-sitter/parse-tree-cache'
+import { asPoint, getCachedParseTreeForDocument } from './tree-sitter/parse-tree-cache'
 import { InlineCompletionItem } from './types'
 
 export interface ProcessInlineCompletionsParams {
@@ -124,11 +124,12 @@ export function addParseInfoToCompletions(
         return items.map(item => ({ ...item, hasParseErrors: false }))
     }
 
-    const { parser } = parseTreeCache
+    const { parser, tree } = parseTreeCache
     const query = parser.getLanguage().query('(ERROR) @error')
 
     return items.map(completion => {
         const { range, insertText } = completion
+        const treeCopy = tree.copy()
 
         // Adjust suffix and prefix based on completion insert range.
         const prefix = range
@@ -139,13 +140,20 @@ export function addParseInfoToCompletions(
             : docContext.suffix
 
         const textWithCompletion = prefix + insertText + suffix
+        const completionEndPosition = position.translate(undefined, insertText.length)
+
+        treeCopy.edit({
+            startIndex: prefix.length,
+            oldEndIndex: prefix.length,
+            newEndIndex: prefix.length + insertText.length,
+            startPosition: asPoint(position),
+            oldEndPosition: asPoint(range?.end || position),
+            newEndPosition: asPoint(completionEndPosition),
+        })
 
         // TODO: consider parsing only the changed part of the document to improve performance.
-        // TODO: move document parsing to a `onDidChangeTextDocument` handler to leverage incremental parsing.
         // parser.parse(textWithCompletion, tree, { includedRanges: [...]})
-        const treeWithCompletion = parser.parse(textWithCompletion)
-
-        const completionPositionEnd = position.translate(undefined, insertText.length)
+        const treeWithCompletion = parser.parse(textWithCompletion, treeCopy)
 
         // Search for ERROR nodes in the completion range.
         const matches = query.matches(
@@ -155,8 +163,8 @@ export function addParseInfoToCompletions(
                 column: position.character,
             },
             {
-                row: completionPositionEnd.line,
-                column: completionPositionEnd.character,
+                row: completionEndPosition.line,
+                column: completionEndPosition.character,
             }
         )
 

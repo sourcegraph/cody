@@ -335,4 +335,43 @@ export class MessageHandler {
         }
         this.messageEncoder.send(data)
     }
+
+    /**
+     * @returns A JSON-RPC client to interact directly with this agent instance. Useful when we want
+     * to use the agent in-process without stdout/stdin transport mechanism.
+     */
+    public clientForThisInstance(): InProcessClient {
+        return new InProcessClient(this.requestHandlers, this.notificationHandlers)
+    }
+}
+
+/**
+ * A client for a JSON-RPC {@link MessageHandler} running in the same process.
+ */
+class InProcessClient {
+    constructor(
+        private readonly requestHandlers: Map<RequestMethodName, RequestCallback<any>>,
+        private readonly notificationHandlers: Map<NotificationMethodName, NotificationCallback<any>>
+    ) {}
+
+    public request<M extends RequestMethodName>(
+        method: M,
+        params: ParamsOf<M>,
+        cancelToken: vscode.CancellationToken = new vscode.CancellationTokenSource().token
+    ): Promise<ResultOf<M>> {
+        const handler = this.requestHandlers.get(method)
+        if (handler) {
+            return handler(params, cancelToken)
+        }
+        throw new Error('No such request handler: ' + method)
+    }
+
+    public notify<M extends NotificationMethodName>(method: M, params: ParamsOf<M>): void {
+        const handler = this.notificationHandlers.get(method)
+        if (handler) {
+            handler(params)
+            return
+        }
+        throw new Error('No such notification handler: ' + method)
+    }
 }
