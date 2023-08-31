@@ -5,7 +5,7 @@ import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
 import { FeatureFlag, FeatureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
 import { RateLimitError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
 
-import { logDebug, outputChannel } from '../log'
+import { logDebug } from '../log'
 import { CodyStatusBar } from '../services/StatusBar'
 
 import { getContext, GetContextOptions, GetContextResult } from './context/context'
@@ -40,8 +40,6 @@ export interface CodyCompletionItemProviderConfig {
     contextFetcher?: (options: GetContextOptions) => Promise<GetContextResult>
     featureFlagProvider: FeatureFlagProvider
 }
-
-const ONE_HOUR = 1000 * 60 * 60
 
 export class InlineCompletionItemProvider implements vscode.InlineCompletionItemProvider {
     private promptChars: number
@@ -337,21 +335,25 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
             return
         }
 
-        const now = Date.now()
-        if (
-            this.reportedErrorMessages.has(error.message) &&
-            this.reportedErrorMessages.get(error.message)! + ONE_HOUR >= now
-        ) {
-            return
-        }
-        this.reportedErrorMessages.set(error.message, now)
-        this.config.statusBar.addError({
-            title: 'Cody Autocomplete Encountered an Unexpected Error',
-            description: error.message,
-            onSelect: () => {
-                outputChannel.show()
-            },
-        })
+        // @TODO(philipp-spiess): Bring back this code once we have fewer uncaught errors
+        //
+        // c.f. https://sourcegraph.slack.com/archives/C05AGQYD528/p1693471486690459
+        //
+        // const now = Date.now()
+        // if (
+        //     this.reportedErrorMessages.has(error.message) &&
+        //     this.reportedErrorMessages.get(error.message)! + ONE_HOUR >= now
+        // ) {
+        //     return
+        // }
+        // this.reportedErrorMessages.set(error.message, now)
+        // this.config.statusBar.addError({
+        //     title: 'Cody Autocomplete Encountered an Unexpected Error',
+        //     description: error.message,
+        //     onSelect: () => {
+        //         outputChannel.show()
+        //     },
+        // })
     }
 }
 
