@@ -1,6 +1,6 @@
 import { expect } from '@playwright/test'
 
-import { sidebarExplorer, sidebarSignin } from './common'
+import { codyEditorCommandButtonRole, sidebarExplorer, sidebarSignin } from './common'
 import { test } from './helpers'
 
 test('checks if clear chat history button clears history and current session', async ({ page, sidebar }) => {
@@ -35,7 +35,7 @@ test('checks if clear chat history button clears history and current session', a
     await expect(sidebar.getByText('Hey')).not.toBeVisible()
 
     // Open the Cody Commands palette and run a command
-    await page.getByRole('button', { name: 'Commands (⌥C)' }).click()
+    await page.getByRole('button', codyEditorCommandButtonRole).click()
     await page.keyboard.type('/explain')
     await page.keyboard.press('Enter')
 
