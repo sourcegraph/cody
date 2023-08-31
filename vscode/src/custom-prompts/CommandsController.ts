@@ -411,7 +411,7 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
             return
         }
         // Save the prompt to the current Map and Extension storage
-        await this.custom.save(newCommand.title, newCommand.prompt)
+        await this.custom.save(newCommand.slashCommand, newCommand.prompt)
         await this.refresh()
 
         debug('CommandsController:updateUserCommandQuick:newPrompt:', 'saved', { verbose: newCommand })

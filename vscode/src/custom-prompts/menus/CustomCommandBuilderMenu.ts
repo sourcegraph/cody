@@ -10,35 +10,59 @@ const NewCustomCommandConfigMenuOptions = {
 }
 
 export interface CodyCommand {
-    title: string
+    slashCommand: string
     prompt: CodyPrompt
 }
 export class CustomCommandsBuilderMenu {
     public async start(commands: Map<string, CodyPrompt>): Promise<CodyCommand | null> {
+        // get slash command
+        const slashCommand = await this.makeSlashCommand(commands)
         // get name
-        const title = await this.makeName(commands)
+        const description = await this.makeDescription()
         // build prompt
-        const prompt = await this.makePrompt(title)
-
-        if (!title || !prompt) {
+        const prompt = await this.makePrompt()
+        if (!slashCommand || !description || !prompt) {
             return null
         }
-        void window.showInformationMessage(`New command: ${title} created successfully.`)
-        return { title, prompt }
+        void window.showInformationMessage(`New command: ${description} created successfully.`)
+        return { slashCommand, prompt: { ...prompt, description, slashCommand } }
     }
 
-    private async makeName(commands: Map<string, CodyPrompt>): Promise<string | undefined> {
+    private async makeSlashCommand(commands: Map<string, CodyPrompt>): Promise<string | undefined> {
+        let slashCommand = await window.showInputBox({
+            ...NewCustomCommandConfigMenuOptions,
+            prompt: 'Enter a keyword for this command to act as a slash command that you can run in chat or main quick pick.',
+            placeHolder: 'e.g. "explain" to assign /explain for the "Explain Code" command',
+            ignoreFocusOut: true,
+            validateInput: (input: string) => {
+                if (!input) {
+                    return 'Slash command cannot be empty. Please enter a unique identifier.'
+                }
+                if (commands.has(input)) {
+                    return 'A command with the same identifier exists. Please enter a different command name.'
+                }
+                if (input.split(' ').length > 1) {
+                    return 'A command cannot contain spaces. You can use dashes, underscores, camelCase, etc. instead.'
+                }
+                return
+            },
+        })
+        if (slashCommand) {
+            // ensure there is only one leading forward slash
+            slashCommand = slashCommand.replace(/^\/+/, '').replace(/^/, '/')
+        }
+        return slashCommand
+    }
+
+    private async makeDescription(): Promise<string | undefined> {
         const name = await window.showInputBox({
             ...NewCustomCommandConfigMenuOptions,
-            prompt: 'Enter an unique name for the new command.',
+            prompt: 'Enter description for the new command.',
             placeHolder: 'e,g. Vulnerability Scanner',
             ignoreFocusOut: true,
             validateInput: (input: string) => {
                 if (!input) {
-                    return 'Command name cannot be empty. Please enter a unique name.'
-                }
-                if (commands.has(input)) {
-                    return 'A command with the same name exists. Please enter a different name.'
+                    return 'Command description cannot be empty.'
                 }
                 return
             },
@@ -46,10 +70,7 @@ export class CustomCommandsBuilderMenu {
         return name
     }
 
-    private async makePrompt(promptName?: string): Promise<CodyPrompt | null> {
-        if (!promptName) {
-            return null
-        }
+    private async makePrompt(): Promise<Omit<CodyPrompt, 'slashCommand'> | null> {
         // Get the prompt description from the user using the input box
         const minPromptLength = 3
         const prompt = await window.showInputBox({
@@ -72,7 +93,9 @@ export class CustomCommandsBuilderMenu {
     }
 
     // Add context to the command
-    private async addContext(newPrompt?: CodyPrompt): Promise<CodyPrompt | null> {
+    private async addContext(
+        newPrompt?: Omit<CodyPrompt, 'slashCommand'>
+    ): Promise<Omit<CodyPrompt, 'slashCommand'> | null> {
         if (!newPrompt) {
             return null
         }
@@ -109,12 +132,6 @@ export class CustomCommandsBuilderMenu {
             }
         }
 
-        // Assign slash command
-        const promptSlashCommand = await showPromptCreationInputBox(slashCommandPrompt)
-        if (promptSlashCommand) {
-            newPrompt.slashCommand = promptSlashCommand
-        }
-
         return newPrompt
     }
 }
@@ -131,9 +148,4 @@ async function showPromptCreationInputBox(args: { prompt: string; placeHolder: s
 const inputPrompt = {
     prompt: 'Add a terminal command to run the command locally and share the output with Cody as prompt context.',
     placeHolder: 'e.g. node your-script.js, git describe --long, cat src/file-name.js etc.',
-}
-
-const slashCommandPrompt = {
-    prompt: 'ESC to skip, or enter a keyword to turn this command into a slash command that you can run in chat',
-    placeHolder: 'e.g. "explain" to assign /explain for the "Explain Code" command',
 }

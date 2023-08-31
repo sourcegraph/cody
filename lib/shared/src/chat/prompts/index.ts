@@ -57,7 +57,7 @@ export interface CodyPrompt {
     prompt: string
     context?: CodyPromptContext
     type?: CodyPromptType
-    slashCommand?: string
+    slashCommand: string
 }
 
 // Type of context available for prompt building
