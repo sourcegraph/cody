@@ -37,5 +37,6 @@ export type RecipeID =
 export interface Recipe {
     id: RecipeID
     multiplexerTopic?: string
+    fast?: boolean
     getInteraction(humanChatInput: string, context: RecipeContext): Promise<Interaction | null>
 }

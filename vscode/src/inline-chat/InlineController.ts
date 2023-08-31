@@ -352,7 +352,7 @@ export class Comment implements vscode.Comment {
          * We throttle the update function to ensure we do not try to update the comment too much.
          * Relevant VS Code logic: https://sourcegraph.com/github.com/microsoft/vscode@6c8cdf325eb1dc8a0e2ea9205a1d2ca05f69c101/-/blob/src/vs/workbench/api/common/extHostComments.ts?L461-492
          */
-        this.update = throttle(this.unthrottledUpdate.bind(this), 500)
+        this.update = throttle(this.unthrottledUpdate.bind(this), 100)
     }
 
     private unthrottledUpdate(input: string, contextValue: string): void {

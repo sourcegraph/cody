@@ -10,6 +10,7 @@ import { Recipe, RecipeContext, RecipeID } from './recipe'
 
 export class InlineChat implements Recipe {
     public id: RecipeID = 'inline-chat'
+    public fast = true
 
     public async getInteraction(taskId: string, context: RecipeContext): Promise<Interaction | null> {
         const inlineController = context.editor.controllers?.inline
