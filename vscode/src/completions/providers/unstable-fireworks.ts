@@ -29,6 +29,8 @@ const MODEL_MAP = {
     'starcoder-7b': 'fireworks/accounts/fireworks/models/starcoder-7b-w8a16',
     'starcoder-3b': 'fireworks/accounts/fireworks/models/starcoder-3b-w8a16',
     'starcoder-1b': 'fireworks/accounts/fireworks/models/starcoder-1b-w8a16',
+    'wizardcoder-15b': 'fireworks/accounts/fireworks/models/wizardcoder-15b',
+    'llama-code-7b': 'fireworks/accounts/fireworks/models/llama-v2-7b-code',
     'llama-code-13b': 'fireworks/accounts/fireworks/models/llama-v2-13b-code',
     'llama-code-13b-instruct': 'fireworks/accounts/fireworks/models/llama-v2-13b-code-instruct',
 }
@@ -94,8 +96,7 @@ export class UnstableFireworksProvider extends Provider {
             // To speed up sample generation in single-line case, we request a lower token limit
             // since we can't terminate on the first `\n`.
             maxTokensToSample: this.options.multiline ? 256 : 30,
-            temperature: 0.4,
-            topP: 0.95,
+            ...getModelConfig(this.model),
             model: MODEL_MAP[this.model],
         }
 
@@ -119,7 +120,7 @@ export class UnstableFireworksProvider extends Provider {
     }
 
     private createInfillingPrompt(intro: string, prefix: string, suffix: string): string {
-        if (this.model.startsWith('starcoder')) {
+        if (this.model.startsWith('starcoder') || this.model.startsWith('wizardcoder')) {
             // c.f. https://starcoder.co/bigcode/starcoder#fill-in-the-middle
             return `<fim_prefix>${intro}${prefix}<fim_suffix>${suffix}<fim_middle>`
         }
@@ -182,7 +183,7 @@ export class UnstableFireworksProvider extends Provider {
     }
 
     private postProcess(content: string): string {
-        if (this.model.startsWith('starcoder')) {
+        if (this.model.startsWith('starcoder') || this.model.startsWith('wizardcoder')) {
             return content.replace(EOT_STARCODER, '')
         }
         if (this.model.startsWith('llama-code')) {
@@ -229,4 +230,18 @@ function getSuffixAfterFirstNewline(suffix: string): string {
     }
 
     return suffix.slice(suffix.indexOf('\n'))
+}
+
+function getModelConfig(model: string): { temperature: number; topP: number } {
+    if (model.startsWith('llama-code')) {
+        return {
+            temperature: 0.3,
+            topP: 0.95,
+        }
+    }
+
+    return {
+        temperature: 0.4,
+        topP: 0.95,
+    }
 }

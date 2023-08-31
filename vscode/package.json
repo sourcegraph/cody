@@ -879,6 +879,8 @@
             "starcoder-7b",
             "starcoder-3b",
             "starcoder-1b",
+            "wizardcoder-15b",
+            "llama-code-7b",
             "llama-code-13b",
             "llama-code-13b-instruct"
           ],
