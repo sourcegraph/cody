@@ -213,7 +213,6 @@ export function createProviderConfig(
         maximumContextCharacters: CONTEXT_WINDOW_CHARS,
         enableExtendedMultilineTriggers: true,
         identifier: PROVIDER_IDENTIFIER,
-        supportsInfilling: true,
         model,
     }
 }
