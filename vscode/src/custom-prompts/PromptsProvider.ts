@@ -4,9 +4,10 @@ import { logDebug } from '../log'
 
 // Manage default commands created by the prompts in prompts.json
 const editorCommands = [{ name: 'Request a Code Edit', prompt: '/edit', slashCommand: '/edit' }]
+const gitCommands = [{ name: 'Git', prompt: '/git', slashCommand: '/git' }]
 export class PromptsProvider {
     // The default prompts
-    private defaultPromptsMap = getDefaultCommandsMap(editorCommands)
+    private defaultPromptsMap = getDefaultCommandsMap([...editorCommands, ...gitCommands])
 
     // The commands grouped by default prompts and custom prompts
     private allCommands = new Map<string, CodyPrompt>()

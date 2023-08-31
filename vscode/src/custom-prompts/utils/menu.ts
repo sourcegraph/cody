@@ -24,6 +24,11 @@ const customCommandsSeparator: QuickPickItem = { kind: -1, label: 'custom comman
 const configOption: QuickPickItem = { label: 'Configure Custom Commands...' }
 const settingsSeparator: QuickPickItem = { kind: -1, label: 'settings' }
 const addOption: QuickPickItem = { label: 'Create a New Custom User Command...', alwaysShow: true }
+const gitOption: QuickPickItemWithSlashCommand = {
+    label: '/git',
+    description: 'Request a Git command',
+    slashCommand: '/git',
+}
 
 export const recentlyUsedSeparatorAsPrompt: [string, CodyPrompt][] = [
     ['separator', { prompt: 'separator', type: 'recently used' }],
@@ -41,6 +46,7 @@ export const menu_options = {
     fix: fixOption,
     config: configOption,
     add: addOption,
+    git: gitOption,
 }
 
 const userItem: QuickPickItem = {

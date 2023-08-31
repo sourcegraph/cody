@@ -342,6 +342,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
     }
 
     public async executeRecipe(recipeId: RecipeID, humanChatInput = ''): Promise<void> {
+        console.log('Executing recipe', recipeId)
         if (this.isMessageInProgress) {
             this.handleError('Cannot execute multiple recipes. Please wait for the current recipe to finish.')
             return
@@ -373,6 +374,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
             codebaseContext: this.contextProvider.context,
             responseMultiplexer: this.multiplexer,
             firstInteraction: this.transcript.isEmpty,
+            chat: this.chat,
         })
         if (!interaction) {
             return
@@ -441,6 +443,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
             codebaseContext: this.contextProvider.context,
             responseMultiplexer: multiplexer,
             firstInteraction: this.transcript.isEmpty,
+            chat: this.chat,
         })
         if (!interaction) {
             return
@@ -592,6 +595,8 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
             case /^\/edit(\s)?/.test(text):
                 await vscode.commands.executeCommand('cody.fixup.new', { instruction: text })
                 return null
+            case /^\/git(\s)?/.test(text):
+                return { text: text.replace('/git', '').trim(), recipeId: 'git-anything' }
             case /^\/(explain|doc|test|smell)$/.test(text):
                 this.telemetryService.log(`CodyVSCodeExtension:command:${commandKey}:called`, {
                     source: 'chat',

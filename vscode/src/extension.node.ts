@@ -3,6 +3,7 @@ import * as vscode from 'vscode'
 import { ContextSearch } from '@sourcegraph/cody-shared/src/chat/recipes/context-search'
 import { PrDescription } from '@sourcegraph/cody-shared/src/chat/recipes/generate-pr-description'
 import { ReleaseNotes } from '@sourcegraph/cody-shared/src/chat/recipes/generate-release-notes'
+import { GitAnything } from '@sourcegraph/cody-shared/src/chat/recipes/git-anything'
 import { GitHistory } from '@sourcegraph/cody-shared/src/chat/recipes/git-log'
 import { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/nodeClient'
 
@@ -33,6 +34,7 @@ export function activate(context: vscode.ExtensionContext): ExtensionApi {
         recipes: [
             ...VSCODE_WEB_RECIPES,
             new GitHistory(),
+            new GitAnything(),
             new ReleaseNotes(),
             new PrDescription(),
             new LocalIndexedKeywordSearch(),

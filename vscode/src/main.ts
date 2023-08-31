@@ -323,6 +323,11 @@ const register = async (
             telemetryService.log('CodyVSCodeExtension:chat:submitted', { source: 'menu' })
         }),
         vscode.commands.registerCommand(
+            'cody.action.git',
+            async (instruction: string): Promise<void> =>
+                executeRecipeInSidebar('custom-prompt', true, `/git ${instruction}`)
+        ),
+        vscode.commands.registerCommand(
             'cody.action.fixup',
             (instruction: string, range: vscode.Range): Promise<void> => executeFixup({ instruction, range })
         ),
