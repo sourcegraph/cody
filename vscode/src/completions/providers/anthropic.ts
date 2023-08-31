@@ -64,22 +64,29 @@ export class AnthropicProvider extends Provider {
         const prefixMessages: Message[] = [
             {
                 speaker: 'human',
-                text: `You are a code completion AI that writes high-quality code like a senior engineer. You are looking at ${
-                    this.options.fileName
-                }. You write code in between tags like this: ${OPENING_CODE_TAG}${
-                    this.options.languageId === 'python' || this.options.languageId === 'ruby'
-                        ? '# Code goes here'
-                        : '/* Code goes here */'
-                }${CLOSING_CODE_TAG}.`,
+                text: 'You are a code completion AI that refers to shared context to write high-quality and efficient code that fits and works seamlessly with surrounding code.',
             },
             {
                 speaker: 'assistant',
-                text: 'I am a code completion AI that writes high-quality code like a senior engineer.',
+                text: 'I am a code completion AI that writes high-quality code that fits and works seamlessly with its surrounding code.',
             },
+            // {
+            //     speaker: 'human',
+            //     text: `Here is the code that goes before the code you will be completing for:${head.trimmed}`,
+            // },
+            // {
+            //     speaker: 'assistant',
+            //     text: 'Reviewed. I will complete the next code completion request that comes after this code snippet.',
+            // },
             {
                 speaker: 'human',
-                text: `Complete this code: ${OPENING_CODE_TAG}${head.trimmed}${CLOSING_CODE_TAG}.`,
+                text: `As a code completion AI that writes high-quality code, complete the code enclosed in the ${OPENING_CODE_TAG} below so that it flows and works seamlessly with its surrounding code. It is important the style and pattern used in the new code is consistent with surrounding code and use the same naming convention. For examples, 1) when writing a comment, following the styles and patterns of the exisiting comments when available, 2) declare return types for functions when functions in the surrounding code do. Do not reuse function names or repeat the same code exists in surrounding code. Do not complete code that uses methods or libraries not imported in current file. Do not repeat code, functions or methods that exist in the shared context. Focus on writing clean, efficient code that works seamlessly with surrounding code. Complete the code in ${OPENING_CODE_TAG}:
+                ${head.trimmed}${OPENING_CODE_TAG}${tail.trimmed}${CLOSING_CODE_TAG}${this.options.docContext.suffix}`,
             },
+            // {
+            //     speaker: 'human',
+            //     text: `As a code completion AI that writes high-quality code, complete the end of the code in ${OPENING_CODE_TAG} tags so that it works seamlessly with the code before it, alongside with the code enclosed in the <AFTER> tags. It is important the new code remains consistent with the rest of the file for maintainability. For example, when writing a comment, following the styles and patterns of the exisiting comments when available. Feel free to reuse code patterns and idioms that appear elsewhere in the file but do not create any functions or methods that already exist in any shared context provided: ${OPENING_CODE_TAG}${head.trimmed}${CLOSING_CODE_TAG}<AFTER>${this.options.docContext.suffix}</AFTER>`,
+            // },
             {
                 speaker: 'assistant',
                 text: `Here is the code: ${OPENING_CODE_TAG}${tail.trimmed}`,
@@ -101,11 +108,11 @@ export class AnthropicProvider extends Provider {
             const snippetMessages: Message[] = [
                 {
                     speaker: 'human',
-                    text: `Here is a reference snippet of code: ${OPENING_CODE_TAG}${snippet.content}${CLOSING_CODE_TAG}`,
+                    text: `Codebase context from a file with file path ${snippet.fileName}: ${OPENING_CODE_TAG}${snippet.content}${CLOSING_CODE_TAG}`,
                 },
                 {
                     speaker: 'assistant',
-                    text: 'I have added the snippet to my knowledge base.',
+                    text: 'I will refer to this code when completing your next request.',
                 },
             ]
             const numSnippetChars = messagesToText(snippetMessages).length + 1
@@ -119,6 +126,7 @@ export class AnthropicProvider extends Provider {
         return { messages: [...referenceSnippetMessages, ...prefixMessages], prefix }
     }
 
+    // Returns completions based on the generated prompt
     public async generateCompletions(
         abortSignal: AbortSignal,
         snippets: ContextSnippet[],

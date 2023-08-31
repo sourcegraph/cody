@@ -103,8 +103,8 @@ async function getRelevantFiles(
     // Use tabs API to get current docs instead of `vscode.workspace.textDocuments`.
     // See related discussion: https://github.com/microsoft/vscode/issues/15178
     // See more info about the API: https://code.visualstudio.com/api/references/vscode-api#Tab
-    const allUris: vscode.Uri[] = vscode.window.tabGroups.all
-        .flatMap(({ tabs }) => tabs.map(tab => (tab.input as any)?.uri))
+    const allUris = vscode.window.tabGroups.all
+        ?.flatMap(({ tabs }) => tabs.map(tab => (tab.input as vscode.TabInputText)?.uri))
         .filter(Boolean)
 
     // To define an upper-bound for the number of files to take into consideration, we consider all
@@ -115,11 +115,19 @@ async function getRelevantFiles(
     // be more relevant.
     const uris: Map<string, vscode.Uri> = new Map()
     const surroundingTabs = visibleUris.length <= 1 ? 3 : 2
+
+    const isCurrentFileTestFile = currentDocument.fileName.includes('test')
+
     for (const visibleUri of visibleUris) {
         uris.set(visibleUri.toString(), visibleUri)
         const index = allUris.findIndex(uri => uri.toString() === visibleUri.toString())
 
         if (index === -1) {
+            continue
+        }
+
+        // Include test files when the current file is a test file
+        if (!includeTestFiles(isCurrentFileTestFile, visibleUri.fsPath)) {
             continue
         }
 
@@ -129,6 +137,19 @@ async function getRelevantFiles(
         for (let j = start; j <= end; j++) {
             uris.set(allUris[j].toString(), allUris[j])
         }
+    }
+
+    // Filters test files from current directory
+    const currentDirectoryUri = vscode.Uri.file(path.dirname(currentDocument.uri.fsPath))
+    const excludeGlob = isCurrentFileTestFile ? undefined : '**/**test**'
+    const searchPattern = new vscode.RelativePattern(currentDirectoryUri, '*')
+
+    const currentDirectoryFilesUris = await vscode.workspace.findFiles(searchPattern, excludeGlob, 15)
+    for (const uri of currentDirectoryFilesUris) {
+        if (uri === currentDocument?.uri || uris.has(uri.toString())) {
+            continue
+        }
+        uris.set(uri.toString(), uri)
     }
 
     const docs = (
@@ -149,7 +170,7 @@ async function getRelevantFiles(
     ).flat()
 
     for (const document of docs) {
-        if (document.fileName.endsWith('.git')) {
+        if (document.fileName.startsWith('.')) {
             // The VS Code API returns fils with the .git suffix for every open file
             continue
         }
@@ -157,19 +178,33 @@ async function getRelevantFiles(
     }
 
     await Promise.all(
-        history.lastN(10, curLang, [currentDocument.uri, ...files.map(f => f.uri)]).map(async item => {
-            try {
-                const document = await vscode.workspace.openTextDocument(item.document.uri)
-                addDocument(document)
-            } catch (error) {
-                console.error(error)
-            }
-        })
+        history
+            .lastN(10, curLang, [
+                currentDocument.uri,
+                ...files.filter(f => includeTestFiles(isCurrentFileTestFile, f.uri.fsPath)).map(f => f.uri),
+            ])
+            .map(async item => {
+                try {
+                    const document = await vscode.workspace.openTextDocument(item.document.uri)
+                    addDocument(document)
+                } catch (error) {
+                    console.error(error)
+                }
+            })
     )
     return files
 }
 
+/**
+ * Returns the last n lines of a text as a string.
+ */
 function lastNLines(text: string, n: number): string {
     const lines = text.split('\n')
     return lines.slice(Math.max(0, lines.length - n)).join('\n')
+}
+
+function includeTestFiles(isCurrentFileTestFile: boolean, docFsPath: string): boolean {
+    const isDocTestFile = docFsPath.includes('test')
+    // Include test files when the current file is a test file
+    return isCurrentFileTestFile === isDocTestFile
 }
