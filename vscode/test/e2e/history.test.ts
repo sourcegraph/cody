@@ -21,7 +21,7 @@ test('checks if clear chat history button clears history and current session', a
     await page.click('[aria-label="Start a New Chat Session"]')
     await expect(sidebar.getByText("Hello! I'm Cody. I can write code and answer questions for you.")).toBeVisible()
 
-    await sidebar.getByRole('textbox', { name: 'Chat message' }).fill('Hello')
+    await sidebar.getByRole('textbox', { name: 'Chat message' }).fill('Hola')
     await sidebar.locator('vscode-button').getByRole('img').click()
 
     await page.click('[aria-label="Start a New Chat Session"]')
@@ -31,11 +31,10 @@ test('checks if clear chat history button clears history and current session', a
     await page.getByRole('button', { name: 'Chat History' }).click()
 
     await expect(sidebar.getByText('Hey')).toBeVisible()
-    await expect(sidebar.getByText('Hello')).toBeVisible()
-
+    await expect(sidebar.getByText('Hola')).toBeVisible()
     await sidebar.locator('vscode-button').filter({ hasText: 'Clear' }).click()
     await expect(sidebar.getByText('Hey')).not.toBeVisible()
-    await expect(sidebar.getByText('Hello')).not.toBeVisible()
+    await expect(sidebar.getByText('Hola')).not.toBeVisible()
 
     // Open the Cody Commands palette and run a command
     await page.getByRole('button', { name: 'Commands (⌥C)' }).click()
