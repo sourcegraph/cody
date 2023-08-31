@@ -92,7 +92,7 @@ addTestCase('InternalDoer', {
             question: 'What does InternalDoer do?',
             facts: literalFacts('httpcli', 'http'),
             answerSummary:
-                'InternalDoer is a shared HTTP client for making internal HTTP requests. It is not used for external HTTP requests. It is a convenience for existing uses of http.DefaultClient.',
+                'InternalDoer is a shared HTTP client for making internal HTTP requests. It is a convenience for existing uses of http.DefaultClient.',
         },
     ],
 })
