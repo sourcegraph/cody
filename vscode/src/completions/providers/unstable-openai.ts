@@ -17,7 +17,6 @@ interface UnstableOpenAIOptions {
 }
 
 const PROVIDER_IDENTIFIER = 'unstable-openai'
-const EOT_OPENAI = '<|im_end|>'
 const MAX_RESPONSE_TOKENS = 256
 const OPENING_CODE_TAG = '```'
 const CLOSING_CODE_TAG = '```'
