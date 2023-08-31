@@ -23,7 +23,6 @@ export interface Configuration {
     autocompleteAdvancedProvider:
         | 'anthropic'
         | 'unstable-codegen'
-        | 'unstable-huggingface'
         | 'unstable-fireworks'
         | 'unstable-azure-openai'
         | null
