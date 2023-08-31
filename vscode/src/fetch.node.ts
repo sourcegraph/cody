@@ -31,7 +31,7 @@ export function initializeNetworkAgent(): void {
      *
      * To work around this, we patch the default proxy agent method and overwrite the
      * `originalAgent` value before invoking it for requests that want to keep their connection
-     * alive (as documented by the `Connection: keep-alive` header).
+     * alive (as indicated by the `Connection: keep-alive` header).
      *
      * c.f. https://github.com/microsoft/vscode/issues/173861
      */
