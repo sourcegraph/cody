@@ -73,12 +73,12 @@ function find(lines: string[], node: SyntaxNode): ReturnedIdentNode[] {
 
     for (let idx in node.children) {
         let child = node.children[idx]
-        if (child.type == 'return_statement') {
+        if (child.type == 'return_statement' && child.childCount == 2) {
             let returnNode = child.children[0]
             let identifierMaybe = child.children[1]
             if (returnNode.type == 'return' && identifierMaybe.type == 'identifier') {
                 let name = extract(lines, identifierMaybe.startPosition, identifierMaybe.endPosition)
-                returnNodes.push({ node: child, identifier: name })
+                returnNodes.push({ node: identifierMaybe, identifier: name })
             } else {
                 console.error(`-> Skipping ${returnNode} because it doesn't match what we want`)
             }
@@ -91,4 +91,37 @@ function find(lines: string[], node: SyntaxNode): ReturnedIdentNode[] {
 
     return returnNodes
 }
+
+
+export function findFilesByExtension(path: String, extension: string): string[] {
+
+    var files: string[] = []
+
+    for (let f of fs.readdirSync(path)) {
+        let filePath = path + "/" + f
+        let st = fs.statSync(filePath)
+        let isDir = st.isDirectory()
+        if (f != "node_modules") {
+            if (isDir) {
+                files = files.concat(findFilesByExtension(filePath, extension))
+            } else if (f.endsWith("." + extension)) {
+                files.push(filePath)
+            }
+        }
+
+    }
+
+    return files
+}
+
+export function indexFolder(path: string, extension: string): CompleteRequest[] {
+    let files = findFilesByExtension(path, extension)
+
+    let requests = files.flatMap(filePath => {
+        return indexFile(filePath)
+    })
+
+    return requests
+}
+
 

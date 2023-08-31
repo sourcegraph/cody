@@ -1,6 +1,6 @@
 import { spawn } from "child_process"
 import { CompleteRequest, CompleteResponse, indexFile, indexString } from "./indexer"
-import { findFilesByExtension } from "./repo"
+import { findFilesByExtension } from "./indexer"
 import { statSync } from "fs"
 
 async function evaluateFolder(dir: string, complete: (cr: CompleteRequest) => Promise<CompleteResponse>): Promise<Stats> {
@@ -32,10 +32,10 @@ async function evaluateFolder(dir: string, complete: (cr: CompleteRequest) => Pr
 async function evaluatePath(path: string, complete: (cr: CompleteRequest) => Promise<CompleteResponse>): Promise<Stats> {
     const stat = statSync(path)
 
-    if (stat.isDirectory()) return evaluateFolder(path, complete)
-    else return evaluateFile(path, complete)
-
-
+    if (stat.isDirectory())
+        return evaluateFolder(path, complete)
+    else
+        return evaluateFile(path, complete)
 }
 
 
