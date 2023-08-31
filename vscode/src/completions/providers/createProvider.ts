@@ -10,6 +10,7 @@ import { createProviderConfig as createUnstableAzureOpenAiProviderConfig } from 
 import { createProviderConfig as createUnstableCodeGenProviderConfig } from './unstable-codegen'
 import { createProviderConfig as createUnstableFireworksProviderConfig } from './unstable-fireworks'
 import { createProviderConfig as createUnstableHuggingFaceProviderConfig } from './unstable-huggingface'
+import { createProviderConfig as createUnstableOpenAIProviderConfig } from './unstable-openai'
 
 export async function createProviderConfig(
     config: Configuration,
@@ -63,6 +64,12 @@ export async function createProviderConfig(
             }
 
             return createUnstableAzureOpenAiProviderConfig({
+                client,
+                contextWindowTokens: 2048,
+            })
+        }
+        case 'unstable-openai': {
+            return createUnstableOpenAIProviderConfig({
                 client,
                 contextWindowTokens: 2048,
             })

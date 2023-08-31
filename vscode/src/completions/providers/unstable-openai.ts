@@ -10,12 +10,12 @@ import { forkSignal } from '../utils'
 
 import { CompletionProviderTracer, Provider, ProviderConfig, ProviderOptions } from './provider'
 
-interface UnstableAzureOpenAIOptions {
+interface UnstableOpenAIOptions {
     client: Pick<CodeCompletionsClient, 'complete'>
     contextWindowTokens: number
 }
 
-const PROVIDER_IDENTIFIER = 'unstable-azure-openai'
+const PROVIDER_IDENTIFIER = 'unstable-openai'
 const EOT_OPENAI = '<|im_end|>'
 const MAX_RESPONSE_TOKENS = 256
 
@@ -25,11 +25,11 @@ function tokensToChars(tokens: number): number {
     return tokens * CHARS_PER_TOKEN
 }
 
-export class UnstableAzureOpenAIProvider extends Provider {
+export class UnstableOpenAIProvider extends Provider {
     private client: Pick<CodeCompletionsClient, 'complete'>
     private promptChars: number
 
-    constructor(options: ProviderOptions, azureOpenAIOptions: UnstableAzureOpenAIOptions) {
+    constructor(options: ProviderOptions, azureOpenAIOptions: UnstableOpenAIOptions) {
         super(options)
         this.client = azureOpenAIOptions.client
         this.promptChars = tokensToChars(azureOpenAIOptions.contextWindowTokens) - tokensToChars(MAX_RESPONSE_TOKENS)
@@ -146,10 +146,10 @@ export class UnstableAzureOpenAIProvider extends Provider {
     }
 }
 
-export function createProviderConfig(unstableAzureOpenAIOptions: UnstableAzureOpenAIOptions): ProviderConfig {
+export function createProviderConfig(unstableAzureOpenAIOptions: UnstableOpenAIOptions): ProviderConfig {
     return {
         create(options: ProviderOptions) {
-            return new UnstableAzureOpenAIProvider(options, { ...unstableAzureOpenAIOptions })
+            return new UnstableOpenAIProvider(options, { ...unstableAzureOpenAIOptions })
         },
         maximumContextCharacters: tokensToChars(unstableAzureOpenAIOptions.contextWindowTokens),
         enableExtendedMultilineTriggers: false,
