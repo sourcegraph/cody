@@ -41,6 +41,8 @@ export function createClient(
             if (config.accessToken) {
                 headers.set('Authorization', `token ${config.accessToken}`)
             }
+            // c.f. https://github.com/microsoft/vscode/issues/173861
+            headers.set('Connection', 'keep-alive')
 
             // We enable streaming only for Node environments right now because it's hard to make the
             // polyfilled fetch API work the same as it does in the browser.
