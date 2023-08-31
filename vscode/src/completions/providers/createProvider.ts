@@ -63,8 +63,8 @@ export async function createProviderConfig(
             }
 
             return createUnstableAzureOpenAiProviderConfig({
-                serverEndpoint: config.autocompleteAdvancedServerEndpoint,
-                accessToken: config.autocompleteAdvancedAccessToken,
+                client,
+                contextWindowTokens: 2048,
             })
         }
         case 'unstable-fireworks': {
