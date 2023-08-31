@@ -20,7 +20,7 @@ import { ANSWER_TOKENS, DEFAULT_MAX_TOKENS } from '@sourcegraph/cody-shared/src/
 import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
 import { TelemetryService } from '@sourcegraph/cody-shared/src/telemetry'
 
-import { ContextDecorator } from '../context-inspector/ContextDecorator'
+import { ContextInspector } from '../context-inspector/ContextInspector'
 import { VSCodeEditor } from '../editor/vscode-editor'
 import { PlatformContext } from '../extension.common'
 import { debug } from '../log'
@@ -98,7 +98,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
     protected telemetryService: TelemetryService
     protected platform: Pick<PlatformContext, 'recipes'>
 
-    private contextInspector: ContextDecorator
+    private contextInspector: ContextInspector
 
     constructor(options: MessageProviderOptions) {
         super()
@@ -108,7 +108,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         }
 
         // TODO: Inject this dependency instead of creating it here
-        this.contextInspector = new ContextDecorator()
+        this.contextInspector = new ContextInspector()
         this.disposables.push(this.contextInspector)
 
         this.chat = options.chat

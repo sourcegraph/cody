@@ -449,6 +449,13 @@
         "category": "Cody",
         "title": "Open Autocomplete Trace View",
         "when": "cody.activated && config.cody.autocomplete && config.cody.debug.enable && editorHasFocus && !editorReadonly"
+      },
+      {
+        "command": "cody.context.openPrompt",
+        "category": "Cody",
+        "title": "Open Last Prompt",
+        "icon": "$(eye)",
+        "when": "cody.activated && config.cody.debug.enable"
       }
     ],
     "keybindings": [

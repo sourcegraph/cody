@@ -61,19 +61,15 @@ export class ContextDecorator implements vscode.Disposable {
         editor.setDecorations(this.decorationUsedContext, decorations)
     }
 
-    // TODO: Also highlight preciseContext results
-    public didUseContext(records: ContextInspectorRecord[]): void {
+    public didUseContext(records: readonly ContextInspectorRecord[]): void {
         this.decorations.clear()
         for (const record of records) {
-            // TODO: This object may actually have precedingText, followingText, selectedText, selectedRange
-            // how does transcript crack these open?
             const uri = filePathToUri(record.file).toString()
             let specs = this.decorations.get(uri)
             if (!specs) {
                 specs = []
                 this.decorations.set(uri, specs)
             }
-            // TODO: need to provide the actual context string here; this contains the context prompt string
             specs.push(record)
             console.log('token count:', countToken2(record.text))
         }
