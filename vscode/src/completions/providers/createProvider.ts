@@ -64,8 +64,8 @@ export async function createProviderConfig(
             }
 
             return createUnstableAzureOpenAiProviderConfig({
-                client,
-                contextWindowTokens: 2048,
+                serverEndpoint: config.autocompleteAdvancedServerEndpoint,
+                accessToken: config.autocompleteAdvancedAccessToken,
             })
         }
         case 'unstable-openai': {
