@@ -11,8 +11,8 @@ export function initializeNetworkAgent(): void {
     /**
      * We use keepAlive agents here to avoid excessive SSL/TLS handshakes for autocomplete requests.
      */
-    const httpAgent = new http.Agent({ keepAlive: true })
-    const httpsAgent = new https.Agent({ keepAlive: true })
+    const httpAgent = new http.Agent({ keepAlive: true, keepAliveMsecs: 60000 })
+    const httpsAgent = new https.Agent({ keepAlive: true, keepAliveMsecs: 60000 })
 
     const customAgent = ({ protocol }: Pick<URL, 'protocol'>): http.Agent => {
         if (protocol === 'http:') {
@@ -42,7 +42,10 @@ export function initializeNetworkAgent(): void {
             PacProxyAgent.prototype.connect = function (req: http.ClientRequest, opts: { protocol: string }): any {
                 try {
                     const connectionHeader = req.getHeader('connection')
-                    if (Array.isArray(connectionHeader) && connectionHeader.includes('keep-alive')) {
+                    if (
+                        connectionHeader === 'keep-alive' ||
+                        (Array.isArray(connectionHeader) && connectionHeader.includes('keep-alive'))
+                    ) {
                         this.opts.originalAgent = customAgent(opts)
                         return originalConnect.call(this, req, opts)
                     }
