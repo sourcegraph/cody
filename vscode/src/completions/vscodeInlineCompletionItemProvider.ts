@@ -330,7 +330,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
                     (error.retryAfter ? ` Usage will reset in ${formatDistance(error.retryAfter, new Date())}.` : ''),
                 onSelect: () => {
                     void vscode.env.openExternal(
-                        vscode.Uri.parse('https://about.sourcegraph.com/blog/increasing-the-completions-rate-limit')
+                        vscode.Uri.parse('https://docs.sourcegraph.com/cody/troubleshooting#autocomplete-rate-limits')
                     )
                 },
             })
