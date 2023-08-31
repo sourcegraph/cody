@@ -18,6 +18,7 @@ interface UnstableOpenAIOptions {
 const PROVIDER_IDENTIFIER = 'unstable-openai'
 const EOT_OPENAI = '<|im_end|>'
 const MAX_RESPONSE_TOKENS = 256
+const CODE_TAG = '```'
 
 const CHARS_PER_TOKEN = 4
 
@@ -37,17 +38,20 @@ export class UnstableOpenAIProvider extends Provider {
 
     private createPrompt(snippets: ContextSnippet[]): string {
         const { prefix } = this.options.docContext
+        const { fileName } = this.options
 
-        const intro: string[] = []
+        const intro: string[] = [`You are a senior engineer assistant working on ${fileName}.`]
         let prompt = ''
 
         for (let snippetsToInclude = 0; snippetsToInclude < snippets.length + 1; snippetsToInclude++) {
             if (snippetsToInclude > 0) {
                 const snippet = snippets[snippetsToInclude - 1]
-                intro.push(`Here is a reference snippet of code from ${snippet.fileName}:\n\n${snippet.content}`)
+                intro.push(
+                    `Here is a reference snippet of code from ${snippet.fileName}:\n\n${CODE_TAG}\n${snippet.content}\n${CODE_TAG}`
+                )
             }
             const introString = intro.join('\n\n')
-            const nextPrompt = `Complete the following code:\n\n${introString}${prefix}`
+            const nextPrompt = `${introString}\n\nComplete the following code:\n\n${prefix}`
 
             if (nextPrompt.length >= this.promptChars) {
                 return prompt
@@ -142,7 +146,7 @@ export class UnstableOpenAIProvider extends Provider {
     }
 
     private postProcess(content: string): string {
-        return content.replace(EOT_OPENAI, '')
+        return content.replace(EOT_OPENAI, '').replace(CODE_TAG, '')
     }
 }
 
