@@ -20,7 +20,8 @@ import { ProviderConfig } from '../../src/completions/providers/provider'
 import { InlineCompletionItemProvider } from '../../src/completions/vscodeInlineCompletionItemProvider'
 import { getFullConfig } from '../../src/configuration'
 import { configureExternalServices } from '../../src/external-services'
-import { InMemorySecretStorage } from '../../src/services/SecretStorageProvider'
+import { localStorage } from '../../src/services/LocalStorageProvider'
+import { InMemorySecretStorage, secretStorage, VSCodeSecretStorage } from '../../src/services/SecretStorageProvider'
 import { wrapVSCodeTextDocument } from '../../src/testutils/textDocument'
 
 import { completionsDataset, CURSOR, Sample } from './completions-dataset'
@@ -39,8 +40,13 @@ const dummyFeatureFlagProvider = new FeatureFlagProvider(
 )
 
 async function initCompletionsProvider(context: GetContextResult): Promise<InlineCompletionItemProvider> {
-    const secretStorage = new InMemorySecretStorage()
+    if (secretStorage instanceof VSCodeSecretStorage) {
+        secretStorage.setStorage(new InMemorySecretStorage() as any as vscode.SecretStorage)
+    }
     await secretStorage.store('cody.access-token', ENVIRONMENT_CONFIG.SOURCEGRAPH_ACCESS_TOKEN)
+
+    // Optional for completions provider. Mock to make TS happy.
+    localStorage.setStorage({ get() {} } as any as vscode.Memento)
 
     const initialConfig = await getFullConfig()
     if (!didLogConfig) {

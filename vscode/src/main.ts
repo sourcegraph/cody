@@ -32,11 +32,12 @@ import { TestSupport } from './test-support'
  * Start the extension, watching all relevant configuration and secrets for changes.
  */
 export async function start(context: vscode.ExtensionContext, platform: PlatformContext): Promise<vscode.Disposable> {
+    // Set internal storage fields for storage provider singletons
+    localStorage.setStorage(context.globalState)
     if (secretStorage instanceof VSCodeSecretStorage) {
         secretStorage.setStorage(context.secrets)
     }
 
-    localStorage.setStorage(context.globalState)
     const rgPath = platform.getRgPath ? await platform.getRgPath() : null
 
     const disposables: vscode.Disposable[] = []
@@ -113,8 +114,6 @@ const register = async (
         chatClient,
         initialCodebaseContext,
         editor,
-        secretStorage,
-        localStorage,
         rgPath,
         symfRunner,
         authProvider,

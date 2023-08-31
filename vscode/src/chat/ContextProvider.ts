@@ -19,8 +19,6 @@ import { debug } from '../log'
 import { getRerankWithLog } from '../logged-rerank'
 import { repositoryRemoteUrl } from '../repository/repositoryHelpers'
 import { AuthProvider } from '../services/AuthProvider'
-import { LocalStorage } from '../services/LocalStorageProvider'
-import { SecretStorage } from '../services/SecretStorageProvider'
 
 import { ChatViewProviderWebview } from './ChatViewProvider'
 import { GraphContextProvider } from './GraphContextProvider'
@@ -68,8 +66,6 @@ export class ContextProvider implements vscode.Disposable {
         private chat: ChatClient,
         private codebaseContext: CodebaseContext,
         private editor: VSCodeEditor,
-        private secretStorage: SecretStorage,
-        private localStorage: LocalStorage,
         private rgPath: string | null,
         private symf: IndexedKeywordContextFetcher | undefined,
         private authProvider: AuthProvider,
