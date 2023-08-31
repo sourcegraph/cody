@@ -23,14 +23,24 @@ export abstract class SentryService {
         const isProd = process.env.NODE_ENV === 'production'
         const options: SentryOptions = {
             dsn: SENTRY_DSN,
+
+            // In dev mode, have Sentry log extended debug information to the console.
             debug: !isProd,
+
+            // Only send errors when connected to dotcom
             beforeSend: event => {
-                // Only send errors when connected to dotcom
                 if (!isDotCom(this.config.serverEndpoint) && isProd) {
                     return null
                 }
                 return event
             },
+
+            // The extension host is shared across other extensions, so listening on the default
+            // unhandled error listeners would not be helpful in case other extensions or VS Code
+            // throw.
+            //
+            // Instead, use the manual `captureException` API.
+            defaultIntegrations: false,
         }
         this.reconfigure(options)
     }
