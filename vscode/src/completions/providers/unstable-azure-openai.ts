@@ -1,157 +1,122 @@
-import {
-    CompletionParameters,
-    CompletionResponse,
-} from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
-
-import { CodeCompletionsClient } from '../client'
-import { canUsePartialCompletion } from '../streaming'
+import { logger } from '../../log'
+import { getHeadAndTail } from '../text-processing'
 import { Completion, ContextSnippet } from '../types'
-import { forkSignal } from '../utils'
 
-import { CompletionProviderTracer, Provider, ProviderConfig, ProviderOptions } from './provider'
+import { Provider, ProviderConfig, ProviderOptions } from './provider'
 
 interface UnstableAzureOpenAIOptions {
-    client: Pick<CodeCompletionsClient, 'complete'>
-    contextWindowTokens: number
+    serverEndpoint: string
+    accessToken: string
 }
 
-const PROVIDER_IDENTIFIER = 'unstable-azure-openai'
-const EOT_OPENAI = '<|im_end|>'
-const MAX_RESPONSE_TOKENS = 256
+const OPENING_CODE_TAG = '```'
+const CLOSING_CODE_TAG = '```'
 
-const CHARS_PER_TOKEN = 4
-
-function tokensToChars(tokens: number): number {
-    return tokens * CHARS_PER_TOKEN
+interface AzureOpenAIApiResponse {
+    id: string
+    object: 'text_completion'
+    created: number
+    model: string
+    choices: {
+        text: string
+        index: number
+        finish_reason: 'stop'
+        logprobs: null
+    }[]
+    usage: {
+        completion_tokens: number
+        prompt_tokens: number
+        total_tokens: number
+    }
 }
+
+const PROVIDER_IDENTIFIER = 'azure-openai'
 
 export class UnstableAzureOpenAIProvider extends Provider {
-    private client: Pick<CodeCompletionsClient, 'complete'>
-    private promptChars: number
+    private serverEndpoint: string
+    private accessToken: string
 
-    constructor(options: ProviderOptions, azureOpenAIOptions: UnstableAzureOpenAIOptions) {
+    constructor(options: ProviderOptions, unstableAzureOpenAIOptions: UnstableAzureOpenAIOptions) {
         super(options)
-        this.client = azureOpenAIOptions.client
-        this.promptChars = tokensToChars(azureOpenAIOptions.contextWindowTokens) - tokensToChars(MAX_RESPONSE_TOKENS)
+        this.serverEndpoint = unstableAzureOpenAIOptions.serverEndpoint
+        this.accessToken = unstableAzureOpenAIOptions.accessToken
     }
 
-    private createPrompt(snippets: ContextSnippet[]): string {
-        const { prefix } = this.options.docContext
+    public async generateCompletions(abortSignal: AbortSignal, snippets: ContextSnippet[]): Promise<Completion[]> {
+        const { head, tail } = getHeadAndTail(this.options.docContext.prefix)
 
-        const intro: string[] = []
-        let prompt = ''
+        // Create prompt
+        // Although we are using gpt-35-turbo in text completion
+        // mode, and not in chat completion mode, it turns out that the model
+        // still seems to work well in a conversational style.
+        const introSection = 'Human: You are a senior engineer assistant working on a codebase.\n\n'
+        const referenceSnippetsSection = snippets
+            .map(s => `File: ${s.fileName}\n${OPENING_CODE_TAG}\n${s.content}\n${CLOSING_CODE_TAG}\n\n`)
+            .join('')
+        const finalSection = `Complete the following code:\n\n${head.trimmed}\n\nAssistant:\n${tail.trimmed}`
+        const prompt = introSection + referenceSnippetsSection + finalSection
 
-        for (let snippetsToInclude = 0; snippetsToInclude < snippets.length + 1; snippetsToInclude++) {
-            if (snippetsToInclude > 0) {
-                const snippet = snippets[snippetsToInclude - 1]
-                intro.push(`Here is a reference snippet of code from ${snippet.fileName}:\n\n${snippet.content}`)
-            }
-            const introString = intro.join('\n\n')
-            const nextPrompt = `Complete the following code:\n\n${introString}${prefix}`
-
-            if (nextPrompt.length >= this.promptChars) {
-                return prompt
-            }
-
-            prompt = nextPrompt
+        const stopSequences = ['Human:', 'Assistant:']
+        if (!this.options.multiline) {
+            stopSequences.push('\n')
         }
-
-        return prompt
-    }
-
-    public async generateCompletions(
-        abortSignal: AbortSignal,
-        snippets: ContextSnippet[],
-        tracer?: CompletionProviderTracer
-    ): Promise<Completion[]> {
-        const prompt = this.createPrompt(snippets)
-
-        const args: CompletionParameters = {
-            messages: [{ speaker: 'human', text: prompt }],
-            maxTokensToSample: this.options.multiline ? MAX_RESPONSE_TOKENS : 50,
-            temperature: 1,
-            topP: 0.5,
-        }
-
-        tracer?.params(args)
 
         // Issue request
-        const responses = await this.batchAndProcessCompletions(this.client, args, this.options.n, abortSignal)
-
-        const ret = responses.map(resp => [
-            {
-                prefix: this.options.docContext.prefix,
-                content: resp.completion,
-                stopReason: resp.stopReason,
-            },
-        ])
-
-        const completions = ret.flat()
-        tracer?.result({ rawResponses: responses, completions })
-
-        return completions
-    }
-
-    private async batchAndProcessCompletions(
-        client: Pick<CodeCompletionsClient, 'complete'>,
-        params: CompletionParameters,
-        n: number,
-        abortSignal: AbortSignal
-    ): Promise<CompletionResponse[]> {
-        const responses: Promise<CompletionResponse>[] = []
-        for (let i = 0; i < n; i++) {
-            responses.push(this.fetchAndProcessCompletions(client, params, abortSignal))
+        const request = {
+            prompt,
+            temperature: 1,
+            top_p: 0.5,
+            frequency_penalty: 0,
+            presence_penalty: 0,
+            max_tokens: this.options.multiline ? 256 : 50,
+            stop: stopSequences,
         }
-        return Promise.all(responses)
-    }
 
-    private async fetchAndProcessCompletions(
-        client: Pick<CodeCompletionsClient, 'complete'>,
-        params: CompletionParameters,
-        abortSignal: AbortSignal
-    ): Promise<CompletionResponse> {
-        // The Async executor is required to return the completion early if a partial result from SSE can be used.
-        // eslint-disable-next-line @typescript-eslint/no-misused-promises, no-async-promise-executor
-        return new Promise(async (resolve, reject) => {
-            try {
-                const abortController = forkSignal(abortSignal)
-
-                const result = await client.complete(
-                    params,
-                    (incompleteResponse: CompletionResponse) => {
-                        const processedCompletion = this.postProcess(incompleteResponse.completion)
-                        if (
-                            canUsePartialCompletion(processedCompletion, {
-                                document: { languageId: this.options.languageId },
-                                multiline: this.options.multiline,
-                                docContext: this.options.docContext,
-                            })
-                        ) {
-                            resolve({ ...incompleteResponse, completion: processedCompletion })
-                            abortController.abort()
-                        }
-                    },
-                    abortController.signal
-                )
-
-                resolve({ ...result, completion: this.postProcess(result.completion) })
-            } catch (error) {
-                reject(error)
-            }
+        const log = logger.startCompletion({
+            request,
+            provider: PROVIDER_IDENTIFIER,
+            serverEndpoint: this.serverEndpoint,
         })
-    }
 
-    private postProcess(content: string): string {
-        return content.replace(EOT_OPENAI, '')
+        const response = await fetch(this.serverEndpoint, {
+            method: 'POST',
+            body: JSON.stringify(request),
+            headers: {
+                'Content-Type': 'application/json',
+                'api-key': this.accessToken,
+            },
+            signal: abortSignal,
+        })
+
+        const json = (await response.json()) as AzureOpenAIApiResponse
+
+        // Post-process
+        const results = json.choices
+            .map(choice => ({
+                messages: prompt,
+                prefix: this.options.docContext.prefix,
+                content: postProcess(choice.text),
+            }))
+            // Omit any empty completion
+            .filter(result => result.content.trim() !== '')
+
+        log?.onComplete(results.map(r => r.content))
+
+        return results
     }
+}
+
+function postProcess(content: string): string {
+    return content.trimEnd()
 }
 
 export function createProviderConfig(unstableAzureOpenAIOptions: UnstableAzureOpenAIOptions): ProviderConfig {
+    const contextWindowChars = 8_000 // ~ 2k token limit
     return {
         create(options: ProviderOptions) {
-            return new UnstableAzureOpenAIProvider(options, { ...unstableAzureOpenAIOptions })
+            return new UnstableAzureOpenAIProvider(options, unstableAzureOpenAIOptions)
         },
-        maximumContextCharacters: tokensToChars(unstableAzureOpenAIOptions.contextWindowTokens),
+        maximumContextCharacters: contextWindowChars,
         enableExtendedMultilineTriggers: false,
         identifier: PROVIDER_IDENTIFIER,
         supportsInfilling: false,
