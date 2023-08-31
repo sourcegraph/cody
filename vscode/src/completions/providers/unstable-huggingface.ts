@@ -1,9 +1,10 @@
 import fetch from 'isomorphic-fetch'
 
+import { isAbortError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
+
 import { logger } from '../../log'
 import { getLanguageConfig } from '../language'
 import { Completion, ContextSnippet } from '../types'
-import { isAbortError } from '../utils'
 
 import { Provider, ProviderConfig, ProviderOptions } from './provider'
 

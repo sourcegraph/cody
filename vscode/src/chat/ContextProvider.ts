@@ -15,7 +15,7 @@ import { convertGitCloneURLToCodebaseName, isError } from '@sourcegraph/cody-sha
 import { getFullConfig } from '../configuration'
 import { VSCodeEditor } from '../editor/vscode-editor'
 import { PlatformContext } from '../extension.common'
-import { debug } from '../log'
+import { logDebug } from '../log'
 import { getRerankWithLog } from '../logged-rerank'
 import { repositoryRemoteUrl } from '../repository/repositoryHelpers'
 import { AuthProvider } from '../services/AuthProvider'
@@ -99,7 +99,7 @@ export class ContextProvider implements vscode.Disposable {
     }
 
     public onConfigurationChange(newConfig: Config): void {
-        debug('ContextProvider:onConfigurationChange', '')
+        logDebug('ContextProvider:onConfigurationChange', '')
         this.config = newConfig
         const authStatus = this.authProvider.getAuthStatus()
         if (authStatus.endpoint) {
@@ -220,7 +220,7 @@ export class ContextProvider implements vscode.Disposable {
             // update codebase context on configuration change
             await this.updateCodebaseContext()
             await this.webview?.postMessage({ type: 'config', config: configForWebview, authStatus })
-            debug('Cody:publishConfig', 'configForWebview', { verbose: configForWebview })
+            logDebug('Cody:publishConfig', 'configForWebview', { verbose: configForWebview })
         }
 
         await send()

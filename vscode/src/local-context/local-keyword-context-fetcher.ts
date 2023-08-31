@@ -11,7 +11,7 @@ import { Editor } from '@sourcegraph/cody-shared/src/editor'
 import { ContextResult, KeywordContextFetcher } from '@sourcegraph/cody-shared/src/local-context'
 import { TelemetryService } from '@sourcegraph/cody-shared/src/telemetry'
 
-import { debug } from '../log'
+import { logDebug } from '../log'
 
 /**
  * Exclude files without extensions and hidden files (starts with '.')
@@ -130,7 +130,7 @@ export class LocalKeywordContextFetcher implements KeywordContextFetcher {
         )
         const searchDuration = performance.now() - startTime
         this.telemetryService.log('CodyVSCodeExtension:keywordContext:searchDuration', { searchDuration })
-        debug('LocalKeywordContextFetcher:getContext', JSON.stringify({ searchDuration }))
+        logDebug('LocalKeywordContextFetcher:getContext', JSON.stringify({ searchDuration }))
 
         return messagePairs.reverse().flat()
     }
@@ -176,7 +176,7 @@ export class LocalKeywordContextFetcher implements KeywordContextFetcher {
                 stem,
             })
         }
-        debug(
+        logDebug(
             'LocalKeywordContextFetcher:userQueryToExpandedKeywords',
             JSON.stringify({ duration: performance.now() - start })
         )
@@ -194,7 +194,7 @@ export class LocalKeywordContextFetcher implements KeywordContextFetcher {
             }
             terms.set(stem, term)
         }
-        debug(
+        logDebug(
             'LocalKeywordContextFetcher:userQueryToKeywordQuery',
             'keyword expansion',
             JSON.stringify({
@@ -305,7 +305,7 @@ export class LocalKeywordContextFetcher implements KeywordContextFetcher {
                 reject(error)
             }
         })
-        debug('fetchFileStats', JSON.stringify({ duration: performance.now() - start }))
+        logDebug('fetchFileStats', JSON.stringify({ duration: performance.now() - start }))
         return fileTermCounts
     }
 
@@ -377,7 +377,7 @@ export class LocalKeywordContextFetcher implements KeywordContextFetcher {
                 })
             )
 
-        debug('LocalKeywordContextFetcher.fetchFileMatches', JSON.stringify({ duration: performance.now() - start }))
+        logDebug('LocalKeywordContextFetcher.fetchFileMatches', JSON.stringify({ duration: performance.now() - start }))
         let totalFilesSearched = -1
         for (const { filesSearched } of termFileCountsArr) {
             if (totalFilesSearched >= 0 && totalFilesSearched !== filesSearched) {
@@ -420,7 +420,7 @@ export class LocalKeywordContextFetcher implements KeywordContextFetcher {
         const fileMatches = await fileMatchesPromise
         const fileStats = await fileStatsPromise
         const fetchFilesDuration = performance.now() - fetchFilesStart
-        debug('LocalKeywordContextFetcher:fetchKeywordFiles', JSON.stringify({ fetchFilesDuration }))
+        logDebug('LocalKeywordContextFetcher:fetchKeywordFiles', JSON.stringify({ fetchFilesDuration }))
 
         const { fileTermCounts, termTotalFiles, totalFiles } = fileMatches
         const idfDict = idf(termTotalFiles, totalFiles)
