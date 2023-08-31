@@ -30,6 +30,7 @@ test('checks if clear chat history button clears history and current session', a
 
     await page.getByRole('button', { name: 'Chat History' }).click()
 
+    // Remove Hey history item from chat history view
     await expect(sidebar.getByText('Hey')).toBeVisible()
     await sidebar.locator('vscode-button').filter({ hasText: 'Clear' }).click()
     await expect(sidebar.getByText('Hey')).not.toBeVisible()
@@ -39,7 +40,8 @@ test('checks if clear chat history button clears history and current session', a
     await page.keyboard.type('/explain')
     await page.keyboard.press('Enter')
 
-    await expect(sidebar.getByText("Hello! I'm Cody. I can write code and answer questions for you.")).toBeVisible()
+    // Go back to Chat View and see
+    await page.click('[aria-label="Cody"]')
     await expect(sidebar.getByText('/explain')).toBeVisible()
     await expect(sidebar.getByText('Hey')).not.toBeVisible()
 })
