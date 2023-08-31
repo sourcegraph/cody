@@ -440,7 +440,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
                 pluginsPrompt
             )
         transcript.setUsedContextFilesForLastInteraction(contextFiles, preciseContexts, pluginExecutionInfos)
-        this.contextInspector.didUseContext(contextInspectorRecords)
+        this.contextInspector.didUseContext(prompt, contextInspectorRecords)
         return prompt
     }
 

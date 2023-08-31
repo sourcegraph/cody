@@ -1,6 +1,7 @@
 import * as vscode from 'vscode'
 
 import { ContextInspectorRecord } from '@sourcegraph/cody-shared/src/chat/context-inspector/context-inspector'
+import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
 
 import { ContextDecorator } from './ContextDecorator'
 import { PromptDocumentProvider } from './PromptDocumentProvider'
@@ -14,8 +15,8 @@ export class ContextInspector implements vscode.Disposable {
         this.promptDocumentProvider.dispose()
     }
 
-    public didUseContext(records: readonly ContextInspectorRecord[]): void {
+    public didUseContext(messages: readonly Message[], records: readonly ContextInspectorRecord[]): void {
         this.contextDecorator.didUseContext(records)
-        // TODO: pass in the serialized prompt here for the prompt document
+        this.promptDocumentProvider.setPrompt(messages)
     }
 }
