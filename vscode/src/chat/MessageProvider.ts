@@ -306,6 +306,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         this.transcript.addAssistantResponse('', 'Identifying applicable plugins...\n')
         this.sendTranscript()
 
+        // TODO: Log the context messages here for the inspector
         const { prompt: previousMessages } = await this.transcript.getPromptForLastInteraction(
             [],
             this.maxPromptTokens,
@@ -432,13 +433,14 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         pluginsPrompt: Message[],
         pluginExecutionInfos: PluginFunctionExecutionInfo[]
     ): Promise<Message[]> {
-        const { prompt, contextFiles, preciseContexts } = await transcript.getPromptForLastInteraction(
-            getPreamble(this.contextProvider.context.getCodebase(), myPremade),
-            this.maxPromptTokens,
-            pluginsPrompt
-        )
+        const { prompt, contextFiles, preciseContexts, contextInspectorRecords } =
+            await transcript.getPromptForLastInteraction(
+                getPreamble(this.contextProvider.context.getCodebase(), myPremade),
+                this.maxPromptTokens,
+                pluginsPrompt
+            )
         transcript.setUsedContextFilesForLastInteraction(contextFiles, preciseContexts, pluginExecutionInfos)
-        this.contextInspector.didUseContext(contextFiles, preciseContexts)
+        this.contextInspector.didUseContext(contextInspectorRecords)
         return prompt
     }
 

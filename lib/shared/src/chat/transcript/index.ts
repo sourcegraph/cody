@@ -3,6 +3,7 @@ import { PluginFunctionExecutionInfo } from '../../plugins/api/types'
 import { CHARS_PER_TOKEN, MAX_AVAILABLE_PROMPT_LENGTH } from '../../prompt/constants'
 import { PromptMixin } from '../../prompt/prompt-mixin'
 import { Message } from '../../sourcegraph-api'
+import { ContextInspectorRecord } from '../context-inspector/context-inspector'
 
 import { Interaction, InteractionJSON } from './interaction'
 import { ChatMessage } from './messages'
@@ -168,9 +169,14 @@ export class Transcript {
         maxPromptLength: number = MAX_AVAILABLE_PROMPT_LENGTH,
         pluginsPrompt: Message[] = [],
         onlyHumanMessages: boolean = false
-    ): Promise<{ prompt: Message[]; contextFiles: ContextFile[]; preciseContexts: PreciseContext[] }> {
+    ): Promise<{
+        prompt: Message[]
+        contextFiles: ContextFile[]
+        preciseContexts: PreciseContext[]
+        contextInspectorRecords: ContextInspectorRecord[]
+    }> {
         if (this.interactions.length === 0) {
-            return { prompt: [], contextFiles: [], preciseContexts: [] }
+            return { prompt: [], contextFiles: [], preciseContexts: [], contextInspectorRecords: [] }
         }
 
         const lastInteractionWithContextIndex = await this.getLastInteractionWithContextIndex()
@@ -196,6 +202,7 @@ export class Transcript {
         // Return what context fits in the window
         const contextFiles: ContextFile[] = []
         const preciseContexts: PreciseContext[] = []
+        const contextInspectorRecords: ContextInspectorRecord[] = []
         for (const msg of truncatedMessages) {
             const contextFile = (msg as ContextMessage).file
             if (contextFile) {
@@ -205,6 +212,16 @@ export class Transcript {
             const preciseContext = (msg as ContextMessage).preciseContext
             if (preciseContext) {
                 preciseContexts.push(preciseContext)
+                // TODO: Push precise context text here
+            }
+
+            const contextInspectorRecord = (msg as ContextMessage).contextInspectorRecord
+            if (contextInspectorRecord) {
+                contextInspectorRecords.push(contextInspectorRecord)
+            } else {
+                console.warn(
+                    'found a ContextFile not instrumented by ContextInspectorRecord; add a ContextInspectorRecord to the ContextMessage'
+                )
             }
         }
 
@@ -215,6 +232,7 @@ export class Transcript {
             prompt: [...preamble, ...truncatedMessages],
             contextFiles,
             preciseContexts,
+            contextInspectorRecords,
         }
     }
 

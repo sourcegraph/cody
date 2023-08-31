@@ -1,5 +1,6 @@
 import path from 'path'
 
+import { ContextInspectorRecord } from '../chat/context-inspector/context-inspector'
 import { getFileExtension, getNormalizedLanguageName } from '../chat/recipes/helpers'
 import { ActiveTextEditorDiagnostic, ActiveTextEditorSelection } from '../editor'
 
@@ -16,11 +17,15 @@ const CODE_CONTEXT_TEMPLATE_WITH_REPO = `Use following code snippet from file \`
 {text}
 \`\`\``
 
-export function populateCodeContextTemplate(code: string, filePath: string, repoName?: string): string {
-    return (repoName ? CODE_CONTEXT_TEMPLATE_WITH_REPO.replace('{repoName}', repoName) : CODE_CONTEXT_TEMPLATE)
-        .replace('{filePath}', filePath)
-        .replace('{language}', getExtension(filePath))
-        .replace('{text}', code)
+export function populateCodeContextTemplate(code: string, filePath: string, repoName?: string): ContextInspectorRecord {
+    return {
+        file: filePath,
+        includedSourceText: code,
+        text: (repoName ? CODE_CONTEXT_TEMPLATE_WITH_REPO.replace('{repoName}', repoName) : CODE_CONTEXT_TEMPLATE)
+            .replace('{filePath}', filePath)
+            .replace('{language}', getExtension(filePath))
+            .replace('{text}', code),
+    }
 }
 
 const PRECISE_CONTEXT_TEMPLATE = `The symbol '{symbol}' is defined in the file {filePath} as:
@@ -40,10 +45,21 @@ const MARKDOWN_CONTEXT_TEMPLATE = 'Use the following text from file `{filePath}`
 const MARKDOWN_CONTEXT_TEMPLATE_WITH_REPO =
     'Use the following text from file `{filePath}` in repository `{repoName}`:\n{text}'
 
-export function populateMarkdownContextTemplate(markdown: string, filePath: string, repoName?: string): string {
-    return (repoName ? MARKDOWN_CONTEXT_TEMPLATE_WITH_REPO.replace('{repoName}', repoName) : MARKDOWN_CONTEXT_TEMPLATE)
-        .replace('{filePath}', filePath)
-        .replace('{text}', markdown)
+export function populateMarkdownContextTemplate(
+    markdown: string,
+    filePath: string,
+    repoName?: string
+): ContextInspectorRecord {
+    return {
+        file: filePath,
+        includedSourceText: markdown,
+        text: (repoName
+            ? MARKDOWN_CONTEXT_TEMPLATE_WITH_REPO.replace('{repoName}', repoName)
+            : MARKDOWN_CONTEXT_TEMPLATE
+        )
+            .replace('{filePath}', filePath)
+            .replace('{text}', markdown),
+    }
 }
 
 const CURRENT_EDITOR_CODE_TEMPLATE = 'I have the `{filePath}` file opened in my editor. '
@@ -51,16 +67,23 @@ const CURRENT_EDITOR_CODE_TEMPLATE = 'I have the `{filePath}` file opened in my 
 const CURRENT_EDITOR_CODE_TEMPLATE_WITH_REPO =
     'I have the `{filePath}` file from the repository `{repoName}` opened in my editor. '
 
-export function populateCurrentEditorContextTemplate(code: string, filePath: string, repoName?: string): string {
+export function populateCurrentEditorContextTemplate(
+    code: string,
+    filePath: string,
+    repoName?: string
+): ContextInspectorRecord {
     const context = isMarkdownFile(filePath)
-        ? populateMarkdownContextTemplate(code, filePath, repoName)
-        : populateCodeContextTemplate(code, filePath, repoName)
-    return (
-        (repoName
-            ? CURRENT_EDITOR_CODE_TEMPLATE_WITH_REPO.replace('{repoName}', repoName)
-            : CURRENT_EDITOR_CODE_TEMPLATE
-        ).replace(/{filePath}/g, filePath) + context
-    )
+        ? populateMarkdownContextTemplate(code, filePath, repoName).text
+        : populateCodeContextTemplate(code, filePath, repoName).text
+    return {
+        file: filePath,
+        text:
+            (repoName
+                ? CURRENT_EDITOR_CODE_TEMPLATE_WITH_REPO.replace('{repoName}', repoName)
+                : CURRENT_EDITOR_CODE_TEMPLATE
+            ).replace(/{filePath}/g, filePath) + context,
+        includedSourceText: code,
+    }
 }
 
 const CURRENT_EDITOR_SELECTED_CODE_TEMPLATE =
@@ -73,20 +96,23 @@ export function populateCurrentEditorSelectedContextTemplate(
     code: string,
     filePath: string,
     repoName?: string
-): string {
+): ContextInspectorRecord {
     const extension = getFileExtension(filePath)
     const languageName = getNormalizedLanguageName(extension)
     const context = isMarkdownFile(filePath)
-        ? populateMarkdownContextTemplate(code, filePath, repoName)
-        : populateCodeContextTemplate(code, filePath, repoName)
-    return (
-        (repoName
-            ? CURRENT_EDITOR_SELECTED_CODE_TEMPLATE_WITH_REPO.replace('{repoName}', repoName)
-            : CURRENT_EDITOR_SELECTED_CODE_TEMPLATE
-        )
-            .replace('{language}', languageName)
-            .replace(/{filePath}/g, filePath) + context
-    )
+        ? populateMarkdownContextTemplate(code, filePath, repoName).text
+        : populateCodeContextTemplate(code, filePath, repoName).text
+    return {
+        file: filePath,
+        includedSourceText: code,
+        text:
+            (repoName
+                ? CURRENT_EDITOR_SELECTED_CODE_TEMPLATE_WITH_REPO.replace('{repoName}', repoName)
+                : CURRENT_EDITOR_SELECTED_CODE_TEMPLATE
+            )
+                .replace('{language}', languageName)
+                .replace(/{filePath}/g, filePath) + context,
+    }
 }
 
 const DIAGNOSTICS_CONTEXT_TEMPLATE = `Use the following {type} from the code snippet in the file \`{filePath}\`
@@ -96,17 +122,22 @@ Code snippet:
 {code}
 \`\`\``
 
+// TODO: Update the rest of these functions to return ContextInspectorRecords
 export function populateCurrentEditorDiagnosticsTemplate(
     { message, type, text }: ActiveTextEditorDiagnostic,
     filePath: string
-): string {
+): ContextInspectorRecord {
     const language = getExtension(filePath)
-    return DIAGNOSTICS_CONTEXT_TEMPLATE.replace('{type}', type)
-        .replace('{filePath}', filePath)
-        .replace('{prefix}', type)
-        .replace('{message}', message)
-        .replace('{language}', language)
-        .replace('{code}', text)
+    return {
+        file: filePath,
+        includedSourceText: text,
+        text: DIAGNOSTICS_CONTEXT_TEMPLATE.replace('{type}', type)
+            .replace('{filePath}', filePath)
+            .replace('{prefix}', type)
+            .replace('{message}', message)
+            .replace('{language}', language)
+            .replace('{code}', text),
+    }
 }
 
 const COMMAND_OUTPUT_TEMPLATE = 'Here is the output returned from the terminal.\n'
@@ -135,17 +166,24 @@ const SELECTED_CODE_CONTEXT_TEMPLATE_WITH_REPO = `"Here is my selected code from
 {code}
 </selected>`
 
-export function populateCurrentSelectedCodeContextTemplate(code: string, filePath: string, repoName?: string): string {
+export function populateCurrentSelectedCodeContextTemplate(
+    code: string,
+    filePath: string,
+    repoName?: string
+): ContextInspectorRecord {
     const extension = getFileExtension(filePath)
     const languageName = getNormalizedLanguageName(extension)
-    return (
-        repoName
+    return {
+        file: filePath,
+        includedSourceText: code,
+        text: (repoName
             ? SELECTED_CODE_CONTEXT_TEMPLATE_WITH_REPO.replace('{repoName}', repoName)
             : SELECTED_CODE_CONTEXT_TEMPLATE
-    )
-        .replace('{code}', code)
-        .replace(/{filePath}/g, filePath)
-        .replace('{languageName}', languageName)
+        )
+            .replace('{code}', code)
+            .replace(/{filePath}/g, filePath)
+            .replace('{languageName}', languageName),
+    }
 }
 
 const CURRENT_FILE_CONTEXT_TEMPLATE = `"This is the {languageName} file \`{filePath}\` I am looking at, with my selected code in <selected> tags:
@@ -156,9 +194,11 @@ const CURRENT_FILE_CONTEXT_TEMPLATE = `"This is the {languageName} file \`{fileP
 export function populateCurrentFileFromEditorSelectionContextTemplate(
     selection: ActiveTextEditorSelection,
     filePath: string
-): string {
+): ContextInspectorRecord {
     const extension = getFileExtension(filePath)
     const languageName = getNormalizedLanguageName(extension)
+    // TODO: ContextInspector--hanlde the case where the selected text is truncated; we need
+    // multiple regions
     const truncatedSelectedText = truncateText(selection.selectedText, MAX_RECIPE_INPUT_TOKENS) || ''
     const truncatedPrecedingText = truncateTextStart(selection.precedingText, MAX_RECIPE_SURROUNDING_TOKENS)
     const truncatedFollowingText = truncateText(selection.followingText, MAX_RECIPE_SURROUNDING_TOKENS)
@@ -169,5 +209,10 @@ export function populateCurrentFileFromEditorSelectionContextTemplate(
         .replace('{selectedText}', truncatedSelectedText)
         .replace('{precedingText}', truncatedPrecedingText)
 
-    return truncateText(fileContext, MAX_CURRENT_FILE_TOKENS)
+    // TODO: ContextInspector--Handle the case where truncation happens again at this point
+    return {
+        text: truncateText(fileContext, MAX_CURRENT_FILE_TOKENS),
+        includedSourceText: truncatedPrecedingText + truncatedSelectedText + truncatedFollowingText,
+        file: filePath,
+    }
 }

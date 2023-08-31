@@ -1,15 +1,13 @@
 import * as vscode from 'vscode'
 
-import { ContextFile, PreciseContext } from '@sourcegraph/cody-shared/src/codebase-context/messages'
+import { ContextInspectorRecord } from '@sourcegraph/cody-shared/src/chat/context-inspector/context-inspector'
 
-export interface ContextDecoration {
-    text: string
-}
-
-function contextFileToUri(contextFile: ContextFile): vscode.Uri {
+// TODO: Multi-repo context has a repoName argument; plumb that through and
+// use it to point to the correct file
+function filePathToUri(filePath: string): vscode.Uri {
     // TODO: Between URL escaping and multiple workspace folders, this is
     // not right. But it is probably usually right. Make this robust.
-    return vscode.Uri.joinPath(vscode.workspace.workspaceFolders![0].uri, contextFile.fileName)
+    return vscode.Uri.joinPath(vscode.workspace.workspaceFolders![0].uri, filePath)
 }
 
 export class ContextDecorator implements vscode.Disposable {
@@ -17,7 +15,7 @@ export class ContextDecorator implements vscode.Disposable {
     private decorationUsedContext: vscode.TextEditorDecorationType
     // This is keyed on vscode.Uri string representations; we use string for
     // the right equality
-    private decorations: Map<string, ContextDecoration[]> = new Map()
+    private decorations: Map<string, ContextInspectorRecord[]> = new Map()
     private disposables: vscode.Disposable[] = []
 
     constructor() {
@@ -48,7 +46,7 @@ export class ContextDecorator implements vscode.Disposable {
 
         const text = editor.document.getText()
         const decorations = specs.map(spec => {
-            const startOffset = text.indexOf(spec.text)
+            const startOffset = text.indexOf(spec.includedSourceText)
             if (startOffset === -1) {
                 // TODO: Do some diff calculation to show we sent some out of date context
                 debugger
@@ -62,21 +60,19 @@ export class ContextDecorator implements vscode.Disposable {
     }
 
     // TODO: Also highlight preciseContext results
-    public didUseContext(contextFiles: readonly ContextFile[], preciseContexts: readonly PreciseContext[]): void {
+    public didUseContext(records: ContextInspectorRecord[]): void {
         this.decorations.clear()
-        for (const contextFile of contextFiles) {
-            // TODO: This object actually has precedingText, followingText, selectedText, selectedRange
+        for (const record of records) {
+            // TODO: This object may actually have precedingText, followingText, selectedText, selectedRange
             // how does transcript crack these open?
-            const uri = contextFileToUri(contextFile).toString()
+            const uri = filePathToUri(record.file).toString()
             let specs = this.decorations.get(uri)
             if (!specs) {
                 specs = []
                 this.decorations.set(uri, specs)
             }
-            // TODO: need to provide the actual context string here
-            specs.push({
-                text: 'hello world',
-            })
+            // TODO: need to provide the actual context string here; this contains the context prompt string
+            specs.push(record)
         }
         // Actually we changed the decorations, not the editors, but the
         // functionality is the same
