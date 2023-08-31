@@ -1,6 +1,6 @@
 import { CodyPrompt, getDefaultCommandsMap } from '@sourcegraph/cody-shared/src/chat/prompts'
 
-import { debug } from '../log'
+import { logDebug } from '../log'
 
 // Manage default commands created by the prompts in prompts.json
 const editorCommands = [{ name: 'Request a Code Edit', prompt: '/edit', slashCommand: '/edit' }]
@@ -51,6 +51,6 @@ export class PromptsProvider {
     // dispose and reset the controller and builder
     public dispose(): void {
         this.allCommands = new Map()
-        debug('CommandsController:dispose', 'disposed')
+        logDebug('CommandsController:dispose', 'disposed')
     }
 }
