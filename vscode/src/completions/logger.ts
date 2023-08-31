@@ -5,6 +5,7 @@ import { isAbortError, isRateLimitError } from '@sourcegraph/cody-shared/src/sou
 import { TelemetryEventProperties } from '@sourcegraph/cody-shared/src/telemetry'
 
 import { logEvent } from '../services/EventLogger'
+import { captureException } from '../services/sentry/sentry'
 
 import { ContextSummary } from './context/context'
 import { InlineCompletionItem } from './types'
@@ -250,6 +251,8 @@ export function logError(error: Error): void {
     if (isAbortError(error) || isRateLimitError(error)) {
         return
     }
+
+    captureException(error)
 
     const message = error.message
 

@@ -1,6 +1,7 @@
 import * as vscode from 'vscode'
 
 import { Recipe } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
+import { Configuration } from '@sourcegraph/cody-shared/src/configuration'
 import { languagePromptMixin, PromptMixin } from '@sourcegraph/cody-shared/src/prompt/prompt-mixin'
 import type { SourcegraphBrowserCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/browserClient'
 import type { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/nodeClient'
@@ -13,6 +14,7 @@ import type { LocalKeywordContextFetcher } from './local-context/local-keyword-c
 import type { SymfRunner } from './local-context/symf'
 import { start } from './main'
 import type { getRgPath } from './rg'
+import { SentryService } from './services/sentry/sentry'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Constructor<T extends new (...args: any) => any> = T extends new (...args: infer A) => infer R
@@ -28,6 +30,7 @@ export interface PlatformContext {
     createCompletionsClient:
         | Constructor<typeof SourcegraphBrowserCompletionsClient>
         | Constructor<typeof SourcegraphNodeCompletionsClient>
+    createSentryService?: (config: Pick<Configuration, 'serverEndpoint'>) => SentryService
     recipes: Recipe[]
 }
 
