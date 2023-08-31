@@ -112,8 +112,9 @@ export class CustomPromptsStore implements vscode.Disposable {
                 if (Object.prototype.hasOwnProperty.call(prompts, key)) {
                     const prompt = prompts[key]
                     prompt.type = type
-                    prompt.slashCommand = key.startsWith('/') ? key : '/' + key
-                    this.myPromptsMap.set(key, prompt)
+                    // ensure there is only one leading forward slash
+                    prompt.slashCommand = key.replace(/^\/+/, '').replace(/^/, '/')
+                    this.myPromptsMap.set(prompt.slashCommand, prompt)
                 }
             }
             this.myPremade = json.premade

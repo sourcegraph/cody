@@ -18,8 +18,9 @@ export function getDefaultCommandsMap(editorCommands: CodyPrompt[] = []): Map<st
         if (Object.prototype.hasOwnProperty.call(prompts, key)) {
             const prompt = prompts[key] as CodyPrompt
             prompt.type = 'default'
-            prompt.slashCommand = key.startsWith('/') ? key : '/' + key
-            map.set(key, prompt)
+            // ensure there is only one leading forward slash
+            prompt.slashCommand = key.replace(/^\/+/, '').replace(/^/, '/')
+            map.set(prompt.slashCommand, prompt)
         }
     }
 
