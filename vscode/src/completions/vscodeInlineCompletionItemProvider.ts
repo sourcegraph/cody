@@ -45,7 +45,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
     private promptChars: number
     private maxPrefixChars: number
     private maxSuffixChars: number
-    private reportedErrorMessages: Map<string, number> = new Map()
+    // private reportedErrorMessages: Map<string, number> = new Map()
     private resetRateLimitErrorsAfter: number | null = null
 
     private readonly config: Required<CodyCompletionItemProviderConfig>
