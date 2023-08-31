@@ -39,7 +39,7 @@ export class UnstableOpenAIProvider extends Provider {
 
     private createPrompt(snippets: ContextSnippet[]): string {
         const { head, tail } = getHeadAndTail(this.options.docContext.prefix)
-        const intro: string[] = [`Human: You are a senior engineer assistant working on a codebase.`]
+        const intro: string[] = ['Human: You are a senior engineer assistant working on a codebase.']
         let prompt = ''
 
         for (let snippetsToInclude = 0; snippetsToInclude < snippets.length + 1; snippetsToInclude++) {
