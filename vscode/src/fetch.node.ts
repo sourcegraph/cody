@@ -3,6 +3,8 @@ import https from 'https'
 
 import { agent } from './fetch'
 
+// The path to the exported class can be found in the npm contents
+// https://www.npmjs.com/package/@vscode/proxy-agent?activeTab=code
 const nodeModules = '_VSCODE_NODE_MODULES'
 const proxyAgentPath = '@vscode/proxy-agent/out/agent'
 const proxyAgent = 'PacProxyAgent'
