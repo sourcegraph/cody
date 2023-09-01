@@ -42,6 +42,7 @@ export function createClient(
             if (config.accessToken) {
                 headers.set('Authorization', `token ${config.accessToken}`)
             }
+            // Force HTTP connection reuse to reduce latency.
             // c.f. https://github.com/microsoft/vscode/issues/173861
             headers.set('Connection', 'keep-alive')
 
