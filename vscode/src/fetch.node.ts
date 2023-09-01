@@ -39,6 +39,8 @@ export function initializeNetworkAgent(): void {
         const PacProxyAgent = (globalThis as any)?.[nodeModules]?.[proxyAgentPath]?.[proxyAgent] ?? undefined
         if (PacProxyAgent) {
             const originalConnect = PacProxyAgent.prototype.connect
+            // Patches the implementation defined here:
+            // https://github.com/microsoft/vscode-proxy-agent/blob/d340b9d34684da494d6ebde3bcd18490a8bbd071/src/agent.ts#L53
             PacProxyAgent.prototype.connect = function (req: http.ClientRequest, opts: { protocol: string }): any {
                 try {
                     const connectionHeader = req.getHeader('connection')
