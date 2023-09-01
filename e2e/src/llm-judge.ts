@@ -94,7 +94,6 @@ export const failFastIfAzureEnvVarsNotSet = (): void => {
     }
   }
 
-
 async function azureJudge(instructions: string): Promise<LLMJudgement> {
     // 1. https://portal.azure.com > Azure OpenAI > sourcegraph-test-oai > Keys and Endpoint
     // 2. Copy the key and export AZURE_API_KEY="<paste the key here>"
