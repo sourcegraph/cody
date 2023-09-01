@@ -18,6 +18,7 @@ import {
     deleteFile,
     getFileContentText,
     isUserType,
+    openCustomCommandDocsLink,
     saveJSONFile,
 } from './utils/helpers'
 import { promptSizeInit } from './utils/menu'
@@ -211,7 +212,13 @@ export class CustomPromptsStore implements vscode.Disposable {
         try {
             if (configFileUri) {
                 await createJSONFile(this.extensionPath, configFileUri, isUser)
-                void vscode.window.showInformationMessage('A new cody.json file has been created successfully.')
+                void vscode.window
+                    .showInformationMessage(`Cody ${type} settings file created`, 'View Documentation')
+                    .then(async choice => {
+                        if (choice === 'View Documentation') {
+                            await openCustomCommandDocsLink()
+                        }
+                    })
                 return
             }
             throw new Error('Please make sure you have a repository opened in your workspace.')
