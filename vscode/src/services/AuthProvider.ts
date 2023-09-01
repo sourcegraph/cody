@@ -45,15 +45,9 @@ export class AuthProvider {
     // if none, try signing in with App URL
     public async init(): Promise<void> {
         await this.appDetector.init()
-<<<<<<< HEAD
         const lastEndpoint = localStorage?.getEndpoint() || this.config.serverEndpoint
         const token = (await secretStorage.get(lastEndpoint || '')) || this.config.accessToken
-        debug('AuthProvider:init:lastEndpoint', lastEndpoint)
-=======
-        const lastEndpoint = this.localStorage?.getEndpoint() || this.config.serverEndpoint
-        const token = (await this.secretStorage.get(lastEndpoint || '')) || this.config.accessToken
         logDebug('AuthProvider:init:lastEndpoint', lastEndpoint)
->>>>>>> main
         const authState = await this.auth(lastEndpoint, token || null)
         if (authState?.isLoggedIn) {
             return
