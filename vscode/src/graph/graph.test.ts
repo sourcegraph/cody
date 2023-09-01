@@ -4,11 +4,7 @@ import { URI } from 'vscode-uri'
 
 import { Uri } from '../testutils/mocks'
 
-import {
-    extractDefinitionContexts,
-    extractRelevantDocumentSymbolRanges,
-    gatherDefinitions,
-} from './GraphContextProvider'
+import { extractDefinitionContexts, extractRelevantDocumentSymbolRanges, gatherDefinitions } from './graph'
 
 const testFile1 = `
 import fmt

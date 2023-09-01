@@ -4,11 +4,11 @@ import { Configuration } from '@sourcegraph/cody-shared/src/configuration'
 import { FeatureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
 
 import { ContextProvider } from '../chat/ContextProvider'
+import { SectionObserver } from '../graph/section-observer'
 import { CodyStatusBar } from '../services/StatusBar'
 
 import { CodeCompletionsClient } from './client'
 import { VSCodeDocumentHistory } from './context/history'
-import { createSectionObserver } from './context/precise/section-observer'
 import { createProviderConfig } from './providers/createProvider'
 import { registerAutocompleteTraceView } from './tracer/traceView'
 import { InlineCompletionItemProvider } from './vscodeInlineCompletionItemProvider'
@@ -41,7 +41,7 @@ export async function createInlineCompletionItemProvider(
             }),
             vscode.languages.registerInlineCompletionItemProvider('*', completionsProvider),
             registerAutocompleteTraceView(completionsProvider),
-            createSectionObserver()
+            new SectionObserver()
         )
     } else if (config.isRunningInsideAgent) {
         throw new Error(
