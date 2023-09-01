@@ -36,10 +36,10 @@ export class CustomCommandsBuilderMenu {
             ignoreFocusOut: true,
             validateInput: (input: string) => {
                 if (!input) {
-                    return 'Slash command cannot be empty. Please enter a unique identifier.'
+                    return 'Slash command cannot be empty. Please enter a unique keyword.'
                 }
                 if (commands.has(input)) {
-                    return 'A command with the same identifier exists. Please enter a different command name.'
+                    return 'A command with the same keyword exists. Please enter a different command name.'
                 }
                 if (input.split(' ').length > 1) {
                     return 'A command cannot contain spaces. You can use dashes, underscores, camelCase, etc. instead.'
