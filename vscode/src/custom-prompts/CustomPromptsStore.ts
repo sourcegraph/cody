@@ -116,9 +116,9 @@ export class CustomPromptsStore implements vscode.Disposable {
             )
             if (isOldFormat) {
                 const commands = promptEntries.reduce(
-                    (acc: Record<string, Omit<CodyPrompt, 'slashCommand'>>, [key, prompt]) => {
+                    (acc: Record<string, Omit<CodyPrompt, 'slashCommand'>>, [key, { prompt, type, context }]) => {
                         const slashCommand = key.trim().replaceAll(' ', '-')
-                        acc[slashCommand] = { ...prompt, description: key }
+                        acc[slashCommand] = { description: key, prompt, type, context }
                         return acc
                     },
                     {}
