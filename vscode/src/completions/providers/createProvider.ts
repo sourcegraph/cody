@@ -9,7 +9,6 @@ import { ProviderConfig } from './provider'
 import { createProviderConfig as createUnstableAzureOpenAiProviderConfig } from './unstable-azure-openai'
 import { createProviderConfig as createUnstableCodeGenProviderConfig } from './unstable-codegen'
 import { createProviderConfig as createUnstableFireworksProviderConfig } from './unstable-fireworks'
-import { createProviderConfig as createUnstableHuggingFaceProviderConfig } from './unstable-huggingface'
 import { createProviderConfig as createUnstableOpenAIProviderConfig } from './unstable-openai'
 
 export async function createProviderConfig(
@@ -29,20 +28,6 @@ export async function createProviderConfig(
             logError(
                 'createProviderConfig',
                 'Provider `unstable-codegen` can not be used without configuring `cody.autocomplete.advanced.serverEndpoint`.'
-            )
-            return null
-        }
-        case 'unstable-huggingface': {
-            if (config.autocompleteAdvancedServerEndpoint !== null) {
-                return createUnstableHuggingFaceProviderConfig({
-                    serverEndpoint: config.autocompleteAdvancedServerEndpoint,
-                    accessToken: config.autocompleteAdvancedAccessToken,
-                })
-            }
-
-            logError(
-                'createProviderConfig',
-                'Provider `unstable-huggingface` can not be used without configuring `cody.autocomplete.advanced.serverEndpoint`.'
             )
             return null
         }

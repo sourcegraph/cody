@@ -20,6 +20,7 @@ import { ProviderConfig } from '../../src/completions/providers/provider'
 import { InlineCompletionItemProvider } from '../../src/completions/vscodeInlineCompletionItemProvider'
 import { getFullConfig } from '../../src/configuration'
 import { configureExternalServices } from '../../src/external-services'
+import { initializeNetworkAgent } from '../../src/fetch.node'
 import { localStorage } from '../../src/services/LocalStorageProvider'
 import { InMemorySecretStorage, secretStorage, VSCodeSecretStorage } from '../../src/services/SecretStorageProvider'
 import { wrapVSCodeTextDocument } from '../../src/testutils/textDocument'
@@ -38,6 +39,8 @@ const dummyFeatureFlagProvider = new FeatureFlagProvider(
         customHeaders: {},
     })
 )
+
+initializeNetworkAgent()
 
 async function initCompletionsProvider(context: GetContextResult): Promise<InlineCompletionItemProvider> {
     if (secretStorage instanceof VSCodeSecretStorage) {

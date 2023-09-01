@@ -1,10 +1,12 @@
 [
   {
     "completions": [
-      "signale.info(message)"
+      "    const logger = signale.scope('my-logger')\n    logger.info(message)",
+      "    const logger = signale.scope('logger')\n    logger.info(message)",
+      "    const logger = signale.scope('logger')"
     ],
-    "elapsed": 1415,
-    "timestamp": "1690289701745",
+    "elapsed": 1241,
+    "timestamp": "1693472909242",
     "sample": {
       "context": [],
       "fileName": "logger.ts",
@@ -14,10 +16,12 @@
   },
   {
     "completions": [
-      "const filePath = path.join(__dirname, 'date.txt')\n    const date = new Date().toLocaleString()\n    const data = date.toString()\n    fs.writeFileSync(filePath, data)"
+      "    const date = new Date()\n    const filename = path.join(__dirname, 'date.txt')\n    require('fs').writeFileSync(filename, date.toDateString())",
+      "    const date = new Date()\n    const filePath = path.join(__dirname, 'date.txt')\n    require('fs').writeFileSync(filePath, date.toDateString())",
+      "    const dateString = new Date().toDateString()"
     ],
-    "elapsed": 4462,
-    "timestamp": "1690289701745",
+    "elapsed": 2568,
+    "timestamp": "1693472909242",
     "sample": {
       "context": [],
       "fileName": "writer.ts",
@@ -27,10 +31,11 @@
   },
   {
     "completions": [
-      "const lineNumber = typeof position === 'number'? position : position.line\n        const lineText = this.lines[lineNumber]\n        return new TextLine(this, lineNumber, lineText)"
+      "        const lineNumber = typeof position === 'number' ? position : position.line;",
+      "        let lineNumber = typeof position === 'number' ? position : position.line"
     ],
-    "elapsed": 24337,
-    "timestamp": "1690289701745",
+    "elapsed": 2172,
+    "timestamp": "1693472909242",
     "sample": {
       "context": [],
       "fileName": "text-document.ts",
@@ -40,10 +45,12 @@
   },
   {
     "completions": [
-      "try {\n            const osName = execFileSync('uname', ['-s']).toString().trim()\n            return osName\n        } catch (error) {\n            console.error(error)\n            return null\n        }\n    } else {\n        return navigator.platform\n    }"
+      "        import { execFileSync } from 'child_process';\n        try {\n            return execFileSync('uname', ['-s']).toString().trim();\n        } catch (err) {\n            console.error('Error getting OS name', err);\n            return null;\n        }\n    } else {\n        return window.navigator.platform;\n    }",
+      "        try {\n            return execFileSync('uname', ['-s']).toString().trim();\n        } catch (err) {\n            return null;\n        }\n    } else {\n        return window.navigator.platform;\n    }",
+      "        try {"
     ],
-    "elapsed": 5665,
-    "timestamp": "1690289701745",
+    "elapsed": 3167,
+    "timestamp": "1693472909242",
     "sample": {
       "context": [],
       "fileName": "getOs.ts",
@@ -53,10 +60,10 @@
   },
   {
     "completions": [
-      "Media && window.matchMedia('(prefers-color-scheme: dark)').matches;"
+      "    return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;"
     ],
-    "elapsed": 2456,
-    "timestamp": "1690289701745",
+    "elapsed": 1776,
+    "timestamp": "1693472909242",
     "sample": {
       "context": [],
       "fileName": "isDarkColorScheme.ts",
@@ -66,10 +73,10 @@
   },
   {
     "completions": [
-      "=== \"localhost\" || window.location.host === \"127.0.0.1\";"
+      "    return window.location.host === 'localhost' || window.location.host === '127.0.0.1';"
     ],
-    "elapsed": 2617,
-    "timestamp": "1690289701745",
+    "elapsed": 1056,
+    "timestamp": "1693472909242",
     "sample": {
       "context": [],
       "fileName": "isLocalhost.ts",
@@ -79,10 +86,24 @@
   },
   {
     "completions": [
-      "return text.replace(/[^\\w-]+/g, \"-\").replace(/(^-+|-+$)/g, \"\");"
+      "     * Wether to cache the completion result"
     ],
-    "elapsed": 2896,
-    "timestamp": "1690289701745",
+    "elapsed": 1025,
+    "timestamp": "1693472909242",
+    "sample": {
+      "context": [],
+      "fileName": "interface.ts",
+      "languageId": "typescript",
+      "content": "interface CacheRequest {\n    /**\n     * The prefix (up to the cursor) of the source file where the completion was requested\n     */\n    prefix: string\n    /**\n     * Wether to ️🔥\n     */\n    trim: boolean\n}"
+    }
+  },
+  {
+    "completions": [
+      "    return text.toLowerCase().replace(/[^a-z0-9-]/g, '');",
+      "    return text.toLowerCase().replace(/[^a-z0-9-]/g, '-');"
+    ],
+    "elapsed": 2550,
+    "timestamp": "1693472909242",
     "sample": {
       "context": [
         {
@@ -109,10 +130,12 @@
   },
   {
     "completions": [
-      "var mockAnthropicValidResponseLines = []string{`{\"id\": \"1234\", \"result\": {\"completions\": [{\"label\": \"foo\", \"kind\": \"method\", \"detail\": \"bar\", \"insertText\": \"foo()\"}]}}`, `{\"id\": \"1234\", \"result\": {\"completions\": [{\"label\": \"baz\", \"kind\": \"method\", \"detail\": \"qux\", \"insertText\": \"baz()\"}]}}`}\n\n    mockClient := getMockClient(linesToResponse(mockAnthropicValidResponseLines))\n\n    completions, err := mockClient.GetCompletions(context.Background(), \"foo\", types.CompletionOptions{})\n    require.NoError(t, err)\n    assert.Equal(t, []types.Completion{\n        {\"foo\", \"method\", \"bar\", \"foo()\"},\n        {\"baz\", \"method\", \"qux\", \"baz()\"},\n    }, completions)\n}"
+      "    responseLines := []string{\"Completion 1\", \"Completion 2\"}\n\tresponseBody := linesToResponse(responseLines)\n\n\tclient :=",
+      "    gold := autogold.New()\n\tdefer gold.Restore()\n\n\tlines",
+      "    responseBody := linesToResponse([]string{\"completion1\", \"completion2\"})\n\tclient := getMockClient(responseBody)"
     ],
-    "elapsed": 20294,
-    "timestamp": "1690289701745",
+    "elapsed": 2858,
+    "timestamp": "1693472909242",
     "sample": {
       "context": [
         {
@@ -139,10 +162,12 @@
   },
   {
     "completions": [
-      "\"\"\"Test getting open issues.\"\"\"\n    issues = api_client.get_open_issues()\n    assert isinstance(issues, List)\n    assert all(isinstance(issue, Issue) for issue in issues)"
+      "    issues = api_client.get_issues(state=\"open\")\n    assert len(issues) > 0",
+      "    issues = api_client.github.get_issues(state=\"open\", repo=api_client.github_repository)\n    assert len(issues) > 0",
+      "    issues = api_client.get_open_issues()"
     ],
-    "elapsed": 4722,
-    "timestamp": "1690289701745",
+    "elapsed": 1891,
+    "timestamp": "1693472909242",
     "sample": {
       "context": [
         {
@@ -173,10 +198,10 @@
   },
   {
     "completions": [
-      "from_toolkit(self)"
+      "            tool_cls.create("
     ],
-    "elapsed": 1215,
-    "timestamp": "1690289701745",
+    "elapsed": 2238,
+    "timestamp": "1693472909242",
     "sample": {
       "context": [
         {
@@ -199,10 +224,12 @@
   },
   {
     "completions": [
-      "providerConfig,\n                cache,\n                triggerMoreEagerly,"
+      "                noStatusBar: noopStatusBar,\n                history: new History(),\n                providerConfig,",
+      "                providerConfig, history: new History(), statusBar: noopStatusBar })",
+      "                providerConfig, history: new History() })"
     ],
-    "elapsed": 5327,
-    "timestamp": "1690289701745",
+    "elapsed": 1793,
+    "timestamp": "1693472909242",
     "sample": {
       "context": [
         {
@@ -224,7 +251,7 @@
       ],
       "fileName": "src/completions/completion.test.ts",
       "languageId": "typescript",
-      "content": "import { beforeEach, describe, expect, it, vi } from 'vitest'\nimport type * as vscode from 'vscode'\nimport { URI } from 'vscode-uri'\n\nimport {\n    CompletionParameters,\n    CompletionResponse,\n} from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'\n\nimport { vsCodeMocks } from '../testutils/mocks'\n\nimport { CodyCompletionItemProvider } from '.'\nimport { CompletionsCache } from './cache'\nimport { History } from './history'\nimport { createProviderConfig } from './providers/anthropic'\n\nvi.mock('vscode', () => ({\n    ...vsCodeMocks,\n    InlineCompletionTriggerKind: {\n        Invoke: 0,\n        Automatic: 1,\n    },\n    workspace: {\n        ...vsCodeMocks.workspace,\n        asRelativePath(path: string) {\n            return path\n        },\n        onDidChangeTextDocument() {\n            return null\n        },\n    },\n    window: {\n        ...vsCodeMocks.window,\n        visibleTextEditors: [],\n        tabGroups: { all: [] },\n    },\n}))\n\nvi.mock('./context-embeddings.ts', () => ({\n    getContextFromEmbeddings: () => [],\n}))\n\nfunction createCompletionResponse(completion: string): CompletionResponse {\n    return {\n        completion: truncateMultilineString(completion),\n        stopReason: 'unknown',\n    }\n}\n\nconst noopStatusBar = {\n    startLoading: () => () => {},\n} as any\n\nconst CURSOR_MARKER = '<cursor>'\n\n/**\n * A helper function used so that the below code example can be intended in code but will have their\n * prefix stripped. This is similar to what Vitest snapshots use but without the prettier hack so that\n * the starting ` is always in the same line as the function name :shrug:\n */\nfunction truncateMultilineString(string: string): string {\n    const lines = string.split('\n')\n\n    if (lines.length <= 1) {\n        return string\n    }\n\n    if (lines[0] !== '') {\n        return string\n    }\n\n    const regex = lines[1].match(/^ */)\n\n    const indentation = regex ? regex[0] : ''\n    return lines\n        .map(line => (line.startsWith(indentation) ? line.replace(indentation, '') : line))\n        .slice(1)\n        .join('\n')\n}\n\ndescribe('Cody completions', () => {\n    /**\n     * A test helper to trigger a completion request. The code example must include\n     * a pipe character to denote the current cursor position.\n     *\n     * @example\n     *   complete(`\n     * async function foo() {\n     *   ${CURSOR_MARKER}\n     * }`)\n     */\n    let complete: (\n        code: string,\n        responses?: CompletionResponse[] | 'stall',\n        languageId?: string,\n        context?: vscode.InlineCompletionContext,\n        triggerMoreEagerly?: boolean\n    ) => Promise<{\n        requests: CompletionParameters[]\n        completions: vscode.InlineCompletionItem[]\n    }>\n    beforeEach(() => {\n        const cache = new CompletionsCache()\n        complete = async (\n            code: string,\n            responses?: CompletionResponse[] | 'stall',\n            languageId: string = 'typescript',\n            context: vscode.InlineCompletionContext = { triggerKind: 1, selectedCompletionInfo: undefined },\n            triggerMoreEagerly = true\n        ): Promise<{\n            requests: CompletionParameters[]\n            completions: vscode.InlineCompletionItem[]\n        }> => {\n            code = truncateMultilineString(code)\n\n            const requests: CompletionParameters[] = []\n            let requestCounter = 0\n            const completionsClient: any = {\n                complete(params: CompletionParameters): Promise<CompletionResponse> {\n                    requests.push(params)\n                    if (responses === 'stall') {\n                        // Creates a stalling request that never responds\n                        return new Promise(() => {})\n                    }\n                    return Promise.resolve(responses?.[requestCounter++] || { completion: '', stopReason: 'unknown' })\n                },\n            }\n            const providerConfig = createProviderConfig({\n                completionsClient,\n                contextWindowTokens: 2048,\n            })\n            const completionProvider = new CodyCompletionItemProvider({\n                ️🔥\n            })\n\n            if (!code.includes(CURSOR_MARKER)) {\n                throw new Error('The test code must include a | to denote the cursor position')\n            }\n\n            const cursorIndex = code.indexOf(CURSOR_MARKER)\n            const prefix = code.slice(0, cursorIndex)\n            const suffix = code.slice(cursorIndex + CURSOR_MARKER.length)\n\n            const codeWithoutCursor = prefix + suffix\n\n            const token: any = {\n                onCancellationRequested() {\n                    return null\n                },\n            }\n            const document: any = {\n                filename: 'test.ts',\n                uri: URI.parse('file:///test.ts'),\n                languageId,"
+      "content": "import { beforeEach, describe, expect, it, vi } from 'vitest'\nimport type * as vscode from 'vscode'\nimport { URI } from 'vscode-uri'\n\nimport {\n    CompletionParameters,\n    CompletionResponse,\n} from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'\n\nimport { vsCodeMocks } from '../testutils/mocks'\n\nimport { CodyCompletionItemProvider } from '.'\nimport { History } from './history'\nimport { createProviderConfig } from './providers/anthropic'\n\nvi.mock('vscode', () => ({\n    ...vsCodeMocks,\n    InlineCompletionTriggerKind: {\n        Invoke: 0,\n        Automatic: 1,\n    },\n    workspace: {\n        ...vsCodeMocks.workspace,\n        asRelativePath(path: string) {\n            return path\n        },\n        onDidChangeTextDocument() {\n            return null\n        },\n    },\n    window: {\n        ...vsCodeMocks.window,\n        visibleTextEditors: [],\n        tabGroups: { all: [] },\n    },\n}))\n\nvi.mock('./context-embeddings.ts', () => ({\n    getContextFromEmbeddings: () => [],\n}))\n\nfunction createCompletionResponse(completion: string): CompletionResponse {\n    return {\n        completion: truncateMultilineString(completion),\n        stopReason: 'unknown',\n    }\n}\n\nconst noopStatusBar = {\n    startLoading: () => () => {},\n} as any\n\nconst CURSOR_MARKER = '<cursor>'\n\n/**\n * A helper function used so that the below code example can be intended in code but will have their\n * prefix stripped. This is similar to what Vitest snapshots use but without the prettier hack so that\n * the starting ` is always in the same line as the function name :shrug:\n */\nfunction truncateMultilineString(string: string): string {\n    const lines = string.split('\n')\n\n    if (lines.length <= 1) {\n        return string\n    }\n\n    if (lines[0] !== '') {\n        return string\n    }\n\n    const regex = lines[1].match(/^ */)\n\n    const indentation = regex ? regex[0] : ''\n    return lines\n        .map(line => (line.startsWith(indentation) ? line.replace(indentation, '') : line))\n        .slice(1)\n        .join('\n')\n}\n\ndescribe('Cody completions', () => {\n    /**\n     * A test helper to trigger a completion request. The code example must include\n     * a pipe character to denote the current cursor position.\n     *\n     * @example\n     *   complete(`\n     * async function foo() {\n     *   ${CURSOR_MARKER}\n     * }`)\n     */\n    let complete: (\n        code: string,\n        responses?: CompletionResponse[] | 'stall',\n        languageId?: string,\n        context?: vscode.InlineCompletionContext,\n    ) => Promise<{\n        requests: CompletionParameters[]\n        completions: vscode.InlineCompletionItem[]\n    }>\n    beforeEach(() => {\n        complete = async (\n            code: string,\n            responses?: CompletionResponse[] | 'stall',\n            languageId: string = 'typescript',\n            context: vscode.InlineCompletionContext = { triggerKind: 1, selectedCompletionInfo: undefined },\n        ): Promise<{\n            requests: CompletionParameters[]\n            completions: vscode.InlineCompletionItem[]\n        }> => {\n            code = truncateMultilineString(code)\n\n            const requests: CompletionParameters[] = []\n            let requestCounter = 0\n            const completionsClient: any = {\n                complete(params: CompletionParameters): Promise<CompletionResponse> {\n                    requests.push(params)\n                    if (responses === 'stall') {\n                        // Creates a stalling request that never responds\n                        return new Promise(() => {})\n                    }\n                    return Promise.resolve(responses?.[requestCounter++] || { completion: '', stopReason: 'unknown' })\n                },\n            }\n            const providerConfig = createProviderConfig({\n                completionsClient,\n                contextWindowTokens: 2048,\n            })\n            const completionProvider = new CodyCompletionItemProvider({\n                ️🔥\n            })\n\n            if (!code.includes(CURSOR_MARKER)) {\n                throw new Error('The test code must include a | to denote the cursor position')\n            }\n\n            const cursorIndex = code.indexOf(CURSOR_MARKER)\n            const prefix = code.slice(0, cursorIndex)\n            const suffix = code.slice(cursorIndex + CURSOR_MARKER.length)\n\n            const codeWithoutCursor = prefix + suffix\n\n            const token: any = {\n                onCancellationRequested() {\n                    return null\n                },\n            }\n            const document: any = {\n                filename: 'test.ts',\n                uri: URI.parse('file:///test.ts'),\n                languageId,"
     }
   }
 ]

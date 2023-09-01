@@ -161,7 +161,6 @@ export function createProviderConfig(unstableAzureOpenAIOptions: UnstableOpenAIO
         maximumContextCharacters: tokensToChars(unstableAzureOpenAIOptions.contextWindowTokens),
         enableExtendedMultilineTriggers: false,
         identifier: PROVIDER_IDENTIFIER,
-        supportsInfilling: false,
         model: 'gpt-35-turbo',
     }
 }

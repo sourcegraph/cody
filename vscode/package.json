@@ -858,7 +858,6 @@
           "enum": [
             "anthropic",
             "unstable-codegen",
-            "unstable-huggingface",
             "unstable-fireworks",
             "unstable-azure-openai",
             "unstable-openai"
@@ -880,6 +879,8 @@
             "starcoder-7b",
             "starcoder-3b",
             "starcoder-1b",
+            "wizardcoder-15b",
+            "llama-code-7b",
             "llama-code-13b",
             "llama-code-13b-instruct"
           ],
@@ -986,6 +987,9 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.4.2",
+    "@sentry/browser": "^7.66.0",
+    "@sentry/core": "^7.66.0",
+    "@sentry/node": "^7.66.0",
     "@sourcegraph/cody-shared": "workspace:*",
     "@sourcegraph/cody-ui": "workspace:*",
     "@types/stream-json": "^1.7.3",

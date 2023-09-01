@@ -49,9 +49,13 @@ export async function configureExternalServices(
     telemetryService: TelemetryService,
     platform: Pick<
         PlatformContext,
-        'createLocalKeywordContextFetcher' | 'createFilenameContextFetcher' | 'createCompletionsClient'
+        | 'createLocalKeywordContextFetcher'
+        | 'createFilenameContextFetcher'
+        | 'createCompletionsClient'
+        | 'createSentryService'
     >
 ): Promise<ExternalServices> {
+    const sentryService = platform.createSentryService?.(initialConfig)
     const client = new SourcegraphGraphQLAPIClient(initialConfig)
     const featureFlagProvider = new FeatureFlagProvider(client)
     const completionsClient = platform.createCompletionsClient(initialConfig, featureFlagProvider, logger)
@@ -91,6 +95,7 @@ export async function configureExternalServices(
         codeCompletionsClient,
         guardrails,
         onConfigurationChange: newConfig => {
+            sentryService?.onConfigurationChange(newConfig)
             client.onConfigurationChange(newConfig)
             completionsClient.onConfigurationChange(newConfig)
             codeCompletionsClient.onConfigurationChange(newConfig)
