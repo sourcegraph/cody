@@ -67,8 +67,8 @@ const workspaceItem: QuickPickItem = {
     description: '.vscode/cody.json',
 }
 
-const openIconButton = { iconPath: new ThemeIcon('go-to-file'), tooltip: 'open/create', id: 'open' }
-const trashIconButton = { iconPath: new ThemeIcon('trash'), tooltip: 'delete', id: 'delete' }
+const openIconButton = { iconPath: new ThemeIcon('go-to-file'), tooltip: 'Open or Create Settings File', id: 'open' }
+const trashIconButton = { iconPath: new ThemeIcon('trash'), tooltip: 'Delete Settings File', id: 'delete' }
 const gearIconButton = { iconPath: new ThemeIcon('gear'), tooltip: 'Configure Custom Commands...', id: 'config' }
 const backIconButton = QuickInputButtons.Back
 
