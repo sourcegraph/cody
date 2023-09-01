@@ -8,6 +8,7 @@ import {
     MyPrompts,
     MyPromptsJSON,
 } from '@sourcegraph/cody-shared/src/chat/prompts'
+import { fromSlashCommand, toSlashCommand } from '@sourcegraph/cody-shared/src/chat/prompts/utils'
 import { newPromptMixin, PromptMixin } from '@sourcegraph/cody-shared/src/prompt/prompt-mixin'
 
 import { debug } from '../log'
@@ -112,8 +113,7 @@ export class CustomPromptsStore implements vscode.Disposable {
                 if (Object.prototype.hasOwnProperty.call(prompts, key)) {
                     const prompt = prompts[key]
                     prompt.type = type
-                    // ensure there is only one leading forward slash
-                    prompt.slashCommand = key.replace(/^\/+/, '').replace(/^/, '/')
+                    prompt.slashCommand = toSlashCommand(key)
                     this.myPromptsMap.set(prompt.slashCommand, prompt)
                 }
             }
@@ -152,11 +152,11 @@ export class CustomPromptsStore implements vscode.Disposable {
         for (const [key, value] of this.myPromptsMap) {
             if (value.type === 'user' && value.prompt !== 'separator') {
                 value.type = undefined
-                filtered.set(key, value)
+                filtered.set(fromSlashCommand(key), value)
             }
         }
         // Add new prompt to the map
-        filtered.set(id, prompt)
+        filtered.set(fromSlashCommand(id), prompt)
         // turn prompt map into json
         const jsonContext = { ...this.myPromptsJSON }
         jsonContext.commands = Object.fromEntries(filtered)

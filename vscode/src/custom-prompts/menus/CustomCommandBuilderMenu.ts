@@ -2,6 +2,7 @@ import { QuickPickItem, window } from 'vscode'
 
 import { CodyPrompt } from '@sourcegraph/cody-shared'
 import { defaultCodyPromptContext } from '@sourcegraph/cody-shared/src/chat/prompts'
+import { toSlashCommand } from '@sourcegraph/cody-shared/src/chat/prompts/utils'
 
 import { customPromptsContextOptions } from '../utils/menu'
 
@@ -29,7 +30,7 @@ export class CustomCommandsBuilderMenu {
     }
 
     private async makeSlashCommand(commands: Map<string, CodyPrompt>): Promise<string | undefined> {
-        let slashCommand = await window.showInputBox({
+        let value = await window.showInputBox({
             ...NewCustomCommandConfigMenuOptions,
             prompt: 'Enter a keyword for this command to act as a slash command that you can run in chat or main quick pick.',
             placeHolder: 'e.g. "explain" to assign /explain for the "Explain Code" command',
@@ -47,11 +48,10 @@ export class CustomCommandsBuilderMenu {
                 return
             },
         })
-        if (slashCommand) {
-            // ensure there is only one leading forward slash
-            slashCommand = slashCommand.replace(/^\/+/, '').replace(/^/, '/')
+        if (value) {
+            value = toSlashCommand(value)
         }
-        return slashCommand
+        return value
     }
 
     private async makeDescription(): Promise<string | undefined> {

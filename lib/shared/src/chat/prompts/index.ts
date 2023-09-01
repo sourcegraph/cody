@@ -1,6 +1,7 @@
 import { Preamble } from '../preamble'
 
 import * as defaultPrompts from './default-prompts.json'
+import { toSlashCommand } from './utils'
 
 export function getDefaultCommandsMap(editorCommands: CodyPrompt[] = []): Map<string, CodyPrompt> {
     const map = new Map<string, CodyPrompt>()
@@ -18,8 +19,7 @@ export function getDefaultCommandsMap(editorCommands: CodyPrompt[] = []): Map<st
         if (Object.prototype.hasOwnProperty.call(prompts, key)) {
             const prompt = prompts[key] as CodyPrompt
             prompt.type = 'default'
-            // ensure there is only one leading forward slash
-            prompt.slashCommand = key.replace(/^\/+/, '').replace(/^/, '/')
+            prompt.slashCommand = toSlashCommand(key)
             map.set(prompt.slashCommand, prompt)
         }
     }

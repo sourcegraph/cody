@@ -26,7 +26,7 @@ const settingsSeparator: QuickPickItem = { kind: -1, label: 'settings' }
 const addOption: QuickPickItem = { label: 'Create a New Custom User Command...', alwaysShow: true }
 
 export const recentlyUsedSeparatorAsPrompt: [string, CodyPrompt][] = [
-    ['separator', { prompt: 'separator', type: 'recently used' }],
+    ['separator', { prompt: 'separator', type: 'recently used', slashCommand: '' }],
 ]
 
 export const menu_separators = {
