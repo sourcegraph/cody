@@ -12,7 +12,7 @@ import {
 import { fromSlashCommand, toSlashCommand } from '@sourcegraph/cody-shared/src/chat/prompts/utils'
 import { newPromptMixin, PromptMixin } from '@sourcegraph/cody-shared/src/prompt/prompt-mixin'
 
-import { debug } from '../log'
+import { logDebug, logError } from '../log'
 
 import {
     constructFileUri,
@@ -87,7 +87,7 @@ export class CustomPromptsStore implements vscode.Disposable {
                 }
             }
         } catch (error) {
-            debug('CustomPromptsStore:refresh', 'failed', { verbose: error })
+            logError('CustomPromptsStore:refresh', 'failed', { verbose: error })
         }
         return { commands: this.myPromptsMap, premade: this.myPremade, starter: this.myStarter }
     }
@@ -162,7 +162,7 @@ export class CustomPromptsStore implements vscode.Disposable {
             }
             this.promptSize[type] = this.myPromptsMap.size - 1
         } catch (error) {
-            debug('CustomPromptsStore:build', 'failed', { verbose: error })
+            logDebug('CustomPromptsStore:build', 'failed', { verbose: error })
         }
         return this.myPromptsMap
     }
@@ -230,7 +230,7 @@ export class CustomPromptsStore implements vscode.Disposable {
         } catch (error) {
             const errorMessage = 'Failed to create cody.json file: '
             void vscode.window.showErrorMessage(`${errorMessage} ${error}`)
-            debug('CustomPromptsStore:addJSONFile:create', 'failed', { verbose: error })
+            logDebug('CustomPromptsStore:addJSONFile:create', 'failed', { verbose: error })
         }
     }
 
@@ -244,7 +244,7 @@ export class CustomPromptsStore implements vscode.Disposable {
             void vscode.window.showInformationMessage(
                 'Fail: try deleting the .vscode/cody.json file in your repository or home directory manually.'
             )
-            debug('CustomPromptsStore:clear:error:', 'Failed to remove cody.json file for' + type)
+            logError('CustomPromptsStore:clear:error:', 'Failed to remove cody.json file for' + type)
         }
         await deleteFile(uri)
     }

@@ -5,14 +5,14 @@ import { TelemetryEventProperties } from '@sourcegraph/cody-shared/src/telemetry
 import { EventLogger, ExtensionDetails } from '@sourcegraph/cody-shared/src/telemetry/EventLogger'
 
 import { version as packageVersion } from '../../package.json'
-import { debug } from '../log'
+import { logDebug } from '../log'
 
 import { LocalStorage } from './LocalStorageProvider'
 
 export let eventLogger: EventLogger | null = null
 let globalAnonymousUserID: string
 
-const extensionDetails: ExtensionDetails = {
+export const extensionDetails: ExtensionDetails = {
     ide: 'VSCode',
     ideExtensionType: 'Cody',
     // Prefer the runtime package json over the version that is inlined during build times. This
@@ -62,7 +62,7 @@ export async function createOrUpdateEventLogger(
  * @deprecated Use TelemetryService instead.
  */
 export function logEvent(eventName: string, properties?: TelemetryEventProperties): void {
-    debug(`logEvent${eventLogger === null ? ' (telemetry disabled)' : ''}`, eventName, JSON.stringify(properties))
+    logDebug(`logEvent${eventLogger === null ? ' (telemetry disabled)' : ''}`, eventName, JSON.stringify(properties))
     if (!eventLogger || !globalAnonymousUserID) {
         return
     }

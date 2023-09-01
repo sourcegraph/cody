@@ -8,7 +8,7 @@ import { ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
 import { Editor } from '@sourcegraph/cody-shared/src/editor'
 import { ContextResult } from '@sourcegraph/cody-shared/src/local-context'
 
-import { debug } from '../log'
+import { logDebug } from '../log'
 
 /**
  * A local context fetcher that uses a LLM to generate filename fragments, which are then used to
@@ -77,7 +77,7 @@ export class FilenameContextFetcher {
         )
 
         const time4 = performance.now()
-        debug(
+        logDebug(
             'FilenameContextFetcher:getContext',
             JSON.stringify({
                 duration: time4 - time0,

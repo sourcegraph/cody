@@ -20,7 +20,9 @@ import { ProviderConfig } from '../../src/completions/providers/provider'
 import { InlineCompletionItemProvider } from '../../src/completions/vscodeInlineCompletionItemProvider'
 import { getFullConfig } from '../../src/configuration'
 import { configureExternalServices } from '../../src/external-services'
-import { InMemorySecretStorage } from '../../src/services/SecretStorageProvider'
+import { initializeNetworkAgent } from '../../src/fetch.node'
+import { localStorage } from '../../src/services/LocalStorageProvider'
+import { InMemorySecretStorage, secretStorage, VSCodeSecretStorage } from '../../src/services/SecretStorageProvider'
 import { wrapVSCodeTextDocument } from '../../src/testutils/textDocument'
 
 import { completionsDataset, CURSOR, Sample } from './completions-dataset'
@@ -38,11 +40,22 @@ const dummyFeatureFlagProvider = new FeatureFlagProvider(
     })
 )
 
+initializeNetworkAgent()
+
 async function initCompletionsProvider(context: GetContextResult): Promise<InlineCompletionItemProvider> {
-    const secretStorage = new InMemorySecretStorage()
+    if (secretStorage instanceof VSCodeSecretStorage) {
+        secretStorage.setStorage(new InMemorySecretStorage() as any as vscode.SecretStorage)
+    }
     await secretStorage.store('cody.access-token', ENVIRONMENT_CONFIG.SOURCEGRAPH_ACCESS_TOKEN)
 
-    const initialConfig = await getFullConfig(secretStorage)
+    // Optional for completions provider. Mock to make TS happy.
+    localStorage.setStorage({
+        get() {
+            return undefined
+        },
+    } as any as vscode.Memento)
+
+    const initialConfig = await getFullConfig()
     if (!didLogConfig) {
         console.error('Running `initCompletionsProvider` with config:', initialConfig)
         didLogConfig = true
@@ -73,6 +86,7 @@ async function initCompletionsProvider(context: GetContextResult): Promise<Inlin
         statusBar: {
             startLoading: () => () => {},
             dispose: () => {},
+            addError: () => {},
         },
         history,
         getCodebaseContext: () => codebaseContext,

@@ -858,9 +858,9 @@
           "enum": [
             "anthropic",
             "unstable-codegen",
-            "unstable-huggingface",
             "unstable-fireworks",
-            "unstable-azure-openai"
+            "unstable-azure-openai",
+            "unstable-openai"
           ],
           "markdownDescription": "The provider used for code autocomplete. Most providers other than `anthropic` require the `cody.autocomplete.advanced.serverEndpoint` and `cody.autocomplete.advanced.accessToken` settings to also be set. Check the Cody output channel for error messages if autocomplete is not working as expected."
         },
@@ -879,6 +879,8 @@
             "starcoder-7b",
             "starcoder-3b",
             "starcoder-1b",
+            "wizardcoder-15b",
+            "llama-code-7b",
             "llama-code-13b",
             "llama-code-13b-instruct"
           ],
@@ -985,6 +987,9 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.4.2",
+    "@sentry/browser": "^7.66.0",
+    "@sentry/core": "^7.66.0",
+    "@sentry/node": "^7.66.0",
     "@sourcegraph/cody-shared": "workspace:*",
     "@sourcegraph/cody-ui": "workspace:*",
     "@types/stream-json": "^1.7.3",
