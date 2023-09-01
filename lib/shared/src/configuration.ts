@@ -25,6 +25,7 @@ export interface Configuration {
         | 'unstable-codegen'
         | 'unstable-fireworks'
         | 'unstable-azure-openai'
+        | 'unstable-openai'
         | null
     autocompleteAdvancedServerEndpoint: string | null
     autocompleteAdvancedModel: string | null

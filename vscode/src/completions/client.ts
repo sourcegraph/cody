@@ -7,7 +7,7 @@ import type {
     CompletionParameters,
     CompletionResponse,
 } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
-import { RateLimitError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
+import { NetworkError, RateLimitError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
 
 export type CodeCompletionsParams = Omit<CompletionParameters, 'fast'>
 
@@ -36,9 +36,19 @@ export function createClient(
         async complete(params, onPartialResponse, signal): Promise<CompletionResponse> {
             const log = logger?.startCompletion(params)
 
+            const [tracingFlagEnabled, streamingResponseFlagEnable] = featureFlagProvider
+                ? await Promise.all([
+                      featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteTracing),
+                      featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteStreamingResponse),
+                  ])
+                : [false, false]
+
             const headers = new Headers(config.customHeaders)
             if (config.accessToken) {
                 headers.set('Authorization', `token ${config.accessToken}`)
+            }
+            if (tracingFlagEnabled) {
+                headers.set('X-Sourcegraph-Should-Trace', 'true')
             }
 
             // We enable streaming only for Node environments right now because it's hard to make the
@@ -47,12 +57,11 @@ export function createClient(
             // @TODO(philipp-spiess): Feature test if the response is a Node or a browser stream and
             // implement SSE parsing for both.
             const isNode = typeof process !== 'undefined'
-            const isFeatureFlagEnabled = featureFlagProvider
-                ? await featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteStreamingResponse)
-                : false
-            const enableStreaming = !!isNode && isFeatureFlagEnabled
 
-            const response = await fetch(getCodeCompletionsEndpoint(), {
+            const enableStreaming = !!isNode && !!streamingResponseFlagEnable
+
+            const url = getCodeCompletionsEndpoint()
+            const response: Response = await fetch(url, {
                 method: 'POST',
                 body: JSON.stringify({
                     ...params,
@@ -61,6 +70,8 @@ export function createClient(
                 headers,
                 signal,
             })
+
+            const traceId = response.headers.get('x-trace') ?? undefined
 
             // When rate-limiting occurs, the response is an error message
             if (response.status === 429) {
@@ -74,7 +85,7 @@ export function createClient(
             }
 
             if (response.body === null) {
-                throw new Error('No response body')
+                throw new NetworkError('No response body', traceId)
             }
 
             // For backward compatibility, we have to check if the response is an SSE stream or a
@@ -100,14 +111,14 @@ export function createClient(
                     }
 
                     if (lastResponse === undefined) {
-                        throw new Error('No completion response received')
+                        throw new NetworkError('No completion response received', traceId)
                     }
 
                     return lastResponse
                 } catch (error) {
                     const message = `error parsing streaming CodeCompletionResponse: ${error}`
                     log?.onError(message)
-                    throw new Error(message)
+                    throw new NetworkError(message, traceId)
                 }
             } else {
                 const result = await response.text()
@@ -117,7 +128,7 @@ export function createClient(
                     if (typeof response.completion !== 'string' || typeof response.stopReason !== 'string') {
                         const message = `response does not satisfy CodeCompletionResponse: ${result}`
                         log?.onError(message)
-                        throw new Error(message)
+                        throw new NetworkError(message, traceId)
                     } else {
                         log?.onComplete(response)
                         return response
@@ -125,7 +136,7 @@ export function createClient(
                 } catch (error) {
                     const message = `error parsing response CodeCompletionResponse: ${error}, response text: ${result}`
                     log?.onError(message)
-                    throw new Error(message)
+                    throw new NetworkError(message, traceId)
                 }
             }
         },

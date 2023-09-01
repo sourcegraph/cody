@@ -9,6 +9,7 @@ import { ProviderConfig } from './provider'
 import { createProviderConfig as createUnstableAzureOpenAiProviderConfig } from './unstable-azure-openai'
 import { createProviderConfig as createUnstableCodeGenProviderConfig } from './unstable-codegen'
 import { createProviderConfig as createUnstableFireworksProviderConfig } from './unstable-fireworks'
+import { createProviderConfig as createUnstableOpenAIProviderConfig } from './unstable-openai'
 
 export async function createProviderConfig(
     config: Configuration,
@@ -50,6 +51,12 @@ export async function createProviderConfig(
             return createUnstableAzureOpenAiProviderConfig({
                 serverEndpoint: config.autocompleteAdvancedServerEndpoint,
                 accessToken: config.autocompleteAdvancedAccessToken,
+            })
+        }
+        case 'unstable-openai': {
+            return createUnstableOpenAIProviderConfig({
+                client,
+                contextWindowTokens: 2048,
             })
         }
         case 'unstable-fireworks': {
