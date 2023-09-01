@@ -12,7 +12,7 @@ import { LocalStorage } from './LocalStorageProvider'
 export let eventLogger: EventLogger | null = null
 let globalAnonymousUserID: string
 
-const extensionDetails: ExtensionDetails = {
+export const extensionDetails: ExtensionDetails = {
     ide: 'VSCode',
     ideExtensionType: 'Cody',
     // Prefer the runtime package json over the version that is inlined during build times. This

@@ -8,8 +8,8 @@ import type {
 import { DOTCOM_URL } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
 
 import { CONFIG_KEY, ConfigKeys } from './configuration-keys'
-import { LocalStorage } from './services/LocalStorageProvider'
-import { getAccessToken, SecretStorage } from './services/SecretStorageProvider'
+import { localStorage } from './services/LocalStorageProvider'
+import { getAccessToken, secretStorage } from './services/SecretStorageProvider'
 
 interface ConfigGetter {
     get<T>(section: (typeof CONFIG_KEY)[ConfigKeys], defaultValue?: T): T
@@ -18,7 +18,7 @@ interface ConfigGetter {
 /**
  * All configuration values, with some sanitization performed.
  */
-export function getConfiguration(config: ConfigGetter): Configuration {
+export function getConfiguration(config: ConfigGetter = vscode.workspace.getConfiguration()): Configuration {
     const isTesting = process.env.CODY_TESTING === 'true'
 
     let debugRegex: RegExp | null = null
@@ -109,18 +109,8 @@ function sanitizeServerEndpoint(serverEndpoint: string): string {
     return serverEndpoint.trim().replace(trailingSlashRegexp, '')
 }
 
-const codyConfiguration = vscode.workspace.getConfiguration('cody')
-
-// Update user configurations in VS Code for Cody
-export async function updateConfiguration(configKey: string, configValue: string): Promise<void> {
-    await codyConfiguration.update(configKey, configValue, vscode.ConfigurationTarget.Global)
-}
-
-export const getFullConfig = async (
-    secretStorage: SecretStorage,
-    localStorage?: LocalStorage
-): Promise<ConfigurationWithAccessToken> => {
-    const config = getConfiguration(vscode.workspace.getConfiguration())
+export const getFullConfig = async (): Promise<ConfigurationWithAccessToken> => {
+    const config = getConfiguration()
     // Migrate endpoints to local storage
     config.serverEndpoint = localStorage?.getEndpoint() || config.serverEndpoint
     const accessToken = (await getAccessToken(secretStorage)) || null
