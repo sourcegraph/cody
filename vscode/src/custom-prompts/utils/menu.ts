@@ -13,10 +13,10 @@ export const NewCustomCommandConfigMenuOptions = {
 export type QuickPickItemWithSlashCommand = QuickPickItem & { slashCommand: string }
 
 const inlineSeparator: QuickPickItem = { kind: -1, label: 'inline' }
-const chatOption: QuickPickItemWithSlashCommand = { label: '/ask', description: 'Ask a Question', slashCommand: '/ask' }
+const chatOption: QuickPickItemWithSlashCommand = { label: '/ask', description: 'Ask a question', slashCommand: '/ask' }
 const fixOption: QuickPickItemWithSlashCommand = {
     label: '/edit',
-    description: 'Request a Code Edit',
+    description: 'Edit code',
     slashCommand: '/edit',
 }
 const commandsSeparator: QuickPickItem = { kind: -1, label: 'commands' }
@@ -206,7 +206,7 @@ export const CustomCommandConfigMenuItems = [
 
 export async function showAskQuestionQuickPick(): Promise<string> {
     const quickPick = vscode.window.createQuickPick()
-    quickPick.title = 'Ask question (/ask)'
+    quickPick.title = 'Ask a question (/ask)'
     quickPick.placeholder = 'Your question'
     quickPick.buttons = [menu_buttons.back]
 
