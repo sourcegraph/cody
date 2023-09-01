@@ -28,18 +28,13 @@ export function createClient(
     featureFlagProvider?: FeatureFlagProvider,
     logger?: CompletionLogger
 ): CodeCompletionsClient {
-    function getCodeCompletionsEndpoint(tracing?: boolean): string {
-        return new URL('/.api/completions/code' + (tracing ? '?trace=1' : ''), config.serverEndpoint).href
+    function getCodeCompletionsEndpoint(): string {
+        return new URL('/.api/completions/code', config.serverEndpoint).href
     }
 
     return {
         async complete(params, onPartialResponse, signal): Promise<CompletionResponse> {
             const log = logger?.startCompletion(params)
-
-            const headers = new Headers(config.customHeaders)
-            if (config.accessToken) {
-                headers.set('Authorization', `token ${config.accessToken}`)
-            }
 
             const [tracingFlagEnabled, streamingResponseFlagEnable] = featureFlagProvider
                 ? await Promise.all([
@@ -47,6 +42,14 @@ export function createClient(
                       featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteStreamingResponse),
                   ])
                 : [false, false]
+
+            const headers = new Headers(config.customHeaders)
+            if (config.accessToken) {
+                headers.set('Authorization', `token ${config.accessToken}`)
+            }
+            if (tracingFlagEnabled) {
+                headers.set('X-Sourcegraph-Should-Trace', 'true')
+            }
 
             // We enable streaming only for Node environments right now because it's hard to make the
             // polyfilled fetch API work the same as it does in the browser.
@@ -57,7 +60,7 @@ export function createClient(
 
             const enableStreaming = !!isNode && !!streamingResponseFlagEnable
 
-            const url = getCodeCompletionsEndpoint(tracingFlagEnabled)
+            const url = getCodeCompletionsEndpoint()
             const response: Response = await fetch(url, {
                 method: 'POST',
                 body: JSON.stringify({
