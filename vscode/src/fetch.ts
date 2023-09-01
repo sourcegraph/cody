@@ -5,6 +5,7 @@ import type { Agent } from 'http'
  * `fetch` by default, we still use the `node-fetch` polyfill and have access to the networking code
  */
 import isomorphicFetch from 'isomorphic-fetch'
+import type { Response as NodeResponse } from 'node-fetch'
 
 import { addCustomUserAgent, customUserAgent } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
 
@@ -20,13 +21,16 @@ import { addCustomUserAgent, customUserAgent } from '@sourcegraph/cody-shared/sr
  */
 export const agent: { current: ((url: URL) => Agent) | undefined } = { current: undefined }
 
-export function fetch(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
+export type BrowserOrNodeResponse = Response | NodeResponse
+
+export function fetch(input: RequestInfo | URL, init?: RequestInit): Promise<BrowserOrNodeResponse> {
     if (customUserAgent) {
         init = init ?? {}
         const headers = new Headers(init?.headers)
         addCustomUserAgent(headers)
         init.headers = headers
     }
+    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
     return isomorphicFetch(input, {
         ...init,
         agent: agent.current,

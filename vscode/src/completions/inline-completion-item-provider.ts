@@ -189,6 +189,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
         const isIncreasedDebounceTimeEnabled = await this.config.featureFlagProvider.evaluateFeatureFlag(
             FeatureFlag.CodyAutocompleteIncreasedDebounceTimeEnabled
         )
+
         try {
             const result = await this.getInlineCompletions({
                 document,
@@ -204,7 +205,12 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
                 documentHistory: this.config.history,
                 requestManager: this.requestManager,
                 lastCandidate: this.lastCandidate,
-                debounceInterval: { singleLine: isIncreasedDebounceTimeEnabled ? 75 : 25, multiLine: 125 },
+                debounceInterval: this.config.providerConfig.useLongerDebounce
+                    ? {
+                          singleLine: 500,
+                          multiLine: 1000,
+                      }
+                    : { singleLine: isIncreasedDebounceTimeEnabled ? 75 : 25, multiLine: 125 },
                 setIsLoading,
                 abortSignal: abortController.signal,
                 tracer,

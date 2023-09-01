@@ -33,6 +33,12 @@ export interface ProviderConfig {
      * Defines which model is used with the respective provider.
      */
     model: string
+
+    /**
+     * Whether to wait longer to debounce requests. Slow models (such as models running locally)
+     * should set this to `true` to avoid overloading the user's machine while they type.
+     */
+    useLongerDebounce?: boolean
 }
 
 export interface ProviderContextSizeHints {
