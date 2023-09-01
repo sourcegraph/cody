@@ -9,7 +9,6 @@ export class LocalStorage {
     protected ANONYMOUS_USER_ID_KEY = 'sourcegraphAnonymousUid'
     protected LAST_USED_ENDPOINT = 'SOURCEGRAPH_CODY_ENDPOINT'
     protected CODY_ENDPOINT_HISTORY = 'SOURCEGRAPH_CODY_ENDPOINT_HISTORY'
-    protected KEY_ENABLED_PLUGINS = 'KEY_ENABLED_PLUGINS'
     protected KEY_LAST_USED_RECIPES = 'SOURCEGRAPH_CODY_LAST_USED_RECIPE_NAMES'
 
     /**
@@ -118,18 +117,6 @@ export class LocalStorage {
             }
         }
         return { anonymousUserID: id, created }
-    }
-
-    public async setEnabledPlugins(plugins: string[]): Promise<void> {
-        try {
-            await this.storage.update(this.KEY_ENABLED_PLUGINS, plugins)
-        } catch (error) {
-            console.error(error)
-        }
-    }
-
-    public getEnabledPlugins(): string[] | null {
-        return this.storage.get<string[] | null>(this.KEY_ENABLED_PLUGINS, null)
     }
 
     public async setLastUsedCommands(recipes: string[]): Promise<void> {

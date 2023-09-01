@@ -1,5 +1,4 @@
 import { ContextFile, ContextMessage, PreciseContext } from '../../codebase-context/messages'
-import { PluginFunctionExecutionInfo } from '../../plugins/api/types'
 
 import { ChatMessage, InteractionMessage } from './messages'
 
@@ -9,7 +8,6 @@ export interface InteractionJSON {
     fullContext: ContextMessage[]
     usedContextFiles: ContextFile[]
     usedPreciseContext: PreciseContext[]
-    pluginExecutionInfos: PluginFunctionExecutionInfo[]
     timestamp: string
 
     // DEPRECATED: Legacy field for backcompat, renamed to `fullContext`
@@ -23,8 +21,7 @@ export class Interaction {
         private fullContext: Promise<ContextMessage[]>,
         private usedContextFiles: ContextFile[],
         private usedPreciseContext: PreciseContext[] = [],
-        public readonly timestamp: string = new Date().toISOString(),
-        private pluginExecutionInfos: PluginFunctionExecutionInfo[] = []
+        public readonly timestamp: string = new Date().toISOString()
     ) {}
 
     public getAssistantMessage(): InteractionMessage {
@@ -49,13 +46,8 @@ export class Interaction {
         return contextMessages.length > 0
     }
 
-    public setUsedContext(
-        usedContextFiles: ContextFile[],
-        pluginExecutionInfos: PluginFunctionExecutionInfo[],
-        usedPreciseContext: PreciseContext[]
-    ): void {
+    public setUsedContext(usedContextFiles: ContextFile[], usedPreciseContext: PreciseContext[]): void {
         this.usedContextFiles = usedContextFiles
-        this.pluginExecutionInfos = pluginExecutionInfos
         this.usedPreciseContext = usedPreciseContext
     }
 
@@ -69,7 +61,6 @@ export class Interaction {
                 ...this.assistantMessage,
                 contextFiles: this.usedContextFiles,
                 preciseContext: this.usedPreciseContext,
-                pluginExecutionInfos: this.pluginExecutionInfos,
             },
         ]
     }
@@ -86,7 +77,6 @@ export class Interaction {
             fullContext: await this.fullContext,
             usedContextFiles: this.usedContextFiles,
             usedPreciseContext: this.usedPreciseContext,
-            pluginExecutionInfos: this.pluginExecutionInfos,
             timestamp: this.timestamp,
         }
     }
