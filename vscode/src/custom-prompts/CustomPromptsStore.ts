@@ -202,7 +202,7 @@ export class CustomPromptsStore implements vscode.Disposable {
      */
     private async updateJSONFile(prompts: MyPromptsJSON, type: CodyPromptType): Promise<void> {
         try {
-            const jsonString = JSON.stringify(prompts)
+            const jsonString = JSON.stringify(prompts, null, 2)
             const rootDirPath = type === 'user' ? this.jsonFileUris.user : this.jsonFileUris.workspace
             if (!rootDirPath || !jsonString) {
                 throw new Error('Invalid file path or json string')
