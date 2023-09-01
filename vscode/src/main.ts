@@ -11,6 +11,7 @@ import { InlineChatViewManager } from './chat/InlineChatViewProvider'
 import { MessageProviderOptions } from './chat/MessageProvider'
 import { CODY_FEEDBACK_URL } from './chat/protocol'
 import { createInlineCompletionItemProvider } from './completions/createVSCodeInlineCompletionItemProvider'
+import { parseAllVisibleDocuments, updateParseTreeOnEdit } from './completions/tree-sitter/parse-tree-cache'
 import { getConfiguration, getFullConfig } from './configuration'
 import { VSCodeEditor } from './editor/vscode-editor'
 import { PlatformContext } from './extension.common'
@@ -22,13 +23,8 @@ import { createOrUpdateEventLogger } from './services/EventLogger'
 import { showFeedbackSupportQuickPick } from './services/FeedbackOptions'
 import { GuardrailsProvider } from './services/GuardrailsProvider'
 import { Comment, InlineController } from './services/InlineController'
-import { LocalStorage } from './services/LocalStorageProvider'
-import {
-    CODY_ACCESS_TOKEN_SECRET,
-    InMemorySecretStorage,
-    SecretStorage,
-    VSCodeSecretStorage,
-} from './services/SecretStorageProvider'
+import { localStorage } from './services/LocalStorageProvider'
+import { CODY_ACCESS_TOKEN_SECRET, secretStorage, VSCodeSecretStorage } from './services/SecretStorageProvider'
 import { createStatusBar } from './services/StatusBar'
 import { createVSCodeTelemetryService } from './services/telemetry'
 import { TestSupport } from './test-support'
@@ -37,30 +33,24 @@ import { TestSupport } from './test-support'
  * Start the extension, watching all relevant configuration and secrets for changes.
  */
 export async function start(context: vscode.ExtensionContext, platform: PlatformContext): Promise<vscode.Disposable> {
-    const secretStorage =
-        process.env.CODY_TESTING === 'true' || process.env.CODY_PROFILE_TEMP === 'true'
-            ? new InMemorySecretStorage()
-            : new VSCodeSecretStorage(context.secrets)
-    const localStorage = new LocalStorage(context.globalState)
+    // Set internal storage fields for storage provider singletons
+    localStorage.setStorage(context.globalState)
+    if (secretStorage instanceof VSCodeSecretStorage) {
+        secretStorage.setStorage(context.secrets)
+    }
+
     const rgPath = platform.getRgPath ? await platform.getRgPath() : null
 
     const disposables: vscode.Disposable[] = []
 
-    const { disposable, onConfigurationChange } = await register(
-        context,
-        await getFullConfig(secretStorage, localStorage),
-        secretStorage,
-        localStorage,
-        rgPath,
-        platform
-    )
+    const { disposable, onConfigurationChange } = await register(context, await getFullConfig(), rgPath, platform)
     disposables.push(disposable)
 
     // Re-initialize when configuration
     disposables.push(
         vscode.workspace.onDidChangeConfiguration(async event => {
             if (event.affectsConfiguration('cody')) {
-                onConfigurationChange(await getFullConfig(secretStorage, localStorage))
+                onConfigurationChange(await getFullConfig())
             }
         })
     )
@@ -72,8 +62,6 @@ export async function start(context: vscode.ExtensionContext, platform: Platform
 const register = async (
     context: vscode.ExtensionContext,
     initialConfig: ConfigurationWithAccessToken,
-    secretStorage: SecretStorage,
-    localStorage: LocalStorage,
     rgPath: string | null,
     platform: Omit<PlatformContext, 'getRgPath'>
 ): Promise<{
@@ -107,6 +95,13 @@ const register = async (
     const workspaceConfig = vscode.workspace.getConfiguration()
     const config = getConfiguration(workspaceConfig)
 
+    if (config.autocompleteExperimentalSyntacticPostProcessing) {
+        parseAllVisibleDocuments()
+
+        disposables.push(vscode.window.onDidChangeVisibleTextEditors(parseAllVisibleDocuments))
+        disposables.push(vscode.workspace.onDidChangeTextDocument(updateParseTreeOnEdit))
+    }
+
     const symfRunner = platform.createSymfRunner?.(config.experimentalSymfPath, config.experimentalSymfAnthropicKey)
 
     const {
@@ -119,7 +114,7 @@ const register = async (
         onConfigurationChange: externalServicesOnDidConfigurationChange,
     } = await configureExternalServices(initialConfig, rgPath, symfRunner, editor, telemetryService, platform)
 
-    const authProvider = new AuthProvider(initialConfig, secretStorage, localStorage, telemetryService)
+    const authProvider = new AuthProvider(initialConfig, telemetryService)
     await authProvider.init()
 
     const contextProvider = new ContextProvider(
@@ -127,8 +122,6 @@ const register = async (
         chatClient,
         initialCodebaseContext,
         editor,
-        secretStorage,
-        localStorage,
         rgPath,
         symfRunner,
         authProvider,
@@ -166,7 +159,7 @@ const register = async (
         }),
         // Update external services when configurationChangeEvent is fired by chatProvider
         contextProvider.configurationChangeEvent.event(async () => {
-            const newConfig = await getFullConfig(secretStorage, localStorage)
+            const newConfig = await getFullConfig()
             externalServicesOnDidConfigurationChange(newConfig)
             await createOrUpdateEventLogger(newConfig, localStorage, isExtensionModeDevOrTest)
         })

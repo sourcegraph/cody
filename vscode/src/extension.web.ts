@@ -19,13 +19,14 @@ import { SourcegraphBrowserCompletionsClient } from '@sourcegraph/cody-shared/sr
 
 import { ExtensionApi } from './extension-api'
 import { activate as activateCommon } from './extension.common'
-import { debug } from './log'
+import { logDebug } from './log'
+import { WebSentryService } from './services/sentry/sentry.web'
 
 /**
  * Recipes that can run in VS Code Web (and do not rely on Node packages such as `child_process`).
  */
 export const VSCODE_WEB_RECIPES: Recipe[] = [
-    new ChatQuestion(debug),
+    new ChatQuestion(logDebug),
     new ExplainCodeDetailed(),
     new ExplainCodeHighLevel(),
     new FindCodeSmells(),
@@ -34,8 +35,8 @@ export const VSCODE_WEB_RECIPES: Recipe[] = [
     new GenerateTest(),
     new ImproveVariableNames(),
     new CustomPrompt(),
-    new InlineChat(debug),
-    new InlineTouch(debug),
+    new InlineChat(logDebug),
+    new InlineTouch(logDebug),
     new NextQuestions(),
     new TranslateToLanguage(),
     new ContextSearch(),
@@ -48,6 +49,7 @@ export const VSCODE_WEB_RECIPES: Recipe[] = [
 export function activate(context: vscode.ExtensionContext): ExtensionApi {
     return activateCommon(context, {
         createCompletionsClient: (...args) => new SourcegraphBrowserCompletionsClient(...args),
+        createSentryService: (...args) => new WebSentryService(...args),
         recipes: VSCODE_WEB_RECIPES,
     })
 }

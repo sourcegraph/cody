@@ -12,7 +12,7 @@ export class FixupTypingUI {
     constructor(private readonly taskFactory: FixupTaskFactory) {}
 
     private async getInstructionFromQuickPick({
-        title = '/edit',
+        title = 'Edit code (/edit)',
         placeholder = 'Your instructions',
         value = '',
         prefix = '/edit',

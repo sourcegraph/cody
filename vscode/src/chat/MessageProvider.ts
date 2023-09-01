@@ -22,7 +22,7 @@ import { TelemetryService } from '@sourcegraph/cody-shared/src/telemetry'
 
 import { VSCodeEditor } from '../editor/vscode-editor'
 import { PlatformContext } from '../extension.common'
-import { debug } from '../log'
+import { logDebug, logError } from '../log'
 import { FixupTask } from '../non-stop/FixupTask'
 import { AuthProvider, isNetworkError } from '../services/AuthProvider'
 import { LocalStorage } from '../services/LocalStorageProvider'
@@ -147,6 +147,9 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         MessageProvider.chatHistory = {}
         MessageProvider.inputHistory = []
         await this.localStorage.removeChatHistory()
+        // Reset the current transcript
+        this.transcript = new Transcript()
+        await this.clearAndRestartSession()
         this.telemetryService.log('CodyVSCodeExtension:clearChatHistoryButton:clicked')
     }
 
@@ -229,7 +232,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
             },
             onError: (err, statusCode) => {
                 // TODO notify the multiplexer of the error
-                debug('ChatViewProvider:onError', err)
+                logError('ChatViewProvider:onError', err)
 
                 if (isAbortError(err)) {
                     this.isMessageInProgress = false
@@ -246,7 +249,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
                             this.contextProvider.config.customHeaders
                         )
                         .catch(error => console.error(error))
-                    debug('ChatViewProvider:onError:unauthUser', err, { verbose: { statusCode } })
+                    logError('ChatViewProvider:onError:unauthUser', err, { verbose: { statusCode } })
                 }
 
                 if (isNetworkError(err)) {
@@ -356,11 +359,11 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         humanChatInput = command?.text
         recipeId = command?.recipeId
 
-        debug('ChatViewProvider:executeRecipe', recipeId, { verbose: humanChatInput })
+        logDebug('ChatViewProvider:executeRecipe', recipeId, { verbose: humanChatInput })
 
         const recipe = this.getRecipe(recipeId)
         if (!recipe) {
-            debug('ChatViewProvider:executeRecipe', 'no recipe found')
+            logDebug('ChatViewProvider:executeRecipe', 'no recipe found')
             return
         }
 
@@ -549,7 +552,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         // Get prompt details from controller by title then execute prompt's command
         const promptText = this.editor.controllers.command?.find(title)
         await this.editor.controllers.command?.get('command')
-        debug('executeCustomCommand:starting', title)
+        logDebug('executeCustomCommand:starting', title)
         if (!promptText) {
             return
         }
@@ -657,6 +660,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         }
         MessageProvider.chatHistory[this.currentChatID] = await this.transcript.toJSON()
         await this.saveChatHistory()
+        this.sendHistory()
     }
 
     /**
@@ -711,7 +715,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
                 }
             })
         } catch (error) {
-            debug('MessageProvider:exportHistory', 'Failed to export chat history', error)
+            logError('MessageProvider:exportHistory', 'Failed to export chat history', error)
         }
     }
 
@@ -752,7 +756,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         if (this.contextProvider.context.checkEmbeddingsConnection() && searchErrors) {
             this.transcript.addErrorAsAssistantResponse(searchErrors)
             this.handleTranscriptErrors(true)
-            debug('ChatViewProvider:onLogEmbeddingsErrors', '', { verbose: searchErrors })
+            logError('ChatViewProvider:onLogEmbeddingsErrors', '', { verbose: searchErrors })
         }
     }
 
