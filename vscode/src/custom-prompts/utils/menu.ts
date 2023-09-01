@@ -89,8 +89,7 @@ export const customPromptsContextOptions: ContextOption[] = [
     {
         id: 'currentDir',
         label: 'Current Directory',
-        description: 'If the prompt includes "test(s)", only test files will be included.',
-        detail: 'First 10 text files in the current directory',
+        detail: 'First 10 text files in the current directory. If the prompt includes the words "test" or "tests", only test files will be included.',
         picked: false,
     },
     {
@@ -102,7 +101,7 @@ export const customPromptsContextOptions: ContextOption[] = [
     {
         id: 'command',
         label: 'Command Output',
-        detail: 'The output returned from a terminal command run from your local workspace. E.g. git describe --long',
+        detail: 'The output returned from a terminal command (e.g. git describe --long, node your-script.js, cat src/file-name.js)',
         picked: false,
     },
     {
