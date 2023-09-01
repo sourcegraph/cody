@@ -9,6 +9,8 @@ import type {
 } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
 import { NetworkError, RateLimitError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
 
+import { fetch } from '../fetch'
+
 export type CodeCompletionsParams = Omit<CompletionParameters, 'fast'>
 
 export interface CodeCompletionsClient {
@@ -44,6 +46,9 @@ export function createClient(
                 : [false, false]
 
             const headers = new Headers(config.customHeaders)
+            // Force HTTP connection reuse to reduce latency.
+            // c.f. https://github.com/microsoft/vscode/issues/173861
+            headers.set('Connection', 'keep-alive')
             if (config.accessToken) {
                 headers.set('Authorization', `token ${config.accessToken}`)
             }
