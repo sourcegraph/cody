@@ -858,7 +858,6 @@
           "enum": [
             "anthropic",
             "unstable-codegen",
-            "unstable-huggingface",
             "unstable-fireworks",
             "unstable-azure-openai",
             "unstable-openai"

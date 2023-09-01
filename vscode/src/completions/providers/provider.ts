@@ -32,11 +32,6 @@ export interface ProviderConfig {
     identifier: string
 
     /**
-     * Indicating whether the provider supports infilling.
-     */
-    supportsInfilling: boolean
-
-    /**
      * Defines which model is used with the respective provider.
      */
     model: string
