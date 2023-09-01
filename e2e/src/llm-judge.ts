@@ -25,6 +25,8 @@ function serializeConversationTranscript(transcript: { question: string; answer:
     return `Conversation transcript:\n${transcriptSerialized}\n`
 }
 
+const maxTokensToSample = 300
+
 export async function llmJudge(
     provider: CLIOptions['provider'],
     transcript: { question: string; answer: string }[],
@@ -58,7 +60,7 @@ export async function llmJudge(
 async function anthropicJudge(instructions: string): Promise<LLMJudgement> {
     const completion = await anthropic.completions.create({
         model: 'claude-2',
-        max_tokens_to_sample: 300,
+        max_tokens_to_sample: maxTokensToSample,
         prompt: `${Anthropic.HUMAN_PROMPT}${instructions}${Anthropic.AI_PROMPT}Thought:`,
     })
     return {
@@ -70,12 +72,15 @@ async function anthropicJudge(instructions: string): Promise<LLMJudgement> {
 async function azureJudge(instructions: string): Promise<LLMJudgement> {
     // 1. https://portal.azure.com > Azure OpenAI > sourcegraph-test-oai > Keys and Endpoint
     // 2. Copy the key and export AZURE_API_KEY="<paste the key here>"
+    // 3. Copy the endpoint and export AZURE_API_ENDPOINT="<paste the endpoint here>"
+    // 4. Go to Model Deployments > Manage Deployments. Find the deployment name and:
+    //    export AZURE_DEPLOYMENT_ID="<paste deployment name here>"
     const azureApiKey = process.env.AZURE_API_KEY as string
-    const endpoint = 'https://sourcegraph-test-oai.openai.azure.com/'
+    const endpoint = process.env.AZURE_API_ENDPOINT as string
 
     const client = new OpenAIClient(endpoint, new AzureKeyCredential(azureApiKey))
-    const deploymentId = 'gpt-35-turbo-test'
-    const result = await client.getCompletions(deploymentId, [instructions], { maxTokens: 128 })
+    const deploymentId = process.env.AZURE_DEPLOYMENT_ID as string
+    const result = await client.getCompletions(deploymentId, [instructions], { maxTokens: maxTokensToSample })
     // Pick the first choice. Probably we can do something better here?
     const [response] = result.choices
 
