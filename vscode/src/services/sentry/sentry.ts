@@ -4,6 +4,8 @@ import type { init as nodeInit } from '@sentry/node'
 import { Configuration } from '@sourcegraph/cody-shared/src/configuration'
 import { isDotCom } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
 
+import { extensionDetails } from '../EventLogger'
+
 export * from '@sentry/core'
 export const SENTRY_DSN = 'https://f565373301c9c7ef18448a1c60dfde8d@o19358.ingest.sentry.io/4505743319564288'
 
@@ -23,6 +25,12 @@ export abstract class SentryService {
         const isProd = process.env.NODE_ENV === 'production'
         const options: SentryOptions = {
             dsn: SENTRY_DSN,
+            release: extensionDetails.version,
+            environment: this.config.isRunningInsideAgent
+                ? 'agent'
+                : typeof process !== 'undefined'
+                ? 'vscode-web'
+                : 'vscode-node',
 
             // In dev mode, have Sentry log extended debug information to the console.
             debug: !isProd,
