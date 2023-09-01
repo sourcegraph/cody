@@ -42,7 +42,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     const [enabledPlugins, setEnabledPlugins] = useState<string[]>([])
     const [myPrompts, setMyPrompts] = useState<[string, CodyPrompt & { label?: string }][] | null>(null)
     const [isTranscriptError, setIsTranscriptError] = useState<boolean>(false)
-    console.log('App:', myPrompts)
+
     useEffect(
         () =>
             vscodeAPI.onMessage(message => {

@@ -47,21 +47,10 @@ export const ChatCommandsComponent: React.FunctionComponent<React.PropsWithChild
             <div className={classNames(styles.commandsContainer)}>
                 {chatCommands &&
                     selectedChatCommand >= 0 &&
-                    chatCommands?.map(([key, prompt], i) => {
-                        if (key === 'separator') {
-                            const isFirstItem = i === 0
-                            const isLastItem = i === chatCommands.length - 1
-                            const prevIsSeparator = chatCommands[i - 1]?.[0] === 'separator'
-                            if (isFirstItem || isLastItem || prevIsSeparator) {
-                                return null
-                            }
-                            return <hr key={i} />
-                        }
-
-                        return (
+                    chatCommands?.map(([key, prompt], i) => (
+                        <React.Fragment key={prompt.slashCommand}>
                             <button
                                 className={classNames(styles.commandItem, selectedChatCommand === i && styles.selected)}
-                                key={prompt.slashCommand}
                                 onClick={() => onCommandClick(prompt.slashCommand)}
                                 type="button"
                                 ref={i === selectedChatCommand ? selectionRef : null}
@@ -69,8 +58,11 @@ export const ChatCommandsComponent: React.FunctionComponent<React.PropsWithChild
                                 <p className={styles.commandTitle}>{prompt.label || prompt.slashCommand}</p>
                                 <p className={styles.commandDescription}>{prompt.description}</p>
                             </button>
-                        )
-                    })}
+                            {prompt.isLastInGroup && i < chatCommands.length - 1 ? (
+                                <hr className={styles.separator} />
+                            ) : null}
+                        </React.Fragment>
+                    ))}
             </div>
         </div>
     )

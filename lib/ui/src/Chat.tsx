@@ -204,8 +204,6 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
         [ChatCommandsComponent, chatCommands, filterChatCommands]
     )
 
-    console.log('Chat:', displayCommands)
-
     const inputHandler = useCallback(
         (inputValue: string): void => {
             chatCommentSelectionHandler(inputValue)

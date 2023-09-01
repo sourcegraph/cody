@@ -85,3 +85,8 @@ body[data-vscode-theme-kind='vscode-high-contrast'] .selected {
     outline: 1px dashed var(--vscode-contrastActiveBorder);
     outline-offset: -1px;
 }
+
+.separator {
+    margin: 0.25rem 0.75rem;
+    border-color: var(--vscode-dropdown-border);
+}
