@@ -34,6 +34,8 @@ const NUM_OF_CHANGED_LINES_FOR_SECTION_RELOAD = 3
  *  - [ ] How does this work in reality?
  *  - [ ] Migrate all of this logging to use debug() API
  *  - [ ] Track the total number of time spent in the context methods
+ *  - [ ] When we refresh sections, make sure to update the ranges even if the
+ *        ID did not change
  */
 export class SectionObserver implements vscode.Disposable {
     private disposables: vscode.Disposable[] = []
