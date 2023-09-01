@@ -9,7 +9,7 @@ import { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/s
 
 import { CLIOptions, program } from '.'
 import { factCheck } from './fact-check'
-import { llmJudge } from './llm-judge'
+import { failFastIfAzureEnvVarsNotSet, llmJudge } from './llm-judge'
 import { TestCase, testCases } from './test-cases'
 import { aggregateResults, AggregateTestResults, logAggregateResults, TestResult } from './test-results'
 
@@ -105,6 +105,10 @@ async function runTestCases(options: CLIOptions): Promise<TestResult[]> {
 
 export async function run(): Promise<void> {
     const options = program.opts<CLIOptions>()
+
+    if (options.provider === 'azure') {
+        failFastIfAzureEnvVarsNotSet()  // Fail fast if Azure env vars not set.
+    }
 
     const runs: TestResult[][] = []
     const aggregateRunsResults: AggregateTestResults[] = []
