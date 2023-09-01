@@ -19,8 +19,6 @@ import { logDebug } from '../log'
 import { getRerankWithLog } from '../logged-rerank'
 import { repositoryRemoteUrl } from '../repository/repositoryHelpers'
 import { AuthProvider } from '../services/AuthProvider'
-import { LocalStorage } from '../services/LocalStorageProvider'
-import { SecretStorage } from '../services/SecretStorageProvider'
 
 import { ChatViewProviderWebview } from './ChatViewProvider'
 import { GraphContextProvider } from './GraphContextProvider'
@@ -68,8 +66,6 @@ export class ContextProvider implements vscode.Disposable {
         private chat: ChatClient,
         private codebaseContext: CodebaseContext,
         private editor: VSCodeEditor,
-        private secretStorage: SecretStorage,
-        private localStorage: LocalStorage,
         private rgPath: string | null,
         private symf: IndexedKeywordContextFetcher | undefined,
         private authProvider: AuthProvider,
@@ -147,7 +143,7 @@ export class ContextProvider implements vscode.Disposable {
     public async syncAuthStatus(): Promise<void> {
         const authStatus = this.authProvider.getAuthStatus()
         // Update config to the latest one and fire configure change event to update external services
-        const newConfig = await getFullConfig(this.secretStorage, this.localStorage)
+        const newConfig = await getFullConfig()
         if (authStatus.siteVersion) {
             // Update codebase context
             const codebaseContext = await getCodebaseContext(
@@ -204,7 +200,7 @@ export class ContextProvider implements vscode.Disposable {
      */
     private async publishConfig(): Promise<void> {
         const send = async (): Promise<void> => {
-            this.config = await getFullConfig(this.secretStorage, this.localStorage)
+            this.config = await getFullConfig()
 
             // check if the new configuration change is valid or not
             const authStatus = this.authProvider.getAuthStatus()

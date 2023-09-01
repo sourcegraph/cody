@@ -12,7 +12,24 @@ export class LocalStorage {
     protected KEY_ENABLED_PLUGINS = 'KEY_ENABLED_PLUGINS'
     protected KEY_LAST_USED_RECIPES = 'SOURCEGRAPH_CODY_LAST_USED_RECIPE_NAMES'
 
-    constructor(private storage: Memento) {}
+    /**
+     * Should be set on extension activation via `localStorage.setStorage(context.globalState)`
+     * Done to avoid passing the local storage around as a parameter and instead
+     * access it as a singleton via the module import.
+     */
+    private _storage: Memento | null = null
+
+    private get storage(): Memento {
+        if (!this._storage) {
+            throw new Error('LocalStorage not initialized')
+        }
+
+        return this._storage
+    }
+
+    public setStorage(storage: Memento): void {
+        this._storage = storage
+    }
 
     public getEndpoint(): string | null {
         return this.storage.get<string | null>(this.LAST_USED_ENDPOINT, null)
@@ -142,3 +159,9 @@ export class LocalStorage {
         }
     }
 }
+
+/**
+ * Singleton instance of the local storage provider.
+ * The underlying storage is set on extension activation via `localStorage.setStorage(context.globalState)`.
+ */
+export const localStorage = new LocalStorage()
