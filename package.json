@@ -42,7 +42,7 @@
     "@storybook/testing-library": "^0.0.14-next.2",
     "@types/node": "20.4.0",
     "@types/prettier": "2.7.3",
-    "@types/react": "18.2.18",
+    "@types/react": "18.2.21",
     "@types/react-dom": "18.2.7",
     "@vitejs/plugin-react": "^4.0.2",
     "esbuild": "^0.18.11",
