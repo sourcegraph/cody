@@ -115,6 +115,7 @@ export class CustomPromptsStore implements vscode.Disposable {
                 ([key, prompt]) => key.split(' ').length > 1 || !('description' in prompt)
             )
             if (isOldFormat) {
+                // transform old format commands to the new format
                 const commands = promptEntries.reduce(
                     (acc: Record<string, Omit<CodyPrompt, 'slashCommand'>>, [key, { prompt, type, context }]) => {
                         const slashCommand = key.trim().replaceAll(' ', '-')
@@ -123,7 +124,9 @@ export class CustomPromptsStore implements vscode.Disposable {
                     },
                     {}
                 )
+                // write transformed commands to the corresponding config file
                 await this.updateJSONFile({ ...json, commands }, type)
+                // inform user about this change
                 void vscode.window
                     .showInformationMessage(
                         `We updated ${type} Cody config to match the new format. You can customize it further manually later.`,
@@ -137,6 +140,7 @@ export class CustomPromptsStore implements vscode.Disposable {
                             }
                         }
                     })
+                // read from the updated config file
                 return await this.build(type)
             }
 
