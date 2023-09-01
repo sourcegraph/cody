@@ -14,7 +14,7 @@ import type { LocalKeywordContextFetcher } from './local-context/local-keyword-c
 import type { SymfRunner } from './local-context/symf'
 import { start } from './main'
 import type { getRgPath } from './rg'
-import { SentryService } from './services/sentry/sentry'
+import { captureException, SentryService } from './services/sentry/sentry'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Constructor<T extends new (...args: any) => any> = T extends new (...args: infer A) => infer R
@@ -49,7 +49,10 @@ export function activate(context: vscode.ExtensionContext, platformContext: Plat
                 onActivationDevelopmentHelpers()
             }
         })
-        .catch(error => console.error(error))
+        .catch(error => {
+            captureException(error)
+            console.error(error)
+        })
 
     return api
 }
