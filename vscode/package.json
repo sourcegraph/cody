@@ -987,6 +987,9 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.4.2",
+    "@sentry/browser": "^7.66.0",
+    "@sentry/core": "^7.66.0",
+    "@sentry/node": "^7.66.0",
     "@sourcegraph/cody-shared": "workspace:*",
     "@sourcegraph/cody-ui": "workspace:*",
     "@types/stream-json": "^1.7.3",
