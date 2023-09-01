@@ -40,9 +40,9 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     const [suggestions, setSuggestions] = useState<string[] | undefined>()
     const [isAppInstalled, setIsAppInstalled] = useState<boolean>(false)
     const [enabledPlugins, setEnabledPlugins] = useState<string[]>([])
-    const [myPrompts, setMyPrompts] = useState<[string, CodyPrompt][] | null>(null)
+    const [myPrompts, setMyPrompts] = useState<[string, CodyPrompt & { label?: string }][] | null>(null)
     const [isTranscriptError, setIsTranscriptError] = useState<boolean>(false)
-
+    console.log('App:', myPrompts)
     useEffect(
         () =>
             vscodeAPI.onMessage(message => {
@@ -90,9 +90,45 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                     case 'enabled-plugins':
                         setEnabledPlugins(message.plugins)
                         break
-                    case 'custom-prompts':
-                        setMyPrompts(message.prompts?.filter(command => command[1]?.slashCommand) || null)
+                    case 'custom-prompts': {
+                        let prompts = message.prompts
+                        if (!prompts) {
+                            setMyPrompts(null)
+                            break
+                        }
+                        prompts = prompts
+                            .reduce((acc: typeof prompts, [key, command], index, array) => {
+                                if (key === 'separator') {
+                                    return acc
+                                }
+
+                                const nextItem = array[index + 1]
+                                if (nextItem?.[0] === 'separator') {
+                                    acc.push([key, { ...command, isLastInGroup: true }])
+                                    return acc
+                                }
+
+                                acc.push([key, command])
+                                return acc
+                            }, [])
+                            .map(([key, command]) => {
+                                const replaceFn = command.slashCommand
+                                    ? labelReplacements[command.slashCommand]
+                                    : undefined
+                                const label = replaceFn ? replaceFn(command.slashCommand) : undefined
+                                return [key, { ...command, label }]
+                            })
+                        const lastPrompt = prompts.at(-1)
+                        if (lastPrompt) {
+                            const [_, command] = lastPrompt
+                            command.isLastInGroup = true
+                        }
+                        setMyPrompts([
+                            ...prompts,
+                            ['reset', { prompt: '', slashCommand: '/reset', description: 'Clear the chat' }],
+                        ])
                         break
+                    }
                     case 'transcript-errors':
                         setIsTranscriptError(message.isTranscriptError)
                         break
@@ -216,3 +252,8 @@ const ErrorBanner: React.FunctionComponent<{ errors: string[]; setErrors: (error
         ))}
     </div>
 )
+
+const labelReplacements: Record<string, (label: string) => string> = {
+    '/ask': label => `${label} [question]`,
+    '/edit': label => `${label} [instruction]`,
+}

@@ -69,12 +69,12 @@ export async function showCommandMenu(
 
             if (isSlashCommand(normalizedValue)) {
                 const [slashCommand] = normalizedValue.split(' ')
-                const matchingCommand = defaultItems.find(
+                const matchingCommands = defaultItems.filter(
                     item => 'slashCommand' in item && item.slashCommand?.toLowerCase().startsWith(slashCommand)
                 )
-                if (matchingCommand) {
+                if (matchingCommands.length > 0) {
                     // show only item for a matching slash command (ignore other label or description matches)
-                    quickPick.items = [{ ...matchingCommand, alwaysShow: true }]
+                    quickPick.items = matchingCommands.map(command => ({ ...command, alwaysShow: true }))
                     return
                 }
 

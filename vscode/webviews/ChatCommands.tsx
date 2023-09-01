@@ -8,6 +8,7 @@ import { ChatCommandsProps } from '@sourcegraph/cody-ui/src/Chat'
 import styles from './ChatCommands.module.css'
 
 export const ChatCommandsComponent: React.FunctionComponent<React.PropsWithChildren<ChatCommandsProps>> = ({
+    formInput,
     chatCommands,
     selectedChatCommand,
     setFormInput,
@@ -20,12 +21,13 @@ export const ChatCommandsComponent: React.FunctionComponent<React.PropsWithChild
         if (!slashCommand) {
             return
         }
-        onSubmit(slashCommand, 'user')
+        onSubmit(formInput, 'user')
         setFormInput('')
         setSelectedChatCommand(-1)
     }
 
-    if (!chatCommands?.length || selectedChatCommand === undefined || selectedChatCommand < 0) {
+    const commands = chatCommands?.filter(([key]) => key !== 'separator')
+    if (!commands?.length || selectedChatCommand === undefined || selectedChatCommand < 0) {
         return null
     }
 
@@ -45,18 +47,30 @@ export const ChatCommandsComponent: React.FunctionComponent<React.PropsWithChild
             <div className={classNames(styles.commandsContainer)}>
                 {chatCommands &&
                     selectedChatCommand >= 0 &&
-                    chatCommands?.map(([, prompt], i) => (
-                        <button
-                            className={classNames(styles.commandItem, selectedChatCommand === i && styles.selected)}
-                            key={prompt.slashCommand}
-                            onClick={() => onCommandClick(prompt.slashCommand)}
-                            type="button"
-                            ref={i === selectedChatCommand ? selectionRef : null}
-                        >
-                            <p className={styles.commandTitle}>{prompt.slashCommand}</p>
-                            <p className={styles.commandDescription}>{prompt.description}</p>
-                        </button>
-                    ))}
+                    chatCommands?.map(([key, prompt], i) => {
+                        if (key === 'separator') {
+                            const isFirstItem = i === 0
+                            const isLastItem = i === chatCommands.length - 1
+                            const prevIsSeparator = chatCommands[i - 1]?.[0] === 'separator'
+                            if (isFirstItem || isLastItem || prevIsSeparator) {
+                                return null
+                            }
+                            return <hr key={i} />
+                        }
+
+                        return (
+                            <button
+                                className={classNames(styles.commandItem, selectedChatCommand === i && styles.selected)}
+                                key={prompt.slashCommand}
+                                onClick={() => onCommandClick(prompt.slashCommand)}
+                                type="button"
+                                ref={i === selectedChatCommand ? selectionRef : null}
+                            >
+                                <p className={styles.commandTitle}>{prompt.label || prompt.slashCommand}</p>
+                                <p className={styles.commandDescription}>{prompt.description}</p>
+                            </button>
+                        )
+                    })}
             </div>
         </div>
     )

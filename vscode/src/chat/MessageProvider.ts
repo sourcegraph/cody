@@ -644,7 +644,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
     private async sendCodyCommands(): Promise<void> {
         const send = async (): Promise<void> => {
             await this.editor.controllers.command?.refresh()
-            const commands = (await this.editor.controllers.command?.getAllCommands()) || []
+            const commands = (await this.editor.controllers.command?.getAllCommands(true)) || []
             void this.handleCodyCommands(commands)
         }
         this.editor.controllers.command?.setMessenger(send)

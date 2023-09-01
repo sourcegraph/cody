@@ -157,6 +157,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             ChatButtonComponent={ChatButton}
             pluginsDevMode={pluginsDevMode}
             chatCommands={chatCommands}
+            filterChatCommands={filterChatCommands}
             ChatCommandsComponent={ChatCommandsComponent}
         />
     )
@@ -367,3 +368,26 @@ You can ask me to explain, document and refactor code using the [Cody Commands](
 
 See the [Getting Started](command:cody.welcome) guide for more tips and tricks.
 `
+
+const slashCommandRegex = /^\/[A-Za-z]+/
+function isSlashCommand(value: string): boolean {
+    return slashCommandRegex.test(value)
+}
+
+function normalize(input: string): string {
+    return input.trim().toLowerCase()
+}
+
+function filterChatCommands(chatCommands: [string, CodyPrompt][], query: string): [string, CodyPrompt][] {
+    const normalizedQuery = normalize(query)
+
+    if (!isSlashCommand(normalizedQuery)) {
+        return []
+    }
+
+    const [slashCommand] = normalizedQuery.split(' ')
+    const matchingCommands: [string, CodyPrompt][] = chatCommands.filter(
+        ([key, command]) => key === 'separator' || command.slashCommand?.toLowerCase().startsWith(slashCommand)
+    )
+    return matchingCommands
+}

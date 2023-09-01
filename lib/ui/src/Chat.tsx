@@ -52,6 +52,7 @@ interface ChatProps extends ChatClassNames {
     ChatButtonComponent?: React.FunctionComponent<ChatButtonProps>
     pluginsDevMode?: boolean
     chatCommands?: [string, CodyPrompt][] | null
+    filterChatCommands?: (chatCommands: [string, CodyPrompt][], input: string) => [string, CodyPrompt][]
     ChatCommandsComponent?: React.FunctionComponent<ChatCommandsProps>
     isTranscriptError?: boolean
 }
@@ -110,9 +111,10 @@ export interface CopyButtonProps {
 }
 
 export interface ChatCommandsProps {
+    formInput: string
     setFormInput: (input: string) => void
     setSelectedChatCommand: (index: number) => void
-    chatCommands?: [string, CodyPrompt][] | null
+    chatCommands?: [string, CodyPrompt & { label?: string }][] | null
     selectedChatCommand?: number
     onSubmit: (input: string, inputType: 'user' | 'suggestion') => void
 }
@@ -168,6 +170,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
     ChatButtonComponent,
     pluginsDevMode,
     chatCommands,
+    filterChatCommands,
     ChatCommandsComponent,
     isTranscriptError,
 }) => {
@@ -188,9 +191,9 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                 return
             }
             if (inputValue.startsWith('/')) {
-                const filteredCommands = chatCommands.filter(
-                    ([_, prompt]) => prompt.slashCommand?.startsWith(inputValue)
-                )
+                const filteredCommands = filterChatCommands
+                    ? filterChatCommands(chatCommands, inputValue)
+                    : chatCommands.filter(([_, prompt]) => prompt.slashCommand?.startsWith(inputValue))
                 setDisplayCommands(filteredCommands)
                 setSelectedChatCommand(0)
                 return
@@ -198,8 +201,10 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
             setDisplayCommands(null)
             setSelectedChatCommand(-1)
         },
-        [ChatCommandsComponent, chatCommands]
+        [ChatCommandsComponent, chatCommands, filterChatCommands]
     )
+
+    console.log('Chat:', displayCommands)
 
     const inputHandler = useCallback(
         (inputValue: string): void => {
@@ -411,6 +416,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                 ) : null}
                 {displayCommands && ChatCommandsComponent && formInput && (
                     <ChatCommandsComponent
+                        formInput={formInput}
                         chatCommands={displayCommands}
                         selectedChatCommand={selectedChatCommand}
                         setFormInput={setFormInput}
