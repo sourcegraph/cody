@@ -33,25 +33,7 @@ export interface Configuration {
     autocompleteAdvancedEmbeddings: boolean
     autocompleteExperimentalCompleteSuggestWidgetSelection?: boolean
     autocompleteExperimentalSyntacticPostProcessing?: boolean
-    pluginsEnabled?: boolean
-    pluginsDebugEnabled?: boolean
     isRunningInsideAgent?: boolean
-    pluginsConfig?: {
-        confluence?: {
-            baseUrl: string
-            email?: string
-            apiToken?: string
-        }
-        github?: {
-            apiToken?: string
-            baseURL?: string
-            org?: string
-            repo?: string
-        }
-        apiNinjas?: {
-            apiKey?: string
-        }
-    }
 }
 
 export interface ConfigurationWithAccessToken extends Configuration {

@@ -41,7 +41,6 @@ interface ChatboxProps {
     telemetryService: TelemetryService
     suggestions?: string[]
     setSuggestions?: (suggestions: undefined | string[]) => void
-    pluginsDevMode?: boolean
     chatCommands?: [string, CodyPrompt][]
     isTranscriptError: boolean
     showOnboardingButtons?: boolean | null
@@ -61,7 +60,6 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     telemetryService,
     suggestions,
     setSuggestions,
-    pluginsDevMode,
     chatCommands,
     isTranscriptError,
     showOnboardingButtons,
@@ -155,7 +153,6 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             afterMarkdown={welcomeMessageMarkdown}
             helpMarkdown=""
             ChatButtonComponent={ChatButton}
-            pluginsDevMode={pluginsDevMode}
             chatCommands={chatCommands}
             ChatCommandsComponent={ChatCommandsComponent}
         />

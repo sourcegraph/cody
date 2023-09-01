@@ -50,7 +50,6 @@ interface ChatProps extends ChatClassNames {
     onAbortMessageInProgress?: () => void
     isCodyEnabled: boolean
     ChatButtonComponent?: React.FunctionComponent<ChatButtonProps>
-    pluginsDevMode?: boolean
     chatCommands?: [string, CodyPrompt][] | null
     ChatCommandsComponent?: React.FunctionComponent<ChatCommandsProps>
     isTranscriptError?: boolean
@@ -166,7 +165,6 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
     onAbortMessageInProgress = () => {},
     isCodyEnabled,
     ChatButtonComponent,
-    pluginsDevMode,
     chatCommands,
     ChatCommandsComponent,
     isTranscriptError,
@@ -386,7 +384,6 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                     submitButtonComponent={SubmitButton}
                     chatInputClassName={chatInputClassName}
                     ChatButtonComponent={ChatButtonComponent}
-                    pluginsDevMode={pluginsDevMode}
                     isTranscriptError={isTranscriptError}
                 />
             )}

@@ -117,10 +117,6 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
                         : undefined
                 )
                 break
-            case 'setEnabledPlugins':
-                await this.localStorage.setEnabledPlugins(message.plugins)
-                this.handleEnabledPlugins(message.plugins)
-                break
             default:
                 this.handleError('Invalid request type from Webview')
         }
@@ -235,10 +231,6 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
         if (copiedCode) {
             this.editor.controllers.inline?.setLastCopiedCode(copiedCode, eventName)
         }
-    }
-
-    protected handleEnabledPlugins(plugins: string[]): void {
-        void this.webview?.postMessage({ type: 'enabled-plugins', plugins })
     }
 
     protected handleCodyCommands(prompts: [string, CodyPrompt][]): void {

@@ -39,7 +39,6 @@ export type WebviewMessage =
           value?: string
       }
     | { command: 'abort' }
-    | { command: 'setEnabledPlugins'; plugins: string[] }
     | { command: 'custom-prompt'; title: string; value?: CodyPromptType }
     | { command: 'reload' }
 
@@ -56,15 +55,13 @@ export type ExtensionMessage =
     | { type: 'errors'; errors: string }
     | { type: 'suggestions'; suggestions: string[] }
     | { type: 'app-state'; isInstalled: boolean }
-    | { type: 'enabled-plugins'; plugins: string[] }
     | { type: 'custom-prompts'; prompts: [string, CodyPrompt][] }
     | { type: 'transcript-errors'; isTranscriptError: boolean }
 
 /**
  * The subset of configuration that is visible to the webview.
  */
-export interface ConfigurationSubsetForWebview
-    extends Pick<Configuration, 'debugEnable' | 'serverEndpoint' | 'pluginsEnabled' | 'pluginsDebugEnabled'> {}
+export interface ConfigurationSubsetForWebview extends Pick<Configuration, 'debugEnable' | 'serverEndpoint'> {}
 
 /**
  * URLs for the Sourcegraph instance and app.

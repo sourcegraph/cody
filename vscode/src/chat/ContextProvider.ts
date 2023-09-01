@@ -39,9 +39,6 @@ export type Config = Pick<
     | 'experimentalCommandLenses'
     | 'experimentalEditorTitleCommandIcon'
     | 'experimentalLocalSymbols'
-    | 'pluginsEnabled'
-    | 'pluginsConfig'
-    | 'pluginsDebugEnabled'
 >
 
 export enum ContextEvent {
@@ -209,8 +206,6 @@ export class ContextProvider implements vscode.Disposable {
                 ...localProcess,
                 debugEnable: this.config.debugEnable,
                 serverEndpoint: this.config.serverEndpoint,
-                pluginsEnabled: this.config.pluginsEnabled,
-                pluginsDebugEnabled: this.config.pluginsDebugEnabled,
             }
 
             // update codebase context on configuration change

@@ -13,9 +13,6 @@ import { Typewriter } from '@sourcegraph/cody-shared/src/chat/typewriter'
 import { reformatBotMessage } from '@sourcegraph/cody-shared/src/chat/viewHelpers'
 import { annotateAttribution, Guardrails } from '@sourcegraph/cody-shared/src/guardrails'
 import { IntentDetector } from '@sourcegraph/cody-shared/src/intent-detector'
-import * as plugins from '@sourcegraph/cody-shared/src/plugins/api'
-import { PluginFunctionExecutionInfo } from '@sourcegraph/cody-shared/src/plugins/api/types'
-import { defaultPlugins } from '@sourcegraph/cody-shared/src/plugins/built-in'
 import { ANSWER_TOKENS, DEFAULT_MAX_TOKENS } from '@sourcegraph/cody-shared/src/prompt/constants'
 import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
 import { TelemetryService } from '@sourcegraph/cody-shared/src/telemetry'
@@ -54,7 +51,6 @@ abstract class MessageHandler {
     protected abstract handleHistory(history: UserLocalHistory): void
     protected abstract handleError(errorMsg: string): void
     protected abstract handleSuggestions(suggestions: string[]): void
-    protected abstract handleEnabledPlugins(plugins: string[]): void
     protected abstract handleCodyCommands(prompts: [string, CodyPrompt][]): void
     protected abstract handleTranscriptErrors(transciptError: boolean): void
 }
@@ -125,7 +121,6 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         this.loadChatHistory()
         this.sendTranscript()
         this.sendHistory()
-        this.sendEnabledPlugins(this.localStorage.getEnabledPlugins() ?? [])
         await this.loadRecentChat()
         await this.contextProvider.init()
         await this.sendCodyCommands()
@@ -165,10 +160,6 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         this.sendTranscript()
         this.sendHistory()
         this.telemetryService.log('CodyVSCodeExtension:restoreChatHistoryButton:clicked')
-    }
-
-    private sendEnabledPlugins(plugins: string[]): void {
-        this.handleEnabledPlugins(plugins)
     }
 
     private createNewChatID(): void {
@@ -288,58 +279,6 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         await this.onCompletionEnd()
     }
 
-    private async getPluginsContext(
-        humanChatInput: string
-    ): Promise<{ prompt?: Message[]; executionInfos?: PluginFunctionExecutionInfo[] }> {
-        this.telemetryService.log('CodyVSCodeExtension:getPluginsContext:used')
-        const enabledPluginNames = this.localStorage.getEnabledPlugins() ?? []
-        const enabledPlugins = defaultPlugins.filter(plugin => enabledPluginNames.includes(plugin.name))
-        if (enabledPlugins.length === 0) {
-            return {}
-        }
-        this.telemetryService.log('CodyVSCodeExtension:getPluginsContext:enabledPlugins', { names: enabledPluginNames })
-
-        this.transcript.addAssistantResponse('', 'Identifying applicable plugins...\n')
-        this.sendTranscript()
-
-        const { prompt: previousMessages } = await this.transcript.getPromptForLastInteraction(
-            [],
-            this.maxPromptTokens,
-            [],
-            true
-        )
-
-        try {
-            this.telemetryService.log('CodyVSCodeExtension:getPluginsContext:chooseDataSourcesUsed')
-            const descriptors = await plugins.chooseDataSources(
-                humanChatInput,
-                this.chat,
-                enabledPlugins,
-                previousMessages
-            )
-            this.telemetryService.log('CodyVSCodeExtension:getPluginsContext:descriptorsFound', {
-                count: descriptors.length,
-            })
-            if (descriptors.length !== 0) {
-                this.transcript.addAssistantResponse(
-                    '',
-                    `Using ${descriptors
-                        .map(descriptor => descriptor.pluginName)
-                        .join(', ')} for additional context...\n`
-                )
-                this.sendTranscript()
-
-                this.telemetryService.log('CodyVSCodeExtension:getPluginsContext:runPluginFunctionsCalled', {
-                    count: descriptors.length,
-                })
-                return await plugins.runPluginFunctions(descriptors, this.contextProvider.config.pluginsConfig)
-            }
-        } catch (error) {
-            console.error('Error getting plugin context', error)
-        }
-        return {}
-    }
-
     private getRecipe(id: RecipeID): Recipe | undefined {
         return this.platform.recipes.find(recipe => recipe.id === id)
     }
@@ -388,14 +327,6 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         this.isMessageInProgress = true
         this.transcript.addInteraction(interaction)
 
-        let pluginsPrompt: Message[] = []
-        let pluginExecutionInfos: PluginFunctionExecutionInfo[] = []
-        if (this.contextProvider.config.pluginsEnabled && recipeId === 'chat-question') {
-            const result = await this.getPluginsContext(humanChatInput)
-            pluginsPrompt = result?.prompt ?? []
-            pluginExecutionInfos = result?.executionInfos ?? []
-        }
-
         // Check whether or not to connect to LLM backend for responses
         // Ex: performing fuzzy / context-search does not require responses from LLM backend
         switch (recipeId) {
@@ -414,14 +345,9 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
 
                 const { prompt, contextFiles, preciseContexts } = await this.transcript.getPromptForLastInteraction(
                     getPreamble(this.contextProvider.context.getCodebase(), myPremade),
-                    this.maxPromptTokens,
-                    pluginsPrompt
+                    this.maxPromptTokens
                 )
-                this.transcript.setUsedContextFilesForLastInteraction(
-                    contextFiles,
-                    preciseContexts,
-                    pluginExecutionInfos
-                )
+                this.transcript.setUsedContextFilesForLastInteraction(contextFiles, preciseContexts)
                 this.sendPrompt(prompt, interaction.getAssistantMessage().prefix ?? '', recipe.multiplexerTopic)
                 await this.saveTranscriptToChatHistory()
             }
