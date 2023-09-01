@@ -107,7 +107,7 @@ export async function run(): Promise<void> {
     const options = program.opts<CLIOptions>()
 
     if (options.provider === 'azure') {
-        failFastIfAzureEnvVarsNotSet()  // Fail fast if Azure env vars not set.
+        failFastIfAzureEnvVarsNotSet() // Fail fast if Azure env vars not set.
     }
 
     const runs: TestResult[][] = []

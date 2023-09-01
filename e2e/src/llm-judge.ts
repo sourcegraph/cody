@@ -76,23 +76,27 @@ export const failFastIfAzureEnvVarsNotSet = (): void => {
     const requiredVars = ['AZURE_API_KEY', 'AZURE_API_ENDPOINT', 'AZURE_DEPLOYMENT_ID']
     const missingVars = requiredVars.filter(varName => !(varName in process.env))
     if (missingVars.length > 0) {
-      console.log(`Missing required environment variables: ${missingVars.join(', ')}`)
-      console.log('1. https://portal.azure.com > Azure OpenAI > sourcegraph-test-oai > Keys and Endpoint')
-      let nextBulletPoint = 2
-      if (!process.env.AZURE_API_KEY) {
-        console.log(`${nextBulletPoint}. Copy the key and export AZURE_API_KEY="<paste the key here>"`)
-        nextBulletPoint++
-      }
-      if (!process.env.AZURE_API_ENDPOINT) {
-        console.log(`${nextBulletPoint}. Copy the endpoint and export AZURE_API_ENDPOINT="<paste the endpoint here>"`)
-      }
-      if (!process.env.AZURE_DEPLOYMENT_ID) {
-        console.log(`${nextBulletPoint}. Go to Model Deployments > Manage Deployments. Find the deployment name and:`)
-        console.log('   export AZURE_DEPLOYMENT_ID="<paste deployment name here>"')
-      }
-      process.exit(1)
+        console.log(`Missing required environment variables: ${missingVars.join(', ')}`)
+        console.log('1. https://portal.azure.com > Azure OpenAI > sourcegraph-test-oai > Keys and Endpoint')
+        let nextBulletPoint = 2
+        if (!process.env.AZURE_API_KEY) {
+            console.log(`${nextBulletPoint}. Copy the key and export AZURE_API_KEY="<paste the key here>"`)
+            nextBulletPoint++
+        }
+        if (!process.env.AZURE_API_ENDPOINT) {
+            console.log(
+                `${nextBulletPoint}. Copy the endpoint and export AZURE_API_ENDPOINT="<paste the endpoint here>"`
+            )
+        }
+        if (!process.env.AZURE_DEPLOYMENT_ID) {
+            console.log(
+                `${nextBulletPoint}. Go to Model Deployments > Manage Deployments. Find the deployment name and:`
+            )
+            console.log('   export AZURE_DEPLOYMENT_ID="<paste deployment name here>"')
+        }
+        process.exit(1)
     }
-  }
+}
 
 async function azureJudge(instructions: string): Promise<LLMJudgement> {
     // 1. https://portal.azure.com > Azure OpenAI > sourcegraph-test-oai > Keys and Endpoint
