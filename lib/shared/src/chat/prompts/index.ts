@@ -41,7 +41,7 @@ export interface MyPrompts {
 
 // JSON format of MyPrompts
 export interface MyPromptsJSON {
-    commands: { [id: string]: CodyPrompt }
+    commands: { [id: string]: Omit<CodyPrompt, 'slashCommand'> }
     recipes?: { [id: string]: CodyPrompt }
     premade?: CodyPremade
     starter?: string
