@@ -11,7 +11,7 @@ import isomorphicFetch from 'isomorphic-fetch'
  * requests being made.
  *
  * To do this, we have a mutable agent variable that can be set to an instance of `http.Agent` or
- * `https.Agent` (depending on the protocol of the URL) but that will be kept undefine for web
+ * `https.Agent` (depending on the protocol of the URL) but that will be kept undefined for web
  * environments.
  *
  * Agent is a mutable ref so that we can override it from `fetch.node.ts`
