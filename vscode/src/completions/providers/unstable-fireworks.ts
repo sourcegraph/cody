@@ -235,7 +235,7 @@ function getSuffixAfterFirstNewline(suffix: string): string {
 function getModelConfig(model: string): { temperature: number; topP: number } {
     if (model.startsWith('llama-code')) {
         return {
-            temperature: 0.3,
+            temperature: 0.2,
             topP: 0.95,
         }
     }
