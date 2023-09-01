@@ -1,3 +1,4 @@
+import { omit } from 'lodash'
 import * as vscode from 'vscode'
 
 import { Preamble } from '@sourcegraph/cody-shared/src/chat/preamble'
@@ -182,14 +183,14 @@ export class CustomPromptsStore implements vscode.Disposable {
         }
         // filter prompt map to remove prompt with type workspace
         const filtered = new Map<string, Omit<CodyPrompt, 'slashCommand'>>()
-        for (const [key, { slashCommand, ...value }] of this.myPromptsMap) {
+        for (const [key, value] of this.myPromptsMap) {
             if (value.type === 'user' && value.prompt !== 'separator') {
                 value.type = undefined
-                filtered.set(fromSlashCommand(key), value)
+                filtered.set(fromSlashCommand(key), omit(value, 'slashCommand'))
             }
         }
         // Add new prompt to the map
-        filtered.set(fromSlashCommand(id), prompt)
+        filtered.set(fromSlashCommand(id), omit(prompt, 'slashCommand'))
         // turn prompt map into json
         const jsonContext = { ...this.myPromptsJSON }
         jsonContext.commands = Object.fromEntries(filtered)
