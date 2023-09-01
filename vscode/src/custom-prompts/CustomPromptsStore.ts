@@ -130,11 +130,11 @@ export class CustomPromptsStore implements vscode.Disposable {
                 // inform user about this change
                 void vscode.window
                     .showInformationMessage(
-                        `We updated ${type} Cody config to match the new format. You can customize it further manually later.`,
-                        'Open config file'
+                        `Your Cody ${type} configuration file has been automatically updated to the new format.`,
+                        'Open File'
                     )
                     .then(choice => {
-                        if (choice === 'Open config file') {
+                        if (choice === 'Open File') {
                             const filePath = type === 'user' ? this.jsonFileUris.user : this.jsonFileUris.workspace
                             if (filePath) {
                                 void vscode.window.showTextDocument(filePath)
