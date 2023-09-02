@@ -40,7 +40,9 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     const [suggestions, setSuggestions] = useState<string[] | undefined>()
     const [isAppInstalled, setIsAppInstalled] = useState<boolean>(false)
     const [enabledPlugins, setEnabledPlugins] = useState<string[]>([])
-    const [myPrompts, setMyPrompts] = useState<[string, CodyPrompt & { label?: string }][] | null>(null)
+    const [myPrompts, setMyPrompts] = useState<
+        [string, CodyPrompt & { isLastInGroup?: boolean; instruction?: string }][] | null
+    >(null)
     const [isTranscriptError, setIsTranscriptError] = useState<boolean>(false)
 
     useEffect(
@@ -91,40 +93,26 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                         setEnabledPlugins(message.plugins)
                         break
                     case 'custom-prompts': {
-                        let prompts = message.prompts
+                        let prompts: [string, CodyPrompt & { isLastInGroup?: boolean; instruction?: string }][] =
+                            message.prompts
+
                         if (!prompts) {
                             setMyPrompts(null)
                             break
                         }
-                        prompts = prompts
-                            .reduce((acc: typeof prompts, [key, command], index, array) => {
-                                if (key === 'separator') {
-                                    return acc
-                                }
 
-                                const nextItem = array[index + 1]
-                                if (nextItem?.[0] === 'separator') {
-                                    acc.push([key, { ...command, isLastInGroup: true }])
-                                    return acc
-                                }
+                        prompts = prompts.reduce(groupPrompts, []).map(addInstructions)
 
-                                acc.push([key, command])
-                                return acc
-                            }, [])
-                            .map(([key, command]) => {
-                                const replaceFn = command.slashCommand
-                                    ? labelReplacements[command.slashCommand]
-                                    : undefined
-                                const label = replaceFn ? replaceFn(command.slashCommand) : undefined
-                                return [key, { ...command, label }]
-                            })
+                        // mark last prompts as last in group before adding another group
                         const lastPrompt = prompts.at(-1)
                         if (lastPrompt) {
                             const [_, command] = lastPrompt
                             command.isLastInGroup = true
                         }
+
                         setMyPrompts([
                             ...prompts,
+                            // add another group
                             ['reset', { prompt: '', slashCommand: '/reset', description: 'Clear the chat' }],
                         ])
                         break
@@ -253,7 +241,33 @@ const ErrorBanner: React.FunctionComponent<{ errors: string[]; setErrors: (error
     </div>
 )
 
-const labelReplacements: Record<string, (label: string) => string> = {
-    '/ask': label => `${label} [question]`,
-    '/edit': label => `${label} [instruction]`,
+/**
+ * Adds `isLastInGroup` field to a prompt if represents last item in a group (e.g., default/custom/etc. prompts).
+ */
+function groupPrompts(
+    acc: [string, CodyPrompt & { isLastInGroup?: boolean }][],
+    [key, command]: [string, CodyPrompt],
+    index: number,
+    array: [string, CodyPrompt][]
+): [string, CodyPrompt & { isLastInGroup?: boolean }][] {
+    if (key === 'separator') {
+        return acc
+    }
+
+    const nextItem = array[index + 1]
+    if (nextItem?.[0] === 'separator') {
+        acc.push([key, { ...command, isLastInGroup: true }])
+        return acc
+    }
+
+    acc.push([key, command])
+    return acc
+}
+
+/**
+ * Adds `instruction` field to a prompt if it requires additional instruction.
+ */
+function addInstructions<T extends CodyPrompt>([key, command]: [string, T]): [string, T & { instruction?: string }] {
+    const instruction = command.slashCommand === '/edit' ? '[instruction]' : undefined
+    return [key, { ...command, instruction }]
 }

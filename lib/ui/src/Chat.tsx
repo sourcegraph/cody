@@ -111,10 +111,9 @@ export interface CopyButtonProps {
 }
 
 export interface ChatCommandsProps {
-    formInput: string
     setFormInput: (input: string) => void
     setSelectedChatCommand: (index: number) => void
-    chatCommands?: [string, CodyPrompt & { label?: string }][] | null
+    chatCommands?: [string, CodyPrompt][] | null
     selectedChatCommand?: number
     onSubmit: (input: string, inputType: 'user' | 'suggestion') => void
 }
@@ -175,7 +174,9 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
     isTranscriptError,
 }) => {
     const [inputRows, setInputRows] = useState(1)
-    const [displayCommands, setDisplayCommands] = useState<[string, CodyPrompt][] | null>(chatCommands || null)
+    const [displayCommands, setDisplayCommands] = useState<[string, CodyPrompt & { instruction?: string }][] | null>(
+        chatCommands || null
+    )
     const [selectedChatCommand, setSelectedChatCommand] = useState(-1)
     const [historyIndex, setHistoryIndex] = useState(inputHistory.length)
 
@@ -297,10 +298,15 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                 ) {
                     event.preventDefault()
                     event.stopPropagation()
-                    const newInput = displayCommands?.[selectedChatCommand]?.[1]?.slashCommand
-                    setFormInput(newInput || formInput)
-                    setDisplayCommands(null)
-                    setSelectedChatCommand(-1)
+                    const selectedCommand = displayCommands?.[selectedChatCommand]?.[1]
+                    if (formInput.startsWith(selectedCommand?.slashCommand)) {
+                        // submit message if the input has slash command already completed
+                        setMessageBeingEdited(false)
+                        onChatSubmit()
+                    } else {
+                        const newInput = selectedCommand?.slashCommand
+                        setFormInput(newInput || formInput)
+                    }
                 }
             }
 
@@ -414,7 +420,6 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                 ) : null}
                 {displayCommands && ChatCommandsComponent && formInput && (
                     <ChatCommandsComponent
-                        formInput={formInput}
                         chatCommands={displayCommands}
                         selectedChatCommand={selectedChatCommand}
                         setFormInput={setFormInput}
