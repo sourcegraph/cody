@@ -8,7 +8,7 @@
     width: calc(100vw - 1.5rem);
 
     max-height: 250%;
-    z-index: 99;
+    z-index: 101;
     background: var(--vscode-sideBar-background);
     color: var(--vscode-sideBar-foreground);
     border: 1px solid var(--vscode-widget-border);
