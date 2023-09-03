@@ -1488,7 +1488,7 @@ describe('getInlineCompletions', () => {
         expect(messages[messages.length - 1]).toMatchInlineSnapshot(`
             {
               "speaker": "assistant",
-              "text": "Here is the code: <CODE5711>constructor(startLine: number, startCharacter: number, endLine: number, endCharacter: number) {
+              "text": "Understood. Here is the completed code snippet aligned with your guidelines: <CODE5711>constructor(startLine: number, startCharacter: number, endLine: number, endCharacter: number) {
                     this.startLine =",
             }
         `)
@@ -1516,7 +1516,9 @@ describe('getInlineCompletions', () => {
         )
         expect(requests).toHaveLength(3)
         const messages = requests[0].messages
-        expect(messages[messages.length - 1].text).toBe('Here is the code: <CODE5711>class Range {\n')
+        expect(messages[messages.length - 1].text).toBe(
+            'Understood. Here is the completed code snippet aligned with your guidelines: <CODE5711>class Range {\n'
+        )
     })
 
     test('synthesizes a completion from a prior request', async () => {

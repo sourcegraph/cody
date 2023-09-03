@@ -64,25 +64,20 @@ export class AnthropicProvider extends Provider {
         const prefixMessages: Message[] = [
             {
                 speaker: 'human',
-                text: `You are a code completion AI that writes high-quality code like a senior engineer. You are looking at ${
-                    this.options.fileName
-                }. You write code in between tags like this: ${OPENING_CODE_TAG}${
-                    this.options.languageId === 'python' || this.options.languageId === 'ruby'
-                        ? '# Code goes here'
-                        : '/* Code goes here */'
-                }${CLOSING_CODE_TAG}.`,
+                text: 'You are a sophisticated code-completion AI, specifically designed to understand the intricacies of coding context. Your abilities include grasping the semantic and syntactic elements of the code I’m working on and offering completion suggestions that not only fit the functional requirements but also adhere to the stylistic and architectural patterns present in the existing codebase.',
             },
             {
                 speaker: 'assistant',
-                text: 'I am a code completion AI that writes high-quality code like a senior engineer.',
+                text: 'Acknowledged. My design incorporates advanced contextual understanding, which allows me to generate code completions that are functionally coherent, stylistically consistent, and architecturally aligned with your existing code.',
             },
             {
                 speaker: 'human',
-                text: `Complete this code: ${OPENING_CODE_TAG}${head.trimmed}${CLOSING_CODE_TAG}.`,
+                text: `I'd like you to focus on the following attributes while completing the code snippet enclosed in the ${OPENING_CODE_TAG}. First, adhere to the naming conventions present in the existing code. Second, maintain stylistic consistency. Third, make sure to define return types explicitly for functions if that's the practice in the surrounding code. Fourth, refrain from using any libraries or methods that aren't already imported or defined. Fifth, avoid redundancy by not repeating code, functions, or methods that are present in the existing code. Sixth: Focus on writing clean, efficient code that works seamlessly with surrounding code. Complete the following code: ${OPENING_CODE_TAG}
+                ${head.trimmed}${OPENING_CODE_TAG}${tail.trimmed}${CLOSING_CODE_TAG}${this.options.docContext.suffix}`,
             },
             {
                 speaker: 'assistant',
-                text: `Here is the code: ${OPENING_CODE_TAG}${tail.trimmed}`,
+                text: `Understood. Here is the completed code snippet aligned with your guidelines: ${OPENING_CODE_TAG}${tail.trimmed}`,
             },
         ]
         return { messages: prefixMessages, prefix: { head, tail, overlap } }
@@ -101,11 +96,11 @@ export class AnthropicProvider extends Provider {
             const snippetMessages: Message[] = [
                 {
                     speaker: 'human',
-                    text: `Here is a reference snippet of code: ${OPENING_CODE_TAG}${snippet.content}${CLOSING_CODE_TAG}`,
+                    text: `Codebase context from a file with file path ${snippet.fileName}: ${OPENING_CODE_TAG}${snippet.content}${CLOSING_CODE_TAG}`,
                 },
                 {
                     speaker: 'assistant',
-                    text: 'I have added the snippet to my knowledge base.',
+                    text: 'I will refer to this code when completing your next request.',
                 },
             ]
             const numSnippetChars = messagesToText(snippetMessages).length + 1
@@ -119,6 +114,7 @@ export class AnthropicProvider extends Provider {
         return { messages: [...referenceSnippetMessages, ...prefixMessages], prefix }
     }
 
+    // Returns completions based on the generated prompt
     public async generateCompletions(
         abortSignal: AbortSignal,
         snippets: ContextSnippet[],
