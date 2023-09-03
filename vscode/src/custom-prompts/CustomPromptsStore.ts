@@ -12,7 +12,7 @@ import {
 import { fromSlashCommand, toSlashCommand } from '@sourcegraph/cody-shared/src/chat/prompts/utils'
 import { newPromptMixin, PromptMixin } from '@sourcegraph/cody-shared/src/prompt/prompt-mixin'
 
-import { debug } from '../log'
+import { logDebug, logError } from '../log'
 
 import {
     constructFileUri,
@@ -87,7 +87,7 @@ export class CustomPromptsStore implements vscode.Disposable {
                 }
             }
         } catch (error) {
-            debug('CustomPromptsStore:refresh', 'failed', { verbose: error })
+            logError('CustomPromptsStore:refresh', 'failed', { verbose: error })
         }
         return { commands: this.myPromptsMap, premade: this.myPremade, starter: this.myStarter }
     }
@@ -119,7 +119,7 @@ export class CustomPromptsStore implements vscode.Disposable {
                 // transform old format commands to the new format
                 const commands = promptEntries.reduce(
                     (acc: Record<string, Omit<CodyPrompt, 'slashCommand'>>, [key, { prompt, type, context }]) => {
-                        const slashCommand = key.trim().replaceAll(' ', '-')
+                        const slashCommand = key.trim().replaceAll(' ', '-').toLowerCase()
                         acc[slashCommand] = { description: key, prompt, type, context }
                         return acc
                     },
@@ -130,11 +130,11 @@ export class CustomPromptsStore implements vscode.Disposable {
                 // inform user about this change
                 void vscode.window
                     .showInformationMessage(
-                        `We updated ${type} Cody config to match the new format. You can customize it further manually later.`,
-                        'Open config file'
+                        `Your Cody ${type} configuration file has been automatically updated to the new format.`,
+                        'Open File'
                     )
                     .then(choice => {
-                        if (choice === 'Open config file') {
+                        if (choice === 'Open File') {
                             const filePath = type === 'user' ? this.jsonFileUris.user : this.jsonFileUris.workspace
                             if (filePath) {
                                 void vscode.window.showTextDocument(filePath)
@@ -162,7 +162,7 @@ export class CustomPromptsStore implements vscode.Disposable {
             }
             this.promptSize[type] = this.myPromptsMap.size - 1
         } catch (error) {
-            debug('CustomPromptsStore:build', 'failed', { verbose: error })
+            logDebug('CustomPromptsStore:build', 'failed', { verbose: error })
         }
         return this.myPromptsMap
     }
@@ -202,7 +202,7 @@ export class CustomPromptsStore implements vscode.Disposable {
      */
     private async updateJSONFile(prompts: MyPromptsJSON, type: CodyPromptType): Promise<void> {
         try {
-            const jsonString = JSON.stringify(prompts)
+            const jsonString = JSON.stringify(prompts, null, 2)
             const rootDirPath = type === 'user' ? this.jsonFileUris.user : this.jsonFileUris.workspace
             if (!rootDirPath || !jsonString) {
                 throw new Error('Invalid file path or json string')
@@ -230,7 +230,7 @@ export class CustomPromptsStore implements vscode.Disposable {
         } catch (error) {
             const errorMessage = 'Failed to create cody.json file: '
             void vscode.window.showErrorMessage(`${errorMessage} ${error}`)
-            debug('CustomPromptsStore:addJSONFile:create', 'failed', { verbose: error })
+            logDebug('CustomPromptsStore:addJSONFile:create', 'failed', { verbose: error })
         }
     }
 
@@ -244,7 +244,7 @@ export class CustomPromptsStore implements vscode.Disposable {
             void vscode.window.showInformationMessage(
                 'Fail: try deleting the .vscode/cody.json file in your repository or home directory manually.'
             )
-            debug('CustomPromptsStore:clear:error:', 'Failed to remove cody.json file for' + type)
+            logError('CustomPromptsStore:clear:error:', 'Failed to remove cody.json file for' + type)
         }
         await deleteFile(uri)
     }

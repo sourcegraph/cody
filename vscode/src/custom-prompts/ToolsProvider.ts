@@ -4,7 +4,7 @@ import { promisify } from 'util'
 
 import * as vscode from 'vscode'
 
-import { debug } from '../log'
+import { logDebug, logError } from '../log'
 
 import { UserWorkspaceInfo } from './utils'
 import { outputWrapper } from './utils/helpers'
@@ -77,10 +77,10 @@ export class ToolsProvider {
             if (!outputString) {
                 throw new Error('Empty output')
             }
-            debug('ToolsProvider:exeCommand', command, { verbose: outputString })
+            logDebug('ToolsProvider:exeCommand', command, { verbose: outputString })
             return outputWrapper.replace('{command}', command).replace('{output}', outputString)
         } catch (error) {
-            debug('ToolsProvider:exeCommand', 'failed', { verbose: error })
+            logError('ToolsProvider:exeCommand', 'failed', { verbose: error })
             void vscode.window.showErrorMessage(
                 'Failed to run command. Please make sure the command works in your terminal before trying again.'
             )

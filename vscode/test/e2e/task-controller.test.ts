@@ -29,7 +29,7 @@ test('task tree view for non-stop cody', async ({ page, sidebar }) => {
     // Open the command palette by clicking on the Cody Icon
     await page.getByRole('button', { name: 'Commands' }).click()
     // Navigate to fixup input
-    await page.getByRole('option', { name: 'Request a Code Edit' }).click()
+    await page.getByRole('option', { name: 'Edit code' }).click()
 
     // Wait for the input box to appear
     await page.getByPlaceholder('Your instructions').click()

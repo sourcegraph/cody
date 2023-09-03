@@ -15,12 +15,12 @@ import {
     unauthenticatedStatus,
 } from '../chat/protocol'
 import { newAuthStatus } from '../chat/utils'
-import { debug } from '../log'
+import { logDebug } from '../log'
 
 import { AuthMenu, showAccessTokenInputBox, showInstanceURLInputBox } from './AuthMenus'
 import { LocalAppDetector } from './LocalAppDetector'
-import { LocalStorage } from './LocalStorageProvider'
-import { SecretStorage } from './SecretStorageProvider'
+import { localStorage } from './LocalStorageProvider'
+import { secretStorage } from './SecretStorageProvider'
 
 export class AuthProvider {
     private endpointHistory: string[] = []
@@ -34,8 +34,6 @@ export class AuthProvider {
 
     constructor(
         private config: Pick<ConfigurationWithAccessToken, 'serverEndpoint' | 'accessToken' | 'customHeaders'>,
-        private secretStorage: SecretStorage,
-        private localStorage: LocalStorage,
         private telemetryService: TelemetryService
     ) {
         this.authStatus.endpoint = 'init'
@@ -47,9 +45,9 @@ export class AuthProvider {
     // if none, try signing in with App URL
     public async init(): Promise<void> {
         await this.appDetector.init()
-        const lastEndpoint = this.localStorage?.getEndpoint() || this.config.serverEndpoint
-        const token = (await this.secretStorage.get(lastEndpoint || '')) || this.config.accessToken
-        debug('AuthProvider:init:lastEndpoint', lastEndpoint)
+        const lastEndpoint = localStorage?.getEndpoint() || this.config.serverEndpoint
+        const token = (await secretStorage.get(lastEndpoint || '')) || this.config.accessToken
+        logDebug('AuthProvider:init:lastEndpoint', lastEndpoint)
         const authState = await this.auth(lastEndpoint, token || null)
         if (authState?.isLoggedIn) {
             return
@@ -59,7 +57,7 @@ export class AuthProvider {
     // Display quickpick to select endpoint to sign in to
     public async signinMenu(type?: 'enterprise' | 'dotcom' | 'token' | 'app', uri?: string): Promise<void> {
         const mode = this.authStatus.isLoggedIn ? 'switch' : 'signin'
-        debug('AuthProvider:signinMenu', mode)
+        logDebug('AuthProvider:signinMenu', mode)
         this.telemetryService.log('CodyVSCodeExtension:login:clicked')
         const item = await AuthMenu(mode, this.endpointHistory)
         if (!item) {
@@ -98,7 +96,7 @@ export class AuthProvider {
                 // Auto log user if token for the selected instance was found in secret
                 const selectedEndpoint = item.uri
                 const tokenKey = isLocalApp(selectedEndpoint) ? 'SOURCEGRAPH_CODY_APP' : selectedEndpoint
-                const token = await this.secretStorage.get(tokenKey)
+                const token = await secretStorage.get(tokenKey)
                 const authStatus = await this.auth(selectedEndpoint, token || null)
                 this.showIsLoggedIn(authStatus?.authStatus || null)
                 if (!authStatus?.isLoggedIn) {
@@ -106,7 +104,7 @@ export class AuthProvider {
                     const authStatusFromToken = await this.auth(selectedEndpoint, newToken || null)
                     this.showIsLoggedIn(authStatusFromToken?.authStatus || null)
                 }
-                debug('AuthProvider:signinMenu', mode, selectedEndpoint)
+                logDebug('AuthProvider:signinMenu', mode, selectedEndpoint)
             }
         }
     }
@@ -131,8 +129,8 @@ export class AuthProvider {
     }
 
     public async appAuth(uri?: string): Promise<void> {
-        debug('AuthProvider:appAuth:init', '')
-        const token = await this.secretStorage.get('SOURCEGRAPH_CODY_APP')
+        logDebug('AuthProvider:appAuth:init', '')
+        const token = await secretStorage.get('SOURCEGRAPH_CODY_APP')
         if (token) {
             const authStatus = await this.auth(LOCAL_APP_URL.href, token)
             if (authStatus?.isLoggedIn) {
@@ -154,7 +152,7 @@ export class AuthProvider {
             return
         }
         await this.signout(endpoint.uri)
-        debug('AuthProvider:signoutMenu', endpoint.uri)
+        logDebug('AuthProvider:signoutMenu', endpoint.uri)
     }
 
     // Log user out of the selected endpoint (remove token from secret)
@@ -163,8 +161,8 @@ export class AuthProvider {
         if (isLocalApp(endpoint)) {
             await this.appDetector.init()
         }
-        await this.secretStorage.deleteToken(endpoint)
-        await this.localStorage.deleteEndpoint()
+        await secretStorage.deleteToken(endpoint)
+        await localStorage.deleteEndpoint()
         await this.auth(endpoint, null)
         this.authStatus.endpoint = ''
         await vscode.commands.executeCommand('setContext', 'cody.activated', false)
@@ -348,7 +346,7 @@ export class AuthProvider {
 
     // Refresh current endpoint history with the one from local storage
     private loadEndpointHistory(): void {
-        this.endpointHistory = this.localStorage.getEndpointHistory() || []
+        this.endpointHistory = localStorage.getEndpointHistory() || []
     }
 
     // Store endpoint in local storage, token in secret storage, and update endpoint history
@@ -356,9 +354,9 @@ export class AuthProvider {
         if (!endpoint) {
             return
         }
-        await this.localStorage.saveEndpoint(endpoint)
+        await localStorage.saveEndpoint(endpoint)
         if (token) {
-            await this.secretStorage.storeToken(endpoint, token)
+            await secretStorage.storeToken(endpoint, token)
         }
         this.loadEndpointHistory()
     }
