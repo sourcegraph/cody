@@ -35,7 +35,7 @@ const commandsSeparator: QuickPickItem = { kind: -1, label: 'commands' }
 const customCommandsSeparator: QuickPickItem = { kind: -1, label: 'custom commands (experimental)' }
 const configOption: QuickPickItem = { label: 'Configure Custom Commands...' }
 const settingsSeparator: QuickPickItem = { kind: -1, label: 'settings' }
-const addOption: QuickPickItem = { label: 'Create a New Custom User Command...', alwaysShow: true }
+const addOption: QuickPickItem = { label: 'New Custom Command...', alwaysShow: true }
 
 export const recentlyUsedSeparatorAsPrompt: [string, CodyPrompt][] = [
     ['separator', { prompt: 'separator', type: 'recently used', slashCommand: '' }],
@@ -188,7 +188,7 @@ export async function showcommandTypeQuickPick(
 export const CustomCommandConfigMenuItems = [
     {
         kind: 0,
-        label: 'Create a New Custom User Command...',
+        label: 'New Custom Command...',
         id: 'add',
         type: 'user',
         description: '',
@@ -213,7 +213,7 @@ export const CustomCommandConfigMenuItems = [
         buttons: [menu_buttons.open, menu_buttons.trash],
     },
     { kind: -1, id: 'separator', label: '' },
-    { kind: 0, label: 'See Example Commands', id: 'example', type: 'default' },
+    { kind: 0, label: 'Open Custom Commands Documentation', id: 'example', type: 'default' },
 ]
 
 export async function showAskQuestionQuickPick(): Promise<string> {
