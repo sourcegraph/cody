@@ -45,7 +45,7 @@ export const ChatCommandsComponent: React.FunctionComponent<React.PropsWithChild
             <div className={classNames(styles.commandsContainer)}>
                 {chatCommands &&
                     selectedChatCommand >= 0 &&
-                    chatCommands?.map(([command, prompt], i) => (
+                    chatCommands?.map(([, prompt], i) => (
                         <button
                             className={classNames(styles.commandItem, selectedChatCommand === i && styles.selected)}
                             key={prompt.slashCommand}
@@ -54,7 +54,7 @@ export const ChatCommandsComponent: React.FunctionComponent<React.PropsWithChild
                             ref={i === selectedChatCommand ? selectionRef : null}
                         >
                             <p className={styles.commandTitle}>{prompt.slashCommand}</p>
-                            <p className={styles.commandDescription}>{command}</p>
+                            <p className={styles.commandDescription}>{prompt.description}</p>
                         </button>
                     ))}
             </div>

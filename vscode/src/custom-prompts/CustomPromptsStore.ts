@@ -1,3 +1,4 @@
+import { omit } from 'lodash'
 import * as vscode from 'vscode'
 
 import { Preamble } from '@sourcegraph/cody-shared/src/chat/preamble'
@@ -8,6 +9,7 @@ import {
     MyPrompts,
     MyPromptsJSON,
 } from '@sourcegraph/cody-shared/src/chat/prompts'
+import { fromSlashCommand, toSlashCommand } from '@sourcegraph/cody-shared/src/chat/prompts/utils'
 import { newPromptMixin, PromptMixin } from '@sourcegraph/cody-shared/src/prompt/prompt-mixin'
 
 import { logDebug, logError } from '../log'
@@ -108,19 +110,47 @@ export class CustomPromptsStore implements vscode.Disposable {
             }
             const json = JSON.parse(content) as MyPromptsJSON
             const prompts = json.commands || json.recipes
-            for (const key in prompts) {
-                if (Object.prototype.hasOwnProperty.call(prompts, key)) {
-                    const prompt = prompts[key]
-                    prompt.name = key
-                    prompt.type = type
-                    // replace any '/' from the start
-                    const slashCommand = prompt.slashCommand?.replace(/^\//, '')
-                    if (slashCommand?.length) {
-                        prompt.slashCommand = `/${slashCommand}`
-                    }
-                    this.myPromptsMap.set(key, prompt)
-                }
+            const promptEntries = Object.entries(prompts)
+
+            const isOldFormat = promptEntries.some(
+                ([key, prompt]) => key.split(' ').length > 1 || !('description' in prompt)
+            )
+            if (isOldFormat) {
+                // transform old format commands to the new format
+                const commands = promptEntries.reduce(
+                    (acc: Record<string, Omit<CodyPrompt, 'slashCommand'>>, [key, { prompt, type, context }]) => {
+                        const slashCommand = key.trim().replaceAll(' ', '-').toLowerCase()
+                        acc[slashCommand] = { description: key, prompt, type, context }
+                        return acc
+                    },
+                    {}
+                )
+                // write transformed commands to the corresponding config file
+                await this.updateJSONFile({ ...json, commands }, type)
+                // inform user about this change
+                void vscode.window
+                    .showInformationMessage(
+                        `Your Cody ${type} configuration file has been automatically updated to the new format.`,
+                        'Open File'
+                    )
+                    .then(choice => {
+                        if (choice === 'Open File') {
+                            const filePath = type === 'user' ? this.jsonFileUris.user : this.jsonFileUris.workspace
+                            if (filePath) {
+                                void vscode.window.showTextDocument(filePath)
+                            }
+                        }
+                    })
+                // read from the updated config file
+                return await this.build(type)
             }
+
+            for (const [key, prompt] of promptEntries) {
+                const current: CodyPrompt = { ...prompt, slashCommand: toSlashCommand(key) }
+                current.type = type
+                this.myPromptsMap.set(current.slashCommand, current)
+            }
+
             this.myPremade = json.premade
             // avoid duplicate starter prompts
             if (json.starter && json?.starter !== this.myStarter) {
@@ -152,20 +182,27 @@ export class CustomPromptsStore implements vscode.Disposable {
             this.myPromptsMap.set(id, prompt)
         }
         // filter prompt map to remove prompt with type workspace
-        const filtered = new Map<string, CodyPrompt>()
+        const filtered = new Map<string, Omit<CodyPrompt, 'slashCommand'>>()
         for (const [key, value] of this.myPromptsMap) {
             if (value.type === 'user' && value.prompt !== 'separator') {
                 value.type = undefined
-                filtered.set(key, value)
+                filtered.set(fromSlashCommand(key), omit(value, 'slashCommand'))
             }
         }
         // Add new prompt to the map
-        filtered.set(id, prompt)
+        filtered.set(fromSlashCommand(id), omit(prompt, 'slashCommand'))
         // turn prompt map into json
         const jsonContext = { ...this.myPromptsJSON }
         jsonContext.commands = Object.fromEntries(filtered)
+        return this.updateJSONFile(jsonContext as MyPromptsJSON, type)
+    }
+
+    /**
+     * Updates the corresponding Cody config file with the given prompts.
+     */
+    private async updateJSONFile(prompts: MyPromptsJSON, type: CodyPromptType): Promise<void> {
         try {
-            const jsonString = JSON.stringify(jsonContext)
+            const jsonString = JSON.stringify(prompts, null, 2)
             const rootDirPath = type === 'user' ? this.jsonFileUris.user : this.jsonFileUris.workspace
             if (!rootDirPath || !jsonString) {
                 throw new Error('Invalid file path or json string')
