@@ -146,6 +146,7 @@ export class CustomPrompt implements Recipe {
                     const packageJson = await getPackageJsonContext(selection?.fileName)
                     contextMessages.push(...packageJson)
                 }
+
                 // TODO bee only top parts
                 if (!selection?.fileName) {
                     const importsContext = getCurrentFileContext()

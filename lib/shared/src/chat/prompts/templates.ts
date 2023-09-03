@@ -3,7 +3,7 @@ const instruction_prompt = `Please follow these rules when answering my question
 - Do not suggest anything that would break the working code.
 - Do not make any assumptions about the code and file names or any misleading information.
 - All generated code should be full workable code.
-- When I say my repository or files, I am referring to the shared context that all come from the codebase I am currently working in
+
 <questions>{humanInput}</questions>
 `
 const prevent_hallucinations =
