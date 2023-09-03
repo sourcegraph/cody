@@ -101,4 +101,60 @@ export class ToolsProvider {
             return false
         }
     }
+
+    public async addContentToTestFile(content: string, currentFileName: string): Promise<void> {
+        const codeBlockRegex = /```[\S\s]*?```/g
+        // the file name is in the <fileName></fileName> tags in the content
+        const testFileName = content
+            .match(/<fileName>(.*?)<\/fileName>/)?.[1]
+            ?.split('/')
+            .pop()
+        const codeBlocks = content.match(codeBlockRegex)?.join('\n')
+        // remove all the opening backticks with language name and closing backticks from the content ex: ```go CODE ```
+        const testContent = codeBlocks?.replaceAll(/```.*\n/g, '').replaceAll('```', '')
+        if (!testContent) {
+            return
+        }
+        // Create a workspace uri for the test file, the test file should locate in the same directory as current file
+        // add the test file name to the directory that the current file is in
+        const testFilePath = currentFileName.replace(/\/[^/]+$/, `/${testFileName}`)
+        // Create workspace file uri for the test file path, add workspace root path to the file path
+        const workspaceRootPath = this.getUserInfo().workspaceRoot || ''
+        const testFileUri = vscode.Uri.joinPath(vscode.Uri.parse(workspaceRootPath), testFilePath)
+        const testFileExists = await this.doesUriExist(testFileUri)
+        if (!testFileExists && testFileName) {
+            await this.createNewFile(testFileUri, testContent)
+            return
+        }
+
+        const document = await vscode.workspace.openTextDocument(testFileUri)
+        const language = document.languageId || ''
+
+        // Create a temporary file in current editor and add content to the file
+        await this.createTempFile([testFileName, testContent].join('\n'), language)
+        return
+    }
+
+    private async createNewFile(fileUri: vscode.Uri, content?: string): Promise<void> {
+        // Create a new file if it doesn't exist
+        const workspaceEditor = new vscode.WorkspaceEdit()
+        workspaceEditor.createFile(fileUri, { ignoreIfExists: true })
+        if (!content) {
+            return
+        }
+        await vscode.workspace.applyEdit(workspaceEditor)
+        const textDocument = await vscode.workspace.openTextDocument(fileUri)
+        workspaceEditor.insert(fileUri, new vscode.Position(textDocument.lineCount + 1, 0), content)
+        await vscode.workspace.applyEdit(workspaceEditor)
+        await textDocument.save()
+        await vscode.window.showTextDocument(fileUri)
+    }
+
+    private async createTempFile(content: string, language: string): Promise<void> {
+        const tempFile = await vscode.workspace.openTextDocument({
+            content: content.trim(),
+            language,
+        })
+        await vscode.window.showTextDocument(tempFile)
+    }
 }
