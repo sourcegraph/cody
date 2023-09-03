@@ -25,6 +25,7 @@ Starting from `0.2.0`, Cody is using `major.EVEN_NUMBER.patch` for release versi
 
 - Autocomplete on VS Code desktop instances now reuses TCP connections to reduce latency. [pull/868](https://github.com/sourcegraph/cody/pull/868)
 - Errors are now always logged to the output console, even if the debug mode is not enabled. [pull/851](https://github.com/sourcegraph/cody/pull/851)
+- The `Generate Unit Tests` command has been improved with an enhanced context fetching process that produces more consistent test results across languages. A new file containing the new tests will be created in the same directory automatically when one does not exist. If a test file already exists, a temporary file with the tests will be created. [pull/907](https://github.com/sourcegraph/cody/pull/907)
 
 ## [0.8.0]
 
