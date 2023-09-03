@@ -8,7 +8,7 @@
     width: calc(100vw - 1.5rem);
 
     max-height: 250%;
-    z-index: 99;
+    z-index: 101;
     background: var(--vscode-sideBar-background);
     color: var(--vscode-sideBar-foreground);
     border: 1px solid var(--vscode-widget-border);
@@ -84,4 +84,10 @@ body[data-vscode-theme-kind='vscode-high-contrast-light'] .selected,
 body[data-vscode-theme-kind='vscode-high-contrast'] .selected {
     outline: 1px dashed var(--vscode-contrastActiveBorder);
     outline-offset: -1px;
+}
+
+.separator {
+    all: unset;
+    margin: 0 0.5rem;
+    border-bottom: 1px solid var(--vscode-dropdown-border);
 }
