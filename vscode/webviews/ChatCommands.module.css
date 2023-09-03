@@ -87,6 +87,7 @@ body[data-vscode-theme-kind='vscode-high-contrast'] .selected {
 }
 
 .separator {
-    margin: 0.25rem 0.75rem;
-    border-color: var(--vscode-dropdown-border);
+    all: unset;
+    margin: 0 0.5rem;
+    border-bottom: 1px solid var(--vscode-dropdown-border);
 }
