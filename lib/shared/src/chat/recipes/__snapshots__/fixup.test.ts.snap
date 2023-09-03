@@ -34,7 +34,7 @@ This is part of the file src/file/index.ts.
 The user has the following code in their selection:
 <selectedCode>return text</selectedCode>
 
-The user wants you to replace parts of the selected code by following their instructions.
+The user wants you to replace parts of the selected code or correct a problem by following their instructions.
 Provide your generated code using the following instructions:
 <instructions>
 Console log text

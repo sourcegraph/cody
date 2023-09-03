@@ -11,7 +11,8 @@
     "postinstall": "pnpm download-wasm",
     "dev": "pnpm run -s dev:desktop",
     "dev:insiders": "pnpm run -s dev:desktop:insiders",
-    "dev:desktop": "pnpm run -s build:dev:desktop && NODE_ENV=development code --extensionDevelopmentPath=$PWD --disable-extension=sourcegraph.cody-ai --disable-extension=github.copilot --disable-extension=github.copilot-nightly --inspect-extensions=9333 --new-window . --goto ./src/logged-rerank.ts:16:5",
+    "start:dev:desktop": "NODE_ENV=development code --extensionDevelopmentPath=$PWD --disable-extension=sourcegraph.cody-ai --disable-extension=github.copilot --disable-extension=github.copilot-nightly --inspect-extensions=9333 --new-window . --goto ./src/logged-rerank.ts:16:5",
+    "dev:desktop": "pnpm run -s build:dev:desktop && pnpm run start:dev:desktop",
     "dev:desktop:insiders": "pnpm run -s build:dev:desktop && NODE_ENV=development code-insiders --extensionDevelopmentPath=$PWD --disable-extension=sourcegraph.cody-ai --disable-extension=github.copilot --disable-extension=github.copilot-nightly --inspect-extensions=9333 --new-window . --goto ./src/logged-rerank.ts:16:5",
     "dev:web": "pnpm run -s build:dev:web && pnpm run -s _dev:vscode-test-web --browserType none",
     "watch:dev:web": "concurrently \"pnpm run -s watch:build:dev:web\" \"pnpm run -s _dev:vscode-test-web --browserType none\"",
@@ -22,13 +23,14 @@
     "build:dev:desktop": "concurrently \"pnpm run -s _build:esbuild:desktop\" \"pnpm run -s _build:webviews --mode development\"",
     "build:dev:web": "concurrently \"pnpm run -s _build:esbuild:web\" \"pnpm run -s _build:webviews --mode development\"",
     "watch:build:dev:web": "concurrently \"pnpm run -s _build:esbuild:web --watch\" \"pnpm run -s _build:webviews --mode development --watch\"",
-    "_build:esbuild:desktop": "esbuild ./src/extension.node.ts --bundle --outfile=dist/extension.node.js --external:vscode --format=cjs --platform=node --sourcemap",
+    "watch:build:dev:desktop": "concurrently \"pnpm run -s _build:esbuild:desktop --watch\" \"pnpm run -s _build:webviews --mode development --watch\"",
+    "_build:esbuild:desktop": "pnpm download-wasm && esbuild ./src/extension.node.ts --bundle --outfile=dist/extension.node.js --external:vscode --format=cjs --platform=node --sourcemap",
     "_build:esbuild:web": "esbuild ./src/extension.web.ts --platform=browser --bundle --outfile=dist/extension.web.js --alias:path=path-browserify --external:vscode --define:process='{\"env\":{}}' --define:window=self --format=cjs --sourcemap",
     "_build:webviews": "vite -c webviews/vite.config.ts build",
     "lint": "pnpm run lint:js",
     "lint:js": "eslint --cache '**/*.[tj]s?(x)'",
     "release": "ts-node ./scripts/release.ts",
-    "download-wasm": "ts-node ./scripts/download-wasm-modules.ts",
+    "download-wasm": "ts-node-transpile-only ./scripts/download-wasm-modules.ts",
     "release:dry-run": "pnpm run download-wasm && CODY_RELEASE_DRY_RUN=1 ts-node ./scripts/release.ts",
     "storybook": "storybook dev -p 6007 --no-open --no-version-updates --no-release-notes",
     "test:e2e": "tsc --build && { pnpm exec playwright install chromium & install_pw_pid=$!; node dist/tsc/test/e2e/install-deps.js & install_vscode_pid=$!; wait $install_pw_pid && wait $install_vscode_pid; } && pnpm run -s build:dev:desktop && playwright test",
@@ -856,9 +858,9 @@
           "enum": [
             "anthropic",
             "unstable-codegen",
-            "unstable-huggingface",
             "unstable-fireworks",
-            "unstable-azure-openai"
+            "unstable-azure-openai",
+            "unstable-openai"
           ],
           "markdownDescription": "The provider used for code autocomplete. Most providers other than `anthropic` require the `cody.autocomplete.advanced.serverEndpoint` and `cody.autocomplete.advanced.accessToken` settings to also be set. Check the Cody output channel for error messages if autocomplete is not working as expected."
         },
@@ -870,6 +872,20 @@
           "type": "string",
           "markdownDescription": "The access token used for code autocomplete. This is only supported with a provider other than `anthropic`."
         },
+        "cody.autocomplete.advanced.model": {
+          "type": "string",
+          "enum": [
+            "starcoder-16b",
+            "starcoder-7b",
+            "starcoder-3b",
+            "starcoder-1b",
+            "wizardcoder-15b",
+            "llama-code-7b",
+            "llama-code-13b",
+            "llama-code-13b-instruct"
+          ],
+          "markdownDescription": "Overwrite the default model used for code autocompletion inference. This is only supported with the `unstable-fireworks` provider"
+        },
         "cody.autocomplete.advanced.embeddings": {
           "order": 99,
           "type": "boolean",
@@ -880,6 +896,11 @@
           "type": "boolean",
           "default": false,
           "markdownDescription": "Autocomplete based on the currently selection in the suggest widget. Requires the VS Code user setting `editor.inlineSuggest.suppressSuggestions` set to true and will change it to true in user settings if it is not true."
+        },
+        "cody.autocomplete.experimental.syntacticPostProcessing": {
+          "type": "boolean",
+          "default": false,
+          "markdownDescription": "Rank autocomplete results with tree-sitter."
         },
         "cody.plugins.enabled": {
           "type": "boolean",
@@ -966,6 +987,9 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.4.2",
+    "@sentry/browser": "^7.66.0",
+    "@sentry/core": "^7.66.0",
+    "@sentry/node": "^7.66.0",
     "@sourcegraph/cody-shared": "workspace:*",
     "@sourcegraph/cody-ui": "workspace:*",
     "@types/stream-json": "^1.7.3",

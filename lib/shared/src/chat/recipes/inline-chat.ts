@@ -24,8 +24,8 @@ export class InlineChat implements Recipe {
         }
 
         // Check if this is a fixup request
-        if (commandRegex.fix.test(humanChatInput)) {
-            return new Fixup().getInteraction(humanChatInput.replace(commandRegex.fix, ''), context)
+        if (commandRegex.edit.test(humanChatInput)) {
+            return new Fixup().getInteraction(humanChatInput.replace(commandRegex.edit, ''), context)
         }
 
         const selection = context.editor.getActiveTextEditorSelection()

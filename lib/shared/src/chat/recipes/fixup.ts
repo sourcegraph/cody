@@ -13,19 +13,19 @@ import { Recipe, RecipeContext, RecipeID } from './recipe'
  * The intent classification.
  * This is either provided by the user, or inferred from their instructions
  */
-export type FixupIntent = 'add' | 'edit' | 'fix' | 'document'
+export type FixupIntent = 'add' | 'edit' | 'document'
 const FixupIntentClassification: IntentClassificationOption<FixupIntent>[] = [
     {
         id: 'edit',
         rawCommand: '/edit',
-        description: 'Edit part of the selected code',
-        examplePrompts: ['Edit this code', 'Change this code', 'Update this code'],
-    },
-    {
-        id: 'fix',
-        rawCommand: '/fix',
-        description: 'Fix a problem in a part of the selected code',
-        examplePrompts: ['Implement this TODO', 'Fix this code'],
+        description: 'Fix a problem or edit part of the selected code',
+        examplePrompts: [
+            'Edit this code',
+            'Change this code',
+            'Update this code',
+            'Implement this TODO',
+            'Fix this code',
+        ],
     },
     {
         id: 'document',
@@ -36,8 +36,7 @@ const FixupIntentClassification: IntentClassificationOption<FixupIntent>[] = [
 ]
 
 const PromptIntentInstruction: Record<Exclude<FixupIntent, 'add'>, string> = {
-    edit: 'The user wants you to replace parts of the selected code by following their instructions.',
-    fix: 'The user wants you to correct a problem in the selected code by following their instructions.',
+    edit: 'The user wants you to replace parts of the selected code or correct a problem by following their instructions.',
     document:
         'The user wants you to add documentation or comments to the selected code by following their instructions.',
 }
@@ -154,24 +153,13 @@ export class Fixup implements Recipe {
                             )
                         )
                     )
+
             /**
-             * Very broad set of possible instructions.
-             * Fetch context from the users' selection and use context from current file.
+             * Broad set of possible instructions.
+             * Fetch context from the users' selection, use any errors/warnings in said selection, and use context from current file.
              * Non-code files are not considered as including Markdown syntax seems to lead to more hallucinations and poorer output quality.
              */
             case 'edit':
-                return getContextMessagesFromSelection(
-                    task.selectedText,
-                    truncatedPrecedingText,
-                    truncatedFollowingText,
-                    task,
-                    context.codebaseContext
-                )
-            /**
-             * Similar to `edit` with a narrower set of instructions.
-             * Fetch context from the users' selection, use any errors/warnings in said selection, and use context from current file.
-             */
-            case 'fix':
                 const range = task.selectionRange
                 const diagnostics = range ? context.editor.getActiveTextEditorDiagnosticsForRange(range) || [] : []
                 const errorsAndWarnings = diagnostics.filter(({ type }) => type === 'error' || type === 'warning')

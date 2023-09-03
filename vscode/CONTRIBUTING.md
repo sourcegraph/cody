@@ -12,8 +12,8 @@ Tip: Enable `cody.debug.enable` and `cody.debug.verbose` in VS Code settings dur
 - `src`: source code of the components for the extension host
 - `webviews`: source code of the extension sidebar webviews, built with Vite
 - `test`: [tests](test/README.md)
-- `dist`: build outputs from both webpack and vite
-- `resources`: everything in this directory will be move to the ./dist directory automatically during build time for easy packaging
+- `dist`: build outputs from both esbuild and vite
+- `resources`: everything in this directory will be moved to the ./dist directory automatically during build time for easy packaging
 - `index.html`: the entry file that Vite looks for to build the webviews. The extension host reads this file at run time and replace the variables inside the file with webview specific uri and info
 
 ## Reporting autocomplete issues
@@ -107,3 +107,22 @@ connect them with special `load` wasm API.
 We don't keep these modules in .git tree, but instead we load them manually from our google cloud bucket.
 In order to do it you can run `./scripts/download-wasm-modules.ts` or just `pnpm download-wasm` before
 running you vscode locally.
+
+## Debugging with dedicated Node DevTools
+
+1. **Initialize the Build Watcher**: Run the following command from the monorepo root to start the build watcher:
+
+```sh
+pnpm --filter cody-ai run watch:build:dev:desktop
+```
+
+2. **Launch the VSCode Extension Host**: Next, start the VSCode extension host by executing the command below from the monorepo root:
+
+```sh
+pnpm --filter cody-ai run start:dev:desktop
+```
+
+3. **Access the Chrome Inspector**: Open up your Google Chrome browser and navigate to `chrome://inspect/#devices`.
+4. **Open Node DevTools**: Look for and click on the option that says "Open dedicated DevTools for Node".
+5. **Specify the Debugging Endpoint**: At this point, DevTools aren't initialized yet. Therefore, you need to specify [the debugging endpoint](https://nodejs.org/en/docs/inspector/) `localhost:9333` (the port depends on the `--inspect-extensions` CLI flag used in the `start:debug` npm script)
+6. **Start Debugging Like a PRO**: yay!

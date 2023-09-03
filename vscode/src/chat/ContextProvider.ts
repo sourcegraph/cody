@@ -7,6 +7,7 @@ import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/confi
 import { Editor } from '@sourcegraph/cody-shared/src/editor'
 import { SourcegraphEmbeddingsSearchClient } from '@sourcegraph/cody-shared/src/embeddings/client'
 import { IndexedKeywordContextFetcher } from '@sourcegraph/cody-shared/src/local-context'
+import { isLocalApp } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
 import { SourcegraphGraphQLAPIClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
 import { TelemetryService } from '@sourcegraph/cody-shared/src/telemetry'
 import { convertGitCloneURLToCodebaseName, isError } from '@sourcegraph/cody-shared/src/utils'
@@ -14,16 +15,14 @@ import { convertGitCloneURLToCodebaseName, isError } from '@sourcegraph/cody-sha
 import { getFullConfig } from '../configuration'
 import { VSCodeEditor } from '../editor/vscode-editor'
 import { PlatformContext } from '../extension.common'
-import { debug } from '../log'
+import { logDebug } from '../log'
 import { getRerankWithLog } from '../logged-rerank'
 import { repositoryRemoteUrl } from '../repository/repositoryHelpers'
 import { AuthProvider } from '../services/AuthProvider'
-import { LocalStorage } from '../services/LocalStorageProvider'
-import { SecretStorage } from '../services/SecretStorageProvider'
 
 import { ChatViewProviderWebview } from './ChatViewProvider'
 import { GraphContextProvider } from './GraphContextProvider'
-import { ConfigurationSubsetForWebview, isLocalApp, LocalEnv } from './protocol'
+import { ConfigurationSubsetForWebview, LocalEnv } from './protocol'
 
 export type Config = Pick<
     ConfigurationWithAccessToken,
@@ -67,8 +66,6 @@ export class ContextProvider implements vscode.Disposable {
         private chat: ChatClient,
         private codebaseContext: CodebaseContext,
         private editor: VSCodeEditor,
-        private secretStorage: SecretStorage,
-        private localStorage: LocalStorage,
         private rgPath: string | null,
         private symf: IndexedKeywordContextFetcher | undefined,
         private authProvider: AuthProvider,
@@ -98,7 +95,7 @@ export class ContextProvider implements vscode.Disposable {
     }
 
     public onConfigurationChange(newConfig: Config): void {
-        debug('ContextProvider:onConfigurationChange', '')
+        logDebug('ContextProvider:onConfigurationChange', '')
         this.config = newConfig
         const authStatus = this.authProvider.getAuthStatus()
         if (authStatus.endpoint) {
@@ -146,7 +143,7 @@ export class ContextProvider implements vscode.Disposable {
     public async syncAuthStatus(): Promise<void> {
         const authStatus = this.authProvider.getAuthStatus()
         // Update config to the latest one and fire configure change event to update external services
-        const newConfig = await getFullConfig(this.secretStorage, this.localStorage)
+        const newConfig = await getFullConfig()
         if (authStatus.siteVersion) {
             // Update codebase context
             const codebaseContext = await getCodebaseContext(
@@ -203,7 +200,7 @@ export class ContextProvider implements vscode.Disposable {
      */
     private async publishConfig(): Promise<void> {
         const send = async (): Promise<void> => {
-            this.config = await getFullConfig(this.secretStorage, this.localStorage)
+            this.config = await getFullConfig()
 
             // check if the new configuration change is valid or not
             const authStatus = this.authProvider.getAuthStatus()
@@ -219,7 +216,7 @@ export class ContextProvider implements vscode.Disposable {
             // update codebase context on configuration change
             await this.updateCodebaseContext()
             await this.webview?.postMessage({ type: 'config', config: configForWebview, authStatus })
-            debug('Cody:publishConfig', 'configForWebview', { verbose: configForWebview })
+            logDebug('Cody:publishConfig', 'configForWebview', { verbose: configForWebview })
         }
 
         await send()

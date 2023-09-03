@@ -1,7 +1,10 @@
 import { Transcript } from '@sourcegraph/cody-shared/src/chat/transcript'
 import { ANSWER_TOKENS } from '@sourcegraph/cody-shared/src/prompt/constants'
 import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
-import { SourcegraphCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/client'
+import {
+    bufferStream,
+    SourcegraphCompletionsClient,
+} from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/client'
 import { CompletionParameters } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
 
 import { debugLog } from '../log'
@@ -18,12 +21,11 @@ const DEFAULT_CHAT_COMPLETION_PARAMETERS: Omit<CompletionParameters, 'messages'>
     topP: -1,
 }
 
-export async function getCompletion(
-    client: Pick<SourcegraphCompletionsClient, 'complete'>,
+export function getCompletion(
+    client: Pick<SourcegraphCompletionsClient, 'stream'>,
     messages: Message[]
 ): Promise<string> {
-    const response = await client.complete({ messages, ...DEFAULT_CHAT_COMPLETION_PARAMETERS })
-    return response.completion
+    return bufferStream(client, { messages, ...DEFAULT_CHAT_COMPLETION_PARAMETERS })
 }
 
 export async function getCompletionWithContext(

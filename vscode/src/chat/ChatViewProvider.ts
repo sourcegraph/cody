@@ -4,7 +4,7 @@ import { CodyPrompt, CodyPromptType } from '@sourcegraph/cody-shared/src/chat/pr
 import { ChatMessage, UserLocalHistory } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 
 import { View } from '../../webviews/NavBar'
-import { debug } from '../log'
+import { logDebug } from '../log'
 
 import { MessageProvider, MessageProviderOptions } from './MessageProvider'
 import { ExtensionMessage, WebviewMessage } from './protocol'
@@ -34,7 +34,7 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
                 await this.authProvider.announceNewAuthStatus()
                 break
             case 'initialized':
-                debug('ChatViewProvider:onDidReceiveMessage:initialized', '')
+                logDebug('ChatViewProvider:onDidReceiveMessage:initialized', '')
                 await this.init()
                 break
             case 'submit':
@@ -127,7 +127,7 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
     }
 
     private async onHumanMessageSubmitted(text: string, submitType: 'user' | 'suggestion' | 'example'): Promise<void> {
-        debug('ChatViewProvider:onHumanMessageSubmitted', '', { verbose: { text, submitType } })
+        logDebug('ChatViewProvider:onHumanMessageSubmitted', '', { verbose: { text, submitType } })
         this.telemetryService.log('CodyVSCodeExtension:chat:submitted', { source: 'sidebar' })
         if (submitType === 'suggestion') {
             this.telemetryService.log('CodyVSCodeExtension:chatPredictions:used')
@@ -148,7 +148,7 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
      */
     private async onCustomPromptClicked(title: string, commandType: CodyPromptType = 'user'): Promise<void> {
         this.telemetryService.log('CodyVSCodeExtension:command:customMenu:clicked')
-        debug('ChatViewProvider:onCustomPromptClicked', title)
+        logDebug('ChatViewProvider:onCustomPromptClicked', title)
         if (!this.isCustomCommandAction(title)) {
             await this.setWebviewView('chat')
         }
