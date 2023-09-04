@@ -1,4 +1,4 @@
-import { mkdir, mkdtempSync, rmdirSync, writeFile } from 'fs'
+import { mkdir, mkdtempSync, rmSync, writeFile } from 'fs'
 import { tmpdir } from 'os'
 import * as path from 'path'
 
@@ -79,11 +79,11 @@ export const test = base
 
             // Delete the recorded video if the test passes
             if (testInfo.status === 'passed') {
-                rmdirSync(videoDirectory, { recursive: true })
+                rmSync(videoDirectory, { recursive: true })
             }
 
-            rmdirSync(userDataDirectory, { recursive: true })
-            rmdirSync(extensionsDirectory, { recursive: true })
+            rmSync(userDataDirectory, { recursive: true })
+            rmSync(extensionsDirectory, { recursive: true })
         },
     })
     .extend<{ sidebar: Frame }>({
