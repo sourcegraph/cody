@@ -90,7 +90,7 @@ jobs:
         if: ${{ failure() }}
         with:
           name: playwright-recordings
-          path: playwright/
+          path: playwright/**/*.webm
 
   build:
     runs-on: ubuntu-latest
