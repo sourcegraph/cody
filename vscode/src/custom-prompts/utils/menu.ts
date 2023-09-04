@@ -19,10 +19,7 @@ export const EDIT_COMMAND = {
     description: 'Edit code',
     slashCommand: '/edit'
 }
-export const instructionLabels: Record<string, string> = {
-    [ASK_QUESTION_COMMAND.slashCommand]: '[question]',
-    [EDIT_COMMAND.slashCommand]: '[instruction]',
-}
+
 const inlineSeparator: QuickPickItem = { kind: -1, label: 'inline' }
 const chatOption: QuickPickItemWithSlashCommand = { label: ASK_QUESTION_COMMAND.slashCommand, description: ASK_QUESTION_COMMAND.description, slashCommand: ASK_QUESTION_COMMAND.slashCommand }
 const fixOption: QuickPickItemWithSlashCommand = {

@@ -4,7 +4,7 @@ import { commands, QuickPickItem, QuickPickOptions, window } from 'vscode'
 import { CodyPrompt } from '@sourcegraph/cody-shared'
 
 import { CustomCommandsItem } from '../utils'
-import { CustomCommandConfigMenuItems, instructionLabels, menu_buttons, menu_options, QuickPickItemWithSlashCommand } from '../utils/menu'
+import { ASK_QUESTION_COMMAND, CustomCommandConfigMenuItems, EDIT_COMMAND, menu_buttons, menu_options, QuickPickItemWithSlashCommand } from '../utils/menu'
 
 import { CodyCommand, CustomCommandsBuilderMenu } from './CustomCommandBuilderMenu'
 
@@ -16,6 +16,11 @@ interface CommandMenuResponse {
 const slashCommandRegex = /^\/[A-Za-z]+/
 function isSlashCommand(value: string): boolean {
     return slashCommandRegex.test(value)
+}
+
+const labelReplacements: Record<string, (label: string) => string> = {
+    [ASK_QUESTION_COMMAND.slashCommand]: label => `${label} [question]`,
+    [EDIT_COMMAND.slashCommand]: label => `${label} [instruction]`,
 }
 
 function normalize(input: string): string {
@@ -31,9 +36,9 @@ export async function showCommandMenu(
     }
 
     const defaultItems: (QuickPickItem | QuickPickItemWithSlashCommand)[] = items.map(item => {
-        const instruction =  'slashCommand' in item ? instructionLabels[item.slashCommand] : undefined
-        if (instruction) {
-            return { ...item, label: `${item.label} ${instruction}` }
+        const replaceFn = 'slashCommand' in item ? labelReplacements[item.slashCommand] : undefined
+        if (replaceFn) {
+            return { ...item, label: replaceFn(item.label) }
         }
         return item
     })
