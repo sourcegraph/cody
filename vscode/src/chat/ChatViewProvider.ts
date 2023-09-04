@@ -5,6 +5,7 @@ import { ChatMessage, UserLocalHistory } from '@sourcegraph/cody-shared/src/chat
 
 import { View } from '../../webviews/NavBar'
 import { logDebug } from '../log'
+import { localStorage } from '../services/LocalStorageProvider'
 
 import { MessageProvider, MessageProviderOptions } from './MessageProvider'
 import { ExtensionMessage, WebviewMessage } from './protocol'
@@ -118,7 +119,7 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
                 )
                 break
             case 'setEnabledPlugins':
-                await this.localStorage.setEnabledPlugins(message.plugins)
+                await localStorage.setEnabledPlugins(message.plugins)
                 this.handleEnabledPlugins(message.plugins)
                 break
             default:

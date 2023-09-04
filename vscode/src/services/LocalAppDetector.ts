@@ -9,7 +9,7 @@ import { constructFileUri } from '../custom-prompts/utils/helpers'
 import { logDebug, logError } from '../log'
 
 import { AppJson, LOCAL_APP_LOCATIONS } from './LocalAppFsPaths'
-import { SecretStorage } from './SecretStorageProvider'
+import { secretStorage } from './SecretStorageProvider'
 
 type OnChangeCallback = (type: string) => Promise<void>
 /**
@@ -28,10 +28,7 @@ export class LocalAppDetector implements vscode.Disposable {
     private _watchers: vscode.Disposable[] = []
     private onChange: OnChangeCallback
 
-    constructor(
-        private secretStorage: SecretStorage,
-        options: { onChange: OnChangeCallback }
-    ) {
+    constructor(options: { onChange: OnChangeCallback }) {
         this.onChange = options.onChange
         this.localEnv = { ...envInit }
         this.localAppMarkers = LOCAL_APP_LOCATIONS[this.localEnv.os]
@@ -107,7 +104,7 @@ export class LocalAppDetector implements vscode.Disposable {
             this.localEnv.hasAppJson = true
             this.tokenFsPath = null
             await this.found('token')
-            await this.secretStorage.storeToken(LOCAL_APP_URL.href, token)
+            await secretStorage.storeToken(LOCAL_APP_URL.href, token)
             await this.fetchServer()
         }
     }

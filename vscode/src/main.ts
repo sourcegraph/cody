@@ -73,7 +73,7 @@ const register = async (
     const isExtensionModeDevOrTest =
         context.extensionMode === vscode.ExtensionMode.Development ||
         context.extensionMode === vscode.ExtensionMode.Test
-    await createOrUpdateEventLogger(initialConfig, localStorage, isExtensionModeDevOrTest)
+    await createOrUpdateEventLogger(initialConfig, isExtensionModeDevOrTest)
     const telemetryService = createVSCodeTelemetryService()
 
     // Controller for inline Chat
@@ -88,7 +88,7 @@ const register = async (
     const editor = new VSCodeEditor({
         inline: commentController,
         fixups: fixup,
-        command: platform.createCommandsController?.(context, localStorage, telemetryService),
+        command: platform.createCommandsController?.(context, telemetryService),
     })
 
     // Could we use the `initialConfig` instead?
@@ -137,7 +137,6 @@ const register = async (
         intentDetector,
         guardrails,
         editor,
-        localStorage,
         authProvider,
         contextProvider,
         telemetryService,
@@ -161,7 +160,7 @@ const register = async (
         contextProvider.configurationChangeEvent.event(async () => {
             const newConfig = await getFullConfig()
             externalServicesOnDidConfigurationChange(newConfig)
-            await createOrUpdateEventLogger(newConfig, localStorage, isExtensionModeDevOrTest)
+            await createOrUpdateEventLogger(newConfig, isExtensionModeDevOrTest)
         })
     )
 
@@ -447,13 +446,13 @@ const register = async (
         await vscode.commands.executeCommand('setContext', 'cody.nonstop.fixups.enabled', true)
     }
 
-    await showSetupNotification(initialConfig, localStorage)
+    await showSetupNotification(initialConfig)
     return {
         disposable: vscode.Disposable.from(...disposables),
         onConfigurationChange: newConfig => {
             contextProvider.onConfigurationChange(newConfig)
             externalServicesOnDidConfigurationChange(newConfig)
-            void createOrUpdateEventLogger(newConfig, localStorage, isExtensionModeDevOrTest)
+            void createOrUpdateEventLogger(newConfig, isExtensionModeDevOrTest)
         },
     }
 }
