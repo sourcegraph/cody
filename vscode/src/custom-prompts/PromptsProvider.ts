@@ -1,12 +1,21 @@
 import { CodyPrompt, getDefaultCommandsMap } from '@sourcegraph/cody-shared/src/chat/prompts'
 
 import { logDebug } from '../log'
+
 import { ASK_QUESTION_COMMAND, EDIT_COMMAND } from './utils/menu'
 
 // Manage default commands created by the prompts in prompts.json
 const editorCommands: CodyPrompt[] = [
-    { description: ASK_QUESTION_COMMAND.description, prompt: ASK_QUESTION_COMMAND.slashCommand, slashCommand: ASK_QUESTION_COMMAND.slashCommand },
-    { description: EDIT_COMMAND.description, prompt: EDIT_COMMAND.slashCommand, slashCommand: EDIT_COMMAND.slashCommand },
+    {
+        description: ASK_QUESTION_COMMAND.description,
+        prompt: ASK_QUESTION_COMMAND.slashCommand,
+        slashCommand: ASK_QUESTION_COMMAND.slashCommand,
+    },
+    {
+        description: EDIT_COMMAND.description,
+        prompt: EDIT_COMMAND.slashCommand,
+        slashCommand: EDIT_COMMAND.slashCommand,
+    },
 ]
 
 export class PromptsProvider {

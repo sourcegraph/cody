@@ -1,4 +1,4 @@
-import { QuickInputButtons, QuickPickItem, ThemeIcon, commands, window } from 'vscode'
+import { commands, QuickInputButtons, QuickPickItem, ThemeIcon, window } from 'vscode'
 
 import { CodyPrompt } from '@sourcegraph/cody-shared'
 import { CodyPromptType } from '@sourcegraph/cody-shared/src/chat/prompts'
@@ -13,15 +13,19 @@ export type QuickPickItemWithSlashCommand = QuickPickItem & { slashCommand: stri
 
 export const ASK_QUESTION_COMMAND = {
     description: 'Ask a question',
-    slashCommand: '/ask'
+    slashCommand: '/ask',
 }
 export const EDIT_COMMAND = {
     description: 'Edit code',
-    slashCommand: '/edit'
+    slashCommand: '/edit',
 }
 
 const inlineSeparator: QuickPickItem = { kind: -1, label: 'inline' }
-const chatOption: QuickPickItemWithSlashCommand = { label: ASK_QUESTION_COMMAND.slashCommand, description: ASK_QUESTION_COMMAND.description, slashCommand: ASK_QUESTION_COMMAND.slashCommand }
+const chatOption: QuickPickItemWithSlashCommand = {
+    label: ASK_QUESTION_COMMAND.slashCommand,
+    description: ASK_QUESTION_COMMAND.description,
+    slashCommand: ASK_QUESTION_COMMAND.slashCommand,
+}
 const fixOption: QuickPickItemWithSlashCommand = {
     label: EDIT_COMMAND.slashCommand,
     description: EDIT_COMMAND.description,

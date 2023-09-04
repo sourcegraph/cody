@@ -266,7 +266,7 @@ function groupPrompts(
 
 const instructionLabels: Record<string, string> = {
     '/ask': '[question]',
-    '/edit': '[instruction]'
+    '/edit': '[instruction]',
 }
 
 /**

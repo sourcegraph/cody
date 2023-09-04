@@ -20,6 +20,7 @@ import { ANSWER_TOKENS, DEFAULT_MAX_TOKENS } from '@sourcegraph/cody-shared/src/
 import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
 import { TelemetryService } from '@sourcegraph/cody-shared/src/telemetry'
 
+import { showAskQuestionQuickPick } from '../custom-prompts/utils/menu'
 import { VSCodeEditor } from '../editor/vscode-editor'
 import { PlatformContext } from '../extension.common'
 import { logDebug, logError } from '../log'
@@ -30,7 +31,6 @@ import { TestSupport } from '../test-support'
 
 import { ContextProvider } from './ContextProvider'
 import { countGeneratedCode } from './utils'
-import { showAskQuestionQuickPick } from '../custom-prompts/utils/menu'
 
 /**
  * The problem with a token limit for the prompt is that we can only

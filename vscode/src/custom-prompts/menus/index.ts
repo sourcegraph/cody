@@ -4,7 +4,14 @@ import { commands, QuickPickItem, QuickPickOptions, window } from 'vscode'
 import { CodyPrompt } from '@sourcegraph/cody-shared'
 
 import { CustomCommandsItem } from '../utils'
-import { ASK_QUESTION_COMMAND, CustomCommandConfigMenuItems, EDIT_COMMAND, menu_buttons, menu_options, QuickPickItemWithSlashCommand } from '../utils/menu'
+import {
+    ASK_QUESTION_COMMAND,
+    CustomCommandConfigMenuItems,
+    EDIT_COMMAND,
+    menu_buttons,
+    menu_options,
+    QuickPickItemWithSlashCommand,
+} from '../utils/menu'
 
 import { CodyCommand, CustomCommandsBuilderMenu } from './CustomCommandBuilderMenu'
 
