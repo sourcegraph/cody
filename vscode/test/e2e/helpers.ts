@@ -1,4 +1,4 @@
-import { mkdir, mkdtempSync, readdirSync, rmSync, writeFile } from 'fs'
+import { mkdir, mkdtempSync, rmSync, writeFile } from 'fs'
 import { tmpdir } from 'os'
 import * as path from 'path'
 
@@ -14,17 +14,16 @@ export const test = base
         page: async ({ page: _page }, use, testInfo) => {
             void _page
 
-            const codyRoot = path.resolve(__dirname, '..', '..')
+            const vscodeRoot = path.resolve(__dirname, '..', '..')
 
             const vscodeExecutablePath = await installDeps()
-            const extensionDevelopmentPath = codyRoot
+            const extensionDevelopmentPath = vscodeRoot
 
             const userDataDirectory = mkdtempSync(path.join(tmpdir(), 'cody-vsce'))
             const extensionsDirectory = mkdtempSync(path.join(tmpdir(), 'cody-vsce'))
-            const videoDirectory = path.join(codyRoot, '..', '..', 'playwright', escapeToPath(testInfo.title))
-            console.log({ videoDirectory })
+            const videoDirectory = path.join(vscodeRoot, '..', 'playwright', escapeToPath(testInfo.title))
 
-            const workspaceDirectory = path.join(codyRoot, 'test', 'fixtures', 'workspace')
+            const workspaceDirectory = path.join(vscodeRoot, 'test', 'fixtures', 'workspace')
 
             await buildWorkSpaceSettings(workspaceDirectory)
 
@@ -77,12 +76,9 @@ export const test = base
 
             await app.close()
 
-            console.log({ status: testInfo.status })
             // Delete the recorded video if the test passes
             if (testInfo.status === 'passed') {
                 rmSync(videoDirectory, { recursive: true })
-            } else {
-                console.log(readdirSync(videoDirectory))
             }
 
             rmSync(userDataDirectory, { recursive: true })
