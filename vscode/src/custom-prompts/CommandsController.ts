@@ -229,7 +229,6 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
             // Show the list of prompts to the user using a quick pick menu
             const { selectedItem: selectedPrompt, input: userPrompt } = await showCommandMenu([
                 menu_separators.commands,
-                menu_options.chat,
                 ...commands,
                 menu_separators.settings,
                 menu_options.config,

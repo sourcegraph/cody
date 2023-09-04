@@ -20,6 +20,7 @@ import { ANSWER_TOKENS, DEFAULT_MAX_TOKENS } from '@sourcegraph/cody-shared/src/
 import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
 import { TelemetryService } from '@sourcegraph/cody-shared/src/telemetry'
 
+import { showAskQuestionQuickPick } from '../custom-prompts/utils/menu'
 import { VSCodeEditor } from '../editor/vscode-editor'
 import { PlatformContext } from '../extension.common'
 import { logDebug, logError } from '../log'
@@ -589,6 +590,14 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
                 return { text, recipeId: 'local-indexed-keyword-search' }
             case /^\/s(earch)?\s/.test(text):
                 return { text, recipeId: 'context-search' }
+            case /^\/ask(\s)?/.test(text): {
+                let question = text.replace('/ask', '').trim()
+                if (!question) {
+                    question = await showAskQuestionQuickPick()
+                }
+                await vscode.commands.executeCommand('cody.action.chat', question)
+                return null
+            }
             case /^\/edit(\s)?/.test(text):
                 await vscode.commands.executeCommand('cody.fixup.new', { instruction: text })
                 return null
