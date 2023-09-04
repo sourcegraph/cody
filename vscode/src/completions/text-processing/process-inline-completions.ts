@@ -54,7 +54,7 @@ export function processItem(
     }
 
     completion = adjustRangeToOverwriteOverlappingCharacters(completion, { position, currentLineSuffix })
-    let parsed = parseCompletion({ completion, document, position, docContext })
+    const parsed = parseCompletion({ completion, document, position, docContext })
 
     if (multiline) {
         parsed.insertText = truncateMultilineCompletion(parsed.insertText, prefix, suffix, document.languageId)
