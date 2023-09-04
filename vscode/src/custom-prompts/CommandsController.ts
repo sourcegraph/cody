@@ -10,7 +10,7 @@ import { VsCodeCommandsController } from '@sourcegraph/cody-shared/src/editor'
 import { TelemetryService } from '@sourcegraph/cody-shared/src/telemetry'
 
 import { logDebug, logError } from '../log'
-import { LocalStorage } from '../services/LocalStorageProvider'
+import { localStorage } from '../services/LocalStorageProvider'
 
 import { CustomPromptsStore } from './CustomPromptsStore'
 import { showCommandConfigMenu, showCommandMenu, showCustomCommandMenu, showNewCustomCommandMenu } from './menus'
@@ -49,7 +49,6 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
 
     constructor(
         context: vscode.ExtensionContext,
-        private localStorage: LocalStorage,
         private telemetryService: TelemetryService
     ) {
         this.tools = new ToolsProvider(context)
@@ -58,7 +57,7 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
         this.custom = new CustomPromptsStore(this.isEnabled, context.extensionPath, user?.workspaceRoot, user.homeDir)
         this.disposables.push(this.custom)
 
-        this.lastUsedCommands = new Set(this.localStorage.getLastUsedCommands())
+        this.lastUsedCommands = new Set(localStorage.getLastUsedCommands())
         this.custom.activate()
         this.fileWatcherInit()
     }
@@ -95,7 +94,7 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
                 // return the terminal output from the command for the prompt if any
                 return this.execCommand()
             case 'current':
-                return this.myPromptInProgress?.name || null
+                return this.myPromptInProgress?.description || null
             default:
                 return this.myPromptInProgress?.prompt || null
         }
@@ -110,8 +109,8 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
      *
      * @returns The prompt text for the command if found, empty string otherwise
      */
-    public find(id: string, isSlash = false): string {
-        const myPrompt = this.default.get(id, isSlash)
+    public find(id: string): string {
+        const myPrompt = this.default.get(id)
 
         logDebug('CommandsController:command:finding', id, { verbose: myPrompt })
 
@@ -217,10 +216,10 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
 
                 if (command.slashCommand) {
                     label = command.slashCommand
-                    description = command.name || name
+                    description = command.description || name
                     slashCommand = command.slashCommand
                 } else {
-                    label = command.name || name
+                    label = command.description || name
                     description = command.type === 'default' ? '' : command.type
                 }
 
@@ -297,7 +296,7 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
                 .map(commandItem => {
                     const command = commandItem[1]
                     const description = command.type
-                    return createQuickPickItem(command.name || commandItem[0], description)
+                    return createQuickPickItem(command.description || commandItem[0], description)
                 })
 
             const configOption = menu_options.config
@@ -411,7 +410,7 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
             return
         }
         // Save the prompt to the current Map and Extension storage
-        await this.custom.save(newCommand.title, newCommand.prompt)
+        await this.custom.save(newCommand.slashCommand, newCommand.prompt)
         await this.refresh()
 
         logDebug('CommandsController:updateUserCommandQuick:newPrompt:', 'saved', { verbose: newCommand })
@@ -449,7 +448,7 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
         // store the last 3 used commands
         const commands = [...this.lastUsedCommands].filter(command => command !== 'separator').slice(0, 3)
         if (commands.length > 0) {
-            await this.localStorage.setLastUsedCommands(commands)
+            await localStorage.setLastUsedCommands(commands)
         }
 
         this.lastUsedCommands = new Set(commands)

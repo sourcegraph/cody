@@ -9,7 +9,7 @@ import { DOTCOM_URL } from '@sourcegraph/cody-shared/src/sourcegraph-api/environ
 
 import { CONFIG_KEY, ConfigKeys } from './configuration-keys'
 import { localStorage } from './services/LocalStorageProvider'
-import { getAccessToken, secretStorage } from './services/SecretStorageProvider'
+import { getAccessToken } from './services/SecretStorageProvider'
 
 interface ConfigGetter {
     get<T>(section: (typeof CONFIG_KEY)[ConfigKeys], defaultValue?: T): T
@@ -113,6 +113,6 @@ export const getFullConfig = async (): Promise<ConfigurationWithAccessToken> => 
     const config = getConfiguration()
     // Migrate endpoints to local storage
     config.serverEndpoint = localStorage?.getEndpoint() || config.serverEndpoint
-    const accessToken = (await getAccessToken(secretStorage)) || null
+    const accessToken = (await getAccessToken()) || null
     return { ...config, accessToken }
 }

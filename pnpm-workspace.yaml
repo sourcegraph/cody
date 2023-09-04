@@ -8,3 +8,4 @@ packages:
   - vscode
   - web
   - completions-review-tool
+  - snippet-extractor
