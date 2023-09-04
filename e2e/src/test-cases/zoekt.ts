@@ -1,4 +1,4 @@
-import { addTestCase } from '.'
+import { addTestCase, literalFacts } from '.'
 
 addTestCase('Skip files during indexing', {
     codebase: 'github.com/sourcegraph/zoekt',
@@ -6,9 +6,10 @@ addTestCase('Skip files during indexing', {
     transcript: [
         {
             question: 'Where do we decide which files to skip during indexing',
-            facts: ['checkText', 'indexbuilder.go', 'builder.go'],
+            facts: literalFacts('checkText', 'builder.go', 'SizeMax'),
             answerSummary:
-                'We decide using the `checkText` function defined in `indexbuilder.go`. We use it in the `builder.go` file to check if the files we are indexing are valid source texts.',
+                'One of the places where we check for valid files is the `Add` method of the `Builder` struct in the `builder.go` file. ' +
+                'Binary files are found using the `CheckText` function and skipped. Files larger than `SizeMax` are skipped.',
         },
     ],
 })

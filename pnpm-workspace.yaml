@@ -1,4 +1,5 @@
 packages:
+  - e2e-inspector
   - e2e
   - agent
   - cli

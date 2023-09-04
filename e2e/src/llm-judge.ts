@@ -39,7 +39,6 @@ export async function llmJudge(
         'I am going to provide a conversation transcript, the latest question, the summary of the correct answer, and the candidate answer. ',
         'Your job is to judge the candidate answer to the latest question. ',
         'The candidate answer should contain the core idea of the summary. ',
-        'Allow irrelevant details in the candidate answer that do not impact the core idea of the summary.\n\n',
         transcript.length === 0 ? 'Conversation transcript is empty.\n\n' : serializeConversationTranscript(transcript),
         `Question:\n${wrapInMarkdownBlock(question)}`,
         `Correct answer summary:\n${wrapInMarkdownBlock(answerSummary)}`,
@@ -64,7 +63,7 @@ async function anthropicJudge(instructions: string): Promise<LLMJudgement> {
         prompt: `${Anthropic.HUMAN_PROMPT}${instructions}${Anthropic.AI_PROMPT}Thought:`,
     })
     return {
-        answerMatchesSummary: doesAnswerMatchSummary(completion.completion),
+        answerMatchesSummary: parseJudgementResponse(completion.completion),
         answerMatchesSummaryJudgement: completion.completion,
     }
 }
@@ -114,12 +113,20 @@ async function azureJudge(instructions: string): Promise<LLMJudgement> {
     const [response] = result.choices
 
     return {
-        answerMatchesSummary: doesAnswerMatchSummary(response.text),
+        answerMatchesSummary: parseJudgementResponse(response.text),
         answerMatchesSummaryJudgement: response.text,
     }
 }
 
-function doesAnswerMatchSummary(response: string): LLMJudgement['answerMatchesSummary'] {
+const CONCLUSION_REGEXP = /conclusion:\s+(yes|no|partial)/i
+
+function parseJudgementResponse(response: string): LLMJudgement['answerMatchesSummary'] {
+    const conclusion = CONCLUSION_REGEXP.exec(response)
+    if (conclusion) {
+        return conclusion[1].toLowerCase() as LLMJudgement['answerMatchesSummary']
+    }
+
+    // Fallback to searching for conclusion anywhere in response.
     if (response.includes('YES')) {
         return 'yes'
     }

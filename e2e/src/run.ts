@@ -54,10 +54,17 @@ async function runTestCase(testCase: TestCase, provider: CLIOptions['provider'])
             }, 250)
         })
 
-        const answer = transcript?.getLastInteraction()?.getAssistantMessage()?.text
-        if (!answer) {
+        const lastInteraction = transcript?.getLastInteraction()
+        if (!lastInteraction) {
+            return new Error('No last interaction found')
+        }
+
+        const answer = lastInteraction.getAssistantMessage().text ?? ''
+        if (!lastInteraction) {
             return new Error(`No answer provided for question: ${interaction.question}`)
         }
+
+        const contextMessages = await lastInteraction.getFullContext()
 
         const llmJudgement = await llmJudge(
             provider,
@@ -70,7 +77,13 @@ async function runTestCase(testCase: TestCase, provider: CLIOptions['provider'])
         )
         const factCheckResult = await factCheck(testCase.codebase, interaction.facts, answer)
 
-        testTranscript.push({ ...interaction, answer, ...llmJudgement, ...factCheckResult })
+        testTranscript.push({
+            ...interaction,
+            ...llmJudgement,
+            ...factCheckResult,
+            answer,
+            contextMessages,
+        })
     }
     return { ...testCase, transcript: testTranscript }
 }

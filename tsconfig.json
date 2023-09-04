@@ -13,6 +13,7 @@
   ],
   "exclude": ["dist", "node_modules"],
   "references": [
+    { "path": "e2e-inspector" },
     { "path": "e2e" },
     { "path": "agent" },
     { "path": "completions-review-tool" },
