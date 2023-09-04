@@ -87,6 +87,7 @@ jobs:
       - run: pnpm -C vscode run test:e2e
         if: matrix.runner == 'windows-latest' || matrix.runner == 'macos-latest'
       - uses: actions/upload-artifact@v3
+        if: ${{ failure() }}
         with:
           name: playwright-recordings
           path: playwright/
