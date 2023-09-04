@@ -1,11 +1,14 @@
 import chalk from 'chalk'
 
+import { ContextMessage } from '@sourcegraph/cody-shared/src/codebase-context/messages'
+
 import { FactCheck } from './fact-check'
 import { LLMJudgement } from './llm-judge'
 import { InteractionTestCase, TestCase } from './test-cases'
 
 export interface InteractionTestCaseResult extends InteractionTestCase, FactCheck, LLMJudgement {
     answer: string
+    contextMessages: ContextMessage[]
 }
 
 export interface TestResult extends Omit<TestCase, 'transcript'> {
@@ -60,26 +63,19 @@ function logResult(label: string, partial: number, total: number, opts: ColorOpt
 }
 
 export function logAggregateResults(aggregateResults: AggregateTestResults): void {
-    logResult('Incorrect answers (LLM judge)', aggregateResults.incorrectAnswers, aggregateResults.numInteractions, {
-        goodRatioThreshold: 0.1,
-        okRatioThreshold: 0.4,
-    })
     logResult(
         'Incorrect or partial answers (LLM judge)',
         aggregateResults.incorrectAnswers + aggregateResults.partialAnswers,
         aggregateResults.numInteractions,
-        {
-            goodRatioThreshold: 0.1,
-            okRatioThreshold: 0.4,
-        }
+        { goodRatioThreshold: 0.05, okRatioThreshold: 0.2 }
     )
     logResult('Missing facts', aggregateResults.missingFacts, aggregateResults.facts, {
-        goodRatioThreshold: 0.1,
-        okRatioThreshold: 0.4,
+        goodRatioThreshold: 0.05,
+        okRatioThreshold: 0.2,
     })
     logResult('Hallucinated entities', aggregateResults.hallucinatedEntities, aggregateResults.detectedEntities, {
-        goodRatioThreshold: 0.1,
-        okRatioThreshold: 0.4,
+        goodRatioThreshold: 0.05,
+        okRatioThreshold: 0.2,
     })
 }
 

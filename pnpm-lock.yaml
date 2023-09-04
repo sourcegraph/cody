@@ -241,6 +241,18 @@ importers:
         specifier: ^3.3.2
         version: 3.3.2
 
+  e2e-inspector:
+    dependencies:
+      '@sourcegraph/cody-e2e':
+        specifier: workspace:*
+        version: link:../e2e
+      '@sourcegraph/cody-shared':
+        specifier: workspace:*
+        version: link:../lib/shared
+      classnames:
+        specifier: ^2.3.2
+        version: 2.3.2
+
   lib/icons:
     dependencies:
       svgtofont:
