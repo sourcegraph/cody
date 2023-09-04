@@ -19,6 +19,10 @@ export interface ParsedCompletion extends InlineCompletionItem {
     endPosition?: Parser.Point
 }
 
+/**
+ * Parses an inline code completion item using Tree-sitter and determines if the completion
+ * would introduce any syntactic errors.
+ */
 export function parseCompletion(context: CompletionContext): ParsedCompletion {
     const { completion, document, position, docContext } = context
     const parseTreeCache = getCachedParseTreeForDocument(document)
@@ -87,7 +91,6 @@ function pasteCompletion(params: PasteCompletionParams): Tree {
         : docContext.suffix
 
     const textWithCompletion = prefix + insertText + suffix
-    console.log(textWithCompletion)
 
     const treeCopy = tree.copy()
     const completionEndPosition = position.translate(undefined, insertText.length)
