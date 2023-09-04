@@ -82,7 +82,6 @@ jobs:
           key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
           restore-keys: ${{ runner.os }}-pnpm-store-
       - run: pnpm install
-      - run: pwd
       - run: xvfb-run -a pnpm -C vscode run test:e2e
         if: matrix.runner == 'ubuntu-latest'
       - run: pnpm -C vscode run test:e2e

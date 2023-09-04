@@ -49,7 +49,6 @@ test('checks if clear chat history button clears history and current session', a
     await page.keyboard.press('Enter')
 
     // Check if the old message "Hey" is cleared
-    await expect(sidebar.getByText('Hey')).toBeVisible()
     await expect(sidebar.getByText('Hey')).not.toBeVisible()
     await expect(sidebar.getByText('/explain')).toBeVisible()
 })
