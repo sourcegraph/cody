@@ -1,4 +1,4 @@
-import { mkdir, mkdtempSync, rmSync, writeFile } from 'fs'
+import { mkdir, mkdtempSync, readdirSync, rmSync, writeFile } from 'fs'
 import { tmpdir } from 'os'
 import * as path from 'path'
 
@@ -22,6 +22,7 @@ export const test = base
             const userDataDirectory = mkdtempSync(path.join(tmpdir(), 'cody-vsce'))
             const extensionsDirectory = mkdtempSync(path.join(tmpdir(), 'cody-vsce'))
             const videoDirectory = path.join(codyRoot, '..', '..', 'playwright', escapeToPath(testInfo.title))
+            console.log({ videoDirectory })
 
             const workspaceDirectory = path.join(codyRoot, 'test', 'fixtures', 'workspace')
 
@@ -47,7 +48,6 @@ export const test = base
                     `--extensions-dir=${extensionsDirectory}`,
                     workspaceDirectory,
                 ],
-                // Record a video that can be picked up by Buildkite. Since there is no way right
                 recordVideo: {
                     dir: videoDirectory,
                 },
@@ -80,6 +80,8 @@ export const test = base
             // Delete the recorded video if the test passes
             if (testInfo.status === 'passed') {
                 rmSync(videoDirectory, { recursive: true })
+            } else {
+                console.log(readdirSync(videoDirectory))
             }
 
             rmSync(userDataDirectory, { recursive: true })
