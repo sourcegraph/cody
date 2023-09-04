@@ -15,8 +15,8 @@ export interface CompletionContext {
 export interface ParsedCompletion extends InlineCompletionItem {
     tree?: Tree
     hasParseErrors?: boolean
-    queryStartPosition?: Parser.Point
-    queryEndPosition?: Parser.Point
+    startPosition?: Parser.Point
+    endPosition?: Parser.Point
 }
 
 export function parseCompletion(context: CompletionContext): ParsedCompletion {
@@ -39,23 +39,23 @@ export function parseCompletion(context: CompletionContext): ParsedCompletion {
     })
 
     const completionEndPosition = position.translate(0, completion.insertText.length)
-    const queryStartPosition: Parser.Point = {
+    const startPosition: Parser.Point = {
         row: position.line,
         column: position.character,
     }
-    const queryEndPosition: Parser.Point = {
+    const endPosition: Parser.Point = {
         row: completionEndPosition.line,
         column: completionEndPosition.character,
     }
 
     // Search for ERROR nodes in the completion range.
     const query = parser.getLanguage().query('(ERROR) @error')
-    const matches = query.matches(treeWithCompletion.rootNode, queryStartPosition, queryEndPosition)
+    const matches = query.matches(treeWithCompletion.rootNode, startPosition, endPosition)
 
     return {
         ...completion,
-        queryStartPosition,
-        queryEndPosition,
+        startPosition,
+        endPosition,
         tree: treeWithCompletion,
         hasParseErrors: matches.length > 0,
     }
