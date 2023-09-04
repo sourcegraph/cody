@@ -20,6 +20,7 @@ import { Plugins } from './Plugins'
 import { UserHistory } from './UserHistory'
 import { createWebviewTelemetryService } from './utils/telemetry'
 import type { VSCodeWrapper } from './utils/VSCodeApi'
+import { instructionLabels } from '../src/custom-prompts/utils/menu'
 
 export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vscodeAPI }) => {
     const [config, setConfig] = useState<
@@ -268,6 +269,6 @@ function groupPrompts(
  * Adds `instruction` field to a prompt if it requires additional instruction.
  */
 function addInstructions<T extends CodyPrompt>([key, command]: [string, T]): [string, T & { instruction?: string }] {
-    const instruction = command.slashCommand === '/edit' ? '[instruction]' : undefined
+    const instruction = instructionLabels[command.slashCommand]
     return [key, { ...command, instruction }]
 }

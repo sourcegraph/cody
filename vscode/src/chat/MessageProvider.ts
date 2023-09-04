@@ -30,6 +30,7 @@ import { TestSupport } from '../test-support'
 
 import { ContextProvider } from './ContextProvider'
 import { countGeneratedCode } from './utils'
+import { showAskQuestionQuickPick } from '../custom-prompts/utils/menu'
 
 /**
  * The problem with a token limit for the prompt is that we can only
@@ -592,6 +593,14 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
                 return { text, recipeId: 'local-indexed-keyword-search' }
             case /^\/s(earch)?\s/.test(text):
                 return { text, recipeId: 'context-search' }
+            case /^\/ask(\s)?/.test(text): {
+                let question = text.replace('/ask', '').trim()
+                if (!question) {
+                    question = await showAskQuestionQuickPick()
+                }
+                await vscode.commands.executeCommand('cody.action.chat', question)
+                return null
+            }
             case /^\/edit(\s)?/.test(text):
                 await vscode.commands.executeCommand('cody.fixup.new', { instruction: text })
                 return null
