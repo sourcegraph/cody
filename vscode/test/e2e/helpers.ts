@@ -77,6 +77,7 @@ export const test = base
 
             await app.close()
 
+            console.log({ status: testInfo.status })
             // Delete the recorded video if the test passes
             if (testInfo.status === 'passed') {
                 rmSync(videoDirectory, { recursive: true })
