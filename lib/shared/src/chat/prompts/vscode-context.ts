@@ -148,9 +148,7 @@ export async function getEditorDirContext(
 
 export async function getEditorTestContext(fileName: string): Promise<ContextMessage[]> {
     const currentTestFile = await getCurrentTestFileContext(fileName)
-    console.log(currentTestFile)
     const codebaseTestFiles = await getCodebaseTestFilesContext(fileName)
-    console.log(codebaseTestFiles)
     return [...codebaseTestFiles, ...currentTestFile]
 }
 
