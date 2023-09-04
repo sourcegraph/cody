@@ -14,8 +14,8 @@ import {
 } from '../Chat'
 
 import { FileLinkProps } from './ContextFiles'
+import { CodyRecipesWidgetWrapper, TranscriptItem, TranscriptItemClassNames } from './TranscriptItem'
 import { SymbolLinkProps } from './PreciseContext'
-import { TranscriptItem, TranscriptItemClassNames } from './TranscriptItem'
 
 import styles from './Transcript.module.css'
 
@@ -37,6 +37,7 @@ export const Transcript: React.FunctionComponent<
         submitButtonComponent?: React.FunctionComponent<ChatUISubmitButtonProps>
         ChatButtonComponent?: React.FunctionComponent<ChatButtonProps>
         pluginsDevMode?: boolean
+        RecipesWidgetWrapper?: CodyRecipesWidgetWrapper
         isTranscriptError?: boolean
     } & TranscriptItemClassNames
 > = React.memo(function TranscriptContent({
@@ -63,6 +64,7 @@ export const Transcript: React.FunctionComponent<
     chatInputClassName,
     ChatButtonComponent,
     pluginsDevMode,
+    RecipesWidgetWrapper,
     isTranscriptError,
 }) {
     // Scroll down whenever a new human message is received as input.
@@ -149,6 +151,7 @@ export const Transcript: React.FunctionComponent<
                                 chatInputClassName={chatInputClassName}
                                 ChatButtonComponent={ChatButtonComponent}
                                 pluginsDevMode={pluginsDevMode}
+                                RecipesWidgetWrapper={RecipesWidgetWrapper}
                             />
                         )
                 )}
@@ -171,6 +174,7 @@ export const Transcript: React.FunctionComponent<
                         submitButtonComponent={submitButtonComponent}
                         chatInputClassName={chatInputClassName}
                         ChatButtonComponent={ChatButtonComponent}
+                        RecipesWidgetWrapper={RecipesWidgetWrapper}
                     />
                 )}
             </div>

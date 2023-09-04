@@ -14,12 +14,14 @@ import {
 } from '../Chat'
 
 import { BlinkingCursor } from './BlinkingCursor'
-import { CodeBlocks } from './CodeBlocks'
+import { CodeBlocks, CodyRecipesWidgetWrapper } from './CodeBlocks'
 import { ContextFiles, FileLinkProps } from './ContextFiles'
 import { PluginExecutionInfos } from './PluginExecutionInfos'
 import { PreciseContexts, SymbolLinkProps } from './PreciseContext'
 
 import styles from './TranscriptItem.module.css'
+
+export type { CodyRecipesWidgetWrapper } from './CodeBlocks'
 
 /**
  * CSS class names used for the {@link TranscriptItem} component.
@@ -58,6 +60,7 @@ export const TranscriptItem: React.FunctionComponent<
         onAbortMessageInProgress?: () => void
         ChatButtonComponent?: React.FunctionComponent<ChatButtonProps>
         pluginsDevMode?: boolean
+        RecipesWidgetWrapper?: CodyRecipesWidgetWrapper
     } & TranscriptItemClassNames
 > = React.memo(function TranscriptItemContent({
     message,
@@ -84,8 +87,10 @@ export const TranscriptItem: React.FunctionComponent<
     chatInputClassName,
     ChatButtonComponent,
     pluginsDevMode,
+    RecipesWidgetWrapper,
 }) {
     const [formInput, setFormInput] = useState<string>(message.displayText ?? '')
+
     const textarea =
         TextArea && beingEdited && editButtonOnSubmit && SubmitButton ? (
             <div className={styles.textAreaContainer}>
@@ -189,6 +194,7 @@ export const TranscriptItem: React.FunctionComponent<
                             copyButtonClassName={codeBlocksCopyButtonClassName}
                             CopyButtonProps={copyButtonOnSubmit}
                             insertButtonClassName={codeBlocksInsertButtonClassName}
+                            RecipesWidgetWrapper={RecipesWidgetWrapper}
                         />
                     )
                 ) : inProgress ? (

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef } from 'react'
+import React, { RefObject, useEffect, useMemo, useRef } from 'react'
 
 import classNames from 'classnames'
 
@@ -8,6 +8,11 @@ import { CopyButtonProps } from '../Chat'
 
 import styles from './CodeBlocks.module.css'
 
+export type CodyRecipesWidgetWrapper = React.ComponentType<{
+    targetRef: RefObject<HTMLElement>
+    children: React.ReactNode
+}>
+
 interface CodeBlocksProps {
     displayText: string
 
@@ -15,6 +20,7 @@ interface CodeBlocksProps {
     insertButtonClassName?: string
 
     CopyButtonProps?: CopyButtonProps['copyButtonOnSubmit']
+    RecipesWidgetWrapper?: CodyRecipesWidgetWrapper
 }
 
 function wrapElement(element: HTMLElement, wrapperElement: HTMLElement): void {
@@ -97,6 +103,7 @@ export const CodeBlocks: React.FunctionComponent<CodeBlocksProps> = React.memo(f
     copyButtonClassName,
     insertButtonClassName,
     CopyButtonProps,
+    RecipesWidgetWrapper = null,
 }) {
     const rootRef = useRef<HTMLDivElement>(null)
 
@@ -125,8 +132,22 @@ export const CodeBlocks: React.FunctionComponent<CodeBlocksProps> = React.memo(f
         }
     }, [displayText, CopyButtonProps, copyButtonClassName, insertButtonClassName, rootRef])
 
-    return useMemo(
-        () => <div ref={rootRef} dangerouslySetInnerHTML={{ __html: renderCodyMarkdown(displayText) }} />,
-        [displayText]
-    )
+    const RecipesWidgetWrapperWithProps = useMemo(() => (props: { targetRef: RefObject<HTMLElement>; children: React.ReactNode }) => {
+        if (RecipesWidgetWrapper) {
+            return <RecipesWidgetWrapper {...props} />
+        }
+        return null
+    }, [RecipesWidgetWrapper, rootRef])
+
+    return useMemo(() => {
+        if (RecipesWidgetWrapper) {
+            return (
+                <RecipesWidgetWrapperWithProps targetRef={rootRef}>
+                    <div ref={rootRef} dangerouslySetInnerHTML={{ __html: renderCodyMarkdown(displayText) }} />
+                </RecipesWidgetWrapperWithProps>
+            )
+        }
+
+        return <div ref={rootRef} dangerouslySetInnerHTML={{ __html: renderCodyMarkdown(displayText) }} />
+    }, [displayText, RecipesWidgetWrapper])
 })
