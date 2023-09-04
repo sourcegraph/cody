@@ -79,16 +79,16 @@ describe('parseCompletion', () => {
         expect(completions.map(c => c.hasParseErrors)).toEqual([false, true])
     })
 
-    test.only('adds parse info to multi-line completions', () => {
+    test('adds parse info to multi-line completions', () => {
         const completions = testParseInfoProcessor(
             `
             function hello() {
                 alert('hello world!')
             }
 
-            const wow = []; function sort(█)
+            function sort(█)
         `,
-            ['array) {\nreturn array.sort()\n} function kek() {}', 'array) new\n']
+            ['array) {\nreturn array.sort()\n}', 'array) new\n']
         )
 
         expect(completions.map(c => c.hasParseErrors)).toEqual([false, true])
