@@ -7,7 +7,7 @@ import { EventLogger, ExtensionDetails } from '@sourcegraph/cody-shared/src/tele
 import { version as packageVersion } from '../../package.json'
 import { logDebug } from '../log'
 
-import { LocalStorage } from './LocalStorageProvider'
+import { localStorage } from './LocalStorageProvider'
 
 export let eventLogger: EventLogger | null = null
 let globalAnonymousUserID: string
@@ -23,7 +23,6 @@ export const extensionDetails: ExtensionDetails = {
 
 export async function createOrUpdateEventLogger(
     config: ConfigurationWithAccessToken,
-    localStorage: LocalStorage,
     isExtensionModeDevOrTest: boolean
 ): Promise<void> {
     if (config.telemetryLevel === 'off' || isExtensionModeDevOrTest) {
