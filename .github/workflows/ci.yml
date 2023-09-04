@@ -86,6 +86,7 @@ jobs:
         if: matrix.runner == 'ubuntu-latest'
       - run: pnpm -C vscode run test:e2e
         if: matrix.runner == 'windows-latest' || matrix.runner == 'macos-latest'
+      - run: pwd
       - uses: actions/upload-artifact@v3
         if: ${{ failure() }}
         with:
