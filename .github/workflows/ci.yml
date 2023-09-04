@@ -89,7 +89,7 @@ jobs:
       - uses: actions/upload-artifact@v3
         if: ${{ failure() }}
         with:
-          name: playwright-recordings
+          name: playwright-recordings ${{ matrix.runner }}
           path: playwright/**/*.webm
 
   build:
