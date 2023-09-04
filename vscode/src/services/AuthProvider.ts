@@ -38,7 +38,7 @@ export class AuthProvider {
     ) {
         this.authStatus.endpoint = 'init'
         this.loadEndpointHistory()
-        this.appDetector = new LocalAppDetector(secretStorage, { onChange: type => this.syncLocalAppState(type) })
+        this.appDetector = new LocalAppDetector({ onChange: type => this.syncLocalAppState(type) })
     }
 
     // Sign into the last endpoint the user was signed into
