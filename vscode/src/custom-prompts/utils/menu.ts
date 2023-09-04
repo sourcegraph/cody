@@ -1,5 +1,4 @@
-import * as vscode from 'vscode'
-import { QuickInputButtons, QuickPickItem, ThemeIcon, window } from 'vscode'
+import { QuickInputButtons, QuickPickItem, ThemeIcon, commands, window } from 'vscode'
 
 import { CodyPrompt } from '@sourcegraph/cody-shared'
 import { CodyPromptType } from '@sourcegraph/cody-shared/src/chat/prompts'
@@ -217,13 +216,13 @@ export const CustomCommandConfigMenuItems = [
 ]
 
 export async function showAskQuestionQuickPick(): Promise<string> {
-    const quickPick = vscode.window.createQuickPick()
+    const quickPick = window.createQuickPick()
     quickPick.title = `${ASK_QUESTION_COMMAND.description} (${ASK_QUESTION_COMMAND.slashCommand})`
     quickPick.placeholder = 'Your question'
     quickPick.buttons = [menu_buttons.back]
 
     quickPick.onDidTriggerButton(() => {
-        void vscode.commands.executeCommand('cody.action.commands.menu')
+        void commands.executeCommand('cody.action.commands.menu')
         quickPick.hide()
     })
 
