@@ -62,7 +62,7 @@ export class CustomPrompt implements Recipe {
             return newInteractionWithError(errorMessage, promptText || '')
         }
 
-        const commandName = command?.slashCommand || command?.name || promptText
+        const commandName = command?.slashCommand || command?.description || promptText
         if (contextConfig?.selection && !selection?.selectedText) {
             const errorMessage = `__${commandName}__ requires highlighted code. Please select some code in your editor and try again.`
             return newInteractionWithError(errorMessage, commandName)

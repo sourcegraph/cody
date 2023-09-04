@@ -1,22 +1,22 @@
 {
   "commands": {
-    "Document Code": {
-      "slashCommand": "doc",
+    "doc": {
+      "description": "Generate code documentation",
       "prompt": "Generate a comment documenting the parameters and functionality for the selected code. Only generate the documentation for the selected code, do not generate the code. Use the same documentation style in the file of the selected code to generate the comments. Pay attention to the file path of the selected code to make sure the comments are generated for the correct language. For example, use the JavaDoc documentation style to generate comments for .java files, or Python docstring using Python multi-line string for .py files.",
       "context": {
         "currentDir": true,
         "selection": true
       }
     },
-    "Explain Code": {
-      "slashCommand": "explain",
+    "explain": {
+      "description": "Explain code",
       "prompt": "Explain what the selected code does in simple terms. Assume the audience is a beginner programmer who has just learned the language features and basic syntax. Focus on explaining: 1) The purpose of the code 2) What input(s) it takes 3) What output(s) it produces 4) How it achieves its purpose through the logic and algorithm. 5) Any important logic flows or data transformations happening. Use simple language a beginner could understand. Include enough detail to give a full picture of what the code aims to accomplish without getting too technical. Format the explanation in coherent paragraphs, using proper punctuation and grammar. Write the explanation assuming no prior context about the code is known. Do not make assumptions about variables or functions not shown in the shared code. Start the answer with the name of the code that is being explained.",
       "context": {
         "currentFile": true
       }
     },
-    "Generate Unit Tests": {
-      "slashCommand": "test",
+    "test": {
+      "description": "Generate unit tests",
       "prompt": "Write a suite of 5 unit tests only for the functions inside the <selected> tags of the shared context. First, review the shared context to see if there is an existing test file that match the file path contains the selected code. If it exists and contains tests for the selected functions, generate new unit tests for uncovered edge cases I can add to the existing suite. If none, detect what testing framework/library is used. If detected, use the detected framework&libraries and follow their patterns for adding packages, imports, dependencies, setup, and assertions used in those code snippets to generate the unit tests. If no tests exist, check shared context to see if any testing libraries for {languageName} are already configured. Import those libraries as needed. If no libraries or package.json are set up, import common test libraries for {languageName}. Pay attention to file paths to see if there is an existing test file for the selected code. If yes, use the same pattern to create new unit tests for edge cases. Focus on testing key behaviors for each function. Only includes mocks if you detected one. Use descriptive variable names that explain the purpose and meaning, not just generic names like 'foo'/'bar'/'name' etc. In your answer, start by telling me which libraries you are importing and why. For example, \"No new imports because I am writing unit tests for an existing test suite\" or \"I am importing unittest since that was used in the shared Python code,\" or \"Importing Jest because it is the configured test framework for Typescript in package.json.\" Then, show the complete test code you wrote, including 1) All necessary dependencies including packages and libraries are imported 2) Setting up the test environment 3) Writing passing tests. At the end, tell me the file path where these tests should be inserted and put the file name in the <fileName> tags. The tests should validate expected functionality and cover any example test cases from comments, as well as edge cases and bugs. All generated tests should be complete and workable, no fragments or comments, and must be enclosed in one single code block.",
       "context": {
         "currentDir": true,
@@ -24,8 +24,8 @@
         "selection": true
       }
     },
-    "Code Smell": {
-      "slashCommand": "smell",
+    "smell": {
+      "description": "Find code smells",
       "prompt": "Please review and analyze the {languageName} code I have selected and identify potential areas for improvement related to code smells, readability, maintainability, performance, security, etc. Do not list issues already addressed in the given code. Focus on providing up to 5 constructive suggestions that could make the code more robust, efficient, or align with best practices. For each suggestion, provide a brief explanation of the potential benefits. After listing any recommendations, summarize if you found notable opportunities to enhance the code quality overall or if the code generally follows sound design principles. If no issues found, reply 'There are no errors.'"
     }
   }
