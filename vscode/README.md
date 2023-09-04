@@ -16,6 +16,8 @@ Ask Cody questions in the chat view, or inline with code, and it will use Source
 <!-- prettier-ignore: Uses <img> so we can fix width to 480px so all images are consistent width and look sharp @2x -->
 <img src="https://storage.googleapis.com/sourcegraph-assets/website/Product%20Animations/GIFS/cody_inline_June23-sm.gif" width="480" alt="Cody Inline Chat">
 
+<br/>
+
 <!-- prettier-ignore: Uses <img> so we can fix width to 480px so all images are consistent width and look sharp @2x -->
 <img src="https://storage.googleapis.com/sourcegraph-assets/website/Product%20Animations/GIFS/cody-chat-may2023-optim.gif" width="480" alt="Cody Chat">
 
@@ -27,15 +29,17 @@ And because Cody has access to the entire code graph, you can:
 
 ## Built-In Commands
 
-Cody has quick commands for common actions, such as adding code documentation, generating unit tests, and detecting code smells.
+Cody has quick commands for common actions, such as adding code documentation, explaining code, generating unit tests, and detecting code smells.
 
-(insert image of chat command menu)
+<!-- prettier-ignore: Uses <img> so we can fix width to 480px so all images are consistent width and look sharp @2x -->
+<img src="https://storage.googleapis.com/sourcegraph-assets/website/Product%20Animations/GIFS/Explain_Code-Sept23-Sm.gif" width="480" alt="Explain Code command">
 
 ## Custom Commands
 
 There's also experimental support for adding your own custom commands, defined as JSON within your repository:
 
-(insert image of custom command)
+<!-- prettier-ignore: Uses <img> so we can fix width to 480px so all images are consistent width and look sharp @2x -->
+<img src="https://storage.googleapis.com/sourcegraph-assets/website/Product%20Animations/GIFS/Custom_Command-Sept2023-Sm.gif" width="480" alt="Custom command">
 
 ## Swappable LLMs
 

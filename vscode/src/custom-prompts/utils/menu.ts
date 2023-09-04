@@ -10,9 +10,15 @@ export const NewCustomCommandConfigMenuOptions = {
     title: 'Cody Custom Commands (Experimental) - New User Command',
 }
 
+export type QuickPickItemWithSlashCommand = QuickPickItem & { slashCommand: string }
+
 const inlineSeparator: QuickPickItem = { kind: -1, label: 'inline' }
-const chatOption: QuickPickItem = { label: '/ask', description: 'Ask a Question', alwaysShow: true }
-const fixOption: QuickPickItem = { label: '/fix', description: 'Refactor Selected Code', alwaysShow: true }
+const chatOption: QuickPickItemWithSlashCommand = { label: '/ask', description: 'Ask a question', slashCommand: '/ask' }
+const fixOption: QuickPickItemWithSlashCommand = {
+    label: '/edit',
+    description: 'Edit code',
+    slashCommand: '/edit',
+}
 const commandsSeparator: QuickPickItem = { kind: -1, label: 'commands' }
 const customCommandsSeparator: QuickPickItem = { kind: -1, label: 'custom commands (experimental)' }
 const configOption: QuickPickItem = { label: 'Configure Custom Commands...' }
@@ -20,7 +26,7 @@ const settingsSeparator: QuickPickItem = { kind: -1, label: 'settings' }
 const addOption: QuickPickItem = { label: 'Create a New Custom User Command...', alwaysShow: true }
 
 export const recentlyUsedSeparatorAsPrompt: [string, CodyPrompt][] = [
-    ['separator', { prompt: 'separator', type: 'recently used' }],
+    ['separator', { prompt: 'separator', type: 'recently used', slashCommand: '' }],
 ]
 
 export const menu_separators = {
@@ -83,8 +89,7 @@ export const customPromptsContextOptions: ContextOption[] = [
     {
         id: 'currentDir',
         label: 'Current Directory',
-        description: 'If the prompt includes "test(s)", only test files will be included.',
-        detail: 'First 10 text files in the current directory',
+        detail: 'First 10 text files in the current directory. If the prompt includes the words "test" or "tests", only test files will be included.',
         picked: false,
     },
     {
@@ -96,7 +101,7 @@ export const customPromptsContextOptions: ContextOption[] = [
     {
         id: 'command',
         label: 'Command Output',
-        detail: 'The output returned from a terminal command run from your local workspace. E.g. git describe --long',
+        detail: 'The output returned from a terminal command (e.g. git describe --long, node your-script.js, cat src/file-name.js)',
         picked: false,
     },
     {
@@ -201,7 +206,7 @@ export const CustomCommandConfigMenuItems = [
 
 export async function showAskQuestionQuickPick(): Promise<string> {
     const quickPick = vscode.window.createQuickPick()
-    quickPick.title = '/ask'
+    quickPick.title = 'Ask a question (/ask)'
     quickPick.placeholder = 'Your question'
     quickPick.buttons = [menu_buttons.back]
 

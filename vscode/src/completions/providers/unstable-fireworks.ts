@@ -17,8 +17,10 @@ interface UnstableFireworksOptions {
 }
 
 const PROVIDER_IDENTIFIER = 'fireworks'
-const STOP_WORD = '<|endoftext|>'
 const CONTEXT_WINDOW_CHARS = 5000 // ~ 2000 token limit
+
+const EOT_STARCODER = '<|endoftext|>'
+const EOT_LLAMA_CODE = ' <EOT>'
 
 // Model identifiers can be found in https://docs.fireworks.ai/explore/ and in our internal
 // conversations
@@ -27,6 +29,9 @@ const MODEL_MAP = {
     'starcoder-7b': 'fireworks/accounts/fireworks/models/starcoder-7b-w8a16',
     'starcoder-3b': 'fireworks/accounts/fireworks/models/starcoder-3b-w8a16',
     'starcoder-1b': 'fireworks/accounts/fireworks/models/starcoder-1b-w8a16',
+    'wizardcoder-15b': 'fireworks/accounts/fireworks/models/wizardcoder-15b',
+    'llama-code-7b': 'fireworks/accounts/fireworks/models/llama-v2-7b-code',
+    'llama-code-13b': 'fireworks/accounts/fireworks/models/llama-v2-13b-code',
     'llama-code-13b-instruct': 'fireworks/accounts/fireworks/models/llama-v2-13b-code-instruct',
 }
 
@@ -65,7 +70,7 @@ export class UnstableFireworksProvider extends Provider {
                     .map(line => (languageConfig ? languageConfig.commentStart + line : ''))
                     .join('\n') + '\n'
 
-            const suffixAfterFirstNewline = suffix.slice(suffix.indexOf('\n'))
+            const suffixAfterFirstNewline = getSuffixAfterFirstNewline(suffix)
 
             const nextPrompt = this.createInfillingPrompt(introString, prefix, suffixAfterFirstNewline)
 
@@ -91,8 +96,7 @@ export class UnstableFireworksProvider extends Provider {
             // To speed up sample generation in single-line case, we request a lower token limit
             // since we can't terminate on the first `\n`.
             maxTokensToSample: this.options.multiline ? 256 : 30,
-            temperature: 0.4,
-            topP: 0.95,
+            ...getModelConfig(this.model),
             model: MODEL_MAP[this.model],
         }
 
@@ -116,14 +120,11 @@ export class UnstableFireworksProvider extends Provider {
     }
 
     private createInfillingPrompt(intro: string, prefix: string, suffix: string): string {
-        if (this.model.startsWith('starcoder')) {
+        if (this.model.startsWith('starcoder') || this.model.startsWith('wizardcoder')) {
             // c.f. https://starcoder.co/bigcode/starcoder#fill-in-the-middle
             return `<fim_prefix>${intro}${prefix}<fim_suffix>${suffix}<fim_middle>`
         }
         if (this.model.startsWith('llama-code')) {
-            // @TODO(philipp-spiess): FIM prompt is not working yet, we're working with Fireworks to
-            // get this sorted
-            //
             // c.f. https://github.com/facebookresearch/codellama/blob/main/llama/generation.py#L402
             return `<PRE> ${intro}${prefix} <SUF>${suffix} <MID>`
         }
@@ -159,7 +160,7 @@ export class UnstableFireworksProvider extends Provider {
                 const result = await client.complete(
                     params,
                     (incompleteResponse: CompletionResponse) => {
-                        const processedCompletion = postProcess(incompleteResponse.completion)
+                        const processedCompletion = this.postProcess(incompleteResponse.completion)
                         if (
                             canUsePartialCompletion(processedCompletion, {
                                 document: { languageId: this.options.languageId },
@@ -174,16 +175,22 @@ export class UnstableFireworksProvider extends Provider {
                     abortController.signal
                 )
 
-                resolve({ ...result, completion: postProcess(result.completion) })
+                resolve({ ...result, completion: this.postProcess(result.completion) })
             } catch (error) {
                 reject(error)
             }
         })
     }
-}
 
-function postProcess(content: string): string {
-    return content.replace(STOP_WORD, '')
+    private postProcess(content: string): string {
+        if (this.model.startsWith('starcoder') || this.model.startsWith('wizardcoder')) {
+            return content.replace(EOT_STARCODER, '')
+        }
+        if (this.model.startsWith('llama-code')) {
+            return content.replace(EOT_LLAMA_CODE, '')
+        }
+        return content
+    }
 }
 
 export function createProviderConfig(
@@ -207,7 +214,33 @@ export function createProviderConfig(
         maximumContextCharacters: CONTEXT_WINDOW_CHARS,
         enableExtendedMultilineTriggers: true,
         identifier: PROVIDER_IDENTIFIER,
-        supportsInfilling: true,
         model,
+    }
+}
+
+// We want to remove the same line suffix from a completion request since both StarCoder and Llama
+// code can't handle this correctly.
+function getSuffixAfterFirstNewline(suffix: string): string {
+    const firstNlInSuffix = suffix.indexOf('\n')
+
+    // When there is no next line, the suffix should be empty
+    if (firstNlInSuffix === -1) {
+        return ''
+    }
+
+    return suffix.slice(suffix.indexOf('\n'))
+}
+
+function getModelConfig(model: string): { temperature: number; topP: number } {
+    if (model.startsWith('llama-code')) {
+        return {
+            temperature: 0.2,
+            topP: 0.95,
+        }
+    }
+
+    return {
+        temperature: 0.4,
+        topP: 0.95,
     }
 }

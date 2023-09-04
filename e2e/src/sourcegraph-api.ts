@@ -45,7 +45,7 @@ export async function search(query: string): Promise<SearchResults['data']['sear
         Authorization: `token ${sourcegraphAccessToken}`,
     }
 
-    return fetch(sourcegraphApiUrl, {
+    const response = await fetch(sourcegraphApiUrl, {
         method: 'POST',
         headers,
         body: JSON.stringify({
@@ -53,7 +53,11 @@ export async function search(query: string): Promise<SearchResults['data']['sear
             variables: { query },
         }),
     })
-        .then(response => response.json())
-        .then(response => response as SearchResults)
-        .then(response => response.data.search.results.results)
+    if (!response.ok) {
+        const text = await response.text()
+        console.error(text)
+        throw new Error(`Error fetching Sourcegraph API: ${response.status}\n${text}`)
+    }
+    const responseJSON = (await response.json()) as SearchResults
+    return responseJSON.data.search.results.results
 }

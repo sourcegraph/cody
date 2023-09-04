@@ -6,10 +6,10 @@ import { LOCAL_APP_URL } from '@sourcegraph/cody-shared/src/sourcegraph-api/envi
 import { version } from '../../package.json'
 import { isOsSupportedByApp, LocalEnv } from '../chat/protocol'
 import { constructFileUri } from '../custom-prompts/utils/helpers'
-import { debug } from '../log'
+import { logDebug, logError } from '../log'
 
 import { AppJson, LOCAL_APP_LOCATIONS } from './LocalAppFsPaths'
-import { SecretStorage } from './SecretStorageProvider'
+import { secretStorage } from './SecretStorageProvider'
 
 type OnChangeCallback = (type: string) => Promise<void>
 /**
@@ -28,10 +28,7 @@ export class LocalAppDetector implements vscode.Disposable {
     private _watchers: vscode.Disposable[] = []
     private onChange: OnChangeCallback
 
-    constructor(
-        private secretStorage: SecretStorage,
-        options: { onChange: OnChangeCallback }
-    ) {
+    constructor(options: { onChange: OnChangeCallback }) {
         this.onChange = options.onChange
         this.localEnv = { ...envInit }
         this.localAppMarkers = LOCAL_APP_LOCATIONS[this.localEnv.os]
@@ -51,11 +48,11 @@ export class LocalAppDetector implements vscode.Disposable {
         // Start with init state
         this.dispose()
         this.localEnv = { ...envInit }
-        debug('LocalAppDetector', 'initializing')
+        logDebug('LocalAppDetector', 'initializing')
         const homeDir = this.localEnv.homeDir
         // if conditions are not met, this will be a noop
         if (!this.isSupported || !homeDir) {
-            debug('LocalAppDetector:init:failed', 'osNotSupported')
+            logError('LocalAppDetector:init:failed', 'osNotSupported')
             return
         }
         // Create filePaths and file watchers
@@ -107,7 +104,7 @@ export class LocalAppDetector implements vscode.Disposable {
             this.localEnv.hasAppJson = true
             this.tokenFsPath = null
             await this.found('token')
-            await this.secretStorage.storeToken(LOCAL_APP_URL.href, token)
+            await secretStorage.storeToken(LOCAL_APP_URL.href, token)
             await this.fetchServer()
         }
     }
@@ -136,7 +133,7 @@ export class LocalAppDetector implements vscode.Disposable {
     private async found(type: 'app' | 'token' | 'server'): Promise<void> {
         this.localEnv.isAppInstalled = true
         await this.onChange(type)
-        debug('LocalAppDetector:found', type)
+        logDebug('LocalAppDetector:found', type)
     }
 
     // We can dispose the file watcher when app is found or when user has logged in

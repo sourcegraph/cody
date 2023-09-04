@@ -26,20 +26,6 @@ export function lastNLines(text: string, n: number): string {
     return lines.slice(Math.max(0, lines.length - n)).join('\n')
 }
 
-export function isAbortError(error: Error): boolean {
-    return (
-        // http module
-        error.message === 'aborted' ||
-        // fetch
-        error.message.includes('The operation was aborted') ||
-        error.message.includes('The user aborted a request')
-    )
-}
-
-export function isRateLimitError(error: Error): boolean {
-    return error.message.includes('you exceeded the rate limit')
-}
-
 /**
  * Creates a new signal that forks a parent signal. When the parent signal is aborted, the forked
  * signal will be aborted as well. This allows propagating abort signals across asynchronous

@@ -9,8 +9,8 @@ import {
 import { VsCodeCommandsController } from '@sourcegraph/cody-shared/src/editor'
 import { TelemetryService } from '@sourcegraph/cody-shared/src/telemetry'
 
-import { debug } from '../log'
-import { LocalStorage } from '../services/LocalStorageProvider'
+import { logDebug, logError } from '../log'
+import { localStorage } from '../services/LocalStorageProvider'
 
 import { CustomPromptsStore } from './CustomPromptsStore'
 import { showCommandConfigMenu, showCommandMenu, showCustomCommandMenu, showNewCustomCommandMenu } from './menus'
@@ -49,7 +49,6 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
 
     constructor(
         context: vscode.ExtensionContext,
-        private localStorage: LocalStorage,
         private telemetryService: TelemetryService
     ) {
         this.tools = new ToolsProvider(context)
@@ -58,7 +57,7 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
         this.custom = new CustomPromptsStore(this.isEnabled, context.extensionPath, user?.workspaceRoot, user.homeDir)
         this.disposables.push(this.custom)
 
-        this.lastUsedCommands = new Set(this.localStorage.getLastUsedCommands())
+        this.lastUsedCommands = new Set(localStorage.getLastUsedCommands())
         this.custom.activate()
         this.fileWatcherInit()
     }
@@ -95,7 +94,7 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
                 // return the terminal output from the command for the prompt if any
                 return this.execCommand()
             case 'current':
-                return this.myPromptInProgress?.name || null
+                return this.myPromptInProgress?.description || null
             default:
                 return this.myPromptInProgress?.prompt || null
         }
@@ -110,10 +109,10 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
      *
      * @returns The prompt text for the command if found, empty string otherwise
      */
-    public find(id: string, isSlash = false): string {
-        const myPrompt = this.default.get(id, isSlash)
+    public find(id: string): string {
+        const myPrompt = this.default.get(id)
 
-        debug('CommandsController:command:finding', id, { verbose: myPrompt })
+        logDebug('CommandsController:command:finding', id, { verbose: myPrompt })
 
         if (!myPrompt) {
             this.telemetryService.log('CodyVSCodeExtension:command:find:invalid')
@@ -213,16 +212,18 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
                 }
                 let label: string | undefined
                 let description: string | undefined
+                let slashCommand: string | undefined
 
                 if (command.slashCommand) {
                     label = command.slashCommand
-                    description = command.name || name
+                    description = command.description || name
+                    slashCommand = command.slashCommand
                 } else {
-                    label = command.name || name
+                    label = command.description || name
                     description = command.type === 'default' ? '' : command.type
                 }
 
-                return createQuickPickItem(label, description, label === '/fix')
+                return { label, description, slashCommand }
             })
 
             // Show the list of prompts to the user using a quick pick menu
@@ -237,13 +238,14 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
                 return
             }
 
-            const selectedCommandID = selectedPrompt.label
+            const selectedCommandID =
+                'slashCommand' in selectedPrompt ? selectedPrompt.slashCommand : selectedPrompt.label
             switch (true) {
                 case !selectedCommandID:
                     break
                 case selectedCommandID === menu_options.config.label:
                     return await vscode.commands.executeCommand('cody.settings.commands')
-                case selectedCommandID === menu_options.chat.label: {
+                case selectedCommandID === menu_options.chat.slashCommand: {
                     let input = userPrompt.trim()
                     if (input) {
                         return await vscode.commands.executeCommand('cody.action.chat', input)
@@ -252,8 +254,7 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
                     await vscode.commands.executeCommand('cody.chat.focus')
                     return await vscode.commands.executeCommand('cody.action.chat', input)
                 }
-
-                case selectedCommandID === menu_options.fix.label: {
+                case selectedCommandID === menu_options.fix.slashCommand: {
                     if (userPrompt.trim()) {
                         return await vscode.commands.executeCommand('cody.action.fixup', userPrompt)
                     }
@@ -269,7 +270,7 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
 
             await vscode.commands.executeCommand('cody.action.commands.exec', selectedCommandID)
         } catch (error) {
-            debug('CommandsController:commandQuickPicker', 'error', { verbose: error })
+            logError('CommandsController:commandQuickPicker', 'error', { verbose: error })
         }
     }
 
@@ -295,7 +296,7 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
                 .map(commandItem => {
                     const command = commandItem[1]
                     const description = command.type
-                    return createQuickPickItem(command.name || commandItem[0], description)
+                    return createQuickPickItem(command.description || commandItem[0], description)
                 })
 
             const configOption = menu_options.config
@@ -321,9 +322,9 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
                     break
             }
 
-            debug('CommandsController:promptsQuickPicker:selectedPrompt', promptTitle)
+            logDebug('CommandsController:promptsQuickPicker:selectedPrompt', promptTitle)
         } catch (error) {
-            debug('CommandsController:promptsQuickPicker', 'error', { verbose: error })
+            logError('CommandsController:promptsQuickPicker', 'error', { verbose: error })
         }
     }
 
@@ -342,7 +343,7 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
             return this.customCommandMenu()
         }
 
-        debug('CommandsController:customPrompts:menu', action)
+        logDebug('CommandsController:customPrompts:menu', action)
 
         switch (action) {
             case 'delete':
@@ -409,10 +410,10 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
             return
         }
         // Save the prompt to the current Map and Extension storage
-        await this.custom.save(newCommand.title, newCommand.prompt)
+        await this.custom.save(newCommand.slashCommand, newCommand.prompt)
         await this.refresh()
 
-        debug('CommandsController:updateUserCommandQuick:newPrompt:', 'saved', { verbose: newCommand })
+        logDebug('CommandsController:updateUserCommandQuick:newPrompt:', 'saved', { verbose: newCommand })
     }
 
     /**
@@ -447,7 +448,7 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
         // store the last 3 used commands
         const commands = [...this.lastUsedCommands].filter(command => command !== 'separator').slice(0, 3)
         if (commands.length > 0) {
-            await this.localStorage.setLastUsedCommands(commands)
+            await localStorage.setLastUsedCommands(commands)
         }
 
         this.lastUsedCommands = new Set(commands)
@@ -499,7 +500,7 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
             )
         }
 
-        debug('CommandsController:fileWatcherInit', 'watchers created')
+        logDebug('CommandsController:fileWatcherInit', 'watchers created')
     }
 
     /**
@@ -517,6 +518,6 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
         this.fileWatcherDisposables = []
         this.disposables = []
         this.myPromptsMap = new Map<string, CodyPrompt>()
-        debug('CommandsController:dispose', 'disposed')
+        logDebug('CommandsController:dispose', 'disposed')
     }
 }

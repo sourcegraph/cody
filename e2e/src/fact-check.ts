@@ -1,19 +1,28 @@
 import { DetectedEntity, detectEntities } from './entity-detection'
 import { detectHallucinations } from './hallucinations'
+import { Fact } from './test-cases'
 
 export interface FactCheck {
-    missingFacts: string[]
+    missingFacts: Fact[]
     detectedEntities: DetectedEntity[]
     hallucinatedEntities: DetectedEntity[]
 }
 
-export async function factCheck(codebase: string, facts: string[], answer: string): Promise<FactCheck> {
-    // TODO: Fact can be a Regexp.
-    const missingFacts = []
+export async function factCheck(codebase: string, facts: Fact[], answer: string): Promise<FactCheck> {
+    const missingFacts: Fact[] = []
 
     for (const fact of facts) {
-        if (!answer.includes(fact)) {
-            missingFacts.push(fact)
+        switch (fact.type) {
+            case 'literal':
+                if (!answer.toLowerCase().includes(fact.value.toLowerCase())) {
+                    missingFacts.push(fact)
+                }
+                break
+            case 'regex':
+                if (!new RegExp(fact.value).test(answer.toLowerCase())) {
+                    missingFacts.push(fact)
+                }
+                break
         }
     }
     const detectedEntities = detectEntities(answer)

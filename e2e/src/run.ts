@@ -9,11 +9,11 @@ import { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/s
 
 import { CLIOptions, program } from '.'
 import { factCheck } from './fact-check'
-import { llmJudge } from './llm-judge'
+import { failFastIfAzureEnvVarsNotSet, llmJudge } from './llm-judge'
 import { TestCase, testCases } from './test-cases'
 import { aggregateResults, AggregateTestResults, logAggregateResults, TestResult } from './test-results'
 
-async function runTestCase(testCase: TestCase): Promise<TestResult | Error> {
+async function runTestCase(testCase: TestCase, provider: CLIOptions['provider']): Promise<TestResult | Error> {
     let latestMessage: ChatMessage | null = { text: '', speaker: 'assistant' }
     let transcript: Transcript | null = new Transcript()
     const client = await createClient({
@@ -54,12 +54,20 @@ async function runTestCase(testCase: TestCase): Promise<TestResult | Error> {
             }, 250)
         })
 
-        const answer = transcript?.getLastInteraction()?.getAssistantMessage()?.text
-        if (!answer) {
+        const lastInteraction = transcript?.getLastInteraction()
+        if (!lastInteraction) {
+            return new Error('No last interaction found')
+        }
+
+        const answer = lastInteraction.getAssistantMessage().text ?? ''
+        if (!lastInteraction) {
             return new Error(`No answer provided for question: ${interaction.question}`)
         }
 
+        const contextMessages = await lastInteraction.getFullContext()
+
         const llmJudgement = await llmJudge(
+            provider,
             // Use `answerSummary` instead of `answer` for transcript history since it might contain wrong information that will impact the judgement.
             // We want to judge the latest answer assuming the transcript up to this point is correct.
             testTranscript.map(interaction => ({ question: interaction.question, answer: interaction.answerSummary })),
@@ -69,7 +77,13 @@ async function runTestCase(testCase: TestCase): Promise<TestResult | Error> {
         )
         const factCheckResult = await factCheck(testCase.codebase, interaction.facts, answer)
 
-        testTranscript.push({ ...interaction, answer, ...llmJudgement, ...factCheckResult })
+        testTranscript.push({
+            ...interaction,
+            ...llmJudgement,
+            ...factCheckResult,
+            answer,
+            contextMessages,
+        })
     }
     return { ...testCase, transcript: testTranscript }
 }
@@ -89,7 +103,7 @@ async function runTestCases(options: CLIOptions): Promise<TestResult[]> {
             `Testing (${testResults.length + 1}/${runnableTestCases.length}):`,
             chalk.blueBright(testCase.label, `(${testCase.codebase})`)
         )
-        const testResult = await runTestCase(testCase)
+        const testResult = await runTestCase(testCase, options.provider)
         if (testResult instanceof Error) {
             console.error('Error running the test:', testResult.message)
             continue
@@ -104,6 +118,10 @@ async function runTestCases(options: CLIOptions): Promise<TestResult[]> {
 
 export async function run(): Promise<void> {
     const options = program.opts<CLIOptions>()
+
+    if (options.provider === 'azure') {
+        failFastIfAzureEnvVarsNotSet() // Fail fast if Azure env vars not set.
+    }
 
     const runs: TestResult[][] = []
     const aggregateRunsResults: AggregateTestResults[] = []

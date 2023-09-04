@@ -1,31 +1,105 @@
+import { debounce } from 'lodash'
 import { commands, QuickPickItem, QuickPickOptions, window } from 'vscode'
 
 import { CodyPrompt } from '@sourcegraph/cody-shared'
 
 import { CustomCommandsItem } from '../utils'
-import { CustomCommandConfigMenuItems, menu_buttons } from '../utils/menu'
+import { CustomCommandConfigMenuItems, menu_buttons, menu_options, QuickPickItemWithSlashCommand } from '../utils/menu'
 
 import { CodyCommand, CustomCommandsBuilderMenu } from './CustomCommandBuilderMenu'
 
 interface CommandMenuResponse {
-    selectedItem: QuickPickItem
+    selectedItem: QuickPickItem | QuickPickItemWithSlashCommand
     input: string
 }
 
-export async function showCommandMenu(items: QuickPickItem[]): Promise<CommandMenuResponse> {
+const slashCommandRegex = /^\/[A-Za-z]+/
+function isSlashCommand(value: string): boolean {
+    return slashCommandRegex.test(value)
+}
+
+const labelReplacements: Record<string, (label: string) => string> = {
+    '/ask': label => `${label} [question]`,
+    '/edit': label => `${label} [instruction]`,
+}
+
+function normalize(input: string): string {
+    return input.trim().toLowerCase()
+}
+
+export async function showCommandMenu(
+    items: (QuickPickItem | QuickPickItemWithSlashCommand)[]
+): Promise<CommandMenuResponse> {
     const options = {
         title: 'Cody (Shortcut: ⌥C)',
         placeHolder: 'Search for a command or enter your question here...',
     }
 
+    const defaultItems: (QuickPickItem | QuickPickItemWithSlashCommand)[] = items.map(item => {
+        const replaceFn = 'slashCommand' in item ? labelReplacements[item.slashCommand] : undefined
+        if (replaceFn) {
+            return { ...item, label: replaceFn(item.label) }
+        }
+        return item
+    })
+
     return new Promise(resolve => {
         const quickPick = window.createQuickPick()
-        quickPick.items = items
+        quickPick.items = defaultItems
         quickPick.title = options.title
         quickPick.placeholder = options.placeHolder
         quickPick.matchOnDescription = true
 
         quickPick.buttons = [menu_buttons.gear]
+
+        const fallbackCommands = new Set([menu_options.chat.slashCommand, menu_options.fix.slashCommand])
+        const updateItems = debounce((value: string) => {
+            const fallbackItems: QuickPickItem[] = items.reduce((acc, item) => {
+                if ('slashCommand' in item && fallbackCommands.has(item.slashCommand)) {
+                    acc.push({ ...item, label: `${item.label} "${value}"`, alwaysShow: true })
+                }
+                return acc
+            }, [] as QuickPickItem[])
+
+            quickPick.items = fallbackItems
+        }, 200)
+        quickPick.onDidChangeValue(value => {
+            const normalizedValue = normalize(value)
+            quickPick.matchOnDescription = false
+
+            if (isSlashCommand(normalizedValue)) {
+                const [slashCommand] = normalizedValue.split(' ')
+                const matchingCommands = defaultItems.filter(
+                    item => 'slashCommand' in item && item.slashCommand?.toLowerCase().startsWith(slashCommand)
+                )
+                if (matchingCommands.length > 0) {
+                    // show only item for a matching slash command (ignore other label or description matches)
+                    quickPick.items = matchingCommands.map(command => ({ ...command, alwaysShow: true }))
+                    return
+                }
+
+                // show no matching commands item
+                quickPick.items = [{ label: 'No matching commands', alwaysShow: true }]
+                return
+            }
+
+            const hasMatch = items.some(item =>
+                // label may include placeholder which we don't want to match against - use slash command instead
+                ['slashCommand' in item ? item.slashCommand : item.label, item.description].some(
+                    str => str?.toLowerCase().includes(normalizedValue)
+                )
+            )
+            if (!normalizedValue || hasMatch) {
+                // show default items
+                quickPick.items = defaultItems
+                quickPick.matchOnDescription = true
+                return
+            }
+
+            // show fallback items
+            updateItems(normalizedValue)
+        })
+
         // On gear icon click
         quickPick.onDidTriggerButton(async () => {
             quickPick.hide()
@@ -34,7 +108,12 @@ export async function showCommandMenu(items: QuickPickItem[]): Promise<CommandMe
 
         quickPick.onDidAccept(() => {
             const selection = quickPick.activeItems[0]
-            resolve({ selectedItem: selection, input: quickPick.value })
+            let value = normalize(quickPick.value)
+            if (isSlashCommand(value)) {
+                const [, ...rest] = value.split(' ')
+                value = rest.join(' ')
+            }
+            resolve({ selectedItem: selection, input: value })
             quickPick.hide()
         })
         quickPick.show()

@@ -2,8 +2,9 @@ import * as vscode from 'vscode'
 import { URI } from 'vscode-uri'
 
 import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
+import { isAbortError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
 
-import { debug } from '../log'
+import { logError } from '../log'
 
 import { GetContextOptions, GetContextResult } from './context/context'
 import { DocumentHistory } from './context/history'
@@ -15,7 +16,7 @@ import { RequestManager, RequestParams } from './request-manager'
 import { reuseLastCandidate } from './reuse-last-candidate'
 import { ProvideInlineCompletionsItemTraceData } from './tracer'
 import { InlineCompletionItem } from './types'
-import { isAbortError, SNIPPET_WINDOW_SIZE } from './utils'
+import { SNIPPET_WINDOW_SIZE } from './utils'
 
 export interface InlineCompletionsParams {
     // Context
@@ -121,7 +122,7 @@ export async function getInlineCompletions(params: InlineCompletionsParams): Pro
         const error = unknownError instanceof Error ? unknownError : new Error(unknownError as any)
 
         params.tracer?.({ error: error.toString() })
-        debug('getInlineCompletions:error', error.message, { verbose: error })
+        logError('getInlineCompletions:error', error.message, error.stack, { verbose: { params, error } })
         CompletionLogger.logError(error)
 
         if (isAbortError(error)) {
