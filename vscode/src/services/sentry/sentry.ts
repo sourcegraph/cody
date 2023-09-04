@@ -37,7 +37,7 @@ export abstract class SentryService {
 
             // Only send errors when connected to dotcom
             beforeSend: event => {
-                if (!isDotCom(this.config.serverEndpoint) && isProd) {
+                if (!isDotCom(this.config.serverEndpoint) || !isProd) {
                     return null
                 }
                 return event
