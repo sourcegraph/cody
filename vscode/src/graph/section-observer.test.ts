@@ -98,12 +98,12 @@ describe('SectionObserver', () => {
         await onDidChangeVisibleTextEditors()
 
         expect(sectionObserver.debugPrint()).toMatchInlineSnapshot(`
-          "file:///document1.ts
-            ├─ foo
-            └─ bar
-          file:///document2.ts
+          "file:///document2.ts
             ├─ baz
-            └─ qux"
+            └─ qux
+          file:///document1.ts
+            ├─ foo
+            └─ bar"
         `)
     })
 

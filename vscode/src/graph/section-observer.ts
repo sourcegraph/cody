@@ -1,3 +1,4 @@
+import { LRUCache } from 'lru-cache'
 import * as vscode from 'vscode'
 
 import { PreciseContext } from '@sourcegraph/cody-shared/src/codebase-context/messages'
@@ -7,8 +8,8 @@ import { getDocumentSections as defaultGetDocumentSections, DocumentSection } fr
 
 interface Section extends DocumentSection {
     context: {
-        lastRefreshAt: number
-        isDirty: boolean
+        lastRevalidateAt: number
+        isStale: boolean
         context: PreciseContext[] | null
     } | null
 }
@@ -16,7 +17,7 @@ interface Section extends DocumentSection {
 interface ActiveDocument {
     uri: string
     sections: Section[]
-    lastRefreshAt: number
+    lastRevalidateAt: number
     lastLines: number
 }
 
@@ -25,14 +26,20 @@ const TEN_MINUTES = 10 * ONE_MINUTE
 
 const NUM_OF_CHANGED_LINES_FOR_SECTION_RELOAD = 3
 
+const MAX_TRACKED_DOCUMENTS = 10
+
 /**
  * Watches a document for changes and refreshes the sections if needed. Preloads the sections that
  * the document is being modified by intersecting the cursor position with the document sections.
  *
+ * Each section will behave like a stale-while-revalidate cache in that it will serve the previous
+ * context while it is still being revalidated.
+ *
  * TODO:
- *  - [ ] GC?? How to make sure this does not grow unbound? Limit it to n total sections?
- *  - [ ] How does this work in reality?
- *  - [ ] Migrate all of this logging to use debug() API
+ *  - [ ] Create a new experimental flag and move all this code behind it.
+ *  - [ ] Wire this up to fetch the context for autocomplete requests
+ *  - [ ] Migrate to use hover tooltips and remove context that is "trivial" like Array TS definitions.
+ *  - [ ] Make logging use `debug()` APIs
  *  - [ ] Track the total number of time spent in the context methods
  *  - [ ] When we refresh sections, make sure to update the ranges even if the
  *        ID did not change
@@ -41,7 +48,9 @@ export class SectionObserver implements vscode.Disposable {
     private disposables: vscode.Disposable[] = []
 
     // A map of all active documents that are being tracked.
-    private activeDocuments: Map<string, ActiveDocument> = new Map()
+    private activeDocuments: LRUCache<string, ActiveDocument> = new LRUCache<string, ActiveDocument>({
+        max: MAX_TRACKED_DOCUMENTS,
+    })
 
     constructor(
         private window: Pick<
@@ -75,7 +84,7 @@ export class SectionObserver implements vscode.Disposable {
         // If a section is already hydrated and was not either marked as dirty or is older than one
         // minute, do not refresh the context.
         if (section.context) {
-            const shouldRefresh = section.context.isDirty || Date.now() - section.context.lastRefreshAt > ONE_MINUTE
+            const shouldRefresh = section.context.isStale || Date.now() - section.context.lastRevalidateAt > ONE_MINUTE
             if (!shouldRefresh) {
                 return
             }
@@ -83,13 +92,13 @@ export class SectionObserver implements vscode.Disposable {
 
         if (!section.context) {
             section.context = {
-                lastRefreshAt: Date.now(),
+                lastRevalidateAt: Date.now(),
                 context: null,
-                isDirty: false,
+                isStale: false,
             }
         } else {
-            section.context.lastRefreshAt = Date.now()
-            section.context.isDirty = false
+            section.context.lastRevalidateAt = Date.now()
+            section.context.isStale = false
         }
 
         section.context.context = await this.getGraphContextFromRange(editor, section.location.range)
@@ -106,7 +115,8 @@ export class SectionObserver implements vscode.Disposable {
      */
     public debugPrint(selectedDocument?: vscode.TextDocument, selections?: readonly vscode.Selection[]): string {
         const lines: string[] = []
-        for (const document of this.activeDocuments.values()) {
+        // eslint-disable-next-line ban/ban
+        this.activeDocuments.forEach(document => {
             lines.push(document.uri)
             for (const section of document.sections) {
                 const isSelected =
@@ -114,7 +124,7 @@ export class SectionObserver implements vscode.Disposable {
                     selections?.some(selection => section.location.range.contains(selection))
                 const isLast = document.sections[document.sections.length - 1] === section
                 const isHydrated = !!section.context
-                const isDirty = section.context?.isDirty ?? false
+                const isStale = section.context?.isStale ?? false
 
                 lines.push(
                     `  ${isLast ? '└' : '├'}${isSelected ? '*' : '─'} ` +
@@ -124,11 +134,11 @@ export class SectionObserver implements vscode.Disposable {
                                   section.context?.context === null
                                       ? 'loading'
                                       : `${section.context?.context.length ?? 0} snippets`
-                              }${isDirty ? ', dirty' : ''})`
+                              }${isStale ? ', dirty' : ''})`
                             : '')
                 )
             }
-        }
+        })
         return lines.join('\n')
     }
 
@@ -141,11 +151,11 @@ export class SectionObserver implements vscode.Disposable {
      */
     private async loadDocument(document: vscode.TextDocument): Promise<void> {
         const uri = document.uri.toString()
-        const lastRefreshAt = Date.now()
+        const lastRevalidateAt = Date.now()
         const lastLines = document.lineCount
         const sections = (await this.getDocumentSections(document)).map(section => ({
             ...section,
-            lastRefreshAt,
+            lastRevalidateAt,
             lastLines: section.location.range.end.line - section.location.range.start.line,
             context: null,
         }))
@@ -155,7 +165,7 @@ export class SectionObserver implements vscode.Disposable {
             this.activeDocuments.set(uri, {
                 uri,
                 sections,
-                lastRefreshAt,
+                lastRevalidateAt,
                 lastLines,
             })
             return
@@ -172,7 +182,7 @@ export class SectionObserver implements vscode.Disposable {
                 // All existing sections that were not removed will be marked as
                 // dirty so that they are reloaded the next time they are
                 // requested.
-                existingSection.context.isDirty = true
+                existingSection.context.isStale = true
             }
         }
         for (const sectionToRemove of sectionsToRemove) {
@@ -199,11 +209,12 @@ export class SectionObserver implements vscode.Disposable {
      */
     private async onDidChangeVisibleTextEditors(): Promise<void> {
         const removedDocuments: string[] = []
-        for (const document of this.activeDocuments.values()) {
+        // eslint-disable-next-line ban/ban
+        this.activeDocuments.forEach(document => {
             if (!this.window.visibleTextEditors.find(editor => editor.document.uri.toString() === document.uri)) {
                 removedDocuments.push(document.uri)
             }
-        }
+        })
         for (const uri of removedDocuments) {
             this.activeDocuments.delete(uri)
         }
@@ -238,7 +249,7 @@ export class SectionObserver implements vscode.Disposable {
         // loaded. If so, we reload the document which will mark all sections as dirty.
         const documentChangedSignificantly =
             Math.abs(document.lastLines - event.document.lineCount) >= NUM_OF_CHANGED_LINES_FOR_SECTION_RELOAD
-        const sectionsOutdated = Date.now() - document.lastRefreshAt > TEN_MINUTES
+        const sectionsOutdated = Date.now() - document.lastRevalidateAt > TEN_MINUTES
         if (documentChangedSignificantly || sectionsOutdated) {
             await this.loadDocument(event.document)
             return
@@ -258,7 +269,7 @@ export class SectionObserver implements vscode.Disposable {
 
             const section = this.getSectionAtPosition(event.document, change.range.start)
             if (section?.context) {
-                section.context.isDirty = true
+                section.context.isStale = true
             }
         }
     }
