@@ -80,7 +80,7 @@ const getGraphContextFromSelection = async (
 
     const unseenDefinitionUris = dedupeWith(
         definitionMatches.map(({ locations }) => locations.map(({ uri }) => uri)).flat(),
-        uri => uri.fsPath
+        'fsPath'
     ).filter(uri => !contentMap.has(uri.fsPath))
 
     const newContentMap = new Map(
@@ -146,7 +146,7 @@ export const extractRelevantDocumentSymbolRanges = async (
         new Map(
             dedupeWith(
                 selections.map(({ uri }) => uri),
-                uri => uri.fsPath
+                'fsPath'
             ).map(uri => [uri.fsPath, getDocumentSymbolRanges(uri)])
         )
     )
@@ -330,7 +330,7 @@ export const gatherDefinitions = async (
         // same definition, but we may be culling aggressively here for some edge cases. I don't
         // currently think that these are likely to be make-or-break a quality response on any
         // significant segment of real world questions, though.
-        for (const { symbolName, position } of dedupeWith(requestQueue, ({ symbolName }) => symbolName)) {
+        for (const { symbolName, position } of dedupeWith(requestQueue, 'symbolName')) {
             definitionMatches.push({
                 symbolName,
                 locations: getDefinitions(uri, position),
