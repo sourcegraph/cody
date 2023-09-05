@@ -21,10 +21,7 @@ export const extensionDetails: ExtensionDetails = {
     version: vscode.extensions.getExtension('sourcegraph.cody-ai')?.packageJSON?.version ?? packageVersion,
 }
 
-export async function createOrUpdateEventLogger(
-    config: ConfigurationWithAccessToken,
-    isExtensionModeDevOrTest: boolean
-): Promise<void> {
+export async function createOrUpdateEventLogger(config: ConfigurationWithAccessToken): Promise<void> {
     if (config.telemetryLevel === 'off') {
         eventLogger = null
         return
