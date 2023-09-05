@@ -26,7 +26,7 @@ export async function createOrUpdateEventLogger(config: ConfigurationWithAccessT
         eventLogger = null
         return
     }
-
+    
     if (isExtensionModeDevOrTest) {
         process.env.CODY_TESTING = 'true'
     }
