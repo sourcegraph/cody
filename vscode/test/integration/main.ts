@@ -30,7 +30,7 @@ async function main(): Promise<void> {
         // Download VS Code, unzip it, and run the integration test.
         await mockServer.run(() =>
             runTests({
-                version: '1.79.2',
+                version: '1.81.1',
                 extensionDevelopmentPath,
                 extensionTestsPath,
                 launchArgs: [

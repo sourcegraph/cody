@@ -1,8 +1,9 @@
-import React, { useRef } from 'react'
+import React from 'react'
 
 import { VSCodeButton } from '@vscode/webview-ui-toolkit/react'
 import classNames from 'classnames'
 
+import { CodyPrompt } from '@sourcegraph/cody-shared'
 import { ChatCommandsProps } from '@sourcegraph/cody-ui/src/Chat'
 
 import styles from './ChatCommands.module.css'
@@ -14,9 +15,7 @@ export const ChatCommandsComponent: React.FunctionComponent<React.PropsWithChild
     setSelectedChatCommand,
     onSubmit,
 }) => {
-    const selectionRef = useRef<HTMLButtonElement>(null)
-
-    const onCommandClick = (slashCommand?: string): void => {
+    const onCommandClick = (slashCommand: string): void => {
         if (!slashCommand) {
             return
         }
@@ -25,7 +24,8 @@ export const ChatCommandsComponent: React.FunctionComponent<React.PropsWithChild
         setSelectedChatCommand(-1)
     }
 
-    if (!chatCommands?.length || selectedChatCommand === undefined || selectedChatCommand < 0) {
+    const commands = chatCommands?.filter(([key]) => key !== 'separator')
+    if (!commands?.length || selectedChatCommand === undefined || selectedChatCommand < 0) {
         return null
     }
 
@@ -45,18 +45,28 @@ export const ChatCommandsComponent: React.FunctionComponent<React.PropsWithChild
             <div className={classNames(styles.commandsContainer)}>
                 {chatCommands &&
                     selectedChatCommand >= 0 &&
-                    chatCommands?.map(([command, prompt], i) => (
-                        <button
-                            className={classNames(styles.commandItem, selectedChatCommand === i && styles.selected)}
-                            key={prompt.slashCommand}
-                            onClick={() => onCommandClick(prompt.slashCommand)}
-                            type="button"
-                            ref={i === selectedChatCommand ? selectionRef : null}
-                        >
-                            <p className={styles.commandTitle}>{prompt.slashCommand}</p>
-                            <p className={styles.commandDescription}>{command}</p>
-                        </button>
-                    ))}
+                    chatCommands?.map(
+                        ([, prompt]: [string, CodyPrompt & { isLastInGroup?: boolean; instruction?: string }], i) => {
+                            const title = `${prompt.slashCommand}${prompt.instruction ? ` ${prompt.instruction}` : ''}`
+                            const hasSeparator = prompt.isLastInGroup && i < chatCommands.length - 1
+                            return (
+                                <React.Fragment key={prompt.slashCommand}>
+                                    <button
+                                        className={classNames(
+                                            styles.commandItem,
+                                            selectedChatCommand === i && styles.selected
+                                        )}
+                                        onClick={() => onCommandClick(prompt.slashCommand)}
+                                        type="button"
+                                    >
+                                        <p className={styles.commandTitle}>{title}</p>
+                                        <p className={styles.commandDescription}>{prompt.description}</p>
+                                    </button>
+                                    {hasSeparator ? <hr className={styles.separator} /> : null}
+                                </React.Fragment>
+                            )
+                        }
+                    )}
             </div>
         </div>
     )

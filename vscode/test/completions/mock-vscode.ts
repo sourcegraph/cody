@@ -25,9 +25,11 @@ const vscodeMock = {
                         case 'cody.autocomplete.enabled':
                             return true
                         case 'cody.serverEndpoint':
-                            return 'http://sourcegraph.test:3080/'
-                        case 'cody.autocomplete.advanced.provider':
-                            return 'anthropic'
+                            return 'https://sourcegraph.com/'
+                        // case 'cody.autocomplete.advanced.provider':
+                        //     return 'unstable-fireworks'
+                        // case 'cody.autocomplete.advanced.model':
+                        //     return 'llama-code-13b'
                         default:
                             return undefined
                     }

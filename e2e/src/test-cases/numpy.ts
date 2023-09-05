@@ -1,4 +1,4 @@
-import { addTestCase } from '.'
+import { addTestCase, literalFacts } from '.'
 
 addTestCase('Vector dot product', {
     codebase: 'github.com/numpy/numpy',
@@ -6,7 +6,7 @@ addTestCase('Vector dot product', {
     transcript: [
         {
             question: 'How do I calculate the dot product of two vectors in NumPy?',
-            facts: ['Dot product'],
+            facts: literalFacts('Dot product'),
             answerSummary: 'Explanation of how to calculate dot product of two vectors in NumPy',
         },
     ],
@@ -18,13 +18,13 @@ addTestCase('Softmax', {
     transcript: [
         {
             question: 'How do I calculate the softmax of a vector in NumPy?',
-            facts: ['Softmax'],
+            facts: literalFacts('Softmax'),
             answerSummary: 'Sample code of how to calculate softmax of a vector in NumPy',
         },
         {
             question:
                 'How do I calculate the softmax of a vector in NumPy? Be sure to use a method which avoids numerical overflow or underflow',
-            facts: ['Softmax'],
+            facts: literalFacts('Softmax'),
             answerSummary:
                 'Sample code of how to calculate softmax of a vector in NumPy which avoids potential numerical overflow or underflow issues',
         },
@@ -37,7 +37,7 @@ addTestCase('Ufunc explanation', {
     transcript: [
         {
             question: 'Please provide a detailed explanation of ufuncs in NumPy',
-            facts: ['Ufunc'],
+            facts: literalFacts('Ufunc'),
             answerSummary:
                 'An explanation of NumPy ufuncs, including what they are, common examples, and how they work under the hood',
         },

@@ -23,3 +23,5 @@ export const sidebarSignin = async (page: Page, sidebar: Frame, testInfo: any): 
 // Selector for the Explorer button in the sidebar that would match on Mac and Linux
 const sidbarExplorerRole = { name: /Explorer.*/ }
 export const sidebarExplorer = (page: Page): Locator => page.getByRole('tab', sidbarExplorerRole)
+
+export const codyEditorCommandButtonRole = { name: /Commands.*/ }

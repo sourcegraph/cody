@@ -16,10 +16,13 @@ import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/cody-shared/src/telemetry'
 import { GetContextResult } from '../../src/completions/context/context'
 import { VSCodeDocumentHistory } from '../../src/completions/context/history'
 import { createProviderConfig } from '../../src/completions/providers/createProvider'
+import { ProviderConfig } from '../../src/completions/providers/provider'
 import { InlineCompletionItemProvider } from '../../src/completions/vscodeInlineCompletionItemProvider'
 import { getFullConfig } from '../../src/configuration'
 import { configureExternalServices } from '../../src/external-services'
-import { InMemorySecretStorage } from '../../src/services/SecretStorageProvider'
+import { initializeNetworkAgent } from '../../src/fetch.node'
+import { localStorage } from '../../src/services/LocalStorageProvider'
+import { InMemorySecretStorage, secretStorage, VSCodeSecretStorage } from '../../src/services/SecretStorageProvider'
 import { wrapVSCodeTextDocument } from '../../src/testutils/textDocument'
 
 import { completionsDataset, CURSOR, Sample } from './completions-dataset'
@@ -27,7 +30,7 @@ import { ENVIRONMENT_CONFIG } from './environment-config'
 import { findSubstringPosition } from './utils'
 
 let didLogConfig = false
-let providerName: string
+let providerConfig: ProviderConfig | null
 
 const dummyFeatureFlagProvider = new FeatureFlagProvider(
     new SourcegraphGraphQLAPIClient({
@@ -37,12 +40,22 @@ const dummyFeatureFlagProvider = new FeatureFlagProvider(
     })
 )
 
+initializeNetworkAgent()
+
 async function initCompletionsProvider(context: GetContextResult): Promise<InlineCompletionItemProvider> {
-    const secretStorage = new InMemorySecretStorage()
+    if (secretStorage instanceof VSCodeSecretStorage) {
+        secretStorage.setStorage(new InMemorySecretStorage() as any as vscode.SecretStorage)
+    }
     await secretStorage.store('cody.access-token', ENVIRONMENT_CONFIG.SOURCEGRAPH_ACCESS_TOKEN)
 
-    const initialConfig = await getFullConfig(secretStorage)
-    providerName = initialConfig.autocompleteAdvancedProvider
+    // Optional for completions provider. Mock to make TS happy.
+    localStorage.setStorage({
+        get() {
+            return undefined
+        },
+    } as any as vscode.Memento)
+
+    const initialConfig = await getFullConfig()
     if (!didLogConfig) {
         console.error('Running `initCompletionsProvider` with config:', initialConfig)
         didLogConfig = true
@@ -52,7 +65,7 @@ async function initCompletionsProvider(context: GetContextResult): Promise<Inlin
         throw new Error('`cody.autocomplete` is not true!')
     }
 
-    const { completionsClient, codebaseContext } = await configureExternalServices(
+    const { codeCompletionsClient, codebaseContext } = await configureExternalServices(
         initialConfig,
         'rg',
         undefined,
@@ -63,7 +76,7 @@ async function initCompletionsProvider(context: GetContextResult): Promise<Inlin
 
     const history = new VSCodeDocumentHistory()
 
-    const providerConfig = createProviderConfig(initialConfig, completionsClient)
+    providerConfig = await createProviderConfig(initialConfig, codeCompletionsClient)
     if (!providerConfig) {
         throw new Error('invalid completion config: no provider')
     }
@@ -73,6 +86,7 @@ async function initCompletionsProvider(context: GetContextResult): Promise<Inlin
         statusBar: {
             startLoading: () => () => {},
             dispose: () => {},
+            addError: () => {},
         },
         history,
         getCodebaseContext: () => codebaseContext,
@@ -175,10 +189,10 @@ async function generateCompletionsForDataset(codeSamples: Sample[]): Promise<voi
     // TODO: prettify path management
     // Save results to a JSON file in the completions-review-tool/data folder to be used by the review tool:
     // pnpm --filter @sourcegraph/completions-review-tool run dev
-    if (!providerName) {
+    if (providerConfig === null) {
         throw new Error('No provider name')
     }
-    const filename = path.join(ENVIRONMENT_CONFIG.OUTPUT_PATH, `${providerName}-${timestamp}.json`)
+    const filename = path.join(ENVIRONMENT_CONFIG.OUTPUT_PATH, `${providerConfig.identifier}-${timestamp}.json`)
     fs.mkdirSync(ENVIRONMENT_CONFIG.OUTPUT_PATH, { recursive: true })
     fs.writeFileSync(filename, JSON.stringify(results, null, 2))
     console.log('\n✅ Completions saved to:', filename)

@@ -57,44 +57,46 @@ func bonk() => { return new bar().Bar(new foo().Foo(), baz.Foo()) }
 
 describe('extractRelevantDocumentSymbolRanges', () => {
     test('returns all document symbol ranges by default', async () => {
-        const ranges = await extractRelevantDocumentSymbolRanges(URI.file('/test-1.test'), undefined, () =>
+        const uri = URI.file('/test-1.test')
+        const ranges = await extractRelevantDocumentSymbolRanges([{ uri }], () =>
             Promise.resolve([
                 new vscode.Range(2, 0, 8, 1), // foo
                 new vscode.Range(10, 0, 16, 1), // bar
             ])
         )
 
-        expect(ranges).toEqual([
-            new vscode.Range(2, 0, 8, 1), // foo
-            new vscode.Range(10, 0, 16, 1), // bar
+        expect(ranges.map(({ uri, range }) => ({ uri: uri.fsPath, range }))).toEqual([
+            { uri: uri.fsPath, range: new vscode.Range(2, 0, 8, 1) }, // foo
+            { uri: uri.fsPath, range: new vscode.Range(10, 0, 16, 1) }, // bar
         ])
     })
 
     test('returns partial document symbol ranges with selection range', async () => {
-        const ranges = await extractRelevantDocumentSymbolRanges(
-            URI.file('/test-1.test'),
-            new vscode.Range(4, 3, 5, 5),
-            () =>
-                Promise.resolve([
-                    new vscode.Range(2, 0, 8, 1), // foo
-                    new vscode.Range(10, 0, 16, 1), // bar
-                ])
+        const uri = URI.file('/test-1.test')
+        const ranges = await extractRelevantDocumentSymbolRanges([{ uri, range: new vscode.Range(4, 3, 5, 5) }], () =>
+            Promise.resolve([
+                new vscode.Range(2, 0, 8, 1), // foo
+                new vscode.Range(10, 0, 16, 1), // bar
+            ])
         )
 
-        expect(ranges).toEqual([
-            new vscode.Range(2, 0, 8, 1), // foo
+        expect(ranges.map(({ uri, range }) => ({ uri: uri.fsPath, range }))).toEqual([
+            { uri: uri.fsPath, range: new vscode.Range(2, 0, 8, 1) }, // foo
         ])
     })
 })
 
 describe('gatherDefinitions', () => {
     test('returns definitions referencing multiple files', async () => {
+        const uri = Uri.parse('/test-3.test')
         const definitions = await gatherDefinitions(
-            Uri.parse('/test-3.test'),
-            testFile3.split('\n').slice(1),
             [
-                new vscode.Range(4, 0, 7, 67), // bonk
+                {
+                    uri,
+                    range: new vscode.Range(4, 0, 7, 67), // bonk
+                },
             ],
+            new Map([[uri.fsPath, testFile3.split('\n').slice(1)]]),
             // eslint-disable-next-line @typescript-eslint/require-await
             async (uri: URI, position: vscode.Position): Promise<vscode.Location[]> => {
                 switch (position.character) {
@@ -119,10 +121,14 @@ describe('gatherDefinitions', () => {
         )
 
         expect(definitions).toEqual([
-            { symbolName: 'Some', locations: [] },
-            { symbolName: 'docstring', locations: [] },
-            { symbolName: 'here', locations: [] },
-            { symbolName: 'bonk', locations: [{ uri: Uri.file('/test-3.test'), range: new vscode.Range(7, 5, 7, 7) }] },
+            // Empty locations are pruned
+            // { symbolName: 'Some', locations: [] },
+            // { symbolName: 'docstring', locations: [] },
+            // { symbolName: 'here', locations: [] },
+
+            // Definitions within input selection are pruned
+            // { symbolName: 'bonk', locations: [{ uri: Uri.file('/test-3.test'), range: new vscode.Range(7, 5, 7, 7) }] },
+
             {
                 symbolName: 'bar',
                 locations: [{ uri: Uri.file('/test-1.test'), range: new vscode.Range(10, 6, 10, 9) }],
@@ -134,7 +140,9 @@ describe('gatherDefinitions', () => {
             { symbolName: 'foo', locations: [{ uri: Uri.file('/test-1.test'), range: new vscode.Range(2, 6, 2, 9) }] },
             { symbolName: 'Foo', locations: [{ uri: Uri.file('/test-1.test'), range: new vscode.Range(3, 6, 3, 9) }] },
             { symbolName: 'baz', locations: [{ uri: Uri.file('/test-2.test'), range: new vscode.Range(3, 6, 3, 8) }] },
-            { symbolName: 'Foo', locations: [{ uri: Uri.file('/test-1.test'), range: new vscode.Range(3, 6, 3, 9) }] },
+
+            // Duplicates are thrown out
+            // { symbolName: 'Foo', locations: [{ uri: Uri.file('/test-1.test'), range: new vscode.Range(3, 6, 3, 9) }] },
         ])
     })
 })

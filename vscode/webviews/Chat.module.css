@@ -34,6 +34,8 @@ body[data-vscode-theme-kind='vscode-high-contrast'] .human-transcript-item {
     /* Our syntax highlighter emits colors intended for dark backgrounds only. */
     background-color: var(--code-background);
     color: var(--code-foreground);
+    font-family: var(--vscode-editor-font-family);
+    font-size: var(--vscode-editor-font-size);
 }
 
 .transcript-item ul:not(.transcript-action *),
@@ -88,7 +90,7 @@ body[data-vscode-theme-kind='vscode-high-contrast'] .human-transcript-item {
 
 .chat-input-container::after {
     /* Note the weird space! Needed to preventy jumpy behavior */
-    content: attr(data-value) " ";
+    content: attr(data-value) ' ';
     /* This is how textarea text behaves */
     white-space: pre-wrap;
     /* Hidden from view, clicks, and screen readers */
@@ -96,7 +98,8 @@ body[data-vscode-theme-kind='vscode-high-contrast'] .human-transcript-item {
 }
 
 /* Both elements need the same styling so the height matches */
-.chat-input, .chat-input-container::after {
+.chat-input,
+.chat-input-container::after {
     box-sizing: border-box;
     background-color: var(--vscode-input-background);
     color: var(--vscode-input-foreground);
@@ -187,7 +190,8 @@ body[data-vscode-theme-kind='vscode-high-contrast'] .human-transcript-item {
     color: var(--foreground);
 }
 
-.submit-button, .submit-button-disabled {
+.submit-button,
+.submit-button-disabled {
     margin-bottom: 0;
 }
 

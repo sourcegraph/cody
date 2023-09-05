@@ -1,28 +1,29 @@
-import { mkdir, mkdtempSync, rmdirSync, writeFile } from 'fs'
+import { mkdir, mkdtempSync, rmSync, writeFile } from 'fs'
 import { tmpdir } from 'os'
 import * as path from 'path'
 
 import { test as base, Frame, Page } from '@playwright/test'
-import { downloadAndUnzipVSCode } from '@vscode/test-electron'
 import { _electron as electron } from 'playwright'
 
 import { run } from '../fixtures/mock-server'
+
+import { installDeps } from './install-deps'
 
 export const test = base
     .extend<{}>({
         page: async ({ page: _page }, use, testInfo) => {
             void _page
 
-            const codyRoot = path.resolve(__dirname, '..', '..')
+            const vscodeRoot = path.resolve(__dirname, '..', '..')
 
-            const vscodeExecutablePath = await downloadAndUnzipVSCode('1.79.2')
-            const extensionDevelopmentPath = codyRoot
+            const vscodeExecutablePath = await installDeps()
+            const extensionDevelopmentPath = vscodeRoot
 
             const userDataDirectory = mkdtempSync(path.join(tmpdir(), 'cody-vsce'))
             const extensionsDirectory = mkdtempSync(path.join(tmpdir(), 'cody-vsce'))
-            const videoDirectory = path.join(codyRoot, '..', '..', 'playwright', escapeToPath(testInfo.title))
+            const videoDirectory = path.join(vscodeRoot, '..', 'playwright', escapeToPath(testInfo.title))
 
-            const workspaceDirectory = path.join(codyRoot, 'test', 'fixtures', 'workspace')
+            const workspaceDirectory = path.join(vscodeRoot, 'test', 'fixtures', 'workspace')
 
             await buildWorkSpaceSettings(workspaceDirectory)
 
@@ -46,7 +47,6 @@ export const test = base
                     `--extensions-dir=${extensionsDirectory}`,
                     workspaceDirectory,
                 ],
-                // Record a video that can be picked up by Buildkite. Since there is no way right
                 recordVideo: {
                     dir: videoDirectory,
                 },
@@ -78,11 +78,11 @@ export const test = base
 
             // Delete the recorded video if the test passes
             if (testInfo.status === 'passed') {
-                rmdirSync(videoDirectory, { recursive: true })
+                rmSync(videoDirectory, { recursive: true })
             }
 
-            rmdirSync(userDataDirectory, { recursive: true })
-            rmdirSync(extensionsDirectory, { recursive: true })
+            rmSync(userDataDirectory, { recursive: true })
+            rmSync(extensionsDirectory, { recursive: true })
         },
     })
     .extend<{ sidebar: Frame }>({

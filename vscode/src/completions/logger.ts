@@ -1,20 +1,22 @@
 import { LRUCache } from 'lru-cache'
 import * as vscode from 'vscode'
 
+import { isAbortError, isNetworkError, isRateLimitError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
 import { TelemetryEventProperties } from '@sourcegraph/cody-shared/src/telemetry'
 
 import { logEvent } from '../services/EventLogger'
+import { captureException } from '../services/sentry/sentry'
 
 import { ContextSummary } from './context/context'
 import { InlineCompletionItem } from './types'
-import { isAbortError, isRateLimitError } from './utils'
 
-interface CompletionEvent {
+export interface CompletionEvent {
     params: {
         type: 'inline'
         multiline: boolean
         multilineMode: null | 'block'
         providerIdentifier: string
+        providerModel: string
         languageId: string
         contextSummary?: ContextSummary
         source?: string
@@ -155,6 +157,10 @@ export function accept(id: string, completion: InlineCompletionItem): void {
     })
 }
 
+export function completionEvent(id: string): CompletionEvent | undefined {
+    return displayedCompletions.get(id)
+}
+
 export function noResponse(id: string): void {
     const completionEvent = displayedCompletions.get(id)
     logCompletionEvent('noResponse', completionEvent?.params ?? {})
@@ -246,11 +252,14 @@ export function logError(error: Error): void {
         return
     }
 
+    captureException(error)
+
     const message = error.message
+    const traceId = isNetworkError(error) ? error.traceId : undefined
 
     if (!errorCounts.has(message)) {
         errorCounts.set(message, 0)
-        logCompletionEvent('error', { message, count: 1 })
+        logCompletionEvent('error', { message, traceId, count: 1 })
     }
 
     const count = errorCounts.get(message)!
@@ -258,7 +267,7 @@ export function logError(error: Error): void {
         // Start a new flush interval
         setTimeout(() => {
             const count = errorCounts.get(message)!
-            logCompletionEvent('error', { message, count })
+            logCompletionEvent('error', { message, traceId, count })
             errorCounts.set(message, 0)
         }, TEN_MINUTES)
     }

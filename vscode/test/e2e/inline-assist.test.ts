@@ -22,7 +22,7 @@ test('start a fixup job from inline chat with valid auth', async ({ page, sideba
     await page.waitForSelector('.monaco-text-button')
 
     // Type in the instruction for fixup
-    await page.keyboard.type('/fix replace hello with goodbye')
+    await page.keyboard.type('/edit replace hello with goodbye')
     // Click on the submit button with the name Ask Cody
     await page.click('.monaco-text-button')
 

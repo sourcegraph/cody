@@ -37,7 +37,7 @@ export function getContextFromEmbeddings(options: Options): ContextSnippet[] {
      * file significantly changed. We can use the `onDidChangeTextDocument`
      * event with some diffing logic for that in the improved version.
      */
-    if (!embeddingsForCurrentFile || differenceInMinutes(embeddingsForCurrentFile.lastChange, new Date()) > 5) {
+    if (!embeddingsForCurrentFile || differenceInMinutes(new Date(), embeddingsForCurrentFile.lastChange) > 5) {
         fetchAndSaveEmbeddings({
             getCodebaseContext,
             currentFilePath,

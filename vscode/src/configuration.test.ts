@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import type * as vscode from 'vscode'
 
-import { DOTCOM_URL } from './chat/protocol'
+import { DOTCOM_URL } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
+
 import { getConfiguration } from './configuration'
 
 describe('getConfiguration', () => {
@@ -32,11 +33,13 @@ describe('getConfiguration', () => {
             debugVerbose: false,
             debugFilter: null,
             telemetryLevel: 'all',
-            autocompleteAdvancedProvider: 'anthropic',
+            autocompleteAdvancedProvider: null,
             autocompleteAdvancedServerEndpoint: null,
+            autocompleteAdvancedModel: null,
             autocompleteAdvancedAccessToken: null,
             autocompleteAdvancedEmbeddings: true,
             autocompleteExperimentalCompleteSuggestWidgetSelection: false,
+            autocompleteExperimentalSyntacticPostProcessing: false,
         })
     })
 
@@ -87,11 +90,15 @@ describe('getConfiguration', () => {
                         return 'unstable-codegen'
                     case 'cody.autocomplete.advanced.serverEndpoint':
                         return 'https://example.com/llm'
+                    case 'cody.autocomplete.advanced.model':
+                        return 'starcoder-32b'
                     case 'cody.autocomplete.advanced.accessToken':
                         return 'foobar'
                     case 'cody.autocomplete.advanced.embeddings':
                         return false
                     case 'cody.autocomplete.experimental.completeSuggestWidgetSelection':
+                        return false
+                    case 'cody.autocomplete.experimental.syntacticPostProcessing':
                         return false
                     case 'cody.plugins.enabled':
                         return true
@@ -136,9 +143,11 @@ describe('getConfiguration', () => {
             telemetryLevel: 'off',
             autocompleteAdvancedProvider: 'unstable-codegen',
             autocompleteAdvancedServerEndpoint: 'https://example.com/llm',
+            autocompleteAdvancedModel: 'starcoder-32b',
             autocompleteAdvancedAccessToken: 'foobar',
             autocompleteAdvancedEmbeddings: false,
             autocompleteExperimentalCompleteSuggestWidgetSelection: false,
+            autocompleteExperimentalSyntacticPostProcessing: false,
         })
     })
 })

@@ -1,22 +1,29 @@
 import { Preamble } from '../preamble'
 
 import * as defaultPrompts from './default-prompts.json'
+import { toSlashCommand } from './utils'
 
-export function getDefaultCommandsMap(): Map<string, CodyPrompt> {
+export function getDefaultCommandsMap(editorCommands: CodyPrompt[] = []): Map<string, CodyPrompt> {
     const map = new Map<string, CodyPrompt>()
+
+    // Add editor specifc commands
+    for (const command of editorCommands) {
+        if (command.slashCommand) {
+            map.set(command.slashCommand, command)
+        }
+    }
+
+    // Add default commands
     const prompts = defaultPrompts.commands as Record<string, unknown>
     for (const key in prompts) {
         if (Object.prototype.hasOwnProperty.call(prompts, key)) {
             const prompt = prompts[key] as CodyPrompt
-            prompt.name = key
             prompt.type = 'default'
-            if (prompt.slashCommand) {
-                const slashCommand = '/' + prompt.slashCommand
-                prompt.slashCommand = slashCommand
-            }
-            map.set(key, prompt)
+            prompt.slashCommand = toSlashCommand(key)
+            map.set(prompt.slashCommand, prompt)
         }
     }
+
     return map
 }
 
@@ -34,7 +41,7 @@ export interface MyPrompts {
 
 // JSON format of MyPrompts
 export interface MyPromptsJSON {
-    commands: { [id: string]: CodyPrompt }
+    commands: { [id: string]: Omit<CodyPrompt, 'slashCommand'> }
     recipes?: { [id: string]: CodyPrompt }
     premade?: CodyPremade
     starter?: string
@@ -47,11 +54,11 @@ export interface CodyPremade {
 }
 
 export interface CodyPrompt {
-    name?: string
+    description?: string
     prompt: string
     context?: CodyPromptContext
     type?: CodyPromptType
-    slashCommand?: string
+    slashCommand: string
 }
 
 // Type of context available for prompt building

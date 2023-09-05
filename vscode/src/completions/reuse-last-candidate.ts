@@ -1,6 +1,6 @@
 import { isDefined } from '@sourcegraph/cody-shared/src/common'
 
-import { DocumentContext } from './document'
+import { DocumentContext } from './get-current-doc-context'
 import { InlineCompletionsParams, InlineCompletionsResult, InlineCompletionsResultSource } from './getInlineCompletions'
 import { InlineCompletionItem } from './types'
 

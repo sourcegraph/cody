@@ -7,8 +7,10 @@ export enum FeatureFlag {
     // product code
     TestFlagDoNotUse = 'test-flag-do-not-use',
 
+    CodyAutocompleteTracing = 'cody-autocomplete-tracing',
     CodyAutocompleteIncreasedDebounceTimeEnabled = 'cody-autocomplete-increased-debounce-time-enabled',
     CodyAutocompleteStreamingResponse = 'cody-autocomplete-streaming-response',
+    CodyAutocompleteDefaultProviderFireworks = 'cody-autocomplete-default-provider-fireworks',
 }
 
 const ONE_HOUR = 60 * 60 * 1000

@@ -13,6 +13,7 @@ import { Recipe, RecipeContext, RecipeID } from './recipe'
 
 export class InlineChat implements Recipe {
     public id: RecipeID = 'inline-chat'
+    public title = 'Inline Chat'
 
     constructor(private debug: (filterLabel: string, text: string, ...args: unknown[]) => void) {}
 
@@ -23,8 +24,8 @@ export class InlineChat implements Recipe {
         }
 
         // Check if this is a fixup request
-        if (commandRegex.fix.test(humanChatInput)) {
-            return new Fixup().getInteraction(humanChatInput.replace(commandRegex.fix, ''), context)
+        if (commandRegex.edit.test(humanChatInput)) {
+            return new Fixup().getInteraction(humanChatInput.replace(commandRegex.edit, ''), context)
         }
 
         const selection = context.editor.getActiveTextEditorSelection()

@@ -8,6 +8,7 @@
 import type {
     Disposable as VSCodeDisposable,
     InlineCompletionTriggerKind as VSCodeInlineCompletionTriggerKind,
+    Location as VSCodeLocation,
     Position as VSCodePosition,
     Range as VSCodeRange,
 } from 'vscode'
@@ -336,6 +337,21 @@ export class Position implements VSCodePosition {
     }
 }
 
+export class Location implements VSCodeLocation {
+    public range: VSCodeRange
+
+    constructor(
+        public readonly uri: vscode_types.Uri,
+        rangeOrPosition: VSCodeRange | VSCodePosition
+    ) {
+        if ('line' in rangeOrPosition && 'character' in rangeOrPosition) {
+            this.range = new Range(rangeOrPosition, rangeOrPosition)
+        } else {
+            this.range = rangeOrPosition
+        }
+    }
+}
+
 export class Range implements VSCodeRange {
     public start: Position
     public end: Position
@@ -478,7 +494,7 @@ export class EventEmitter<T> implements vscode_types.EventEmitter<T> {
         }
     }
     dispose(): void {
-        // throw new Error('Method not implemented.')
+        this.listeners.clear()
     }
 }
 
@@ -494,13 +510,25 @@ export enum FileType {
     SymbolicLink = 64,
 }
 
-export class CancellationTokenSource {
-    public token: unknown
-
+export class CancellationToken implements vscode_types.CancellationToken {
+    public isCancellationRequested = false
+    public emitter = new EventEmitter<void>()
     constructor() {
-        this.token = {
-            onCancellationRequested() {},
+        this.emitter.event(() => {
+            this.isCancellationRequested = true
+        })
+    }
+    onCancellationRequested = this.emitter.event
+}
+export class CancellationTokenSource implements vscode_types.CancellationTokenSource {
+    public token = new CancellationToken()
+    cancel(): void {
+        if (!this.token.isCancellationRequested) {
+            this.token.emitter.fire()
         }
+    }
+    dispose(): void {
+        this.token.emitter.dispose()
     }
 }
 

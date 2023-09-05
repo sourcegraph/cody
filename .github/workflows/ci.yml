@@ -28,6 +28,7 @@ jobs:
           key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
           restore-keys: ${{ runner.os }}-pnpm-store-
       - run: pnpm install
+      - run: pnpm build
       - run: pnpm run test:unit --run
 
   test-integration:
@@ -85,6 +86,11 @@ jobs:
         if: matrix.runner == 'ubuntu-latest'
       - run: pnpm -C vscode run test:e2e
         if: matrix.runner == 'windows-latest' || matrix.runner == 'macos-latest'
+      - uses: actions/upload-artifact@v3
+        if: ${{ failure() }}
+        with:
+          name: playwright-recordings ${{ matrix.runner }}
+          path: playwright/**/*.webm
 
   build:
     runs-on: ubuntu-latest

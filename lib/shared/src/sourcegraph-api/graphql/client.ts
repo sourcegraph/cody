@@ -2,6 +2,7 @@ import fetch from 'isomorphic-fetch'
 
 import { ConfigurationWithAccessToken } from '../../configuration'
 import { isError } from '../../utils'
+import { DOTCOM_URL, isDotCom } from '../environments'
 
 import {
     CURRENT_SITE_CODY_LLM_CONFIGURATION,
@@ -187,8 +188,7 @@ type GraphQLAPIClientConfig = Pick<ConfigurationWithAccessToken, 'serverEndpoint
     Pick<Partial<ConfigurationWithAccessToken>, 'telemetryLevel'>
 
 export class SourcegraphGraphQLAPIClient {
-    private dotcomUrl = 'https://sourcegraph.com'
-
+    private dotcomUrl = DOTCOM_URL
     constructor(private config: GraphQLAPIClientConfig) {}
 
     public onConfigurationChange(newConfig: GraphQLAPIClientConfig): void {
@@ -196,7 +196,7 @@ export class SourcegraphGraphQLAPIClient {
     }
 
     public isDotCom(): boolean {
-        return new URL(this.config.serverEndpoint).origin === new URL(this.dotcomUrl).origin
+        return isDotCom(this.config.serverEndpoint)
     }
 
     public async getSiteVersion(): Promise<string | Error> {
@@ -498,7 +498,7 @@ export class SourcegraphGraphQLAPIClient {
 
     // make an anonymous request to the dotcom API
     private fetchSourcegraphDotcomAPI<T>(query: string, variables: Record<string, any>): Promise<T | Error> {
-        const url = buildGraphQLUrl({ request: query, baseUrl: this.dotcomUrl })
+        const url = buildGraphQLUrl({ request: query, baseUrl: this.dotcomUrl.href })
         return fetch(url, {
             method: 'POST',
             body: JSON.stringify({ query, variables }),

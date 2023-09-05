@@ -9,19 +9,36 @@ export const NewCustomCommandConfigMenuOptions = {
     title: 'Cody Custom Commands (Experimental) - New User Command',
 }
 
+export type QuickPickItemWithSlashCommand = QuickPickItem & { slashCommand: string }
+
+export const ASK_QUESTION_COMMAND = {
+    description: 'Ask a question',
+    slashCommand: '/ask',
+}
+export const EDIT_COMMAND = {
+    description: 'Edit code',
+    slashCommand: '/edit',
+}
+
 const inlineSeparator: QuickPickItem = { kind: -1, label: 'inline' }
-const chatOption: QuickPickItem = { label: 'Ask a Question' }
-const fixOption: QuickPickItem = { label: 'Refactor This Code' }
+const chatOption: QuickPickItemWithSlashCommand = {
+    label: ASK_QUESTION_COMMAND.slashCommand,
+    description: ASK_QUESTION_COMMAND.description,
+    slashCommand: ASK_QUESTION_COMMAND.slashCommand,
+}
+const fixOption: QuickPickItemWithSlashCommand = {
+    label: EDIT_COMMAND.slashCommand,
+    description: EDIT_COMMAND.description,
+    slashCommand: EDIT_COMMAND.slashCommand,
+}
 const commandsSeparator: QuickPickItem = { kind: -1, label: 'commands' }
 const customCommandsSeparator: QuickPickItem = { kind: -1, label: 'custom commands (experimental)' }
 const configOption: QuickPickItem = { label: 'Configure Custom Commands...' }
 const settingsSeparator: QuickPickItem = { kind: -1, label: 'settings' }
-const addOption: QuickPickItem = { label: 'New Custom User Command...', alwaysShow: true }
-const chatSubmitOption: QuickPickItem = { label: 'Submit Question', alwaysShow: true }
-const fixSubmitOption: QuickPickItem = { label: 'Submit Refactor Request', alwaysShow: true }
+const addOption: QuickPickItem = { label: 'Create a New Custom User Command...', alwaysShow: true }
 
 export const recentlyUsedSeparatorAsPrompt: [string, CodyPrompt][] = [
-    ['separator', { prompt: 'separator', type: 'recently used' }],
+    ['separator', { prompt: 'separator', type: 'recently used', slashCommand: '' }],
 ]
 
 export const menu_separators = {
@@ -36,8 +53,6 @@ export const menu_options = {
     fix: fixOption,
     config: configOption,
     add: addOption,
-    submitChat: chatSubmitOption,
-    submitFix: fixSubmitOption,
 }
 
 const userItem: QuickPickItem = {
@@ -86,8 +101,7 @@ export const customPromptsContextOptions: ContextOption[] = [
     {
         id: 'currentDir',
         label: 'Current Directory',
-        description: 'If the prompt includes "test(s)", only test files will be included.',
-        detail: 'First 10 text files in the current directory',
+        detail: 'First 10 text files in the current directory. If the prompt includes the words "test" or "tests", only test files will be included.',
         picked: false,
     },
     {
@@ -99,7 +113,7 @@ export const customPromptsContextOptions: ContextOption[] = [
     {
         id: 'command',
         label: 'Command Output',
-        detail: 'The output returned from a terminal command run from your local workspace. E.g. git describe --long',
+        detail: 'The output returned from a terminal command (e.g. git describe --long, node your-script.js, cat src/file-name.js)',
         picked: false,
     },
     {
@@ -133,17 +147,6 @@ export async function showRemoveConfirmationInput(): Promise<string | void> {
 export async function commandPicker(promptList: string[] = []): Promise<string> {
     const selectedRecipe = (await window.showQuickPick(promptList)) || ''
     return selectedRecipe
-}
-
-export async function quickChatInput(): Promise<void> {
-    const humanInput = await window.showInputBox({
-        prompt: 'Ask Cody a question...',
-        placeHolder: 'e.g. What is a class in TypeScript?',
-        validateInput: (input: string) => (input ? null : 'Please enter a question.'),
-    })
-    if (humanInput) {
-        await commands.executeCommand('cody.action.chat', humanInput)
-    }
 }
 
 // Quick pick menu with the correct command type (user or workspace) selections based on existing JSON files
@@ -185,7 +188,7 @@ export async function showcommandTypeQuickPick(
 export const CustomCommandConfigMenuItems = [
     {
         kind: 0,
-        label: 'New Custom User Command...',
+        label: 'Create a New Custom User Command...',
         id: 'add',
         type: 'user',
         description: '',
@@ -212,3 +215,30 @@ export const CustomCommandConfigMenuItems = [
     { kind: -1, id: 'separator', label: '' },
     { kind: 0, label: 'See Example Commands', id: 'example', type: 'default' },
 ]
+
+export async function showAskQuestionQuickPick(): Promise<string> {
+    const quickPick = window.createQuickPick()
+    quickPick.title = `${ASK_QUESTION_COMMAND.description} (${ASK_QUESTION_COMMAND.slashCommand})`
+    quickPick.placeholder = 'Your question'
+    quickPick.buttons = [menu_buttons.back]
+
+    quickPick.onDidTriggerButton(() => {
+        void commands.executeCommand('cody.action.commands.menu')
+        quickPick.hide()
+    })
+
+    quickPick.show()
+
+    return new Promise(resolve =>
+        quickPick.onDidAccept(() => {
+            const question = quickPick.value.trim()
+            if (!question) {
+                // noop
+                return
+            }
+
+            quickPick.hide()
+            return resolve(question)
+        })
+    )
+}

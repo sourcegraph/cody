@@ -1,12 +1,12 @@
 import { LRUCache } from 'lru-cache'
 import * as vscode from 'vscode'
 
-import { DocumentContext } from './document'
+import { DocumentContext } from './get-current-doc-context'
 import { LastInlineCompletionCandidate } from './getInlineCompletions'
 import { logCompletionEvent } from './logger'
-import { processInlineCompletions } from './processInlineCompletions'
 import { CompletionProviderTracer, Provider } from './providers/provider'
 import { reuseLastCandidate } from './reuse-last-candidate'
+import { processInlineCompletions } from './text-processing/process-inline-completions'
 import { ContextSnippet, InlineCompletionItem } from './types'
 
 export interface RequestParams {

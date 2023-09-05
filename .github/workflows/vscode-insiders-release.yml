@@ -18,6 +18,7 @@ jobs:
       - uses: pnpm/action-setup@v2
         with:
           run_install: true
+      - run: pnpm build
       - run: pnpm run test
       - run: xvfb-run -a pnpm -C vscode run test:integration
       - run: xvfb-run -a pnpm -C vscode run test:e2e
@@ -33,3 +34,7 @@ jobs:
           SLACK_CHANNEL: wg-cody-vscode
           SLACK_ICON: https://github.com/sourcegraph.png?size=48
           SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+          SLACK_MESSAGE: Insiders build failed
+          SLACK_COLOR: danger
+          SLACK_FOOTER: ''
+          MSG_MINIMAL: actions url
