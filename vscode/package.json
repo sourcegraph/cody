@@ -854,8 +854,9 @@
         },
         "cody.autocomplete.advanced.provider": {
           "type": "string",
-          "default": "anthropic",
+          "default": null,
           "enum": [
+            null,
             "anthropic",
             "unstable-codegen",
             "unstable-fireworks",
@@ -874,7 +875,9 @@
         },
         "cody.autocomplete.advanced.model": {
           "type": "string",
+          "default": null,
           "enum": [
+            null,
             "starcoder-16b",
             "starcoder-7b",
             "starcoder-3b",
