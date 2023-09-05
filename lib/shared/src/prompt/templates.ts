@@ -35,12 +35,6 @@ export function populatePreciseCodeContextTemplate(symbol: string, filePath: str
         .replace('{text}', code)
 }
 
-const PRECISE_CONTEXT_TEMPLATE_FOR_COMPLETIONS = "Additional documentation for '{symbol}':\n{hover}"
-
-export function populatePreciseCodeContextTemplateForCompletions(symbol: string, hover: string[]): string {
-    return PRECISE_CONTEXT_TEMPLATE_FOR_COMPLETIONS.replace('{symbol}', symbol).replace('{hover}', hover.join('\n'))
-}
-
 const MARKDOWN_CONTEXT_TEMPLATE = 'Use the following text from file `{filePath}`:\n{text}'
 
 const MARKDOWN_CONTEXT_TEMPLATE_WITH_REPO =

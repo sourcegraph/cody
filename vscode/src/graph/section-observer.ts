@@ -1,3 +1,5 @@
+import path from 'path'
+
 import { LRUCache } from 'lru-cache'
 import * as vscode from 'vscode'
 
@@ -73,13 +75,8 @@ export class SectionObserver implements vscode.Disposable, GraphContextFetcher {
 
     public getContextAtPosition(document: vscode.TextDocument, position: vscode.Position): ContextSnippet[] {
         const section = this.getSectionAtPosition(document, position)
-        console.log(section)
-        console.log(this.debugPrint())
         if (section?.context?.context) {
-            return section.context.context.map(context => ({
-                fileName: context.filePath,
-                content: context.definitionSnippet,
-            }))
+            return section.context.context.map(preciseContextToSnippet)
         }
         return []
     }
@@ -297,4 +294,25 @@ export class SectionObserver implements vscode.Disposable, GraphContextFetcher {
             disposable.dispose()
         }
     }
+}
+
+function preciseContextToSnippet(context: PreciseContext): ContextSnippet {
+    const isDts = context.filePath.endsWith('.d.ts')
+    return {
+        fileName: path.normalize(vscode.workspace.asRelativePath(context.filePath)),
+        content:
+            context.hoverText.length > 0 && !isDts
+                ? context.hoverText.map(extractMarkdownCodeBlock).join('\n').trim()
+                : context.definitionSnippet,
+    }
+}
+
+function extractMarkdownCodeBlock(string: string): string {
+    const regex = /```([a-z]*)\n([\S\s]*?)\n```/g
+    const matches = string.match(regex)
+    if (!matches) {
+        return ''
+    }
+    const result = matches.map(m => m.match(/([\S\s]*)```/)![1])
+    return result.join('\n')
 }

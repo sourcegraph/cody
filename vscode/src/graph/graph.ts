@@ -4,11 +4,10 @@ import { URI } from 'vscode-uri'
 import { PreciseContext } from '@sourcegraph/cody-shared/src/codebase-context/messages'
 import { dedupeWith, isDefined } from '@sourcegraph/cody-shared/src/common'
 import { ActiveTextEditorSelectionRange, Editor } from '@sourcegraph/cody-shared/src/editor'
+import { logDebug } from '../log'
 
 // TODO(efritz) - move to options object
-const recursionLimit = 0
-const removeFileLocalResults = false
-const forCompletions = true
+const recursionLimit = 2
 
 /**
  * Return the definitions of symbols that occur within the editor's active document. If there is
@@ -33,18 +32,10 @@ export const getGraphContextFromEditor = async (editor: Editor): Promise<Precise
         recursionLimit
     )
 
-    const filteredContexts = removeFileLocalResults
-        ? contexts.filter(({ filePath }) => filePath !== uri.fsPath)
-        : contexts
-
-    console.log('START')
-    for (const context of filteredContexts) {
-        console.log({ symbol: context.symbol.fuzzyName, hoverText: context.hoverText })
-    }
-    console.log('END')
+    const filteredContexts = contexts.filter(({ filePath }) => filePath !== uri.fsPath)
 
     // Debuggin'
-    console.debug(`Retrieved ${filteredContexts.length} filtered context snippets`)
+    logDebug('GraphContext:filteredSnippetsRetrieved', `Retrieved ${filteredContexts.length} filtered context snippets`)
     performance.mark(label)
     return filteredContexts
 }
@@ -65,7 +56,8 @@ export const getGraphContextFromRange = async (
     const contexts = await getGraphContextFromSelection(
         [{ uri, range }],
         new Map([[uri.fsPath, editor.document.getText().split('\n')]]),
-        recursionLimit
+        1, // recursion limit
+        true // use type definitions
     )
 
     return contexts
@@ -84,7 +76,8 @@ interface Selection {
 const getGraphContextFromSelection = async (
     selections: Selection[],
     contentMap: Map<string, string[]>,
-    recursionLimit: number = 0
+    recursionLimit: number = 0,
+    useTypeDefinitions: boolean = false
 ): Promise<PreciseContext[]> => {
     // Debuggin'
     const label = 'precise context from selection'
@@ -98,7 +91,7 @@ const getGraphContextFromSelection = async (
         definitionSelections,
         contentMap,
         defaultGetHover,
-        forCompletions ? defaultGetTypeDefinitions : defaultGetDefinitions
+        useTypeDefinitions ? defaultGetTypeDefinitions: defaultGetDefinitions
     )
 
     // Open each URI referenced by a definition match in the current workspace, and make the document
@@ -148,7 +141,7 @@ const getGraphContextFromSelection = async (
     const contexts = await extractDefinitionContexts(matches, contentMap)
 
     // Debuggin'
-    console.debug(`Retrieved ${contexts.length} context snippets`)
+    logDebug('GraphContext:snippetsRetrieved', `Retrieved ${contexts.length} context snippets`)
     performance.mark(label)
 
     if (recursionLimit > 0) {
@@ -466,7 +459,6 @@ export const extractDefinitionContexts = async (
                     symbol: {
                         fuzzyName: symbolName,
                     },
-                    forCompletions,
                     filePath: uri.fsPath,
                     range: {
                         startLine: range.start.line,

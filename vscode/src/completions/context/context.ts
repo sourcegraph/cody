@@ -51,7 +51,10 @@ export async function getContext(options: GetContextOptions): Promise<GetContext
         : []
     const localMatches = await getContextFromCurrentEditor(options)
 
-    console.log(graphMatches)
+    for (const graphMatch of graphMatches) {
+        console.log(graphMatch.fileName)
+        console.log(graphMatch.content)
+    }
 
     /**
      * Iterate over matches and add them to the context.
