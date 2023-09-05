@@ -21,7 +21,10 @@ export const extensionDetails: ExtensionDetails = {
     version: vscode.extensions.getExtension('sourcegraph.cody-ai')?.packageJSON?.version ?? packageVersion,
 }
 
-export async function createOrUpdateEventLogger(config: ConfigurationWithAccessToken, isExtensionModeDevOrTest: boolean): Promise<void> {
+export async function createOrUpdateEventLogger(
+    config: ConfigurationWithAccessToken,
+    isExtensionModeDevOrTest: boolean
+): Promise<void> {
     if (config.telemetryLevel === 'off') {
         eventLogger = null
         return
@@ -62,7 +65,11 @@ export async function createOrUpdateEventLogger(config: ConfigurationWithAccessT
  * @deprecated Use TelemetryService instead.
  */
 export function logEvent(eventName: string, properties?: TelemetryEventProperties): void {
-    logDebug(`logEvent${eventLogger === null || process.env.CODY_TESTING === 'true' ? ' (telemetry disabled)' : ''}`, eventName, JSON.stringify(properties))
+    logDebug(
+        `logEvent${eventLogger === null || process.env.CODY_TESTING === 'true' ? ' (telemetry disabled)' : ''}`,
+        eventName,
+        JSON.stringify(properties)
+    )
     if (!eventLogger || !globalAnonymousUserID) {
         return
     }
