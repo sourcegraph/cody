@@ -1,6 +1,6 @@
 import * as vscode from 'vscode'
 
-import { menu_buttons } from '../custom-prompts/utils/menu'
+import { EDIT_COMMAND, menu_buttons } from '../custom-prompts/utils/menu'
 
 import { FixupTask } from './FixupTask'
 import { FixupTaskFactory } from './roles'
@@ -12,10 +12,10 @@ export class FixupTypingUI {
     constructor(private readonly taskFactory: FixupTaskFactory) {}
 
     private async getInstructionFromQuickPick({
-        title = 'Edit code (/edit)',
+        title = `${EDIT_COMMAND.description} (${EDIT_COMMAND.slashCommand})`,
         placeholder = 'Your instructions',
         value = '',
-        prefix = '/edit',
+        prefix = EDIT_COMMAND.slashCommand,
     } = {}): Promise<string> {
         const quickPick = vscode.window.createQuickPick()
         quickPick.title = title

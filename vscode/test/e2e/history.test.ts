@@ -24,13 +24,19 @@ test('checks if clear chat history button clears history and current session', a
     await sidebar.getByRole('textbox', { name: 'Chat message' }).fill('Hola')
     await sidebar.locator('vscode-button').getByRole('img').click()
 
+    await expect(sidebar.getByText('hello from the assistant')).toBeVisible()
+
     await page.click('[aria-label="Start a New Chat Session"]')
     await sidebar.getByRole('textbox', { name: 'Chat message' }).fill('Hey')
     await sidebar.locator('vscode-button').getByRole('img').click()
 
+    await expect(sidebar.getByText('hello from the assistant')).toBeVisible()
+    await expect(sidebar.getByText('Hola')).not.toBeVisible()
+
     await page.getByRole('button', { name: 'Chat History' }).click()
 
     // Remove Hey history item from chat history view
+    await expect(sidebar.getByText('Hola')).toBeVisible()
     await expect(sidebar.getByText('Hey')).toBeVisible()
     await sidebar.locator('vscode-button').filter({ hasText: 'Clear' }).click()
     await expect(sidebar.getByText('Hey')).not.toBeVisible()
@@ -42,8 +48,7 @@ test('checks if clear chat history button clears history and current session', a
     await page.keyboard.type('/explain')
     await page.keyboard.press('Enter')
 
-    // Go back to Chat View and check if the old message "Hey" is cleared
-    await page.click('[aria-label="Cody"]')
+    // Check if the old message "Hey" is cleared
     await expect(sidebar.getByText('Hey')).not.toBeVisible()
     await expect(sidebar.getByText('/explain')).toBeVisible()
 })

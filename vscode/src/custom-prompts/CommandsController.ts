@@ -10,7 +10,7 @@ import { VsCodeCommandsController } from '@sourcegraph/cody-shared/src/editor'
 import { TelemetryService } from '@sourcegraph/cody-shared/src/telemetry'
 
 import { logDebug, logError } from '../log'
-import { LocalStorage } from '../services/LocalStorageProvider'
+import { localStorage } from '../services/LocalStorageProvider'
 
 import { CustomPromptsStore } from './CustomPromptsStore'
 import { showCommandConfigMenu, showCommandMenu, showCustomCommandMenu, showNewCustomCommandMenu } from './menus'
@@ -49,7 +49,6 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
 
     constructor(
         context: vscode.ExtensionContext,
-        private localStorage: LocalStorage,
         private telemetryService: TelemetryService
     ) {
         this.tools = new ToolsProvider(context)
@@ -58,7 +57,7 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
         this.custom = new CustomPromptsStore(this.isEnabled, context.extensionPath, user?.workspaceRoot, user.homeDir)
         this.disposables.push(this.custom)
 
-        this.lastUsedCommands = new Set(this.localStorage.getLastUsedCommands())
+        this.lastUsedCommands = new Set(localStorage.getLastUsedCommands())
         this.custom.activate()
         this.fileWatcherInit()
     }
@@ -230,7 +229,6 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
             // Show the list of prompts to the user using a quick pick menu
             const { selectedItem: selectedPrompt, input: userPrompt } = await showCommandMenu([
                 menu_separators.commands,
-                menu_options.chat,
                 ...commands,
                 menu_separators.settings,
                 menu_options.config,
@@ -449,7 +447,7 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
         // store the last 3 used commands
         const commands = [...this.lastUsedCommands].filter(command => command !== 'separator').slice(0, 3)
         if (commands.length > 0) {
-            await this.localStorage.setLastUsedCommands(commands)
+            await localStorage.setLastUsedCommands(commands)
         }
 
         this.lastUsedCommands = new Set(commands)

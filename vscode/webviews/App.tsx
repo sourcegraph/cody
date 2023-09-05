@@ -264,10 +264,15 @@ function groupPrompts(
     return acc
 }
 
+const instructionLabels: Record<string, string> = {
+    '/ask': '[question]',
+    '/edit': '[instruction]',
+}
+
 /**
  * Adds `instruction` field to a prompt if it requires additional instruction.
  */
 function addInstructions<T extends CodyPrompt>([key, command]: [string, T]): [string, T & { instruction?: string }] {
-    const instruction = command.slashCommand === '/edit' ? '[instruction]' : undefined
+    const instruction = instructionLabels[command.slashCommand]
     return [key, { ...command, instruction }]
 }
