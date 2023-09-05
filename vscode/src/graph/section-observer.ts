@@ -3,6 +3,9 @@ import * as vscode from 'vscode'
 
 import { PreciseContext } from '@sourcegraph/cody-shared/src/codebase-context/messages'
 
+import { GraphContextFetcher } from '../completions/context/context'
+import { ContextSnippet } from '../completions/types'
+
 import { getGraphContextFromRange as defaultGetGraphContextFromRange, locationKeyFn } from './graph'
 import { getDocumentSections as defaultGetDocumentSections, DocumentSection } from './sections'
 
@@ -36,15 +39,16 @@ const MAX_TRACKED_DOCUMENTS = 10
  * context while it is still being revalidated.
  *
  * TODO:
- *  - [ ] Create a new experimental flag and move all this code behind it.
+ *  - [x] Create a new experimental flag and move all this code behind it.
  *  - [ ] Wire this up to fetch the context for autocomplete requests
  *  - [ ] Migrate to use hover tooltips and remove context that is "trivial" like Array TS definitions.
  *  - [ ] Make logging use `debug()` APIs
  *  - [ ] Track the total number of time spent in the context methods
  *  - [ ] When we refresh sections, make sure to update the ranges even if the
  *        ID did not change
+ *  - [ ] Integrate debug view into trace view
  */
-export class SectionObserver implements vscode.Disposable {
+export class SectionObserver implements vscode.Disposable, GraphContextFetcher {
     private disposables: vscode.Disposable[] = []
 
     // A map of all active documents that are being tracked.
@@ -67,12 +71,17 @@ export class SectionObserver implements vscode.Disposable {
         void this.onDidChangeVisibleTextEditors()
     }
 
-    public getCachedContextAtPosition(
-        document: vscode.TextDocument,
-        position: vscode.Position
-    ): PreciseContext[] | null {
+    public getContextAtPosition(document: vscode.TextDocument, position: vscode.Position): ContextSnippet[] {
         const section = this.getSectionAtPosition(document, position)
-        return section?.context?.context ?? null
+        console.log(section)
+        console.log(this.debugPrint())
+        if (section?.context?.context) {
+            return section.context.context.map(context => ({
+                fileName: context.filePath,
+                content: context.definitionSnippet,
+            }))
+        }
+        return []
     }
 
     private async hydrateContextAtCursor(editor: vscode.TextEditor, position: vscode.Position): Promise<void> {

@@ -286,25 +286,16 @@ describe('SectionObserver', () => {
             `)
 
             expect(
-                sectionObserver.getCachedContextAtPosition(
-                    testDocuments.document1 as any,
-                    { line: 15, character: 0 } as any
-                )
+                sectionObserver.getContextAtPosition(testDocuments.document1 as any, { line: 15, character: 0 } as any)
             ).toMatchInlineSnapshot(`
               [
                 {
-                  "definitionSnippet": "function foo() {}",
-                  "filePath": "file:///document1.ts",
-                  "symbol": {
-                    "fuzzyName": "foo",
-                  },
+                  "content": "function foo() {}",
+                  "fileName": "file:///document1.ts",
                 },
                 {
-                  "definitionSnippet": "function bar() {}",
-                  "filePath": "file:///document1.ts",
-                  "symbol": {
-                    "fuzzyName": "bar",
-                  },
+                  "content": "function bar() {}",
+                  "fileName": "file:///document1.ts",
                 },
               ]
             `)

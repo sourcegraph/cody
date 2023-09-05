@@ -10,6 +10,7 @@ import { DocumentHistory } from './history'
 
 export interface GetContextOptions {
     document: vscode.TextDocument
+    position: vscode.Position
     history: DocumentHistory
     prefix: string
     suffix: string
@@ -17,7 +18,11 @@ export interface GetContextOptions {
     maxChars: number
     getCodebaseContext: () => CodebaseContext
     isEmbeddingsContextEnabled?: boolean
-    isGraphContextEnabled?: boolean
+    graphContextFetcher?: GraphContextFetcher
+}
+
+export interface GraphContextFetcher {
+    getContextAtPosition(document: vscode.TextDocument, position: vscode.Position): ContextSnippet[]
 }
 
 export type ContextSummary = Readonly<{
@@ -32,7 +37,7 @@ export interface GetContextResult {
 }
 
 export async function getContext(options: GetContextOptions): Promise<GetContextResult> {
-    const { maxChars, isEmbeddingsContextEnabled, isGraphContextEnabled } = options
+    const { maxChars, isEmbeddingsContextEnabled, graphContextFetcher } = options
     const start = performance.now()
 
     /**
@@ -40,8 +45,13 @@ export async function getContext(options: GetContextOptions): Promise<GetContext
      * not available in cache yet, we'll retrieve it in the background and cache it for future use.
      */
     const embeddingsMatches =
-        isEmbeddingsContextEnabled && !isGraphContextEnabled ? getContextFromEmbeddings(options) : []
+        isEmbeddingsContextEnabled && !graphContextFetcher ? getContextFromEmbeddings(options) : []
+    const graphMatches = graphContextFetcher
+        ? graphContextFetcher.getContextAtPosition(options.document, options.position)
+        : []
     const localMatches = await getContextFromCurrentEditor(options)
+
+    console.log(graphMatches)
 
     /**
      * Iterate over matches and add them to the context.

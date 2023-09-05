@@ -8,7 +8,7 @@ import { RateLimitError } from '@sourcegraph/cody-shared/src/sourcegraph-api/err
 import { logDebug } from '../log'
 import { CodyStatusBar } from '../services/StatusBar'
 
-import { getContext, GetContextOptions, GetContextResult } from './context/context'
+import { getContext, GetContextOptions, GetContextResult, GraphContextFetcher } from './context/context'
 import { DocumentHistory } from './context/history'
 import { DocumentContext, getCurrentDocContext } from './get-current-doc-context'
 import {
@@ -33,7 +33,7 @@ export interface CodyCompletionItemProviderConfig {
     prefixPercentage?: number
     suffixPercentage?: number
     isEmbeddingsContextEnabled?: boolean
-    isGraphContextEnabled?: boolean
+    graphContextFetcher?: GraphContextFetcher | undefined
     completeSuggestWidgetSelection?: boolean
     tracer?: ProvideInlineCompletionItemsTracer | null
     contextFetcher?: (options: GetContextOptions) => Promise<GetContextResult>
@@ -62,7 +62,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
         prefixPercentage = 0.6,
         suffixPercentage = 0.1,
         isEmbeddingsContextEnabled = true,
-        isGraphContextEnabled = false,
+        graphContextFetcher = undefined,
         completeSuggestWidgetSelection = false,
         tracer = null,
         ...config
@@ -73,7 +73,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
             prefixPercentage,
             suffixPercentage,
             isEmbeddingsContextEnabled,
-            isGraphContextEnabled,
+            graphContextFetcher,
             completeSuggestWidgetSelection,
             tracer,
             contextFetcher: config.contextFetcher ?? getContext,
@@ -169,7 +169,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
                 prefixPercentage: this.config.prefixPercentage,
                 suffixPercentage: this.config.suffixPercentage,
                 isEmbeddingsContextEnabled: this.config.isEmbeddingsContextEnabled,
-                isGraphContextEnabled: this.config.isGraphContextEnabled,
+                graphContextFetcher: this.config.graphContextFetcher,
                 toWorkspaceRelativePath: uri => vscode.workspace.asRelativePath(uri),
                 contextFetcher: this.config.contextFetcher,
                 getCodebaseContext: this.config.getCodebaseContext,

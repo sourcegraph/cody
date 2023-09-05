@@ -97,8 +97,20 @@ const getGraphContextFromSelection = async (
         'fsPath'
     ).filter(uri => !contentMap.has(uri.fsPath))
 
+    // Remove ultra-common type definitions that are probably already known by the LLM
+    const filteredUnseenDefinitionUris = unseenDefinitionUris.filter(uri => {
+        for (const importPath of commonImportPaths) {
+            if (uri.fsPath.includes(importPath)) {
+                return false
+            }
+        }
+        return true
+    })
+
+    console.log({ unseenDefinitionUris, filteredUnseenDefinitionUris })
+
     const newContentMap = new Map(
-        unseenDefinitionUris.map(uri => [
+        filteredUnseenDefinitionUris.map(uri => [
             uri.fsPath,
             vscode.workspace.openTextDocument(uri.fsPath).then(document => document.getText().split('\n')),
         ])
@@ -286,6 +298,13 @@ const typescriptKeywords = new Set([
     'yield',
 ])
 
+const commonImportPaths = new Set([
+    // The TS lib folder contains the TS standard library and all of ECMAScript.
+    '/node_modules/typescript/lib',
+    // The node library contains the standard node library.
+    'node_modules/@types/node',
+])
+
 export const commonKeywords = new Set([...goKeywords, ...typescriptKeywords])
 
 interface SymbolDefinitionMatches {
@@ -443,12 +462,17 @@ export const extractDefinitionContexts = async (
  * Shim for default LSP executeDocumentSymbolProvider call. Can be mocked for testing.
  */
 export const defaultGetDocumentSymbolRanges = async (uri: URI): Promise<vscode.Range[]> =>
-    (
-        await vscode.commands.executeCommand<(vscode.SymbolInformation | vscode.DocumentSymbol)[]>(
+    vscode.commands
+        .executeCommand<(vscode.SymbolInformation | vscode.DocumentSymbol)[] | undefined>(
             'vscode.executeDocumentSymbolProvider',
             uri
         )
-    ).map(extractSymbolRange)
+        .then(result => {
+            if (!result) {
+                return []
+            }
+            return result.map(extractSymbolRange)
+        })
 
 /**
  * Shim for default LSP executeDefinitionProvider call. Can be mocked for testing.
