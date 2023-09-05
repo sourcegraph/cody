@@ -41,13 +41,8 @@ const MAX_TRACKED_DOCUMENTS = 10
  * context while it is still being revalidated.
  *
  * TODO:
- *  - [x] Create a new experimental flag and move all this code behind it.
- *  - [ ] Wire this up to fetch the context for autocomplete requests
- *  - [ ] Migrate to use hover tooltips and remove context that is "trivial" like Array TS definitions.
- *  - [ ] Make logging use `debug()` APIs
- *  - [ ] Track the total number of time spent in the context methods
- *  - [ ] When we refresh sections, make sure to update the ranges even if the
- *        ID did not change
+ *  - [ ] Track the total number of time spent in the context methods for analytics
+ *  - [ ] When we refresh sections, make sure to update the ranges even if the  ID did not change
  *  - [ ] Integrate debug view into trace view
  */
 export class SectionObserver implements vscode.Disposable, GraphContextFetcher {
