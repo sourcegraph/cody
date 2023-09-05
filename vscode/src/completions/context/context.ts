@@ -17,6 +17,7 @@ export interface GetContextOptions {
     maxChars: number
     getCodebaseContext: () => CodebaseContext
     isEmbeddingsContextEnabled?: boolean
+    isGraphContextEnabled?: boolean
 }
 
 export type ContextSummary = Readonly<{
@@ -31,14 +32,15 @@ export interface GetContextResult {
 }
 
 export async function getContext(options: GetContextOptions): Promise<GetContextResult> {
-    const { maxChars, isEmbeddingsContextEnabled } = options
+    const { maxChars, isEmbeddingsContextEnabled, isGraphContextEnabled } = options
     const start = performance.now()
 
     /**
      * The embeddings context is sync to retrieve to keep the completions latency minimal. If it's
      * not available in cache yet, we'll retrieve it in the background and cache it for future use.
      */
-    const embeddingsMatches = isEmbeddingsContextEnabled ? getContextFromEmbeddings(options) : []
+    const embeddingsMatches =
+        isEmbeddingsContextEnabled && !isGraphContextEnabled ? getContextFromEmbeddings(options) : []
     const localMatches = await getContextFromCurrentEditor(options)
 
     /**

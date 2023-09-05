@@ -33,6 +33,7 @@ export async function createInlineCompletionItemProvider(
             statusBar,
             getCodebaseContext: () => contextProvider.context,
             isEmbeddingsContextEnabled: config.autocompleteAdvancedEmbeddings,
+            isGraphContextEnabled: config.autocompleteExperimentalGraphContext,
             completeSuggestWidgetSelection: config.autocompleteExperimentalCompleteSuggestWidgetSelection,
             featureFlagProvider,
         })

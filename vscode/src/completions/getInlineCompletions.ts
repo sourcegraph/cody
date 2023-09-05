@@ -32,6 +32,7 @@ export interface InlineCompletionsParams {
     prefixPercentage: number
     suffixPercentage: number
     isEmbeddingsContextEnabled: boolean
+    isGraphContextEnabled: boolean
 
     // Platform
     toWorkspaceRelativePath: (uri: URI) => string
@@ -146,6 +147,7 @@ async function doGetInlineCompletions({
     prefixPercentage,
     suffixPercentage,
     isEmbeddingsContextEnabled,
+    isGraphContextEnabled,
     toWorkspaceRelativePath,
     contextFetcher,
     getCodebaseContext,
@@ -218,6 +220,7 @@ async function doGetInlineCompletions({
         document,
         promptChars,
         isEmbeddingsContextEnabled,
+        isGraphContextEnabled,
         contextFetcher,
         getCodebaseContext,
         documentHistory,
@@ -339,6 +342,7 @@ interface GetCompletionContextParams
         | 'document'
         | 'promptChars'
         | 'isEmbeddingsContextEnabled'
+        | 'isGraphContextEnabled'
         | 'contextFetcher'
         | 'getCodebaseContext'
         | 'documentHistory'
@@ -350,6 +354,7 @@ async function getCompletionContext({
     document,
     promptChars,
     isEmbeddingsContextEnabled,
+    isGraphContextEnabled,
     contextFetcher,
     getCodebaseContext,
     documentHistory,
@@ -374,6 +379,7 @@ async function getCompletionContext({
         maxChars: promptChars,
         getCodebaseContext,
         isEmbeddingsContextEnabled,
+        isGraphContextEnabled,
     })
 }
 
