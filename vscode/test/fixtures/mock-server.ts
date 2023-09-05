@@ -34,7 +34,6 @@ export async function run<T>(around: () => Promise<T>): Promise<T> {
 
     // endpoint which will accept the data that you want to send in that you will add your pubsub code
     app.post('/.api/testLogging', (req, res) => {
-        console.log(req.body)
         void logTestingData(req.body)
         res.status(200)
     })
