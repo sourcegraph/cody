@@ -101,7 +101,10 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
             completeSuggestWidgetSelection: this.config.completeSuggestWidgetSelection,
         })
 
-        logDebug('CodyCompletionProvider:initialized', `provider: ${this.config.providerConfig.identifier}`)
+        logDebug(
+            'CodyCompletionProvider:initialized',
+            `${this.config.providerConfig.identifier}/${this.config.providerConfig.model}`
+        )
     }
 
     /** Set the tracer (or unset it with `null`). */
