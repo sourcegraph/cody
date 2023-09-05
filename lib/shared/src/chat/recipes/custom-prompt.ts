@@ -74,7 +74,6 @@ export class CustomPrompt implements Recipe {
 
         // Attach code selection to prompt text if only selection is needed as context
         if (selection && isOnlySelectionRequired(contextConfig)) {
-            // const truncatedTextWithCode = promptTextWithCodeSelection(codyPromptText, selection)
             const contextMessages = Promise.resolve(getCurrentFileContextFromEditorSelection(selection))
             return newInteraction({ text, displayText, contextMessages })
         }
@@ -107,65 +106,64 @@ export class CustomPrompt implements Recipe {
         const workspaceRootUri = editor.getWorkspaceRootUri()
         const isUnitTestRequest = extractTestType(text) === 'unit'
 
-        switch (true) {
-            case promptContext.none:
-                return []
-            case promptContext.codebase: {
-                const codebaseMessages = await codebaseContext.getContextMessages(text, numResults)
-                contextMessages.push(...codebaseMessages)
-            }
-            case promptContext.openTabs: {
-                const openTabsMessages = await getEditorOpenTabsContext()
-                contextMessages.push(...openTabsMessages)
-            }
-            case promptContext.currentDir: {
-                const currentDirMessages = await getCurrentDirContext(isUnitTestRequest)
-                contextMessages.push(...currentDirMessages)
-            }
-            case promptContext.directoryPath !== undefined: {
-                if (promptContext.directoryPath) {
-                    const dirMessages = await getEditorDirContext(promptContext.directoryPath, selection?.fileName)
-                    contextMessages.push(...dirMessages)
-                }
-            }
-            case promptContext.filePath !== undefined: {
-                if (promptContext.filePath) {
-                    const fileMessages = await getFilePathContext(promptContext.filePath)
-                    contextMessages.push(...fileMessages)
-                }
-            }
-            // Context for unit tests requests
-            case isUnitTestRequest && contextMessages.length === 0: {
-                if (workspaceRootUri) {
-                    const rootFileNames = await getDirectoryFileListContext(workspaceRootUri)
-                    contextMessages.push(...rootFileNames)
-                }
-
-                // Add package.json content for ts/js files only
-                if (selection?.fileName && getFileExtension(selection?.fileName).match(/ts|js/)) {
-                    const packageJson = await getPackageJsonContext(selection?.fileName)
-                    contextMessages.push(...packageJson)
-                }
-
-                // TODO bee only top parts
-                if (!selection?.fileName) {
-                    const importsContext = getCurrentFileContext()
-                    contextMessages.push(...importsContext)
-                }
-            }
-            case promptContext.currentFile || promptContext.selection !== false:
-                if (selection) {
-                    const currentFileMessages = getCurrentFileContextFromEditorSelection(selection)
-                    contextMessages.push(...currentFileMessages)
-                }
-            case promptContext.command !== undefined: {
-                if (commandOutput) {
-                    const outputMessages = getTerminalOutputContext(commandOutput)
-                    contextMessages.push(...outputMessages)
-                }
-            }
+        if (promptContext.none) {
+            return []
         }
 
+        if (promptContext.codebase) {
+            const codebaseMessages = await codebaseContext.getContextMessages(text, numResults)
+            contextMessages.push(...codebaseMessages)
+        }
+        if (promptContext.openTabs) {
+            const openTabsMessages = await getEditorOpenTabsContext()
+            contextMessages.push(...openTabsMessages)
+        }
+        if (promptContext.currentDir) {
+            const currentDirMessages = await getCurrentDirContext(isUnitTestRequest)
+            contextMessages.push(...currentDirMessages)
+        }
+        if (promptContext.directoryPath !== undefined) {
+            if (promptContext.directoryPath) {
+                const dirMessages = await getEditorDirContext(promptContext.directoryPath, selection?.fileName)
+                contextMessages.push(...dirMessages)
+            }
+        }
+        if (promptContext.filePath !== undefined) {
+            if (promptContext.filePath) {
+                const fileMessages = await getFilePathContext(promptContext.filePath)
+                contextMessages.push(...fileMessages)
+            }
+        }
+        // Context for unit tests requests
+        if (isUnitTestRequest && contextMessages.length === 0) {
+            if (workspaceRootUri) {
+                const rootFileNames = await getDirectoryFileListContext(workspaceRootUri)
+                contextMessages.push(...rootFileNames)
+            }
+            // Add package.json content for ts/js files only
+            if (selection?.fileName && getFileExtension(selection?.fileName).match(/ts|js/)) {
+                const packageJson = await getPackageJsonContext(selection?.fileName)
+                contextMessages.push(...packageJson)
+            }
+            // Try adding code from current file as context in case the import statement
+            // gets cut off in the next step
+            if (selection?.fileName) {
+                const importsContext = getCurrentFileContext()
+                contextMessages.push(...importsContext)
+            }
+        }
+        if (promptContext.currentFile || promptContext.selection !== false) {
+            if (selection) {
+                const currentFileMessages = getCurrentFileContextFromEditorSelection(selection)
+                contextMessages.push(...currentFileMessages)
+            }
+        }
+        if (promptContext.command !== undefined) {
+            if (commandOutput) {
+                const outputMessages = getTerminalOutputContext(commandOutput)
+                contextMessages.push(...outputMessages)
+            }
+        }
         // Return sliced results
         const maxResults = Math.floor((NUM_CODE_RESULTS + NUM_TEXT_RESULTS) / 2) * 2
         return contextMessages.slice(-maxResults * 2)
