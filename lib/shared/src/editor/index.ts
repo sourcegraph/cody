@@ -68,7 +68,7 @@ export interface VsCodeFixupController {
 
 export interface VsCodeCommandsController {
     get(type?: string): Promise<string | null>
-    getCurrentCommand(fileName?: string): CodyPrompt | null
+    getCurrentCommand(): CodyPrompt | null
     menu(type: 'custom' | 'config' | 'default', showDesc?: boolean): Promise<void>
 }
 

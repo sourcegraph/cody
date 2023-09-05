@@ -41,7 +41,7 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
     private myPromptsMap = new Map<string, CodyPrompt>()
 
     private lastUsedCommands = new Set<string>()
-    private commandInProgress: { command: CodyPrompt | null; fileName?: string } = { command: null }
+    private myPromptInProgress: CodyPrompt | null = null
 
     private webViewMessenger: (() => Promise<void>) | null = null
     public wsFileWatcher: vscode.FileSystemWatcher | null = null
@@ -78,42 +78,36 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
      */
     public async get(type?: string, id?: string): Promise<string | null> {
         await this.refresh()
-        const myPromptInProgress = this.commandInProgress?.command
+
         switch (type) {
             case 'prompt':
                 return id ? this.default.get(id)?.prompt || null : null
             case 'context':
-                return JSON.stringify(myPromptInProgress?.context || { ...defaultCodyPromptContext })
+                return JSON.stringify(this.myPromptInProgress?.context || { ...defaultCodyPromptContext })
             case 'codebase':
-                return myPromptInProgress?.context?.codebase ? 'codebase' : null
+                return this.myPromptInProgress?.context?.codebase ? 'codebase' : null
             case 'output':
-                return myPromptInProgress?.context?.output || null
+                return this.myPromptInProgress?.context?.output || null
             case 'slash':
-                return myPromptInProgress?.slashCommand || null
+                return this.myPromptInProgress?.slashCommand || null
             case 'command':
                 // return the terminal output from the command for the prompt if any
                 return this.execCommand()
             case 'current':
-                return myPromptInProgress?.description || null
+                return this.myPromptInProgress?.description || null
             default:
-                return myPromptInProgress?.prompt || null
+                return this.myPromptInProgress?.prompt || null
         }
     }
 
-    public getCurrentCommand(fileName?: string): CodyPrompt | null {
-        const currentCommand = this.commandInProgress
-        if (fileName) {
-            currentCommand.fileName = fileName
-        }
-        return currentCommand?.command || null
-    }
-
-    public async onCompletion(content?: string): Promise<void> {
-        const commandInProgress = this.commandInProgress
-        if (commandInProgress?.command?.slashCommand === '/test' && commandInProgress?.fileName && content) {
-            await this.tools.addContentToTestFile(content, commandInProgress?.fileName)
-        }
-        this.commandInProgress = { command: null }
+    /**
+     * Get the current cody command that is in progress.
+     *
+     * @returns The current CodyPrompt that the user has initiated and is waiting for output, or null if there is no prompt in progress.
+     */
+    public getCurrentCommand(): CodyPrompt | null {
+        const currentCommand = this.myPromptInProgress
+        return currentCommand || null
     }
 
     /**
@@ -135,7 +129,7 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
         }
 
         if (myPrompt) {
-            this.commandInProgress.command = myPrompt
+            this.myPromptInProgress = myPrompt
             this.lastUsedCommands.add(id)
         }
 
@@ -173,14 +167,14 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
      * @returns The output of the command execution, or null if no command was found.
      */
     private async execCommand(): Promise<string | null> {
-        const currentContext = this.commandInProgress?.command?.context
-        if (!this.commandInProgress?.command || !currentContext?.command) {
+        const currentContext = this.myPromptInProgress?.context
+        if (!this.myPromptInProgress || !currentContext?.command) {
             return null
         }
         const fullCommand = currentContext.command
         const commandOutput = await this.tools.exeCommand(fullCommand)
         currentContext.output = commandOutput
-        this.commandInProgress.command.context = currentContext
+        this.myPromptInProgress.context = currentContext
         this.telemetryService.log('CodyVSCodeExtension:command:execCommand')
         return commandOutput || null
     }
@@ -523,7 +517,7 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
      */
     public dispose(): void {
         this.isEnabled = false
-        this.commandInProgress = { command: null }
+        this.myPromptInProgress = null
         for (const disposable of this.disposables) {
             disposable.dispose()
         }

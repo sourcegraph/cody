@@ -53,7 +53,7 @@ export class CustomPrompt implements Recipe {
 
         const selection = selectionContent
 
-        const command = context.editor.controllers?.command?.getCurrentCommand(selection?.fileName)
+        const command = context.editor.controllers?.command?.getCurrentCommand()
 
         // Get prompt text from the editor command or from the human input
         const promptText = humanChatInput.trim() || command?.prompt
