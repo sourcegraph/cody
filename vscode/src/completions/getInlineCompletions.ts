@@ -32,7 +32,7 @@ export interface InlineCompletionsParams {
     prefixPercentage: number
     suffixPercentage: number
     isEmbeddingsContextEnabled: boolean
-    graphContextFetcher: GraphContextFetcher | undefined
+    graphContextFetcher?: GraphContextFetcher
 
     // Platform
     toWorkspaceRelativePath: (uri: URI) => string

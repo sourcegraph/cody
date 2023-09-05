@@ -33,7 +33,7 @@ export interface CodyCompletionItemProviderConfig {
     prefixPercentage?: number
     suffixPercentage?: number
     isEmbeddingsContextEnabled?: boolean
-    graphContextFetcher?: GraphContextFetcher | undefined
+    graphContextFetcher?: GraphContextFetcher | null
     completeSuggestWidgetSelection?: boolean
     tracer?: ProvideInlineCompletionItemsTracer | null
     contextFetcher?: (options: GetContextOptions) => Promise<GetContextResult>
@@ -62,7 +62,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
         prefixPercentage = 0.6,
         suffixPercentage = 0.1,
         isEmbeddingsContextEnabled = true,
-        graphContextFetcher = undefined,
+        graphContextFetcher = null,
         completeSuggestWidgetSelection = false,
         tracer = null,
         ...config
@@ -120,6 +120,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
         token?: vscode.CancellationToken
     ): Promise<vscode.InlineCompletionList | null> {
         const tracer = this.config.tracer ? createTracerForInvocation(this.config.tracer) : undefined
+        const graphContextFetcher = this.config.graphContextFetcher ?? undefined
 
         let stopLoading: () => void | undefined
         const setIsLoading = (isLoading: boolean): void => {
@@ -169,7 +170,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
                 prefixPercentage: this.config.prefixPercentage,
                 suffixPercentage: this.config.suffixPercentage,
                 isEmbeddingsContextEnabled: this.config.isEmbeddingsContextEnabled,
-                graphContextFetcher: this.config.graphContextFetcher,
+                graphContextFetcher,
                 toWorkspaceRelativePath: uri => vscode.workspace.asRelativePath(uri),
                 contextFetcher: this.config.contextFetcher,
                 getCodebaseContext: this.config.getCodebaseContext,
