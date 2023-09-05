@@ -6,7 +6,7 @@ import { truncateText } from '../../prompt/truncation'
 import { CodyPromptContext } from '../prompts'
 import {
     extractTestType,
-    getHumanTextForCommand,
+    getClaudeHumanText,
     isOnlySelectionRequired,
     newInteraction,
     newInteractionWithError,
@@ -70,7 +70,7 @@ export class CustomPrompt implements Recipe {
 
         // Add selection file name as display when available
         const displayText = getHumanDisplayTextWithFileName(commandName, selection, workspaceRootUri)
-        const text = getHumanTextForCommand(promptText, selection?.fileName)
+        const text = getClaudeHumanText(promptText, selection?.fileName)
 
         // Attach code selection to prompt text if only selection is needed as context
         if (selection && isOnlySelectionRequired(contextConfig)) {

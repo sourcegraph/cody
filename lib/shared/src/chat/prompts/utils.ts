@@ -87,12 +87,12 @@ export function extractTestType(text: string): string {
     return text.match(testTypeRegex)?.[0] || ''
 }
 
-export function getHumanTextForCommand(text: string, fileName?: string): string {
-    const promptText = prompts.instruction.replace('{humanInput}', text)
-    if (!fileName) {
+export function getClaudeHumanText(commandInstructions: string, currentFileName?: string): string {
+    const promptText = prompts.instruction.replace('{humanInput}', commandInstructions)
+    if (!currentFileName) {
         return promptText
     }
-    return promptText.replaceAll('{languageName}', getNormalizedLanguageName(getFileExtension(fileName)))
+    return promptText.replaceAll('{languageName}', getNormalizedLanguageName(getFileExtension(currentFileName)))
 }
 
 const leadingForwardSlashRegex = /^\/+/
