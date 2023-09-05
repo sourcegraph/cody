@@ -63,7 +63,7 @@ async function initCompletionsProvider(context: GetContextResult): Promise<Inlin
 
     const history = new VSCodeDocumentHistory()
 
-    const providerConfig = await createProviderConfig(initialConfig, completionsClient, undefined)
+    const providerConfig = createProviderConfig(initialConfig, completionsClient)
     if (!providerConfig) {
         throw new Error('invalid completion config: no provider')
     }

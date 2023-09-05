@@ -28,12 +28,6 @@ export function activate(context: vscode.ExtensionContext): ExtensionApi {
         createFilenameContextFetcher: (...args) => new FilenameContextFetcher(...args),
         createCompletionsClient: (...args) => new SourcegraphNodeCompletionsClient(...args),
         createSymfRunner: (...args) => new SymfRunner(...args),
-        createProxyAgent: {
-            socks: async (...args) => {
-                const { SocksProxyAgent } = await import('socks-proxy-agent')
-                return new SocksProxyAgent(...args)
-            },
-        },
 
         // Include additional recipes that require Node packages (such as `child_process`).
         recipes: [

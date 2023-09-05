@@ -1,7 +1,6 @@
 import { Configuration } from '@sourcegraph/cody-shared/src/configuration'
 import { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/nodeClient'
 
-import { PlatformContext } from '../../extension.common'
 import { debug } from '../../log'
 
 import { createProviderConfig as createAnthropicProviderConfig } from './anthropic'
@@ -11,19 +10,17 @@ import { createProviderConfig as createUnstableCodeGenProviderConfig } from './u
 import { createProviderConfig as createUnstableFireworksProviderConfig } from './unstable-fireworks'
 import { createProviderConfig as createUnstableHuggingFaceProviderConfig } from './unstable-huggingface'
 
-export async function createProviderConfig(
+export function createProviderConfig(
     config: Configuration,
-    completionsClient: SourcegraphNodeCompletionsClient,
-    createProxyAgent: PlatformContext['createProxyAgent']
-): Promise<ProviderConfig | null> {
+    completionsClient: SourcegraphNodeCompletionsClient
+): ProviderConfig | null {
     switch (config.autocompleteAdvancedProvider) {
         case 'unstable-codegen': {
             if (config.autocompleteAdvancedServerEndpoint !== null) {
-                const socksProxyAgent =
-                    config.autocompleteAdvancedServerSocksProxy && createProxyAgent
-                        ? await createProxyAgent.socks(config.autocompleteAdvancedServerSocksProxy)
-                        : undefined
-                return createUnstableCodeGenProviderConfig(config.autocompleteAdvancedServerEndpoint, socksProxyAgent)
+                return createUnstableCodeGenProviderConfig({
+                    serverEndpoint: config.autocompleteAdvancedServerEndpoint,
+                    socksProxy: config.autocompleteAdvancedServerSocksProxy || undefined,
+                })
             }
 
             debug(
