@@ -22,7 +22,7 @@ import {
 import { createProviderConfig } from './providers/anthropic'
 import { RequestManager } from './request-manager'
 import { completion, documentAndPosition } from './testHelpers'
-import { getNextNonEmptyLine } from './utils/text-utils'
+import { getNextNonEmptyLine, MULTILINE_STOP_SEQUENCE } from './text-processing'
 
 // The dedent package seems to replace `\t` with `\\t` so in order to insert a tab character, we
 // have to use interpolation. We abbreviate this to `T` because ${T} is exactly 4 characters,
@@ -613,7 +613,7 @@ describe('getInlineCompletions', () => {
                 })
             )
             expect(requests).toHaveLength(3)
-            expect(requests[0].stopSequences).not.toContain('\n')
+            expect(requests[0].stopSequences).not.toContain(MULTILINE_STOP_SEQUENCE)
         })
 
         test('does not trigger a multi-line completion at a function call', async () => {
@@ -626,6 +626,7 @@ describe('getInlineCompletions', () => {
                 })
             )
             expect(requests).toHaveLength(1)
+            expect(requests[0].stopSequences).toContain(MULTILINE_STOP_SEQUENCE)
         })
 
         test('does not trigger a multi-line completion at a method call', async () => {
@@ -638,18 +639,42 @@ describe('getInlineCompletions', () => {
                 })
             )
             expect(requests).toHaveLength(1)
+            expect(requests[0].stopSequences).toContain(MULTILINE_STOP_SEQUENCE)
         })
 
-        test('trigger a multi-line completion at a method declarations', async () => {
+        test('does not trigger a multi-line completion if a block already has content', async () => {
             const requests: CompletionParameters[] = []
             await getInlineCompletions(
-                params('method.hello () { █', [], {
+                params(
+                    dedent`
+                    function myFunction() {
+                        █
+                        console.log('three')
+                    }
+                `,
+                    [],
+                    {
+                        onNetworkRequest(request) {
+                            requests.push(request)
+                        },
+                    }
+                )
+            )
+            expect(requests).toHaveLength(1)
+            expect(requests[0].stopSequences).toContain(MULTILINE_STOP_SEQUENCE)
+        })
+
+        test('triggers a multi-line completion at a method declarations', async () => {
+            const requests: CompletionParameters[] = []
+            await getInlineCompletions(
+                params('method.hello () {█', [], {
                     onNetworkRequest(request) {
                         requests.push(request)
                     },
                 })
             )
-            expect(requests).toHaveLength(1)
+            expect(requests).toHaveLength(3)
+            expect(requests[0].stopSequences).not.toContain(MULTILINE_STOP_SEQUENCE)
         })
 
         test('uses an indentation based approach to cut-off completions', async () => {
@@ -723,7 +748,7 @@ describe('getInlineCompletions', () => {
                 })
             )
             expect(requests).toHaveLength(1)
-            expect(requests[0].stopSequences).toContain('\n\n')
+            expect(requests[0].stopSequences).toContain(MULTILINE_STOP_SEQUENCE)
         })
 
         test('requires an indentation to start a block', async () => {
@@ -736,7 +761,7 @@ describe('getInlineCompletions', () => {
                 })
             )
             expect(requests).toHaveLength(1)
-            expect(requests[0].stopSequences).toContain('\n\n')
+            expect(requests[0].stopSequences).toContain(MULTILINE_STOP_SEQUENCE)
         })
 
         test('works with python', async () => {
@@ -768,7 +793,7 @@ describe('getInlineCompletions', () => {
                 )
             )
             expect(requests).toHaveLength(3)
-            expect(requests[0].stopSequences).not.toContain('\n')
+            expect(requests[0].stopSequences).not.toContain(MULTILINE_STOP_SEQUENCE)
             expect(items[0]).toMatchInlineSnapshot(`
                 "print(i)
                     elif i % 3 == 0:
@@ -810,7 +835,7 @@ describe('getInlineCompletions', () => {
                 )
             )
             expect(requests).toHaveLength(3)
-            expect(requests[0].stopSequences).not.toContain('\n')
+            expect(requests[0].stopSequences).not.toContain(MULTILINE_STOP_SEQUENCE)
             expect(items[0]).toMatchInlineSnapshot(`
                 "System.out.println(i);
                     } else if (i % 3 == 0) {
@@ -861,7 +886,7 @@ describe('getInlineCompletions', () => {
                 )
             )
             expect(requests).toHaveLength(3)
-            expect(requests[0].stopSequences).not.toContain('\n')
+            expect(requests[0].stopSequences).not.toContain(MULTILINE_STOP_SEQUENCE)
             expect(items[0]).toMatchInlineSnapshot(`
                 "Console.WriteLine(i);
                     }"
@@ -900,7 +925,7 @@ describe('getInlineCompletions', () => {
                 )
             )
             expect(requests).toHaveLength(3)
-            expect(requests[0].stopSequences).not.toContain('\n')
+            expect(requests[0].stopSequences).not.toContain(MULTILINE_STOP_SEQUENCE)
             expect(items[0]).toMatchInlineSnapshot(`
                 "std::cout << i;
                     } else if (i % 3 == 0) {
@@ -943,7 +968,7 @@ describe('getInlineCompletions', () => {
                 )
             )
             expect(requests).toHaveLength(3)
-            expect(requests[0].stopSequences).not.toContain('\n')
+            expect(requests[0].stopSequences).not.toContain(MULTILINE_STOP_SEQUENCE)
             expect(items[0]).toMatchInlineSnapshot(`
                 "printf(\\"%d\\", i);
                     } else if (i % 3 == 0) {
@@ -987,7 +1012,7 @@ describe('getInlineCompletions', () => {
             )
 
             expect(requests).toHaveLength(3)
-            expect(requests[0].stopSequences).not.toContain('\n')
+            expect(requests[0].stopSequences).not.toContain(MULTILINE_STOP_SEQUENCE)
             expect(items[0]).toMatchInlineSnapshot(`
               "echo $i;
                   } else if ($i % 3 == 0) {
@@ -1031,7 +1056,7 @@ describe('getInlineCompletions', () => {
             )
 
             expect(requests).toHaveLength(3)
-            expect(requests[0].stopSequences).not.toContain('\n')
+            expect(requests[0].stopSequences).not.toContain(MULTILINE_STOP_SEQUENCE)
             expect(items[0]).toMatchInlineSnapshot(`
               "print(i);
                   } else if (i % 3 == 0) {
@@ -1148,71 +1173,6 @@ describe('getInlineCompletions', () => {
                     )
                 ).length
             ).toBe(0)
-        })
-
-        test('stops when the next non-empty line of the suffix matches exactly with one line completion', async () => {
-            expect(
-                (
-                    await getInlineCompletionsInsertText(
-                        params(
-                            dedent`
-                    function myFunction() {
-                        console.log('one')
-                        █
-                        console.log('three')
-                    }
-                `,
-                            [
-                                completion`
-                        ├console.log('three')
-                    }┤`,
-                            ]
-                        )
-                    )
-                ).length
-            ).toBe(0)
-        })
-
-        test('cuts off a matching line with the next line even if the completion is longer', async () => {
-            expect(
-                (
-                    await getInlineCompletionsInsertText(
-                        params(
-                            dedent`
-                    function bubbleSort() {
-                        █
-                        do {
-                            swapped = false;
-                            for (let i = 0; i < array.length - 1; i++) {
-                                if (array[i] > array[i + 1]) {
-                                    let temp = array[i];
-                                    array[i] = array[i + 1];
-                                    array[i + 1] = temp;
-                                    swapped = true;
-                                }
-                            }
-                        } while (swapped);
-                    }`,
-                            [
-                                completion`
-                        ├let swapped;
-                        do {
-                            swapped = false;
-                            for (let i = 0; i < array.length - 1; i++) {
-                                if (array[i] > array[i + 1]) {
-                                    let temp = array[i];
-                                    array[i] = array[i + 1];
-                                    array[i + 1] = temp;
-                                    swapped = true;
-                                }
-                            }
-                        } while (swapped);┤
-                    ┴┴┴┴`,
-                            ]
-                        )
-                    )
-                )[0]
-            ).toBe('let swapped;')
         })
 
         describe('stops when the next non-empty line of the suffix matches partially', () => {
@@ -1492,7 +1452,7 @@ describe('getInlineCompletions', () => {
                     this.startLine =",
             }
         `)
-        expect(requests[0].stopSequences).toEqual(['\n\nHuman:', '</CODE5711>', '\n\n'])
+        expect(requests[0].stopSequences).toEqual(['\n\nHuman:', '</CODE5711>', MULTILINE_STOP_SEQUENCE])
     })
 
     test('trims whitespace in the prefix but keeps one \n', async () => {

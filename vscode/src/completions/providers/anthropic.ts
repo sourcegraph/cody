@@ -13,6 +13,7 @@ import {
     extractFromCodeBlock,
     fixBadCompletionStart,
     getHeadAndTail,
+    MULTILINE_STOP_SEQUENCE,
     OPENING_CODE_TAG,
     PrefixComponents,
     trimLeadingWhitespaceUntilNewline,
@@ -141,7 +142,7 @@ export class AnthropicProvider extends Provider {
                   temperature: 0.5,
                   messages: prompt,
                   maxTokensToSample: Math.min(50, this.responseTokens),
-                  stopSequences: [anthropic.HUMAN_PROMPT, CLOSING_CODE_TAG, '\n\n'],
+                  stopSequences: [anthropic.HUMAN_PROMPT, CLOSING_CODE_TAG, MULTILINE_STOP_SEQUENCE],
               }
         tracer?.params(args)
 

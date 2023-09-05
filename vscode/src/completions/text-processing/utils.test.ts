@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { getNextNonEmptyLine, getPrevNonEmptyLine } from './text-utils'
+import { getNextNonEmptyLine, getPrevNonEmptyLine } from './utils'
 
 describe('getNextNonEmptyLine', () => {
     it.each([

@@ -5,8 +5,8 @@ import { vsCodeMocks } from '../testutils/mocks'
 import { Provider } from './providers/provider'
 import { RequestManager, RequestManagerResult, RequestParams } from './request-manager'
 import { documentAndPosition } from './testHelpers'
+import { getNextNonEmptyLine, getPrevNonEmptyLine } from './text-processing'
 import { Completion } from './types'
-import { getNextNonEmptyLine, getPrevNonEmptyLine } from './utils/text-utils'
 
 class MockProvider extends Provider {
     public didFinishNetworkRequest = false

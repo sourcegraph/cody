@@ -1,7 +1,6 @@
-import fetch from 'isomorphic-fetch'
-
 import { isAbortError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
 
+import { fetch } from '../../fetch'
 import { logger } from '../../log'
 import { Completion, ContextSnippet } from '../types'
 
@@ -51,6 +50,9 @@ export class UnstableCodeGenProvider extends Provider {
             body: JSON.stringify(params),
             headers: {
                 'Content-Type': 'application/json',
+                // Force HTTP connection reuse to reduce latency.
+                // c.f. https://github.com/microsoft/vscode/issues/173861
+                Connection: 'keep-alive',
             },
             signal: abortSignal,
         })
@@ -58,7 +60,7 @@ export class UnstableCodeGenProvider extends Provider {
         try {
             const data = (await response.json()) as { completions: { completion: string }[] }
 
-            const completions: string[] = data.completions.map(c => postProcess(c.completion, this.options.multiline))
+            const completions: string[] = data.completions.map(c => postProcess(c.completion))
             log?.onComplete(completions)
 
             return completions.map(content => ({ content }))
@@ -72,13 +74,7 @@ export class UnstableCodeGenProvider extends Provider {
     }
 }
 
-function postProcess(content: string, multiline: boolean): string {
-    // The model might return multiple lines for single line completions because
-    // we are only able to specify a token limit.
-    if (!multiline && content.includes('\n')) {
-        content = content.slice(0, content.indexOf('\n'))
-    }
-
+function postProcess(content: string): string {
     return content.trim()
 }
 

@@ -1,6 +1,6 @@
 import * as vscode from 'vscode'
 
-import { getNextNonEmptyLine, getPrevNonEmptyLine } from './utils/text-utils'
+import { getNextNonEmptyLine, getPrevNonEmptyLine } from './text-processing'
 
 export interface DocumentContext {
     prefix: string

@@ -73,9 +73,6 @@ export function getConfiguration(config: ConfigGetter = vscode.workspace.getConf
             CONFIG_KEY.autocompleteExperimentalSyntacticPostProcessing,
             false
         ),
-        pluginsEnabled: config.get<boolean>(CONFIG_KEY.pluginsEnabled, false),
-        pluginsDebugEnabled: config.get<boolean>(CONFIG_KEY.pluginsDebugEnabled, true),
-        pluginsConfig: config.get(CONFIG_KEY.pluginsConfig, {}),
 
         /**
          * UNDOCUMENTED FLAGS
