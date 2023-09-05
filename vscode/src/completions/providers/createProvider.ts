@@ -16,7 +16,7 @@ export async function createProviderConfig(
     client: CodeCompletionsClient,
     featureFlagProvider?: FeatureFlagProvider
 ): Promise<ProviderConfig | null> {
-    const provider = await resolveDefaultProvider(config.autocompleteAdvancedProvider, featureFlagProvider)
+    const { provider, model } = await resolveDefaultProvider(config.autocompleteAdvancedProvider, featureFlagProvider)
     switch (provider) {
         case 'unstable-codegen': {
             if (config.autocompleteAdvancedServerEndpoint !== null) {
@@ -63,7 +63,7 @@ export async function createProviderConfig(
         case 'unstable-fireworks': {
             return createUnstableFireworksProviderConfig({
                 client,
-                model: config.autocompleteAdvancedModel,
+                model: config.autocompleteAdvancedModel ?? model ?? null,
             })
         }
         case 'anthropic': {
@@ -84,14 +84,19 @@ export async function createProviderConfig(
 async function resolveDefaultProvider(
     configuredProvider: string | null,
     featureFlagProvider?: FeatureFlagProvider
-): Promise<string> {
+): Promise<{ provider: string; model?: 'starcoder-7b' | 'starcoder-16b' }> {
     if (configuredProvider) {
-        return configuredProvider
+        return { provider: configuredProvider }
     }
 
-    if (await featureFlagProvider?.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteDefaultProviderFireworks)) {
-        return 'unstable-fireworks'
+    const [starCoder7b, starCoder16b] = await Promise.all([
+        featureFlagProvider?.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteStarCoder7B),
+        featureFlagProvider?.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteStarCoder16B),
+    ])
+
+    if (starCoder7b === true || starCoder16b === true) {
+        return { provider: 'unstable-fireworks', model: starCoder7b ? 'starcoder-7b' : 'starcoder-16b' }
     }
 
-    return 'anthropic'
+    return { provider: 'anthropic' }
 }

@@ -11,9 +11,6 @@ describe('getConfiguration', () => {
             get: <T>(_key: string, defaultValue?: T): typeof defaultValue | undefined => defaultValue,
         }
         expect(getConfiguration(config)).toEqual({
-            pluginsConfig: {},
-            pluginsDebugEnabled: true,
-            pluginsEnabled: false,
             serverEndpoint: DOTCOM_URL.href,
             codebase: '',
             customHeaders: {},
@@ -103,14 +100,6 @@ describe('getConfiguration', () => {
                         return false
                     case 'cody.autocomplete.experimental.syntacticPostProcessing':
                         return false
-                    case 'cody.plugins.enabled':
-                        return true
-                    case 'cody.plugins.config':
-                        return {
-                            foo: 'bar',
-                        }
-                    case 'cody.plugins.debug.enabled':
-                        return false
                     case 'cody.advanced.agent.running':
                         return false
                     default:
@@ -119,9 +108,6 @@ describe('getConfiguration', () => {
             },
         }
         expect(getConfiguration(config)).toEqual({
-            pluginsEnabled: true,
-            pluginsConfig: { foo: 'bar' },
-            pluginsDebugEnabled: false,
             serverEndpoint: 'http://example.com',
             codebase: 'my/codebase',
             useContext: 'keyword',

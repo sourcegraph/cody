@@ -114,10 +114,6 @@ export class FixupProvider extends MessageProvider {
         // not implemented
     }
 
-    protected handleEnabledPlugins(): void {
-        // not implemented
-    }
-
     protected handleMyPrompts(): void {
         // not implemented
     }

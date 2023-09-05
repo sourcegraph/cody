@@ -36,7 +36,6 @@ export const Transcript: React.FunctionComponent<
         copyButtonOnSubmit?: CopyButtonProps['copyButtonOnSubmit']
         submitButtonComponent?: React.FunctionComponent<ChatUISubmitButtonProps>
         ChatButtonComponent?: React.FunctionComponent<ChatButtonProps>
-        pluginsDevMode?: boolean
         isTranscriptError?: boolean
     } & TranscriptItemClassNames
 > = React.memo(function TranscriptContent({
@@ -62,7 +61,6 @@ export const Transcript: React.FunctionComponent<
     submitButtonComponent,
     chatInputClassName,
     ChatButtonComponent,
-    pluginsDevMode,
     isTranscriptError,
 }) {
     // Scroll down whenever a new human message is received as input.
@@ -148,7 +146,6 @@ export const Transcript: React.FunctionComponent<
                                 submitButtonComponent={submitButtonComponent}
                                 chatInputClassName={chatInputClassName}
                                 ChatButtonComponent={ChatButtonComponent}
-                                pluginsDevMode={pluginsDevMode}
                             />
                         )
                 )}
