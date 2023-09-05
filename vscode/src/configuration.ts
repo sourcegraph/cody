@@ -77,11 +77,22 @@ export function getConfiguration(config: ConfigGetter = vscode.workspace.getConf
         pluginsDebugEnabled: config.get<boolean>(CONFIG_KEY.pluginsDebugEnabled, true),
         pluginsConfig: config.get(CONFIG_KEY.pluginsConfig, {}),
 
+        /**
+         * UNDOCUMENTED FLAGS
+         */
+
         // Note: In spirit, we try to minimize agent-specific code paths in the VSC extension.
         // We currently use this flag for the agent to provide more helpful error messages
         // when something goes wrong, and to suppress event logging in the agent.
         // Rely on this flag sparingly.
-        isRunningInsideAgent: config.get('cody.advanced.agent.running' as any, false),
+        isRunningInsideAgent: config.get<boolean>('cody.advanced.agent.running' as any, false),
+
+        // Note: Add cody.autocomplete.experimental.graphContext to the package.json once it has an
+        // implementation and becomes useable
+        autocompleteExperimentalGraphContext: config.get<boolean>(
+            'cody.autocomplete.experimental.graphContext' as any,
+            false
+        ),
     }
 }
 

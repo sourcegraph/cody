@@ -40,6 +40,7 @@ describe('getConfiguration', () => {
             autocompleteAdvancedEmbeddings: true,
             autocompleteExperimentalCompleteSuggestWidgetSelection: false,
             autocompleteExperimentalSyntacticPostProcessing: false,
+            autocompleteExperimentalGraphContext: false,
         })
     })
 
@@ -100,6 +101,8 @@ describe('getConfiguration', () => {
                         return false
                     case 'cody.autocomplete.experimental.syntacticPostProcessing':
                         return false
+                    case 'cody.autocomplete.experimental.graphContext':
+                        return true
                     case 'cody.plugins.enabled':
                         return true
                     case 'cody.plugins.config':
@@ -148,6 +151,7 @@ describe('getConfiguration', () => {
             autocompleteAdvancedEmbeddings: false,
             autocompleteExperimentalCompleteSuggestWidgetSelection: false,
             autocompleteExperimentalSyntacticPostProcessing: false,
+            autocompleteExperimentalGraphContext: true,
         })
     })
 })

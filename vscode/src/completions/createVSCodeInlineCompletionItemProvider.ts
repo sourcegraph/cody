@@ -25,6 +25,8 @@ export async function createInlineCompletionItemProvider(
     const providerConfig = await createProviderConfig(config, client)
     if (providerConfig) {
         const history = new VSCodeDocumentHistory()
+        const sectionObserver = config.autocompleteExperimentalGraphContext ? new SectionObserver() : undefined
+
         const completionsProvider = new InlineCompletionItemProvider({
             providerConfig,
             history,
@@ -40,9 +42,11 @@ export async function createInlineCompletionItemProvider(
                 completionsProvider.handleDidAcceptCompletionItem(codyLogId, codyCompletion)
             }),
             vscode.languages.registerInlineCompletionItemProvider('*', completionsProvider),
-            registerAutocompleteTraceView(completionsProvider),
-            new SectionObserver()
+            registerAutocompleteTraceView(completionsProvider)
         )
+        if (sectionObserver) {
+            disposables.push(sectionObserver)
+        }
     } else if (config.isRunningInsideAgent) {
         throw new Error(
             "Can't register completion provider because `providerConfig` evaluated to `null`. " +
