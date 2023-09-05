@@ -1,8 +1,6 @@
-import { SocksProxyAgent } from 'socks-proxy-agent'
-
 import { isAbortError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
 
-import { fetch } from '../../fetch'
+import { agent, fetch } from '../../fetch'
 import { logger } from '../../log'
 import { Completion, ContextSnippet } from '../types'
 
@@ -62,11 +60,7 @@ export class UnstableCodeGenProvider extends Provider {
             signal: abortSignal,
         }
         const agentRequestInit =
-            this.proxyAddress !== undefined
-                ? {
-                      agent: new SocksProxyAgent(this.proxyAddress),
-                  }
-                : {}
+            this.proxyAddress !== undefined && agent.current ? { agent: agent.current(new URL(this.proxyAddress)) } : {}
         const response = await fetch(this.serverEndpoint, { ...requestInit, ...agentRequestInit })
         try {
             const data = (await response.json()) as { completions: { completion: string }[] }

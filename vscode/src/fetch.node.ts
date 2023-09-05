@@ -1,6 +1,8 @@
 import http from 'http'
 import https from 'https'
 
+import { SocksProxyAgent } from 'socks-proxy-agent'
+
 import { agent } from './fetch'
 
 // The path to the exported class can be found in the npm contents
@@ -15,10 +17,19 @@ export function initializeNetworkAgent(): void {
      */
     const httpAgent = new http.Agent({ keepAlive: true, keepAliveMsecs: 60000 })
     const httpsAgent = new https.Agent({ keepAlive: true, keepAliveMsecs: 60000 })
+    const socksAgents = new Map<string, SocksProxyAgent>()
 
-    const customAgent = ({ protocol }: Pick<URL, 'protocol'>): http.Agent => {
-        if (protocol === 'http:') {
+    const customAgent = (url: URL): http.Agent => {
+        if (url.protocol === 'http:') {
             return httpAgent
+        }
+        if (url.protocol === 'socks:') {
+            let sockAgent = socksAgents.get(url.href)
+            if (!sockAgent) {
+                sockAgent = new SocksProxyAgent(url, { keepAlive: true, keepAliveMsecs: 60000 })
+                socksAgents.set(url.href, sockAgent)
+            }
+            return sockAgent
         }
         return httpsAgent
     }
