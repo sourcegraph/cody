@@ -102,6 +102,17 @@ export class ToolsProvider {
         }
     }
 
+    /**
+     * Adds content to a test file.
+     *
+     * @param content - The content to add to the test file. This should contain the file name tags and code blocks.
+     * @param currentFileName - The path of the current file. Used to determine the path for the test file.
+     *
+     * This extracts the test file name from the content, gets the code blocks, builds the test file path from the current file name,
+     * checks if the test file already exists, and creates a new test file with the code blocks as content if it doesn't exist.
+     *
+     * It also handles opening an existing test file and adding the content to a temporary file.
+     */
     public async addContentToTestFile(content: string, currentFileName: string): Promise<void> {
         const codeBlockRegex = /```[\S\s]*?```/g
         // the file name is in the <fileName></fileName> tags in the content
@@ -135,8 +146,17 @@ export class ToolsProvider {
         return
     }
 
+    /**
+     * Creates a new file if it doesn't already exist and adds content to it.
+     *
+     * @param fileUri - The URI of the file to create.
+     * @param content - Optional content to add to the new file.
+     *
+     * This first checks if the file exists, and creates it if not.
+     * Then it opens the file, inserts the content at the end, saves the file,
+     * and opens the document in the editor.
+     */
     private async createNewFile(fileUri: vscode.Uri, content?: string): Promise<void> {
-        // Create a new file if it doesn't exist
         const workspaceEditor = new vscode.WorkspaceEdit()
         workspaceEditor.createFile(fileUri, { ignoreIfExists: true })
         if (!content) {
@@ -150,6 +170,15 @@ export class ToolsProvider {
         await vscode.window.showTextDocument(fileUri)
     }
 
+    /**
+     * Creates a temporary file with the given content and language.
+     *
+     * @param content - The content to add to the temporary file.
+     * @param language - The language of the temporary file.
+     *
+     * Opens a new text document with the given content and language,
+     * then shows that document in a new editor tab.
+     */
     private async createTempFile(content: string, language: string): Promise<void> {
         const tempFile = await vscode.workspace.openTextDocument({
             content: content.trim(),
