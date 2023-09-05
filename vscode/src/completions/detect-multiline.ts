@@ -8,17 +8,14 @@ import {
 } from './text-processing'
 
 export function detectMultiline(
-    {
-        prefix,
-        prevNonEmptyLine,
-        currentLinePrefix,
-        currentLineSuffix,
-    }: Pick<DocumentContext, 'prefix' | 'prevNonEmptyLine' | 'currentLinePrefix' | 'currentLineSuffix'>,
+    docContext: DocumentContext,
     languageId: string,
     enableExtendedTriggers: boolean
 ): boolean {
-    const config = getLanguageConfig(languageId)
-    if (!config) {
+    const { prefix, prevNonEmptyLine, nextNonEmptyLine, currentLinePrefix, currentLineSuffix } = docContext
+
+    const languageConfig = getLanguageConfig(languageId)
+    if (!languageConfig) {
         return false
     }
 
@@ -38,13 +35,18 @@ export function detectMultiline(
         return true
     }
 
+    const { blockStart } = languageConfig
+
     if (
         currentLinePrefix.trim() === '' &&
         currentLineSuffix.trim() === '' &&
         // Only trigger multiline suggestions for the beginning of blocks
-        prefix.trim().at(prefix.trim().length - config.blockStart.length) === config.blockStart &&
+        prefix.trimEnd().endsWith(blockStart) &&
         // Only trigger multiline suggestions when the new current line is indented
-        indentation(prevNonEmptyLine) < indentation(currentLinePrefix)
+        indentation(prevNonEmptyLine) < indentation(currentLinePrefix) &&
+        // Only trigger multiline suggestions when the next non-empty line is indented less
+        // than the block start line (the newly created block is empty).
+        indentation(prevNonEmptyLine) >= indentation(nextNonEmptyLine)
     ) {
         return true
     }
