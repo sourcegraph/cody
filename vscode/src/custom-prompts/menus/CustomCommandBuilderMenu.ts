@@ -1,7 +1,7 @@
 import { QuickPickItem, window } from 'vscode'
 
 import { CodyPrompt } from '@sourcegraph/cody-shared'
-import { defaultCodyPromptContext } from '@sourcegraph/cody-shared/src/chat/prompts'
+import { CodyPromptType, defaultCodyPromptContext } from '@sourcegraph/cody-shared/src/chat/prompts'
 import { toSlashCommand } from '@sourcegraph/cody-shared/src/chat/prompts/utils'
 
 import { customPromptsContextOptions } from '../utils/menu'
@@ -18,11 +18,15 @@ export class CustomCommandsBuilderMenu {
         const description = await this.makeDescription()
         // build prompt
         const prompt = await this.makePrompt()
-        if (!slashCommand || !description || !prompt) {
+        // get type
+        const type = await this.makeType()
+
+        if (!slashCommand || !description || !prompt || !type) {
             return null
         }
-        void window.showInformationMessage('New command added to Cody user settings (~/.vscode/cody.json)')
-        return { slashCommand, prompt: { ...prompt, description, slashCommand } }
+
+        void window.showInformationMessage(`New command added to Cody ${type} settings`)
+        return { slashCommand, prompt: { ...prompt, description, slashCommand, type } }
     }
 
     private async makeSlashCommand(commands: Map<string, CodyPrompt>): Promise<string | undefined> {
@@ -130,6 +134,33 @@ export class CustomCommandsBuilderMenu {
 
         return newPrompt
     }
+
+    private async makeType(): Promise<CodyPromptType> {
+        // Get the command to run from the user using the input box
+        const option = await window.showQuickPick(
+            [
+                {
+                    label: 'User Settings',
+                    detail: 'Stored on your machine and usable across all your workspaces',
+                    type: 'user',
+                    description: '~/.vscode/cody.json',
+                },
+                {
+                    label: 'Workspace Settings',
+                    detail: 'Project-specific and shared with anyone using this workspace/repo',
+                    type: 'workspace',
+                    description: '.vscode/cody.json',
+                }
+            ],
+            {
+                title: 'Type',
+                placeHolder: 'Choose an option',
+                ignoreFocusOut: true
+            }
+        )
+    
+        return option.type as CodyPromptType
+    }    
 }
 
 async function showPromptCreationInputBox(): Promise<string | void> {
