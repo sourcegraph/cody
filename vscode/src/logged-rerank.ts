@@ -2,7 +2,7 @@ import { ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
 import { LLMReranker } from '@sourcegraph/cody-shared/src/codebase-context/rerank'
 import { ContextResult } from '@sourcegraph/cody-shared/src/local-context'
 
-import { debug } from './log'
+import { logDebug } from './log'
 import { TestSupport } from './test-support'
 
 export function getRerankWithLog(
@@ -18,7 +18,7 @@ export function getRerankWithLog(
         const start = performance.now()
         const rerankedResults = await reranker.rerank(userQuery, results)
         const duration = performance.now() - start
-        debug('Reranker:rerank', JSON.stringify({ duration }))
+        logDebug('Reranker:rerank', JSON.stringify({ duration }))
         return rerankedResults
     }
 }

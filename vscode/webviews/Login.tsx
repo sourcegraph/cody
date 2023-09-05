@@ -1,9 +1,10 @@
 import { VSCodeButton } from '@vscode/webview-ui-toolkit/react'
 import classNames from 'classnames'
 
+import { DOTCOM_URL, LOCAL_APP_URL } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
 import { TelemetryService } from '@sourcegraph/cody-shared/src/telemetry'
 
-import { AuthStatus, DOTCOM_URL, isOsSupportedByApp, LOCAL_APP_URL } from '../src/chat/protocol'
+import { AuthStatus, isOsSupportedByApp } from '../src/chat/protocol'
 
 import { ConnectApp } from './ConnectApp'
 import { ErrorContainer } from './Error'

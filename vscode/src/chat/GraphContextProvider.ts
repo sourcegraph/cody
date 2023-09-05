@@ -2,7 +2,7 @@ import * as vscode from 'vscode'
 import { URI } from 'vscode-uri'
 
 import { PreciseContext } from '@sourcegraph/cody-shared/src/codebase-context/messages'
-import { isDefined } from '@sourcegraph/cody-shared/src/common'
+import { dedupeWith, isDefined } from '@sourcegraph/cody-shared/src/common'
 import { ActiveTextEditorSelectionRange, Editor } from '@sourcegraph/cody-shared/src/editor'
 import { GraphContextFetcher } from '@sourcegraph/cody-shared/src/graph-context'
 
@@ -80,7 +80,7 @@ const getGraphContextFromSelection = async (
 
     const unseenDefinitionUris = dedupeWith(
         definitionMatches.map(({ locations }) => locations.map(({ uri }) => uri)).flat(),
-        uri => uri.fsPath
+        'fsPath'
     ).filter(uri => !contentMap.has(uri.fsPath))
 
     const newContentMap = new Map(
@@ -146,7 +146,7 @@ export const extractRelevantDocumentSymbolRanges = async (
         new Map(
             dedupeWith(
                 selections.map(({ uri }) => uri),
-                uri => uri.fsPath
+                'fsPath'
             ).map(uri => [uri.fsPath, getDocumentSymbolRanges(uri)])
         )
     )
@@ -304,19 +304,37 @@ export const gatherDefinitions = async (
             continue
         }
 
+        const requestQueue: { symbolName: string; position: vscode.Position }[] = []
         for (const { start, end } of [range]) {
             for (const [lineIndex, line] of lines.slice(start.line, end.line + 1).entries()) {
-                for (const match of line.matchAll(identifierPattern)) {
+                // NOTE: pretty hacky - strip out C-style line comments and find everything
+                // that might look like it could be an identifier. If we end up running a
+                // VSCode provider over this cursor position and it's not a symbol we can
+                // use, we'll just get back an empty location list.
+                const identifierMatches = line.replace(/\/\/.*$/, '').matchAll(identifierPattern)
+
+                for (const match of identifierMatches) {
                     if (match.index === undefined || commonKeywords.has(match[0])) {
                         continue
                     }
 
-                    definitionMatches.push({
+                    requestQueue.push({
                         symbolName: match[0],
-                        locations: getDefinitions(uri, new vscode.Position(start.line + lineIndex, match.index + 1)),
+                        position: new vscode.Position(start.line + lineIndex, match.index + 1),
                     })
                 }
             }
+        }
+
+        // NOTE: deduplicating here will save duplicate queries that are _likely_ to point to the
+        // same definition, but we may be culling aggressively here for some edge cases. I don't
+        // currently think that these are likely to be make-or-break a quality response on any
+        // significant segment of real world questions, though.
+        for (const { symbolName, position } of dedupeWith(requestQueue, 'symbolName')) {
+            definitionMatches.push({
+                symbolName,
+                locations: getDefinitions(uri, position),
+            })
         }
     }
 
@@ -455,14 +473,6 @@ const extractSnippets = (lines: string[], symbolRanges: vscode.Range[], targetRa
     // NOTE: inclusive upper bound
     return intersectingRanges.map(fr => lines.slice(fr.start.line, fr.end.line + 1).join('\n'))
 }
-
-/**
- * Return a filtered version of the given array, de-duplicating items based on the given key function.
- * The order of the filtered array is not guaranteed to be related to the input ordering.
- */
-const dedupeWith = <T>(items: T[], keyFn: (item: T) => string): T[] => [
-    ...new Map(items.map(item => [keyFn(item), item])).values(),
-]
 
 /**
  * Returns a key unique to a given location for use with `dedupeWith`.

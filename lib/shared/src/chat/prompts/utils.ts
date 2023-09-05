@@ -75,3 +75,20 @@ export function isOnlySelectionRequired(contextConfig: CodyPromptContext): boole
     const contextConfigLength = Object.entries(contextConfig).length
     return !contextConfig.none && ((contextConfig.selection && contextConfigLength === 1) || !contextConfigLength)
 }
+
+const leadingForwardSlashRegex = /^\/+/
+
+/**
+ * Removes leading forward slashes from slash command string.
+ */
+export function fromSlashCommand(slashCommand: string): string {
+    return slashCommand.replace(leadingForwardSlashRegex, '')
+}
+
+/**
+ * Returns command starting with a forward slash.
+ */
+export function toSlashCommand(command: string): string {
+    // ensure there is only one leading forward slash
+    return command.replace(leadingForwardSlashRegex, '').replace(/^/, '/')
+}

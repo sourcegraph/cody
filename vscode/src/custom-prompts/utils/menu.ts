@@ -1,5 +1,4 @@
-import * as vscode from 'vscode'
-import { QuickInputButtons, QuickPickItem, ThemeIcon, window } from 'vscode'
+import { commands, QuickInputButtons, QuickPickItem, ThemeIcon, window } from 'vscode'
 
 import { CodyPrompt } from '@sourcegraph/cody-shared'
 import { CodyPromptType } from '@sourcegraph/cody-shared/src/chat/prompts'
@@ -10,9 +9,28 @@ export const NewCustomCommandConfigMenuOptions = {
     title: 'Cody Custom Commands (Experimental) - New User Command',
 }
 
+export type QuickPickItemWithSlashCommand = QuickPickItem & { slashCommand: string }
+
+export const ASK_QUESTION_COMMAND = {
+    description: 'Ask a question',
+    slashCommand: '/ask',
+}
+export const EDIT_COMMAND = {
+    description: 'Edit code',
+    slashCommand: '/edit',
+}
+
 const inlineSeparator: QuickPickItem = { kind: -1, label: 'inline' }
-const chatOption: QuickPickItem = { label: '/ask', description: 'Ask a Question', alwaysShow: true }
-const fixOption: QuickPickItem = { label: '/fix', description: 'Refactor Selected Code', alwaysShow: true }
+const chatOption: QuickPickItemWithSlashCommand = {
+    label: ASK_QUESTION_COMMAND.slashCommand,
+    description: ASK_QUESTION_COMMAND.description,
+    slashCommand: ASK_QUESTION_COMMAND.slashCommand,
+}
+const fixOption: QuickPickItemWithSlashCommand = {
+    label: EDIT_COMMAND.slashCommand,
+    description: EDIT_COMMAND.description,
+    slashCommand: EDIT_COMMAND.slashCommand,
+}
 const commandsSeparator: QuickPickItem = { kind: -1, label: 'commands' }
 const customCommandsSeparator: QuickPickItem = { kind: -1, label: 'custom commands (experimental)' }
 const configOption: QuickPickItem = { label: 'Configure Custom Commands...' }
@@ -20,7 +38,7 @@ const settingsSeparator: QuickPickItem = { kind: -1, label: 'settings' }
 const addOption: QuickPickItem = { label: 'Create a New Custom User Command...', alwaysShow: true }
 
 export const recentlyUsedSeparatorAsPrompt: [string, CodyPrompt][] = [
-    ['separator', { prompt: 'separator', type: 'recently used' }],
+    ['separator', { prompt: 'separator', type: 'recently used', slashCommand: '' }],
 ]
 
 export const menu_separators = {
@@ -83,8 +101,7 @@ export const customPromptsContextOptions: ContextOption[] = [
     {
         id: 'currentDir',
         label: 'Current Directory',
-        description: 'If the prompt includes "test(s)", only test files will be included.',
-        detail: 'First 10 text files in the current directory',
+        detail: 'First 10 text files in the current directory. If the prompt includes the words "test" or "tests", only test files will be included.',
         picked: false,
     },
     {
@@ -96,7 +113,7 @@ export const customPromptsContextOptions: ContextOption[] = [
     {
         id: 'command',
         label: 'Command Output',
-        detail: 'The output returned from a terminal command run from your local workspace. E.g. git describe --long',
+        detail: 'The output returned from a terminal command (e.g. git describe --long, node your-script.js, cat src/file-name.js)',
         picked: false,
     },
     {
@@ -200,13 +217,13 @@ export const CustomCommandConfigMenuItems = [
 ]
 
 export async function showAskQuestionQuickPick(): Promise<string> {
-    const quickPick = vscode.window.createQuickPick()
-    quickPick.title = '/ask'
+    const quickPick = window.createQuickPick()
+    quickPick.title = `${ASK_QUESTION_COMMAND.description} (${ASK_QUESTION_COMMAND.slashCommand})`
     quickPick.placeholder = 'Your question'
     quickPick.buttons = [menu_buttons.back]
 
     quickPick.onDidTriggerButton(() => {
-        void vscode.commands.executeCommand('cody.action.commands.menu')
+        void commands.executeCommand('cody.action.commands.menu')
         quickPick.hide()
     })
 
@@ -214,14 +231,14 @@ export async function showAskQuestionQuickPick(): Promise<string> {
 
     return new Promise(resolve =>
         quickPick.onDidAccept(() => {
-            const instruction = quickPick.value.trim()
-            if (!instruction) {
+            const question = quickPick.value.trim()
+            if (!question) {
                 // noop
                 return
             }
 
             quickPick.hide()
-            return resolve(instruction)
+            return resolve(question)
         })
     )
 }

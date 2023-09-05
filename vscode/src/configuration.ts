@@ -5,11 +5,11 @@ import type {
     ConfigurationUseContext,
     ConfigurationWithAccessToken,
 } from '@sourcegraph/cody-shared/src/configuration'
+import { DOTCOM_URL } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
 
-import { DOTCOM_URL } from './chat/protocol'
 import { CONFIG_KEY, ConfigKeys } from './configuration-keys'
-import { LocalStorage } from './services/LocalStorageProvider'
-import { getAccessToken, SecretStorage } from './services/SecretStorageProvider'
+import { localStorage } from './services/LocalStorageProvider'
+import { getAccessToken } from './services/SecretStorageProvider'
 
 interface ConfigGetter {
     get<T>(section: (typeof CONFIG_KEY)[ConfigKeys], defaultValue?: T): T
@@ -18,7 +18,7 @@ interface ConfigGetter {
 /**
  * All configuration values, with some sanitization performed.
  */
-export function getConfiguration(config: ConfigGetter): Configuration {
+export function getConfiguration(config: ConfigGetter = vscode.workspace.getConfiguration()): Configuration {
     const isTesting = process.env.CODY_TESTING === 'true'
 
     let debugRegex: RegExp | null = null
@@ -55,7 +55,7 @@ export function getConfiguration(config: ConfigGetter): Configuration {
         experimentalLocalSymbols: config.get(CONFIG_KEY.experimentalLocalSymbols, false),
         experimentalCommandLenses: config.get(CONFIG_KEY.experimentalCommandLenses, false),
         experimentalEditorTitleCommandIcon: config.get(CONFIG_KEY.experimentalEditorTitleCommandIcon, false),
-        autocompleteAdvancedProvider: config.get(CONFIG_KEY.autocompleteAdvancedProvider, 'anthropic'),
+        autocompleteAdvancedProvider: config.get(CONFIG_KEY.autocompleteAdvancedProvider, null),
         experimentalSymfPath: config.get<string>(CONFIG_KEY.experimentalSymfPath, 'symf'),
         experimentalSymfAnthropicKey: config.get<string>(CONFIG_KEY.experimentalSymfAnthropicKey, ''),
         autocompleteAdvancedServerEndpoint: config.get<string | null>(
@@ -71,6 +71,10 @@ export function getConfiguration(config: ConfigGetter): Configuration {
         autocompleteAdvancedEmbeddings: config.get(CONFIG_KEY.autocompleteAdvancedEmbeddings, true),
         autocompleteExperimentalCompleteSuggestWidgetSelection: config.get(
             CONFIG_KEY.autocompleteExperimentalCompleteSuggestWidgetSelection,
+            false
+        ),
+        autocompleteExperimentalSyntacticPostProcessing: config.get(
+            CONFIG_KEY.autocompleteExperimentalSyntacticPostProcessing,
             false
         ),
         pluginsEnabled: config.get<boolean>(CONFIG_KEY.pluginsEnabled, false),
@@ -109,20 +113,10 @@ function sanitizeServerEndpoint(serverEndpoint: string): string {
     return serverEndpoint.trim().replace(trailingSlashRegexp, '')
 }
 
-const codyConfiguration = vscode.workspace.getConfiguration('cody')
-
-// Update user configurations in VS Code for Cody
-export async function updateConfiguration(configKey: string, configValue: string): Promise<void> {
-    await codyConfiguration.update(configKey, configValue, vscode.ConfigurationTarget.Global)
-}
-
-export const getFullConfig = async (
-    secretStorage: SecretStorage,
-    localStorage?: LocalStorage
-): Promise<ConfigurationWithAccessToken> => {
-    const config = getConfiguration(vscode.workspace.getConfiguration())
+export const getFullConfig = async (): Promise<ConfigurationWithAccessToken> => {
+    const config = getConfiguration()
     // Migrate endpoints to local storage
     config.serverEndpoint = localStorage?.getEndpoint() || config.serverEndpoint
-    const accessToken = (await getAccessToken(secretStorage)) || null
+    const accessToken = (await getAccessToken()) || null
     return { ...config, accessToken }
 }

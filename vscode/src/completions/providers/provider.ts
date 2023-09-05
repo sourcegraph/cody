@@ -1,6 +1,6 @@
 import { CompletionParameters } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
 
-import { DocumentContext } from '../document'
+import { DocumentContext } from '../get-current-doc-context'
 import { Completion, ContextSnippet } from '../types'
 
 export interface ProviderConfig {
@@ -32,9 +32,9 @@ export interface ProviderConfig {
     identifier: string
 
     /**
-     * Indicating whether the provider supports infilling.
+     * Defines which model is used with the respective provider.
      */
-    supportsInfilling: boolean
+    model: string
 }
 
 export interface ProviderOptions {

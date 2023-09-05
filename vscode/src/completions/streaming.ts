@@ -1,6 +1,12 @@
-import { truncateMultilineCompletion } from './multiline'
-import { ProcessInlineCompletionsParams } from './processInlineCompletions'
+import { DocumentContext } from './get-current-doc-context'
 import { trimUntilSuffix } from './text-processing'
+import { truncateMultilineCompletion } from './text-processing/truncate-multiline-completion'
+
+interface CanUsePartialCompletionParams {
+    document: { languageId: string }
+    multiline: boolean
+    docContext: DocumentContext
+}
 
 /**
  * Evaluates a partial completion response and returns true when we can already use it. This is used
@@ -15,11 +21,7 @@ import { trimUntilSuffix } from './text-processing'
  */
 export function canUsePartialCompletion(
     partialResponse: string,
-    {
-        document,
-        multiline,
-        docContext: { prefix, suffix },
-    }: Pick<ProcessInlineCompletionsParams, 'document' | 'multiline' | 'docContext'>
+    { document, multiline, docContext: { prefix, suffix } }: CanUsePartialCompletionParams
 ): boolean {
     const lastNlIndex = partialResponse.lastIndexOf('\n')
 

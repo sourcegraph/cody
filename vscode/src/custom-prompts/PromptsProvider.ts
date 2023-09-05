@@ -1,9 +1,23 @@
 import { CodyPrompt, getDefaultCommandsMap } from '@sourcegraph/cody-shared/src/chat/prompts'
 
-import { debug } from '../log'
+import { logDebug } from '../log'
+
+import { ASK_QUESTION_COMMAND, EDIT_COMMAND } from './utils/menu'
 
 // Manage default commands created by the prompts in prompts.json
-const editorCommands = [{ name: 'Refactor Selected Code', prompt: '/fix', slashCommand: '/fix' }]
+const editorCommands: CodyPrompt[] = [
+    {
+        description: ASK_QUESTION_COMMAND.description,
+        prompt: ASK_QUESTION_COMMAND.slashCommand,
+        slashCommand: ASK_QUESTION_COMMAND.slashCommand,
+    },
+    {
+        description: EDIT_COMMAND.description,
+        prompt: EDIT_COMMAND.slashCommand,
+        slashCommand: EDIT_COMMAND.slashCommand,
+    },
+]
+
 export class PromptsProvider {
     // The default prompts
     private defaultPromptsMap = getDefaultCommandsMap(editorCommands)
@@ -19,13 +33,7 @@ export class PromptsProvider {
     /**
      * Find a prompt by its id
      */
-    public get(id: string, isSlashCommand = false): CodyPrompt | undefined {
-        if (id.startsWith('/') || isSlashCommand) {
-            const commands = [...this.allCommands]
-            const slashCommand = commands.find(command => command[1].slashCommand === id)
-            return slashCommand ? slashCommand[1] : this.allCommands.get(id)
-        }
-
+    public get(id: string): CodyPrompt | undefined {
         return this.allCommands.get(id)
     }
 
@@ -44,13 +52,13 @@ export class PromptsProvider {
      */
     public groupCommands(customCommands = new Map<string, CodyPrompt>()): void {
         const combinedMap = new Map([...this.defaultPromptsMap])
-        combinedMap.set('separator', { prompt: 'separator' })
+        combinedMap.set('separator', { prompt: 'separator', slashCommand: '' })
         this.allCommands = new Map([...combinedMap, ...customCommands])
     }
 
     // dispose and reset the controller and builder
     public dispose(): void {
         this.allCommands = new Map()
-        debug('CommandsController:dispose', 'disposed')
+        logDebug('CommandsController:dispose', 'disposed')
     }
 }

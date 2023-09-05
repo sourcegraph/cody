@@ -52,3 +52,13 @@ export const escapeMarkdown = (text: string): string => {
     }
     return text.replaceAll('<', '&lt;').replaceAll('>', '&gt;')
 }
+
+/**
+ * Return a filtered version of the given array, de-duplicating items based on the given key function.
+ * The order of the filtered array is not guaranteed to be related to the input ordering.
+ */
+export const dedupeWith = <T>(items: T[], key: keyof T | ((item: T) => string)): T[] => [
+    ...new Map(items.map(item => [typeof key !== 'function' ? item[key] : key(item), item])).values(),
+]
+
+export * from './paths'

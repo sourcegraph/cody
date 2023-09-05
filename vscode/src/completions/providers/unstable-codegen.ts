@@ -1,9 +1,10 @@
 import fetch from 'isomorphic-fetch'
 import { SocksProxyAgent } from 'socks-proxy-agent'
 
+import { isAbortError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
+
 import { logger } from '../../log'
 import { Completion, ContextSnippet } from '../types'
-import { isAbortError } from '../utils'
 
 import { Provider, ProviderConfig, ProviderOptions } from './provider'
 
@@ -162,6 +163,6 @@ export function createProviderConfig(unstableCodeGenOptions: UnstableCodeGenOpti
         maximumContextCharacters: contextWindowChars,
         enableExtendedMultilineTriggers: false,
         identifier: PROVIDER_IDENTIFIER,
-        supportsInfilling: true,
+        model: 'codegen',
     }
 }

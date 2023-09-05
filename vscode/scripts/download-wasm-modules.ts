@@ -4,8 +4,18 @@ import path from 'path'
 
 import ProgressBar from 'progress'
 
-const DIST_DIRECTORY = path.join(path.resolve(__dirname), '..', 'dist')
-const WASM_DIRECTORY = path.join(path.resolve(__dirname), '..', 'resources', 'wasm')
+import { ROOT_PATH } from '@sourcegraph/cody-shared/src/common'
+
+const DIST_DIRECTORY = path.join(ROOT_PATH, 'vscode/dist')
+const WASM_DIRECTORY = path.join(ROOT_PATH, 'vscode/resources/wasm')
+
+// We have to manually copy this because it's resolved by tree-sitter package
+// relative to the current `__dirname` which works fine if we do not bundle `node_modules`
+// but fails for the VS Code distribution.
+//
+// https://github.com/tree-sitter/tree-sitter/discussions/1680
+const TREE_SITTER_WASM_FILE = 'tree-sitter.wasm'
+const TREE_SITTER_WASM_PATH = require.resolve(`web-tree-sitter/${TREE_SITTER_WASM_FILE}`)
 
 const urls = [
     'https://storage.googleapis.com/sourcegraph-assets/cody-wasm/tree-sitter-javascript.wasm',
@@ -63,6 +73,8 @@ function copyFilesToDistDir(): void {
     for (const file of files) {
         copyFileSync(path.join(WASM_DIRECTORY, file), path.join(DIST_DIRECTORY, file))
     }
+
+    copyFileSync(TREE_SITTER_WASM_PATH, path.join(DIST_DIRECTORY, TREE_SITTER_WASM_FILE))
 }
 
 function getMissingFiles(urls: string[]): string[] {
@@ -86,8 +98,7 @@ function getFilePathFromURL(url: string): string {
 function downloadFile(url: string): Promise<WriteStream> {
     const fileName = getFilePathFromURL(url)
 
-    const downloadDirectory = path.resolve(__dirname, '..', 'resources', 'wasm')
-    const file = fs.createWriteStream(path.join(downloadDirectory, fileName))
+    const file = fs.createWriteStream(path.join(WASM_DIRECTORY, fileName))
 
     return new Promise((resolve, reject) => {
         http.get(url).on('response', res => {

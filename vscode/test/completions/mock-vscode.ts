@@ -26,16 +26,10 @@ const vscodeMock = {
                             return true
                         case 'cody.serverEndpoint':
                             return 'https://sourcegraph.com/'
-                        case 'cody.autocomplete.advanced.provider':
-                            return 'anthropic'
                         // case 'cody.autocomplete.advanced.provider':
                         //     return 'unstable-fireworks'
-                        // case 'cody.autocomplete.advanced.accessToken':
-                        //     return ''
-                        // case 'cody.autocomplete.advanced.serverEndpoint':
-                        //     return 'https://api.fireworks.ai/inference/v1/completions'
                         // case 'cody.autocomplete.advanced.model':
-                        //     return 'llama-code-13b-instruct'
+                        //     return 'llama-code-13b'
                         default:
                             return undefined
                     }

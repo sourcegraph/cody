@@ -40,7 +40,9 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     const [suggestions, setSuggestions] = useState<string[] | undefined>()
     const [isAppInstalled, setIsAppInstalled] = useState<boolean>(false)
     const [enabledPlugins, setEnabledPlugins] = useState<string[]>([])
-    const [myPrompts, setMyPrompts] = useState<[string, CodyPrompt][] | null>(null)
+    const [myPrompts, setMyPrompts] = useState<
+        [string, CodyPrompt & { isLastInGroup?: boolean; instruction?: string }][] | null
+    >(null)
     const [isTranscriptError, setIsTranscriptError] = useState<boolean>(false)
 
     useEffect(
@@ -90,9 +92,31 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                     case 'enabled-plugins':
                         setEnabledPlugins(message.plugins)
                         break
-                    case 'custom-prompts':
-                        setMyPrompts(message.prompts?.filter(command => command[1]?.slashCommand) || null)
+                    case 'custom-prompts': {
+                        let prompts: [string, CodyPrompt & { isLastInGroup?: boolean; instruction?: string }][] =
+                            message.prompts
+
+                        if (!prompts) {
+                            setMyPrompts(null)
+                            break
+                        }
+
+                        prompts = prompts.reduce(groupPrompts, []).map(addInstructions)
+
+                        // mark last prompts as last in group before adding another group
+                        const lastPrompt = prompts.at(-1)
+                        if (lastPrompt) {
+                            const [_, command] = lastPrompt
+                            command.isLastInGroup = true
+                        }
+
+                        setMyPrompts([
+                            ...prompts,
+                            // add another group
+                            ['reset', { prompt: '', slashCommand: '/reset', description: 'Clear the chat' }],
+                        ])
                         break
+                    }
                     case 'transcript-errors':
                         setIsTranscriptError(message.isTranscriptError)
                         break
@@ -216,3 +240,39 @@ const ErrorBanner: React.FunctionComponent<{ errors: string[]; setErrors: (error
         ))}
     </div>
 )
+
+/**
+ * Adds `isLastInGroup` field to a prompt if represents last item in a group (e.g., default/custom/etc. prompts).
+ */
+function groupPrompts(
+    acc: [string, CodyPrompt & { isLastInGroup?: boolean }][],
+    [key, command]: [string, CodyPrompt],
+    index: number,
+    array: [string, CodyPrompt][]
+): [string, CodyPrompt & { isLastInGroup?: boolean }][] {
+    if (key === 'separator') {
+        return acc
+    }
+
+    const nextItem = array[index + 1]
+    if (nextItem?.[0] === 'separator') {
+        acc.push([key, { ...command, isLastInGroup: true }])
+        return acc
+    }
+
+    acc.push([key, command])
+    return acc
+}
+
+const instructionLabels: Record<string, string> = {
+    '/ask': '[question]',
+    '/edit': '[instruction]',
+}
+
+/**
+ * Adds `instruction` field to a prompt if it requires additional instruction.
+ */
+function addInstructions<T extends CodyPrompt>([key, command]: [string, T]): [string, T & { instruction?: string }] {
+    const instruction = instructionLabels[command.slashCommand]
+    return [key, { ...command, instruction }]
+}

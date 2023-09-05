@@ -10,7 +10,7 @@ import * as vscode from 'vscode'
 
 import { IndexedKeywordContextFetcher, Result } from '@sourcegraph/cody-shared/src/local-context'
 
-import { debug } from '../log'
+import { logDebug } from '../log'
 
 const execFile = promisify(_execFile)
 
@@ -102,7 +102,7 @@ export class SymfRunner implements IndexedKeywordContextFetcher {
                 return indexDir
             })
             .catch(error => {
-                debug('symf', 'symf index creation failed', error)
+                logDebug('symf', 'symf index creation failed', error)
                 throw error
             })
     }
@@ -121,7 +121,7 @@ export class SymfRunner implements IndexedKeywordContextFetcher {
             rm(tmpIndexDir, { recursive: true }).catch(() => undefined),
         ])
 
-        debug('symf', 'creating index', indexDir)
+        logDebug('symf', 'creating index', indexDir)
         const args = ['--index-root', tmpIndexDir, 'add', '--langs', 'go,typescript,python', scopeDir]
         try {
             await execFile(this.symfPath, args)

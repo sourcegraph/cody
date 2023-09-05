@@ -1,14 +1,16 @@
+import { formatDistance } from 'date-fns'
 import * as vscode from 'vscode'
 
 import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
 import { FeatureFlag, FeatureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
+import { RateLimitError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
 
-import { debug } from '../log'
+import { logDebug } from '../log'
 import { CodyStatusBar } from '../services/StatusBar'
 
 import { getContext, GetContextOptions, GetContextResult } from './context/context'
 import { DocumentHistory } from './context/history'
-import { DocumentContext, getCurrentDocContext } from './document'
+import { DocumentContext, getCurrentDocContext } from './get-current-doc-context'
 import {
     getInlineCompletions,
     InlineCompletionsParams,
@@ -18,9 +20,9 @@ import {
 import * as CompletionLogger from './logger'
 import { ProviderConfig } from './providers/provider'
 import { RequestManager } from './request-manager'
+import { getNextNonEmptyLine } from './text-processing'
 import { ProvideInlineCompletionItemsTracer, ProvideInlineCompletionsItemTraceData } from './tracer'
 import { InlineCompletionItem } from './types'
-import { getNextNonEmptyLine } from './utils/text-utils'
 
 export interface CodyCompletionItemProviderConfig {
     providerConfig: ProviderConfig
@@ -41,6 +43,8 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
     private promptChars: number
     private maxPrefixChars: number
     private maxSuffixChars: number
+    // private reportedErrorMessages: Map<string, number> = new Map()
+    private resetRateLimitErrorsAfter: number | null = null
 
     private readonly config: Required<CodyCompletionItemProviderConfig>
 
@@ -97,7 +101,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
             completeSuggestWidgetSelection: this.config.completeSuggestWidgetSelection,
         })
 
-        debug('CodyCompletionProvider:initialized', `provider: ${this.config.providerConfig.identifier}`)
+        logDebug('CodyCompletionProvider:initialized', `provider: ${this.config.providerConfig.identifier}`)
     }
 
     /** Set the tracer (or unset it with `null`). */
@@ -150,86 +154,96 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
         const isIncreasedDebounceTimeEnabled = await this.config.featureFlagProvider.evaluateFeatureFlag(
             FeatureFlag.CodyAutocompleteIncreasedDebounceTimeEnabled
         )
-
-        const result = await this.getInlineCompletions({
-            document,
-            position,
-            context,
-            docContext,
-            promptChars: this.promptChars,
-            providerConfig: this.config.providerConfig,
-            responsePercentage: this.config.responsePercentage,
-            prefixPercentage: this.config.prefixPercentage,
-            suffixPercentage: this.config.suffixPercentage,
-            isEmbeddingsContextEnabled: this.config.isEmbeddingsContextEnabled,
-            toWorkspaceRelativePath: uri => vscode.workspace.asRelativePath(uri),
-            contextFetcher: this.config.contextFetcher,
-            getCodebaseContext: this.config.getCodebaseContext,
-            documentHistory: this.config.history,
-            requestManager: this.requestManager,
-            lastCandidate: this.lastCandidate,
-            debounceInterval: { singleLine: isIncreasedDebounceTimeEnabled ? 75 : 25, multiLine: 125 },
-            setIsLoading,
-            abortSignal: abortController.signal,
-            tracer,
-        })
-
-        if (!result) {
-            return null
-        }
-
-        // Track the last candidate completion (that is shown as ghost text in the editor) so that
-        // we can reuse it if the user types in such a way that it is still valid (such as by typing
-        // `ab` if the ghost text suggests `abcd`).
-        if (result.source !== InlineCompletionsResultSource.LastCandidate) {
-            this.lastCandidate =
-                result.items.length > 0
-                    ? {
-                          uri: document.uri,
-                          lastTriggerPosition: position,
-                          lastTriggerCurrentLinePrefix: document.lineAt(position).text.slice(0, position.character),
-                          lastTriggerNextNonEmptyLine: getNextNonEmptyLine(
-                              document.getText(
-                                  new vscode.Range(position, document.lineAt(document.lineCount - 1).range.end)
-                              )
-                          ),
-                          lastTriggerSelectedInfoItem: context?.selectedCompletionInfo?.text,
-                          result: {
-                              logId: result.logId,
-                              items: result.items,
-                          },
-                      }
-                    : undefined
-        }
-
-        const items = this.processInlineCompletionsForVSCode(result.logId, document, position, result.items, context)
-
-        // A completion that won't be visible in VS Code will not be returned and not be logged.
-        if (
-            !isCompletionVisible(
-                items,
+        try {
+            const result = await this.getInlineCompletions({
                 document,
-                docContext,
+                position,
                 context,
-                this.config.completeSuggestWidgetSelection,
-                abortController.signal
+                docContext,
+                promptChars: this.promptChars,
+                providerConfig: this.config.providerConfig,
+                responsePercentage: this.config.responsePercentage,
+                prefixPercentage: this.config.prefixPercentage,
+                suffixPercentage: this.config.suffixPercentage,
+                isEmbeddingsContextEnabled: this.config.isEmbeddingsContextEnabled,
+                toWorkspaceRelativePath: uri => vscode.workspace.asRelativePath(uri),
+                contextFetcher: this.config.contextFetcher,
+                getCodebaseContext: this.config.getCodebaseContext,
+                documentHistory: this.config.history,
+                requestManager: this.requestManager,
+                lastCandidate: this.lastCandidate,
+                debounceInterval: { singleLine: isIncreasedDebounceTimeEnabled ? 75 : 25, multiLine: 125 },
+                setIsLoading,
+                abortSignal: abortController.signal,
+                tracer,
+            })
+
+            if (!result) {
+                return null
+            }
+
+            // Track the last candidate completion (that is shown as ghost text in the editor) so that
+            // we can reuse it if the user types in such a way that it is still valid (such as by typing
+            // `ab` if the ghost text suggests `abcd`).
+            if (result.source !== InlineCompletionsResultSource.LastCandidate) {
+                this.lastCandidate =
+                    result.items.length > 0
+                        ? {
+                              uri: document.uri,
+                              lastTriggerPosition: position,
+                              lastTriggerCurrentLinePrefix: document.lineAt(position).text.slice(0, position.character),
+                              lastTriggerNextNonEmptyLine: getNextNonEmptyLine(
+                                  document.getText(
+                                      new vscode.Range(position, document.lineAt(document.lineCount - 1).range.end)
+                                  )
+                              ),
+                              lastTriggerSelectedInfoItem: context?.selectedCompletionInfo?.text,
+                              result: {
+                                  logId: result.logId,
+                                  items: result.items,
+                              },
+                          }
+                        : undefined
+            }
+
+            const items = this.processInlineCompletionsForVSCode(
+                result.logId,
+                document,
+                position,
+                result.items,
+                context
             )
-        ) {
-            return null
+
+            // A completion that won't be visible in VS Code will not be returned and not be logged.
+            if (
+                !isCompletionVisible(
+                    items,
+                    document,
+                    docContext,
+                    context,
+                    this.config.completeSuggestWidgetSelection,
+                    abortController.signal
+                )
+            ) {
+                return null
+            }
+
+            const event = CompletionLogger.completionEvent(result.logId)
+            if (items.length > 0) {
+                CompletionLogger.suggested(result.logId, InlineCompletionsResultSource[result.source], items[0] as any)
+            } else {
+                CompletionLogger.noResponse(result.logId)
+            }
+
+            const completionResult: vscode.InlineCompletionList = { items }
+
+            ;(completionResult as any).completionEvent = event
+
+            return completionResult
+        } catch (error) {
+            this.onError(error as Error)
+            throw error
         }
-
-        const event = CompletionLogger.completionEvent(result.logId)
-        if (items.length > 0) {
-            CompletionLogger.suggested(result.logId, InlineCompletionsResultSource[result.source], items[0] as any)
-        } else {
-            CompletionLogger.noResponse(result.logId)
-        }
-
-        const completionResult: vscode.InlineCompletionList = { items }
-
-        ;(completionResult as any).completionEvent = event
-
-        return completionResult
     }
 
     public handleDidAcceptCompletionItem(logId: string, completion: InlineCompletionItem): void {
@@ -283,6 +297,52 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
                 ],
             })
         })
+    }
+
+    /**
+     * A callback that is called whenever an error happens. We do not want to flood a users UI with
+     * error messages so every unexpected error is deduplicated by its message and rate limit errors
+     * are only shown once during the rate limit period.
+     */
+    private onError(error: Error | RateLimitError): void {
+        if (error instanceof RateLimitError) {
+            if (this.resetRateLimitErrorsAfter && this.resetRateLimitErrorsAfter > Date.now()) {
+                return
+            }
+            this.resetRateLimitErrorsAfter = error.retryAfter?.getTime() ?? Date.now() + 24 * 60 * 60 * 1000
+            this.config.statusBar.addError({
+                title: 'Cody Autocomplete Disabled Due to Rate Limit',
+                description:
+                    `You've used all${error.limit ? ` ${error.limit}` : ''} daily autocompletions.` +
+                    (error.retryAfter ? ` Usage will reset in ${formatDistance(error.retryAfter, new Date())}.` : ''),
+                onSelect: () => {
+                    void vscode.env.openExternal(
+                        vscode.Uri.parse('https://docs.sourcegraph.com/cody/troubleshooting#autocomplete-rate-limits')
+                    )
+                },
+            })
+            return
+        }
+
+        // @TODO(philipp-spiess): Bring back this code once we have fewer uncaught errors
+        //
+        // c.f. https://sourcegraph.slack.com/archives/C05AGQYD528/p1693471486690459
+        //
+        // const now = Date.now()
+        // if (
+        //     this.reportedErrorMessages.has(error.message) &&
+        //     this.reportedErrorMessages.get(error.message)! + ONE_HOUR >= now
+        // ) {
+        //     return
+        // }
+        // this.reportedErrorMessages.set(error.message, now)
+        // this.config.statusBar.addError({
+        //     title: 'Cody Autocomplete Encountered an Unexpected Error',
+        //     description: error.message,
+        //     onSelect: () => {
+        //         outputChannel.show()
+        //     },
+        // })
     }
 }
 
