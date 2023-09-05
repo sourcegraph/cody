@@ -642,7 +642,29 @@ describe('getInlineCompletions', () => {
             expect(requests[0].stopSequences).toContain(MULTILINE_STOP_SEQUENCE)
         })
 
-        test('trigger a multi-line completion at a method declarations', async () => {
+        test('does not trigger a multi-line completion if a block already has content', async () => {
+            const requests: CompletionParameters[] = []
+            await getInlineCompletions(
+                params(
+                    dedent`
+                    function myFunction() {
+                        █
+                        console.log('three')
+                    }
+                `,
+                    [],
+                    {
+                        onNetworkRequest(request) {
+                            requests.push(request)
+                        },
+                    }
+                )
+            )
+            expect(requests).toHaveLength(1)
+            expect(requests[0].stopSequences).toContain(MULTILINE_STOP_SEQUENCE)
+        })
+
+        test('triggers a multi-line completion at a method declarations', async () => {
             const requests: CompletionParameters[] = []
             await getInlineCompletions(
                 params('method.hello () {█', [], {
@@ -726,7 +748,7 @@ describe('getInlineCompletions', () => {
                 })
             )
             expect(requests).toHaveLength(1)
-            expect(requests[0].stopSequences).toContain('\n\n')
+            expect(requests[0].stopSequences).toContain(MULTILINE_STOP_SEQUENCE)
         })
 
         test('requires an indentation to start a block', async () => {
@@ -739,7 +761,7 @@ describe('getInlineCompletions', () => {
                 })
             )
             expect(requests).toHaveLength(1)
-            expect(requests[0].stopSequences).toContain('\n\n')
+            expect(requests[0].stopSequences).toContain(MULTILINE_STOP_SEQUENCE)
         })
 
         test('works with python', async () => {
@@ -1430,7 +1452,7 @@ describe('getInlineCompletions', () => {
                     this.startLine =",
             }
         `)
-        expect(requests[0].stopSequences).toEqual(['\n\nHuman:', '</CODE5711>', '\n\n'])
+        expect(requests[0].stopSequences).toEqual(['\n\nHuman:', '</CODE5711>', MULTILINE_STOP_SEQUENCE])
     })
 
     test('trims whitespace in the prefix but keeps one \n', async () => {
