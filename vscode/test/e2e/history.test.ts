@@ -2,17 +2,11 @@ import { expect } from '@playwright/test'
 
 import { sendTestInfo } from '../fixtures/mock-server'
 
-import { sidebarSignin } from './common'
-import { test } from './helpers'
-
-test.skip('checks for the chat history and new session', async ({ page, sidebar }, testInfo) => {
-    sendTestInfo(testInfo.title, testInfo.testId)
-    // Sign into Cody
-    await sidebarSignin(page, sidebar, sendTestInfo)
 import { codyEditorCommandButtonRole, sidebarExplorer, sidebarSignin } from './common'
 import { test } from './helpers'
 
 test('checks if clear chat history button clears history and current session', async ({ page, sidebar }, testInfo) => {
+    sendTestInfo(testInfo.title, testInfo.testId)
     // Sign into Cody
     await sidebarSignin(page, sidebar, testInfo)
     // Open the File Explorer view from the sidebar
