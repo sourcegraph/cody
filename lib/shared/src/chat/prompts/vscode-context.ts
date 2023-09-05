@@ -105,10 +105,10 @@ export function getTerminalOutputContext(terminalOutput: string): ContextMessage
 /**
  * Gets context messages for the current open file's directory.
  *
- * @param isTestOnly - Whether this is a request for test files only.
+ * @param isUnitTestRequest - Whether this is a request for test files only.
  * @returns A Promise resolving to ContextMessage[] containing file path context.
  */
-export async function getCurrentDirContext(isTestOnly: boolean): Promise<ContextMessage[]> {
+export async function getCurrentDirContext(isUnitTestRequest: boolean): Promise<ContextMessage[]> {
     // Get current open file path
     const currentFile = vscode.window.activeTextEditor?.document?.fileName
 
@@ -118,24 +118,24 @@ export async function getCurrentDirContext(isTestOnly: boolean): Promise<Context
 
     const currentDir = dirname(currentFile)
 
-    return getEditorDirContext(currentDir, currentFile, isTestOnly)
+    return getEditorDirContext(currentDir, currentFile, isUnitTestRequest)
 }
 
 export async function getEditorDirContext(
     directoryPath: string,
     currentFileName?: string,
-    testFilesOnly = false
+    isUnitTestRequest = false
 ): Promise<ContextMessage[]> {
     const directoryUri = vscode.Uri.file(directoryPath)
-    const filteredFiles = await getFilteredFiles(directoryUri, testFilesOnly)
+    const filteredFiles = await getFilteredFiles(directoryUri, isUnitTestRequest)
 
-    if (testFilesOnly && currentFileName) {
+    if (isUnitTestRequest && currentFileName) {
         const context = await getCurrentDirFilteredContext(directoryUri, filteredFiles, currentFileName)
         if (context.length > 0) {
             return context
         }
 
-        const testFileContext = await getEditorTestContext(currentFileName)
+        const testFileContext = await getEditorTestContext(currentFileName, isUnitTestRequest)
         if (testFileContext.length > 0) {
             return testFileContext
         }
@@ -146,9 +146,9 @@ export async function getEditorDirContext(
     return getDirContextMessages(directoryUri, firstFiles)
 }
 
-export async function getEditorTestContext(fileName: string): Promise<ContextMessage[]> {
+export async function getEditorTestContext(fileName: string, isUnitTestRequest = false): Promise<ContextMessage[]> {
     const currentTestFile = await getCurrentTestFileContext(fileName)
-    const codebaseTestFiles = await getCodebaseTestFilesContext(fileName)
+    const codebaseTestFiles = await getCodebaseTestFilesContext(fileName, isUnitTestRequest)
     return [...codebaseTestFiles, ...currentTestFile]
 }
 
@@ -195,9 +195,9 @@ export async function getCurrentTestFileContext(fileName: string): Promise<Conte
 }
 
 // Get context for test file in current directory
-async function getCodebaseTestFilesContext(fileName: string): Promise<ContextMessage[]> {
+async function getCodebaseTestFilesContext(fileName: string, isUnitTest: boolean): Promise<ContextMessage[]> {
     // exclude any files in the path with e2e or integration in the directory name
-    const excludePattern = '**/*{e2e,integration}*/**'
+    const excludePattern = isUnitTest ? '**/*{e2e,integration}*/**' : undefined
 
     // search for test files
     const fileExtension = fileName ? getFileExtension(fileName) : '*'
