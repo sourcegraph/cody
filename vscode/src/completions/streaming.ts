@@ -1,6 +1,6 @@
 import { DocumentContext } from './get-current-doc-context'
-import { truncateMultilineCompletion } from './multiline'
 import { trimUntilSuffix } from './text-processing'
+import { truncateMultilineCompletion } from './text-processing/truncate-multiline-completion'
 
 interface CanUsePartialCompletionParams {
     document: { languageId: string }

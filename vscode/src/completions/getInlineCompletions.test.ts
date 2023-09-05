@@ -22,7 +22,7 @@ import {
 import { createProviderConfig } from './providers/anthropic'
 import { RequestManager } from './request-manager'
 import { completion, documentAndPosition } from './testHelpers'
-import { getNextNonEmptyLine } from './utils/text-utils'
+import { getNextNonEmptyLine } from './text-processing'
 
 // The dedent package seems to replace `\t` with `\\t` so in order to insert a tab character, we
 // have to use interpolation. We abbreviate this to `T` because ${T} is exactly 4 characters,

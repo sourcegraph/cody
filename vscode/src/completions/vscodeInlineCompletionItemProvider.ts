@@ -20,9 +20,9 @@ import {
 import * as CompletionLogger from './logger'
 import { ProviderConfig } from './providers/provider'
 import { RequestManager } from './request-manager'
+import { getNextNonEmptyLine } from './text-processing'
 import { ProvideInlineCompletionItemsTracer, ProvideInlineCompletionsItemTraceData } from './tracer'
 import { InlineCompletionItem } from './types'
-import { getNextNonEmptyLine } from './utils/text-utils'
 
 export interface CodyCompletionItemProviderConfig {
     providerConfig: ProviderConfig
