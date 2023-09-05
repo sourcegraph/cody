@@ -9,7 +9,7 @@ import { DOTCOM_URL } from '@sourcegraph/cody-shared/src/sourcegraph-api/environ
 
 import { CONFIG_KEY, ConfigKeys } from './configuration-keys'
 import { localStorage } from './services/LocalStorageProvider'
-import { getAccessToken, secretStorage } from './services/SecretStorageProvider'
+import { getAccessToken } from './services/SecretStorageProvider'
 
 interface ConfigGetter {
     get<T>(section: (typeof CONFIG_KEY)[ConfigKeys], defaultValue?: T): T
@@ -73,9 +73,6 @@ export function getConfiguration(config: ConfigGetter = vscode.workspace.getConf
             CONFIG_KEY.autocompleteExperimentalSyntacticPostProcessing,
             false
         ),
-        pluginsEnabled: config.get<boolean>(CONFIG_KEY.pluginsEnabled, false),
-        pluginsDebugEnabled: config.get<boolean>(CONFIG_KEY.pluginsDebugEnabled, true),
-        pluginsConfig: config.get(CONFIG_KEY.pluginsConfig, {}),
 
         // Note: In spirit, we try to minimize agent-specific code paths in the VSC extension.
         // We currently use this flag for the agent to provide more helpful error messages
@@ -113,6 +110,6 @@ export const getFullConfig = async (): Promise<ConfigurationWithAccessToken> => 
     const config = getConfiguration()
     // Migrate endpoints to local storage
     config.serverEndpoint = localStorage?.getEndpoint() || config.serverEndpoint
-    const accessToken = (await getAccessToken(secretStorage)) || null
+    const accessToken = (await getAccessToken()) || null
     return { ...config, accessToken }
 }

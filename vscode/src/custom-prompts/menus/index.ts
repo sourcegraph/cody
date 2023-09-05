@@ -4,7 +4,14 @@ import { commands, QuickPickItem, QuickPickOptions, window } from 'vscode'
 import { CodyPrompt } from '@sourcegraph/cody-shared'
 
 import { CustomCommandsItem } from '../utils'
-import { CustomCommandConfigMenuItems, menu_buttons, menu_options, QuickPickItemWithSlashCommand } from '../utils/menu'
+import {
+    ASK_QUESTION_COMMAND,
+    CustomCommandConfigMenuItems,
+    EDIT_COMMAND,
+    menu_buttons,
+    menu_options,
+    QuickPickItemWithSlashCommand,
+} from '../utils/menu'
 
 import { CodyCommand, CustomCommandsBuilderMenu } from './CustomCommandBuilderMenu'
 
@@ -19,8 +26,8 @@ function isSlashCommand(value: string): boolean {
 }
 
 const labelReplacements: Record<string, (label: string) => string> = {
-    '/ask': label => `${label} [question]`,
-    '/edit': label => `${label} [instruction]`,
+    [ASK_QUESTION_COMMAND.slashCommand]: label => `${label} [question]`,
+    [EDIT_COMMAND.slashCommand]: label => `${label} [instruction]`,
 }
 
 function normalize(input: string): string {

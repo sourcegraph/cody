@@ -6,7 +6,7 @@ import { logDebug, logError } from '../log'
 
 export const CODY_ACCESS_TOKEN_SECRET = 'cody.access-token'
 
-export async function getAccessToken(secretStorage: SecretStorage): Promise<string | null> {
+export async function getAccessToken(): Promise<string | null> {
     try {
         const token = (await secretStorage.get(CODY_ACCESS_TOKEN_SECRET)) || null
         if (token) {

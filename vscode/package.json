@@ -2,7 +2,7 @@
   "name": "cody-ai",
   "private": true,
   "displayName": "Cody AI",
-  "version": "0.8.0",
+  "version": "0.10.0",
   "publisher": "sourcegraph",
   "license": "Apache-2.0",
   "icon": "resources/cody.png",
@@ -854,8 +854,9 @@
         },
         "cody.autocomplete.advanced.provider": {
           "type": "string",
-          "default": "anthropic",
+          "default": null,
           "enum": [
+            null,
             "anthropic",
             "unstable-codegen",
             "unstable-fireworks",
@@ -874,7 +875,9 @@
         },
         "cody.autocomplete.advanced.model": {
           "type": "string",
+          "default": null,
           "enum": [
+            null,
             "starcoder-16b",
             "starcoder-7b",
             "starcoder-3b",
@@ -901,70 +904,6 @@
           "type": "boolean",
           "default": false,
           "markdownDescription": "Rank autocomplete results with tree-sitter."
-        },
-        "cody.plugins.enabled": {
-          "type": "boolean",
-          "default": false,
-          "markdownDescription": "Enables the use of built-in experimental plugins."
-        },
-        "cody.plugins.config": {
-          "type": "object",
-          "default": {},
-          "properties": {
-            "confluence": {
-              "type": "object",
-              "properties": {
-                "baseUrl": {
-                  "type": "string",
-                  "description": "Confluence instance base url."
-                },
-                "email": {
-                  "type": "string",
-                  "description": "Confluence Email."
-                },
-                "apiToken": {
-                  "type": "string",
-                  "description": "Confluence API Token."
-                }
-              }
-            },
-            "github": {
-              "type": "object",
-              "properties": {
-                "apiToken": {
-                  "type": "string",
-                  "description": "GitHub API Token."
-                },
-                "baseUrl": {
-                  "type": "string",
-                  "description": "Github API URL.",
-                  "default": "https://api.github.com/"
-                },
-                "org": {
-                  "type": "string",
-                  "description": "GitHub organization to limit results to."
-                },
-                "repo": {
-                  "type": "string",
-                  "description": "GitHub repo to limit results to."
-                }
-              }
-            },
-            "apiNinjas": {
-              "type": "object",
-              "properties": {
-                "apiKey": {
-                  "type": "string",
-                  "description": "API Ninjas Key. Use https://api-ninjas.com to get one."
-                }
-              }
-            }
-          }
-        },
-        "cody.plugins.debug.enabled": {
-          "type": "boolean",
-          "default": true,
-          "markdownDescription": "Enables debug output for plugins."
         }
       }
     },

@@ -1,4 +1,4 @@
-import { addTestCase } from '.'
+import { addTestCase, literalFacts } from '.'
 
 addTestCase('PyTorch Model Training', {
     codebase: 'github.com/pytorch/pytorch',
@@ -6,12 +6,12 @@ addTestCase('PyTorch Model Training', {
     transcript: [
         {
             question: 'How do I train a model in PyTorch?',
-            facts: ['Model training', 'backpropagation', 'loss functions', 'optimizers'],
+            facts: literalFacts('Model training', 'backpropagation', 'loss functions', 'optimizers'),
             answerSummary: 'Explanation of how to train a model in PyTorch',
         },
         {
             question: 'What loss functions are available in PyTorch?',
-            facts: ['loss functions', 'MSELoss', 'CrossEntropyLoss'],
+            facts: literalFacts('loss functions', 'MSELoss', 'CrossEntropyLoss'),
             answerSummary: 'List of common loss functions available in PyTorch like MSELoss and CrossEntropyLoss',
         },
     ],
@@ -23,7 +23,13 @@ addTestCase('PyTorch Learning Rate Scheduling', {
     transcript: [
         {
             question: 'What learning rate schedulers are available in PyTorch?',
-            facts: ['learning rate schedulers', 'StepLR', 'MultiStepLR', 'ExponentialLR', 'ReduceLROnPlateau'],
+            facts: literalFacts(
+                'learning rate schedulers',
+                'StepLR',
+                'MultiStepLR',
+                'ExponentialLR',
+                'ReduceLROnPlateau'
+            ),
             answerSummary: 'List of learning rate schedulers available in PyTorch',
         },
     ],

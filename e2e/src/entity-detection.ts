@@ -64,7 +64,7 @@ function isMixedCase(token: string): boolean {
 export function detectFilePaths(text: string): DetectedEntity[] {
     return deduplicate(
         tokenize(removeCodeBlocks(text))
-            .filter(lengthAtLeast(3))
+            .filter(lengthAtLeast(4))
             .filter(isFilePath)
             .map(removeInlineCodeBlockDelimiters)
             .map(token => ({ value: token, type: 'path' }))
@@ -114,8 +114,8 @@ function lengthAtLeast(minLength: number) {
     return (token: string) => token.length >= minLength
 }
 
-const trailingPunctuation = new Set(['.', ',', '?', '!', '"', "'", ':', ';', ')', '}', ']'])
-const leadingPunctuation = new Set(["'", '"', '(', '[', '{'])
+const trailingPunctuation = new Set(['.', ',', '?', '!', '"', "'", ':', ';', ')', '}', ']', '>'])
+const leadingPunctuation = new Set(["'", '"', '(', '[', '{', '<'])
 
 function tokenize(text: string): string[] {
     return text

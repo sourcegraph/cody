@@ -2,8 +2,6 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import './App.css'
 
-import { uniq, without } from 'lodash'
-
 import { ChatContextStatus } from '@sourcegraph/cody-shared/src/chat/context'
 import { CodyPrompt } from '@sourcegraph/cody-shared/src/chat/prompts'
 import { ChatHistory, ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
@@ -16,16 +14,14 @@ import { LoadingPage } from './LoadingPage'
 import { Login } from './Login'
 import { View } from './NavBar'
 import { Notices } from './Notices'
-import { Plugins } from './Plugins'
 import { UserHistory } from './UserHistory'
 import { createWebviewTelemetryService } from './utils/telemetry'
 import type { VSCodeWrapper } from './utils/VSCodeApi'
 
 export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vscodeAPI }) => {
-    const [config, setConfig] = useState<
-        | (Pick<Configuration, 'debugEnable' | 'serverEndpoint' | 'pluginsEnabled' | 'pluginsDebugEnabled'> & LocalEnv)
-        | null
-    >(null)
+    const [config, setConfig] = useState<(Pick<Configuration, 'debugEnable' | 'serverEndpoint'> & LocalEnv) | null>(
+        null
+    )
     const [endpoint, setEndpoint] = useState<string | null>(null)
     const [view, setView] = useState<View | undefined>()
     const [messageInProgress, setMessageInProgress] = useState<ChatMessage | null>(null)
@@ -39,7 +35,6 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     const [errorMessages, setErrorMessages] = useState<string[]>([])
     const [suggestions, setSuggestions] = useState<string[] | undefined>()
     const [isAppInstalled, setIsAppInstalled] = useState<boolean>(false)
-    const [enabledPlugins, setEnabledPlugins] = useState<string[]>([])
     const [myPrompts, setMyPrompts] = useState<
         [string, CodyPrompt & { isLastInGroup?: boolean; instruction?: string }][] | null
     >(null)
@@ -88,9 +83,6 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                         break
                     case 'app-state':
                         setIsAppInstalled(message.isInstalled)
-                        break
-                    case 'enabled-plugins':
-                        setEnabledPlugins(message.plugins)
                         break
                     case 'custom-prompts': {
                         let prompts: [string, CodyPrompt & { isLastInGroup?: boolean; instruction?: string }][] =
@@ -147,15 +139,6 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
         [setEndpoint, vscodeAPI]
     )
 
-    const onPluginToggle = useCallback(
-        (pluginName: string, enabled: boolean) => {
-            const newPlugins = enabled ? uniq([...enabledPlugins, pluginName]) : without(enabledPlugins, pluginName)
-            vscodeAPI.postMessage({ command: 'setEnabledPlugins', plugins: newPlugins })
-            setEnabledPlugins(newPlugins)
-        },
-        [enabledPlugins, vscodeAPI]
-    )
-
     const telemetryService = useMemo(() => createWebviewTelemetryService(vscodeAPI), [vscodeAPI])
 
     if (!view || !authStatus || !config) {
@@ -207,7 +190,6 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                             setInputHistory={setInputHistory}
                             vscodeAPI={vscodeAPI}
                             suggestions={suggestions}
-                            pluginsDevMode={Boolean(config?.pluginsDebugEnabled)}
                             setSuggestions={setSuggestions}
                             telemetryService={telemetryService}
                             chatCommands={myPrompts || undefined}
@@ -216,10 +198,6 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                         />
                     )}
                 </>
-            )}
-
-            {config.pluginsEnabled && view === 'plugins' && (
-                <Plugins plugins={enabledPlugins} onPluginToggle={onPluginToggle} />
             )}
         </div>
     )
@@ -264,10 +242,15 @@ function groupPrompts(
     return acc
 }
 
+const instructionLabels: Record<string, string> = {
+    '/ask': '[question]',
+    '/edit': '[instruction]',
+}
+
 /**
  * Adds `instruction` field to a prompt if it requires additional instruction.
  */
 function addInstructions<T extends CodyPrompt>([key, command]: [string, T]): [string, T & { instruction?: string }] {
-    const instruction = command.slashCommand === '/edit' ? '[instruction]' : undefined
+    const instruction = instructionLabels[command.slashCommand]
     return [key, { ...command, instruction }]
 }

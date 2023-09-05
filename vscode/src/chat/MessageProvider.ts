@@ -13,19 +13,17 @@ import { Typewriter } from '@sourcegraph/cody-shared/src/chat/typewriter'
 import { reformatBotMessage } from '@sourcegraph/cody-shared/src/chat/viewHelpers'
 import { annotateAttribution, Guardrails } from '@sourcegraph/cody-shared/src/guardrails'
 import { IntentDetector } from '@sourcegraph/cody-shared/src/intent-detector'
-import * as plugins from '@sourcegraph/cody-shared/src/plugins/api'
-import { PluginFunctionExecutionInfo } from '@sourcegraph/cody-shared/src/plugins/api/types'
-import { defaultPlugins } from '@sourcegraph/cody-shared/src/plugins/built-in'
 import { ANSWER_TOKENS, DEFAULT_MAX_TOKENS } from '@sourcegraph/cody-shared/src/prompt/constants'
 import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
 import { TelemetryService } from '@sourcegraph/cody-shared/src/telemetry'
 
+import { showAskQuestionQuickPick } from '../custom-prompts/utils/menu'
 import { VSCodeEditor } from '../editor/vscode-editor'
 import { PlatformContext } from '../extension.common'
 import { logDebug, logError } from '../log'
 import { FixupTask } from '../non-stop/FixupTask'
 import { AuthProvider, isNetworkError } from '../services/AuthProvider'
-import { LocalStorage } from '../services/LocalStorageProvider'
+import { localStorage } from '../services/LocalStorageProvider'
 import { TestSupport } from '../test-support'
 
 import { ContextProvider } from './ContextProvider'
@@ -54,7 +52,6 @@ abstract class MessageHandler {
     protected abstract handleHistory(history: UserLocalHistory): void
     protected abstract handleError(errorMsg: string): void
     protected abstract handleSuggestions(suggestions: string[]): void
-    protected abstract handleEnabledPlugins(plugins: string[]): void
     protected abstract handleCodyCommands(prompts: [string, CodyPrompt][]): void
     protected abstract handleTranscriptErrors(transciptError: boolean): void
 }
@@ -64,7 +61,6 @@ export interface MessageProviderOptions {
     intentDetector: IntentDetector
     guardrails: Guardrails
     editor: VSCodeEditor
-    localStorage: LocalStorage
     authProvider: AuthProvider
     contextProvider: ContextProvider
     telemetryService: TelemetryService
@@ -91,7 +87,6 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
     protected intentDetector: IntentDetector
     protected guardrails: Guardrails
     protected readonly editor: VSCodeEditor
-    protected localStorage: LocalStorage
     protected authProvider: AuthProvider
     protected contextProvider: ContextProvider
     protected telemetryService: TelemetryService
@@ -108,7 +103,6 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         this.intentDetector = options.intentDetector
         this.guardrails = options.guardrails
         this.editor = options.editor
-        this.localStorage = options.localStorage
         this.authProvider = options.authProvider
         this.contextProvider = options.contextProvider
         this.telemetryService = options.telemetryService
@@ -125,7 +119,6 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         this.loadChatHistory()
         this.sendTranscript()
         this.sendHistory()
-        this.sendEnabledPlugins(this.localStorage.getEnabledPlugins() ?? [])
         await this.loadRecentChat()
         await this.contextProvider.init()
         await this.sendCodyCommands()
@@ -146,7 +139,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
     public async clearHistory(): Promise<void> {
         MessageProvider.chatHistory = {}
         MessageProvider.inputHistory = []
-        await this.localStorage.removeChatHistory()
+        await localStorage.removeChatHistory()
         // Reset the current transcript
         this.transcript = new Transcript()
         await this.clearAndRestartSession()
@@ -165,10 +158,6 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         this.sendTranscript()
         this.sendHistory()
         this.telemetryService.log('CodyVSCodeExtension:restoreChatHistoryButton:clicked')
-    }
-
-    private sendEnabledPlugins(plugins: string[]): void {
-        this.handleEnabledPlugins(plugins)
     }
 
     private createNewChatID(): void {
@@ -289,58 +278,6 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         await this.onCompletionEnd()
     }
 
-    private async getPluginsContext(
-        humanChatInput: string
-    ): Promise<{ prompt?: Message[]; executionInfos?: PluginFunctionExecutionInfo[] }> {
-        this.telemetryService.log('CodyVSCodeExtension:getPluginsContext:used')
-        const enabledPluginNames = this.localStorage.getEnabledPlugins() ?? []
-        const enabledPlugins = defaultPlugins.filter(plugin => enabledPluginNames.includes(plugin.name))
-        if (enabledPlugins.length === 0) {
-            return {}
-        }
-        this.telemetryService.log('CodyVSCodeExtension:getPluginsContext:enabledPlugins', { names: enabledPluginNames })
-
-        this.transcript.addAssistantResponse('', 'Identifying applicable plugins...\n')
-        this.sendTranscript()
-
-        const { prompt: previousMessages } = await this.transcript.getPromptForLastInteraction(
-            [],
-            this.maxPromptTokens,
-            [],
-            true
-        )
-
-        try {
-            this.telemetryService.log('CodyVSCodeExtension:getPluginsContext:chooseDataSourcesUsed')
-            const descriptors = await plugins.chooseDataSources(
-                humanChatInput,
-                this.chat,
-                enabledPlugins,
-                previousMessages
-            )
-            this.telemetryService.log('CodyVSCodeExtension:getPluginsContext:descriptorsFound', {
-                count: descriptors.length,
-            })
-            if (descriptors.length !== 0) {
-                this.transcript.addAssistantResponse(
-                    '',
-                    `Using ${descriptors
-                        .map(descriptor => descriptor.pluginName)
-                        .join(', ')} for additional context...\n`
-                )
-                this.sendTranscript()
-
-                this.telemetryService.log('CodyVSCodeExtension:getPluginsContext:runPluginFunctionsCalled', {
-                    count: descriptors.length,
-                })
-                return await plugins.runPluginFunctions(descriptors, this.contextProvider.config.pluginsConfig)
-            }
-        } catch (error) {
-            console.error('Error getting plugin context', error)
-        }
-        return {}
-    }
-
     private getRecipe(id: RecipeID): Recipe | undefined {
         return this.platform.recipes.find(recipe => recipe.id === id)
     }
@@ -389,14 +326,6 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         this.isMessageInProgress = true
         this.transcript.addInteraction(interaction)
 
-        let pluginsPrompt: Message[] = []
-        let pluginExecutionInfos: PluginFunctionExecutionInfo[] = []
-        if (this.contextProvider.config.pluginsEnabled && recipeId === 'chat-question') {
-            const result = await this.getPluginsContext(humanChatInput)
-            pluginsPrompt = result?.prompt ?? []
-            pluginExecutionInfos = result?.executionInfos ?? []
-        }
-
         // Check whether or not to connect to LLM backend for responses
         // Ex: performing fuzzy / context-search does not require responses from LLM backend
         switch (recipeId) {
@@ -415,14 +344,9 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
 
                 const { prompt, contextFiles, preciseContexts } = await this.transcript.getPromptForLastInteraction(
                     getPreamble(this.contextProvider.context.getCodebase(), myPremade),
-                    this.maxPromptTokens,
-                    pluginsPrompt
+                    this.maxPromptTokens
                 )
-                this.transcript.setUsedContextFilesForLastInteraction(
-                    contextFiles,
-                    preciseContexts,
-                    pluginExecutionInfos
-                )
+                this.transcript.setUsedContextFilesForLastInteraction(contextFiles, preciseContexts)
                 this.sendPrompt(prompt, interaction.getAssistantMessage().prefix ?? '', recipe.multiplexerTopic)
                 await this.saveTranscriptToChatHistory()
             }
@@ -593,6 +517,14 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
                 return { text, recipeId: 'local-indexed-keyword-search' }
             case /^\/s(earch)?\s/.test(text):
                 return { text, recipeId: 'context-search' }
+            case /^\/ask(\s)?/.test(text): {
+                let question = text.replace('/ask', '').trim()
+                if (!question) {
+                    question = await showAskQuestionQuickPick()
+                }
+                await vscode.commands.executeCommand('cody.action.chat', question)
+                return null
+            }
             case /^\/edit(\s)?/.test(text):
                 await vscode.commands.executeCommand('cody.fixup.new', { instruction: text })
                 return null
@@ -672,7 +604,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
             chat: MessageProvider.chatHistory,
             input: MessageProvider.inputHistory,
         }
-        await this.localStorage.setChatHistory(userHistory)
+        await localStorage.setChatHistory(userHistory)
     }
 
     /**
@@ -680,7 +612,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
      */
     protected async deleteHistory(chatID: string): Promise<void> {
         delete MessageProvider.chatHistory[chatID]
-        await this.localStorage.deleteChatHistory(chatID)
+        await localStorage.deleteChatHistory(chatID)
         this.sendHistory()
         this.telemetryService.log('CodyVSCodeExtension:deleteChatHistoryButton:clicked')
     }
@@ -689,7 +621,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
      * Loads chat history from local storage
      */
     private loadChatHistory(): void {
-        const localHistory = this.localStorage.getChatHistory()
+        const localHistory = localStorage.getChatHistory()
         if (localHistory) {
             MessageProvider.chatHistory = localHistory?.chat
             MessageProvider.inputHistory = localHistory.input
@@ -724,7 +656,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
      * Loads the most recent chat
      */
     private async loadRecentChat(): Promise<void> {
-        const localHistory = this.localStorage.getChatHistory()
+        const localHistory = localStorage.getChatHistory()
         if (localHistory) {
             const chats = localHistory.chat
             const sortedChats = Object.entries(chats).sort(

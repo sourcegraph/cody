@@ -20,9 +20,9 @@ import {
 import * as CompletionLogger from './logger'
 import { ProviderConfig } from './providers/provider'
 import { RequestManager } from './request-manager'
+import { getNextNonEmptyLine } from './text-processing'
 import { ProvideInlineCompletionItemsTracer, ProvideInlineCompletionsItemTraceData } from './tracer'
 import { InlineCompletionItem } from './types'
-import { getNextNonEmptyLine } from './utils/text-utils'
 
 export interface CodyCompletionItemProviderConfig {
     providerConfig: ProviderConfig
@@ -101,7 +101,10 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
             completeSuggestWidgetSelection: this.config.completeSuggestWidgetSelection,
         })
 
-        logDebug('CodyCompletionProvider:initialized', `provider: ${this.config.providerConfig.identifier}`)
+        logDebug(
+            'CodyCompletionProvider:initialized',
+            `${this.config.providerConfig.identifier}/${this.config.providerConfig.model}`
+        )
     }
 
     /** Set the tracer (or unset it with `null`). */

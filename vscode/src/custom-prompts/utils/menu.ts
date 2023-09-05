@@ -1,5 +1,4 @@
-import * as vscode from 'vscode'
-import { QuickInputButtons, QuickPickItem, ThemeIcon, window } from 'vscode'
+import { commands, QuickInputButtons, QuickPickItem, ThemeIcon, window } from 'vscode'
 
 import { CodyPrompt } from '@sourcegraph/cody-shared'
 import { CodyPromptType } from '@sourcegraph/cody-shared/src/chat/prompts'
@@ -12,12 +11,25 @@ export const NewCustomCommandConfigMenuOptions = {
 
 export type QuickPickItemWithSlashCommand = QuickPickItem & { slashCommand: string }
 
-const inlineSeparator: QuickPickItem = { kind: -1, label: 'inline' }
-const chatOption: QuickPickItemWithSlashCommand = { label: '/ask', description: 'Ask a question', slashCommand: '/ask' }
-const fixOption: QuickPickItemWithSlashCommand = {
-    label: '/edit',
+export const ASK_QUESTION_COMMAND = {
+    description: 'Ask a question',
+    slashCommand: '/ask',
+}
+export const EDIT_COMMAND = {
     description: 'Edit code',
     slashCommand: '/edit',
+}
+
+const inlineSeparator: QuickPickItem = { kind: -1, label: 'inline' }
+const chatOption: QuickPickItemWithSlashCommand = {
+    label: ASK_QUESTION_COMMAND.slashCommand,
+    description: ASK_QUESTION_COMMAND.description,
+    slashCommand: ASK_QUESTION_COMMAND.slashCommand,
+}
+const fixOption: QuickPickItemWithSlashCommand = {
+    label: EDIT_COMMAND.slashCommand,
+    description: EDIT_COMMAND.description,
+    slashCommand: EDIT_COMMAND.slashCommand,
 }
 const commandsSeparator: QuickPickItem = { kind: -1, label: 'commands' }
 const customCommandsSeparator: QuickPickItem = { kind: -1, label: 'custom commands (experimental)' }
@@ -205,13 +217,13 @@ export const CustomCommandConfigMenuItems = [
 ]
 
 export async function showAskQuestionQuickPick(): Promise<string> {
-    const quickPick = vscode.window.createQuickPick()
-    quickPick.title = 'Ask a question (/ask)'
+    const quickPick = window.createQuickPick()
+    quickPick.title = `${ASK_QUESTION_COMMAND.description} (${ASK_QUESTION_COMMAND.slashCommand})`
     quickPick.placeholder = 'Your question'
     quickPick.buttons = [menu_buttons.back]
 
     quickPick.onDidTriggerButton(() => {
-        void vscode.commands.executeCommand('cody.action.commands.menu')
+        void commands.executeCommand('cody.action.commands.menu')
         quickPick.hide()
     })
 
@@ -219,14 +231,14 @@ export async function showAskQuestionQuickPick(): Promise<string> {
 
     return new Promise(resolve =>
         quickPick.onDidAccept(() => {
-            const instruction = quickPick.value.trim()
-            if (!instruction) {
+            const question = quickPick.value.trim()
+            if (!question) {
                 // noop
                 return
             }
 
             quickPick.hide()
-            return resolve(instruction)
+            return resolve(question)
         })
     )
 }
