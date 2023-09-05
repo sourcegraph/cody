@@ -7,6 +7,7 @@ import { isAlmostTheSameString } from './string-comparator'
 
 export const OPENING_CODE_TAG = '<CODE5711>'
 export const CLOSING_CODE_TAG = '</CODE5711>'
+export const MULTILINE_STOP_SEQUENCE = '\n\n'
 
 /**
  * This extracts the generated code from the response from Anthropic. The generated code is book
