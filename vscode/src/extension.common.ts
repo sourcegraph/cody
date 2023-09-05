@@ -1,3 +1,4 @@
+import type { SocksProxyAgent } from 'socks-proxy-agent'
 import * as vscode from 'vscode'
 
 import { Recipe } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
@@ -28,6 +29,11 @@ export interface PlatformContext {
     createCompletionsClient:
         | Constructor<typeof SourcegraphBrowserCompletionsClient>
         | Constructor<typeof SourcegraphNodeCompletionsClient>
+    createProxyAgent?: {
+        socks: (
+            ...args: ConstructorParameters<typeof SocksProxyAgent>
+        ) => Promise<ReturnType<Constructor<typeof SocksProxyAgent>>>
+    }
     recipes: Recipe[]
 }
 

@@ -1,5 +1,5 @@
 import fetch from 'isomorphic-fetch'
-import { SocksProxyAgent } from 'socks-proxy-agent'
+import type { SocksProxyAgent } from 'socks-proxy-agent'
 
 import { logger } from '../../log'
 import { Completion, ContextSnippet } from '../types'
@@ -7,21 +7,15 @@ import { isAbortError } from '../utils'
 
 import { Provider, ProviderConfig, ProviderOptions } from './provider'
 
-interface UnstableCodeGenOptions {
-    serverEndpoint: string
-    socksProxy?: string // If set, `serverEndpoint` is reached out to via the proxy.
-}
-
 const PROVIDER_IDENTIFIER = 'codegen'
 
 export class UnstableCodeGenProvider extends Provider {
-    private serverEndpoint: string
-    private proxyAddress?: string
-
-    constructor(options: ProviderOptions, unstableCodeGenOptions: UnstableCodeGenOptions) {
+    constructor(
+        options: ProviderOptions,
+        private serverEndpoint: string,
+        private socksProxyAgent?: SocksProxyAgent // If set, `serverEndpoint` is reached out to via the proxy.
+    ) {
         super(options)
-        this.serverEndpoint = unstableCodeGenOptions.serverEndpoint
-        this.proxyAddress = unstableCodeGenOptions.socksProxy || undefined
     }
 
     public async generateCompletions(abortSignal: AbortSignal, snippets: ContextSnippet[]): Promise<Completion[]> {
@@ -57,12 +51,7 @@ export class UnstableCodeGenProvider extends Provider {
             },
             signal: abortSignal,
         }
-        const agentRequestInit =
-            this.proxyAddress !== undefined
-                ? {
-                      agent: new SocksProxyAgent(this.proxyAddress),
-                  }
-                : {}
+        const agentRequestInit = this.socksProxyAgent ? { agent: this.socksProxyAgent } : {}
         const response = await fetch(this.serverEndpoint, { ...requestInit, ...agentRequestInit })
         try {
             const data = (await response.json()) as { completions: { completion: string }[] }
@@ -153,11 +142,11 @@ function prepareContext(snippets: ContextSnippet[], fileName: string): Context {
     }
 }
 
-export function createProviderConfig(unstableCodeGenOptions: UnstableCodeGenOptions): ProviderConfig {
+export function createProviderConfig(serverEndpoint: string, socksProxyAgent?: SocksProxyAgent): ProviderConfig {
     const contextWindowChars = 8_000 // ~ 2k token limit
     return {
         create(options: ProviderOptions) {
-            return new UnstableCodeGenProvider(options, unstableCodeGenOptions)
+            return new UnstableCodeGenProvider(options, serverEndpoint, socksProxyAgent)
         },
         maximumContextCharacters: contextWindowChars,
         enableExtendedMultilineTriggers: false,

@@ -402,7 +402,7 @@ const register = async (
 
     let completionsProvider: vscode.Disposable | null = null
     disposables.push({ dispose: () => completionsProvider?.dispose() })
-    const setupAutocomplete = (): void => {
+    const setupAutocomplete = async (): Promise<void> => {
         const config = getConfiguration(vscode.workspace.getConfiguration())
 
         if (!config.autocomplete) {
@@ -423,20 +423,21 @@ const register = async (
             completionsProvider.dispose()
         }
 
-        completionsProvider = createCompletionsProvider(
+        completionsProvider = await createCompletionsProvider(
             config,
             completionsClient,
             statusBar,
             contextProvider,
-            featureFlagProvider
+            featureFlagProvider,
+            platform.createProxyAgent
         )
     }
     vscode.workspace.onDidChangeConfiguration(event => {
         if (event.affectsConfiguration('cody.autocomplete')) {
-            setupAutocomplete()
+            void setupAutocomplete()
         }
     })
-    setupAutocomplete()
+    await setupAutocomplete()
 
     // Initiate inline chat when feature flag is on
     if (!initialConfig.inlineChat) {
@@ -470,16 +471,17 @@ const register = async (
     }
 }
 
-function createCompletionsProvider(
+async function createCompletionsProvider(
     config: Configuration,
     completionsClient: SourcegraphCompletionsClient,
     statusBar: CodyStatusBar,
     contextProvider: ContextProvider,
-    featureFlagProvider: FeatureFlagProvider
-): vscode.Disposable {
+    featureFlagProvider: FeatureFlagProvider,
+    createSocksProxyAgent: PlatformContext['createProxyAgent']
+): Promise<vscode.Disposable> {
     const disposables: vscode.Disposable[] = []
 
-    const providerConfig = createProviderConfig(config, completionsClient)
+    const providerConfig = await createProviderConfig(config, completionsClient, createSocksProxyAgent)
     if (providerConfig) {
         const history = new VSCodeDocumentHistory()
         const completionsProvider = new InlineCompletionItemProvider({
