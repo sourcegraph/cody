@@ -34,10 +34,13 @@ export function isInWorkspace(fileToCheck: URI): boolean {
  * Gets files from a directory, optionally filtering for test files only.
  *
  * @param dirUri - The URI of the directory to get files from.
- * @param testOnly - Whether to only return test files.
+ * @param testFilesOnly - Whether to only return file names with test in it.
  * @returns A Promise resolving to an array of [fileName, fileType] tuples.
  */
-export const getFilesFromDir = async (dirUri: vscode.Uri, testOnly: boolean): Promise<[string, vscode.FileType][]> => {
+export const getFilesFromDir = async (
+    dirUri: vscode.Uri,
+    testFilesOnly: boolean
+): Promise<[string, vscode.FileType][]> => {
     try {
         const filesInDir = await vscode.workspace.fs.readDirectory(dirUri)
 
@@ -47,9 +50,9 @@ export const getFilesFromDir = async (dirUri: vscode.Uri, testOnly: boolean): Pr
             const fileType = file[1]
             const isDirectory = fileType === vscode.FileType.Directory
             const isHiddenFile = fileName.startsWith('.')
-            const isTestFile = testOnly ? fileName.includes('test') : true
+            const isFileNameIncludesTest = testFilesOnly ? fileName.includes('test') : false
 
-            return !isDirectory && !isHiddenFile && isTestFile
+            return !isDirectory && !isHiddenFile && !isFileNameIncludesTest
         })
     } catch (error) {
         console.error(error)
@@ -152,7 +155,10 @@ export async function getEditorTestContext(fileName: string, isUnitTestRequest =
     return [...codebaseTestFiles, ...currentTestFile]
 }
 
-export const getFilteredFiles = async (dirUri: vscode.Uri, testOnly: boolean): Promise<[string, vscode.FileType][]> => {
+export const getFilteredFiles = async (
+    dirUri: vscode.Uri,
+    testFilesOnly: boolean
+): Promise<[string, vscode.FileType][]> => {
     try {
         const filesInDir = await vscode.workspace.fs.readDirectory(dirUri)
 
@@ -162,9 +168,9 @@ export const getFilteredFiles = async (dirUri: vscode.Uri, testOnly: boolean): P
             const fileType = file[1]
             const isDirectory = fileType === vscode.FileType.Directory
             const isHiddenFile = fileName.startsWith('.')
-            const isTestFile = testOnly ? fileName.includes('test') : true
+            const isATestFile = testFilesOnly ? fileName.includes('test') : true
 
-            return !isDirectory && !isHiddenFile && isTestFile
+            return !isDirectory && !isHiddenFile && isATestFile
         })
     } catch (error) {
         console.error(error)
