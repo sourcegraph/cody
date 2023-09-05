@@ -22,7 +22,7 @@ import {
 import { createProviderConfig } from './providers/anthropic'
 import { RequestManager } from './request-manager'
 import { completion, documentAndPosition } from './testHelpers'
-import { getNextNonEmptyLine } from './text-processing'
+import { getNextNonEmptyLine, MULTILINE_STOP_SEQUENCE } from './text-processing'
 
 // The dedent package seems to replace `\t` with `\\t` so in order to insert a tab character, we
 // have to use interpolation. We abbreviate this to `T` because ${T} is exactly 4 characters,
@@ -613,7 +613,7 @@ describe('getInlineCompletions', () => {
                 })
             )
             expect(requests).toHaveLength(3)
-            expect(requests[0].stopSequences).not.toContain('\n')
+            expect(requests[0].stopSequences).not.toContain(MULTILINE_STOP_SEQUENCE)
         })
 
         test('does not trigger a multi-line completion at a function call', async () => {
@@ -626,6 +626,7 @@ describe('getInlineCompletions', () => {
                 })
             )
             expect(requests).toHaveLength(1)
+            expect(requests[0].stopSequences).toContain(MULTILINE_STOP_SEQUENCE)
         })
 
         test('does not trigger a multi-line completion at a method call', async () => {
@@ -638,18 +639,20 @@ describe('getInlineCompletions', () => {
                 })
             )
             expect(requests).toHaveLength(1)
+            expect(requests[0].stopSequences).toContain(MULTILINE_STOP_SEQUENCE)
         })
 
         test('trigger a multi-line completion at a method declarations', async () => {
             const requests: CompletionParameters[] = []
             await getInlineCompletions(
-                params('method.hello () { █', [], {
+                params('method.hello () {█', [], {
                     onNetworkRequest(request) {
                         requests.push(request)
                     },
                 })
             )
-            expect(requests).toHaveLength(1)
+            expect(requests).toHaveLength(3)
+            expect(requests[0].stopSequences).not.toContain(MULTILINE_STOP_SEQUENCE)
         })
 
         test('uses an indentation based approach to cut-off completions', async () => {
@@ -768,7 +771,7 @@ describe('getInlineCompletions', () => {
                 )
             )
             expect(requests).toHaveLength(3)
-            expect(requests[0].stopSequences).not.toContain('\n')
+            expect(requests[0].stopSequences).not.toContain(MULTILINE_STOP_SEQUENCE)
             expect(items[0]).toMatchInlineSnapshot(`
                 "print(i)
                     elif i % 3 == 0:
@@ -810,7 +813,7 @@ describe('getInlineCompletions', () => {
                 )
             )
             expect(requests).toHaveLength(3)
-            expect(requests[0].stopSequences).not.toContain('\n')
+            expect(requests[0].stopSequences).not.toContain(MULTILINE_STOP_SEQUENCE)
             expect(items[0]).toMatchInlineSnapshot(`
                 "System.out.println(i);
                     } else if (i % 3 == 0) {
@@ -861,7 +864,7 @@ describe('getInlineCompletions', () => {
                 )
             )
             expect(requests).toHaveLength(3)
-            expect(requests[0].stopSequences).not.toContain('\n')
+            expect(requests[0].stopSequences).not.toContain(MULTILINE_STOP_SEQUENCE)
             expect(items[0]).toMatchInlineSnapshot(`
                 "Console.WriteLine(i);
                     }"
@@ -900,7 +903,7 @@ describe('getInlineCompletions', () => {
                 )
             )
             expect(requests).toHaveLength(3)
-            expect(requests[0].stopSequences).not.toContain('\n')
+            expect(requests[0].stopSequences).not.toContain(MULTILINE_STOP_SEQUENCE)
             expect(items[0]).toMatchInlineSnapshot(`
                 "std::cout << i;
                     } else if (i % 3 == 0) {
@@ -943,7 +946,7 @@ describe('getInlineCompletions', () => {
                 )
             )
             expect(requests).toHaveLength(3)
-            expect(requests[0].stopSequences).not.toContain('\n')
+            expect(requests[0].stopSequences).not.toContain(MULTILINE_STOP_SEQUENCE)
             expect(items[0]).toMatchInlineSnapshot(`
                 "printf(\\"%d\\", i);
                     } else if (i % 3 == 0) {
@@ -987,7 +990,7 @@ describe('getInlineCompletions', () => {
             )
 
             expect(requests).toHaveLength(3)
-            expect(requests[0].stopSequences).not.toContain('\n')
+            expect(requests[0].stopSequences).not.toContain(MULTILINE_STOP_SEQUENCE)
             expect(items[0]).toMatchInlineSnapshot(`
               "echo $i;
                   } else if ($i % 3 == 0) {
@@ -1031,7 +1034,7 @@ describe('getInlineCompletions', () => {
             )
 
             expect(requests).toHaveLength(3)
-            expect(requests[0].stopSequences).not.toContain('\n')
+            expect(requests[0].stopSequences).not.toContain(MULTILINE_STOP_SEQUENCE)
             expect(items[0]).toMatchInlineSnapshot(`
               "print(i);
                   } else if (i % 3 == 0) {
