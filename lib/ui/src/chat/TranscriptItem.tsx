@@ -16,7 +16,6 @@ import {
 import { BlinkingCursor } from './BlinkingCursor'
 import { CodeBlocks } from './CodeBlocks'
 import { ContextFiles, FileLinkProps } from './ContextFiles'
-import { PluginExecutionInfos } from './PluginExecutionInfos'
 import { PreciseContexts, SymbolLinkProps } from './PreciseContext'
 
 import styles from './TranscriptItem.module.css'
@@ -57,7 +56,6 @@ export const TranscriptItem: React.FunctionComponent<
         abortMessageInProgressComponent?: React.FunctionComponent<{ onAbortMessageInProgress: () => void }>
         onAbortMessageInProgress?: () => void
         ChatButtonComponent?: React.FunctionComponent<ChatButtonProps>
-        pluginsDevMode?: boolean
     } & TranscriptItemClassNames
 > = React.memo(function TranscriptItemContent({
     message,
@@ -83,7 +81,6 @@ export const TranscriptItem: React.FunctionComponent<
     submitButtonComponent: SubmitButton,
     chatInputClassName,
     ChatButtonComponent,
-    pluginsDevMode,
 }) {
     const [formInput, setFormInput] = useState<string>(message.displayText ?? '')
     const textarea =
@@ -163,15 +160,6 @@ export const TranscriptItem: React.FunctionComponent<
                         preciseContexts={message.preciseContext}
                         symbolLinkComponent={symbolLinkComponent}
                         className={transcriptActionClassName}
-                    />
-                </div>
-            )}
-            {message.pluginExecutionInfos && message.pluginExecutionInfos.length > 0 && (
-                <div className={styles.actions}>
-                    <PluginExecutionInfos
-                        pluginExecutionInfos={message.pluginExecutionInfos}
-                        className={transcriptActionClassName}
-                        devMode={pluginsDevMode}
                     />
                 </div>
             )}

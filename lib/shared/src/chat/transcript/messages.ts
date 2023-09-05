@@ -1,5 +1,4 @@
 import { ContextFile, PreciseContext } from '../../codebase-context/messages'
-import { PluginFunctionExecutionInfo } from '../../plugins/api/types'
 import { Message } from '../../sourcegraph-api'
 
 import { TranscriptJSON } from '.'
@@ -14,7 +13,6 @@ export interface ChatMessage extends Message {
     displayText?: string
     contextFiles?: ContextFile[]
     preciseContext?: PreciseContext[]
-    pluginExecutionInfos?: PluginFunctionExecutionInfo[]
     buttons?: ChatButton[]
     data?: any
 }
