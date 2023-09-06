@@ -346,8 +346,7 @@ export class SourcegraphGraphQLAPIClient {
 
     public async logEvent(event: event): Promise<LogEventResponse | Error> {
         if (process.env.CODY_TESTING === 'true') {
-            console.log(`not logging ${event.event} in test mode`)
-            return {}
+            return this.sendEventLogRequestToTestingAPI(event)
         }
         if (this.config?.telemetryLevel === 'off') {
             return {}
@@ -385,6 +384,18 @@ export class SourcegraphGraphQLAPIClient {
                 LOG_EVENT_MUTATION_DEPRECATED,
                 event
             )
+            return extractDataOrError(secondResponse, data => data)
+        }
+
+        return initialDataOrError
+    }
+
+    private async sendEventLogRequestToTestingAPI(event: event): Promise<LogEventResponse | Error> {
+        const initialResponse = await this.fetchSourcegraphTestingAPI<APIResponse<LogEventResponse>>(event)
+        const initialDataOrError = extractDataOrError(initialResponse, data => data)
+
+        if (isError(initialDataOrError)) {
+            const secondResponse = await this.fetchSourcegraphTestingAPI<APIResponse<LogEventResponse>>(event)
             return extractDataOrError(secondResponse, data => data)
         }
 
@@ -495,6 +506,21 @@ export class SourcegraphGraphQLAPIClient {
             .then(verifyResponseCode)
             .then(response => response.json() as T)
             .catch(error => new Error(`error fetching Sourcegraph GraphQL API: ${error} (${url})`))
+    }
+
+    // make an anonymous request to the Testing API
+    private fetchSourcegraphTestingAPI<T>(body: Record<string, any>): Promise<T | Error> {
+        const url = 'http://localhost:49300/.api/testLogging'
+        return fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(body),
+        })
+            .then(verifyResponseCode)
+            .then(response => response.json() as T)
+            .catch(error => new Error(`error fetching Testing Sourcegraph API: ${error} (${url})`))
     }
 }
 
