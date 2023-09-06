@@ -12,6 +12,8 @@ Starting from `0.2.0`, Cody is using `major.EVEN_NUMBER.patch` for release versi
 
 ### Changed
 
+- Remove `starter` and `premade` fields from the configuration files for custom commands (cody.json). [pull/](https://github.com/sourcegraph/cody/pull/)
+
 ## [0.10.0]
 
 ### Added
