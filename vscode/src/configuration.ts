@@ -73,6 +73,10 @@ export function getConfiguration(config: ConfigGetter = vscode.workspace.getConf
             CONFIG_KEY.autocompleteExperimentalSyntacticPostProcessing,
             false
         ),
+        autocompleteExperimentalGraphContext: config.get<boolean>(
+            CONFIG_KEY.autocompleteExperimentalGraphContext,
+            false
+        ),
 
         /**
          * UNDOCUMENTED FLAGS
@@ -83,13 +87,6 @@ export function getConfiguration(config: ConfigGetter = vscode.workspace.getConf
         // when something goes wrong, and to suppress event logging in the agent.
         // Rely on this flag sparingly.
         isRunningInsideAgent: config.get<boolean>('cody.advanced.agent.running' as any, false),
-
-        // Note: Add cody.autocomplete.experimental.graphContext to the package.json once it has an
-        // implementation and becomes useable
-        autocompleteExperimentalGraphContext: config.get<boolean>(
-            'cody.autocomplete.experimental.graphContext' as any,
-            false
-        ),
     }
 }
 
