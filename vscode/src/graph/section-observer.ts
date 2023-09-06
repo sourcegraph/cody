@@ -6,7 +6,8 @@ import * as vscode from 'vscode'
 import { PreciseContext } from '@sourcegraph/cody-shared/src/codebase-context/messages'
 
 import { GraphContextFetcher } from '../completions/context/context'
-import { ContextSnippet } from '../completions/types'
+import { SymbolContextSnippet } from '../completions/types'
+import { logDebug } from '../log'
 
 import { getGraphContextFromRange as defaultGetGraphContextFromRange, locationKeyFn } from './graph'
 import { getDocumentSections as defaultGetDocumentSections, DocumentSection } from './sections'
@@ -39,11 +40,6 @@ const MAX_TRACKED_DOCUMENTS = 10
  *
  * Each section will behave like a stale-while-revalidate cache in that it will serve the previous
  * context while it is still being revalidated.
- *
- * TODO:
- *  - [ ] Track the total number of time spent in the context methods for analytics
- *  - [ ] When we refresh sections, make sure to update the ranges even if the  ID did not change
- *  - [ ] Integrate debug view into trace view
  */
 export class SectionObserver implements vscode.Disposable, GraphContextFetcher {
     private disposables: vscode.Disposable[] = []
@@ -68,7 +64,7 @@ export class SectionObserver implements vscode.Disposable, GraphContextFetcher {
         void this.onDidChangeVisibleTextEditors()
     }
 
-    public getContextAtPosition(document: vscode.TextDocument, position: vscode.Position): ContextSnippet[] {
+    public getContextAtPosition(document: vscode.TextDocument, position: vscode.Position): SymbolContextSnippet[] {
         const section = this.getSectionAtPosition(document, position)
         if (section?.context?.context) {
             return section.context.context.map(preciseContextToSnippet)
@@ -102,7 +98,11 @@ export class SectionObserver implements vscode.Disposable, GraphContextFetcher {
             section.context.isStale = false
         }
 
-        section.context.context = await this.getGraphContextFromRange(editor, section.location.range)
+        const start = performance.now()
+        const context = await this.getGraphContextFromRange(editor, section.location.range)
+
+        logHydratedContext(context, editor, section, start)
+        section.context.context = context
     }
 
     private getSectionAtPosition(document: vscode.TextDocument, position: vscode.Position): Section | undefined {
@@ -180,10 +180,11 @@ export class SectionObserver implements vscode.Disposable, GraphContextFetcher {
             if (!newSection) {
                 sectionsToRemove.push(existingSection)
             } else if (existingSection.context) {
-                // All existing sections that were not removed will be marked as
-                // dirty so that they are reloaded the next time they are
-                // requested.
+                // All existing sections that were not removed will be marked as stale so that they
+                // are reloaded the next time they are requested.
+                // We also update the ranges to make sure they are up to date.
                 existingSection.context.isStale = true
+                existingSection.location = newSection.location
             }
         }
         for (const sectionToRemove of sectionsToRemove) {
@@ -291,10 +292,11 @@ export class SectionObserver implements vscode.Disposable, GraphContextFetcher {
     }
 }
 
-function preciseContextToSnippet(context: PreciseContext): ContextSnippet {
+function preciseContextToSnippet(context: PreciseContext): SymbolContextSnippet {
     const isDts = context.filePath.endsWith('.d.ts')
     return {
         fileName: path.normalize(vscode.workspace.asRelativePath(context.filePath)),
+        symbol: context.symbol.fuzzyName ?? '',
         content:
             context.hoverText.length > 0 && !isDts
                 ? context.hoverText.map(extractMarkdownCodeBlock).join('\n').trim()
@@ -303,11 +305,47 @@ function preciseContextToSnippet(context: PreciseContext): ContextSnippet {
 }
 
 function extractMarkdownCodeBlock(string: string): string {
-    const regex = /```([a-z]*)\n([\S\s]*?)\n```/g
+    const regex = /```([a-z]*)\n([\S\s]*?)(\n```)?/g
     const matches = string.match(regex)
     if (!matches) {
         return ''
     }
-    const result = matches.map(m => m.match(/([\S\s]*)```/)![1])
-    return result.join('\n')
+    const result = matches.map(m => m.match(/([\S\s]*)(```?)/)![1])
+    return (
+        result
+            .join('\n')
+            // The TS language server often adds a loading text which is not helpful for the LLM
+            .replaceAll('(loading...)', '')
+    )
+}
+
+function logHydratedContext(
+    context: PreciseContext[],
+    editor: vscode.TextEditor,
+    section: Section,
+    start: number
+): void {
+    const matchSummary: { [filename: string]: Set<string> } = {}
+    for (const match of context.map(preciseContextToSnippet)) {
+        const normalizedFilename = path.normalize(vscode.workspace.asRelativePath(match.fileName))
+        const set = matchSummary[normalizedFilename] ?? new Set()
+        set.add(match.symbol)
+        matchSummary[normalizedFilename] = set
+    }
+
+    logDebug(
+        'GraphContext:hydrated',
+        `Preloaded ${context.length} graph matches for ${path.normalize(
+            vscode.workspace.asRelativePath(editor.document.uri)
+        )}#${section.fuzzyName} (took ${Math.round(performance.now() - start)}ms)`,
+        {
+            verbose: Object.entries(matchSummary).reduce(
+                (acc, [filename, symbols]) => {
+                    acc[filename] = [...symbols.values()]
+                    return acc
+                },
+                {} as { [filename: string]: string[] }
+            ),
+        }
+    )
 }

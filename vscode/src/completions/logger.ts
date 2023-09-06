@@ -259,7 +259,7 @@ export function logError(error: Error): void {
 
     if (!errorCounts.has(message)) {
         errorCounts.set(message, 0)
-        logCompletionEvent('error', { message, traceId, count: 1 })
+        logCompletionEvent('error', { message, traceId })
     }
 
     const count = errorCounts.get(message)!

@@ -2,6 +2,7 @@ import * as vscode from 'vscode'
 
 import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
 
+import { logDebug } from '../../log'
 import { ContextSnippet } from '../types'
 
 import { getContextFromEmbeddings } from './context-embeddings'
@@ -56,14 +57,21 @@ export async function getContext(options: GetContextOptions): Promise<GetContext
     if (graphMatches.length > 0) {
         const context: ContextSnippet[] = []
         let totalChars = 0
-        const includedGraphMatches = 0
+        let includedGraphMatches = 0
         for (const match of graphMatches) {
             if (totalChars + match.content.length > maxChars) {
                 continue
             }
             context.push(match)
             totalChars += match.content.length
+            includedGraphMatches++
         }
+
+        logDebug(
+            'GraphContext:autocomplete',
+            `Added ${includedGraphMatches} graph matches for ${options.document.fileName}`,
+            { verbose: graphMatches }
+        )
 
         return {
             context,

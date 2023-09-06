@@ -4,6 +4,7 @@ import { URI } from 'vscode-uri'
 import { PreciseContext } from '@sourcegraph/cody-shared/src/codebase-context/messages'
 import { dedupeWith, isDefined } from '@sourcegraph/cody-shared/src/common'
 import { ActiveTextEditorSelectionRange, Editor } from '@sourcegraph/cody-shared/src/editor'
+
 import { logDebug } from '../log'
 
 // TODO(efritz) - move to options object
@@ -91,7 +92,7 @@ const getGraphContextFromSelection = async (
         definitionSelections,
         contentMap,
         defaultGetHover,
-        useTypeDefinitions ? defaultGetTypeDefinitions: defaultGetDefinitions
+        useTypeDefinitions ? defaultGetTypeDefinitions : defaultGetDefinitions
     )
 
     // Open each URI referenced by a definition match in the current workspace, and make the document
@@ -115,8 +116,6 @@ const getGraphContextFromSelection = async (
         }
         return true
     })
-
-    console.log({ unseenDefinitionUris, filteredUnseenDefinitionUris })
 
     const newContentMap = new Map(
         filteredUnseenDefinitionUris.map(uri => [
@@ -312,6 +311,12 @@ const commonImportPaths = new Set([
     '/node_modules/typescript/lib',
     // The node library contains the standard node library.
     'node_modules/@types/node',
+    // All CSS properties as TS types.
+    'node_modules/csstype',
+    // Common React type definitions.
+    'node_modules/@types/react/',
+    'node_modules/@types/prop-types',
+    'node_modules/next/',
 ])
 
 export const commonKeywords = new Set([...goKeywords, ...typescriptKeywords])
