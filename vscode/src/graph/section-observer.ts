@@ -292,31 +292,37 @@ export class SectionObserver implements vscode.Disposable, GraphContextFetcher {
     }
 }
 
-function preciseContextToSnippet(context: PreciseContext): SymbolContextSnippet {
+function preciseContextToSnippet(context: PreciseContext): SymbolContextSnippet | null {
     const isDts = context.filePath.endsWith('.d.ts')
+    const content =
+        context.hoverText.length > 0 && !isDts
+            ? context.hoverText.map(extractMarkdownCodeBlock).join('\n').trim()
+            : context.definitionSnippet
+
     return {
         fileName: path.normalize(vscode.workspace.asRelativePath(context.filePath)),
         symbol: context.symbol.fuzzyName ?? '',
-        content:
-            context.hoverText.length > 0 && !isDts
-                ? context.hoverText.map(extractMarkdownCodeBlock).join('\n').trim()
-                : context.definitionSnippet,
+        content,
     }
 }
 
 function extractMarkdownCodeBlock(string: string): string {
-    const regex = /```([a-z]*)\n([\S\s]*?)(\n```)?/g
-    const matches = string.match(regex)
-    if (!matches) {
-        return ''
+    const lines = string.split('\n')
+    const codeBlocks: string[] = []
+    let isCodeBlock = false
+    for (const line of lines) {
+        const isCodeBlockDelimiter = line.trim().startsWith('```')
+
+        if (isCodeBlockDelimiter && !isCodeBlock) {
+            isCodeBlock = true
+        } else if (isCodeBlockDelimiter && isCodeBlock) {
+            isCodeBlock = false
+        } else if (isCodeBlock) {
+            codeBlocks.push(line)
+        }
     }
-    const result = matches.map(m => m.match(/([\S\s]*)(```?)/)![1])
-    return (
-        result
-            .join('\n')
-            // The TS language server often adds a loading text which is not helpful for the LLM
-            .replaceAll('(loading...)', '')
-    )
+
+    return codeBlocks.join('\n')
 }
 
 function logHydratedContext(
@@ -327,6 +333,9 @@ function logHydratedContext(
 ): void {
     const matchSummary: { [filename: string]: Set<string> } = {}
     for (const match of context.map(preciseContextToSnippet)) {
+        if (!match) {
+            continue
+        }
         const normalizedFilename = path.normalize(vscode.workspace.asRelativePath(match.fileName))
         const set = matchSummary[normalizedFilename] ?? new Set()
         set.add(match.symbol)
