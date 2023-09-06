@@ -218,7 +218,6 @@ describe('extractDefinitionContexts', () => {
         expect(contexts).toEqual([
             {
                 symbol: { fuzzyName: 'foo' },
-                forCompletions: true,
                 filePath: '/test-1.test',
                 hoverText: [],
                 definitionSnippet:
@@ -227,7 +226,6 @@ describe('extractDefinitionContexts', () => {
             },
             {
                 symbol: { fuzzyName: 'bar' },
-                forCompletions: true,
                 filePath: '/test-1.test',
                 hoverText: [],
                 definitionSnippet:
@@ -236,7 +234,6 @@ describe('extractDefinitionContexts', () => {
             },
             {
                 symbol: { fuzzyName: 'baz' },
-                forCompletions: true,
                 filePath: '/test-2.test',
                 hoverText: [],
                 definitionSnippet: 'const baz = new foo()',
@@ -244,7 +241,6 @@ describe('extractDefinitionContexts', () => {
             },
             {
                 symbol: { fuzzyName: 'bonk' },
-                forCompletions: true,
                 filePath: '/test-3.test',
                 hoverText: [],
                 definitionSnippet:

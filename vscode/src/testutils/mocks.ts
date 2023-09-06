@@ -583,6 +583,9 @@ export const vsCodeMocks = {
         }),
         applyEdit: (edit: WorkspaceEdit) => true,
         save: () => true,
+        asRelativePath(path: string | URI) {
+            return path.toString()
+        },
     },
     ConfigurationTarget: {
         Global: undefined,

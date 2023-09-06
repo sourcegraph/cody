@@ -1,17 +1,28 @@
-import { beforeEach, describe, expect, it, Mock, vitest } from 'vitest'
+import { beforeEach, describe, expect, it, Mock, vi, vitest } from 'vitest'
 import { URI } from 'vscode-uri'
 
+import { PreciseContext } from '@sourcegraph/cody-shared/src/codebase-context/messages'
+
+import { vsCodeMocks } from '../testutils/mocks'
 import { range } from '../testutils/textDocument'
 
 import { SectionObserver } from './section-observer'
 
+vi.mock('vscode', () => vsCodeMocks)
+
 const document1Uri = URI.file('/document1.ts')
 const document2Uri = URI.file('/document2.ts')
 
+interface TestDocument {
+    uri: URI
+    lineCount: number
+    sections: { fuzzyName: string; location: any }[]
+}
+
 describe('SectionObserver', () => {
     let testDocuments: {
-        document1: { uri: URI; lineCount: number; sections: { fuzzyName: string; location: any }[] }
-        document2: { uri: URI; lineCount: number; sections: { fuzzyName: string; location: any }[] }
+        document1: TestDocument
+        document2: TestDocument
     }
 
     let visibleTextEditors: Mock
@@ -47,18 +58,23 @@ describe('SectionObserver', () => {
             return doc?.sections ?? []
         })
 
-        getGraphContextFromRange = vitest.fn().mockImplementation(() => [
-            {
-                symbol: { fuzzyName: 'foo' },
-                definitionSnippet: 'function foo() {}',
-                filePath: document1Uri.toString(),
-            },
-            {
-                symbol: { fuzzyName: 'bar' },
-                definitionSnippet: 'function bar() {}',
-                filePath: document1Uri.toString(),
-            },
-        ])
+        getGraphContextFromRange = vitest.fn().mockImplementation(
+            () =>
+                [
+                    {
+                        symbol: { fuzzyName: 'foo' },
+                        definitionSnippet: 'function foo() {}',
+                        filePath: document1Uri.toString(),
+                        hoverText: [],
+                    },
+                    {
+                        symbol: { fuzzyName: 'bar' },
+                        definitionSnippet: 'function bar() {}',
+                        filePath: document1Uri.toString(),
+                        hoverText: [],
+                    },
+                ] satisfies PreciseContext[]
+        )
 
         sectionObserver = new SectionObserver(
             {
@@ -213,6 +229,7 @@ describe('SectionObserver', () => {
                 symbol: { fuzzyName: 'foo' },
                 definitionSnippet: 'function foo() {}',
                 filePath: document1Uri.toString(),
+                hoverText: [],
             },
         ])
         await onDidChangeTextEditorSelection({
@@ -258,6 +275,7 @@ describe('SectionObserver', () => {
                 symbol: { fuzzyName: 'foo' },
                 definitionSnippet: 'function foo() {}',
                 filePath: document1Uri.toString(),
+                hoverText: [],
             },
         ])
         await onDidChangeTextEditorSelection({
@@ -291,14 +309,41 @@ describe('SectionObserver', () => {
               [
                 {
                   "content": "function foo() {}",
-                  "fileName": "file:///document1.ts",
+                  "fileName": "file:/document1.ts",
+                  "symbol": "foo",
                 },
                 {
                   "content": "function bar() {}",
-                  "fileName": "file:///document1.ts",
+                  "fileName": "file:/document1.ts",
+                  "symbol": "bar",
                 },
               ]
             `)
+        })
+
+        it('updates section ranges when the document is reloaded', async () => {
+            const updatedRange = range(1, 0, 22, 0)
+            // Change the document so that the bar section now starts on line 2
+            testDocuments.document1.lineCount = 23
+            testDocuments.document1.sections = [
+                { fuzzyName: 'bar', location: { document1Uri, range: range(1, 0, 22, 0) } },
+            ]
+            await onDidChangeTextDocument({
+                document: testDocuments.document1,
+                contentChanges: [],
+            })
+
+            expect(sectionObserver.debugPrint()).toMatchInlineSnapshot(`
+              "file:///document1.ts
+                └─ bar"
+            `)
+
+            // Expect a hover to preload the updated section range
+            await onDidChangeTextEditorSelection({
+                textEditor: { document: testDocuments.document1 },
+                selections: [{ active: { line: 2, character: 0 } }],
+            })
+            expect(getGraphContextFromRange).toHaveBeenCalledWith(expect.anything(), updatedRange)
         })
     })
 })
