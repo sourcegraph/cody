@@ -41,8 +41,13 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     >(null)
     const [isTranscriptError, setIsTranscriptError] = useState<boolean>(false)
 
-    // TODO: Use the experiment framework to pick an arm.
-    const loginArm = LoginExperimentArm.Simplified
+    // TODO: Use the experiment framework to pick an arm. Probably this happens
+    // not in the webview UI but in the host.
+
+    // FIXME expose the simplified login experiment to VScode web when
+    // the Sourcegraph token generation page can support VScode web-style
+    // redirects, see asExternalUri.
+    const loginArm = LoginExperimentArm.Simplified // vscode.env.uiKind !== vscode.UIKind.Web
 
     useEffect(
         () =>
@@ -143,6 +148,17 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
         [setEndpoint, vscodeAPI]
     )
 
+    const simplifiedLoginRedirect = useCallback(
+        (method: 'dotcom' | 'github' | 'gitlab') => {
+            // TODO: Shouldn't the source of truth, AuthProvider, update its
+            // state and those changes flow back to us?
+            // TODO: you get stuck in the "login" view if you close the browser,
+            // etc. so don't set the view to "login"
+            vscodeAPI.postMessage({ command: 'auth', type: 'simplified-onboarding', authMethod: method })
+        },
+        [vscodeAPI]
+    )
+
     const telemetryService = useMemo(() => createWebviewTelemetryService(vscodeAPI), [vscodeAPI])
 
     if (!view || !authStatus || !config) {
@@ -154,9 +170,8 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
             {view === 'login' || !authStatus.isLoggedIn ? (
                 loginArm === LoginExperimentArm.Simplified ? (
                     <LoginSimplified
-                        onLoginRedirect={onLoginRedirect}
+                        simplifiedLoginRedirect={simplifiedLoginRedirect}
                         telemetryService={telemetryService}
-                        uriScheme={config?.uriScheme}
                     />
                 ) : (
                     <Login

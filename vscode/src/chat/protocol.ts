@@ -34,9 +34,10 @@ export type WebviewMessage =
     | { command: 'copy'; eventType: 'Button' | 'Keydown'; text: string }
     | {
           command: 'auth'
-          type: 'signin' | 'signout' | 'support' | 'app' | 'callback'
+          type: 'signin' | 'signout' | 'support' | 'app' | 'callback' | 'simplified-onboarding'
           endpoint?: string
           value?: string
+          authMethod?: 'dotcom' | 'github' | 'gitlab' // Simplified onboarding auth methods
       }
     | { command: 'abort' }
     | { command: 'custom-prompt'; title: string; value?: CodyPromptType }

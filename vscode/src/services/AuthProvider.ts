@@ -311,6 +311,10 @@ export class AuthProvider {
         const params = new URLSearchParams(uri.query)
         const isApp = params.get('type') === 'app'
         const token = params.get('code')
+        // TODO: This is weak because the callback could come from any endpoint
+        // and we assume this.authStatus.endpoint is authoritative.
+        // It would be more robust if the endpoint identified itself and we
+        // verified it is an endpoint we want to use.
         const endpoint = isApp ? LOCAL_APP_URL.href : this.authStatus.endpoint
         // TODO: Need to set authStatus.endpoint to dotcom
         if (!token || !endpoint) {
@@ -369,6 +373,18 @@ export class AuthProvider {
             await secretStorage.storeToken(endpoint, token)
         }
         this.loadEndpointHistory()
+    }
+
+    // Notifies the AuthProvider that the simplified onboarding experiment is
+    // kicking off an authorization flow. That flow ends when (if) this
+    // AuthProvider gets a call to tokenCallbackHandler.
+    public authProviderSimplifiedWillAttemptAuth(): void {
+        // FIXME: This is equivalent to what redirectToEndpointLogin does. But
+        // the existing design is weak--it mixes other authStatus with this
+        // endpoint and races with everything else this class does.
+
+        // Simplified onboarding only supports dotcom.
+        this.authStatus.endpoint = DOTCOM_URL.toString()
     }
 }
 

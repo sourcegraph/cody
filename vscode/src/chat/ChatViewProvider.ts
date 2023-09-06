@@ -5,6 +5,7 @@ import { ChatMessage, UserLocalHistory } from '@sourcegraph/cody-shared/src/chat
 
 import { View } from '../../webviews/NavBar'
 import { logDebug } from '../log'
+import { AuthProviderSimplified } from '../services/AuthProviderSimplified'
 
 import { MessageProvider, MessageProviderOptions } from './MessageProvider'
 import { ExtensionMessage, WebviewMessage } from './protocol'
@@ -63,6 +64,12 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
                 }
                 if (message.type === 'callback' && message.endpoint) {
                     this.authProvider.redirectToEndpointLogin(message.endpoint)
+                    break
+                }
+                if (message.type === 'simplified-onboarding') {
+                    const authProviderSimplified = new AuthProviderSimplified()
+                    const authMethod = message.authMethod || 'dotcom'
+                    void authProviderSimplified.openExternalAuthUrl(this.authProvider, authMethod)
                     break
                 }
                 // cody.auth.signin or cody.auth.signout
