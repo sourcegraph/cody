@@ -71,7 +71,13 @@ function params(
 
     const { document, position } = documentAndPosition(code, languageId, URI_FIXTURE.toString())
 
-    const docContext = getCurrentDocContext(document, position, 1000, 1000)
+    const docContext = getCurrentDocContext(
+        document,
+        position,
+        1000,
+        1000,
+        providerConfig.enableExtendedMultilineTriggers
+    )
     if (docContext === null) {
         throw new Error()
     }
