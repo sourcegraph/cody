@@ -25,13 +25,9 @@ export async function createOrUpdateEventLogger(
     config: ConfigurationWithAccessToken,
     isExtensionModeDevOrTest: boolean
 ): Promise<void> {
-    if (config.telemetryLevel === 'off') {
+    if (config.telemetryLevel === 'off' || isExtensionModeDevOrTest) {
         eventLogger = null
         return
-    }
-
-    if (isExtensionModeDevOrTest) {
-        process.env.CODY_TESTING = 'true'
     }
 
     const { anonymousUserID, created } = await localStorage.anonymousUserID()
