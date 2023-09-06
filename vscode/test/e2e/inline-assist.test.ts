@@ -3,9 +3,9 @@ import { expect } from '@playwright/test'
 import { sidebarExplorer, sidebarSignin } from './common'
 import { test } from './helpers'
 
-test('start a fixup job from inline chat with valid auth', async ({ page, sidebar }, testInfo) => {
+test('start a fixup job from inline chat with valid auth', async ({ page, sidebar }) => {
     // Sign into Cody
-    await sidebarSignin(page, sidebar, testInfo)
+    await sidebarSignin(page, sidebar)
 
     // Open the Explorer view from the sidebar
     await sidebarExplorer(page).click()

@@ -1,15 +1,11 @@
 import { expect } from '@playwright/test'
 
-import { sendTestInfo } from '../fixtures/mock-server'
-
 import { sidebarExplorer, sidebarSignin } from './common'
 import { test } from './helpers'
 
-test.skip('start a fixup job from inline chat with valid auth', async ({ page, sidebar }, testInfo) => {
-    sendTestInfo(testInfo.title, testInfo.testId)
-
+test.skip('start a fixup job from inline chat with valid auth', async ({ page, sidebar }) => {
     // Sign into Cody
-    await sidebarSignin(page, sidebar, testInfo)
+    await sidebarSignin(page, sidebar)
 
     // Open the Explorer view from the sidebar
     await sidebarExplorer(page).click()

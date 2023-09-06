@@ -1,16 +1,13 @@
 import { expect } from '@playwright/test'
 
-import { sendTestInfo } from '../fixtures/mock-server'
-
 import { sidebarExplorer, sidebarSignin } from './common'
 import { test } from './helpers'
 
 const DECORATION_SELECTOR = 'div.view-overlays[role="presentation"] div[class*="TextEditorDecorationType"]'
 
-test('decorations from un-applied Cody changes appear', async ({ page, sidebar }, testInfo) => {
-    sendTestInfo(testInfo.title, testInfo.testId)
+test('decorations from un-applied Cody changes appear', async ({ page, sidebar }) => {
     // Sign into Cody
-    await sidebarSignin(page, sidebar, testInfo)
+    await sidebarSignin(page, sidebar)
 
     // Open the Explorer view from the sidebar
     await sidebarExplorer(page).click()

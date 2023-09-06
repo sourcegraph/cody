@@ -1,11 +1,10 @@
 import { expect } from '@playwright/test'
 
-import { sendTestInfo, SERVER_URL, VALID_TOKEN } from '../fixtures/mock-server'
+import { SERVER_URL, VALID_TOKEN } from '../fixtures/mock-server'
 
 import { signOut, test } from './helpers'
 
-test('requires a valid auth token and allows logouts', async ({ page, sidebar }, testInfo) => {
-    sendTestInfo(testInfo.title, testInfo.testId)
+test('requires a valid auth token and allows logouts', async ({ page, sidebar }) => {
     await expect(sidebar.getByText('Invalid credentials')).not.toBeVisible()
     await sidebar.getByRole('button', { name: 'Other Sign In Options…' }).click()
     await page.getByRole('option', { name: 'Sign in with URL and Access Token' }).click()

@@ -1,15 +1,11 @@
 import { expect } from '@playwright/test'
 
-import { sendTestInfo } from '../fixtures/mock-server'
-
 import { sidebarSignin } from './common'
 import { test } from './helpers'
 
-test('open the Custom Commands in sidebar and add new user recipe', async ({ page, sidebar }, testInfo) => {
-    sendTestInfo(testInfo.title, testInfo.testId)
-
+test('open the Custom Commands in sidebar and add new user recipe', async ({ page, sidebar }) => {
     // Sign into Cody
-    await sidebarSignin(page, sidebar, testInfo)
+    await sidebarSignin(page, sidebar)
 
     await expect(sidebar.getByText("Hello! I'm Cody.")).toBeVisible()
 

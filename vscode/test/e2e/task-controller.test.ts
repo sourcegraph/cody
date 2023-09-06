@@ -1,15 +1,11 @@
 import { expect } from '@playwright/test'
 
-import { sendTestInfo } from '../fixtures/mock-server'
-
 import { sidebarExplorer, sidebarSignin } from './common'
 import { test } from './helpers'
 
-test('task tree view for non-stop cody', async ({ page, sidebar }, testInfo) => {
-    sendTestInfo(testInfo.title, testInfo.testId)
-
+test('task tree view for non-stop cody', async ({ page, sidebar }) => {
     // Sign into Cody
-    await sidebarSignin(page, sidebar, testInfo)
+    await sidebarSignin(page, sidebar)
 
     // Open the Explorer view from the sidebar
     await sidebarExplorer(page).click()
