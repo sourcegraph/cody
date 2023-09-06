@@ -12,35 +12,30 @@ import { agent } from './fetch'
 // https://www.npmjs.com/package/@vscode/proxy-agent?activeTab=code
 const nodeModules = '_VSCODE_NODE_MODULES'
 const proxyAgentPath = '@vscode/proxy-agent/out/agent'
-const proxyAgent = 'PacProxyAgent'
+const pacProxyAgent = 'PacProxyAgent'
 
 /**
  * We use keepAlive agents here to avoid excessive SSL/TLS handshakes for autocomplete requests.
  */
 const httpAgent = new http.Agent({ keepAlive: true, keepAliveMsecs: 60000 })
 const httpsAgent = new https.Agent({ keepAlive: true, keepAliveMsecs: 60000 })
-
-// Map storing socks proxy URL pathname a key and socks proxy agent as a value. Contains only one key-value pair.
-const socksAgents = new Map<string, SocksProxyAgent>()
+let socksProxyAgent: SocksProxyAgent
 
 function getCustomAgent({
     autocompleteAdvancedServerSocksProxy,
 }: Configuration): ({ protocol }: Pick<URL, 'protocol'>) => http.Agent {
     return ({ protocol }) => {
-        if (protocol === 'http:') {
-            return httpAgent
-        }
-        if (protocol === 'socks:' && autocompleteAdvancedServerSocksProxy) {
-            let socksAgent = socksAgents.get(autocompleteAdvancedServerSocksProxy)
-            if (!socksAgent) {
-                socksAgent = new SocksProxyAgent(autocompleteAdvancedServerSocksProxy, {
+        if (autocompleteAdvancedServerSocksProxy) {
+            if (!socksProxyAgent) {
+                socksProxyAgent = new SocksProxyAgent(autocompleteAdvancedServerSocksProxy, {
                     keepAlive: true,
                     keepAliveMsecs: 60000,
                 })
-                socksAgents.clear()
-                socksAgents.set(autocompleteAdvancedServerSocksProxy, socksAgent)
             }
-            return socksAgent
+            return socksProxyAgent
+        }
+        if (protocol === 'http:') {
+            return httpAgent
         }
         return httpsAgent
     }
@@ -67,7 +62,7 @@ export function initializeNetworkAgent(): void {
      * c.f. https://github.com/microsoft/vscode/issues/173861
      */
     try {
-        const PacProxyAgent = (globalThis as any)?.[nodeModules]?.[proxyAgentPath]?.[proxyAgent] ?? undefined
+        const PacProxyAgent = (globalThis as any)?.[nodeModules]?.[proxyAgentPath]?.[pacProxyAgent] ?? undefined
         if (PacProxyAgent) {
             const originalConnect = PacProxyAgent.prototype.connect
             // Patches the implementation defined here:
