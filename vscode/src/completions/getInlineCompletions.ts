@@ -159,6 +159,7 @@ async function doGetInlineCompletions({
     completeSuggestWidgetSelection = false,
 }: InlineCompletionsParams): Promise<InlineCompletionsResult | null> {
     tracer?.({ params: { document, position, context } })
+    const start = Date.now()
 
     // If we have a suffix in the same line as the cursor and the suffix contains any word
     // characters, do not attempt to make a completion. This means we only make completions if
@@ -267,6 +268,11 @@ async function doGetInlineCompletions({
             : cacheHit === 'hit-after-request-started'
             ? InlineCompletionsResultSource.CacheAfterRequestStart
             : InlineCompletionsResultSource.Network
+
+    // Require a minimum delay to ensure that the user has stopped typing before showing
+    // suggestions. This delay should be lower than our expected network latency but it should make
+    // it so that we show less irrelevant suggestions.
+    await new Promise<void>(resolve => setTimeout(resolve, start + 400 - Date.now()))
 
     CompletionLogger.loaded(logId)
 
