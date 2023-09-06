@@ -1,8 +1,9 @@
 import * as vscode from 'vscode'
 
+import { detectMultiline, DetectMultilineResult } from './detect-multiline'
 import { getNextNonEmptyLine, getPrevNonEmptyLine } from './text-processing'
 
-export interface DocumentContext {
+export type DocumentContext = DetectMultilineResult & {
     prefix: string
     suffix: string
 
@@ -36,6 +37,7 @@ export function getCurrentDocContext(
     position: vscode.Position,
     maxPrefixLength: number,
     maxSuffixLength: number,
+    enableExtendedTriggers: boolean,
     context?: vscode.InlineCompletionContext
 ): DocumentContext {
     const offset = document.offsetAt(position)
@@ -88,12 +90,19 @@ export function getCurrentDocContext(
     const prevNonEmptyLine = getPrevNonEmptyLine(prefix)
     const nextNonEmptyLine = getNextNonEmptyLine(suffix)
 
-    return {
+    const docContext = {
         prefix,
         suffix,
         currentLinePrefix,
         currentLineSuffix,
         prevNonEmptyLine,
         nextNonEmptyLine,
+    }
+
+    const multilineContext = detectMultiline(docContext, document.languageId, enableExtendedTriggers ?? false)
+
+    return {
+        ...docContext,
+        ...multilineContext,
     }
 }

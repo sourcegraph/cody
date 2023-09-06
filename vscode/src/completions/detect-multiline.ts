@@ -7,16 +7,28 @@ import {
     OPENING_BRACKET_REGEX,
 } from './text-processing'
 
+export type DetectMultilineResult =
+    | {
+          multiline: true
+          multilineTrigger: string
+      }
+    | {
+          multiline: false
+          multilineTrigger: undefined
+      }
+
+const MULTILINE_DISABLED_RESULT: DetectMultilineResult = { multiline: false, multilineTrigger: undefined }
+
 export function detectMultiline(
-    docContext: DocumentContext,
+    docContext: Omit<DocumentContext, 'multiline' | 'multilineTrigger'>,
     languageId: string,
     enableExtendedTriggers: boolean
-): boolean {
+): DetectMultilineResult {
     const { prefix, prevNonEmptyLine, nextNonEmptyLine, currentLinePrefix, currentLineSuffix } = docContext
 
     const languageConfig = getLanguageConfig(languageId)
     if (!languageConfig) {
-        return false
+        return MULTILINE_DISABLED_RESULT
     }
 
     const checkInvocation =
@@ -28,11 +40,15 @@ export function detectMultiline(
         !currentLinePrefix.trim().match(FUNCTION_KEYWORDS) &&
         checkInvocation.match(FUNCTION_OR_METHOD_INVOCATION_REGEX)
     ) {
-        return false
+        return MULTILINE_DISABLED_RESULT
     }
 
-    if (enableExtendedTriggers && currentLinePrefix.match(OPENING_BRACKET_REGEX)) {
-        return true
+    const openingBracketMatch = currentLinePrefix.match(OPENING_BRACKET_REGEX)
+    if (enableExtendedTriggers && openingBracketMatch) {
+        return {
+            multiline: true,
+            multilineTrigger: openingBracketMatch[0],
+        }
     }
 
     const { blockStart } = languageConfig
@@ -48,8 +64,11 @@ export function detectMultiline(
         // than the block start line (the newly created block is empty).
         indentation(prevNonEmptyLine) >= indentation(nextNonEmptyLine)
     ) {
-        return true
+        return {
+            multiline: true,
+            multilineTrigger: blockStart,
+        }
     }
 
-    return false
+    return MULTILINE_DISABLED_RESULT
 }

@@ -149,6 +149,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
             position,
             this.maxPrefixChars,
             this.maxSuffixChars,
+            this.config.providerConfig.enableExtendedMultilineTriggers,
             // We ignore the current context selection if completeSuggestWidgetSelection is not
             // enabled
             this.config.completeSuggestWidgetSelection ? context : undefined
