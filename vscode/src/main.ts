@@ -454,7 +454,7 @@ const register = async (
             contextProvider.onConfigurationChange(newConfig)
             externalServicesOnDidConfigurationChange(newConfig)
             void createOrUpdateEventLogger(newConfig, isExtensionModeDevOrTest)
-            onDidConfigurationChange(newConfig)
+            platform.onConfigurationChange?.(newConfig)
         },
     }
 }
