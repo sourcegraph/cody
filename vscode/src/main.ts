@@ -69,7 +69,6 @@ const register = async (
     onConfigurationChange: (newConfig: ConfigurationWithAccessToken) => void
 }> => {
     const disposables: vscode.Disposable[] = []
-
     const isExtensionModeDevOrTest =
         context.extensionMode === vscode.ExtensionMode.Development ||
         context.extensionMode === vscode.ExtensionMode.Test

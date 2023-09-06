@@ -1,4 +1,6 @@
+import { PubSub } from '@google-cloud/pubsub'
 import express from 'express'
+import * as uuid from 'uuid'
 
 // create interface for the request
 interface MockRequest {
@@ -29,6 +31,12 @@ const NON_STOP_FIXUP_PROMPT_TAG = '<selection>'
 export async function run<T>(around: () => Promise<T>): Promise<T> {
     const app = express()
     app.use(express.json())
+
+    // endpoint which will accept the data that you want to send in that you will add your pubsub code
+    app.post('/.api/testLogging', (req, res) => {
+        void logTestingData(req.body)
+        res.status(200)
+    })
 
     app.post('/.api/completions/stream', (req, res) => {
         // TODO: Filter streaming response
@@ -82,4 +90,40 @@ export async function run<T>(around: () => Promise<T>): Promise<T> {
     server.close()
 
     return result
+}
+
+export async function logTestingData(data: string): Promise<void> {
+    // create a pubsub client
+    const pubSubClient = new PubSub({
+        projectId: 'sourcegraph-telligent-testing',
+    })
+
+    const message = {
+        event: data,
+        timestamp: new Date().getTime(),
+        // aditya todo: pass in the E2E test name
+        test_name: currentTestName,
+        test_id: currentTestID,
+        UID: uuid.v4(),
+    }
+
+    // Publishes the message as a string
+    const dataBuffer = Buffer.from(JSON.stringify(message))
+
+    try {
+        await pubSubClient
+            .topic('projects/sourcegraph-telligent-testing/topics/e2e-testing')
+            .publishMessage({ data: dataBuffer })
+        console.log('Message published.')
+    } catch (error) {
+        console.error('Received error while publishing:', error)
+    }
+}
+
+let currentTestName: string
+let currentTestID: string
+
+export function sendTestInfo(testName: string, testID: string): void {
+    currentTestName = testName || ''
+    currentTestID = testID || ''
 }
