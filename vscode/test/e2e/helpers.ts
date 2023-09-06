@@ -5,7 +5,7 @@ import * as path from 'path'
 import { test as base, Frame, Page } from '@playwright/test'
 import { _electron as electron } from 'playwright'
 
-import { run } from '../fixtures/mock-server'
+import { run, sendTestInfo } from '../fixtures/mock-server'
 
 import { installDeps } from './install-deps'
 
@@ -26,6 +26,8 @@ export const test = base
             const workspaceDirectory = path.join(vscodeRoot, 'test', 'fixtures', 'workspace')
 
             await buildWorkSpaceSettings(workspaceDirectory)
+
+            sendTestInfo(testInfo.title, testInfo.testId)
 
             // See: https://github.com/microsoft/vscode-test/blob/main/lib/runTest.ts
             const app = await electron.launch({
