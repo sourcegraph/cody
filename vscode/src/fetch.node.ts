@@ -3,6 +3,7 @@ import https from 'https'
 
 import { SocksProxyAgent } from 'socks-proxy-agent'
 
+import { getConfiguration } from './configuration'
 import { agent } from './fetch'
 
 // The path to the exported class can be found in the npm contents
@@ -12,24 +13,22 @@ const proxyAgentPath = '@vscode/proxy-agent/out/agent'
 const proxyAgent = 'PacProxyAgent'
 
 export function initializeNetworkAgent(): void {
+    const { autocompleteAdvancedServerSocksProxy } = getConfiguration()
     /**
      * We use keepAlive agents here to avoid excessive SSL/TLS handshakes for autocomplete requests.
      */
     const httpAgent = new http.Agent({ keepAlive: true, keepAliveMsecs: 60000 })
     const httpsAgent = new https.Agent({ keepAlive: true, keepAliveMsecs: 60000 })
-    const socksAgents = new Map<string, SocksProxyAgent>()
+    const socksAgent = autocompleteAdvancedServerSocksProxy
+        ? new SocksProxyAgent(autocompleteAdvancedServerSocksProxy, { keepAlive: true, keepAliveMsecs: 60000 })
+        : undefined
 
     const customAgent = (url: URL): http.Agent => {
         if (url.protocol === 'http:') {
             return httpAgent
         }
-        if (url.protocol === 'socks:') {
-            let sockAgent = socksAgents.get(url.href)
-            if (!sockAgent) {
-                sockAgent = new SocksProxyAgent(url, { keepAlive: true, keepAliveMsecs: 60000 })
-                socksAgents.set(url.href, sockAgent)
-            }
-            return sockAgent
+        if (url.protocol === 'socks:' && socksAgent) {
+            return socksAgent
         }
         return httpsAgent
     }

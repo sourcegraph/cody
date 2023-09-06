@@ -20,7 +20,7 @@ export const agent: { current: ((url: URL) => Agent) | undefined } = { current: 
 
 export function fetch(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
     return isomorphicFetch(input, {
-        agent: agent.current,
         ...init,
+        agent: agent.current,
     } as RequestInit)
 }
