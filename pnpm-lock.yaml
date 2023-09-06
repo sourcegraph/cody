@@ -177,8 +177,8 @@ importers:
         specifier: ^3.6.8
         version: 3.6.8
       marked:
-        specifier: ^4.0.16
-        version: 4.0.16
+        specifier: ^8.0.1
+        version: 8.0.1
       morgan:
         specifier: ^1.10.0
         version: 1.10.0
@@ -277,8 +277,8 @@ importers:
         specifier: ^4.17.21
         version: 4.17.21
       marked:
-        specifier: ^4.0.16
-        version: 4.0.16
+        specifier: ^8.0.1
+        version: 8.0.1
       vscode-uri:
         specifier: ^3.0.7
         version: 3.0.7
@@ -12513,6 +12513,13 @@ packages:
     resolution: {integrity: sha512-wahonIQ5Jnyatt2fn8KqF/nIqZM8mh3oRu2+l5EANGMhu6RFjiSG52QNE2eWzFMI94HqYSgN184NurgNG6CztA==}
     engines: {node: '>= 12'}
     hasBin: true
+    dev: true
+
+  /marked@8.0.1:
+    resolution: {integrity: sha512-eEbeEb/mJwh+sNLEhHOWtxMgjN/NEwZUBs1nkiIH2sTQTq07KmPMQ48ihyvo5+Ya56spVOPhunfGr6406crCVA==}
+    engines: {node: '>= 16'}
+    hasBin: true
+    dev: false
 
   /mathml-tag-names@2.1.3:
     resolution: {integrity: sha512-APMBEanjybaPzUrfqU0IMU5I0AswKMH7k8OTLs0vvV4KZpExkTkY87nR/zpbuTPj+gARop7aGUbl11pnDfW6xg==}
