@@ -28,6 +28,7 @@ export interface GraphContextFetcher {
 export type ContextSummary = Readonly<{
     embeddings?: number
     local?: number
+    graph?: number
     duration: number
 }>
 
@@ -49,12 +50,31 @@ export async function getContext(options: GetContextOptions): Promise<GetContext
     const graphMatches = graphContextFetcher
         ? graphContextFetcher.getContextAtPosition(options.document, options.position)
         : []
-    const localMatches = await getContextFromCurrentEditor(options)
 
-    for (const graphMatch of graphMatches) {
-        console.log(graphMatch.fileName)
-        console.log(graphMatch.content)
+    // When we have graph matches, use it exclusively for the context
+    // @TODO(philipp-spiess): Do we want to mix this with local context?
+    if (graphMatches.length > 0) {
+        const context: ContextSnippet[] = []
+        let totalChars = 0
+        const includedGraphMatches = 0
+        for (const match of graphMatches) {
+            if (totalChars + match.content.length > maxChars) {
+                continue
+            }
+            context.push(match)
+            totalChars += match.content.length
+        }
+
+        return {
+            context,
+            logSummary: {
+                graph: includedGraphMatches,
+                duration: performance.now() - start,
+            },
+        }
     }
+
+    const localMatches = await getContextFromCurrentEditor(options)
 
     /**
      * Iterate over matches and add them to the context.
