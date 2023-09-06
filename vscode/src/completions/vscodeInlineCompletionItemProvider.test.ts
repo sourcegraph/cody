@@ -19,9 +19,7 @@ vi.mock('vscode', () => ({
     ...vsCodeMocks,
     workspace: {
         ...vsCodeMocks.workspace,
-        asRelativePath(path: string) {
-            return path
-        },
+
         onDidChangeTextDocument() {
             return null
         },
