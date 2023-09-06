@@ -53,7 +53,7 @@ export async function getContext(options: GetContextOptions): Promise<GetContext
         : []
 
     // When we have graph matches, use it exclusively for the context
-    // @TODO(philipp-spiess): Do we want to mix this with local context?
+    // TODO(philipp-spiess): Do we want to mix this with local context?
     if (graphMatches.length > 0) {
         const context: ContextSnippet[] = []
         let totalChars = 0

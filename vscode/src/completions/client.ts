@@ -56,10 +56,10 @@ export function createClient(
                 headers.set('X-Sourcegraph-Should-Trace', 'true')
             }
 
-            // We enable streaming only for Node environments right now because it's hard to make the
-            // polyfilled fetch API work the same as it does in the browser.
+            // We enable streaming only for Node environments right now because it's hard to make
+            // the polyfilled fetch API work the same as it does in the browser.
             //
-            // @TODO(philipp-spiess): Feature test if the response is a Node or a browser stream and
+            // TODO(philipp-spiess): Feature test if the response is a Node or a browser stream and
             // implement SSE parsing for both.
             const isNode = typeof process !== 'undefined'
 

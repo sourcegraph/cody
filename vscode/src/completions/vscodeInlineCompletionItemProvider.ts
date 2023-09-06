@@ -332,7 +332,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
             return
         }
 
-        // @TODO(philipp-spiess): Bring back this code once we have fewer uncaught errors
+        // TODO(philipp-spiess): Bring back this code once we have fewer uncaught errors
         //
         // c.f. https://sourcegraph.slack.com/archives/C05AGQYD528/p1693471486690459
         //

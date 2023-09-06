@@ -147,7 +147,7 @@ export class SectionObserver implements vscode.Disposable, GraphContextFetcher {
      * Loads or reloads a document's sections and attempts to merge new sections with existing
      * sections.
      *
-     * @TODO(philipp-spiess): Handle the case that a document is being reloaded while it is still
+     * TODO(philipp-spiess): Handle the case that a document is being reloaded while it is still
      * loaded.
      */
     private async loadDocument(document: vscode.TextDocument): Promise<void> {
@@ -206,7 +206,7 @@ export class SectionObserver implements vscode.Disposable, GraphContextFetcher {
      * Diff vscode.window.visibleTextEditors with activeDocuments to load new documents or unload
      * those no longer needed.
      *
-     * @TODO(philipp-spiess): When this method is called while the documents are still being loaded,
+     * TODO(philipp-spiess): When this method is called while the documents are still being loaded,
      * we might reload a document immediately afterwards.
      */
     private async onDidChangeVisibleTextEditors(): Promise<void> {
@@ -236,7 +236,7 @@ export class SectionObserver implements vscode.Disposable, GraphContextFetcher {
     }
 
     /**
-     * @TODO(philipp-spiess): We can use the ranges of the change events to mark exactly which
+     * TODO(philipp-spiess): We can use the ranges of the change events to mark exactly which
      * sections have been modified to avoid reloading the whole document.
      */
     private async onDidChangeTextDocument(event: vscode.TextDocumentChangeEvent): Promise<void> {
@@ -260,7 +260,7 @@ export class SectionObserver implements vscode.Disposable, GraphContextFetcher {
         // Next, we go over all changes and check if the change has been significant enough to mark
         // a section as dirty.
         //
-        // @TODO(philipp-spiess): We can't reliably detect single line deletions so this might need
+        // TODO(philipp-spiess): We can't reliably detect single line deletions so this might need
         // something smarter.
         for (const change of event.contentChanges) {
             const isNewLineAddition = change.text.includes('\n')
