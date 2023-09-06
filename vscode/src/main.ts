@@ -50,7 +50,9 @@ export async function start(context: vscode.ExtensionContext, platform: Platform
     disposables.push(
         vscode.workspace.onDidChangeConfiguration(async event => {
             if (event.affectsConfiguration('cody')) {
-                onConfigurationChange(await getFullConfig())
+                const config = await getFullConfig()
+                onConfigurationChange(config)
+                platform.onConfigurationChange?.(config)
             }
         })
     )
@@ -453,6 +455,7 @@ const register = async (
             contextProvider.onConfigurationChange(newConfig)
             externalServicesOnDidConfigurationChange(newConfig)
             void createOrUpdateEventLogger(newConfig, isExtensionModeDevOrTest)
+            onDidConfigurationChange(newConfig)
         },
     }
 }

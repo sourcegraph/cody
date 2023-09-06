@@ -3,6 +3,8 @@ import https from 'https'
 
 import { SocksProxyAgent } from 'socks-proxy-agent'
 
+import { Configuration } from '@sourcegraph/cody-shared/src/configuration'
+
 import { getConfiguration } from './configuration'
 import { agent } from './fetch'
 
@@ -12,28 +14,45 @@ const nodeModules = '_VSCODE_NODE_MODULES'
 const proxyAgentPath = '@vscode/proxy-agent/out/agent'
 const proxyAgent = 'PacProxyAgent'
 
-export function initializeNetworkAgent(): void {
-    const { autocompleteAdvancedServerSocksProxy } = getConfiguration()
-    /**
-     * We use keepAlive agents here to avoid excessive SSL/TLS handshakes for autocomplete requests.
-     */
-    const httpAgent = new http.Agent({ keepAlive: true, keepAliveMsecs: 60000 })
-    const httpsAgent = new https.Agent({ keepAlive: true, keepAliveMsecs: 60000 })
-    const socksAgent = autocompleteAdvancedServerSocksProxy
-        ? new SocksProxyAgent(autocompleteAdvancedServerSocksProxy, { keepAlive: true, keepAliveMsecs: 60000 })
-        : undefined
+/**
+ * We use keepAlive agents here to avoid excessive SSL/TLS handshakes for autocomplete requests.
+ */
+const httpAgent = new http.Agent({ keepAlive: true, keepAliveMsecs: 60000 })
+const httpsAgent = new https.Agent({ keepAlive: true, keepAliveMsecs: 60000 })
 
-    const customAgent = (url: URL): http.Agent => {
-        if (url.protocol === 'http:') {
+// Map storing socks proxy URL pathname a key and socks proxy agent as a value. Contains only one key-value pair.
+const socksAgents = new Map<string, SocksProxyAgent>()
+
+function getCustomAgent({
+    autocompleteAdvancedServerSocksProxy,
+}: Configuration): ({ protocol }: Pick<URL, 'protocol'>) => http.Agent {
+    return ({ protocol }) => {
+        if (protocol === 'http:') {
             return httpAgent
         }
-        if (url.protocol === 'socks:' && socksAgent) {
+        if (protocol === 'socks:' && autocompleteAdvancedServerSocksProxy) {
+            let socksAgent = socksAgents.get(autocompleteAdvancedServerSocksProxy)
+            if (!socksAgent) {
+                socksAgent = new SocksProxyAgent(autocompleteAdvancedServerSocksProxy, {
+                    keepAlive: true,
+                    keepAliveMsecs: 60000,
+                })
+                socksAgents.clear()
+                socksAgents.set(autocompleteAdvancedServerSocksProxy, socksAgent)
+            }
             return socksAgent
         }
         return httpsAgent
     }
+}
 
-    agent.current = customAgent
+export function setCustomAgent(configuration: Configuration): ({ protocol }: Pick<URL, 'protocol'>) => http.Agent {
+    agent.current = getCustomAgent(configuration)
+    return agent.current as ({ protocol }: Pick<URL, 'protocol'>) => http.Agent
+}
+
+export function initializeNetworkAgent(): void {
+    const customAgent = setCustomAgent(getConfiguration())
 
     /**
      * This works around an issue in the default VS Code proxy agent code. When `http.proxySupport`
