@@ -61,7 +61,7 @@ export function truncateParsedCompletion(context: CompletionContext): string {
         const overlap = findLargestSuffixPrefixOverlap(node.text, completion.insertText)
 
         if (overlap) {
-            return overlap.text
+            return overlap
         }
     }
 
@@ -87,8 +87,5 @@ function findLargestSuffixPrefixOverlap(left: string, right: string) {
         return null
     }
 
-    return {
-        text: overlap,
-        index: left.length - overlap.length,
-    }
+    return overlap
 }
