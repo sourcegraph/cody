@@ -24,6 +24,7 @@ export interface PreciseContext {
     symbol: {
         fuzzyName?: string
     }
+    hoverText: string[]
     definitionSnippet: string
     filePath: string
     range?: {

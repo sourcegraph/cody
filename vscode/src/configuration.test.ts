@@ -38,6 +38,7 @@ describe('getConfiguration', () => {
             autocompleteAdvancedEmbeddings: true,
             autocompleteExperimentalCompleteSuggestWidgetSelection: false,
             autocompleteExperimentalSyntacticPostProcessing: false,
+            autocompleteExperimentalGraphContext: false,
         })
     })
 
@@ -100,6 +101,8 @@ describe('getConfiguration', () => {
                         return false
                     case 'cody.autocomplete.experimental.syntacticPostProcessing':
                         return false
+                    case 'cody.autocomplete.experimental.graphContext':
+                        return true
                     case 'cody.advanced.agent.running':
                         return false
                     default:
@@ -138,6 +141,7 @@ describe('getConfiguration', () => {
             autocompleteAdvancedEmbeddings: false,
             autocompleteExperimentalCompleteSuggestWidgetSelection: false,
             autocompleteExperimentalSyntacticPostProcessing: false,
+            autocompleteExperimentalGraphContext: true,
         })
     })
 })
