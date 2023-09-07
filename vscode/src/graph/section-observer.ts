@@ -4,6 +4,7 @@ import { LRUCache } from 'lru-cache'
 import * as vscode from 'vscode'
 
 import { PreciseContext } from '@sourcegraph/cody-shared/src/codebase-context/messages'
+import { isDefined } from '@sourcegraph/cody-shared/src/common'
 
 import { GraphContextFetcher } from '../completions/context/context'
 import { SymbolContextSnippet } from '../completions/types'
@@ -67,7 +68,7 @@ export class SectionObserver implements vscode.Disposable, GraphContextFetcher {
     public getContextAtPosition(document: vscode.TextDocument, position: vscode.Position): SymbolContextSnippet[] {
         const section = this.getSectionAtPosition(document, position)
         if (section?.context?.context) {
-            return section.context.context.map(preciseContextToSnippet)
+            return section.context.context.map(preciseContextToSnippet).filter(isDefined)
         }
         return []
     }
