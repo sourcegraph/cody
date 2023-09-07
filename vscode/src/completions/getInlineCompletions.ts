@@ -253,7 +253,6 @@ async function doGetInlineCompletions(params: InlineCompletionsParams): Promise<
         document,
         docContext,
         position,
-        multiline, // TODO: drop in favor of docContext.
         context,
     }
 
