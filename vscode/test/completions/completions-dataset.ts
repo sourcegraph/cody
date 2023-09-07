@@ -366,11 +366,9 @@ export const completionsDataset: Sample[] = [
             # GITHUB_APP_ID
             # GITHUB_PRIVATE_KEY
 
-
             @pytest.fixture
             def api_client() -> GitHubAPIWrapper:
                 return GitHubAPIWrapper()
-
 
             def test_get_open_issues(api_client: GitHubAPIWrapper) -> None:
                 ${CURSOR}
@@ -417,7 +415,6 @@ export const completionsDataset: Sample[] = [
                     from playwright.sync_api import Browser as SyncBrowser
                 except ImportError:
                     pass
-
 
             class PlayWrightBrowserToolkit(BaseToolkit):
                 """Toolkit for PlayWright browser tools."""
