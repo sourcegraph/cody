@@ -31,6 +31,14 @@ const pubSubClient = new PubSub({
     projectId: 'sourcegraph-telligent-testing',
 })
 
+const publishOptions = {
+    gaxOpts: {
+        timeout: 100000,
+    },
+}
+
+const topicPublisher = pubSubClient.topic('projects/sourcegraph-telligent-testing/topics/e2e-testing', publishOptions)
+
 // Runs a stub Cody service for testing.
 export async function run<T>(around: () => Promise<T>): Promise<T> {
     const app = express()
@@ -107,16 +115,6 @@ export async function logTestingData(data: string): Promise<void> {
 
     // Publishes the message as a string
     const dataBuffer = Buffer.from(JSON.stringify(message))
-    const publishOptions = {
-        gaxOpts: {
-            timeout: 100000,
-        },
-    }
-
-    const topicPublisher = pubSubClient.topic(
-        'projects/sourcegraph-telligent-testing/topics/e2e-testing',
-        publishOptions
-    )
 
     try {
         await topicPublisher.publishMessage({ data: dataBuffer })
