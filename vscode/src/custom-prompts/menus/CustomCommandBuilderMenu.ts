@@ -144,23 +144,23 @@ export class CustomCommandsBuilderMenu {
                     detail: 'Stored on your machine, usable across all your workspaces',
                     type: 'user',
                     description: '~/.vscode/cody.json',
-                    picked: true
+                    picked: true,
                 },
                 {
                     label: 'Workspace Settings',
                     detail: 'Project-specific, shared with anyone using this workspace/repo',
                     type: 'workspace',
                     description: '.vscode/cody.json',
-                }
+                },
             ],
             {
                 title: 'New Custom Cody Command: Save to…',
-                ignoreFocusOut: true
+                ignoreFocusOut: true,
             }
         )
-    
+
         return option?.type as CodyPromptType
-    }    
+    }
 }
 
 async function showPromptCreationInputBox(): Promise<string | void> {
