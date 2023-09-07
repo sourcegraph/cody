@@ -63,8 +63,6 @@ export function truncateParsedCompletion(context: CompletionContext): string {
         if (overlap) {
             return overlap.text
         }
-
-        return completion.insertText
     }
 
     return completion.insertText
