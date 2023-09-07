@@ -141,7 +141,7 @@ async function doGetInlineCompletions(params: InlineCompletionsParams): Promise<
         position,
         context,
         docContext,
-        docContext: { multiline, currentLineSuffix },
+        docContext: { multilineTrigger, currentLineSuffix },
         promptChars,
         providerConfig,
         responsePercentage,
@@ -194,6 +194,7 @@ async function doGetInlineCompletions(params: InlineCompletionsParams): Promise<
     // has passed to ensure we don't log too many start events where we end up not doing any work at
     // all.
     CompletionLogger.clear()
+    const multiline = Boolean(multilineTrigger)
     const logId = CompletionLogger.create({
         multiline,
         providerIdentifier: providerConfig.identifier,
@@ -313,7 +314,7 @@ function getCompletionProviders(params: GetCompletionProvidersParams): Provider[
         prefixPercentage,
         suffixPercentage,
     }
-    if (docContext.multiline) {
+    if (docContext.multilineTrigger) {
         return [
             providerConfig.create({
                 id: 'multiline',

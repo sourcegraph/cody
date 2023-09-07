@@ -16,7 +16,6 @@ describe('getCurrentDocContext', () => {
             currentLineSuffix: '',
             prevNonEmptyLine: 'function myFunction() {',
             nextNonEmptyLine: '',
-            multiline: true,
             multilineTrigger: '{',
         })
     })
@@ -33,7 +32,6 @@ describe('getCurrentDocContext', () => {
             currentLineSuffix: '',
             prevNonEmptyLine: 'if (true) {',
             nextNonEmptyLine: '}',
-            multiline: true,
             multilineTrigger: '{',
         })
     })
@@ -50,7 +48,6 @@ describe('getCurrentDocContext', () => {
             currentLineSuffix: '',
             prevNonEmptyLine: '',
             nextNonEmptyLine: '];',
-            multiline: true,
             multilineTrigger: '[',
         })
     })

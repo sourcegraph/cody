@@ -62,7 +62,7 @@ export function parseCompletion(context: CompletionContext): ParsedCompletion {
         },
     }
 
-    if (docContext.multiline) {
+    if (docContext.multilineTrigger) {
         const triggerPosition = document.positionAt(docContext.prefix.lastIndexOf(docContext.multilineTrigger))
 
         points.trigger = {
