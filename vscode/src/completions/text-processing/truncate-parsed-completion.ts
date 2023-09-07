@@ -59,7 +59,6 @@ export function truncateParsedCompletion(context: CompletionContext): string {
     if (blockCaptures.length > 0) {
         const [{ node }] = blockCaptures
         const overlap = findLargestSuffixPrefixOverlap(node.text, completion.insertText)
-        console.log({ test: node.text, overlap })
 
         if (overlap) {
             return overlap.text
