@@ -41,3 +41,31 @@ export function forkSignal(signal: AbortSignal): AbortController {
     signal.addEventListener('abort', () => controller.abort())
     return controller
 }
+
+/**
+ * Creates a simple subscriber that can be used to register callbacks
+ */
+type Callback<T> = (value: T) => void
+interface Subscriber<T> {
+    subscribe(callback: Callback<T>): () => void
+    notify(value: T): void
+}
+export function createSubscriber<T>(): Subscriber<T> {
+    const callbacks: Set<Callback<T>> = new Set()
+    function subscribe(callback: Callback<T>): () => void {
+        callbacks.add(callback)
+        return () => callbacks.delete(callback)
+    }
+
+    function notify(value: T): void {
+        for (const callback of callbacks) {
+            // eslint-disable-next-line callback-return
+            callback(value)
+        }
+    }
+
+    return {
+        subscribe,
+        notify,
+    }
+}

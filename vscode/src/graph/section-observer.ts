@@ -8,6 +8,7 @@ import { isDefined } from '@sourcegraph/cody-shared/src/common'
 
 import { GraphContextFetcher } from '../completions/context/context'
 import { SymbolContextSnippet } from '../completions/types'
+import { createSubscriber } from '../completions/utils'
 import { logDebug } from '../log'
 
 import { getGraphContextFromRange as defaultGetGraphContextFromRange, locationKeyFn } from './graph'
@@ -35,6 +36,11 @@ const NUM_OF_CHANGED_LINES_FOR_SECTION_RELOAD = 3
 
 const MAX_TRACKED_DOCUMENTS = 10
 
+const debugSubscriber = createSubscriber<void>()
+export const registerDebugListener = debugSubscriber.subscribe.bind(debugSubscriber)
+
+export let singleton: SectionObserver | null = null
+
 /**
  * Watches a document for changes and refreshes the sections if needed. Preloads the sections that
  * the document is being modified by intersecting the cursor position with the document sections.
@@ -59,6 +65,12 @@ export class SectionObserver implements vscode.Disposable, GraphContextFetcher {
         private getDocumentSections: typeof defaultGetDocumentSections = defaultGetDocumentSections,
         private getGraphContextFromRange: typeof defaultGetGraphContextFromRange = defaultGetGraphContextFromRange
     ) {
+        if (singleton) {
+            throw new Error('SectionObserver already initialized')
+        }
+        // eslint-disable-next-line @typescript-eslint/no-this-alias, unicorn/no-this-assignment
+        singleton = this
+
         this.disposables.push(window.onDidChangeVisibleTextEditors(this.onDidChangeVisibleTextEditors.bind(this)))
         this.disposables.push(workspace.onDidChangeTextDocument(this.onDidChangeTextDocument.bind(this)))
         this.disposables.push(window.onDidChangeTextEditorSelection(this.onDidChangeTextEditorSelection.bind(this)))
@@ -99,11 +111,15 @@ export class SectionObserver implements vscode.Disposable, GraphContextFetcher {
             section.context.isStale = false
         }
 
+        debugSubscriber.notify()
+
         const start = performance.now()
         const context = await this.getGraphContextFromRange(editor, section.location.range)
 
         logHydratedContext(context, editor, section, start)
         section.context.context = context
+
+        debugSubscriber.notify()
     }
 
     private getSectionAtPosition(document: vscode.TextDocument, position: vscode.Position): Section | undefined {
@@ -119,7 +135,7 @@ export class SectionObserver implements vscode.Disposable, GraphContextFetcher {
         const lines: string[] = []
         // eslint-disable-next-line ban/ban
         this.activeDocuments.forEach(document => {
-            lines.push(document.uri)
+            lines.push(path.normalize(vscode.workspace.asRelativePath(document.uri)))
             for (const section of document.sections) {
                 const isSelected =
                     selectedDocument?.uri.toString() === document.uri &&
@@ -201,6 +217,8 @@ export class SectionObserver implements vscode.Disposable, GraphContextFetcher {
                 existingDocument.sections.push(newSection)
             }
         }
+
+        debugSubscriber.notify()
     }
 
     /**
@@ -287,9 +305,11 @@ export class SectionObserver implements vscode.Disposable, GraphContextFetcher {
     }
 
     public dispose(): void {
+        singleton = null
         for (const disposable of this.disposables) {
             disposable.dispose()
         }
+        debugSubscriber.notify()
     }
 }
 

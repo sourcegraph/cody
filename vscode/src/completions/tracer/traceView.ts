@@ -3,6 +3,7 @@ import * as vscode from 'vscode'
 import { isDefined } from '@sourcegraph/cody-shared'
 import { renderMarkdown } from '@sourcegraph/cody-shared/src/common/markdown'
 
+import * as sectionObserver from '../../graph/section-observer'
 import { InlineCompletionsResultSource } from '../getInlineCompletions'
 import * as statistics from '../statistics'
 import { InlineCompletionItem } from '../types'
@@ -55,7 +56,8 @@ export function registerAutocompleteTraceView(provider: InlineCompletionItemProv
             }
             rerender()
 
-            const unsubscribeStatistics = statistics.registerChangeListener(() => rerender())
+            const unsubscribeStatistics = statistics.registerChangeListener(rerender)
+            const unsubscribeSectionObserver = sectionObserver.registerDebugListener(rerender)
 
             provider.setTracer(_data => {
                 data = _data
@@ -63,7 +65,10 @@ export function registerAutocompleteTraceView(provider: InlineCompletionItemProv
             })
 
             return {
-                dispose: () => unsubscribeStatistics(),
+                dispose: () => {
+                    unsubscribeStatistics()
+                    unsubscribeSectionObserver()
+                },
             }
         }),
         {
@@ -124,8 +129,14 @@ ${
     data.context === null || data.context.context.length === 0
         ? 'No context.'
         : data.context.context
-              .map(({ content, fileName }) =>
-                  codeDetailsWithSummary(`${fileName} (${content.length} chars)`, content, 'start')
+              .map(contextSnippet =>
+                  codeDetailsWithSummary(
+                      `${contextSnippet.fileName}${'symbol' in contextSnippet ? `#${contextSnippet.symbol}` : ''} (${
+                          contextSnippet.content.length
+                      } chars)`,
+                      contextSnippet.content,
+                      'start'
+                  )
               )
               .join('\n\n')
 }
@@ -170,6 +181,13 @@ ${
 
 ${markdownCodeBlock(data.error)}
 `,
+        sectionObserver.singleton
+            ? `
+## Document sections
+
+${documentSections()}`
+            : '',
+
         `
 ## Advanced tools
 
@@ -190,6 +208,13 @@ function statisticSummary(): string {
     return `📈 Suggested: ${suggested} | Accepted: ${accepted} | Acceptance rate: ${
         suggested === 0 || accepted === 0 ? 'N/A' : `${((accepted / suggested) * 100).toFixed(2)}%`
     }`
+}
+
+function documentSections(): string {
+    if (!sectionObserver.singleton) {
+        return ''
+    }
+    return `\`\`\`\n${sectionObserver.singleton.debugPrint()}\n\`\`\``
 }
 
 function codeDetailsWithSummary(
