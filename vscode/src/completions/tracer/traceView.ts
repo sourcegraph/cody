@@ -261,8 +261,8 @@ ${
 }
 
 function rangeDescription(range: vscode.Range): string {
-    //  The VS Code extension API uses 0-indexed lines and columns, but the UI (and humans) use
-    //  1-indexed lines and columns. Show the latter.
+    // The VS Code extension API uses 0-indexed lines and columns, but the UI (and humans) use
+    // 1-indexed lines and columns. Show the latter.
     return `${range.start.line + 1}:${range.start.character + 1}${
         range.isEmpty
             ? ''
