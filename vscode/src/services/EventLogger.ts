@@ -25,15 +25,16 @@ export async function createOrUpdateEventLogger(
     config: ConfigurationWithAccessToken,
     isExtensionModeDevOrTest: boolean
 ): Promise<void> {
-    if (config.telemetryLevel === 'off' || isExtensionModeDevOrTest) {
+    const serverEndpoint = localStorage?.getEndpoint() || config.serverEndpoint
+
+    // if the serverEndpoint is localhost:49300, that's our test server and we want to log that to our testing environment
+    if (config.telemetryLevel === 'off' || (isExtensionModeDevOrTest && serverEndpoint !== 'http://localhost:49300/')) {
         eventLogger = null
         return
     }
 
     const { anonymousUserID, created } = await localStorage.anonymousUserID()
     globalAnonymousUserID = anonymousUserID
-
-    const serverEndpoint = localStorage?.getEndpoint() || config.serverEndpoint
 
     if (!eventLogger) {
         eventLogger = new EventLogger(serverEndpoint, extensionDetails, config)
