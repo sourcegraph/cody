@@ -885,7 +885,8 @@
             "wizardcoder-15b",
             "llama-code-7b",
             "llama-code-13b",
-            "llama-code-13b-instruct"
+            "llama-code-13b-instruct",
+            "claude-instant-infill"
           ],
           "markdownDescription": "Overwrite the default model used for code autocompletion inference. This is only supported with the `unstable-fireworks` provider"
         },
