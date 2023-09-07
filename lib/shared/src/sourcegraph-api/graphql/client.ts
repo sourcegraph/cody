@@ -345,7 +345,7 @@ export class SourcegraphGraphQLAPIClient {
     }
 
     public async logEvent(event: event): Promise<LogEventResponse | Error> {
-        if (process.env.CODY_TESTING === 'true' && this.config.serverEndpoint === 'http://localhost:49300/') {
+        if (process.env.CODY_TESTING === 'true') {
             return this.sendEventLogRequestToTestingAPI(event)
         }
         if (this.config?.telemetryLevel === 'off') {
