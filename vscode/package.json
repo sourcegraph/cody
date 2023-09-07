@@ -811,6 +811,14 @@
           "default": false,
           "markdownDescription": "Experimental feature for internal use."
         },
+        "cody.custom.starter": {
+          "order": 10,
+          "type": "string",
+          "markdownDescription": "A custom message added to the start of every chat request to Cody. Extension reload required.",
+          "examples": [
+            "Answer me in Spanish."
+          ]
+        },
         "cody.experimental.symf.path": {
           "order": 99,
           "type": "string",
