@@ -22,7 +22,6 @@ interface InlineCompletionItemProviderArgs {
     contextProvider: ContextProvider
     featureFlagProvider: FeatureFlagProvider
     authProvider: AuthProvider
-    openSidebar: () => void
 }
 
 export async function createInlineCompletionItemProvider({
@@ -32,19 +31,12 @@ export async function createInlineCompletionItemProvider({
     contextProvider,
     featureFlagProvider,
     authProvider,
-    openSidebar,
 }: InlineCompletionItemProviderArgs): Promise<vscode.Disposable> {
     if (!authProvider.getAuthStatus().isLoggedIn) {
         logDebug('CodyCompletionProvider:notSignedIn', 'You are not signed in.')
-        const removeError = statusBar.addError({
-            title: 'Sign In To Use Cody',
-            description: 'You need to sign in to use Cody. Get started for free!',
-            onSelect: () => {
-                openSidebar?.()
-            },
-        })
+
         return {
-            dispose: () => removeError(),
+            dispose: () => {},
         }
     }
 

@@ -386,6 +386,28 @@ const register = async (
         })
     )
 
+    /**
+     * Signed out status bar indicator
+     */
+    let removeAuthStatusBarError: undefined | (() => void)
+    function updateAuthStatusBarIndicator(): void {
+        if (removeAuthStatusBarError) {
+            removeAuthStatusBarError()
+            removeAuthStatusBarError = undefined
+        }
+        if (!authProvider.getAuthStatus().isLoggedIn) {
+            removeAuthStatusBarError = statusBar.addError({
+                title: 'Sign In To Use Cody',
+                description: 'You need to sign in to use Cody.',
+                onSelect: () => {
+                    void sidebarChatProvider.setWebviewView('chat')
+                },
+            })
+        }
+    }
+    authProvider.addChangeListener(() => updateAuthStatusBarIndicator())
+    updateAuthStatusBarIndicator()
+
     let completionsProvider: vscode.Disposable | null = null
     disposables.push({ dispose: () => completionsProvider?.dispose() })
     const setupAutocomplete = async (): Promise<void> => {
@@ -416,7 +438,6 @@ const register = async (
             contextProvider,
             featureFlagProvider,
             authProvider,
-            openSidebar: () => sidebarChatProvider.setWebviewView('chat'),
         })
     }
     // Reload autocomplete if either the configuration changes or the auth status is updated
@@ -430,7 +451,7 @@ const register = async (
     })
     await setupAutocomplete()
 
-    // Initiate inline chat  when feature flag is on
+    // Initiate inline chat when feature flag is on
     if (!initialConfig.inlineChat) {
         commentController.dispose()
     }
@@ -443,8 +464,8 @@ const register = async (
             })
         )
     }
-    // Register task view wh en feature flag is on
-    // TODO(umpox): We shoul d move the task view to a quick pick before enabling it everywhere.
+    // Register task view when feature flag is on
+    // TODO(umpox): We should move the task view to a quick pick before enabling it everywhere.
     // It is too obstructive when it is in the same window as the sidebar chat.
     if (initialConfig.experimentalNonStop || process.env.CODY_TESTING === 'true') {
         fixup.registerTreeView()
