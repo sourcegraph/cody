@@ -1,11 +1,15 @@
 import dedent from 'dedent'
-import { describe, expect, test } from 'vitest'
+import { beforeAll, describe, expect, it, test } from 'vitest'
 
-import { completion } from '../test-helpers'
+import { completion, initTreeSitterParser } from '../test-helpers'
 
 import { getInlineCompletionsInsertText, params, T } from './helpers'
 
 describe('[getInlineCompletions] multiline truncation', () => {
+    beforeAll(async () => {
+        await initTreeSitterParser()
+    })
+
     test('removes trailing spaces', async () => {
         expect(
             (
@@ -431,5 +435,29 @@ describe('[getInlineCompletions] multiline truncation', () => {
                 )
             )[0]
         ).toBe("console.log('foo')")
+    })
+
+    it('truncates multiline completions with inconsistent indentation', async () => {
+        expect(
+            (
+                await getInlineCompletionsInsertText(
+                    params(
+                        dedent`
+                    function test() {
+                        █
+                `,
+                        [
+                            completion`
+                        console.log('foo')
+                    console.log('oops')
+                    `,
+                        ]
+                    )
+                )
+            )[0]
+        ).toBe(dedent`
+            console.log('foo')
+            console.log('oops')
+        `)
     })
 })

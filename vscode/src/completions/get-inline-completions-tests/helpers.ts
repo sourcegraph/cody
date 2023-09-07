@@ -12,6 +12,9 @@ import { getInlineCompletions as _getInlineCompletions, InlineCompletionsParams 
 import { createProviderConfig } from '../providers/anthropic'
 import { RequestManager } from '../request-manager'
 import { documentAndPosition } from '../test-helpers'
+import { SupportedLanguage } from '../tree-sitter/grammars'
+import { updateParseTreeCache } from '../tree-sitter/parse-tree-cache'
+import { getParser } from '../tree-sitter/parser'
 
 // The dedent package seems to replace `\t` with `\\t` so in order to insert a tab character, we
 // have to use interpolation. We abbreviate this to `T` because ${T} is exactly 4 characters,
@@ -62,6 +65,11 @@ export function params(
 
     const { document, position } = documentAndPosition(code, languageId, URI_FIXTURE.toString())
 
+    const parser = getParser(document.languageId as SupportedLanguage)
+    if (parser) {
+        updateParseTreeCache(document, parser)
+    }
+
     const docContext = getCurrentDocContext({
         document,
         position,
@@ -104,6 +112,16 @@ export async function getInlineCompletions(
         return rest
     }
     return result
+}
+
+/**
+ * Wraps the `getInlineCompletions` function to omit `logId` so that test expected values can omit
+ * it and be stable.
+ */
+export async function getInlineCompletionsWithParams(
+    ...args: Parameters<typeof params>
+): ReturnType<typeof getInlineCompletions> {
+    return getInlineCompletions(params(...args))
 }
 
 /** Test helper for when you just want to assert the completion strings. */
