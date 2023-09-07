@@ -21,7 +21,7 @@ export async function createInlineCompletionItemProvider(
 ): Promise<vscode.Disposable> {
     const disposables: vscode.Disposable[] = []
 
-    const providerConfig = await createProviderConfig(config, client)
+    const providerConfig = await createProviderConfig(config, client, featureFlagProvider)
     if (providerConfig) {
         const history = new VSCodeDocumentHistory()
         const completionsProvider = new InlineCompletionItemProvider({
