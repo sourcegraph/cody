@@ -33,7 +33,7 @@ const pubSubClient = new PubSub({
 
 const publishOptions = {
     gaxOpts: {
-        timeout: 100000,
+        timeout: 120000,
     },
 }
 
