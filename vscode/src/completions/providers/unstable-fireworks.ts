@@ -100,7 +100,9 @@ export class UnstableFireworksProvider extends Provider {
             // To speed up sample generation in single-line case, we request a lower token limit
             // since we can't terminate on the first `\n`.
             maxTokensToSample: this.options.multiline ? 256 : 30,
-            ...getModelConfig(this.model),
+            temperature: 0.2,
+            topP: 0.95,
+            topK: 0,
             model: MODEL_MAP[this.model],
         }
 
@@ -233,20 +235,4 @@ function getSuffixAfterFirstNewline(suffix: string): string {
     }
 
     return suffix.slice(suffix.indexOf('\n'))
-}
-
-function getModelConfig(model: string): { temperature: number; topP: number; topK: number } {
-    if (model.startsWith('llama-code')) {
-        return {
-            temperature: 0.2,
-            topP: 0.95,
-            topK: 0,
-        }
-    }
-
-    return {
-        temperature: 0.2,
-        topP: 0.95,
-        topK: 0,
-    }
 }
