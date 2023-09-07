@@ -10,6 +10,14 @@ Starting from `0.2.0`, Cody is using `major.EVEN_NUMBER.patch` for release versi
 
 ### Fixed
 
+### Changed
+
+## [0.10.1]
+
+### Added
+
+### Fixed
+
 - Fix feature flag initialization for autocomplete providers. [pull/965](https://github.com/sourcegraph/cody/pull/965)
 
 ### Changed
