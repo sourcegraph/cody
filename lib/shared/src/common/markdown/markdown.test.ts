@@ -1,6 +1,12 @@
 import { describe, expect, it, test } from 'vitest'
 
-import { escapeMarkdown, extractHtmlTagName, isValidHTMLTag, registerHighlightContributions, renderMarkdown } from '.'
+import {
+    escapeMarkdown,
+    extractHtmlTagName,
+    registerHighlightContributions,
+    renderMarkdown,
+    shouldEscapeTagWithElementName,
+} from '.'
 
 // TODO(sqs): copied from sourcegraph/sourcegraph. should dedupe.
 
@@ -181,18 +187,18 @@ describe('extractHTMLTagName', () => {
     })
 })
 
-describe('isValidHTMLTag', () => {
-    it('treats svg tags as valid HTML', () => {
-        expect(isValidHTMLTag('svg')).toBe(true)
+describe('shouldEscapeTagWithElementName', () => {
+    it('treats svg as valid', () => {
+        expect(shouldEscapeTagWithElementName('svg')).toBe(false)
     })
 
     it('is not case sensitive', () => {
-        expect(isValidHTMLTag('li')).toBe(true)
-        expect(isValidHTMLTag('LI')).toBe(true)
-        expect(isValidHTMLTag('Li')).toBe(true)
+        expect(shouldEscapeTagWithElementName('li')).toBe(false)
+        expect(shouldEscapeTagWithElementName('LI')).toBe(false)
+        expect(shouldEscapeTagWithElementName('Li')).toBe(false)
     })
 
-    it('treats custom tags as invalid HTML', () => {
-        expect(isValidHTMLTag('myTag')).toBe(false)
+    it('treats custom element names as invalid', () => {
+        expect(shouldEscapeTagWithElementName('myTag')).toBe(true)
     })
 })

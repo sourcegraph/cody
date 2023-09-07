@@ -14,10 +14,10 @@ const escapeHTML = (html: string): string => {
 }
 
 /**
- * All HTML tags in the list are treated as valid HTML that doesn't need to be escaped in markedjs.
- * Unsafe tags like script are valid in here as they should only be removed by DOMPurify
+ * All HTML element names in the list are treated as valid HTML that doesn't need to be escaped in markedjs.
+ * Unsafe elements like script are valid in here as they should only be removed by DOMPurify
  */
-const HTML_TAGS_NO_ESCAPE: Set<string> = new Set([
+const HTML_ELEMENT_NAMES_NO_ESCAPE: Set<string> = new Set([
     'a',
     'abbr',
     'acronym',
@@ -132,14 +132,15 @@ const HTML_TAGS_NO_ESCAPE: Set<string> = new Set([
 ])
 
 /**
- * Checks if a given HTML tag is a valid, non-custom HTML tag
+ * Determines whether the provided HTML element name should be escaped or not.
  *
- * @example isValidHTMLTag('a') and isValidHTMLTag('svg') will return true
- * @example isValidHTMLTag('myTag') will return false
- * @param tag A HTML tag (e.g. img, svg, my-custom-tag)
- * @returns If the given tag is a valid HTML tag
+ * @example shouldEscapeTagWithElementName('a') and shouldEscapeTagWithElementName('svg') will return false
+ * @example shouldEscapeTagWithElementName('myTag') will return true
+ * @param elementName A HTML element name (e.g. img, svg, my-custom-tag)
+ * @returns If the given element name should be escaped
  */
-export const isValidHTMLTag = (tag: string): boolean => HTML_TAGS_NO_ESCAPE.has(tag.toLowerCase())
+export const shouldEscapeTagWithElementName = (elementName: string): boolean =>
+    !HTML_ELEMENT_NAMES_NO_ESCAPE.has(elementName.toLowerCase())
 
 /**
  * Extracts the name of the HTML tag of a given HTML token
@@ -221,11 +222,11 @@ export const renderMarkdown = (
         }
 
         const tagName = extractHtmlTagName(token.text)
-        if (isValidHTMLTag(tagName)) {
+        if (!shouldEscapeTagWithElementName(tagName)) {
             return
         }
 
-        // all custom HTML tags should be escaped as they are probably part of a text block or a regex.
+        // all custom HTML element names should be escaped as they are probably part of a text block or a regex.
         // Otherwise they would be removed by the sanitizer
         token.text = token.text.replaceAll('<', '&lt;').replaceAll('>', '&gt;')
     }
