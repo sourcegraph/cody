@@ -15,7 +15,6 @@ export const MULTILINE_TRUNCATION_SUPPORTED_LANGUAGES: Set<string> = new Set([
     SupportedLanguage.TypeScript,
 ])
 
-// TODO: add multi-lang support.
 // Supports Javascript and Typescript only.
 const BLOCKS_QUERY = `
     [(class_declaration)
@@ -39,7 +38,7 @@ const BLOCKS_QUERY = `
  * Uses `tree-sitter` to query specific code blocks for contextual truncation.
  * Returns the original `insertText` if no truncation is needed or if syntactic post-processing isn't enabled.
  *
- * TODO(valery): Extend to support multiple languages.
+ * TODO(tree-sitter): Extend to support multiple languages.
  */
 export function truncateParsedCompletion(context: CompletionContext): string {
     const { completion, document } = context

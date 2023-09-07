@@ -21,9 +21,6 @@ export interface RequestParams {
 
     /** The cursor position in the source file where the completion request was triggered. **/
     position: vscode.Position
-
-    /** Wether the completion request is multiline or not. **/
-    multiline: boolean
 }
 
 export interface RequestManagerResult {
