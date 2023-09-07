@@ -71,12 +71,12 @@ export function truncateParsedCompletion(context: CompletionContext): string {
 /**
  * Finds the maximum suffix-prefix overlap between two strings.
  */
-function findLargestSuffixPrefixOverlap(left: string, right: string) {
+function findLargestSuffixPrefixOverlap(left: string, right: string): string | null {
     let overlap = ''
 
     for (let i = 1; i <= Math.min(left.length, right.length); i++) {
-        const suffix = left.substring(left.length - i)
-        const prefix = right.substring(0, i)
+        const suffix = left.slice(left.length - i)
+        const prefix = right.slice(0, i)
 
         if (suffix === prefix) {
             overlap = suffix
