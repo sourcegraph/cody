@@ -102,7 +102,6 @@ export async function logTestingData(data: string): Promise<void> {
     const message = {
         event: data,
         timestamp: new Date().getTime(),
-        // aditya todo: pass in the E2E test name
         test_name: currentTestName,
         test_id: currentTestID,
         UID: uuid.v4(),
