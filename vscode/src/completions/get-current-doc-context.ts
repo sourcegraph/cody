@@ -18,6 +18,15 @@ export type DocumentContext = {
     multilineTrigger: string | null
 }
 
+interface GetCurrentDocContextParams {
+    document: vscode.TextDocument
+    position: vscode.Position
+    maxPrefixLength: number
+    maxSuffixLength: number
+    enableExtendedTriggers: boolean
+    context?: vscode.InlineCompletionContext
+}
+
 /**
  * Get the current document context based on the cursor position in the current document.
  *
@@ -34,14 +43,8 @@ export type DocumentContext = {
  *
  * @returns An object containing the current document context or null if there are no lines in the document.
  */
-export function getCurrentDocContext(
-    document: vscode.TextDocument,
-    position: vscode.Position,
-    maxPrefixLength: number,
-    maxSuffixLength: number,
-    enableExtendedTriggers: boolean,
-    context?: vscode.InlineCompletionContext
-): DocumentContext {
+export function getCurrentDocContext(params: GetCurrentDocContextParams): DocumentContext {
+    const { document, position, maxPrefixLength, maxSuffixLength, enableExtendedTriggers, context } = params
     const offset = document.offsetAt(position)
 
     // TODO(philipp-spiess): This requires us to read the whole document. Can we limit our ranges

@@ -59,7 +59,14 @@ describe('parseCompletion', () => {
 
     function testParseInfoProcessor(code: string, completioSnippets: string[]) {
         const { document, position } = documentAndPosition(code)
-        const docContext = getCurrentDocContext(document, position, Infinity, Infinity, true)
+        const docContext = getCurrentDocContext({
+            document,
+            position,
+            maxPrefixLength: Infinity,
+            maxSuffixLength: Infinity,
+            enableExtendedTriggers: true,
+        })
+
         updateParseTreeCache(document, parser)
 
         return completioSnippets.map(insertText =>

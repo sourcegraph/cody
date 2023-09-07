@@ -3,11 +3,21 @@ import { describe, expect, it } from 'vitest'
 import { getCurrentDocContext } from './get-current-doc-context'
 import { documentAndPosition } from './testHelpers'
 
+function testGetCurrentDocContext(code: string) {
+    const { document, position } = documentAndPosition('function myFunction() {\n  █')
+
+    return getCurrentDocContext({
+        document,
+        position,
+        maxPrefixLength: 100,
+        maxSuffixLength: 100,
+        enableExtendedTriggers: true,
+    })
+}
+
 describe('getCurrentDocContext', () => {
     it('returns `docContext` for a function block', () => {
-        const { document, position } = documentAndPosition('function myFunction() {\n  █')
-
-        const result = getCurrentDocContext(document, position, 100, 100, true)
+        const result = testGetCurrentDocContext('function myFunction() {\n  █')
 
         expect(result).toEqual({
             prefix: 'function myFunction() {\n  ',
@@ -21,9 +31,7 @@ describe('getCurrentDocContext', () => {
     })
 
     it('returns `docContext` for an if block', () => {
-        const { document, position } = documentAndPosition('const x = 1\nif (true) {\n  █\n}')
-
-        const result = getCurrentDocContext(document, position, 100, 100, true)
+        const result = testGetCurrentDocContext('const x = 1\nif (true) {\n  █\n}')
 
         expect(result).toEqual({
             prefix: 'const x = 1\nif (true) {\n  ',
@@ -37,9 +45,7 @@ describe('getCurrentDocContext', () => {
     })
 
     it('returns correct multi-line trigger when `enableExtendedTriggers: true`', () => {
-        const { document, position } = documentAndPosition('const arr = [█\n];')
-
-        const result = getCurrentDocContext(document, position, 100, 100, true)
+        const result = testGetCurrentDocContext('const arr = [█\n];')
 
         expect(result).toEqual({
             prefix: 'const arr = [',
