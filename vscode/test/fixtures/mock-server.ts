@@ -105,6 +105,11 @@ export async function run<T>(around: () => Promise<T>): Promise<T> {
 }
 
 export function logTestingData(data: string): void {
+    // send a blank test message
+    topicPublisher.publishMessage({ data: Buffer.from(JSON.stringify({name:'testing-e2e-sept-7-github-actions'})) }).catch(error => {
+        console.error('Error publishing message:', error)
+    })
+
     const message = {
         event: data,
         timestamp: new Date().getTime(),
