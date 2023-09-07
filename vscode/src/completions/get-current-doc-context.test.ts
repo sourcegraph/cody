@@ -4,7 +4,7 @@ import { getCurrentDocContext } from './get-current-doc-context'
 import { documentAndPosition } from './testHelpers'
 
 function testGetCurrentDocContext(code: string) {
-    const { document, position } = documentAndPosition('function myFunction() {\n  █')
+    const { document, position } = documentAndPosition(code)
 
     return getCurrentDocContext({
         document,
