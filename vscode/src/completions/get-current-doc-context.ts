@@ -3,7 +3,7 @@ import * as vscode from 'vscode'
 import { detectMultiline } from './detect-multiline'
 import { getNextNonEmptyLine, getPrevNonEmptyLine } from './text-processing'
 
-export type DocumentContext = {
+export interface DocumentContext {
     prefix: string
     suffix: string
 
