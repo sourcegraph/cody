@@ -92,6 +92,8 @@ const configuration: vscode.WorkspaceConfiguration = {
         switch (section) {
             case 'cody.serverEndpoint':
                 return connectionConfig?.serverEndpoint
+            case 'cody.proxy':
+                return connectionConfig?.proxy ?? null
             case 'cody.customHeaders':
                 return connectionConfig?.customHeaders
             case 'cody.telemetry.level':
@@ -106,8 +108,6 @@ const configuration: vscode.WorkspaceConfiguration = {
                 return connectionConfig?.autocompleteAdvancedProvider ?? 'anthropic'
             case 'cody.autocomplete.advanced.serverEndpoint':
                 return connectionConfig?.autocompleteAdvancedServerEndpoint ?? null
-            case 'cody.autocomplete.advanced.serverSocksProxy':
-                return connectionConfig?.autocompleteAdvancedServerSocksProxy ?? null
             case 'cody.autocomplete.advanced.model':
                 return connectionConfig?.autocompleteAdvancedModel ?? null
             case 'cody.autocomplete.advanced.accessToken':

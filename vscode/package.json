@@ -729,6 +729,10 @@
           "markdownDeprecationMessage": "**Deprecated**: Please sign in via the UI instead. If you are already signed in, you can empty this field to remove this warning.",
           "deprecationMessage": "Deprecated: Please sign in via the UI instead."
         },
+        "cody.proxy": {
+          "type": "string",
+          "markdownDeprecationMessage": "The SOCKS proxy endpoint to access server endpoint. This is only supported with `unstable-codegen` provider and only for use with the Cody Agent (for instance with JetBrains plugin). For VS Code please use http.proxy instead."
+        },
         "cody.codebase": {
           "order": 2,
           "type": "string",
@@ -868,10 +872,6 @@
         "cody.autocomplete.advanced.serverEndpoint": {
           "type": "string",
           "markdownDescription": "The server endpoint used for code autocomplete. This is only supported with a provider other than `anthropic`."
-        },
-        "cody.autocomplete.advanced.serverSocksProxy": {
-          "type": "string",
-          "markdownDeprecationMessage": "The SOCKS proxy endpoint to access server endpoint. This is only supported with `unstable-codegen` provider and only for use with the Cody Agent (for instance with JetBrains plugin). For VS Code please use http.proxy instead."
         },
         "cody.autocomplete.advanced.accessToken": {
           "type": "string",

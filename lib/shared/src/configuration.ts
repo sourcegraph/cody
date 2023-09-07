@@ -3,6 +3,7 @@ export type ConfigurationUseContext = 'embeddings' | 'keyword' | 'none' | 'blend
 // Should we share VS Code specific config via cody-shared?
 export interface Configuration {
     serverEndpoint: string
+    proxy?: string | null
     codebase?: string
     debugEnable: boolean
     debugFilter: RegExp | null
@@ -28,7 +29,6 @@ export interface Configuration {
         | 'unstable-openai'
         | null
     autocompleteAdvancedServerEndpoint: string | null
-    autocompleteAdvancedServerSocksProxy: string | null
     autocompleteAdvancedModel: string | null
     autocompleteAdvancedAccessToken: string | null
     autocompleteAdvancedEmbeddings: boolean

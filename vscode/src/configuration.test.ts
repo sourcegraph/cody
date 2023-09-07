@@ -12,6 +12,7 @@ describe('getConfiguration', () => {
         }
         expect(getConfiguration(config)).toEqual({
             serverEndpoint: DOTCOM_URL.href,
+            proxy: null,
             codebase: '',
             customHeaders: {},
             useContext: 'embeddings',
@@ -32,7 +33,6 @@ describe('getConfiguration', () => {
             telemetryLevel: 'all',
             autocompleteAdvancedProvider: null,
             autocompleteAdvancedServerEndpoint: null,
-            autocompleteAdvancedServerSocksProxy: null,
             autocompleteAdvancedModel: null,
             autocompleteAdvancedAccessToken: null,
             autocompleteAdvancedEmbeddings: true,
@@ -48,6 +48,8 @@ describe('getConfiguration', () => {
                 switch (key) {
                     case 'cody.serverEndpoint':
                         return 'http://example.com'
+                    case 'cody.proxy':
+                        return 'socks5://127.0.0.1:9999'
                     case 'cody.codebase':
                         return 'my/codebase'
                     case 'cody.useContext':
@@ -89,8 +91,6 @@ describe('getConfiguration', () => {
                         return 'unstable-codegen'
                     case 'cody.autocomplete.advanced.serverEndpoint':
                         return 'https://example.com/llm'
-                    case 'cody.autocomplete.advanced.serverSocksProxy':
-                        return 'socks5://127.0.0.1:9999'
                     case 'cody.autocomplete.advanced.model':
                         return 'starcoder-32b'
                     case 'cody.autocomplete.advanced.accessToken':
@@ -112,6 +112,7 @@ describe('getConfiguration', () => {
         }
         expect(getConfiguration(config)).toEqual({
             serverEndpoint: 'http://example.com',
+            proxy: 'socks5://127.0.0.1:9999',
             codebase: 'my/codebase',
             useContext: 'keyword',
             customHeaders: {
@@ -135,7 +136,6 @@ describe('getConfiguration', () => {
             telemetryLevel: 'off',
             autocompleteAdvancedProvider: 'unstable-codegen',
             autocompleteAdvancedServerEndpoint: 'https://example.com/llm',
-            autocompleteAdvancedServerSocksProxy: 'socks5://127.0.0.1:9999',
             autocompleteAdvancedModel: 'starcoder-32b',
             autocompleteAdvancedAccessToken: 'foobar',
             autocompleteAdvancedEmbeddings: false,

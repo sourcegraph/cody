@@ -21,18 +21,16 @@ const httpAgent = new http.Agent({ keepAlive: true, keepAliveMsecs: 60000 })
 const httpsAgent = new https.Agent({ keepAlive: true, keepAliveMsecs: 60000 })
 let socksProxyAgent: SocksProxyAgent
 
-function getCustomAgent({
-    autocompleteAdvancedServerSocksProxy,
-}: Configuration): ({ protocol }: Pick<URL, 'protocol'>) => http.Agent {
+function getCustomAgent({ proxy }: Configuration): ({ protocol }: Pick<URL, 'protocol'>) => http.Agent {
     return ({ protocol }) => {
-        if (autocompleteAdvancedServerSocksProxy) {
-            if (!socksProxyAgent) {
-                socksProxyAgent = new SocksProxyAgent(autocompleteAdvancedServerSocksProxy, {
+        if (proxy) {
+            if (proxy.startsWith('socks') && !socksProxyAgent) {
+                socksProxyAgent = new SocksProxyAgent(proxy, {
                     keepAlive: true,
                     keepAliveMsecs: 60000,
                 })
+                return socksProxyAgent
             }
-            return socksProxyAgent
         }
         if (protocol === 'http:') {
             return httpAgent
