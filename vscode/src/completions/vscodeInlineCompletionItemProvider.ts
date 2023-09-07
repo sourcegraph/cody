@@ -8,7 +8,7 @@ import { RateLimitError } from '@sourcegraph/cody-shared/src/sourcegraph-api/err
 import { logDebug } from '../log'
 import { CodyStatusBar } from '../services/StatusBar'
 
-import { getContext, GetContextOptions, GetContextResult } from './context/context'
+import { getContext, GetContextOptions, GetContextResult, GraphContextFetcher } from './context/context'
 import { DocumentHistory } from './context/history'
 import { DocumentContext, getCurrentDocContext } from './get-current-doc-context'
 import {
@@ -33,6 +33,7 @@ export interface CodyCompletionItemProviderConfig {
     prefixPercentage?: number
     suffixPercentage?: number
     isEmbeddingsContextEnabled?: boolean
+    graphContextFetcher?: GraphContextFetcher | null
     completeSuggestWidgetSelection?: boolean
     tracer?: ProvideInlineCompletionItemsTracer | null
     contextFetcher?: (options: GetContextOptions) => Promise<GetContextResult>
@@ -61,6 +62,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
         prefixPercentage = 0.6,
         suffixPercentage = 0.1,
         isEmbeddingsContextEnabled = true,
+        graphContextFetcher = null,
         completeSuggestWidgetSelection = false,
         tracer = null,
         ...config
@@ -71,6 +73,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
             prefixPercentage,
             suffixPercentage,
             isEmbeddingsContextEnabled,
+            graphContextFetcher,
             completeSuggestWidgetSelection,
             tracer,
             contextFetcher: config.contextFetcher ?? getContext,
@@ -120,6 +123,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
         token?: vscode.CancellationToken
     ): Promise<vscode.InlineCompletionList | null> {
         const tracer = this.config.tracer ? createTracerForInvocation(this.config.tracer) : undefined
+        const graphContextFetcher = this.config.graphContextFetcher ?? undefined
 
         let stopLoading: () => void | undefined
         const setIsLoading = (isLoading: boolean): void => {
@@ -170,6 +174,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
                 prefixPercentage: this.config.prefixPercentage,
                 suffixPercentage: this.config.suffixPercentage,
                 isEmbeddingsContextEnabled: this.config.isEmbeddingsContextEnabled,
+                graphContextFetcher,
                 toWorkspaceRelativePath: uri => vscode.workspace.asRelativePath(uri),
                 contextFetcher: this.config.contextFetcher,
                 getCodebaseContext: this.config.getCodebaseContext,
@@ -328,7 +333,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
             return
         }
 
-        // @TODO(philipp-spiess): Bring back this code once we have fewer uncaught errors
+        // TODO(philipp-spiess): Bring back this code once we have fewer uncaught errors
         //
         // c.f. https://sourcegraph.slack.com/archives/C05AGQYD528/p1693471486690459
         //

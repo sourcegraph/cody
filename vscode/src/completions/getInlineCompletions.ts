@@ -6,7 +6,7 @@ import { isAbortError } from '@sourcegraph/cody-shared/src/sourcegraph-api/error
 
 import { logError } from '../log'
 
-import { GetContextOptions, GetContextResult } from './context/context'
+import { GetContextOptions, GetContextResult, GraphContextFetcher } from './context/context'
 import { DocumentHistory } from './context/history'
 import { DocumentContext } from './get-current-doc-context'
 import * as CompletionLogger from './logger'
@@ -31,6 +31,7 @@ export interface InlineCompletionsParams {
     prefixPercentage: number
     suffixPercentage: number
     isEmbeddingsContextEnabled: boolean
+    graphContextFetcher?: GraphContextFetcher
 
     // Platform
     toWorkspaceRelativePath: (uri: URI) => string
@@ -147,6 +148,7 @@ async function doGetInlineCompletions(params: InlineCompletionsParams): Promise<
         prefixPercentage,
         suffixPercentage,
         isEmbeddingsContextEnabled,
+        graphContextFetcher,
         toWorkspaceRelativePath,
         contextFetcher,
         getCodebaseContext,
@@ -216,8 +218,10 @@ async function doGetInlineCompletions(params: InlineCompletionsParams): Promise<
     // Fetch context
     const contextResult = await getCompletionContext({
         document,
+        position,
         promptChars,
         isEmbeddingsContextEnabled,
+        graphContextFetcher,
         contextFetcher,
         getCodebaseContext,
         documentHistory,
@@ -335,8 +339,10 @@ interface GetCompletionContextParams
     extends Pick<
         InlineCompletionsParams,
         | 'document'
+        | 'position'
         | 'promptChars'
         | 'isEmbeddingsContextEnabled'
+        | 'graphContextFetcher'
         | 'contextFetcher'
         | 'getCodebaseContext'
         | 'documentHistory'
@@ -346,8 +352,10 @@ interface GetCompletionContextParams
 
 async function getCompletionContext({
     document,
+    position,
     promptChars,
     isEmbeddingsContextEnabled,
+    graphContextFetcher,
     contextFetcher,
     getCodebaseContext,
     documentHistory,
@@ -365,6 +373,7 @@ async function getCompletionContext({
 
     return contextFetcher({
         document,
+        position,
         prefix,
         suffix,
         history: documentHistory,
@@ -372,6 +381,7 @@ async function getCompletionContext({
         maxChars: promptChars,
         getCodebaseContext,
         isEmbeddingsContextEnabled,
+        graphContextFetcher,
     })
 }
 

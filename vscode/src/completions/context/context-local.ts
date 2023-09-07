@@ -111,8 +111,8 @@ async function getRelevantFiles(
     // active editor tabs and the 5 tabs (7 when there are no split views) that are open around it
     // (so we include 2 or 3 tabs to the left to the right).
     //
-    // @TODO(philipp-spiess): Consider files that are in the same directory or called similarly to
-    // be more relevant.
+    // TODO(philipp-spiess): Consider files that are in the same directory or called similarly to be
+    // more relevant.
     const uris: Map<string, vscode.Uri> = new Map()
     const surroundingTabs = visibleUris.length <= 1 ? 3 : 2
     for (const visibleUri of visibleUris) {

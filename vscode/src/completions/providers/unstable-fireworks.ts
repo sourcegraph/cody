@@ -60,7 +60,11 @@ export class UnstableFireworksProvider extends Provider {
         for (let snippetsToInclude = 0; snippetsToInclude < snippets.length + 1; snippetsToInclude++) {
             if (snippetsToInclude > 0) {
                 const snippet = snippets[snippetsToInclude - 1]
-                intro.push(`Here is a reference snippet of code from ${snippet.fileName}:\n\n${snippet.content}`)
+                if ('symbol' in snippet && snippet.symbol !== '') {
+                    intro.push(`Additional documentation for ${snippet.symbol}:\n\n${snippet.content}`)
+                } else {
+                    intro.push(`Here is a reference snippet of code from ${snippet.fileName}:\n\n${snippet.content}`)
+                }
             }
 
             const introString =

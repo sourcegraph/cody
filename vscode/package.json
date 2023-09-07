@@ -904,6 +904,11 @@
           "type": "boolean",
           "default": false,
           "markdownDescription": "Rank autocomplete results with tree-sitter."
+        },
+        "cody.autocomplete.experimental.graphContext": {
+          "type": "boolean",
+          "default": false,
+          "markdownDescription": "Use the code graph to retrieve context for autocomplete requests."
         }
       }
     },
