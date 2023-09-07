@@ -3,7 +3,6 @@ import { Position, TextDocument } from 'vscode'
 import { dedupeWith } from '@sourcegraph/cody-shared/src/common'
 
 import { DocumentContext } from '../get-current-doc-context'
-import { SupportedLanguage } from '../tree-sitter/grammars'
 import { InlineCompletionItem } from '../types'
 
 import { parseCompletion, ParsedCompletion, parsedCompletionToCompletion } from './parse-completion'
