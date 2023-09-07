@@ -112,33 +112,39 @@ export class CustomPromptsStore implements vscode.Disposable {
                 ([key, prompt]) => key.split(' ').length > 1 || !('description' in prompt)
             )
             if (isOldFormat) {
-                // transform old format commands to the new format
-                const commands = promptEntries.reduce(
-                    (acc: Record<string, Omit<CodyPrompt, 'slashCommand'>>, [key, { prompt, type, context }]) => {
-                        const slashCommand = key.trim().replaceAll(' ', '-').toLowerCase()
-                        acc[slashCommand] = { description: key, prompt, type, context }
-                        return acc
-                    },
-                    {}
-                )
-                // write transformed commands to the corresponding config file
-                await this.updateJSONFile({ ...json, commands }, type)
-                // inform user about this change
                 void vscode.window
                     .showInformationMessage(
-                        `Your Cody ${type} configuration file has been automatically updated to the new format.`,
-                        'Open File'
+                        `Commands format has changed. To be able to use custom commands, we suggest updating your ${type} configuration to the new format.`,
+                        'Update',
+                        'Ignore'
                     )
                     .then(choice => {
-                        if (choice === 'Open File') {
-                            const filePath = type === 'user' ? this.jsonFileUris.user : this.jsonFileUris.workspace
-                            if (filePath) {
-                                void vscode.window.showTextDocument(filePath)
-                            }
+                        if (choice === 'Update') {
+                            // transform old format commands to the new format
+                            const commands = promptEntries.reduce(
+                                (
+                                    acc: Record<string, Omit<CodyPrompt, 'slashCommand'>>,
+                                    [key, { prompt, type, context }]
+                                ) => {
+                                    const slashCommand = key.trim().replaceAll(' ', '-').toLowerCase()
+                                    acc[slashCommand] = { description: key, prompt, type, context }
+                                    return acc
+                                },
+                                {}
+                            )
+
+                            // write transformed commands to the corresponding config file
+                            void this.updateJSONFile({ ...json, commands }, type).then(() => {
+                                // open the updated settings file
+                                const filePath = type === 'user' ? this.jsonFileUris.user : this.jsonFileUris.workspace
+                                if (filePath) {
+                                    void vscode.window.showTextDocument(filePath)
+                                }
+                            })
                         }
                     })
-                // read from the updated config file
-                return await this.build(type)
+
+                return null
             }
             for (const [key, prompt] of promptEntries) {
                 const current: CodyPrompt = { ...prompt, slashCommand: toSlashCommand(key) }
