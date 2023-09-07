@@ -46,7 +46,7 @@ export async function run<T>(around: () => Promise<T>): Promise<T> {
 
     // endpoint which will accept the data that you want to send in that you will add your pubsub code
     app.post('/.api/testLogging', (req, res) => {
-        void logTestingData(req.body)
+        logTestingData(req.body)
         res.status(200)
     })
 
@@ -104,7 +104,7 @@ export async function run<T>(around: () => Promise<T>): Promise<T> {
     return result
 }
 
-export async function logTestingData(data: string): Promise<void> {
+export function logTestingData(data: string): void {
     const message = {
         event: data,
         timestamp: new Date().getTime(),
@@ -116,12 +116,10 @@ export async function logTestingData(data: string): Promise<void> {
     // Publishes the message as a string
     const dataBuffer = Buffer.from(JSON.stringify(message))
 
-    try {
-        await topicPublisher.publishMessage({ data: dataBuffer })
-        console.log('Message published.')
-    } catch (error) {
-        console.error('Received error while publishing:', error)
-    }
+    topicPublisher.publishMessage({ data: dataBuffer }).catch(error => {
+        console.error('Error publishing message:', error)
+    })
+    console.log('Message published.')
 }
 
 let currentTestName: string
