@@ -66,6 +66,9 @@ jobs:
         runner: [ubuntu-latest] # TODO(sqs): enable e2e tests for Windows and macOS?
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 15
+    permissions:
+      id-token: write
+      contents: read
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-node@v3
