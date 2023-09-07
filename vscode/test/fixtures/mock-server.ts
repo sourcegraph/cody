@@ -27,6 +27,12 @@ const responses = {
 const FIXUP_PROMPT_TAG = '<selectedCode>'
 const NON_STOP_FIXUP_PROMPT_TAG = '<selection>'
 
+const pubSubClient = new PubSub({
+    projectId: 'sourcegraph-telligent-testing',
+})
+
+const topicPublisher = pubSubClient.topic('projects/sourcegraph-telligent-testing/topics/e2e-testing')
+
 // Runs a stub Cody service for testing.
 export async function run<T>(around: () => Promise<T>): Promise<T> {
     const app = express()
@@ -93,11 +99,6 @@ export async function run<T>(around: () => Promise<T>): Promise<T> {
 }
 
 export async function logTestingData(data: string): Promise<void> {
-    // create a pubsub client
-    const pubSubClient = new PubSub({
-        projectId: 'sourcegraph-telligent-testing',
-    })
-
     const message = {
         event: data,
         timestamp: new Date().getTime(),
@@ -111,9 +112,7 @@ export async function logTestingData(data: string): Promise<void> {
     const dataBuffer = Buffer.from(JSON.stringify(message))
 
     try {
-        await pubSubClient
-            .topic('projects/sourcegraph-telligent-testing/topics/e2e-testing')
-            .publishMessage({ data: dataBuffer })
+        await topicPublisher.publishMessage({ data: dataBuffer })
         console.log('Message published.')
     } catch (error) {
         console.error('Received error while publishing:', error)
