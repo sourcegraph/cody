@@ -126,3 +126,23 @@ pnpm --filter cody-ai run start:dev:desktop
 4. **Open Node DevTools**: Look for and click on the option that says "Open dedicated DevTools for Node".
 5. **Specify the Debugging Endpoint**: At this point, DevTools aren't initialized yet. Therefore, you need to specify [the debugging endpoint](https://nodejs.org/en/docs/inspector/) `localhost:9333` (the port depends on the `--inspect-extensions` CLI flag used in the `start:debug` npm script)
 6. **Start Debugging Like a PRO**: yay!
+
+## Running the autocomplete test suite
+
+We have a list of test cases that you can easily automate to validate autocomplete quality when making prompt changes. The database for this lives in `vscode/test/completions/completions-dataset.ts` and should be updated when new cases are added or removed.
+
+To run the test suite:
+
+- `cd vscode`
+- `export SOURCEGRAPH_ACCESS_TOKEN=<Your access token>`
+- `pnpm run test:completions`
+
+You can change the config of which providers is run in `vscode/test/completions/mock-vscode.ts` by providing the VS Code config to achieve this setup.
+
+Once a test is run, logs are created in temporary folders. To access the comparison UI, you first need to move these to `completions-review-tool/data` and follow the naming schema there.
+
+After that, you can start the UI like so:
+
+- `cd completions-review-tool`
+- `pnpm run dev`
+- `open localhost:4000`
