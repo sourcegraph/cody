@@ -5,6 +5,8 @@ import { FeatureFlagProvider } from '@sourcegraph/cody-shared/src/experimentatio
 
 import { ContextProvider } from '../chat/ContextProvider'
 import { SectionObserver } from '../graph/section-observer'
+import { logDebug } from '../log'
+import type { AuthProvider } from '../services/AuthProvider'
 import { CodyStatusBar } from '../services/StatusBar'
 
 import { CodeCompletionsClient } from './client'
@@ -13,13 +15,39 @@ import { createProviderConfig } from './providers/createProvider'
 import { registerAutocompleteTraceView } from './tracer/traceView'
 import { InlineCompletionItemProvider } from './vscodeInlineCompletionItemProvider'
 
-export async function createInlineCompletionItemProvider(
-    config: Configuration,
-    client: CodeCompletionsClient,
-    statusBar: CodyStatusBar,
-    contextProvider: ContextProvider,
+interface InlineCompletionItemProviderArgs {
+    config: Configuration
+    client: CodeCompletionsClient
+    statusBar: CodyStatusBar
+    contextProvider: ContextProvider
     featureFlagProvider: FeatureFlagProvider
-): Promise<vscode.Disposable> {
+    authProvider: AuthProvider
+    openSidebar: () => void
+}
+
+export async function createInlineCompletionItemProvider({
+    config,
+    client,
+    statusBar,
+    contextProvider,
+    featureFlagProvider,
+    authProvider,
+    openSidebar,
+}: InlineCompletionItemProviderArgs): Promise<vscode.Disposable> {
+    if (!authProvider.getAuthStatus().isLoggedIn) {
+        logDebug('CodyCompletionProvider:notSignedIn', 'You are not signed in.')
+        const removeError = statusBar.addError({
+            title: 'Sign In To Use Cody',
+            description: 'You need to sign in to use Cody. Get started for free!',
+            onSelect: () => {
+                openSidebar?.()
+            },
+        })
+        return {
+            dispose: () => removeError(),
+        }
+    }
+
     const disposables: vscode.Disposable[] = []
 
     const providerConfig = await createProviderConfig(config, client, featureFlagProvider)
