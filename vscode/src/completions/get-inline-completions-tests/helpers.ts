@@ -114,16 +114,6 @@ export async function getInlineCompletions(
     return result
 }
 
-/**
- * Wraps the `getInlineCompletions` function to omit `logId` so that test expected values can omit
- * it and be stable.
- */
-export async function getInlineCompletionsWithParams(
-    ...args: Parameters<typeof params>
-): ReturnType<typeof getInlineCompletions> {
-    return getInlineCompletions(params(...args))
-}
-
 /** Test helper for when you just want to assert the completion strings. */
 export async function getInlineCompletionsInsertText(
     ...args: Parameters<typeof _getInlineCompletions>
