@@ -1,7 +1,7 @@
 import { QuickPickItem, window } from 'vscode'
 
 import { CodyPrompt } from '@sourcegraph/cody-shared'
-import { CodyPromptType, defaultCodyPromptContext } from '@sourcegraph/cody-shared/src/chat/prompts'
+import { defaultCodyPromptContext } from '@sourcegraph/cody-shared/src/chat/prompts'
 import { toSlashCommand } from '@sourcegraph/cody-shared/src/chat/prompts/utils'
 
 import { customPromptsContextOptions } from '../utils/menu'
@@ -19,14 +19,15 @@ export class CustomCommandsBuilderMenu {
         // build prompt
         const prompt = await this.makePrompt()
         // get type
-        const type = await this.makeType()
+        if (prompt) {
+            prompt.type = await this.makeType()
+        }
 
-        if (!slashCommand || !description || !prompt || !type) {
+        if (!slashCommand || !description || !prompt || !prompt.type) {
             return null
         }
 
-        void window.showInformationMessage(`New command added to Cody ${type} settings`)
-        return { slashCommand, prompt: { ...prompt, description, slashCommand, type } }
+        return { slashCommand, prompt: { ...prompt, description, slashCommand } }
     }
 
     private async makeSlashCommand(commands: Map<string, CodyPrompt>): Promise<string | undefined> {
@@ -135,7 +136,7 @@ export class CustomCommandsBuilderMenu {
         return newPrompt
     }
 
-    private async makeType(): Promise<CodyPromptType> {
+    private async makeType(): Promise<'user' | 'workspace'> {
         // Get the command to run from the user using the input box
         const option = await window.showQuickPick(
             [
@@ -159,7 +160,7 @@ export class CustomCommandsBuilderMenu {
             }
         )
 
-        return option?.type as CodyPromptType
+        return option?.type === 'workspace' ? 'workspace' : 'user'
     }
 }
 

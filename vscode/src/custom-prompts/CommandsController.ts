@@ -409,8 +409,16 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
             return
         }
         // Save the prompt to the current Map and Extension storage
-        await this.custom.save(newCommand.slashCommand, newCommand.prompt)
+        await this.custom.save(newCommand.slashCommand, newCommand.prompt, false, newCommand.prompt.type)
         await this.refresh()
+        // Notify user
+        void vscode.window
+            .showInformationMessage(`New custom Cody command saved to ${newCommand.prompt.type} settings`, 'Open Settings')
+            .then(async choice => {
+                if (choice === 'Open Settings') {
+                    await this.custom.openConfig(newCommand.prompt.type)
+                }
+            })
 
         logDebug('CommandsController:updateUserCommandQuick:newPrompt:', 'saved', { verbose: newCommand })
     }
