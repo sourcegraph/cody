@@ -4,6 +4,7 @@ import { isDefined } from '@sourcegraph/cody-shared'
 import { renderMarkdown } from '@sourcegraph/cody-shared/src/common/markdown'
 
 import { InlineCompletionsResultSource } from '../getInlineCompletions'
+import * as statistics from '../statistics'
 import { InlineCompletionItem } from '../types'
 import { InlineCompletionItemProvider } from '../vscodeInlineCompletionItemProvider'
 
@@ -32,14 +33,18 @@ export function registerAutocompleteTraceView(provider: InlineCompletionItemProv
                 panel = null
             })
 
-            panel.webview.html = renderWebviewHtml(undefined)
-
-            provider.setTracer(data => {
+            let data: ProvideInlineCompletionsItemTraceData | undefined
+            function rerender(): void {
                 if (!panel) {
                     return
                 }
 
-                // Only show data from the latest invocation.
+                if (!data) {
+                    panel.webview.html = renderWebviewHtml(data)
+                    return
+                }
+
+                //  Only show data from the latest invocation.
                 if (data.invocationSequence > latestInvocationSequence) {
                     latestInvocationSequence = data.invocationSequence
                 } else if (data.invocationSequence < latestInvocationSequence) {
@@ -47,7 +52,19 @@ export function registerAutocompleteTraceView(provider: InlineCompletionItemProv
                 }
 
                 panel.webview.html = renderWebviewHtml(data)
+            }
+            rerender()
+
+            const unsubscribeStatistics = statistics.registerChangeListener(() => rerender())
+
+            provider.setTracer(_data => {
+                data = _data
+                rerender()
             })
+
+            return {
+                dispose: () => unsubscribeStatistics(),
+            }
         }),
         {
             dispose() {
@@ -63,6 +80,7 @@ export function registerAutocompleteTraceView(provider: InlineCompletionItemProv
 function renderWebviewHtml(data: ProvideInlineCompletionsItemTraceData | undefined): string {
     const markdownSource = [
         `# Cody autocomplete trace view${data ? ` (#${data.invocationSequence})` : ''}`,
+        statisticSummary(),
         data ? null : 'Waiting for you to trigger a completion...',
         data?.params &&
             `
@@ -167,6 +185,13 @@ ${codeDetailsWithSummary('JSON for dataset', jsonForDataset(data))}
     return renderMarkdown(markdownSource, { noDomPurify: true })
 }
 
+function statisticSummary(): string {
+    const { accepted, suggested } = statistics.getStatistics()
+    return `📈 Suggested: ${suggested} | Accepted: ${accepted} | Acceptance rate: ${
+        suggested === 0 || accepted === 0 ? 'N/A' : `${((accepted / suggested) * 100).toFixed(2)}%`
+    }`
+}
+
 function codeDetailsWithSummary(
     title: string,
     value: string,
@@ -236,8 +261,8 @@ ${
 }
 
 function rangeDescription(range: vscode.Range): string {
-    // The VS Code extension API uses 0-indexed lines and columns, but the UI (and humans) use
-    // 1-indexed lines and columns. Show the latter.
+    //  The VS Code extension API uses 0-indexed lines and columns, but the UI (and humans) use
+    //  1-indexed lines and columns. Show the latter.
     return `${range.start.line + 1}:${range.start.character + 1}${
         range.isEmpty
             ? ''
