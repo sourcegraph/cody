@@ -32,12 +32,14 @@ function tokensToChars(tokens: number): number {
 interface AnthropicOptions {
     contextWindowTokens: number
     client: Pick<CodeCompletionsClient, 'complete'>
+    mode?: 'default' | 'infill'
 }
 
 export class AnthropicProvider extends Provider {
     private promptChars: number
     private responseTokens: number
     private client: Pick<CodeCompletionsClient, 'complete'>
+    private useInfillPrefix = false
 
     constructor(options: ProviderOptions, anthropicOptions: AnthropicOptions) {
         super(options)
@@ -46,6 +48,7 @@ export class AnthropicProvider extends Provider {
             Math.floor(tokensToChars(anthropicOptions.contextWindowTokens) * options.responsePercentage)
         this.responseTokens = Math.floor(anthropicOptions.contextWindowTokens * options.responsePercentage)
         this.client = anthropicOptions.client
+        this.useInfillPrefix = anthropicOptions.mode === 'infill'
     }
 
     public emptyPromptLength(): number {
@@ -86,7 +89,29 @@ export class AnthropicProvider extends Provider {
                 text: `Here is the code: ${OPENING_CODE_TAG}${tail.trimmed}`,
             },
         ]
-        return { messages: prefixMessages, prefix: { head, tail, overlap } }
+
+        const prefixMessagesWithInfill: Message[] = [
+            {
+                speaker: 'human',
+                text: `You are a code completion AI designed to take the surrounding code and shared context into account in order to predict and suggest high-quality code to complete the code block enclosed in ${OPENING_CODE_TAG}${CLOSING_CODE_TAG} tags when provided. You suggest code that follows the same coding styles, formats, patterns, and naming convention detected in surrounding context. Only response with code that works and fits seamlessly with surrounding code.`,
+            },
+            {
+                speaker: 'assistant',
+                text: 'I am a code completion AI with exceptional context-awareness designed to auto-complete nested code blocks with high-quality code that seamlessly integrates with surrounding code without duplicating existing implementations.',
+            },
+            {
+                speaker: 'human',
+                text: `Below is the code from file path ${this.options.fileName}. First, review the code outside of the ${OPENING_CODE_TAG} XML tags. Then complete the code inside the tags using the same style, patterns and logics of the surrounding code precisely without duplicating existing implementations:
+                ${head.trimmed}${OPENING_CODE_TAG}${tail.trimmed}${CLOSING_CODE_TAG}${this.options.docContext.suffix}`,
+            },
+            {
+                speaker: 'assistant',
+                text: `${OPENING_CODE_TAG}${tail.trimmed}`,
+            },
+        ]
+
+        const selectedPrefixMessages = this.useInfillPrefix ? prefixMessagesWithInfill : prefixMessages
+        return { messages: selectedPrefixMessages, prefix: { head, tail, overlap } }
     }
 
     // Creates the resulting prompt and adds as many snippets from the reference
@@ -105,11 +130,11 @@ export class AnthropicProvider extends Provider {
                     text:
                         'symbol' in snippet && snippet.symbol !== ''
                             ? `Additional documentation for \`${snippet.symbol}\`: ${OPENING_CODE_TAG}${snippet.content}${CLOSING_CODE_TAG}`
-                            : `Here is a reference snippet from ${snippet.fileName}: ${OPENING_CODE_TAG}${snippet.content}${CLOSING_CODE_TAG}`,
+                            : `Codebase context from file path '${snippet.fileName}': ${OPENING_CODE_TAG}${snippet.content}${CLOSING_CODE_TAG}`,
                 },
                 {
                     speaker: 'assistant',
-                    text: 'I have added the snippet to my knowledge base.',
+                    text: 'I will refer to this code to complete your next request.',
                 },
             ]
             const numSnippetChars = messagesToText(snippetMessages).length + 1
@@ -244,6 +269,6 @@ export function createProviderConfig(anthropicOptions: AnthropicOptions): Provid
         maximumContextCharacters: tokensToChars(anthropicOptions.contextWindowTokens),
         enableExtendedMultilineTriggers: true,
         identifier: 'anthropic',
-        model: 'claude-instant-1',
+        model: anthropicOptions.mode === 'infill' ? 'claude-instant-infill' : 'claude-instant-1',
     }
 }
