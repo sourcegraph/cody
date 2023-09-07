@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, Mock, vi, vitest } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, Mock, vi, vitest } from 'vitest'
 import { URI } from 'vscode-uri'
 
 import { PreciseContext } from '@sourcegraph/cody-shared/src/codebase-context/messages'
@@ -12,6 +12,10 @@ vi.mock('vscode', () => vsCodeMocks)
 
 const document1Uri = URI.file('/document1.ts')
 const document2Uri = URI.file('/document2.ts')
+
+const disposable = {
+    dispose: () => {},
+}
 
 interface TestDocument {
     uri: URI
@@ -78,17 +82,23 @@ describe('SectionObserver', () => {
 
         sectionObserver = new SectionObserver(
             {
-                onDidChangeVisibleTextEditors: (_onDidChangeVisibleTextEditors: any) =>
-                    (onDidChangeVisibleTextEditors = _onDidChangeVisibleTextEditors),
-                onDidChangeTextEditorSelection: (_onDidChangeTextEditorSelection: any) =>
-                    (onDidChangeTextEditorSelection = _onDidChangeTextEditorSelection),
+                onDidChangeVisibleTextEditors: (_onDidChangeVisibleTextEditors: any) => {
+                    onDidChangeVisibleTextEditors = _onDidChangeVisibleTextEditors
+                    return disposable
+                },
+                onDidChangeTextEditorSelection: (_onDidChangeTextEditorSelection: any) => {
+                    onDidChangeTextEditorSelection = _onDidChangeTextEditorSelection
+                    return disposable
+                },
                 get visibleTextEditors(): any {
                     return visibleTextEditors()
                 },
             },
             {
-                onDidChangeTextDocument: (_onDidChangeTextDocument: any) =>
-                    (onDidChangeTextDocument = _onDidChangeTextDocument),
+                onDidChangeTextDocument: (_onDidChangeTextDocument: any) => {
+                    onDidChangeTextDocument = _onDidChangeTextDocument
+                    return disposable
+                },
             },
             getDocumentSections,
             getGraphContextFromRange
@@ -97,10 +107,13 @@ describe('SectionObserver', () => {
         // for it to finish loading.
         await nextTick()
     })
+    afterEach(() => {
+        sectionObserver.dispose()
+    })
 
     it('loads visible documents when it loads', () => {
         expect(sectionObserver.debugPrint()).toMatchInlineSnapshot(`
-          "file:///document1.ts
+          "file:/document1.ts
             ├─ foo
             └─ bar"
         `)
@@ -114,10 +127,10 @@ describe('SectionObserver', () => {
         await onDidChangeVisibleTextEditors()
 
         expect(sectionObserver.debugPrint()).toMatchInlineSnapshot(`
-          "file:///document2.ts
+          "file:/document2.ts
             ├─ baz
             └─ qux
-          file:///document1.ts
+          file:/document1.ts
             ├─ foo
             └─ bar"
         `)
@@ -128,7 +141,7 @@ describe('SectionObserver', () => {
         await onDidChangeVisibleTextEditors()
 
         expect(sectionObserver.debugPrint()).toMatchInlineSnapshot(`
-          "file:///document2.ts
+          "file:/document2.ts
             ├─ baz
             └─ qux"
         `)
@@ -146,7 +159,7 @@ describe('SectionObserver', () => {
         })
 
         expect(sectionObserver.debugPrint()).toMatchInlineSnapshot(`
-          "file:///document1.ts
+          "file:/document1.ts
             ├─ foo
             └─ baz"
         `)
@@ -159,7 +172,7 @@ describe('SectionObserver', () => {
         })
 
         expect(sectionObserver.debugPrint()).toMatchInlineSnapshot(`
-          "file:///document1.ts
+          "file:/document1.ts
             ├─ foo
             └─ bar (loading)"
         `)
@@ -167,7 +180,7 @@ describe('SectionObserver', () => {
         await promise
 
         expect(sectionObserver.debugPrint()).toMatchInlineSnapshot(`
-          "file:///document1.ts
+          "file:/document1.ts
             ├─ foo
             └─ bar (2 snippets)"
         `)
@@ -179,7 +192,7 @@ describe('SectionObserver', () => {
             selections: [{ active: { line: 1, character: 0 } }],
         })
         expect(sectionObserver.debugPrint()).toMatchInlineSnapshot(`
-          "file:///document1.ts
+          "file:/document1.ts
             ├─ foo (2 snippets)
             └─ bar"
         `)
@@ -195,7 +208,7 @@ describe('SectionObserver', () => {
         })
 
         expect(sectionObserver.debugPrint()).toMatchInlineSnapshot(`
-          "file:///document1.ts
+          "file:/document1.ts
             ├─ foo (2 snippets, dirty)
             └─ baz"
         `)
@@ -207,7 +220,7 @@ describe('SectionObserver', () => {
             selections: [{ active: { line: 1, character: 0 } }],
         })
         expect(sectionObserver.debugPrint()).toMatchInlineSnapshot(`
-          "file:///document1.ts
+          "file:/document1.ts
             ├─ foo (2 snippets)
             └─ bar"
         `)
@@ -220,7 +233,7 @@ describe('SectionObserver', () => {
         })
 
         expect(sectionObserver.debugPrint()).toMatchInlineSnapshot(`
-          "file:///document1.ts
+          "file:/document1.ts
             └─ foo (2 snippets, dirty)"
         `)
 
@@ -238,7 +251,7 @@ describe('SectionObserver', () => {
         })
 
         expect(sectionObserver.debugPrint()).toMatchInlineSnapshot(`
-          "file:///document1.ts
+          "file:/document1.ts
             └─ foo (1 snippets)"
         `)
     })
@@ -249,7 +262,7 @@ describe('SectionObserver', () => {
             selections: [{ active: { line: 1, character: 0 } }],
         })
         expect(sectionObserver.debugPrint()).toMatchInlineSnapshot(`
-          "file:///document1.ts
+          "file:/document1.ts
             ├─ foo (2 snippets)
             └─ bar"
         `)
@@ -265,7 +278,7 @@ describe('SectionObserver', () => {
         })
 
         expect(sectionObserver.debugPrint()).toMatchInlineSnapshot(`
-          "file:///document1.ts
+          "file:/document1.ts
             ├─ foo (2 snippets, dirty)
             └─ bar"
         `)
@@ -284,7 +297,7 @@ describe('SectionObserver', () => {
         })
 
         expect(sectionObserver.debugPrint()).toMatchInlineSnapshot(`
-          "file:///document1.ts
+          "file:/document1.ts
             ├─ foo (1 snippets)
             └─ bar"
         `)
@@ -298,7 +311,7 @@ describe('SectionObserver', () => {
             })
 
             expect(sectionObserver.debugPrint()).toMatchInlineSnapshot(`
-              "file:///document1.ts
+              "file:/document1.ts
                 ├─ foo
                 └─ bar (2 snippets)"
             `)
@@ -334,7 +347,7 @@ describe('SectionObserver', () => {
             })
 
             expect(sectionObserver.debugPrint()).toMatchInlineSnapshot(`
-              "file:///document1.ts
+              "file:/document1.ts
                 └─ bar"
             `)
 
