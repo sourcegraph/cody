@@ -77,6 +77,23 @@ export const completionsDataset: Sample[] = [
     },
     {
         context: [],
+        fileName: 'twoNums.ts',
+        languageId: 'typescript',
+        content: `
+            function twoSum(a: number, b: number): number {
+                const sum = a + b
+                console.log(sum)
+                return sum
+            }
+
+            function maxNum(a: number, b: number): number {
+                ${CURSOR}
+                console.log(max)
+                return max
+            }`,
+    },
+    {
+        context: [],
         fileName: 'isLocalhost.ts',
         languageId: 'typescript',
         content: `

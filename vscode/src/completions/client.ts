@@ -7,7 +7,7 @@ import type {
     CompletionParameters,
     CompletionResponse,
 } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
-import { NetworkError, RateLimitError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
+import { isAbortError, NetworkError, RateLimitError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
 
 import { fetch } from '../fetch'
 
@@ -56,10 +56,10 @@ export function createClient(
                 headers.set('X-Sourcegraph-Should-Trace', 'true')
             }
 
-            // We enable streaming only for Node environments right now because it's hard to make the
-            // polyfilled fetch API work the same as it does in the browser.
+            // We enable streaming only for Node environments right now because it's hard to make
+            // the polyfilled fetch API work the same as it does in the browser.
             //
-            // @TODO(philipp-spiess): Feature test if the response is a Node or a browser stream and
+            // TODO(philipp-spiess): Feature test if the response is a Node or a browser stream and
             // implement SSE parsing for both.
             const isNode = typeof process !== 'undefined'
 
@@ -98,6 +98,7 @@ export function createClient(
             const isStreamingResponse = response.headers.get('content-type') === 'text/event-stream'
 
             if (isStreamingResponse) {
+                let lastResponse: CompletionResponse | undefined
                 try {
                     // The any cast is necessary because `node-fetch` (The polyfill for fetch we use via
                     // `isomorphic-fetch`) does not implement a proper ReadableStream interface but
@@ -107,7 +108,6 @@ export function createClient(
                     // non Node environments, the response.body will always be a Node Stream instead
                     const iterator = createSSEIterator(response.body as any as AsyncIterableIterator<BufferSource>)
 
-                    let lastResponse: CompletionResponse | undefined
                     for await (const chunk of iterator) {
                         if (chunk.event === 'completion') {
                             lastResponse = JSON.parse(chunk.data) as CompletionResponse
@@ -118,9 +118,14 @@ export function createClient(
                     if (lastResponse === undefined) {
                         throw new NetworkError('No completion response received', traceId)
                     }
+                    log?.onComplete(lastResponse)
 
                     return lastResponse
                 } catch (error) {
+                    if (isAbortError(error as Error) && lastResponse) {
+                        log?.onComplete(lastResponse)
+                    }
+
                     const message = `error parsing streaming CodeCompletionResponse: ${error}`
                     log?.onError(message)
                     throw new NetworkError(message, traceId)

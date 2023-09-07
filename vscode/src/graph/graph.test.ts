@@ -4,11 +4,7 @@ import { URI } from 'vscode-uri'
 
 import { Uri } from '../testutils/mocks'
 
-import {
-    extractDefinitionContexts,
-    extractRelevantDocumentSymbolRanges,
-    gatherDefinitions,
-} from './GraphContextProvider'
+import { extractDefinitionContexts, extractRelevantDocumentSymbolRanges, gatherDefinitions } from './graph'
 
 const testFile1 = `
 import fmt
@@ -97,6 +93,7 @@ describe('gatherDefinitions', () => {
                 },
             ],
             new Map([[uri.fsPath, testFile3.split('\n').slice(1)]]),
+            (): Promise<vscode.Hover[]> => Promise.resolve([]),
             // eslint-disable-next-line @typescript-eslint/require-await
             async (uri: URI, position: vscode.Position): Promise<vscode.Location[]> => {
                 switch (position.character) {
@@ -131,18 +128,36 @@ describe('gatherDefinitions', () => {
 
             {
                 symbolName: 'bar',
+                hover: [],
                 locations: [{ uri: Uri.file('/test-1.test'), range: new vscode.Range(10, 6, 10, 9) }],
             },
             {
                 symbolName: 'Bar',
+                hover: [],
                 locations: [{ uri: Uri.file('/test-1.test'), range: new vscode.Range(11, 6, 11, 9) }],
             },
-            { symbolName: 'foo', locations: [{ uri: Uri.file('/test-1.test'), range: new vscode.Range(2, 6, 2, 9) }] },
-            { symbolName: 'Foo', locations: [{ uri: Uri.file('/test-1.test'), range: new vscode.Range(3, 6, 3, 9) }] },
-            { symbolName: 'baz', locations: [{ uri: Uri.file('/test-2.test'), range: new vscode.Range(3, 6, 3, 8) }] },
+            {
+                symbolName: 'foo',
+                hover: [],
+                locations: [{ uri: Uri.file('/test-1.test'), range: new vscode.Range(2, 6, 2, 9) }],
+            },
+            {
+                symbolName: 'Foo',
+                hover: [],
+                locations: [{ uri: Uri.file('/test-1.test'), range: new vscode.Range(3, 6, 3, 9) }],
+            },
+            {
+                symbolName: 'baz',
+                hover: [],
+                locations: [{ uri: Uri.file('/test-2.test'), range: new vscode.Range(3, 6, 3, 8) }],
+            },
 
             // Duplicates are thrown out
-            // { symbolName: 'Foo', locations: [{ uri: Uri.file('/test-1.test'), range: new vscode.Range(3, 6, 3, 9) }] },
+            // {
+            //     symbolName: 'Foo',
+            //     hover: [],
+            //     locations: [{ uri: Uri.file('/test-1.test'), range: new vscode.Range(3, 6, 3, 9) }],
+            // },
         ])
     })
 })
@@ -153,18 +168,22 @@ describe('extractDefinitionContexts', () => {
             [
                 {
                     symbolName: 'foo',
+                    hover: [],
                     location: { uri: Uri.file('/test-1.test'), range: new vscode.Range(2, 6, 2, 9) },
                 },
                 {
                     symbolName: 'bar',
+                    hover: [],
                     location: { uri: Uri.file('/test-1.test'), range: new vscode.Range(10, 6, 10, 9) },
                 },
                 {
                     symbolName: 'baz',
+                    hover: [],
                     location: { uri: Uri.file('/test-2.test'), range: new vscode.Range(3, 6, 3, 8) },
                 },
                 {
                     symbolName: 'bonk',
+                    hover: [],
                     location: { uri: Uri.file('/test-3.test'), range: new vscode.Range(7, 5, 7, 7) },
                 },
             ],
@@ -200,6 +219,7 @@ describe('extractDefinitionContexts', () => {
             {
                 symbol: { fuzzyName: 'foo' },
                 filePath: '/test-1.test',
+                hoverText: [],
                 definitionSnippet:
                     'class foo {\n\tfunc Foo() {\n\t\tconst a = 3\n\t\tconst b = 4\n\t\treturn a + b\n\t}\n}',
                 range: { startLine: 2, startCharacter: 6, endLine: 2, endCharacter: 9 },
@@ -207,6 +227,7 @@ describe('extractDefinitionContexts', () => {
             {
                 symbol: { fuzzyName: 'bar' },
                 filePath: '/test-1.test',
+                hoverText: [],
                 definitionSnippet:
                     'class bar {\n\tfunc Bar(x, y) {\n\t\tconst a = 3\n\t\tconst b = 4\n\t\treturn (a * b) + (x * y)\n\t}\n}',
                 range: { startLine: 10, startCharacter: 6, endLine: 10, endCharacter: 9 },
@@ -214,12 +235,14 @@ describe('extractDefinitionContexts', () => {
             {
                 symbol: { fuzzyName: 'baz' },
                 filePath: '/test-2.test',
+                hoverText: [],
                 definitionSnippet: 'const baz = new foo()',
                 range: { startLine: 3, startCharacter: 6, endLine: 3, endCharacter: 8 },
             },
             {
                 symbol: { fuzzyName: 'bonk' },
                 filePath: '/test-3.test',
+                hoverText: [],
                 definitionSnippet:
                     '/**\n * Some docstring here.\n */\nfunc bonk() => { return new bar().Bar(new foo().Foo(), baz.Foo()) }',
                 range: { startLine: 7, startCharacter: 5, endLine: 7, endCharacter: 7 },

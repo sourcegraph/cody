@@ -61,7 +61,11 @@ export async function createOrUpdateEventLogger(
  * @deprecated Use TelemetryService instead.
  */
 export function logEvent(eventName: string, properties?: TelemetryEventProperties): void {
-    logDebug(`logEvent${eventLogger === null ? ' (telemetry disabled)' : ''}`, eventName, JSON.stringify(properties))
+    logDebug(
+        `logEvent${eventLogger === null || process.env.CODY_TESTING === 'true' ? ' (telemetry disabled)' : ''}`,
+        eventName,
+        JSON.stringify(properties)
+    )
     if (!eventLogger || !globalAnonymousUserID) {
         return
     }

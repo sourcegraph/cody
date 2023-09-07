@@ -1,7 +1,6 @@
 import { omit } from 'lodash'
 import * as vscode from 'vscode'
 
-import { Preamble } from '@sourcegraph/cody-shared/src/chat/preamble'
 import {
     CodyPrompt,
     CodyPromptType,
@@ -10,7 +9,6 @@ import {
     MyPromptsJSON,
 } from '@sourcegraph/cody-shared/src/chat/prompts'
 import { fromSlashCommand, toSlashCommand } from '@sourcegraph/cody-shared/src/chat/prompts/utils'
-import { newPromptMixin, PromptMixin } from '@sourcegraph/cody-shared/src/prompt/prompt-mixin'
 
 import { logDebug, logError } from '../log'
 
@@ -30,9 +28,7 @@ import { promptSizeInit } from './utils/menu'
  */
 export class CustomPromptsStore implements vscode.Disposable {
     public myPromptsJSON: MyPromptsJSON | null = null
-    public myPremade: Preamble | undefined = undefined
     public myPromptsMap = new Map<string, CodyPrompt>()
-    public myStarter = ''
 
     public promptSize = promptSizeInit
     public jsonFileUris: { user?: vscode.Uri; workspace?: vscode.Uri }
@@ -89,7 +85,7 @@ export class CustomPromptsStore implements vscode.Disposable {
         } catch (error) {
             logError('CustomPromptsStore:refresh', 'failed', { verbose: error })
         }
-        return { commands: this.myPromptsMap, premade: this.myPremade, starter: this.myStarter }
+        return { commands: this.myPromptsMap }
     }
 
     /**
@@ -144,18 +140,10 @@ export class CustomPromptsStore implements vscode.Disposable {
                 // read from the updated config file
                 return await this.build(type)
             }
-
             for (const [key, prompt] of promptEntries) {
                 const current: CodyPrompt = { ...prompt, slashCommand: toSlashCommand(key) }
                 current.type = type
                 this.myPromptsMap.set(current.slashCommand, current)
-            }
-
-            this.myPremade = json.premade
-            // avoid duplicate starter prompts
-            if (json.starter && json?.starter !== this.myStarter) {
-                PromptMixin.addCustom(newPromptMixin(json.starter))
-                this.myStarter = json.starter
             }
             if (type === 'user') {
                 this.myPromptsJSON = json
@@ -275,8 +263,6 @@ export class CustomPromptsStore implements vscode.Disposable {
         this.isActive = false
         this.myPromptsMap = new Map<string, CodyPrompt>()
         this.promptSize = { ...promptSizeInit }
-        this.myPremade = undefined
-        this.myStarter = ''
         this.myPromptsJSON = null
     }
 

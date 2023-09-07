@@ -102,7 +102,10 @@ export class AnthropicProvider extends Provider {
             const snippetMessages: Message[] = [
                 {
                     speaker: 'human',
-                    text: `Here is a reference snippet of code: ${OPENING_CODE_TAG}${snippet.content}${CLOSING_CODE_TAG}`,
+                    text:
+                        'symbol' in snippet && snippet.symbol !== ''
+                            ? `Additional documentation for \`${snippet.symbol}\`: ${OPENING_CODE_TAG}${snippet.content}${CLOSING_CODE_TAG}`
+                            : `Here is a reference snippet from ${snippet.fileName}: ${OPENING_CODE_TAG}${snippet.content}${CLOSING_CODE_TAG}`,
                 },
                 {
                     speaker: 'assistant',

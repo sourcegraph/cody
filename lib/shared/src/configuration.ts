@@ -33,6 +33,7 @@ export interface Configuration {
     autocompleteAdvancedEmbeddings: boolean
     autocompleteExperimentalCompleteSuggestWidgetSelection?: boolean
     autocompleteExperimentalSyntacticPostProcessing?: boolean
+    autocompleteExperimentalGraphContext?: boolean
     isRunningInsideAgent?: boolean
 }
 
