@@ -57,8 +57,8 @@ export const getGraphContextFromRange = async (
     const contexts = await getGraphContextFromSelection(
         [{ uri, range }],
         new Map([[uri.fsPath, editor.document.getText().split('\n')]]),
-        1, // recursion limit
-        true // use type definitions
+        0, // recursion limit
+        false // use type definitions
     )
 
     return contexts
@@ -456,7 +456,8 @@ export const extractDefinitionContexts = async (
 
         if (contentPromise && documentSymbolsPromises) {
             const content = contentPromise
-            const documentSymbols = await documentSymbolsPromises // NOTE: already resolved)
+            const documentSymbols = await documentSymbolsPromises // NOTE: already resolved
+
             const definitionSnippets = extractSnippets(content, documentSymbols, [range])
 
             for (const definitionSnippet of definitionSnippets) {

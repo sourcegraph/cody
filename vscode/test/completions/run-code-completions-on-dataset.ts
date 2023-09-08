@@ -86,7 +86,7 @@ async function initCompletionsProvider(context: GetContextResult): Promise<Inlin
         statusBar: {
             startLoading: () => () => {},
             dispose: () => {},
-            addError: () => {},
+            addError: () => () => {},
         },
         history,
         getCodebaseContext: () => codebaseContext,

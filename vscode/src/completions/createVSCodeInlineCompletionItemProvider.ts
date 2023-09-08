@@ -5,6 +5,8 @@ import { FeatureFlagProvider } from '@sourcegraph/cody-shared/src/experimentatio
 
 import { ContextProvider } from '../chat/ContextProvider'
 import { SectionObserver } from '../graph/section-observer'
+import { logDebug } from '../log'
+import type { AuthProvider } from '../services/AuthProvider'
 import { CodyStatusBar } from '../services/StatusBar'
 
 import { CodeCompletionsClient } from './client'
@@ -13,19 +15,39 @@ import { createProviderConfig } from './providers/createProvider'
 import { registerAutocompleteTraceView } from './tracer/traceView'
 import { InlineCompletionItemProvider } from './vscodeInlineCompletionItemProvider'
 
-export async function createInlineCompletionItemProvider(
-    config: Configuration,
-    client: CodeCompletionsClient,
-    statusBar: CodyStatusBar,
-    contextProvider: ContextProvider,
+interface InlineCompletionItemProviderArgs {
+    config: Configuration
+    client: CodeCompletionsClient
+    statusBar: CodyStatusBar
+    contextProvider: ContextProvider
     featureFlagProvider: FeatureFlagProvider
-): Promise<vscode.Disposable> {
+    authProvider: AuthProvider
+}
+
+export async function createInlineCompletionItemProvider({
+    config,
+    client,
+    statusBar,
+    contextProvider,
+    featureFlagProvider,
+    authProvider,
+}: InlineCompletionItemProviderArgs): Promise<vscode.Disposable> {
+    if (!authProvider.getAuthStatus().isLoggedIn) {
+        logDebug('CodyCompletionProvider:notSignedIn', 'You are not signed in.')
+
+        return {
+            dispose: () => {},
+        }
+    }
+
     const disposables: vscode.Disposable[] = []
 
-    const providerConfig = await createProviderConfig(config, client)
+    const providerConfig = await createProviderConfig(config, client, featureFlagProvider)
     if (providerConfig) {
         const history = new VSCodeDocumentHistory()
-        const sectionObserver = config.autocompleteExperimentalGraphContext ? new SectionObserver() : undefined
+        const sectionObserver = config.autocompleteExperimentalGraphContext
+            ? SectionObserver.createInstance()
+            : undefined
 
         const completionsProvider = new InlineCompletionItemProvider({
             providerConfig,

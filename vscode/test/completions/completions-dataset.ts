@@ -81,6 +81,7 @@ export const completionsDataset: Sample[] = [
         languageId: 'typescript',
         content: `
             function twoSum(a: number, b: number): number {
+                const sum = a + b
                 console.log(sum)
                 return sum
             }
@@ -89,11 +90,6 @@ export const completionsDataset: Sample[] = [
                 ${CURSOR}
                 console.log(max)
                 return max
-            }
-
-            function minNum(a: number, b: number): number {
-                console.log(min)
-                return min
             }`,
     },
     {
@@ -387,11 +383,9 @@ export const completionsDataset: Sample[] = [
             # GITHUB_APP_ID
             # GITHUB_PRIVATE_KEY
 
-
             @pytest.fixture
             def api_client() -> GitHubAPIWrapper:
                 return GitHubAPIWrapper()
-
 
             def test_get_open_issues(api_client: GitHubAPIWrapper) -> None:
                 ${CURSOR}
@@ -438,7 +432,6 @@ export const completionsDataset: Sample[] = [
                     from playwright.sync_api import Browser as SyncBrowser
                 except ImportError:
                     pass
-
 
             class PlayWrightBrowserToolkit(BaseToolkit):
                 """Toolkit for PlayWright browser tools."""

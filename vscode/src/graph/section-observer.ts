@@ -2,11 +2,14 @@ import path from 'path'
 
 import { LRUCache } from 'lru-cache'
 import * as vscode from 'vscode'
+import { URI } from 'vscode-uri'
 
 import { PreciseContext } from '@sourcegraph/cody-shared/src/codebase-context/messages'
+import { isDefined } from '@sourcegraph/cody-shared/src/common'
 
 import { GraphContextFetcher } from '../completions/context/context'
 import { SymbolContextSnippet } from '../completions/types'
+import { createSubscriber } from '../completions/utils'
 import { logDebug } from '../log'
 
 import { getGraphContextFromRange as defaultGetGraphContextFromRange, locationKeyFn } from './graph'
@@ -34,6 +37,9 @@ const NUM_OF_CHANGED_LINES_FOR_SECTION_RELOAD = 3
 
 const MAX_TRACKED_DOCUMENTS = 10
 
+const debugSubscriber = createSubscriber<void>()
+export const registerDebugListener = debugSubscriber.subscribe.bind(debugSubscriber)
+
 /**
  * Watches a document for changes and refreshes the sections if needed. Preloads the sections that
  * the document is being modified by intersecting the cursor position with the document sections.
@@ -49,7 +55,7 @@ export class SectionObserver implements vscode.Disposable, GraphContextFetcher {
         max: MAX_TRACKED_DOCUMENTS,
     })
 
-    constructor(
+    private constructor(
         private window: Pick<
             typeof vscode.window,
             'onDidChangeVisibleTextEditors' | 'onDidChangeTextEditorSelection' | 'visibleTextEditors'
@@ -64,10 +70,27 @@ export class SectionObserver implements vscode.Disposable, GraphContextFetcher {
         void this.onDidChangeVisibleTextEditors()
     }
 
+    public static instance: SectionObserver | null = null
+    public static createInstance(
+        window?: Pick<
+            typeof vscode.window,
+            'onDidChangeVisibleTextEditors' | 'onDidChangeTextEditorSelection' | 'visibleTextEditors'
+        >,
+        workspace?: Pick<typeof vscode.workspace, 'onDidChangeTextDocument'>,
+        getDocumentSections?: typeof defaultGetDocumentSections,
+        getGraphContextFromRange?: typeof defaultGetGraphContextFromRange
+    ): SectionObserver {
+        if (this.instance) {
+            throw new Error('SectionObserver has already been initialized')
+        }
+        this.instance = new SectionObserver(window, workspace, getDocumentSections, getGraphContextFromRange)
+        return this.instance
+    }
+
     public getContextAtPosition(document: vscode.TextDocument, position: vscode.Position): SymbolContextSnippet[] {
         const section = this.getSectionAtPosition(document, position)
         if (section?.context?.context) {
-            return section.context.context.map(preciseContextToSnippet)
+            return section.context.context.map(preciseContextToSnippet).filter(isDefined)
         }
         return []
     }
@@ -98,11 +121,15 @@ export class SectionObserver implements vscode.Disposable, GraphContextFetcher {
             section.context.isStale = false
         }
 
+        debugSubscriber.notify()
+
         const start = performance.now()
         const context = await this.getGraphContextFromRange(editor, section.location.range)
 
         logHydratedContext(context, editor, section, start)
         section.context.context = context
+
+        debugSubscriber.notify()
     }
 
     private getSectionAtPosition(document: vscode.TextDocument, position: vscode.Position): Section | undefined {
@@ -118,7 +145,7 @@ export class SectionObserver implements vscode.Disposable, GraphContextFetcher {
         const lines: string[] = []
         // eslint-disable-next-line ban/ban
         this.activeDocuments.forEach(document => {
-            lines.push(document.uri)
+            lines.push(path.normalize(vscode.workspace.asRelativePath(URI.parse(document.uri))))
             for (const section of document.sections) {
                 const isSelected =
                     selectedDocument?.uri.toString() === document.uri &&
@@ -200,6 +227,8 @@ export class SectionObserver implements vscode.Disposable, GraphContextFetcher {
                 existingDocument.sections.push(newSection)
             }
         }
+
+        debugSubscriber.notify()
     }
 
     /**
@@ -286,37 +315,45 @@ export class SectionObserver implements vscode.Disposable, GraphContextFetcher {
     }
 
     public dispose(): void {
+        SectionObserver.instance = null
         for (const disposable of this.disposables) {
             disposable.dispose()
         }
+        debugSubscriber.notify()
     }
 }
 
-function preciseContextToSnippet(context: PreciseContext): SymbolContextSnippet {
+function preciseContextToSnippet(context: PreciseContext): SymbolContextSnippet | null {
     const isDts = context.filePath.endsWith('.d.ts')
+    const content =
+        context.hoverText.length > 0 && !isDts
+            ? context.hoverText.map(extractMarkdownCodeBlock).join('\n').trim()
+            : context.definitionSnippet
+
     return {
         fileName: path.normalize(vscode.workspace.asRelativePath(context.filePath)),
         symbol: context.symbol.fuzzyName ?? '',
-        content:
-            context.hoverText.length > 0 && !isDts
-                ? context.hoverText.map(extractMarkdownCodeBlock).join('\n').trim()
-                : context.definitionSnippet,
+        content,
     }
 }
 
 function extractMarkdownCodeBlock(string: string): string {
-    const regex = /```([a-z]*)\n([\S\s]*?)(\n```)?/g
-    const matches = string.match(regex)
-    if (!matches) {
-        return ''
+    const lines = string.split('\n')
+    const codeBlocks: string[] = []
+    let isCodeBlock = false
+    for (const line of lines) {
+        const isCodeBlockDelimiter = line.trim().startsWith('```')
+
+        if (isCodeBlockDelimiter && !isCodeBlock) {
+            isCodeBlock = true
+        } else if (isCodeBlockDelimiter && isCodeBlock) {
+            isCodeBlock = false
+        } else if (isCodeBlock) {
+            codeBlocks.push(line)
+        }
     }
-    const result = matches.map(m => m.match(/([\S\s]*)(```?)/)![1])
-    return (
-        result
-            .join('\n')
-            // The TS language server often adds a loading text which is not helpful for the LLM
-            .replaceAll('(loading...)', '')
-    )
+
+    return codeBlocks.join('\n')
 }
 
 function logHydratedContext(
@@ -327,6 +364,9 @@ function logHydratedContext(
 ): void {
     const matchSummary: { [filename: string]: Set<string> } = {}
     for (const match of context.map(preciseContextToSnippet)) {
+        if (!match) {
+            continue
+        }
         const normalizedFilename = path.normalize(vscode.workspace.asRelativePath(match.fileName))
         const set = matchSummary[normalizedFilename] ?? new Set()
         set.add(match.symbol)

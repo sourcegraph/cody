@@ -69,6 +69,7 @@ export async function createProviderConfig(
             return createAnthropicProviderConfig({
                 client,
                 contextWindowTokens: 2048,
+                mode: config.autocompleteAdvancedModel === 'claude-instant-infill' ? 'infill' : 'default',
             })
         }
         default:
@@ -83,18 +84,23 @@ export async function createProviderConfig(
 async function resolveDefaultProvider(
     configuredProvider: string | null,
     featureFlagProvider?: FeatureFlagProvider
-): Promise<{ provider: string; model?: 'starcoder-7b' | 'starcoder-16b' }> {
+): Promise<{ provider: string; model?: 'starcoder-7b' | 'starcoder-16b' | 'claude-instant-infill' }> {
     if (configuredProvider) {
         return { provider: configuredProvider }
     }
 
-    const [starCoder7b, starCoder16b] = await Promise.all([
+    const [starCoder7b, starCoder16b, claudeInstantInfill] = await Promise.all([
         featureFlagProvider?.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteStarCoder7B),
         featureFlagProvider?.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteStarCoder16B),
+        featureFlagProvider?.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteClaudeInstantInfill),
     ])
 
     if (starCoder7b === true || starCoder16b === true) {
         return { provider: 'unstable-fireworks', model: starCoder7b ? 'starcoder-7b' : 'starcoder-16b' }
+    }
+
+    if (claudeInstantInfill === true) {
+        return { provider: 'anthropic', model: 'claude-instant-infill' }
     }
 
     return { provider: 'anthropic' }
