@@ -122,9 +122,16 @@ export interface Editor<
      * Get diagnostics (errors, warnings, hints) for a range within the active text editor.
      */
     getActiveTextEditorDiagnosticsForRange(range: ActiveTextEditorSelectionRange): ActiveTextEditorDiagnostic[] | null
-
+    /**
+     * Gets the active text editor's visible content.
+     */
     getActiveTextEditorVisibleContent(): ActiveTextEditorVisibleContent | null
+    /**
+     * Functions for editing text documents
+     */
     replaceSelection(fileName: string, selectedText: string, replacement: string): Promise<void>
+    insertToTextDocument(fileUri: URI, content: string): Promise<void>
+
     showQuickPick(labels: string[]): Promise<string | undefined>
     showWarningMessage(message: string): Promise<void>
     showInputBox(prompt?: string): Promise<string | undefined>
@@ -182,6 +189,10 @@ export class NoopEditor implements Editor {
     }
 
     public replaceSelection(_fileName: string, _selectedText: string, _replacement: string): Promise<void> {
+        return Promise.resolve()
+    }
+
+    public insertToTextDocument(_fileUri: URI, _content: string): Promise<void> {
         return Promise.resolve()
     }
 

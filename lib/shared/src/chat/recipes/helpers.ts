@@ -89,3 +89,13 @@ export const numResults = {
 export function isSingleWord(str: string): boolean {
     return str.trim().split(/\s+/).length === 1
 }
+
+/**
+ * Remove markdown formatted code block
+ */
+export function markdownCodeblockRemover(codeblock: string): string {
+    return codeblock
+        .trimEnd()
+        .replace(/```[^\n]*\n/, '')
+        .replace(/```/, '')
+}

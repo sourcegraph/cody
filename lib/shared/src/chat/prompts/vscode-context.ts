@@ -21,6 +21,7 @@ import { getFileExtension } from '../recipes/helpers'
 import { answers, displayFileName } from './templates'
 import { getFileNameFromPath, isValidTestFileName } from './utils'
 
+// TODO bee move vscode logic to editor and context creating to share lib
 /**
  * Checks if a file URI is part of the current workspace.
  *
@@ -545,6 +546,11 @@ export async function getTestFileOfCurrentFileContext(fileName: string): Promise
 /**
  * Creates a URI for a test file that matches the path provided based on the current open file.
  *
+ * e.x.
+ * test_foo.py & bar.py -> test_bar.py
+ * foo.test.ts & bar.ts -> bar.test.ts
+ * fooTest.scala & bar.scala -> barTest.scala
+ *
  * @param repoTestFilePath - The path to the test file in the repository
  * @param currentFileUri - The URI of the currently open file
  * @returns A URI for a test file that matches the repoTestFilePath using info from currentFileUri
@@ -572,10 +578,14 @@ export function createTestFileUri(repoTestFilePath: string, currentFileUri: vsco
         prefix += charByTestIndex
     }
 
-    // Create new URI for the test file by replacing the currentFileName from currentFileUri with the new test file name
-    return vscode.Uri.parse(currentFileUri.toString().replace(currentFileName, prefix + suffix))
+    // Replace the currentFileName from currentFileUri with the new test file name
+    const testFsPathForCurrentFile = currentFileUri.toString().replace(currentFileName, prefix + suffix)
+    return vscode.Uri.parse(testFsPathForCurrentFile)
 }
 
+/**
+ * Checks if a character is alphanumeric.
+ */
 function isCharAlphanumeric(char: string): boolean {
     return /^[\dA-Za-z]+$/.test(char)
 }

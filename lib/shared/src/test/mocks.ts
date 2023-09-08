@@ -116,6 +116,10 @@ export class MockEditor implements Editor {
         return this.mocks.replaceSelection?.(fileName, selectedText, replacement) ?? Promise.resolve()
     }
 
+    public insertToTextDocument(fileUri: URI, content: string): Promise<void> {
+        return this.mocks.insertToTextDocument?.(fileUri, content) ?? Promise.resolve()
+    }
+
     public showQuickPick(labels: string[]): Promise<string | undefined> {
         return this.mocks.showQuickPick?.(labels) ?? Promise.resolve(undefined)
     }

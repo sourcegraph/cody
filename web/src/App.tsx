@@ -48,6 +48,9 @@ const editor: Editor = {
     replaceSelection(_fileName, _selectedText, _replacement) {
         return Promise.resolve()
     },
+    insertToTextDocument(_fileUri, _content) {
+        return Promise.resolve()
+    },
     async showQuickPick(labels) {
         // TODO: Use a proper UI element
         return window.prompt(`Choose: ${labels.join(', ')}`, labels[0]) || undefined

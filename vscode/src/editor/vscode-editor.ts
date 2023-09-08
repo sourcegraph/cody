@@ -1,5 +1,6 @@
 import * as vscode from 'vscode'
 
+import { markdownCodeblockRemover } from '@sourcegraph/cody-shared/src/chat/recipes/helpers'
 import type {
     ActiveTextEditor,
     ActiveTextEditorDiagnostic,
@@ -281,6 +282,58 @@ export class VSCodeEditor implements Editor<InlineController, FixupController, C
         })
 
         return
+    }
+
+    /**
+     * Inserts the given content into the specified file URI.
+     *
+     * @param fileUri - The file URI to insert the content into.
+     * @param content - The content string to insert.
+     *
+     * This will create the file if it doesn't exist.
+     * It inserts the content at the end of the file, after any existing content.
+     * It handles inserting after any import statements if they exist.
+     * It removes any surrounding markdown code blocks from the content before inserting.
+     * Finally it opens the file in the editor with the inserted content selected.
+     */
+    public async insertToTextDocument(fileUri: vscode.Uri, content: string): Promise<void> {
+        const workspaceEditor = new vscode.WorkspaceEdit()
+        workspaceEditor.createFile(fileUri, { ignoreIfExists: true })
+        await vscode.workspace.applyEdit(workspaceEditor)
+        const textDocument = await vscode.workspace.openTextDocument(fileUri)
+
+        const lastLineNum = textDocument.lineCount
+        const insertPos = new vscode.Position(lastLineNum + 1, 0)
+
+        let sinitizedContent = markdownCodeblockRemover(content)
+
+        // Check for duplicated imports in non-empty files
+        if (textDocument.getText().length) {
+            // get folding range for the textDocument
+            const foldingRanges = await vscode.commands.executeCommand<vscode.FoldingRange[]>(
+                'vscode.executeFoldingRangeProvider',
+                fileUri
+            )
+            // get the line number of the last import statement
+            const lastImportLineNum = foldingRanges?.findLast(range => range.kind === 2)?.end || 0
+
+            // loop through the import statements to remove duplicates
+            for (let i = 0; i <= lastImportLineNum; i++) {
+                const lineText = textDocument.lineAt(i).text.trim()
+                // Remove duplicate imports from content
+                if (lineText && sinitizedContent.includes(lineText)) {
+                    sinitizedContent = sinitizedContent.replace(lineText, '')
+                }
+            }
+        }
+
+        workspaceEditor.insert(fileUri, insertPos, sinitizedContent)
+        await vscode.workspace.applyEdit(workspaceEditor)
+
+        // Open the new file
+        void vscode.window.showTextDocument(textDocument, {
+            selection: new vscode.Range(insertPos, insertPos),
+        })
     }
 
     public async showQuickPick(labels: string[]): Promise<string | undefined> {

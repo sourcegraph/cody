@@ -121,6 +121,10 @@ export class AgentEditor implements Editor {
         throw new Error('Not implemented')
     }
 
+    public insertToTextDocument(): Promise<void> {
+        throw new Error('Not implemented')
+    }
+
     public showQuickPick(): Promise<string | undefined> {
         throw new Error('Not implemented')
     }

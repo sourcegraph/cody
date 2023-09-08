@@ -152,13 +152,3 @@ export function isValidTestFileName(filePath?: string): boolean {
 
     return regex?.test(fileName) ?? false
 }
-
-/**
- * Remove markdown formatted code block
- */
-export function markdownCodeblockRemover(codeblock: string): string {
-    return codeblock
-        .trimEnd()
-        .replace(/```[^\n]*\n/, '')
-        .replace(/```/, '')
-}

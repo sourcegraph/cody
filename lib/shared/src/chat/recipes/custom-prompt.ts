@@ -1,5 +1,3 @@
-import * as vscode from 'vscode'
-
 import { CodebaseContext } from '../../codebase-context'
 import { ContextMessage } from '../../codebase-context/messages'
 import { ActiveTextEditorSelection, Editor } from '../../editor'
@@ -11,7 +9,6 @@ import {
     extractTestType,
     getHumanLLMText,
     isOnlySelectionRequired,
-    markdownCodeblockRemover,
     newInteraction,
     newInteractionWithError,
 } from '../prompts/utils'
@@ -112,10 +109,10 @@ export class CustomPrompt implements Recipe {
                         const currentFileUri = context.editor.fileUri
                         if (codebaseTestFile && currentFileUri) {
                             const testFileUri = createTestFileUri(codebaseTestFile, currentFileUri)
-                            await this.insertContentIntoFile(testFileUri, content)
+                            await context.editor.insertToTextDocument(testFileUri, content)
                         }
                     })
-                    .catch(error => console.error(error))
+                    .catch(error => console.log(error))
                 return Promise.resolve()
             })
         )
@@ -196,57 +193,5 @@ export class CustomPrompt implements Recipe {
         // Return sliced results
         const maxResults = Math.floor((NUM_CODE_RESULTS + NUM_TEXT_RESULTS) / 2) * 2
         return contextMessages.slice(-maxResults * 2)
-    }
-
-    /**
-     * Inserts the given content into the specified file URI.
-     *
-     * @param fileUri - The file URI to insert the content into.
-     * @param content - The content string to insert.
-     *
-     * This will create the file if it doesn't exist.
-     * It inserts the content at the end of the file, after any existing content.
-     * It handles inserting after any import statements if they exist.
-     * It removes any surrounding markdown code blocks from the content before inserting.
-     * Finally it opens the file in the editor with the inserted content selected.
-     */
-    private async insertContentIntoFile(fileUri: vscode.Uri, content: string): Promise<void> {
-        const workspaceEditor = new vscode.WorkspaceEdit()
-        workspaceEditor.createFile(fileUri, { ignoreIfExists: true })
-        await vscode.workspace.applyEdit(workspaceEditor)
-        const textDocument = await vscode.workspace.openTextDocument(fileUri)
-
-        const lastLineNum = textDocument.lineCount
-        const insertPos = new vscode.Position(lastLineNum + 1, 0)
-
-        let sinitizedContent = markdownCodeblockRemover(content)
-
-        // check if the textDocument is empty
-        if (textDocument.getText().length) {
-            // get folding range for the textDocument
-            const foldingRanges = await vscode.commands.executeCommand<vscode.FoldingRange[]>(
-                'vscode.executeFoldingRangeProvider',
-                fileUri
-            )
-            // get the line number of the folding range after the last import statement
-            const lastImportLineNum = foldingRanges?.findLast(range => range.kind === 2)?.end || 0
-
-            // loop through the import statements and see if each import statement exists in content
-            for (let i = 0; i <= lastImportLineNum; i++) {
-                // get the line text at line i
-                const lineText = textDocument.lineAt(i).text.trim()
-                // check if the line text exists in the content
-                if (lineText && sinitizedContent.includes(lineText)) {
-                    sinitizedContent = sinitizedContent.replace(lineText, '')
-                }
-            }
-        }
-
-        workspaceEditor.insert(fileUri, insertPos, sinitizedContent)
-        await vscode.workspace.applyEdit(workspaceEditor)
-        // Open the new file
-        await vscode.window.showTextDocument(textDocument, {
-            selection: new vscode.Range(insertPos, insertPos),
-        })
     }
 }
