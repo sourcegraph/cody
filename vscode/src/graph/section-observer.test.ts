@@ -80,7 +80,7 @@ describe('SectionObserver', () => {
                 ] satisfies PreciseContext[]
         )
 
-        sectionObserver = new SectionObserver(
+        sectionObserver = SectionObserver.createInstance(
             {
                 onDidChangeVisibleTextEditors: (_onDidChangeVisibleTextEditors: any) => {
                     onDidChangeVisibleTextEditors = _onDidChangeVisibleTextEditors

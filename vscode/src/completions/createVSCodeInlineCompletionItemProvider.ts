@@ -25,7 +25,9 @@ export async function createInlineCompletionItemProvider(
     const providerConfig = await createProviderConfig(config, client, featureFlagProvider)
     if (providerConfig) {
         const history = new VSCodeDocumentHistory()
-        const sectionObserver = config.autocompleteExperimentalGraphContext ? new SectionObserver() : undefined
+        const sectionObserver = config.autocompleteExperimentalGraphContext
+            ? SectionObserver.createInstance()
+            : undefined
 
         const completionsProvider = new InlineCompletionItemProvider({
             providerConfig,

@@ -3,7 +3,10 @@ import * as vscode from 'vscode'
 import { isDefined } from '@sourcegraph/cody-shared'
 import { renderMarkdown } from '@sourcegraph/cody-shared/src/common/markdown'
 
-import * as sectionObserver from '../../graph/section-observer'
+import {
+    registerDebugListener as registerSectionObserverDebugListener,
+    SectionObserver,
+} from '../../graph/section-observer'
 import { InlineCompletionsResultSource } from '../getInlineCompletions'
 import * as statistics from '../statistics'
 import { InlineCompletionItem } from '../types'
@@ -57,7 +60,7 @@ export function registerAutocompleteTraceView(provider: InlineCompletionItemProv
             rerender()
 
             const unsubscribeStatistics = statistics.registerChangeListener(rerender)
-            const unsubscribeSectionObserver = sectionObserver.registerDebugListener(rerender)
+            const unsubscribeSectionObserver = registerSectionObserverDebugListener(rerender)
 
             provider.setTracer(_data => {
                 data = _data
@@ -181,7 +184,7 @@ ${
 
 ${markdownCodeBlock(data.error)}
 `,
-        sectionObserver.singleton
+        SectionObserver.instance
             ? `
 ## Document sections
 
@@ -211,10 +214,10 @@ function statisticSummary(): string {
 }
 
 function documentSections(): string {
-    if (!sectionObserver.singleton) {
+    if (!SectionObserver.instance) {
         return ''
     }
-    return `\`\`\`\n${sectionObserver.singleton.debugPrint()}\n\`\`\``
+    return `\`\`\`\n${SectionObserver.instance.debugPrint()}\n\`\`\``
 }
 
 function codeDetailsWithSummary(
