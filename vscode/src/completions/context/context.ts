@@ -24,7 +24,11 @@ export interface GetContextOptions {
 }
 
 export interface GraphContextFetcher {
-    getContextAtPosition(document: vscode.TextDocument, position: vscode.Position): ContextSnippet[]
+    getContextAtPosition(
+        document: vscode.TextDocument,
+        position: vscode.Position,
+        contextRange?: vscode.Range
+    ): ContextSnippet[]
 }
 
 export type ContextSummary = Readonly<{
