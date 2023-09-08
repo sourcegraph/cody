@@ -15,16 +15,19 @@ export class CustomCommandsBuilderMenu {
     public async start(commands: Map<string, CodyPrompt>): Promise<CodyCommand | null> {
         // get slash command
         const slashCommand = await this.makeSlashCommand(commands)
+        if (!slashCommand) { return null }
+
         // get name
         const description = await this.makeDescription()
+        if (!description) { return null }
+
         // build prompt
         const prompt = await this.makePrompt()
+        if (!prompt) { return null }
+
         // get type
         const type = await this.makeType()
-
-        if (!slashCommand || !description || !prompt || !type) {
-            return null
-        }
+        if (!type) { return null }
 
         return { slashCommand, prompt: { ...prompt, description, slashCommand }, type }
     }
