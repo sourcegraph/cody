@@ -8,7 +8,7 @@ Starting from `0.2.0`, Cody is using `major.EVEN_NUMBER.patch` for release versi
 
 ### Added
 
-- New setting `cody.custom.starter` for configuring custom message added to the start of every chat request. Extension reload required. [pull/963](https://github.com/sourcegraph/cody/pull/963)
+- New setting `cody.chat.preInstruction` for configuring custom message added to the start of every chat request. Extension reload required. [pull/963](https://github.com/sourcegraph/cody/pull/963)
 
 ### Fixed
 

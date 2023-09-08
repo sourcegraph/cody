@@ -85,7 +85,7 @@ describe('getConfiguration', () => {
                         return /.*/
                     case 'cody.telemetry.level':
                         return 'off'
-                    case 'cody.custom.starter':
+                    case 'cody.chat.preInstruction':
                         return 'My name is Jeff.'
                     case 'cody.autocomplete.advanced.provider':
                         return 'unstable-codegen'

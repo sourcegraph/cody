@@ -811,12 +811,12 @@
           "default": false,
           "markdownDescription": "Experimental feature for internal use."
         },
-        "cody.custom.starter": {
+        "cody.chat.preInstruction": {
           "order": 10,
           "type": "string",
-          "markdownDescription": "A custom message added to the start of every chat request to Cody. Extension reload required.",
+          "markdownDescription": "An instruction to be included at the start of all chat messages sent to Cody. Extension reload required.",
           "examples": [
-            "Answer me in Spanish."
+            "Answer all my questions in Spanish."
           ]
         },
         "cody.experimental.symf.path": {
