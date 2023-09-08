@@ -2,12 +2,14 @@ import path from 'path'
 
 import { LRUCache } from 'lru-cache'
 import * as vscode from 'vscode'
+import { URI } from 'vscode-uri'
 
 import { PreciseContext } from '@sourcegraph/cody-shared/src/codebase-context/messages'
 import { isDefined } from '@sourcegraph/cody-shared/src/common'
 
 import { GraphContextFetcher } from '../completions/context/context'
 import { SymbolContextSnippet } from '../completions/types'
+import { createSubscriber } from '../completions/utils'
 import { logDebug } from '../log'
 
 import { getGraphContextFromRange as defaultGetGraphContextFromRange, locationKeyFn } from './graph'
@@ -35,6 +37,9 @@ const NUM_OF_CHANGED_LINES_FOR_SECTION_RELOAD = 3
 
 const MAX_TRACKED_DOCUMENTS = 10
 
+const debugSubscriber = createSubscriber<void>()
+export const registerDebugListener = debugSubscriber.subscribe.bind(debugSubscriber)
+
 /**
  * Watches a document for changes and refreshes the sections if needed. Preloads the sections that
  * the document is being modified by intersecting the cursor position with the document sections.
@@ -50,7 +55,7 @@ export class SectionObserver implements vscode.Disposable, GraphContextFetcher {
         max: MAX_TRACKED_DOCUMENTS,
     })
 
-    constructor(
+    private constructor(
         private window: Pick<
             typeof vscode.window,
             'onDidChangeVisibleTextEditors' | 'onDidChangeTextEditorSelection' | 'visibleTextEditors'
@@ -63,6 +68,23 @@ export class SectionObserver implements vscode.Disposable, GraphContextFetcher {
         this.disposables.push(workspace.onDidChangeTextDocument(this.onDidChangeTextDocument.bind(this)))
         this.disposables.push(window.onDidChangeTextEditorSelection(this.onDidChangeTextEditorSelection.bind(this)))
         void this.onDidChangeVisibleTextEditors()
+    }
+
+    public static instance: SectionObserver | null = null
+    public static createInstance(
+        window?: Pick<
+            typeof vscode.window,
+            'onDidChangeVisibleTextEditors' | 'onDidChangeTextEditorSelection' | 'visibleTextEditors'
+        >,
+        workspace?: Pick<typeof vscode.workspace, 'onDidChangeTextDocument'>,
+        getDocumentSections?: typeof defaultGetDocumentSections,
+        getGraphContextFromRange?: typeof defaultGetGraphContextFromRange
+    ): SectionObserver {
+        if (this.instance) {
+            throw new Error('SectionObserver has already been initialized')
+        }
+        this.instance = new SectionObserver(window, workspace, getDocumentSections, getGraphContextFromRange)
+        return this.instance
     }
 
     public getContextAtPosition(document: vscode.TextDocument, position: vscode.Position): SymbolContextSnippet[] {
@@ -99,11 +121,15 @@ export class SectionObserver implements vscode.Disposable, GraphContextFetcher {
             section.context.isStale = false
         }
 
+        debugSubscriber.notify()
+
         const start = performance.now()
         const context = await this.getGraphContextFromRange(editor, section.location.range)
 
         logHydratedContext(context, editor, section, start)
         section.context.context = context
+
+        debugSubscriber.notify()
     }
 
     private getSectionAtPosition(document: vscode.TextDocument, position: vscode.Position): Section | undefined {
@@ -119,7 +145,7 @@ export class SectionObserver implements vscode.Disposable, GraphContextFetcher {
         const lines: string[] = []
         // eslint-disable-next-line ban/ban
         this.activeDocuments.forEach(document => {
-            lines.push(document.uri)
+            lines.push(path.normalize(vscode.workspace.asRelativePath(URI.parse(document.uri))))
             for (const section of document.sections) {
                 const isSelected =
                     selectedDocument?.uri.toString() === document.uri &&
@@ -201,6 +227,8 @@ export class SectionObserver implements vscode.Disposable, GraphContextFetcher {
                 existingDocument.sections.push(newSection)
             }
         }
+
+        debugSubscriber.notify()
     }
 
     /**
@@ -287,9 +315,11 @@ export class SectionObserver implements vscode.Disposable, GraphContextFetcher {
     }
 
     public dispose(): void {
+        SectionObserver.instance = null
         for (const disposable of this.disposables) {
             disposable.dispose()
         }
+        debugSubscriber.notify()
     }
 }
 

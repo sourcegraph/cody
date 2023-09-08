@@ -1,3 +1,7 @@
+import { createSubscriber } from './utils'
+
+const subscriber = createSubscriber<void>()
+
 interface CompletionStatistics {
     suggested: number
     accepted: number
@@ -14,23 +18,11 @@ export function getStatistics(): CompletionStatistics {
 
 export function logSuggested(): void {
     statistics = { ...statistics, suggested: statistics.suggested + 1 }
-    notifyAll()
+    subscriber.notify()
 }
 export function logAccepted(): void {
     statistics = { ...statistics, accepted: statistics.accepted + 1 }
-    notifyAll()
+    subscriber.notify()
 }
 
-const listeners: Set<Listener> = new Set()
-type Listener = () => void
-type Unregister = () => void
-export function registerChangeListener(listener: Listener): Unregister {
-    listeners.add(listener)
-    return () => listeners.delete(listener)
-}
-
-function notifyAll(): void {
-    for (const listener of listeners) {
-        listener()
-    }
-}
+export const registerChangeListener = subscriber.subscribe.bind(subscriber)
