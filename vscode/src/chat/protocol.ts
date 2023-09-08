@@ -7,6 +7,7 @@ import { CodyLLMSiteConfiguration } from '@sourcegraph/cody-shared/src/sourcegra
 import type { TelemetryEventProperties } from '@sourcegraph/cody-shared/src/telemetry'
 
 import { View } from '../../webviews/NavBar'
+import { AuthMethod } from '../../webviews/LoginExperiment'
 
 /**
  * A message sent from the webview to the extension host.
@@ -37,7 +38,7 @@ export type WebviewMessage =
           type: 'signin' | 'signout' | 'support' | 'app' | 'callback' | 'simplified-onboarding'
           endpoint?: string
           value?: string
-          authMethod?: 'dotcom' | 'github' | 'gitlab' // Simplified onboarding auth methods
+          authMethod?: AuthMethod
       }
     | { command: 'abort' }
     | { command: 'custom-prompt'; title: string; value?: CodyPromptType }

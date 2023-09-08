@@ -8,6 +8,40 @@
     color: var(--vscode-editor-foreground);
 }
 
+.logo {
+    margin-bottom: 1rem;
+}
+
+.button-width-sizer {
+    margin-top: 0.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: start;
+}
+
+.button-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+}
+
+.section.auth-method-screen {
+    border: 1px solid #454545;
+    border-radius: 4px;
+    padding: 1rem;
+    box-shadow: 0px 2px 16px 0px #0000005C;
+}
+
+body[data-vscode-theme-kind='vscode-dark'] .auth-method-screen {
+    background-color: #303031;
+    color: white;
+    font-weight: 600;
+}
+
+body[data-vscode-theme-kind='vscode-dark'] .terms, body[data-vscode-theme-kind='vscode-light'] .terms {
+    color: #a0a0a0;
+}
+
 .divider {
     height: 1px;
     border-top: 1px solid var(--vscode-activityBar-border);
@@ -20,26 +54,17 @@
 
 .section {
     border: 0.1em solid;
-    border-image-slice: 1;
     border-width: 0.1em;
     margin-bottom: var(--spacing);
     padding: var(--spacing);
 }
 
-.cody-gradient {
-    border-image-source: linear-gradient(to bottom, #b200f8, #ff5543, #00cbec);
-}
-
-.grey-gradient {
-    border-color: #888888;
-}
-
 .other-sign-in-options {
-    margin-top: 1.5rem;
-    display: flex;
-    flex-direction: column;
+    flex: 0 0 auto;
+    margin-bottom: 0.5rem;
     width: 100%;
-    gap: 1rem;
+    text-align: center;
+    line-height: 1.4;
 }
 
 .section-header {
@@ -81,4 +106,8 @@
     flex-direction: column;
     width: 100%;
     gap: 1rem;
+}
+
+.button img {
+    margin-inline-end: 0.5rem;
 }

@@ -17,7 +17,7 @@ export class AuthProviderSimplified {
     }
 }
 
-type AuthMethod = 'dotcom' | 'github' | 'gitlab'
+type AuthMethod = 'dotcom' | 'github' | 'gitlab' | 'google'
 
 // Opens authentication URLs for simplified onboarding.
 async function openExternalAuthUrl(provider: AuthMethod): Promise<boolean> {
@@ -41,6 +41,7 @@ async function openExternalAuthUrl(provider: AuthMethod): Promise<boolean> {
     const gitLabLoginUrl = `${site}/.auth/gitlab/login?pc=https%3A%2F%2Fgitlab.com%2F%3A%3A262309265ae76179773477bd50c93c7022007a4810c344c69a7371da11949c48&redirect=${
         postSignUpSurveyUrl
     }`
+    const googleLoginUrl = `${site}/.auth/openidconnect/login?pc=google&redirect=${postSignUpSurveyUrl}`
 
     let uri
     switch (provider) {
@@ -49,6 +50,9 @@ async function openExternalAuthUrl(provider: AuthMethod): Promise<boolean> {
             break
         case 'gitlab':
             uri = gitLabLoginUrl
+            break
+        case 'google':
+            uri = googleLoginUrl
             break
         case 'dotcom':
         default:

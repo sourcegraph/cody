@@ -12,7 +12,7 @@ import { AuthStatus, defaultAuthStatus, LocalEnv } from '../src/chat/protocol'
 import { Chat } from './Chat'
 import { LoadingPage } from './LoadingPage'
 import { Login } from './Login'
-import { LoginExperimentArm, LoginSimplified } from './LoginExperiment'
+import { AuthMethod, LoginExperimentArm, LoginSimplified } from './LoginExperiment'
 import { View } from './NavBar'
 import { Notices } from './Notices'
 import { UserHistory } from './UserHistory'
@@ -149,7 +149,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     )
 
     const simplifiedLoginRedirect = useCallback(
-        (method: 'dotcom' | 'github' | 'gitlab') => {
+        (method: AuthMethod) => {
             // TODO: Shouldn't the source of truth, AuthProvider, update its
             // state and those changes flow back to us?
             // TODO: you get stuck in the "login" view if you close the browser,

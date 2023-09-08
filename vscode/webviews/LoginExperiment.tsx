@@ -4,13 +4,21 @@ import { TelemetryService } from '@sourcegraph/cody-shared/src/telemetry'
 
 import styles from './LoginExperiment.module.css'
 
+import onboardingSplashImage from './cody-onboarding-splash.svg'
+import signInLogoGitHub from './sign-in-logo-github.svg'
+import signInLogoGitLab from './sign-in-logo-gitlab.svg'
+import signInLogoGoogle from './sign-in-logo-google.svg'
+import classNames from 'classnames'
+
 export enum LoginExperimentArm {
     Classic,
     Simplified,
 }
 
+export type AuthMethod = 'dotcom' | 'github' | 'gitlab' | 'google'
+
 interface LoginProps {
-    simplifiedLoginRedirect: (method: 'dotcom' | 'github' | 'gitlab') => void
+    simplifiedLoginRedirect: (method: AuthMethod) => void
     telemetryService: TelemetryService
 }
 
@@ -19,51 +27,57 @@ export const LoginSimplified: React.FunctionComponent<React.PropsWithoutRef<Logi
     simplifiedLoginRedirect,
     telemetryService,
 }) => (
-    <div>
-        <img />
-        <h1>Cody</h1>
-        <p>Understand and write code faster with an AI assistant</p>
-        <div>
-            <p>To get started, sign in or continue with email:</p>
-            <VSCodeButton
-                className={styles.button}
-                type="button"
-                onClick={() => {
-                    telemetryService.log('CodyVSCodeExtension:auth:simplifiedSignInGitHubClick')
-                    simplifiedLoginRedirect('github')
-                }}
-            >
-                <img />
-                Sign In with GitHub
-            </VSCodeButton>
-            <VSCodeButton
-                className={styles.button}
-                type="button"
-                onClick={() => {
-                    telemetryService.log('CodyVSCodeExtension:auth:simplifiedSignInGitLabClick')
-                    simplifiedLoginRedirect('gitlab')
-                }}
-            >
-                <img />
-                Sign In with GitLab
-            </VSCodeButton>
-            <VSCodeButton
-                className={styles.link}
-                type="button"
-                onClick={() => {
-                    telemetryService.log('CodyVSCodeExtension:auth:simplifiedSignInEmailClick')
-                    simplifiedLoginRedirect('dotcom')
-                }}
-            >
-                Continue with Email &rarr;
-            </VSCodeButton>
-            <a href="https://sourcegraph.com/sign-up">Sign Up</a>
-            <a href="https://about.sourcegraph.com/terms/cody-notice">Terms of Use</a>
+    <div className={styles.container}>
+        <div className={styles.sectionsContainer}>
+        <img src={onboardingSplashImage} alt="Hi, I'm Cody" className={styles.logo} />
+        <div className={classNames(styles.section, styles.authMethodScreen)}>
+            Sign in to get started:
+            <div className={styles.buttonWidthSizer}>
+                <div className={styles.buttonStack}>
+                    <VSCodeButton
+                        className={styles.button}
+                        type="button"
+                        onClick={() => {
+                            telemetryService.log('CodyVSCodeExtension:auth:simplifiedSignInGitHubClick')
+                            simplifiedLoginRedirect('github')
+                        }}
+                    >
+                        <img src={signInLogoGitHub} alt="GitHub logo" />
+                        Sign In with GitHub
+                    </VSCodeButton>
+                    <VSCodeButton
+                        className={styles.button}
+                        type="button"
+                        onClick={() => {
+                            telemetryService.log('CodyVSCodeExtension:auth:simplifiedSignInGitLabClick')
+                            simplifiedLoginRedirect('gitlab')
+                        }}
+                    >
+                        <img src={signInLogoGitLab} alt="GitLab logo" />
+                        Sign In with GitLab
+                    </VSCodeButton>
+                    <VSCodeButton
+                        className={styles.button}
+                        type="button"
+                        onClick={() => {
+                            telemetryService.log('CodyVSCodeExtension:auth:simplifiedSignInGoogleClick')
+                            simplifiedLoginRedirect('google')
+                        }}
+                    >
+                        <img src={signInLogoGoogle} alt="Google logo" />
+                        Sign In with Google
+                    </VSCodeButton>
+                </div>
+            </div>
         </div>
-
-        <div>
+        <p className={styles.terms}>
+            By signing in you&rsquo;re agreeing to Sourcegraph&rsquo;s <a href="https://about.sourcegraph.com/terms/cody-notice">Cody Usage &amp; Privacy Notice</a>
+        </p>
+    </div>
+    <div className={styles.otherSignInOptions}>
             Use Sourcegraph Enterprise?
+            <br/>
             <a href="#">Sign In to Enterprise Instance</a>
-        </div>
+    </div>
 </div>
 )
