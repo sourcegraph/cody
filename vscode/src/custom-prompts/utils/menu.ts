@@ -190,8 +190,6 @@ export const CustomCommandConfigMenuItems = [
         kind: 0,
         label: 'New Custom Command...',
         id: 'add',
-        type: 'user',
-        description: '',
     },
     { kind: -1, id: 'separator', label: '' },
     {

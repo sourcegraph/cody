@@ -9,6 +9,7 @@ import { customPromptsContextOptions } from '../utils/menu'
 export interface CodyCommand {
     slashCommand: string
     prompt: CodyPrompt
+    type: 'user' | 'workspace'
 }
 export class CustomCommandsBuilderMenu {
     public async start(commands: Map<string, CodyPrompt>): Promise<CodyCommand | null> {
@@ -19,15 +20,13 @@ export class CustomCommandsBuilderMenu {
         // build prompt
         const prompt = await this.makePrompt()
         // get type
-        if (prompt) {
-            prompt.type = await this.makeType()
-        }
+        const type = await this.makeType()
 
-        if (!slashCommand || !description || !prompt || !prompt.type) {
+        if (!slashCommand || !description || !prompt || !type) {
             return null
         }
 
-        return { slashCommand, prompt: { ...prompt, description, slashCommand } }
+        return { slashCommand, prompt: { ...prompt, description, slashCommand }, type }
     }
 
     private async makeSlashCommand(commands: Map<string, CodyPrompt>): Promise<string | undefined> {

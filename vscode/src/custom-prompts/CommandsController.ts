@@ -331,9 +331,8 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
      * Menu with an option to add a new command via UI and save it to user's cody.json file
      */
     public async configMenu(lastMenu?: string): Promise<void> {
-        const promptSize = this.custom.promptSize.user + this.custom.promptSize.workspace
         const selected = await showCommandConfigMenu()
-        const action = promptSize === 0 ? 'file' : selected?.id
+        const action = selected?.id
         if (!selected || !action) {
             return
         }
@@ -353,12 +352,7 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
                 break
             }
             case 'add': {
-                if (selected?.type === 'workspace') {
-                    const wsFileAction = this.custom.promptSize.workspace === 0 ? 'file' : 'open'
-                    await this.config(wsFileAction, 'workspace')
-                    break
-                }
-                await this.config(action, selected?.type)
+                await this.config(action)
                 break
             }
             case 'list':
@@ -376,7 +370,7 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
      * Config file controller
      * handles operations on config files for user and workspace commands
      */
-    public async config(action: string, fileType: CodyPromptType): Promise<void> {
+    public async config(action: string, fileType?: CodyPromptType): Promise<void> {
         switch (action) {
             case 'delete':
                 if ((await showRemoveConfirmationInput()) !== 'Yes') {
@@ -389,7 +383,9 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
                 await this.custom.createConfig(fileType)
                 break
             case 'open':
-                await this.open(fileType)
+                if (fileType) {
+                    await this.open(fileType)
+                }
                 break
             case 'add':
                 await this.addNewUserCommandQuick()
@@ -409,17 +405,17 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
             return
         }
         // Save the prompt to the current Map and Extension storage
-        await this.custom.save(newCommand.slashCommand, newCommand.prompt, false, newCommand.prompt.type)
+        await this.custom.save(newCommand.slashCommand, newCommand.prompt, false, newCommand.type)
         await this.refresh()
         // Notify user
         void vscode.window
             .showInformationMessage(
-                `New custom Cody command saved to ${newCommand.prompt.type} settings`,
+                `New custom Cody command saved to ${newCommand.type} settings`,
                 'Open Settings'
             )
             .then(async choice => {
                 if (choice === 'Open Settings') {
-                    await this.custom.openConfig(newCommand.prompt.type)
+                    await this.custom.openConfig(newCommand.type)
                 }
             })
 
