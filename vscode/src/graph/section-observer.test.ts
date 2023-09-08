@@ -82,6 +82,7 @@ describe('SectionObserver', () => {
 
         sectionObserver = SectionObserver.createInstance(
             {
+                // Mock VS Code event handlers so we can fire them manually
                 onDidChangeVisibleTextEditors: (_onDidChangeVisibleTextEditors: any) => {
                     onDidChangeVisibleTextEditors = _onDidChangeVisibleTextEditors
                     return disposable
