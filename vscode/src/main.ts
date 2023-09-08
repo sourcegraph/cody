@@ -95,8 +95,8 @@ const register = async (
     const workspaceConfig = vscode.workspace.getConfiguration()
     const config = getConfiguration(workspaceConfig)
 
-    if (config.customStarter) {
-        PromptMixin.addCustom(newPromptMixin(config.customStarter))
+    if (config.chatPreInstruction) {
+        PromptMixin.addCustom(newPromptMixin(config.chatPreInstruction))
     }
 
     if (config.autocompleteExperimentalSyntacticPostProcessing) {
