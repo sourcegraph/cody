@@ -15,6 +15,7 @@ export interface GetContextOptions {
     history: DocumentHistory
     prefix: string
     suffix: string
+    contextRange: vscode.Range
     jaccardDistanceWindowSize: number
     maxChars: number
     getCodebaseContext: () => CodebaseContext
@@ -48,8 +49,9 @@ export async function getContext(options: GetContextOptions): Promise<GetContext
      */
     const embeddingsMatches =
         isEmbeddingsContextEnabled && !graphContextFetcher ? getContextFromEmbeddings(options) : []
+
     const graphMatches = graphContextFetcher
-        ? graphContextFetcher.getContextAtPosition(options.document, options.position)
+        ? graphContextFetcher.getContextAtPosition(options.document, options.position, options.contextRange)
         : []
 
     // When we have graph matches, use it exclusively for the context

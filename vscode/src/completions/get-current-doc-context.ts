@@ -6,6 +6,9 @@ export interface DocumentContext {
     prefix: string
     suffix: string
 
+    /** The range that overlaps the included prefix and suffix */
+    contextRange: vscode.Range
+
     /** Text before the cursor on the same line. */
     currentLinePrefix: string
     /** Text after the cursor on the same line. */
@@ -91,6 +94,10 @@ export function getCurrentDocContext(
     return {
         prefix,
         suffix,
+        contextRange: new vscode.Range(
+            document.positionAt(offset - prefix.length),
+            document.positionAt(offset + suffix.length)
+        ),
         currentLinePrefix,
         currentLineSuffix,
         prevNonEmptyLine,
