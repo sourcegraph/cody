@@ -1,10 +1,10 @@
 [
   {
     "completions": [
-      "    const logger = signale.scope('logger')"
+      "    signale.info(message)"
     ],
-    "elapsed": 1389,
-    "timestamp": "1694209101117",
+    "elapsed": 1420,
+    "timestamp": "1694213801336",
     "sample": {
       "context": [],
       "fileName": "logger.ts",
@@ -14,10 +14,12 @@
   },
   {
     "completions": [
-      "    const date = new Date()"
+      "    const date = new Date();\n\n    const filename = path.join(__dirname, 'date.txt');\n\n    require('fs').writeFile(filename, date.toDateString(), err => {\n        if (err) throw err;\n        console.log('Date written to', filename);\n    });",
+      "    const date = new Date();\n\n    const fileName = path.join(__dirname, 'log', `${date.toISOString()}.log`);\n\n    fs.writeFileSync(fileName, date.toISOString());",
+      "    const date = new Date();\n    const fileName = path.join(__dirname, 'log', `${date.getFullYear()}-${date.getMonth()+1}-${date.getDate()}.log`);\n\n    fs.writeFileSync(fileName, date);"
     ],
-    "elapsed": 1206,
-    "timestamp": "1694209101117",
+    "elapsed": 1636,
+    "timestamp": "1694213801336",
     "sample": {
       "context": [],
       "fileName": "writer.ts",
@@ -27,12 +29,12 @@
   },
   {
     "completions": [
-      "        // Return line object at given position\n        const lineNumber = typeof position === 'number' ? position : position.line\n        return {\n            text: this.lines[lineNumber],\n            range: new vscode.Range(lineNumber, 0, lineNumber, this.lines[lineNumber].length)\n        }",
-      "        // Return TextLine object at given position\n        const lineNumber = typeof position === 'number' ? position : position.line;\n        return {\n            text: this.lines[lineNumber],\n            range: new vscode.Range(lineNumber, 0, lineNumber, this.lines[lineNumber].length)\n        };",
-      "        let lineNumber = typeof position === 'number' ? position : position.line;"
+      "        let lineNumber: number;\n            if(position instanceof vscode.Position) {\n                lineNumber = position.line;\n            } else {\n                lineNumber = position;\n            }\n\n            return {\n                text: this.lines[lineNumber],\n                range: new vscode.Range(lineNumber, 0, lineNumber, this.lines[lineNumber].length)\n            }\n        }",
+      "        const lineNumber = typeof position === 'number' ? position : position.line;\n        return {\n            text: this.lines[lineNumber],\n            range: new vscode.Range(lineNumber, 0, lineNumber, this.lines[lineNumber].length)\n        }",
+      "        const pos = typeof position === 'number' ? {line: position, character: 0} : position;\n        return {\n            text: this.lines[pos.line],\n            range: new vscode.Range(pos.line, 0, pos.line, this.lines[pos.line].length)\n        }"
     ],
-    "elapsed": 1510,
-    "timestamp": "1694209101117",
+    "elapsed": 2687,
+    "timestamp": "1694213801336",
     "sample": {
       "context": [],
       "fileName": "text-document.ts",
@@ -42,11 +44,11 @@
   },
   {
     "completions": [
-      "        try {\n        return execFileSync('uname', ['-s']).toString().trim()\n    } catch (err) {",
-      "        try {"
+      "        try {\n                return require('os').platform()\n            } catch (err) {\n                return null\n            }\n        } else {\n            return window.navigator.platform\n        }\n    }",
+      "        try {\n            return require('os').platform()\n        } catch (err) {\n            return null\n        }\n    } else {\n        return window.navigator.platform\n    }"
     ],
-    "elapsed": 1808,
-    "timestamp": "1694209101117",
+    "elapsed": 1140,
+    "timestamp": "1694213801336",
     "sample": {
       "context": [],
       "fileName": "getOs.ts",
@@ -56,10 +58,10 @@
   },
   {
     "completions": [
-      "    return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;"
+      "    return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches"
     ],
-    "elapsed": 699,
-    "timestamp": "1694209101117",
+    "elapsed": 772,
+    "timestamp": "1694213801336",
     "sample": {
       "context": [],
       "fileName": "isDarkColorScheme.ts",
@@ -69,10 +71,10 @@
   },
   {
     "completions": [
-      "    const max = Math.max(a, b);"
+      "    let max = a;"
     ],
-    "elapsed": 743,
-    "timestamp": "1694209101117",
+    "elapsed": 1031,
+    "timestamp": "1694213801336",
     "sample": {
       "context": [],
       "fileName": "twoNums.ts",
@@ -82,10 +84,10 @@
   },
   {
     "completions": [
-      "    return window.location.host === 'localhost:3000' || window.location.host === '127.0.0.1:3000';"
+      "    return window.location.host === 'localhost' || window.location.host === '127.0.0.1';"
     ],
-    "elapsed": 811,
-    "timestamp": "1694209101117",
+    "elapsed": 1024,
+    "timestamp": "1694213801336",
     "sample": {
       "context": [],
       "fileName": "isLocalhost.ts",
@@ -95,10 +97,10 @@
   },
   {
     "completions": [
-      "     * Wether to trim whitespace from the completion results"
+      "     * Wether to trim the completion results"
     ],
-    "elapsed": 741,
-    "timestamp": "1694209101117",
+    "elapsed": 735,
+    "timestamp": "1694213801336",
     "sample": {
       "context": [],
       "fileName": "interface.ts",
@@ -108,11 +110,11 @@
   },
   {
     "completions": [
-      "    return text.toLowerCase().replace(/[^a-z0-9 -]/g, '');",
-      "    return text.toLowerCase().replace(/[^\\w-]+/g, '');"
+      "    return text.toLowerCase().replace(/[^\\w-]+/g, '');",
+      "    return text.toLowerCase().replace(/[^\\w]+/g, '');"
     ],
-    "elapsed": 3186,
-    "timestamp": "1694209101117",
+    "elapsed": 1380,
+    "timestamp": "1694213801336",
     "sample": {
       "context": [
         {
@@ -139,12 +141,12 @@
   },
   {
     "completions": [
-      "    var mockAnthropicValidResponseLines = []string{`{\"Completion\": \"foo\", \"StopReason\": \"\"}`, `{\"Completion\": \"bar\", \"StopReason\": \"\"}`}\n\n\tmockClient := getMockClient(linesToResponse(mockAnthropicValidResponseLines))\n\tvar completions []types.CompletionResponse\n\terr := mockClient.Stream(context.Background(), types.CompletionsFeatureChat, types.CompletionRequestParameters{}, func(event types.CompletionResponse) error {\n\t\tcompletions = append(completions, event)\n\t\treturn nil\n\t})\n\n\trequire.NoError(t, err)\n\tassert.Equal(t, 2, len(completions))\n\tassert.Equal(t, \"foo\", completions[0].Completion)\n\tassert.Equal(t, \"bar\", completions[1].Completion)\n}",
-      "    var mockAnthropicValidResponseLines = []string{`{\"Completion\": \"hello\", \"StopReason\": \"\"}`}\n\n\tmockClient := getMockClient(linesToResponse(mockAnthropicValidResponseLines))\n\tvar responses []types.CompletionResponse\n\terr := mockClient.Stream(context.Background(), types.CompletionsFeatureChat, types.CompletionRequestParameters{}, func(response types.CompletionResponse) error {\n\t\tresponses = append(responses, response)\n\t\treturn nil\n\t})\n\n\trequire.NoError(t, err)\n\tassert.Equal(t, 1, len(responses))\n\tassert.Equal(t, \"hello\", responses[0].Completion)\n\tassert.Equal(t, \"\", responses[0].StopReason)\n}",
-      "    var mockAnthropicValidResponseLines = []string{`{\"Completion\":\"func\",\"StopReason\":\"COMPLETE\"}`}\n\n\tmockClient := getMockClient(linesToResponse(mockAnthropicValidResponseLines))\n\tvar responses []types.CompletionResponse\n\terr := mockClient.Stream(context.Background(), types.CompletionsFeatureChat, types.CompletionRequestParameters{}, func(response types.CompletionResponse) error {\n\t\tresponses = append(responses, response)\n\t\treturn nil\n\t})\n\n\trequire.NoError(t, err)\n\tassert.Equal(t, 1, len(responses))\n\tassert.Equal(t, \"func\", responses[0].Completion)\n\tassert.Equal(t, \"COMPLETE\", responses[0].StopReason)\n}"
+      "    var mockAnthropicResponseLines = []string{`{\"Completion\":{\"label\":\"foo\"}}`, `{\"StopReason\":\"Done\"}`}\n\n    mockClient := getMockClient(linesToResponse(mockAnthropicResponseLines))\n\n    err := mockClient.Stream(context.Background(), types.CompletionsFeatureChat, types.CompletionRequestParameters{}, func(event types.CompletionResponse) error {\n        return nil\n    })\n\n    if err != nil {\n        t.Fatal(\"expected no error, got\", err)\n    }\n}",
+      "    mockAnthropicResponseLines := []string{`{\"Completion\": \"test\", \"StopReason\": \"\"}`}\n\n    mockClient := getMockClient(linesToResponse(mockAnthropicResponseLines))\n\n    err := mockClient.Stream(context.Background(), types.CompletionsFeatureChat, types.CompletionRequestParameters{}, func(event types.CompletionResponse) error {\n        return nil\n    })\n\n    if err != nil {\n        t.Fatal(\"expected no error, got\", err)\n    }\n}",
+      "    var mockAnthropicResponseLines = []string{`{\"Completion\":\"func main() {\"}`, `\"fmt.Println(\\\"Hello World!\\\")\"}`}\n\n    mockClient := getMockClient(linesToResponse(mockAnthropicResponseLines))\n\n    err := mockClient.Stream(context.Background(), types.CompletionsFeatureChat, types.CompletionRequestParameters{}, func(event types.CompletionResponse) error {\n        return nil\n    })\n\n    if err != nil {\n        t.Fatal(\"expected no error, got\", err)\n    }\n}"
     ],
-    "elapsed": 3526,
-    "timestamp": "1694209101117",
+    "elapsed": 3414,
+    "timestamp": "1694213801336",
     "sample": {
       "context": [
         {
@@ -171,12 +173,12 @@
   },
   {
     "completions": [
+      "    issues = api_client.github.get_issues(api_client.github_repository, state=\"open\")\n    assert issues\n    assert len(issues) > 0",
       "    issues = api_client.get_issues()\n    assert issues\n    assert len(issues) > 0",
-      "    issues = api_client.github.get_issues(state=\"open\")\n    assert len(issues) > 0",
-      "    issues = api_client.github.get_issues(state=\"open\")"
+      "    issues = api_client.github.get_issues(api_client.github_repository, state=\"open\")\n    assert len(issues) > 0"
     ],
-    "elapsed": 1373,
-    "timestamp": "1694209101117",
+    "elapsed": 2419,
+    "timestamp": "1694213801336",
     "sample": {
       "context": [
         {
@@ -207,10 +209,10 @@
   },
   {
     "completions": [
-      "            tool_cls.from_toolkit(self)"
+      "            tool_cls.construct("
     ],
-    "elapsed": 1223,
-    "timestamp": "1694209101117",
+    "elapsed": 1163,
+    "timestamp": "1694213801336",
     "sample": {
       "context": [
         {
@@ -233,12 +235,12 @@
   },
   {
     "completions": [
-      "                // pass necessary dependencies\n                completionsClient,\n                contextWindowTokens: 2048,\n                history: new History(),\n                statusBar: noopStatusBar",
-      "                completionsClient,\n                contextWindowTokens: 2048",
-      "                config: providerConfig,"
+      "                workspace,\n                providerConfig,\n                history: new History(),\n                statusBar: noopStatusBar",
+      "                history: new History(),\n                providerConfig,\n                statusBar: noopStatusBar",
+      "                history: new History(),\n                config: providerConfig"
     ],
-    "elapsed": 2688,
-    "timestamp": "1694209101117",
+    "elapsed": 1413,
+    "timestamp": "1694213801336",
     "sample": {
       "context": [
         {

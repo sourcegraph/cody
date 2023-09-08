@@ -94,9 +94,9 @@ export class AnthropicProvider extends Provider {
             return { messages: prefixMessages, prefix: { head, tail, overlap } }
         }
 
-        const infillHead = `${head.trimmed}\n${head.rearSpace}`
-        const infillTail = this.options.docContext.suffix.trim()
-        const infillBlock = `${infillHead}${OPENING_CODE_TAG}${CLOSING_CODE_TAG}${infillTail}`
+        const infillHead = this.options.docContext.prefix.replace(tail.trimmed, '')
+        const infillTail = this.options.docContext.suffix
+        const infillBlock = `${OPENING_CODE_TAG}${tail.trimmed.trimEnd()}`
 
         const prefixMessagesWithInfill: Message[] = [
             {
@@ -109,12 +109,12 @@ export class AnthropicProvider extends Provider {
             },
             {
                 speaker: 'human',
-                text: `Below is the code from file path ${this.options.fileName}. First, review the code outside of the ${OPENING_CODE_TAG} XML tags. Then complete and enclose the code in ${OPENING_CODE_TAG} tags using the same style, patterns and logics of the surrounding code precisely without duplicating existing implementations:
-                ${infillBlock}`,
+                text: `Below is the code from file path ${this.options.fileName}. First, review the code outside of the ${OPENING_CODE_TAG} tags. Then complete the code enclosed in ${OPENING_CODE_TAG}${CLOSING_CODE_TAG} tags following the style, patterns and logics of the surrounding code precisely without duplicating existing implementations:
+                ${infillHead}${infillBlock}${CLOSING_CODE_TAG}${infillTail}`,
             },
             {
                 speaker: 'assistant',
-                text: `${OPENING_CODE_TAG}${tail.trimmed}`,
+                text: `${infillBlock}`,
             },
         ]
 
