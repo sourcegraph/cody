@@ -54,10 +54,10 @@ export class CustomCommandsBuilderMenu {
     }
 
     private async makeDescription(): Promise<string | undefined> {
-        const name = await window.showInputBox({
+        const description = await window.showInputBox({
             title: 'New Custom Cody Command: Description',
-            prompt: 'Enter a description for the command.',
-            placeHolder: 'e.g. Vulnerability Scanner',
+            prompt: 'Enter a description for the command in sentence case.',
+            placeHolder: 'e.g. Scan for vulnerabilities',
             ignoreFocusOut: true,
             validateInput: (input: string) => {
                 if (!input) {
@@ -66,25 +66,23 @@ export class CustomCommandsBuilderMenu {
                 return
             },
         })
-        return name
+        return description
     }
 
     private async makePrompt(): Promise<Omit<CodyPrompt, 'slashCommand'> | null> {
-        const minPromptLength = 3
         const prompt = await window.showInputBox({
             title: 'New Custom Cody Command: Prompt',
             prompt: 'Enter the instructions for Cody to follow and answer.',
             placeHolder: 'e.g. Create five different test cases for the selected code',
             ignoreFocusOut: true,
             validateInput: (input: string) => {
-                if (!input || input.split(' ').length < minPromptLength) {
-                    return `Please enter a prompt with a minimum of ${minPromptLength} words`
+                if (!input) {
+                    return 'Command prompt cannot be empty.'
                 }
                 return null
             },
         })
         if (!prompt) {
-            void window.showErrorMessage('Prompt is required and cannot be empty.')
             return null
         }
         return this.addContext({ prompt })
@@ -162,7 +160,7 @@ async function showPromptCreationInputBox(): Promise<string | void> {
     const promptCommand = await window.showInputBox({
         title: 'New Custom Cody Command: Command',
         prompt: 'Enter the terminal command to run from the workspace root. Its output will be included to Cody as prompt context.',
-        placeHolder: 'e.g. git describe --long',
+        placeHolder: 'e.g. node myscript.js | head -n 50',
     })
     return promptCommand
 }
