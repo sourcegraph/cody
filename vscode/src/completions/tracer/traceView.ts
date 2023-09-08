@@ -209,7 +209,7 @@ ${codeDetailsWithSummary('JSON for dataset', jsonForDataset(data))}
 function statisticSummary(): string {
     const { accepted, suggested } = statistics.getStatistics()
     return `📈 Suggested: ${suggested} | Accepted: ${accepted} | Acceptance rate: ${
-        suggested === 0 || accepted === 0 ? 'N/A' : `${((accepted / suggested) * 100).toFixed(2)}%`
+        suggested === 0 ? 'N/A' : `${((accepted / suggested) * 100).toFixed(2)}%`
     }`
 }
 
