@@ -142,14 +142,14 @@ export class CustomCommandsBuilderMenu {
             [
                 {
                     label: 'User Settings',
-                    detail: 'Stored on your machine, usable across all your workspaces',
+                    detail: 'Stored on your machine and usable across all your workspaces',
                     type: 'user',
                     description: '~/.vscode/cody.json',
                     picked: true,
                 },
                 {
                     label: 'Workspace Settings',
-                    detail: 'Project-specific, shared with anyone using this workspace/repo',
+                    detail: 'Project-specific and shared with anyone using this workspace/repo',
                     type: 'workspace',
                     description: '.vscode/cody.json',
                 },
