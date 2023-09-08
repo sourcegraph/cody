@@ -13,19 +13,17 @@ Cody autocompletes single lines, or whole functions, in any programming language
 
 Ask Cody questions in the chat view, or inline with code, and it will use Sourcegraph’s code graph to answer using knowledge of your entire codebase.
 
-<!-- prettier-ignore: Uses <img> so we can fix width to 480px so all images are consistent width and look sharp @2x -->
-<img src="https://storage.googleapis.com/sourcegraph-assets/website/Product%20Animations/GIFS/cody_inline_June23-sm.gif" width="480" alt="Cody Inline Chat">
+For example, you can ask Cody:
 
-<br/>
+- "How is our app's secret storage implemented on Linux?"
+- "Where is the CI config for the web integration tests?"
+- "Write a new GraphQL resolver for the AuditLog"
+- "Why is the UserConnectionResolver giving an "unknown user" error, and how do I fix it?"
+- "Add helpful debug log statements"
+- "Make this work" _(seriously, it often works—try it!)_
 
 <!-- prettier-ignore: Uses <img> so we can fix width to 480px so all images are consistent width and look sharp @2x -->
 <img src="https://storage.googleapis.com/sourcegraph-assets/website/Product%20Animations/GIFS/cody-chat-may2023-optim.gif" width="480" alt="Cody Chat">
-
-And because Cody has access to the entire code graph, you can:
-
-- Ask Cody to generate an API call. Cody can gather context on your API schema to inform the code it writes.
-- Ask Cody to find where within your codebase a specific component is defined. Cody can retrieve and describe the exact files where that component is written.
-- Ask Cody questions that require an understanding of multiple files, such as how data is populated in a React app. Cody can find the React component definitions to understand what data is being passed and where it originates
 
 ## Built-In Commands
 
