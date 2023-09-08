@@ -14,6 +14,7 @@ describe('getConfiguration', () => {
             serverEndpoint: DOTCOM_URL.href,
             codebase: '',
             customHeaders: {},
+            chatPreInstruction: undefined,
             useContext: 'embeddings',
             autocomplete: true,
             experimentalCommandLenses: false,
@@ -84,6 +85,8 @@ describe('getConfiguration', () => {
                         return /.*/
                     case 'cody.telemetry.level':
                         return 'off'
+                    case 'cody.chat.preInstruction':
+                        return 'My name is Jeff.'
                     case 'cody.autocomplete.advanced.provider':
                         return 'unstable-codegen'
                     case 'cody.autocomplete.advanced.serverEndpoint':
@@ -115,6 +118,7 @@ describe('getConfiguration', () => {
                 'Cache-Control': 'no-cache',
                 'Proxy-Authenticate': 'Basic',
             },
+            chatPreInstruction: 'My name is Jeff.',
             autocomplete: false,
             experimentalChatPredictions: true,
             experimentalCommandLenses: true,

@@ -811,6 +811,14 @@
           "default": false,
           "markdownDescription": "Experimental feature for internal use."
         },
+        "cody.chat.preInstruction": {
+          "order": 10,
+          "type": "string",
+          "markdownDescription": "An instruction to be included at the start of all chat messages sent to Cody. Extension reload required.",
+          "examples": [
+            "Answer all my questions in Spanish."
+          ]
+        },
         "cody.experimental.symf.path": {
           "order": 99,
           "type": "string",

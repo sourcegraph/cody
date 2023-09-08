@@ -10,6 +10,7 @@ export interface Configuration {
     telemetryLevel: 'all' | 'off'
     useContext: ConfigurationUseContext
     customHeaders: Record<string, string>
+    chatPreInstruction: string
     autocomplete: boolean
     experimentalChatPredictions: boolean
     inlineChat: boolean
