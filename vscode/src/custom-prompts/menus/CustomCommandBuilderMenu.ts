@@ -137,7 +137,6 @@ export class CustomCommandsBuilderMenu {
     }
 
     private async makeType(): Promise<'user' | 'workspace'> {
-        // Get the command to run from the user using the input box
         const option = await window.showQuickPick(
             [
                 {
