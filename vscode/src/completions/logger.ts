@@ -50,7 +50,7 @@ export interface CompletionEvent {
     acceptedAt: number | null
 }
 
-const READ_TIMEOUT = 750
+const READ_TIMEOUT_MS = 750
 
 const displayedCompletions = new LRUCache<string, CompletionEvent>({
     max: 100, // Maximum number of completions that we are keeping track of
@@ -118,7 +118,7 @@ export function loaded(id: string): void {
 // them again (they are NOT accepted) or when they ARE accepted. This way, we can calculate the
 // duration they were actually visible for.
 //
-// For statistics logging we start a timeout matching the READ_TIMEOUT so we can increment the
+// For statistics logging we start a timeout matching the READ_TIMEOUT_MS so we can increment the
 // suggested completion count as soon as we count it as such.
 export function suggested(id: string, source: string, completion: InlineCompletionItem): void {
     const event = displayedCompletions.get(id)
@@ -141,11 +141,11 @@ export function suggested(id: string, source: string, completion: InlineCompleti
 
             if (event.suggestedAt && !event.suggestionAnalyticsLoggedAt && !event.suggestionLoggedAt) {
                 // We can assume that this completion will be marked as `read: true` because
-                // READ_TIMEOUT has passed without the completion being logged yet.
+                // READ_TIMEOUT_MS has passed without the completion being logged yet.
                 statistics.logSuggested()
                 event.suggestionAnalyticsLoggedAt = performance.now()
             }
-        }, READ_TIMEOUT)
+        }, READ_TIMEOUT_MS)
     }
 }
 
@@ -227,7 +227,7 @@ function logSuggestionEvents(): void {
 
         const latency = loadedAt - startedAt
         const displayDuration = now - suggestedAt
-        const seen = displayDuration >= READ_TIMEOUT
+        const seen = displayDuration >= READ_TIMEOUT_MS
         const accepted = acceptedAt !== null
         const read = accepted || seen
 
