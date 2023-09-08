@@ -19,6 +19,7 @@ import { truncateText } from '../../prompt/truncation'
 import { getFileExtension } from '../recipes/helpers'
 
 import { answers, displayFileName } from './templates'
+import { getFileNameFromPath, isValidTestFileName } from './utils'
 
 /**
  * Checks if a file URI is part of the current workspace.
@@ -50,9 +51,9 @@ export const getFilesFromDir = async (
             const fileType = file[1]
             const isDirectory = fileType === vscode.FileType.Directory
             const isHiddenFile = fileName.startsWith('.')
-            const isFileNameIncludesTest = testFilesOnly ? fileName.includes('test') : false
+            const isATestFile = testFilesOnly ? isValidTestFileName(fileName) : true
 
-            return !isDirectory && !isHiddenFile && !isFileNameIncludesTest
+            return !isDirectory && !isHiddenFile && isATestFile
         })
     } catch (error) {
         console.error(error)
@@ -130,7 +131,7 @@ export async function getEditorDirContext(
     isUnitTestRequest = false
 ): Promise<ContextMessage[]> {
     const directoryUri = vscode.Uri.file(directoryPath)
-    const filteredFiles = await getFilteredFiles(directoryUri, isUnitTestRequest)
+    const filteredFiles = await getFilesFromDir(directoryUri, isUnitTestRequest)
 
     if (isUnitTestRequest && currentFileName) {
         const context = await getCurrentDirFilteredContext(directoryUri, filteredFiles, currentFileName)
@@ -153,29 +154,6 @@ export async function getEditorTestContext(fileName: string, isUnitTestRequest =
     const currentTestFile = await getCurrentTestFileContext(fileName)
     const codebaseTestFiles = await getCodebaseTestFilesContext(fileName, isUnitTestRequest)
     return [...codebaseTestFiles, ...currentTestFile]
-}
-
-export const getFilteredFiles = async (
-    dirUri: vscode.Uri,
-    testFilesOnly: boolean
-): Promise<[string, vscode.FileType][]> => {
-    try {
-        const filesInDir = await vscode.workspace.fs.readDirectory(dirUri)
-
-        // Filter out directories, non-test files, and dot files
-        return filesInDir.filter(file => {
-            const fileName = file[0]
-            const fileType = file[1]
-            const isDirectory = fileType === vscode.FileType.Directory
-            const isHiddenFile = fileName.startsWith('.')
-            const isATestFile = testFilesOnly ? fileName.includes('test') : true
-
-            return !isDirectory && !isHiddenFile && isATestFile
-        })
-    } catch (error) {
-        console.error(error)
-        return []
-    }
 }
 
 // Get context for test file in current directory
@@ -255,7 +233,8 @@ export async function getEditorFoundFilesContext(
     numResults = 3
 ): Promise<ContextMessage[]> {
     const parentTestFiles = await vscode.workspace.findFiles(globalPattern, excludePattern, numResults)
-    return getContextMessageFromFiles(parentTestFiles)
+    const filtered = parentTestFiles.filter(file => isValidTestFileName(file.fsPath))
+    return getContextMessageFromFiles(filtered)
 }
 
 /**
@@ -561,4 +540,42 @@ export async function getTestFileOfCurrentFileContext(fileName: string): Promise
     }
 
     return []
+}
+
+/**
+ * Creates a URI for a test file that matches the path provided based on the current open file.
+ *
+ * @param repoTestFilePath - The path to the test file in the repository
+ * @param currentFileUri - The URI of the currently open file
+ * @returns A URI for a test file that matches the repoTestFilePath using info from currentFileUri
+ */
+export function createTestFileUri(repoTestFilePath: string, currentFileUri: vscode.Uri): vscode.Uri {
+    const currentFilePath = currentFileUri.fsPath
+    // if the current file is a test file, return the current file Uri
+    if (!currentFilePath || !repoTestFilePath) {
+        return currentFileUri
+    }
+
+    const currentFileName = getFileNameFromPath(currentFilePath)
+    const testFileName = getFileNameFromPath(repoTestFilePath).toLowerCase()
+
+    const isFileNameStartsWithTest = testFileName.startsWith('test')
+    const length = testFileName.length - 1
+
+    let prefix = isFileNameStartsWithTest ? 'test' : currentFileName
+    const suffix = !isFileNameStartsWithTest ? 'test' : currentFileName
+
+    const indexByTestIndex = isFileNameStartsWithTest ? 4 : length - 4
+    const charByTestIndex = testFileName[indexByTestIndex]
+
+    if (!isCharAlphanumeric(charByTestIndex)) {
+        prefix += charByTestIndex
+    }
+
+    // Create new URI for the test file by replacing the currentFileName from currentFileUri with the new test file name
+    return vscode.Uri.parse(currentFileUri.toString().replace(currentFileName, prefix + suffix))
+}
+
+function isCharAlphanumeric(char: string): boolean {
+    return /^[\dA-Za-z]+$/.test(char)
 }

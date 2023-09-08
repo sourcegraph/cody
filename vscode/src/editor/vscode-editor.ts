@@ -33,6 +33,10 @@ export class VSCodeEditor implements Editor<InlineController, FixupController, C
         return vscode.window.activeTextEditor?.document.fileName ?? ''
     }
 
+    public get fileUri(): vscode.Uri | null {
+        return vscode.window.activeTextEditor?.document?.uri || null
+    }
+
     /** @deprecated Use {@link VSCodeEditor.getWorkspaceRootUri} instead. */
     public getWorkspaceRootPath(): string | null {
         const uri = this.getWorkspaceRootUri()

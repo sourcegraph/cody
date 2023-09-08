@@ -17,6 +17,10 @@ export class AgentEditor implements Editor {
 
     constructor(private agent: Agent) {}
 
+    public get fileUri(): vscode_shim.Uri | null {
+        throw new Error('Method not implemented.')
+    }
+
     public didReceiveFixupText(): Promise<void> {
         throw new Error('Method not implemented.')
     }

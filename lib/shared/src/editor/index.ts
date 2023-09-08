@@ -8,6 +8,7 @@ export interface ActiveTextEditor {
     repoName?: string
     revision?: string
     selectionRange?: ActiveTextEditorSelectionRange
+    fileUri?: URI
 }
 
 export interface ActiveTextEditorSelectionRange {
@@ -29,6 +30,7 @@ export interface ActiveTextEditorSelection {
     selectedText: string
     followingText: string
     selectionRange?: ActiveTextEditorSelectionRange | null
+    fileUri?: URI
 }
 
 export type ActiveTextEditorDiagnosticType = 'error' | 'warning' | 'information' | 'hint'
@@ -45,6 +47,7 @@ export interface ActiveTextEditorVisibleContent {
     fileName: string
     repoName?: string
     revision?: string
+    fileUri?: URI
 }
 
 export interface VsCodeInlineController {
@@ -88,6 +91,8 @@ export interface Editor<
     P extends VsCodeCommandsController = VsCodeCommandsController,
 > {
     controllers?: ActiveTextEditorViewControllers<I, F, P>
+
+    fileUri: URI | null
 
     /**
      * The path of the workspace root if on the file system, otherwise `null`.
@@ -133,6 +138,8 @@ export class NoopEditor implements Editor {
     public controllers?:
         | ActiveTextEditorViewControllers<VsCodeInlineController, VsCodeFixupController, VsCodeCommandsController>
         | undefined
+
+    public fileUri: URI | null = null
 
     public getWorkspaceRootPath(): string | null {
         return null

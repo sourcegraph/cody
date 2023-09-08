@@ -14,6 +14,7 @@ import styles from './App.module.css'
 
 /* eslint-disable @typescript-eslint/require-await */
 const editor: Editor = {
+    fileUri: null,
     getActiveTextEditor() {
         return null
     },

@@ -218,6 +218,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
             },
             onComplete: () => {
                 void this.multiplexer.notifyTurnComplete()
+                void this.onCompletionEnd()
             },
             onError: (err, statusCode) => {
                 // TODO notify the multiplexer of the error

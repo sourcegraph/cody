@@ -68,6 +68,8 @@ export class MockEditor implements Editor {
 
     public fileName = ''
 
+    public fileUri = null
+
     public getWorkspaceRootPath(): string | null {
         return this.mocks.getWorkspaceRootPath?.() ?? null
     }

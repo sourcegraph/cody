@@ -1,17 +1,22 @@
+import * as vscode from 'vscode'
+
 import { CodebaseContext } from '../../codebase-context'
 import { ContextMessage } from '../../codebase-context/messages'
 import { ActiveTextEditorSelection, Editor } from '../../editor'
 import { MAX_HUMAN_INPUT_TOKENS, NUM_CODE_RESULTS, NUM_TEXT_RESULTS } from '../../prompt/constants'
 import { truncateText } from '../../prompt/truncation'
+import { BufferedBotResponseSubscriber } from '../bot-response-multiplexer'
 import { CodyPromptContext } from '../prompts'
 import {
     extractTestType,
-    getClaudeHumanText,
+    getHumanLLMText,
     isOnlySelectionRequired,
+    markdownCodeblockRemover,
     newInteraction,
     newInteractionWithError,
 } from '../prompts/utils'
 import {
+    createTestFileUri,
     getCurrentDirContext,
     getCurrentFileContext,
     getCurrentFileContextFromEditorSelection,
@@ -36,6 +41,8 @@ export class CustomPrompt implements Recipe {
     public id: RecipeID = 'custom-prompt'
     public title = 'Custom Prompt'
 
+    public currentTextDocUri: string | null = null
+
     /**
      * Retrieves an Interaction object based on the humanChatInput and RecipeContext provided.
      * The Interaction object contains messages from both the human and the assistant, as well as context information.
@@ -46,12 +53,10 @@ export class CustomPrompt implements Recipe {
         const contextConfigString = (await context.editor.controllers?.command?.get('context')) || ''
         const contextConfig = JSON.parse(contextConfigString) as CodyPromptContext
 
-        // Check if selection is required. If selection is not defined, accept visible content
-        const selectionContent = contextConfig?.selection
+        // If selection is required, don't accept visible content as selection
+        const selection = contextConfig?.selection
             ? context.editor.getActiveTextEditorSelection()
             : context.editor.getActiveTextEditorSelectionOrVisibleContent()
-
-        const selection = selectionContent
 
         const command = context.editor.controllers?.command?.getCurrentCommand()
 
@@ -70,7 +75,7 @@ export class CustomPrompt implements Recipe {
 
         // Add selection file name as display when available
         const displayText = getHumanDisplayTextWithFileName(commandName, selection, workspaceRootUri)
-        const text = getClaudeHumanText(promptText, selection?.fileName)
+        const text = getHumanLLMText(promptText, selection?.fileName)
 
         // Attach code selection to prompt text if only selection is needed as context
         if (selection && isOnlySelectionRequired(contextConfig)) {
@@ -80,6 +85,8 @@ export class CustomPrompt implements Recipe {
 
         // Get output from the command if any
         const commandOutput = await context.editor.controllers?.command?.get('output')
+        // Get test request type if any
+        const testRequestType = extractTestType(text) || 'custom'
 
         const truncatedText = truncateText(text, MAX_HUMAN_INPUT_TOKENS)
         const contextMessages = this.getContextMessages(
@@ -88,7 +95,29 @@ export class CustomPrompt implements Recipe {
             context.codebaseContext,
             contextConfig,
             selection,
+            testRequestType,
             commandOutput
+        )
+
+        context.responseMultiplexer.sub(
+            testRequestType,
+            new BufferedBotResponseSubscriber(async content => {
+                // NOTE: Currently handles unit tests only
+                if (testRequestType !== 'unit' || !content) {
+                    return Promise.resolve()
+                }
+                contextMessages
+                    .then(async messages => {
+                        const codebaseTestFile = messages.find(m => m.file?.fileName.includes('test'))?.file?.fileName
+                        const currentFileUri = context.editor.fileUri
+                        if (codebaseTestFile && currentFileUri) {
+                            const testFileUri = createTestFileUri(codebaseTestFile, currentFileUri)
+                            await this.insertContentIntoFile(testFileUri, content)
+                        }
+                    })
+                    .catch(error => console.error(error))
+                return Promise.resolve()
+            })
         )
 
         return newInteraction({ text: truncatedText, displayText, contextMessages })
@@ -100,16 +129,16 @@ export class CustomPrompt implements Recipe {
         codebaseContext: CodebaseContext,
         promptContext: CodyPromptContext,
         selection?: ActiveTextEditorSelection | null,
+        testRequestType?: string,
         commandOutput?: string | null
     ): Promise<ContextMessage[]> {
         const contextMessages: ContextMessage[] = []
         const workspaceRootUri = editor.getWorkspaceRootUri()
-        const isUnitTestRequest = extractTestType(text) === 'unit'
+        const isUnitTestRequest = testRequestType === 'unit'
 
         if (promptContext.none) {
             return []
         }
-
         if (promptContext.codebase) {
             const codebaseMessages = await codebaseContext.getContextMessages(text, numResults)
             contextMessages.push(...codebaseMessages)
@@ -122,13 +151,13 @@ export class CustomPrompt implements Recipe {
             const currentDirMessages = await getCurrentDirContext(isUnitTestRequest)
             contextMessages.push(...currentDirMessages)
         }
-        if (promptContext.directoryPath !== undefined) {
+        if (promptContext.directoryPath) {
             if (promptContext.directoryPath) {
                 const dirMessages = await getEditorDirContext(promptContext.directoryPath, selection?.fileName)
                 contextMessages.push(...dirMessages)
             }
         }
-        if (promptContext.filePath !== undefined) {
+        if (promptContext.filePath) {
             if (promptContext.filePath) {
                 const fileMessages = await getFilePathContext(promptContext.filePath)
                 contextMessages.push(...fileMessages)
@@ -140,7 +169,7 @@ export class CustomPrompt implements Recipe {
                 const rootFileNames = await getDirectoryFileListContext(workspaceRootUri)
                 contextMessages.push(...rootFileNames)
             }
-            // Add package.json content for ts/js files only
+            // Add package.json content only if files matches the ts/js regex
             if (selection?.fileName && getFileExtension(selection?.fileName).match(/ts|js/)) {
                 const packageJson = await getPackageJsonContext(selection?.fileName)
                 contextMessages.push(...packageJson)
@@ -158,7 +187,7 @@ export class CustomPrompt implements Recipe {
                 contextMessages.push(...currentFileMessages)
             }
         }
-        if (promptContext.command !== undefined) {
+        if (promptContext.command) {
             if (commandOutput) {
                 const outputMessages = getTerminalOutputContext(commandOutput)
                 contextMessages.push(...outputMessages)
@@ -167,5 +196,57 @@ export class CustomPrompt implements Recipe {
         // Return sliced results
         const maxResults = Math.floor((NUM_CODE_RESULTS + NUM_TEXT_RESULTS) / 2) * 2
         return contextMessages.slice(-maxResults * 2)
+    }
+
+    /**
+     * Inserts the given content into the specified file URI.
+     *
+     * @param fileUri - The file URI to insert the content into.
+     * @param content - The content string to insert.
+     *
+     * This will create the file if it doesn't exist.
+     * It inserts the content at the end of the file, after any existing content.
+     * It handles inserting after any import statements if they exist.
+     * It removes any surrounding markdown code blocks from the content before inserting.
+     * Finally it opens the file in the editor with the inserted content selected.
+     */
+    private async insertContentIntoFile(fileUri: vscode.Uri, content: string): Promise<void> {
+        const workspaceEditor = new vscode.WorkspaceEdit()
+        workspaceEditor.createFile(fileUri, { ignoreIfExists: true })
+        await vscode.workspace.applyEdit(workspaceEditor)
+        const textDocument = await vscode.workspace.openTextDocument(fileUri)
+
+        const lastLineNum = textDocument.lineCount
+        const insertPos = new vscode.Position(lastLineNum + 1, 0)
+
+        let sinitizedContent = markdownCodeblockRemover(content)
+
+        // check if the textDocument is empty
+        if (textDocument.getText().length) {
+            // get folding range for the textDocument
+            const foldingRanges = await vscode.commands.executeCommand<vscode.FoldingRange[]>(
+                'vscode.executeFoldingRangeProvider',
+                fileUri
+            )
+            // get the line number of the folding range after the last import statement
+            const lastImportLineNum = foldingRanges?.findLast(range => range.kind === 2)?.end || 0
+
+            // loop through the import statements and see if each import statement exists in content
+            for (let i = 0; i <= lastImportLineNum; i++) {
+                // get the line text at line i
+                const lineText = textDocument.lineAt(i).text.trim()
+                // check if the line text exists in the content
+                if (lineText && sinitizedContent.includes(lineText)) {
+                    sinitizedContent = sinitizedContent.replace(lineText, '')
+                }
+            }
+        }
+
+        workspaceEditor.insert(fileUri, insertPos, sinitizedContent)
+        await vscode.workspace.applyEdit(workspaceEditor)
+        // Open the new file
+        await vscode.window.showTextDocument(textDocument, {
+            selection: new vscode.Range(insertPos, insertPos),
+        })
     }
 }

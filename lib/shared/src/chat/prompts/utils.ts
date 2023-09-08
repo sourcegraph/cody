@@ -80,14 +80,17 @@ export function isOnlySelectionRequired(contextConfig: CodyPromptContext): boole
     return !contextConfig.none && ((contextConfig.selection && contextConfigLength === 1) || !contextConfigLength)
 }
 
-// Extract the word "unit" / "e2e" / "integration" from a test prompt text
+/**
+ * Returns the test type from the given text, or an empty string if no test type found.
+ */
 export function extractTestType(text: string): string {
     // match "unit", "e2e", or "integration" that is follow by the word test, but don't include the word test in the matches
     const testTypeRegex = /(unit|e2e|integration)(?= test)/i
     return text.match(testTypeRegex)?.[0] || ''
 }
 
-export function getClaudeHumanText(commandInstructions: string, currentFileName?: string): string {
+// Get the non-display text for a command prompt, including the filename if provided
+export function getHumanLLMText(commandInstructions: string, currentFileName?: string): string {
     const promptText = prompts.instruction.replace('{humanInput}', commandInstructions)
     if (!currentFileName) {
         return promptText
@@ -110,4 +113,52 @@ export function fromSlashCommand(slashCommand: string): string {
 export function toSlashCommand(command: string): string {
     // ensure there is only one leading forward slash
     return command.replace(leadingForwardSlashRegex, '').replace(/^/, '/')
+}
+
+/**
+ * Returns the file name from the given file path without the extension.
+ */
+export function getFileNameFromPath(filePath: string): string {
+    const fileName = filePath.split('/').pop()?.split('.')
+    return fileName?.slice(0, -1).join('.') || filePath[0]
+}
+
+const TEST_FILE_EXTENSIONS = new Set(['ts', 'js', 'py', 'go', 'java', 'cs', 'cpp', 'cc'])
+
+const TEST_FILE_REGEXES = {
+    ts: /(test\.[^.]+)|([^.]+\.test)\.\w+/i,
+    js: /(test\.[^.]+)|([^.]+\.test)\.\w+/i,
+    py: /(_test\.)|(\w+test_\.)/i,
+    go: /(_test\.)|(\w+test_\.)/i,
+    java: /(test\.)|((\w+)test\.)/i,
+    cs: /(tests?\.[\da-z]+)|([a-z]+tests?\.[a-z]+)/i,
+    cpp: /(tests?\.)|([a-z]+tests?\.[a-z]+)|(_test\.)/i,
+    cc: /(tests?\.)|([a-z]+tests?\.[a-z]+)|(_test\.)/i,
+}
+
+export function isValidTestFileName(filePath?: string): boolean {
+    if (!filePath) {
+        return false
+    }
+
+    const fileName = filePath.split('/').pop() || filePath
+    const extension = getFileExtension(filePath)
+
+    if (!TEST_FILE_EXTENSIONS.has(extension)) {
+        return false
+    }
+
+    const regex = TEST_FILE_REGEXES[extension as keyof typeof TEST_FILE_REGEXES]
+
+    return regex?.test(fileName) ?? false
+}
+
+/**
+ * Remove markdown formatted code block
+ */
+export function markdownCodeblockRemover(codeblock: string): string {
+    return codeblock
+        .trimEnd()
+        .replace(/```[^\n]*\n/, '')
+        .replace(/```/, '')
 }
