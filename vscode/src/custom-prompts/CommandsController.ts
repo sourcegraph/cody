@@ -409,10 +409,7 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
         await this.refresh()
         // Notify user
         void vscode.window
-            .showInformationMessage(
-                `New custom Cody command saved to ${newCommand.type} settings`,
-                'Open Settings'
-            )
+            .showInformationMessage(`New custom Cody command saved to ${newCommand.type} settings`, 'Open Settings')
             .then(async choice => {
                 if (choice === 'Open Settings') {
                     await this.custom.openConfig(newCommand.type)
