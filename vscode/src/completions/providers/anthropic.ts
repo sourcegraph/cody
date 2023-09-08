@@ -90,10 +90,18 @@ export class AnthropicProvider extends Provider {
             },
         ]
 
+        if (!this.useInfillPrefix) {
+            return { messages: prefixMessages, prefix: { head, tail, overlap } }
+        }
+
+        const infillHead = `${head.trimmed}\n${head.rearSpace}`
+        const infillTail = this.options.docContext.suffix.trim()
+        const infillBlock = `${infillHead}${OPENING_CODE_TAG}${CLOSING_CODE_TAG}${infillTail}`
+
         const prefixMessagesWithInfill: Message[] = [
             {
                 speaker: 'human',
-                text: `You are a code completion AI designed to take the surrounding code and shared context into account in order to predict and suggest high-quality code to complete the code block enclosed in ${OPENING_CODE_TAG}${CLOSING_CODE_TAG} tags when provided. You suggest code that follows the same coding styles, formats, patterns, and naming convention detected in surrounding context. Only response with code that works and fits seamlessly with surrounding code.`,
+                text: `You are a code completion AI designed to take the surrounding code and shared context into account in order to predict and suggest high-quality code to complete the code enclosed in ${OPENING_CODE_TAG} tags. You suggest code that follows the same coding styles, formats, patterns, and naming convention detected in surrounding context. Only response with code that works and fits seamlessly with surrounding code if any, or use best practice.`,
             },
             {
                 speaker: 'assistant',
@@ -101,8 +109,8 @@ export class AnthropicProvider extends Provider {
             },
             {
                 speaker: 'human',
-                text: `Below is the code from file path ${this.options.fileName}. First, review the code outside of the ${OPENING_CODE_TAG} XML tags. Then complete the code inside the tags using the same style, patterns and logics of the surrounding code precisely without duplicating existing implementations:
-                ${head.trimmed}${OPENING_CODE_TAG}${tail.trimmed}${CLOSING_CODE_TAG}${this.options.docContext.suffix}`,
+                text: `Below is the code from file path ${this.options.fileName}. First, review the code outside of the ${OPENING_CODE_TAG} XML tags. Then complete and enclose the code in ${OPENING_CODE_TAG} tags using the same style, patterns and logics of the surrounding code precisely without duplicating existing implementations:
+                ${infillBlock}`,
             },
             {
                 speaker: 'assistant',
@@ -110,8 +118,7 @@ export class AnthropicProvider extends Provider {
             },
         ]
 
-        const selectedPrefixMessages = this.useInfillPrefix ? prefixMessagesWithInfill : prefixMessages
-        return { messages: selectedPrefixMessages, prefix: { head, tail, overlap } }
+        return { messages: prefixMessagesWithInfill, prefix: { head, tail, overlap } }
     }
 
     // Creates the resulting prompt and adds as many snippets from the reference

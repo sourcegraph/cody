@@ -145,4 +145,4 @@ After that, you can start the UI like so:
 
 - `cd completions-review-tool`
 - `pnpm run dev`
-- `open localhost:4000`
+- `open localhost:3000`
