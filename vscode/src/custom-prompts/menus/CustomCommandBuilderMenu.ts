@@ -13,19 +13,15 @@ export interface CodyCommand {
 }
 export class CustomCommandsBuilderMenu {
     public async start(commands: Map<string, CodyPrompt>): Promise<CodyCommand | null> {
-        // get slash command
         const slashCommand = await this.makeSlashCommand(commands)
         if (!slashCommand) { return null }
 
-        // get name
         const description = await this.makeDescription()
         if (!description) { return null }
 
-        // build prompt
         const prompt = await this.makePrompt()
         if (!prompt) { return null }
 
-        // get type
         const type = await this.makeType()
         if (!type) { return null }
 
@@ -74,7 +70,6 @@ export class CustomCommandsBuilderMenu {
     }
 
     private async makePrompt(): Promise<Omit<CodyPrompt, 'slashCommand'> | null> {
-        // Get the prompt description from the user using the input box
         const minPromptLength = 3
         const prompt = await window.showInputBox({
             title: 'New Custom Cody Command: Prompt',
@@ -95,7 +90,6 @@ export class CustomCommandsBuilderMenu {
         return this.addContext({ prompt })
     }
 
-    // Add context to the command
     private async addContext(
         newPrompt?: Omit<CodyPrompt, 'slashCommand'>
     ): Promise<Omit<CodyPrompt, 'slashCommand'> | null> {
@@ -104,7 +98,6 @@ export class CustomCommandsBuilderMenu {
         }
 
         newPrompt.context = { ...defaultCodyPromptContext }
-        // Get the context types from the user using the quick pick
         const promptContext = await window.showQuickPick(customPromptsContextOptions, {
             title: 'New Custom Cody Command: Context Options',
             placeHolder: 'For accurate responses, choose only the necessary options.',
@@ -166,7 +159,6 @@ export class CustomCommandsBuilderMenu {
 }
 
 async function showPromptCreationInputBox(): Promise<string | void> {
-    // Get the command to run from the user using the input box
     const promptCommand = await window.showInputBox({
         title: 'New Custom Cody Command: Command',
         prompt: 'Enter the terminal command to run from the workspace root. Its output will be included to Cody as prompt context.',
