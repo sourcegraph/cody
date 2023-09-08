@@ -22,6 +22,9 @@ import { LocalAppDetector } from './LocalAppDetector'
 import { localStorage } from './LocalStorageProvider'
 import { secretStorage } from './SecretStorageProvider'
 
+type Listener = (authStatus: AuthStatus) => void
+type Unsubscribe = () => {}
+
 export class AuthProvider {
     private endpointHistory: string[] = []
 
@@ -31,6 +34,7 @@ export class AuthProvider {
 
     private authStatus: AuthStatus = defaultAuthStatus
     public webview?: ChatViewProviderWebview
+    private listeners: Set<Listener> = new Set()
 
     constructor(
         private config: Pick<ConfigurationWithAccessToken, 'serverEndpoint' | 'accessToken' | 'customHeaders'>,
@@ -48,10 +52,12 @@ export class AuthProvider {
         const lastEndpoint = localStorage?.getEndpoint() || this.config.serverEndpoint
         const token = (await secretStorage.get(lastEndpoint || '')) || this.config.accessToken
         logDebug('AuthProvider:init:lastEndpoint', lastEndpoint)
-        const authState = await this.auth(lastEndpoint, token || null)
-        if (authState?.isLoggedIn) {
-            return
-        }
+        await this.auth(lastEndpoint, token || null)
+    }
+
+    public addChangeListener(listener: Listener): Unsubscribe {
+        this.listeners.add(listener)
+        return () => this.listeners.delete(listener)
     }
 
     // Display quickpick to select endpoint to sign in to
@@ -277,6 +283,9 @@ export class AuthProvider {
     public async announceNewAuthStatus(): Promise<void> {
         if (this.authStatus.endpoint === 'init' || !this.webview) {
             return
+        }
+        for (const listener of this.listeners) {
+            listener(this.getAuthStatus())
         }
         await vscode.commands.executeCommand('cody.auth.sync')
     }

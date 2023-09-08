@@ -386,6 +386,28 @@ const register = async (
         })
     )
 
+    /**
+     * Signed out status bar indicator
+     */
+    let removeAuthStatusBarError: undefined | (() => void)
+    function updateAuthStatusBarIndicator(): void {
+        if (removeAuthStatusBarError) {
+            removeAuthStatusBarError()
+            removeAuthStatusBarError = undefined
+        }
+        if (!authProvider.getAuthStatus().isLoggedIn) {
+            removeAuthStatusBarError = statusBar.addError({
+                title: 'Sign In To Use Cody',
+                description: 'You need to sign in to use Cody.',
+                onSelect: () => {
+                    void sidebarChatProvider.setWebviewView('chat')
+                },
+            })
+        }
+    }
+    authProvider.addChangeListener(() => updateAuthStatusBarIndicator())
+    updateAuthStatusBarIndicator()
+
     let completionsProvider: vscode.Disposable | null = null
     disposables.push({ dispose: () => completionsProvider?.dispose() })
     const setupAutocomplete = async (): Promise<void> => {
@@ -409,18 +431,23 @@ const register = async (
             completionsProvider.dispose()
         }
 
-        completionsProvider = await createInlineCompletionItemProvider(
+        completionsProvider = await createInlineCompletionItemProvider({
             config,
-            codeCompletionsClient,
+            client: codeCompletionsClient,
             statusBar,
             contextProvider,
-            featureFlagProvider
-        )
+            featureFlagProvider,
+            authProvider,
+        })
     }
+    // Reload autocomplete if either the configuration changes or the auth status is updated
     vscode.workspace.onDidChangeConfiguration(event => {
         if (event.affectsConfiguration('cody.autocomplete')) {
             void setupAutocomplete()
         }
+    })
+    authProvider.addChangeListener(() => {
+        void setupAutocomplete()
     })
     await setupAutocomplete()
 
