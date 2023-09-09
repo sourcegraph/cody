@@ -12,6 +12,7 @@ import {
     populateCurrentEditorContextTemplate,
     populateCurrentFileFromEditorSelectionContextTemplate,
     populateCurrentSelectedCodeContextTemplate,
+    populateImportListContextTemplate,
     populateListOfFilesContextTemplate,
     populateTerminalOutputContextTemplate,
 } from '../../prompt/templates'
@@ -476,6 +477,34 @@ export function getCurrentFileContext(): ContextMessage[] {
     const fileName = vscode.workspace.asRelativePath(currentFile.fileName)
 
     return getContextMessageWithResponse(populateCodeContextTemplate(truncatedContent, fileName), {
+        fileName,
+    })
+}
+
+/**
+ * Gets the imports from file and adds it to the context.
+ */
+export async function getCurrentFileImportsContext(): Promise<ContextMessage[]> {
+    const currentFile = vscode.window.activeTextEditor?.document
+    if (!currentFile) {
+        return []
+    }
+    const foldingRanges = await vscode.commands.executeCommand<vscode.FoldingRange[]>(
+        'vscode.executeFoldingRangeProvider',
+        currentFile.uri
+    )
+    // Get the line number of the last import statement
+    const lastImportLineNum = foldingRanges?.findLast(range => range.kind === 2)?.end || 0
+    if (!lastImportLineNum) {
+        return []
+    }
+    // Get imports as text from linenumbers 0 to lastImportLineNum
+    const importStatements = currentFile.getText(new vscode.Range(0, 0, lastImportLineNum, 0))
+
+    const truncatedContent = truncateText(importStatements, MAX_CURRENT_FILE_TOKENS / 2)
+    const fileName = vscode.workspace.asRelativePath(currentFile.fileName)
+
+    return getContextMessageWithResponse(populateImportListContextTemplate(truncatedContent, fileName), {
         fileName,
     })
 }

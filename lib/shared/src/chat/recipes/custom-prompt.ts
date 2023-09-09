@@ -5,6 +5,7 @@ import { MAX_HUMAN_INPUT_TOKENS, NUM_CODE_RESULTS, NUM_TEXT_RESULTS } from '../.
 import { truncateText } from '../../prompt/truncation'
 import { BufferedBotResponseSubscriber } from '../bot-response-multiplexer'
 import { CodyPromptContext } from '../prompts'
+import { COMMAND_PREFIX } from '../prompts/templates'
 import {
     extractTestType,
     getHumanLLMText,
@@ -15,8 +16,8 @@ import {
 import {
     createTestFileUri,
     getCurrentDirContext,
-    getCurrentFileContext,
     getCurrentFileContextFromEditorSelection,
+    getCurrentFileImportsContext,
     getDirectoryFileListContext,
     getEditorDirContext,
     getEditorOpenTabsContext,
@@ -117,7 +118,8 @@ export class CustomPrompt implements Recipe {
             })
         )
 
-        return newInteraction({ text: truncatedText, displayText, contextMessages })
+        const assistantPrefix = COMMAND_PREFIX[commandName as keyof typeof COMMAND_PREFIX] || undefined
+        return newInteraction({ text: truncatedText, displayText, contextMessages, assistantPrefix })
     }
 
     private async getContextMessages(
@@ -171,10 +173,9 @@ export class CustomPrompt implements Recipe {
                 const packageJson = await getPackageJsonContext(selection?.fileName)
                 contextMessages.push(...packageJson)
             }
-            // Try adding code from current file as context in case the import statement
-            // gets cut off in the next step
+            // Try adding import statements from current file as context
             if (selection?.fileName) {
-                const importsContext = getCurrentFileContext()
+                const importsContext = await getCurrentFileImportsContext()
                 contextMessages.push(...importsContext)
             }
         }

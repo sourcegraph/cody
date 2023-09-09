@@ -181,3 +181,9 @@ export function populateListOfFilesContextTemplate(fileList: string, fileName: s
 export function populateContextTemplateFromText(templateText: string, content: string, fileName: string): string {
     return templateText.replace('{fileName}', fileName) + content
 }
+
+const FILE_IMPORTS_TEMPLATE = '{fileName} has imported the folowing: '
+
+export function populateImportListContextTemplate(importList: string, fileName: string): string {
+    return FILE_IMPORTS_TEMPLATE.replace('{fileName}', fileName) + importList
+}

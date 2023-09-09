@@ -95,7 +95,7 @@ export function isSingleWord(str: string): boolean {
  */
 export function markdownCodeblockRemover(codeblock: string): string {
     return codeblock
-        .trimEnd()
+        .trim()
         .replace(/```[^\n]*\n/, '')
         .replace(/```/, '')
 }

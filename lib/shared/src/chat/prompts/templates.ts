@@ -18,6 +18,10 @@ export const answers = {
     packageJson: 'Noted. I will use the right libraries/framework already setup in your codebase for your questions.',
 }
 
+export const COMMAND_PREFIX = {
+    '/test': 'Unit test generation in progress. Please wait...',
+}
+
 export const prompts = {
     instruction: instruction_prompt,
 }

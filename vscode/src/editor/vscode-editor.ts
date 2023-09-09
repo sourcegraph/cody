@@ -308,9 +308,8 @@ export class VSCodeEditor implements Editor<InlineController, FixupController, C
             const textDocument = await vscode.workspace.openTextDocument(fileUri)
 
             const lastLineNum = textDocument.lineCount
-            const insertPos = new vscode.Position(lastLineNum + 1, 0)
-
-            let sinitizedContent = markdownCodeblockRemover(content)
+            let insertPos = new vscode.Position(lastLineNum + 1, 0)
+            let reviewedContent = markdownCodeblockRemover(content)
 
             // Check for duplicated imports in non-empty files
             if (textDocument.getText().length) {
@@ -319,26 +318,30 @@ export class VSCodeEditor implements Editor<InlineController, FixupController, C
                     'vscode.executeFoldingRangeProvider',
                     fileUri
                 )
-                // get the line number of the last import statement
+                // Get the line number of the last import statement
                 const lastImportLineNum = foldingRanges?.findLast(range => range.kind === 2)?.end || 0
+                // Insert new content after the last import statement
+                if (lastImportLineNum > 0 && lastImportLineNum < lastLineNum) {
+                    insertPos = new vscode.Position(lastImportLineNum + 1, 0)
+                }
 
                 // loop through the import statements to remove duplicates
                 for (let i = 0; i <= lastImportLineNum; i++) {
                     const lineText = textDocument.lineAt(i).text.trim()
-                    // Remove duplicate imports from content
-                    if (lineText && sinitizedContent.includes(lineText)) {
-                        sinitizedContent = sinitizedContent.replace(lineText, '')
+                    // TRY removing duplicate imports from content
+                    if (lineText && reviewedContent.includes(lineText)) {
+                        reviewedContent = reviewedContent.replace(lineText, '').trim()
                     }
                 }
             }
 
-            workspaceEditor.insert(fileUri, insertPos, sinitizedContent)
+            workspaceEditor.insert(fileUri, insertPos, reviewedContent)
             await vscode.workspace.applyEdit(workspaceEditor)
-
             // Open the new file
             void vscode.window.showTextDocument(textDocument, {
                 selection: new vscode.Range(insertPos, insertPos),
             })
+            void textDocument.save()
         } catch (error) {
             const message = `Failed to insert content to ${fileUri.fsPath}: ${error}`
             await this.showWarningMessage(message)

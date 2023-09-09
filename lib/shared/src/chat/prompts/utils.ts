@@ -17,12 +17,14 @@ export async function newInteraction(args: {
     contextMessages?: Promise<ContextMessage[]>
     assistantText?: string
     assistantDisplayText?: string
+    assistantPrefix?: string
 }): Promise<Interaction> {
-    const { text, displayText, contextMessages, assistantText, assistantDisplayText } = args
+    const { text, displayText, contextMessages, assistantText, assistantDisplayText, assistantPrefix } = args
+    const formattedPrefix = assistantPrefix ? assistantPrefix + '\n\n' : ''
     return Promise.resolve(
         new Interaction(
             { speaker: 'human', text, displayText },
-            { speaker: 'assistant', text: assistantText, displayText: assistantDisplayText },
+            { speaker: 'assistant', text: assistantText, displayText: assistantDisplayText, prefix: formattedPrefix },
             Promise.resolve(contextMessages || []),
             []
         )
