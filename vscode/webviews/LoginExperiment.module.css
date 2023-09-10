@@ -35,7 +35,11 @@
 body[data-vscode-theme-kind='vscode-dark'] .auth-method-screen {
     background-color: #303031;
     color: white;
-    font-weight: 600;
+    font-weight: 500;
+}
+
+.auth-method-screen .button {
+    font-weight: 500;
 }
 
 body[data-vscode-theme-kind='vscode-dark'] .terms, body[data-vscode-theme-kind='vscode-light'] .terms {

@@ -32,16 +32,16 @@ async function openExternalAuthUrl(provider: AuthMethod): Promise<boolean> {
     // FIXME: This redirect will not work until https://github.com/sourcegraph/sourcegraph/pull/56360
     const postSignUpSurveyUrl = `/post-sign-up?returnTo=${newTokenUrl}`
     // DONOTCOMMIT
-    const site = /* 'https://sourcegraph.test:3443' || */ DOTCOM_URL.toString()
+    const site = /* 'https://sourcegraph.test:3443/' || */ DOTCOM_URL.toString()
 
-    const emailLoginUrl = `${site}/sign-in?showMore=&returnTo=${postSignUpSurveyUrl}`
-    const gitHubLoginUrl = `${site}/.auth/github/login?pc=https%3A%2F%2Fgithub.com%2F%3A%3Ae917b2b7fa9040e1edd4&redirect=${
+    const emailLoginUrl = `${site}sign-in?showMore=&returnTo=${postSignUpSurveyUrl}`
+    const gitHubLoginUrl = `${site}.auth/github/login?pc=https%3A%2F%2Fgithub.com%2F%3A%3Ae917b2b7fa9040e1edd4&redirect=${
         postSignUpSurveyUrl
     }`
-    const gitLabLoginUrl = `${site}/.auth/gitlab/login?pc=https%3A%2F%2Fgitlab.com%2F%3A%3A262309265ae76179773477bd50c93c7022007a4810c344c69a7371da11949c48&redirect=${
+    const gitLabLoginUrl = `${site}.auth/gitlab/login?pc=https%3A%2F%2Fgitlab.com%2F%3A%3A262309265ae76179773477bd50c93c7022007a4810c344c69a7371da11949c48&redirect=${
         postSignUpSurveyUrl
     }`
-    const googleLoginUrl = `${site}/.auth/openidconnect/login?pc=google&redirect=${postSignUpSurveyUrl}`
+    const googleLoginUrl = `${site}.auth/openidconnect/login?pc=google&redirect=${postSignUpSurveyUrl}`
 
     let uri
     switch (provider) {
