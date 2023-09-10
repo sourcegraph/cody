@@ -38,11 +38,11 @@ export class CustomCommandsBuilderMenu {
                 if (!input) {
                     return 'Slash name cannot be empty.'
                 }
-                if (commands.has(input)) {
-                    return 'A command with the slash name already exists.'
-                }
                 if (input.split(' ').length > 1) {
                     return 'Slash name cannot contain spaces. Use dashes, underscores, or camelCase.'
+                }
+                if (commands.has(toSlashCommand(input))) {
+                    return 'A command with the slash name already exists.'
                 }
                 return
             },
