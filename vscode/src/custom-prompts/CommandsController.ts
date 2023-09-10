@@ -410,7 +410,7 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
         // Notify user
         const buttonTitle = `Open ${newCommand.type === 'user' ? 'User' : 'Workspace'} Settings (JSON)`
         void vscode.window
-            .showInformationMessage(`New ${newCommand.slashCommand} command saved`, buttonTitle)
+            .showInformationMessage(`New ${newCommand.slashCommand} command saved to ${newCommand.type} settings`, buttonTitle)
             .then(async choice => {
                 if (choice === buttonTitle) {
                     await this.custom.openConfig(newCommand.type)
