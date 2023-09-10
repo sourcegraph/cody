@@ -9,6 +9,7 @@ import signInLogoGitHub from './sign-in-logo-github.svg'
 import signInLogoGitLab from './sign-in-logo-gitlab.svg'
 import signInLogoGoogle from './sign-in-logo-google.svg'
 import classNames from 'classnames'
+import { VSCodeWrapper } from './utils/VSCodeApi'
 
 export enum LoginExperimentArm {
     Classic,
@@ -20,14 +21,20 @@ export type AuthMethod = 'dotcom' | 'github' | 'gitlab' | 'google'
 interface LoginProps {
     simplifiedLoginRedirect: (method: AuthMethod) => void
     telemetryService: TelemetryService
+    vscodeAPI: VSCodeWrapper
 }
 
 // A login component which is simplified by not having an app setup flow.
 export const LoginSimplified: React.FunctionComponent<React.PropsWithoutRef<LoginProps>> = ({
     simplifiedLoginRedirect,
     telemetryService,
-}) => (
-    <div className={styles.container}>
+    vscodeAPI,
+}) => {
+    const otherSignInClick = (): void => {
+        telemetryService.log('CodyVSCodeExtension:auth:clickOtherSignInOptions')
+        vscodeAPI.postMessage({ command: 'auth', type: 'signin' })
+    }
+    return <div className={styles.container}>
         <div className={styles.sectionsContainer}>
         <img src={onboardingSplashImage} alt="Hi, I'm Cody" className={styles.logo} />
         <div className={classNames(styles.section, styles.authMethodScreen)}>
@@ -77,7 +84,9 @@ export const LoginSimplified: React.FunctionComponent<React.PropsWithoutRef<Logi
     <div className={styles.otherSignInOptions}>
             Use Sourcegraph Enterprise?
             <br/>
-            <a href="#">Sign In to Enterprise Instance</a>
+            <a onClick={otherSignInClick}>
+                Sign In to Enterprise Instance
+            </a>
     </div>
 </div>
-)
+}

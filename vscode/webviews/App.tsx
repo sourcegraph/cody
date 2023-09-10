@@ -47,7 +47,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     // FIXME expose the simplified login experiment to VScode web when
     // the Sourcegraph token generation page can support VScode web-style
     // redirects, see asExternalUri.
-    const loginArm = LoginExperimentArm.Simplified // vscode.env.uiKind !== vscode.UIKind.Web
+    const loginArm: LoginExperimentArm = LoginExperimentArm.Simplified // vscode.env.uiKind !== vscode.UIKind.Web
 
     useEffect(
         () =>
@@ -172,6 +172,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                     <LoginSimplified
                         simplifiedLoginRedirect={simplifiedLoginRedirect}
                         telemetryService={telemetryService}
+                        vscodeAPI={vscodeAPI}
                     />
                 ) : (
                     <Login
