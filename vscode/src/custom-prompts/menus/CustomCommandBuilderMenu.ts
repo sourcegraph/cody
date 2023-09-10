@@ -14,16 +14,24 @@ export interface CodyCommand {
 export class CustomCommandsBuilderMenu {
     public async start(commands: Map<string, CodyPrompt>): Promise<CodyCommand | null> {
         const slashCommand = await this.makeSlashCommand(commands)
-        if (!slashCommand) { return null }
+        if (!slashCommand) {
+            return null
+        }
 
         const description = await this.makeDescription()
-        if (!description) { return null }
+        if (!description) {
+            return null
+        }
 
         const prompt = await this.makePrompt()
-        if (!prompt) { return null }
+        if (!prompt) {
+            return null
+        }
 
         const type = await this.makeType()
-        if (!type) { return null }
+        if (!type) {
+            return null
+        }
 
         return { slashCommand, prompt: { ...prompt, description, slashCommand }, type }
     }
