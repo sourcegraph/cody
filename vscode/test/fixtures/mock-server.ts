@@ -31,7 +31,13 @@ const pubSubClient = new PubSub({
     projectId: 'sourcegraph-telligent-testing',
 })
 
-const topicPublisher = pubSubClient.topic('projects/sourcegraph-telligent-testing/topics/e2e-testing')
+const topicPublisher = pubSubClient
+    .topic('projects/sourcegraph-telligent-testing/topics/e2e-testing')
+    .setPublishOptions({
+        gaxOpts: {
+            timeout: 120000,
+        },
+    })
 
 // Runs a stub Cody service for testing.
 export async function run<T>(around: () => Promise<T>): Promise<T> {
