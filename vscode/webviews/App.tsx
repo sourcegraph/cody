@@ -150,10 +150,9 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
 
     const simplifiedLoginRedirect = useCallback(
         (method: AuthMethod) => {
-            // TODO: Shouldn't the source of truth, AuthProvider, update its
-            // state and those changes flow back to us?
-            // TODO: you get stuck in the "login" view if you close the browser,
-            // etc. so don't set the view to "login"
+            // Unlike onLoginRedirect, we do not change the view here. We want
+            // to keep presenting the login buttons until we get a token so
+            // users don't get stuck if they close the browser.
             vscodeAPI.postMessage({ command: 'auth', type: 'simplified-onboarding', authMethod: method })
         },
         [vscodeAPI]
