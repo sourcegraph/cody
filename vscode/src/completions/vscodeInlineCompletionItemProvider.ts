@@ -262,6 +262,9 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
         CompletionLogger.accept(logId, completion)
     }
 
+    /**
+     * Should only be used by agent to allow it access to clear the last candidate
+     */
     public clearLastCandidate(): void {
         this.lastCandidate = undefined
     }
