@@ -90,7 +90,33 @@ export const completionsDataset: Sample[] = [
                 ${CURSOR}
                 console.log(max)
                 return max
+            }
+Math
+            function minNum(a: number, b: number): number {
+                const min = Math.min(a, b)
+                console.log(min)
+                return min
             }`,
+    },
+    {
+        context: [],
+        fileName: 'comment.ts',
+        languageId: 'typescript',
+        content: `
+            // A function to ${CURSOR}
+            function twoSum(a: number, b: number): number {
+                const sum = a + b
+                console.log(sum)
+                return sum
+            }`,
+    },
+    {
+        context: [],
+        fileName: 'LineAfterComment.ts',
+        languageId: 'typescript',
+        content: `
+            // Sort an array using bubble sort
+            ${CURSOR}`,
     },
     {
         context: [],

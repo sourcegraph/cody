@@ -1,12 +1,11 @@
 [
   {
     "completions": [
-      "    const logger = signale.scope('my-logger')\n    logger.info(message)",
-      "    const logger = signale.scope('logger')\n    logger.info(message)",
+      "    signale.info(message)",
       "    const logger = signale.scope('logger')"
     ],
-    "elapsed": 1241,
-    "timestamp": "1693472909242",
+    "elapsed": 1384,
+    "timestamp": "1694445067147",
     "sample": {
       "context": [],
       "fileName": "logger.ts",
@@ -16,12 +15,10 @@
   },
   {
     "completions": [
-      "    const date = new Date()\n    const filename = path.join(__dirname, 'date.txt')\n    require('fs').writeFileSync(filename, date.toDateString())",
-      "    const date = new Date()\n    const filePath = path.join(__dirname, 'date.txt')\n    require('fs').writeFileSync(filePath, date.toDateString())",
-      "    const dateString = new Date().toDateString()"
+      "    const date = new Date()"
     ],
-    "elapsed": 2568,
-    "timestamp": "1693472909242",
+    "elapsed": 1803,
+    "timestamp": "1694445067147",
     "sample": {
       "context": [],
       "fileName": "writer.ts",
@@ -31,11 +28,12 @@
   },
   {
     "completions": [
+      "        let lineNumber = position instanceof vscode.Position ? position.line : Math.floor(position / this.lineCount);",
       "        const lineNumber = typeof position === 'number' ? position : position.line;",
-      "        let lineNumber = typeof position === 'number' ? position : position.line"
+      "        return new vscode.TextLine(this, this.text.split('"
     ],
-    "elapsed": 2172,
-    "timestamp": "1693472909242",
+    "elapsed": 2020,
+    "timestamp": "1694445067147",
     "sample": {
       "context": [],
       "fileName": "text-document.ts",
@@ -45,12 +43,10 @@
   },
   {
     "completions": [
-      "        import { execFileSync } from 'child_process';\n        try {\n            return execFileSync('uname', ['-s']).toString().trim();\n        } catch (err) {\n            console.error('Error getting OS name', err);\n            return null;\n        }\n    } else {\n        return window.navigator.platform;\n    }",
-      "        try {\n            return execFileSync('uname', ['-s']).toString().trim();\n        } catch (err) {\n            return null;\n        }\n    } else {\n        return window.navigator.platform;\n    }",
       "        try {"
     ],
-    "elapsed": 3167,
-    "timestamp": "1693472909242",
+    "elapsed": 1228,
+    "timestamp": "1694445067147",
     "sample": {
       "context": [],
       "fileName": "getOs.ts",
@@ -60,10 +56,10 @@
   },
   {
     "completions": [
-      "    return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;"
+      "    return window.matchMedia('(prefers-color-scheme: dark)').matches;"
     ],
-    "elapsed": 1776,
-    "timestamp": "1693472909242",
+    "elapsed": 662,
+    "timestamp": "1694445067147",
     "sample": {
       "context": [],
       "fileName": "isDarkColorScheme.ts",
@@ -73,10 +69,49 @@
   },
   {
     "completions": [
-      "    return window.location.host === 'localhost' || window.location.host === '127.0.0.1';"
+      "    let max;"
     ],
-    "elapsed": 1056,
-    "timestamp": "1693472909242",
+    "elapsed": 2928,
+    "timestamp": "1694445067147",
+    "sample": {
+      "context": [],
+      "fileName": "twoNums.ts",
+      "languageId": "typescript",
+      "content": "function twoSum(a: number, b: number): number {\n    const sum = a + b\n    console.log(sum)\n    return sum\n}\n\nfunction maxNum(a: number, b: number): number {\n    ️🔥\n    console.log(max)\n    return max\n}\nMath\nfunction minNum(a: number, b: number): number {\n    const min = Math.min(a, b)\n    console.log(min)\n    return min\n}"
+    }
+  },
+  {
+    "completions": [
+      "// A function to calculate the factorial of a number"
+    ],
+    "elapsed": 858,
+    "timestamp": "1694445067147",
+    "sample": {
+      "context": [],
+      "fileName": "comment.ts",
+      "languageId": "typescript",
+      "content": "// A function to ️🔥\nfunction twoSum(a: number, b: number): number {\n    const sum = a + b\n    console.log(sum)\n    return sum\n}"
+    }
+  },
+  {
+    "completions": [
+      "function bubbleSort(array: number[]): number[] {"
+    ],
+    "elapsed": 971,
+    "timestamp": "1694445067147",
+    "sample": {
+      "context": [],
+      "fileName": "LineAfterComment.ts",
+      "languageId": "typescript",
+      "content": "// Sort an array using bubble sort\n️🔥"
+    }
+  },
+  {
+    "completions": [
+      "    return window.location.host === 'localhost';"
+    ],
+    "elapsed": 932,
+    "timestamp": "1694445067147",
     "sample": {
       "context": [],
       "fileName": "isLocalhost.ts",
@@ -86,10 +121,10 @@
   },
   {
     "completions": [
-      "     * Wether to cache the completion result"
+      "     * Wether to include the full source file contents in the response"
     ],
-    "elapsed": 1025,
-    "timestamp": "1693472909242",
+    "elapsed": 763,
+    "timestamp": "1694445067147",
     "sample": {
       "context": [],
       "fileName": "interface.ts",
@@ -99,11 +134,12 @@
   },
   {
     "completions": [
-      "    return text.toLowerCase().replace(/[^a-z0-9-]/g, '');",
+      "    return text.toLowerCase().replace(/[^\\w-]+/g, '')",
+      "    return text.toLowerCase().replace(/[^\\w-]+/g, '');",
       "    return text.toLowerCase().replace(/[^a-z0-9-]/g, '-');"
     ],
-    "elapsed": 2550,
-    "timestamp": "1693472909242",
+    "elapsed": 1369,
+    "timestamp": "1694445067147",
     "sample": {
       "context": [
         {
@@ -130,12 +166,12 @@
   },
   {
     "completions": [
-      "    responseLines := []string{\"Completion 1\", \"Completion 2\"}\n\tresponseBody := linesToResponse(responseLines)\n\n\tclient :=",
-      "    gold := autogold.New()\n\tdefer gold.Restore()\n\n\tlines",
-      "    responseBody := linesToResponse([]string{\"completion1\", \"completion2\"})\n\tclient := getMockClient(responseBody)"
+      "    lines := []string{\"hello\", \"world\"}\n\tresponseBody := linesToResponse(lines)\n\n\tclient := getMockClient(responseBody)\n\n\tvar completions []string\n\terr := client.Stream(context.Background(), types.Python, types.CompletionRequestParameters{}, func(event types.CompletionEvent) {\n\t\tcompletions = append(completions, event.Completion)\n\t})\n\n\trequire.NoError(t, err)\n\tassert.Equal(t, lines, completions)\n}",
+      "    ctx := context.Background()\n\tlines := []string{\"Hello\", \"World\"}\n\tresponseBody := linesToResponse(lines)\n\n\tclient := getMockClient(responseBody)\n\tvar completions []string\n\terr := client.Stream(ctx, types.CompletionsFeatureAnthropic, types.CompletionRequestParameters{}, func(event types.CompletionEvent) {\n\t\tcompletions = append(completions, event.Completion)\n\t})\n\n\trequire.NoError(t, err)\n\tassert.Equal(t, lines, completions)\n}",
+      "    responseBody := linesToResponse([]string{\"Hello\", \"World\"})\n\n\tclient := getMockClient(responseBody)\n\n\tvar completions []string\n\terr := client.Stream(context.Background(), types.Python, types.CompletionRequestParameters{}, func(event types.CompletionEvent) {\n\t\tcompletions = append(completions, event.Completion)\n\t})\n\n\trequire.NoError(t, err)\n\tassert.Equal(t, []string{\"Hello\", \"World\"}, completions)\n}"
     ],
-    "elapsed": 2858,
-    "timestamp": "1693472909242",
+    "elapsed": 3585,
+    "timestamp": "1694445067147",
     "sample": {
       "context": [
         {
@@ -162,12 +198,11 @@
   },
   {
     "completions": [
-      "    issues = api_client.get_issues(state=\"open\")\n    assert len(issues) > 0",
-      "    issues = api_client.github.get_issues(state=\"open\", repo=api_client.github_repository)\n    assert len(issues) > 0",
-      "    issues = api_client.get_open_issues()"
+      "    issues = api_client.get_issues()\n    assert isinstance(issues, list)\n    assert len(issues) > 0",
+      "    issues = api_client.github.get_issues(state=\"open\")\n    assert isinstance(issues, list)\n    assert len(issues) > 0"
     ],
-    "elapsed": 1891,
-    "timestamp": "1693472909242",
+    "elapsed": 5647,
+    "timestamp": "1694445067147",
     "sample": {
       "context": [
         {
@@ -193,15 +228,15 @@
       ],
       "fileName": "libs/langchain/tests/integration_tests/utilities/test_github.py",
       "languageId": "python",
-      "content": "\"\"\"Integration test for Github Wrapper.\"\"\"\nimport pytest\n\nfrom langchain.utilities.github import GitHubAPIWrapper\n\n# Make sure you have set the following env variables:\n# GITHUB_REPOSITORY\n# GITHUB_BRANCH\n# GITHUB_APP_ID\n# GITHUB_PRIVATE_KEY\n\n\n@pytest.fixture\ndef api_client() -> GitHubAPIWrapper:\n    return GitHubAPIWrapper()\n\n\ndef test_get_open_issues(api_client: GitHubAPIWrapper) -> None:\n    ️🔥"
+      "content": "\"\"\"Integration test for Github Wrapper.\"\"\"\nimport pytest\n\nfrom langchain.utilities.github import GitHubAPIWrapper\n\n# Make sure you have set the following env variables:\n# GITHUB_REPOSITORY\n# GITHUB_BRANCH\n# GITHUB_APP_ID\n# GITHUB_PRIVATE_KEY\n\n@pytest.fixture\ndef api_client() -> GitHubAPIWrapper:\n    return GitHubAPIWrapper()\n\ndef test_get_open_issues(api_client: GitHubAPIWrapper) -> None:\n    ️🔥"
     }
   },
   {
     "completions": [
-      "            tool_cls.create("
+      "            tool_cls.build("
     ],
-    "elapsed": 2238,
-    "timestamp": "1693472909242",
+    "elapsed": 1394,
+    "timestamp": "1694445067147",
     "sample": {
       "context": [
         {
@@ -219,17 +254,17 @@
       ],
       "fileName": "libs/langchain/langchain/agents/agent_toolkits/playwright/toolkit.py",
       "languageId": "python",
-      "content": "\"\"\"Playwright web browser toolkit.\"\"\"\nfrom __future__ import annotations\n\nfrom typing import TYPE_CHECKING, List, Optional, Type, cast\n\nfrom pydantic import Extra, root_validator\n\nfrom langchain.agents.agent_toolkits.base import BaseToolkit\nfrom langchain.tools.base import BaseTool\nfrom langchain.tools.playwright.base import (\n    BaseBrowserTool,\n    lazy_import_playwright_browsers,\n)\nfrom langchain.tools.playwright.click import ClickTool\nfrom langchain.tools.playwright.current_page import CurrentWebPageTool\nfrom langchain.tools.playwright.extract_hyperlinks import ExtractHyperlinksTool\nfrom langchain.tools.playwright.extract_text import ExtractTextTool\nfrom langchain.tools.playwright.get_elements import GetElementsTool\nfrom langchain.tools.playwright.navigate import NavigateTool\nfrom langchain.tools.playwright.navigate_back import NavigateBackTool\n\nif TYPE_CHECKING:\n    from playwright.async_api import Browser as AsyncBrowser\n    from playwright.sync_api import Browser as SyncBrowser\nelse:\n    try:\n        # We do this so pydantic can resolve the types when instantiating\n        from playwright.async_api import Browser as AsyncBrowser\n        from playwright.sync_api import Browser as SyncBrowser\n    except ImportError:\n        pass\n\n\nclass PlayWrightBrowserToolkit(BaseToolkit):\n    \"\"\"Toolkit for PlayWright browser tools.\"\"\"\n\n    sync_browser: Optional[\"SyncBrowser\"] = None\n    async_browser: Optional[\"AsyncBrowser\"] = None\n\n    class Config:\n        \"\"\"Configuration for this pydantic object.\"\"\"\n\n        extra = Extra.forbid\n        arbitrary_types_allowed = True\n\n    @root_validator\n    def validate_imports_and_browser_provided(cls, values: dict) -> dict:\n        \"\"\"Check that the arguments are valid.\"\"\"\n        lazy_import_playwright_browsers()\n        if values.get(\"async_browser\") is None and values.get(\"sync_browser\") is None:\n            raise ValueError(\"Either async_browser or sync_browser must be specified.\")\n        return values\n\n    def get_tools(self) -> List[BaseTool]:\n        \"\"\"Get the tools in the toolkit.\"\"\"\n        tool_classes: List[Type[BaseBrowserTool]] = [\n            ClickTool,\n            NavigateTool,\n            NavigateBackTool,\n            ExtractTextTool,\n            ExtractHyperlinksTool,\n            GetElementsTool,\n            CurrentWebPageTool,\n        ]\n\n        tools = [\n            tool_cls.️🔥\n            for tool_cls in tool_classes\n        ]\n        return cast(List[BaseTool], tools)\n\n    @classmethod\n    def from_browser(\n        cls,\n        sync_browser: Optional[SyncBrowser] = None,\n        async_browser: Optional[AsyncBrowser] = None,\n    ) -> PlayWrightBrowserToolkit:\n        \"\"\"Instantiate the toolkit.\"\"\"\n        # This is to raise a better error than the forward ref ones Pydantic would have\n        lazy_import_playwright_browsers()\n        return cls(sync_browser=sync_browser, async_browser=async_browser)"
+      "content": "\"\"\"Playwright web browser toolkit.\"\"\"\nfrom __future__ import annotations\n\nfrom typing import TYPE_CHECKING, List, Optional, Type, cast\n\nfrom pydantic import Extra, root_validator\n\nfrom langchain.agents.agent_toolkits.base import BaseToolkit\nfrom langchain.tools.base import BaseTool\nfrom langchain.tools.playwright.base import (\n    BaseBrowserTool,\n    lazy_import_playwright_browsers,\n)\nfrom langchain.tools.playwright.click import ClickTool\nfrom langchain.tools.playwright.current_page import CurrentWebPageTool\nfrom langchain.tools.playwright.extract_hyperlinks import ExtractHyperlinksTool\nfrom langchain.tools.playwright.extract_text import ExtractTextTool\nfrom langchain.tools.playwright.get_elements import GetElementsTool\nfrom langchain.tools.playwright.navigate import NavigateTool\nfrom langchain.tools.playwright.navigate_back import NavigateBackTool\n\nif TYPE_CHECKING:\n    from playwright.async_api import Browser as AsyncBrowser\n    from playwright.sync_api import Browser as SyncBrowser\nelse:\n    try:\n        # We do this so pydantic can resolve the types when instantiating\n        from playwright.async_api import Browser as AsyncBrowser\n        from playwright.sync_api import Browser as SyncBrowser\n    except ImportError:\n        pass\n\nclass PlayWrightBrowserToolkit(BaseToolkit):\n    \"\"\"Toolkit for PlayWright browser tools.\"\"\"\n\n    sync_browser: Optional[\"SyncBrowser\"] = None\n    async_browser: Optional[\"AsyncBrowser\"] = None\n\n    class Config:\n        \"\"\"Configuration for this pydantic object.\"\"\"\n\n        extra = Extra.forbid\n        arbitrary_types_allowed = True\n\n    @root_validator\n    def validate_imports_and_browser_provided(cls, values: dict) -> dict:\n        \"\"\"Check that the arguments are valid.\"\"\"\n        lazy_import_playwright_browsers()\n        if values.get(\"async_browser\") is None and values.get(\"sync_browser\") is None:\n            raise ValueError(\"Either async_browser or sync_browser must be specified.\")\n        return values\n\n    def get_tools(self) -> List[BaseTool]:\n        \"\"\"Get the tools in the toolkit.\"\"\"\n        tool_classes: List[Type[BaseBrowserTool]] = [\n            ClickTool,\n            NavigateTool,\n            NavigateBackTool,\n            ExtractTextTool,\n            ExtractHyperlinksTool,\n            GetElementsTool,\n            CurrentWebPageTool,\n        ]\n\n        tools = [\n            tool_cls.️🔥\n            for tool_cls in tool_classes\n        ]\n        return cast(List[BaseTool], tools)\n\n    @classmethod\n    def from_browser(\n        cls,\n        sync_browser: Optional[SyncBrowser] = None,\n        async_browser: Optional[AsyncBrowser] = None,\n    ) -> PlayWrightBrowserToolkit:\n        \"\"\"Instantiate the toolkit.\"\"\"\n        # This is to raise a better error than the forward ref ones Pydantic would have\n        lazy_import_playwright_browsers()\n        return cls(sync_browser=sync_browser, async_browser=async_browser)"
     }
   },
   {
     "completions": [
-      "                noStatusBar: noopStatusBar,\n                history: new History(),\n                providerConfig,",
-      "                providerConfig, history: new History(), statusBar: noopStatusBar })",
-      "                providerConfig, history: new History() })"
+      "                providerConfig,\n                history: new History(),\n                statusBar: noopStatusBar",
+      "                providerConfig,\n                history: new History(),\n                statusBar: noopStatusBar,",
+      "                history: new History(),"
     ],
-    "elapsed": 1793,
-    "timestamp": "1693472909242",
+    "elapsed": 9369,
+    "timestamp": "1694445067147",
     "sample": {
       "context": [
         {

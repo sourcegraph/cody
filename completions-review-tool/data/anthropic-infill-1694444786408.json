@@ -3,8 +3,8 @@
     "completions": [
       "    signale.info(message)"
     ],
-    "elapsed": 1221,
-    "timestamp": "1694444230630",
+    "elapsed": 2296,
+    "timestamp": "1694444786408",
     "sample": {
       "context": [],
       "fileName": "logger.ts",
@@ -14,12 +14,12 @@
   },
   {
     "completions": [
-      "    const date = new Date()\n    const filename = path.join(__dirname, 'date.txt')\n\n    fs.writeFile(filename, date.toDateString(), err => {\n        if (err) {\n            console.error(err)\n            return\n        }\n        console.log(`Date written to ${filename}`)\n    })",
-      "    const date = new Date();\n    const filename = path.join(__dirname, 'date.txt');\n\n    fs.writeFile(filename, date.toDateString(), err => {\n        if (err) throw err;\n        console.log('Date written to', filename);\n    });",
-      "    const date = new Date();\n    const filename = path.join(__dirname, 'date.txt');\n\n    fs.writeFile(filename, date.toISOString(), err => {\n        if (err) throw err;\n        console.log('Date written to', filename);\n    });"
+      "    const date = new Date();\n    const filePath = path.join(__dirname, 'date.txt');\n\n    fs.writeFile(filePath, date.toDateString(), err => {\n        if (err) {\n            console.error(err);\n            return;\n        }\n        console.log('Date written to file');\n    });",
+      "    const date = new Date();\n    const fileName = path.join(__dirname, 'date.txt');\n\n    fs.writeFileSync(\n        fileName,\n        date.toDateString(),\n        {encoding: 'utf-8'}\n    );",
+      "    const date = new Date();\n    const filename = path.join(__dirname, 'date.txt');\n\n    fs.writeFile(filename, date.toDateString(), err => {\n        if (err) throw err;\n        console.log('Date written to', filename);\n    });"
     ],
-    "elapsed": 2293,
-    "timestamp": "1694444230630",
+    "elapsed": 1736,
+    "timestamp": "1694444786408",
     "sample": {
       "context": [],
       "fileName": "writer.ts",
@@ -29,12 +29,12 @@
   },
   {
     "completions": [
-      "        if(typeof position === 'number') {\n            const lineIndex = Math.floor(position / this.getLineLength(0))\n            return {\n                text: this.lines[lineIndex],\n                range: new vscode.Range(position, position + this.getLineLength(lineIndex))\n            }\n        } else {\n            const lineIndex = position.line\n            return {\n                text: this.lines[lineIndex],\n                range: new vscode.Range(position.line * this.getLineLength(0), (position.line + 1) * this.getLineLength(0))\n            }\n        }",
-      "        if(typeof position === 'number') {\n            const lineIndex = Math.floor(position / this.lineLength())\n            return new TextLine(this, lineIndex)\n        } else {\n            const lineIndex = this.positionAt(position).line\n            return new TextLine(this, lineIndex)\n        }",
-      "        if(typeof position === 'number') {\n            const lineIndex = Math.floor(position / this.lineLength());\n            return new vscode.TextLine(this, lineIndex);\n        } else {\n            const lineIndex = this.positionToLine(position);\n            return new vscode.TextLine(this, lineIndex);\n        }"
+      "        if(typeof position === 'number') {\n            const lineIndex = Math.floor(position / this.lineLength())\n            return {\n                text: this.lines[lineIndex],\n                range: new vscode.Range(position, position + this.lines[lineIndex].length)\n            }\n        } else {\n            const lineIndex = this.lines.findIndex(line => {\n                return position.line >= this.getLineOffsets()[lineIndex] &&\n                    position.line < this.getLineOffsets()[lineIndex+1]\n            })\n            return {\n                text: this.lines[lineIndex],\n                range: new vscode.Range(this.getLineOffsets()[lineIndex], this.getLineOffsets()[lineIndex+1])\n            }\n        }",
+      "        let lineNumber: number;\n        if(position instanceof vscode.Position) {\n            lineNumber = position.line;\n        } else {\n            lineNumber = position;\n        }\n\n        return {\n            text: this.lines[lineNumber],\n            range: new vscode.Range(lineNumber, 0, lineNumber, this.lines[lineNumber].length)\n        }",
+      "        let lineNumber: number;\n        if (position instanceof vscode.Position) {\n            lineNumber = position.line;\n        } else {\n            lineNumber = position;\n        }\n        return {\n            text: this.lines[lineNumber],\n            range: new vscode.Range(lineNumber, 0, lineNumber, this.lines[lineNumber].length)\n        };"
     ],
-    "elapsed": 5774,
-    "timestamp": "1694444230630",
+    "elapsed": 3760,
+    "timestamp": "1694444786408",
     "sample": {
       "context": [],
       "fileName": "text-document.ts",
@@ -45,11 +45,10 @@
   {
     "completions": [
       "        try {\n                return require('os').platform()\n            } catch (err) {\n                return null\n            }\n        } else {\n            return window.navigator.platform\n        }\n    }",
-      "        try {\n            return require('os').platform()\n        } catch (err) {\n            return null\n        }\n    } else {\n        return window.navigator.platform\n    }",
-      "        try {\n            return require('os').platform();\n        } catch (err) {\n            return null;\n        }\n    } else {\n        return window.navigator.platform;\n    }"
+      "        try {\n            return require('os').platform()\n        } catch (err) {\n            return null\n        }\n    } else {\n        return window.navigator.platform\n    }"
     ],
-    "elapsed": 1485,
-    "timestamp": "1694444230630",
+    "elapsed": 2275,
+    "timestamp": "1694444786408",
     "sample": {
       "context": [],
       "fileName": "getOs.ts",
@@ -61,8 +60,8 @@
     "completions": [
       "    return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;"
     ],
-    "elapsed": 971,
-    "timestamp": "1694444230630",
+    "elapsed": 1003,
+    "timestamp": "1694444786408",
     "sample": {
       "context": [],
       "fileName": "isDarkColorScheme.ts",
@@ -71,22 +70,50 @@
     }
   },
   {
-    "completions": [],
-    "elapsed": 549,
-    "timestamp": "1694444230630",
+    "completions": [
+      "    const max = Math.max(a, b);"
+    ],
+    "elapsed": 893,
+    "timestamp": "1694444786408",
     "sample": {
       "context": [],
       "fileName": "twoNums.ts",
       "languageId": "typescript",
-      "content": "function twoSum(a: number, b: number): number {\n    const sum = a + b\n    console.log(sum)\n    return sum\n}\n\nfunction maxNum(a: number, b: number): number {\n    ️🔥\n    console.log(max)\n    return max\n}"
+      "content": "function twoSum(a: number, b: number): number {\n    const sum = a + b\n    console.log(sum)\n    return sum\n}\n\nfunction maxNum(a: number, b: number): number {\n    ️🔥\n    console.log(max)\n    return max\n}\nMath\nfunction minNum(a: number, b: number): number {\n    const min = Math.min(a, b)\n    console.log(min)\n    return min\n}"
+    }
+  },
+  {
+    "completions": [
+      "// A function to add two numbers"
+    ],
+    "elapsed": 970,
+    "timestamp": "1694444786408",
+    "sample": {
+      "context": [],
+      "fileName": "comment.ts",
+      "languageId": "typescript",
+      "content": "// A function to ️🔥\nfunction twoSum(a: number, b: number): number {\n    const sum = a + b\n    console.log(sum)\n    return sum\n}"
+    }
+  },
+  {
+    "completions": [
+      "function bubbleSort(array: number[]): number[] {"
+    ],
+    "elapsed": 2825,
+    "timestamp": "1694444786408",
+    "sample": {
+      "context": [],
+      "fileName": "LineAfterComment.ts",
+      "languageId": "typescript",
+      "content": "// Sort an array using bubble sort\n️🔥"
     }
   },
   {
     "completions": [
       "    return window.location.host === 'localhost' || window.location.host === '127.0.0.1';"
     ],
-    "elapsed": 845,
-    "timestamp": "1694444230630",
+    "elapsed": 866,
+    "timestamp": "1694444786408",
     "sample": {
       "context": [],
       "fileName": "isLocalhost.ts",
@@ -96,10 +123,10 @@
   },
   {
     "completions": [
-      "     * Wether to trim whitespace from the completion results."
+      "     * Wether to trim whitespace from the completion results"
     ],
-    "elapsed": 965,
-    "timestamp": "1694444230630",
+    "elapsed": 818,
+    "timestamp": "1694444786408",
     "sample": {
       "context": [],
       "fileName": "interface.ts",
@@ -111,8 +138,8 @@
     "completions": [
       "    return text.toLowerCase().replace(/[^\\w-]+/g, '');"
     ],
-    "elapsed": 3474,
-    "timestamp": "1694444230630",
+    "elapsed": 3194,
+    "timestamp": "1694444786408",
     "sample": {
       "context": [
         {
@@ -139,12 +166,12 @@
   },
   {
     "completions": [
-      "    var mockAnthropicValidResponseLines = []string{\n        `{\"Completion\":\"func\", \"StopReason\":\"Complete\"}`,\n        `{\"Completion\":\" (ctx context.Context\", \"StopReason\":\"Incomplete\"}`,\n    }\n\n    mockClient := getMockClient(linesToResponse(mockAnthropicValidResponseLines))\n\n    err := mockClient.Stream(context.Background(), types.CompletionsFeatureChat, types.CompletionRequestParameters{}, func(event types.CompletionResponse) error {\n        return nil\n    })\n\n    if err != nil {\n        t.Fatal(\"unexpected error\", err)\n    }\n\n}",
-      "    var mockAnthropicValidResponseLines = []string{\n        `{\"Completion\":{\"label\":\"func main() {}\",\"insertText\":\"func main() {}\"},\"StopReason\":\"Done\"}`,\n    }\n\n    mockClient := getMockClient(linesToResponse(mockAnthropicValidResponseLines))\n\n    err := mockClient.Stream(context.Background(), types.CompletionsFeatureChat, types.CompletionRequestParameters{}, func(event types.CompletionResponse) error {\n        return nil\n    })\n\n    if err != nil {\n        t.Fatal(\"expected no error, got\", err)\n    }\n\n}",
-      "    var mockAnthropicValidResponseLines = []string{\n    `{\"Completion\":{\"label\":\"func main() {}\",\"detail\":\"main function\"},\"StopReason\":\"Complete\"}`,\n}"
+      "    var mockAnthropicValidResponseLines = []string{\n        `{\"Completion\":{\"label\":\"foo\"}}`,\n        `{\"Completion\":{\"label\":\"bar\"}}`,\n    }\n\n    mockClient := getMockClient(linesToResponse(mockAnthropicValidResponseLines))\n\n    err := mockClient.Stream(context.Background(), types.CompletionsFeatureChat, types.CompletionRequestParameters{}, func(event types.CompletionResponse) error {\n        return nil\n    })\n\n    if err != nil {\n        t.Fatal(\"unexpected error streaming completions\")\n    }\n\n}",
+      "    var mockAnthropicValidResponseLines = []string{`{\"Completion\":\"func\",\"StopReason\":\"Complete\"}`}\n\n    mockClient := getMockClient(linesToResponse(mockAnthropicValidResponseLines))\n\n    err := mockClient.Stream(context.Background(), types.CompletionsFeatureChat, types.CompletionRequestParameters{}, func(event types.CompletionResponse) error {\n        return nil\n    })\n\n    if err != nil {\n        t.Fatal(\"unexpected error streaming valid response\")\n    }\n\n}",
+      "    var mockAnthropicValidResponseLines = []string{`{\"Completion\":{\"label\":\"func main() {}\"}}`}\n\n    mockClient := getMockClient(linesToResponse(mockAnthropicValidResponseLines))\n\n    err := mockClient.Stream(context.Background(), types.CompletionsFeatureChat, types.CompletionRequestParameters{}, func(event types.CompletionResponse) error {\n        assert.Equal(t, event.Completion.Label, \"func main() {}\")\n        return nil\n    })\n\n    if err != nil {\n        t.Fatal(\"stream returned unexpected error\", err)\n    }\n}"
     ],
-    "elapsed": 2701,
-    "timestamp": "1694444230630",
+    "elapsed": 3566,
+    "timestamp": "1694444786408",
     "sample": {
       "context": [
         {
@@ -171,12 +198,12 @@
   },
   {
     "completions": [
-      "    issues = api_client.github.get_issues(state=\"open\")\n    assert issues",
-      "    issues = api_client.github.get_issues(state=\"open\")",
-      "    issues = api_client.github.search_issues(f\"repo:{api_client.github_repository} is:open\")"
+      "    issues = api_client.github.issue.list_for_repo(owner=api_client.github_repository, repo=api_client.github_repository, state='open')\n    assert len(issues) > 0",
+      "    issues = api_client.github.search_issues(api_client.github_repository, \"state:open\")\n    assert issues",
+      "    issues = api_client.github.search_issues(f\"repo:{api_client.github_repository} is:open\")\n    assert len(issues) > 0"
     ],
-    "elapsed": 3341,
-    "timestamp": "1694444230630",
+    "elapsed": 3440,
+    "timestamp": "1694444786408",
     "sample": {
       "context": [
         {
@@ -209,8 +236,8 @@
     "completions": [
       "            tool_cls.from_toolkit(self)"
     ],
-    "elapsed": 1000,
-    "timestamp": "1694444230630",
+    "elapsed": 1369,
+    "timestamp": "1694444786408",
     "sample": {
       "context": [
         {
@@ -233,11 +260,12 @@
   },
   {
     "completions": [
-      "                config: providerConfig,\n                history: new History(),\n                statusBar: noopStatusBar",
-      "                providerConfig,\n                history: new History(),"
+      "                providerConfig,\n                history: new History(),\n                statusBar: noopStatusBar",
+      "                providerConfig,\n                history: new History(),\n                statusBar: noopStatusBar,",
+      "                config: providerConfig,\n                history: new History(),"
     ],
-    "elapsed": 4765,
-    "timestamp": "1694444230630",
+    "elapsed": 4848,
+    "timestamp": "1694444786408",
     "sample": {
       "context": [
         {
