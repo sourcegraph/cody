@@ -55,6 +55,7 @@ function docState(prefix: string, suffix: string = ';'): RequestParams {
             currentLineSuffix: suffix,
             prevNonEmptyLine: getPrevNonEmptyLine(prefix),
             nextNonEmptyLine: getNextNonEmptyLine(suffix),
+            multilineTrigger: null,
         },
         context: {
             triggerKind: vsCodeMocks.InlineCompletionTriggerKind.Automatic,

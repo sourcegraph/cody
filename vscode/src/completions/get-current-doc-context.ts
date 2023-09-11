@@ -1,5 +1,6 @@
 import * as vscode from 'vscode'
 
+import { detectMultiline } from './detect-multiline'
 import { getNextNonEmptyLine, getPrevNonEmptyLine } from './text-processing'
 
 export interface DocumentContext {
@@ -13,6 +14,17 @@ export interface DocumentContext {
 
     prevNonEmptyLine: string
     nextNonEmptyLine: string
+
+    multilineTrigger: string | null
+}
+
+interface GetCurrentDocContextParams {
+    document: vscode.TextDocument
+    position: vscode.Position
+    maxPrefixLength: number
+    maxSuffixLength: number
+    enableExtendedTriggers: boolean
+    context?: vscode.InlineCompletionContext
 }
 
 /**
@@ -31,13 +43,8 @@ export interface DocumentContext {
  *
  * @returns An object containing the current document context or null if there are no lines in the document.
  */
-export function getCurrentDocContext(
-    document: vscode.TextDocument,
-    position: vscode.Position,
-    maxPrefixLength: number,
-    maxSuffixLength: number,
-    context?: vscode.InlineCompletionContext
-): DocumentContext {
+export function getCurrentDocContext(params: GetCurrentDocContextParams): DocumentContext {
+    const { document, position, maxPrefixLength, maxSuffixLength, enableExtendedTriggers, context } = params
     const offset = document.offsetAt(position)
 
     // TODO(philipp-spiess): This requires us to read the whole document. Can we limit our ranges
@@ -88,12 +95,17 @@ export function getCurrentDocContext(
     const prevNonEmptyLine = getPrevNonEmptyLine(prefix)
     const nextNonEmptyLine = getNextNonEmptyLine(suffix)
 
-    return {
+    const docContext = {
         prefix,
         suffix,
         currentLinePrefix,
         currentLineSuffix,
         prevNonEmptyLine,
         nextNonEmptyLine,
+    }
+
+    return {
+        ...docContext,
+        multilineTrigger: detectMultiline(docContext, document.languageId, enableExtendedTriggers ?? false),
     }
 }
