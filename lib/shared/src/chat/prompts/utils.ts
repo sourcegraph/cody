@@ -1,3 +1,5 @@
+import { basename, extname } from 'path'
+
 import { ContextMessage } from '../../codebase-context/messages'
 import { ActiveTextEditorSelection } from '../../editor'
 import { CHARS_PER_TOKEN, MAX_AVAILABLE_PROMPT_LENGTH, MAX_RECIPE_INPUT_TOKENS } from '../../prompt/constants'
@@ -117,47 +119,55 @@ export function toSlashCommand(command: string): string {
     return command.replace(leadingForwardSlashRegex, '').replace(/^/, '/')
 }
 
+const TEST_FILE_EXTENSIONS = new Set(['ts', 'js', 'tsx', 'jsx', 'py', 'rb', 'go', 'cs', 'cpp', 'cc'])
+// Language extension that uses '.test' suffix for test files
+const TEST_FILE_DOT_SUFFIX_EXTENSIONS = new Set(['js', 'ts', 'jsx', 'tsx'])
+// language extension that uses '_test' suffix for test files
+const TEST_FILE_DASH_SUFFIX_EXTENSIONS = new Set(['py', 'rb', 'go', 'cs', 'cpp', 'cc'])
+
 /**
- * Returns the file name from the given file path without the extension.
+ * Checks if the given file path is a valid test file name.
+ *
+ * @param filePath - The file path to check.
+ * @returns True if the file name contains 'test' and has a valid test file extension, false otherwise.
+ *
+ * Validates that:
+ * - The file extension is in the allowed test extensions list
+ * - The file name contains 'test', '.' or '_' before or after 'test'
+ * - The file name does not contain 'test-'
  */
-export function getFileNameFromPath(filePath: string): string {
-    const fileName = filePath.split('/').pop()
-    if (!fileName) {
-        return filePath
-    }
-    return fileName.split('.')[0]
-}
-
-const TEST_FILE_EXTENSIONS = new Set(['ts', 'js', 'py', 'go', 'java', 'cs', 'cpp', 'cc'])
-
-const TEST_FILE_REGEXES = {
-    ts: /(test\.[^.]+)|([^.]+\.test)\.\w+/i,
-    js: /(test\.[^.]+)|([^.]+\.test)\.\w+/i,
-    py: /(test_[^.]+)|([^.]+_test)\.\w+/i,
-    go: /(_test\.)|(\w+test_\.)/i,
-    java: /(test\.)|((\w+)test\.)/i,
-    cs: /(tests?\.[\da-z]+)|([a-z]+tests?\.[a-z]+)/i,
-    cpp: /(tests?\.)|([a-z]+tests?\.[a-z]+)|(_test\.)/i,
-    cc: /(tests?\.)|([a-z]+tests?\.[a-z]+)|(_test\.)/i,
-}
-
 export function isValidTestFileName(filePath?: string): boolean {
     if (!filePath) {
         return false
     }
 
-    const fileName = filePath.split('/').pop() || filePath
-    const extension = getFileExtension(filePath)
+    const fileNameWithExt = basename(filePath).toLowerCase()
+    const extension = extname(fileNameWithExt)
+    const fileName = fileNameWithExt.replace(extension, '')
 
-    if (!TEST_FILE_EXTENSIONS.has(extension)) {
-        return false
+    if (TEST_FILE_EXTENSIONS.has(extension)) {
+        // Check if there is '.' or '_' before or after 'test'
+        return /(_|.)test(_|\.)/.test(fileName) || /test(_|\.)/.test(fileName)
     }
 
-    const regex = TEST_FILE_REGEXES[extension as keyof typeof TEST_FILE_REGEXES]
+    return fileName.includes('test') && !fileName.includes('test-')
+}
 
-    if (!regex) {
-        return false
+/**
+ * Generates a default test file name based on the original file name and extension.
+ *
+ * @param fileName - The original file name
+ * @param ext - The file extension
+ * @returns The generated default test file name
+ */
+export function createDefaultTestFileNameByLanguageExt(fileName: string, ext: string): string {
+    if (TEST_FILE_DOT_SUFFIX_EXTENSIONS.has(ext)) {
+        return `${fileName}.test${ext}`
     }
 
-    return regex.test(fileName) || false
+    if (TEST_FILE_DASH_SUFFIX_EXTENSIONS.has(ext)) {
+        return `${fileName}_test${ext}`
+    }
+
+    return `${fileName}Test${ext}`
 }

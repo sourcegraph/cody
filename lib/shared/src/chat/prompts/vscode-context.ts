@@ -1,4 +1,4 @@
-import { basename, dirname } from 'path'
+import { basename, dirname, extname } from 'path'
 
 import * as vscode from 'vscode'
 import { URI } from 'vscode-uri'
@@ -20,7 +20,7 @@ import { truncateText } from '../../prompt/truncation'
 import { getFileExtension } from '../recipes/helpers'
 
 import { answers, displayFileName } from './templates'
-import { getFileNameFromPath, isValidTestFileName } from './utils'
+import { createDefaultTestFileNameByLanguageExt, isValidTestFileName } from './utils'
 
 // TODO bee move vscode logic to editor and context creating to share lib
 /**
@@ -598,21 +598,27 @@ export function createTestFileUri(currentFileUri: vscode.Uri, repoTestFilePath?:
 
     const currentFileUriString = currentFileUri.toString()
     const currentFileName = basename(currentFileUriString)
+    const currentFileExt = extname(currentFileName)
+    const currentFileNameWithoutExt = currentFileName.replace(currentFileExt, '')
 
-    const currentFileNameWithoutExt = getFileNameFromPath(currentFilePath)
-    const testFileNameWithoutExt = repoTestFilePath
-        ? getFileNameFromPath(repoTestFilePath).toLowerCase()
-        : `test.${currentFileNameWithoutExt}`
+    const repoTestFileName = repoTestFilePath
+        ? basename(repoTestFilePath)
+        : createDefaultTestFileNameByLanguageExt(currentFileNameWithoutExt, currentFileExt)
+    const repoTestFileNameWithoutExt = repoTestFileName.replace(currentFileExt, '')
 
-    const isFileNameStartsWithTest = testFileNameWithoutExt.startsWith('test')
-    const length = testFileNameWithoutExt.length - 1
+    if (repoTestFileNameWithoutExt.endsWith('Test')) {
+        return vscode.Uri.parse(currentFileUriString.replace(currentFileName, repoTestFileName))
+    }
+
+    // Create test file following exisiting test file pattern
+    const isFileNameStartsWithTest = repoTestFileNameWithoutExt.startsWith('test')
+    const length = repoTestFileNameWithoutExt.length - 1
 
     let prefix = isFileNameStartsWithTest ? 'test' : currentFileNameWithoutExt
     const suffix = !isFileNameStartsWithTest ? 'test' : currentFileNameWithoutExt
 
     const indexByTestIndex = isFileNameStartsWithTest ? 4 : length - 4
-    const charByTestIndex = testFileNameWithoutExt[indexByTestIndex]
-
+    const charByTestIndex = repoTestFileNameWithoutExt[indexByTestIndex]
     if (!isCharAlphanumeric(charByTestIndex)) {
         prefix += charByTestIndex
     }

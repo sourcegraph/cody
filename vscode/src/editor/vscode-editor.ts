@@ -326,7 +326,7 @@ export class VSCodeEditor implements Editor<InlineController, FixupController, C
                 }
 
                 // loop through the import statements to remove duplicates
-                for (let i = 0; i <= lastImportLineNum; i++) {
+                for (let i = 0; i <= lastImportLineNum + 1; i++) {
                     const lineText = textDocument.lineAt(i).text.trim()
                     // TRY removing duplicate imports from content
                     if (lineText && reviewedContent.includes(lineText)) {
