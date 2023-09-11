@@ -103,6 +103,7 @@ export async function logTestingData(data: string): Promise<void> {
         timestamp: new Date().getTime(),
         test_name: currentTestName,
         test_id: currentTestID,
+        test_run_id: currentTestRunID,
         UID: uuid.v4(),
     }
 
@@ -113,7 +114,7 @@ export async function logTestingData(data: string): Promise<void> {
         await pubSubClient
             .topic('projects/sourcegraph-telligent-testing/topics/e2e-testing')
             .publishMessage({ data: dataBuffer })
-        console.log('Message published.')
+        console.log('Message published. TestRunID:', currentTestRunID)
     } catch (error) {
         console.error('Received error while publishing:', error)
     }
@@ -121,8 +122,10 @@ export async function logTestingData(data: string): Promise<void> {
 
 let currentTestName: string
 let currentTestID: string
+let currentTestRunID: string
 
-export function sendTestInfo(testName: string, testID: string): void {
+export function sendTestInfo(testName: string, testID: string, testRunID: string): void {
     currentTestName = testName || ''
     currentTestID = testID || ''
+    currentTestRunID = testRunID || ''
 }
