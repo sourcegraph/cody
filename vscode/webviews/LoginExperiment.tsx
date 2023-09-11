@@ -84,7 +84,7 @@ export const LoginSimplified: React.FunctionComponent<React.PropsWithoutRef<Logi
     <div className={styles.otherSignInOptions}>
             Use Sourcegraph Enterprise?
             <br/>
-            <a onClick={otherSignInClick}>
+            <a href="#" onClick={otherSignInClick}>
                 Sign In to Enterprise Instance
             </a>
     </div>
