@@ -207,8 +207,7 @@ export class ContextProvider implements vscode.Disposable {
                 ...localProcess,
                 debugEnable: this.config.debugEnable,
                 serverEndpoint: this.config.serverEndpoint,
-                // TODO: Flip the experiment switch here.
-                experimentOnboarding: OnboardingExperimentArm.Default,
+                experimentOnboarding: pickOnboardingExperimentArm(),
             }
 
             // update codebase context on configuration change
@@ -289,4 +288,11 @@ export async function getCodebaseContext(
         undefined,
         getRerankWithLog(chatClient)
     )
+}
+
+export function pickOnboardingExperimentArm(): OnboardingExperimentArm {
+    // TODO(dpc): Actually pick, and cache, experiment arm selection.
+    // Integrate this cache with user settings, etc. but discourage editing.
+    const config = vscode.workspace.getConfiguration()
+    return config.has('cody.todo-internal-onboarding-qa') ? OnboardingExperimentArm.Simplified : OnboardingExperimentArm.Classic
 }
