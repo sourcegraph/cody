@@ -5,7 +5,7 @@ import { vsCodeMocks } from '../testutils/mocks'
 import { getCurrentDocContext } from './get-current-doc-context'
 import { Provider } from './providers/provider'
 import { RequestManager, RequestManagerResult, RequestParams } from './request-manager'
-import { documentAndPosition } from './testHelpers'
+import { documentAndPosition } from './test-helpers'
 import { Completion } from './types'
 
 class MockProvider extends Provider {
@@ -47,7 +47,13 @@ function docState(prefix: string, suffix: string = ';'): RequestParams {
     return {
         document,
         position,
-        docContext: getCurrentDocContext(document, position, 100, 100),
+        docContext: getCurrentDocContext({
+            document,
+            position,
+            maxPrefixLength: 100,
+            maxSuffixLength: 100,
+            enableExtendedTriggers: true,
+        }),
         context: {
             triggerKind: vsCodeMocks.InlineCompletionTriggerKind.Automatic,
             selectedCompletionInfo: undefined,

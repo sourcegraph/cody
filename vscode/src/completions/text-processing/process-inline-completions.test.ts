@@ -3,7 +3,7 @@ import Parser from 'web-tree-sitter'
 
 import { range } from '../../testutils/textDocument'
 import { getCurrentDocContext } from '../get-current-doc-context'
-import { documentAndPosition, initTreeSitterParser } from '../testHelpers'
+import { documentAndPosition, initTreeSitterParser } from '../test-helpers'
 import { updateParseTreeCache } from '../tree-sitter/parse-tree-cache'
 import { InlineCompletionItem } from '../types'
 
@@ -59,7 +59,14 @@ describe('parseCompletion', () => {
 
     function testParseInfoProcessor(code: string, completioSnippets: string[]) {
         const { document, position } = documentAndPosition(code)
-        const docContext = getCurrentDocContext(document, position, Infinity, Infinity)
+        const docContext = getCurrentDocContext({
+            document,
+            position,
+            maxPrefixLength: Infinity,
+            maxSuffixLength: Infinity,
+            enableExtendedTriggers: true,
+        })
+
         updateParseTreeCache(document, parser)
 
         return completioSnippets.map(insertText =>

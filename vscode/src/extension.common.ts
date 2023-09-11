@@ -32,6 +32,7 @@ export interface PlatformContext {
         | Constructor<typeof SourcegraphNodeCompletionsClient>
     createSentryService?: (config: Pick<Configuration, 'serverEndpoint'>) => SentryService
     recipes: Recipe[]
+    onConfigurationChange?: (configuration: Configuration) => void
 }
 
 export function activate(context: vscode.ExtensionContext, platformContext: PlatformContext): ExtensionApi {

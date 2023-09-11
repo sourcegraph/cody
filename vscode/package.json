@@ -729,6 +729,10 @@
           "markdownDeprecationMessage": "**Deprecated**: Please sign in via the UI instead. If you are already signed in, you can empty this field to remove this warning.",
           "deprecationMessage": "Deprecated: Please sign in via the UI instead."
         },
+        "cody.proxy": {
+          "type": "string",
+          "markdownDeprecationMessage": "The SOCKS proxy endpoint to access server endpoint. This is only supported with `unstable-codegen` provider and only for use with the Cody Agent (for instance with JetBrains plugin). For VS Code please use http.proxy instead."
+        },
         "cody.codebase": {
           "order": 2,
           "type": "string",
@@ -810,6 +814,14 @@
           "type": "boolean",
           "default": false,
           "markdownDescription": "Experimental feature for internal use."
+        },
+        "cody.chat.preInstruction": {
+          "order": 10,
+          "type": "string",
+          "markdownDescription": "An instruction to be included at the start of all chat messages sent to Cody. Extension reload required.",
+          "examples": [
+            "Answer all my questions in Spanish."
+          ]
         },
         "cody.experimental.symf.path": {
           "order": 99,
@@ -950,6 +962,7 @@
     "mkdirp": "^3.0.1",
     "mock-require": "^3.0.3",
     "openai": "^3.2.1",
+    "socks-proxy-agent": "^8.0.1",
     "stream-json": "^1.8.0",
     "uuid": "^9.0.0",
     "vscode-languageserver-textdocument": "^1.0.8",

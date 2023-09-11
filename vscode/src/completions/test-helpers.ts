@@ -83,9 +83,13 @@ interface FormattedCapture {
     text: string
 }
 
-function formatCaptures(captures: QueryCapture[]): FormattedCapture[] {
+export function formatCaptures(captures: QueryCapture[]): FormattedCapture[] {
     return captures.map(capture => ({
         name: capture.name,
         text: capture.node.text,
     }))
+}
+
+export async function nextTick(): Promise<void> {
+    await new Promise(resolve => setTimeout(resolve, 0))
 }

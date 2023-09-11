@@ -3,6 +3,7 @@ import * as vscode from 'vscode'
 import { commandRegex } from '@sourcegraph/cody-shared/src/chat/recipes/helpers'
 import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
+import { newPromptMixin, PromptMixin } from '@sourcegraph/cody-shared/src/prompt/prompt-mixin'
 
 import { ChatViewProvider } from './chat/ChatViewProvider'
 import { ContextProvider } from './chat/ContextProvider'
@@ -50,7 +51,9 @@ export async function start(context: vscode.ExtensionContext, platform: Platform
     disposables.push(
         vscode.workspace.onDidChangeConfiguration(async event => {
             if (event.affectsConfiguration('cody')) {
-                onConfigurationChange(await getFullConfig())
+                const config = await getFullConfig()
+                onConfigurationChange(config)
+                platform.onConfigurationChange?.(config)
             }
         })
     )
@@ -93,6 +96,10 @@ const register = async (
     // Could we use the `initialConfig` instead?
     const workspaceConfig = vscode.workspace.getConfiguration()
     const config = getConfiguration(workspaceConfig)
+
+    if (config.chatPreInstruction) {
+        PromptMixin.addCustom(newPromptMixin(config.chatPreInstruction))
+    }
 
     if (config.autocompleteExperimentalSyntacticPostProcessing) {
         parseAllVisibleDocuments()
@@ -479,6 +486,7 @@ const register = async (
             contextProvider.onConfigurationChange(newConfig)
             externalServicesOnDidConfigurationChange(newConfig)
             void createOrUpdateEventLogger(newConfig, isExtensionModeDevOrTest)
+            platform.onConfigurationChange?.(newConfig)
         },
     }
 }

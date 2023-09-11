@@ -150,6 +150,7 @@ export interface ServerCapabilities {}
 
 export interface ExtensionConfiguration {
     serverEndpoint: string
+    proxy?: string | null
     accessToken: string
     customHeaders: Record<string, string>
     autocompleteAdvancedProvider?: string

@@ -6,18 +6,14 @@ import { Completion, ContextSnippet } from '../types'
 
 import { Provider, ProviderConfig, ProviderOptions } from './provider'
 
-interface UnstableCodeGenOptions {
-    serverEndpoint: string
-}
-
 const PROVIDER_IDENTIFIER = 'codegen'
 
 export class UnstableCodeGenProvider extends Provider {
-    private serverEndpoint: string
-
-    constructor(options: ProviderOptions, unstableCodeGenOptions: UnstableCodeGenOptions) {
+    constructor(
+        options: ProviderOptions,
+        private serverEndpoint: string
+    ) {
         super(options)
-        this.serverEndpoint = unstableCodeGenOptions.serverEndpoint
     }
 
     public async generateCompletions(abortSignal: AbortSignal, snippets: ContextSnippet[]): Promise<Completion[]> {
@@ -45,7 +41,7 @@ export class UnstableCodeGenProvider extends Provider {
             provider: PROVIDER_IDENTIFIER,
             serverEndpoint: this.serverEndpoint,
         })
-        const response = await fetch(this.serverEndpoint, {
+        const requestInit: RequestInit = {
             method: 'POST',
             body: JSON.stringify(params),
             headers: {
@@ -55,8 +51,9 @@ export class UnstableCodeGenProvider extends Provider {
                 Connection: 'keep-alive',
             },
             signal: abortSignal,
-        })
+        }
 
+        const response = await fetch(this.serverEndpoint, requestInit)
         try {
             const data = (await response.json()) as { completions: { completion: string }[] }
 
@@ -140,11 +137,11 @@ function prepareContext(snippets: ContextSnippet[], fileName: string): Context {
     }
 }
 
-export function createProviderConfig(unstableCodeGenOptions: UnstableCodeGenOptions): ProviderConfig {
+export function createProviderConfig(serverEndpoint: string): ProviderConfig {
     const contextWindowChars = 8_000 // ~ 2k token limit
     return {
         create(options: ProviderOptions) {
-            return new UnstableCodeGenProvider(options, unstableCodeGenOptions)
+            return new UnstableCodeGenProvider(options, serverEndpoint)
         },
         maximumContextCharacters: contextWindowChars,
         enableExtendedMultilineTriggers: false,

@@ -148,15 +148,15 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
             return null
         }
 
-        const docContext = getCurrentDocContext(
+        const docContext = getCurrentDocContext({
             document,
             position,
-            this.maxPrefixChars,
-            this.maxSuffixChars,
-            // We ignore the current context selection if completeSuggestWidgetSelection is not
-            // enabled
-            this.config.completeSuggestWidgetSelection ? context : undefined
-        )
+            maxPrefixLength: this.maxPrefixChars,
+            maxSuffixLength: this.maxSuffixChars,
+            enableExtendedTriggers: this.config.providerConfig.enableExtendedMultilineTriggers,
+            // We ignore the current context selection if completeSuggestWidgetSelection is not enabled
+            context: this.config.completeSuggestWidgetSelection ? context : undefined,
+        })
 
         const isIncreasedDebounceTimeEnabled = await this.config.featureFlagProvider.evaluateFeatureFlag(
             FeatureFlag.CodyAutocompleteIncreasedDebounceTimeEnabled
