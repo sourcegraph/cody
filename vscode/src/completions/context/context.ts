@@ -23,7 +23,11 @@ export interface GetContextOptions {
 }
 
 export interface GraphContextFetcher {
-    getContextAtPosition(document: vscode.TextDocument, position: vscode.Position): ContextSnippet[]
+    getContextAtPosition(
+        document: vscode.TextDocument,
+        position: vscode.Position,
+        maxChars: number
+    ): Promise<ContextSnippet[]>
 }
 
 export type ContextSummary = Readonly<{
@@ -49,8 +53,10 @@ export async function getContext(options: GetContextOptions): Promise<GetContext
     const embeddingsMatches =
         isEmbeddingsContextEnabled && !graphContextFetcher ? getContextFromEmbeddings(options) : []
     const graphMatches = graphContextFetcher
-        ? graphContextFetcher.getContextAtPosition(options.document, options.position)
+        ? await graphContextFetcher.getContextAtPosition(options.document, options.position, maxChars)
         : []
+
+    console.log({ graphMatches })
 
     // When we have graph matches, use it exclusively for the context
     // TODO(philipp-spiess): Do we want to mix this with local context?

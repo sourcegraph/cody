@@ -8,7 +8,7 @@ import { PreciseContext } from '@sourcegraph/cody-shared/src/codebase-context/me
 import { isDefined } from '@sourcegraph/cody-shared/src/common'
 
 import { GraphContextFetcher } from '../completions/context/context'
-import { SymbolContextSnippet } from '../completions/types'
+import { ContextSnippet, SymbolContextSnippet } from '../completions/types'
 import { createSubscriber } from '../completions/utils'
 import { logDebug } from '../log'
 
@@ -36,6 +36,7 @@ const TEN_MINUTES = 10 * ONE_MINUTE
 const NUM_OF_CHANGED_LINES_FOR_SECTION_RELOAD = 3
 
 const MAX_TRACKED_DOCUMENTS = 10
+const MAX_LAST_VISITED_SECTIONS = 10
 
 const debugSubscriber = createSubscriber<void>()
 export const registerDebugListener = debugSubscriber.subscribe.bind(debugSubscriber)
@@ -50,10 +51,13 @@ export const registerDebugListener = debugSubscriber.subscribe.bind(debugSubscri
 export class SectionObserver implements vscode.Disposable, GraphContextFetcher {
     private disposables: vscode.Disposable[] = []
 
-    // A map of all active documents that are being tracked.
+    // A map of all active documents that are being tracked. We rely on the LRU cache to evict
+    // documents that are not being tracked anymore.
     private activeDocuments: LRUCache<string, ActiveDocument> = new LRUCache<string, ActiveDocument>({
         max: MAX_TRACKED_DOCUMENTS,
     })
+    // A list of up to ten sections that were being visited last as identifier via their location.
+    private lastVisitedSections: vscode.Location[] = []
 
     private constructor(
         private window: Pick<
@@ -87,12 +91,73 @@ export class SectionObserver implements vscode.Disposable, GraphContextFetcher {
         return this.instance
     }
 
-    public getContextAtPosition(document: vscode.TextDocument, position: vscode.Position): SymbolContextSnippet[] {
+    public async getContextAtPosition(
+        document: vscode.TextDocument,
+        position: vscode.Position,
+        maxChars: number
+    ): Promise<ContextSnippet[]> {
         const section = this.getSectionAtPosition(document, position)
-        if (section?.context?.context) {
-            return section.context.context.map(preciseContextToSnippet).filter(isDefined)
+        const sectionGraphContext = section?.context?.context
+
+        let usedContextChars = 0
+        const context: ContextSnippet[] = []
+
+        const sectionHistory = (
+            await Promise.all(
+                this.lastVisitedSections
+                    .map(location => this.getSectionForLocation(location))
+                    .filter(isDefined)
+                    // TODO: Use the language ID to compare here instead of this hack
+                    .filter(section => fileExtensionsMatch(section.location.uri.fsPath, document.uri.fsPath))
+                    // Exclude the current section
+                    .filter(
+                        compareSection =>
+                            locationKeyFn(compareSection.location) !==
+                            (section ? locationKeyFn(section.location) : null)
+                    )
+                    .map(async section => {
+                        try {
+                            const uri = section.location.uri
+                            const textDocument = await vscode.workspace.openTextDocument(uri)
+                            const fileName = path.normalize(vscode.workspace.asRelativePath(uri.fsPath))
+                            const content = textDocument.getText(section.location.range)
+                            return { fileName, content }
+                        } catch (error) {
+                            // Ignore errors opening the text file. This can happen when the file was deleted
+                            console.error(error)
+                            return undefined
+                        }
+                    })
+            )
+        ).filter(isDefined)
+
+        // Allocate up to 50% of the maxChars budget to inlining previous section unless the current
+        // section is not hydrated with graph context.
+        const maxCharsForPreviousSections = sectionGraphContext ? maxChars / 2 : maxChars
+        for (const historyContext of sectionHistory) {
+            if (usedContextChars + historyContext.content.length > maxCharsForPreviousSections) {
+                // We use continue here to test potentially smaller context snippets that might
+                // still fit inside the budget
+                continue
+            }
+            usedContextChars += historyContext.content.length
+            context.push(historyContext)
         }
-        return []
+
+        if (sectionGraphContext) {
+            const preciseContexts = sectionGraphContext.map(preciseContextToSnippet).filter(isDefined)
+            for (const preciseContext of preciseContexts) {
+                if (usedContextChars + preciseContext.content.length > maxChars) {
+                    // We use continue here to test potentially smaller context snippets that might
+                    // still fit inside the budget
+                    continue
+                }
+                usedContextChars += preciseContext.content.length
+                context.push(preciseContext)
+            }
+        }
+
+        return context
     }
 
     private async hydrateContextAtCursor(editor: vscode.TextEditor, position: vscode.Position): Promise<void> {
@@ -100,6 +165,8 @@ export class SectionObserver implements vscode.Disposable, GraphContextFetcher {
         if (!section) {
             return
         }
+
+        pushUniqueAndTruncate(this.lastVisitedSections, section.location, MAX_LAST_VISITED_SECTIONS)
 
         // If a section is already hydrated and was not either marked as dirty or is older than one
         // minute, do not refresh the context.
@@ -167,6 +234,21 @@ export class SectionObserver implements vscode.Disposable, GraphContextFetcher {
                 )
             }
         })
+
+        lines.push('')
+        lines.push('Last visited sections:')
+        const lastSections = this.lastVisitedSections.map(loc => this.getSectionForLocation(loc)).filter(isDefined)
+        for (let i = 0; i < lastSections.length; i++) {
+            const section = lastSections[i]
+            const isLast = i === lastSections.length - 1
+
+            lines.push(
+                `  ${isLast ? '└' : '├'} ${path.normalize(vscode.workspace.asRelativePath(section.location.uri))} ${
+                    section.fuzzyName ?? 'unknown'
+                }`
+            )
+        }
+
         return lines.join('\n')
     }
 
@@ -235,21 +317,12 @@ export class SectionObserver implements vscode.Disposable, GraphContextFetcher {
      * Diff vscode.window.visibleTextEditors with activeDocuments to load new documents or unload
      * those no longer needed.
      *
+     * We rely on the LRU cache to evict documents that are no longer visible.
+     *
      * TODO(philipp-spiess): When this method is called while the documents are still being loaded,
      * we might reload a document immediately afterwards.
      */
     private async onDidChangeVisibleTextEditors(): Promise<void> {
-        const removedDocuments: string[] = []
-        // eslint-disable-next-line ban/ban
-        this.activeDocuments.forEach(document => {
-            if (!this.window.visibleTextEditors.find(editor => editor.document.uri.toString() === document.uri)) {
-                removedDocuments.push(document.uri)
-            }
-        })
-        for (const uri of removedDocuments) {
-            this.activeDocuments.delete(uri)
-        }
-
         const promises: Promise<void>[] = []
         for (const editor of this.window.visibleTextEditors) {
             if (editor.document.uri.scheme !== 'file') {
@@ -260,8 +333,20 @@ export class SectionObserver implements vscode.Disposable, GraphContextFetcher {
                 promises.push(this.loadDocument(editor.document))
             }
         }
-
         await Promise.all(promises)
+    }
+
+    private getSectionForLocation(location: vscode.Location): Section | undefined {
+        const uri = location.uri.toString()
+        if (!this.activeDocuments.has(uri)) {
+            return
+        }
+        const document = this.activeDocuments.get(uri)
+        if (!document) {
+            return
+        }
+        const locationKey = locationKeyFn(location)
+        return document.sections.find(section => locationKeyFn(section.location) === locationKey)
     }
 
     /**
@@ -388,4 +473,33 @@ function logHydratedContext(
             ),
         }
     )
+}
+
+function pushUniqueAndTruncate<T>(array: T[], item: T, truncate: number): T[] {
+    if (array.includes(item)) {
+        // put the item to the front
+        array.splice(array.indexOf(item), 1)
+        array.unshift(item)
+        return array
+    }
+    if (array.length >= truncate) {
+        array.pop()
+    }
+    array.unshift(item)
+    return array
+}
+
+function fileExtensionsMatch(a: string, b: string): boolean {
+    let aExt = path.extname(a)
+    let bExt = path.extname(b)
+
+    // .ts, .d.ts, .tsx are equivalent
+    if (aExt === '.d.ts' || bExt === '.tsx') {
+        aExt = '.ts'
+    }
+    if (bExt === '.d.ts' || aExt === '.tsx') {
+        bExt = '.ts'
+    }
+
+    return aExt === bExt || aExt === '' || bExt === ''
 }
