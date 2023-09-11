@@ -122,14 +122,18 @@ export class SymfRunner implements IndexedKeywordContextFetcher {
         ])
 
         logDebug('symf', 'creating index', indexDir)
-        const args = ['--index-root', tmpIndexDir, 'add', '--langs', 'go,typescript,python', scopeDir]
+        const args = ['--index-root', tmpIndexDir, 'add', '--langs', '*', scopeDir]
+        console.log('### cmd', [this.symfPath, ...args].join(' '))
         try {
             await execFile(this.symfPath, args)
+            console.error("# HERE 2")
             await mkdirp(path.dirname(indexDir))
             await rename(tmpIndexDir, indexDir)
         } catch (error) {
+            console.error('####### Error creating symf index', error)
             handleSymfError(error)
         }
+        console.error("# HERE 3")
     }
 }
 
