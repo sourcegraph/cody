@@ -99,7 +99,9 @@ export async function run<T>(around: () => Promise<T>): Promise<T> {
     })
 
     const result = await around()
-    const closeServer = (): void => {server.close()}
+    const closeServer = (): void => {
+        server.close()
+    }
 
     // check to see if messages are sent if we wait 10 seconds and then close the server
     setTimeout(closeServer, 10000)
