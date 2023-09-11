@@ -23,14 +23,12 @@ let socksProxyAgent: SocksProxyAgent
 
 function getCustomAgent({ proxy }: Configuration): ({ protocol }: Pick<URL, 'protocol'>) => http.Agent {
     return ({ protocol }) => {
-        if (proxy) {
-            if (proxy.startsWith('socks') && !socksProxyAgent) {
-                socksProxyAgent = new SocksProxyAgent(proxy, {
-                    keepAlive: true,
-                    keepAliveMsecs: 60000,
-                })
-                return socksProxyAgent
-            }
+        if (proxy?.startsWith('socks') && !socksProxyAgent) {
+            socksProxyAgent = new SocksProxyAgent(proxy, {
+                keepAlive: true,
+                keepAliveMsecs: 60000,
+            })
+            return socksProxyAgent
         }
         if (protocol === 'http:') {
             return httpAgent
