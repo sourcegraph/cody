@@ -123,8 +123,11 @@ export const Transcript: React.FunctionComponent<
     const earlierMessages = transcript.slice(0, lastHumanMessageIndex)
     const lastInteractionMessages = transcript.slice(lastHumanMessageIndex)
 
-    const messageToTranscriptItem = (message: ChatMessage, index: number) =>
-        message?.displayText && (
+    const messageToTranscriptItem = (message: ChatMessage, index: number): JSX.Element | null => {
+        if (!message?.displayText) {
+            return null
+        }
+        return (
             <TranscriptItem
                 // eslint-disable-next-line react/no-array-index-key
                 key={index}
@@ -152,13 +155,14 @@ export const Transcript: React.FunctionComponent<
                 chatInputClassName={chatInputClassName}
                 ChatButtonComponent={ChatButtonComponent}
             />
-    )
+        )
+    }
 
     return (
         <div ref={transcriptContainerRef} className={classNames(className, styles.container)}>
             <div ref={scrollAnchoredContainerRef} className={classNames(styles.scrollAnchoredContainer)}>
                 {earlierMessages.map(messageToTranscriptItem)}
-                <div ref={lastHumanMessageTopRef}></div>
+                <div ref={lastHumanMessageTopRef} />
                 {lastInteractionMessages.map(messageToTranscriptItem)}
                 {messageInProgress && messageInProgress.speaker === 'assistant' && (
                     <TranscriptItem
