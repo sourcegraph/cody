@@ -38,12 +38,9 @@ export function createClient(
         async complete(params, onPartialResponse, signal): Promise<CompletionResponse> {
             const log = logger?.startCompletion(params)
 
-            const [tracingFlagEnabled, streamingResponseFlagEnable] = featureFlagProvider
-                ? await Promise.all([
-                      featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteTracing),
-                      featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteStreamingResponse),
-                  ])
-                : [false, false]
+            const tracingFlagEnabled = await featureFlagProvider?.evaluateFeatureFlag(
+                FeatureFlag.CodyAutocompleteTracing
+            )
 
             const headers = new Headers(config.customHeaders)
             // Force HTTP connection reuse to reduce latency.
@@ -62,8 +59,7 @@ export function createClient(
             // TODO(philipp-spiess): Feature test if the response is a Node or a browser stream and
             // implement SSE parsing for both.
             const isNode = typeof process !== 'undefined'
-
-            const enableStreaming = !!isNode && !!streamingResponseFlagEnable
+            const enableStreaming = !!isNode
 
             const url = getCodeCompletionsEndpoint()
             const response: Response = await fetch(url, {
