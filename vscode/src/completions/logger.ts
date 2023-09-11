@@ -8,6 +8,7 @@ import { logEvent } from '../services/EventLogger'
 import { captureException } from '../services/sentry/sentry'
 
 import { ContextSummary } from './context/context'
+import * as statistics from './statistics'
 import { InlineCompletionItem } from './types'
 
 export interface CompletionEvent {
@@ -40,11 +41,16 @@ export interface CompletionEvent {
     // The timestamp of when the suggestion was logged to our analytics backend
     // This is to avoid double-logging
     suggestionLoggedAt: number | null
+    // The timestamp of when the suggestion was logged to our statistics backend
+    // This can happen before we log it to our analytics backend because we
+    // don't care about the total display duration but instead want to update
+    // the UI as soon as the completion is counted as visible
+    suggestionAnalyticsLoggedAt: number | null
     // The timestamp of when a completion was accepted and logged to our backend
     acceptedAt: number | null
 }
 
-const READ_TIMEOUT = 750
+const READ_TIMEOUT_MS = 750
 
 const displayedCompletions = new LRUCache<string, CompletionEvent>({
     max: 100, // Maximum number of completions that we are keeping track of
@@ -74,6 +80,7 @@ export function create(inputParams: Omit<CompletionEvent['params'], 'multilineMo
         loadedAt: null,
         suggestedAt: null,
         suggestionLoggedAt: null,
+        suggestionAnalyticsLoggedAt: null,
         acceptedAt: null,
     })
 
@@ -110,6 +117,9 @@ export function loaded(id: string): void {
 // Suggested completions will not be logged immediately. Instead, we log them when we either hide
 // them again (they are NOT accepted) or when they ARE accepted. This way, we can calculate the
 // duration they were actually visible for.
+//
+// For statistics logging we start a timeout matching the READ_TIMEOUT_MS so we can increment the
+// suggested completion count as soon as we count it as such.
 export function suggested(id: string, source: string, completion: InlineCompletionItem): void {
     const event = displayedCompletions.get(id)
     if (!event) {
@@ -122,6 +132,20 @@ export function suggested(id: string, source: string, completion: InlineCompleti
         event.params.lineCount = lineCount
         event.params.charCount = charCount
         event.suggestedAt = performance.now()
+
+        setTimeout(() => {
+            const event = displayedCompletions.get(id)
+            if (!event) {
+                return
+            }
+
+            if (event.suggestedAt && !event.suggestionAnalyticsLoggedAt && !event.suggestionLoggedAt) {
+                // We can assume that this completion will be marked as `read: true` because
+                // READ_TIMEOUT_MS has passed without the completion being logged yet.
+                statistics.logSuggested()
+                event.suggestionAnalyticsLoggedAt = performance.now()
+            }
+        }, READ_TIMEOUT_MS)
     }
 }
 
@@ -155,6 +179,7 @@ export function accept(id: string, completion: InlineCompletionItem): void {
         ...lineAndCharCount(completion),
         otherCompletionProviderEnabled: otherCompletionProviderEnabled(),
     })
+    statistics.logAccepted()
 }
 
 export function completionEvent(id: string): CompletionEvent | undefined {
@@ -182,8 +207,16 @@ function logSuggestionEvents(): void {
     const now = performance.now()
     // eslint-disable-next-line ban/ban
     displayedCompletions.forEach(completionEvent => {
-        const { loadedAt, suggestedAt, suggestionLoggedAt, startedAt, params, startLoggedAt, acceptedAt } =
-            completionEvent
+        const {
+            loadedAt,
+            suggestedAt,
+            suggestionLoggedAt,
+            startedAt,
+            params,
+            startLoggedAt,
+            acceptedAt,
+            suggestionAnalyticsLoggedAt,
+        } = completionEvent
 
         // Only log suggestion events that were already shown to the user and
         // have not been logged yet.
@@ -194,18 +227,27 @@ function logSuggestionEvents(): void {
 
         const latency = loadedAt - startedAt
         const displayDuration = now - suggestedAt
-        const read = displayDuration >= READ_TIMEOUT
+        const seen = displayDuration >= READ_TIMEOUT_MS
         const accepted = acceptedAt !== null
+        const read = accepted || seen
+
+        if (!suggestionAnalyticsLoggedAt) {
+            completionEvent.suggestionAnalyticsLoggedAt = now
+            if (read) {
+                statistics.logSuggested()
+            }
+        }
 
         logCompletionEvent('suggested', {
             ...params,
             latency,
             displayDuration,
-            read: accepted || read,
+            read,
             accepted,
             otherCompletionProviderEnabled: otherCompletionProviderEnabled(),
             completionsStartedSinceLastSuggestion,
         })
+
         completionsStartedSinceLastSuggestion = 0
     })
 

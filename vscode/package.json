@@ -2,7 +2,7 @@
   "name": "cody-ai",
   "private": true,
   "displayName": "Cody AI",
-  "version": "0.10.0",
+  "version": "0.10.1",
   "publisher": "sourcegraph",
   "license": "Apache-2.0",
   "icon": "resources/cody.png",
@@ -810,6 +810,14 @@
           "type": "boolean",
           "default": false,
           "markdownDescription": "Experimental feature for internal use."
+        },
+        "cody.chat.preInstruction": {
+          "order": 10,
+          "type": "string",
+          "markdownDescription": "An instruction to be included at the start of all chat messages sent to Cody. Extension reload required.",
+          "examples": [
+            "Answer all my questions in Spanish."
+          ]
         },
         "cody.experimental.symf.path": {
           "order": 99,
