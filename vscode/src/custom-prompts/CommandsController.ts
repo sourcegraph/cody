@@ -1,10 +1,6 @@
 import * as vscode from 'vscode'
 
-import {
-    CodyPrompt,
-    defaultCodyPromptContext,
-    MyPrompts,
-} from '@sourcegraph/cody-shared/src/chat/prompts'
+import { CodyPrompt, defaultCodyPromptContext, MyPrompts } from '@sourcegraph/cody-shared/src/chat/prompts'
 import { VsCodeCommandsController } from '@sourcegraph/cody-shared/src/editor'
 import { TelemetryService } from '@sourcegraph/cody-shared/src/telemetry'
 
@@ -408,7 +404,10 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
         // Notify user
         const buttonTitle = `Open ${newCommand.type === 'user' ? 'User' : 'Workspace'} Settings (JSON)`
         void vscode.window
-            .showInformationMessage(`New ${newCommand.slashCommand} command saved to ${newCommand.type} settings`, buttonTitle)
+            .showInformationMessage(
+                `New ${newCommand.slashCommand} command saved to ${newCommand.type} settings`,
+                buttonTitle
+            )
             .then(async choice => {
                 if (choice === buttonTitle) {
                     await this.custom.openConfig(newCommand.type)

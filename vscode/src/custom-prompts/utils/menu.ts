@@ -181,7 +181,7 @@ export async function showcommandTypeQuickPick(
     if (!commandType?.label) {
         return null
     }
-    return (commandType.label.toLowerCase() === 'user' ? 'user' : 'workspace')
+    return commandType.label.toLowerCase() === 'user' ? 'user' : 'workspace'
 }
 
 export const CustomCommandConfigMenuItems = [
