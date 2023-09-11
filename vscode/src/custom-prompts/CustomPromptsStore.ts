@@ -116,7 +116,7 @@ export class CustomPromptsStore implements vscode.Disposable {
                     .showInformationMessage(
                         `Your custom commands ${type} JSON (${type === 'user' ? '~/.vscode/cody.json' : '.vscode/cody.json'}) is using an old format, and needs to be upgraded.`,
                         'Upgrade JSON',
-                        'Update',
+                        'Upgrade JSON',
                         'Ignore'
                     )
                     .then(choice => {
