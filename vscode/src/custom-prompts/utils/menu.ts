@@ -210,7 +210,7 @@ export const CustomCommandConfigMenuItems = [
         buttons: [menu_buttons.open, menu_buttons.trash],
     },
     { kind: -1, id: 'separator', label: '' },
-    { kind: 0, label: 'Open Custom Commands Documentation', id: 'example' },
+    { kind: 0, label: 'Open Custom Commands Documentation', id: 'docs' },
 ]
 
 export async function showAskQuestionQuickPick(): Promise<string> {

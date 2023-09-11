@@ -356,7 +356,7 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
             case 'list':
                 await this.customCommandMenu()
                 break
-            case 'example':
+            case 'docs':
                 await openCustomCommandDocsLink()
                 break
         }
