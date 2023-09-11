@@ -5,6 +5,7 @@ import { defaultAuthStatus } from '../src/chat/protocol'
 import { App } from './App'
 import { VSCodeStoryDecorator } from './storybook/VSCodeStoryDecorator'
 import { VSCodeWrapper } from './utils/VSCodeApi'
+import { OnboardingExperimentArm } from '../src/services/OnboardingExperiment'
 
 const meta: ComponentMeta<typeof App> = {
     title: 'cody/App',
@@ -41,6 +42,7 @@ const dummyVSCodeAPI: VSCodeWrapper = {
                 hasAppJson: false,
                 uiKindIsWeb: false,
                 extensionVersion: '0.0.0',
+                experimentOnboarding: OnboardingExperimentArm.Default,
             },
             authStatus: {
                 ...defaultAuthStatus,

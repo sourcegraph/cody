@@ -23,6 +23,7 @@ import { AuthProvider } from '../services/AuthProvider'
 import { ChatViewProviderWebview } from './ChatViewProvider'
 import { GraphContextProvider } from './GraphContextProvider'
 import { ConfigurationSubsetForWebview, LocalEnv } from './protocol'
+import { OnboardingExperimentArm } from '../services/OnboardingExperiment'
 
 export type Config = Pick<
     ConfigurationWithAccessToken,
@@ -206,6 +207,8 @@ export class ContextProvider implements vscode.Disposable {
                 ...localProcess,
                 debugEnable: this.config.debugEnable,
                 serverEndpoint: this.config.serverEndpoint,
+                // TODO: Flip the experiment switch here.
+                experimentOnboarding: OnboardingExperimentArm.Default,
             }
 
             // update codebase context on configuration change

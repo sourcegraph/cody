@@ -1,5 +1,6 @@
 import * as vscode from 'vscode'
 
+import { AuthMethod } from './OnboardingExperiment'
 import { AuthProvider } from './AuthProvider'
 import { DOTCOM_URL } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
 
@@ -15,8 +16,6 @@ export class AuthProviderSimplified {
         classicAuthProvider.authProviderSimplifiedWillAttemptAuth()
     }
 }
-
-type AuthMethod = 'dotcom' | 'github' | 'gitlab' | 'google'
 
 // Opens authentication URLs for simplified onboarding.
 async function openExternalAuthUrl(provider: AuthMethod): Promise<boolean> {

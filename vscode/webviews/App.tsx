@@ -7,12 +7,13 @@ import { CodyPrompt } from '@sourcegraph/cody-shared/src/chat/prompts'
 import { ChatHistory, ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { Configuration } from '@sourcegraph/cody-shared/src/configuration'
 
-import { AuthStatus, defaultAuthStatus, LocalEnv } from '../src/chat/protocol'
+import { AuthStatus, defaultAuthStatus, Experiments, LocalEnv } from '../src/chat/protocol'
 
+import { AuthMethod, OnboardingExperimentArm } from '../src/services/OnboardingExperiment'
 import { Chat } from './Chat'
 import { LoadingPage } from './LoadingPage'
 import { Login } from './Login'
-import { AuthMethod, LoginExperimentArm, LoginSimplified } from './LoginExperiment'
+import { LoginSimplified } from './OnboardingExperiment'
 import { View } from './NavBar'
 import { Notices } from './Notices'
 import { UserHistory } from './UserHistory'
@@ -20,7 +21,7 @@ import { createWebviewTelemetryService } from './utils/telemetry'
 import type { VSCodeWrapper } from './utils/VSCodeApi'
 
 export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vscodeAPI }) => {
-    const [config, setConfig] = useState<(Pick<Configuration, 'debugEnable' | 'serverEndpoint'> & LocalEnv) | null>(
+    const [config, setConfig] = useState<(Pick<Configuration, 'debugEnable' | 'serverEndpoint'> & LocalEnv & Experiments) | null>(
         null
     )
     const [endpoint, setEndpoint] = useState<string | null>(null)
@@ -40,14 +41,6 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
         [string, CodyPrompt & { isLastInGroup?: boolean; instruction?: string }][] | null
     >(null)
     const [isTranscriptError, setIsTranscriptError] = useState<boolean>(false)
-
-    // TODO: Use the experiment framework to pick an arm. Probably this happens
-    // not in the webview UI but in the host.
-
-    // FIXME expose the simplified login experiment to VScode web when
-    // the Sourcegraph token generation page can support VScode web-style
-    // redirects, see asExternalUri.
-    const loginArm: LoginExperimentArm = LoginExperimentArm.Simplified // vscode.env.uiKind !== vscode.UIKind.Web
 
     useEffect(
         () =>
@@ -167,7 +160,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     return (
         <div className="outer-container">
             {view === 'login' || !authStatus.isLoggedIn ? (
-                loginArm === LoginExperimentArm.Simplified ? (
+                config.experimentOnboarding === OnboardingExperimentArm.Simplified ? (
                     <LoginSimplified
                         simplifiedLoginRedirect={simplifiedLoginRedirect}
                         telemetryService={telemetryService}

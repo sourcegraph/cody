@@ -2,7 +2,7 @@ import { Meta, StoryObj } from '@storybook/react'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/cody-shared/src/telemetry'
 
-import { LoginSimplified } from './LoginExperiment'
+import { LoginSimplified } from './OnboardingExperiment'
 import { VSCodeStoryDecorator } from './storybook/VSCodeStoryDecorator'
 import { VSCodeWrapper } from './utils/VSCodeApi'
 

@@ -7,7 +7,7 @@ import { CodyLLMSiteConfiguration } from '@sourcegraph/cody-shared/src/sourcegra
 import type { TelemetryEventProperties } from '@sourcegraph/cody-shared/src/telemetry'
 
 import { View } from '../../webviews/NavBar'
-import { AuthMethod } from '../../webviews/LoginExperiment'
+import { AuthMethod, OnboardingExperimentArm } from '../services/OnboardingExperiment'
 
 /**
  * A message sent from the webview to the extension host.
@@ -63,7 +63,7 @@ export type ExtensionMessage =
 /**
  * The subset of configuration that is visible to the webview.
  */
-export interface ConfigurationSubsetForWebview extends Pick<Configuration, 'debugEnable' | 'serverEndpoint'> {}
+export interface ConfigurationSubsetForWebview extends Pick<Configuration, 'debugEnable' | 'serverEndpoint'>, Experiments {}
 
 /**
  * URLs for the Sourcegraph instance and app.
@@ -129,6 +129,10 @@ export const networkErrorAuthStatus = {
     requiresVerifiedEmail: false,
     siteHasCodyEnabled: false,
     siteVersion: '',
+}
+
+export interface Experiments {
+    experimentOnboarding: OnboardingExperimentArm
 }
 
 /** The local environment of the editor. */

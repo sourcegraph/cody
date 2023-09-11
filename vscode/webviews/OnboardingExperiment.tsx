@@ -2,7 +2,9 @@ import { VSCodeButton } from '@vscode/webview-ui-toolkit/react'
 
 import { TelemetryService } from '@sourcegraph/cody-shared/src/telemetry'
 
-import styles from './LoginExperiment.module.css'
+import { AuthMethod } from '../src/services/OnboardingExperiment'
+
+import styles from './OnboardingExperiment.module.css'
 
 import onboardingSplashImage from './cody-onboarding-splash.svg'
 import signInLogoGitHub from './sign-in-logo-github.svg'
@@ -10,13 +12,6 @@ import signInLogoGitLab from './sign-in-logo-gitlab.svg'
 import signInLogoGoogle from './sign-in-logo-google.svg'
 import classNames from 'classnames'
 import { VSCodeWrapper } from './utils/VSCodeApi'
-
-export enum LoginExperimentArm {
-    Classic,
-    Simplified,
-}
-
-export type AuthMethod = 'dotcom' | 'github' | 'gitlab' | 'google'
 
 interface LoginProps {
     simplifiedLoginRedirect: (method: AuthMethod) => void
@@ -30,6 +25,7 @@ export const LoginSimplified: React.FunctionComponent<React.PropsWithoutRef<Logi
     telemetryService,
     vscodeAPI,
 }) => {
+    // TODO: Log exposures to the experiment.
     const otherSignInClick = (): void => {
         telemetryService.log('CodyVSCodeExtension:auth:clickOtherSignInOptions')
         vscodeAPI.postMessage({ command: 'auth', type: 'signin' })
