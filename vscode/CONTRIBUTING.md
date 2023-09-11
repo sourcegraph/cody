@@ -135,7 +135,7 @@ To run the test suite:
 
 - `cd vscode`
 - `export SOURCEGRAPH_ACCESS_TOKEN=<Your access token>`
-- `pnpm run test:completions`
+- `pnpm run generate:completions`
 
 You can change the config of which providers is run in `vscode/test/completions/mock-vscode.ts` by providing the VS Code config to achieve this setup.
 
