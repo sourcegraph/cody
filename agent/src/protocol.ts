@@ -88,6 +88,9 @@ export type Notifications = {
     'textDocument/didClose': [TextDocument]
 
     '$/cancelRequest': [CancelParams]
+    // The user no longer wishes to consider the last autocomplete candidate
+    // and the current autocomplete id should not be reused.
+    'autocomplete/clearLastCandidate': [null]
 
     // ================
     // Server -> Client
