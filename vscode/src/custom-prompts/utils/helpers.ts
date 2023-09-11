@@ -70,10 +70,6 @@ export async function deleteFile(uri?: vscode.Uri): Promise<void> {
     await vscode.workspace.fs.delete(uri)
 }
 
-export function getFileNameFromPath(path: string): string | undefined {
-    return path.split('/').pop()
-}
-
 export async function getFileToRemove(keys: string[]): Promise<string | undefined> {
     return vscode.window.showQuickPick(Array.from(keys))
 }

@@ -169,7 +169,7 @@ export class CustomPrompt implements Recipe {
         // Context for unit tests requests
         if (isUnitTestRequest && contextMessages.length === 0) {
             if (workspaceRootUri) {
-                const rootFileNames = await getDirectoryFileListContext(workspaceRootUri)
+                const rootFileNames = await getDirectoryFileListContext(workspaceRootUri, isUnitTestRequest)
                 contextMessages.push(...rootFileNames)
             }
             // Add package.json content only if files matches the ts/js regex

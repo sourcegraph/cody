@@ -1,4 +1,4 @@
-import { dirname } from 'path'
+import { basename, dirname } from 'path'
 
 import * as vscode from 'vscode'
 import { URI } from 'vscode-uri'
@@ -53,9 +53,12 @@ export const getFilesFromDir = async (
             const fileType = file[1]
             const isDirectory = fileType === vscode.FileType.Directory
             const isHiddenFile = fileName.startsWith('.')
-            const isATestFile = testFilesOnly ? isValidTestFileName(fileName) : true
 
-            return !isDirectory && !isHiddenFile && isATestFile
+            if (testFilesOnly) {
+                return !isDirectory && !isHiddenFile && isValidTestFileName(fileName)
+            }
+
+            return !isDirectory && !isHiddenFile
         })
     } catch (error) {
         console.error(error)
@@ -514,6 +517,7 @@ export async function getCurrentFileImportsContext(): Promise<ContextMessage[]> 
  */
 export async function getDirectoryFileListContext(
     workspaceRootUri: vscode.Uri,
+    isTestRequest: boolean,
     fileName?: string
 ): Promise<ContextMessage[]> {
     try {
@@ -523,7 +527,7 @@ export async function getDirectoryFileListContext(
 
         const fileUri = fileName ? vscode.Uri.joinPath(workspaceRootUri, fileName) : workspaceRootUri
         const directoryUri = !fileName ? workspaceRootUri : vscode.Uri.joinPath(fileUri, '..')
-        const directoryFiles = await getFilesFromDir(directoryUri, false)
+        const directoryFiles = await getFilesFromDir(directoryUri, isTestRequest)
         const fileNames = directoryFiles.map(file => file[0])
         const truncatedFileNames = truncateText(fileNames.join(', '), MAX_CURRENT_FILE_TOKENS)
         const fsPath = fileName || 'root'
@@ -588,30 +592,37 @@ export function createTestFileUri(currentFileUri: vscode.Uri, repoTestFilePath?:
     const currentFilePath = currentFileUri.fsPath
 
     // if the current file is a test file, return the current file Uri
-    if (!currentFilePath) {
+    if (isValidTestFileName(currentFilePath)) {
         return currentFileUri
     }
 
-    const currentFileName = getFileNameFromPath(currentFilePath)
-    const testFileName = repoTestFilePath
+    const currentFileUriString = currentFileUri.toString()
+    const currentFileName = basename(currentFileUriString)
+
+    const currentFileNameWithoutExt = getFileNameFromPath(currentFilePath)
+    const testFileNameWithoutExt = repoTestFilePath
         ? getFileNameFromPath(repoTestFilePath).toLowerCase()
-        : `test.${currentFileName}`
+        : `test.${currentFileNameWithoutExt}`
 
-    const isFileNameStartsWithTest = testFileName.startsWith('test')
-    const length = testFileName.length - 1
+    const isFileNameStartsWithTest = testFileNameWithoutExt.startsWith('test')
+    const length = testFileNameWithoutExt.length - 1
 
-    let prefix = isFileNameStartsWithTest ? 'test' : currentFileName
-    const suffix = !isFileNameStartsWithTest ? 'test' : currentFileName
+    let prefix = isFileNameStartsWithTest ? 'test' : currentFileNameWithoutExt
+    const suffix = !isFileNameStartsWithTest ? 'test' : currentFileNameWithoutExt
 
     const indexByTestIndex = isFileNameStartsWithTest ? 4 : length - 4
-    const charByTestIndex = testFileName[indexByTestIndex]
+    const charByTestIndex = testFileNameWithoutExt[indexByTestIndex]
 
     if (!isCharAlphanumeric(charByTestIndex)) {
         prefix += charByTestIndex
     }
 
-    // Replace the currentFileName from currentFileUri with the new test file name
-    const testFsPathForCurrentFile = currentFileUri.toString().replace(currentFileName, prefix + suffix)
+    const testFileWithExt = prefix + suffix
+
+    // Replace the last string that matches currentFileName from currentFileUri with the new test file name
+    const testFileNameForCurrentFileWithExt = currentFileName.replace(currentFileNameWithoutExt, testFileWithExt)
+    const testFsPathForCurrentFile = currentFileUriString.replace(currentFileName, testFileNameForCurrentFileWithExt)
+
     return vscode.Uri.parse(testFsPathForCurrentFile)
 }
 

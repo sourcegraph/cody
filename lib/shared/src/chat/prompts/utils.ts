@@ -121,8 +121,11 @@ export function toSlashCommand(command: string): string {
  * Returns the file name from the given file path without the extension.
  */
 export function getFileNameFromPath(filePath: string): string {
-    const fileName = filePath.split('/').pop()?.split('.')
-    return fileName?.slice(0, -1).join('.') || filePath[0]
+    const fileName = filePath.split('/').pop()
+    if (!fileName) {
+        return filePath
+    }
+    return fileName.split('.')[0]
 }
 
 const TEST_FILE_EXTENSIONS = new Set(['ts', 'js', 'py', 'go', 'java', 'cs', 'cpp', 'cc'])
@@ -130,7 +133,7 @@ const TEST_FILE_EXTENSIONS = new Set(['ts', 'js', 'py', 'go', 'java', 'cs', 'cpp
 const TEST_FILE_REGEXES = {
     ts: /(test\.[^.]+)|([^.]+\.test)\.\w+/i,
     js: /(test\.[^.]+)|([^.]+\.test)\.\w+/i,
-    py: /(_test\.)|(\w+test_\.)/i,
+    py: /(test_[^.]+)|([^.]+_test)\.\w+/i,
     go: /(_test\.)|(\w+test_\.)/i,
     java: /(test\.)|((\w+)test\.)/i,
     cs: /(tests?\.[\da-z]+)|([a-z]+tests?\.[a-z]+)/i,
@@ -152,5 +155,9 @@ export function isValidTestFileName(filePath?: string): boolean {
 
     const regex = TEST_FILE_REGEXES[extension as keyof typeof TEST_FILE_REGEXES]
 
-    return regex?.test(fileName) ?? false
+    if (!regex) {
+        return false
+    }
+
+    return regex.test(fileName) || false
 }
