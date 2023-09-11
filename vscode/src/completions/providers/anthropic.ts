@@ -94,14 +94,14 @@ export class AnthropicProvider extends Provider {
             return { messages: prefixMessages, prefix: { head, tail, overlap } }
         }
 
-        const infillHead = this.options.docContext.prefix.replace(tail.trimmed, '')
-        const infillTail = this.options.docContext.suffix
-        const infillBlock = `${OPENING_CODE_TAG}${tail.trimmed.trimEnd()}`
+        const infillPrefix = this.options.docContext.prefix.replace(tail.trimmed, '')
+        const infillSuffix = this.options.docContext.suffix
+        const infillBlock = `${!infillSuffix.trim() ? tail.trimmed : tail.trimmed.trimEnd()}`
 
         const prefixMessagesWithInfill: Message[] = [
             {
                 speaker: 'human',
-                text: `You are a code completion AI designed to take the surrounding code and shared context into account in order to predict and suggest high-quality code to complete the code enclosed in ${OPENING_CODE_TAG} tags. You suggest code that follows the same coding styles, formats, patterns, and naming convention detected in surrounding context. Only response with code that works and fits seamlessly with surrounding code if any, or use best practice.`,
+                text: `You are a code completion AI designed to take the surrounding code and shared context into account in order to predict and suggest high-quality code to complete the code enclosed in ${OPENING_CODE_TAG} tags. You suggest code that follows the same coding styles, formats, patterns, methods, and naming convention detected in surrounding context. Only response with code that works and fits seamlessly with surrounding code if any, or use best practice.`,
             },
             {
                 speaker: 'assistant',
@@ -109,8 +109,8 @@ export class AnthropicProvider extends Provider {
             },
             {
                 speaker: 'human',
-                text: `Below is the code from file path ${this.options.fileName}. First, review the code outside of the ${OPENING_CODE_TAG} tags. Then complete the code enclosed in ${OPENING_CODE_TAG}${CLOSING_CODE_TAG} tags following the style, patterns and logics of the surrounding code precisely without duplicating existing implementations:
-                ${infillHead}${infillBlock}${CLOSING_CODE_TAG}${infillTail}`,
+                text: `Below is the code from file path ${this.options.fileName}. First, analyze the code outside of the ${OPENING_CODE_TAG} tags and detect functionality, style, patterns, assetmethods/libraries, and logics in use. Then, use what you detect and reuse assetmethods/libraries to complete the code enclosed in ${OPENING_CODE_TAG}${CLOSING_CODE_TAG} tags precisely without duplicating existing implementations:
+                ${infillPrefix}${OPENING_CODE_TAG}${infillBlock}${CLOSING_CODE_TAG}${infillSuffix}`,
             },
             {
                 speaker: 'assistant',
