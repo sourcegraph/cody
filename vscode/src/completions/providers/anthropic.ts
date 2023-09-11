@@ -52,7 +52,7 @@ export class AnthropicProvider extends Provider {
     }
 
     public emptyPromptLength(): number {
-        const { messages } = this.createPromptPrefix()
+        const { messages } = this.useInfillPrefix ? this.createInfillPromptPrefix() : this.createPromptPrefix()
         const promptNoSnippets = messagesToText(messages)
         return promptNoSnippets.length - 10 // extra 10 chars of buffer cuz who knows
     }
@@ -90,18 +90,28 @@ export class AnthropicProvider extends Provider {
             },
         ]
 
-        if (!this.useInfillPrefix) {
-            return { messages: prefixMessages, prefix: { head, tail, overlap } }
+        return { messages: prefixMessages, prefix: { head, tail, overlap } }
+    }
+
+    // This reverts #727 because it is causing a quality regressions with the infill prompt structure
+    private createInfillPromptPrefix(): { messages: Message[]; prefix: PrefixComponents } {
+        const prefixLines = this.options.docContext.prefix.split('\n')
+        if (prefixLines.length === 0) {
+            throw new Error('no prefix lines')
         }
 
-        const infillPrefix = this.options.docContext.prefix.replace(tail.trimmed, '')
+        const { head, tail, overlap } = getHeadAndTail(this.options.docContext.prefix)
+
         const infillSuffix = this.options.docContext.suffix
+        const infillPrefix = this.options.docContext.prefix.replace(tail.trimmed, '')
+        // Infill block represents the code we want cody to complete.
+        // It removes the new line added at the end when suffix is empty
         const infillBlock = `${!infillSuffix.trim() ? tail.trimmed : tail.trimmed.trimEnd()}`
 
         const prefixMessagesWithInfill: Message[] = [
             {
                 speaker: 'human',
-                text: `You are a code completion AI designed to take the surrounding code and shared context into account in order to predict and suggest high-quality code to complete the code enclosed in ${OPENING_CODE_TAG} tags. You suggest code that follows the same coding styles, formats, patterns, methods, and naming convention detected in surrounding context. Only response with code that works and fits seamlessly with surrounding code if any or use best practice, and nothing else.`,
+                text: `You are a code completion AI designed to take the surrounding code and shared context into account in order to predict and suggest high-quality code to complete the code enclosed in ${OPENING_CODE_TAG} tags. You suggest code that follows the same coding styles, formats, patterns, methods, and naming convention detected in surrounding context. Only response with code that works and fits seamlessly with surrounding code if any or use best practice and nothing else.`,
             },
             {
                 speaker: 'assistant',
@@ -109,12 +119,12 @@ export class AnthropicProvider extends Provider {
             },
             {
                 speaker: 'human',
-                text: `Below is the code from file path ${this.options.fileName}. First, analyze the code outside of the ${OPENING_CODE_TAG} tags and detect functionality, style, patterns, assetmethods/libraries, and logics in use. Then, use what you detect and reuse assetmethods/libraries to complete the code enclosed in ${OPENING_CODE_TAG}${CLOSING_CODE_TAG} tags precisely without duplicating existing implementations:
+                text: `Below is the code from file path ${this.options.fileName}. First, analyze the code outside of the ${OPENING_CODE_TAG} tags and detect functionality, style, patterns, assetmethods/libraries, and logics in use. Then, use what you detect and reuse assetmethods/libraries to complete the code enclosed in ${OPENING_CODE_TAG}${CLOSING_CODE_TAG} tags precisely without duplicating existing implementations and nothing else:
                 ${infillPrefix}${OPENING_CODE_TAG}${infillBlock}${CLOSING_CODE_TAG}${infillSuffix}`,
             },
             {
                 speaker: 'assistant',
-                text: `${infillBlock}`,
+                text: `${OPENING_CODE_TAG}${infillBlock}`,
             },
         ]
 
@@ -124,7 +134,9 @@ export class AnthropicProvider extends Provider {
     // Creates the resulting prompt and adds as many snippets from the reference
     // list as possible.
     protected createPrompt(snippets: ContextSnippet[]): { messages: Message[]; prefix: PrefixComponents } {
-        const { messages: prefixMessages, prefix } = this.createPromptPrefix()
+        const { messages: prefixMessages, prefix } = this.useInfillPrefix
+            ? this.createInfillPromptPrefix()
+            : this.createPromptPrefix()
 
         const referenceSnippetMessages: Message[] = []
 
