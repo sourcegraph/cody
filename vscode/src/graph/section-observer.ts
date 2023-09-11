@@ -87,10 +87,29 @@ export class SectionObserver implements vscode.Disposable, GraphContextFetcher {
         return this.instance
     }
 
-    public getContextAtPosition(document: vscode.TextDocument, position: vscode.Position): SymbolContextSnippet[] {
+    public getContextAtPosition(
+        document: vscode.TextDocument,
+        position: vscode.Position,
+
+        // Allow the caller to pass a range for the context. We won't return any symbols that are
+        // defined inside this range.
+        contextRange?: vscode.Range
+    ): SymbolContextSnippet[] {
         const section = this.getSectionAtPosition(document, position)
         if (section?.context?.context) {
-            return section.context.context.map(preciseContextToSnippet).filter(isDefined)
+            return section.context.context
+                .filter(context => {
+                    if (!contextRange || !context.range || context.filePath !== document.uri.fsPath) {
+                        return true
+                    }
+
+                    return !(
+                        contextRange.start.line <= context.range.startLine &&
+                        contextRange.end.line >= context.range.endLine
+                    )
+                })
+                .map(preciseContextToSnippet)
+                .filter(isDefined)
         }
         return []
     }
@@ -324,10 +343,9 @@ export class SectionObserver implements vscode.Disposable, GraphContextFetcher {
 }
 
 function preciseContextToSnippet(context: PreciseContext): SymbolContextSnippet | null {
-    const isDts = context.filePath.endsWith('.d.ts')
     const content =
-        context.hoverText.length > 0 && !isDts
-            ? context.hoverText.map(extractMarkdownCodeBlock).join('\n').trim()
+        context.hoverText.length > 0
+            ? context.hoverText.map(extractMarkdownCodeBlock).join('\n\n').trim()
             : context.definitionSnippet
 
     return {

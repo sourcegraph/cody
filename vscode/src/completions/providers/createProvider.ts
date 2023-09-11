@@ -20,9 +20,7 @@ export async function createProviderConfig(
     switch (provider) {
         case 'unstable-codegen': {
             if (config.autocompleteAdvancedServerEndpoint !== null) {
-                return createUnstableCodeGenProviderConfig({
-                    serverEndpoint: config.autocompleteAdvancedServerEndpoint,
-                })
+                return createUnstableCodeGenProviderConfig(config.autocompleteAdvancedServerEndpoint)
             }
 
             logError(

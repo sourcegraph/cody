@@ -15,8 +15,15 @@ export interface CompletionContext {
 export interface ParsedCompletion extends InlineCompletionItem {
     tree?: Tree
     hasParseErrors?: boolean
-    startPosition?: Parser.Point
-    endPosition?: Parser.Point
+    // Points for parse-tree queries.
+    points?: {
+        // Start of completion.insertText in the parse-tree.
+        start?: Parser.Point
+        // End of completion.insertText in the parse-tree
+        end?: Parser.Point
+        // Start of the multi-line completion trigger if applicable
+        trigger?: Parser.Point
+    }
 }
 
 /**
@@ -43,23 +50,35 @@ export function parseCompletion(context: CompletionContext): ParsedCompletion {
     })
 
     const completionEndPosition = position.translate(0, completion.insertText.length)
-    const startPosition: Parser.Point = {
-        row: position.line,
-        column: position.character,
+
+    const points: ParsedCompletion['points'] = {
+        start: {
+            row: position.line,
+            column: position.character,
+        },
+        end: {
+            row: completionEndPosition.line,
+            column: completionEndPosition.character,
+        },
     }
-    const endPosition: Parser.Point = {
-        row: completionEndPosition.line,
-        column: completionEndPosition.character,
+
+    if (docContext.multilineTrigger) {
+        const triggerPosition = document.positionAt(docContext.prefix.lastIndexOf(docContext.multilineTrigger))
+
+        points.trigger = {
+            row: triggerPosition.line,
+            column: triggerPosition.character,
+        }
     }
 
     // Search for ERROR nodes in the completion range.
     const query = parser.getLanguage().query('(ERROR) @error')
-    const matches = query.matches(treeWithCompletion.rootNode, startPosition, endPosition)
+    // TODO: query bigger range to catch higher scope syntactic errors caused by the completion.
+    const matches = query.matches(treeWithCompletion.rootNode, points?.trigger || points.start, points.end)
 
     return {
         ...completion,
-        startPosition,
-        endPosition,
+        points,
         tree: treeWithCompletion,
         hasParseErrors: matches.length > 0,
     }

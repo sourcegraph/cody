@@ -1,4 +1,3 @@
-import fetch from 'isomorphic-fetch'
 import * as vscode from 'vscode'
 
 import { LOCAL_APP_URL } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
@@ -6,6 +5,7 @@ import { LOCAL_APP_URL } from '@sourcegraph/cody-shared/src/sourcegraph-api/envi
 import { version } from '../../package.json'
 import { isOsSupportedByApp, LocalEnv } from '../chat/protocol'
 import { constructFileUri } from '../custom-prompts/utils/helpers'
+import { fetch } from '../fetch'
 import { logDebug, logError } from '../log'
 
 import { AppJson, LOCAL_APP_LOCATIONS } from './LocalAppFsPaths'

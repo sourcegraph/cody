@@ -12,6 +12,7 @@ describe('getConfiguration', () => {
         }
         expect(getConfiguration(config)).toEqual({
             serverEndpoint: DOTCOM_URL.href,
+            proxy: null,
             codebase: '',
             customHeaders: {},
             chatPreInstruction: undefined,
@@ -48,6 +49,8 @@ describe('getConfiguration', () => {
                 switch (key) {
                     case 'cody.serverEndpoint':
                         return 'http://example.com'
+                    case 'cody.proxy':
+                        return 'socks5://127.0.0.1:9999'
                     case 'cody.codebase':
                         return 'my/codebase'
                     case 'cody.useContext':
@@ -112,6 +115,7 @@ describe('getConfiguration', () => {
         }
         expect(getConfiguration(config)).toEqual({
             serverEndpoint: 'http://example.com',
+            proxy: 'socks5://127.0.0.1:9999',
             codebase: 'my/codebase',
             useContext: 'keyword',
             customHeaders: {
