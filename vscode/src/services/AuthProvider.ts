@@ -25,32 +25,6 @@ import { secretStorage } from './SecretStorageProvider'
 type Listener = (authStatus: AuthStatus) => void
 type Unsubscribe = () => {}
 
-// Responsibilities:
-// - Token storage
-//   - Loads initial auth tokens, if present, from storage on startup
-//   - Saves tokens so you can switch between them
-//   - Deletes tokens on sign out
-// - Token retrieval
-//   - Initiates token retrieval flow from dotcom/enterprise website
-//   - Handles tokens provided by dotcom/enterprise website
-//   - Manual token entry (see UX)
-// - Configuration state provider
-//   - When a token changes, gets whether Cody is enabled, what the sourcegraph version is, and what the LLM "version" is, from GraphQL and stores that configuration
-//   - Provides "AuthStatus" (but that is a rich object with tons of state)
-// - State notifications
-//   - Syncs the cody.activated VScode context with the logged in status
-//   - Fires cody.auth.sync commands to ping the context provider and feature flag provider to pick up auth status changes
-// - Policies?
-//   - Applies different policies around email verification for enterprise, dotcom, or app
-// - UX
-//   - Displays a QuickPick (AuthMenu) for changing accounts
-//   - Sign out menu handler
-//   - Has a text box for inputing a token manually
-//   - Promotes network errors, email verification required, etc. errors into the UX
-//   - Pushes whether App is installed into the webview
-// - Misc
-//   - Formats URLs hand input by the user so they start with "https"
-//   - Owns the AppDetector
 export class AuthProvider {
     private endpointHistory: string[] = []
 
@@ -337,12 +311,7 @@ export class AuthProvider {
         const params = new URLSearchParams(uri.query)
         const isApp = params.get('type') === 'app'
         const token = params.get('code')
-        // TODO: This is weak because the callback could come from any endpoint
-        // and we assume this.authStatus.endpoint is authoritative.
-        // It would be more robust if the endpoint identified itself and we
-        // verified it is an endpoint we want to use.
         const endpoint = isApp ? LOCAL_APP_URL.href : this.authStatus.endpoint
-        // TODO: Need to set authStatus.endpoint to dotcom
         if (!token || !endpoint) {
             return
         }
