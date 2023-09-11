@@ -360,7 +360,7 @@ async function getCompletionContext({
     contextFetcher,
     getCodebaseContext,
     documentHistory,
-    docContext: { prefix, suffix },
+    docContext: { prefix, suffix, contextRange },
 }: GetCompletionContextParams): Promise<GetContextResult | null> {
     if (!contextFetcher) {
         return null
@@ -377,6 +377,7 @@ async function getCompletionContext({
         position,
         prefix,
         suffix,
+        contextRange,
         history: documentHistory,
         jaccardDistanceWindowSize: SNIPPET_WINDOW_SIZE,
         maxChars: promptChars,

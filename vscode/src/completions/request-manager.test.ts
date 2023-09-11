@@ -2,10 +2,10 @@ import { beforeEach, describe, expect, it } from 'vitest'
 
 import { vsCodeMocks } from '../testutils/mocks'
 
+import { getCurrentDocContext } from './get-current-doc-context'
 import { Provider } from './providers/provider'
 import { RequestManager, RequestManagerResult, RequestParams } from './request-manager'
 import { documentAndPosition } from './test-helpers'
-import { getNextNonEmptyLine, getPrevNonEmptyLine } from './text-processing'
 import { Completion } from './types'
 
 class MockProvider extends Provider {
@@ -47,16 +47,13 @@ function docState(prefix: string, suffix: string = ';'): RequestParams {
     return {
         document,
         position,
-        docContext: {
-            prefix,
-            suffix,
-            currentLinePrefix:
-                prefix.lastIndexOf('\n') === -1 ? prefix : prefix.slice(Math.max(0, prefix.lastIndexOf('\n') + 1)),
-            currentLineSuffix: suffix,
-            prevNonEmptyLine: getPrevNonEmptyLine(prefix),
-            nextNonEmptyLine: getNextNonEmptyLine(suffix),
-            multilineTrigger: null,
-        },
+        docContext: getCurrentDocContext({
+            document,
+            position,
+            maxPrefixLength: 100,
+            maxSuffixLength: 100,
+            enableExtendedTriggers: true,
+        }),
         context: {
             triggerKind: vsCodeMocks.InlineCompletionTriggerKind.Automatic,
             selectedCompletionInfo: undefined,
