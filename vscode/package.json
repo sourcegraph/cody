@@ -2,7 +2,7 @@
   "name": "cody-ai",
   "private": true,
   "displayName": "Cody AI",
-  "version": "0.10.0",
+  "version": "0.10.1",
   "publisher": "sourcegraph",
   "license": "Apache-2.0",
   "icon": "resources/cody.png",
@@ -28,7 +28,7 @@
     "_build:esbuild:web": "esbuild ./src/extension.web.ts --platform=browser --bundle --outfile=dist/extension.web.js --alias:path=path-browserify --external:vscode --define:process='{\"env\":{}}' --define:window=self --format=cjs --sourcemap",
     "_build:webviews": "vite -c webviews/vite.config.ts build",
     "lint": "pnpm run lint:js",
-    "lint:js": "eslint --cache '**/*.[tj]s?(x)'",
+    "lint:js": "NODE_OPTIONS=--max-old-space-size=4096 eslint --quiet --cache '**/*.[tj]s?(x)'",
     "release": "ts-node ./scripts/release.ts",
     "download-wasm": "ts-node-transpile-only ./scripts/download-wasm-modules.ts",
     "release:dry-run": "pnpm run download-wasm && CODY_RELEASE_DRY_RUN=1 ts-node ./scripts/release.ts",
@@ -729,6 +729,10 @@
           "markdownDeprecationMessage": "**Deprecated**: Please sign in via the UI instead. If you are already signed in, you can empty this field to remove this warning.",
           "deprecationMessage": "Deprecated: Please sign in via the UI instead."
         },
+        "cody.proxy": {
+          "type": "string",
+          "markdownDeprecationMessage": "The SOCKS proxy endpoint to access server endpoint. This is only supported with `unstable-codegen` provider and only for use with the Cody Agent (for instance with JetBrains plugin). For VS Code please use http.proxy instead."
+        },
         "cody.codebase": {
           "order": 2,
           "type": "string",
@@ -811,6 +815,14 @@
           "default": false,
           "markdownDescription": "Experimental feature for internal use."
         },
+        "cody.chat.preInstruction": {
+          "order": 10,
+          "type": "string",
+          "markdownDescription": "An instruction to be included at the start of all chat messages sent to Cody. Extension reload required.",
+          "examples": [
+            "Answer all my questions in Spanish."
+          ]
+        },
         "cody.experimental.symf.path": {
           "order": 99,
           "type": "string",
@@ -885,7 +897,8 @@
             "wizardcoder-15b",
             "llama-code-7b",
             "llama-code-13b",
-            "llama-code-13b-instruct"
+            "llama-code-13b-instruct",
+            "claude-instant-infill"
           ],
           "markdownDescription": "Overwrite the default model used for code autocompletion inference. This is only supported with the `unstable-fireworks` provider"
         },
@@ -949,6 +962,7 @@
     "mkdirp": "^3.0.1",
     "mock-require": "^3.0.3",
     "openai": "^3.2.1",
+    "socks-proxy-agent": "^8.0.1",
     "stream-json": "^1.8.0",
     "uuid": "^9.0.0",
     "vscode-languageserver-textdocument": "^1.0.8",

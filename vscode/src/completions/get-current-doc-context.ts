@@ -1,9 +1,9 @@
 import * as vscode from 'vscode'
 
-import { detectMultiline, DetectMultilineResult } from './detect-multiline'
+import { detectMultiline } from './detect-multiline'
 import { getNextNonEmptyLine, getPrevNonEmptyLine } from './text-processing'
 
-export type DocumentContext = DetectMultilineResult & {
+export interface DocumentContext {
     prefix: string
     suffix: string
 
@@ -14,6 +14,17 @@ export type DocumentContext = DetectMultilineResult & {
 
     prevNonEmptyLine: string
     nextNonEmptyLine: string
+
+    multilineTrigger: string | null
+}
+
+interface GetCurrentDocContextParams {
+    document: vscode.TextDocument
+    position: vscode.Position
+    maxPrefixLength: number
+    maxSuffixLength: number
+    enableExtendedTriggers: boolean
+    context?: vscode.InlineCompletionContext
 }
 
 /**
@@ -32,14 +43,8 @@ export type DocumentContext = DetectMultilineResult & {
  *
  * @returns An object containing the current document context or null if there are no lines in the document.
  */
-export function getCurrentDocContext(
-    document: vscode.TextDocument,
-    position: vscode.Position,
-    maxPrefixLength: number,
-    maxSuffixLength: number,
-    enableExtendedTriggers: boolean,
-    context?: vscode.InlineCompletionContext
-): DocumentContext {
+export function getCurrentDocContext(params: GetCurrentDocContextParams): DocumentContext {
+    const { document, position, maxPrefixLength, maxSuffixLength, enableExtendedTriggers, context } = params
     const offset = document.offsetAt(position)
 
     // TODO(philipp-spiess): This requires us to read the whole document. Can we limit our ranges
@@ -99,10 +104,8 @@ export function getCurrentDocContext(
         nextNonEmptyLine,
     }
 
-    const multilineContext = detectMultiline(docContext, document.languageId, enableExtendedTriggers ?? false)
-
     return {
         ...docContext,
-        ...multilineContext,
+        multilineTrigger: detectMultiline(docContext, document.languageId, enableExtendedTriggers ?? false),
     }
 }
