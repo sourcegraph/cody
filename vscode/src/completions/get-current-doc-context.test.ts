@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import { getCurrentDocContext } from './get-current-doc-context'
-import { documentAndPosition } from './testHelpers'
+import { documentAndPosition } from './test-helpers'
 
 function testGetCurrentDocContext(code: string) {
     const { document, position } = documentAndPosition(code)

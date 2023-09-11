@@ -21,7 +21,7 @@ import {
 } from './getInlineCompletions'
 import { createProviderConfig } from './providers/anthropic'
 import { RequestManager } from './request-manager'
-import { completion, documentAndPosition } from './testHelpers'
+import { completion, documentAndPosition } from './test-helpers'
 import { getNextNonEmptyLine, MULTILINE_STOP_SEQUENCE } from './text-processing'
 
 // The dedent package seems to replace `\t` with `\\t` so in order to insert a tab character, we

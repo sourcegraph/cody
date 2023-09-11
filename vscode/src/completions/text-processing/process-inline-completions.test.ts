@@ -3,7 +3,7 @@ import Parser from 'web-tree-sitter'
 
 import { range } from '../../testutils/textDocument'
 import { getCurrentDocContext } from '../get-current-doc-context'
-import { documentAndPosition, initTreeSitterParser } from '../testHelpers'
+import { documentAndPosition, initTreeSitterParser } from '../test-helpers'
 import { updateParseTreeCache } from '../tree-sitter/parse-tree-cache'
 import { InlineCompletionItem } from '../types'
 
