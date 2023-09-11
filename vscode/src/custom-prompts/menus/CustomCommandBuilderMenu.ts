@@ -155,8 +155,9 @@ export class CustomCommandsBuilderMenu {
                 },
             ],
             {
-                title: 'New Custom Cody Command: Save to…',
+                title: 'New Custom Cody Command: Save To…',
                 ignoreFocusOut: true,
+                placeHolder: 'Choose where to save the command',
             }
         )
 
