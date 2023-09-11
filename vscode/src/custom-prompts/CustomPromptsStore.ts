@@ -120,7 +120,7 @@ export class CustomPromptsStore implements vscode.Disposable {
                         'Ignore'
                     )
                     .then(choice => {
-                        if (choice === 'Update') {
+                        if (choice === 'Upgrade JSON') {
                             // transform old format commands to the new format
                             const commands = promptEntries.reduce(
                                 (
