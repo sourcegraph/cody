@@ -34,7 +34,7 @@ export interface TranscriptItemClassNames {
 }
 
 /**
- * A single message in the chat trans cript.
+ * A single message in the chat transcript.
  */
 export const TranscriptItem: React.FunctionComponent<
     {
@@ -56,6 +56,7 @@ export const TranscriptItem: React.FunctionComponent<
         abortMessageInProgressComponent?: React.FunctionComponent<{ onAbortMessageInProgress: () => void }>
         onAbortMessageInProgress?: () => void
         ChatButtonComponent?: React.FunctionComponent<ChatButtonProps>
+        transcriptItemRef?: React.RefCallback<HTMLDivElement>
     } & TranscriptItemClassNames
 > = React.memo(function TranscriptItemContent({
     message,
@@ -81,6 +82,7 @@ export const TranscriptItem: React.FunctionComponent<
     submitButtonComponent: SubmitButton,
     chatInputClassName,
     ChatButtonComponent,
+    transcriptItemRef,
 }) {
     const [formInput, setFormInput] = useState<string>(message.displayText ?? '')
     const textarea =
@@ -123,6 +125,7 @@ export const TranscriptItem: React.FunctionComponent<
 
     return (
         <div
+            ref={transcriptItemRef}
             className={classNames(
                 styles.row,
                 transcriptItemClassName,

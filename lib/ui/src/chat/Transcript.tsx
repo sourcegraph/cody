@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 
 import classNames from 'classnames'
 
@@ -67,61 +67,85 @@ export const Transcript: React.FunctionComponent<
     const transcriptContainerRef = useRef<HTMLDivElement>(null)
     const scrollAnchoredContainerRef = useRef<HTMLDivElement>(null)
     const humanMessageCount = transcript.filter(message => message.speaker === 'human').length
+    // const messageInProgressRef = useRef<HTMLDivElement>(null)
+    const [messageInProgressNode, setMessageInProgressNode] = useState<HTMLDivElement | null>(null)
+    const messageInProgressRef = (node: HTMLDivElement | null): void => {
+        console.log('# updating messageInProgressNode', node)
+        setMessageInProgressNode(node)
+    }
+
     useEffect(() => {
-        if (transcriptContainerRef.current) {
-            transcriptContainerRef.current?.scrollTo({
-                top: transcriptContainerRef.current.scrollHeight,
-                behavior: 'smooth',
-            })
+        // if (transcriptContainerRef.current) {
+        //     console.log('# transcriptContainerRef.current', transcriptContainerRef.current)
+        //     transcriptContainerRef.current?.scrollTo({
+        //         // top: transcriptContainerRef.current.scrollHeight,
+        //         top: transcriptContainerRef.current.scrollHeight + 300,
+        //         behavior: 'smooth',
+        //     })
+        // }
+
+        // console.log('# HERE 1', messageInProgressRef.current)
+        // if (messageInProgressRef.current) {
+        //     console.log("# scrolling", messageInProgressRef.current)
+        //     messageInProgressRef.current.scrollIntoView({ behavior: 'smooth' })
+        if (messageInProgressNode) {
+            console.log("# scrolling", messageInProgressNode)
+            messageInProgressNode.scrollIntoView({ behavior: 'smooth' })
         }
     }, [humanMessageCount, transcriptContainerRef])
 
-    // When the content was not scrollable, then becomes scrollable, manually
-    // scroll the anchor into view. This overrides the browser's default
-    // behavior of initially anchoring to the top until a scroll occurs.
-    useEffect(() => {
-        const root = transcriptContainerRef.current
-        const container = scrollAnchoredContainerRef.current
-        if (!(root && container)) {
-            return undefined
-        }
-        let wasIntersecting = true
-        const observer = new IntersectionObserver(
-            entries => {
-                for (const entry of entries) {
-                    if (entry.rootBounds?.width === 0 || entries[0].rootBounds?.height === 0) {
-                        // After restoring a pane the root element hasn't been sized yet, and we
-                        // trivially overflow it. Ignore this.
-                        continue
-                    }
-                    if (wasIntersecting && !entry.isIntersecting) {
-                        root.scrollTo({
-                            top: root.scrollHeight,
-                            behavior: 'smooth',
-                        })
-                    }
-                    wasIntersecting = entry.isIntersecting
-                }
-            },
-            {
-                root,
-                threshold: 1,
-            }
-        )
-        observer.observe(container)
-        return () => {
-            observer.disconnect()
-        }
-    }, [transcriptContainerRef, scrollAnchoredContainerRef])
+    // // When the content was not scrollable, then becomes scrollable, manually
+    // // scroll the anchor into view. This overrides the browser's default
+    // // behavior of initially anchoring to the top until a scroll occurs.
+    // useEffect(() => {
+    //     const root = transcriptContainerRef.current
+    //     const container = scrollAnchoredContainerRef.current
+    //     if (!(root && container)) {
+    //         return undefined
+    //     }
+    //     let wasIntersecting = true
+    //     const observer = new IntersectionObserver(
+    //         entries => {
+    //             for (const entry of entries) {
+    //                 if (entry.rootBounds?.width === 0 || entries[0].rootBounds?.height === 0) {
+    //                     // After restoring a pane the root element hasn't been sized yet, and we
+    //                     // trivially overflow it. Ignore this.
+    //                     continue
+    //                 }
+    //                 if (wasIntersecting && !entry.isIntersecting) {
+    //                     root.scrollTo({
+    //                         top: root.scrollHeight,
+    //                         behavior: 'smooth',
+    //                     })
+    //                 }
+    //                 wasIntersecting = entry.isIntersecting
+    //             }
+    //         },
+    //         {
+    //             root,
+    //             threshold: 1,
+    //         }
+    //     )
+    //     observer.observe(container)
+    //     return () => {
+    //         observer.disconnect()
+    //     }
+    // }, [transcriptContainerRef, scrollAnchoredContainerRef])
+
+    const hasInProgressHumanMessage = messageInProgress && messageInProgress.speaker === 'assistant'
+    console.log('# messageInProgress', messageInProgress)
 
     return (
         <div ref={transcriptContainerRef} className={classNames(className, styles.container)}>
             <div ref={scrollAnchoredContainerRef} className={classNames(styles.scrollAnchoredContainer)}>
                 {transcript.map(
-                    (message, index) =>
-                        message?.displayText && (
+                    (message, index) => {
+                        const x = (!hasInProgressHumanMessage && index === transcript.length - 1) ? messageInProgressRef : undefined
+                        console.log("### HERE 2", (!hasInProgressHumanMessage && index === transcript.length - 1), x)
+                        return message?.displayText && (
                             <TranscriptItem
                                 // eslint-disable-next-line react/no-array-index-key
+                                transcriptItemRef={(!hasInProgressHumanMessage && index === transcript.length - 1) ? messageInProgressRef : undefined}
                                 key={index}
                                 message={message}
                                 inProgress={false}
@@ -148,9 +172,11 @@ export const Transcript: React.FunctionComponent<
                                 ChatButtonComponent={ChatButtonComponent}
                             />
                         )
+                    }
                 )}
-                {messageInProgress && messageInProgress.speaker === 'assistant' && (
+                {hasInProgressHumanMessage && (
                     <TranscriptItem
+                        transcriptItemRef={messageInProgressRef}
                         message={messageInProgress}
                         inProgress={true}
                         beingEdited={false}
