@@ -84,11 +84,6 @@ export async function getFileContentText(uri: vscode.Uri): Promise<string> {
     }
 }
 
-export const isUserType = (type: CodyPromptType): boolean => type === 'user'
-export const isWorkspaceType = (type: CodyPromptType): boolean => type === 'workspace'
-export const isCustomType = (type: CodyPromptType): boolean => type === 'user' || type === 'workspace'
-export const isNonCustomType = (type: CodyPromptType): boolean => type === 'recently used' || type === 'default'
-
 export const outputWrapper = `
 Here is the output of \`{command}\` command from my terminal inside <output> tags:
 <output>

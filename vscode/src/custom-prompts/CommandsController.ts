@@ -2,7 +2,6 @@ import * as vscode from 'vscode'
 
 import {
     CodyPrompt,
-    CodyPromptType,
     defaultCodyPromptContext,
     MyPrompts,
 } from '@sourcegraph/cody-shared/src/chat/prompts'
@@ -105,7 +104,6 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
      * then set it as the prompt in progress
      *
      * @param id - The id/name of the command
-     * @param isSlash - Whether this is a slash command
      *
      * @returns The prompt text for the command if found, empty string otherwise
      */
@@ -370,7 +368,7 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
      * Config file controller
      * handles operations on config files for user and workspace commands
      */
-    public async config(action: string, fileType?: CodyPromptType): Promise<void> {
+    public async config(action: string, fileType?: 'user' | 'workspace'): Promise<void> {
         switch (action) {
             case 'delete':
                 if ((await showRemoveConfirmationInput()) !== 'Yes') {

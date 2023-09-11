@@ -1,7 +1,6 @@
 import { commands, QuickInputButtons, QuickPickItem, ThemeIcon, window } from 'vscode'
 
 import { CodyPrompt } from '@sourcegraph/cody-shared'
-import { CodyPromptType } from '@sourcegraph/cody-shared/src/chat/prompts'
 
 import { ContextOption } from '.'
 
@@ -38,7 +37,7 @@ const settingsSeparator: QuickPickItem = { kind: -1, label: 'settings' }
 const addOption: QuickPickItem = { label: 'New Custom Command...', alwaysShow: true }
 
 export const recentlyUsedSeparatorAsPrompt: [string, CodyPrompt][] = [
-    ['separator', { prompt: 'separator', type: 'recently used', slashCommand: '' }],
+    ['separator', { prompt: 'separator', slashCommand: '' }],
 ]
 
 export const menu_separators = {
@@ -156,7 +155,7 @@ export async function showcommandTypeQuickPick(
         user: number
         workspace: number
     }
-): Promise<CodyPromptType | null> {
+): Promise<'user' | 'workspace' | null> {
     const options: QuickPickItem[] = []
     const userItem = CustomCommandTypes.user
     const workspaceItem = CustomCommandTypes.workspace
@@ -182,7 +181,7 @@ export async function showcommandTypeQuickPick(
     if (!commandType?.label) {
         return null
     }
-    return (commandType.label.toLowerCase() === 'user' ? 'user' : 'workspace') as CodyPromptType
+    return (commandType.label.toLowerCase() === 'user' ? 'user' : 'workspace')
 }
 
 export const CustomCommandConfigMenuItems = [
@@ -211,7 +210,7 @@ export const CustomCommandConfigMenuItems = [
         buttons: [menu_buttons.open, menu_buttons.trash],
     },
     { kind: -1, id: 'separator', label: '' },
-    { kind: 0, label: 'Open Custom Commands Documentation', id: 'example', type: 'default' },
+    { kind: 0, label: 'Open Custom Commands Documentation', id: 'example' },
 ]
 
 export async function showAskQuestionQuickPick(): Promise<string> {

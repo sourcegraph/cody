@@ -3,7 +3,6 @@ import * as vscode from 'vscode'
 
 import {
     CodyPrompt,
-    CodyPromptType,
     ConfigFileName,
     MyPrompts,
     MyPromptsJSON,
@@ -17,7 +16,6 @@ import {
     createJSONFile,
     deleteFile,
     getFileContentText,
-    isUserType,
     openCustomCommandDocsLink,
     saveJSONFile,
 } from './utils/helpers'
@@ -99,7 +97,7 @@ export class CustomPromptsStore implements vscode.Disposable {
     /**
      * Build the map of prompts using the json string
      */
-    public async build(type: CodyPromptType): Promise<Map<string, CodyPrompt> | null> {
+    public async build(type: 'user' | 'workspace'): Promise<Map<string, CodyPrompt> | null> {
         try {
             const content = await this.getPromptsFromFileSystem(type)
             if (!content) {
@@ -163,7 +161,7 @@ export class CustomPromptsStore implements vscode.Disposable {
         id: string,
         prompt: CodyPrompt,
         deletePrompt = false,
-        type: CodyPromptType = 'user'
+        type: 'user' | 'workspace' = 'user'
     ): Promise<void> {
         if (deletePrompt) {
             this.myPromptsMap.delete(id)
@@ -189,15 +187,13 @@ export class CustomPromptsStore implements vscode.Disposable {
     /**
      * Updates the corresponding Cody config file with the given prompts.
      */
-    private async updateJSONFile(prompts: MyPromptsJSON, type: CodyPromptType): Promise<void> {
+    private async updateJSONFile(prompts: MyPromptsJSON, type: 'user' | 'workspace'): Promise<void> {
         try {
-            const jsonString = JSON.stringify(prompts, null, 2)
             const rootDirPath = type === 'user' ? this.jsonFileUris.user : this.jsonFileUris.workspace
-            if (!rootDirPath || !jsonString) {
-                throw new Error('Invalid file path or json string')
+            if (!rootDirPath) {
+                throw new Error('Invalid file path')
             }
-            const isSaveMode = true
-            await saveJSONFile(jsonString, rootDirPath, isSaveMode)
+            await saveJSONFile(prompts, rootDirPath)
         } catch (error) {
             void vscode.window.showErrorMessage(`Failed to save to cody.json file: ${error}`)
         }
@@ -206,12 +202,11 @@ export class CustomPromptsStore implements vscode.Disposable {
     /**
      * Create a new cody.json file to the user's workspace or home directory
      */
-    public async createConfig(type: CodyPromptType = 'user'): Promise<void> {
-        const isUser = isUserType(type)
+    public async createConfig(type: 'user' | 'workspace' = 'user'): Promise<void> {
         const configFileUri = this.getConfigUriByType(type)
         try {
             if (configFileUri) {
-                await createJSONFile(this.extensionPath, configFileUri, isUser)
+                await createJSONFile(this.extensionPath, configFileUri)
                 void vscode.window
                     .showInformationMessage(`Cody ${type} settings file created`, 'View Documentation')
                     .then(async choice => {
@@ -232,7 +227,7 @@ export class CustomPromptsStore implements vscode.Disposable {
     /**
      * Remove the cody.json file from the user's workspace or home directory
      */
-    public async deleteConfig(type: CodyPromptType = 'user'): Promise<void> {
+    public async deleteConfig(type: 'user' | 'workspace' = 'user'): Promise<void> {
         // delete .vscode/cody.json for user command using the vs code api
         const uri = this.getConfigUriByType(type)
         if (this.promptSize[type] === 0 || !uri) {
@@ -247,7 +242,7 @@ export class CustomPromptsStore implements vscode.Disposable {
     /**
      * Open the .vscode/cody.json file for given type in the editor
      */
-    public async openConfig(type: CodyPromptType = 'user'): Promise<void> {
+    public async openConfig(type: 'user' | 'workspace' = 'user'): Promise<void> {
         const uri = this.getConfigUriByType(type)
         return vscode.commands.executeCommand('vscode.open', uri)
     }
@@ -255,7 +250,7 @@ export class CustomPromptsStore implements vscode.Disposable {
     /**
      * Get the file content of the cody.json file for the given type
      */
-    private async getPromptsFromFileSystem(type: CodyPromptType): Promise<string | null> {
+    private async getPromptsFromFileSystem(type: 'user' | 'workspace'): Promise<string | null> {
         const codyJsonFilePathUri = this.getConfigUriByType(type)
         if (!codyJsonFilePathUri) {
             return null
@@ -276,9 +271,8 @@ export class CustomPromptsStore implements vscode.Disposable {
     /**
      * Get the uri of the cody.json file for the given type
      */
-    private getConfigUriByType(type: CodyPromptType): vscode.Uri | undefined {
-        const isUserType = type === 'user'
-        const configFileUri = isUserType ? this.jsonFileUris.user : this.jsonFileUris.workspace
+    private getConfigUriByType(type: 'user' | 'workspace'): vscode.Uri | undefined {
+        const configFileUri = type === 'user' ? this.jsonFileUris.user : this.jsonFileUris.workspace
         return configFileUri
     }
 }

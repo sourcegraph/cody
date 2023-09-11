@@ -18,7 +18,7 @@ export interface UserWorkspaceInfo {
 
 export interface CustomCommandsItem extends QuickPickItem {
     id?: CustomCommandMenuAction
-    type: CodyPromptType
+    type: 'user' | 'workspace'
 }
 
 export interface ContextOption {
