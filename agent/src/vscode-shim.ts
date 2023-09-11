@@ -92,6 +92,8 @@ const configuration: vscode.WorkspaceConfiguration = {
         switch (section) {
             case 'cody.serverEndpoint':
                 return connectionConfig?.serverEndpoint
+            case 'cody.proxy':
+                return connectionConfig?.proxy ?? null
             case 'cody.customHeaders':
                 return connectionConfig?.customHeaders
             case 'cody.telemetry.level':
