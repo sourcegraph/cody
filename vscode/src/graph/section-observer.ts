@@ -4,8 +4,8 @@ import { LRUCache } from 'lru-cache'
 import * as vscode from 'vscode'
 import { URI } from 'vscode-uri'
 
-import { PreciseContext } from '@sourcegraph/cody-shared/src/codebase-context/messages'
-import { isDefined } from '@sourcegraph/cody-shared/src/common'
+import { HoverContext } from '@sourcegraph/cody-shared/src/codebase-context/messages'
+import { dedupeWith, isDefined } from '@sourcegraph/cody-shared/src/common'
 
 import { GraphContextFetcher } from '../completions/context/context'
 import { ContextSnippet, SymbolContextSnippet } from '../completions/types'
@@ -19,7 +19,7 @@ interface Section extends DocumentSection {
     context: {
         lastRevalidateAt: number
         isStale: boolean
-        context: PreciseContext[] | null
+        context: HoverContext[] | null
     } | null
 }
 
@@ -145,7 +145,7 @@ export class SectionObserver implements vscode.Disposable, GraphContextFetcher {
         }
 
         if (sectionGraphContext) {
-            const preciseContexts = sectionGraphContext.map(preciseContextToSnippet).filter(isDefined)
+            const preciseContexts = hoverContextsToSnippets(sectionGraphContext)
             for (const preciseContext of preciseContexts) {
                 if (usedContextChars + preciseContext.content.length > maxChars) {
                     // We use continue here to test potentially smaller context snippets that might
@@ -208,7 +208,11 @@ export class SectionObserver implements vscode.Disposable, GraphContextFetcher {
     /**
      * A pretty way to print the current state of all cached sections
      */
-    public debugPrint(selectedDocument?: vscode.TextDocument, selections?: readonly vscode.Selection[]): string {
+    public debugPrint(
+        selectedDocument?: vscode.TextDocument,
+        selections?: readonly vscode.Selection[],
+        showLastVisited = true
+    ): string {
         const lines: string[] = []
         // eslint-disable-next-line ban/ban
         this.activeDocuments.forEach(document => {
@@ -235,18 +239,21 @@ export class SectionObserver implements vscode.Disposable, GraphContextFetcher {
             }
         })
 
-        lines.push('')
-        lines.push('Last visited sections:')
         const lastSections = this.lastVisitedSections.map(loc => this.getSectionForLocation(loc)).filter(isDefined)
-        for (let i = 0; i < lastSections.length; i++) {
-            const section = lastSections[i]
-            const isLast = i === lastSections.length - 1
+        if (showLastVisited && lastSections.length > 0) {
+            lines.push('')
+            lines.push('Last visited sections:')
 
-            lines.push(
-                `  ${isLast ? '└' : '├'} ${path.normalize(vscode.workspace.asRelativePath(section.location.uri))} ${
-                    section.fuzzyName ?? 'unknown'
-                }`
-            )
+            for (let i = 0; i < lastSections.length; i++) {
+                const section = lastSections[i]
+                const isLast = i === lastSections.length - 1
+
+                lines.push(
+                    `  ${isLast ? '└' : '├'} ${path.normalize(vscode.workspace.asRelativePath(section.location.uri))} ${
+                        section.fuzzyName ?? 'unknown'
+                    }`
+                )
+            }
         }
 
         return lines.join('\n')
@@ -408,47 +415,39 @@ export class SectionObserver implements vscode.Disposable, GraphContextFetcher {
     }
 }
 
-function preciseContextToSnippet(context: PreciseContext): SymbolContextSnippet | null {
-    const isDts = context.filePath.endsWith('.d.ts')
-    const content =
-        context.hoverText.length > 0 && !isDts
-            ? context.hoverText.map(extractMarkdownCodeBlock).join('\n').trim()
-            : context.definitionSnippet
-
-    return {
-        fileName: path.normalize(vscode.workspace.asRelativePath(context.filePath)),
-        symbol: context.symbol.fuzzyName ?? '',
-        content,
-    }
+function hoverContextsToSnippets(contexts: HoverContext[]): SymbolContextSnippet[] {
+    return dedupeWith(contexts.flatMap(hoverContextToSnippets).filter(isDefined), context =>
+        [context.symbol, context.fileName, context.content].join('\n')
+    )
 }
 
-function extractMarkdownCodeBlock(string: string): string {
-    const lines = string.split('\n')
-    const codeBlocks: string[] = []
-    let isCodeBlock = false
-    for (const line of lines) {
-        const isCodeBlockDelimiter = line.trim().startsWith('```')
+function hoverContextToSnippets(context: HoverContext): SymbolContextSnippet[] {
+    const snippets: SymbolContextSnippet[] = []
+    const definitionHovers = context.hovers.filter(h => h.type === 'definition')
+    const nonDefinitionHovers = context.hovers.filter(h => h.type !== 'definition')
 
-        if (isCodeBlockDelimiter && !isCodeBlock) {
-            isCodeBlock = true
-        } else if (isCodeBlockDelimiter && isCodeBlock) {
-            isCodeBlock = false
-        } else if (isCodeBlock) {
-            codeBlocks.push(line)
-        }
+    if (definitionHovers.length > 0) {
+        snippets.push({
+            fileName: path.normalize(vscode.workspace.asRelativePath(context.filePath)),
+            symbol: context.symbolName,
+            content: definitionHovers.map(h => h.content.join('\n').trim()).join('\n\n'),
+        })
     }
 
-    return codeBlocks.join('\n')
+    if (nonDefinitionHovers.length > 0) {
+        snippets.push({
+            fileName: path.normalize(vscode.workspace.asRelativePath(context.filePath)),
+            symbol: context.symbolName,
+            content: nonDefinitionHovers.map(h => h.content.join('\n').trim()).join('\n\n'),
+        })
+    }
+
+    return snippets
 }
 
-function logHydratedContext(
-    context: PreciseContext[],
-    editor: vscode.TextEditor,
-    section: Section,
-    start: number
-): void {
+function logHydratedContext(context: HoverContext[], editor: vscode.TextEditor, section: Section, start: number): void {
     const matchSummary: { [filename: string]: Set<string> } = {}
-    for (const match of context.map(preciseContextToSnippet)) {
+    for (const match of hoverContextsToSnippets(context)) {
         if (!match) {
             continue
         }

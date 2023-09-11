@@ -35,6 +35,23 @@ export interface PreciseContext {
     }
 }
 
+export interface HoverContext {
+    symbolName: string
+    filePath: string
+    range?: {
+        startLine: number
+        startCharacter: number
+        endLine: number
+        endCharacter: number
+    }
+    hovers: TaggedHoverContent[]
+}
+
+export interface TaggedHoverContent {
+    type: 'definition' | 'typeDefinition' | 'implementation'
+    content: string[]
+}
+
 export interface OldContextMessage extends Message {
     fileName?: string
 }

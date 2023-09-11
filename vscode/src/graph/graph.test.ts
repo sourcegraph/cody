@@ -4,7 +4,12 @@ import { URI } from 'vscode-uri'
 
 import { Uri } from '../testutils/mocks'
 
-import { extractDefinitionContexts, extractRelevantDocumentSymbolRanges, gatherDefinitions } from './graph'
+import {
+    extractDefinitionContexts,
+    extractRelevantDocumentSymbolRanges,
+    gatherDefinitionRequestCandidates,
+    gatherDefinitions,
+} from './graph'
 
 const testFile1 = `
 import fmt
@@ -85,14 +90,16 @@ describe('extractRelevantDocumentSymbolRanges', () => {
 describe('gatherDefinitions', () => {
     test('returns definitions referencing multiple files', async () => {
         const uri = Uri.parse('/test-3.test')
+        const selections = [
+            {
+                uri,
+                range: new vscode.Range(4, 0, 7, 67), // bonk
+            },
+        ]
+
         const definitions = await gatherDefinitions(
-            [
-                {
-                    uri,
-                    range: new vscode.Range(4, 0, 7, 67), // bonk
-                },
-            ],
-            new Map([[uri.fsPath, testFile3.split('\n').slice(1)]]),
+            selections,
+            gatherDefinitionRequestCandidates(selections, new Map([[uri.fsPath, testFile3.split('\n').slice(1)]])),
             (): Promise<vscode.Hover[]> => Promise.resolve([]),
             // eslint-disable-next-line @typescript-eslint/require-await
             async (uri: URI, position: vscode.Position): Promise<vscode.Location[]> => {
@@ -114,7 +121,9 @@ describe('gatherDefinitions', () => {
                 }
 
                 return []
-            }
+            },
+            (): Promise<vscode.Location[]> => Promise.resolve([]),
+            (): Promise<vscode.Location[]> => Promise.resolve([])
         )
 
         expect(definitions).toEqual([
@@ -129,27 +138,37 @@ describe('gatherDefinitions', () => {
             {
                 symbolName: 'bar',
                 hover: [],
-                locations: [{ uri: Uri.file('/test-1.test'), range: new vscode.Range(10, 6, 10, 9) }],
+                definitionLocations: [{ uri: Uri.file('/test-1.test'), range: new vscode.Range(10, 6, 10, 9) }],
+                typeDefinitionLocations: [],
+                implementationLocations: [],
             },
             {
                 symbolName: 'Bar',
                 hover: [],
-                locations: [{ uri: Uri.file('/test-1.test'), range: new vscode.Range(11, 6, 11, 9) }],
+                definitionLocations: [{ uri: Uri.file('/test-1.test'), range: new vscode.Range(11, 6, 11, 9) }],
+                typeDefinitionLocations: [],
+                implementationLocations: [],
             },
             {
                 symbolName: 'foo',
                 hover: [],
-                locations: [{ uri: Uri.file('/test-1.test'), range: new vscode.Range(2, 6, 2, 9) }],
+                definitionLocations: [{ uri: Uri.file('/test-1.test'), range: new vscode.Range(2, 6, 2, 9) }],
+                typeDefinitionLocations: [],
+                implementationLocations: [],
             },
             {
                 symbolName: 'Foo',
                 hover: [],
-                locations: [{ uri: Uri.file('/test-1.test'), range: new vscode.Range(3, 6, 3, 9) }],
+                definitionLocations: [{ uri: Uri.file('/test-1.test'), range: new vscode.Range(3, 6, 3, 9) }],
+                typeDefinitionLocations: [],
+                implementationLocations: [],
             },
             {
                 symbolName: 'baz',
                 hover: [],
-                locations: [{ uri: Uri.file('/test-2.test'), range: new vscode.Range(3, 6, 3, 8) }],
+                definitionLocations: [{ uri: Uri.file('/test-2.test'), range: new vscode.Range(3, 6, 3, 8) }],
+                typeDefinitionLocations: [],
+                implementationLocations: [],
             },
 
             // Duplicates are thrown out
