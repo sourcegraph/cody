@@ -584,15 +584,18 @@ export async function getTestFileOfCurrentFileContext(fileName: string): Promise
  * @param currentFileUri - The URI of the currently open file
  * @returns A URI for a test file that matches the repoTestFilePath using info from currentFileUri
  */
-export function createTestFileUri(repoTestFilePath: string, currentFileUri: vscode.Uri): vscode.Uri {
+export function createTestFileUri(currentFileUri: vscode.Uri, repoTestFilePath?: string): vscode.Uri {
     const currentFilePath = currentFileUri.fsPath
+
     // if the current file is a test file, return the current file Uri
-    if (!currentFilePath || !repoTestFilePath) {
+    if (!currentFilePath) {
         return currentFileUri
     }
 
     const currentFileName = getFileNameFromPath(currentFilePath)
-    const testFileName = getFileNameFromPath(repoTestFilePath).toLowerCase()
+    const testFileName = repoTestFilePath
+        ? getFileNameFromPath(repoTestFilePath).toLowerCase()
+        : `test.${currentFileName}`
 
     const isFileNameStartsWithTest = testFileName.startsWith('test')
     const length = testFileName.length - 1

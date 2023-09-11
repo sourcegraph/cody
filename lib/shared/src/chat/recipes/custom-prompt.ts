@@ -108,9 +108,13 @@ export class CustomPrompt implements Recipe {
                     .then(async messages => {
                         const codebaseTestFile = messages.find(m => m.file?.fileName.includes('test'))?.file?.fileName
                         const currentFileUri = context.editor.fileUri
-                        if (codebaseTestFile && currentFileUri) {
-                            const testFileUri = createTestFileUri(codebaseTestFile, currentFileUri)
+                        if (currentFileUri) {
+                            const testFileUri = createTestFileUri(currentFileUri, codebaseTestFile)
                             await context.editor.insertToTextDocument(testFileUri, content)
+                        } else {
+                            return context.editor.showWarningMessage(
+                                'Invalid workspace file. Please run this command from a workspace file.'
+                            )
                         }
                     })
                     .catch(error => console.log(error))
