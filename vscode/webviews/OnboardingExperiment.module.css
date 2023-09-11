@@ -14,13 +14,14 @@
     margin-top: 0.5rem;
     display: flex;
     flex-direction: column;
-    align-items: start;
+    align-items: center;
 }
 
 .button-stack {
     display: flex;
     flex-direction: column;
     gap: 7px;
+    min-width: 75%;
 }
 
 .section.auth-method-screen {
