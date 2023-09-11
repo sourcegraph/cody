@@ -101,7 +101,7 @@ export class AnthropicProvider extends Provider {
         const prefixMessagesWithInfill: Message[] = [
             {
                 speaker: 'human',
-                text: `You are a code completion AI designed to take the surrounding code and shared context into account in order to predict and suggest high-quality code to complete the code enclosed in ${OPENING_CODE_TAG} tags. You suggest code that follows the same coding styles, formats, patterns, methods, and naming convention detected in surrounding context. Only response with code that works and fits seamlessly with surrounding code if any, or use best practice.`,
+                text: `You are a code completion AI designed to take the surrounding code and shared context into account in order to predict and suggest high-quality code to complete the code enclosed in ${OPENING_CODE_TAG} tags. You suggest code that follows the same coding styles, formats, patterns, methods, and naming convention detected in surrounding context. Only response with code that works and fits seamlessly with surrounding code if any or use best practice, and nothing else.`,
             },
             {
                 speaker: 'assistant',

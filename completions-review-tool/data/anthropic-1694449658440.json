@@ -1,11 +1,12 @@
 [
   {
     "completions": [
-      "    signale.info(message)",
-      "    const logger = signale.scope('logger')"
+      "    const logger = signale.scope('Logger')\n    logger.info(message)",
+      "    const logger = signale.scope('logger')\n    logger.info(message)",
+      "    signale.info(message)"
     ],
-    "elapsed": 1384,
-    "timestamp": "1694445067147",
+    "elapsed": 1269,
+    "timestamp": "1694449658440",
     "sample": {
       "context": [],
       "fileName": "logger.ts",
@@ -15,10 +16,12 @@
   },
   {
     "completions": [
-      "    const date = new Date()"
+      "    const date = new Date()\n    const filename = path.join(__dirname, 'date.txt')\n    require('fs').writeFileSync(filename, date.toString())",
+      "    const date = new Date()",
+      "    const currentDate = new Date()"
     ],
-    "elapsed": 1803,
-    "timestamp": "1694445067147",
+    "elapsed": 1815,
+    "timestamp": "1694449658440",
     "sample": {
       "context": [],
       "fileName": "writer.ts",
@@ -28,12 +31,12 @@
   },
   {
     "completions": [
-      "        let lineNumber = position instanceof vscode.Position ? position.line : Math.floor(position / this.lineCount);",
-      "        const lineNumber = typeof position === 'number' ? position : position.line;",
-      "        return new vscode.TextLine(this, this.text.split('"
+      "        // Get the line number from the position\n        let lineNumber: number;\n        if (position instanceof vscode.Position) {\n            lineNumber = position.line;\n        } else {\n            lineNumber = Math.floor(position / this.lineLength());\n        }",
+      "        return {\n        text: this.text,\n        range: new vscode.Range(position, position)",
+      "        return new vscode.TextLine(this, this.text.substring(0, position));"
     ],
-    "elapsed": 2020,
-    "timestamp": "1694445067147",
+    "elapsed": 1987,
+    "timestamp": "1694449658440",
     "sample": {
       "context": [],
       "fileName": "text-document.ts",
@@ -43,10 +46,12 @@
   },
   {
     "completions": [
+      "        import { execFileSync } from 'child_process'\n\n            try {\n                return execFileSync('uname', ['-s']).toString().trim();\n            } catch (err) {\n                return null;\n            }\n        } else {\n            return window.navigator.platform;\n        }\n    }",
+      "        import { execFileSync } from 'child_process'\n            try {\n                return execFileSync('uname', ['-s']).toString().trim();\n            } catch (err) {\n                return null;\n            }\n        } else {\n            return window.navigator.platform;\n        }\n    }",
       "        try {"
     ],
-    "elapsed": 1228,
-    "timestamp": "1694445067147",
+    "elapsed": 1335,
+    "timestamp": "1694449658440",
     "sample": {
       "context": [],
       "fileName": "getOs.ts",
@@ -56,10 +61,10 @@
   },
   {
     "completions": [
-      "    return window.matchMedia('(prefers-color-scheme: dark)').matches;"
+      "    return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;"
     ],
-    "elapsed": 662,
-    "timestamp": "1694445067147",
+    "elapsed": 731,
+    "timestamp": "1694449658440",
     "sample": {
       "context": [],
       "fileName": "isDarkColorScheme.ts",
@@ -69,49 +74,73 @@
   },
   {
     "completions": [
-      "    let max;"
+      "    const min = Math.min(a, b);"
     ],
-    "elapsed": 2928,
-    "timestamp": "1694445067147",
+    "elapsed": 795,
+    "timestamp": "1694449658440",
     "sample": {
       "context": [],
       "fileName": "twoNums.ts",
       "languageId": "typescript",
-      "content": "function twoSum(a: number, b: number): number {\n    const sum = a + b\n    console.log(sum)\n    return sum\n}\n\nfunction maxNum(a: number, b: number): number {\n    ️🔥\n    console.log(max)\n    return max\n}\nMath\nfunction minNum(a: number, b: number): number {\n    const min = Math.min(a, b)\n    console.log(min)\n    return min\n}"
+      "content": "function twoSum(a: number, b: number): number {\n    const sum = a + b\n    console.log(sum)\n    return sum\n}\n\nfunction minNum(a: number, b: number): number {\n    ️🔥\n    console.log(min)\n    return min\n}\n\nfunction maxNum(a: number, b: number): number {\n    const max = Math.max(a, b)\n    console.log(min)\n    return max\n}"
     }
   },
   {
-    "completions": [
-      "// A function to calculate the factorial of a number"
-    ],
-    "elapsed": 858,
-    "timestamp": "1694445067147",
+    "completions": [],
+    "elapsed": 714,
+    "timestamp": "1694449658440",
     "sample": {
       "context": [],
       "fileName": "comment.ts",
       "languageId": "typescript",
-      "content": "// A function to ️🔥\nfunction twoSum(a: number, b: number): number {\n    const sum = a + b\n    console.log(sum)\n    return sum\n}"
+      "content": "// A function returns️🔥\nfunction twoSum(a: number, b: number): number {\n    return a + b\n}"
     }
   },
   {
     "completions": [
       "function bubbleSort(array: number[]): number[] {"
     ],
-    "elapsed": 971,
-    "timestamp": "1694445067147",
+    "elapsed": 1060,
+    "timestamp": "1694449658440",
     "sample": {
       "context": [],
-      "fileName": "LineAfterComment.ts",
+      "fileName": "LineAfterCompletedComment.ts",
       "languageId": "typescript",
       "content": "// Sort an array using bubble sort\n️🔥"
     }
   },
   {
     "completions": [
+      "function twoSum(a: number, b: number): number {"
+    ],
+    "elapsed": 887,
+    "timestamp": "1694449658440",
+    "sample": {
+      "context": [],
+      "fileName": "LineAfterIncompleteComment.ts",
+      "languageId": "typescript",
+      "content": "// A function to calculate the sum of two numbers\nfunction twoSum(a: number, b: number): number {\n    const sum = a + b\n    return sum\n}\n\n// A function to\n️🔥\n\n// A function to get the min of two numbers\nfunction minNum(a: number, b: number): number {\n    const min = Math.min(a, b)\n    return min\n}"
+    }
+  },
+  {
+    "completions": [
+      "function myFunction() {"
+    ],
+    "elapsed": 732,
+    "timestamp": "1694449658440",
+    "sample": {
+      "context": [],
+      "fileName": "LineAfterIncompleteCommentInEmptyDocs.ts",
+      "languageId": "typescript",
+      "content": "// A function\n️🔥"
+    }
+  },
+  {
+    "completions": [
       "    return window.location.host === 'localhost';"
     ],
-    "elapsed": 932,
-    "timestamp": "1694445067147",
+    "elapsed": 622,
+    "timestamp": "1694449658440",
     "sample": {
       "context": [],
       "fileName": "isLocalhost.ts",
@@ -121,10 +150,10 @@
   },
   {
     "completions": [
-      "     * Wether to include the full source file contents in the response"
+      "     * Wether to include documentation comments in the completion results."
     ],
-    "elapsed": 763,
-    "timestamp": "1694445067147",
+    "elapsed": 792,
+    "timestamp": "1694449658440",
     "sample": {
       "context": [],
       "fileName": "interface.ts",
@@ -134,12 +163,12 @@
   },
   {
     "completions": [
+      "    return text.toLowerCase().replace(/[^a-z0-9-]/g, '-');",
       "    return text.toLowerCase().replace(/[^\\w-]+/g, '')",
-      "    return text.toLowerCase().replace(/[^\\w-]+/g, '');",
-      "    return text.toLowerCase().replace(/[^a-z0-9-]/g, '-');"
+      "    return text.toLowerCase().replace(/[^\\w\\s-]/g, '');"
     ],
-    "elapsed": 1369,
-    "timestamp": "1694445067147",
+    "elapsed": 1414,
+    "timestamp": "1694449658440",
     "sample": {
       "context": [
         {
@@ -166,12 +195,12 @@
   },
   {
     "completions": [
-      "    lines := []string{\"hello\", \"world\"}\n\tresponseBody := linesToResponse(lines)\n\n\tclient := getMockClient(responseBody)\n\n\tvar completions []string\n\terr := client.Stream(context.Background(), types.Python, types.CompletionRequestParameters{}, func(event types.CompletionEvent) {\n\t\tcompletions = append(completions, event.Completion)\n\t})\n\n\trequire.NoError(t, err)\n\tassert.Equal(t, lines, completions)\n}",
-      "    ctx := context.Background()\n\tlines := []string{\"Hello\", \"World\"}\n\tresponseBody := linesToResponse(lines)\n\n\tclient := getMockClient(responseBody)\n\tvar completions []string\n\terr := client.Stream(ctx, types.CompletionsFeatureAnthropic, types.CompletionRequestParameters{}, func(event types.CompletionEvent) {\n\t\tcompletions = append(completions, event.Completion)\n\t})\n\n\trequire.NoError(t, err)\n\tassert.Equal(t, lines, completions)\n}",
-      "    responseBody := linesToResponse([]string{\"Hello\", \"World\"})\n\n\tclient := getMockClient(responseBody)\n\n\tvar completions []string\n\terr := client.Stream(context.Background(), types.Python, types.CompletionRequestParameters{}, func(event types.CompletionEvent) {\n\t\tcompletions = append(completions, event.Completion)\n\t})\n\n\trequire.NoError(t, err)\n\tassert.Equal(t, []string{\"Hello\", \"World\"}, completions)\n}"
+      "    lines := []string{\"Hello\", \"World\"}\n\tresponseBody := linesToResponse(lines)\n\n\tclient := getMockClient(responseBody)\n\n\tvar received []string\n\terr := client.Stream(context.Background(), types.Python, types.CompletionRequestParameters{}, func(event types.CompletionEvent) {\n\t\treceived = append(received, event.Completion)\n\t})\n\n\trequire.NoError(t, err)\n\tassert.Equal(t, lines, received)\n}",
+      "    lines := []string{\"Hello\", \"World\"}\n\tresponseBody := linesToResponse(lines)\n\n\tclient := getMockClient(responseBody)\n\n\tvar sentLines []string\n\terr := client.Stream(context.Background(), types.Python, types.CompletionRequestParameters{}, func(event types.CompletionEvent) {\n\t\tsentLines = append(sentLines, event.Completion)\n\t})\n\n\trequire.NoError(t, err)\n\tassert.Equal(t, lines, sentLines)\n}",
+      "    responseBody := linesToResponse([]string{\"completion 1\", \"completion 2\"})\n\tclient := getMockClient(responseBody)\n\n\tvar completions []string\n\terr := client.Stream(context.Background(), types.FeatureAnthropic, types.CompletionRequestParameters{}, func(event types.CompletionEvent) {\n\t\tcompletions = append(completions, event.Completion)\n\t})\n\n\trequire.NoError(t, err)\n\tassert.Equal(t, []string{\"completion 1\", \"completion 2\"}, completions)\n}"
     ],
-    "elapsed": 3585,
-    "timestamp": "1694445067147",
+    "elapsed": 6494,
+    "timestamp": "1694449658440",
     "sample": {
       "context": [
         {
@@ -199,10 +228,11 @@
   {
     "completions": [
       "    issues = api_client.get_issues()\n    assert isinstance(issues, list)\n    assert len(issues) > 0",
-      "    issues = api_client.github.get_issues(state=\"open\")\n    assert isinstance(issues, list)\n    assert len(issues) > 0"
+      "    issues = api_client.github.get_issues(state=\"open\")\n    assert len(issues) > 0",
+      "    issues = api_client.github.get_issues(state=\"open\")"
     ],
-    "elapsed": 5647,
-    "timestamp": "1694445067147",
+    "elapsed": 4805,
+    "timestamp": "1694449658440",
     "sample": {
       "context": [
         {
@@ -233,10 +263,10 @@
   },
   {
     "completions": [
-      "            tool_cls.build("
+      "            tool_cls.from_toolkit(self)"
     ],
-    "elapsed": 1394,
-    "timestamp": "1694445067147",
+    "elapsed": 1315,
+    "timestamp": "1694449658440",
     "sample": {
       "context": [
         {
@@ -259,12 +289,12 @@
   },
   {
     "completions": [
-      "                providerConfig,\n                history: new History(),\n                statusBar: noopStatusBar",
+      "                <<<<<<< HEAD\n                config: providerConfig,\n                history: new History(),\n                statusBar: noopStatusBar,",
       "                providerConfig,\n                history: new History(),\n                statusBar: noopStatusBar,",
       "                history: new History(),"
     ],
-    "elapsed": 9369,
-    "timestamp": "1694445067147",
+    "elapsed": 6358,
+    "timestamp": "1694449658440",
     "sample": {
       "context": [
         {
