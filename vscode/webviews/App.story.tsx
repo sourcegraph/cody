@@ -1,11 +1,11 @@
 import { ComponentMeta, ComponentStoryObj } from '@storybook/react'
 
 import { defaultAuthStatus } from '../src/chat/protocol'
+import { OnboardingExperimentArm } from '../src/services/OnboardingExperiment'
 
 import { App } from './App'
 import { VSCodeStoryDecorator } from './storybook/VSCodeStoryDecorator'
 import { VSCodeWrapper } from './utils/VSCodeApi'
-import { OnboardingExperimentArm } from '../src/services/OnboardingExperiment'
 
 const meta: ComponentMeta<typeof App> = {
     title: 'cody/App',

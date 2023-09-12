@@ -19,11 +19,11 @@ import { logDebug } from '../log'
 import { getRerankWithLog } from '../logged-rerank'
 import { repositoryRemoteUrl } from '../repository/repositoryHelpers'
 import { AuthProvider } from '../services/AuthProvider'
+import { OnboardingExperimentArm } from '../services/OnboardingExperiment'
 
 import { ChatViewProviderWebview } from './ChatViewProvider'
 import { GraphContextProvider } from './GraphContextProvider'
 import { ConfigurationSubsetForWebview, LocalEnv } from './protocol'
-import { OnboardingExperimentArm } from '../services/OnboardingExperiment'
 
 export type Config = Pick<
     ConfigurationWithAccessToken,
@@ -294,5 +294,7 @@ export function pickOnboardingExperimentArm(): OnboardingExperimentArm {
     // TODO(dpc): Actually pick, and cache, experiment arm selection.
     // Integrate this cache with user settings, etc. but discourage editing.
     const config = vscode.workspace.getConfiguration()
-    return config.has('cody.todo-internal-onboarding-qa') ? OnboardingExperimentArm.Simplified : OnboardingExperimentArm.Classic
+    return config.has('cody.todo-internal-onboarding-qa')
+        ? OnboardingExperimentArm.Simplified
+        : OnboardingExperimentArm.Classic
 }

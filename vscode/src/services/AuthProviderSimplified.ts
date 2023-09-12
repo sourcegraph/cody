@@ -1,8 +1,9 @@
 import * as vscode from 'vscode'
 
-import { AuthMethod } from './OnboardingExperiment'
-import { AuthProvider } from './AuthProvider'
 import { DOTCOM_URL } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
+
+import { AuthProvider } from './AuthProvider'
+import { AuthMethod } from './OnboardingExperiment'
 
 // An auth provider for simplified onboarding. This is a sidecar to AuthProvider
 // so we can deprecate the experiment later. AuthProviderSimplified only works
@@ -31,12 +32,8 @@ async function openExternalAuthUrl(provider: AuthMethod): Promise<boolean> {
     const site = DOTCOM_URL.toString() // Note, ends with the path /
 
     const genericLoginUrl = `${site}sign-in?returnTo=${postSignUpSurveyUrl}`
-    const gitHubLoginUrl = `${site}.auth/github/login?pc=https%3A%2F%2Fgithub.com%2F%3A%3Ae917b2b7fa9040e1edd4&redirect=${
-        postSignUpSurveyUrl
-    }`
-    const gitLabLoginUrl = `${site}.auth/gitlab/login?pc=https%3A%2F%2Fgitlab.com%2F%3A%3Ab45ecb474e92c069567822400cf73db6e39917635bf682f062c57aca68a1e41c&redirect=${
-        postSignUpSurveyUrl
-    }`
+    const gitHubLoginUrl = `${site}.auth/github/login?pc=https%3A%2F%2Fgithub.com%2F%3A%3Ae917b2b7fa9040e1edd4&redirect=${postSignUpSurveyUrl}`
+    const gitLabLoginUrl = `${site}.auth/gitlab/login?pc=https%3A%2F%2Fgitlab.com%2F%3A%3Ab45ecb474e92c069567822400cf73db6e39917635bf682f062c57aca68a1e41c&redirect=${postSignUpSurveyUrl}`
     const googleLoginUrl = `${site}.auth/openidconnect/login?pc=google&redirect=${postSignUpSurveyUrl}`
 
     let uriSpec
