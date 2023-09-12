@@ -1,3 +1,5 @@
+import { URI } from 'vscode-uri'
+
 import { CodebaseContext } from '../../codebase-context'
 import { ContextMessage } from '../../codebase-context/messages'
 import { ActiveTextEditorSelection, Editor } from '../../editor'
@@ -135,18 +137,8 @@ export class CustomPrompt implements Recipe {
 
         // Context for unit tests requests
         if (isUnitTestRequest && contextMessages.length === 0) {
-            if (workspaceRootUri) {
-                const rootFileNames = await getDirectoryFileListContext(workspaceRootUri, isUnitTestRequest)
-                contextMessages.push(...rootFileNames)
-            }
-            // Add package.json content only if files matches the ts/js extension regex
-            if (selection?.fileName && getFileExtension(selection?.fileName).match(/ts|js/)) {
-                const packageJson = await getPackageJsonContext(selection?.fileName)
-                contextMessages.push(...packageJson)
-            }
-            // Try adding import statements from current file as context
             if (selection?.fileName) {
-                const importsContext = await getCurrentFileImportsContext()
+                const importsContext = await this.getUnitTestContextMessages(selection, workspaceRootUri)
                 contextMessages.push(...importsContext)
             }
         }
@@ -164,5 +156,29 @@ export class CustomPrompt implements Recipe {
         // Return sliced results
         const maxResults = Math.floor((NUM_CODE_RESULTS + NUM_TEXT_RESULTS) / 2) * 2
         return contextMessages.slice(-maxResults * 2)
+    }
+
+    private async getUnitTestContextMessages(
+        selection: ActiveTextEditorSelection,
+        workspaceRootUri?: URI | null
+    ): Promise<ContextMessage[]> {
+        const contextMessages: ContextMessage[] = []
+
+        if (workspaceRootUri) {
+            const rootFileNames = await getDirectoryFileListContext(workspaceRootUri, true)
+            contextMessages.push(...rootFileNames)
+        }
+        // Add package.json content only if files matches the ts/js extension regex
+        if (selection?.fileName && getFileExtension(selection?.fileName).match(/ts|js/)) {
+            const packageJson = await getPackageJsonContext(selection?.fileName)
+            contextMessages.push(...packageJson)
+        }
+        // Try adding import statements from current file as context
+        if (selection?.fileName) {
+            const importsContext = await getCurrentFileImportsContext()
+            contextMessages.push(...importsContext)
+        }
+
+        return contextMessages
     }
 }

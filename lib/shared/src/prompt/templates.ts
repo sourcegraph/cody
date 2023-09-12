@@ -124,12 +124,12 @@ function getExtension(filePath: string): string {
     return path.extname(filePath).slice(1)
 }
 
-const SELECTED_CODE_CONTEXT_TEMPLATE = `"Here is my selected code from a {languageName} file \`{filePath}\`:
+const SELECTED_CODE_CONTEXT_TEMPLATE = `"My selected {languageName} code from file \`{filePath}\`:
 <selected>
 {code}
 </selected>`
 
-const SELECTED_CODE_CONTEXT_TEMPLATE_WITH_REPO = `"Here is my selected code from a {languageName} file \`{filePath}\` in repository \`{repoName}\`:
+const SELECTED_CODE_CONTEXT_TEMPLATE_WITH_REPO = `"My selected {languageName} code from file \`{filePath}\` in \`{repoName}\` repository:
 <selected>
 {code}
 </selected>`
@@ -147,7 +147,7 @@ export function populateCurrentSelectedCodeContextTemplate(code: string, filePat
         .replace('{languageName}', languageName)
 }
 
-const CURRENT_FILE_CONTEXT_TEMPLATE = `This is the code from file path \`{filePath}\` with my selected code in <selected> tags:
+const CURRENT_FILE_CONTEXT_TEMPLATE = `My selected code from file path \`{filePath}\` in <selected> tags:
 {precedingText}<selected>{selectedText}</selected>{followingText}`
 
 export function populateCurrentFileFromEditorSelectionContextTemplate(
