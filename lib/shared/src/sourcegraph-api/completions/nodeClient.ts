@@ -2,6 +2,7 @@ import http from 'http'
 import https from 'https'
 
 import { isError } from '../../utils'
+import { customUserAgent } from '../graphql/client'
 import { toPartialUtf8String } from '../utils'
 
 import { SourcegraphCompletionsClient } from './client'
@@ -24,6 +25,7 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                 headers: {
                     'Content-Type': 'application/json',
                     ...(this.config.accessToken ? { Authorization: `token ${this.config.accessToken}` } : null),
+                    ...(customUserAgent ? { 'User-Agent': customUserAgent } : null),
                     ...this.config.customHeaders,
                 },
                 // So we can send requests to the Sourcegraph local development instance, which has an incompatible cert.
