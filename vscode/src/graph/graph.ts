@@ -525,12 +525,17 @@ const hoverToStrings = (h: vscode.Hover[]): string[] =>
 
 const hoverContextFromResolvedHoverText = (t: ResolvedHoverText): HoverContext[] =>
     [
-        hoverContextFromElement(t.definition),
-        hoverContextFromElement(t.typeDefinition, t.symbolName),
-        ...(t.implementations?.map(e => hoverContextFromElement(e, t.typeDefinition?.symbolName)) ?? []),
+        hoverContextFromElement(t.definition, 'definition'),
+        hoverContextFromElement(t.typeDefinition, 'typeDefinition', t.symbolName),
+        ...(t.implementations?.map(e => hoverContextFromElement(e, 'implementation', t.typeDefinition?.symbolName)) ??
+            []),
     ].filter(isDefined)
 
-const hoverContextFromElement = (e?: ResolvedHoverElement, sourceSymbolName?: string): HoverContext | undefined => {
+const hoverContextFromElement = (
+    e: ResolvedHoverElement | undefined,
+    type: 'definition' | 'typeDefinition' | 'implementation',
+    sourceSymbolName?: string
+): HoverContext | undefined => {
     if (e === undefined) {
         return undefined
     }
@@ -543,7 +548,7 @@ const hoverContextFromElement = (e?: ResolvedHoverElement, sourceSymbolName?: st
     return {
         symbolName: e.symbolName,
         sourceSymbolName,
-        type: 'definition',
+        type,
         content,
         uri: e.location.uri.toString(),
         range: {
