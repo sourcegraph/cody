@@ -239,11 +239,7 @@ export class GraphSectionObserver implements vscode.Disposable, GraphContextFetc
     /**
      * A pretty way to print the current state of all cached sections
      */
-    public debugPrint(
-        selectedDocument?: vscode.TextDocument,
-        selections?: readonly vscode.Selection[],
-        showLastVisited = true
-    ): string {
+    public debugPrint(selectedDocument?: vscode.TextDocument, selections?: readonly vscode.Selection[]): string {
         const lines: string[] = []
         // eslint-disable-next-line ban/ban
         this.activeDocuments.forEach(document => {
