@@ -149,9 +149,9 @@ export class SectionObserver implements vscode.Disposable, GraphContextFetcher {
             )
         ).filter(isDefined)
 
-        // Allocate up to 50% of the maxChars budget to inlining previous section unless the current
+        // Allocate up to 40% of the maxChars budget to inlining previous section unless the current
         // section is not hydrated with graph context.
-        const maxCharsForPreviousSections = sectionGraphContext ? maxChars / 2 : maxChars
+        const maxCharsForPreviousSections = sectionGraphContext ? maxChars * 0.4 : maxChars
         for (const historyContext of sectionHistory) {
             if (usedContextChars + historyContext.content.length > maxCharsForPreviousSections) {
                 // We use continue here to test potentially smaller context snippets that might
