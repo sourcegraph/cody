@@ -174,7 +174,7 @@ export class GraphSectionObserver implements vscode.Disposable, GraphContextFetc
 
         if (sectionGraphContext) {
             const preciseContexts = hoverContextsToSnippets(
-                sectionGraphContext.filter(context => !overlapsContextRange(URI.file(context.uri), context.range))
+                sectionGraphContext.filter(context => !overlapsContextRange(URI.parse(context.uri), context.range))
             )
             for (const preciseContext of preciseContexts) {
                 if (usedContextChars + preciseContext.content.length > maxChars) {
