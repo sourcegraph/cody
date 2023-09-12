@@ -19,6 +19,12 @@ export const sidebarSignin = async (page: Page, sidebar: Frame): Promise<void> =
     await page.getByRole('button', { name: 'Chat Section' }).hover()
 }
 
+export const openFile = async (page: Page, file: string): Promise<void> => {
+    // Click command palette
+    // Find open file command
+    // Click
+}
+
 // Selector for the Explorer button in the sidebar that would match on Mac and Linux
 const sidbarExplorerRole = { name: /Explorer.*/ }
 export const sidebarExplorer = (page: Page): Locator => page.getByRole('tab', sidbarExplorerRole)

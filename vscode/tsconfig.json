@@ -10,8 +10,9 @@
   "include": [
     "src",
     "test/fixtures",
-    "playwright.config.ts",
     "test/e2e",
+    "test/completions-2",
+    "test/completions-2/light.json",
     "webviews",
     "vite.config.ts",
     "package.json",
