@@ -8,7 +8,8 @@ import { RateLimitError } from '@sourcegraph/cody-shared/src/sourcegraph-api/err
 import { logDebug } from '../log'
 import { CodyStatusBar } from '../services/StatusBar'
 
-import { getContext, GetContextOptions, GetContextResult, GraphContextFetcher } from './context/context'
+import { getContext, GetContextOptions, GetContextResult } from './context/context'
+import { GraphContextFetcher } from './context/context-graph'
 import { DocumentHistory } from './context/history'
 import { DocumentContext, getCurrentDocContext } from './get-current-doc-context'
 import {

@@ -6,7 +6,8 @@ import { isAbortError } from '@sourcegraph/cody-shared/src/sourcegraph-api/error
 
 import { logError } from '../log'
 
-import { GetContextOptions, GetContextResult, GraphContextFetcher } from './context/context'
+import { GetContextOptions, GetContextResult } from './context/context'
+import { GraphContextFetcher } from './context/context-graph'
 import { DocumentHistory } from './context/history'
 import { DocumentContext } from './get-current-doc-context'
 import * as CompletionLogger from './logger'
