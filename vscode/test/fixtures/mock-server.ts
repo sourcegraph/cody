@@ -111,6 +111,7 @@ export async function logTestingData(data: string): Promise<void> {
         timestamp: new Date().getTime(),
         test_name: currentTestName,
         test_id: currentTestID,
+        test_run_id: currentTestRunID,
         UID: uuid.v4(),
     }
 
@@ -125,8 +126,10 @@ export async function logTestingData(data: string): Promise<void> {
 
 let currentTestName: string
 let currentTestID: string
+let currentTestRunID: string
 
-export function sendTestInfo(testName: string, testID: string): void {
+export function sendTestInfo(testName: string, testID: string, testRunID: string): void {
     currentTestName = testName || ''
     currentTestID = testID || ''
+    currentTestRunID = testRunID || ''
 }
