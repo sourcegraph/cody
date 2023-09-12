@@ -69,7 +69,6 @@ export async function getContextFromGraph(options: Options): Promise<GetContextR
 }
 
 function supportedLanguageId(languageId: string): boolean {
-    // allow go and js/ts
     switch (languageId) {
         case 'go':
         case 'javascript':
