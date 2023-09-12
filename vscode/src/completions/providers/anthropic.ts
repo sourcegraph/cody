@@ -149,7 +149,9 @@ export class AnthropicProvider extends Provider {
                     speaker: 'human',
                     text:
                         'symbol' in snippet && snippet.symbol !== ''
-                            ? `Additional documentation for \`${snippet.symbol}\`${formatRelationship(snippet.sourceSymbolAndRelationship)}: ${OPENING_CODE_TAG}${snippet.content}${CLOSING_CODE_TAG}`
+                            ? `Additional documentation for \`${snippet.symbol}\`${formatRelationship(
+                                  snippet.sourceSymbolAndRelationship
+                              )}: ${OPENING_CODE_TAG}${snippet.content}${CLOSING_CODE_TAG}`
                             : `Codebase context from file path '${snippet.fileName}': ${OPENING_CODE_TAG}${snippet.content}${CLOSING_CODE_TAG}`,
                 },
                 {
