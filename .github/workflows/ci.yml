@@ -82,7 +82,7 @@ jobs:
           service_account: ${{ secrets.DATA_TEAM_SA_EMAIL }}
       - uses: google-github-actions/setup-gcloud@v0
       - run: |
-          gcloud config list account --format "value(core.account)" --quiet
+          gcloud pubsub topics publish e2e-testing --project sourcegraph-telligent-testing --message test --verbosity debug
       - run: echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
         shell: bash
         id: pnpm-cache
