@@ -30,5 +30,9 @@ export interface SymbolContextSnippet {
     fileName: string
     symbol: string
     content: string
+    sourceSymbolAndRelationship?: {
+        symbol: string
+        relationship: 'typeDefinition' | 'implementation'
+    }
 }
 export type ContextSnippet = FileContextSnippet | SymbolContextSnippet
