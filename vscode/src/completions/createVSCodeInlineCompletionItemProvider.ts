@@ -42,12 +42,11 @@ export async function createInlineCompletionItemProvider({
 
     const disposables: vscode.Disposable[] = []
 
-    const providerConfig = await createProviderConfig(config, client, featureFlagProvider)
+    const [providerConfig, graphContextFlag] = await Promise.all([
+        createProviderConfig(config, client, featureFlagProvider),
+        featureFlagProvider?.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteGraphContext),
+    ])
     if (providerConfig) {
-        const graphContextFlag = await featureFlagProvider?.evaluateFeatureFlag(
-            FeatureFlag.CodyAutocompleteGraphContext
-        )
-
         const history = new VSCodeDocumentHistory()
         const sectionObserver =
             config.autocompleteExperimentalGraphContext || graphContextFlag
