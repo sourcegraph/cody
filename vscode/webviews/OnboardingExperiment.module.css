@@ -76,3 +76,14 @@ body[data-vscode-theme-kind='vscode-dark'] .terms, body[data-vscode-theme-kind='
 .button img {
     margin-inline-end: 0.5rem;
 }
+
+/* To suppress jsx-eslint/anchor-is-valid. */
+.link-button {
+    background-color: transparent;
+    color: var(--vscode-textLink-foreground);
+    border: none;
+    cursor: pointer;
+    display: inline;
+    margin: 0;
+    padding: 0;
+}

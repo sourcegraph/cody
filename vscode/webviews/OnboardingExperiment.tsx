@@ -74,15 +74,15 @@ export const LoginSimplified: React.FunctionComponent<React.PropsWithoutRef<Logi
             </div>
         </div>
         <p className={styles.terms}>
-            By signing in you&rsquo;re agreeing to Sourcegraph&rsquo;s <a href="https://about.sourcegraph.com/terms/cody-notice">Cody Usage &amp; Privacy Notice</a>
+            By signing in, you agree to our <a href="https://about.sourcegraph.com/terms">Terms of Service</a> and <a href="https://about.sourcegraph.com/terms/privacy">Privacy Policy</a>
         </p>
     </div>
     <div className={styles.otherSignInOptions}>
             Use Sourcegraph Enterprise?
             <br/>
-            <a href="#" onClick={otherSignInClick}>
+            <button type="button" className={styles.linkButton} onClick={otherSignInClick}>
                 Sign In to Enterprise Instance
-            </a>
+            </button>
     </div>
 </div>
 }
