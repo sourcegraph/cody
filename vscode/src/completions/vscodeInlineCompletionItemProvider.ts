@@ -45,7 +45,7 @@ export interface CodyCompletionItemProviderConfig {
 //
 // We don't want to show completions immediately after a user types a character (unless we show the
 // last candidate) to avoid churning the UI too much. Instead, we wait at least
-const MINIMUM_LATENCY_MS = 500
+const MINIMUM_LATENCY_MS = 400
 
 export class InlineCompletionItemProvider implements vscode.InlineCompletionItemProvider {
     private promptChars: number
