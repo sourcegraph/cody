@@ -96,29 +96,25 @@ export class AnthropicProvider extends Provider {
     // NOTE: This revert pull/727 for this prompt branch that causes quality regressions
     // pull/727: https://github.com/sourcegraph/cody/pull/727
     private createInfillPromptPrefix(): { messages: Message[]; prefix: PrefixComponents } {
-        if (this.options.docContext.prevNonEmptyLine.length === 0) {
+        const prefixLines = this.options.docContext.prefix.split('\n')
+        if (prefixLines.length === 0) {
             throw new Error('no prefix lines')
         }
 
         const { head, tail, overlap } = getHeadAndTail(this.options.docContext.prefix)
 
+        // code before the cursor, after removing the code for the infillBlock
+        // Using this instead of head.trimmed to preserve the spacing from prefix so the model can determines the patterns of surrounding code
+        const infillPrefix = this.options.docContext.prefix.replace(tail.trimmed.trim(), '')
         // code after the cursor
         const infillSuffix = this.options.docContext.suffix
-
-        // code before the cursor minus the code inside the infillBlock
-        // This is used to preserve the spacing from prefix so the model can determines the patterns of surrounding code
-        const infillPrefix = this.options.docContext.prefix.replace(tail.trimmed, '')
-
-        // Infill block represents the code we want cody to complete.
-        // Trims when suffix is empty to clean up the code context as there is no code after the cursor
-        // - It signals the model that the current line is incomplete and needs completion
-        // - Without trimming, infillBlock ends with emprty line could be interpreted as complete by the model
-        const infillBlock = `${!infillSuffix.trim() ? tail.trimmed : tail.trimmed.trimEnd()}`
+        // Infill block represents the code we want the model to complete
+        const infillBlock = `${tail.trimmed}`
 
         const prefixMessagesWithInfill: Message[] = [
             {
                 speaker: 'human',
-                text: `You are a code completion AI designed to take the surrounding code and shared context into account in order to predict and suggest high-quality code to complete the code enclosed in ${OPENING_CODE_TAG} tags. You suggest code that follows the same coding styles, formats, patterns, methods, and naming convention detected in surrounding context. Only response with code that works and fits seamlessly with surrounding code if any or use best practice and nothing else.`,
+                text: `You are a code completion AI designed to take the surrounding code and shared context into account in order to predict and suggest high-quality code to complete the code enclosed in ${OPENING_CODE_TAG} tags. You only response with code that works and fits seamlessly with surrounding code if any or use best practice and nothing else.`,
             },
             {
                 speaker: 'assistant',
@@ -126,7 +122,7 @@ export class AnthropicProvider extends Provider {
             },
             {
                 speaker: 'human',
-                text: `Below is the code from file path ${this.options.fileName}. Detect the functionality, style, patterns, and logics in use from code outside ${OPENING_CODE_TAG} XML tags. Then, use what you detect and reuse assetmethods/libraries to complete and enclose complete code only inside ${OPENING_CODE_TAG} XML tags precisely:
+                text: `Below is the code from file path ${this.options.fileName}. Detect the functionality, formats, style, patterns, and logics in use from code outside ${OPENING_CODE_TAG} XML tags. Then, use what you detect and reuse assetmethods/libraries to complete and enclose complete code only inside ${OPENING_CODE_TAG} XML tags precisely:
                 ${infillPrefix}${OPENING_CODE_TAG}${CLOSING_CODE_TAG}${infillSuffix}`,
             },
             {

@@ -94,7 +94,7 @@ export const completionsDataset: Sample[] = [
 
             function maxNum(a: number, b: number): number {
                 const max = Math.max(a, b)
-                console.log(min)
+                console.log(max)
                 return max
             }`,
     },
