@@ -1,7 +1,7 @@
 import * as vscode from 'vscode'
 
 import { Configuration } from '@sourcegraph/cody-shared/src/configuration'
-import { FeatureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
+import { FeatureFlag, FeatureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
 
 import { ContextProvider } from '../chat/ContextProvider'
 import { logDebug } from '../log'
@@ -44,10 +44,15 @@ export async function createInlineCompletionItemProvider({
 
     const providerConfig = await createProviderConfig(config, client, featureFlagProvider)
     if (providerConfig) {
+        const graphContextFlag = await featureFlagProvider?.evaluateFeatureFlag(
+            FeatureFlag.CodyAutocompleteGraphContext
+        )
+
         const history = new VSCodeDocumentHistory()
-        const sectionObserver = config.autocompleteExperimentalGraphContext
-            ? GraphSectionObserver.createInstance()
-            : undefined
+        const sectionObserver =
+            config.autocompleteExperimentalGraphContext || graphContextFlag
+                ? GraphSectionObserver.createInstance()
+                : undefined
 
         const completionsProvider = new InlineCompletionItemProvider({
             providerConfig,

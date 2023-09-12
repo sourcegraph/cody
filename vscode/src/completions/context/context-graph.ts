@@ -23,6 +23,10 @@ interface Options {
 }
 
 export async function getContextFromGraph(options: Options): Promise<GetContextResult | undefined> {
+    if (!supportedLanguageId(options.document.languageId)) {
+        return undefined
+    }
+
     const start = performance.now()
     const graphMatches = options.graphContextFetcher
         ? await options.graphContextFetcher.getContextAtPosition(
@@ -61,5 +65,19 @@ export async function getContextFromGraph(options: Options): Promise<GetContextR
             graph: includedGraphMatches,
             duration: performance.now() - start,
         },
+    }
+}
+
+function supportedLanguageId(languageId: string): boolean {
+    // allow go and js/ts
+    switch (languageId) {
+        case 'go':
+        case 'javascript':
+        case 'javascriptreact':
+        case 'typescript':
+        case 'typescriptreact':
+            return true
+        default:
+            return false
     }
 }
