@@ -535,15 +535,15 @@ const hoverContextFromElement = (e?: ResolvedHoverElement): HoverContext | undef
         return undefined
     }
 
-    const definitionHoverContent = hoverToStrings(e.hover)
-    if (definitionHoverContent.length === 0) {
+    const content = hoverToStrings(e.hover)
+    if (content.length === 0) {
         return undefined
     }
 
     return {
         symbolName: e.symbolName,
         type: 'definition',
-        content: definitionHoverContent,
+        content,
         uri: e.location.uri.toString(),
         range: {
             startLine: e.location.range.start.line,
