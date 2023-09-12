@@ -124,12 +124,32 @@ export class AnthropicProvider extends Provider {
         let remainingChars = this.promptChars - this.emptyPromptLength()
 
         for (const snippet of snippets) {
+            const formatRelationship = (
+                relationship:
+                    | {
+                          symbol: string
+                          relationship: 'typeDefinition' | 'implementation'
+                      }
+                    | undefined
+            ): string => {
+                if (relationship) {
+                    switch (relationship.relationship) {
+                        case 'typeDefinition':
+                            return ` (the type of \`${relationship.symbol}\`)`
+                        case 'implementation':
+                            return ` (an implementation of \`${relationship.symbol}\`)`
+                    }
+                }
+
+                return ''
+            }
+
             const snippetMessages: Message[] = [
                 {
                     speaker: 'human',
                     text:
                         'symbol' in snippet && snippet.symbol !== ''
-                            ? `Additional documentation for \`${snippet.symbol}\`: ${OPENING_CODE_TAG}${snippet.content}${CLOSING_CODE_TAG}`
+                            ? `Additional documentation for \`${snippet.symbol}\`${formatRelationship(snippet.sourceSymbolAndRelationship)}: ${OPENING_CODE_TAG}${snippet.content}${CLOSING_CODE_TAG}`
                             : `Codebase context from file path '${snippet.fileName}': ${OPENING_CODE_TAG}${snippet.content}${CLOSING_CODE_TAG}`,
                 },
                 {
