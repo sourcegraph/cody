@@ -6,6 +6,7 @@ import { ContextSnippet } from '../types'
 
 import { bestJaccardMatch, JaccardMatch } from './bestJaccardMatch'
 import { DocumentHistory } from './history'
+import { baseLanguageId } from './utils'
 
 interface JaccardMatchWithFilename extends JaccardMatch {
     fileName: string
@@ -70,7 +71,7 @@ async function getRelevantFiles(
     }
 
     function addDocument(document: vscode.TextDocument): void {
-        if (document.uri === currentDocument.uri) {
+        if (document.uri.toString() === currentDocument.uri.toString()) {
             // omit current file
             return
         }
@@ -80,9 +81,7 @@ async function getRelevantFiles(
             return
         }
 
-        if (document.languageId !== curLang) {
-            // TODO(beyang): handle JavaScript <-> TypeScript and verify this works for C header files
-            // omit files of other languages
+        if (baseLanguageId(document.languageId) !== baseLanguageId(curLang)) {
             return
         }
 
