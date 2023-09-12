@@ -25,24 +25,15 @@
 }
 
 .section.auth-method-screen {
-    border: 1px solid #454545;
+    background: var(--vscode-sideBar-background);
+    color: var(--vscode-sideBar-foreground);
+    border: 1px solid var(--vscode-widget-border);
+    box-shadow: 0 2px 16px 0 var(--vscode-widget-shadow);
     border-radius: 4px;
-    padding: 1rem;
-    box-shadow: 0px 2px 16px 0px #0000005C;
-}
-
-body[data-vscode-theme-kind='vscode-dark'] .auth-method-screen {
-    background-color: #303031;
-    color: white;
-    font-weight: 500;
 }
 
 .auth-method-screen .button {
     font-weight: 500;
-}
-
-body[data-vscode-theme-kind='vscode-dark'] .terms, body[data-vscode-theme-kind='vscode-light'] .terms {
-    color: #a0a0a0;
 }
 
 .sections-container {
@@ -57,6 +48,7 @@ body[data-vscode-theme-kind='vscode-dark'] .terms, body[data-vscode-theme-kind='
 }
 
 .other-sign-in-options {
+    color: var(--vscode-sideBar-foreground);
     flex: 0 0 auto;
     margin-bottom: 0.5rem;
     width: 100%;
@@ -71,6 +63,7 @@ body[data-vscode-theme-kind='vscode-dark'] .terms, body[data-vscode-theme-kind='
 
 .terms {
     font-size: 90%;
+    opacity: 70%;
 }
 
 .button img {
