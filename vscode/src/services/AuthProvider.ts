@@ -369,6 +369,18 @@ export class AuthProvider {
         }
         this.loadEndpointHistory()
     }
+
+    // Notifies the AuthProvider that the simplified onboarding experiment is
+    // kicking off an authorization flow. That flow ends when (if) this
+    // AuthProvider gets a call to tokenCallbackHandler.
+    public authProviderSimplifiedWillAttemptAuth(): void {
+        // FIXME: This is equivalent to what redirectToEndpointLogin does. But
+        // the existing design is weak--it mixes other authStatus with this
+        // endpoint and races with everything else this class does.
+
+        // Simplified onboarding only supports dotcom.
+        this.authStatus.endpoint = DOTCOM_URL.toString()
+    }
 }
 
 export function isNetworkError(error: string): boolean {
