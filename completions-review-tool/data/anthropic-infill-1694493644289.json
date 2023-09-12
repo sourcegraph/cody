@@ -1,12 +1,10 @@
 [
   {
     "completions": [
-      "    const logger = signale.scope('my-logger')\n    logger.info(message)",
-      "    const logger = signale.scope('logger')\n    logger.info(message)",
-      "    const logger = signale.scope('logger')"
+      "    const logger = signale.scope('logger')\n    logger.info(message)"
     ],
-    "elapsed": 1241,
-    "timestamp": "1693472909242",
+    "elapsed": 1411,
+    "timestamp": "1694493644289",
     "sample": {
       "context": [],
       "fileName": "logger.ts",
@@ -16,12 +14,12 @@
   },
   {
     "completions": [
-      "    const date = new Date()\n    const filename = path.join(__dirname, 'date.txt')\n    require('fs').writeFileSync(filename, date.toDateString())",
-      "    const date = new Date()\n    const filePath = path.join(__dirname, 'date.txt')\n    require('fs').writeFileSync(filePath, date.toDateString())",
-      "    const dateString = new Date().toDateString()"
+      "    const date = new Date();\n    const filename = path.join(__dirname, 'date.txt');\n\n    fs.writeFile(filename, date.toDateString(), err => {\n        if (err) {\n            console.error(err);\n            return;\n        }\n        console.log('Date written to', filename);\n    });",
+      "    const date = new Date();\n    const fileName = path.join(__dirname, 'date.txt');\n\n    fs.writeFileSync(fileName, date.toISOString(), 'utf8');",
+      "    const date = new Date();\n    const filename = path.join(__dirname, 'date.txt');\n    require('fs').writeFileSync(filename, date.toUTCString());"
     ],
-    "elapsed": 2568,
-    "timestamp": "1693472909242",
+    "elapsed": 3471,
+    "timestamp": "1694493644289",
     "sample": {
       "context": [],
       "fileName": "writer.ts",
@@ -31,11 +29,12 @@
   },
   {
     "completions": [
-      "        const lineNumber = typeof position === 'number' ? position : position.line;",
-      "        let lineNumber = typeof position === 'number' ? position : position.line"
+      "        const lineNumber = typeof position === 'number' ? position : position.line\n        return new vscode.TextLine(this.lines[lineNumber], lineNumber)",
+      "        const lineNumber = typeof position === 'number' ? position : position.line\n        return new vscode.TextLine(this, lineNumber, this.lines[lineNumber - 1])",
+      "        const lineNumber = typeof position === 'number' ? position : position.line;\n        return new vscode.TextLine(this, lineNumber, this.lines[lineNumber - 1]);"
     ],
-    "elapsed": 2172,
-    "timestamp": "1693472909242",
+    "elapsed": 4604,
+    "timestamp": "1694493644289",
     "sample": {
       "context": [],
       "fileName": "text-document.ts",
@@ -45,12 +44,12 @@
   },
   {
     "completions": [
-      "        import { execFileSync } from 'child_process';\n        try {\n            return execFileSync('uname', ['-s']).toString().trim();\n        } catch (err) {\n            console.error('Error getting OS name', err);\n            return null;\n        }\n    } else {\n        return window.navigator.platform;\n    }",
-      "        try {\n            return execFileSync('uname', ['-s']).toString().trim();\n        } catch (err) {\n            return null;\n        }\n    } else {\n        return window.navigator.platform;\n    }",
-      "        try {"
+      "        try {\n                return require('os').platform();\n            } catch (err) {\n                return null;\n            }\n        } else {\n            return window.navigator.platform;\n        }",
+      "        try {\n                return execFileSync('uname', ['-s']).toString().trim()\n            } catch (err) {\n                return null\n            }\n        } else {\n            return window.navigator.platform\n        }",
+      "        try {\n                return execFileSync('uname', ['-s']).toString().trim();\n            } catch (err) {\n                return null;\n            }\n        } else {\n            return window.navigator.platform;\n        }"
     ],
-    "elapsed": 3167,
-    "timestamp": "1693472909242",
+    "elapsed": 1539,
+    "timestamp": "1694493644289",
     "sample": {
       "context": [],
       "fileName": "getOs.ts",
@@ -62,8 +61,8 @@
     "completions": [
       "    return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;"
     ],
-    "elapsed": 1776,
-    "timestamp": "1693472909242",
+    "elapsed": 920,
+    "timestamp": "1694493644289",
     "sample": {
       "context": [],
       "fileName": "isDarkColorScheme.ts",
@@ -73,10 +72,75 @@
   },
   {
     "completions": [
+      "    const min = Math.min(a, b);"
+    ],
+    "elapsed": 860,
+    "timestamp": "1694493644289",
+    "sample": {
+      "context": [],
+      "fileName": "twoNums.ts",
+      "languageId": "typescript",
+      "content": "function twoSum(a: number, b: number): number {\n    const sum = a + b\n    console.log(sum)\n    return sum\n}\n\nfunction minNum(a: number, b: number): number {\n    ️🔥\n    console.log(min)\n    return min\n}\n\nfunction maxNum(a: number, b: number): number {\n    const max = Math.max(a, b)\n    console.log(min)\n    return max\n}"
+    }
+  },
+  {
+    "completions": [
+      "// A function returns the sum of two numbers"
+    ],
+    "elapsed": 2404,
+    "timestamp": "1694493644289",
+    "sample": {
+      "context": [],
+      "fileName": "comment.ts",
+      "languageId": "typescript",
+      "content": "// A function returns️🔥\nfunction twoSum(a: number, b: number): number {\n    return a + b\n}"
+    }
+  },
+  {
+    "completions": [
+      "const numbers = [5, 3, 6, 2, 10];"
+    ],
+    "elapsed": 724,
+    "timestamp": "1694493644289",
+    "sample": {
+      "context": [],
+      "fileName": "LineAfterCompletedComment.ts",
+      "languageId": "typescript",
+      "content": "// Sort an array using bubble sort\n️🔥"
+    }
+  },
+  {
+    "completions": [
+      " calculate the difference of two numbers"
+    ],
+    "elapsed": 1236,
+    "timestamp": "1694493644289",
+    "sample": {
+      "context": [],
+      "fileName": "LineAfterIncompleteComment.ts",
+      "languageId": "typescript",
+      "content": "// A function to calculate the sum of two numbers\nfunction twoSum(a: number, b: number): number {\n    const sum = a + b\n    return sum\n}\n\n// A function to\n️🔥\n\n// A function to get the min of two numbers\nfunction minNum(a: number, b: number): number {\n    const min = Math.min(a, b)\n    return min\n}"
+    }
+  },
+  {
+    "completions": [
+      "function myFunction() {"
+    ],
+    "elapsed": 716,
+    "timestamp": "1694493644289",
+    "sample": {
+      "context": [],
+      "fileName": "LineAfterIncompleteCommentInEmptyDocs.ts",
+      "languageId": "typescript",
+      "content": "// A function\n️🔥"
+    }
+  },
+  {
+    "completions": [
       "    return window.location.host === 'localhost' || window.location.host === '127.0.0.1';"
     ],
-    "elapsed": 1056,
-    "timestamp": "1693472909242",
+    "elapsed": 819,
+    "timestamp": "1694493644289",
     "sample": {
       "context": [],
       "fileName": "isLocalhost.ts",
@@ -86,10 +150,10 @@
   },
   {
     "completions": [
-      "     * Wether to cache the completion result"
+      "     * Wether to trim whitespace from the completion results"
     ],
-    "elapsed": 1025,
-    "timestamp": "1693472909242",
+    "elapsed": 3071,
+    "timestamp": "1694493644289",
     "sample": {
       "context": [],
       "fileName": "interface.ts",
@@ -99,11 +163,12 @@
   },
   {
     "completions": [
-      "    return text.toLowerCase().replace(/[^a-z0-9-]/g, '');",
-      "    return text.toLowerCase().replace(/[^a-z0-9-]/g, '-');"
+      "    return text.toLowerCase().replace(/[^\\w-]+/g, '')",
+      "    return text.toLowerCase().replace(/[^\\w-]/g, '');",
+      "    return text.toLowerCase().replace(/[^\\w-]+/g, '');"
     ],
-    "elapsed": 2550,
-    "timestamp": "1693472909242",
+    "elapsed": 1540,
+    "timestamp": "1694493644289",
     "sample": {
       "context": [
         {
@@ -130,12 +195,12 @@
   },
   {
     "completions": [
-      "    responseLines := []string{\"Completion 1\", \"Completion 2\"}\n\tresponseBody := linesToResponse(responseLines)\n\n\tclient :=",
-      "    gold := autogold.New()\n\tdefer gold.Restore()\n\n\tlines",
-      "    responseBody := linesToResponse([]string{\"completion1\", \"completion2\"})\n\tclient := getMockClient(responseBody)"
+      "    var mockAnthropicResponseLines = []string{\"event: completion\", \"data: suggestion1\"}\n\n    mockClient := getMockClient(linesToResponse(mockAnthropicResponseLines))\n\n    var receivedEvents []types.CompletionResponse\n\n    err := mockClient.Stream(context.Background(), types.CompletionsFeatureChat, types.CompletionRequestParameters{}, func(event types.CompletionResponse) error {\n        receivedEvents = append(receivedEvents, event)\n        return nil\n    })\n\n    require.NoError(t, err)\n    require.Equal(t, 2, len(receivedEvents))\n    assert.Equal(t, \"completion\", receivedEvents[0].StopReason)\n    assert.Equal(t, \"suggestion1\", receivedEvents[0].Completion)\n}",
+      "    var mockAnthropicResponseLines = []string{`{\"Completion\": \"hello\"}`, `{\"StopReason\": \"Done\"}`}\n\n    mockClient := getMockClient(linesToResponse(mockAnthropicResponseLines))\n\n    var receivedResponses []types.CompletionResponse\n    err := mockClient.Stream(context.Background(), types.CompletionsFeatureChat, types.CompletionRequestParameters{}, func(event types.CompletionResponse) error {\n        receivedResponses = append(receivedResponses, event)\n        return nil\n    })\n\n    require.NoError(t, err)\n    assert.Equal(t, 2, len(receivedResponses))\n    assert.Equal(t, \"hello\", receivedResponses[0].Completion)\n    assert.Equal(t, types.StopReasonDone, receivedResponses[1].StopReason)\n}",
+      "    var mockAnthropicResponseLines = []string{`{\"Completion\": \"func\", \"StopReason\": \"\"}`, `{\"Completion\": \"(\", \"StopReason\": \"\"}`}\n\n    mockClient := getMockClient(linesToResponse(mockAnthropicResponseLines))\n\n    var completions []types.CompletionResponse\n    err := mockClient.Stream(context.Background(), types.CompletionsFeatureChat, types.CompletionRequestParameters{}, func(event types.CompletionResponse) error {\n        completions = append(completions, event)\n        return nil\n    })\n\n    require.NoError(t, err)\n    assert.Equal(t, 2, len(completions))\n    assert.Equal(t, \"func\", completions[0].Completion)\n    assert.Equal(t, \"(\", completions[1].Completion)\n}"
     ],
-    "elapsed": 2858,
-    "timestamp": "1693472909242",
+    "elapsed": 4303,
+    "timestamp": "1694493644289",
     "sample": {
       "context": [
         {
@@ -162,12 +227,11 @@
   },
   {
     "completions": [
-      "    issues = api_client.get_issues(state=\"open\")\n    assert len(issues) > 0",
-      "    issues = api_client.github.get_issues(state=\"open\", repo=api_client.github_repository)\n    assert len(issues) > 0",
-      "    issues = api_client.get_open_issues()"
+      "    issues = api_client.get_issues(state=\"open\")\n    assert isinstance(issues, list)\n    assert len(issues) > 0",
+      "    issues = api_client.get_issues(state=\"open\")\n    assert issues"
     ],
-    "elapsed": 1891,
-    "timestamp": "1693472909242",
+    "elapsed": 1540,
+    "timestamp": "1694493644289",
     "sample": {
       "context": [
         {
@@ -193,15 +257,15 @@
       ],
       "fileName": "libs/langchain/tests/integration_tests/utilities/test_github.py",
       "languageId": "python",
-      "content": "\"\"\"Integration test for Github Wrapper.\"\"\"\nimport pytest\n\nfrom langchain.utilities.github import GitHubAPIWrapper\n\n# Make sure you have set the following env variables:\n# GITHUB_REPOSITORY\n# GITHUB_BRANCH\n# GITHUB_APP_ID\n# GITHUB_PRIVATE_KEY\n\n\n@pytest.fixture\ndef api_client() -> GitHubAPIWrapper:\n    return GitHubAPIWrapper()\n\n\ndef test_get_open_issues(api_client: GitHubAPIWrapper) -> None:\n    ️🔥"
+      "content": "\"\"\"Integration test for Github Wrapper.\"\"\"\nimport pytest\n\nfrom langchain.utilities.github import GitHubAPIWrapper\n\n# Make sure you have set the following env variables:\n# GITHUB_REPOSITORY\n# GITHUB_BRANCH\n# GITHUB_APP_ID\n# GITHUB_PRIVATE_KEY\n\n@pytest.fixture\ndef api_client() -> GitHubAPIWrapper:\n    return GitHubAPIWrapper()\n\ndef test_get_open_issues(api_client: GitHubAPIWrapper) -> None:\n    ️🔥"
     }
   },
   {
     "completions": [
       "            tool_cls.create("
     ],
-    "elapsed": 2238,
-    "timestamp": "1693472909242",
+    "elapsed": 1265,
+    "timestamp": "1694493644289",
     "sample": {
       "context": [
         {
@@ -219,17 +283,16 @@
       ],
       "fileName": "libs/langchain/langchain/agents/agent_toolkits/playwright/toolkit.py",
       "languageId": "python",
-      "content": "\"\"\"Playwright web browser toolkit.\"\"\"\nfrom __future__ import annotations\n\nfrom typing import TYPE_CHECKING, List, Optional, Type, cast\n\nfrom pydantic import Extra, root_validator\n\nfrom langchain.agents.agent_toolkits.base import BaseToolkit\nfrom langchain.tools.base import BaseTool\nfrom langchain.tools.playwright.base import (\n    BaseBrowserTool,\n    lazy_import_playwright_browsers,\n)\nfrom langchain.tools.playwright.click import ClickTool\nfrom langchain.tools.playwright.current_page import CurrentWebPageTool\nfrom langchain.tools.playwright.extract_hyperlinks import ExtractHyperlinksTool\nfrom langchain.tools.playwright.extract_text import ExtractTextTool\nfrom langchain.tools.playwright.get_elements import GetElementsTool\nfrom langchain.tools.playwright.navigate import NavigateTool\nfrom langchain.tools.playwright.navigate_back import NavigateBackTool\n\nif TYPE_CHECKING:\n    from playwright.async_api import Browser as AsyncBrowser\n    from playwright.sync_api import Browser as SyncBrowser\nelse:\n    try:\n        # We do this so pydantic can resolve the types when instantiating\n        from playwright.async_api import Browser as AsyncBrowser\n        from playwright.sync_api import Browser as SyncBrowser\n    except ImportError:\n        pass\n\n\nclass PlayWrightBrowserToolkit(BaseToolkit):\n    \"\"\"Toolkit for PlayWright browser tools.\"\"\"\n\n    sync_browser: Optional[\"SyncBrowser\"] = None\n    async_browser: Optional[\"AsyncBrowser\"] = None\n\n    class Config:\n        \"\"\"Configuration for this pydantic object.\"\"\"\n\n        extra = Extra.forbid\n        arbitrary_types_allowed = True\n\n    @root_validator\n    def validate_imports_and_browser_provided(cls, values: dict) -> dict:\n        \"\"\"Check that the arguments are valid.\"\"\"\n        lazy_import_playwright_browsers()\n        if values.get(\"async_browser\") is None and values.get(\"sync_browser\") is None:\n            raise ValueError(\"Either async_browser or sync_browser must be specified.\")\n        return values\n\n    def get_tools(self) -> List[BaseTool]:\n        \"\"\"Get the tools in the toolkit.\"\"\"\n        tool_classes: List[Type[BaseBrowserTool]] = [\n            ClickTool,\n            NavigateTool,\n            NavigateBackTool,\n            ExtractTextTool,\n            ExtractHyperlinksTool,\n            GetElementsTool,\n            CurrentWebPageTool,\n        ]\n\n        tools = [\n            tool_cls.️🔥\n            for tool_cls in tool_classes\n        ]\n        return cast(List[BaseTool], tools)\n\n    @classmethod\n    def from_browser(\n        cls,\n        sync_browser: Optional[SyncBrowser] = None,\n        async_browser: Optional[AsyncBrowser] = None,\n    ) -> PlayWrightBrowserToolkit:\n        \"\"\"Instantiate the toolkit.\"\"\"\n        # This is to raise a better error than the forward ref ones Pydantic would have\n        lazy_import_playwright_browsers()\n        return cls(sync_browser=sync_browser, async_browser=async_browser)"
+      "content": "\"\"\"Playwright web browser toolkit.\"\"\"\nfrom __future__ import annotations\n\nfrom typing import TYPE_CHECKING, List, Optional, Type, cast\n\nfrom pydantic import Extra, root_validator\n\nfrom langchain.agents.agent_toolkits.base import BaseToolkit\nfrom langchain.tools.base import BaseTool\nfrom langchain.tools.playwright.base import (\n    BaseBrowserTool,\n    lazy_import_playwright_browsers,\n)\nfrom langchain.tools.playwright.click import ClickTool\nfrom langchain.tools.playwright.current_page import CurrentWebPageTool\nfrom langchain.tools.playwright.extract_hyperlinks import ExtractHyperlinksTool\nfrom langchain.tools.playwright.extract_text import ExtractTextTool\nfrom langchain.tools.playwright.get_elements import GetElementsTool\nfrom langchain.tools.playwright.navigate import NavigateTool\nfrom langchain.tools.playwright.navigate_back import NavigateBackTool\n\nif TYPE_CHECKING:\n    from playwright.async_api import Browser as AsyncBrowser\n    from playwright.sync_api import Browser as SyncBrowser\nelse:\n    try:\n        # We do this so pydantic can resolve the types when instantiating\n        from playwright.async_api import Browser as AsyncBrowser\n        from playwright.sync_api import Browser as SyncBrowser\n    except ImportError:\n        pass\n\nclass PlayWrightBrowserToolkit(BaseToolkit):\n    \"\"\"Toolkit for PlayWright browser tools.\"\"\"\n\n    sync_browser: Optional[\"SyncBrowser\"] = None\n    async_browser: Optional[\"AsyncBrowser\"] = None\n\n    class Config:\n        \"\"\"Configuration for this pydantic object.\"\"\"\n\n        extra = Extra.forbid\n        arbitrary_types_allowed = True\n\n    @root_validator\n    def validate_imports_and_browser_provided(cls, values: dict) -> dict:\n        \"\"\"Check that the arguments are valid.\"\"\"\n        lazy_import_playwright_browsers()\n        if values.get(\"async_browser\") is None and values.get(\"sync_browser\") is None:\n            raise ValueError(\"Either async_browser or sync_browser must be specified.\")\n        return values\n\n    def get_tools(self) -> List[BaseTool]:\n        \"\"\"Get the tools in the toolkit.\"\"\"\n        tool_classes: List[Type[BaseBrowserTool]] = [\n            ClickTool,\n            NavigateTool,\n            NavigateBackTool,\n            ExtractTextTool,\n            ExtractHyperlinksTool,\n            GetElementsTool,\n            CurrentWebPageTool,\n        ]\n\n        tools = [\n            tool_cls.️🔥\n            for tool_cls in tool_classes\n        ]\n        return cast(List[BaseTool], tools)\n\n    @classmethod\n    def from_browser(\n        cls,\n        sync_browser: Optional[SyncBrowser] = None,\n        async_browser: Optional[AsyncBrowser] = None,\n    ) -> PlayWrightBrowserToolkit:\n        \"\"\"Instantiate the toolkit.\"\"\"\n        # This is to raise a better error than the forward ref ones Pydantic would have\n        lazy_import_playwright_browsers()\n        return cls(sync_browser=sync_browser, async_browser=async_browser)"
     }
   },
   {
     "completions": [
-      "                noStatusBar: noopStatusBar,\n                history: new History(),\n                providerConfig,",
-      "                providerConfig, history: new History(), statusBar: noopStatusBar })",
-      "                providerConfig, history: new History() })"
+      "                providerConfig,\n                                statusBar: noopStatusBar,\n                                history: new History(),\n                        })\n\n                        const completions = await completionProvider.provideCompletionItems(\n                                codeWithoutCursor,\n                                context,\n                                token\n                        )\n\n                        return {\n                                requests,\n                                completions: completions as vscode.InlineCompletionItem[]\n                        }\n                }",
+      "                providerConfig,\n                history: new History(),\n                statusBar: noopStatusBar,"
     ],
-    "elapsed": 1793,
-    "timestamp": "1693472909242",
+    "elapsed": 4273,
+    "timestamp": "1694493644289",
     "sample": {
       "context": [
         {
