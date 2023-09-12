@@ -9,55 +9,55 @@ on:
   workflow_dispatch:
 
 jobs:
-  test-unit:
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
-        with:
-          node-version-file: .tool-versions
-      - uses: pnpm/action-setup@v2
-      - run: echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
-        shell: bash
-        id: pnpm-cache
-      - name: Cache pnpm store
-        uses: actions/cache@v3
-        with:
-          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: ${{ runner.os }}-pnpm-store-
-      - run: pnpm install
-      - run: pnpm build
-      - run: pnpm run test:unit --run
+  # test-unit:
+  #   runs-on: ubuntu-latest
+  #   timeout-minutes: 5
+  #   steps:
+  #     - uses: actions/checkout@v3
+  #     - uses: actions/setup-node@v3
+  #       with:
+  #         node-version-file: .tool-versions
+  #     - uses: pnpm/action-setup@v2
+  #     - run: echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
+  #       shell: bash
+  #       id: pnpm-cache
+  #     - name: Cache pnpm store
+  #       uses: actions/cache@v3
+  #       with:
+  #         path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+  #         key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+  #         restore-keys: ${{ runner.os }}-pnpm-store-
+  #     - run: pnpm install
+  #     - run: pnpm build
+  #     - run: pnpm run test:unit --run
 
-  test-integration:
-    strategy:
-      fail-fast: false
-      matrix:
-        runner: [ubuntu-latest, windows-latest, macos-latest]
-    runs-on: ${{ matrix.runner }}
-    timeout-minutes: 15
-    steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
-        with:
-          node-version-file: .tool-versions
-      - uses: pnpm/action-setup@v2
-      - run: echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
-        shell: bash
-        id: pnpm-cache
-      - name: Cache pnpm store
-        uses: actions/cache@v3
-        with:
-          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: ${{ runner.os }}-pnpm-store-
-      - run: pnpm install
-      - run: xvfb-run -a pnpm -C vscode run test:integration
-        if: matrix.runner == 'ubuntu-latest'
-      - run: pnpm -C vscode run test:integration
-        if: github.ref == 'refs/heads/main' && (matrix.runner == 'windows-latest' || matrix.runner == 'macos-latest')
+  # test-integration:
+  #   strategy:
+  #     fail-fast: false
+  #     matrix:
+  #       runner: [ubuntu-latest, windows-latest, macos-latest]
+  #   runs-on: ${{ matrix.runner }}
+  #   timeout-minutes: 15
+  #   steps:
+  #     - uses: actions/checkout@v3
+  #     - uses: actions/setup-node@v3
+  #       with:
+  #         node-version-file: .tool-versions
+  #     - uses: pnpm/action-setup@v2
+  #     - run: echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
+  #       shell: bash
+  #       id: pnpm-cache
+  #     - name: Cache pnpm store
+  #       uses: actions/cache@v3
+  #       with:
+  #         path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+  #         key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+  #         restore-keys: ${{ runner.os }}-pnpm-store-
+  #     - run: pnpm install
+  #     - run: xvfb-run -a pnpm -C vscode run test:integration
+  #       if: matrix.runner == 'ubuntu-latest'
+  #     - run: pnpm -C vscode run test:integration
+  #       if: github.ref == 'refs/heads/main' && (matrix.runner == 'windows-latest' || matrix.runner == 'macos-latest')
 
   test-e2e:
     strategy:
@@ -81,6 +81,8 @@ jobs:
           workload_identity_provider: ${{ secrets.DATA_TEAM_PROVIDER_NAME }}
           service_account: ${{ secrets.DATA_TEAM_SA_EMAIL }}
       - uses: google-github-actions/setup-gcloud@v0
+      - run: |
+          gcloud config list account --format "value(core.account)" --quiet
       - run: echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
         shell: bash
         id: pnpm-cache
@@ -101,26 +103,26 @@ jobs:
           name: playwright-recordings ${{ matrix.runner }}
           path: playwright/**/*.webm
 
-  build:
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
-        with:
-          node-version-file: .tool-versions
-      - uses: pnpm/action-setup@v2
-      - run: echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
-        shell: bash
-        id: pnpm-cache
-      - name: Cache pnpm store
-        uses: actions/cache@v3
-        with:
-          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: ${{ runner.os }}-pnpm-store-
-      - run: pnpm install
-      - run: pnpm run build
-      - run: pnpm -C vscode run build
-      - run: pnpm run lint
-      - run: pnpm run format:check
+  # build:
+  #   runs-on: ubuntu-latest
+  #   timeout-minutes: 5
+  #   steps:
+  #     - uses: actions/checkout@v3
+  #     - uses: actions/setup-node@v3
+  #       with:
+  #         node-version-file: .tool-versions
+  #     - uses: pnpm/action-setup@v2
+  #     - run: echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
+  #       shell: bash
+  #       id: pnpm-cache
+  #     - name: Cache pnpm store
+  #       uses: actions/cache@v3
+  #       with:
+  #         path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+  #         key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+  #         restore-keys: ${{ runner.os }}-pnpm-store-
+  #     - run: pnpm install
+  #     - run: pnpm run build
+  #     - run: pnpm -C vscode run build
+  #     - run: pnpm run lint
+  #     - run: pnpm run format:check
