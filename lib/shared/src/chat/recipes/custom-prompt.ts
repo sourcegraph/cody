@@ -6,15 +6,15 @@ import { truncateText } from '../../prompt/truncation'
 import { CodyPromptContext } from '../prompts'
 import {
     extractTestType,
-    getClaudeHumanText,
+    getHumanLLMText,
     isOnlySelectionRequired,
     newInteraction,
     newInteractionWithError,
 } from '../prompts/utils'
 import {
     getCurrentDirContext,
-    getCurrentFileContext,
     getCurrentFileContextFromEditorSelection,
+    getCurrentFileImportsContext,
     getDirectoryFileListContext,
     getEditorDirContext,
     getEditorOpenTabsContext,
@@ -46,12 +46,10 @@ export class CustomPrompt implements Recipe {
         const contextConfigString = (await context.editor.controllers?.command?.get('context')) || ''
         const contextConfig = JSON.parse(contextConfigString) as CodyPromptContext
 
-        // Check if selection is required. If selection is not defined, accept visible content
-        const selectionContent = contextConfig?.selection
+        // If selection is required, ensure not to accept visible content as selection
+        const selection = contextConfig?.selection
             ? context.editor.getActiveTextEditorSelection()
             : context.editor.getActiveTextEditorSelectionOrVisibleContent()
-
-        const selection = selectionContent
 
         const command = context.editor.controllers?.command?.getCurrentCommand()
 
@@ -70,7 +68,7 @@ export class CustomPrompt implements Recipe {
 
         // Add selection file name as display when available
         const displayText = getHumanDisplayTextWithFileName(commandName, selection, workspaceRootUri)
-        const text = getClaudeHumanText(promptText, selection?.fileName)
+        const text = getHumanLLMText(promptText, selection?.fileName)
 
         // Attach code selection to prompt text if only selection is needed as context
         if (selection && isOnlySelectionRequired(contextConfig)) {
@@ -122,47 +120,46 @@ export class CustomPrompt implements Recipe {
             const currentDirMessages = await getCurrentDirContext(isUnitTestRequest)
             contextMessages.push(...currentDirMessages)
         }
-        if (promptContext.directoryPath !== undefined) {
+        if (!promptContext.directoryPath) {
             if (promptContext.directoryPath) {
                 const dirMessages = await getEditorDirContext(promptContext.directoryPath, selection?.fileName)
                 contextMessages.push(...dirMessages)
             }
         }
-        if (promptContext.filePath !== undefined) {
+        if (!promptContext.filePath) {
             if (promptContext.filePath) {
                 const fileMessages = await getFilePathContext(promptContext.filePath)
                 contextMessages.push(...fileMessages)
             }
         }
+
         // Context for unit tests requests
         if (isUnitTestRequest && contextMessages.length === 0) {
             if (workspaceRootUri) {
-                const rootFileNames = await getDirectoryFileListContext(workspaceRootUri)
+                const rootFileNames = await getDirectoryFileListContext(workspaceRootUri, isUnitTestRequest)
                 contextMessages.push(...rootFileNames)
             }
-            // Add package.json content for ts/js files only
+            // Add package.json content only if files matches the ts/js extension regex
             if (selection?.fileName && getFileExtension(selection?.fileName).match(/ts|js/)) {
                 const packageJson = await getPackageJsonContext(selection?.fileName)
                 contextMessages.push(...packageJson)
             }
-            // Try adding code from current file as context in case the import statement
-            // gets cut off in the next step
+            // Try adding import statements from current file as context
             if (selection?.fileName) {
-                const importsContext = getCurrentFileContext()
+                const importsContext = await getCurrentFileImportsContext()
                 contextMessages.push(...importsContext)
             }
         }
+
         if (promptContext.currentFile || promptContext.selection !== false) {
             if (selection) {
                 const currentFileMessages = getCurrentFileContextFromEditorSelection(selection)
                 contextMessages.push(...currentFileMessages)
             }
         }
-        if (promptContext.command !== undefined) {
-            if (commandOutput) {
-                const outputMessages = getTerminalOutputContext(commandOutput)
-                contextMessages.push(...outputMessages)
-            }
+        if (promptContext.command && commandOutput) {
+            const outputMessages = getTerminalOutputContext(commandOutput)
+            contextMessages.push(...outputMessages)
         }
         // Return sliced results
         const maxResults = Math.floor((NUM_CODE_RESULTS + NUM_TEXT_RESULTS) / 2) * 2

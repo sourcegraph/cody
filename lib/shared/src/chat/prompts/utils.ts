@@ -87,7 +87,7 @@ export function extractTestType(text: string): string {
     return text.match(testTypeRegex)?.[0] || ''
 }
 
-export function getClaudeHumanText(commandInstructions: string, currentFileName?: string): string {
+export function getHumanLLMText(commandInstructions: string, currentFileName?: string): string {
     const promptText = prompts.instruction.replace('{humanInput}', commandInstructions)
     if (!currentFileName) {
         return promptText

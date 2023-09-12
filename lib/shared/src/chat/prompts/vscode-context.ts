@@ -12,6 +12,7 @@ import {
     populateCurrentEditorContextTemplate,
     populateCurrentFileFromEditorSelectionContextTemplate,
     populateCurrentSelectedCodeContextTemplate,
+    populateImportListContextTemplate,
     populateListOfFilesContextTemplate,
     populateTerminalOutputContextTemplate,
 } from '../../prompt/templates'
@@ -50,9 +51,13 @@ export const getFilesFromDir = async (
             const fileType = file[1]
             const isDirectory = fileType === vscode.FileType.Directory
             const isHiddenFile = fileName.startsWith('.')
-            const isFileNameIncludesTest = testFilesOnly ? fileName.includes('test') : false
 
-            return !isDirectory && !isHiddenFile && !isFileNameIncludesTest
+            if (!testFilesOnly) {
+                return !isDirectory && !isHiddenFile
+            }
+
+            const isFileNameIncludesTest = fileName.includes('test') && !fileName.includes('test-')
+            return !isDirectory && !isHiddenFile && isFileNameIncludesTest
         })
     } catch (error) {
         console.error(error)
@@ -130,7 +135,7 @@ export async function getEditorDirContext(
     isUnitTestRequest = false
 ): Promise<ContextMessage[]> {
     const directoryUri = vscode.Uri.file(directoryPath)
-    const filteredFiles = await getFilteredFiles(directoryUri, isUnitTestRequest)
+    const filteredFiles = await getFilesFromDir(directoryUri, isUnitTestRequest)
 
     if (isUnitTestRequest && currentFileName) {
         const context = await getCurrentDirFilteredContext(directoryUri, filteredFiles, currentFileName)
@@ -153,29 +158,6 @@ export async function getEditorTestContext(fileName: string, isUnitTestRequest =
     const currentTestFile = await getCurrentTestFileContext(fileName)
     const codebaseTestFiles = await getCodebaseTestFilesContext(fileName, isUnitTestRequest)
     return [...codebaseTestFiles, ...currentTestFile]
-}
-
-export const getFilteredFiles = async (
-    dirUri: vscode.Uri,
-    testFilesOnly: boolean
-): Promise<[string, vscode.FileType][]> => {
-    try {
-        const filesInDir = await vscode.workspace.fs.readDirectory(dirUri)
-
-        // Filter out directories, non-test files, and dot files
-        return filesInDir.filter(file => {
-            const fileName = file[0]
-            const fileType = file[1]
-            const isDirectory = fileType === vscode.FileType.Directory
-            const isHiddenFile = fileName.startsWith('.')
-            const isATestFile = testFilesOnly ? fileName.includes('test') : true
-
-            return !isDirectory && !isHiddenFile && isATestFile
-        })
-    } catch (error) {
-        console.error(error)
-        return []
-    }
 }
 
 // Get context for test file in current directory
@@ -505,6 +487,7 @@ export function getCurrentFileContext(): ContextMessage[] {
  */
 export async function getDirectoryFileListContext(
     workspaceRootUri: vscode.Uri,
+    isTestRequest: boolean,
     fileName?: string
 ): Promise<ContextMessage[]> {
     try {
@@ -514,7 +497,7 @@ export async function getDirectoryFileListContext(
 
         const fileUri = fileName ? vscode.Uri.joinPath(workspaceRootUri, fileName) : workspaceRootUri
         const directoryUri = !fileName ? workspaceRootUri : vscode.Uri.joinPath(fileUri, '..')
-        const directoryFiles = await getFilesFromDir(directoryUri, false)
+        const directoryFiles = await getFilesFromDir(directoryUri, isTestRequest)
         const fileNames = directoryFiles.map(file => file[0])
         const truncatedFileNames = truncateText(fileNames.join(', '), MAX_CURRENT_FILE_TOKENS)
         const fsPath = fileName || 'root'
@@ -561,4 +544,32 @@ export async function getTestFileOfCurrentFileContext(fileName: string): Promise
     }
 
     return []
+}
+
+/**
+ * Gets the imports from file and adds it to the context.
+ */
+export async function getCurrentFileImportsContext(): Promise<ContextMessage[]> {
+    const currentFile = vscode.window.activeTextEditor?.document
+    if (!currentFile) {
+        return []
+    }
+    const foldingRanges = await vscode.commands.executeCommand<vscode.FoldingRange[]>(
+        'vscode.executeFoldingRangeProvider',
+        currentFile.uri
+    )
+    // Get the line number of the last import statement
+    const lastImportLineNum = foldingRanges?.findLast(range => range.kind === 2)?.end || 0
+    if (!lastImportLineNum) {
+        return []
+    }
+    // Get imports as text from linenumbers 0 to lastImportLineNum
+    const importStatements = currentFile.getText(new vscode.Range(0, 0, lastImportLineNum, 0))
+
+    const truncatedContent = truncateText(importStatements, MAX_CURRENT_FILE_TOKENS / 2)
+    const fileName = vscode.workspace.asRelativePath(currentFile.fileName)
+
+    return getContextMessageWithResponse(populateImportListContextTemplate(truncatedContent, fileName), {
+        fileName,
+    })
 }
