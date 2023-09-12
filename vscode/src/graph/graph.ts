@@ -531,7 +531,7 @@ const toHoverContext = (t: ResolvedHoverText): HoverContext[] => {
     if (definitionHoverContent.length > 0 && t.definitionLocation) {
         contexts.push({
             symbolName: t.symbolName,
-            filePath: t.definitionLocation.uri.fsPath,
+            uri: t.definitionLocation.uri.toString(),
             range: {
                 startLine: t.definitionLocation.range.start.line,
                 startCharacter: t.definitionLocation.range.start.character,
@@ -569,7 +569,7 @@ const toHoverContext = (t: ResolvedHoverText): HoverContext[] => {
 
         contexts.push({
             symbolName: t.typeDefinitionSymbolName,
-            filePath: t.typeDefinitionLocation.uri.fsPath || '',
+            uri: t.typeDefinitionLocation.uri.toString() || '',
             range: {
                 startLine: t.typeDefinitionLocation.range.start.line,
                 startCharacter: t.typeDefinitionLocation.range.start.character,

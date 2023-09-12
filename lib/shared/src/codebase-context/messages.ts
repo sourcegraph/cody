@@ -37,7 +37,7 @@ export interface PreciseContext {
 
 export interface HoverContext {
     symbolName: string
-    filePath: string
+    uri: string
     range?: {
         startLine: number
         startCharacter: number

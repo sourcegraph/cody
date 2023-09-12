@@ -68,13 +68,13 @@ describe('GraphSectionObserver', () => {
                     {
                         symbolName: 'foo',
                         hovers: [{ type: 'definition', content: ['function foo() {}'] }],
-                        filePath: document1Uri.toString(),
+                        uri: document1Uri.toString(),
                         range: { startCharacter: 0, startLine: 0, endCharacter: 0, endLine: 10 },
                     },
                     {
                         symbolName: 'bar',
                         hovers: [{ type: 'definition', content: ['function bar() {}'] }],
-                        filePath: document1Uri.toString(),
+                        uri: document1Uri.toString(),
                         range: { startCharacter: 0, startLine: 11, endCharacter: 0, endLine: 20 },
                     },
                 ] satisfies HoverContext[]
@@ -390,12 +390,12 @@ describe('GraphSectionObserver', () => {
               [
                 {
                   "content": "function foo() {}",
-                  "fileName": "file:/document1.ts",
+                  "fileName": "/document1.ts",
                   "symbol": "foo",
                 },
                 {
                   "content": "function bar() {}",
-                  "fileName": "file:/document1.ts",
+                  "fileName": "/document1.ts",
                   "symbol": "bar",
                 },
               ]
@@ -431,7 +431,7 @@ describe('GraphSectionObserver', () => {
               [
                 {
                   "content": "function bar() {}",
-                  "fileName": "file:/document1.ts",
+                  "fileName": "/document1.ts",
                   "symbol": "bar",
                 },
               ]

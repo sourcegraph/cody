@@ -174,7 +174,7 @@ export class GraphSectionObserver implements vscode.Disposable, GraphContextFetc
 
         if (sectionGraphContext) {
             const preciseContexts = hoverContextsToSnippets(
-                sectionGraphContext.filter(context => !overlapsContextRange(URI.file(context.filePath), context.range))
+                sectionGraphContext.filter(context => !overlapsContextRange(URI.file(context.uri), context.range))
             )
             for (const preciseContext of preciseContexts) {
                 if (usedContextChars + preciseContext.content.length > maxChars) {
@@ -461,7 +461,7 @@ function hoverContextToSnippets(context: HoverContext): SymbolContextSnippet[] {
 
     if (definitionHovers.length > 0) {
         snippets.push({
-            fileName: path.normalize(vscode.workspace.asRelativePath(context.filePath)),
+            fileName: path.normalize(vscode.workspace.asRelativePath(URI.parse(context.uri).fsPath)),
             symbol: context.symbolName,
             content: definitionHovers.map(h => h.content.join('\n').trim()).join('\n\n'),
         })
@@ -469,7 +469,7 @@ function hoverContextToSnippets(context: HoverContext): SymbolContextSnippet[] {
 
     if (nonDefinitionHovers.length > 0) {
         snippets.push({
-            fileName: path.normalize(vscode.workspace.asRelativePath(context.filePath)),
+            fileName: path.normalize(vscode.workspace.asRelativePath(URI.parse(context.uri).fsPath)),
             symbol: context.symbolName,
             content: nonDefinitionHovers.map(h => h.content.join('\n').trim()).join('\n\n'),
         })
