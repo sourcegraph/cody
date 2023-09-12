@@ -19,7 +19,6 @@ export async function getDocumentSections(
 ): Promise<DocumentSection[]> {
     const label = 'build document symbols map'
     performance.mark(label)
-    console.log(document.uri)
     const ranges = await getDocumentSymbolRanges(document.uri)
 
     const sections: DocumentSection[] = []

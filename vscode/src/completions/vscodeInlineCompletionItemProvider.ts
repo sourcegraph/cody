@@ -8,7 +8,8 @@ import { RateLimitError } from '@sourcegraph/cody-shared/src/sourcegraph-api/err
 import { logDebug } from '../log'
 import { CodyStatusBar } from '../services/StatusBar'
 
-import { getContext, GetContextOptions, GetContextResult, GraphContextFetcher } from './context/context'
+import { getContext, GetContextOptions, GetContextResult } from './context/context'
+import { GraphContextFetcher } from './context/context-graph'
 import { DocumentHistory } from './context/history'
 import { DocumentContext, getCurrentDocContext } from './get-current-doc-context'
 import {
@@ -257,9 +258,16 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
     public handleDidAcceptCompletionItem(logId: string, completion: InlineCompletionItem): void {
         // When a completion is accepted, the lastCandidate should be cleared. This makes sure the
         // log id is never reused if the completion is accepted.
-        this.lastCandidate = undefined
+        this.clearLastCandidate()
 
         CompletionLogger.accept(logId, completion)
+    }
+
+    /**
+     * Should only be used by agent to allow it access to clear the last candidate
+     */
+    public clearLastCandidate(): void {
+        this.lastCandidate = undefined
     }
 
     /**

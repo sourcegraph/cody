@@ -2,7 +2,6 @@
     display: flex;
     flex-direction: column;
     height: 100%;
-
     padding: 1.25rem;
     color: var(--vscode-editor-foreground);
 }
@@ -21,7 +20,6 @@
     border: 0.1em solid;
     border-image-slice: 1;
     border-width: 0.1em;
-
     margin-bottom: var(--spacing);
     padding: var(--spacing);
 }
@@ -31,14 +29,13 @@
 }
 
 .grey-gradient {
-    border-color: grey;
+    border-color: #888888;
 }
 
 .other-sign-in-options {
     margin-top: 1.5rem;
     display: flex;
     flex-direction: column;
-
     width: 100%;
     gap: 1rem;
 }
@@ -47,7 +44,7 @@
     font-weight: 600;
     color: var(--vscode-editor-foreground);
     font-size: calc(1.15 * var(--vscode-editor-font-size));
-    margin: 0 0 0.65rem 0;
+    margin: 0 0 0.65rem;
 }
 
 .open-message {
@@ -80,7 +77,6 @@
 .footer {
     display: flex;
     flex-direction: column;
-
     width: 100%;
     gap: 1rem;
 }

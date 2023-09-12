@@ -187,6 +187,16 @@ export interface event {
 type GraphQLAPIClientConfig = Pick<ConfigurationWithAccessToken, 'serverEndpoint' | 'accessToken' | 'customHeaders'> &
     Pick<Partial<ConfigurationWithAccessToken>, 'telemetryLevel'>
 
+export let customUserAgent: string | undefined
+export function addCustomUserAgent(headers: Headers): void {
+    if (customUserAgent) {
+        headers.set('User-Agent', customUserAgent)
+    }
+}
+export function setUserAgent(newUseragent: string): void {
+    customUserAgent = newUseragent
+}
+
 export class SourcegraphGraphQLAPIClient {
     private dotcomUrl = DOTCOM_URL
     constructor(private config: GraphQLAPIClientConfig) {}
@@ -484,6 +494,7 @@ export class SourcegraphGraphQLAPIClient {
         if (this.config.accessToken) {
             headers.set('Authorization', `token ${this.config.accessToken}`)
         }
+        addCustomUserAgent(headers)
 
         const url = buildGraphQLUrl({ request: query, baseUrl: this.config.serverEndpoint })
         return fetch(url, {
@@ -499,9 +510,12 @@ export class SourcegraphGraphQLAPIClient {
     // make an anonymous request to the dotcom API
     private fetchSourcegraphDotcomAPI<T>(query: string, variables: Record<string, any>): Promise<T | Error> {
         const url = buildGraphQLUrl({ request: query, baseUrl: this.dotcomUrl.href })
+        const headers = new Headers()
+        addCustomUserAgent(headers)
         return fetch(url, {
             method: 'POST',
             body: JSON.stringify({ query, variables }),
+            headers,
         })
             .then(verifyResponseCode)
             .then(response => response.json() as T)
@@ -511,11 +525,14 @@ export class SourcegraphGraphQLAPIClient {
     // make an anonymous request to the Testing API
     private fetchSourcegraphTestingAPI<T>(body: Record<string, any>): Promise<T | Error> {
         const url = 'http://localhost:49300/.api/testLogging'
+        const headers = new Headers({
+            'Content-Type': 'application/json',
+        })
+        addCustomUserAgent(headers)
+
         return fetch(url, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
+            headers,
             body: JSON.stringify(body),
         })
             .then(verifyResponseCode)
