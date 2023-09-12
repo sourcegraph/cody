@@ -4,6 +4,7 @@ import * as path from 'path'
 
 import { test as base, Frame, Page } from '@playwright/test'
 import { _electron as electron } from 'playwright'
+import * as uuid from 'uuid'
 
 import { run, sendTestInfo } from '../fixtures/mock-server'
 
@@ -27,7 +28,7 @@ export const test = base
 
             await buildWorkSpaceSettings(workspaceDirectory)
 
-            sendTestInfo(testInfo.title, testInfo.testId)
+            sendTestInfo(testInfo.title, testInfo.testId, uuid.v4())
 
             // See: https://github.com/microsoft/vscode-test/blob/main/lib/runTest.ts
             const app = await electron.launch({

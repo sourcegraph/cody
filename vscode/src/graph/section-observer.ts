@@ -94,7 +94,10 @@ export class SectionObserver implements vscode.Disposable, GraphContextFetcher {
     public async getContextAtPosition(
         document: vscode.TextDocument,
         position: vscode.Position,
-        maxChars: number
+        maxChars: number,
+        // Allow the caller to pass a range for the context. We won't return any symbols that are
+        // defined inside this range.
+        contextRange?: vscode.Range
     ): Promise<ContextSnippet[]> {
         const section = this.getSectionAtPosition(document, position)
         const sectionGraphContext = section?.context?.context
@@ -145,7 +148,19 @@ export class SectionObserver implements vscode.Disposable, GraphContextFetcher {
         }
 
         if (sectionGraphContext) {
-            const preciseContexts = sectionGraphContext.map(preciseContextToSnippet).filter(isDefined)
+            const preciseContexts = sectionGraphContext
+                .filter(context => {
+                    if (!contextRange || !context.range || context.filePath !== document.uri.fsPath) {
+                        return true
+                    }
+
+                    return !(
+                        contextRange.start.line <= context.range.startLine &&
+                        contextRange.end.line >= context.range.endLine
+                    )
+                })
+                .map(preciseContextToSnippet)
+                .filter(isDefined)
             for (const preciseContext of preciseContexts) {
                 if (usedContextChars + preciseContext.content.length > maxChars) {
                     // We use continue here to test potentially smaller context snippets that might
@@ -235,18 +250,20 @@ export class SectionObserver implements vscode.Disposable, GraphContextFetcher {
             }
         })
 
-        lines.push('')
-        lines.push('Last visited sections:')
         const lastSections = this.lastVisitedSections.map(loc => this.getSectionForLocation(loc)).filter(isDefined)
-        for (let i = 0; i < lastSections.length; i++) {
-            const section = lastSections[i]
-            const isLast = i === lastSections.length - 1
+        if (lastSections.length > 0) {
+            lines.push('')
+            lines.push('Last visited sections:')
+            for (let i = 0; i < lastSections.length; i++) {
+                const section = lastSections[i]
+                const isLast = i === lastSections.length - 1
 
-            lines.push(
-                `  ${isLast ? '└' : '├'} ${path.normalize(vscode.workspace.asRelativePath(section.location.uri))} ${
-                    section.fuzzyName ?? 'unknown'
-                }`
-            )
+                lines.push(
+                    `  ${isLast ? '└' : '├'} ${path.normalize(vscode.workspace.asRelativePath(section.location.uri))} ${
+                        section.fuzzyName ?? 'unknown'
+                    }`
+                )
+            }
         }
 
         return lines.join('\n')
@@ -409,10 +426,9 @@ export class SectionObserver implements vscode.Disposable, GraphContextFetcher {
 }
 
 function preciseContextToSnippet(context: PreciseContext): SymbolContextSnippet | null {
-    const isDts = context.filePath.endsWith('.d.ts')
     const content =
-        context.hoverText.length > 0 && !isDts
-            ? context.hoverText.map(extractMarkdownCodeBlock).join('\n').trim()
+        context.hoverText.length > 0
+            ? context.hoverText.map(extractMarkdownCodeBlock).join('\n\n').trim()
             : context.definitionSnippet
 
     return {

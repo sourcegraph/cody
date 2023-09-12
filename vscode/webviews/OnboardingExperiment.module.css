@@ -1,0 +1,82 @@
+.container {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    padding: 1.25rem;
+    color: var(--vscode-editor-foreground);
+}
+
+.logo {
+    margin-bottom: 1rem;
+}
+
+.button-width-sizer {
+    margin-top: 0.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.button-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    min-width: 75%;
+}
+
+.section.auth-method-screen {
+    background: var(--vscode-sideBar-background);
+    color: var(--vscode-sideBar-foreground);
+    border: 1px solid var(--vscode-widget-border);
+    box-shadow: 0 2px 16px 0 var(--vscode-widget-shadow);
+    border-radius: 4px;
+}
+
+.auth-method-screen .button {
+    font-weight: 500;
+}
+
+.sections-container {
+    flex: 1;
+}
+
+.section {
+    border: 0.1em solid;
+    border-width: 0.1em;
+    margin-bottom: var(--spacing);
+    padding: var(--spacing);
+}
+
+.other-sign-in-options {
+    color: var(--vscode-sideBar-foreground);
+    flex: 0 0 auto;
+    margin-bottom: 0.5rem;
+    width: 100%;
+    text-align: center;
+    line-height: 1.4;
+}
+
+.button {
+    justify-content: center;
+    padding: 0.25rem;
+}
+
+.terms {
+    font-size: 90%;
+    opacity: 70%;
+}
+
+.button img {
+    margin-inline-end: 0.5rem;
+}
+
+/* To suppress jsx-eslint/anchor-is-valid. */
+.link-button {
+    background-color: transparent;
+    color: var(--vscode-textLink-foreground);
+    border: none;
+    cursor: pointer;
+    display: inline;
+    margin: 0;
+    padding: 0;
+}

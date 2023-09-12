@@ -5,6 +5,7 @@ import * as vscode from 'vscode'
 import { Client, createClient } from '@sourcegraph/cody-shared/src/chat/client'
 import { registeredRecipes } from '@sourcegraph/cody-shared/src/chat/recipes/agent-recipes'
 import { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/nodeClient'
+import { setUserAgent } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
 
 import { activate } from '../../vscode/src/extension.node'
 
@@ -82,6 +83,8 @@ export class Agent extends MessageHandler {
             if (extensionConfig) {
                 this.setClient(extensionConfig)
             }
+
+            setUserAgent(`${client?.name} / ${client?.version}`)
 
             const codyClient = await this.client
 
@@ -219,6 +222,14 @@ export class Agent extends MessageHandler {
 
             await client?.graphqlClient.logEvent(event)
             return null
+        })
+
+        this.registerNotification('autocomplete/clearLastCandidate', async () => {
+            const provider = await vscode_shim.completionProvider
+            if (!provider) {
+                console.log('Completion provider is not initialized: unable to clear last candidate')
+            }
+            provider.clearLastCandidate()
         })
     }
 
