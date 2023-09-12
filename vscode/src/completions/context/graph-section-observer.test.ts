@@ -67,13 +67,15 @@ describe('GraphSectionObserver', () => {
                 [
                     {
                         symbolName: 'foo',
-                        hovers: [{ type: 'definition', content: ['function foo() {}'] }],
+                        type: 'definition',
+                        content: ['function foo() {}'],
                         uri: document1Uri.toString(),
                         range: { startCharacter: 0, startLine: 0, endCharacter: 0, endLine: 10 },
                     },
                     {
                         symbolName: 'bar',
-                        hovers: [{ type: 'definition', content: ['function bar() {}'] }],
+                        type: 'definition',
+                        content: ['function bar() {}'],
                         uri: document1Uri.toString(),
                         range: { startCharacter: 0, startLine: 11, endCharacter: 0, endLine: 20 },
                     },
@@ -264,7 +266,8 @@ describe('GraphSectionObserver', () => {
         getGraphContextFromRange.mockImplementation(() => [
             {
                 symbolName: 'foo',
-                hovers: [{ type: 'definition', content: ['function foo() {}'] }],
+                type: 'definition',
+                content: ['function foo() {}'],
                 filePath: document1Uri.toString(),
             },
         ])
@@ -319,7 +322,8 @@ describe('GraphSectionObserver', () => {
         getGraphContextFromRange.mockImplementation(() => [
             {
                 symbol: 'foo',
-                hovers: [{ type: 'definition', content: ['function foo() {}'] }],
+                type: 'definition',
+                content: ['function foo() {}'],
                 filePath: document1Uri.toString(),
             },
         ])

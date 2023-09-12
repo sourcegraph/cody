@@ -449,33 +449,18 @@ export class GraphSectionObserver implements vscode.Disposable, GraphContextFetc
 }
 
 function hoverContextsToSnippets(contexts: HoverContext[]): SymbolContextSnippet[] {
-    return dedupeWith(contexts.flatMap(hoverContextToSnippets).filter(isDefined), context =>
+    return dedupeWith(contexts.map(hoverContextToSnippets), context =>
         [context.symbol, context.fileName, context.content].join('\n')
     )
 }
 
-function hoverContextToSnippets(context: HoverContext): SymbolContextSnippet[] {
-    const snippets: SymbolContextSnippet[] = []
-    const definitionHovers = context.hovers.filter(h => h.type === 'definition')
-    const nonDefinitionHovers = context.hovers.filter(h => h.type !== 'definition')
-
-    if (definitionHovers.length > 0) {
-        snippets.push({
-            fileName: path.normalize(vscode.workspace.asRelativePath(URI.parse(context.uri).fsPath)),
-            symbol: context.symbolName,
-            content: definitionHovers.map(h => h.content.join('\n').trim()).join('\n\n'),
-        })
+function hoverContextToSnippets(context: HoverContext): SymbolContextSnippet {
+    console.log({ context })
+    return {
+        fileName: path.normalize(vscode.workspace.asRelativePath(URI.parse(context.uri).fsPath)),
+        symbol: context.symbolName,
+        content: context.content.join('\n').trim(),
     }
-
-    if (nonDefinitionHovers.length > 0) {
-        snippets.push({
-            fileName: path.normalize(vscode.workspace.asRelativePath(URI.parse(context.uri).fsPath)),
-            symbol: context.symbolName,
-            content: nonDefinitionHovers.map(h => h.content.join('\n').trim()).join('\n\n'),
-        })
-    }
-
-    return snippets
 }
 
 function logHydratedContext(context: HoverContext[], editor: vscode.TextEditor, section: Section, start: number): void {

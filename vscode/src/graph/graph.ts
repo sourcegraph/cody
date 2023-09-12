@@ -1,11 +1,7 @@
 import * as vscode from 'vscode'
 import { URI } from 'vscode-uri'
 
-import {
-    HoverContext,
-    PreciseContext,
-    TaggedHoverContent,
-} from '@sourcegraph/cody-shared/src/codebase-context/messages'
+import { HoverContext, PreciseContext } from '@sourcegraph/cody-shared/src/codebase-context/messages'
 import { dedupeWith, isDefined } from '@sourcegraph/cody-shared/src/common'
 import { ActiveTextEditorSelectionRange, Editor } from '@sourcegraph/cody-shared/src/editor'
 
@@ -83,7 +79,7 @@ export const getGraphContextFromRange = async (
         defaultGetImplementations
     )
 
-    const contexts = resolvedHoverText.flatMap(toHoverContext)
+    const contexts = resolvedHoverText.flatMap(hoverContextFromResolvedHoverText)
 
     // Debuggin'
     logDebug('GraphContext:snippetsRetrieved', `Retrieved ${contexts.length} hover context snippets`)
@@ -494,25 +490,30 @@ export const gatherDefinitions = async (
 }
 
 interface UnresolvedHoverText {
-    uri: vscode.Uri
     symbolName: string
-    symbolHover: Thenable<vscode.Hover[]>
-    definitionLocations: Thenable<vscode.Location[]>
-    typeDefinitionLocations: Thenable<vscode.Location[]>
-    implementationLocations: Thenable<vscode.Location[]>
-    typeDefinitionHover?: Thenable<vscode.Hover[]>
-    implementationHover?: Thenable<vscode.Hover[]>
+    symbolLocation: vscode.Location
+    definition: UnresolvedHoverElement
+    typeDefinition: UnresolvedHoverElement
+    implementations: UnresolvedHoverElement
+}
+
+interface UnresolvedHoverElement {
+    locations: Thenable<vscode.Location[]>
+    hover?: Thenable<vscode.Hover[]>
 }
 
 interface ResolvedHoverText {
-    symbolUri: vscode.Uri
     symbolName: string
-    symbolHover: vscode.Hover[]
-    definitionLocation?: vscode.Location
-    typeDefinitionLocation?: vscode.Location
-    typeDefinitionSymbolName?: string
-    typeDefinitionHover: vscode.Hover[]
-    implementationHover: vscode.Hover[]
+    symbolLocation: vscode.Location
+    definition?: ResolvedHoverElement
+    typeDefinition?: ResolvedHoverElement
+    implementations?: ResolvedHoverElement[]
+}
+
+interface ResolvedHoverElement {
+    symbolName: string
+    location: vscode.Location
+    hover: vscode.Hover[]
 }
 
 const hoverToStrings = (h: vscode.Hover[]): string[] =>
@@ -522,65 +523,35 @@ const hoverToStrings = (h: vscode.Hover[]): string[] =>
         .map(s => s.trim())
         .filter(s => s !== '')
 
-const toHoverContext = (t: ResolvedHoverText): HoverContext[] => {
-    const contexts: HoverContext[] = []
-    const definitionHoverContent = hoverToStrings(t.symbolHover)
-    const typeDefinitionHoverContent = hoverToStrings(t.typeDefinitionHover)
-    const implementationHoverContent = hoverToStrings(t.implementationHover)
+const hoverContextFromResolvedHoverText = (t: ResolvedHoverText): HoverContext[] =>
+    [
+        hoverContextFromElement(t.definition),
+        hoverContextFromElement(t.typeDefinition),
+        ...(t.implementations?.map(hoverContextFromElement) ?? []),
+    ].filter(isDefined)
 
-    if (definitionHoverContent.length > 0 && t.definitionLocation) {
-        contexts.push({
-            symbolName: t.symbolName,
-            uri: t.definitionLocation.uri.toString(),
-            range: {
-                startLine: t.definitionLocation.range.start.line,
-                startCharacter: t.definitionLocation.range.start.character,
-                endLine: t.definitionLocation.range.end.line,
-                endCharacter: t.definitionLocation.range.end.character,
-            },
-            hovers: [
-                {
-                    type: 'definition',
-                    content: definitionHoverContent,
-                },
-            ],
-        })
+const hoverContextFromElement = (e?: ResolvedHoverElement): HoverContext | undefined => {
+    if (e === undefined) {
+        return undefined
     }
 
-    if (
-        t.typeDefinitionSymbolName &&
-        typeDefinitionHoverContent.length > 0 &&
-        t.typeDefinitionLocation &&
-        definitionHoverContent.join('\n') !== typeDefinitionHoverContent.join('\n') &&
-        !t.typeDefinitionLocation.uri.fsPath.endsWith('.d.ts')
-    ) {
-        const hovers: TaggedHoverContent[] = []
-        hovers.push({
-            type: 'typeDefinition',
-            content: typeDefinitionHoverContent,
-        })
-
-        if (implementationHoverContent.length > 0) {
-            hovers.push({
-                type: 'implementation',
-                content: implementationHoverContent,
-            })
-        }
-
-        contexts.push({
-            symbolName: t.typeDefinitionSymbolName,
-            uri: t.typeDefinitionLocation.uri.toString() || '',
-            range: {
-                startLine: t.typeDefinitionLocation.range.start.line,
-                startCharacter: t.typeDefinitionLocation.range.start.character,
-                endLine: t.typeDefinitionLocation.range.end.line,
-                endCharacter: t.typeDefinitionLocation.range.end.character,
-            },
-            hovers,
-        })
+    const definitionHoverContent = hoverToStrings(e.hover)
+    if (definitionHoverContent.length === 0) {
+        return undefined
     }
 
-    return contexts
+    return {
+        symbolName: e.symbolName,
+        type: 'definition',
+        content: definitionHoverContent,
+        uri: e.location.uri.toString(),
+        range: {
+            startLine: e.location.range.start.line,
+            startCharacter: e.location.range.start.character,
+            endLine: e.location.range.end.line,
+            endCharacter: e.location.range.end.character,
+        },
+    }
 }
 
 function extractMarkdownCodeBlock(string: string): string {
@@ -625,11 +596,10 @@ export const gatherHoverText = async (
     for (const { uri, symbolName, position } of dedupeWith(requests, 'symbolName')) {
         hoverMatches.push({
             symbolName,
-            uri,
-            symbolHover: getHover(uri, position),
-            definitionLocations: getDefinitions(uri, position),
-            typeDefinitionLocations: getTypeDefinitions(uri, position),
-            implementationLocations: getImplementations(uri, position),
+            symbolLocation: new vscode.Location(uri, position),
+            definition: { locations: getDefinitions(uri, position), hover: getHover(uri, position) },
+            typeDefinition: { locations: getTypeDefinitions(uri, position) },
+            implementations: { locations: getImplementations(uri, position) },
         })
     }
 
@@ -638,10 +608,10 @@ export const gatherHoverText = async (
     const locationsForHover = dedupeWith(
         (
             await Promise.all(
-                hoverMatches.map(async ({ definitionLocations, typeDefinitionLocations, implementationLocations }) => [
-                    ...(await definitionLocations),
-                    ...(await typeDefinitionLocations),
-                    ...(await implementationLocations),
+                hoverMatches.map(async ({ definition, typeDefinition, implementations }) => [
+                    ...(await definition.locations),
+                    ...(await typeDefinition.locations),
+                    ...(await implementations.locations),
                 ])
             )
         ).flat(),
@@ -663,27 +633,57 @@ export const gatherHoverText = async (
     )
 
     return Promise.all(
-        hoverMatches.map(
-            async ({
-                uri,
+        hoverMatches.map(async ({ symbolName, symbolLocation, definition, typeDefinition, implementations }) => {
+            let definitionObj: ResolvedHoverElement | undefined
+            const definitionLocation = (await definition.locations).pop()
+            if (definitionLocation) {
+                const symbolName = extractRangeFromDocument(
+                    contentMap,
+                    definitionLocation.uri,
+                    definitionLocation.range
+                )
+
+                definitionObj = {
+                    symbolName,
+                    location: definitionLocation,
+                    hover: hoverMap.get(locationKeyFn(definitionLocation)) || [],
+                }
+            }
+
+            let typeDefinitionObj: ResolvedHoverElement | undefined
+            const typeDefinitionLocation = (await typeDefinition.locations).pop()
+            if (typeDefinitionLocation) {
+                const symbolName = extractRangeFromDocument(
+                    contentMap,
+                    typeDefinitionLocation.uri,
+                    typeDefinitionLocation.range
+                )
+
+                typeDefinitionObj = {
+                    symbolName,
+                    location: typeDefinitionLocation,
+                    hover: hoverMap.get(locationKeyFn(typeDefinitionLocation)) || [],
+                }
+            }
+
+            let implementationObjs: ResolvedHoverElement[] | undefined
+            const implementationsLocations = await implementations.locations
+            if (implementationsLocations.length > 0) {
+                implementationObjs = implementationsLocations.map(location => ({
+                    symbolName: extractRangeFromDocument(contentMap, location.uri, location.range),
+                    location,
+                    hover: hoverMap.get(locationKeyFn(location)) || [],
+                }))
+            }
+
+            return {
                 symbolName,
-                symbolHover,
-                definitionLocations,
-                typeDefinitionLocations,
-                implementationLocations,
-            }) => ({
-                symbolName,
-                symbolUri: uri,
-                symbolHover: await symbolHover,
-                typeDefinitionSymbolName: (await typeDefinitionLocations)
-                    .map(l => extractRangeFromDocument(contentMap, l.uri, l.range))
-                    .pop(),
-                definitionLocation: (await definitionLocations).pop(),
-                typeDefinitionLocation: (await typeDefinitionLocations).pop(),
-                typeDefinitionHover: (await typeDefinitionLocations).flatMap(l => hoverMap.get(locationKeyFn(l)) || []),
-                implementationHover: (await implementationLocations).flatMap(l => hoverMap.get(locationKeyFn(l)) || []),
-            })
-        )
+                symbolLocation,
+                definition: definitionObj,
+                typeDefinition: typeDefinitionObj,
+                implementations: implementationObjs,
+            }
+        })
     )
 }
 
