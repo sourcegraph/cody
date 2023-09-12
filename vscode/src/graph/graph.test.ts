@@ -97,33 +97,42 @@ describe('gatherDefinitions', () => {
             },
         ]
 
+        const requests = gatherDefinitionRequestCandidates(
+            selections,
+            new Map([[uri.fsPath, testFile3.split('\n').slice(1)]])
+        )
+        const getHover = (): Promise<vscode.Hover[]> => Promise.resolve([])
+        // eslint-disable-next-line @typescript-eslint/require-await
+        const getDefinitions = async (uri: URI, position: vscode.Position): Promise<vscode.Location[]> => {
+            switch (position.character) {
+                case 6:
+                    return [{ uri: Uri.file('/test-3.test'), range: new vscode.Range(7, 5, 7, 7) }]
+                case 29: // bar
+                    return [{ uri: Uri.file('/test-1.test'), range: new vscode.Range(10, 6, 10, 9) }]
+                case 35: // Bar
+                    return [{ uri: Uri.file('/test-1.test'), range: new vscode.Range(11, 6, 11, 9) }]
+                case 43: // foo
+                    return [{ uri: Uri.file('/test-1.test'), range: new vscode.Range(2, 6, 2, 9) }]
+                case 49: // Foo
+                    return [{ uri: Uri.file('/test-1.test'), range: new vscode.Range(3, 6, 3, 9) }]
+                case 56: // baz
+                    return [{ uri: Uri.file('/test-2.test'), range: new vscode.Range(3, 6, 3, 8) }]
+                case 60: // Foo
+                    return [{ uri: Uri.file('/test-1.test'), range: new vscode.Range(3, 6, 3, 9) }]
+            }
+
+            return []
+        }
+        const getTypeDefinitions = (): Promise<vscode.Location[]> => Promise.resolve([])
+        const getImplementations = (): Promise<vscode.Location[]> => Promise.resolve([])
+
         const definitions = await gatherDefinitions(
             selections,
-            gatherDefinitionRequestCandidates(selections, new Map([[uri.fsPath, testFile3.split('\n').slice(1)]])),
-            (): Promise<vscode.Hover[]> => Promise.resolve([]),
-            // eslint-disable-next-line @typescript-eslint/require-await
-            async (uri: URI, position: vscode.Position): Promise<vscode.Location[]> => {
-                switch (position.character) {
-                    case 6:
-                        return [{ uri: Uri.file('/test-3.test'), range: new vscode.Range(7, 5, 7, 7) }]
-                    case 29: // bar
-                        return [{ uri: Uri.file('/test-1.test'), range: new vscode.Range(10, 6, 10, 9) }]
-                    case 35: // Bar
-                        return [{ uri: Uri.file('/test-1.test'), range: new vscode.Range(11, 6, 11, 9) }]
-                    case 43: // foo
-                        return [{ uri: Uri.file('/test-1.test'), range: new vscode.Range(2, 6, 2, 9) }]
-                    case 49: // Foo
-                        return [{ uri: Uri.file('/test-1.test'), range: new vscode.Range(3, 6, 3, 9) }]
-                    case 56: // baz
-                        return [{ uri: Uri.file('/test-2.test'), range: new vscode.Range(3, 6, 3, 8) }]
-                    case 60: // Foo
-                        return [{ uri: Uri.file('/test-1.test'), range: new vscode.Range(3, 6, 3, 9) }]
-                }
-
-                return []
-            },
-            (): Promise<vscode.Location[]> => Promise.resolve([]),
-            (): Promise<vscode.Location[]> => Promise.resolve([])
+            requests,
+            getHover,
+            getDefinitions,
+            getTypeDefinitions,
+            getImplementations
         )
 
         expect(definitions).toEqual([

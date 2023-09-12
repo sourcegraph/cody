@@ -377,7 +377,10 @@ describe('GraphSectionObserver', () => {
             expect(
                 await sectionObserver.getContextAtPosition(
                     testDocuments.document1 as any,
-                    { line: 15, character: 0 } as any,
+                    {
+                        line: 15,
+                        character: 0,
+                    } as any,
                     1000
                 )
             ).toMatchInlineSnapshot(`
