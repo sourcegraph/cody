@@ -93,19 +93,26 @@ export class AnthropicProvider extends Provider {
         return { messages: prefixMessages, prefix: { head, tail, overlap } }
     }
 
-    // This reverts #727 because it is causing a quality regressions with the infill prompt structure
+    // NOTE: This revert pull/727 for this prompt branch that causes quality regressions
+    // pull/727: https://github.com/sourcegraph/cody/pull/727
     private createInfillPromptPrefix(): { messages: Message[]; prefix: PrefixComponents } {
-        const prefixLines = this.options.docContext.prefix.split('\n')
-        if (prefixLines.length === 0) {
+        if (this.options.docContext.prevNonEmptyLine.length === 0) {
             throw new Error('no prefix lines')
         }
 
         const { head, tail, overlap } = getHeadAndTail(this.options.docContext.prefix)
 
+        // code after the cursor
         const infillSuffix = this.options.docContext.suffix
+
+        // code before the cursor minus the code inside the infillBlock
+        // This is used to preserve the spacing from prefix so the model can determines the patterns of surrounding code
         const infillPrefix = this.options.docContext.prefix.replace(tail.trimmed, '')
+
         // Infill block represents the code we want cody to complete.
-        // It removes the new line added at the end when suffix is empty
+        // Trims when suffix is empty to clean up the code context as there is no code after the cursor
+        // - It signals the model that the current line is incomplete and needs completion
+        // - Without trimming, infillBlock ends with emprty line could be interpreted as complete by the model
         const infillBlock = `${!infillSuffix.trim() ? tail.trimmed : tail.trimmed.trimEnd()}`
 
         const prefixMessagesWithInfill: Message[] = [
@@ -119,8 +126,8 @@ export class AnthropicProvider extends Provider {
             },
             {
                 speaker: 'human',
-                text: `Below is the code from file path ${this.options.fileName}. First, analyze the code outside of the ${OPENING_CODE_TAG} tags and detect functionality, style, patterns, assetmethods/libraries, and logics in use. Then, use what you detect and reuse assetmethods/libraries to complete the code enclosed in ${OPENING_CODE_TAG}${CLOSING_CODE_TAG} tags precisely without duplicating existing implementations and nothing else:
-                ${infillPrefix}${OPENING_CODE_TAG}${infillBlock}${CLOSING_CODE_TAG}${infillSuffix}`,
+                text: `Below is the code from file path ${this.options.fileName}. Detect the functionality, style, patterns, and logics in use from code outside ${OPENING_CODE_TAG} XML tags. Then, use what you detect and reuse assetmethods/libraries to complete and enclose complete code only inside ${OPENING_CODE_TAG} XML tags precisely:
+                ${infillPrefix}${OPENING_CODE_TAG}${CLOSING_CODE_TAG}${infillSuffix}`,
             },
             {
                 speaker: 'assistant',
