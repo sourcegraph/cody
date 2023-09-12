@@ -1,7 +1,7 @@
 import * as vscode from 'vscode'
 import { URI } from 'vscode-uri'
 
-import { PreciseContext } from '@sourcegraph/cody-shared/src/codebase-context/messages'
+import { HoverContext, PreciseContext } from '@sourcegraph/cody-shared/src/codebase-context/messages'
 import { dedupeWith, isDefined } from '@sourcegraph/cody-shared/src/common'
 import { ActiveTextEditorSelectionRange, Editor } from '@sourcegraph/cody-shared/src/editor'
 
@@ -14,6 +14,8 @@ const recursionLimit = 2
  * Return the definitions of symbols that occur within the editor's active document. If there is
  * an active selection, we will cull the symbols to those referenced in intersecting document symbol
  * ranges.
+ *
+ * NOTE: used only in chat, see `getGraphContextFromRange` for the new completions hotness.
  */
 export const getGraphContextFromEditor = async (editor: Editor): Promise<PreciseContext[]> => {
     const activeEditor = editor.getActiveTextEditor()
@@ -52,15 +54,36 @@ export const getGraphContextFromEditor = async (editor: Editor): Promise<Precise
 export const getGraphContextFromRange = async (
     editor: vscode.TextEditor,
     range: vscode.Range
-): Promise<PreciseContext[]> => {
+): Promise<HoverContext[]> => {
     const uri = editor.document.uri
-    const contexts = await getGraphContextFromSelection(
-        [{ uri, range }],
-        new Map([[uri.fsPath, editor.document.getText().split('\n')]]),
-        0, // recursion limit
-        false // use type definitions
+    const contentMap = new Map([[uri.fsPath, editor.document.getText().split('\n')]])
+    const selections = [{ uri, range }]
+
+    // Debuggin'
+    const label = 'precise context for completions'
+    performance.mark(label)
+
+    // Get the document symbols in the current file and extract their definition range
+    const definitionSelections = await extractRelevantDocumentSymbolRanges(selections)
+
+    // Find the candidate identifiers to request definitions for in the selection
+    const requestCandidates = gatherDefinitionRequestCandidates(definitionSelections, contentMap)
+
+    // Extract hover (symbol, definition, type def, impl) text related to all of the request candidates
+    const resolvedHoverText = await gatherHoverText(
+        contentMap,
+        requestCandidates,
+        defaultGetHover,
+        defaultGetDefinitions,
+        defaultGetTypeDefinitions,
+        defaultGetImplementations
     )
 
+    const contexts = resolvedHoverText.flatMap(hoverContextFromResolvedHoverText)
+
+    // Debuggin'
+    logDebug('GraphContext:snippetsRetrieved', `Retrieved ${contexts.length} hover context snippets`)
+    performance.mark(label)
     return contexts
 }
 
@@ -77,8 +100,7 @@ interface Selection {
 const getGraphContextFromSelection = async (
     selections: Selection[],
     contentMap: Map<string, string[]>,
-    recursionLimit: number = 0,
-    useTypeDefinitions: boolean = false
+    recursionLimit: number = 0
 ): Promise<PreciseContext[]> => {
     // Debuggin'
     const label = 'precise context from selection'
@@ -87,50 +109,35 @@ const getGraphContextFromSelection = async (
     // Get the document symbols in the current file and extract their definition range
     const definitionSelections = await extractRelevantDocumentSymbolRanges(selections)
 
+    // Find the candidate identifiers to request definitions for in the selection
+    const requestCandidates = gatherDefinitionRequestCandidates(definitionSelections, contentMap)
+
     // Extract identifiers from the relevant document symbol ranges and request their definitions
     const definitionMatches = await gatherDefinitions(
         definitionSelections,
-        contentMap,
+        requestCandidates,
         defaultGetHover,
-        useTypeDefinitions ? defaultGetTypeDefinitions : defaultGetDefinitions
+        defaultGetDefinitions,
+        defaultGetTypeDefinitions,
+        defaultGetImplementations
     )
 
-    // Open each URI referenced by a definition match in the current workspace, and make the document
-    // content retrievable by filepath by adding it to the shared content map.
-    //
     // NOTE: Before asking for data about a document it must be opened in the workspace. This forces
     // a resolution so that the following queries that require the document context will not fail with
     // an unknown document.
 
-    const unseenDefinitionUris = dedupeWith(
-        definitionMatches.map(({ locations }) => locations.map(({ uri }) => uri)).flat(),
-        'fsPath'
-    ).filter(uri => !contentMap.has(uri.fsPath))
-
-    // Remove ultra-common type definitions that are probably already known by the LLM
-    const filteredUnseenDefinitionUris = unseenDefinitionUris.filter(uri => {
-        for (const importPath of commonImportPaths) {
-            if (uri.fsPath.includes(importPath)) {
-                return false
-            }
-        }
-        return true
-    })
-
-    const newContentMap = new Map(
-        filteredUnseenDefinitionUris.map(uri => [
-            uri.fsPath,
-            vscode.workspace.openTextDocument(uri.fsPath).then(document => document.getText().split('\n')),
-        ])
+    await updateContentMap(
+        contentMap,
+        definitionMatches.map(({ definitionLocations }) => definitionLocations.map(({ uri }) => uri)).flat()
     )
-
-    for (const [fsPath, lines] of await unwrapThenableMap(newContentMap)) {
-        contentMap.set(fsPath, lines)
-    }
 
     // Resolve, extract, and deduplicate the symbol and location match pairs from the definition matches
     const matches = dedupeWith(
-        definitionMatches.map(({ locations, ...rest }) => locations.map(location => ({ location, ...rest }))).flat(),
+        definitionMatches
+            .map(({ definitionLocations, typeDefinitionLocations, implementationLocations, ...rest }) =>
+                definitionLocations.map(location => ({ location, ...rest }))
+            )
+            .flat(),
         ({ symbolName, location }) => `${symbolName}:${locationKeyFn(location)}`
     )
 
@@ -164,6 +171,35 @@ const getGraphContextFromSelection = async (
     }
 
     return contexts
+}
+
+/**
+ * Open each URI referenced by a definition match in the current workspace, and make the document
+ * content retrievable by filepath by adding it to the shared content map.
+ */
+const updateContentMap = async (contentMap: Map<string, string[]>, locations: vscode.Uri[]): Promise<void> => {
+    const unseenDefinitionUris = dedupeWith(locations, 'fsPath').filter(uri => !contentMap.has(uri.fsPath))
+
+    // Remove ultra-common type definitions that are probably already known by the LLM
+    const filteredUnseenDefinitionUris = unseenDefinitionUris.filter(uri => {
+        for (const importPath of commonImportPaths) {
+            if (uri.fsPath.includes(importPath)) {
+                return false
+            }
+        }
+        return true
+    })
+
+    const newContentMap = new Map(
+        filteredUnseenDefinitionUris.map(uri => [
+            uri.fsPath,
+            vscode.workspace.openTextDocument(uri.fsPath).then(document => document.getText().split('\n')),
+        ])
+    )
+
+    for (const [fsPath, lines] of await unwrapThenableMap(newContentMap)) {
+        contentMap.set(fsPath, lines)
+    }
 }
 
 /**
@@ -321,32 +357,21 @@ const commonImportPaths = new Set([
 
 export const commonKeywords = new Set([...goKeywords, ...typescriptKeywords])
 
-interface SymbolDefinitionMatches {
+interface Request {
     symbolName: string
-    hover: Thenable<vscode.Hover[]>
-    locations: Thenable<vscode.Location[]>
-}
-
-interface ResolvedSymbolDefinitionMatches {
-    symbolName: string
-    hover: vscode.Hover[]
-    locations: vscode.Location[]
+    uri: vscode.Uri
+    position: vscode.Position
 }
 
 /**
  * Search the given ranges identifier definitions matching an a common identifier pattern and filter out
- * common keywords. Each matching symbol is queried for definitions which are resolved in parallel before
- * return.
+ * common keywords.
  */
-export const gatherDefinitions = async (
+export const gatherDefinitionRequestCandidates = (
     selections: Selection[],
-    contentMap: Map<string, string[]>,
-    getHover: typeof defaultGetHover = defaultGetHover,
-    getDefinitions: typeof defaultGetDefinitions = defaultGetDefinitions
-): Promise<ResolvedSymbolDefinitionMatches[]> => {
-    // Construct a list of symbol and definition location pairs by querying the LSP server
-    // with all identifiers (heuristically chosen via regex) in the relevant code ranges.
-    const definitionMatches: SymbolDefinitionMatches[] = []
+    contentMap: Map<string, string[]>
+): Request[] => {
+    const requestCandidates: Request[] = []
 
     for (const selection of selections) {
         const { uri, range } = selection
@@ -355,7 +380,6 @@ export const gatherDefinitions = async (
             continue
         }
 
-        const requestQueue: { symbolName: string; position: vscode.Position }[] = []
         for (const { start, end } of [range]) {
             for (const [lineIndex, line] of lines.slice(start.line, end.line + 1).entries()) {
                 // NOTE: pretty hacky - strip out C-style line comments and find everything
@@ -369,43 +393,83 @@ export const gatherDefinitions = async (
                         continue
                     }
 
-                    requestQueue.push({
+                    requestCandidates.push({
                         symbolName: match[0],
+                        uri,
                         position: new vscode.Position(start.line + lineIndex, match.index + 1),
                     })
                 }
             }
         }
+    }
 
-        // NOTE: deduplicating here will save duplicate queries that are _likely_ to point to the
-        // same definition, but we may be culling aggressively here for some edge cases. I don't
-        // currently think that these are likely to be make-or-break a quality response on any
-        // significant segment of real world questions, though.
-        for (const { symbolName, position } of dedupeWith(requestQueue, 'symbolName')) {
-            definitionMatches.push({
-                symbolName,
-                hover: getHover(uri, position),
-                locations: getDefinitions(uri, position),
-            })
-        }
+    return requestCandidates
+}
+
+interface SymbolDefinitionMatches {
+    symbolName: string
+    hover: Thenable<vscode.Hover[]>
+    definitionLocations: Thenable<vscode.Location[]>
+    typeDefinitionLocations: Thenable<vscode.Location[]>
+    implementationLocations: Thenable<vscode.Location[]>
+}
+
+interface ResolvedSymbolDefinitionMatches {
+    symbolName: string
+    hover: vscode.Hover[]
+    definitionLocations: vscode.Location[]
+    typeDefinitionLocations: vscode.Location[]
+    implementationLocations: vscode.Location[]
+}
+
+/**
+ * Query each of the candidate requests for definitions which are resolved in parallel before return.
+ */
+export const gatherDefinitions = async (
+    selections: Selection[],
+    requests: Request[],
+    getHover: typeof defaultGetHover = defaultGetHover,
+    getDefinitions: typeof defaultGetDefinitions = defaultGetDefinitions,
+    getTypeDefinitions: typeof defaultGetTypeDefinitions = defaultGetTypeDefinitions,
+    getImplementations: typeof defaultGetImplementations = defaultGetImplementations
+): Promise<ResolvedSymbolDefinitionMatches[]> => {
+    // Construct a list of symbol and definition location pairs by querying the LSP server
+    // with all identifiers (heuristically chosen via regex) in the relevant code ranges.
+    const definitionMatches: SymbolDefinitionMatches[] = []
+
+    // NOTE: deduplicating here will save duplicate queries that are _likely_ to point to the
+    // same definition, but we may be culling aggressively here for some edge cases. I don't
+    // currently think that these are likely to be make-or-break a quality response on any
+    // significant segment of real world questions, though.
+    for (const { symbolName, uri, position } of dedupeWith(requests, 'symbolName')) {
+        definitionMatches.push({
+            symbolName,
+            hover: getHover(uri, position),
+            definitionLocations: getDefinitions(uri, position),
+            typeDefinitionLocations: getTypeDefinitions(uri, position),
+            implementationLocations: getImplementations(uri, position),
+        })
     }
 
     // Resolve all in-flight promises in parallel
     const resolvedDefinitionMatches = await Promise.all(
-        definitionMatches.map(async ({ symbolName, hover, locations }) => ({
-            symbolName,
-            hover: await hover,
-            locations: await locations,
-        }))
+        definitionMatches.map(
+            async ({ symbolName, hover, definitionLocations, typeDefinitionLocations, implementationLocations }) => ({
+                symbolName,
+                hover: await hover,
+                definitionLocations: await definitionLocations,
+                typeDefinitionLocations: await typeDefinitionLocations,
+                implementationLocations: await implementationLocations,
+            })
+        )
     )
 
     return (
         resolvedDefinitionMatches
             // Remove definition ranges that exist within one of the input definition selections
             // These are locals and don't give us any additional information in the context window.
-            .map(({ locations, ...rest }) => ({
-                ...rest,
-                locations: locations.filter(
+            .map(({ definitionLocations, ...rest }) => ({
+                definitionLocations: definitionLocations.filter(
                     ({ uri, range }) =>
                         !selections.some(
                             ({ uri: selectionUri, range: selectionRange }) =>
@@ -415,12 +479,234 @@ export const gatherDefinitions = async (
                                         range.end.line <= selectionRange.end.line))
                         )
                 ),
+                ...rest,
             }))
             // Remove empty locations
-            .filter(({ locations }) => locations.length !== 0)
+            .filter(
+                ({ definitionLocations, typeDefinitionLocations, implementationLocations }) =>
+                    definitionLocations.length + typeDefinitionLocations.length + implementationLocations.length !== 0
+            )
     )
 }
 
+interface UnresolvedHoverText {
+    symbolName: string
+    symbolLocation: vscode.Location
+    definition: UnresolvedHoverElement
+    typeDefinition: UnresolvedHoverElement
+    implementations: UnresolvedHoverElement
+}
+
+interface UnresolvedHoverElement {
+    locations: Thenable<vscode.Location[]>
+    hover?: Thenable<vscode.Hover[]>
+}
+
+interface ResolvedHoverText {
+    symbolName: string
+    symbolLocation: vscode.Location
+    definition?: ResolvedHoverElement
+    typeDefinition?: ResolvedHoverElement
+    implementations?: ResolvedHoverElement[]
+}
+
+interface ResolvedHoverElement {
+    symbolName: string
+    location: vscode.Location
+    hover: vscode.Hover[]
+}
+
+const hoverToStrings = (h: vscode.Hover[]): string[] =>
+    h
+        .flatMap(h => h.contents.map(c => (typeof c === 'string' ? c : c.value)))
+        .map(extractMarkdownCodeBlock)
+        .map(s => s.trim())
+        .filter(s => s !== '')
+
+const hoverContextFromResolvedHoverText = (t: ResolvedHoverText): HoverContext[] =>
+    [
+        hoverContextFromElement(t.definition),
+        hoverContextFromElement(t.typeDefinition),
+        ...(t.implementations?.map(hoverContextFromElement) ?? []),
+    ].filter(isDefined)
+
+const hoverContextFromElement = (e?: ResolvedHoverElement): HoverContext | undefined => {
+    if (e === undefined) {
+        return undefined
+    }
+
+    const definitionHoverContent = hoverToStrings(e.hover)
+    if (definitionHoverContent.length === 0) {
+        return undefined
+    }
+
+    return {
+        symbolName: e.symbolName,
+        type: 'definition',
+        content: definitionHoverContent,
+        uri: e.location.uri.toString(),
+        range: {
+            startLine: e.location.range.start.line,
+            startCharacter: e.location.range.start.character,
+            endLine: e.location.range.end.line,
+            endCharacter: e.location.range.end.character,
+        },
+    }
+}
+
+function extractMarkdownCodeBlock(string: string): string {
+    const lines = string.split('\n')
+    const codeBlocks: string[] = []
+    let isCodeBlock = false
+    for (const line of lines) {
+        const isCodeBlockDelimiter = line.trim().startsWith('```')
+
+        if (isCodeBlockDelimiter && !isCodeBlock) {
+            isCodeBlock = true
+        } else if (isCodeBlockDelimiter && isCodeBlock) {
+            isCodeBlock = false
+        } else if (isCodeBlock) {
+            codeBlocks.push(line)
+        }
+    }
+
+    return codeBlocks.join('\n')
+}
+
+/**
+ * Query each of the candidate requests for hover texts which are resolved in parallel before return.
+ */
+export const gatherHoverText = async (
+    contentMap: Map<string, string[]>,
+    requests: Request[],
+    getHover: typeof defaultGetHover = defaultGetHover,
+    getDefinitions: typeof defaultGetDefinitions = defaultGetDefinitions,
+    getTypeDefinitions: typeof defaultGetTypeDefinitions = defaultGetTypeDefinitions,
+    getImplementations: typeof defaultGetImplementations = defaultGetImplementations
+): Promise<ResolvedHoverText[]> => {
+    // Construct a list of symbol and definition location pairs by querying the LSP server
+    // with all identifiers (heuristically chosen via regex) in the relevant code ranges.
+    const hoverMatches: UnresolvedHoverText[] = []
+
+    // NOTE: deduplicating here will save duplicate queries that are _likely_ to point to the
+    // same definition, but we may be culling aggressively here for some edge cases. I don't
+    // currently think that these are likely to be make-or-break a quality response on any
+    // significant segment of real world questions, though.
+
+    for (const { uri, symbolName, position } of dedupeWith(requests, 'symbolName')) {
+        hoverMatches.push({
+            symbolName,
+            symbolLocation: new vscode.Location(uri, position),
+            definition: { locations: getDefinitions(uri, position), hover: getHover(uri, position) },
+            typeDefinition: { locations: getTypeDefinitions(uri, position) },
+            implementations: { locations: getImplementations(uri, position) },
+        })
+    }
+
+    // Resolve the definition/type definition/implementations queries above in parallel and extract
+    // and deduplicate the locations. We're going to request hover text from each of these next.
+    const locationsForHover = dedupeWith(
+        (
+            await Promise.all(
+                hoverMatches.map(async ({ definition, typeDefinition, implementations }) => [
+                    ...(await definition.locations),
+                    ...(await typeDefinition.locations),
+                    ...(await implementations.locations),
+                ])
+            )
+        ).flat(),
+        locationKeyFn
+    )
+
+    // NOTE: Before asking for data about a document it must be opened in the workspace. This forces
+    // a resolution so that the following queries that require the document context will not fail with
+    // an unknown document.
+    await updateContentMap(contentMap, dedupeWith(locationsForHover.map(l => l.uri).flat(), 'fsPath'))
+
+    // Request hover for every (deduplicated) location range we got from def/type def/impl queries
+    const hoverMap = await unwrapThenableMap(
+        new Map(
+            locationsForHover.map(
+                l => [locationKeyFn(l), getHover(l.uri, l.range.start)] as [string, Thenable<vscode.Hover[]>]
+            )
+        )
+    )
+
+    return Promise.all(
+        hoverMatches.map(async ({ symbolName, symbolLocation, definition, typeDefinition, implementations }) => {
+            let definitionObj: ResolvedHoverElement | undefined
+            const definitionLocation = (await definition.locations).pop()
+            if (definitionLocation) {
+                const symbolName = extractRangeFromDocument(
+                    contentMap,
+                    definitionLocation.uri,
+                    definitionLocation.range
+                )
+
+                definitionObj = {
+                    symbolName,
+                    location: definitionLocation,
+                    hover: hoverMap.get(locationKeyFn(definitionLocation)) || [],
+                }
+            }
+
+            let typeDefinitionObj: ResolvedHoverElement | undefined
+            const typeDefinitionLocation = (await typeDefinition.locations).pop()
+            if (typeDefinitionLocation) {
+                const symbolName = extractRangeFromDocument(
+                    contentMap,
+                    typeDefinitionLocation.uri,
+                    typeDefinitionLocation.range
+                )
+
+                typeDefinitionObj = {
+                    symbolName,
+                    location: typeDefinitionLocation,
+                    hover: hoverMap.get(locationKeyFn(typeDefinitionLocation)) || [],
+                }
+            }
+
+            let implementationObjs: ResolvedHoverElement[] | undefined
+            const implementationsLocations = await implementations.locations
+            if (implementationsLocations.length > 0) {
+                implementationObjs = implementationsLocations.map(location => ({
+                    symbolName: extractRangeFromDocument(contentMap, location.uri, location.range),
+                    location,
+                    hover: hoverMap.get(locationKeyFn(location)) || [],
+                }))
+            }
+
+            return {
+                symbolName,
+                symbolLocation,
+                definition: definitionObj,
+                typeDefinition: typeDefinitionObj,
+                implementations: implementationObjs,
+            }
+        })
+    )
+}
+
+const extractRangeFromDocument = (contentMap: Map<string, string[]>, uri: vscode.Uri, range: vscode.Range): string => {
+    const content = contentMap.get(uri.fsPath)
+    if (!content) {
+        return ''
+    }
+
+    // Trim off lines outside of the range
+    // NOTE: inclusive upper bound
+    const extractedLines = content.slice(range.start.line, range.end.line + 1)
+    if (extractedLines.length === 0) {
+        return ''
+    }
+
+    // Trim off characters outside of the range
+    const n = extractedLines.length - 1
+    extractedLines[n] = extractedLines[n].slice(0, range.end.character)
+    extractedLines[0] = extractedLines[0].slice(range.start.character)
+
+    return extractedLines.join('\n')
+}
 /**
  * For each match, extract the definition text from the given map of file contents. The given content map
  * is expected to hold the contents of the file indicated by the definition's location URI, and the file
@@ -529,6 +815,18 @@ const defaultGetTypeDefinitions = async (uri: URI, position: vscode.Position): P
         .then(locations => (locations.length > 0 ? locations : defaultGetDefinitions(uri, position)))
 
 /**
+ * Shim for default LSP executeImplementationProvider call. Can be mocked for testing.
+ */
+const defaultGetImplementations = async (uri: URI, position: vscode.Position): Promise<vscode.Location[]> =>
+    vscode.commands
+        .executeCommand<(vscode.Location | vscode.LocationLink)[]>(
+            'vscode.executeImplementationProvider',
+            uri,
+            position
+        )
+        .then(locations => locations.flatMap(extractLocation))
+
+/**
  * Extract the definition range from the given symbol information or document symbol.
  */
 const extractSymbolRange = (d: vscode.SymbolInformation | vscode.DocumentSymbol): vscode.Range =>
@@ -562,7 +860,7 @@ const extractSnippets = (lines: string[], symbolRanges: vscode.Range[], targetRa
  * Returns a key unique to a given location for use with `dedupeWith`.
  */
 export const locationKeyFn = (location: vscode.Location): string =>
-    `${location.uri}?L${location.range.start.line}:${location.range.start.character}`
+    `${location.uri?.fsPath}?L${location.range.start.line}:${location.range.start.character}`
 
 /**
  * Convert a mapping from K -> Thenable<V> to a map of K -> V.
