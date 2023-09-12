@@ -105,6 +105,14 @@ export class SectionObserver implements vscode.Disposable, GraphContextFetcher {
         let usedContextChars = 0
         const context: ContextSnippet[] = []
 
+        function overlapsContextRange(uri: vscode.Uri, range?: { startLine: number; endLine: number }): boolean {
+            if (!contextRange || !range || uri.toString() !== document.uri.toString()) {
+                return false
+            }
+
+            return contextRange.start.line <= range.startLine && contextRange.end.line >= range.endLine
+        }
+
         const sectionHistory = (
             await Promise.all(
                 this.lastVisitedSections
@@ -117,6 +125,13 @@ export class SectionObserver implements vscode.Disposable, GraphContextFetcher {
                         compareSection =>
                             locationKeyFn(compareSection.location) !==
                             (section ? locationKeyFn(section.location) : null)
+                    )
+                    .filter(
+                        section =>
+                            !overlapsContextRange(section.location.uri, {
+                                startLine: section.location.range.start.line,
+                                endLine: section.location.range.end.line,
+                            })
                     )
                     .map(async section => {
                         try {
@@ -149,16 +164,7 @@ export class SectionObserver implements vscode.Disposable, GraphContextFetcher {
 
         if (sectionGraphContext) {
             const preciseContexts = sectionGraphContext
-                .filter(context => {
-                    if (!contextRange || !context.range || context.filePath !== document.uri.fsPath) {
-                        return true
-                    }
-
-                    return !(
-                        contextRange.start.line <= context.range.startLine &&
-                        contextRange.end.line >= context.range.endLine
-                    )
-                })
+                .filter(context => !overlapsContextRange(URI.file(context.filePath), context.range))
                 .map(preciseContextToSnippet)
                 .filter(isDefined)
             for (const preciseContext of preciseContexts) {

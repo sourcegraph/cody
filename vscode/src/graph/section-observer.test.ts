@@ -488,6 +488,40 @@ describe('SectionObserver', () => {
                     fileName: '/document2.ts',
                 })
             })
+
+            it('does not include sections that are contained in the prefix/suffix range', async () => {
+                // Visit the first and second section  in document 1
+                await onDidChangeTextEditorSelection({
+                    textEditor: { document: testDocuments.document1 },
+                    selections: [{ active: { line: 0, character: 0 } }],
+                })
+                await onDidChangeTextEditorSelection({
+                    textEditor: { document: testDocuments.document1 },
+                    selections: [{ active: { line: 11, character: 0 } }],
+                })
+
+                expect(sectionObserver.debugPrint()).toMatchInlineSnapshot(`
+                  "file:/document1.ts
+                    ├─ foo (2 snippets)
+                    └─ bar (2 snippets)
+
+                  Last visited sections:
+                    ├ file:/document1.ts bar
+                    └ file:/document1.ts foo"
+                `)
+
+                const context = await sectionObserver.getContextAtPosition(
+                    testDocuments.document1 as any,
+                    {
+                        line: 0,
+                        character: 0,
+                    } as any,
+                    1000,
+                    range(0, 0, 20, 0)
+                )
+
+                expect(context.length).toBe(0)
+            })
         })
     })
 })
