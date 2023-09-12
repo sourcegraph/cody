@@ -7,14 +7,14 @@ import { URI } from 'vscode-uri'
 import { PreciseContext } from '@sourcegraph/cody-shared/src/codebase-context/messages'
 import { isDefined } from '@sourcegraph/cody-shared/src/common'
 
-import { GraphContextFetcher } from '../completions/context/context'
-import { baseLanguageId } from '../completions/context/utils'
-import { ContextSnippet, SymbolContextSnippet } from '../completions/types'
-import { createSubscriber } from '../completions/utils'
-import { logDebug } from '../log'
+import { getGraphContextFromRange as defaultGetGraphContextFromRange, locationKeyFn } from '../../graph/graph'
+import { getDocumentSections as defaultGetDocumentSections, DocumentSection } from '../../graph/sections'
+import { logDebug } from '../../log'
+import { ContextSnippet, SymbolContextSnippet } from '../types'
+import { createSubscriber } from '../utils'
 
-import { getGraphContextFromRange as defaultGetGraphContextFromRange, locationKeyFn } from './graph'
-import { getDocumentSections as defaultGetDocumentSections, DocumentSection } from './sections'
+import { GraphContextFetcher } from './context-graph'
+import { baseLanguageId } from './utils'
 
 interface Section extends DocumentSection {
     preloadedContext: {
@@ -50,7 +50,7 @@ export const registerDebugListener = debugSubscriber.subscribe.bind(debugSubscri
  * Each section will behave like a stale-while-revalidate cache in that it will serve the previous
  * context while it is still being revalidated.
  */
-export class SectionObserver implements vscode.Disposable, GraphContextFetcher {
+export class GraphSectionObserver implements vscode.Disposable, GraphContextFetcher {
     private disposables: vscode.Disposable[] = []
 
     // A map of all active documents that are being tracked. We rely on the LRU cache to evict
@@ -76,7 +76,7 @@ export class SectionObserver implements vscode.Disposable, GraphContextFetcher {
         void this.onDidChangeVisibleTextEditors()
     }
 
-    public static instance: SectionObserver | null = null
+    public static instance: GraphSectionObserver | null = null
     public static createInstance(
         window?: Pick<
             typeof vscode.window,
@@ -85,11 +85,11 @@ export class SectionObserver implements vscode.Disposable, GraphContextFetcher {
         workspace?: Pick<typeof vscode.workspace, 'onDidChangeTextDocument'>,
         getDocumentSections?: typeof defaultGetDocumentSections,
         getGraphContextFromRange?: typeof defaultGetGraphContextFromRange
-    ): SectionObserver {
+    ): GraphSectionObserver {
         if (this.instance) {
             throw new Error('SectionObserver has already been initialized')
         }
-        this.instance = new SectionObserver(window, workspace, getDocumentSections, getGraphContextFromRange)
+        this.instance = new GraphSectionObserver(window, workspace, getDocumentSections, getGraphContextFromRange)
         return this.instance
     }
 
@@ -441,7 +441,7 @@ export class SectionObserver implements vscode.Disposable, GraphContextFetcher {
     }
 
     public dispose(): void {
-        SectionObserver.instance = null
+        GraphSectionObserver.instance = null
         for (const disposable of this.disposables) {
             disposable.dispose()
         }

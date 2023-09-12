@@ -3,10 +3,10 @@ import { URI } from 'vscode-uri'
 
 import { PreciseContext } from '@sourcegraph/cody-shared/src/codebase-context/messages'
 
-import { vsCodeMocks } from '../testutils/mocks'
-import { range } from '../testutils/textDocument'
+import { vsCodeMocks } from '../../testutils/mocks'
+import { range } from '../../testutils/textDocument'
 
-import { SectionObserver } from './section-observer'
+import { GraphSectionObserver } from './graph-section-observer'
 
 vi.mock('vscode', () => vsCodeMocks)
 
@@ -23,7 +23,7 @@ interface TestDocument {
     sections: { fuzzyName: string; location: any }[]
 }
 
-describe('SectionObserver', () => {
+describe('GraphSectionObserver', () => {
     let testDocuments: {
         document1: TestDocument
         document2: TestDocument
@@ -35,7 +35,7 @@ describe('SectionObserver', () => {
     let onDidChangeTextDocument: any
     let getDocumentSections: Mock
     let getGraphContextFromRange: Mock
-    let sectionObserver: SectionObserver
+    let sectionObserver: GraphSectionObserver
     beforeEach(async () => {
         testDocuments = {
             document1: {
@@ -82,7 +82,7 @@ describe('SectionObserver', () => {
                 ] satisfies PreciseContext[]
         )
 
-        sectionObserver = SectionObserver.createInstance(
+        sectionObserver = GraphSectionObserver.createInstance(
             {
                 // Mock VS Code event handlers so we can fire them manually
                 onDidChangeVisibleTextEditors: (_onDidChangeVisibleTextEditors: any) => {
