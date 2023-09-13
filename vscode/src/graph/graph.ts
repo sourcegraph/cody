@@ -181,14 +181,7 @@ const updateContentMap = async (contentMap: Map<string, string[]>, locations: vs
     const unseenDefinitionUris = dedupeWith(locations, 'fsPath').filter(uri => !contentMap.has(uri.fsPath))
 
     // Remove ultra-common type definitions that are probably already known by the LLM
-    const filteredUnseenDefinitionUris = unseenDefinitionUris.filter(uri => {
-        for (const importPath of commonImportPaths) {
-            if (uri.fsPath.includes(importPath)) {
-                return false
-            }
-        }
-        return true
-    })
+    const filteredUnseenDefinitionUris = unseenDefinitionUris.filter(uri => !isCommonImport(uri))
 
     const newContentMap = new Map(
         filteredUnseenDefinitionUris.map(uri => [
@@ -344,7 +337,7 @@ const typescriptKeywords = new Set([
 
 const commonImportPaths = new Set([
     // The TS lib folder contains the TS standard library and all of ECMAScript.
-    '/node_modules/typescript/lib',
+    'node_modules/typescript/lib',
     // The node library contains the standard node library.
     'node_modules/@types/node',
     // All CSS properties as TS types.
@@ -354,6 +347,15 @@ const commonImportPaths = new Set([
     'node_modules/@types/prop-types',
     'node_modules/next/',
 ])
+
+function isCommonImport(uri: vscode.Uri): boolean {
+    for (const importPath of commonImportPaths) {
+        if (uri.fsPath.includes(importPath)) {
+            return true
+        }
+    }
+    return false
+}
 
 export const commonKeywords = new Set([...goKeywords, ...typescriptKeywords])
 
@@ -632,9 +634,9 @@ export const gatherHoverText = async (
     // Request hover for every (deduplicated) location range we got from def/type def/impl queries
     const hoverMap = await unwrapThenableMap(
         new Map(
-            locationsForHover.map(
-                l => [locationKeyFn(l), getHover(l.uri, l.range.start)] as [string, Thenable<vscode.Hover[]>]
-            )
+            locationsForHover
+                .filter(l => !isCommonImport(l.uri))
+                .map(l => [locationKeyFn(l), getHover(l.uri, l.range.start)] as [string, Thenable<vscode.Hover[]>])
         )
     )
 
