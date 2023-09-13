@@ -1,3 +1,5 @@
+import { isError } from '../utils'
+
 export class RateLimitError extends Error {
     constructor(
         message: string,
@@ -9,11 +11,11 @@ export class RateLimitError extends Error {
     }
 }
 
-export function isRateLimitError(error: Error): error is RateLimitError {
+export function isRateLimitError(error: unknown): error is RateLimitError {
     return error instanceof RateLimitError
 }
 
-export class NetworkError extends Error {
+export class TracedError extends Error {
     constructor(
         message: string,
         public traceId: string | undefined
@@ -23,30 +25,38 @@ export class NetworkError extends Error {
     }
 }
 
+export function isTracedError(error: Error): error is TracedError {
+    return error instanceof TracedError
+}
+
+export class NetworkError extends Error {
+    public readonly status: number
+
+    constructor(
+        response: Response,
+        public traceId: string | undefined
+    ) {
+        super(`Request to ${response.url} failed with ${response.status}: ${response.statusText}`)
+        this.status = response.status
+        Object.setPrototypeOf(this, NetworkError.prototype)
+    }
+}
+
 export function isNetworkError(error: Error): error is NetworkError {
     return error instanceof NetworkError
 }
 
-export function isAbortError(error: Error): boolean {
+export function isAbortError(error: unknown): boolean {
     return (
+        isError(error) &&
         // http module
-        error.message === 'aborted' ||
-        // fetch
-        error.message.includes('The operation was aborted') ||
-        error.message.includes('The user aborted a request')
+        (error.message === 'aborted' ||
+            // fetch
+            error.message.includes('The operation was aborted') ||
+            error.message.includes('The user aborted a request'))
     )
 }
 
-export class AuthError extends Error {
-    constructor(
-        message: string,
-        public traceId: string | undefined
-    ) {
-        super(message)
-        Object.setPrototypeOf(this, AuthError.prototype)
-    }
-}
-
-export function isAuthError(error: Error): error is AuthError {
-    return error instanceof AuthError
+export function isAuthError(error: unknown): boolean {
+    return error instanceof NetworkError && (error.status === 401 || error.status === 403)
 }

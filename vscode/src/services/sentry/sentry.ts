@@ -3,6 +3,12 @@ import type { init as nodeInit } from '@sentry/node'
 
 import { Configuration } from '@sourcegraph/cody-shared/src/configuration'
 import { isDotCom } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
+import {
+    isAbortError,
+    isAuthError,
+    isRateLimitError,
+    NetworkError,
+} from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
 
 import { extensionDetails } from '../EventLogger'
 
@@ -36,12 +42,17 @@ export abstract class SentryService {
                 // In dev mode, have Sentry log extended debug information to the console.
                 debug: !isProd,
 
-                // Only send errors when connected to dotcom
-                beforeSend: event => {
-                    if (!isDotCom(this.config.serverEndpoint) && isProd) {
-                        return null
+                // Only send errors when connected to dotcom in the production build.
+                beforeSend: (event, hint) => {
+                    if (
+                        isProd &&
+                        isDotCom(this.config.serverEndpoint) &&
+                        shouldErrorBeReported(hint.originalException)
+                    ) {
+                        return event
                     }
-                    return event
+
+                    return null
                 },
 
                 // The extension host is shared across other extensions, so listening on the default
@@ -61,4 +72,17 @@ export abstract class SentryService {
     }
 
     protected abstract reconfigure(options: Parameters<typeof nodeInit | typeof browserInit>[0]): void
+}
+
+export function shouldErrorBeReported(error: unknown): boolean {
+    if (error instanceof NetworkError) {
+        // Ignore Server error responses (5xx).
+        return error.status < 500
+    }
+
+    if (isAbortError(error) || isRateLimitError(error) || isAuthError(error)) {
+        return false
+    }
+
+    return true
 }
