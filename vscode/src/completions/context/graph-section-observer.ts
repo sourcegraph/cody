@@ -461,7 +461,7 @@ function hoverContextToSnippets(context: HoverContext): SymbolContextSnippet {
             : undefined
 
     return {
-        fileName: path.normalize(vscode.workspace.asRelativePath(URI.parse(context.uri))),
+        fileName: path.normalize(vscode.workspace.asRelativePath(URI.parse(context.uri).fsPath)),
         symbol: context.symbolName,
         sourceSymbolAndRelationship,
         content: context.content.join('\n').trim(),
