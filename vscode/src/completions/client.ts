@@ -98,12 +98,6 @@ export function createClient(
                 throw new TracedError('No response body', traceId)
             }
 
-            // Terminate early and do not report this error to Sentry if a request is unauthenticated.
-            if (response.status === 401) {
-                const result = await response.text()
-                throw new AuthError(result, traceId)
-            }
-
             // For backward compatibility, we have to check if the response is an SSE stream or a
             // regular JSON payload. This ensures that the request also works against older backends
             const isStreamingResponse = response.headers.get('content-type') === 'text/event-stream'
