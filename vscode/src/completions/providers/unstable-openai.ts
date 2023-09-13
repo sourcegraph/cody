@@ -14,7 +14,6 @@ import { CompletionProviderTracer, Provider, ProviderConfig, ProviderOptions } f
 interface UnstableOpenAIOptions {
     client: Pick<CodeCompletionsClient, 'complete'>
     contextWindowTokens: number
-    model: string
 }
 
 const PROVIDER_IDENTIFIER = 'unstable-openai'
@@ -31,13 +30,11 @@ function tokensToChars(tokens: number): number {
 export class UnstableOpenAIProvider extends Provider {
     private client: Pick<CodeCompletionsClient, 'complete'>
     private promptChars: number
-    private model: string
 
     constructor(options: ProviderOptions, azureOpenAIOptions: UnstableOpenAIOptions) {
         super(options)
         this.client = azureOpenAIOptions.client
         this.promptChars = tokensToChars(azureOpenAIOptions.contextWindowTokens) - tokensToChars(MAX_RESPONSE_TOKENS)
-        this.model = azureOpenAIOptions.model
     }
 
     private createPrompt(snippets: ContextSnippet[]): string {
@@ -81,7 +78,6 @@ export class UnstableOpenAIProvider extends Provider {
             temperature: 1,
             topP: 0.5,
             stopSequences,
-            model: this.model,
         }
 
         tracer?.params(args)
@@ -157,17 +153,17 @@ export class UnstableOpenAIProvider extends Provider {
     }
 }
 
-export function createProviderConfig(
-    unstableAzureOpenAIOptions: Omit<UnstableOpenAIOptions, 'model'> & { model?: string }
-): ProviderConfig {
-    const model = unstableAzureOpenAIOptions.model || 'gpt-35-turbo'
+export function createProviderConfig({
+    model,
+    ...unstableAzureOpenAIOptions
+}: UnstableOpenAIOptions & { model?: string }): ProviderConfig {
     return {
         create(options: ProviderOptions) {
-            return new UnstableOpenAIProvider(options, { ...unstableAzureOpenAIOptions, model })
+            return new UnstableOpenAIProvider(options, { ...unstableAzureOpenAIOptions })
         },
         maximumContextCharacters: tokensToChars(unstableAzureOpenAIOptions.contextWindowTokens),
         enableExtendedMultilineTriggers: false,
         identifier: PROVIDER_IDENTIFIER,
-        model,
+        model: model || 'gpt-35-turbo',
     }
 }
