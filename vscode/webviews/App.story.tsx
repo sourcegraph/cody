@@ -1,7 +1,6 @@
 import { ComponentMeta, ComponentStoryObj } from '@storybook/react'
 
-import { defaultAuthStatus } from '../src/chat/protocol'
-import { OnboardingExperimentArm } from '../src/services/OnboardingExperiment'
+import { defaultAuthStatus, OnboardingExperimentArm } from '../src/chat/protocol'
 
 import { App } from './App'
 import { VSCodeStoryDecorator } from './storybook/VSCodeStoryDecorator'

@@ -19,11 +19,10 @@ import { logDebug } from '../log'
 import { getRerankWithLog } from '../logged-rerank'
 import { repositoryRemoteUrl } from '../repository/repositoryHelpers'
 import { AuthProvider } from '../services/AuthProvider'
-import { OnboardingExperimentArm } from '../services/OnboardingExperiment'
 
 import { ChatViewProviderWebview } from './ChatViewProvider'
 import { GraphContextProvider } from './GraphContextProvider'
-import { ConfigurationSubsetForWebview, LocalEnv } from './protocol'
+import { ConfigurationSubsetForWebview, LocalEnv, OnboardingExperimentArm } from './protocol'
 
 export type Config = Pick<
     ConfigurationWithAccessToken,

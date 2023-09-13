@@ -3,7 +3,7 @@ import classNames from 'classnames'
 
 import { TelemetryService } from '@sourcegraph/cody-shared/src/telemetry'
 
-import { AuthMethod } from '../src/services/OnboardingExperiment'
+import { AuthMethod } from '../src/chat/protocol'
 
 import onboardingSplashImage from './cody-onboarding-splash.svg'
 import signInLogoGitHub from './sign-in-logo-github.svg'

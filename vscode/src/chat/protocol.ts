@@ -7,7 +7,6 @@ import { CodyLLMSiteConfiguration } from '@sourcegraph/cody-shared/src/sourcegra
 import type { TelemetryEventProperties } from '@sourcegraph/cody-shared/src/telemetry'
 
 import { View } from '../../webviews/NavBar'
-import { AuthMethod, OnboardingExperimentArm } from '../services/OnboardingExperiment'
 
 /**
  * A message sent from the webview to the extension host.
@@ -183,4 +182,14 @@ export function archConvertor(arch: string): string {
             return 'x86_64'
     }
     return arch
+}
+
+// Simplified Onboarding types which are shared between WebView and extension.
+
+export type AuthMethod = 'dotcom' | 'github' | 'gitlab' | 'google'
+
+export enum OnboardingExperimentArm {
+    Classic, // Control
+    Simplified, // Treatment: simplified onboarding flow
+    Default = Classic,
 }
