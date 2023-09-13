@@ -1,5 +1,13 @@
 export type ConfigurationUseContext = 'embeddings' | 'keyword' | 'none' | 'blended' | 'unified'
 
+export const autocompleteAdvancedProviders = [
+    'anthropic',
+    'unstable-codegen',
+    'unstable-fireworks',
+    'unstable-azure-openai',
+    'unstable-openai',
+] as const
+
 // Should we share VS Code specific config via cody-shared?
 export interface Configuration {
     serverEndpoint: string
@@ -22,13 +30,7 @@ export interface Configuration {
     experimentalLocalSymbols: boolean
     experimentalSymfPath: string
     experimentalSymfAnthropicKey: string
-    autocompleteAdvancedProvider:
-        | 'anthropic'
-        | 'unstable-codegen'
-        | 'unstable-fireworks'
-        | 'unstable-azure-openai'
-        | 'unstable-openai'
-        | null
+    autocompleteAdvancedProvider: (typeof autocompleteAdvancedProviders)[number] | null
     autocompleteAdvancedServerEndpoint: string | null
     autocompleteAdvancedModel: string | null
     autocompleteAdvancedAccessToken: string | null
@@ -43,3 +45,10 @@ export interface ConfigurationWithAccessToken extends Configuration {
     /** The access token, which is stored in the secret storage (not configuration). */
     accessToken: string | null
 }
+
+const colors = ['red', 'green', 'yellow'] as const
+interface Config {
+    color: (typeof colors)[number] | null
+}
+
+const color: Config['color'] = 'blue'

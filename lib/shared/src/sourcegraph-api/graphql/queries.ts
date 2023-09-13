@@ -46,6 +46,7 @@ query CurrentSiteCodyLlmConfiguration {
             fastChatModelMaxTokens
             completionModel
             completionModelMaxTokens
+            provider
         }
     }
 }`

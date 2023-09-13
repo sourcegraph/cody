@@ -140,6 +140,7 @@ export interface CodyLLMSiteConfiguration {
     fastChatModelMaxTokens?: number
     completionModel?: string
     completionModelMaxTokens?: number
+    provider?: string
 }
 
 interface IsContextRequiredForChatQueryResponse {

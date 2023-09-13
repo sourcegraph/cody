@@ -42,7 +42,7 @@ export async function createInlineCompletionItemProvider({
 
     const disposables: vscode.Disposable[] = []
 
-    const providerConfig = await createProviderConfig(config, client, featureFlagProvider)
+    const providerConfig = await createProviderConfig(config, client, featureFlagProvider, authProvider)
     if (providerConfig) {
         const history = new VSCodeDocumentHistory()
         const sectionObserver = config.autocompleteExperimentalGraphContext
