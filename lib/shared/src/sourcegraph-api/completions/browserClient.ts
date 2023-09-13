@@ -45,13 +45,23 @@ export class SourcegraphBrowserCompletionsClient extends SourcegraphCompletionsC
                 }
             },
             onmessage: message => {
-                const data: Event = { ...JSON.parse(message.data), type: message.event }
-                this.sendEvents([data], cb)
+                try {
+                    const data: Event = { ...JSON.parse(message.data), type: message.event }
+                    this.sendEvents([data], cb)
+                } catch (error: any) {
+                    cb.onError(error.message)
+                    abort.abort()
+                    console.error(error)
+                    // throw the error for not retrying
+                    throw error
+                }
             },
             onerror(error) {
                 cb.onError(error.message)
                 abort.abort()
                 console.error(error)
+                // throw the error for not retrying
+                throw error
             },
         }).catch(error => {
             cb.onError(error.message)
