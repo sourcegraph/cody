@@ -271,6 +271,13 @@ const goKeywords = new Set([
     'switch',
     'type',
     'var',
+
+    // common variables, types we don't need to follow
+    'ctx',
+    'Context',
+    'err',
+    'error',
+    'ok',
 ])
 
 const typescriptKeywords = new Set([
