@@ -1,8 +1,8 @@
 import { Configuration } from '@sourcegraph/cody-shared/src/configuration'
 import { FeatureFlag, FeatureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
+import { CodyLLMSiteConfiguration } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
 
 import { logError } from '../../log'
-import { AuthProvider } from '../../services/AuthProvider'
 import { CodeCompletionsClient } from '../client'
 
 import { createProviderConfig as createAnthropicProviderConfig } from './anthropic'
@@ -12,91 +12,124 @@ import { createProviderConfig as createUnstableCodeGenProviderConfig } from './u
 import { createProviderConfig as createUnstableFireworksProviderConfig } from './unstable-fireworks'
 import { createProviderConfig as createUnstableOpenAIProviderConfig } from './unstable-openai'
 
+const DEFAULT_PROVIDER: { provider: string; model?: string } = { provider: 'anthropic' }
+
 export async function createProviderConfig(
     config: Configuration,
     client: CodeCompletionsClient,
     featureFlagProvider: FeatureFlagProvider,
-    authProvider: AuthProvider
+    codyLLMSiteConfig?: CodyLLMSiteConfiguration
 ): Promise<ProviderConfig | null> {
-    const { provider, model } = await resolveDefaultProvider(
+    const providerFromVSCodeConfig = await resolveDefaultProviderFromVSCodeConfig(
         config.autocompleteAdvancedProvider,
-        featureFlagProvider,
-        authProvider
+        featureFlagProvider
     )
-    switch (provider) {
-        case 'unstable-codegen': {
-            if (config.autocompleteAdvancedServerEndpoint !== null) {
-                return createUnstableCodeGenProviderConfig(config.autocompleteAdvancedServerEndpoint)
-            }
+    if (providerFromVSCodeConfig) {
+        const { provider, model } = providerFromVSCodeConfig
 
-            logError(
-                'createProviderConfig',
-                'Provider `unstable-codegen` can not be used without configuring `cody.autocomplete.advanced.serverEndpoint`.'
-            )
-            return null
-        }
-        case 'unstable-azure-openai': {
-            if (config.autocompleteAdvancedServerEndpoint === null) {
+        switch (provider) {
+            case 'unstable-codegen': {
+                if (config.autocompleteAdvancedServerEndpoint !== null) {
+                    return createUnstableCodeGenProviderConfig(config.autocompleteAdvancedServerEndpoint)
+                }
+
                 logError(
                     'createProviderConfig',
-                    'Provider `unstable-azure-openai` can not be used without configuring `cody.autocomplete.advanced.serverEndpoint`.'
+                    'Provider `unstable-codegen` can not be used without configuring `cody.autocomplete.advanced.serverEndpoint`.'
                 )
                 return null
             }
+            case 'unstable-azure-openai': {
+                if (config.autocompleteAdvancedServerEndpoint === null) {
+                    logError(
+                        'createProviderConfig',
+                        'Provider `unstable-azure-openai` can not be used without configuring `cody.autocomplete.advanced.serverEndpoint`.'
+                    )
+                    return null
+                }
 
-            if (config.autocompleteAdvancedAccessToken === null) {
+                if (config.autocompleteAdvancedAccessToken === null) {
+                    logError(
+                        'createProviderConfig',
+                        'Provider `unstable-azure-openai` can not be used without configuring `cody.autocomplete.advanced.accessToken`.'
+                    )
+                    return null
+                }
+
+                return createUnstableAzureOpenAiProviderConfig({
+                    serverEndpoint: config.autocompleteAdvancedServerEndpoint,
+                    accessToken: config.autocompleteAdvancedAccessToken,
+                })
+            }
+            case 'unstable-openai': {
+                return createUnstableOpenAIProviderConfig({
+                    client,
+                    contextWindowTokens: 2048,
+                })
+            }
+            case 'unstable-fireworks': {
+                return createUnstableFireworksProviderConfig({
+                    client,
+                    model: config.autocompleteAdvancedModel ?? model ?? null,
+                })
+            }
+            case 'anthropic': {
+                return createAnthropicProviderConfig({
+                    client,
+                    contextWindowTokens: 2048,
+                    mode: config.autocompleteAdvancedModel === 'claude-instant-infill' ? 'infill' : 'default',
+                })
+            }
+            default:
                 logError(
                     'createProviderConfig',
-                    'Provider `unstable-azure-openai` can not be used without configuring `cody.autocomplete.advanced.accessToken`.'
+                    `Unrecognized provider '${config.autocompleteAdvancedProvider}' configured.`
                 )
                 return null
-            }
-
-            return createUnstableAzureOpenAiProviderConfig({
-                serverEndpoint: config.autocompleteAdvancedServerEndpoint,
-                accessToken: config.autocompleteAdvancedAccessToken,
-            })
         }
-        case 'openai':
-        case 'azure-openai':
-        case 'unstable-openai': {
-            return createUnstableOpenAIProviderConfig({
-                client,
-                contextWindowTokens: 2048,
-                // "unstable-openai" provider doesn't support setting a model.
-                // Pass model only if provider comes from the instance site config.
-                model: provider !== 'unstable-openai' ? model : undefined,
-            })
-        }
-        case 'fireworks':
-        case 'unstable-fireworks': {
-            return createUnstableFireworksProviderConfig({
-                client,
-                // if completions provider comes from the instance site config, ignore advanced model value from the VSCode settings
-                model: (provider === 'unstable-fireworks' ? config.autocompleteAdvancedModel : null) ?? model ?? null,
-            })
-        }
-        case 'anthropic': {
-            return createAnthropicProviderConfig({
-                client,
-                contextWindowTokens: 2048,
-                mode: config.autocompleteAdvancedModel === 'claude-instant-infill' ? 'infill' : 'default',
-            })
-        }
-        default:
-            logError(
-                'createProviderConfig',
-                `Unrecognized provider '${config.autocompleteAdvancedProvider}' configured.`
-            )
-            return null
     }
+
+    const providerFromSiteConfig = codyLLMSiteConfig ? resolveDefaultProviderFromSiteConfig(codyLLMSiteConfig) : null
+    if (providerFromSiteConfig) {
+        const { provider, model } = providerFromSiteConfig
+
+        switch (provider) {
+            case 'openai':
+            case 'azure-openai':
+                return createUnstableOpenAIProviderConfig({
+                    client,
+                    contextWindowTokens: 2048,
+                    model,
+                })
+
+            case 'fireworks':
+                return createUnstableFireworksProviderConfig({
+                    client,
+                    model: model ?? null,
+                })
+            case 'anthropic':
+            case 'sourcegraph':
+                return createAnthropicProviderConfig({
+                    client,
+                    contextWindowTokens: 2048,
+                    mode: config.autocompleteAdvancedModel === 'claude-instant-infill' ? 'infill' : 'default',
+                    // TODO: pass model name if provider is anthropic
+                    // model: provider === 'anthropic' ? model : undefined,
+                })
+            default:
+                logError('createProviderConfig', `Unrecognized provider '${provider}' configured.`)
+                return null
+        }
+    }
+
+    // TODO: return default provider (anthropic) config instead
+    return null
 }
 
-async function resolveDefaultProvider(
+async function resolveDefaultProviderFromVSCodeConfig(
     configuredProvider: string | null,
-    featureFlagProvider: FeatureFlagProvider,
-    authProvider: AuthProvider
-): Promise<{ provider: string; model?: string }> {
+    featureFlagProvider?: FeatureFlagProvider
+): Promise<{ provider: string; model?: 'starcoder-7b' | 'starcoder-16b' | 'claude-instant-infill' } | null> {
     if (configuredProvider) {
         return { provider: configuredProvider }
     }
@@ -115,13 +148,16 @@ async function resolveDefaultProvider(
         return { provider: 'anthropic', model: 'claude-instant-infill' }
     }
 
-    const codyLLMSiteConfigOverwrites = authProvider.getAuthStatus().configOverwrites
-    const provider = codyLLMSiteConfigOverwrites?.provider
-    const model = codyLLMSiteConfigOverwrites?.completionModel
+    return null
+}
+
+function resolveDefaultProviderFromSiteConfig({
+    provider,
+    completionModel,
+}: CodyLLMSiteConfiguration): { provider: string; model?: string } | null {
     if (provider && provider !== 'sourcegraph') {
         // https://github.com/sourcegraph/sourcegraph/blob/83166945fa80c009dd7d13b7ff97e4c7df000180/internal/conf/computed.go#L592-L601
-        return { provider, model }
+        return { provider, model: completionModel }
     }
-
-    return { provider: 'anthropic' }
+    return null
 }
