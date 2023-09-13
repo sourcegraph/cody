@@ -271,6 +271,13 @@ const goKeywords = new Set([
     'switch',
     'type',
     'var',
+
+    // common variables, types we don't need to follow
+    'ctx',
+    'Context',
+    'err',
+    'error',
+    'ok',
 ])
 
 const typescriptKeywords = new Set([
@@ -346,6 +353,9 @@ const commonImportPaths = new Set([
     'node_modules/@types/react/',
     'node_modules/@types/prop-types',
     'node_modules/next/',
+
+    // Go stdlib installation (covers Brew installs at a minimum)
+    'libexec/src/',
 ])
 
 function isCommonImport(uri: vscode.Uri): boolean {
