@@ -1,0 +1,12 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "sourceMap": true,
+    "rootDir": ".",
+    "outDir": "../../dist/tsc/test/completions-3",
+    "types": ["mocha", "node"],
+  },
+  "references": [{ "path": "../../" }, { "path": "../../../lib/shared" }],
+  "include": ["*.ts", "datasets/**/*.json"],
+  "exclude": ["testdata"],
+}

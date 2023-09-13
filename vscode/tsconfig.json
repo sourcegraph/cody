@@ -11,8 +11,6 @@
     "src",
     "test/fixtures",
     "test/e2e",
-    "test/completions-2",
-    "test/completions-2/light.json",
     "webviews",
     "vite.config.ts",
     "package.json",
@@ -20,7 +18,7 @@
     "../lib/shared/src/telemetry/EventLogger.ts",
     "test/completions/completions-dataset.ts",
   ],
-  "exclude": ["scripts", "dist", "test/integration"],
+  "exclude": ["scripts", "dist", "test/integration", "test/completions-3"],
   "references": [
     {
       "path": "../lib/shared",
