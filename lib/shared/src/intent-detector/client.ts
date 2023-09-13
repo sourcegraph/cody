@@ -71,11 +71,11 @@ export class SourcegraphIntentDetectorClient implements IntentDetector {
         options: IntentClassificationOption<Intent>[],
         fallback: Intent
     ): Promise<Intent> {
-        const matchingRawCommand = options.find(option => input.startsWith(option.rawCommand))
-        if (matchingRawCommand) {
-            // Matching command (e.g. /edit), so skip the LLM and return the intent.
-            return matchingRawCommand.id
-        }
+        // const matchingRawCommand = options.find(option => input.startsWith(option.rawCommand))
+        // if (matchingRawCommand) {
+        //     // Matching command (e.g. /edit), so skip the LLM and return the intent.
+        //     return matchingRawCommand.id
+        // }
 
         const completionsClient = this.completionsClient
         if (!completionsClient) {

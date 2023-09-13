@@ -4,6 +4,7 @@ import { Editor } from '../editor'
 import { PrefilledOptions, withPreselectedOptions } from '../editor/withPreselectedOptions'
 import { SourcegraphEmbeddingsSearchClient } from '../embeddings/client'
 import { SourcegraphIntentDetectorClient } from '../intent-detector/client'
+import { SourcegraphFixupRangeExpander } from '../range-expander/client'
 import { SourcegraphBrowserCompletionsClient } from '../sourcegraph-api/completions/browserClient'
 import { CompletionsClientConfig, SourcegraphCompletionsClient } from '../sourcegraph-api/completions/client'
 import { SourcegraphGraphQLAPIClient } from '../sourcegraph-api/graphql'
@@ -90,6 +91,7 @@ export async function createClient({
         const codebaseContext = new CodebaseContext(config, config.codebase, embeddingsSearch, null, null, null)
 
         const intentDetector = new SourcegraphIntentDetectorClient(graphqlClient, completionsClient)
+        const rangeExpander = new SourcegraphFixupRangeExpander(completionsClient)
 
         const transcript = initialTranscript || new Transcript()
 
@@ -131,6 +133,7 @@ export async function createClient({
             const interaction = await recipe.getInteraction(humanChatInput, {
                 editor: options?.prefilledOptions ? withPreselectedOptions(editor, options.prefilledOptions) : editor,
                 intentDetector,
+                rangeExpander,
                 codebaseContext,
                 responseMultiplexer: new BotResponseMultiplexer(),
                 firstInteraction: transcript.isEmpty,

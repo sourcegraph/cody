@@ -274,6 +274,18 @@ export class FixupController
         return Array.from(this.tasks.values())
     }
 
+    /**
+     * Sets the task state. Checks the state transition is valid.
+     */
+    public setEditRange(taskid: string, newRange: vscode.Range): void {
+        console.log('I got here finally')
+        const task = this.tasks.get(taskid)
+        if (!task) {
+            return undefined
+        }
+        task.editRange = newRange
+    }
+
     // Called by the non-stop recipe to gather current state for the task.
     public async getTaskRecipeData(id: string): Promise<VsCodeFixupTaskRecipeData | undefined> {
         const task = this.tasks.get(id)
@@ -283,23 +295,33 @@ export class FixupController
         const document = await vscode.workspace.openTextDocument(task.fixupFile.uri)
         const precedingText = document.getText(
             new vscode.Range(
-                task.selectionRange.start.translate({ lineDelta: -Math.min(task.selectionRange.start.line, 50) }),
-                task.selectionRange.start
+                task.editRange.start.translate({ lineDelta: -Math.min(task.editRange.start.line, 50) }),
+                task.editRange.start
             )
         )
-        const selectedText = document.getText(task.selectionRange)
+
+        const rawSelectedText = document.getText(task.editRange)
+        const selectedTextWithLineNumbers = rawSelectedText
+            .split('\n')
+            .map((line, idx) => {
+                const actualLineNumber = task.editRange.start.line + idx + 1 // +1 because line numbers typically start from 1
+                return `${actualLineNumber}: ${line}`
+            })
+            .join('\n')
+
         // TODO: original text should be a property of the diff so that we
         // can apply diffs even while re-spinning
-        task.original = selectedText
+        task.original = rawSelectedText
+
         const followingText = document.getText(
-            new vscode.Range(task.selectionRange.end, task.selectionRange.end.translate({ lineDelta: 50 }))
+            new vscode.Range(task.editRange.end, task.editRange.end.translate({ lineDelta: 50 }))
         )
 
         return {
             instruction: task.instruction,
             fileName: task.fixupFile.uri.fsPath,
             precedingText,
-            selectedText,
+            selectedText: selectedTextWithLineNumbers,
             followingText,
             selectionRange: task.selectionRange,
         }

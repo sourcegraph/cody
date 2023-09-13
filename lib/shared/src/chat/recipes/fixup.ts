@@ -58,6 +58,8 @@ export class Fixup implements Recipe {
             return null
         }
 
+        const newRange = await this.getReformedRange(fixupTask, context)
+
         const quarterFileContext = Math.floor(MAX_CURRENT_FILE_TOKENS / 4)
         if (truncateText(fixupTask.selectedText, quarterFileContext * 2) !== fixupTask.selectedText) {
             const msg = "The amount of text selected exceeds Cody's current capacity."
@@ -82,6 +84,17 @@ export class Fixup implements Recipe {
                 []
             )
         )
+    }
+
+    private async getReformedRange(task: VsCodeFixupTaskRecipeData, context: RecipeContext): Promise<string> {
+        if (task.selectedText.trim().length === 0) {
+            // Nothing selected, assume this is always 'add'.
+            return 'add'
+        }
+        const expander = context.rangeExpander
+
+        const intent = await expander.expandTheContextRange(task.instruction)
+        return intent
     }
 
     private async getIntent(task: VsCodeFixupTaskRecipeData, context: RecipeContext): Promise<FixupIntent> {

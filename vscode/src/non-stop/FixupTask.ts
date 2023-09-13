@@ -21,12 +21,14 @@ export class FixupTask {
     public diff: Diff | undefined
     // The number of times we've submitted this to the LLM.
     public spinCount = 0
+    public editRange: vscode.Range
 
     constructor(
         public readonly fixupFile: FixupFile,
         public readonly instruction: string,
         public selectionRange: vscode.Range
     ) {
+        this.editRange = selectionRange
         this.id = Date.now().toString(36).replace(/\d+/g, '')
     }
 

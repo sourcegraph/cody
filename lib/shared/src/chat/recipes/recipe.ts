@@ -1,6 +1,7 @@
 import { CodebaseContext } from '../../codebase-context'
 import { Editor } from '../../editor'
 import { IntentDetector } from '../../intent-detector'
+import { RangeExpander } from '../../range-expander'
 import { BotResponseMultiplexer } from '../bot-response-multiplexer'
 import { Interaction } from '../transcript/interaction'
 
@@ -8,6 +9,7 @@ import { Interaction } from '../transcript/interaction'
 export interface RecipeContext {
     editor: Editor
     intentDetector: IntentDetector
+    rangeExpander: RangeExpander
     codebaseContext: CodebaseContext
     responseMultiplexer: BotResponseMultiplexer
     firstInteraction: boolean

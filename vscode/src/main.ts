@@ -111,6 +111,7 @@ const register = async (
     const {
         featureFlagProvider,
         intentDetector,
+        rangeExpander,
         codebaseContext: initialCodebaseContext,
         chatClient,
         codeCompletionsClient,
@@ -139,6 +140,7 @@ const register = async (
     const messageProviderOptions: MessageProviderOptions = {
         chat: chatClient,
         intentDetector,
+        rangeExpander,
         guardrails,
         editor,
         authProvider,

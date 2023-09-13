@@ -14,6 +14,7 @@ import { reformatBotMessage } from '@sourcegraph/cody-shared/src/chat/viewHelper
 import { annotateAttribution, Guardrails } from '@sourcegraph/cody-shared/src/guardrails'
 import { IntentDetector } from '@sourcegraph/cody-shared/src/intent-detector'
 import { ANSWER_TOKENS, DEFAULT_MAX_TOKENS } from '@sourcegraph/cody-shared/src/prompt/constants'
+import { RangeExpander } from '@sourcegraph/cody-shared/src/range-expander'
 import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
 import { TelemetryService } from '@sourcegraph/cody-shared/src/telemetry'
 
@@ -59,6 +60,7 @@ abstract class MessageHandler {
 export interface MessageProviderOptions {
     chat: ChatClient
     intentDetector: IntentDetector
+    rangeExpander: RangeExpander
     guardrails: Guardrails
     editor: VSCodeEditor
     authProvider: AuthProvider
@@ -85,6 +87,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
 
     protected chat: ChatClient
     protected intentDetector: IntentDetector
+    protected rangeExpander: RangeExpander
     protected guardrails: Guardrails
     protected readonly editor: VSCodeEditor
     protected authProvider: AuthProvider
@@ -101,6 +104,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
 
         this.chat = options.chat
         this.intentDetector = options.intentDetector
+        this.rangeExpander = options.rangeExpander
         this.guardrails = options.guardrails
         this.editor = options.editor
         this.authProvider = options.authProvider
@@ -310,6 +314,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         const interaction = await recipe.getInteraction(humanChatInput, {
             editor: this.editor,
             intentDetector: this.intentDetector,
+            rangeExpander: this.rangeExpander,
             codebaseContext: this.contextProvider.context,
             responseMultiplexer: this.multiplexer,
             firstInteraction: this.transcript.isEmpty,
@@ -360,6 +365,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         const interaction = await recipe.getInteraction(humanChatInput, {
             editor: this.editor,
             intentDetector: this.intentDetector,
+            rangeExpander: this.rangeExpander,
             codebaseContext: this.contextProvider.context,
             responseMultiplexer: multiplexer,
             firstInteraction: this.transcript.isEmpty,

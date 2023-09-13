@@ -9,6 +9,8 @@ import { SourcegraphGuardrailsClient } from '@sourcegraph/cody-shared/src/guardr
 import { IntentDetector } from '@sourcegraph/cody-shared/src/intent-detector'
 import { SourcegraphIntentDetectorClient } from '@sourcegraph/cody-shared/src/intent-detector/client'
 import { IndexedKeywordContextFetcher } from '@sourcegraph/cody-shared/src/local-context'
+import { RangeExpander } from '@sourcegraph/cody-shared/src/range-expander'
+import { SourcegraphFixupRangeExpander } from '@sourcegraph/cody-shared/src/range-expander/client'
 import { SourcegraphGraphQLAPIClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
 import { TelemetryService } from '@sourcegraph/cody-shared/src/telemetry'
 import { isError } from '@sourcegraph/cody-shared/src/utils'
@@ -20,6 +22,7 @@ import { getRerankWithLog } from './logged-rerank'
 
 interface ExternalServices {
     intentDetector: IntentDetector
+    rangeExpander: RangeExpander
     codebaseContext: CodebaseContext
     chatClient: ChatClient
     codeCompletionsClient: CodeCompletionsClient
@@ -89,6 +92,7 @@ export async function configureExternalServices(
 
     return {
         intentDetector: new SourcegraphIntentDetectorClient(client, completionsClient),
+        rangeExpander: new SourcegraphFixupRangeExpander(completionsClient),
         featureFlagProvider,
         codebaseContext,
         chatClient,
