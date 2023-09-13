@@ -6,8 +6,8 @@ The autocomplete review tool let's us (manually, visually) inspect autocomplete 
 
 You'll need:
 
-* A Sourcegraph API server somewhere, with Cody enabled/configured
-* An access token to the GraphQL API
+- A Sourcegraph API server somewhere, with Cody enabled/configured
+- An access token to the GraphQL API
 
 For example, if you are using a local development server and want to test against Azure OpenAI you would make your `dev-private` site-config.json configured as follows:
 
@@ -47,7 +47,7 @@ index 772836ed..088c8770 100644
  export const INTERNAL_S2_URL = new URL('https://sourcegraph.sourcegraph.com/')
 -export const LOCAL_APP_URL = new URL('http://localhost:3080')
 +export const LOCAL_APP_URL = new URL('https://sourcegraph.test:3443')
- 
+
  export function isLocalApp(url: string): boolean {
      try {
 diff --git a/vscode/test/completions/mock-vscode.ts b/vscode/test/completions/mock-vscode.ts
@@ -74,7 +74,7 @@ index 731bfb77..13aa6afb 100644
 --- a/vscode/test/completions/run-code-completions-on-dataset.ts
 +++ b/vscode/test/completions/run-code-completions-on-dataset.ts
 @@ -34,8 +34,8 @@ let providerConfig: ProviderConfig | null
- 
+
  const dummyFeatureFlagProvider = new FeatureFlagProvider(
      new SourcegraphGraphQLAPIClient({
 -        accessToken: 'access-token',
