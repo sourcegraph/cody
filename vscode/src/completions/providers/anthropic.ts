@@ -125,13 +125,7 @@ export class AnthropicProvider extends Provider {
 
         for (const snippet of snippets) {
             const formatRelationship = (
-                relationship:
-                    | {
-                          symbol: string
-                          relationship: 'typeDefinition' | 'implementation'
-                      }
-                    | undefined
-            ): string => {
+                relationship: SymbolContextSnippet['sourceSymbolAndRelationship']): string => {
                 if (relationship) {
                     switch (relationship.relationship) {
                         case 'typeDefinition':
