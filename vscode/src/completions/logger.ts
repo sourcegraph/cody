@@ -1,7 +1,12 @@
 import { LRUCache } from 'lru-cache'
 import * as vscode from 'vscode'
 
-import { isAbortError, isNetworkError, isRateLimitError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
+import {
+    isAbortError,
+    isAuthError,
+    isNetworkError,
+    isRateLimitError,
+} from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
 import { TelemetryEventProperties } from '@sourcegraph/cody-shared/src/telemetry'
 
 import { logEvent } from '../services/EventLogger'
@@ -290,7 +295,7 @@ function lineAndCharCount({ insertText }: InlineCompletionItem): { lineCount: nu
 const TEN_MINUTES = 1000 * 60 * 10
 const errorCounts: Map<string, number> = new Map()
 export function logError(error: Error): void {
-    if (isAbortError(error) || isRateLimitError(error)) {
+    if (isAbortError(error) || isRateLimitError(error) || isAuthError(error)) {
         return
     }
 

@@ -36,3 +36,17 @@ export function isAbortError(error: Error): boolean {
         error.message.includes('The user aborted a request')
     )
 }
+
+export class AuthError extends Error {
+    constructor(
+        message: string,
+        public traceId: string | undefined
+    ) {
+        super(message)
+        Object.setPrototypeOf(this, AuthError.prototype)
+    }
+}
+
+export function isAuthError(error: Error): error is AuthError {
+    return error instanceof AuthError
+}

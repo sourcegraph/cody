@@ -7,7 +7,12 @@ import type {
     CompletionParameters,
     CompletionResponse,
 } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
-import { isAbortError, NetworkError, RateLimitError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
+import {
+    AuthError,
+    isAbortError,
+    NetworkError,
+    RateLimitError,
+} from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
 
 import { fetch } from '../fetch'
 
@@ -87,6 +92,12 @@ export function createClient(
 
             if (response.body === null) {
                 throw new NetworkError('No response body', traceId)
+            }
+
+            // Terminate early and do not report this error to Sentry if a request is unauthenticated.
+            if (response.status === 401) {
+                const result = await response.text()
+                throw new AuthError(result, traceId)
             }
 
             // For backward compatibility, we have to check if the response is an SSE stream or a
