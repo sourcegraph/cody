@@ -1,3 +1,5 @@
+import { useEffect } from 'react'
+
 import { VSCodeButton } from '@vscode/webview-ui-toolkit/react'
 import classNames from 'classnames'
 
@@ -30,6 +32,9 @@ export const LoginSimplified: React.FunctionComponent<React.PropsWithoutRef<Logi
         telemetryService.log('CodyVSCodeExtension:auth:clickOtherSignInOptions')
         vscodeAPI.postMessage({ command: 'auth', type: 'signin' })
     }
+    useEffect(() => {
+        vscodeAPI.postMessage({ command: 'auth', type: 'simplified-onboarding-exposure' })
+    }, [vscodeAPI])
     return (
         <div className={styles.container}>
             <div className={styles.sectionsContainer}>

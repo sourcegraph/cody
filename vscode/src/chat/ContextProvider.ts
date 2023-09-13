@@ -19,10 +19,11 @@ import { logDebug } from '../log'
 import { getRerankWithLog } from '../logged-rerank'
 import { repositoryRemoteUrl } from '../repository/repositoryHelpers'
 import { AuthProvider } from '../services/AuthProvider'
+import * as OnboardingExperiment from '../services/OnboardingExperiment'
 
 import { ChatViewProviderWebview } from './ChatViewProvider'
 import { GraphContextProvider } from './GraphContextProvider'
-import { ConfigurationSubsetForWebview, LocalEnv, OnboardingExperimentArm } from './protocol'
+import { ConfigurationSubsetForWebview, LocalEnv } from './protocol'
 
 export type Config = Pick<
     ConfigurationWithAccessToken,
@@ -206,7 +207,7 @@ export class ContextProvider implements vscode.Disposable {
                 ...localProcess,
                 debugEnable: this.config.debugEnable,
                 serverEndpoint: this.config.serverEndpoint,
-                experimentOnboarding: pickOnboardingExperimentArm(),
+                experimentOnboarding: OnboardingExperiment.pickArm(this.telemetryService),
             }
 
             // update codebase context on configuration change
@@ -287,13 +288,4 @@ export async function getCodebaseContext(
         undefined,
         getRerankWithLog(chatClient)
     )
-}
-
-export function pickOnboardingExperimentArm(): OnboardingExperimentArm {
-    // TODO(dpc): Actually pick, and cache, experiment arm selection.
-    // Integrate this cache with user settings, etc. but discourage editing.
-    const config = vscode.workspace.getConfiguration()
-    return config.has('cody.todo-internal-onboarding-qa')
-        ? OnboardingExperimentArm.Simplified
-        : OnboardingExperimentArm.Classic
 }

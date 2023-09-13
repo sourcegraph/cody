@@ -34,7 +34,14 @@ export type WebviewMessage =
     | { command: 'copy'; eventType: 'Button' | 'Keydown'; text: string }
     | {
           command: 'auth'
-          type: 'signin' | 'signout' | 'support' | 'app' | 'callback' | 'simplified-onboarding'
+          type:
+              | 'signin'
+              | 'signout'
+              | 'support'
+              | 'app'
+              | 'callback'
+              | 'simplified-onboarding'
+              | 'simplified-onboarding-exposure'
           endpoint?: string
           value?: string
           authMethod?: AuthMethod
@@ -189,7 +196,12 @@ export function archConvertor(arch: string): string {
 export type AuthMethod = 'dotcom' | 'github' | 'gitlab' | 'google'
 
 export enum OnboardingExperimentArm {
-    Classic, // Control
-    Simplified, // Treatment: simplified onboarding flow
-    Default = Classic,
+    // Note, these values are persisted to local storage, see pickArm. Do not
+    // change these values. Adding values is OK but don't delete them.
+    Classic = 0, // Control
+    Simplified = 1, // Treatment: simplified onboarding flow
+
+    MinValue = Classic,
+    // Update this when adding an arm to the trial.
+    MaxValue = Simplified,
 }
