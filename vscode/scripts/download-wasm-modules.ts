@@ -4,7 +4,7 @@ import path from 'path'
 
 import ProgressBar from 'progress'
 
-import { ROOT_PATH } from '@sourcegraph/cody-shared/src/common'
+import { ROOT_PATH } from '@sourcegraph/cody-shared/src/common/paths'
 
 const DIST_DIRECTORY = path.join(ROOT_PATH, 'vscode/dist')
 const WASM_DIRECTORY = path.join(ROOT_PATH, 'vscode/resources/wasm')
