@@ -18,7 +18,7 @@ import {
     PrefixComponents,
     trimLeadingWhitespaceUntilNewline,
 } from '../text-processing'
-import { Completion, ContextSnippet } from '../types'
+import { Completion, ContextSnippet, SymbolContextSnippet } from '../types'
 import { forkSignal, messagesToText } from '../utils'
 
 import { CompletionProviderTracer, Provider, ProviderConfig, ProviderOptions } from './provider'
@@ -124,8 +124,7 @@ export class AnthropicProvider extends Provider {
         let remainingChars = this.promptChars - this.emptyPromptLength()
 
         for (const snippet of snippets) {
-            const formatRelationship = (
-                relationship: SymbolContextSnippet['sourceSymbolAndRelationship']): string => {
+            const formatRelationship = (relationship: SymbolContextSnippet['sourceSymbolAndRelationship']): string => {
                 if (relationship) {
                     switch (relationship.relationship) {
                         case 'typeDefinition':

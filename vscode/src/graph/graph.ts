@@ -533,7 +533,7 @@ const hoverContextFromResolvedHoverText = (t: ResolvedHoverText): HoverContext[]
 
 const hoverContextFromElement = (
     e: ResolvedHoverElement | undefined,
-    type: 'definition' | 'typeDefinition' | 'implementation',
+    type: HoverContext['type'],
     sourceSymbolName?: string
 ): HoverContext | undefined => {
     if (e === undefined) {

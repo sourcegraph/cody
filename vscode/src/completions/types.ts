@@ -1,5 +1,7 @@
 import { Range } from 'vscode-languageserver-textdocument'
 
+import { HoverContext } from '@sourcegraph/cody-shared/src/codebase-context/messages'
+
 export interface Completion {
     content: string
     stopReason?: string
@@ -32,7 +34,7 @@ export interface SymbolContextSnippet {
     content: string
     sourceSymbolAndRelationship?: {
         symbol: string
-        relationship: 'typeDefinition' | 'implementation'
+        relationship: Omit<HoverContext['type'], 'definition'>
     }
 }
 export type ContextSnippet = FileContextSnippet | SymbolContextSnippet
