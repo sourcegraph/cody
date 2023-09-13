@@ -346,16 +346,12 @@ const commonImportPaths = new Set([
     'node_modules/@types/react/',
     'node_modules/@types/prop-types',
     'node_modules/next/',
+
+    // Go stdlib installation (covers Brew installs at a minimum)
+    'libexec/src/',
 ])
 
-function isCommonImport(uri: vscode.Uri): boolean {
-    for (const importPath of commonImportPaths) {
-        if (uri.fsPath.includes(importPath)) {
-            return true
-        }
-    }
-    return false
-}
+const isCommonImport = (uri: vscode.Uri): boolean => [...commonImportPaths].some(p => uri.fsPath.includes(p))
 
 export const commonKeywords = new Set([...goKeywords, ...typescriptKeywords])
 
