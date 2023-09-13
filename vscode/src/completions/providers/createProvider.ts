@@ -15,7 +15,7 @@ import { createProviderConfig as createUnstableOpenAIProviderConfig } from './un
 export async function createProviderConfig(
     config: Configuration,
     client: CodeCompletionsClient,
-    featureFlagProvider: FeatureFlagProvider,
+    featureFlagProvider?: FeatureFlagProvider,
     codyLLMSiteConfig?: CodyLLMSiteConfiguration
 ): Promise<ProviderConfig | null> {
     const defaultAnthropicProviderConfig = createAnthropicProviderConfig({
