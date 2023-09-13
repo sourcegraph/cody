@@ -50,6 +50,7 @@ describe('OnboardingExperiment', () => {
     })
 
     it('caches arms on exposure, not when picking them', async () => {
+        const random = vi.spyOn(global.Math, 'random').mockReturnValueOnce(2)
         const set = vi.spyOn(localStorage, 'set')
         OnboardingExperiment.pickArm(mockTelemetry)
         expect(set).not.toHaveBeenCalled()
@@ -65,7 +66,7 @@ describe('OnboardingExperiment', () => {
         expect(random).toBeCalled()
 
         OnboardingExperiment.resetForTesting()
-        random.mockReturnValueOnce(0)
+        random.mockReturnValueOnce(2)
         expect(OnboardingExperiment.pickArm(mockTelemetry)).toBe(OnboardingExperimentArm.Classic)
     })
 
