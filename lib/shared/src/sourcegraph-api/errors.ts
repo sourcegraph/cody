@@ -7,7 +7,6 @@ export class RateLimitError extends Error {
         public retryAfter?: Date
     ) {
         super(message)
-        Object.setPrototypeOf(this, RateLimitError.prototype)
     }
 }
 
@@ -21,7 +20,6 @@ export class TracedError extends Error {
         public traceId: string | undefined
     ) {
         super(message)
-        Object.setPrototypeOf(this, TracedError.prototype)
     }
 }
 
@@ -38,7 +36,6 @@ export class NetworkError extends Error {
     ) {
         super(`Request to ${response.url} failed with ${response.status}: ${response.statusText}`)
         this.status = response.status
-        Object.setPrototypeOf(this, NetworkError.prototype)
     }
 }
 
