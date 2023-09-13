@@ -1,5 +1,7 @@
 import { fetchEventSource } from '@microsoft/fetch-event-source'
 
+import { addCustomUserAgent } from '../graphql/client'
+
 import { SourcegraphCompletionsClient } from './client'
 import type { CompletionCallbacks, CompletionParameters, Event } from './types'
 
@@ -7,6 +9,7 @@ export class SourcegraphBrowserCompletionsClient extends SourcegraphCompletionsC
     public stream(params: CompletionParameters, cb: CompletionCallbacks): () => void {
         const abort = new AbortController()
         const headersInstance = new Headers(this.config.customHeaders as HeadersInit)
+        addCustomUserAgent(headersInstance)
         headersInstance.set('Content-Type', 'application/json; charset=utf-8')
         if (this.config.accessToken) {
             headersInstance.set('Authorization', `token ${this.config.accessToken}`)
@@ -42,13 +45,23 @@ export class SourcegraphBrowserCompletionsClient extends SourcegraphCompletionsC
                 }
             },
             onmessage: message => {
-                const data: Event = { ...JSON.parse(message.data), type: message.event }
-                this.sendEvents([data], cb)
+                try {
+                    const data: Event = { ...JSON.parse(message.data), type: message.event }
+                    this.sendEvents([data], cb)
+                } catch (error: any) {
+                    cb.onError(error.message)
+                    abort.abort()
+                    console.error(error)
+                    // throw the error for not retrying
+                    throw error
+                }
             },
             onerror(error) {
                 cb.onError(error.message)
                 abort.abort()
                 console.error(error)
+                // throw the error for not retrying
+                throw error
             },
         }).catch(error => {
             cb.onError(error.message)

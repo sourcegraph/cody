@@ -6,6 +6,7 @@ import {
 import { CodeCompletionsClient } from '../client'
 import { getLanguageConfig } from '../language'
 import { canUsePartialCompletion } from '../streaming'
+import { formatSymbolContextRelationship } from '../text-processing'
 import { Completion, ContextSnippet } from '../types'
 import { forkSignal } from '../utils'
 
@@ -53,7 +54,9 @@ export class UnstableFireworksProvider extends Provider {
         let prompt = ''
 
         const languageConfig = getLanguageConfig(this.options.languageId)
-        if (languageConfig) {
+
+        // In StarCoder we have a special token to announce the path of the file
+        if (!isStarCoderFamily(this.model)) {
             intro.push(`Path: ${this.options.fileName}`)
         }
 
@@ -61,7 +64,11 @@ export class UnstableFireworksProvider extends Provider {
             if (snippetsToInclude > 0) {
                 const snippet = snippets[snippetsToInclude - 1]
                 if ('symbol' in snippet && snippet.symbol !== '') {
-                    intro.push(`Additional documentation for ${snippet.symbol}:\n\n${snippet.content}`)
+                    intro.push(
+                        `Additional documentation for \`${snippet.symbol}\`${formatSymbolContextRelationship(
+                            snippet.sourceSymbolAndRelationship
+                        )}:\n\n${snippet.content}`
+                    )
                 } else {
                     intro.push(`Here is a reference snippet of code from ${snippet.fileName}:\n\n${snippet.content}`)
                 }
@@ -71,12 +78,17 @@ export class UnstableFireworksProvider extends Provider {
                 intro
                     .join('\n\n')
                     .split('\n')
-                    .map(line => (languageConfig ? languageConfig.commentStart + line : ''))
+                    .map(line => (languageConfig ? languageConfig.commentStart + line : '// '))
                     .join('\n') + '\n'
 
             const suffixAfterFirstNewline = getSuffixAfterFirstNewline(suffix)
 
-            const nextPrompt = this.createInfillingPrompt(introString, prefix, suffixAfterFirstNewline)
+            const nextPrompt = this.createInfillingPrompt(
+                this.options.fileName,
+                introString,
+                prefix,
+                suffixAfterFirstNewline
+            )
 
             if (nextPrompt.length >= maxPromptChars) {
                 return prompt
@@ -104,6 +116,7 @@ export class UnstableFireworksProvider extends Provider {
             topP: 0.95,
             topK: 0,
             model: MODEL_MAP[this.model],
+            stopSequences: [this.options.multiline ? '\n\n' : '\n'],
         }
 
         tracer?.params(args)
@@ -125,12 +138,13 @@ export class UnstableFireworksProvider extends Provider {
         return completions
     }
 
-    private createInfillingPrompt(intro: string, prefix: string, suffix: string): string {
-        if (this.model.startsWith('starcoder') || this.model.startsWith('wizardcoder')) {
-            // c.f. https://starcoder.co/bigcode/starcoder#fill-in-the-middle
-            return `<fim_prefix>${intro}${prefix}<fim_suffix>${suffix}<fim_middle>`
+    private createInfillingPrompt(filename: string, intro: string, prefix: string, suffix: string): string {
+        if (isStarCoderFamily(this.model)) {
+            // c.f. https://huggingface.co/bigcode/starcoder#fill-in-the-middle
+            // c.f. https://arxiv.org/pdf/2305.06161.pdf
+            return `<filename>${filename}<fim_prefix>${intro}${prefix}<fim_suffix>${suffix}<fim_middle>`
         }
-        if (this.model.startsWith('llama-code')) {
+        if (isLlamaCode(this.model)) {
             // c.f. https://github.com/facebookresearch/codellama/blob/main/llama/generation.py#L402
             return `<PRE> ${intro}${prefix} <SUF>${suffix} <MID>`
         }
@@ -189,10 +203,10 @@ export class UnstableFireworksProvider extends Provider {
     }
 
     private postProcess(content: string): string {
-        if (this.model.startsWith('starcoder') || this.model.startsWith('wizardcoder')) {
+        if (isStarCoderFamily(this.model)) {
             return content.replace(EOT_STARCODER, '')
         }
-        if (this.model.startsWith('llama-code')) {
+        if (isLlamaCode(this.model)) {
             return content.replace(EOT_LLAMA_CODE, '')
         }
         return content
@@ -235,4 +249,12 @@ function getSuffixAfterFirstNewline(suffix: string): string {
     }
 
     return suffix.slice(suffix.indexOf('\n'))
+}
+
+function isStarCoderFamily(model: string): boolean {
+    return model.startsWith('starcoder') || model.startsWith('wizardcoder')
+}
+
+function isLlamaCode(model: string): boolean {
+    return model.startsWith('llama-code')
 }

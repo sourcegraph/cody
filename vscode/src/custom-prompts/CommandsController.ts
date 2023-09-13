@@ -101,6 +101,16 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
     }
 
     /**
+     * Get the current cody command that is in progress.
+     *
+     * @returns The current CodyPrompt that the user has initiated and is waiting for output, or null if there is no prompt in progress.
+     */
+    public getCurrentCommand(): CodyPrompt | null {
+        const currentCommand = this.myPromptInProgress
+        return currentCommand || null
+    }
+
+    /**
      * Find the text of the prompt for a command based on its id / title
      * then set it as the prompt in progress
      *

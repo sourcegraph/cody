@@ -6,7 +6,8 @@ import { isAbortError } from '@sourcegraph/cody-shared/src/sourcegraph-api/error
 
 import { logError } from '../log'
 
-import { GetContextOptions, GetContextResult, GraphContextFetcher } from './context/context'
+import { GetContextOptions, GetContextResult } from './context/context'
+import { GraphContextFetcher } from './context/context-graph'
 import { DocumentHistory } from './context/history'
 import { DocumentContext } from './get-current-doc-context'
 import * as CompletionLogger from './logger'
@@ -360,7 +361,7 @@ async function getCompletionContext({
     contextFetcher,
     getCodebaseContext,
     documentHistory,
-    docContext: { prefix, suffix },
+    docContext: { prefix, suffix, contextRange },
 }: GetCompletionContextParams): Promise<GetContextResult | null> {
     if (!contextFetcher) {
         return null
@@ -377,6 +378,7 @@ async function getCompletionContext({
         position,
         prefix,
         suffix,
+        contextRange,
         history: documentHistory,
         jaccardDistanceWindowSize: SNIPPET_WINDOW_SIZE,
         maxChars: promptChars,
