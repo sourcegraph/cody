@@ -14,7 +14,6 @@ function mockVScode() {
     return {
         workspace: {
             getConfiguration: () => ({
-                has: () => false,
                 get: () => undefined,
             }),
         },
@@ -50,7 +49,7 @@ describe('OnboardingExperiment', () => {
     })
 
     it('caches arms on exposure, not when picking them', async () => {
-        const random = vi.spyOn(global.Math, 'random').mockReturnValueOnce(2)
+        vi.spyOn(global.Math, 'random').mockReturnValueOnce(2)
         const set = vi.spyOn(localStorage, 'set')
         OnboardingExperiment.pickArm(mockTelemetry)
         expect(set).not.toHaveBeenCalled()
@@ -59,13 +58,13 @@ describe('OnboardingExperiment', () => {
     })
 
     it('randomly assigns arms', () => {
-        // The treatment arm has 0 allocation now, so return a number less than
-        // zero.
+        // A number less than zero will always trigger the experiment.
         const random = vi.spyOn(global.Math, 'random').mockReturnValueOnce(-1)
         expect(OnboardingExperiment.pickArm(mockTelemetry)).toBe(OnboardingExperimentArm.Simplified)
         expect(random).toBeCalled()
 
         OnboardingExperiment.resetForTesting()
+        // A number greater than 1 will always trigger the control arm of the trial.
         random.mockReturnValueOnce(2)
         expect(OnboardingExperiment.pickArm(mockTelemetry)).toBe(OnboardingExperimentArm.Classic)
     })
@@ -110,15 +109,41 @@ describe('OnboardingExperiment', () => {
         })
     })
 
-    it('can be overridden with a config parameter, override exposures are not logged', async () => {
+    it('can be overridden ON with a config parameter', async () => {
         vi.spyOn(vscode.workspace, 'getConfiguration').mockReturnValue({
-            has: (key: string) => key === 'testing.simplified-onboarding',
+            get: (key: string) => key === 'testing.simplified-onboarding',
         } as unknown as vscode.WorkspaceConfiguration)
         const localStorageGet = vi.spyOn(localStorage, 'get')
         const random = vi.spyOn(global.Math, 'random')
         expect(OnboardingExperiment.pickArm(mockTelemetry)).toBe(OnboardingExperimentArm.Simplified)
         expect(localStorageGet).not.toBeCalled()
         expect(random).not.toBeCalled()
+
+        const log = vi.spyOn(mockTelemetry, 'log')
+        await OnboardingExperiment.logExposure()
+        expect(log).not.toBeCalled()
+    })
+
+    it('can be overridden OFF with a config parameter', async () => {
+        vi.spyOn(vscode.workspace, 'getConfiguration').mockReturnValue({
+            get: () => false,
+        } as unknown as vscode.WorkspaceConfiguration)
+        const localStorageGet = vi.spyOn(localStorage, 'get')
+        const random = vi.spyOn(global.Math, 'random')
+        expect(OnboardingExperiment.pickArm(mockTelemetry)).toBe(OnboardingExperimentArm.Classic)
+        expect(localStorageGet).not.toBeCalled()
+        expect(random).not.toBeCalled()
+
+        const log = vi.spyOn(mockTelemetry, 'log')
+        await OnboardingExperiment.logExposure()
+        expect(log).not.toBeCalled()
+    })
+
+    it('does not log exposures from overrides', async () => {
+        vi.spyOn(vscode.workspace, 'getConfiguration').mockReturnValue({
+            get: (key: string) => key === 'testing.simplified-onboarding',
+        } as unknown as vscode.WorkspaceConfiguration)
+        expect(OnboardingExperiment.pickArm(mockTelemetry)).toBe(OnboardingExperimentArm.Simplified)
 
         const log = vi.spyOn(mockTelemetry, 'log')
         await OnboardingExperiment.logExposure()

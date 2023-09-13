@@ -32,8 +32,13 @@ let selection: SelectedArm | undefined
 // undocumented configuration property. Use this for testing and development.
 function loadOverrideSelection(): SelectedArm | undefined {
     const config = vscode.workspace.getConfiguration()
-    return config.has('testing.simplified-onboarding')
-        ? { arm: OnboardingExperimentArm.Simplified, excludeFromExperiment: true, setByTestingOverride: true }
+    const override = config.get('testing.simplified-onboarding')
+    return typeof override === 'boolean'
+        ? {
+              arm: override ? OnboardingExperimentArm.Simplified : OnboardingExperimentArm.Classic,
+              excludeFromExperiment: true,
+              setByTestingOverride: true,
+          }
         : undefined
 }
 

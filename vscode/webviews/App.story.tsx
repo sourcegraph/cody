@@ -41,7 +41,7 @@ const dummyVSCodeAPI: VSCodeWrapper = {
                 hasAppJson: false,
                 uiKindIsWeb: false,
                 extensionVersion: '0.0.0',
-                experimentOnboarding: OnboardingExperimentArm.Default,
+                experimentOnboarding: OnboardingExperimentArm.Classic,
             },
             authStatus: {
                 ...defaultAuthStatus,
