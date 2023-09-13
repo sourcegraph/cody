@@ -13,6 +13,7 @@ export enum FeatureFlag {
     CodyAutocompleteStarCoder16B = 'cody-autocomplete-default-starcoder-16b',
     CodyAutocompleteClaudeInstantInfill = 'cody-autocomplete-claude-instant-infill',
     CodyAutocompleteMinimumLatency = 'cody-autocomplete-minimum-latency',
+    CodyAutocompleteGraphContext = 'cody-autocomplete-graph-context',
 }
 
 const ONE_HOUR = 60 * 60 * 1000

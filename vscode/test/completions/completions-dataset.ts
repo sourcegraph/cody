@@ -86,11 +86,63 @@ export const completionsDataset: Sample[] = [
                 return sum
             }
 
-            function maxNum(a: number, b: number): number {
+            function minNum(a: number, b: number): number {
                 ${CURSOR}
+                console.log(min)
+                return min
+            }
+
+            function maxNum(a: number, b: number): number {
+                const max = Math.max(a, b)
                 console.log(max)
                 return max
             }`,
+    },
+    {
+        context: [],
+        fileName: 'comment.ts',
+        languageId: 'typescript',
+        content: `
+            // A function returns${CURSOR}
+            function twoSum(a: number, b: number): number {
+                return a + b
+            }`,
+    },
+    {
+        context: [],
+        fileName: 'LineAfterCompletedComment.ts',
+        languageId: 'typescript',
+        content: `
+            // Sort an array using bubble sort
+            ${CURSOR}`,
+    },
+    {
+        context: [],
+        fileName: 'LineAfterIncompleteComment.ts',
+        languageId: 'typescript',
+        content: `
+        // A function to calculate the sum of two numbers
+        function twoSum(a: number, b: number): number {
+            const sum = a + b
+            return sum
+        }
+
+        // A function to
+        ${CURSOR}
+
+        // A function to get the min of two numbers
+        function minNum(a: number, b: number): number {
+            const min = Math.min(a, b)
+            return min
+        }`,
+    },
+    {
+        context: [],
+        fileName: 'LineAfterIncompleteCommentInEmptyDocs.ts',
+        languageId: 'typescript',
+        content: `
+        // A function
+        ${CURSOR}`,
     },
     {
         context: [],

@@ -120,50 +120,56 @@ export const Transcript: React.FunctionComponent<
     const lastHumanMessageIndex = transcript.findLastIndex(
         message => message.speaker === 'human' && message.displayText !== undefined
     )
-    const earlierMessages = transcript.slice(0, lastHumanMessageIndex)
-    const lastInteractionMessages = transcript.slice(lastHumanMessageIndex)
-
-    const messageToTranscriptItem = (message: ChatMessage, index: number): JSX.Element | null => {
-        if (!message?.displayText) {
-            return null
-        }
-        return (
-            <TranscriptItem
-                // eslint-disable-next-line react/no-array-index-key
-                key={index}
-                message={message}
-                inProgress={false}
-                beingEdited={index > 0 && transcript.length - index === 2 && messageBeingEdited}
-                setBeingEdited={setMessageBeingEdited}
-                fileLinkComponent={fileLinkComponent}
-                symbolLinkComponent={symbolLinkComponent}
-                codeBlocksCopyButtonClassName={codeBlocksCopyButtonClassName}
-                codeBlocksInsertButtonClassName={codeBlocksInsertButtonClassName}
-                transcriptItemClassName={transcriptItemClassName}
-                humanTranscriptItemClassName={humanTranscriptItemClassName}
-                transcriptItemParticipantClassName={transcriptItemParticipantClassName}
-                transcriptActionClassName={transcriptActionClassName}
-                textAreaComponent={textAreaComponent}
-                EditButtonContainer={EditButtonContainer}
-                editButtonOnSubmit={editButtonOnSubmit}
-                showEditButton={index > 0 && transcript.length - index === 2}
-                FeedbackButtonsContainer={FeedbackButtonsContainer}
-                feedbackButtonsOnSubmit={feedbackButtonsOnSubmit}
-                copyButtonOnSubmit={copyButtonOnSubmit}
-                showFeedbackButtons={index !== 0 && !isTranscriptError}
-                submitButtonComponent={submitButtonComponent}
-                chatInputClassName={chatInputClassName}
-                ChatButtonComponent={ChatButtonComponent}
-            />
-        )
+    let earlierMessages: ChatMessage[] = []
+    let lastInteractionMessages = transcript
+    if (lastHumanMessageIndex !== -1) {
+        earlierMessages = transcript.slice(0, lastHumanMessageIndex)
+        lastInteractionMessages = transcript.slice(lastHumanMessageIndex)
     }
+
+    const messageToTranscriptItem =
+        (offset: number) =>
+        (message: ChatMessage, index: number): JSX.Element | null => {
+            if (!message?.displayText) {
+                return null
+            }
+            return (
+                <TranscriptItem
+                    // eslint-disable-next-line react/no-array-index-key
+                    key={index + offset}
+                    message={message}
+                    inProgress={false}
+                    beingEdited={index > 0 && transcript.length - index === 2 && messageBeingEdited}
+                    setBeingEdited={setMessageBeingEdited}
+                    fileLinkComponent={fileLinkComponent}
+                    symbolLinkComponent={symbolLinkComponent}
+                    codeBlocksCopyButtonClassName={codeBlocksCopyButtonClassName}
+                    codeBlocksInsertButtonClassName={codeBlocksInsertButtonClassName}
+                    transcriptItemClassName={transcriptItemClassName}
+                    humanTranscriptItemClassName={humanTranscriptItemClassName}
+                    transcriptItemParticipantClassName={transcriptItemParticipantClassName}
+                    transcriptActionClassName={transcriptActionClassName}
+                    textAreaComponent={textAreaComponent}
+                    EditButtonContainer={EditButtonContainer}
+                    editButtonOnSubmit={editButtonOnSubmit}
+                    showEditButton={index > 0 && transcript.length - index === 2}
+                    FeedbackButtonsContainer={FeedbackButtonsContainer}
+                    feedbackButtonsOnSubmit={feedbackButtonsOnSubmit}
+                    copyButtonOnSubmit={copyButtonOnSubmit}
+                    showFeedbackButtons={index !== 0 && !isTranscriptError}
+                    submitButtonComponent={submitButtonComponent}
+                    chatInputClassName={chatInputClassName}
+                    ChatButtonComponent={ChatButtonComponent}
+                />
+            )
+        }
 
     return (
         <div ref={transcriptContainerRef} className={classNames(className, styles.container)}>
             <div ref={scrollAnchoredContainerRef} className={classNames(styles.scrollAnchoredContainer)}>
-                {earlierMessages.map(messageToTranscriptItem)}
+                {earlierMessages.map(messageToTranscriptItem(0))}
                 <div ref={lastHumanMessageTopRef} />
-                {lastInteractionMessages.map(messageToTranscriptItem)}
+                {lastInteractionMessages.map(messageToTranscriptItem(earlierMessages.length))}
                 {messageInProgress && messageInProgress.speaker === 'assistant' && (
                     <TranscriptItem
                         message={messageInProgress}

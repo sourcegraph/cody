@@ -187,14 +187,14 @@ export interface event {
 type GraphQLAPIClientConfig = Pick<ConfigurationWithAccessToken, 'serverEndpoint' | 'accessToken' | 'customHeaders'> &
     Pick<Partial<ConfigurationWithAccessToken>, 'telemetryLevel'>
 
-export let useragent: string | undefined
-export function addCustomUseragent(headers: Headers): void {
-    if (useragent) {
-        headers.set('User-Agent', useragent)
+export let customUserAgent: string | undefined
+export function addCustomUserAgent(headers: Headers): void {
+    if (customUserAgent) {
+        headers.set('User-Agent', customUserAgent)
     }
 }
 export function setUserAgent(newUseragent: string): void {
-    useragent = newUseragent
+    customUserAgent = newUseragent
 }
 
 export class SourcegraphGraphQLAPIClient {
@@ -494,7 +494,7 @@ export class SourcegraphGraphQLAPIClient {
         if (this.config.accessToken) {
             headers.set('Authorization', `token ${this.config.accessToken}`)
         }
-        addCustomUseragent(headers)
+        addCustomUserAgent(headers)
 
         const url = buildGraphQLUrl({ request: query, baseUrl: this.config.serverEndpoint })
         return fetch(url, {
@@ -511,7 +511,7 @@ export class SourcegraphGraphQLAPIClient {
     private fetchSourcegraphDotcomAPI<T>(query: string, variables: Record<string, any>): Promise<T | Error> {
         const url = buildGraphQLUrl({ request: query, baseUrl: this.dotcomUrl.href })
         const headers = new Headers()
-        addCustomUseragent(headers)
+        addCustomUserAgent(headers)
         return fetch(url, {
             method: 'POST',
             body: JSON.stringify({ query, variables }),
@@ -528,7 +528,7 @@ export class SourcegraphGraphQLAPIClient {
         const headers = new Headers({
             'Content-Type': 'application/json',
         })
-        addCustomUseragent(headers)
+        addCustomUserAgent(headers)
 
         return fetch(url, {
             method: 'POST',

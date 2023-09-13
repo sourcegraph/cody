@@ -4,8 +4,8 @@ import { LRUCache } from 'lru-cache'
 import * as vscode from 'vscode'
 import { URI } from 'vscode-uri'
 
-import { PreciseContext } from '@sourcegraph/cody-shared/src/codebase-context/messages'
-import { isDefined } from '@sourcegraph/cody-shared/src/common'
+import { HoverContext } from '@sourcegraph/cody-shared/src/codebase-context/messages'
+import { dedupeWith, isDefined } from '@sourcegraph/cody-shared/src/common'
 
 import { getGraphContextFromRange as defaultGetGraphContextFromRange, locationKeyFn } from '../../graph/graph'
 import { getDocumentSections as defaultGetDocumentSections, DocumentSection } from '../../graph/sections'
@@ -20,7 +20,7 @@ interface Section extends DocumentSection {
     preloadedContext: {
         lastRevalidateAt: number
         isStale: boolean
-        graphContext: PreciseContext[] | null
+        graphContext: HoverContext[] | null
     } | null
 }
 
@@ -173,10 +173,9 @@ export class GraphSectionObserver implements vscode.Disposable, GraphContextFetc
         }
 
         if (sectionGraphContext) {
-            const preciseContexts = sectionGraphContext
-                .filter(context => !overlapsContextRange(URI.file(context.filePath), context.range))
-                .map(preciseContextToSnippet)
-                .filter(isDefined)
+            const preciseContexts = hoverContextsToSnippets(
+                sectionGraphContext.filter(context => !overlapsContextRange(URI.parse(context.uri), context.range))
+            )
             for (const preciseContext of preciseContexts) {
                 if (usedContextChars + preciseContext.content.length > maxChars) {
                     // We use continue here to test potentially smaller context snippets that might
@@ -449,46 +448,24 @@ export class GraphSectionObserver implements vscode.Disposable, GraphContextFetc
     }
 }
 
-function preciseContextToSnippet(context: PreciseContext): SymbolContextSnippet | null {
-    const content =
-        context.hoverText.length > 0
-            ? context.hoverText.map(extractMarkdownCodeBlock).join('\n\n').trim()
-            : context.definitionSnippet
+function hoverContextsToSnippets(contexts: HoverContext[]): SymbolContextSnippet[] {
+    return dedupeWith(contexts.map(hoverContextToSnippets), context =>
+        [context.symbol, context.fileName, context.content].join('\n')
+    )
+}
 
+function hoverContextToSnippets(context: HoverContext): SymbolContextSnippet {
+    console.log({ context })
     return {
-        fileName: path.normalize(vscode.workspace.asRelativePath(context.filePath)),
-        symbol: context.symbol.fuzzyName ?? '',
-        content,
+        fileName: path.normalize(vscode.workspace.asRelativePath(URI.parse(context.uri).fsPath)),
+        symbol: context.symbolName,
+        content: context.content.join('\n').trim(),
     }
 }
 
-function extractMarkdownCodeBlock(string: string): string {
-    const lines = string.split('\n')
-    const codeBlocks: string[] = []
-    let isCodeBlock = false
-    for (const line of lines) {
-        const isCodeBlockDelimiter = line.trim().startsWith('```')
-
-        if (isCodeBlockDelimiter && !isCodeBlock) {
-            isCodeBlock = true
-        } else if (isCodeBlockDelimiter && isCodeBlock) {
-            isCodeBlock = false
-        } else if (isCodeBlock) {
-            codeBlocks.push(line)
-        }
-    }
-
-    return codeBlocks.join('\n')
-}
-
-function logHydratedContext(
-    context: PreciseContext[],
-    editor: vscode.TextEditor,
-    section: Section,
-    start: number
-): void {
+function logHydratedContext(context: HoverContext[], editor: vscode.TextEditor, section: Section, start: number): void {
     const matchSummary: { [filename: string]: Set<string> } = {}
-    for (const match of context.map(preciseContextToSnippet)) {
+    for (const match of hoverContextsToSnippets(context)) {
         if (!match) {
             continue
         }

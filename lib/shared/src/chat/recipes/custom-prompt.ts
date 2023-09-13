@@ -1,22 +1,25 @@
+import { URI } from 'vscode-uri'
+
 import { CodebaseContext } from '../../codebase-context'
 import { ContextMessage } from '../../codebase-context/messages'
 import { ActiveTextEditorSelection, Editor } from '../../editor'
 import { MAX_HUMAN_INPUT_TOKENS, NUM_CODE_RESULTS, NUM_TEXT_RESULTS } from '../../prompt/constants'
 import { truncateText } from '../../prompt/truncation'
-import { CodyPromptContext, defaultCodyPromptContext } from '../prompts'
-import { prompts } from '../prompts/templates'
+import { CodyPromptContext } from '../prompts'
 import {
+    extractTestType,
+    getHumanLLMText,
     isOnlySelectionRequired,
     newInteraction,
     newInteractionWithError,
-    promptTextWithCodeSelection,
 } from '../prompts/utils'
 import {
     getCurrentDirContext,
     getCurrentFileContextFromEditorSelection,
+    getCurrentFileImportsContext,
+    getDirectoryFileListContext,
     getEditorDirContext,
     getEditorOpenTabsContext,
-    getEditorSelectionContext,
     getFilePathContext,
     getHumanDisplayTextWithFileName,
     getPackageJsonContext,
@@ -24,7 +27,7 @@ import {
 } from '../prompts/vscode-context'
 import { Interaction } from '../transcript/interaction'
 
-import { getFileExtension, getNormalizedLanguageName, numResults } from './helpers'
+import { getFileExtension, numResults } from './helpers'
 import { Recipe, RecipeContext, RecipeID } from './recipe'
 
 /** ======================================================
@@ -38,68 +41,56 @@ export class CustomPrompt implements Recipe {
     /**
      * Retrieves an Interaction object based on the humanChatInput and RecipeContext provided.
      * The Interaction object contains messages from both the human and the assistant, as well as context information.
-     *
-     * @param humanChatInput - The input from the human user.
-     * @param context - The RecipeContext object containing information about the editor, intent detector, codebase context, response multiplexer, and whether this is the first interaction.
-     * @returns A Promise that resolves to an Interaction object.
      */
     public async getInteraction(humanChatInput: string, context: RecipeContext): Promise<Interaction | null> {
+        const workspaceRootUri = context.editor.getWorkspaceRootUri()
         // Check if context is required
-        const contextConfig = await context.editor.controllers?.command?.get('context')
-        const isContextNeeded = contextConfig
-            ? (JSON.parse(contextConfig) as CodyPromptContext)
-            : defaultCodyPromptContext
+        const contextConfigString = (await context.editor.controllers?.command?.get('context')) || ''
+        const contextConfig = JSON.parse(contextConfigString) as CodyPromptContext
+
+        // If selection is required, ensure not to accept visible content as selection
+        const selection = contextConfig?.selection
+            ? context.editor.getActiveTextEditorSelection()
+            : context.editor.getActiveTextEditorSelectionOrVisibleContent()
+
+        const command = context.editor.controllers?.command?.getCurrentCommand()
 
         // Get prompt text from the editor command or from the human input
-        const promptText = humanChatInput.trim() || (await context.editor.controllers?.command?.get()) || null
+        const promptText = humanChatInput.trim() || command?.prompt
         if (!promptText) {
             const errorMessage = 'Please enter a valid prompt for the custom command.'
             return newInteractionWithError(errorMessage, promptText || '')
         }
-        const promptName = (await context.editor.controllers?.command?.get('current')) || promptText
-        const slashCommand = (await context.editor.controllers?.command?.get('slash')) || promptName
 
-        // Check if selection is required. If selection is not defined, accept visible content
-        const selectionContent = isContextNeeded?.selection
-            ? context.editor.getActiveTextEditorSelection()
-            : context.editor.getActiveTextEditorSelectionOrVisibleContent()
-
-        const selection = selectionContent
-        if (isContextNeeded?.selection && !selection?.selectedText) {
-            const errorMessage = `__${slashCommand}__ requires highlighted code. Please select some code in your editor and try again.`
-            return newInteractionWithError(errorMessage, slashCommand)
+        const commandName = command?.slashCommand || command?.description || promptText
+        if (contextConfig?.selection && !selection?.selectedText) {
+            const errorMessage = `__${commandName}__ requires highlighted code. Please select some code in your editor and try again.`
+            return newInteractionWithError(errorMessage, commandName)
         }
 
         // Add selection file name as display when available
-        const displayText = selection?.fileName
-            ? getHumanDisplayTextWithFileName(slashCommand, selection, context.editor.getWorkspaceRootUri())
-            : slashCommand
-        const languageName = selection?.fileName ? getNormalizedLanguageName(getFileExtension(selection?.fileName)) : ''
-        // Prompt text to share with Cody but not display to human
-        const codyPromptText = prompts.instruction
-            .replace('{humanInput}', promptText)
-            .replaceAll('{languageName}', languageName)
+        const displayText = getHumanDisplayTextWithFileName(commandName, selection, workspaceRootUri)
+        const text = getHumanLLMText(promptText, selection?.fileName)
 
         // Attach code selection to prompt text if only selection is needed as context
-        if (selection && isOnlySelectionRequired(isContextNeeded)) {
-            const truncatedTextWithCode = promptTextWithCodeSelection(codyPromptText, selection)
-            if (truncatedTextWithCode) {
-                return newInteraction({ text: truncatedTextWithCode, displayText })
-            }
+        if (selection && isOnlySelectionRequired(contextConfig)) {
+            const contextMessages = Promise.resolve(getCurrentFileContextFromEditorSelection(selection))
+            return newInteraction({ text, displayText, contextMessages })
         }
 
         // Get output from the command if any
         const commandOutput = await context.editor.controllers?.command?.get('output')
 
-        const truncatedText = truncateText(codyPromptText, MAX_HUMAN_INPUT_TOKENS)
+        const truncatedText = truncateText(text, MAX_HUMAN_INPUT_TOKENS)
         const contextMessages = this.getContextMessages(
             truncatedText,
             context.editor,
             context.codebaseContext,
-            isContextNeeded,
+            contextConfig,
             selection,
             commandOutput
         )
+
         return newInteraction({ text: truncatedText, displayText, contextMessages })
     }
 
@@ -107,72 +98,87 @@ export class CustomPrompt implements Recipe {
         text: string,
         editor: Editor,
         codebaseContext: CodebaseContext,
-        isContextRequired: CodyPromptContext,
+        promptContext: CodyPromptContext,
         selection?: ActiveTextEditorSelection | null,
         commandOutput?: string | null
     ): Promise<ContextMessage[]> {
         const contextMessages: ContextMessage[] = []
+        const workspaceRootUri = editor.getWorkspaceRootUri()
+        const isUnitTestRequest = extractTestType(text) === 'unit'
 
-        // none
-        if (isContextRequired.none) {
+        if (promptContext.none) {
             return []
         }
 
-        // codebase
-        if (isContextRequired.codebase) {
-            const codebaseContextMessages = await codebaseContext.getContextMessages(text, numResults)
-            contextMessages.push(...codebaseContextMessages)
+        if (promptContext.codebase) {
+            const codebaseMessages = await codebaseContext.getContextMessages(text, numResults)
+            contextMessages.push(...codebaseMessages)
+        }
+        if (promptContext.openTabs) {
+            const openTabsMessages = await getEditorOpenTabsContext()
+            contextMessages.push(...openTabsMessages)
+        }
+        if (promptContext.currentDir) {
+            const currentDirMessages = await getCurrentDirContext(isUnitTestRequest)
+            contextMessages.push(...currentDirMessages)
+        }
+        if (!promptContext.directoryPath) {
+            if (promptContext.directoryPath) {
+                const dirMessages = await getEditorDirContext(promptContext.directoryPath, selection?.fileName)
+                contextMessages.push(...dirMessages)
+            }
+        }
+        if (!promptContext.filePath) {
+            if (promptContext.filePath) {
+                const fileMessages = await getFilePathContext(promptContext.filePath)
+                contextMessages.push(...fileMessages)
+            }
         }
 
-        // Open files in editor tabs
-        if (isContextRequired.openTabs) {
-            const openTabsContext = await getEditorOpenTabsContext()
-            contextMessages.push(...openTabsContext)
+        // Context for unit tests requests
+        if (isUnitTestRequest && contextMessages.length === 0) {
+            if (selection?.fileName) {
+                const importsContext = await this.getUnitTestContextMessages(selection, workspaceRootUri)
+                contextMessages.push(...importsContext)
+            }
         }
 
-        // Current directory
-        if (isContextRequired.currentDir) {
-            const isTestRequest = text.includes('test')
-            const currentDirContext = await getCurrentDirContext(isTestRequest)
-            const packageJSONContext = await getPackageJsonContext(selection?.fileName)
-            contextMessages.push(...currentDirContext, ...(isTestRequest ? packageJSONContext : []))
+        if (promptContext.currentFile || promptContext.selection !== false) {
+            if (selection) {
+                const currentFileMessages = getCurrentFileContextFromEditorSelection(selection)
+                contextMessages.push(...currentFileMessages)
+            }
         }
-
-        // Files from a directory path
-        if (isContextRequired.directoryPath?.length) {
-            const fileContext = await getEditorDirContext(isContextRequired.directoryPath, selection?.fileName)
-            contextMessages.push(...fileContext)
+        if (promptContext.command && commandOutput) {
+            const outputMessages = getTerminalOutputContext(commandOutput)
+            contextMessages.push(...outputMessages)
         }
-
-        // File path
-        const fileContextQueue = []
-        if (isContextRequired.filePath?.length) {
-            const fileContext = await getFilePathContext(isContextRequired.filePath)
-            fileContextQueue.push(...fileContext)
-        }
-
-        // Currently focused file in editor
-        const currentFileContextStack = []
-        // If currentFile is true, or when selection is true but there is no selected text
-        // then we want to include the current file context
-        if (selection && (isContextRequired.currentFile || (isContextRequired.selection && !selection?.selectedText))) {
-            const contextMsg = getCurrentFileContextFromEditorSelection(selection)
-            currentFileContextStack.push(...contextMsg)
-        }
-
-        contextMessages.push(...fileContextQueue, ...currentFileContextStack)
-
-        // Selected text - this is exclude only if selection is set to false specifically
-        if (isContextRequired.selection !== false && selection?.selectedText) {
-            contextMessages.push(...getEditorSelectionContext(selection))
-        }
-
-        // Command output
-        if (isContextRequired.command?.length && commandOutput) {
-            contextMessages.push(...getTerminalOutputContext(commandOutput))
-        }
-
+        // Return sliced results
         const maxResults = Math.floor((NUM_CODE_RESULTS + NUM_TEXT_RESULTS) / 2) * 2
         return contextMessages.slice(-maxResults * 2)
+    }
+
+    private async getUnitTestContextMessages(
+        selection: ActiveTextEditorSelection,
+        workspaceRootUri?: URI | null
+    ): Promise<ContextMessage[]> {
+        const contextMessages: ContextMessage[] = []
+
+        if (workspaceRootUri) {
+            const rootFileNames = await getDirectoryFileListContext(workspaceRootUri, true)
+            contextMessages.push(...rootFileNames)
+        }
+        // Add package.json content only if files matches the ts/js extension regex
+        if (selection?.fileName && getFileExtension(selection?.fileName).match(/ts|js/)) {
+            const packageJson = await getPackageJsonContext(selection?.fileName)
+            contextMessages.push(...packageJson)
+        }
+        // Try adding import statements from current file as context
+        if (selection?.fileName) {
+            const importsContext = await getCurrentFileImportsContext()
+            contextMessages.push(...importsContext)
+        }
+
+        return contextMessages
     }
 }

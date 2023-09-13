@@ -52,7 +52,7 @@ export class AnthropicProvider extends Provider {
     }
 
     public emptyPromptLength(): number {
-        const { messages } = this.createPromptPrefix()
+        const { messages } = this.useInfillPrefix ? this.createInfillPromptPrefix() : this.createPromptPrefix()
         const promptNoSnippets = messagesToText(messages)
         return promptNoSnippets.length - 10 // extra 10 chars of buffer cuz who knows
     }
@@ -90,10 +90,31 @@ export class AnthropicProvider extends Provider {
             },
         ]
 
+        return { messages: prefixMessages, prefix: { head, tail, overlap } }
+    }
+
+    // NOTE: This revert pull/727 for this prompt branch that causes quality regressions
+    // pull/727: https://github.com/sourcegraph/cody/pull/727
+    private createInfillPromptPrefix(): { messages: Message[]; prefix: PrefixComponents } {
+        const prefixLines = this.options.docContext.prefix.split('\n')
+        if (prefixLines.length === 0) {
+            throw new Error('no prefix lines')
+        }
+
+        const { head, tail, overlap } = getHeadAndTail(this.options.docContext.prefix)
+
+        // code before the cursor, after removing the code for the infillBlock
+        // Using this instead of head.trimmed to preserve the spacing from prefix so the model can determines the patterns of surrounding code
+        const infillPrefix = this.options.docContext.prefix.replace(tail.trimmed.trim(), '')
+        // code after the cursor
+        const infillSuffix = this.options.docContext.suffix
+        // Infill block represents the code we want the model to complete
+        const infillBlock = `${tail.trimmed}`
+
         const prefixMessagesWithInfill: Message[] = [
             {
                 speaker: 'human',
-                text: `You are a code completion AI designed to take the surrounding code and shared context into account in order to predict and suggest high-quality code to complete the code block enclosed in ${OPENING_CODE_TAG}${CLOSING_CODE_TAG} tags when provided. You suggest code that follows the same coding styles, formats, patterns, and naming convention detected in surrounding context. Only response with code that works and fits seamlessly with surrounding code.`,
+                text: `You are a code completion AI designed to take the surrounding code and shared context into account in order to predict and suggest high-quality code to complete the code enclosed in ${OPENING_CODE_TAG} tags. You only response with code that works and fits seamlessly with surrounding code if any or use best practice and nothing else.`,
             },
             {
                 speaker: 'assistant',
@@ -101,23 +122,24 @@ export class AnthropicProvider extends Provider {
             },
             {
                 speaker: 'human',
-                text: `Below is the code from file path ${this.options.fileName}. First, review the code outside of the ${OPENING_CODE_TAG} XML tags. Then complete the code inside the tags using the same style, patterns and logics of the surrounding code precisely without duplicating existing implementations:
-                ${head.trimmed}${OPENING_CODE_TAG}${tail.trimmed}${CLOSING_CODE_TAG}${this.options.docContext.suffix}`,
+                text: `Below is the code from file path ${this.options.fileName}. Detect the functionality, formats, style, patterns, and logics in use from code outside ${OPENING_CODE_TAG} XML tags. Then, use what you detect and reuse assetmethods/libraries to complete and enclose complete code only inside ${OPENING_CODE_TAG} XML tags precisely:
+                ${infillPrefix}${OPENING_CODE_TAG}${CLOSING_CODE_TAG}${infillSuffix}`,
             },
             {
                 speaker: 'assistant',
-                text: `${OPENING_CODE_TAG}${tail.trimmed}`,
+                text: `${OPENING_CODE_TAG}${infillBlock}`,
             },
         ]
 
-        const selectedPrefixMessages = this.useInfillPrefix ? prefixMessagesWithInfill : prefixMessages
-        return { messages: selectedPrefixMessages, prefix: { head, tail, overlap } }
+        return { messages: prefixMessagesWithInfill, prefix: { head, tail, overlap } }
     }
 
     // Creates the resulting prompt and adds as many snippets from the reference
     // list as possible.
     protected createPrompt(snippets: ContextSnippet[]): { messages: Message[]; prefix: PrefixComponents } {
-        const { messages: prefixMessages, prefix } = this.createPromptPrefix()
+        const { messages: prefixMessages, prefix } = this.useInfillPrefix
+            ? this.createInfillPromptPrefix()
+            : this.createPromptPrefix()
 
         const referenceSnippetMessages: Message[] = []
 

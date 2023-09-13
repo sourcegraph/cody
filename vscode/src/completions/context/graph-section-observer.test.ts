@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, Mock, vi, vitest } from 'vitest'
 import { URI } from 'vscode-uri'
 
-import { PreciseContext } from '@sourcegraph/cody-shared/src/codebase-context/messages'
+import { HoverContext } from '@sourcegraph/cody-shared/src/codebase-context/messages'
 
 import { vsCodeMocks } from '../../testutils/mocks'
 import { range } from '../../testutils/textDocument'
@@ -66,20 +66,20 @@ describe('GraphSectionObserver', () => {
             () =>
                 [
                     {
-                        symbol: { fuzzyName: 'foo' },
-                        definitionSnippet: 'function foo() {}',
-                        filePath: document1Uri.fsPath,
-                        hoverText: [],
+                        symbolName: 'foo',
+                        type: 'definition',
+                        content: ['function foo() {}'],
+                        uri: document1Uri.toString(),
                         range: { startCharacter: 0, startLine: 0, endCharacter: 0, endLine: 10 },
                     },
                     {
-                        symbol: { fuzzyName: 'bar' },
-                        definitionSnippet: 'function bar() {}',
-                        filePath: document1Uri.fsPath,
-                        hoverText: [],
+                        symbolName: 'bar',
+                        type: 'definition',
+                        content: ['function bar() {}'],
+                        uri: document1Uri.toString(),
                         range: { startCharacter: 0, startLine: 11, endCharacter: 0, endLine: 20 },
                     },
-                ] satisfies PreciseContext[]
+                ] satisfies HoverContext[]
         )
 
         sectionObserver = GraphSectionObserver.createInstance(
@@ -156,8 +156,8 @@ describe('GraphSectionObserver', () => {
     it('reloads the sections when two new lines are added', async () => {
         testDocuments.document1.lineCount = 23
         testDocuments.document1.sections = [
-            { fuzzyName: 'foo', location: { document1Uri, range: range(2, 0, 12, 0) } },
-            { fuzzyName: 'baz', location: { document1Uri, range: range(13, 0, 22, 0) } },
+            { fuzzyName: 'foo', location: { uri: document1Uri, range: range(2, 0, 12, 0) } },
+            { fuzzyName: 'baz', location: { uri: document1Uri, range: range(13, 0, 22, 0) } },
         ]
         await onDidChangeTextDocument({
             document: testDocuments.document1,
@@ -214,8 +214,8 @@ describe('GraphSectionObserver', () => {
 
         testDocuments.document1.lineCount = 23
         testDocuments.document1.sections = [
-            { fuzzyName: 'foo', location: { document1Uri, range: range(0, 0, 12, 0) } },
-            { fuzzyName: 'baz', location: { document1Uri, range: range(13, 0, 22, 0) } },
+            { fuzzyName: 'foo', location: { uri: document1Uri, range: range(0, 0, 12, 0) } },
+            { fuzzyName: 'baz', location: { uri: document1Uri, range: range(13, 0, 22, 0) } },
         ]
         await onDidChangeTextDocument({
             document: testDocuments.document1,
@@ -224,8 +224,11 @@ describe('GraphSectionObserver', () => {
 
         expect(sectionObserver.debugPrint()).toMatchInlineSnapshot(`
           "file:/document1.ts
-            ├─ foo
-            └─ baz"
+            ├─ foo (2 snippets, dirty)
+            └─ baz
+
+          Last visited sections:
+            └ file:/document1.ts foo"
         `)
     })
 
@@ -262,10 +265,10 @@ describe('GraphSectionObserver', () => {
 
         getGraphContextFromRange.mockImplementation(() => [
             {
-                symbol: { fuzzyName: 'foo' },
-                definitionSnippet: 'function foo() {}',
+                symbolName: 'foo',
+                type: 'definition',
+                content: ['function foo() {}'],
                 filePath: document1Uri.toString(),
-                hoverText: [],
             },
         ])
         await onDidChangeTextEditorSelection({
@@ -318,10 +321,10 @@ describe('GraphSectionObserver', () => {
 
         getGraphContextFromRange.mockImplementation(() => [
             {
-                symbol: { fuzzyName: 'foo' },
-                definitionSnippet: 'function foo() {}',
+                symbol: 'foo',
+                type: 'definition',
+                content: ['function foo() {}'],
                 filePath: document1Uri.toString(),
-                hoverText: [],
             },
         ])
         await onDidChangeTextEditorSelection({
