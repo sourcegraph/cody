@@ -358,7 +358,14 @@ const commonImportPaths = new Set([
     'libexec/src/',
 ])
 
-const isCommonImport = (uri: vscode.Uri): boolean => [...commonImportPaths].some(p => uri.fsPath.includes(p))
+function isCommonImport(uri: vscode.Uri): boolean {
+    for (const importPath of commonImportPaths) {
+        if (uri.fsPath.includes(importPath)) {
+            return true
+        }
+    }
+    return false
+}
 
 export const commonKeywords = new Set([...goKeywords, ...typescriptKeywords])
 
