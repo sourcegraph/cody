@@ -65,7 +65,7 @@ export class UnstableFireworksProvider extends Provider {
                     intro.push(
                         `Additional documentation for \`${snippet.symbol}\`${formatSymbolContextRelationship(
                             snippet.sourceSymbolAndRelationship
-                        )}\n\n${snippet.content}`
+                        )}:\n\n${snippet.content}`
                     )
                 } else {
                     intro.push(`Here is a reference snippet of code from ${snippet.fileName}:\n\n${snippet.content}`)
