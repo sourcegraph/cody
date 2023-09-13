@@ -12,13 +12,14 @@ import {
     CLOSING_CODE_TAG,
     extractFromCodeBlock,
     fixBadCompletionStart,
+    formatSymbolContextRelationship,
     getHeadAndTail,
     MULTILINE_STOP_SEQUENCE,
     OPENING_CODE_TAG,
     PrefixComponents,
     trimLeadingWhitespaceUntilNewline,
 } from '../text-processing'
-import { Completion, ContextSnippet, SymbolContextSnippet } from '../types'
+import { Completion, ContextSnippet } from '../types'
 import { forkSignal, messagesToText } from '../utils'
 
 import { CompletionProviderTracer, Provider, ProviderConfig, ProviderOptions } from './provider'
@@ -124,25 +125,12 @@ export class AnthropicProvider extends Provider {
         let remainingChars = this.promptChars - this.emptyPromptLength()
 
         for (const snippet of snippets) {
-            const formatRelationship = (relationship: SymbolContextSnippet['sourceSymbolAndRelationship']): string => {
-                if (relationship) {
-                    switch (relationship.relationship) {
-                        case 'typeDefinition':
-                            return ` (the type of \`${relationship.symbol}\`)`
-                        case 'implementation':
-                            return ` (an implementation of \`${relationship.symbol}\`)`
-                    }
-                }
-
-                return ''
-            }
-
             const snippetMessages: Message[] = [
                 {
                     speaker: 'human',
                     text:
                         'symbol' in snippet && snippet.symbol !== ''
-                            ? `Additional documentation for \`${snippet.symbol}\`${formatRelationship(
+                            ? `Additional documentation for \`${snippet.symbol}\`${formatSymbolContextRelationship(
                                   snippet.sourceSymbolAndRelationship
                               )}: ${OPENING_CODE_TAG}${snippet.content}${CLOSING_CODE_TAG}`
                             : `Codebase context from file path '${snippet.fileName}': ${OPENING_CODE_TAG}${snippet.content}${CLOSING_CODE_TAG}`,
