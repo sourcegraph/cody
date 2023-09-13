@@ -101,7 +101,11 @@ export function pickArm(useThisTelemetryService: TelemetryService): OnboardingEx
     // Try to apply an override for testing.
     const overrideSelection = loadOverrideSelection()
     if (overrideSelection) {
-        logDebug('simplified-onboarding', 'user override onboarding experiment arm selection', overrideSelection)
+        logDebug(
+            'simplified-onboarding',
+            'user override onboarding experiment arm selection',
+            JSON.stringify(overrideSelection)
+        )
         selection = overrideSelection
         return overrideSelection.arm
     }
@@ -115,7 +119,11 @@ export function pickArm(useThisTelemetryService: TelemetryService): OnboardingEx
     // Try to load an earlier selection from storage.
     const cachedSelection = loadCachedSelection()
     if (cachedSelection && !(cachedSelection instanceof Error)) {
-        logDebug('simplified-onboarding', 'using cached onboarding experiment arm selection', cachedSelection)
+        logDebug(
+            'simplified-onboarding',
+            'using cached onboarding experiment arm selection',
+            JSON.stringify(cachedSelection)
+        )
         selection = cachedSelection
         return selection.arm
     }
@@ -126,7 +134,7 @@ export function pickArm(useThisTelemetryService: TelemetryService): OnboardingEx
 
     // This is the first time we are picking an arm. Pick randomly.
     selection = pickSelection(cachedSelection instanceof Error)
-    logDebug('simplified-onboarding', 'picked new onboarding experiment arm selection', selection)
+    logDebug('simplified-onboarding', 'picked new onboarding experiment arm selection', JSON.stringify(selection))
     return selection.arm
 }
 
