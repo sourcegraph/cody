@@ -21,7 +21,7 @@ export class TracedError extends Error {
         public traceId: string | undefined
     ) {
         super(message)
-        Object.setPrototypeOf(this, NetworkError.prototype)
+        Object.setPrototypeOf(this, TracedError.prototype)
     }
 }
 
