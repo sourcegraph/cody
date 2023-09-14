@@ -122,6 +122,8 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
         this.config.tracer = value
     }
 
+    private timeout: NodeJS.Timeout | undefined = undefined
+
     public async provideInlineCompletionItems(
         document: vscode.TextDocument,
         position: vscode.Position,
@@ -257,6 +259,24 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
                 return null
             }
 
+            // Compares length of currentLine to the line when the last completion was triggered
+            // If the current line is shorter, it means the user deleted some text likely the suggested completion
+            const currentLine = document.lineAt(position)
+            const currentLinePrefix = document.getText(currentLine.range.with({ end: position }))
+            const lastTriggeredPrefix = this.lastCandidate?.lastTriggerCurrentLinePrefix
+            if (!this.timeout && lastTriggeredPrefix && currentLinePrefix.length < lastTriggeredPrefix.length) {
+                // Clear last candidate if current suggestion is being deleted
+                const completionItem = this.lastCandidate?.result.items[0]
+                if (completionItem) {
+                    this.timeout = setTimeout(() => {
+                        this.handleDidRejectCompletionItem(result.logId, completionItem)
+                    }, MINIMUM_LATENCY_MS)
+                }
+            } else {
+                clearTimeout(this.timeout)
+                this.timeout = undefined
+            }
+
             const event = CompletionLogger.completionEvent(result.logId)
             if (items.length > 0) {
                 CompletionLogger.suggested(result.logId, InlineCompletionsResultSource[result.source], items[0] as any)
@@ -281,6 +301,13 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
         this.clearLastCandidate()
 
         CompletionLogger.accept(logId, completion)
+    }
+
+    public handleDidRejectCompletionItem(logId: string, completion: InlineCompletionItem): void {
+        // When a completion is rejected, the lastCandidate should be cleared.
+        this.clearLastCandidate()
+
+        CompletionLogger.reject(logId, completion)
     }
 
     /**
