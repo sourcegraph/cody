@@ -18,7 +18,6 @@ interface UnstableFireworksOptions {
 }
 
 const PROVIDER_IDENTIFIER = 'fireworks'
-const CONTEXT_WINDOW_CHARS = 5000 // ~ 2000 token limit
 
 const EOT_STARCODER = '<|endoftext|>'
 const EOT_LLAMA_CODE = ' <EOT>'
@@ -36,6 +35,29 @@ const MODEL_MAP = {
     'llama-code-13b-instruct': 'fireworks/accounts/fireworks/models/llama-v2-13b-code-instruct',
 }
 
+function getContextWindowChars(model: string): number {
+    switch (model) {
+        case 'starcoder-16b':
+        case 'starcoder-7b':
+        case 'starcoder-3b':
+        case 'starcoder-1b':
+            // StarCoder supports up to 8k tokens, we limit it to ~2k for evaluation against
+            // our current Anthropic prompt
+            return 8192 // ~ 2048 token limit
+        case 'wizardcoder-15b':
+            // TODO: Confirm what the limit is for WizardCoder
+            return 8192 // ~ 2048 token limit
+        case 'llama-code-7b':
+        case 'llama-code-13b':
+        case 'llama-code-13b-instruct':
+            // Llama Code was trained on 16k context windows, we're constraining it here to better
+            // compare the results
+            return 8192 // ~ 2048 token limit
+        default:
+            return 5000
+    }
+}
+
 export class UnstableFireworksProvider extends Provider {
     private client: Pick<CodeCompletionsClient, 'complete'>
     private model: keyof typeof MODEL_MAP
@@ -47,7 +69,8 @@ export class UnstableFireworksProvider extends Provider {
     }
 
     private createPrompt(snippets: ContextSnippet[]): string {
-        const maxPromptChars = CONTEXT_WINDOW_CHARS - CONTEXT_WINDOW_CHARS * this.options.responsePercentage
+        const contextWindowChars = getContextWindowChars(this.model)
+        const maxPromptChars = contextWindowChars - contextWindowChars * this.options.responsePercentage
         const { prefix, suffix } = this.options.docContext
 
         const intro: string[] = []
@@ -227,11 +250,13 @@ export function createProviderConfig(
         throw new Error(`Unknown model: \`${unstableFireworksOptions.model}\``)
     }
 
+    const contextWindowChars = getContextWindowChars(model)
+
     return {
         create(options: ProviderOptions) {
             return new UnstableFireworksProvider(options, { ...unstableFireworksOptions, model })
         },
-        maximumContextCharacters: CONTEXT_WINDOW_CHARS,
+        maximumContextCharacters: contextWindowChars,
         enableExtendedMultilineTriggers: true,
         identifier: PROVIDER_IDENTIFIER,
         model,
