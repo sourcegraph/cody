@@ -1,3 +1,5 @@
+import { useEffect } from 'react'
+
 import { VSCodeButton } from '@vscode/webview-ui-toolkit/react'
 import classNames from 'classnames'
 
@@ -54,6 +56,12 @@ export const Login: React.FunctionComponent<React.PropsWithChildren<LoginProps>>
     isAppRunning = false,
     onLoginRedirect,
 }) => {
+    useEffect(() => {
+        // Log that the user was exposed to the control arm of the simplified
+        // onboarding experiment.
+        vscodeAPI.postMessage({ command: 'auth', type: 'simplified-onboarding-exposure' })
+    }, [vscodeAPI])
+
     const isOSSupported = isOsSupportedByApp(appOS, appArch)
 
     const title = isAppInstalled ? (isAppRunning ? 'Connect with Cody App' : 'Cody App Not Running') : 'Get Started'
@@ -106,6 +114,7 @@ export const Login: React.FunctionComponent<React.PropsWithChildren<LoginProps>>
         isInstalled: endpoint === LOCAL_APP_URL.href && isAppInstalled,
         isRunning: isAppRunning,
     }
+
     return (
         <div className={styles.container}>
             {authStatus && <ErrorContainer authStatus={authStatus} isApp={isApp} endpoint={endpoint} />}

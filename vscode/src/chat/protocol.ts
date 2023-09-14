@@ -7,7 +7,6 @@ import { CodyLLMSiteConfiguration } from '@sourcegraph/cody-shared/src/sourcegra
 import type { TelemetryEventProperties } from '@sourcegraph/cody-shared/src/telemetry'
 
 import { View } from '../../webviews/NavBar'
-import { AuthMethod, OnboardingExperimentArm } from '../services/OnboardingExperiment'
 
 /**
  * A message sent from the webview to the extension host.
@@ -35,7 +34,14 @@ export type WebviewMessage =
     | { command: 'copy'; eventType: 'Button' | 'Keydown'; text: string }
     | {
           command: 'auth'
-          type: 'signin' | 'signout' | 'support' | 'app' | 'callback' | 'simplified-onboarding'
+          type:
+              | 'signin'
+              | 'signout'
+              | 'support'
+              | 'app'
+              | 'callback'
+              | 'simplified-onboarding'
+              | 'simplified-onboarding-exposure'
           endpoint?: string
           value?: string
           authMethod?: AuthMethod
@@ -183,4 +189,19 @@ export function archConvertor(arch: string): string {
             return 'x86_64'
     }
     return arch
+}
+
+// Simplified Onboarding types which are shared between WebView and extension.
+
+export type AuthMethod = 'dotcom' | 'github' | 'gitlab' | 'google'
+
+export enum OnboardingExperimentArm {
+    // Note, these values are persisted to local storage, see pickArm. Do not
+    // change these values. Adding values is OK but don't delete them.
+    Classic = 0, // Control
+    Simplified = 1, // Treatment: simplified onboarding flow
+
+    MinValue = Classic,
+    // Update this when adding an arm to the trial.
+    MaxValue = Simplified,
 }
