@@ -1,10 +1,12 @@
 import * as vscode from 'vscode'
 import { URI } from 'vscode-uri'
+import { SyntaxNode } from 'web-tree-sitter'
 
 import { HoverContext, PreciseContext } from '@sourcegraph/cody-shared/src/codebase-context/messages'
 import { dedupeWith, isDefined } from '@sourcegraph/cody-shared/src/common'
 import { ActiveTextEditorSelectionRange, Editor } from '@sourcegraph/cody-shared/src/editor'
 
+import { getCachedParseTreeForDocument } from '../completions/tree-sitter/parse-tree-cache'
 import { logDebug } from '../log'
 
 // TODO(efritz) - move to options object
@@ -395,7 +397,32 @@ export const gatherDefinitionRequestCandidates = (selections: Selection[], conte
             continue
         }
 
-        for (const { start, end } of [range]) {
+        const cachedParseTree = pair.document ? getCachedParseTreeForDocument(pair.document) : undefined
+
+        if (cachedParseTree) {
+            const nodes: SyntaxNode[] = [cachedParseTree.tree.rootNode]
+            while (true) {
+                const node = nodes.shift()
+                if (!node) {
+                    break
+                }
+
+                if (range.start.line <= node.startPosition.row && node.startPosition.row <= range.end.line) {
+                    if (node.type.includes('identifier')) {
+                        requestCandidates.push({
+                            symbolName: node.text,
+                            uri,
+                            position: new vscode.Position(node.startPosition.row, node.startPosition.column),
+                        })
+                    }
+                }
+
+                if (node.startPosition.row <= range.end.line) {
+                    nodes.push(...node.children)
+                }
+            }
+        } else {
+            const { start, end } = range
             for (const [lineIndex, line] of pair.lines.slice(start.line, end.line + 1).entries()) {
                 // NOTE: pretty hacky - strip out C-style line comments and find everything
                 // that might look like it could be an identifier. If we end up running a
