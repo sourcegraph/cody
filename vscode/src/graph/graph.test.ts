@@ -99,7 +99,7 @@ describe('gatherDefinitions', () => {
 
         const requests = gatherDefinitionRequestCandidates(
             selections,
-            new Map([[uri.fsPath, testFile3.split('\n').slice(1)]])
+            new Map([[uri.fsPath, { document: undefined, lines: testFile3.split('\n').slice(1) }]])
         )
         const getHover = (): Promise<vscode.Hover[]> => Promise.resolve([])
         // eslint-disable-next-line @typescript-eslint/require-await
@@ -215,10 +215,10 @@ describe('extractDefinitionContexts', () => {
                     location: { uri: Uri.file('/test-3.test'), range: new vscode.Range(7, 5, 7, 7) },
                 },
             ],
-            new Map<string, string[]>([
-                ['/test-1.test', testFile1.split('\n').slice(1)], // foo, bar
-                ['/test-2.test', testFile2.split('\n').slice(1)], // baz
-                ['/test-3.test', testFile3.split('\n').slice(1)], // bonk
+            new Map([
+                ['/test-1.test', { document: undefined, lines: testFile1.split('\n').slice(1) }], // foo, bar
+                ['/test-2.test', { document: undefined, lines: testFile2.split('\n').slice(1) }], // baz
+                ['/test-3.test', { document: undefined, lines: testFile3.split('\n').slice(1) }], // bonk
             ]),
             (uri: URI): Promise<vscode.Range[]> => {
                 switch (uri.fsPath) {
