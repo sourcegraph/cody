@@ -1,5 +1,5 @@
 import dedent from 'dedent'
-import { describe, expect, it, test } from 'vitest'
+import { describe, expect, it } from 'vitest'
 
 import { CompletionParameters } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
 
@@ -11,19 +11,19 @@ import { getInlineCompletions, params, V } from './helpers'
 
 describe('[getInlineCompletions] triggers', () => {
     describe('singleline', () => {
-        test('after whitespace', async () =>
+        it('after whitespace', async () =>
             expect(await getInlineCompletions(params('foo = █', [completion`bar`]))).toEqual<V>({
                 items: [{ insertText: 'bar' }],
                 source: InlineCompletionsResultSource.Network,
             }))
 
-        test('end of word', async () =>
+        it('end of word', async () =>
             expect(await getInlineCompletions(params('foo█', [completion`()`]))).toEqual<V>({
                 items: [{ insertText: '()' }],
                 source: InlineCompletionsResultSource.Network,
             }))
 
-        test('middle of line', async () =>
+        it('middle of line', async () =>
             expect(
                 await getInlineCompletions(
                     params('function bubbleSort(█)', [completion`array) {`, completion`items) {`])
@@ -37,16 +37,16 @@ describe('[getInlineCompletions] triggers', () => {
             }))
 
         describe('same line suffix behavior', () => {
-            test('does not trigger when there are alphanumeric chars in the line suffix', async () =>
+            it('does not trigger when there are alphanumeric chars in the line suffix', async () =>
                 expect(await getInlineCompletions(params('foo = █ // x', []))).toBeNull())
 
-            test('triggers when there are only non-alphanumeric chars in the line suffix', async () =>
+            it('triggers when there are only non-alphanumeric chars in the line suffix', async () =>
                 expect(await getInlineCompletions(params('foo = █;', []))).toBeTruthy())
         })
     })
 
     describe('multiline', () => {
-        test('triggers a multi-line completion at the start of a block', async () => {
+        it('triggers a multi-line completion at the start of a block', async () => {
             const requests: CompletionParameters[] = []
             await getInlineCompletions(
                 params('function bubbleSort() {\n  █', [], {
@@ -58,7 +58,7 @@ describe('[getInlineCompletions] triggers', () => {
             expect(requests).toBeMultiLine()
         })
 
-        test('does not trigger a multi-line completion at a function call', async () => {
+        it('does not trigger a multi-line completion at a function call', async () => {
             const requests: CompletionParameters[] = []
             await getInlineCompletions(
                 params('bar(█)', [], {
@@ -70,7 +70,7 @@ describe('[getInlineCompletions] triggers', () => {
             expect(requests).toBeSingleLine()
         })
 
-        test('does not trigger a multi-line completion at a method call', async () => {
+        it('does not trigger a multi-line completion at a method call', async () => {
             const requests: CompletionParameters[] = []
             await getInlineCompletions(
                 params('foo.bar(█)', [], {
@@ -127,7 +127,7 @@ describe('[getInlineCompletions] triggers', () => {
             })
         })
 
-        test('triggers a multi-line completion at a method declarations', async () => {
+        it('triggers a multi-line completion at a method declarations', async () => {
             const requests: CompletionParameters[] = []
             await getInlineCompletions(
                 params('method.hello () {█', [], {
@@ -139,7 +139,7 @@ describe('[getInlineCompletions] triggers', () => {
             expect(requests).toBeMultiLine()
         })
 
-        test('does not support multi-line completion on unsupported languages', async () => {
+        it('does not support multi-line completion on unsupported languages', async () => {
             const requests: CompletionParameters[] = []
             await getInlineCompletions(
                 params('function looksLegit() {\n  █', [], {
@@ -152,7 +152,7 @@ describe('[getInlineCompletions] triggers', () => {
             expect(requests).toBeSingleLine()
         })
 
-        test('requires an indentation to start a block', async () => {
+        it('requires an indentation to start a block', async () => {
             const requests: CompletionParameters[] = []
             await getInlineCompletions(
                 params('function bubbleSort() {\n█', [], {
