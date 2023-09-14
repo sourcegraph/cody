@@ -1,7 +1,7 @@
 import { QuickPickItem, window } from 'vscode'
 
 import { CodyPrompt } from '@sourcegraph/cody-shared'
-import { defaultCodyPromptContext } from '@sourcegraph/cody-shared/src/chat/prompts'
+import { CustomCommandType, defaultCodyPromptContext } from '@sourcegraph/cody-shared/src/chat/prompts'
 import { toSlashCommand } from '@sourcegraph/cody-shared/src/chat/prompts/utils'
 
 import { customPromptsContextOptions } from '../utils/menu'
@@ -9,7 +9,7 @@ import { customPromptsContextOptions } from '../utils/menu'
 export interface CodyCommand {
     slashCommand: string
     prompt: CodyPrompt
-    type: 'user' | 'workspace'
+    type: CustomCommandType
 }
 export class CustomCommandsBuilderMenu {
     public async start(commands: Map<string, CodyPrompt>): Promise<CodyCommand | null> {
@@ -137,7 +137,7 @@ export class CustomCommandsBuilderMenu {
         return newPrompt
     }
 
-    private async makeType(): Promise<'user' | 'workspace'> {
+    private async makeType(): Promise<CustomCommandType> {
         const option = await window.showQuickPick(
             [
                 {

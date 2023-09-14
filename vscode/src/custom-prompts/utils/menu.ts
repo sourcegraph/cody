@@ -1,6 +1,7 @@
 import { commands, QuickInputButtons, QuickPickItem, ThemeIcon, window } from 'vscode'
 
 import { CodyPrompt } from '@sourcegraph/cody-shared'
+import { CustomCommandType } from '@sourcegraph/cody-shared/src/chat/prompts'
 
 import { ContextOption } from '.'
 
@@ -155,7 +156,7 @@ export async function showcommandTypeQuickPick(
         user: number
         workspace: number
     }
-): Promise<'user' | 'workspace' | null> {
+): Promise<CustomCommandType | null> {
     const options: QuickPickItem[] = []
     const userItem = CustomCommandTypes.user
     const workspaceItem = CustomCommandTypes.workspace

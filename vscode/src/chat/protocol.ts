@@ -1,5 +1,5 @@
 import { ChatContextStatus } from '@sourcegraph/cody-shared/src/chat/context'
-import { CodyPrompt } from '@sourcegraph/cody-shared/src/chat/prompts'
+import { CodyPrompt, CustomCommandType } from '@sourcegraph/cody-shared/src/chat/prompts'
 import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 import { ChatMessage, UserLocalHistory } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { Configuration } from '@sourcegraph/cody-shared/src/configuration'
@@ -39,7 +39,7 @@ export type WebviewMessage =
           value?: string
       }
     | { command: 'abort' }
-    | { command: 'custom-prompt'; title: string; value?: 'user' | 'workspace' }
+    | { command: 'custom-prompt'; title: string; value?: CustomCommandType }
     | { command: 'reload' }
 
 /**

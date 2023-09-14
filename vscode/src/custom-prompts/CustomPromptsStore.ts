@@ -1,7 +1,13 @@
 import { omit } from 'lodash'
 import * as vscode from 'vscode'
 
-import { CodyPrompt, ConfigFileName, MyPrompts, MyPromptsJSON } from '@sourcegraph/cody-shared/src/chat/prompts'
+import {
+    CodyPrompt,
+    ConfigFileName,
+    CustomCommandType,
+    MyPrompts,
+    MyPromptsJSON,
+} from '@sourcegraph/cody-shared/src/chat/prompts'
 import { fromSlashCommand, toSlashCommand } from '@sourcegraph/cody-shared/src/chat/prompts/utils'
 
 import { logDebug, logError } from '../log'
@@ -92,7 +98,7 @@ export class CustomPromptsStore implements vscode.Disposable {
     /**
      * Build the map of prompts using the json string
      */
-    public async build(type: 'user' | 'workspace'): Promise<Map<string, CodyPrompt> | null> {
+    public async build(type: CustomCommandType): Promise<Map<string, CodyPrompt> | null> {
         try {
             const content = await this.getPromptsFromFileSystem(type)
             if (!content) {
@@ -164,7 +170,7 @@ export class CustomPromptsStore implements vscode.Disposable {
         id: string,
         prompt: CodyPrompt,
         deletePrompt = false,
-        type: 'user' | 'workspace' = 'user'
+        type: CustomCommandType = 'user'
     ): Promise<void> {
         if (deletePrompt) {
             this.myPromptsMap.delete(id)
@@ -190,7 +196,7 @@ export class CustomPromptsStore implements vscode.Disposable {
     /**
      * Updates the corresponding Cody config file with the given prompts.
      */
-    private async updateJSONFile(prompts: MyPromptsJSON, type: 'user' | 'workspace'): Promise<void> {
+    private async updateJSONFile(prompts: MyPromptsJSON, type: CustomCommandType): Promise<void> {
         try {
             const rootDirPath = type === 'user' ? this.jsonFileUris.user : this.jsonFileUris.workspace
             if (!rootDirPath) {
@@ -205,7 +211,7 @@ export class CustomPromptsStore implements vscode.Disposable {
     /**
      * Create a new cody.json file to the user's workspace or home directory
      */
-    public async createConfig(type: 'user' | 'workspace' = 'user'): Promise<void> {
+    public async createConfig(type: CustomCommandType = 'user'): Promise<void> {
         const configFileUri = this.getConfigUriByType(type)
         try {
             if (configFileUri) {
@@ -230,7 +236,7 @@ export class CustomPromptsStore implements vscode.Disposable {
     /**
      * Remove the cody.json file from the user's workspace or home directory
      */
-    public async deleteConfig(type: 'user' | 'workspace' = 'user'): Promise<void> {
+    public async deleteConfig(type: CustomCommandType = 'user'): Promise<void> {
         // delete .vscode/cody.json for user command using the vs code api
         const uri = this.getConfigUriByType(type)
         if (this.promptSize[type] === 0 || !uri) {
@@ -245,7 +251,7 @@ export class CustomPromptsStore implements vscode.Disposable {
     /**
      * Open the .vscode/cody.json file for given type in the editor
      */
-    public async openConfig(type: 'user' | 'workspace' = 'user'): Promise<void> {
+    public async openConfig(type: CustomCommandType = 'user'): Promise<void> {
         const uri = this.getConfigUriByType(type)
         return vscode.commands.executeCommand('vscode.open', uri)
     }
@@ -253,7 +259,7 @@ export class CustomPromptsStore implements vscode.Disposable {
     /**
      * Get the file content of the cody.json file for the given type
      */
-    private async getPromptsFromFileSystem(type: 'user' | 'workspace'): Promise<string | null> {
+    private async getPromptsFromFileSystem(type: CustomCommandType): Promise<string | null> {
         const codyJsonFilePathUri = this.getConfigUriByType(type)
         if (!codyJsonFilePathUri) {
             return null
@@ -274,7 +280,7 @@ export class CustomPromptsStore implements vscode.Disposable {
     /**
      * Get the uri of the cody.json file for the given type
      */
-    private getConfigUriByType(type: 'user' | 'workspace'): vscode.Uri | undefined {
+    private getConfigUriByType(type: CustomCommandType): vscode.Uri | undefined {
         const configFileUri = type === 'user' ? this.jsonFileUris.user : this.jsonFileUris.workspace
         return configFileUri
     }

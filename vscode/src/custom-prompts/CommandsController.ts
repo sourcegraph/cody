@@ -1,6 +1,11 @@
 import * as vscode from 'vscode'
 
-import { CodyPrompt, defaultCodyPromptContext, MyPrompts } from '@sourcegraph/cody-shared/src/chat/prompts'
+import {
+    CodyPrompt,
+    CustomCommandType,
+    defaultCodyPromptContext,
+    MyPrompts,
+} from '@sourcegraph/cody-shared/src/chat/prompts'
 import { VsCodeCommandsController } from '@sourcegraph/cody-shared/src/editor'
 import { TelemetryService } from '@sourcegraph/cody-shared/src/telemetry'
 
@@ -364,7 +369,7 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
      * Config file controller
      * handles operations on config files for user and workspace commands
      */
-    public async config(action: string, fileType?: 'user' | 'workspace'): Promise<void> {
+    public async config(action: string, fileType?: CustomCommandType): Promise<void> {
         switch (action) {
             case 'delete':
                 if ((await showRemoveConfirmationInput()) !== 'Yes') {
