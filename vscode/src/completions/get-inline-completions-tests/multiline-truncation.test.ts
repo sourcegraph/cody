@@ -6,10 +6,12 @@ import { resetParsersCache } from '../tree-sitter/parser'
 
 import { getInlineCompletionsInsertText, params, T } from './helpers'
 
+const cases = [true, false]
+
 // Run truncation tests for both strategies: indentation-based and tree-sittere-based.
 // We cannot use `describe.each` here because `toMatchInlineSnapshot` is not supported with it.
-
-;[true, false].forEach(isTreeSitterEnabled => {
+// eslint-disable-next-line ban/ban
+cases.forEach(isTreeSitterEnabled => {
     const label = isTreeSitterEnabled ? 'enabled' : 'disabled'
 
     describe(`[getInlineCompletions] multiline truncation with tree-sitter ${label}`, () => {
