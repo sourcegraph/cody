@@ -25,6 +25,8 @@ import { forkSignal, messagesToText } from '../utils'
 import { CompletionProviderTracer, Provider, ProviderConfig, ProviderOptions } from './provider'
 
 const CHARS_PER_TOKEN = 4
+export const MULTI_LINE_STOP_SEQUENCES = [anthropic.HUMAN_PROMPT, CLOSING_CODE_TAG]
+export const SINGLE_LINE_STOP_SEQUENCES = [anthropic.HUMAN_PROMPT, CLOSING_CODE_TAG, MULTILINE_STOP_SEQUENCE]
 
 function tokensToChars(tokens: number): number {
     return tokens * CHARS_PER_TOKEN
@@ -189,13 +191,13 @@ export class AnthropicProvider extends Provider {
                   temperature: 0.5,
                   messages: prompt,
                   maxTokensToSample: this.responseTokens,
-                  stopSequences: [anthropic.HUMAN_PROMPT, CLOSING_CODE_TAG],
+                  stopSequences: MULTI_LINE_STOP_SEQUENCES,
               }
             : {
                   temperature: 0.5,
                   messages: prompt,
                   maxTokensToSample: Math.min(50, this.responseTokens),
-                  stopSequences: [anthropic.HUMAN_PROMPT, CLOSING_CODE_TAG, MULTILINE_STOP_SEQUENCE],
+                  stopSequences: SINGLE_LINE_STOP_SEQUENCES,
               }
         tracer?.params(args)
 

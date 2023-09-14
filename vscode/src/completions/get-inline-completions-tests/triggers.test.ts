@@ -1,12 +1,11 @@
 import dedent from 'dedent'
-import { describe, expect, test } from 'vitest'
+import { describe, expect, it, test } from 'vitest'
 
 import { CompletionParameters } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
 
 import { range } from '../../testutils/textDocument'
 import { InlineCompletionsResultSource } from '../getInlineCompletions'
 import { completion } from '../test-helpers'
-import { MULTILINE_STOP_SEQUENCE } from '../text-processing'
 
 import { getInlineCompletions, params, V } from './helpers'
 
@@ -56,8 +55,7 @@ describe('[getInlineCompletions] triggers', () => {
                     },
                 })
             )
-            expect(requests).toHaveLength(3)
-            expect(requests[0].stopSequences).not.toContain(MULTILINE_STOP_SEQUENCE)
+            expect(requests).toBeMultiLine()
         })
 
         test('does not trigger a multi-line completion at a function call', async () => {
@@ -69,8 +67,7 @@ describe('[getInlineCompletions] triggers', () => {
                     },
                 })
             )
-            expect(requests).toHaveLength(1)
-            expect(requests[0].stopSequences).toContain(MULTILINE_STOP_SEQUENCE)
+            expect(requests).toBeSingleLine()
         })
 
         test('does not trigger a multi-line completion at a method call', async () => {
@@ -82,30 +79,52 @@ describe('[getInlineCompletions] triggers', () => {
                     },
                 })
             )
-            expect(requests).toHaveLength(1)
-            expect(requests[0].stopSequences).toContain(MULTILINE_STOP_SEQUENCE)
+            expect(requests).toBeSingleLine()
         })
 
-        test('does not trigger a multi-line completion if a block already has content', async () => {
-            const requests: CompletionParameters[] = []
-            await getInlineCompletions(
-                params(
-                    dedent`
-                    function myFunction() {
-                        █
-                        console.log('three')
-                    }
-                `,
-                    [],
-                    {
-                        onNetworkRequest(request) {
-                            requests.push(request)
-                        },
-                    }
+        describe('does not trigger a multi-line completion if a block already has content', () => {
+            it('for a non-empty current line', async () => {
+                const requests: CompletionParameters[] = []
+                await getInlineCompletions(
+                    params(
+                        dedent`
+                        function myFunction() {█
+
+                            console.log('three')
+                        }
+                    `,
+                        [],
+                        {
+                            onNetworkRequest(request) {
+                                requests.push(request)
+                            },
+                        }
+                    )
                 )
-            )
-            expect(requests).toHaveLength(1)
-            expect(requests[0].stopSequences).toContain(MULTILINE_STOP_SEQUENCE)
+                expect(requests).toBeSingleLine()
+            })
+
+            it('for an empty current line', async () => {
+                const requests: CompletionParameters[] = []
+                await getInlineCompletions(
+                    params(
+                        dedent`
+                        function myFunction() {
+                            █
+
+                            console.log('three')
+                        }
+                    `,
+                        [],
+                        {
+                            onNetworkRequest(request) {
+                                requests.push(request)
+                            },
+                        }
+                    )
+                )
+                expect(requests).toBeSingleLine()
+            })
         })
 
         test('triggers a multi-line completion at a method declarations', async () => {
@@ -117,9 +136,9 @@ describe('[getInlineCompletions] triggers', () => {
                     },
                 })
             )
-            expect(requests).toHaveLength(3)
-            expect(requests[0].stopSequences).not.toContain(MULTILINE_STOP_SEQUENCE)
+            expect(requests).toBeMultiLine()
         })
+
         test('does not support multi-line completion on unsupported languages', async () => {
             const requests: CompletionParameters[] = []
             await getInlineCompletions(
@@ -130,8 +149,7 @@ describe('[getInlineCompletions] triggers', () => {
                     },
                 })
             )
-            expect(requests).toHaveLength(1)
-            expect(requests[0].stopSequences).toContain(MULTILINE_STOP_SEQUENCE)
+            expect(requests).toBeSingleLine()
         })
 
         test('requires an indentation to start a block', async () => {
@@ -143,8 +161,7 @@ describe('[getInlineCompletions] triggers', () => {
                     },
                 })
             )
-            expect(requests).toHaveLength(1)
-            expect(requests[0].stopSequences).toContain(MULTILINE_STOP_SEQUENCE)
+            expect(requests).toBeSingleLine()
         })
     })
 })
