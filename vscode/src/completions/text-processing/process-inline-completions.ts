@@ -48,7 +48,7 @@ interface ProcessItemParams {
 
 export function processItem(params: ProcessItemParams): ParsedCompletion {
     const { document, position, docContext } = params
-    const { prefix, suffix, currentLineSuffix, multiline } = docContext
+    const { prefix, suffix, currentLineSuffix, multilineTrigger } = docContext
 
     // Make a copy to avoid unexpected behavior.
     let completion = { ...params.completion }
@@ -65,7 +65,7 @@ export function processItem(params: ProcessItemParams): ParsedCompletion {
     const parsed = parseCompletion({ completion, document, position, docContext })
     let { insertText } = parsed
 
-    if (multiline) {
+    if (multilineTrigger) {
         // Use tree-sitter for truncation if `config.autocompleteExperimentalSyntacticPostProcessing` is enabled.
         if (parsed.tree && MULTILINE_TRUNCATION_SUPPORTED_LANGUAGES.has(document.languageId)) {
             console.log('Truncating multiline completion using tree-sitter')
@@ -77,7 +77,7 @@ export function processItem(params: ProcessItemParams): ParsedCompletion {
         insertText = removeTrailingWhitespace(insertText)
     }
 
-    if (!multiline) {
+    if (!multilineTrigger) {
         // Only keep a single line in single-line completions mode
         const newLineIndex = insertText.indexOf('\n')
         if (newLineIndex !== -1) {
