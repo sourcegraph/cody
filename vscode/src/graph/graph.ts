@@ -552,7 +552,13 @@ const hoverContextFromElement = (
         return undefined
     }
 
-    const content = hoverToStrings(e.hover)
+    let content = hoverToStrings(e.hover)
+
+    // Filter out common hover texts that do not provide additional value
+    if (sourceSymbolName) {
+        content = content.filter(c => c !== `interface ${sourceSymbolName}` && c !== `class ${sourceSymbolName}`)
+    }
+
     if (content.length === 0) {
         return undefined
     }
