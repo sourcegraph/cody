@@ -143,7 +143,7 @@ export class FixupController
             console.warn('no response cached from LLM so no applicable diff')
             return undefined
         }
-        const bufferText = document.getText(task.selectionRange)
+        const bufferText = document.getText(task.editRange)
         let diff = task.diff
         if (task.replacement !== undefined && bufferText !== diff?.bufferText) {
             // The buffer changed since we last computed the diff.

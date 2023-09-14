@@ -1,3 +1,4 @@
+import * as vscode from 'vscode'
 import { URI } from 'vscode-uri'
 
 export interface ActiveTextEditor {
@@ -62,6 +63,7 @@ export interface VsCodeFixupTaskRecipeData {
 
 export interface VsCodeFixupController {
     getTaskRecipeData(taskId: string): Promise<VsCodeFixupTaskRecipeData | undefined>
+    setEditRange(taskid: string, newRange: vscode.Range): void
 }
 
 export interface VsCodeCommandsController {

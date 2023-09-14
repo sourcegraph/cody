@@ -9,7 +9,7 @@ import { RangeExpander } from '.'
 export class SourcegraphFixupRangeExpander implements RangeExpander {
     constructor(private completionsClient?: SourcegraphCompletionsClient) {}
 
-    public async expandTheContextRange(task: VsCodeFixupTaskRecipeData): Promise<string> {
+    public async expandTheContextRange(task: VsCodeFixupTaskRecipeData): Promise<vscode.Range | null> {
         const selectionRange = task.selectionRange
         const completionsClient = this.completionsClient
 
@@ -29,7 +29,7 @@ export class SourcegraphFixupRangeExpander implements RangeExpander {
         const finalPrompt = FINAL_QUESTION + fullText
 
         if (!completionsClient) {
-            return 'nothing'
+            return null
         }
 
         const result = await new Promise<string>(resolve => {
@@ -66,22 +66,22 @@ export class SourcegraphFixupRangeExpander implements RangeExpander {
             )
         })
         const numbers = this.extractNumbersFromBrackets(result)
-        const startLineNumber = selectionRange.start.line
-        const endLineNumber = selectionRange.end.line
-        const newRange = this.findEnclosingRange(numbers, new vscode.Range(startLineNumber, 0, endLineNumber, 0))
+        const newEditRange = this.findEnclosingRange(numbers, selectionRange)
+        const startPosition = new vscode.Position(newEditRange.start.line, 0) // 1st line, 5th character
+        const endPosition = new vscode.Position(newEditRange.end.line, 0) // 3rd line, 15th character
+
+        const myRange = new vscode.Range(startPosition, endPosition)
 
         console.log('Result:', result, 'numbers:', numbers)
-        console.log('Selection range:', selectionRange, startLineNumber, endLineNumber, newRange)
         console.log('Full text:', fullText)
-        return result
+        return myRange
     }
 
-    private trimFirstAndLast30Lines(input: string): string {
-        const lines = input.split('\n')
-        if (lines.length <= 60) {
-            return '' // If there are 50 lines or fewer, return an empty string.
-        }
-        return lines.slice(30, -30).join('\n')
+    private addLineNumbers(content: string, startFrom: number = 0): string {
+        return content
+            .split('\n')
+            .map((line, index) => `${startFrom + index} ${line}`)
+            .join('\n')
     }
 
     private addLineNumbersToPrecedingText(
@@ -100,7 +100,10 @@ export class SourcegraphFixupRangeExpander implements RangeExpander {
         return this.addLineNumbers(followingText, startLineNumber)
     }
 
-    private findEnclosingRange(numbers: number[], selectionRange: vscode.Range): vscode.Range {
+    private findEnclosingRange(
+        numbers: number[],
+        selectionRange: ActiveTextEditorSelectionRange
+    ): ActiveTextEditorSelectionRange {
         if (!numbers.length) {
             return selectionRange
         }
@@ -122,8 +125,17 @@ export class SourcegraphFixupRangeExpander implements RangeExpander {
         if (selectionRange.start.line < start && selectionRange.end.line > end) {
             return selectionRange
         }
-
-        return new vscode.Range(start, 0, end, 0) // Assuming column numbers remain 0 for simplicity
+        const newEditRange: ActiveTextEditorSelectionRange = {
+            start: {
+                line: start,
+                character: 0,
+            },
+            end: {
+                line: end,
+                character: 0,
+            },
+        }
+        return newEditRange // Assuming column numbers remain 0 for simplicity
     }
 
     private extractNumbersFromBrackets(input: string): number[] {
@@ -142,15 +154,9 @@ export class SourcegraphFixupRangeExpander implements RangeExpander {
                 tempNum += char
             }
         }
+        numbers.sort((a, b) => a - b)
 
         return numbers
-    }
-
-    private addLineNumbers(content: string, startFrom: number = 0): string {
-        return content
-            .split('\n')
-            .map((line, index) => `${startFrom + index} ${line}`)
-            .join('\n')
     }
 }
 

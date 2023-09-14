@@ -1,3 +1,5 @@
+import * as vscode from 'vscode'
+
 import { ContextMessage, getContextMessageWithResponse } from '../../codebase-context/messages'
 import { VsCodeFixupTaskRecipeData } from '../../editor'
 import { IntentClassificationOption } from '../../intent-detector'
@@ -52,22 +54,29 @@ export class Fixup implements Recipe {
             return null
         }
 
-        const fixupTask = await fixupController.getTaskRecipeData(taskId)
-        if (!fixupTask) {
+        const originalFixupTask = await fixupController.getTaskRecipeData(taskId)
+        if (!originalFixupTask) {
             await context.editor.showWarningMessage('Select some code to fixup.')
             return null
         }
 
-        const newRange = await this.getReformedRange(fixupTask, context)
-
         const quarterFileContext = Math.floor(MAX_CURRENT_FILE_TOKENS / 4)
-        if (truncateText(fixupTask.selectedText, quarterFileContext * 2) !== fixupTask.selectedText) {
+        if (truncateText(originalFixupTask.selectedText, quarterFileContext * 2) !== originalFixupTask.selectedText) {
             const msg = "The amount of text selected exceeds Cody's current capacity."
             await context.editor.showWarningMessage(msg)
             return null
         }
 
-        const intent = await this.getIntent(fixupTask, context)
+        const intent = await this.getIntent(originalFixupTask, context)
+        let newFixupTask: VsCodeFixupTaskRecipeData | undefined
+        if (intent === 'edit') {
+            const newRange = await this.getReformedRange(originalFixupTask, context)
+            if (newRange) {
+                fixupController.setEditRange(taskId, newRange)
+                newFixupTask = await fixupController.getTaskRecipeData(taskId)
+            }
+        }
+        const fixupTask = newFixupTask || originalFixupTask
         const promptText = this.getPrompt(fixupTask, intent)
 
         return Promise.resolve(
@@ -86,12 +95,10 @@ export class Fixup implements Recipe {
         )
     }
 
-    private async getReformedRange(task: VsCodeFixupTaskRecipeData, context: RecipeContext): Promise<string> {
-        if (task.selectedText.trim().length === 0) {
-            // Nothing selected, assume this is always 'add'.
-            return 'add'
-        }
-
+    private async getReformedRange(
+        task: VsCodeFixupTaskRecipeData,
+        context: RecipeContext
+    ): Promise<vscode.Range | null> {
         const intent = await context.rangeExpander.expandTheContextRange(task)
         return intent
     }
