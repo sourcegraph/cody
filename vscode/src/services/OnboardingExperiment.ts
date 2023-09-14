@@ -25,6 +25,8 @@ interface SelectedArm {
     setByTestingOverride: boolean
 }
 
+// TODO(dpc): Refactor TelemetryService to be a globalton like the other
+// services, instead of catching one that's passed around.
 let telemetryService: TelemetryService | undefined
 let selection: SelectedArm | undefined
 
@@ -109,11 +111,6 @@ export function pickArm(useThisTelemetryService: TelemetryService): OnboardingEx
     // Try to apply an override for testing.
     const overrideSelection = loadOverrideSelection()
     if (overrideSelection) {
-        logDebug(
-            'simplified-onboarding',
-            'user override onboarding experiment arm selection',
-            JSON.stringify(overrideSelection)
-        )
         selection = overrideSelection
         return overrideSelection.arm
     }
