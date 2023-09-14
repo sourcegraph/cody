@@ -395,11 +395,13 @@ describe('GraphSectionObserver', () => {
                 {
                   "content": "function foo() {}",
                   "fileName": "/document1.ts",
+                  "sourceSymbolAndRelationship": undefined,
                   "symbol": "foo",
                 },
                 {
                   "content": "function bar() {}",
                   "fileName": "/document1.ts",
+                  "sourceSymbolAndRelationship": undefined,
                   "symbol": "bar",
                 },
               ]
@@ -436,6 +438,7 @@ describe('GraphSectionObserver', () => {
                 {
                   "content": "function bar() {}",
                   "fileName": "/document1.ts",
+                  "sourceSymbolAndRelationship": undefined,
                   "symbol": "bar",
                 },
               ]

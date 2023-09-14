@@ -181,14 +181,7 @@ const updateContentMap = async (contentMap: Map<string, string[]>, locations: vs
     const unseenDefinitionUris = dedupeWith(locations, 'fsPath').filter(uri => !contentMap.has(uri.fsPath))
 
     // Remove ultra-common type definitions that are probably already known by the LLM
-    const filteredUnseenDefinitionUris = unseenDefinitionUris.filter(uri => {
-        for (const importPath of commonImportPaths) {
-            if (uri.fsPath.includes(importPath)) {
-                return false
-            }
-        }
-        return true
-    })
+    const filteredUnseenDefinitionUris = unseenDefinitionUris.filter(uri => !isCommonImport(uri))
 
     const newContentMap = new Map(
         filteredUnseenDefinitionUris.map(uri => [
@@ -278,6 +271,13 @@ const goKeywords = new Set([
     'switch',
     'type',
     'var',
+
+    // common variables, types we don't need to follow
+    'ctx',
+    'Context',
+    'err',
+    'error',
+    'ok',
 ])
 
 const typescriptKeywords = new Set([
@@ -344,7 +344,7 @@ const typescriptKeywords = new Set([
 
 const commonImportPaths = new Set([
     // The TS lib folder contains the TS standard library and all of ECMAScript.
-    '/node_modules/typescript/lib',
+    'node_modules/typescript/lib',
     // The node library contains the standard node library.
     'node_modules/@types/node',
     // All CSS properties as TS types.
@@ -353,7 +353,19 @@ const commonImportPaths = new Set([
     'node_modules/@types/react/',
     'node_modules/@types/prop-types',
     'node_modules/next/',
+
+    // Go stdlib installation (covers Brew installs at a minimum)
+    'libexec/src/',
 ])
+
+function isCommonImport(uri: vscode.Uri): boolean {
+    for (const importPath of commonImportPaths) {
+        if (uri.fsPath.includes(importPath)) {
+            return true
+        }
+    }
+    return false
+}
 
 export const commonKeywords = new Set([...goKeywords, ...typescriptKeywords])
 
@@ -525,25 +537,31 @@ const hoverToStrings = (h: vscode.Hover[]): string[] =>
 
 const hoverContextFromResolvedHoverText = (t: ResolvedHoverText): HoverContext[] =>
     [
-        hoverContextFromElement(t.definition),
-        hoverContextFromElement(t.typeDefinition),
-        ...(t.implementations?.map(hoverContextFromElement) ?? []),
+        hoverContextFromElement(t.definition, 'definition'),
+        hoverContextFromElement(t.typeDefinition, 'typeDefinition', t.symbolName),
+        ...(t.implementations?.map(e => hoverContextFromElement(e, 'implementation', t.typeDefinition?.symbolName)) ??
+            []),
     ].filter(isDefined)
 
-const hoverContextFromElement = (e?: ResolvedHoverElement): HoverContext | undefined => {
+const hoverContextFromElement = (
+    e: ResolvedHoverElement | undefined,
+    type: HoverContext['type'],
+    sourceSymbolName?: string
+): HoverContext | undefined => {
     if (e === undefined) {
         return undefined
     }
 
-    const definitionHoverContent = hoverToStrings(e.hover)
-    if (definitionHoverContent.length === 0) {
+    const content = hoverToStrings(e.hover)
+    if (content.length === 0) {
         return undefined
     }
 
     return {
         symbolName: e.symbolName,
-        type: 'definition',
-        content: definitionHoverContent,
+        sourceSymbolName,
+        type,
+        content,
         uri: e.location.uri.toString(),
         range: {
             startLine: e.location.range.start.line,
@@ -626,9 +644,9 @@ export const gatherHoverText = async (
     // Request hover for every (deduplicated) location range we got from def/type def/impl queries
     const hoverMap = await unwrapThenableMap(
         new Map(
-            locationsForHover.map(
-                l => [locationKeyFn(l), getHover(l.uri, l.range.start)] as [string, Thenable<vscode.Hover[]>]
-            )
+            locationsForHover
+                .filter(l => !isCommonImport(l.uri))
+                .map(l => [locationKeyFn(l), getHover(l.uri, l.range.start)] as [string, Thenable<vscode.Hover[]>])
         )
     )
 

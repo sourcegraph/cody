@@ -149,16 +149,14 @@ export class AuthProvider {
         await vscode.env.openExternal(vscode.Uri.parse(uri))
     }
 
-    // Display quickpick to select endpoint to sign out of
     public async signoutMenu(): Promise<void> {
         this.telemetryService.log('CodyVSCodeExtension:logout:clicked')
-        const endpointQuickPickItem = this.authStatus.endpoint ? [this.authStatus.endpoint] : []
-        const endpoint = await AuthMenu('signout', endpointQuickPickItem)
-        if (!endpoint?.uri) {
-            return
+        const { endpoint } = this.authStatus
+
+        if (endpoint) {
+            await this.signout(endpoint)
+            logDebug('AuthProvider:signoutMenu', endpoint)
         }
-        await this.signout(endpoint.uri)
-        logDebug('AuthProvider:signoutMenu', endpoint.uri)
     }
 
     // Log user out of the selected endpoint (remove token from secret)

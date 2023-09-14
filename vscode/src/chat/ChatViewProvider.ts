@@ -1,6 +1,6 @@
 import * as vscode from 'vscode'
 
-import { CodyPrompt, CodyPromptType } from '@sourcegraph/cody-shared/src/chat/prompts'
+import { CodyPrompt, CustomCommandType } from '@sourcegraph/cody-shared/src/chat/prompts'
 import { ChatMessage, UserLocalHistory } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 
 import { View } from '../../webviews/NavBar'
@@ -149,7 +149,7 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
     /**
      * Process custom command click
      */
-    private async onCustomPromptClicked(title: string, commandType: CodyPromptType = 'user'): Promise<void> {
+    private async onCustomPromptClicked(title: string, commandType: CustomCommandType = 'user'): Promise<void> {
         this.telemetryService.log('CodyVSCodeExtension:command:customMenu:clicked')
         logDebug('ChatViewProvider:onCustomPromptClicked', title)
         if (!this.isCustomCommandAction(title)) {
