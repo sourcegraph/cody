@@ -1,40 +1,32 @@
-import { createEvaluationFiles, TestCase } from './create-evaluation-cases'
-import RandomSpanInfillingLight from './datasets/humaneval-infill/RandomSpanInfillingLight.json'
-import { CaseResult, CaseStatus, evaluateCompletion } from './evaluate-test-case'
+import { execFileSync } from 'child_process'
+import { mkdtempSync } from 'fs'
+import { tmpdir } from 'os'
+import path from 'path'
+import util from 'util'
+
+import _glob from 'glob'
+
+import { DATASETS, parseDatasetConfig } from './datasets'
+import { CaseStatus, evaluateCompletion } from './evaluate-test-case'
 import { setup, teardown } from './helpers'
 
-const singleLineTestCases: TestCase[] = []
-const multiLineTestCases: TestCase[] = []
-
-for (const testCase of RandomSpanInfillingLight) {
-    if (testCase.solution.includes('\n')) {
-        multiLineTestCases.push({ ...testCase, extension: 'py' })
-    } else {
-        singleLineTestCases.push({ ...testCase, extension: 'py' })
-    }
-}
+const glob = util.promisify(_glob)
 
 export async function run(): Promise<void> {
     await setup()
 
-    const results: CaseResult[] = []
+    const dataset = DATASETS.HumanEvalInfill
 
-    // Get evaluation cases from specified dataset
-    // TODO
+    const tempDir = mkdtempSync(path.join(tmpdir(), 'cody-evaluation-'))
+    execFileSync('git', ['clone', dataset.repoUrl, '.'], { cwd: tempDir })
+    console.log(tempDir)
 
-    // Filter any evaluation cases (e.g. if specified only to run specific id)
-    // TODO
-
-    for (const evalCase of singleLineTestCases) {
-        const files = createEvaluationFiles(evalCase)
-        const result = await evaluateCompletion(evalCase.id, files)
-        console.log(`${result.status === CaseStatus.PASS ? '🟢' : '🔴'} - ${files.fileDirectory}`)
-        results.push(result)
-    }
-
-    const failedResults = results.filter(result => result.status === CaseStatus.FAIL)
-    if (failedResults.length > 0) {
-        throw new Error(`There were ${failedResults.length} failures.`)
+    const configFiles = await glob(dataset.caseGlob, { cwd: tempDir })
+    for (const configFile of configFiles) {
+        const configPath = path.join(tempDir, configFile)
+        const files = parseDatasetConfig(configPath)
+        const result = await evaluateCompletion(Date.now().toString(), files, path.dirname(configPath))
+        console.log(`${result.status === CaseStatus.PASS ? '🟢' : '🔴'} - ${files.generate}`)
     }
 
     await teardown()

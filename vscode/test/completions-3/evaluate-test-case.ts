@@ -4,7 +4,8 @@ import path from 'path'
 import * as vscode from 'vscode'
 
 import { TEST_WORKSPACE_PATH } from './constants'
-import { CURSOR, EvaluationFiles } from './create-evaluation-cases'
+import { CURSOR } from './create-evaluation-cases'
+import { DatasetConfig } from './datasets'
 import { ensureExecuteCommand } from './helpers'
 
 export enum CaseStatus {
@@ -50,10 +51,10 @@ export const pollToAcceptCompletion = async (originalDocumentVersion: number): P
     return true
 }
 
-export const evaluateCompletion = async (id: string, files: EvaluationFiles): Promise<CaseResult> => {
-    const generatedPath = path.resolve(files.generationFile)
-    const testPath = path.resolve(files.testFile)
-    const solutionPath = path.resolve(files.solutionFile)
+export const evaluateCompletion = async (id: string, files: DatasetConfig, cwd: string): Promise<CaseResult> => {
+    const generatedPath = path.resolve(cwd, files.generate)
+    const testPath = path.resolve(cwd, files.test)
+    const solutionPath = path.resolve(cwd, files.solution)
     if (!generatedPath || !testPath || !solutionPath) {
         throw new Error(`Invalid test case configuration - ${id}`)
     }

@@ -5,7 +5,7 @@ import path from 'path'
 
 import { writeAndCommitFile } from './git-helpers'
 
-export const CURSOR = '~'
+export const CURSOR = '🔥'
 
 export interface TestCase {
     id: string
@@ -38,7 +38,7 @@ export interface EvaluationFiles {
     testFile: string
 }
 
-export const createEvaluationFiles = ({
+export const createEvaluation = ({
     prefix,
     suffix,
     solution,
