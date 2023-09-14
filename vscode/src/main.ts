@@ -101,7 +101,7 @@ const register = async (
         PromptMixin.addCustom(newPromptMixin(config.chatPreInstruction))
     }
 
-    if (config.autocompleteExperimentalSyntacticPostProcessing) {
+    if (config.autocompleteExperimentalSyntacticPostProcessing || config.autocompleteExperimentalGraphContext) {
         parseAllVisibleDocuments()
 
         disposables.push(vscode.window.onDidChangeVisibleTextEditors(parseAllVisibleDocuments))
