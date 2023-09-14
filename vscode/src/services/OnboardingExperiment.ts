@@ -77,6 +77,9 @@ function loadCachedSelection(): SelectedArm | Error | undefined {
 // exposure so unexposed users can be allocated if experiment weights change
 // in later versions.
 function pickSelection(excludeFromExperiment: boolean): SelectedArm {
+    if (vscode.env.uiKind === vscode.UIKind.Web) {
+        return { arm: OnboardingExperimentArm.Classic, excludeFromExperiment: true, setByTestingOverride: false }
+    }
     const arm =
         Math.random() < SIMPLIFIED_ARM_ALLOCATION ? OnboardingExperimentArm.Simplified : OnboardingExperimentArm.Classic
     return { arm, excludeFromExperiment, setByTestingOverride: false }
