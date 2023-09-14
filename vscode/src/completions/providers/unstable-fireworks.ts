@@ -116,7 +116,7 @@ export class UnstableFireworksProvider extends Provider {
             topP: 0.95,
             topK: 0,
             model: MODEL_MAP[this.model],
-            stopSequences: [this.options.multiline ? '\n\n' : '\n'],
+            stopSequences: this.options.multiline ? ['\n\n', '\n\r\n'] : ['\n'],
         }
 
         tracer?.params(args)
