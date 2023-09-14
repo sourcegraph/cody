@@ -223,6 +223,14 @@ export class Agent extends MessageHandler {
             await client?.graphqlClient.logEvent(event)
             return null
         })
+
+        this.registerNotification('autocomplete/clearLastCandidate', async () => {
+            const provider = await vscode_shim.completionProvider
+            if (!provider) {
+                console.log('Completion provider is not initialized: unable to clear last candidate')
+            }
+            provider.clearLastCandidate()
+        })
     }
 
     private setClient(config: ExtensionConfiguration): void {

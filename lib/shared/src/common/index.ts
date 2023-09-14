@@ -60,5 +60,3 @@ export const escapeMarkdown = (text: string): string => {
 export const dedupeWith = <T>(items: T[], key: keyof T | ((item: T) => string)): T[] => [
     ...new Map(items.map(item => [typeof key !== 'function' ? item[key] : key(item), item])).values(),
 ]
-
-export * from './paths'

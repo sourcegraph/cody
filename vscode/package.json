@@ -267,7 +267,7 @@
       {
         "command": "cody.command.generate-tests",
         "category": "Ask Cody",
-        "title": "Generate Unit Test"
+        "title": "Generate Unit Tests"
       },
       {
         "command": "cody.command.document-code",
