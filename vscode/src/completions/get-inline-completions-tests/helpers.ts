@@ -23,7 +23,7 @@ export const T = '\t'
 
 const URI_FIXTURE = URI.parse('file:///test.ts')
 
-export type Params = Partial<Omit<InlineCompletionsParams, 'document' | 'position' | 'docContext'>> & {
+type Params = Partial<Omit<InlineCompletionsParams, 'document' | 'position' | 'docContext'>> & {
     languageId?: string
     onNetworkRequest?: (
         params: CompletionParameters,
@@ -66,7 +66,6 @@ export function params(
     const { document, position } = documentAndPosition(code, languageId, URI_FIXTURE.toString())
 
     const parser = getParser(document.languageId as SupportedLanguage)
-    console.log({ parser: Boolean(parser) })
     if (parser) {
         updateParseTreeCache(document, parser)
     }
