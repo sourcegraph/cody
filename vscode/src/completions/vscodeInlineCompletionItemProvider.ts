@@ -21,7 +21,6 @@ import {
 import * as CompletionLogger from './logger'
 import { ProviderConfig } from './providers/provider'
 import { RequestManager } from './request-manager'
-import { getNextNonEmptyLine } from './text-processing'
 import { ProvideInlineCompletionItemsTracer, ProvideInlineCompletionsItemTraceData } from './tracer'
 import { InlineCompletionItem } from './types'
 
@@ -200,12 +199,13 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
             })
 
             if (!result) {
+                this.lastCandidate = undefined
                 return null
             }
 
-            // Track the last candidate completion (that is shown as ghost text in the editor) so that
-            // we can reuse it if the user types in such a way that it is still valid (such as by typing
-            // `ab` if the ghost text suggests `abcd`).
+            // Unless the result is from the last candidate, we may want to honor the minimum
+            // latency so that we don't show a result before the user has paused typing for a brief
+            // moment.
             if (result.source !== InlineCompletionsResultSource.LastCandidate) {
                 const minimumLatencyFlag = await minimumLatencyFlagPromise
                 if (minimumLatencyFlag) {
@@ -214,25 +214,18 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
                         await new Promise(resolve => setTimeout(resolve, MINIMUM_LATENCY_MS - delta))
                     }
                 }
+            }
 
-                this.lastCandidate =
-                    result.items.length > 0
-                        ? {
-                              uri: document.uri,
-                              lastTriggerPosition: position,
-                              lastTriggerCurrentLinePrefix: document.lineAt(position).text.slice(0, position.character),
-                              lastTriggerNextNonEmptyLine: getNextNonEmptyLine(
-                                  document.getText(
-                                      new vscode.Range(position, document.lineAt(document.lineCount - 1).range.end)
-                                  )
-                              ),
-                              lastTriggerSelectedInfoItem: context?.selectedCompletionInfo?.text,
-                              result: {
-                                  logId: result.logId,
-                                  items: result.items,
-                              },
-                          }
-                        : undefined
+            const candidate: LastInlineCompletionCandidate = {
+                uri: document.uri,
+                lastTriggerPosition: position,
+                lastTriggerCurrentLinePrefix: docContext.currentLinePrefix,
+                lastTriggerNextNonEmptyLine: docContext.nextNonEmptyLine,
+                lastTriggerSelectedInfoItem: context?.selectedCompletionInfo?.text,
+                result: {
+                    logId: result.logId,
+                    items: result.items,
+                },
             }
 
             const items = this.processInlineCompletionsForVSCode(
@@ -254,7 +247,16 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
                     abortController.signal
                 )
             ) {
+                this.lastCandidate = undefined
                 return null
+            }
+
+            // Since we now know that the completion is going to be visible in the UI, we save the
+            // completion as the last candidate (that is shown as ghost text in the editor) so that
+            // we can reuse it if the user types in such a way that it is still valid (such as by
+            // typing `ab` if the ghost text suggests `abcd`).
+            if (result.source !== InlineCompletionsResultSource.LastCandidate) {
+                this.lastCandidate = items.length > 0 ? candidate : undefined
             }
 
             const event = CompletionLogger.completionEvent(result.logId)

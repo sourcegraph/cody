@@ -1,4 +1,4 @@
-import { Position, Range, TextDocument } from 'vscode'
+    import { Position, Range, TextDocument } from 'vscode'
 import Parser, { Tree } from 'web-tree-sitter'
 
 import { DocumentContext } from '../get-current-doc-context'
