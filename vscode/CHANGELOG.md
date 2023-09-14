@@ -13,7 +13,7 @@ Starting from `0.2.0`, Cody is using `major.EVEN_NUMBER.patch` for release versi
 - Add experimental option `claude-instant-infill` to the `cody.autocomplete.advanced.model` config option that enables users using the Claude Instant model to get suggestions with context awareness (infill). [pull/974](https://github.com/sourcegraph/cody/pull/974)
 - New `cody.chat.preInstruction` configuration option for adding custom message at the start of all chat messages sent to Cody. Extension reload required. [pull/963](https://github.com/sourcegraph/cody/pull/963)
 - Add a simplified sign-in. 50% of people will see these new sign-in buttons. [pull/1036](https://github.com/sourcegraph/cody/pull/1036)
-- Trigger a new completion request when user deletes a suggested completion item. This avoids showing stale completions if the user rejects a suggestion. [PR #](https://github.com/sourcegraph/cody/pull/)
+- Trigger a new completion request when user deletes a suggested completion item. This avoids showing stale completions repeatedly if the user rejects a suggestion. [PR/1064](https://github.com/sourcegraph/cody/pull/1064)
 
 ### Fixed
 
