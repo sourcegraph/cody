@@ -29,6 +29,12 @@ export function getParser(language: SupportedLanguage): Parser | undefined {
     return PARSERS_LOCAL_CACHE[language]
 }
 
+export function resetParsersCache() {
+    Object.keys(PARSERS_LOCAL_CACHE).forEach(key => {
+        delete PARSERS_LOCAL_CACHE[key as SupportedLanguage]
+    })
+}
+
 export async function createParser(settings: ParserSettings): Promise<Parser> {
     const { language, grammarDirectory = __dirname } = settings
 

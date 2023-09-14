@@ -68,7 +68,6 @@ export function processItem(params: ProcessItemParams): ParsedCompletion {
     if (multilineTrigger) {
         // Use tree-sitter for truncation if `config.autocompleteExperimentalSyntacticPostProcessing` is enabled.
         if (parsed.tree && MULTILINE_TRUNCATION_SUPPORTED_LANGUAGES.has(document.languageId)) {
-            console.log('Truncating multiline completion using tree-sitter')
             insertText = truncateParsedCompletion({ completion: parsed, document })
         } else {
             insertText = truncateMultilineCompletion(insertText, prefix, suffix, document.languageId)
