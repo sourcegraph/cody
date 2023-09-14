@@ -484,6 +484,11 @@
       {
         "command": "-github.copilot.generate",
         "key": "ctrl+enter"
+      },
+      {
+        "command": "editor.action.inlineSuggest.trigger",
+        "key": "alt+\\",
+        "when": "editorTextFocus && !editorHasSelection && cody.autocomplete.enabled && !inlineSuggestionsVisible"
       }
     ],
     "submenus": [
