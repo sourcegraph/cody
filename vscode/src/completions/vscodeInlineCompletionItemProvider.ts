@@ -269,7 +269,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
                 const completionItem = this.lastCandidate?.result.items[0]
                 if (completionItem) {
                     this.timeout = setTimeout(() => {
-                        this.handleDidRejectCompletionItem(result.logId, completionItem)
+                        this.clearLastCandidate()
                     }, MINIMUM_LATENCY_MS)
                 }
             } else {
@@ -301,13 +301,6 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
         this.clearLastCandidate()
 
         CompletionLogger.accept(logId, completion)
-    }
-
-    public handleDidRejectCompletionItem(logId: string, completion: InlineCompletionItem): void {
-        // When a completion is rejected, the lastCandidate should be cleared.
-        this.clearLastCandidate()
-
-        CompletionLogger.reject(logId, completion)
     }
 
     /**

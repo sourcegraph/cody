@@ -48,9 +48,6 @@ export interface CompletionEvent {
     suggestionAnalyticsLoggedAt: number | null
     // The timestamp of when a completion was accepted and logged to our backend
     acceptedAt: number | null
-    // The timestamp of when a completion was rejected
-    // This happens when the user press backspaced during a suggestion is displayed
-    rejectedAt: number | null
 }
 
 const READ_TIMEOUT_MS = 750
@@ -85,7 +82,6 @@ export function create(inputParams: Omit<CompletionEvent['params'], 'multilineMo
         suggestionLoggedAt: null,
         suggestionAnalyticsLoggedAt: null,
         acceptedAt: null,
-        rejectedAt: null,
     })
 
     return id
@@ -163,9 +159,6 @@ export function accept(id: string, completion: InlineCompletionItem): void {
 
     // Some additional logging to ensure the invariant is correct. I expect these branches to never
     // hit but if they do, they might help debug analytics issues
-    if (completionEvent.rejectedAt) {
-        logCompletionEvent('unexpectedRejected')
-    }
     if (!completionEvent.loadedAt) {
         logCompletionEvent('unexpectedNotLoaded')
     }
@@ -187,37 +180,6 @@ export function accept(id: string, completion: InlineCompletionItem): void {
         otherCompletionProviderEnabled: otherCompletionProviderEnabled(),
     })
     statistics.logAccepted()
-}
-
-export function reject(id: string, completion: InlineCompletionItem): void {
-    const event = displayedCompletions.get(id)
-    if (!event) {
-        return
-    }
-
-    if (event.acceptedAt) {
-        logCompletionEvent('unexpectedAccepted')
-    }
-    if (!event.loadedAt) {
-        logCompletionEvent('unexpectedNotLoaded')
-    }
-    if (!event.startLoggedAt) {
-        logCompletionEvent('unexpectedNotStarted')
-    }
-    if (!event.suggestedAt) {
-        logCompletionEvent('unexpectedNotSuggested')
-    }
-
-    event.rejectedAt = performance.now()
-    logSuggestionEvents()
-    logCompletionEvent('rejected', {
-        ...event.params,
-        // We overwrite the existing lines and chars in the params and rely on the rejected one in
-        // case the popover is used to insert a completion different from the one that was suggested
-        ...lineAndCharCount(completion),
-        otherCompletionProviderEnabled: otherCompletionProviderEnabled(),
-    })
-    statistics.logRejected()
 }
 
 export function completionEvent(id: string): CompletionEvent | undefined {

@@ -5,13 +5,11 @@ const subscriber = createSubscriber<void>()
 interface CompletionStatistics {
     suggested: number
     accepted: number
-    rejected: number
 }
 
 let statistics: CompletionStatistics = {
     suggested: 0,
     accepted: 0,
-    rejected: 0,
 }
 
 export function getStatistics(): CompletionStatistics {
@@ -24,10 +22,6 @@ export function logSuggested(): void {
 }
 export function logAccepted(): void {
     statistics = { ...statistics, accepted: statistics.accepted + 1 }
-    subscriber.notify()
-}
-export function logRejected(): void {
-    statistics = { ...statistics, rejected: statistics.rejected + 1 }
     subscriber.notify()
 }
 
