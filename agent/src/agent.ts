@@ -137,8 +137,8 @@ export class Agent extends MessageHandler {
             vscode_shim.onDidCloseTextDocument.fire(this.workspace.agentTextDocument(document))
         })
 
-        const configurationDidChange = (config: ExtensionConfiguration): void => {
-            this.setClient(config)
+        const configurationDidChange = (config: ExtensionConfiguration): Promise<void> => {
+            return this.setClient(config)
         }
 
         this.registerNotification('connectionConfiguration/didChange', configurationDidChange)
@@ -152,6 +152,14 @@ export class Agent extends MessageHandler {
                 }))
             )
         )
+
+        this.registerNotification('chat/reset', async () => {
+            const client = await this.client
+            if (!client) {
+                return
+            }
+            client.reset()
+        })
 
         this.registerRequest('recipes/execute', async (data, token) => {
             const client = await this.client
@@ -242,7 +250,7 @@ export class Agent extends MessageHandler {
         })
     }
 
-    private setClient(config: ExtensionConfiguration): void {
+    private async setClient(config: ExtensionConfiguration): Promise<void> {
         vscode_shim.setConnectionConfig(config)
         vscode_shim.onDidChangeConfiguration.fire({
             affectsConfiguration: () =>
@@ -254,7 +262,9 @@ export class Agent extends MessageHandler {
             () => {},
             () => {}
         )
+        const oldClient = await this.client
         this.client = createClient({
+            initialTranscript: oldClient?.transcript,
             editor: new AgentEditor(this),
             config: { ...config, useContext: 'embeddings', experimentalLocalSymbols: false },
             setMessageInProgress: messageInProgress => {

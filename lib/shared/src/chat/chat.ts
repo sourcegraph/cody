@@ -18,6 +18,7 @@ export class ChatClient {
     public chat(messages: Message[], cb: CompletionCallbacks, params?: Partial<ChatParameters>): () => void {
         const isLastMessageFromHuman = messages.length > 0 && messages[messages.length - 1].speaker === 'human'
         const augmentedMessages = isLastMessageFromHuman ? messages.concat([{ speaker: 'assistant' }]) : messages
+        console.log({ messages })
 
         return this.completions.stream(
             {
