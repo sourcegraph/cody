@@ -1,3 +1,5 @@
+import { VsCodeFixupTaskRecipeData } from '../editor/index'
+
 export interface RangeExpander {
-    expandTheContextRange(input: string): Promise<string>
+    expandTheContextRange(task: VsCodeFixupTaskRecipeData): Promise<string>
 }

@@ -91,9 +91,8 @@ export class Fixup implements Recipe {
             // Nothing selected, assume this is always 'add'.
             return 'add'
         }
-        const expander = context.rangeExpander
 
-        const intent = await expander.expandTheContextRange(task.instruction)
+        const intent = await context.rangeExpander.expandTheContextRange(task)
         return intent
     }
 
