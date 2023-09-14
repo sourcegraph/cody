@@ -12,6 +12,13 @@ vi.mock('../log', mockLog)
 
 function mockVScode() {
     return {
+        UIKind: {
+            Desktop: 1,
+            Web: 42,
+        },
+        env: {
+            uiKind: 1, // Desktop
+        },
         workspace: {
             getConfiguration: () => ({
                 get: () => undefined,
