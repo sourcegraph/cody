@@ -205,7 +205,11 @@ async function doGetInlineCompletions(params: InlineCompletionsParams): Promise<
 
     // Debounce to avoid firing off too many network requests as the user is still typing.
     const interval = multiline ? debounceInterval?.multiLine : debounceInterval?.singleLine
-    if (interval !== undefined && interval > 0) {
+    if (
+        context.triggerKind === vscode.InlineCompletionTriggerKind.Automatic &&
+        interval !== undefined &&
+        interval > 0
+    ) {
         await new Promise<void>(resolve => setTimeout(resolve, interval))
     }
 
