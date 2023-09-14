@@ -31,7 +31,7 @@ export const getGraphContextFromEditor = async (editor: Editor): Promise<Precise
     const uri = workspaceRootUri.with({ path: activeEditor.filePath })
     const contexts = await getGraphContextFromSelection(
         [{ uri, range: activeEditor.selectionRange }],
-        new Map([[uri.fsPath, activeEditor.content.split('\n')]]),
+        new Map([[uri.fsPath, { document: undefined, lines: activeEditor.content.split('\n') }]]),
         recursionLimit
     )
 
@@ -56,7 +56,9 @@ export const getGraphContextFromRange = async (
     range: vscode.Range
 ): Promise<HoverContext[]> => {
     const uri = editor.document.uri
-    const contentMap = new Map([[uri.fsPath, editor.document.getText().split('\n')]])
+    const contentMap = new Map([
+        [uri.fsPath, { document: editor.document, lines: editor.document.getText().split('\n') }],
+    ])
     const selections = [{ uri, range }]
 
     // Debuggin'
@@ -99,7 +101,7 @@ interface Selection {
  */
 const getGraphContextFromSelection = async (
     selections: Selection[],
-    contentMap: Map<string, string[]>,
+    contentMap: ContentMap,
     recursionLimit: number = 0
 ): Promise<PreciseContext[]> => {
     // Debuggin'
@@ -173,11 +175,13 @@ const getGraphContextFromSelection = async (
     return contexts
 }
 
+type ContentMap = Map<string, { document?: vscode.TextDocument; lines: string[] }>
+
 /**
  * Open each URI referenced by a definition match in the current workspace, and make the document
  * content retrievable by filepath by adding it to the shared content map.
  */
-const updateContentMap = async (contentMap: Map<string, string[]>, locations: vscode.Uri[]): Promise<void> => {
+const updateContentMap = async (contentMap: ContentMap, locations: vscode.Uri[]): Promise<void> => {
     const unseenDefinitionUris = dedupeWith(locations, 'fsPath').filter(uri => !contentMap.has(uri.fsPath))
 
     // Remove ultra-common type definitions that are probably already known by the LLM
@@ -186,12 +190,14 @@ const updateContentMap = async (contentMap: Map<string, string[]>, locations: vs
     const newContentMap = new Map(
         filteredUnseenDefinitionUris.map(uri => [
             uri.fsPath,
-            vscode.workspace.openTextDocument(uri.fsPath).then(document => document.getText().split('\n')),
+            vscode.workspace
+                .openTextDocument(uri.fsPath)
+                .then(document => ({ document, lines: document.getText().split('\n') })),
         ])
     )
 
-    for (const [fsPath, lines] of await unwrapThenableMap(newContentMap)) {
-        contentMap.set(fsPath, lines)
+    for (const [fsPath, pair] of await unwrapThenableMap(newContentMap)) {
+        contentMap.set(fsPath, pair)
     }
 }
 
@@ -379,21 +385,18 @@ interface Request {
  * Search the given ranges identifier definitions matching an a common identifier pattern and filter out
  * common keywords.
  */
-export const gatherDefinitionRequestCandidates = (
-    selections: Selection[],
-    contentMap: Map<string, string[]>
-): Request[] => {
+export const gatherDefinitionRequestCandidates = (selections: Selection[], contentMap: ContentMap): Request[] => {
     const requestCandidates: Request[] = []
 
     for (const selection of selections) {
         const { uri, range } = selection
-        const lines = contentMap.get(uri.fsPath)
-        if (!range || !lines) {
+        const pair = contentMap.get(uri.fsPath)
+        if (!range || !pair) {
             continue
         }
 
         for (const { start, end } of [range]) {
-            for (const [lineIndex, line] of lines.slice(start.line, end.line + 1).entries()) {
+            for (const [lineIndex, line] of pair.lines.slice(start.line, end.line + 1).entries()) {
                 // NOTE: pretty hacky - strip out C-style line comments and find everything
                 // that might look like it could be an identifier. If we end up running a
                 // VSCode provider over this cursor position and it's not a symbol we can
@@ -595,7 +598,7 @@ function extractMarkdownCodeBlock(string: string): string {
  * Query each of the candidate requests for hover texts which are resolved in parallel before return.
  */
 export const gatherHoverText = async (
-    contentMap: Map<string, string[]>,
+    contentMap: ContentMap,
     requests: Request[],
     getHover: typeof defaultGetHover = defaultGetHover,
     getDefinitions: typeof defaultGetDefinitions = defaultGetDefinitions,
@@ -705,7 +708,7 @@ export const gatherHoverText = async (
     )
 }
 
-const extractRangeFromDocument = (contentMap: Map<string, string[]>, uri: vscode.Uri, range: vscode.Range): string => {
+const extractRangeFromDocument = (contentMap: ContentMap, uri: vscode.Uri, range: vscode.Range): string => {
     const content = contentMap.get(uri.fsPath)
     if (!content) {
         return ''
@@ -713,7 +716,7 @@ const extractRangeFromDocument = (contentMap: Map<string, string[]>, uri: vscode
 
     // Trim off lines outside of the range
     // NOTE: inclusive upper bound
-    const extractedLines = content.slice(range.start.line, range.end.line + 1)
+    const extractedLines = content.lines.slice(range.start.line, range.end.line + 1)
     if (extractedLines.length === 0) {
         return ''
     }
@@ -732,7 +735,7 @@ const extractRangeFromDocument = (contentMap: Map<string, string[]>, uri: vscode
  */
 export const extractDefinitionContexts = async (
     matches: { symbolName: string; hover: vscode.Hover[]; location: vscode.Location }[],
-    contentMap: Map<string, string[]>,
+    contentMap: ContentMap,
     getDocumentSymbolRanges: typeof defaultGetDocumentSymbolRanges = defaultGetDocumentSymbolRanges
 ): Promise<PreciseContext[]> => {
     // Retrieve document symbols for each of the open documents, which we will use to extract the relevant
@@ -759,10 +762,10 @@ export const extractDefinitionContexts = async (
         const documentSymbolsPromises = documentSymbolsMap.get(uri.fsPath)
 
         if (contentPromise && documentSymbolsPromises) {
-            const content = contentPromise
+            const lines = contentPromise.lines
             const documentSymbols = await documentSymbolsPromises // NOTE: already resolved
 
-            const definitionSnippets = extractSnippets(content, documentSymbols, [range])
+            const definitionSnippets = extractSnippets(lines, documentSymbols, [range])
 
             for (const definitionSnippet of definitionSnippets) {
                 contexts.push({
