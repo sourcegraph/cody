@@ -104,13 +104,15 @@ export class AnthropicProvider extends Provider {
 
         const { head, tail, overlap } = getHeadAndTail(this.options.docContext.prefix)
 
+        // Infill block represents the code we want the model to complete
+        const infillBlock = `${tail.trimmed.trimEnd()}`
         // code before the cursor, after removing the code for the infillBlock
         // Using this instead of head.trimmed to preserve the spacing from prefix so the model can determines the patterns of surrounding code
-        const infillPrefix = this.options.docContext.prefix.replace(tail.trimmed.trim(), '')
+        // Use regex to makes sure only the last trimmedTail match is replaced to avoid replacing overlapping code
+        const infillBlockRegex = new RegExp(`${infillBlock}\\s*$`, 'g')
+        const infillPrefix = this.options.docContext.prefix.replace(infillBlockRegex, '')
         // code after the cursor
         const infillSuffix = this.options.docContext.suffix
-        // Infill block represents the code we want the model to complete
-        const infillBlock = `${tail.trimmed}`
 
         const prefixMessagesWithInfill: Message[] = [
             {
@@ -119,11 +121,11 @@ export class AnthropicProvider extends Provider {
             },
             {
                 speaker: 'assistant',
-                text: 'I am a code completion AI with exceptional context-awareness designed to auto-complete nested code blocks with high-quality code that seamlessly integrates with surrounding code without duplicating existing implementations.',
+                text: 'I am a code completion AI with exceptional context-awareness designed to auto-complete nested code blocks with high-quality code that seamlessly integrates with surrounding code.',
             },
             {
                 speaker: 'human',
-                text: `Below is the code from file path ${this.options.fileName}. Detect the functionality, formats, style, patterns, and logics in use from code outside ${OPENING_CODE_TAG} XML tags. Then, use what you detect and reuse assetmethods/libraries to complete and enclose complete code only inside ${OPENING_CODE_TAG} XML tags precisely:
+                text: `Below is the code from file path ${this.options.fileName}. Detect the functionality, formats, style, patterns, and logics in use from code outside ${OPENING_CODE_TAG} XML tags. Then, use what you detect and reuse assetmethods/libraries to complete and enclose completed code only inside ${OPENING_CODE_TAG} tags precisely without duplicating existing implementations. Here is the code:
                 ${infillPrefix}${OPENING_CODE_TAG}${CLOSING_CODE_TAG}${infillSuffix}`,
             },
             {
