@@ -113,7 +113,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
 
         logDebug(
             'CodyCompletionProvider:initialized',
-            `${this.config.providerConfig.identifier}/${this.config.providerConfig.model}`
+            [this.config.providerConfig.identifier, this.config.providerConfig.model].join('/')
         )
     }
 

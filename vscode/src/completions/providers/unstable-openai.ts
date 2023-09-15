@@ -164,6 +164,6 @@ export function createProviderConfig({
         maximumContextCharacters: tokensToChars(unstableAzureOpenAIOptions.contextWindowTokens),
         enableExtendedMultilineTriggers: false,
         identifier: PROVIDER_IDENTIFIER,
-        model: model || 'gpt-35-turbo',
+        model: model ?? 'gpt-35-turbo',
     }
 }

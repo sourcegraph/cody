@@ -93,7 +93,7 @@ export async function createProviderConfig(
                 return createUnstableOpenAIProviderConfig({
                     client,
                     contextWindowTokens: 2048,
-                    model,
+                    model: provider === 'azure-openai' ? '' : model,
                 })
 
             case 'fireworks':
