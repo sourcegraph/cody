@@ -537,7 +537,7 @@ function idf(termTotalFiles: { [term: string]: number }, totalFiles: number): { 
 }
 
 function escapeRegex(s: string): string {
-    return s.replace(/[$()*+./?[\\\]^{|}-]/g, '\\$&')
+    return s.replaceAll(/[$()*+./?[\\\]^{|}-]/g, '\\$&')
 }
 
 function uniques(results: { filename: string; score: number }[]): { filename: string; score: number }[] {

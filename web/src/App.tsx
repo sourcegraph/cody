@@ -102,9 +102,7 @@ export const App: React.FunctionComponent = () => {
                 <Settings config={config} setConfig={setConfig} />
             </header>
             <main className={styles.main}>
-                {!client ? (
-                    <>Loading...</>
-                ) : isErrorLike(client) ? (
+                {client ? isErrorLike(client) ? (
                     <p>Error: {client.message}</p>
                 ) : (
                     <>
@@ -120,6 +118,8 @@ export const App: React.FunctionComponent = () => {
                             onSubmit={onSubmit}
                         />
                     </>
+                ) : (
+                    <>Loading...</>
                 )}
             </main>
         </div>

@@ -478,7 +478,7 @@ export async function getDirectoryFileListContext(
         }
 
         const fileUri = fileName ? vscode.Uri.joinPath(workspaceRootUri, fileName) : workspaceRootUri
-        const directoryUri = !fileName ? workspaceRootUri : vscode.Uri.joinPath(fileUri, '..')
+        const directoryUri = fileName ? vscode.Uri.joinPath(fileUri, '..') : workspaceRootUri
         const directoryFiles = await getFilesFromDir(directoryUri, isTestRequest)
         const fileNames = directoryFiles.map(file => file[0])
         const truncatedFileNames = truncateText(fileNames.join(', '), MAX_CURRENT_FILE_TOKENS)

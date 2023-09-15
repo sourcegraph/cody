@@ -35,13 +35,7 @@ export const ChatInputContext: React.FunctionComponent<{
 }> = React.memo(function ChatInputContextContent({ contextStatus, className }) {
     return (
         <div className={classNames(styles.container, className)}>
-            {!contextStatus.codebase ? (
-                <CodebaseState
-                    tooltip="No Git repository opened"
-                    icon={mdiDatabaseOffOutline}
-                    iconClassName={styles.errorColor}
-                />
-            ) : contextStatus.mode && contextStatus.connection ? (
+            {contextStatus.codebase ? contextStatus.mode && contextStatus.connection ? (
                 <CodebaseState
                     codebase={contextStatus.codebase}
                     tooltip={`Repository ${contextStatus.codebase} is indexed and has embeddings`}
@@ -53,6 +47,12 @@ export const ChatInputContext: React.FunctionComponent<{
                     tooltip={`Repository ${contextStatus.codebase} is not indexed and has no embeddings`}
                     icon={mdiDatabaseRemoveOutline}
                     iconClassName={styles.warningColor}
+                />
+            ) : (
+                <CodebaseState
+                    tooltip="No Git repository opened"
+                    icon={mdiDatabaseOffOutline}
+                    iconClassName={styles.errorColor}
                 />
             )}
             {(contextStatus.filePath && (

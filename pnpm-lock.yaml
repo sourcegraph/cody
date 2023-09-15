@@ -28,8 +28,8 @@ importers:
         specifier: ^4.1.0
         version: 4.1.0(prettier@3.0.3)
       '@sourcegraph/eslint-config':
-        specifier: 0.33.0
-        version: 0.33.0(eslint@8.49.0)(typescript@5.1.6)
+        specifier: 0.34.0
+        version: 0.34.0(eslint@8.49.0)(typescript@5.1.6)
       '@sourcegraph/prettierrc':
         specifier: ^3.0.3
         version: 3.0.3
@@ -4010,7 +4010,7 @@ packages:
     dependencies:
       '@types/istanbul-lib-coverage': 2.0.4
       '@types/istanbul-reports': 3.0.1
-      '@types/node': 20.5.7
+      '@types/node': 20.4.0
       '@types/yargs': 15.0.3
       chalk: 4.1.2
     dev: true
@@ -4945,8 +4945,8 @@ packages:
       - debug
     dev: false
 
-  /@sourcegraph/eslint-config@0.33.0(eslint@8.49.0)(typescript@5.1.6):
-    resolution: {integrity: sha512-MoTXZ9oR+mHdjdTpkzJ/wRqFt75NnvodNiuCcvJHRCruiDCRn0yCPxC6d9pDj6A7KdLZA8ZpUqFOtb9Aenc6BA==}
+  /@sourcegraph/eslint-config@0.34.0(eslint@8.49.0)(typescript@5.1.6):
+    resolution: {integrity: sha512-TB7rKE8HHqvGgqm+9JppItB0jfFmux8R1M/QgQaF6tgPZge8cl6VPSCHmU7phLku8tp7HOfw3kQC3HaI4DJcgA==}
     dependencies:
       '@sourcegraph/prettierrc': 3.0.3
       '@typescript-eslint/eslint-plugin': 5.54.1(@typescript-eslint/parser@5.59.9)(eslint@8.49.0)(typescript@5.1.6)
@@ -4961,7 +4961,7 @@ packages:
       eslint-plugin-react: 7.32.1(eslint@8.49.0)
       eslint-plugin-react-hooks: 4.5.0(eslint@8.49.0)
       eslint-plugin-rxjs: 5.0.2(eslint@8.49.0)(typescript@5.1.6)
-      eslint-plugin-unicorn: 42.0.0(eslint@8.49.0)
+      eslint-plugin-unicorn: 48.0.1(eslint@8.49.0)
       eslint-plugin-unused-imports: 1.1.5(@typescript-eslint/eslint-plugin@5.54.1)(eslint@8.49.0)
     transitivePeerDependencies:
       - eslint
@@ -6705,7 +6705,7 @@ packages:
     engines: {node: ^12.22.0 || ^14.17.0 || >=16.0.0}
     dependencies:
       '@typescript-eslint/types': 5.4.0
-      eslint-visitor-keys: 3.4.1
+      eslint-visitor-keys: 3.4.3
     dev: true
 
   /@typescript-eslint/visitor-keys@5.54.1:
@@ -6721,7 +6721,7 @@ packages:
     engines: {node: ^12.22.0 || ^14.17.0 || >=16.0.0}
     dependencies:
       '@typescript-eslint/types': 5.59.9
-      eslint-visitor-keys: 3.4.1
+      eslint-visitor-keys: 3.4.3
     dev: true
 
   /@vanilla-extract/babel-plugin-debug-ids@1.0.3:
@@ -9418,25 +9418,26 @@ packages:
       - typescript
     dev: true
 
-  /eslint-plugin-unicorn@42.0.0(eslint@8.49.0):
-    resolution: {integrity: sha512-ixBsbhgWuxVaNlPTT8AyfJMlhyC5flCJFjyK3oKE8TRrwBnaHvUbuIkCM1lqg8ryYrFStL/T557zfKzX4GKSlg==}
-    engines: {node: '>=12'}
+  /eslint-plugin-unicorn@48.0.1(eslint@8.49.0):
+    resolution: {integrity: sha512-FW+4r20myG/DqFcCSzoumaddKBicIPeFnTrifon2mWIzlfyvzwyqZjqVP7m4Cqr/ZYisS2aiLghkUWaPg6vtCw==}
+    engines: {node: '>=16'}
     peerDependencies:
-      eslint: '>=8.8.0'
+      eslint: '>=8.44.0'
     dependencies:
       '@babel/helper-validator-identifier': 7.22.5
+      '@eslint-community/eslint-utils': 4.4.0(eslint@8.49.0)
       ci-info: 3.8.0
       clean-regexp: 1.0.0
       eslint: 8.49.0
-      eslint-utils: 3.0.0(eslint@8.49.0)
       esquery: 1.5.0
       indent-string: 4.0.0
-      is-builtin-module: 3.1.0
+      is-builtin-module: 3.2.1
+      jsesc: 3.0.2
       lodash: 4.17.21
       pluralize: 8.0.0
       read-pkg-up: 7.0.1
-      regexp-tree: 0.1.24
-      safe-regex: 2.1.1
+      regexp-tree: 0.1.27
+      regjsparser: 0.10.0
       semver: 7.5.4
       strip-indent: 3.0.0
     dev: true
@@ -11119,8 +11120,8 @@ packages:
     resolution: {integrity: sha512-i2R6zNFDwgEHJyQUtJEk0XFi1i0dPFn/oqjK3/vPCcDeJvW5NQ83V8QbicfF1SupOaB0h8ntgBC2YiE7dfyctQ==}
     engines: {node: '>=4'}
 
-  /is-builtin-module@3.1.0:
-    resolution: {integrity: sha512-OV7JjAgOTfAFJmHZLvpSTb4qi0nIILDV1gWPYDnDJUTNFM5aGlRAhk4QcT8i7TuAleeEV5Fdkqn3t4mS+Q11fg==}
+  /is-builtin-module@3.2.1:
+    resolution: {integrity: sha512-BSLE3HnV2syZ0FK0iMA/yUGplUeMmNz4AW5fnTunbCIqZi4vG3WjJT9FHMy5D69xmAYBHXQhJdALdpwVxV501A==}
     engines: {node: '>=6'}
     dependencies:
       builtin-modules: 3.3.0
@@ -13524,10 +13525,12 @@ packages:
 
   /node-addon-api@1.7.2:
     resolution: {integrity: sha512-ibPK3iA+vaY1eEjESkQkM0BbCqFOaZMiXRTtdB0u7b4djtY6JnsjvPdUHVMg6xQt3B8fpTTWHI9A+ADjM9frzg==}
+    requiresBuild: true
     optional: true
 
   /node-addon-api@4.3.0:
     resolution: {integrity: sha512-73sE9+3UaLYYFmDsFZnqCInzPyh3MqIwZO9cw58yIqAZhONrrabrYyYe3TuIqtIiOuTXVhsGau8hcrhhwSsDIQ==}
+    requiresBuild: true
     dev: true
     optional: true
 
@@ -15146,8 +15149,8 @@ packages:
       safe-regex: 1.1.0
     dev: false
 
-  /regexp-tree@0.1.24:
-    resolution: {integrity: sha512-s2aEVuLhvnVJW6s/iPgEGK6R+/xngd2jNQ+xy4bXNDKxZKJH6jpPHY6kVeVv1IeLCHgswRj+Kl3ELaDjG6V1iw==}
+  /regexp-tree@0.1.27:
+    resolution: {integrity: sha512-iETxpjK6YoRWJG5o6hXLwvjYAoW+FEZn9os0PD/b6AP6xQwsa/Y7lCVgIixBbUPMfhu+i2LtdeAqVTgGlQarfA==}
     hasBin: true
     dev: true
 
@@ -15178,6 +15181,13 @@ packages:
   /regextras@0.7.1:
     resolution: {integrity: sha512-9YXf6xtW+qzQ+hcMQXx95MOvfqXFgsKDZodX3qZB0x2n5Z94ioetIITsBtvJbiOyxa/6s9AtyweBLCdPmPko/w==}
     engines: {node: '>=0.1.14'}
+    dev: true
+
+  /regjsparser@0.10.0:
+    resolution: {integrity: sha512-qx+xQGZVsy55CH0a1hiVwHmqjLryfh7wQyF5HO07XJ9f7dQMY/gPQHhlyDkIzJKC+x2fUCpCcUODUUUFrm7SHA==}
+    hasBin: true
+    dependencies:
+      jsesc: 0.5.0
     dev: true
 
   /regjsparser@0.9.1:
@@ -15477,12 +15487,6 @@ packages:
     dependencies:
       ret: 0.1.15
     dev: false
-
-  /safe-regex@2.1.1:
-    resolution: {integrity: sha512-rx+x8AMzKb5Q5lQ95Zoi6ZbJqwCLkqi3XuJXp5P3rT8OEc6sZCJG5AE5dU3lsgRr/F4Bs31jSlVN+j5KrsGu9A==}
-    dependencies:
-      regexp-tree: 0.1.24
-    dev: true
 
   /safer-buffer@2.1.2:
     resolution: {integrity: sha512-YZo3K82SD7Riyi0E1EQPojLz7kpepnSQI9IyPbHHg1XXXevb5dJI7tpyN2ADxGcQbHG7vcyRHk0cbwqcQriUtg==}
