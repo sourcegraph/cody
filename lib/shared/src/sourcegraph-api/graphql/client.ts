@@ -6,6 +6,7 @@ import { DOTCOM_URL, isDotCom } from '../environments'
 
 import {
     CURRENT_SITE_CODY_LLM_CONFIGURATION,
+    CURRENT_SITE_CODY_LLM_PROVIDER,
     CURRENT_SITE_GRAPHQL_FIELDS_QUERY,
     CURRENT_SITE_HAS_CODY_ENABLED_QUERY,
     CURRENT_SITE_IDENTIFICATION,
@@ -55,6 +56,14 @@ interface CurrentUserIdResponse {
 
 interface CurrentUserIdHasVerifiedEmailResponse {
     currentUser: { id: string; hasVerifiedEmail: boolean } | null
+}
+
+interface CodyLLMSiteConfigurationResponse {
+    site: { codyLLMConfiguration: Omit<CodyLLMSiteConfiguration, 'provider'> | null } | null
+}
+
+interface CodyLLMSiteConfigurationProviderResponse {
+    site: { codyLLMConfiguration: Pick<CodyLLMSiteConfiguration, 'provider'> | null } | null
 }
 
 interface RepositoryIdResponse {
@@ -140,6 +149,7 @@ export interface CodyLLMSiteConfiguration {
     fastChatModelMaxTokens?: number
     completionModel?: string
     completionModelMaxTokens?: number
+    provider?: string
 }
 
 interface IsContextRequiredForChatQueryResponse {
@@ -274,9 +284,28 @@ export class SourcegraphGraphQLAPIClient {
     }
 
     public async getCodyLLMConfiguration(): Promise<undefined | CodyLLMSiteConfiguration | Error> {
-        const response = await this.fetchSourcegraphAPI<APIResponse<any>>(CURRENT_SITE_CODY_LLM_CONFIGURATION)
+        // fetch Cody LLM provider separately for backward compatability
+        const [configResponse, providerResponse] = await Promise.all([
+            this.fetchSourcegraphAPI<APIResponse<CodyLLMSiteConfigurationResponse>>(
+                CURRENT_SITE_CODY_LLM_CONFIGURATION
+            ),
+            this.fetchSourcegraphAPI<APIResponse<CodyLLMSiteConfigurationProviderResponse>>(
+                CURRENT_SITE_CODY_LLM_PROVIDER
+            ),
+        ])
 
-        return extractDataOrError(response, data => data.site?.codyLLMConfiguration)
+        const config = extractDataOrError(configResponse, data => data.site?.codyLLMConfiguration || undefined)
+        if (!config || isError(config)) {
+            return config
+        }
+
+        let provider: string | undefined
+        const llmProvider = extractDataOrError(providerResponse, data => data.site?.codyLLMConfiguration?.provider)
+        if (llmProvider && !isError(llmProvider)) {
+            provider = llmProvider
+        }
+
+        return { ...config, provider }
     }
 
     public async getRepoIds(names: string[]): Promise<{ id: string; name: string }[] | Error> {

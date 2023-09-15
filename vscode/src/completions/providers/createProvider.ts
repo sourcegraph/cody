@@ -1,5 +1,6 @@
 import { Configuration } from '@sourcegraph/cody-shared/src/configuration'
 import { FeatureFlag, FeatureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
+import { CodyLLMSiteConfiguration } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
 
 import { logError } from '../../log'
 import { CodeCompletionsClient } from '../client'
@@ -13,53 +14,114 @@ import { createProviderConfig as createUnstableOpenAIProviderConfig } from './un
 export async function createProviderConfig(
     config: Configuration,
     client: CodeCompletionsClient,
-    featureFlagProvider?: FeatureFlagProvider
+    featureFlagProvider?: FeatureFlagProvider,
+    codyLLMSiteConfig?: CodyLLMSiteConfiguration
 ): Promise<ProviderConfig | null> {
-    const { provider, model } = await resolveDefaultProvider(config.autocompleteAdvancedProvider, featureFlagProvider)
-    switch (provider) {
-        case 'unstable-codegen': {
-            if (config.autocompleteAdvancedServerEndpoint !== null) {
-                return createUnstableCodeGenProviderConfig(config.autocompleteAdvancedServerEndpoint)
-            }
+    const defaultAnthropicProviderConfig = createAnthropicProviderConfig({
+        client,
+        contextWindowTokens: 2048,
+        mode: config.autocompleteAdvancedModel === 'claude-instant-infill' ? 'infill' : 'default',
+    })
 
-            logError(
-                'createProviderConfig',
-                'Provider `unstable-codegen` can not be used without configuring `cody.autocomplete.advanced.serverEndpoint`.'
-            )
-            return null
+    /**
+     * Look for the autocomplete provider in VSCode settings and return matching provider config.
+     */
+    const providerAndModelFromVSCodeConfig = await resolveDefaultProviderFromVSCodeConfigOrFeatureFlags(
+        config.autocompleteAdvancedProvider,
+        featureFlagProvider
+    )
+    if (providerAndModelFromVSCodeConfig) {
+        const { provider, model } = providerAndModelFromVSCodeConfig
+
+        switch (provider) {
+            case 'unstable-codegen': {
+                if (config.autocompleteAdvancedServerEndpoint !== null) {
+                    return createUnstableCodeGenProviderConfig(config.autocompleteAdvancedServerEndpoint)
+                }
+
+                logError(
+                    'createProviderConfig',
+                    'Provider `unstable-codegen` can not be used without configuring `cody.autocomplete.advanced.serverEndpoint`.'
+                )
+                return null
+            }
+            case 'unstable-openai': {
+                return createUnstableOpenAIProviderConfig({
+                    client,
+                    contextWindowTokens: 2048,
+                })
+            }
+            case 'unstable-fireworks': {
+                return createUnstableFireworksProviderConfig({
+                    client,
+                    model: config.autocompleteAdvancedModel ?? model ?? null,
+                })
+            }
+            case 'anthropic': {
+                return defaultAnthropicProviderConfig
+            }
+            default:
+                logError(
+                    'createProviderConfig',
+                    `Unrecognized provider '${config.autocompleteAdvancedProvider}' configured.`
+                )
+                return null
         }
-        case 'unstable-openai': {
-            return createUnstableOpenAIProviderConfig({
-                client,
-                contextWindowTokens: 2048,
-            })
-        }
-        case 'unstable-fireworks': {
-            return createUnstableFireworksProviderConfig({
-                client,
-                model: config.autocompleteAdvancedModel ?? model ?? null,
-            })
-        }
-        case 'anthropic': {
-            return createAnthropicProviderConfig({
-                client,
-                contextWindowTokens: 2048,
-                mode: config.autocompleteAdvancedModel === 'claude-instant-infill' ? 'infill' : 'default',
-            })
-        }
-        default:
-            logError(
-                'createProviderConfig',
-                `Unrecognized provider '${config.autocompleteAdvancedProvider}' configured.`
-            )
-            return null
     }
+
+    /**
+     * If autocomplete provider is not defined in the VSCode settings,
+     * check the completions provider in the connected Sourcegraph instance site config
+     * and return the matching provider config.
+     */
+    if (codyLLMSiteConfig?.provider) {
+        const parsed = parseProviderAndModel({
+            provider: codyLLMSiteConfig.provider,
+            model: codyLLMSiteConfig.completionModel,
+        })
+        if (!parsed) {
+            logError(
+                'createProviderConfig',
+                `Failed to parse the model name for '${codyLLMSiteConfig.provider}' completions provider.`
+            )
+            return null
+        }
+        const { provider, model } = parsed
+        switch (provider) {
+            case 'openai':
+            case 'azure-openai':
+                return createUnstableOpenAIProviderConfig({
+                    client,
+                    contextWindowTokens: 2048,
+                    // Model name for azure openai provider is a deployment name. It shouldn't appear in logs.
+                    model: provider === 'azure-openai' && model ? '' : model,
+                })
+
+            case 'fireworks':
+                return createUnstableFireworksProviderConfig({
+                    client,
+                    model: model ?? null,
+                })
+            case 'aws-bedrock':
+            case 'anthropic':
+                return defaultAnthropicProviderConfig
+            default:
+                logError('createProviderConfig', `Unrecognized provider '${provider}' configured.`)
+                return null
+        }
+    }
+
+    /**
+     * If autocomplete provider is not defined neither in VSCode nor in Sourcegraph instance site config,
+     * use the default provider config ("anthropic").
+     */
+    return defaultAnthropicProviderConfig
 }
 
-async function resolveDefaultProvider(
+async function resolveDefaultProviderFromVSCodeConfigOrFeatureFlags(
     configuredProvider: string | null,
     featureFlagProvider?: FeatureFlagProvider
-): Promise<{ provider: string; model?: 'starcoder-7b' | 'starcoder-16b' | 'claude-instant-infill' }> {
+): Promise<{ provider: string; model?: 'starcoder-7b' | 'starcoder-16b' | 'claude-instant-infill' } | null> {
     if (configuredProvider) {
         return { provider: configuredProvider }
     }
@@ -78,5 +140,45 @@ async function resolveDefaultProvider(
         return { provider: 'anthropic', model: 'claude-instant-infill' }
     }
 
-    return { provider: 'anthropic' }
+    return null
+}
+
+const delimeters: Record<string, string> = {
+    sourcegraph: '/',
+    'aws-bedrock': '.',
+}
+
+/**
+ * For certain completions providers configured in the Sourcegraph instance site config
+ * the model name consists MODEL_PROVIDER and MODEL_NAME separated by a specific delimeter (see {@link delimeters}).
+ *
+ * This function checks if the given provider has a specific model naming format and:
+ *   - if it does, parses the model name and returns the parsed provider and model names;
+ *   - if it doesn't, returns the original provider and model names.
+ *
+ * E.g. for "sourcegraph" provider the completions model name consists of model provider and model name separated by "/".
+ * So when received `{ provider: "sourcegraph", model: "anthropic/claude-instant-1" }` the expected output would be `{ provider: "anthropic", model: "claude-instant-1" }`.
+ */
+function parseProviderAndModel({
+    provider,
+    model,
+}: {
+    provider: string
+    model?: string
+}): { provider: string; model?: string } | null {
+    const delimeter = delimeters[provider]
+    if (!delimeter) {
+        return { provider, model }
+    }
+
+    if (model) {
+        const index = model.indexOf(delimeter)
+        const parsedProvider = model.slice(0, index)
+        const parsedModel = model.slice(index + 1)
+        if (parsedProvider && parsedModel) {
+            return { provider: parsedProvider, model: parsedModel }
+        }
+    }
+
+    return null
 }

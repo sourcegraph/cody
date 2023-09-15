@@ -153,7 +153,10 @@ export class UnstableOpenAIProvider extends Provider {
     }
 }
 
-export function createProviderConfig(unstableAzureOpenAIOptions: UnstableOpenAIOptions): ProviderConfig {
+export function createProviderConfig({
+    model,
+    ...unstableAzureOpenAIOptions
+}: UnstableOpenAIOptions & { model?: string }): ProviderConfig {
     return {
         create(options: ProviderOptions) {
             return new UnstableOpenAIProvider(options, { ...unstableAzureOpenAIOptions })
@@ -161,6 +164,6 @@ export function createProviderConfig(unstableAzureOpenAIOptions: UnstableOpenAIO
         maximumContextCharacters: tokensToChars(unstableAzureOpenAIOptions.contextWindowTokens),
         enableExtendedMultilineTriggers: false,
         identifier: PROVIDER_IDENTIFIER,
-        model: 'gpt-35-turbo',
+        model: model ?? 'gpt-35-turbo',
     }
 }
