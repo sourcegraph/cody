@@ -34,6 +34,7 @@ const Icon: React.FunctionComponent = () => (
     </svg>
 )
 
+// TODO(dpc): This needs state to hide the notice when it is dismissed.
 export const EmbeddingsEnabledNotice: React.FunctionComponent<{}> = () => {
     const title = <div className={styles.title}>Embeddings Enabled</div>
     return (
