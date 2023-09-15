@@ -1,5 +1,4 @@
 interface EditorConfig {
-    fileContent: string
     filePath: string
     repoName?: string
     revision?: string

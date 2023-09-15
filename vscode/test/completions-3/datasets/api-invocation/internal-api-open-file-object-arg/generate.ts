@@ -9,13 +9,10 @@ const repository = {
     file: {
         path: 'index.ts',
         content: '// Hello world!',
-    },
+    }
 }
+
 export const getRepoId = () => {
-    return getEditorRepoFileID({
-        fileContent: repository.file.content,
-        filePath: repository.file.path,
-        repoName: repository.name,
-        revision: repository.commit.oid,
-    })
+    return getEditorRepoFileID({🔥}
 }
+

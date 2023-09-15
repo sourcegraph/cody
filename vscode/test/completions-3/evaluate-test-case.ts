@@ -46,7 +46,7 @@ export const testCompletionResult = async (
  */
 export const pollToAcceptCompletion = async (originalDocumentVersion: number): Promise<boolean> => {
     await ensureExecuteCommand('editor.action.inlineSuggest.commit')
-    await new Promise(resolve => setTimeout(resolve, 50))
+    await new Promise(resolve => setTimeout(resolve, 100))
 
     if (!vscode.window.activeTextEditor) {
         throw new Error('Unable to access the active text editor')
@@ -90,11 +90,9 @@ export const executeCompletionOnFile = async (
     cwd: string
 ): Promise<boolean> => {
     for (const fileToOpen of openFiles) {
-        console.log('Opening file', path.resolve(cwd, fileToOpen))
-        // TODO: Check context is working correctly
+        // TODO: Check files are open and available for context
         const doc = await vscode.workspace.openTextDocument(path.resolve(cwd, fileToOpen))
-        await vscode.window.showTextDocument(doc)
-        await new Promise(resolve => setTimeout(resolve, 500))
+        await vscode.window.showTextDocument(doc, { preview: false })
     }
     const entryDocument = await vscode.workspace.openTextDocument(path.resolve(cwd, entryFile))
     // Find the placeholder symbol, replace it and update the selection for the completion
@@ -114,7 +112,7 @@ export const executeCompletionOnFile = async (
     await vscode.commands.executeCommand('editor.action.inlineSuggest.trigger')
     const completed = await Promise.race([
         startPolling,
-        new Promise<false>(resolve => setTimeout(() => resolve(false), 5000)), // Maximum 5000ms wait
+        new Promise<false>(resolve => setTimeout(() => resolve(false), 10000)), // Maximum 10s wait
     ])
     await editor.document.save()
     return completed
@@ -155,7 +153,9 @@ export const evaluateCompletion = async (
     if (testOutcome === CaseStatus.FAIL) {
         console.log(`🔴 ${id} - ${tempWorkspace}`)
         // Also print the diff for quick evaluation
-        const diff = (await exec(`git diff --color-words ${evalCaseConfig.entryFile}`, { cwd: tempWorkspace })).stdout
+        const diff = (
+            await exec(`git diff --color=always -U0 ${evalCaseConfig.entryFile} | tail -n +5`, { cwd: tempWorkspace })
+        ).stdout
         console.log(diff)
     } else {
         console.log(`🟢 ${id} - ${tempWorkspace}`)

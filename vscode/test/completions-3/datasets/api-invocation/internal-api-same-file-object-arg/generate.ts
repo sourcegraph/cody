@@ -1,4 +1,12 @@
-import { getEditorRepoFileID } from './api'
+interface EditorConfig {
+    filePath: string
+    repoName?: string
+    revision?: string
+}
+
+export const getEditorRepoFileID = (config: EditorConfig) => {
+    return `${config.repoName}-${config.filePath}-${config.revision || 'latest'}`
+}
 
 const repository = {
     name: 'sourcegraph/sourcegraph',
@@ -13,7 +21,6 @@ const repository = {
 }
 
 export const getRepoId = () => {
-    return getEditorRepoFileID({
-        🔥
+    return getEditorRepoFileID({🔥}
 }
 

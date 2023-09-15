@@ -1,4 +1,6 @@
-import { getEditorRepoFileID } from './api'
+export const getEditorRepoFileID = (repoName: string, filePath: string, revision: string) => {
+    return `${repoName}-${filePath}-${revision || 'latest'}`
+}
 
 const repository = {
     name: 'sourcegraph/sourcegraph',
@@ -9,11 +11,10 @@ const repository = {
     file: {
         path: 'index.ts',
         content: '// Hello world!',
-    },
+    }
 }
 
 export const getRepoId = () => {
-    return getEditorRepoFileID({
-        🔥
+    return getEditorRepoFileID(🔥)
 }
 

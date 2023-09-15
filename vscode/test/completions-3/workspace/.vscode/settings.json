@@ -1,7 +1,5 @@
 {
   "cody.autocomplete.enabled": true,
-  "cody.autocomplete.experimental.completeSuggestWidgetSelection": true,
-  "editor.inlineSuggest.suppressSuggestions": true,
   "cody.debug.enable": true,
   "cody.debug.verbose": true,
 }
