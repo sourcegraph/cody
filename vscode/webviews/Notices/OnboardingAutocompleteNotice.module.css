@@ -1,12 +1,5 @@
-.notice {
-    /* Set the link color that VSCodeLink will use */
-    --link-foreground: var(--vscode-gitDecoration-untrackedResourceForeground, var(--vscode-textLink-foreground));
-    --link-active-foreground: var(--vscode-gitDecoration-untrackedResourceForeground, var(--vscode-textLink-activeforeground));
-}
-
 .icon {
-    /* Match the icon color to it */
-    fill: var(--link-foreground);
+    fill: var(--vscode-gitDecoration-untrackedResourceForeground, var(--vscode-textLink-foreground));
     opacity: 0.9;
 }
 

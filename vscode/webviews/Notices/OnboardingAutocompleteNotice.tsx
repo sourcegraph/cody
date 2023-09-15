@@ -1,17 +1,32 @@
+import { useState } from 'react'
+
 import { Notice } from './Notice'
 
 import styles from './OnboardingAutocompleteNotice.module.css'
 
-export const OnboardingAutocompleteNotice: React.FunctionComponent = () => (
-    <Notice
-        icon={<Icon />}
-        title="Congratulations! You just accepted your first Cody autocomplete."
-        linkText="Next: Run a Cody Command →"
-        linkHref="command:cody.action.commands.menu"
-        onDismiss={() => console.log('todo')}
-        className={styles.notice}
-    />
-)
+export const OnboardingAutocompleteNotice: React.FunctionComponent = () => {
+    const [showNotice, setShowNotice] = useState<boolean>(false)
+
+    // TODO: Implement actual listener for first autocomplete. It may have to be a prop passed down like probablyNewInstall
+    setTimeout(() => {
+        setShowNotice(true)
+    }, 1500)
+
+    if (!showNotice) {
+        return undefined
+    }
+
+    return (
+        <Notice
+            icon={<Icon />}
+            title={<>Congratulations! You just accepted your first Cody autocomplete.</>}
+            linkText="Next: Run a Command →"
+            linkHref="command:cody.action.commands.menu"
+            dismissKey="onboarding-autocomplete"
+            className={styles.notice}
+        />
+    )
+}
 
 const Icon: React.FunctionComponent = () => (
     <svg className={styles.icon} width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
