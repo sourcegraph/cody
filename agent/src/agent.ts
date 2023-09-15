@@ -5,7 +5,7 @@ import * as vscode from 'vscode'
 import { Client, createClient } from '@sourcegraph/cody-shared/src/chat/client'
 import { registeredRecipes } from '@sourcegraph/cody-shared/src/chat/recipes/agent-recipes'
 import { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/nodeClient'
-import { setUserAgent } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
+import { setUserAgent, SourcegraphGraphQLAPIClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
 
 import { activate } from '../../vscode/src/extension.node'
 
@@ -230,14 +230,26 @@ export class Agent extends MessageHandler {
             return null
         })
 
-        this.registerRequest('graphql/getRepoIdIfEmbeddingExists', async ({ repoName }) => {
-            const client = await this.client
-            const result = await client?.graphqlClient.getRepoIdIfEmbeddingExists(repoName)
+        const getRepoID = async (
+            getRepoHandler: (client: SourcegraphGraphQLAPIClient) => Promise<string | Error | null>
+        ): Promise<string | null> => {
+            const client = (await this.client)?.graphqlClient
+            if (!client) {
+                return null
+            }
+            const result = getRepoHandler(client)
             if (result instanceof Error) {
-                console.error('getRepoIdIfEmbeddingExists', result)
+                console.error('getRepoId', result)
             }
             return typeof result === 'string' ? result : null
-        })
+        }
+
+        this.registerRequest('graphql/getRepoId', async ({ repoName }) =>
+            getRepoID(client => client.getRepoId(repoName))
+        )
+        this.registerRequest('graphql/getRepoIdIfEmbeddingExists', async ({ repoName }) =>
+            getRepoID(client => client.getRepoIdIfEmbeddingExists(repoName))
+        )
 
         this.registerNotification('autocomplete/clearLastCandidate', async () => {
             const provider = await vscode_shim.completionProvider
