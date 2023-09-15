@@ -13,6 +13,8 @@ interface CompletionContext {
 export const MULTILINE_TRUNCATION_SUPPORTED_LANGUAGES: Set<string> = new Set([
     SupportedLanguage.JavaScript,
     SupportedLanguage.TypeScript,
+    SupportedLanguage.JSX,
+    SupportedLanguage.TSX,
 ])
 
 // Supports Javascript and Typescript only.
@@ -45,9 +47,8 @@ export function truncateParsedCompletion(context: CompletionContext): string {
 
     const parseTreeCache = getCachedParseTreeForDocument(document)
 
-    // Do nothig if the syntactic post-processing is not enabled.
     if (!completion.tree || !parseTreeCache) {
-        return completion.insertText
+        throw new Error('Expected completion and document to have tree-sitter data for truncation')
     }
 
     const { tree, points } = completion
