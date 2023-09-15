@@ -237,7 +237,7 @@ export class Agent extends MessageHandler {
             if (!client) {
                 return null
             }
-            const result = getRepoHandler(client)
+            const result = await getRepoHandler(client)
             if (result instanceof Error) {
                 console.error('getRepoId', result)
             }
