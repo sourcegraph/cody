@@ -76,6 +76,10 @@ export class SourcegraphBrowserCompletionsClient extends SourcegraphCompletionsC
 
 declare const WorkerGlobalScope: never
 const isRunningInWebWorker =
+    // NOTE Do not compare agaist `undefined` like ESLint suggests because it
+    // makes this module crash during initialization if it's not running in the
+    // browser.
+    // eslint-disable-next-line unicorn/no-typeof-undefined
     typeof WorkerGlobalScope !== 'undefined' && WorkerGlobalScope !== undefined && self instanceof WorkerGlobalScope
 
 if (isRunningInWebWorker) {
