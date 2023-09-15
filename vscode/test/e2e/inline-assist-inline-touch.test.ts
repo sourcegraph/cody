@@ -1,8 +1,24 @@
 import { expect } from '@playwright/test'
 
+import { loggedEvents } from '../fixtures/mock-server'
+
 import { sidebarExplorer, sidebarSignin } from './common'
 import { test } from './helpers'
 
+const expectedOrderedEvents = [
+    'CodyVSCodeExtension:auth:clickOtherSignInOptions',
+    'CodyVSCodeExtension:login:clicked',
+    'CodyVSCodeExtension:auth:selectSigninMenu',
+    'CodyVSCodeExtension:auth:fromToken',
+    'CodyVSCodeExtension:Auth:connected',
+    'CodyVSCodeExtension:fixup:created',
+    'CodyVSCodeExtension:keywordContext:searchDuration',
+    'CodyVSCodeExtension:recipe:fixup:executed',
+    'CodyVSCodeExtension:fixupResponse:hasCode',
+    'CodyVSCodeExtension:chatResponse:noCode',
+    'CodyVSCodeExtension:fixup:codeLens:clicked',
+    'CodyVSCodeExtension:fixup:applied',
+]
 test.skip('start a fixup job from inline chat with valid auth', async ({ page, sidebar }) => {
     // Sign into Cody
     await sidebarSignin(page, sidebar)
@@ -35,6 +51,7 @@ test.skip('start a fixup job from inline chat with valid auth', async ({ page, s
 
     // Check if a new file called index.cody.html is created
     await expect(page.getByText('index.cody.html')).toBeVisible()
+    expect(loggedEvents).toEqual(expectedOrderedEvents)
 
     // TODO check if content is correct. Currently blocked by ability to highlight in test
 })

@@ -1,8 +1,34 @@
 import { expect } from '@playwright/test'
 
+import { loggedEvents } from '../fixtures/mock-server'
+
 import { codyEditorCommandButtonRole, sidebarExplorer, sidebarSignin } from './common'
 import { test } from './helpers'
 
+const expectedOrderedEvent = [
+    'CodyVSCodeExtension:auth:clickOtherSignInOptions',
+    'CodyVSCodeExtension:login:clicked',
+    'CodyVSCodeExtension:auth:selectSigninMenu',
+    'CodyVSCodeExtension:auth:fromToken',
+    'CodyVSCodeExtension:Auth:connected',
+    'CodyVSCodeExtension:chatReset:executed',
+    'CodyVSCodeExtension:chatTitleButton:clicked',
+    'CodyVSCodeExtension:chat:submitted',
+    'CodyVSCodeExtension:recipe:chat-question:executed',
+    'CodyVSCodeExtension:chatResponse:noCode',
+    'CodyVSCodeExtension:chatReset:executed',
+    'CodyVSCodeExtension:chatTitleButton:clicked',
+    'CodyVSCodeExtension:chat:submitted',
+    'CodyVSCodeExtension:recipe:chat-question:executed',
+    'CodyVSCodeExtension:chatResponse:noCode',
+    'CodyVSCodeExtension:chatTitleButton:clicked',
+    'CodyVSCodeExtension:chatReset:executed',
+    'CodyVSCodeExtension:clearChatHistoryButton:clicked',
+    'CodyVSCodeExtension:chatReset:executed',
+    'CodyVSCodeExtension:chatTitleButton:clicked',
+    'CodyVSCodeExtension:command:menu:opened',
+    'CodyVSCodeExtension:recipe:custom-prompt:executed',
+]
 test('checks if clear chat history button clears history and current session', async ({ page, sidebar }) => {
     // Sign into Cody
     await sidebarSignin(page, sidebar)
@@ -51,4 +77,5 @@ test('checks if clear chat history button clears history and current session', a
     // Check if the old message "Hey" is cleared
     await expect(sidebar.getByText('Hey')).not.toBeVisible()
     await expect(sidebar.getByText('/explain')).toBeVisible()
+    expect(loggedEvents).toEqual(expectedOrderedEvent)
 })

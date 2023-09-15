@@ -1,8 +1,26 @@
 import { expect } from '@playwright/test'
 
+import { loggedEvents } from '../fixtures/mock-server'
+
 import { sidebarExplorer, sidebarSignin } from './common'
 import { test } from './helpers'
 
+const expectedOrderedEvent = [
+    'CodyVSCodeExtension:auth:clickOtherSignInOptions',
+    'CodyVSCodeExtension:login:clicked',
+    'CodyVSCodeExtension:auth:selectSigninMenu',
+    'CodyVSCodeExtension:auth:fromToken',
+    'CodyVSCodeExtension:Auth:connected',
+    'CodyVSCodeExtension:command:menu:opened',
+    'CodyVSCodeExtension:fixup:created',
+    'CodyVSCodeExtension:keywordContext:searchDuration',
+    'CodyVSCodeExtension:recipe:fixup:executed',
+    'CodyVSCodeExtension:fixupResponse:hasCode',
+    'CodyVSCodeExtension:chatResponse:noCode',
+    'CodyVSCodeExtension:fixup:codeLens:clicked',
+    'CodyVSCodeExtension:fixup:codeLens:clicked',
+    'CodyVSCodeExtension:fixup:applied',
+]
 test('task tree view for non-stop cody', async ({ page, sidebar }) => {
     // Sign into Cody
     await sidebarSignin(page, sidebar)
@@ -72,4 +90,5 @@ test('task tree view for non-stop cody', async ({ page, sidebar }) => {
     // Collapse the task tree view
     await page.getByRole('button', { name: 'Fixups Section' }).click()
     await expect(page.getByText('No pending Cody fixups')).not.toBeVisible()
+    expect(loggedEvents).toEqual(expectedOrderedEvent)
 })
