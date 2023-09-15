@@ -231,7 +231,7 @@ describe('createProviderConfig', () => {
                 // provider not defined (backward compat)
                 {
                     codyLLMConfig: { provider: undefined, completionModel: 'llama-code-7b' },
-                    expected: null,
+                    expected: { provider: 'anthropic', model: 'claude-instant-1' },
                 },
             ]
 
