@@ -205,7 +205,7 @@ describe('createProviderConfig', () => {
                 // azure-openai
                 {
                     codyLLMConfig: { provider: 'azure-openai', completionModel: 'gpt-35-turbo-test' },
-                    expected: { provider: 'unstable-openai', model: 'gpt-35-turbo-test' },
+                    expected: { provider: 'unstable-openai', model: '' },
                 },
                 {
                     codyLLMConfig: { provider: 'azure-openai' },

@@ -93,7 +93,8 @@ export async function createProviderConfig(
                 return createUnstableOpenAIProviderConfig({
                     client,
                     contextWindowTokens: 2048,
-                    model: provider === 'azure-openai' ? '' : model,
+                    // Model name for azure openai provider is a deployment name. It shouldn't appear in logs.
+                    model: provider === 'azure-openai' && model ? '' : model,
                 })
 
             case 'fireworks':
