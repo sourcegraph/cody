@@ -81,7 +81,7 @@ export class Agent extends MessageHandler {
 
             const extensionConfig = client.extensionConfiguration ?? client.connectionConfiguration
             if (extensionConfig) {
-                this.setClient(extensionConfig)
+                await this.setClient(extensionConfig)
             }
 
             setUserAgent(`${client?.name} / ${client?.version}`)
@@ -137,9 +137,7 @@ export class Agent extends MessageHandler {
             vscode_shim.onDidCloseTextDocument.fire(this.workspace.agentTextDocument(document))
         })
 
-        const configurationDidChange = (config: ExtensionConfiguration): Promise<void> => {
-            return this.setClient(config)
-        }
+        const configurationDidChange = (config: ExtensionConfiguration): Promise<void> => this.setClient(config)
 
         this.registerNotification('connectionConfiguration/didChange', configurationDidChange)
         this.registerNotification('extensionConfiguration/didChange', configurationDidChange)
