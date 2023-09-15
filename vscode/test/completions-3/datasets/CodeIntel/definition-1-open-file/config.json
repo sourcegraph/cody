@@ -1,0 +1,8 @@
+{
+  "entryFile": "generate.ts",
+  "openFiles": ["api.ts"],
+  "additionalFiles": [],
+  "solutionFile": "solution.ts",
+  "testFile": "test.ts",
+  "testCommand": "npx ts-node"
+}

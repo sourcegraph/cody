@@ -1,33 +1,29 @@
-import { execFileSync } from 'child_process'
-import { mkdtempSync } from 'fs'
-import { tmpdir } from 'os'
 import path from 'path'
 import util from 'util'
 
 import _glob from 'glob'
 
-import { DATASETS, parseDatasetConfig } from './datasets'
-import { CaseStatus, evaluateCompletion } from './evaluate-test-case'
-import { setup, teardown } from './helpers'
+import { DATASETS_PATH } from './constants'
+import { parseEvaluationConfig } from './datasets'
+import { evaluateCompletion } from './evaluate-test-case'
+import { cleanup, setup, teardown } from './helpers'
 
 const glob = util.promisify(_glob)
 
 export async function run(): Promise<void> {
     await setup()
 
-    const dataset = DATASETS.HumanEvalInfill
+    const dataset = 'CodeIntel'
+    const datasetPath = path.join(DATASETS_PATH, dataset)
+    const evaluationCases = await glob(path.join(datasetPath, '*'))
 
-    const tempDir = mkdtempSync(path.join(tmpdir(), 'cody-evaluation-'))
-    execFileSync('git', ['clone', dataset.repoUrl, '.'], { cwd: tempDir })
-    console.log(tempDir)
-
-    const configFiles = await glob(dataset.caseGlob, { cwd: tempDir })
-    for (const configFile of configFiles) {
-        const configPath = path.join(tempDir, configFile)
-        const files = parseDatasetConfig(configPath)
-        const result = await evaluateCompletion(Date.now().toString(), files, path.dirname(configPath))
-        console.log(`${result.status === CaseStatus.PASS ? '🟢' : '🔴'} - ${files.generate}`)
+    for (const evalCase of evaluationCases) {
+        const evalDir = path.basename(evalCase)
+        const evalCaseConfig = parseEvaluationConfig(path.join(evalCase, 'config.json'))
+        await evaluateCompletion(evalDir, evalCaseConfig, evalCase)
+        await cleanup()
     }
 
+    await new Promise(resolve => setTimeout(resolve, 1000000))
     await teardown()
 }

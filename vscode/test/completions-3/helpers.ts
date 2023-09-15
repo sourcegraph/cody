@@ -35,6 +35,14 @@ export async function teardown(): Promise<void> {
     await ensureExecuteCommand('cody.test.token', null, null)
 }
 
+/**
+ * Clean up command for VS Code.
+ * Closes all open files.
+ */
+export async function cleanup(): Promise<void> {
+    await ensureExecuteCommand('workbench.action.closeAllEditors')
+}
+
 // executeCommand specifies ...any[] https://code.visualstudio.com/api/references/vscode-api#commands
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function ensureExecuteCommand<T>(command: string, ...args: any[]): Promise<T> {

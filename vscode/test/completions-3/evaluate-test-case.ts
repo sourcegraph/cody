@@ -1,5 +1,8 @@
-import { execSync } from 'child_process'
+import { exec as _exec } from 'child_process'
+import { copyFile, mkdir, mkdtemp } from 'fs/promises'
+import { tmpdir } from 'os'
 import path from 'path'
+import { promisify } from 'util'
 
 import * as vscode from 'vscode'
 
@@ -7,6 +10,8 @@ import { TEST_WORKSPACE_PATH } from './constants'
 import { CURSOR } from './create-evaluation-cases'
 import { DatasetConfig } from './datasets'
 import { ensureExecuteCommand } from './helpers'
+
+const exec = promisify(_exec)
 
 export enum CaseStatus {
     'PASS',
@@ -16,14 +21,16 @@ export enum CaseStatus {
 
 export interface CaseResult {
     status: CaseStatus
-    editSimilarity: number | null
-    exactMatch: number | null
 }
 
-export const testCompletionResult = (testPath: string): CaseStatus.PASS | CaseStatus.FAIL => {
+export const testCompletionResult = async (
+    testFile: string,
+    testCommand: string,
+    cwd: string
+): Promise<CaseStatus.PASS | CaseStatus.FAIL> => {
     let status: CaseStatus
     try {
-        execSync(`python ${testPath}`, { cwd: TEST_WORKSPACE_PATH, stdio: 'inherit' })
+        await exec(`${testCommand} ${testFile}`, { cwd })
         status = CaseStatus.PASS
     } catch {
         status = CaseStatus.FAIL
@@ -51,51 +58,108 @@ export const pollToAcceptCompletion = async (originalDocumentVersion: number): P
     return true
 }
 
-export const evaluateCompletion = async (id: string, files: DatasetConfig, cwd: string): Promise<CaseResult> => {
-    const generatedPath = path.resolve(cwd, files.generate)
-    const testPath = path.resolve(cwd, files.test)
-    const solutionPath = path.resolve(cwd, files.solution)
-    if (!generatedPath || !testPath || !solutionPath) {
-        throw new Error(`Invalid test case configuration - ${id}`)
+const copyFileToWorkspace = async (workspaceDir: string, fileName: string, cwd: string): Promise<void> => {
+    const filePath = path.join(cwd, fileName)
+    const tempFilePath = path.join(workspaceDir, path.basename(filePath))
+    await copyFile(filePath, tempFilePath)
+}
+
+const createTemporaryWorkspace = async (filePaths: string[], cwd: string): Promise<string> => {
+    const tempDir = await mkdtemp(path.join(tmpdir(), 'cody-evaluation-'))
+    for (const file of filePaths) {
+        await copyFileToWorkspace(tempDir, file, cwd)
     }
 
+    // Add the hardcoded workspace settings too
+    const tempVsCodeConfigPath = path.join(tempDir, '.vscode')
+    const existingVsCodeConfig = path.join(TEST_WORKSPACE_PATH, '.vscode')
+    await mkdir(path.join(tempDir, '.vscode'))
+    await copyFileToWorkspace(tempVsCodeConfigPath, 'settings.json', existingVsCodeConfig)
+
+    // Create a Git repo and commit the copied files. This will give us a useful way to compare any future changes.
+    await exec('git init --quiet', { cwd: tempDir })
+    await exec('git add --all', { cwd: tempDir })
+    await exec('git commit -m "init"', { cwd: tempDir })
+
+    return tempDir
+}
+
+export const executeCompletionOnFile = async (
+    entryFile: string,
+    openFiles: string[],
+    cwd: string
+): Promise<boolean> => {
+    for (const fileToOpen of openFiles) {
+        console.log('Opening file', path.resolve(cwd, fileToOpen))
+        // TODO: Check context is working correctly
+        const doc = await vscode.workspace.openTextDocument(path.resolve(cwd, fileToOpen))
+        await vscode.window.showTextDocument(doc)
+        await new Promise(resolve => setTimeout(resolve, 500))
+    }
+    const entryDocument = await vscode.workspace.openTextDocument(path.resolve(cwd, entryFile))
     // Find the placeholder symbol, replace it and update the selection for the completion
-    const document = await vscode.workspace.openTextDocument(generatedPath)
-    const searchResult = document.getText().indexOf(CURSOR)
-    const cursorPosition = document.positionAt(searchResult)
+    const editor = await vscode.window.showTextDocument(entryDocument)
+    const searchResult = editor.document.getText().indexOf(CURSOR)
+    const cursorPosition = editor.document.positionAt(searchResult)
     const cursorRange = new vscode.Range(cursorPosition, cursorPosition.translate(0, 1))
-    const editor = await vscode.window.showTextDocument(document)
     await editor.edit(edit => {
         edit.replace(cursorRange, '')
     })
     editor.selection = new vscode.Selection(cursorPosition, cursorPosition)
 
     // TODO: Delay for completion trigger?
-    await new Promise(resolve => setTimeout(resolve, 200))
+    await new Promise(resolve => setTimeout(resolve, 500))
 
     const startPolling = pollToAcceptCompletion(editor.document.version)
     await vscode.commands.executeCommand('editor.action.inlineSuggest.trigger')
-    const completion = await Promise.race([
+    const completed = await Promise.race([
         startPolling,
         new Promise<false>(resolve => setTimeout(() => resolve(false), 5000)), // Maximum 5000ms wait
     ])
-    await document.save()
+    await editor.document.save()
+    return completed
+}
 
-    if (!completion) {
-        return {
-            status: CaseStatus.TIMED_OUT,
-            editSimilarity: 0,
-            exactMatch: 0,
-        }
+export const evaluateCompletion = async (
+    id: string,
+    evalCaseConfig: DatasetConfig,
+    cwd: string
+): Promise<CaseStatus> => {
+    // Copy the entry file into a temporary Git directory
+    // This gives us an isolated place where we can allow Cody to make changes, and inspect them later
+    // TODO: Deduplicate files
+    const tempWorkspace = await createTemporaryWorkspace(
+        [evalCaseConfig.entryFile, ...evalCaseConfig.openFiles, ...evalCaseConfig.additionalFiles],
+        cwd
+    )
+
+    // Open the relevant files and trigger a completion in the entry file
+    const completed = await executeCompletionOnFile(evalCaseConfig.entryFile, evalCaseConfig.openFiles, tempWorkspace)
+
+    // We didn't get a completion within the allocated time, we should output this differently for further investigation.
+    if (!completed) {
+        console.log(`⏳ ${id} - ${tempWorkspace} (TIMED OUT)`)
+        return CaseStatus.TIMED_OUT
     }
 
-    const testStatus = testCompletionResult(testPath)
-    const editSimilarity = 1
-    const exactMatch = 1
+    // Copy the test file. We do this after the evaluation is completed to ensure there is no chance it is included as context.    await copyFileToWorkspace()
+    await copyFileToWorkspace(tempWorkspace, evalCaseConfig.testFile, cwd)
 
-    return {
-        status: testStatus,
-        editSimilarity,
-        exactMatch,
+    // Run the test file against the generated completion
+    const testOutcome = await testCompletionResult(evalCaseConfig.testFile, evalCaseConfig.testCommand, tempWorkspace)
+
+    // Copy the solution file. This is primarily so we can compare the generation vs the solution.
+    // In the future we may also want to produce edit similarity (ES) and exact match (EM) metrics for further inspection.
+    await copyFileToWorkspace(tempWorkspace, evalCaseConfig.solutionFile, cwd)
+
+    if (testOutcome === CaseStatus.FAIL) {
+        console.log(`🔴 ${id} - ${tempWorkspace}`)
+        // Also print the diff for quick evaluation
+        const diff = (await exec(`git diff --color-words ${evalCaseConfig.entryFile}`, { cwd: tempWorkspace })).stdout
+        console.log(diff)
+    } else {
+        console.log(`🟢 ${id} - ${tempWorkspace}`)
     }
+
+    return testOutcome
 }

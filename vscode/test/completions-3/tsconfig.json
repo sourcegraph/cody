@@ -8,5 +8,5 @@
   },
   "references": [{ "path": "../../" }, { "path": "../../../lib/shared" }],
   "include": ["*.ts", "datasets/**/*.json"],
-  "exclude": ["testdata"],
+  "exclude": ["datasets"],
 }
