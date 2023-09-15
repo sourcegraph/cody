@@ -10,5 +10,6 @@ interface NoticesProps {
 export const Notices: React.FunctionComponent<NoticesProps> = ({ extensionVersion, probablyNewInstall }) => (
     <div className={styles.notices}>
         <VersionUpdatedNotice version={extensionVersion} probablyNewInstall={probablyNewInstall} />
+        {/* <OnboardingAutocompleteNotice /> */}
     </div>
 )
