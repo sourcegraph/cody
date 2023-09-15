@@ -192,7 +192,7 @@ export class AuthProvider {
             this.client.getCodyLLMConfiguration(),
         ])
 
-        const configOverwrites = !isError(codyLLMConfiguration) ? codyLLMConfiguration : undefined
+        const configOverwrites = isError(codyLLMConfiguration) ? undefined : codyLLMConfiguration
 
         const isDotComOrApp = this.client.isDotCom() || isLocalApp(endpoint)
         if (!isDotComOrApp) {

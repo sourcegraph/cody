@@ -92,7 +92,7 @@ function getMissingFiles(urls: string[]): string[] {
 
 function getFilePathFromURL(url: string): string {
     const parts = url.split('/')
-    return parts[parts.length - 1]
+    return parts.at(-1)!
 }
 
 function downloadFile(url: string): Promise<WriteStream> {
