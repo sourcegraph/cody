@@ -227,6 +227,12 @@ describe('createProviderConfig', () => {
                     codyLLMConfig: { provider: 'unknown-provider', completionModel: 'llama-code-7b' },
                     expected: null,
                 },
+
+                // provider not defined (backward compat)
+                {
+                    codyLLMConfig: { provider: undefined, completionModel: 'llama-code-7b' },
+                    expected: null,
+                },
             ]
 
             for (const { codyLLMConfig, expected } of testCases) {
