@@ -2,10 +2,10 @@ import * as vscode from 'vscode'
 
 import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
 
-import { logDebug } from '../../log'
 import { ContextSnippet } from '../types'
 
 import { getContextFromEmbeddings } from './context-embeddings'
+import { getContextFromGraph, GraphContextFetcher } from './context-graph'
 import { getContextFromCurrentEditor } from './context-local'
 import { DocumentHistory } from './history'
 
@@ -15,15 +15,12 @@ export interface GetContextOptions {
     history: DocumentHistory
     prefix: string
     suffix: string
+    contextRange: vscode.Range
     jaccardDistanceWindowSize: number
     maxChars: number
     getCodebaseContext: () => CodebaseContext
     isEmbeddingsContextEnabled?: boolean
     graphContextFetcher?: GraphContextFetcher
-}
-
-export interface GraphContextFetcher {
-    getContextAtPosition(document: vscode.TextDocument, position: vscode.Position): ContextSnippet[]
 }
 
 export type ContextSummary = Readonly<{
@@ -39,49 +36,21 @@ export interface GetContextResult {
 }
 
 export async function getContext(options: GetContextOptions): Promise<GetContextResult> {
-    const { maxChars, isEmbeddingsContextEnabled, graphContextFetcher } = options
+    const graphContext = await getContextFromGraph(options)
+    // When we have graph matches, use it exclusively for the context
+    // TODO(philipp-spiess): Do we want to mix this with local context?
+    if (graphContext) {
+        return graphContext
+    }
+
+    const { maxChars, isEmbeddingsContextEnabled } = options
     const start = performance.now()
 
     /**
      * The embeddings context is sync to retrieve to keep the completions latency minimal. If it's
      * not available in cache yet, we'll retrieve it in the background and cache it for future use.
      */
-    const embeddingsMatches =
-        isEmbeddingsContextEnabled && !graphContextFetcher ? getContextFromEmbeddings(options) : []
-    const graphMatches = graphContextFetcher
-        ? graphContextFetcher.getContextAtPosition(options.document, options.position)
-        : []
-
-    // When we have graph matches, use it exclusively for the context
-    // TODO(philipp-spiess): Do we want to mix this with local context?
-    if (graphMatches.length > 0) {
-        const context: ContextSnippet[] = []
-        let totalChars = 0
-        let includedGraphMatches = 0
-        for (const match of graphMatches) {
-            if (totalChars + match.content.length > maxChars) {
-                continue
-            }
-            context.push(match)
-            totalChars += match.content.length
-            includedGraphMatches++
-        }
-
-        logDebug(
-            'GraphContext:autocomplete',
-            `Added ${includedGraphMatches} graph matches for ${options.document.fileName}`,
-            { verbose: graphMatches }
-        )
-
-        return {
-            context,
-            logSummary: {
-                graph: includedGraphMatches,
-                duration: performance.now() - start,
-            },
-        }
-    }
-
+    const embeddingsMatches = isEmbeddingsContextEnabled ? getContextFromEmbeddings(options) : []
     const localMatches = await getContextFromCurrentEditor(options)
 
     /**

@@ -6,6 +6,7 @@ import { DOTCOM_URL, isDotCom } from '../environments'
 
 import {
     CURRENT_SITE_CODY_LLM_CONFIGURATION,
+    CURRENT_SITE_CODY_LLM_PROVIDER,
     CURRENT_SITE_GRAPHQL_FIELDS_QUERY,
     CURRENT_SITE_HAS_CODY_ENABLED_QUERY,
     CURRENT_SITE_IDENTIFICATION,
@@ -55,6 +56,14 @@ interface CurrentUserIdResponse {
 
 interface CurrentUserIdHasVerifiedEmailResponse {
     currentUser: { id: string; hasVerifiedEmail: boolean } | null
+}
+
+interface CodyLLMSiteConfigurationResponse {
+    site: { codyLLMConfiguration: Omit<CodyLLMSiteConfiguration, 'provider'> | null } | null
+}
+
+interface CodyLLMSiteConfigurationProviderResponse {
+    site: { codyLLMConfiguration: Pick<CodyLLMSiteConfiguration, 'provider'> | null } | null
 }
 
 interface RepositoryIdResponse {
@@ -140,6 +149,7 @@ export interface CodyLLMSiteConfiguration {
     fastChatModelMaxTokens?: number
     completionModel?: string
     completionModelMaxTokens?: number
+    provider?: string
 }
 
 interface IsContextRequiredForChatQueryResponse {
@@ -187,6 +197,16 @@ export interface event {
 type GraphQLAPIClientConfig = Pick<ConfigurationWithAccessToken, 'serverEndpoint' | 'accessToken' | 'customHeaders'> &
     Pick<Partial<ConfigurationWithAccessToken>, 'telemetryLevel'>
 
+export let customUserAgent: string | undefined
+export function addCustomUserAgent(headers: Headers): void {
+    if (customUserAgent) {
+        headers.set('User-Agent', customUserAgent)
+    }
+}
+export function setUserAgent(newUseragent: string): void {
+    customUserAgent = newUseragent
+}
+
 export class SourcegraphGraphQLAPIClient {
     private dotcomUrl = DOTCOM_URL
     constructor(private config: GraphQLAPIClientConfig) {}
@@ -202,9 +222,11 @@ export class SourcegraphGraphQLAPIClient {
     public async getSiteVersion(): Promise<string | Error> {
         return this.fetchSourcegraphAPI<APIResponse<SiteVersionResponse>>(CURRENT_SITE_VERSION_QUERY, {}).then(
             response =>
-                extractDataOrError(response, data =>
-                    // Example values: "5.1.0" or "222587_2023-05-30_5.0-39cbcf1a50f0" for insider builds
-                    data.site?.productVersion ? data.site?.productVersion : new Error('site version not found')
+                extractDataOrError(
+                    response,
+                    data =>
+                        // Example values: "5.1.0" or "222587_2023-05-30_5.0-39cbcf1a50f0" for insider builds
+                        data.site?.productVersion ?? new Error('site version not found')
                 )
         )
     }
@@ -262,9 +284,28 @@ export class SourcegraphGraphQLAPIClient {
     }
 
     public async getCodyLLMConfiguration(): Promise<undefined | CodyLLMSiteConfiguration | Error> {
-        const response = await this.fetchSourcegraphAPI<APIResponse<any>>(CURRENT_SITE_CODY_LLM_CONFIGURATION)
+        // fetch Cody LLM provider separately for backward compatability
+        const [configResponse, providerResponse] = await Promise.all([
+            this.fetchSourcegraphAPI<APIResponse<CodyLLMSiteConfigurationResponse>>(
+                CURRENT_SITE_CODY_LLM_CONFIGURATION
+            ),
+            this.fetchSourcegraphAPI<APIResponse<CodyLLMSiteConfigurationProviderResponse>>(
+                CURRENT_SITE_CODY_LLM_PROVIDER
+            ),
+        ])
 
-        return extractDataOrError(response, data => data.site?.codyLLMConfiguration)
+        const config = extractDataOrError(configResponse, data => data.site?.codyLLMConfiguration || undefined)
+        if (!config || isError(config)) {
+            return config
+        }
+
+        let provider: string | undefined
+        const llmProvider = extractDataOrError(providerResponse, data => data.site?.codyLLMConfiguration?.provider)
+        if (llmProvider && !isError(llmProvider)) {
+            provider = llmProvider
+        }
+
+        return { ...config, provider }
     }
 
     public async getRepoIds(names: string[]): Promise<{ id: string; name: string }[] | Error> {
@@ -484,6 +525,7 @@ export class SourcegraphGraphQLAPIClient {
         if (this.config.accessToken) {
             headers.set('Authorization', `token ${this.config.accessToken}`)
         }
+        addCustomUserAgent(headers)
 
         const url = buildGraphQLUrl({ request: query, baseUrl: this.config.serverEndpoint })
         return fetch(url, {
@@ -499,9 +541,12 @@ export class SourcegraphGraphQLAPIClient {
     // make an anonymous request to the dotcom API
     private fetchSourcegraphDotcomAPI<T>(query: string, variables: Record<string, any>): Promise<T | Error> {
         const url = buildGraphQLUrl({ request: query, baseUrl: this.dotcomUrl.href })
+        const headers = new Headers()
+        addCustomUserAgent(headers)
         return fetch(url, {
             method: 'POST',
             body: JSON.stringify({ query, variables }),
+            headers,
         })
             .then(verifyResponseCode)
             .then(response => response.json() as T)
@@ -511,11 +556,14 @@ export class SourcegraphGraphQLAPIClient {
     // make an anonymous request to the Testing API
     private fetchSourcegraphTestingAPI<T>(body: Record<string, any>): Promise<T | Error> {
         const url = 'http://localhost:49300/.api/testLogging'
+        const headers = new Headers({
+            'Content-Type': 'application/json',
+        })
+        addCustomUserAgent(headers)
+
         return fetch(url, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
+            headers,
             body: JSON.stringify(body),
         })
             .then(verifyResponseCode)

@@ -63,15 +63,17 @@ export const Transcript: React.FunctionComponent<
     ChatButtonComponent,
     isTranscriptError,
 }) {
-    // Scroll down whenever a new human message is received as input.
+    // Scroll the last human message to the top whenever a new human message is received as input.
     const transcriptContainerRef = useRef<HTMLDivElement>(null)
     const scrollAnchoredContainerRef = useRef<HTMLDivElement>(null)
+    const lastHumanMessageTopRef = useRef<HTMLDivElement>(null)
     const humanMessageCount = transcript.filter(message => message.speaker === 'human').length
     useEffect(() => {
         if (transcriptContainerRef.current) {
-            transcriptContainerRef.current?.scrollTo({
-                top: transcriptContainerRef.current.scrollHeight,
-                behavior: 'smooth',
+            lastHumanMessageTopRef.current?.scrollIntoView({
+                behavior: 'auto',
+                block: 'start',
+                inline: 'nearest',
             })
         }
     }, [humanMessageCount, transcriptContainerRef])
@@ -95,9 +97,10 @@ export const Transcript: React.FunctionComponent<
                         continue
                     }
                     if (wasIntersecting && !entry.isIntersecting) {
-                        root.scrollTo({
-                            top: root.scrollHeight,
-                            behavior: 'smooth',
+                        lastHumanMessageTopRef.current?.scrollIntoView({
+                            behavior: 'auto',
+                            block: 'start',
+                            inline: 'nearest',
                         })
                     }
                     wasIntersecting = entry.isIntersecting
@@ -114,41 +117,59 @@ export const Transcript: React.FunctionComponent<
         }
     }, [transcriptContainerRef, scrollAnchoredContainerRef])
 
+    const lastHumanMessageIndex = transcript.findLastIndex(
+        message => message.speaker === 'human' && message.displayText !== undefined
+    )
+    let earlierMessages: ChatMessage[] = []
+    let lastInteractionMessages = transcript
+    if (lastHumanMessageIndex !== -1) {
+        earlierMessages = transcript.slice(0, lastHumanMessageIndex)
+        lastInteractionMessages = transcript.slice(lastHumanMessageIndex)
+    }
+
+    const messageToTranscriptItem =
+        (offset: number) =>
+        (message: ChatMessage, index: number): JSX.Element | null => {
+            if (!message?.displayText) {
+                return null
+            }
+            return (
+                <TranscriptItem
+                    // eslint-disable-next-line react/no-array-index-key
+                    key={index + offset}
+                    message={message}
+                    inProgress={false}
+                    beingEdited={index > 0 && transcript.length - index === 2 && messageBeingEdited}
+                    setBeingEdited={setMessageBeingEdited}
+                    fileLinkComponent={fileLinkComponent}
+                    symbolLinkComponent={symbolLinkComponent}
+                    codeBlocksCopyButtonClassName={codeBlocksCopyButtonClassName}
+                    codeBlocksInsertButtonClassName={codeBlocksInsertButtonClassName}
+                    transcriptItemClassName={transcriptItemClassName}
+                    humanTranscriptItemClassName={humanTranscriptItemClassName}
+                    transcriptItemParticipantClassName={transcriptItemParticipantClassName}
+                    transcriptActionClassName={transcriptActionClassName}
+                    textAreaComponent={textAreaComponent}
+                    EditButtonContainer={EditButtonContainer}
+                    editButtonOnSubmit={editButtonOnSubmit}
+                    showEditButton={index > 0 && transcript.length - index === 2}
+                    FeedbackButtonsContainer={FeedbackButtonsContainer}
+                    feedbackButtonsOnSubmit={feedbackButtonsOnSubmit}
+                    copyButtonOnSubmit={copyButtonOnSubmit}
+                    showFeedbackButtons={index !== 0 && !isTranscriptError}
+                    submitButtonComponent={submitButtonComponent}
+                    chatInputClassName={chatInputClassName}
+                    ChatButtonComponent={ChatButtonComponent}
+                />
+            )
+        }
+
     return (
         <div ref={transcriptContainerRef} className={classNames(className, styles.container)}>
             <div ref={scrollAnchoredContainerRef} className={classNames(styles.scrollAnchoredContainer)}>
-                {transcript.map(
-                    (message, index) =>
-                        message?.displayText && (
-                            <TranscriptItem
-                                // eslint-disable-next-line react/no-array-index-key
-                                key={index}
-                                message={message}
-                                inProgress={false}
-                                beingEdited={index > 0 && transcript.length - index === 2 && messageBeingEdited}
-                                setBeingEdited={setMessageBeingEdited}
-                                fileLinkComponent={fileLinkComponent}
-                                symbolLinkComponent={symbolLinkComponent}
-                                codeBlocksCopyButtonClassName={codeBlocksCopyButtonClassName}
-                                codeBlocksInsertButtonClassName={codeBlocksInsertButtonClassName}
-                                transcriptItemClassName={transcriptItemClassName}
-                                humanTranscriptItemClassName={humanTranscriptItemClassName}
-                                transcriptItemParticipantClassName={transcriptItemParticipantClassName}
-                                transcriptActionClassName={transcriptActionClassName}
-                                textAreaComponent={textAreaComponent}
-                                EditButtonContainer={EditButtonContainer}
-                                editButtonOnSubmit={editButtonOnSubmit}
-                                showEditButton={index > 0 && transcript.length - index === 2}
-                                FeedbackButtonsContainer={FeedbackButtonsContainer}
-                                feedbackButtonsOnSubmit={feedbackButtonsOnSubmit}
-                                copyButtonOnSubmit={copyButtonOnSubmit}
-                                showFeedbackButtons={index !== 0 && !isTranscriptError}
-                                submitButtonComponent={submitButtonComponent}
-                                chatInputClassName={chatInputClassName}
-                                ChatButtonComponent={ChatButtonComponent}
-                            />
-                        )
-                )}
+                {earlierMessages.map(messageToTranscriptItem(0))}
+                <div ref={lastHumanMessageTopRef} />
+                {lastInteractionMessages.map(messageToTranscriptItem(earlierMessages.length))}
                 {messageInProgress && messageInProgress.speaker === 'assistant' && (
                     <TranscriptItem
                         message={messageInProgress}

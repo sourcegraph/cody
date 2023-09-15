@@ -8,7 +8,8 @@ import { RateLimitError } from '@sourcegraph/cody-shared/src/sourcegraph-api/err
 import { logDebug } from '../log'
 import { CodyStatusBar } from '../services/StatusBar'
 
-import { getContext, GetContextOptions, GetContextResult, GraphContextFetcher } from './context/context'
+import { getContext, GetContextOptions, GetContextResult } from './context/context'
+import { GraphContextFetcher } from './context/context-graph'
 import { DocumentHistory } from './context/history'
 import { DocumentContext, getCurrentDocContext } from './get-current-doc-context'
 import {
@@ -39,6 +40,12 @@ export interface CodyCompletionItemProviderConfig {
     contextFetcher?: (options: GetContextOptions) => Promise<GetContextResult>
     featureFlagProvider: FeatureFlagProvider
 }
+
+// Only used when the CodyAutocompleteMinimumLatency feature flag is turned on:
+//
+// We don't want to show completions immediately after a user types a character (unless we show the
+// last candidate) to avoid churning the UI too much. Instead, we wait at least
+const MINIMUM_LATENCY_MS = 350
 
 export class InlineCompletionItemProvider implements vscode.InlineCompletionItemProvider {
     private promptChars: number
@@ -106,7 +113,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
 
         logDebug(
             'CodyCompletionProvider:initialized',
-            `${this.config.providerConfig.identifier}/${this.config.providerConfig.model}`
+            [this.config.providerConfig.identifier, this.config.providerConfig.model].join('/')
         )
     }
 
@@ -122,6 +129,12 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
         // Making it optional here to execute multiple suggestion in parallel from the CLI script.
         token?: vscode.CancellationToken
     ): Promise<vscode.InlineCompletionList | null> {
+        const start = performance.now()
+        // We start the request early so that we have a high chance of getting a response before we
+        // need it.
+        const minimumLatencyFlagPromise = this.config.featureFlagProvider.evaluateFeatureFlag(
+            FeatureFlag.CodyAutocompleteMinimumLatency
+        )
         const tracer = this.config.tracer ? createTracerForInvocation(this.config.tracer) : undefined
         const graphContextFetcher = this.config.graphContextFetcher ?? undefined
 
@@ -194,6 +207,14 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
             // we can reuse it if the user types in such a way that it is still valid (such as by typing
             // `ab` if the ghost text suggests `abcd`).
             if (result.source !== InlineCompletionsResultSource.LastCandidate) {
+                const minimumLatencyFlag = await minimumLatencyFlagPromise
+                if (minimumLatencyFlag) {
+                    const delta = performance.now() - start
+                    if (delta < MINIMUM_LATENCY_MS) {
+                        await new Promise(resolve => setTimeout(resolve, MINIMUM_LATENCY_MS - delta))
+                    }
+                }
+
                 this.lastCandidate =
                     result.items.length > 0
                         ? {
@@ -257,9 +278,16 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
     public handleDidAcceptCompletionItem(logId: string, completion: InlineCompletionItem): void {
         // When a completion is accepted, the lastCandidate should be cleared. This makes sure the
         // log id is never reused if the completion is accepted.
-        this.lastCandidate = undefined
+        this.clearLastCandidate()
 
         CompletionLogger.accept(logId, completion)
+    }
+
+    /**
+     * Should only be used by agent to allow it access to clear the last candidate
+     */
+    public clearLastCandidate(): void {
+        this.lastCandidate = undefined
     }
 
     /**

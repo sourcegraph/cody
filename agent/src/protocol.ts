@@ -40,6 +40,8 @@ export type Requests = {
     'graphql/currentUserId': [null, string]
     'graphql/logEvent': [event, null]
 
+    'graphql/getRepoIdIfEmbeddingExists': [{ repoName: string }, string | null]
+
     // ================
     // Server -> Client
     // ================
@@ -88,6 +90,14 @@ export type Notifications = {
     'textDocument/didClose': [TextDocument]
 
     '$/cancelRequest': [CancelParams]
+    // The user no longer wishes to consider the last autocomplete candidate
+    // and the current autocomplete id should not be reused.
+    'autocomplete/clearLastCandidate': [null]
+
+    // Resets the chat transcript and clears any in-progress interactions.
+    // This notification should be sent when the user starts a new conversation.
+    // The chat transcript grows indefinitely if this notification is never sent.
+    'transcript/reset': [null]
 
     // ================
     // Server -> Client

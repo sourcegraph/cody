@@ -27,6 +27,18 @@ const responses = {
 const FIXUP_PROMPT_TAG = '<selectedCode>'
 const NON_STOP_FIXUP_PROMPT_TAG = '<selection>'
 
+const pubSubClient = new PubSub({
+    projectId: 'sourcegraph-telligent-testing',
+})
+
+const publishOptions = {
+    gaxOpts: {
+        timeout: 120000,
+    },
+}
+
+const topicPublisher = pubSubClient.topic('projects/sourcegraph-telligent-testing/topics/e2e-testing', publishOptions)
+
 // Runs a stub Cody service for testing.
 export async function run<T>(around: () => Promise<T>): Promise<T> {
     const app = express()
@@ -87,42 +99,37 @@ export async function run<T>(around: () => Promise<T>): Promise<T> {
     })
 
     const result = await around()
+
     server.close()
 
     return result
 }
 
 export async function logTestingData(data: string): Promise<void> {
-    // create a pubsub client
-    const pubSubClient = new PubSub({
-        projectId: 'sourcegraph-telligent-testing',
-    })
-
     const message = {
         event: data,
         timestamp: new Date().getTime(),
         test_name: currentTestName,
         test_id: currentTestID,
+        test_run_id: currentTestRunID,
         UID: uuid.v4(),
     }
 
     // Publishes the message as a string
     const dataBuffer = Buffer.from(JSON.stringify(message))
 
-    try {
-        await pubSubClient
-            .topic('projects/sourcegraph-telligent-testing/topics/e2e-testing')
-            .publishMessage({ data: dataBuffer })
-        console.log('Message published.')
-    } catch (error) {
-        console.error('Received error while publishing:', error)
-    }
+    const messageID = await topicPublisher.publishMessage({ data: dataBuffer }).catch(error => {
+        console.error('Error publishing message:', error)
+    })
+    console.log('Message published. ID:', messageID)
 }
 
 let currentTestName: string
 let currentTestID: string
+let currentTestRunID: string
 
-export function sendTestInfo(testName: string, testID: string): void {
+export function sendTestInfo(testName: string, testID: string, testRunID: string): void {
     currentTestName = testName || ''
     currentTestID = testID || ''
+    currentTestRunID = testRunID || ''
 }

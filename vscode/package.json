@@ -268,7 +268,7 @@
       {
         "command": "cody.command.generate-tests",
         "category": "Ask Cody",
-        "title": "Generate Unit Test"
+        "title": "Generate Unit Tests"
       },
       {
         "command": "cody.command.document-code",
@@ -288,7 +288,7 @@
       {
         "command": "cody.auth.signout",
         "category": "Cody",
-        "title": "Sign Out…",
+        "title": "Sign Out",
         "icon": "$(sign-out)"
       },
       {
@@ -488,8 +488,8 @@
       },
       {
         "command": "editor.action.inlineSuggest.trigger",
-        "key": "ctrl+\\",
-        "when": "cody.activated && editorFocus && cody.autocomplete.enabled"
+        "key": "alt+\\",
+        "when": "editorTextFocus && !editorHasSelection && cody.autocomplete.enabled && !inlineSuggestionsVisible"
       }
     ],
     "submenus": [
@@ -878,7 +878,6 @@
             "anthropic",
             "unstable-codegen",
             "unstable-fireworks",
-            "unstable-azure-openai",
             "unstable-openai"
           ],
           "markdownDescription": "The provider used for code autocomplete. Most providers other than `anthropic` require the `cody.autocomplete.advanced.serverEndpoint` and `cody.autocomplete.advanced.accessToken` settings to also be set. Check the Cody output channel for error messages if autocomplete is not working as expected."

@@ -16,7 +16,7 @@ export class DocumentOffsets {
             }
             index++
         }
-        if (this.content.length !== this.lines[this.lines.length - 1]) {
+        if (this.content.length !== this.lines.at(-1)) {
             this.lines.push(this.content.length) // sentinel value
         }
     }

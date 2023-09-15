@@ -5,6 +5,7 @@ import * as vscode from 'vscode'
 import { Client, createClient } from '@sourcegraph/cody-shared/src/chat/client'
 import { registeredRecipes } from '@sourcegraph/cody-shared/src/chat/recipes/agent-recipes'
 import { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/nodeClient'
+import { setUserAgent } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
 
 import { activate } from '../../vscode/src/extension.node'
 
@@ -80,8 +81,10 @@ export class Agent extends MessageHandler {
 
             const extensionConfig = client.extensionConfiguration ?? client.connectionConfiguration
             if (extensionConfig) {
-                this.setClient(extensionConfig)
+                await this.setClient(extensionConfig)
             }
+
+            setUserAgent(`${client?.name} / ${client?.version}`)
 
             const codyClient = await this.client
 
@@ -134,9 +137,7 @@ export class Agent extends MessageHandler {
             vscode_shim.onDidCloseTextDocument.fire(this.workspace.agentTextDocument(document))
         })
 
-        const configurationDidChange = (config: ExtensionConfiguration): void => {
-            this.setClient(config)
-        }
+        const configurationDidChange = (config: ExtensionConfiguration): Promise<void> => this.setClient(config)
 
         this.registerNotification('connectionConfiguration/didChange', configurationDidChange)
         this.registerNotification('extensionConfiguration/didChange', configurationDidChange)
@@ -149,6 +150,14 @@ export class Agent extends MessageHandler {
                 }))
             )
         )
+
+        this.registerNotification('transcript/reset', async () => {
+            const client = await this.client
+            if (!client) {
+                return
+            }
+            client.reset()
+        })
 
         this.registerRequest('recipes/execute', async (data, token) => {
             const client = await this.client
@@ -220,9 +229,26 @@ export class Agent extends MessageHandler {
             await client?.graphqlClient.logEvent(event)
             return null
         })
+
+        this.registerRequest('graphql/getRepoIdIfEmbeddingExists', async ({ repoName }) => {
+            const client = await this.client
+            const result = await client?.graphqlClient.getRepoIdIfEmbeddingExists(repoName)
+            if (result instanceof Error) {
+                console.error('getRepoIdIfEmbeddingExists', result)
+            }
+            return typeof result === 'string' ? result : null
+        })
+
+        this.registerNotification('autocomplete/clearLastCandidate', async () => {
+            const provider = await vscode_shim.completionProvider
+            if (!provider) {
+                console.log('Completion provider is not initialized: unable to clear last candidate')
+            }
+            provider.clearLastCandidate()
+        })
     }
 
-    private setClient(config: ExtensionConfiguration): void {
+    private async setClient(config: ExtensionConfiguration): Promise<void> {
         vscode_shim.setConnectionConfig(config)
         vscode_shim.onDidChangeConfiguration.fire({
             affectsConfiguration: () =>
@@ -234,7 +260,9 @@ export class Agent extends MessageHandler {
             () => {},
             () => {}
         )
+        const oldClient = await this.client
         this.client = createClient({
+            initialTranscript: oldClient?.transcript,
             editor: new AgentEditor(this),
             config: { ...config, useContext: 'embeddings', experimentalLocalSymbols: false },
             setMessageInProgress: messageInProgress => {

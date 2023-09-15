@@ -93,9 +93,9 @@ function isFilePath(token: string): boolean {
         return false
     }
 
-    const lastPart = parts[parts.length - 1]
+    const lastPart = parts.at(-1)
     // Consider token a file path if it is wrapped in an inline markdown code block or has an extension.
-    return isInlineMarkdownCodeBlock || lastPart.includes('.')
+    return isInlineMarkdownCodeBlock || Boolean(lastPart?.includes('.'))
 }
 
 function removeInlineCodeBlockDelimiters(token: string): string {

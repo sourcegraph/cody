@@ -5,7 +5,7 @@ import type { Position as VSCodePosition, TextDocument as VSCodeTextDocument } f
 import { TextDocument } from 'vscode-languageserver-textdocument'
 import Parser, { QueryCapture, QueryMatch } from 'web-tree-sitter'
 
-import { ROOT_PATH } from '@sourcegraph/cody-shared/src/common'
+import { ROOT_PATH } from '@sourcegraph/cody-shared/src/common/paths'
 import { CompletionResponse } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
 
 import { wrapVSCodeTextDocument } from '../testutils/textDocument'

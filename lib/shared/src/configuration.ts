@@ -22,13 +22,7 @@ export interface Configuration {
     experimentalLocalSymbols: boolean
     experimentalSymfPath: string
     experimentalSymfAnthropicKey: string
-    autocompleteAdvancedProvider:
-        | 'anthropic'
-        | 'unstable-codegen'
-        | 'unstable-fireworks'
-        | 'unstable-azure-openai'
-        | 'unstable-openai'
-        | null
+    autocompleteAdvancedProvider: 'anthropic' | 'unstable-codegen' | 'unstable-fireworks' | 'unstable-openai' | null
     autocompleteAdvancedServerEndpoint: string | null
     autocompleteAdvancedModel: string | null
     autocompleteAdvancedAccessToken: string | null
