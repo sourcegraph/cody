@@ -1,7 +1,7 @@
 import { QuickPickItem, window } from 'vscode'
 
 import { CodyPrompt } from '@sourcegraph/cody-shared'
-import { defaultCodyPromptContext } from '@sourcegraph/cody-shared/src/chat/prompts'
+import { CustomCommandType, defaultCodyPromptContext } from '@sourcegraph/cody-shared/src/chat/prompts'
 import { toSlashCommand } from '@sourcegraph/cody-shared/src/chat/prompts/utils'
 
 import { customPromptsContextOptions } from '../utils/menu'
@@ -9,20 +9,31 @@ import { customPromptsContextOptions } from '../utils/menu'
 export interface CodyCommand {
     slashCommand: string
     prompt: CodyPrompt
+    type: CustomCommandType
 }
 export class CustomCommandsBuilderMenu {
     public async start(commands: Map<string, CodyPrompt>): Promise<CodyCommand | null> {
-        // get slash command
         const slashCommand = await this.makeSlashCommand(commands)
-        // get name
-        const description = await this.makeDescription()
-        // build prompt
-        const prompt = await this.makePrompt()
-        if (!slashCommand || !description || !prompt) {
+        if (!slashCommand) {
             return null
         }
-        void window.showInformationMessage('New command added to Cody user settings (~/.vscode/cody.json)')
-        return { slashCommand, prompt: { ...prompt, description, slashCommand } }
+
+        const description = await this.makeDescription()
+        if (!description) {
+            return null
+        }
+
+        const prompt = await this.makePrompt()
+        if (!prompt) {
+            return null
+        }
+
+        const type = await this.makeType()
+        if (!type) {
+            return null
+        }
+
+        return { slashCommand, prompt: { ...prompt, description, slashCommand }, type }
     }
 
     private async makeSlashCommand(commands: Map<string, CodyPrompt>): Promise<string | undefined> {
@@ -35,11 +46,11 @@ export class CustomCommandsBuilderMenu {
                 if (!input) {
                     return 'Slash name cannot be empty.'
                 }
-                if (commands.has(input)) {
-                    return 'A command with the slash name already exists.'
-                }
                 if (input.split(' ').length > 1) {
                     return 'Slash name cannot contain spaces. Use dashes, underscores, or camelCase.'
+                }
+                if (commands.has(toSlashCommand(input))) {
+                    return 'A command with the slash name already exists.'
                 }
                 return
             },
@@ -51,10 +62,10 @@ export class CustomCommandsBuilderMenu {
     }
 
     private async makeDescription(): Promise<string | undefined> {
-        const name = await window.showInputBox({
+        const description = await window.showInputBox({
             title: 'New Custom Cody Command: Description',
-            prompt: 'Enter a description for the command.',
-            placeHolder: 'e.g. Vulnerability Scanner',
+            prompt: 'Enter a description for the command in sentence case.',
+            placeHolder: 'e.g. Scan for vulnerabilities',
             ignoreFocusOut: true,
             validateInput: (input: string) => {
                 if (!input) {
@@ -63,32 +74,28 @@ export class CustomCommandsBuilderMenu {
                 return
             },
         })
-        return name
+        return description
     }
 
     private async makePrompt(): Promise<Omit<CodyPrompt, 'slashCommand'> | null> {
-        // Get the prompt description from the user using the input box
-        const minPromptLength = 3
         const prompt = await window.showInputBox({
             title: 'New Custom Cody Command: Prompt',
             prompt: 'Enter the instructions for Cody to follow and answer.',
             placeHolder: 'e.g. Create five different test cases for the selected code',
             ignoreFocusOut: true,
             validateInput: (input: string) => {
-                if (!input || input.split(' ').length < minPromptLength) {
-                    return `Please enter a prompt with a minimum of ${minPromptLength} words`
+                if (!input) {
+                    return 'Command prompt cannot be empty.'
                 }
                 return null
             },
         })
         if (!prompt) {
-            void window.showErrorMessage('Prompt is required and cannot be empty.')
             return null
         }
         return this.addContext({ prompt })
     }
 
-    // Add context to the command
     private async addContext(
         newPrompt?: Omit<CodyPrompt, 'slashCommand'>
     ): Promise<Omit<CodyPrompt, 'slashCommand'> | null> {
@@ -97,7 +104,6 @@ export class CustomCommandsBuilderMenu {
         }
 
         newPrompt.context = { ...defaultCodyPromptContext }
-        // Get the context types from the user using the quick pick
         const promptContext = await window.showQuickPick(customPromptsContextOptions, {
             title: 'New Custom Cody Command: Context Options',
             placeHolder: 'For accurate responses, choose only the necessary options.',
@@ -130,14 +136,40 @@ export class CustomCommandsBuilderMenu {
 
         return newPrompt
     }
+
+    private async makeType(): Promise<CustomCommandType> {
+        const option = await window.showQuickPick(
+            [
+                {
+                    label: 'User Settings',
+                    detail: 'Stored on your machine and usable across all your workspaces/repositories',
+                    type: 'user',
+                    description: '~/.vscode/cody.json',
+                    picked: true,
+                },
+                {
+                    label: 'Workspace Settings',
+                    detail: 'Project-specific and shared with anyone using this workspace/repository',
+                    type: 'workspace',
+                    description: '.vscode/cody.json',
+                },
+            ],
+            {
+                title: 'New Custom Cody Command: Save To…',
+                ignoreFocusOut: true,
+                placeHolder: 'Choose where to save the command',
+            }
+        )
+
+        return option?.type === 'workspace' ? 'workspace' : 'user'
+    }
 }
 
 async function showPromptCreationInputBox(): Promise<string | void> {
-    // Get the command to run from the user using the input box
     const promptCommand = await window.showInputBox({
         title: 'New Custom Cody Command: Command',
         prompt: 'Enter the terminal command to run from the workspace root. Its output will be included to Cody as prompt context.',
-        placeHolder: 'e.g. git describe --long',
+        placeHolder: 'e.g. node myscript.js | head -n 50',
     })
     return promptCommand
 }

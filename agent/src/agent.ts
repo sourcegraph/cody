@@ -224,6 +224,15 @@ export class Agent extends MessageHandler {
             return null
         })
 
+        this.registerRequest('graphql/getRepoIdIfEmbeddingExists', async ({ repoName }) => {
+            const client = await this.client
+            const result = await client?.graphqlClient.getRepoIdIfEmbeddingExists(repoName)
+            if (result instanceof Error) {
+                console.error('getRepoIdIfEmbeddingExists', result)
+            }
+            return typeof result === 'string' ? result : null
+        })
+
         this.registerNotification('autocomplete/clearLastCandidate', async () => {
             const provider = await vscode_shim.completionProvider
             if (!provider) {

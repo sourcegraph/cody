@@ -15,7 +15,7 @@ export interface LoginInput {
     token: string | null | undefined
 }
 
-export type AuthMenuType = 'signin' | 'signout' | 'switch'
+export type AuthMenuType = 'signin' | 'switch'
 
 function getItemLabel(uri: string, current: boolean): string {
     const icon = current ? '$(check) ' : ''
@@ -37,13 +37,13 @@ export const AuthMenu = async (type: AuthMenuType, historyItems: string[]): Prom
                   ?.map((uri, i) => ({
                       id: uri,
                       label: getItemLabel(uri, type === 'switch' && i === historySize - 1),
-                      description: type === 'signout' && i === 0 ? 'current' : '',
+                      description: '',
                       uri,
                   }))
                   .reverse()
             : []
     const separator = [{ label: type === 'signin' ? 'previously used' : 'current', kind: -1 }]
-    const optionItems = type === 'signout' ? history : [...LoginMenuOptionItems, ...separator, ...history]
+    const optionItems = [...LoginMenuOptionItems, ...separator, ...history]
     const option = (await vscode.window.showQuickPick(optionItems, AuthMenuOptions[type])) as LoginMenuItem
     return option
 }
@@ -88,10 +88,6 @@ export const AuthMenuOptions = {
     signin: {
         title: 'Other Sign in Options',
         placeholder: 'Choose a sign in option',
-    },
-    signout: {
-        title: 'Sign Out',
-        placeHolder: 'Choose instance to sign out',
     },
     switch: {
         title: 'Switch Account',

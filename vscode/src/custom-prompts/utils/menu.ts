@@ -1,7 +1,7 @@
 import { commands, QuickInputButtons, QuickPickItem, ThemeIcon, window } from 'vscode'
 
 import { CodyPrompt } from '@sourcegraph/cody-shared'
-import { CodyPromptType } from '@sourcegraph/cody-shared/src/chat/prompts'
+import { CustomCommandType } from '@sourcegraph/cody-shared/src/chat/prompts'
 
 import { ContextOption } from '.'
 
@@ -35,10 +35,10 @@ const commandsSeparator: QuickPickItem = { kind: -1, label: 'commands' }
 const customCommandsSeparator: QuickPickItem = { kind: -1, label: 'custom commands (experimental)' }
 const configOption: QuickPickItem = { label: 'Configure Custom Commands...' }
 const settingsSeparator: QuickPickItem = { kind: -1, label: 'settings' }
-const addOption: QuickPickItem = { label: 'Create a New Custom User Command...', alwaysShow: true }
+const addOption: QuickPickItem = { label: 'New Custom Command...', alwaysShow: true }
 
 export const recentlyUsedSeparatorAsPrompt: [string, CodyPrompt][] = [
-    ['separator', { prompt: 'separator', type: 'recently used', slashCommand: '' }],
+    ['separator', { prompt: 'separator', slashCommand: '' }],
 ]
 
 export const menu_separators = {
@@ -67,8 +67,8 @@ const workspaceItem: QuickPickItem = {
     description: '.vscode/cody.json',
 }
 
-const openIconButton = { iconPath: new ThemeIcon('go-to-file'), tooltip: 'open/create', id: 'open' }
-const trashIconButton = { iconPath: new ThemeIcon('trash'), tooltip: 'delete', id: 'delete' }
+const openIconButton = { iconPath: new ThemeIcon('go-to-file'), tooltip: 'Open or Create Settings File', id: 'open' }
+const trashIconButton = { iconPath: new ThemeIcon('trash'), tooltip: 'Delete Settings File', id: 'delete' }
 const gearIconButton = { iconPath: new ThemeIcon('gear'), tooltip: 'Configure Custom Commands...', id: 'config' }
 const backIconButton = QuickInputButtons.Back
 
@@ -156,7 +156,7 @@ export async function showcommandTypeQuickPick(
         user: number
         workspace: number
     }
-): Promise<CodyPromptType | null> {
+): Promise<CustomCommandType | null> {
     const options: QuickPickItem[] = []
     const userItem = CustomCommandTypes.user
     const workspaceItem = CustomCommandTypes.workspace
@@ -182,22 +182,20 @@ export async function showcommandTypeQuickPick(
     if (!commandType?.label) {
         return null
     }
-    return (commandType.label.toLowerCase() === 'user' ? 'user' : 'workspace') as CodyPromptType
+    return commandType.label.toLowerCase() === 'user' ? 'user' : 'workspace'
 }
 
 export const CustomCommandConfigMenuItems = [
     {
         kind: 0,
-        label: 'Create a New Custom User Command...',
+        label: 'New Custom Command...',
         id: 'add',
-        type: 'user',
-        description: '',
     },
     { kind: -1, id: 'separator', label: '' },
     {
         kind: 0,
         label: 'Open User Settings (JSON)',
-        detail: 'Stored on your machine and usable across all your workspaces',
+        detail: 'Stored on your machine and usable across all your workspaces/repositories',
         id: 'open',
         type: 'user',
         description: '~/.vscode/cody.json',
@@ -206,14 +204,14 @@ export const CustomCommandConfigMenuItems = [
     {
         kind: 0,
         label: 'Open Workspace Settings (JSON)',
-        detail: 'Project-specific and shared with anyone using this workspace',
+        detail: 'Project-specific and shared with anyone using this workspace/repository',
         id: 'open',
         type: 'workspace',
         description: '.vscode/cody.json',
         buttons: [menu_buttons.open, menu_buttons.trash],
     },
     { kind: -1, id: 'separator', label: '' },
-    { kind: 0, label: 'See Example Commands', id: 'example', type: 'default' },
+    { kind: 0, label: 'Open Custom Commands Documentation', id: 'docs' },
 ]
 
 export async function showAskQuestionQuickPick(): Promise<string> {

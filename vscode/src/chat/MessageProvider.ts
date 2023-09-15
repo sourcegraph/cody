@@ -3,7 +3,7 @@ import * as vscode from 'vscode'
 import { BotResponseMultiplexer } from '@sourcegraph/cody-shared/src/chat/bot-response-multiplexer'
 import { ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
 import { getPreamble } from '@sourcegraph/cody-shared/src/chat/preamble'
-import { CodyPrompt, CodyPromptType } from '@sourcegraph/cody-shared/src/chat/prompts'
+import { CodyPrompt, CustomCommandType } from '@sourcegraph/cody-shared/src/chat/prompts'
 import { newInteraction } from '@sourcegraph/cody-shared/src/chat/prompts/utils'
 import { Recipe, RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 import { Transcript } from '@sourcegraph/cody-shared/src/chat/transcript'
@@ -445,7 +445,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
      * Handle instructions returned from webview in regard to a Cody Command
      * Finds and execute a Cody command
      */
-    public async executeCustomCommand(title: string, type?: CodyPromptType): Promise<void> {
+    public async executeCustomCommand(title: string, type?: CustomCommandType): Promise<void> {
         title = title.trim()
         switch (title) {
             case 'get':
@@ -514,7 +514,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
                 await vscode.commands.executeCommand('cody.fixup.new', { instruction: text })
                 return null
             case /^\/(explain|doc|test|smell)$/.test(text):
-                this.telemetryService.log(`CodyVSCodeExtension:command:${commandKey}:called`, {
+                this.telemetryService.log(`CodyVSCodeExtension:command:${commandKey}:executed`, {
                     source: 'chat',
                 })
             default: {

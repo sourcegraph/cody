@@ -1,9 +1,11 @@
+import { useEffect } from 'react'
+
 import { VSCodeButton } from '@vscode/webview-ui-toolkit/react'
 import classNames from 'classnames'
 
 import { TelemetryService } from '@sourcegraph/cody-shared/src/telemetry'
 
-import { AuthMethod } from '../src/services/OnboardingExperiment'
+import { AuthMethod } from '../src/chat/protocol'
 
 import onboardingSplashImage from './cody-onboarding-splash.svg'
 import signInLogoGitHub from './sign-in-logo-github.svg'
@@ -30,6 +32,9 @@ export const LoginSimplified: React.FunctionComponent<React.PropsWithoutRef<Logi
         telemetryService.log('CodyVSCodeExtension:auth:clickOtherSignInOptions')
         vscodeAPI.postMessage({ command: 'auth', type: 'signin' })
     }
+    useEffect(() => {
+        vscodeAPI.postMessage({ command: 'auth', type: 'simplified-onboarding-exposure' })
+    }, [vscodeAPI])
     return (
         <div className={styles.container}>
             <div className={styles.sectionsContainer}>

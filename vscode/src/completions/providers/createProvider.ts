@@ -7,7 +7,6 @@ import { CodeCompletionsClient } from '../client'
 
 import { createProviderConfig as createAnthropicProviderConfig } from './anthropic'
 import { ProviderConfig } from './provider'
-import { createProviderConfig as createUnstableAzureOpenAiProviderConfig } from './unstable-azure-openai'
 import { createProviderConfig as createUnstableCodeGenProviderConfig } from './unstable-codegen'
 import { createProviderConfig as createUnstableFireworksProviderConfig } from './unstable-fireworks'
 import { createProviderConfig as createUnstableOpenAIProviderConfig } from './unstable-openai'
@@ -45,28 +44,6 @@ export async function createProviderConfig(
                     'Provider `unstable-codegen` can not be used without configuring `cody.autocomplete.advanced.serverEndpoint`.'
                 )
                 return null
-            }
-            case 'unstable-azure-openai': {
-                if (config.autocompleteAdvancedServerEndpoint === null) {
-                    logError(
-                        'createProviderConfig',
-                        'Provider `unstable-azure-openai` can not be used without configuring `cody.autocomplete.advanced.serverEndpoint`.'
-                    )
-                    return null
-                }
-
-                if (config.autocompleteAdvancedAccessToken === null) {
-                    logError(
-                        'createProviderConfig',
-                        'Provider `unstable-azure-openai` can not be used without configuring `cody.autocomplete.advanced.accessToken`.'
-                    )
-                    return null
-                }
-
-                return createUnstableAzureOpenAiProviderConfig({
-                    serverEndpoint: config.autocompleteAdvancedServerEndpoint,
-                    accessToken: config.autocompleteAdvancedAccessToken,
-                })
             }
             case 'unstable-openai': {
                 return createUnstableOpenAIProviderConfig({

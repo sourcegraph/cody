@@ -2,7 +2,7 @@ import * as vscode from 'vscode'
 
 import {
     CodyPrompt,
-    CodyPromptType,
+    CustomCommandType,
     defaultCodyPromptContext,
     MyPrompts,
 } from '@sourcegraph/cody-shared/src/chat/prompts'
@@ -115,7 +115,6 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
      * then set it as the prompt in progress
      *
      * @param id - The id/name of the command
-     * @param isSlash - Whether this is a slash command
      *
      * @returns The prompt text for the command if found, empty string otherwise
      */
@@ -341,9 +340,8 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
      * Menu with an option to add a new command via UI and save it to user's cody.json file
      */
     public async configMenu(lastMenu?: string): Promise<void> {
-        const promptSize = this.custom.promptSize.user + this.custom.promptSize.workspace
         const selected = await showCommandConfigMenu()
-        const action = promptSize === 0 ? 'file' : selected?.id
+        const action = selected?.id
         if (!selected || !action) {
             return
         }
@@ -363,18 +361,13 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
                 break
             }
             case 'add': {
-                if (selected?.type === 'workspace') {
-                    const wsFileAction = this.custom.promptSize.workspace === 0 ? 'file' : 'open'
-                    await this.config(wsFileAction, 'workspace')
-                    break
-                }
-                await this.config(action, selected?.type)
+                await this.config(action)
                 break
             }
             case 'list':
                 await this.customCommandMenu()
                 break
-            case 'example':
+            case 'docs':
                 await openCustomCommandDocsLink()
                 break
         }
@@ -386,7 +379,7 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
      * Config file controller
      * handles operations on config files for user and workspace commands
      */
-    public async config(action: string, fileType: CodyPromptType): Promise<void> {
+    public async config(action: string, fileType?: CustomCommandType): Promise<void> {
         switch (action) {
             case 'delete':
                 if ((await showRemoveConfirmationInput()) !== 'Yes') {
@@ -399,7 +392,9 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
                 await this.custom.createConfig(fileType)
                 break
             case 'open':
-                await this.open(fileType)
+                if (fileType) {
+                    await this.open(fileType)
+                }
                 break
             case 'add':
                 await this.addNewUserCommandQuick()
@@ -419,8 +414,20 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
             return
         }
         // Save the prompt to the current Map and Extension storage
-        await this.custom.save(newCommand.slashCommand, newCommand.prompt)
+        await this.custom.save(newCommand.slashCommand, newCommand.prompt, false, newCommand.type)
         await this.refresh()
+        // Notify user
+        const buttonTitle = `Open ${newCommand.type === 'user' ? 'User' : 'Workspace'} Settings (JSON)`
+        void vscode.window
+            .showInformationMessage(
+                `New ${newCommand.slashCommand} command saved to ${newCommand.type} settings`,
+                buttonTitle
+            )
+            .then(async choice => {
+                if (choice === buttonTitle) {
+                    await this.custom.openConfig(newCommand.type)
+                }
+            })
 
         logDebug('CommandsController:updateUserCommandQuick:newPrompt:', 'saved', { verbose: newCommand })
     }

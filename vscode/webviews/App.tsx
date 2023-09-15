@@ -7,8 +7,14 @@ import { CodyPrompt } from '@sourcegraph/cody-shared/src/chat/prompts'
 import { ChatHistory, ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { Configuration } from '@sourcegraph/cody-shared/src/configuration'
 
-import { AuthStatus, defaultAuthStatus, Experiments, LocalEnv } from '../src/chat/protocol'
-import { AuthMethod, OnboardingExperimentArm } from '../src/services/OnboardingExperiment'
+import {
+    AuthMethod,
+    AuthStatus,
+    defaultAuthStatus,
+    Experiments,
+    LocalEnv,
+    OnboardingExperimentArm,
+} from '../src/chat/protocol'
 
 import { Chat } from './Chat'
 import { LoadingPage } from './LoadingPage'
