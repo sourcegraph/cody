@@ -1,7 +1,7 @@
 import { VSCodeButton, VSCodeLink } from '@vscode/webview-ui-toolkit/react'
 import classNames from 'classnames'
 
-import noticeStyles from './Notice.module.css'
+import styles from './InstallCodyAppNotice.module.css'
 
 interface InstallCodyNoticeProps {
     className?: string
@@ -10,7 +10,7 @@ interface InstallCodyNoticeProps {
     linkText: React.ReactNode
     linkHref: string
     linkTarget?: '_blank' | undefined
-    actionButtons?: React.ReactNode[]
+    actionButtons?: React.ReactNode
     onDismiss: () => void
 }
 
@@ -24,23 +24,25 @@ export const InstallCodyAppNotice: React.FunctionComponent<React.PropsWithChildr
     actionButtons,
     onDismiss,
 }) => (
-    <div className={classNames(noticeStyles.notice, className)}>
-        <div className={noticeStyles.noticeText}>
-            <h1>{title}</h1>
-            {text && <p>{text}</p>}
-            {linkText && linkHref && (
-                <p>
-                    <VSCodeLink href={linkHref} target={linkTarget}>
-                        {linkText}
-                    </VSCodeLink>
-                </p>
-            )}
+    <div className={classNames(styles.notice, className)}>
+        <div className={styles.row}>
+            <div className={styles.noticeText}>
+                <h1>{title}</h1>
+                {text && <p>{text}</p>}
+                {linkText && linkHref && (
+                    <p>
+                        <VSCodeLink href={linkHref} target={linkTarget}>
+                            {linkText}
+                        </VSCodeLink>
+                    </p>
+                )}
+            </div>
+            <div className={styles.noticeClose}>
+                <VSCodeButton appearance="icon" onClick={onDismiss}>
+                    <i className="codicon codicon-close" />
+                </VSCodeButton>
+            </div>
         </div>
-        {actionButtons && <div>{...actionButtons}</div>}
-        <div className={noticeStyles.noticeClose}>
-            <VSCodeButton appearance="icon" onClick={onDismiss}>
-                <i className="codicon codicon-close" />
-            </VSCodeButton>
-        </div>
+        {actionButtons && <div className={classNames(styles.actionButtonContainer, styles.row)}>{actionButtons}</div>}
     </div>
 )

@@ -23,7 +23,12 @@ export const InstallCodyAppNoticeStory: StoryObj<typeof InstallCodyAppNotice> = 
                 text="You can increase the quality of Cody's chat and autocomplete by installing the Cody desktop app."
                 linkText="Learn more"
                 linkHref="https://docs.sourcegraph.com/cody/overview/app"
-                actionButtons={[<VSCodeButton>Install Cody App</VSCodeButton>, <VSCodeButton>Reload</VSCodeButton>]}
+                actionButtons={
+                    <>
+                        <VSCodeButton>Install Cody App</VSCodeButton>
+                        <VSCodeButton>Reload</VSCodeButton>
+                    </>
+                }
                 onDismiss={() => {}}
             />
         </div>

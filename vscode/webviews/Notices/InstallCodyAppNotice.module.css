@@ -8,11 +8,23 @@
     border: 1px solid var(--vscode-widget-border);
     box-shadow: 0 0 8px 2px var(--vscode-widget-shadow);
     border-radius: 6px;
+}
 
+.row {
     display: flex;
     flex-direction: row;
     gap: 4px;
 }
+
+.actionButtonContainer {
+    gap: 20px;
+    text-transform: uppercase;
+    background: green;
+    border: 2px dashed gold;
+    margin-top: 7em;
+}
+
+/* TODO: remove the unused styles below */
 
 /* When there's no notices we don't want the container taking up space and capturing clicks */
 .notice:empty {
