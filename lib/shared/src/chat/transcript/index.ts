@@ -107,7 +107,7 @@ export class Transcript {
     }
 
     public getLastInteraction(): Interaction | null {
-        return this.interactions.length > 0 ? this.interactions[this.interactions.length - 1] : null
+        return this.interactions.length > 0 ? this.interactions.at(-1)! : null
     }
 
     public removeLastInteraction(): void {
@@ -217,7 +217,7 @@ export class Transcript {
         if (this.interactions.length === 0) {
             throw new Error('Cannot set context files for empty transcript')
         }
-        this.interactions[this.interactions.length - 1].setUsedContext(contextFiles, preciseContexts)
+        this.interactions.at(-1)!.setUsedContext(contextFiles, preciseContexts)
     }
 
     public toChat(): ChatMessage[] {

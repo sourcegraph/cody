@@ -212,9 +212,11 @@ export class SourcegraphGraphQLAPIClient {
     public async getSiteVersion(): Promise<string | Error> {
         return this.fetchSourcegraphAPI<APIResponse<SiteVersionResponse>>(CURRENT_SITE_VERSION_QUERY, {}).then(
             response =>
-                extractDataOrError(response, data =>
-                    // Example values: "5.1.0" or "222587_2023-05-30_5.0-39cbcf1a50f0" for insider builds
-                    data.site?.productVersion ? data.site?.productVersion : new Error('site version not found')
+                extractDataOrError(
+                    response,
+                    data =>
+                        // Example values: "5.1.0" or "222587_2023-05-30_5.0-39cbcf1a50f0" for insider builds
+                        data.site?.productVersion ?? new Error('site version not found')
                 )
         )
     }

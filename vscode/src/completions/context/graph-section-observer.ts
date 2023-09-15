@@ -208,15 +208,15 @@ export class GraphSectionObserver implements vscode.Disposable, GraphContextFetc
             }
         }
 
-        if (!section.preloadedContext) {
+        if (section.preloadedContext) {
+            section.preloadedContext.lastRevalidateAt = Date.now()
+            section.preloadedContext.isStale = false
+        } else {
             section.preloadedContext = {
                 lastRevalidateAt: Date.now(),
                 graphContext: null,
                 isStale: false,
             }
-        } else {
-            section.preloadedContext.lastRevalidateAt = Date.now()
-            section.preloadedContext.isStale = false
         }
 
         debugSubscriber.notify()
@@ -248,7 +248,7 @@ export class GraphSectionObserver implements vscode.Disposable, GraphContextFetc
                 const isSelected =
                     selectedDocument?.uri.toString() === document.uri.toString() &&
                     selections?.some(selection => section.location.range.contains(selection))
-                const isLast = document.sections[document.sections.length - 1] === section
+                const isLast = document.sections.at(-1) === section
                 const isHydrated = !!section.preloadedContext
                 const isStale = section.preloadedContext?.isStale ?? false
 

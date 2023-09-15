@@ -59,7 +59,7 @@ export function populateCurrentEditorContextTemplate(code: string, filePath: str
         (repoName
             ? CURRENT_EDITOR_CODE_TEMPLATE_WITH_REPO.replace('{repoName}', repoName)
             : CURRENT_EDITOR_CODE_TEMPLATE
-        ).replace(/{filePath}/g, filePath) + context
+        ).replaceAll('{filePath}', filePath) + context
     )
 }
 
@@ -84,7 +84,7 @@ export function populateCurrentEditorSelectedContextTemplate(
             : CURRENT_EDITOR_SELECTED_CODE_TEMPLATE
         )
             .replace('{language}', languageName)
-            .replace(/{filePath}/g, filePath) + context
+            .replaceAll('{filePath}', filePath) + context
     )
 }
 
@@ -143,7 +143,7 @@ export function populateCurrentSelectedCodeContextTemplate(code: string, filePat
             : SELECTED_CODE_CONTEXT_TEMPLATE
     )
         .replace('{code}', code)
-        .replace(/{filePath}/g, filePath)
+        .replaceAll('{filePath}', filePath)
         .replace('{languageName}', languageName)
 }
 
@@ -162,7 +162,7 @@ export function populateCurrentFileFromEditorSelectionContextTemplate(
     const truncatedFollowingText = truncateText(selection.followingText, surroundingTextLength)
 
     const fileContext = CURRENT_FILE_CONTEXT_TEMPLATE.replace('{languageName}', languageName)
-        .replace(/{filePath}/g, filePath)
+        .replaceAll('{filePath}', filePath)
         .replace('{followingText}', truncatedFollowingText)
         .replace('{selectedText}', truncatedSelectedText)
         .replace('{precedingText}', truncatedPrecedingText)

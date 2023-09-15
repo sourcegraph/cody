@@ -102,24 +102,26 @@ export const App: React.FunctionComponent = () => {
                 <Settings config={config} setConfig={setConfig} />
             </header>
             <main className={styles.main}>
-                {!client ? (
-                    <>Loading...</>
-                ) : isErrorLike(client) ? (
-                    <p>Error: {client.message}</p>
+                {client ? (
+                    isErrorLike(client) ? (
+                        <p>Error: {client.message}</p>
+                    ) : (
+                        <>
+                            <Chat
+                                messageInProgress={messageInProgress}
+                                transcript={transcript}
+                                contextStatus={{ codebase: config.codebase }}
+                                formInput={formInput}
+                                setFormInput={setFormInput}
+                                inputHistory={inputHistory}
+                                setInputHistory={setInputHistory}
+                                isCodyEnabled={true}
+                                onSubmit={onSubmit}
+                            />
+                        </>
+                    )
                 ) : (
-                    <>
-                        <Chat
-                            messageInProgress={messageInProgress}
-                            transcript={transcript}
-                            contextStatus={{ codebase: config.codebase }}
-                            formInput={formInput}
-                            setFormInput={setFormInput}
-                            inputHistory={inputHistory}
-                            setInputHistory={setInputHistory}
-                            isCodyEnabled={true}
-                            onSubmit={onSubmit}
-                        />
-                    </>
+                    <>Loading...</>
                 )}
             </main>
         </div>

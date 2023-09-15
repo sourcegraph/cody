@@ -65,7 +65,7 @@ export const Login: React.FunctionComponent<React.PropsWithChildren<LoginProps>>
     const isOSSupported = isOsSupportedByApp(appOS, appArch)
 
     const title = isAppInstalled ? (isAppRunning ? 'Connect with Cody App' : 'Cody App Not Running') : 'Get Started'
-    const openMsg = !isAppInstalled ? APP_DESC.getStarted : !isAppRunning ? APP_DESC.notRunning : APP_DESC.connectApp
+    const openMsg = isAppInstalled ? (isAppRunning ? APP_DESC.connectApp : APP_DESC.notRunning) : APP_DESC.getStarted
 
     const AppConnect: React.FunctionComponent = () => (
         <section className={classNames(styles.section, isOSSupported ? styles.codyGradient : styles.greyGradient)}>

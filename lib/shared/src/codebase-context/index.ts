@@ -288,7 +288,7 @@ function mergeConsecutiveResults(results: EmbeddingsSearchResult[]): string[] {
         const previousResult = sortedResults[i - 1]
 
         if (result.startLine === previousResult.endLine) {
-            mergedResults[mergedResults.length - 1] = mergedResults[mergedResults.length - 1] + result.content
+            mergedResults[mergedResults.length - 1] = mergedResults.at(-1)! + result.content
         } else {
             mergedResults.push(result.content)
         }

@@ -24,7 +24,7 @@ export function dirname(path: string): string {
  * Returns the last element of path, or "." if path is empty.
  */
 export function basename(path: string): string {
-    return path.split('/').slice(-1)[0] || '.'
+    return path.split('/').at(-1) || '.'
 }
 
 export function pluralize(string: string, count: number | bigint, plural = string + 's'): string {
@@ -58,5 +58,5 @@ export const escapeMarkdown = (text: string): string => {
  * The order of the filtered array is not guaranteed to be related to the input ordering.
  */
 export const dedupeWith = <T>(items: T[], key: keyof T | ((item: T) => string)): T[] => [
-    ...new Map(items.map(item => [typeof key !== 'function' ? item[key] : key(item), item])).values(),
+    ...new Map(items.map(item => [typeof key === 'function' ? key(item) : item[key], item])).values(),
 ]

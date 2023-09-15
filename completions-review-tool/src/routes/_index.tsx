@@ -128,16 +128,16 @@ function renderMarkdown(code: string) {
         const truncatedSuffix = splitSuffix.slice(0, 15).join('\n')
 
         truncatedCode =
-            (truncatedPrefix !== prefix ? '// Prefix truncated\n' : '') +
+            (truncatedPrefix === prefix ? '' : '// Prefix truncated\n') +
             truncatedPrefix +
             '🔥' +
             truncatedSuffix +
-            (truncatedSuffix !== suffix ? '\n// Suffix truncated' : '')
+            (truncatedSuffix === suffix ? '' : '\n// Suffix truncated')
     }
 
     return marked(
         `\`\`\`javascript
-${truncatedCode.replace(/\\/g, '\\\\')}
+${truncatedCode.replaceAll(/\\/, '\\\\')}
 \`\`\``,
         { gfm: true }
     )
