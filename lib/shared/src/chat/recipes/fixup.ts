@@ -72,7 +72,7 @@ export class Fixup implements Recipe {
         if (intent === 'edit') {
             const newRange = await this.getReformedRange(originalFixupTask, context)
             if (newRange) {
-                fixupController.setEditRange(taskId, newRange)
+                const result = await fixupController.setEditRange(taskId, newRange)
                 newFixupTask = await fixupController.getTaskRecipeData(taskId)
             }
         }

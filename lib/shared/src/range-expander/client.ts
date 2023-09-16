@@ -14,14 +14,23 @@ export class SourcegraphFixupRangeExpander implements RangeExpander {
         const completionsClient = this.completionsClient
 
         const precedingText = this.addLineNumbersToPrecedingText(task.precedingText, selectionRange)
-        const trimmedprecedingText = (precedingText: string): string => precedingText.split('\n').slice(20).join('\n')
+
+        const trimmedprecedingText = (precedingText: string): string => {
+            const lines = precedingText.split('\n')
+            return lines.length > 40 ? lines.slice(20).join('\n') : precedingText
+        }
+
         const followingText = this.addLineNumbersToFollowingText(task.followingText, selectionRange)
-        const trimLast20Lines = (followingText: string): string => followingText.split('\n').slice(0, -20).join('\n')
+
+        const trimLast20Lines = (followingText: string): string => {
+            const lines = followingText.split('\n')
+            return lines.length > 40 ? lines.slice(0, -20).join('\n') : followingText
+        }
         const fullText =
             '"' +
             trimmedprecedingText(precedingText) +
             '\n' +
-            task.selectedText +
+            this.addLineNumbers(task.selectedText, selectionRange.start.line) +
             '\n' +
             trimLast20Lines(followingText) +
             '"'
@@ -72,8 +81,8 @@ export class SourcegraphFixupRangeExpander implements RangeExpander {
 
         const myRange = new vscode.Range(startPosition, endPosition)
 
-        console.log('Result:', result, 'numbers:', numbers)
         console.log('Full text:', fullText)
+        console.log('Result:', result, 'numbers:', numbers)
         return myRange
     }
 
@@ -184,59 +193,22 @@ In Python:
 should return -> complete StartLineNumber: [1], EndLineNumber: [2]\n incomplete StartLineNumber: [3], EndLineNumber: [3]
 
 Now, for the given code:
-"1 Fixup'
-2    public multiplexerTopic = 'selection'
-3
+"
 4    public async getInteraction(taskId: string, context: RecipeContext): Promise<Interaction | null> {
 5        const fixupController = context.editor.controllers?.fixups
 6        if (!fixupController) {
 7            return null
 8        }
-9
-10        const fixupTask = await fixupController.getTaskRecipeData(taskId)
-11        if (!fixupTask) {
-12            await context.editor.showWarningMessage('Select some code to fixup.')
-13            return null
-14        }
-15
-16        const quarterFileContext = Math.floor(MAX_CURRENT_FILE_TOKENS / 4)
-17        if (truncateText(fixupTask.selectedText, quarterFileContext * 2) !== fixupTask.selectedText) {
-18            const msg = \"The amount of text selected exceeds Cody's current capacity.\"
-19            await context.editor.showWarningMessage(msg)
-20            return null
-21        }
-22
-23        const intent = await this.getIntent(fixupTask, context)
 24        const promptText = this.getPrompt(fixupTask, intent)
 25
 26        return Promise.resolve(
 27            new Interaction(
-28                {
-29                    speaker: 'human',
-30                    text: promptText,
-31                    displayText: '**✨Fixup✨** ' + fixupTask.instruction,
-32                },
-33                {
-34                    speaker: 'assistant',
-35                },
-36                this.getContextFromIntent(intent, fixupTask, quarterFileContext, context),
-37                []
+28
 38            )
 39        )
 40    }
 41
 42    private async getIntent(task: VsCodeFixupTaskRecipeData, context: RecipeContext): Promise<FixupIntent> {
-43        if (task.selectedText.trim().length === 0) {
-44            // Nothing selected, assume this is always 'add'.
-45            return 'add'
-46        }
-47
-48        /**
-49         * TODO(umpox): We should probably find a shorter way of detecting intent when possible.
-50         * Possible methods:
-51         * - Input -> Match first word against update|fix|add|delete verbs
-52         * - Context -> Infer intent from context, e.g. Current file is a test -> Test intent, Current selection is a comment symbol -> Documentation intent
-53         */
 54        const intent = await context.intentDetector.classifyIntentFromOptions(
 55            task.instruction,
 56            FixupIntentClassification,
@@ -245,14 +217,7 @@ Now, for the given code:
 59        return intent
 60    }
 61
-62    public getPrompt(task: VsCodeFixupTaskRecipeData, intent: FixupIntent): string {
-63        if (intent === 'add') {
-64            return Fixup.addPrompt
-65                .replace('{precedingText}', task.precedingText)
-66                .replace('{humanInput}', task.instruction)
-67                .replace('{fileName}', task.fileName)
-68        }
-69
+62    public getPrompt(task: VsCodeFixupTaskRecipeData): string {
 70        const promptInstruction = truncateText(task.instruction, MAX_HUMAN_INPUT"
 Please identify all  functions and provide their starting and ending line numbers in the format:
 <FunctionName> StartLineNumber: [LineNumber], EndLineNumber: [LineNumber]
@@ -269,53 +234,18 @@ Given the following code snippet:
 1    constructor(options: MessageProviderOptions) {
     2        super()
     3
-    4        if (TestSupport.instance) {
-    5            TestSupport.instance.messageProvider.set(this)
-    6        }
-    7
-    8        this.chat = options.chat
-    9        this.intentDetector = options.intentDetector
-    10        this.rangeExpander = options.rangeExpander
-    11        this.guardrails = options.guardrails
-    12        this.editor = options.editor
-    13        this.authProvider = options.authProvider
-    14        this.contextProvider = options.contextProvider
-    15        this.telemetryService = options.telemetryService
-    16        this.platform = options.platform
-    17
-    18        // chat id is used to identify chat session
-    19        this.createNewChatID()
-    20
-    21        // Listen to configuration changes to possibly enable Custom Commands
     22        this.contextProvider.configurationChangeEvent.event(() => this.sendCodyCommands())
     23    }
     24
     25    protected async init(): Promise<void> {
-    26        this.loadChatHistory()
-    27        this.sendTranscript()
-    28        this.sendHistory()
-    29        await this.loadRecentChat()
-    30        await this.contextProvider.init()
     31        await this.sendCodyCommands()
     32    }
     33
     34    public async clearAndRestartSession(): Promise<void> {
-    35        await this.saveTranscriptToChatHistory()
-    36        this.createNewChatID()
-    37        this.cancelCompletion()
-    38        this.isMessageInProgress = false
-    39        this.transcript.reset()
-    40        this.handleSuggestions([])
-    41        this.sendTranscript()
-    42        this.sendHistory()
     43        this.telemetryService.log('CodyVSCodeExtension:chatReset:executed')
     44    }
     45
     46    public async clearHistory(): Promise<void> {
-    47        MessageProvider.chatHistory = {}
-    48        MessageProvider.inputHistory = []
-    49        await localStorage.removeChatHistory()
-    50        // Reset the current transcript
     51        this.transcript = new Transcript()
 
 Please identify all  functions and provide their starting and ending line numbers in the format:

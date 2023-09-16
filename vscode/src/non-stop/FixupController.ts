@@ -117,7 +117,7 @@ export class FixupController
             return
         }
         // Create vscode Uri from task uri and selection range
-        void vscode.window.showTextDocument(task.fixupFile.uri, { selection: task.selectionRange })
+        void vscode.window.showTextDocument(task.fixupFile.uri, { selection: task.editRange })
     }
 
     // Apply single fixup from task ID. Public for testing.
@@ -147,7 +147,7 @@ export class FixupController
         let diff = task.diff
         if (task.replacement !== undefined && bufferText !== diff?.bufferText) {
             // The buffer changed since we last computed the diff.
-            task.diff = diff = computeDiff(task.original, task.replacement, bufferText, task.selectionRange.start)
+            task.diff = diff = computeDiff(task.original, task.replacement, bufferText, task.editRange.start)
             this.didUpdateDiff(task)
         }
         if (!diff?.clean) {
@@ -187,7 +187,7 @@ export class FixupController
             return
         }
 
-        editor.revealRange(task.selectionRange)
+        editor.revealRange(task.editRange)
         const editOk = await editor.edit(editBuilder => {
             for (const edit of diff.edits) {
                 editBuilder.replace(
@@ -277,13 +277,17 @@ export class FixupController
     /**
      * Sets the task state. Checks the state transition is valid.
      */
-    public setEditRange(taskid: string, newRange: vscode.Range): void {
+    public async setEditRange(taskid: string, newRange: vscode.Range): Promise<void> {
         console.log('I got here finally')
         const task = this.tasks.get(taskid)
         if (!task) {
             return undefined
         }
         task.editRange = newRange
+        const document = await vscode.workspace.openTextDocument(task.fixupFile.uri)
+        const rawSelectedText = document.getText(task.editRange)
+        task.original = rawSelectedText
+        return Promise.resolve()
     }
 
     // Called by the non-stop recipe to gather current state for the task.
@@ -301,13 +305,7 @@ export class FixupController
         )
 
         const rawSelectedText = document.getText(task.editRange)
-        const selectedTextWithLineNumbers = rawSelectedText
-            .split('\n')
-            .map((line, idx) => {
-                const actualLineNumber = task.editRange.start.line + idx + 1 // +1 because line numbers typically start from 1
-                return `${actualLineNumber}: ${line}`
-            })
-            .join('\n')
+        const selectedText = document.getText(task.editRange)
 
         // TODO: original text should be a property of the diff so that we
         // can apply diffs even while re-spinning
@@ -321,7 +319,7 @@ export class FixupController
             instruction: task.instruction,
             fileName: task.fixupFile.uri.fsPath,
             precedingText,
-            selectedText: selectedTextWithLineNumbers,
+            selectedText,
             followingText,
             selectionRange: task.selectionRange,
         }
@@ -434,8 +432,8 @@ export class FixupController
             if (!botText) {
                 continue
             }
-            const bufferText = editor.document.getText(task.selectionRange)
-            task.diff = computeDiff(task.original, botText, bufferText, task.selectionRange.start)
+            const bufferText = editor.document.getText(task.editRange)
+            task.diff = computeDiff(task.original, botText, bufferText, task.editRange.start)
             this.didUpdateDiff(task)
         }
 
@@ -490,7 +488,7 @@ export class FixupController
         const tempDocUri = vscode.Uri.parse(`cody-fixup:${task.fixupFile.uri.fsPath}#${task.id}`)
         const doc = await vscode.workspace.openTextDocument(tempDocUri)
         const edit = new vscode.WorkspaceEdit()
-        const range = task.selectionRange
+        const range = task.editRange
         edit.replace(tempDocUri, range, diff.mergedText)
         await vscode.workspace.applyEdit(edit)
         await doc.save()

@@ -63,7 +63,7 @@ export interface VsCodeFixupTaskRecipeData {
 
 export interface VsCodeFixupController {
     getTaskRecipeData(taskId: string): Promise<VsCodeFixupTaskRecipeData | undefined>
-    setEditRange(taskid: string, newRange: vscode.Range): void
+    setEditRange(taskid: string, newRange: vscode.Range): Promise<void>
 }
 
 export interface VsCodeCommandsController {
