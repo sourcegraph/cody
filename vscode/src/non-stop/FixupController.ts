@@ -278,15 +278,14 @@ export class FixupController
      * Sets the task state. Checks the state transition is valid.
      */
     public async setEditRange(taskid: string, newRange: vscode.Range): Promise<void> {
-        console.log('I got here finally')
         const task = this.tasks.get(taskid)
         if (!task) {
             return undefined
         }
         task.editRange = newRange
         const document = await vscode.workspace.openTextDocument(task.fixupFile.uri)
-        const rawSelectedText = document.getText(task.editRange)
-        task.original = rawSelectedText
+        const originalTextFromNewEditRange = document.getText(task.editRange)
+        task.original = originalTextFromNewEditRange
         return Promise.resolve()
     }
 
@@ -303,13 +302,11 @@ export class FixupController
                 task.editRange.start
             )
         )
-
-        const rawSelectedText = document.getText(task.editRange)
         const selectedText = document.getText(task.editRange)
 
         // TODO: original text should be a property of the diff so that we
         // can apply diffs even while re-spinning
-        task.original = rawSelectedText
+        task.original = selectedText
 
         const followingText = document.getText(
             new vscode.Range(task.editRange.end, task.editRange.end.translate({ lineDelta: 50 }))
