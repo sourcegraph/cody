@@ -75,6 +75,7 @@ export class SourcegraphBrowserCompletionsClient extends SourcegraphCompletionsC
 }
 
 declare const WorkerGlobalScope: never
+// eslint-disable-next-line unicorn/no-typeof-undefined
 const isRunningInWebWorker = typeof WorkerGlobalScope !== 'undefined' && self instanceof WorkerGlobalScope
 
 if (isRunningInWebWorker) {
