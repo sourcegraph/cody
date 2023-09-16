@@ -1,3 +1,5 @@
+import { isEqual } from 'lodash'
+import { expect } from 'vitest'
 import { URI } from 'vscode-uri'
 
 import {
@@ -9,7 +11,7 @@ import { vsCodeMocks } from '../../testutils/mocks'
 import { CodeCompletionsClient } from '../client'
 import { getCurrentDocContext } from '../get-current-doc-context'
 import { getInlineCompletions as _getInlineCompletions, InlineCompletionsParams } from '../getInlineCompletions'
-import { createProviderConfig } from '../providers/anthropic'
+import { createProviderConfig, MULTI_LINE_STOP_SEQUENCES, SINGLE_LINE_STOP_SEQUENCES } from '../providers/anthropic'
 import { RequestManager } from '../request-manager'
 import { documentAndPosition } from '../test-helpers'
 import { SupportedLanguage } from '../tree-sitter/grammars'
@@ -123,3 +125,32 @@ export async function getInlineCompletionsInsertText(
 }
 
 export type V = Awaited<ReturnType<typeof getInlineCompletions>>
+
+expect.extend({
+    /**
+     * Checks if `CompletionParameters[]` contains one item with single-line stop sequences.
+     */
+    toBeSingleLine(requests: CompletionParameters[], _) {
+        const { isNot } = this
+
+        return {
+            pass: requests.length === 1 && isEqual(requests[0]?.stopSequences, SINGLE_LINE_STOP_SEQUENCES),
+            message: () => `Completion requests are${isNot ? ' not' : ''} single-line`,
+            actual: requests.map(r => ({ stopSequences: r.stopSequences })),
+            expected: [{ stopSequences: SINGLE_LINE_STOP_SEQUENCES }],
+        }
+    },
+    /**
+     * Checks if `CompletionParameters[]` contains three items with multi-line stop sequences.
+     */
+    toBeMultiLine(requests: CompletionParameters[], _) {
+        const { isNot } = this
+
+        return {
+            pass: requests.length === 3 && isEqual(requests[0]?.stopSequences, MULTI_LINE_STOP_SEQUENCES),
+            message: () => `Completion requests are${isNot ? ' not' : ''} multi-line`,
+            actual: requests.map(r => ({ stopSequences: r.stopSequences })),
+            expected: Array.from({ length: 3 }).map(() => ({ stopSequences: MULTI_LINE_STOP_SEQUENCES })),
+        }
+    },
+})

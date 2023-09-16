@@ -35,7 +35,7 @@ export function updateRangeMultipleChanges(range: vscode.Range, changes: TextCha
 export function updateRange(range: vscode.Range, change: TextChange): vscode.Range {
     const lines = change.text.split(/\r\n|\r|\n/m)
     const insertedLastLine = lines.at(-1)?.length
-    if (typeof insertedLastLine === 'undefined') {
+    if (insertedLastLine === undefined) {
         throw new TypeError('unreachable') // Any string .split produces a non-empty array.
     }
     const insertedLineBreaks = lines.length - 1

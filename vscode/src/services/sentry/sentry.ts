@@ -38,9 +38,9 @@ export abstract class SentryService {
                 release: extensionDetails.version,
                 environment: this.config.isRunningInsideAgent
                     ? 'agent'
-                    : typeof process !== 'undefined'
-                    ? 'vscode-node'
-                    : 'vscode-web',
+                    : typeof process === 'undefined'
+                    ? 'vscode-web'
+                    : 'vscode-node',
 
                 // In dev mode, have Sentry log extended debug information to the console.
                 debug: !isProd,
