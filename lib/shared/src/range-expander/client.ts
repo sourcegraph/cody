@@ -81,8 +81,6 @@ export class SourcegraphFixupRangeExpander implements RangeExpander {
 
         const myRange = new vscode.Range(startPosition, endPosition)
 
-        console.log('Full text:', fullText)
-        console.log('Result:', result, 'numbers:', numbers)
         return myRange
     }
 

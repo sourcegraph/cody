@@ -23,18 +23,22 @@ export class ContentProvider implements vscode.TextDocumentContentProvider, vsco
         // when the file is opened.
         this._disposables = vscode.workspace.onDidCloseTextDocument(doc => this.deleteByFilePath(doc.uri.fsPath))
     }
+    // Get content from the content store
     public provideTextDocumentContent(uri: vscode.Uri): string | null {
         const id = uri.fragment
         return this.contentStore.get(id) || null
     }
+    // Add to store - store origin content by fixup task id
     public async set(id: string, docUri: vscode.Uri): Promise<void> {
         const doc = await vscode.workspace.openTextDocument(docUri)
         this.contentStore.set(id, doc.getText())
         this.tasksByFilePath.set(docUri.fsPath, [...(this.tasksByFilePath.get(docUri.fsPath) || []), id])
     }
 
+    // Remove by ID
     public delete(id: string): void {
         this.contentStore.delete(id)
+        // remove task from tasksByFilePath
         for (const [filePath, tasks] of this.tasksByFilePath) {
             const index = tasks.indexOf(id)
             if (index > -1) {
