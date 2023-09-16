@@ -1,5 +1,3 @@
-import * as vscode from 'vscode'
-
 import { ContextMessage, getContextMessageWithResponse } from '../../codebase-context/messages'
 import { VsCodeFixupTaskRecipeData } from '../../editor'
 import { IntentClassificationOption } from '../../intent-detector'
@@ -68,39 +66,34 @@ export class Fixup implements Recipe {
         }
 
         const intent = await this.getIntent(originalFixupTask, context)
-        let newFixupTask: VsCodeFixupTaskRecipeData | undefined
+        // Default to the initial task. It will be overwritten if the intent requires modification.
+        let finalFixupTask = originalFixupTask
+
+        // If the intent is 'edit', then potentially modify the fixup task.
         if (intent === 'edit') {
-            const newRange = await this.getReformedRange(originalFixupTask, context)
+            const newRange = await context.rangeExpander.expandTheContextRange(originalFixupTask)
             if (newRange) {
                 await fixupController.setEditRange(taskId, newRange)
-                newFixupTask = await fixupController.getTaskRecipeData(taskId)
+                // Update the fixup task if the range was modified.
+                finalFixupTask = (await fixupController.getTaskRecipeData(taskId)) || originalFixupTask
             }
         }
-        const fixupTask = newFixupTask || originalFixupTask
-        const promptText = this.getPrompt(fixupTask, intent)
+        const promptText = this.getPrompt(finalFixupTask, intent)
 
         return Promise.resolve(
             new Interaction(
                 {
                     speaker: 'human',
                     text: promptText,
-                    displayText: '**✨Fixup✨** ' + fixupTask.instruction,
+                    displayText: '**✨Fixup✨** ' + finalFixupTask.instruction,
                 },
                 {
                     speaker: 'assistant',
                 },
-                this.getContextFromIntent(intent, fixupTask, quarterFileContext, context),
+                this.getContextFromIntent(intent, finalFixupTask, quarterFileContext, context),
                 []
             )
         )
-    }
-
-    private async getReformedRange(
-        task: VsCodeFixupTaskRecipeData,
-        context: RecipeContext
-    ): Promise<vscode.Range | null> {
-        const intent = await context.rangeExpander.expandTheContextRange(task)
-        return intent
     }
 
     private async getIntent(task: VsCodeFixupTaskRecipeData, context: RecipeContext): Promise<FixupIntent> {

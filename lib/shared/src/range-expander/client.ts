@@ -33,64 +33,40 @@ ${this.trimFollowingText(followingText)}"`
         return FINAL_QUESTION + fullText
     }
 
-    // Main function to expand the context range to fully include all the functions
-    // that surround the user selected range of code
+    /**
+     * Expands the context range to include all the functions surrounding
+     * the user-selected range of code. This method queries the completions client
+     * for a response and then determines the full range based on the result.
+     *
+     * @param task - Data recipe for the fixup task which includes details like selected text and its surrounding context.
+     * @returns - A range that represents the expanded context or null if no completions client is available.
+     */
     public async expandTheContextRange(task: VsCodeFixupTaskRecipeData): Promise<vscode.Range | null> {
+        // Extract the current selection range and completions client from the instance.
         const selectionRange = task.selectionRange
         const completionsClient = this.completionsClient
-
-        const precedingText = this.addLineNumbersToText(task.precedingText, selectionRange, true)
-        const followingText = this.addLineNumbersToText(task.followingText, selectionRange, false)
-        const finalPrompt = this.buildPrompt(task, precedingText, followingText)
-
+        // If no completions client is available, return null.
         if (!completionsClient) {
             return null
         }
 
-        const result = await new Promise<string>(resolve => {
-            let responseText = ''
+        const precedingText = this.addLineNumbersToText(task.precedingText, selectionRange, true)
+        const followingText = this.addLineNumbersToText(task.followingText, selectionRange, false)
+        // Generate the final prompt using the task data.
+        const finalPrompt = this.buildPrompt(task, precedingText, followingText)
 
-            completionsClient.stream(
-                {
-                    fast: true,
-                    temperature: 1,
-                    maxTokensToSample: RANGE_EXPANDER_QUERY_TOKENS,
-                    topK: -1,
-                    topP: -1,
-                    messages: [
-                        { speaker: 'human', text: INSTRUCTION_PROMPT },
-                        { speaker: 'assistant', text: ASSISTANT_RESPONSE },
-                        { speaker: 'human', text: SECOND_INSTURCTION },
-                        { speaker: 'assistant', text: SECOND_ASSISTANT_RESPONSE },
-                        { speaker: 'human', text: finalPrompt },
-                        { speaker: 'assistant' },
-                    ],
-                },
-                {
-                    onChange: (text: string) => {
-                        responseText = text
-                    },
-                    onComplete: () => {
-                        resolve(responseText)
-                    },
-                    onError: (message: string, statusCode?: number) => {
-                        console.error(`Error detecting intent: Status code ${statusCode}: ${message}`)
-                        resolve('')
-                    },
-                }
-            )
-        })
-        const numbers = this.extractNumbersFromBrackets(result)
-        const newEditRange = this.findEnclosingRange(numbers, selectionRange)
-        const newStartPosition = new vscode.Position(newEditRange.start.line, 0)
-        const newEndPosition = new vscode.Position(newEditRange.end.line, 0)
+        const clientResponse = await this.queryCompletionsClient(finalPrompt, completionsClient)
 
-        const myRange = new vscode.Range(newStartPosition, newEndPosition)
+        const numbers = this.extractNumbersFromBrackets(clientResponse)
+        // Determine the full range based on the extracted line numbers.
+        const expandedRange = this.findEnclosingRange(numbers, selectionRange)
+        const expandedRangeStartPosition = new vscode.Position(expandedRange.start.line, 0)
+        const expandedRangeEndPosition = new vscode.Position(expandedRange.end.line, 0)
 
-        return myRange
+        return new vscode.Range(expandedRangeStartPosition, expandedRangeEndPosition)
     }
 
-    // Adds line numbers to a given content, starting from a specified index
+    // A dds line numbers to a given content, starting from a specified index
     private addLineNumbers(content: string, startFrom: number = 0): string {
         return content
             .split('\n')
@@ -146,6 +122,52 @@ ${this.trimFollowingText(followingText)}"`
             },
         }
         return newEditRange // Assuming column numbers remain 0 for simplicity
+    }
+
+    /**
+     * Queries the completions client and retrieves a response.
+     *
+     * @param finalPrompt - The prompt string to be used for the query.
+     * @param completionsClient - The completions client instance for querying.
+     * @returns - The response string from the completions client.
+     */
+    private async queryCompletionsClient(
+        finalPrompt: string,
+        completionsClient: SourcegraphCompletionsClient
+    ): Promise<string> {
+        return new Promise<string>(resolve => {
+            let responseText = ''
+
+            completionsClient.stream(
+                {
+                    fast: true,
+                    temperature: 1,
+                    maxTokensToSample: RANGE_EXPANDER_QUERY_TOKENS,
+                    topK: -1,
+                    topP: -1,
+                    messages: [
+                        { speaker: 'human', text: INSTRUCTION_PROMPT },
+                        { speaker: 'assistant', text: ASSISTANT_RESPONSE },
+                        { speaker: 'human', text: SECOND_INSTURCTION },
+                        { speaker: 'assistant', text: SECOND_ASSISTANT_RESPONSE },
+                        { speaker: 'human', text: finalPrompt },
+                        { speaker: 'assistant' },
+                    ],
+                },
+                {
+                    onChange: (text: string) => {
+                        responseText = text
+                    },
+                    onComplete: () => {
+                        resolve(responseText)
+                    },
+                    onError: (message: string, statusCode?: number) => {
+                        console.error(`Error detecting intent: Status code ${statusCode}: ${message}`)
+                        resolve('') // Default to an empty string on error.
+                    },
+                }
+            )
+        })
     }
 
     // Constructs an array of numbers from the result of the LLM call to get the starting/ending lines of all functions

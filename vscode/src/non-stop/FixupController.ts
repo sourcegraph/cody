@@ -275,7 +275,7 @@ export class FixupController
     }
 
     /**
-     * Sets the task state. Checks the state transition is valid.
+     * OverWrites the editRange of the FixupTask and selects new text corresponding to that range
      */
     public async setEditRange(taskid: string, newRange: vscode.Range): Promise<void> {
         const task = this.tasks.get(taskid)
