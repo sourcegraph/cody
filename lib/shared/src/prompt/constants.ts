@@ -1,5 +1,8 @@
 export const DEFAULT_MAX_TOKENS = 7000
-export const ANSWER_TOKENS = 5000
+export const ANSWER_TOKENS = 600
+export const RANGE_EXPANDER_QUERY_TOKENS = 1500
+export const LINES_TO_TRIM = 20
+export const MAX_LINES_BEFORE_TRIM = 40
 export const MAX_HUMAN_INPUT_TOKENS = 1000
 export const MAX_RECIPE_INPUT_TOKENS = 2000
 export const MAX_CURRENT_FILE_TOKENS = 1000

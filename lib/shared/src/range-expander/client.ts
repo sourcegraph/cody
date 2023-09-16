@@ -1,7 +1,7 @@
 import * as vscode from 'vscode'
 
 import { ActiveTextEditorSelectionRange, VsCodeFixupTaskRecipeData } from '../editor/index'
-import { ANSWER_TOKENS } from '../prompt/constants'
+import { LINES_TO_TRIM, MAX_LINES_BEFORE_TRIM, RANGE_EXPANDER_QUERY_TOKENS } from '../prompt/constants'
 import { SourcegraphCompletionsClient } from '../sourcegraph-api/completions/client'
 
 import { RangeExpander } from '.'
@@ -9,33 +9,39 @@ import { RangeExpander } from '.'
 export class SourcegraphFixupRangeExpander implements RangeExpander {
     constructor(private completionsClient?: SourcegraphCompletionsClient) {}
 
+    // Splits a string into lines
+    private splitLines(text: string): string[] {
+        return text.split('\n')
+    }
+
+    // Trims the preceding text if it exceeds the maximum allowed lines
+    private trimmedPrecedingText(precedingText: string): string {
+        const lines = this.splitLines(precedingText)
+        return lines.length > MAX_LINES_BEFORE_TRIM ? lines.slice(-LINES_TO_TRIM).join('\n') : precedingText
+    }
+
+    // Trims the last lines of the following text if it exceeds the maximum allowed lines
+    private trimFollowingText(followingText: string): string {
+        const lines = this.splitLines(followingText)
+        return lines.length > MAX_LINES_BEFORE_TRIM ? lines.slice(0, -LINES_TO_TRIM).join('\n') : followingText
+    }
+
+    private buildPrompt(task: VsCodeFixupTaskRecipeData, precedingText: string, followingText: string): string {
+        const fullText = `"${this.trimmedPrecedingText(precedingText)}
+${this.addLineNumbers(task.selectedText, task.selectionRange.start.line)}
+${this.trimFollowingText(followingText)}"`
+        return FINAL_QUESTION + fullText
+    }
+
+    // Main function to expand the context range to fully include all the functions
+    // that surround the user selected range of code
     public async expandTheContextRange(task: VsCodeFixupTaskRecipeData): Promise<vscode.Range | null> {
         const selectionRange = task.selectionRange
         const completionsClient = this.completionsClient
 
-        const precedingText = this.addLineNumbersToPrecedingText(task.precedingText, selectionRange)
-
-        const trimmedprecedingText = (precedingText: string): string => {
-            const lines = precedingText.split('\n')
-            return lines.length > 40 ? lines.slice(20).join('\n') : precedingText
-        }
-
-        const followingText = this.addLineNumbersToFollowingText(task.followingText, selectionRange)
-
-        const trimLast20Lines = (followingText: string): string => {
-            const lines = followingText.split('\n')
-            return lines.length > 40 ? lines.slice(0, -20).join('\n') : followingText
-        }
-        const fullText =
-            '"' +
-            trimmedprecedingText(precedingText) +
-            '\n' +
-            this.addLineNumbers(task.selectedText, selectionRange.start.line) +
-            '\n' +
-            trimLast20Lines(followingText) +
-            '"'
-
-        const finalPrompt = FINAL_QUESTION + fullText
+        const precedingText = this.addLineNumbersToText(task.precedingText, selectionRange, true)
+        const followingText = this.addLineNumbersToText(task.followingText, selectionRange, false)
+        const finalPrompt = this.buildPrompt(task, precedingText, followingText)
 
         if (!completionsClient) {
             return null
@@ -48,7 +54,7 @@ export class SourcegraphFixupRangeExpander implements RangeExpander {
                 {
                     fast: true,
                     temperature: 1,
-                    maxTokensToSample: ANSWER_TOKENS,
+                    maxTokensToSample: RANGE_EXPANDER_QUERY_TOKENS,
                     topK: -1,
                     topP: -1,
                     messages: [
@@ -76,14 +82,15 @@ export class SourcegraphFixupRangeExpander implements RangeExpander {
         })
         const numbers = this.extractNumbersFromBrackets(result)
         const newEditRange = this.findEnclosingRange(numbers, selectionRange)
-        const startPosition = new vscode.Position(newEditRange.start.line, 0) // 1st line, 5th character
-        const endPosition = new vscode.Position(newEditRange.end.line, 0) // 3rd line, 15th character
+        const newStartPosition = new vscode.Position(newEditRange.start.line, 0)
+        const newEndPosition = new vscode.Position(newEditRange.end.line, 0)
 
-        const myRange = new vscode.Range(startPosition, endPosition)
+        const myRange = new vscode.Range(newStartPosition, newEndPosition)
 
         return myRange
     }
 
+    // Adds line numbers to a given content, starting from a specified index
     private addLineNumbers(content: string, startFrom: number = 0): string {
         return content
             .split('\n')
@@ -91,22 +98,18 @@ export class SourcegraphFixupRangeExpander implements RangeExpander {
             .join('\n')
     }
 
-    private addLineNumbersToPrecedingText(
-        precedingText: string,
-        selectionRange: ActiveTextEditorSelectionRange
+    // Adds line numbers to either the preceding or following text based on the provided selection range
+    private addLineNumbersToText(
+        text: string,
+        selectionRange: ActiveTextEditorSelectionRange,
+        isPreceding: boolean
     ): string {
-        const startLineNumber = selectionRange.start.line - precedingText.split('\n').length + 1
-        return this.addLineNumbers(precedingText, startLineNumber)
+        const lineCount = this.splitLines(text).length
+        const startLineNumber = isPreceding ? selectionRange.start.line - lineCount + 1 : selectionRange.end.line + 1
+        return this.addLineNumbers(text, startLineNumber)
     }
 
-    private addLineNumbersToFollowingText(
-        followingText: string,
-        selectionRange: ActiveTextEditorSelectionRange
-    ): string {
-        const startLineNumber = selectionRange.end.line + 1
-        return this.addLineNumbers(followingText, startLineNumber)
-    }
-
+    // Finds a Range which includes the full definition of all the functions selected by user
     private findEnclosingRange(
         numbers: number[],
         selectionRange: ActiveTextEditorSelectionRange
@@ -145,6 +148,7 @@ export class SourcegraphFixupRangeExpander implements RangeExpander {
         return newEditRange // Assuming column numbers remain 0 for simplicity
     }
 
+    // Constructs an array of numbers from the result of the LLM call to get the starting/ending lines of all functions
     private extractNumbersFromBrackets(input: string): number[] {
         const numbers: number[] = []
         let isInBrackets = false
