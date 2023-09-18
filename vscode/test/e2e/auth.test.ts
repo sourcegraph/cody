@@ -5,6 +5,8 @@ import { loggedEvents, SERVER_URL, VALID_TOKEN } from '../fixtures/mock-server'
 import { signOut, test } from './helpers'
 
 const expectedOrderedEvents = [
+    'CodyInstalled',
+    'CodyVSCodeExtension:Auth:failed',
     'CodyVSCodeExtension:auth:clickOtherSignInOptions',
     'CodyVSCodeExtension:login:clicked',
     'CodyVSCodeExtension:auth:selectSigninMenu',

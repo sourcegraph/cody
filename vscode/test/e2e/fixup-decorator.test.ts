@@ -8,6 +8,8 @@ import { test } from './helpers'
 const DECORATION_SELECTOR = 'div.view-overlays[role="presentation"] div[class*="TextEditorDecorationType"]'
 
 const expectedOrderedEvents = [
+    'CodyInstalled',
+    'CodyVSCodeExtension:Auth:failed',
     'CodyVSCodeExtension:auth:clickOtherSignInOptions',
     'CodyVSCodeExtension:login:clicked',
     'CodyVSCodeExtension:auth:selectSigninMenu',

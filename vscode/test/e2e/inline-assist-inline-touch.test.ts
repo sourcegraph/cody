@@ -6,6 +6,8 @@ import { sidebarExplorer, sidebarSignin } from './common'
 import { test } from './helpers'
 
 const expectedOrderedEvents = [
+    'CodyInstalled',
+    'CodyVSCodeExtension:Auth:failed',
     'CodyVSCodeExtension:auth:clickOtherSignInOptions',
     'CodyVSCodeExtension:login:clicked',
     'CodyVSCodeExtension:auth:selectSigninMenu',

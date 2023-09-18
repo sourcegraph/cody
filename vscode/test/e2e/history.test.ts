@@ -6,6 +6,8 @@ import { codyEditorCommandButtonRole, sidebarExplorer, sidebarSignin } from './c
 import { test } from './helpers'
 
 const expectedOrderedEvent = [
+    'CodyInstalled',
+    'CodyVSCodeExtension:Auth:failed',
     'CodyVSCodeExtension:auth:clickOtherSignInOptions',
     'CodyVSCodeExtension:login:clicked',
     'CodyVSCodeExtension:auth:selectSigninMenu',
@@ -78,6 +80,5 @@ test('checks if clear chat history button clears history and current session', a
     await expect(sidebar.getByText('Hey')).not.toBeVisible()
     await expect(sidebar.getByText('/explain')).toBeVisible()
 
-    console.log('loggedEvents:', loggedEvents)
     expect(loggedEvents).toEqual(expectedOrderedEvent)
 })
