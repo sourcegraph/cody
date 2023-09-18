@@ -65,7 +65,7 @@ export function getCurrentDocContext(params: GetCurrentDocContextParams): Docume
     const prefixLines = completePrefixWithContextCompletion.split('\n')
     const suffixLines = completeSuffix.split('\n')
 
-    const currentLinePrefix = prefixLines[prefixLines.length - 1]
+    const currentLinePrefix = prefixLines.at(-1)!
     const currentLineSuffix = suffixLines[0]
 
     let prefix: string

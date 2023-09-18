@@ -125,7 +125,7 @@ async function waitUntil(predicate: () => boolean | Promise<boolean>): Promise<v
 }
 
 function escapeToPath(text: string): string {
-    return text.replace(/\W/g, '_')
+    return text.replaceAll(/\W/g, '_')
 }
 
 // Build a workspace settings file that enables the experimental inline mode

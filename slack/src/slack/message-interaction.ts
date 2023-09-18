@@ -75,10 +75,10 @@ export function getSlackInteraction(humanText: string, assistantText: string = '
 
 export function cleanupMessageForPrompt(text: string, isAssistantMessage = false) {
     // Delete mentions
-    const textWithoutMentions = text.replace(/<@[\dA-Z]+>/gm, '').trim()
+    const textWithoutMentions = text.replaceAll(/<@[\dA-Z]+>/gm, '').trim()
 
     // Delete cody-slack filters
-    const textWithoutFilters = textWithoutMentions.replace(/channel:([\w-]+)/gm, '').trim()
+    const textWithoutFilters = textWithoutMentions.replaceAll(/channel:([\w-]+)/gm, '').trim()
 
     if (isAssistantMessage) {
         // Delete "Files used" section
@@ -87,8 +87,8 @@ export function cleanupMessageForPrompt(text: string, isAssistantMessage = false
         if (filesSectionIndex !== -1) {
             return textWithoutFilters
                 .slice(0, filesSectionIndex)
-                .replace(/[|\u00A0\u200B\u200D]/gm, '')
-                .replace(/\n+$/gm, '')
+                .replaceAll(/[|\u00A0\u200B\u200D]/gm, '')
+                .replaceAll(/\n+$/gm, '')
         }
     }
 

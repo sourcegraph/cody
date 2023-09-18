@@ -173,7 +173,7 @@ export class InlineController implements VsCodeInlineController {
             }
 
             // get the last editor from the event list
-            const editor = e[e.length - 1]
+            const editor = e.at(-1)
             if (editor?.document?.uri?.scheme === 'comment') {
                 this.lastClipboardText = await vscode.env.clipboard.readText()
             }
@@ -256,7 +256,7 @@ export class InlineController implements VsCodeInlineController {
             return
         }
 
-        return this.thread.comments[this.thread.comments.length - 1]
+        return this.thread.comments.at(-1)
     }
 
     /**

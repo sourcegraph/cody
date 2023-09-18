@@ -70,7 +70,7 @@ function log(level: 'debug' | 'error', filterLabel: string, text: string, ...arg
         return
     }
 
-    const lastArg = args[args.length - 1]
+    const lastArg = args.at(-1)
     if (lastArg && typeof lastArg === 'object' && 'verbose' in lastArg) {
         if (config.debugVerbose) {
             outputChannel.appendLine(

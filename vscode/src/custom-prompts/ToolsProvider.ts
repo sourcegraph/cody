@@ -65,7 +65,7 @@ export class ToolsProvider {
         }
         // Expand the ~/ in command with the home directory if any of the substring starts with ~/ with a space before it
         const homeDir = this.user.homeDir + '/' || ''
-        const filteredCommand = command.replace(/(\s~\/)/g, ` ${homeDir}`)
+        const filteredCommand = command.replaceAll(/(\s~\/)/g, ` ${homeDir}`)
         try {
             const { stdout, stderr } = await _exec(filteredCommand, {
                 cwd: runFromWSRoot ? rootPath : currentFilePath,

@@ -159,7 +159,7 @@ function mergeSequentialUserMessages(messages: SlackReplyMessage[]) {
     const mergedMessages: SlackInteraction[] = []
 
     for (const message of messages) {
-        const lastInteraction = mergedMessages[mergedMessages.length - 1]
+        const lastInteraction = mergedMessages.at(-1)
 
         const text = cleanupMessageForPrompt(message.text || '', Boolean(message.bot_id))
         const updatedMessage = { text }
@@ -173,10 +173,10 @@ function mergeSequentialUserMessages(messages: SlackReplyMessage[]) {
             if (!lastInteraction.assistant) {
                 lastInteraction.assistant = updatedMessage
             }
-        } else if (!lastInteraction.assistant) {
-            lastInteraction.human.text = `${lastInteraction.human.text || ''}; ${text}`
-        } else {
+        } else if (lastInteraction.assistant) {
             mergedMessages.push({ human: updatedMessage })
+        } else {
+            lastInteraction.human.text = `${lastInteraction.human.text || ''}; ${text}`
         }
     }
 

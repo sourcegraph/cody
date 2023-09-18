@@ -43,7 +43,7 @@ export async function createInlineCompletionItemProvider({
     const disposables: vscode.Disposable[] = []
 
     const [providerConfig, graphContextFlag] = await Promise.all([
-        createProviderConfig(config, client, featureFlagProvider),
+        createProviderConfig(config, client, featureFlagProvider, authProvider.getAuthStatus().configOverwrites),
         featureFlagProvider?.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteGraphContext),
     ])
     if (providerConfig) {
