@@ -28,7 +28,8 @@ const expectedOrderedEvent = [
     'CodyVSCodeExtension:chatReset:executed',
     'CodyVSCodeExtension:chatTitleButton:clicked',
     'CodyVSCodeExtension:command:menu:opened',
-    'CodyVSCodeExtension:recipe:custom-prompt:executed']
+    'CodyVSCodeExtension:recipe:custom-prompt:executed',
+]
 test('checks if clear chat history button clears history and current session', async ({ page, sidebar }) => {
     // Sign into Cody
     await sidebarSignin(page, sidebar)
