@@ -233,7 +233,6 @@ export class GraphSectionObserver implements vscode.Disposable, GraphContextFetc
 
         // Abort previous requests that have not yet resolved and are for a different section
         if (this.lastRequestGraphContextSectionKey && this.lastRequestGraphContextSectionKey !== sectionKey) {
-            logDebug('errrr', 'argh we need to abort bruh')
             this.abortLastRequestGraphContext()
         }
         this.lastRequestGraphContextSectionKey = sectionKey
