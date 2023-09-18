@@ -8,7 +8,7 @@ import {
 } from './text-processing'
 
 export function detectMultiline(
-    docContext: Omit<DocumentContext, 'multiline' | 'multilineTrigger'>,
+    docContext: Omit<DocumentContext, 'multilineTrigger'>,
     languageId: string,
     enableExtendedTriggers: boolean
 ): string | null {
@@ -32,7 +32,13 @@ export function detectMultiline(
     }
 
     const openingBracketMatch = currentLinePrefix.match(OPENING_BRACKET_REGEX)
-    if (enableExtendedTriggers && openingBracketMatch) {
+    if (
+        enableExtendedTriggers &&
+        openingBracketMatch &&
+        // Only trigger multiline suggestions when the next non-empty line is indented less
+        // than the block start line (the newly created block is empty).
+        indentation(currentLinePrefix) >= indentation(nextNonEmptyLine)
+    ) {
         return openingBracketMatch[0]
     }
 

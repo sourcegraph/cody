@@ -69,7 +69,7 @@ export function matchCodeSnippets(copiedText: string, changedText: string): bool
     }
     // Code can be multiline, so we need to remove all new lines and spaces
     // from the copied code and changed text as formatting on paste may change the spacing
-    const copiedTextNoSpace = copiedText.replace(/\s/g, '')
+    const copiedTextNoSpace = copiedText.replaceAll(/\s/g, '')
     const changedTextNoSpace = changedText?.replace(/\s/g, '')
     // check if the copied code is the same as the changed text without spaces
     return copiedTextNoSpace === changedTextNoSpace

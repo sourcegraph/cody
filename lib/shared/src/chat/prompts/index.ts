@@ -62,6 +62,8 @@ export interface CodyPromptContext {
 
 export type CodyPromptType = 'workspace' | 'user' | 'default' | 'recently used'
 
+export type CustomCommandType = 'workspace' | 'user'
+
 export const ConfigFileName = {
     vscode: '.vscode/cody.json',
 }

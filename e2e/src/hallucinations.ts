@@ -16,7 +16,7 @@ export async function detectHallucinations(codebase: string, entities: DetectedE
 }
 
 function escapeRegex(text: string): string {
-    return text.replace(/[$()*+./?[\\\]^{|}-]/g, '\\$&')
+    return text.replaceAll(/[$()*+./?[\\\]^{|}-]/, '\\$&')
 }
 
 async function detectFilePathHallucinations(codebase: string, filePaths: DetectedEntity[]): Promise<DetectedEntity[]> {

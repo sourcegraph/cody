@@ -90,7 +90,7 @@ export class InlineChatViewProvider extends MessageProvider {
      * Send transcript to the active inline chat thread.
      */
     protected handleTranscript(transcript: ChatMessage[], isMessageInProgress: boolean): void {
-        const lastMessage = transcript[transcript.length - 1]
+        const lastMessage = transcript.at(-1)
 
         // The users' messages are already added through the comments API.
         if (lastMessage?.speaker !== 'assistant') {

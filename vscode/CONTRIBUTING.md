@@ -131,18 +131,4 @@ pnpm --filter cody-ai run start:dev:desktop
 
 We have a list of test cases that you can easily automate to validate autocomplete quality when making prompt changes. The database for this lives in `vscode/test/completions/completions-dataset.ts` and should be updated when new cases are added or removed.
 
-To run the test suite:
-
-- `cd vscode`
-- `export SOURCEGRAPH_ACCESS_TOKEN=<Your access token>`
-- `pnpm run generate:completions`
-
-You can change the config of which providers is run in `vscode/test/completions/mock-vscode.ts` by providing the VS Code config to achieve this setup.
-
-Once a test is run, logs are created in temporary folders. To access the comparison UI, you first need to move these to `completions-review-tool/data` and follow the naming schema there.
-
-After that, you can start the UI like so:
-
-- `cd completions-review-tool`
-- `pnpm run dev`
-- `open localhost:3000`
+For more information, see [Cody quality tools](../doc/dev/quality/index.md)

@@ -58,7 +58,7 @@ export class BufferedBotResponseSubscriber implements BotResponseSubscriber {
  * @returns an array with the two substring pieces.
  */
 function splitAt(str: string, startIndex: number, endIndex?: number): [string, string] {
-    return [str.slice(0, startIndex), str.slice(typeof endIndex === 'undefined' ? startIndex : endIndex)]
+    return [str.slice(0, startIndex), str.slice(endIndex === undefined ? startIndex : endIndex)]
 }
 
 /**
@@ -158,7 +158,7 @@ export class BotResponseMultiplexer {
         this.buffer_ += response
         let last
         while (this.buffer_) {
-            if (typeof last !== 'undefined' && last === this.buffer_.length) {
+            if (last !== undefined && last === this.buffer_.length) {
                 throw new Error(`did not make progress parsing: ${this.buffer_}`)
             }
             last = this.buffer_.length
@@ -169,7 +169,7 @@ export class BotResponseMultiplexer {
                 await this.publishBufferUpTo(this.buffer_.length)
                 return
             }
-            if (typeof match.index === 'undefined') {
+            if (match.index === undefined) {
                 throw new TypeError('unreachable')
             }
             if (match.index) {

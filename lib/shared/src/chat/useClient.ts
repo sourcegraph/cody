@@ -104,7 +104,7 @@ export const useClient = ({
 
     const messageInProgress: ChatMessage | null = useMemo(() => {
         if (isMessageInProgress) {
-            const lastMessage = chatMessages[chatMessages.length - 1]
+            const lastMessage = chatMessages.at(-1)
 
             if (lastMessage?.speaker === 'assistant') {
                 return lastMessage
@@ -351,16 +351,27 @@ export const useClient = ({
                 const abort = chatClient.chat(prompt, {
                     onChange(content) {
                         if (transcript.id !== transcriptIdRef.current) {
+                            typewriter.close()
                             typewriter.stop()
                             abort()
                             resolve(transcript)
                             return
                         }
 
-                        typewriter.update(content)
+                        try {
+                            typewriter.update(content)
+                        } catch (error: any) {
+                            console.error(`Error while updating typewriter: ${error}`)
+
+                            typewriter.close()
+                            typewriter.stop()
+                            abort()
+                            resolve(transcript)
+                        }
                     },
                     onComplete() {
                         if (transcript.id !== transcriptIdRef.current) {
+                            typewriter.close()
                             typewriter.stop()
                             abort()
                             resolve(transcript)
@@ -376,10 +387,14 @@ export const useClient = ({
                         onEvent?.('error')
 
                         typewriter.close()
+                        typewriter.stop()
+                        abort()
+                        resolve(transcript)
                     },
                 })
 
                 setAbortMessageInProgress(() => () => {
+                    typewriter.close()
                     typewriter.stop()
                     abort()
                     resolve(transcript)
