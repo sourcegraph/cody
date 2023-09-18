@@ -62,7 +62,7 @@ function getContextWindowChars(model: FireworksModel): number {
 
 export class UnstableFireworksProvider extends Provider {
     private client: Pick<CodeCompletionsClient, 'complete'>
-    private model: keyof typeof MODEL_MAP
+    private model: FireworksModel
 
     constructor(options: ProviderOptions, { client, model }: UnstableFireworksOptions) {
         super(options)
