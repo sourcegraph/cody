@@ -22,10 +22,12 @@ import { CODY_FEEDBACK_URL } from '../src/chat/protocol'
 
 import { ChatCommandsComponent } from './ChatCommands'
 import { FileLink } from './FileLink'
+import { InstallCodyAppPopup } from './Popups/InstallCodyAppPopup'
 import { SymbolLink } from './SymbolLink'
 import { VSCodeWrapper } from './utils/VSCodeApi'
 
 import styles from './Chat.module.css'
+import popupStyles from './Popups/Popup.module.css'
 
 interface ChatboxProps {
     messageInProgress: ChatMessage | null
@@ -170,6 +172,12 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             chatCommands={chatCommands}
             filterChatCommands={filterChatCommands}
             ChatCommandsComponent={ChatCommandsComponent}
+            contextStatusComponent={() => (
+                <div className={popupStyles.popupHost}>
+                    Hey
+                    <InstallCodyAppPopup />
+                </div>
+            )}
         />
     )
 }

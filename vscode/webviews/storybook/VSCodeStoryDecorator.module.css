@@ -32,6 +32,8 @@
     --vscode-editor-font-size: 13px;
     --vscode-editor-foreground: var(--foreground);
     --vscode-font-family: -apple-system, BlinkMacSystemFont, 'Ubuntu', 'Droid Sans', 'Segoe WPC', 'Segoe UI', sans-serif;
+    --vscode-input-background: #313131;
+    --vscode-input-foreground: #cccccc;
     --vscode-inputValidation-errorBackground: #ff000033;
     --vscode-inputValidation-errorBorder: #ff0000;
     --vscode-link-color: #7777ff;

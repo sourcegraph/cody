@@ -1,9 +1,9 @@
 import { VSCodeButton, VSCodeLink } from '@vscode/webview-ui-toolkit/react'
 import classNames from 'classnames'
 
-import styles from './InstallCodyAppNotice.module.css'
+import styles from './Popup.module.css'
 
-interface InstallCodyNoticeProps {
+interface PopupProps {
     className?: string
     title: React.ReactNode
     text: React.ReactNode
@@ -16,7 +16,7 @@ interface InstallCodyNoticeProps {
 
 // Note, if the popup's parent is interactive, the button's event handlers should prevent event
 // propagation.
-export const InstallCodyAppNotice: React.FunctionComponent<React.PropsWithChildren<InstallCodyNoticeProps>> = ({
+export const Popup: React.FunctionComponent<React.PropsWithChildren<PopupProps>> = ({
     className,
     title,
     text,
@@ -27,7 +27,7 @@ export const InstallCodyAppNotice: React.FunctionComponent<React.PropsWithChildr
     onDismiss,
 }) => (
     <>
-        <div className={classNames(styles.notice, className)}>
+        <div className={classNames(styles.popup, className)}>
             <div className={styles.row}>
                 <div className={styles.noticeText}>
                     <h1>{title}</h1>
