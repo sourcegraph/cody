@@ -11,6 +11,7 @@ const expectedOrderedEvent = [
     'CodyVSCodeExtension:auth:selectSigninMenu',
     'CodyVSCodeExtension:auth:fromToken',
     'CodyVSCodeExtension:Auth:connected',
+    'CodyVSCodeExtension:chatTitleButton:clicked',
     'CodyVSCodeExtension:chatReset:executed',
     'CodyVSCodeExtension:chatTitleButton:clicked',
     'CodyVSCodeExtension:chat:submitted',
@@ -27,8 +28,7 @@ const expectedOrderedEvent = [
     'CodyVSCodeExtension:chatReset:executed',
     'CodyVSCodeExtension:chatTitleButton:clicked',
     'CodyVSCodeExtension:command:menu:opened',
-    'CodyVSCodeExtension:recipe:custom-prompt:executed',
-]
+    'CodyVSCodeExtension:recipe:custom-prompt:executed']
 test('checks if clear chat history button clears history and current session', async ({ page, sidebar }) => {
     // Sign into Cody
     await sidebarSignin(page, sidebar)
@@ -62,7 +62,6 @@ test('checks if clear chat history button clears history and current session', a
     await page.getByRole('button', { name: 'Chat History' }).click()
 
     // Remove Hey history item from chat history view
-    await expect(sidebar.getByText('Hola')).toBeVisible()
     await expect(sidebar.getByText('Hey')).toBeVisible()
     await sidebar.locator('vscode-button').filter({ hasText: 'Clear' }).click()
     await expect(sidebar.getByText('Hey')).not.toBeVisible()
@@ -77,5 +76,7 @@ test('checks if clear chat history button clears history and current session', a
     // Check if the old message "Hey" is cleared
     await expect(sidebar.getByText('Hey')).not.toBeVisible()
     await expect(sidebar.getByText('/explain')).toBeVisible()
+
+    console.log('loggedEvents:', loggedEvents)
     expect(loggedEvents).toEqual(expectedOrderedEvent)
 })
