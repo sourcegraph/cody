@@ -30,6 +30,5 @@ test('open the Custom Commands in sidebar and add new user recipe', async ({ pag
     await page.locator('a').filter({ hasText: 'New Custom Command...' }).click()
     await page.keyboard.type(recipeName)
     await page.keyboard.press('Enter')
-    console.log('loggedEvents:', loggedEvents)
     expect(loggedEvents).toEqual(expectedOrderedEvent)
 })
