@@ -26,16 +26,18 @@ Currently, clients have to manually write bindings for the JSON-RPC methods.
 
 ## Useful commands
 
-- The command `pnpm run build-agent-binaries` builds standalone binaries for
+- The command `pnpm build-agent-binaries` builds standalone binaries for
   macOS, Linux, and Windows. By default, the binaries get written to the `dist/`
   directory. The destination directory can be configured with the environment
   variable `AGENT_EXECUTABLE_TARGET_DIRECTORY`.
-- The command `pnpm run test` runs the agent against a minimized testing client.
+- The command `pnpm test` runs the agent against a minimized testing client.
   The tests are disabled in CI because they run against uses an actual Sourcegraph
   instance. Set the environment variables `SRC_ENDPOINT` and `SRC_ACCESS_TOKEN`
   to run the tests against an actual Sourcegraph instance.
   See the file [`src/index.test.ts`](src/index.test.ts) for a detailed but minimized example
   interaction between an agent client and agent server.
+- The command `pnpm agent:debug` runs the agent, allowing attaching an
+  [inspector](https://nodejs.org/en/docs/inspector) to it.
 
 ## Client implementations
 
