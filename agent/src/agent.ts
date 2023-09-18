@@ -9,12 +9,13 @@ import { setUserAgent } from '@sourcegraph/cody-shared/src/sourcegraph-api/graph
 
 import { activate } from '../../vscode/src/extension.node'
 
+import { AgentMessageProvider } from './AgentMessageProvider'
 import { AgentTextDocument } from './AgentTextDocument'
 import { newTextEditor } from './AgentTextEditor'
 import { AgentWorkspaceDocuments } from './AgentWorkspaceDocuments'
 import { AgentEditor } from './editor'
 import { MessageHandler } from './jsonrpc'
-import { AutocompleteItem, ExtensionConfiguration, RecipeInfo } from './protocol'
+import { AutocompleteItem, ExtensionConfiguration, RecipeInfo, TranscriptID } from './protocol'
 import * as vscode_shim from './vscode-shim'
 
 const secretStorage = new Map<string, string>()
@@ -65,9 +66,14 @@ function initializeVscodeExtension(): void {
 export class Agent extends MessageHandler {
     private client: Promise<Client | null> = Promise.resolve(null)
     public workspace = new AgentWorkspaceDocuments()
+    public messageProvider: AgentMessageProvider
 
     constructor() {
         super()
+
+        // TODO: This isn't a good place for this
+        this.messageProvider = new AgentMessageProvider(this)
+
         vscode_shim.setWorkspaceDocuments(this.workspace)
         vscode_shim.setAgent(this)
         this.registerRequest('initialize', async client => {
@@ -165,6 +171,7 @@ export class Agent extends MessageHandler {
             })
             return null
         })
+
         this.registerRequest('autocomplete/execute', async (params, token) => {
             const provider = await vscode_shim.completionProvider
             if (!provider) {
@@ -230,6 +237,27 @@ export class Agent extends MessageHandler {
                 console.log('Completion provider is not initialized: unable to clear last candidate')
             }
             provider.clearLastCandidate()
+        })
+
+        this.registerChatCommands()
+    }
+
+    private registerChatCommands(): void {
+        // this.registerRequest('chat/sendMessage', async (message: ChatMessage) => {})
+
+        this.registerRequest('chat/new', async _ => {
+            // TODO: How do we return jsonrpc errors?
+            const client = (await this.client)!
+
+            client.reset()
+            return { newTranscriptID: client.transcript.id as TranscriptID }
+        })
+
+        this.registerRequest('chat/submit', async msg => {
+            const client = (await this.client)!
+            client.submitMessage(msg.humanInput)
+
+            return {}
         })
     }
 

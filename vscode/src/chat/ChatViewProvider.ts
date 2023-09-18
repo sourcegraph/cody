@@ -143,6 +143,11 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
         if (this.contextProvider.config.experimentalChatPredictions) {
             void this.runRecipeForSuggestion('next-questions', text)
         }
+
+        // Question: Why do we go through recipes here? Shouldn't we have like a `lib/chat/...` and then
+        // the recipe goes through that? It seems like that would really simplify finding where we're
+        // making calls and simplifying the interfaces.
+        // this.sendMessage(self.activeTranscript().id, new Interaction(text))
         await this.executeRecipe('chat-question', text)
     }
 

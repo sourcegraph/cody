@@ -9,6 +9,10 @@ export interface ChatButton {
     onClick: (action: string) => void
 }
 
+// TODO: It would be nice to have a single concept of a message ID (some UUID hopefully)
+// import { Brand } from '../../brand'
+// type ChatMessageID = Brand<string, 'ChatMessageID'>
+
 export interface ChatMessage extends Message {
     displayText?: string
     contextFiles?: ContextFile[]

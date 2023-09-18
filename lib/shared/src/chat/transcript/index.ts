@@ -25,53 +25,15 @@ export interface TranscriptJSON {
  * Any "controller" logic belongs outside of this class.
  */
 export class Transcript {
-    public static fromJSON(json: TranscriptJSON): Transcript {
-        return new Transcript(
-            json.interactions.map(
-                ({
-                    humanMessage,
-                    assistantMessage,
-                    context,
-                    fullContext,
-                    usedContextFiles,
-                    usedPreciseContext,
-                    timestamp,
-                }) => {
-                    if (!fullContext) {
-                        fullContext = context || []
-                    }
-                    return new Interaction(
-                        humanMessage,
-                        assistantMessage,
-                        Promise.resolve(
-                            fullContext.map(message => {
-                                if (message.file) {
-                                    return message
-                                }
-
-                                const { fileName } = message as any as OldContextMessage
-                                if (fileName) {
-                                    return { ...message, file: { fileName } }
-                                }
-
-                                return message
-                            })
-                        ),
-                        usedContextFiles || [],
-                        usedPreciseContext || [],
-                        timestamp || new Date().toISOString()
-                    )
-                }
-            ),
-            json.id
-        )
-    }
+    public title: string
 
     private interactions: Interaction[] = []
-
     private internalID: string
 
-    constructor(interactions: Interaction[] = [], id?: string) {
+    constructor(interactions: Interaction[] = [], id?: string, title?: string) {
+        // TODO: I would like to set this with a summary of the first message if possible
+        this.title = title || 'TestTitle'
+
         this.interactions = interactions
         this.internalID =
             id ||
@@ -263,6 +225,48 @@ export class Transcript {
     public reset(): void {
         this.interactions = []
         this.internalID = new Date().toISOString()
+    }
+
+    public static fromJSON(json: TranscriptJSON): Transcript {
+        return new Transcript(
+            json.interactions.map(
+                ({
+                    humanMessage,
+                    assistantMessage,
+                    context,
+                    fullContext,
+                    usedContextFiles,
+                    usedPreciseContext,
+                    timestamp,
+                }) => {
+                    if (!fullContext) {
+                        fullContext = context || []
+                    }
+                    return new Interaction(
+                        humanMessage,
+                        assistantMessage,
+                        Promise.resolve(
+                            fullContext.map(message => {
+                                if (message.file) {
+                                    return message
+                                }
+
+                                const { fileName } = message as any as OldContextMessage
+                                if (fileName) {
+                                    return { ...message, file: { fileName } }
+                                }
+
+                                return message
+                            })
+                        ),
+                        usedContextFiles || [],
+                        usedPreciseContext || [],
+                        timestamp || new Date().toISOString()
+                    )
+                }
+            ),
+            json.id
+        )
     }
 }
 

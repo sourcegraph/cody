@@ -1,5 +1,8 @@
 /* eslint-disable @typescript-eslint/consistent-type-definitions */
+import { ContextFile, PreciseContext } from '@sourcegraph/cody-shared'
+import { Brand } from '@sourcegraph/cody-shared/src/brand'
 import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
+import { Transcript } from '@sourcegraph/cody-shared/src/chat/transcript'
 import { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { event } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
 
@@ -25,6 +28,7 @@ export type Requests = {
     // Client requests the agent server to lists all recipes that are supported
     // by the agent.
     'recipes/list': [null, RecipeInfo[]]
+
     // Client requests the agent server to execute an individual recipe.
     // The response is null because the AI/Assistant messages are streamed through
     // the chat/updateMessageInProgress notification. The flow to trigger a recipe
@@ -35,20 +39,69 @@ export type Requests = {
     // client <-- chat/updateMessageInProgress --- server
     'recipes/execute': [ExecuteRecipeParams, null]
 
+    // Request a list of autocomplete candidates.
     'autocomplete/execute': [AutocompleteParams, AutocompleteResult]
 
     'graphql/currentUserId': [null, string]
     'graphql/logEvent': [event, null]
+
+    // Create a new chat
+    'chat/new': [ChatNewParams, ChatNewResult]
+
+    // List available chats
+    'chat/list': [null, ChatListResult]
+
+    // Send a new message
+    'chat/submit': [ChatSubmitParams, ChatSubmitResult]
+
+    // Get a transcript
+    'chat/view': [ChatViewParams, ChatViewResult]
+
+    // POTENTIAL FUTURE CHAT MESSAGES:
+    // Edit an existing message
+    // 'chat/edit': [ChatEditParams, ChatEditResult]
+
+    // Share a chat snippet with someone
+    // 'chat/share': []
 
     // ================
     // Server -> Client
     // ================
 }
 
+export type TranscriptID = Brand<string, 'TranscriptID'>
+
+export interface ChatNewParams {}
+
+export interface ChatNewResult {
+    newTranscriptID: TranscriptID
+}
+
+export interface ChatSubmitParams {
+    transcriptID: TranscriptID
+    humanInput: string
+}
+
+export interface ChatSubmitResult {}
+
+export interface ChatViewParams {
+    transcriptID: TranscriptID
+}
+
+export interface ChatViewResult {
+    transcriptID: TranscriptID
+    messages: ChatMessage[]
+}
+
+export interface ChatListResult {
+    transcripts: { transcriptID: TranscriptID; title: string }[]
+}
+
 // The JSON-RPC notifications of the Cody Agent protocol. Notifications are
 // synchronous fire-and-forget messages that have no return value. Notifications are
 // conventionally used to represent streams of values.
 export type Notifications = {
+    //{{{
     // ================
     // Client -> Server
     // ================
@@ -100,11 +153,44 @@ export type Notifications = {
     // 'chat/executeRecipe' request.
     'chat/updateMessageInProgress': [ChatMessage | null]
 
+    // The server received new messages for the ongoing 'chat/executeRecipe'
+    // request. The server should never send this notification outside of a
+    // 'chat/executeRecipe' request.
+    'chat/update': [ChatMessageUpdate | null]
+
     'debug/message': [DebugMessage]
-}
+} //}}}
 
 export interface CancelParams {
     id: string | number
+}
+
+export interface ChatParams {
+    id: string
+
+    // List of interactions
+    // Q: Why do interactions seem to only have one human message and one assistant?
+    //  Do we have a different type for a list of messages?
+    // interactions: Interaction[]
+}
+
+export interface ChatResult {
+    chat_id: string
+}
+
+export interface ChatExecuteParams {
+    id: string
+    content: string
+}
+
+export interface ChatExecuteResult {
+    chat_id: string
+    message_id: string
+}
+
+export interface ChatMessageUpdate {
+    transcriptID: TranscriptID
+    message: ChatMessage
 }
 
 export interface AutocompleteParams {
