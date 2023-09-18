@@ -199,6 +199,8 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
             })
 
             if (!result) {
+                // Returning null will clear any existing suggestions, thus we need to reset the
+                // last candidate.
                 this.lastCandidate = undefined
                 return null
             }
@@ -247,6 +249,8 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
                     abortController.signal
                 )
             ) {
+                // Returning null will clear any existing suggestions, thus we need to reset the
+                // last candidate.
                 this.lastCandidate = undefined
                 return null
             }
