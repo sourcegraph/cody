@@ -25,13 +25,11 @@ test('open the Custom Commands in sidebar and add new user recipe', async ({ pag
     await sidebar.locator('vscode-button').getByRole('img').click()
 
     // Create Command via UI
-    const recipeName = 'A Test Recipes'
+    const recipeName = 'ATestRecipes'
     await page.getByText('Configure Custom Commands...').click()
     await page.locator('a').filter({ hasText: 'New Custom Command...' }).click()
     await page.keyboard.type(recipeName)
     await page.keyboard.press('Enter')
-    await page.keyboard.type('this is a test')
-    await page.keyboard.press('Enter')
-    await page.keyboard.press('Enter')
+    console.log('loggedEvents:', loggedEvents)
     expect(loggedEvents).toEqual(expectedOrderedEvent)
 })
