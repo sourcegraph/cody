@@ -3,6 +3,7 @@ import * as vscode from 'vscode'
 import { commandRegex } from '@sourcegraph/cody-shared/src/chat/recipes/helpers'
 import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
+import { newPromptMixin, PromptMixin } from '@sourcegraph/cody-shared/src/prompt/prompt-mixin'
 
 import { ChatViewProvider } from './chat/ChatViewProvider'
 import { ContextProvider } from './chat/ContextProvider'
@@ -50,7 +51,9 @@ export async function start(context: vscode.ExtensionContext, platform: Platform
     disposables.push(
         vscode.workspace.onDidChangeConfiguration(async event => {
             if (event.affectsConfiguration('cody')) {
-                onConfigurationChange(await getFullConfig())
+                const config = await getFullConfig()
+                onConfigurationChange(config)
+                platform.onConfigurationChange?.(config)
             }
         })
     )
@@ -69,7 +72,6 @@ const register = async (
     onConfigurationChange: (newConfig: ConfigurationWithAccessToken) => void
 }> => {
     const disposables: vscode.Disposable[] = []
-
     const isExtensionModeDevOrTest =
         context.extensionMode === vscode.ExtensionMode.Development ||
         context.extensionMode === vscode.ExtensionMode.Test
@@ -94,6 +96,10 @@ const register = async (
     // Could we use the `initialConfig` instead?
     const workspaceConfig = vscode.workspace.getConfiguration()
     const config = getConfiguration(workspaceConfig)
+
+    if (config.chatPreInstruction) {
+        PromptMixin.addCustom(newPromptMixin(config.chatPreInstruction))
+    }
 
     if (config.autocompleteExperimentalSyntacticPostProcessing) {
         parseAllVisibleDocuments()
@@ -387,6 +393,28 @@ const register = async (
         })
     )
 
+    /**
+     * Signed out status bar indicator
+     */
+    let removeAuthStatusBarError: undefined | (() => void)
+    function updateAuthStatusBarIndicator(): void {
+        if (removeAuthStatusBarError) {
+            removeAuthStatusBarError()
+            removeAuthStatusBarError = undefined
+        }
+        if (!authProvider.getAuthStatus().isLoggedIn) {
+            removeAuthStatusBarError = statusBar.addError({
+                title: 'Sign In To Use Cody',
+                description: 'You need to sign in to use Cody.',
+                onSelect: () => {
+                    void sidebarChatProvider.setWebviewView('chat')
+                },
+            })
+        }
+    }
+    authProvider.addChangeListener(() => updateAuthStatusBarIndicator())
+    updateAuthStatusBarIndicator()
+
     let completionsProvider: vscode.Disposable | null = null
     disposables.push({ dispose: () => completionsProvider?.dispose() })
     const setupAutocomplete = async (): Promise<void> => {
@@ -410,18 +438,23 @@ const register = async (
             completionsProvider.dispose()
         }
 
-        completionsProvider = await createInlineCompletionItemProvider(
+        completionsProvider = await createInlineCompletionItemProvider({
             config,
-            codeCompletionsClient,
+            client: codeCompletionsClient,
             statusBar,
             contextProvider,
-            featureFlagProvider
-        )
+            featureFlagProvider,
+            authProvider,
+        })
     }
+    // Reload autocomplete if either the configuration changes or the auth status is updated
     vscode.workspace.onDidChangeConfiguration(event => {
         if (event.affectsConfiguration('cody.autocomplete')) {
             void setupAutocomplete()
         }
+    })
+    authProvider.addChangeListener(() => {
+        void setupAutocomplete()
     })
     await setupAutocomplete()
 
@@ -453,6 +486,7 @@ const register = async (
             contextProvider.onConfigurationChange(newConfig)
             externalServicesOnDidConfigurationChange(newConfig)
             void createOrUpdateEventLogger(newConfig, isExtensionModeDevOrTest)
+            platform.onConfigurationChange?.(newConfig)
         },
     }
 }

@@ -41,6 +41,10 @@ const config = {
     'import/order': 'off',
     'id-length': 'off',
     'etc/no-deprecated': 'off', // slow
+    'unicorn/switch-case-braces': 'off',
+    'unicorn/prefer-event-target': 'off',
+    'unicorn/prefer-top-level-await': 'off',
+    'unicorn/prefer-dom-node-remove': 'off',
   },
   overrides: [
     {

@@ -22,6 +22,9 @@ import { LocalAppDetector } from './LocalAppDetector'
 import { localStorage } from './LocalStorageProvider'
 import { secretStorage } from './SecretStorageProvider'
 
+type Listener = (authStatus: AuthStatus) => void
+type Unsubscribe = () => {}
+
 export class AuthProvider {
     private endpointHistory: string[] = []
 
@@ -31,6 +34,7 @@ export class AuthProvider {
 
     private authStatus: AuthStatus = defaultAuthStatus
     public webview?: ChatViewProviderWebview
+    private listeners: Set<Listener> = new Set()
 
     constructor(
         private config: Pick<ConfigurationWithAccessToken, 'serverEndpoint' | 'accessToken' | 'customHeaders'>,
@@ -48,10 +52,12 @@ export class AuthProvider {
         const lastEndpoint = localStorage?.getEndpoint() || this.config.serverEndpoint
         const token = (await secretStorage.get(lastEndpoint || '')) || this.config.accessToken
         logDebug('AuthProvider:init:lastEndpoint', lastEndpoint)
-        const authState = await this.auth(lastEndpoint, token || null)
-        if (authState?.isLoggedIn) {
-            return
-        }
+        await this.auth(lastEndpoint, token || null)
+    }
+
+    public addChangeListener(listener: Listener): Unsubscribe {
+        this.listeners.add(listener)
+        return () => this.listeners.delete(listener)
     }
 
     // Display quickpick to select endpoint to sign in to
@@ -143,16 +149,14 @@ export class AuthProvider {
         await vscode.env.openExternal(vscode.Uri.parse(uri))
     }
 
-    // Display quickpick to select endpoint to sign out of
     public async signoutMenu(): Promise<void> {
         this.telemetryService.log('CodyVSCodeExtension:logout:clicked')
-        const endpointQuickPickItem = this.authStatus.endpoint ? [this.authStatus.endpoint] : []
-        const endpoint = await AuthMenu('signout', endpointQuickPickItem)
-        if (!endpoint?.uri) {
-            return
+        const { endpoint } = this.authStatus
+
+        if (endpoint) {
+            await this.signout(endpoint)
+            logDebug('AuthProvider:signoutMenu', endpoint)
         }
-        await this.signout(endpoint.uri)
-        logDebug('AuthProvider:signoutMenu', endpoint.uri)
     }
 
     // Log user out of the selected endpoint (remove token from secret)
@@ -188,7 +192,7 @@ export class AuthProvider {
             this.client.getCodyLLMConfiguration(),
         ])
 
-        const configOverwrites = !isError(codyLLMConfiguration) ? codyLLMConfiguration : undefined
+        const configOverwrites = isError(codyLLMConfiguration) ? undefined : codyLLMConfiguration
 
         const isDotComOrApp = this.client.isDotCom() || isLocalApp(endpoint)
         if (!isDotComOrApp) {
@@ -278,6 +282,9 @@ export class AuthProvider {
         if (this.authStatus.endpoint === 'init' || !this.webview) {
             return
         }
+        for (const listener of this.listeners) {
+            listener(this.getAuthStatus())
+        }
         await vscode.commands.executeCommand('cody.auth.sync')
     }
     /**
@@ -359,6 +366,18 @@ export class AuthProvider {
             await secretStorage.storeToken(endpoint, token)
         }
         this.loadEndpointHistory()
+    }
+
+    // Notifies the AuthProvider that the simplified onboarding experiment is
+    // kicking off an authorization flow. That flow ends when (if) this
+    // AuthProvider gets a call to tokenCallbackHandler.
+    public authProviderSimplifiedWillAttemptAuth(): void {
+        // FIXME: This is equivalent to what redirectToEndpointLogin does. But
+        // the existing design is weak--it mixes other authStatus with this
+        // endpoint and races with everything else this class does.
+
+        // Simplified onboarding only supports dotcom.
+        this.authStatus.endpoint = DOTCOM_URL.toString()
     }
 }
 

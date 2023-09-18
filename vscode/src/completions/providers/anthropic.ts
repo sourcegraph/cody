@@ -12,6 +12,7 @@ import {
     CLOSING_CODE_TAG,
     extractFromCodeBlock,
     fixBadCompletionStart,
+    formatSymbolContextRelationship,
     getHeadAndTail,
     MULTILINE_STOP_SEQUENCE,
     OPENING_CODE_TAG,
@@ -24,6 +25,8 @@ import { forkSignal, messagesToText } from '../utils'
 import { CompletionProviderTracer, Provider, ProviderConfig, ProviderOptions } from './provider'
 
 const CHARS_PER_TOKEN = 4
+export const MULTI_LINE_STOP_SEQUENCES = [anthropic.HUMAN_PROMPT, CLOSING_CODE_TAG]
+export const SINGLE_LINE_STOP_SEQUENCES = [anthropic.HUMAN_PROMPT, CLOSING_CODE_TAG, MULTILINE_STOP_SEQUENCE]
 
 function tokensToChars(tokens: number): number {
     return tokens * CHARS_PER_TOKEN
@@ -32,12 +35,14 @@ function tokensToChars(tokens: number): number {
 interface AnthropicOptions {
     contextWindowTokens: number
     client: Pick<CodeCompletionsClient, 'complete'>
+    mode?: 'default' | 'infill'
 }
 
 export class AnthropicProvider extends Provider {
     private promptChars: number
     private responseTokens: number
     private client: Pick<CodeCompletionsClient, 'complete'>
+    private useInfillPrefix = false
 
     constructor(options: ProviderOptions, anthropicOptions: AnthropicOptions) {
         super(options)
@@ -46,10 +51,11 @@ export class AnthropicProvider extends Provider {
             Math.floor(tokensToChars(anthropicOptions.contextWindowTokens) * options.responsePercentage)
         this.responseTokens = Math.floor(anthropicOptions.contextWindowTokens * options.responsePercentage)
         this.client = anthropicOptions.client
+        this.useInfillPrefix = anthropicOptions.mode === 'infill'
     }
 
     public emptyPromptLength(): number {
-        const { messages } = this.createPromptPrefix()
+        const { messages } = this.useInfillPrefix ? this.createInfillPromptPrefix() : this.createPromptPrefix()
         const promptNoSnippets = messagesToText(messages)
         return promptNoSnippets.length - 10 // extra 10 chars of buffer cuz who knows
     }
@@ -86,13 +92,59 @@ export class AnthropicProvider extends Provider {
                 text: `Here is the code: ${OPENING_CODE_TAG}${tail.trimmed}`,
             },
         ]
+
         return { messages: prefixMessages, prefix: { head, tail, overlap } }
+    }
+
+    // NOTE: This revert pull/727 for this prompt branch that causes quality regressions
+    // pull/727: https://github.com/sourcegraph/cody/pull/727
+    private createInfillPromptPrefix(): { messages: Message[]; prefix: PrefixComponents } {
+        const prefixLines = this.options.docContext.prefix.split('\n')
+        if (prefixLines.length === 0) {
+            throw new Error('no prefix lines')
+        }
+
+        const { head, tail, overlap } = getHeadAndTail(this.options.docContext.prefix)
+
+        // Infill block represents the code we want the model to complete
+        const infillBlock = `${tail.trimmed.trimEnd()}`
+        // code before the cursor, after removing the code for the infillBlock
+        // Using this instead of head.trimmed to preserve the spacing from prefix so the model can determines the patterns of surrounding code
+        // Use regex to makes sure only the last trimmedTail match is replaced to avoid replacing overlapping code
+        const infillBlockRegex = new RegExp(`${infillBlock}\\s*$`, 'g')
+        const infillPrefix = this.options.docContext.prefix.replace(infillBlockRegex, '')
+        // code after the cursor
+        const infillSuffix = this.options.docContext.suffix
+
+        const prefixMessagesWithInfill: Message[] = [
+            {
+                speaker: 'human',
+                text: `You are a code completion AI designed to take the surrounding code and shared context into account in order to predict and suggest high-quality code to complete the code enclosed in ${OPENING_CODE_TAG} tags. You only response with code that works and fits seamlessly with surrounding code if any or use best practice and nothing else.`,
+            },
+            {
+                speaker: 'assistant',
+                text: 'I am a code completion AI with exceptional context-awareness designed to auto-complete nested code blocks with high-quality code that seamlessly integrates with surrounding code.',
+            },
+            {
+                speaker: 'human',
+                text: `Below is the code from file path ${this.options.fileName}. Detect the functionality, formats, style, patterns, and logics in use from code outside ${OPENING_CODE_TAG} XML tags. Then, use what you detect and reuse assetmethods/libraries to complete and enclose completed code only inside ${OPENING_CODE_TAG} tags precisely without duplicating existing implementations. Here is the code:
+                ${infillPrefix}${OPENING_CODE_TAG}${CLOSING_CODE_TAG}${infillSuffix}`,
+            },
+            {
+                speaker: 'assistant',
+                text: `${OPENING_CODE_TAG}${infillBlock}`,
+            },
+        ]
+
+        return { messages: prefixMessagesWithInfill, prefix: { head, tail, overlap } }
     }
 
     // Creates the resulting prompt and adds as many snippets from the reference
     // list as possible.
     protected createPrompt(snippets: ContextSnippet[]): { messages: Message[]; prefix: PrefixComponents } {
-        const { messages: prefixMessages, prefix } = this.createPromptPrefix()
+        const { messages: prefixMessages, prefix } = this.useInfillPrefix
+            ? this.createInfillPromptPrefix()
+            : this.createPromptPrefix()
 
         const referenceSnippetMessages: Message[] = []
 
@@ -102,11 +154,16 @@ export class AnthropicProvider extends Provider {
             const snippetMessages: Message[] = [
                 {
                     speaker: 'human',
-                    text: `Here is a reference snippet of code: ${OPENING_CODE_TAG}${snippet.content}${CLOSING_CODE_TAG}`,
+                    text:
+                        'symbol' in snippet && snippet.symbol !== ''
+                            ? `Additional documentation for \`${snippet.symbol}\`${formatSymbolContextRelationship(
+                                  snippet.sourceSymbolAndRelationship
+                              )}: ${OPENING_CODE_TAG}${snippet.content}${CLOSING_CODE_TAG}`
+                            : `Codebase context from file path '${snippet.fileName}': ${OPENING_CODE_TAG}${snippet.content}${CLOSING_CODE_TAG}`,
                 },
                 {
                     speaker: 'assistant',
-                    text: 'I have added the snippet to my knowledge base.',
+                    text: 'I will refer to this code to complete your next request.',
                 },
             ]
             const numSnippetChars = messagesToText(snippetMessages).length + 1
@@ -136,13 +193,13 @@ export class AnthropicProvider extends Provider {
                   temperature: 0.5,
                   messages: prompt,
                   maxTokensToSample: this.responseTokens,
-                  stopSequences: [anthropic.HUMAN_PROMPT, CLOSING_CODE_TAG],
+                  stopSequences: MULTI_LINE_STOP_SEQUENCES,
               }
             : {
                   temperature: 0.5,
                   messages: prompt,
                   maxTokensToSample: Math.min(50, this.responseTokens),
-                  stopSequences: [anthropic.HUMAN_PROMPT, CLOSING_CODE_TAG, MULTILINE_STOP_SEQUENCE],
+                  stopSequences: SINGLE_LINE_STOP_SEQUENCES,
               }
         tracer?.params(args)
 
@@ -241,6 +298,6 @@ export function createProviderConfig(anthropicOptions: AnthropicOptions): Provid
         maximumContextCharacters: tokensToChars(anthropicOptions.contextWindowTokens),
         enableExtendedMultilineTriggers: true,
         identifier: 'anthropic',
-        model: 'claude-instant-1',
+        model: anthropicOptions.mode === 'infill' ? 'claude-instant-infill' : 'claude-instant-1',
     }
 }

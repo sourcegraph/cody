@@ -91,8 +91,7 @@ export const UserHistory: React.FunctionComponent<React.PropsWithChildren<Histor
                                     transcriptJSON.interactions && transcriptJSON.interactions.length > 0
                             )
                             .map(([id, transcriptJSON]) => {
-                                const lastMessage =
-                                    transcriptJSON.interactions[transcriptJSON.interactions.length - 1].humanMessage
+                                const lastMessage = transcriptJSON.interactions.at(-1)!.humanMessage
                                 if (!lastMessage?.displayText) {
                                     return null
                                 }

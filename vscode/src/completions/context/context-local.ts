@@ -6,6 +6,7 @@ import { ContextSnippet } from '../types'
 
 import { bestJaccardMatch, JaccardMatch } from './bestJaccardMatch'
 import { DocumentHistory } from './history'
+import { baseLanguageId } from './utils'
 
 interface JaccardMatchWithFilename extends JaccardMatch {
     fileName: string
@@ -70,7 +71,7 @@ async function getRelevantFiles(
     }
 
     function addDocument(document: vscode.TextDocument): void {
-        if (document.uri === currentDocument.uri) {
+        if (document.uri.toString() === currentDocument.uri.toString()) {
             // omit current file
             return
         }
@@ -80,9 +81,7 @@ async function getRelevantFiles(
             return
         }
 
-        if (document.languageId !== curLang) {
-            // TODO(beyang): handle JavaScript <-> TypeScript and verify this works for C header files
-            // omit files of other languages
+        if (baseLanguageId(document.languageId) !== baseLanguageId(curLang)) {
             return
         }
 
@@ -111,8 +110,8 @@ async function getRelevantFiles(
     // active editor tabs and the 5 tabs (7 when there are no split views) that are open around it
     // (so we include 2 or 3 tabs to the left to the right).
     //
-    // @TODO(philipp-spiess): Consider files that are in the same directory or called similarly to
-    // be more relevant.
+    // TODO(philipp-spiess): Consider files that are in the same directory or called similarly to be
+    // more relevant.
     const uris: Map<string, vscode.Uri> = new Map()
     const surroundingTabs = visibleUris.length <= 1 ? 3 : 2
     for (const visibleUri of visibleUris) {

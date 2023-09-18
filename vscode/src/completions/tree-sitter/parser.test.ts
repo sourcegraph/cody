@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { formatMatches, initTreeSitterParser } from '../testHelpers'
+import { formatMatches, initTreeSitterParser } from '../test-helpers'
 
 describe('lexical analysis', () => {
     describe('experiment', () => {

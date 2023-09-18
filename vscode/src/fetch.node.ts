@@ -1,29 +1,49 @@
 import http from 'http'
 import https from 'https'
 
+import { SocksProxyAgent } from 'socks-proxy-agent'
+
+import { Configuration } from '@sourcegraph/cody-shared/src/configuration'
+
+import { getConfiguration } from './configuration'
 import { agent } from './fetch'
 
 // The path to the exported class can be found in the npm contents
 // https://www.npmjs.com/package/@vscode/proxy-agent?activeTab=code
 const nodeModules = '_VSCODE_NODE_MODULES'
 const proxyAgentPath = '@vscode/proxy-agent/out/agent'
-const proxyAgent = 'PacProxyAgent'
+const pacProxyAgent = 'PacProxyAgent'
 
-export function initializeNetworkAgent(): void {
-    /**
-     * We use keepAlive agents here to avoid excessive SSL/TLS handshakes for autocomplete requests.
-     */
-    const httpAgent = new http.Agent({ keepAlive: true, keepAliveMsecs: 60000 })
-    const httpsAgent = new https.Agent({ keepAlive: true, keepAliveMsecs: 60000 })
+/**
+ * We use keepAlive agents here to avoid excessive SSL/TLS handshakes for autocomplete requests.
+ */
+const httpAgent = new http.Agent({ keepAlive: true, keepAliveMsecs: 60000 })
+const httpsAgent = new https.Agent({ keepAlive: true, keepAliveMsecs: 60000 })
+let socksProxyAgent: SocksProxyAgent
 
-    const customAgent = ({ protocol }: Pick<URL, 'protocol'>): http.Agent => {
+function getCustomAgent({ proxy }: Configuration): ({ protocol }: Pick<URL, 'protocol'>) => http.Agent {
+    return ({ protocol }) => {
+        if (proxy?.startsWith('socks') && !socksProxyAgent) {
+            socksProxyAgent = new SocksProxyAgent(proxy, {
+                keepAlive: true,
+                keepAliveMsecs: 60000,
+            })
+            return socksProxyAgent
+        }
         if (protocol === 'http:') {
             return httpAgent
         }
         return httpsAgent
     }
+}
 
-    agent.current = customAgent
+export function setCustomAgent(configuration: Configuration): ({ protocol }: Pick<URL, 'protocol'>) => http.Agent {
+    agent.current = getCustomAgent(configuration)
+    return agent.current as ({ protocol }: Pick<URL, 'protocol'>) => http.Agent
+}
+
+export function initializeNetworkAgent(): void {
+    const customAgent = setCustomAgent(getConfiguration())
 
     /**
      * This works around an issue in the default VS Code proxy agent code. When `http.proxySupport`
@@ -38,7 +58,7 @@ export function initializeNetworkAgent(): void {
      * c.f. https://github.com/microsoft/vscode/issues/173861
      */
     try {
-        const PacProxyAgent = (globalThis as any)?.[nodeModules]?.[proxyAgentPath]?.[proxyAgent] ?? undefined
+        const PacProxyAgent = (globalThis as any)?.[nodeModules]?.[proxyAgentPath]?.[pacProxyAgent] ?? undefined
         if (PacProxyAgent) {
             const originalConnect = PacProxyAgent.prototype.connect
             // Patches the implementation defined here:

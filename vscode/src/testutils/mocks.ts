@@ -409,7 +409,16 @@ export class Range implements VSCodeRange {
     public get isSingleLine(): boolean {
         return this.start.line === this.end.line
     }
-    public contains(): boolean {
+    public contains(positionOrRange: Position | Range): boolean {
+        if ('line' in positionOrRange) {
+            return (
+                positionOrRange.line >= this.start.line &&
+                positionOrRange.line <= this.end.line &&
+                positionOrRange.character >= this.start.character &&
+                positionOrRange.character <= this.end.character
+            )
+        }
+
         throw new Error('not implemented')
     }
     public intersection(): VSCodeRange | undefined {
@@ -574,6 +583,9 @@ export const vsCodeMocks = {
         }),
         applyEdit: (edit: WorkspaceEdit) => true,
         save: () => true,
+        asRelativePath(path: string | URI) {
+            return path.toString()
+        },
     },
     ConfigurationTarget: {
         Global: undefined,

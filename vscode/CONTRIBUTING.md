@@ -126,3 +126,9 @@ pnpm --filter cody-ai run start:dev:desktop
 4. **Open Node DevTools**: Look for and click on the option that says "Open dedicated DevTools for Node".
 5. **Specify the Debugging Endpoint**: At this point, DevTools aren't initialized yet. Therefore, you need to specify [the debugging endpoint](https://nodejs.org/en/docs/inspector/) `localhost:9333` (the port depends on the `--inspect-extensions` CLI flag used in the `start:debug` npm script)
 6. **Start Debugging Like a PRO**: yay!
+
+## Running the autocomplete test suite
+
+We have a list of test cases that you can easily automate to validate autocomplete quality when making prompt changes. The database for this lives in `vscode/test/completions/completions-dataset.ts` and should be updated when new cases are added or removed.
+
+For more information, see [Cody quality tools](../doc/dev/quality/index.md)

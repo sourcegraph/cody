@@ -9,9 +9,11 @@ export enum FeatureFlag {
 
     CodyAutocompleteTracing = 'cody-autocomplete-tracing',
     CodyAutocompleteIncreasedDebounceTimeEnabled = 'cody-autocomplete-increased-debounce-time-enabled',
-    CodyAutocompleteStreamingResponse = 'cody-autocomplete-streaming-response',
     CodyAutocompleteStarCoder7B = 'cody-autocomplete-default-starcoder-7b',
     CodyAutocompleteStarCoder16B = 'cody-autocomplete-default-starcoder-16b',
+    CodyAutocompleteClaudeInstantInfill = 'cody-autocomplete-claude-instant-infill',
+    CodyAutocompleteMinimumLatency = 'cody-autocomplete-minimum-latency',
+    CodyAutocompleteGraphContext = 'cody-autocomplete-graph-context',
 }
 
 const ONE_HOUR = 60 * 60 * 1000

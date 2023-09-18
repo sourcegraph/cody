@@ -1,10 +1,12 @@
 import * as vscode from 'vscode'
 
-import { CodyPrompt, CodyPromptType } from '@sourcegraph/cody-shared/src/chat/prompts'
+import { CodyPrompt, CustomCommandType } from '@sourcegraph/cody-shared/src/chat/prompts'
 import { ChatMessage, UserLocalHistory } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 
 import { View } from '../../webviews/NavBar'
 import { logDebug } from '../log'
+import { AuthProviderSimplified } from '../services/AuthProviderSimplified'
+import * as OnboardingExperiment from '../services/OnboardingExperiment'
 
 import { MessageProvider, MessageProviderOptions } from './MessageProvider'
 import { ExtensionMessage, WebviewMessage } from './protocol'
@@ -63,6 +65,16 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
                 }
                 if (message.type === 'callback' && message.endpoint) {
                     this.authProvider.redirectToEndpointLogin(message.endpoint)
+                    break
+                }
+                if (message.type === 'simplified-onboarding') {
+                    const authProviderSimplified = new AuthProviderSimplified()
+                    const authMethod = message.authMethod || 'dotcom'
+                    void authProviderSimplified.openExternalAuthUrl(this.authProvider, authMethod)
+                    break
+                }
+                if (message.type === 'simplified-onboarding-exposure') {
+                    await OnboardingExperiment.logExposure()
                     break
                 }
                 // cody.auth.signin or cody.auth.signout
@@ -142,7 +154,7 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
     /**
      * Process custom command click
      */
-    private async onCustomPromptClicked(title: string, commandType: CodyPromptType = 'user'): Promise<void> {
+    private async onCustomPromptClicked(title: string, commandType: CustomCommandType = 'user'): Promise<void> {
         this.telemetryService.log('CodyVSCodeExtension:command:customMenu:clicked')
         logDebug('ChatViewProvider:onCustomPromptClicked', title)
         if (!this.isCustomCommandAction(title)) {

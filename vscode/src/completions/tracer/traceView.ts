@@ -3,7 +3,12 @@ import * as vscode from 'vscode'
 import { isDefined } from '@sourcegraph/cody-shared'
 import { renderMarkdown } from '@sourcegraph/cody-shared/src/common/markdown'
 
+import {
+    GraphSectionObserver,
+    registerDebugListener as registerSectionObserverDebugListener,
+} from '../context/graph-section-observer'
 import { InlineCompletionsResultSource } from '../getInlineCompletions'
+import * as statistics from '../statistics'
 import { InlineCompletionItem } from '../types'
 import { InlineCompletionItemProvider } from '../vscodeInlineCompletionItemProvider'
 
@@ -32,14 +37,18 @@ export function registerAutocompleteTraceView(provider: InlineCompletionItemProv
                 panel = null
             })
 
-            panel.webview.html = renderWebviewHtml(undefined)
-
-            provider.setTracer(data => {
+            let data: ProvideInlineCompletionsItemTraceData | undefined
+            function rerender(): void {
                 if (!panel) {
                     return
                 }
 
-                // Only show data from the latest invocation.
+                if (!data) {
+                    panel.webview.html = renderWebviewHtml(data)
+                    return
+                }
+
+                //  Only show data from the latest invocation.
                 if (data.invocationSequence > latestInvocationSequence) {
                     latestInvocationSequence = data.invocationSequence
                 } else if (data.invocationSequence < latestInvocationSequence) {
@@ -47,7 +56,23 @@ export function registerAutocompleteTraceView(provider: InlineCompletionItemProv
                 }
 
                 panel.webview.html = renderWebviewHtml(data)
+            }
+            rerender()
+
+            const unsubscribeStatistics = statistics.registerChangeListener(rerender)
+            const unsubscribeSectionObserver = registerSectionObserverDebugListener(rerender)
+
+            provider.setTracer(_data => {
+                data = _data
+                rerender()
             })
+
+            return {
+                dispose: () => {
+                    unsubscribeStatistics()
+                    unsubscribeSectionObserver()
+                },
+            }
         }),
         {
             dispose() {
@@ -63,6 +88,7 @@ export function registerAutocompleteTraceView(provider: InlineCompletionItemProv
 function renderWebviewHtml(data: ProvideInlineCompletionsItemTraceData | undefined): string {
     const markdownSource = [
         `# Cody autocomplete trace view${data ? ` (#${data.invocationSequence})` : ''}`,
+        statisticSummary(),
         data ? null : 'Waiting for you to trigger a completion...',
         data?.params &&
             `
@@ -96,8 +122,9 @@ ${codeDetailsWithSummary('Suffix', suffix, 'start')}
 ${markdownList(otherOptions)}
 `
 )}`,
-        data?.context !== undefined
-            ? `
+        data?.context === undefined
+            ? ''
+            : `
 ## Context
 
 ${data.context ? markdownList(data.context.logSummary) : ''}
@@ -106,13 +133,18 @@ ${
     data.context === null || data.context.context.length === 0
         ? 'No context.'
         : data.context.context
-              .map(({ content, fileName }) =>
-                  codeDetailsWithSummary(`${fileName} (${content.length} chars)`, content, 'start')
+              .map(contextSnippet =>
+                  codeDetailsWithSummary(
+                      `${contextSnippet.fileName}${'symbol' in contextSnippet ? `#${contextSnippet.symbol}` : ''} (${
+                          contextSnippet.content.length
+                      } chars)`,
+                      contextSnippet.content,
+                      'start'
+                  )
               )
               .join('\n\n')
 }
-`
-            : '',
+`,
         data?.completionProviderCallParams &&
             `
 ## Completion provider calls
@@ -126,8 +158,9 @@ ${
 }
 
 `,
-        data?.result !== undefined
-            ? `
+        data?.result === undefined
+            ? ''
+            : `
 ## Completions
 
 ${(data.result
@@ -143,8 +176,7 @@ ${
         : data.result.items
               .map(item => inlineCompletionItemDescription(item, data.params?.document))
               .join('\n\n---\n\n')
-}`
-            : '',
+}`,
 
         data?.error &&
             `
@@ -152,6 +184,13 @@ ${
 
 ${markdownCodeBlock(data.error)}
 `,
+        GraphSectionObserver.instance
+            ? `
+## Document sections
+
+${documentSections()}`
+            : '',
+
         `
 ## Advanced tools
 
@@ -167,6 +206,20 @@ ${codeDetailsWithSummary('JSON for dataset', jsonForDataset(data))}
     return renderMarkdown(markdownSource, { noDomPurify: true })
 }
 
+function statisticSummary(): string {
+    const { accepted, suggested } = statistics.getStatistics()
+    return `📈 Suggested: ${suggested} | Accepted: ${accepted} | Acceptance rate: ${
+        suggested === 0 ? 'N/A' : `${((accepted / suggested) * 100).toFixed(2)}%`
+    }`
+}
+
+function documentSections(): string {
+    if (!GraphSectionObserver.instance) {
+        return ''
+    }
+    return `\`\`\`\n${GraphSectionObserver.instance.debugPrint()}\n\`\`\``
+}
+
 function codeDetailsWithSummary(
     title: string,
     value: string,
@@ -176,11 +229,11 @@ function codeDetailsWithSummary(
     const excerpt =
         anchor === 'start' ? value.slice(0, excerptLength) : anchor === 'end' ? value.slice(-excerptLength) : null
     const excerptMarkdown =
-        excerpt !== null
-            ? `: <code>${anchor === 'end' ? '⋯' : ''}${withVisibleWhitespace(excerpt)
-                  .replace(/</g, '&lt;')
-                  .replace(/>/g, '&gt;')}${anchor === 'start' ? '⋯' : ''}</code>`
-            : ''
+        excerpt === null
+            ? ''
+            : `: <code>${anchor === 'end' ? '⋯' : ''}${withVisibleWhitespace(excerpt)
+                  .replaceAll('<', '&lt;')
+                  .replaceAll('>', '&gt;')}${anchor === 'start' ? '⋯' : ''}</code>`
     return `
 <details>
 <summary>${title}${excerptMarkdown}</summary>
@@ -191,11 +244,11 @@ ${markdownCodeBlock(value)}
 }
 
 function markdownInlineCode(value: string): string {
-    return '`' + value.replace(/`/g, '\\`') + '`'
+    return '`' + value.replaceAll('`', '\\`') + '`'
 }
 
 function markdownCodeBlock(value: string): string {
-    return '```\n' + value.replace(/`/g, '\\`') + '\n```\n'
+    return '```\n' + value.replaceAll('`', '\\`') + '\n```\n'
 }
 
 function markdownList(object: { [key: string]: string | number | boolean }): string {
@@ -241,7 +294,7 @@ function rangeDescription(range: vscode.Range): string {
     return `${range.start.line + 1}:${range.start.character + 1}${
         range.isEmpty
             ? ''
-            : `-${range.end.line !== range.start.line ? `${range.end.line + 1}:` : ''}${range.end.character + 1}`
+            : `-${range.end.line === range.start.line ? '' : `${range.end.line + 1}:`}${range.end.character + 1}`
     }`
 }
 
@@ -256,7 +309,7 @@ function rangeDescriptionWithCurrentText(range: vscode.Range, document?: vscode.
 }
 
 function withVisibleWhitespace(text: string): string {
-    return text.replace(/ /g, '·').replace(/\t/g, '⇥').replace(/\r?\n/g, '↵')
+    return text.replaceAll(' ', '·').replaceAll('\t', '⇥').replaceAll(/\r?\n/g, '↵')
 }
 
 function jsonForDataset(data: ProvideInlineCompletionsItemTraceData | undefined): string {

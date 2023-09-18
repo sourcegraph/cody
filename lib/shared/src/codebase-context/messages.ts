@@ -24,8 +24,24 @@ export interface PreciseContext {
     symbol: {
         fuzzyName?: string
     }
+    hoverText: string[]
     definitionSnippet: string
     filePath: string
+    range?: {
+        startLine: number
+        startCharacter: number
+        endLine: number
+        endCharacter: number
+    }
+}
+
+export interface HoverContext {
+    symbolName: string
+    sourceSymbolName?: string
+    type: 'definition' | 'typeDefinition' | 'implementation'
+    content: string[]
+
+    uri: string
     range?: {
         startLine: number
         startCharacter: number

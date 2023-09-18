@@ -1,5 +1,3 @@
-import { Preamble } from '../preamble'
-
 import * as defaultPrompts from './default-prompts.json'
 import { toSlashCommand } from './utils'
 
@@ -32,25 +30,12 @@ export interface MyPrompts {
     commands: Map<string, CodyPrompt>
     // backward compatibility
     recipes?: Map<string, CodyPrompt>
-    // Premade is a set of prompts that are added to the start of every new conversation
-    // --this is where we define the "identity" and "rules" for Cody
-    premade?: Preamble
-    // A conversation starter --this is added to the start of every human input sent to Cody.
-    starter: string
 }
 
 // JSON format of MyPrompts
 export interface MyPromptsJSON {
     commands: { [id: string]: Omit<CodyPrompt, 'slashCommand'> }
     recipes?: { [id: string]: CodyPrompt }
-    premade?: CodyPremade
-    starter?: string
-}
-
-export interface CodyPremade {
-    actions: string
-    rules: string
-    answer: string
 }
 
 export interface CodyPrompt {
@@ -76,6 +61,8 @@ export interface CodyPromptContext {
 }
 
 export type CodyPromptType = 'workspace' | 'user' | 'default' | 'recently used'
+
+export type CustomCommandType = 'workspace' | 'user'
 
 export const ConfigFileName = {
     vscode: '.vscode/cody.json',

@@ -3,7 +3,7 @@ import * as vscode from 'vscode'
 import { BotResponseMultiplexer } from '@sourcegraph/cody-shared/src/chat/bot-response-multiplexer'
 import { ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
 import { getPreamble } from '@sourcegraph/cody-shared/src/chat/preamble'
-import { CodyPrompt, CodyPromptType } from '@sourcegraph/cody-shared/src/chat/prompts'
+import { CodyPrompt, CustomCommandType } from '@sourcegraph/cody-shared/src/chat/prompts'
 import { newInteraction } from '@sourcegraph/cody-shared/src/chat/prompts/utils'
 import { Recipe, RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 import { Transcript } from '@sourcegraph/cody-shared/src/chat/transcript'
@@ -336,13 +336,8 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
             default: {
                 this.sendTranscript()
 
-                const myPremade = (await this.editor.controllers.command?.getCustomConfig())?.premade
-                if (myPremade) {
-                    this.telemetryService.log('CodyVSCodeExtension:command:customPremade:applied')
-                }
-
                 const { prompt, contextFiles, preciseContexts } = await this.transcript.getPromptForLastInteraction(
-                    getPreamble(this.contextProvider.context.getCodebase(), myPremade),
+                    getPreamble(this.contextProvider.context.getCodebase()),
                     this.maxPromptTokens
                 )
                 this.transcript.setUsedContextFilesForLastInteraction(contextFiles, preciseContexts)
@@ -374,13 +369,8 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         }
         transcript.addInteraction(interaction)
 
-        const myPremade = (await this.editor.controllers.command?.getCustomConfig())?.premade
-        if (myPremade) {
-            this.telemetryService.log('CodyVSCodeExtension:command:customPremade:applied')
-        }
-
         const { prompt, contextFiles } = await transcript.getPromptForLastInteraction(
-            getPreamble(this.contextProvider.context.getCodebase(), myPremade),
+            getPreamble(this.contextProvider.context.getCodebase()),
             this.maxPromptTokens
         )
         transcript.setUsedContextFilesForLastInteraction(contextFiles)
@@ -455,7 +445,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
      * Handle instructions returned from webview in regard to a Cody Command
      * Finds and execute a Cody command
      */
-    public async executeCustomCommand(title: string, type?: CodyPromptType): Promise<void> {
+    public async executeCustomCommand(title: string, type?: CustomCommandType): Promise<void> {
         title = title.trim()
         switch (title) {
             case 'get':
@@ -476,14 +466,10 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         // Get prompt details from controller by title then execute prompt's command
         const promptText = this.editor.controllers.command?.find(title)
         await this.editor.controllers.command?.get('command')
-        logDebug('executeCustomCommand:starting', title)
-        if (!promptText) {
-            return
-        }
-        await this.executeRecipe('custom-prompt', promptText)
-        const starter = (await this.editor.controllers.command?.getCustomConfig())?.starter
-        if (starter) {
-            this.telemetryService.log('CodyVSCodeExtension:command:customStarter:applied')
+
+        if (promptText) {
+            logDebug('executeCustomCommand:starting', title)
+            await this.executeRecipe('custom-prompt', promptText)
         }
         return
     }
@@ -528,7 +514,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
                 await vscode.commands.executeCommand('cody.fixup.new', { instruction: text })
                 return null
             case /^\/(explain|doc|test|smell)$/.test(text):
-                this.telemetryService.log(`CodyVSCodeExtension:command:${commandKey}:called`, {
+                this.telemetryService.log(`CodyVSCodeExtension:command:${commandKey}:executed`, {
                     source: 'chat',
                 })
             default: {

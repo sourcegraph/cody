@@ -1,16 +1,14 @@
 import { omit } from 'lodash'
 import * as vscode from 'vscode'
 
-import { Preamble } from '@sourcegraph/cody-shared/src/chat/preamble'
 import {
     CodyPrompt,
-    CodyPromptType,
     ConfigFileName,
+    CustomCommandType,
     MyPrompts,
     MyPromptsJSON,
 } from '@sourcegraph/cody-shared/src/chat/prompts'
 import { fromSlashCommand, toSlashCommand } from '@sourcegraph/cody-shared/src/chat/prompts/utils'
-import { newPromptMixin, PromptMixin } from '@sourcegraph/cody-shared/src/prompt/prompt-mixin'
 
 import { logDebug, logError } from '../log'
 
@@ -19,7 +17,7 @@ import {
     createJSONFile,
     deleteFile,
     getFileContentText,
-    isUserType,
+    openCustomCommandDocsLink,
     saveJSONFile,
 } from './utils/helpers'
 import { promptSizeInit } from './utils/menu'
@@ -30,9 +28,7 @@ import { promptSizeInit } from './utils/menu'
  */
 export class CustomPromptsStore implements vscode.Disposable {
     public myPromptsJSON: MyPromptsJSON | null = null
-    public myPremade: Preamble | undefined = undefined
     public myPromptsMap = new Map<string, CodyPrompt>()
-    public myStarter = ''
 
     public promptSize = promptSizeInit
     public jsonFileUris: { user?: vscode.Uri; workspace?: vscode.Uri }
@@ -89,7 +85,7 @@ export class CustomPromptsStore implements vscode.Disposable {
         } catch (error) {
             logError('CustomPromptsStore:refresh', 'failed', { verbose: error })
         }
-        return { commands: this.myPromptsMap, premade: this.myPremade, starter: this.myStarter }
+        return { commands: this.myPromptsMap }
     }
 
     /**
@@ -102,7 +98,7 @@ export class CustomPromptsStore implements vscode.Disposable {
     /**
      * Build the map of prompts using the json string
      */
-    public async build(type: CodyPromptType): Promise<Map<string, CodyPrompt> | null> {
+    public async build(type: CustomCommandType): Promise<Map<string, CodyPrompt> | null> {
         try {
             const content = await this.getPromptsFromFileSystem(type)
             if (!content) {
@@ -116,46 +112,46 @@ export class CustomPromptsStore implements vscode.Disposable {
                 ([key, prompt]) => key.split(' ').length > 1 || !('description' in prompt)
             )
             if (isOldFormat) {
-                // transform old format commands to the new format
-                const commands = promptEntries.reduce(
-                    (acc: Record<string, Omit<CodyPrompt, 'slashCommand'>>, [key, { prompt, type, context }]) => {
-                        const slashCommand = key.trim().replaceAll(' ', '-').toLowerCase()
-                        acc[slashCommand] = { description: key, prompt, type, context }
-                        return acc
-                    },
-                    {}
-                )
-                // write transformed commands to the corresponding config file
-                await this.updateJSONFile({ ...json, commands }, type)
-                // inform user about this change
                 void vscode.window
                     .showInformationMessage(
-                        `Your Cody ${type} configuration file has been automatically updated to the new format.`,
-                        'Open File'
+                        `Your custom commands ${type} JSON (${
+                            type === 'user' ? '~/.vscode/cody.json' : '.vscode/cody.json'
+                        }) is using an old format, and needs to be upgraded.`,
+                        'Upgrade JSON',
+                        'Ignore'
                     )
                     .then(choice => {
-                        if (choice === 'Open File') {
-                            const filePath = type === 'user' ? this.jsonFileUris.user : this.jsonFileUris.workspace
-                            if (filePath) {
-                                void vscode.window.showTextDocument(filePath)
-                            }
+                        if (choice === 'Upgrade JSON') {
+                            // transform old format commands to the new format
+                            const commands = promptEntries.reduce(
+                                (
+                                    acc: Record<string, Omit<CodyPrompt, 'slashCommand'>>,
+                                    [key, { prompt, type, context }]
+                                ) => {
+                                    const slashCommand = key.trim().replaceAll(' ', '-').toLowerCase()
+                                    acc[slashCommand] = { description: key, prompt, type, context }
+                                    return acc
+                                },
+                                {}
+                            )
+
+                            // write transformed commands to the corresponding config file
+                            void this.updateJSONFile({ ...json, commands }, type).then(() => {
+                                // open the updated settings file
+                                const filePath = type === 'user' ? this.jsonFileUris.user : this.jsonFileUris.workspace
+                                if (filePath) {
+                                    void vscode.window.showTextDocument(filePath)
+                                }
+                            })
                         }
                     })
-                // read from the updated config file
-                return await this.build(type)
-            }
 
+                return null
+            }
             for (const [key, prompt] of promptEntries) {
                 const current: CodyPrompt = { ...prompt, slashCommand: toSlashCommand(key) }
                 current.type = type
                 this.myPromptsMap.set(current.slashCommand, current)
-            }
-
-            this.myPremade = json.premade
-            // avoid duplicate starter prompts
-            if (json.starter && json?.starter !== this.myStarter) {
-                PromptMixin.addCustom(newPromptMixin(json.starter))
-                this.myStarter = json.starter
             }
             if (type === 'user') {
                 this.myPromptsJSON = json
@@ -174,7 +170,7 @@ export class CustomPromptsStore implements vscode.Disposable {
         id: string,
         prompt: CodyPrompt,
         deletePrompt = false,
-        type: CodyPromptType = 'user'
+        type: CustomCommandType = 'user'
     ): Promise<void> {
         if (deletePrompt) {
             this.myPromptsMap.delete(id)
@@ -200,15 +196,13 @@ export class CustomPromptsStore implements vscode.Disposable {
     /**
      * Updates the corresponding Cody config file with the given prompts.
      */
-    private async updateJSONFile(prompts: MyPromptsJSON, type: CodyPromptType): Promise<void> {
+    private async updateJSONFile(prompts: MyPromptsJSON, type: CustomCommandType): Promise<void> {
         try {
-            const jsonString = JSON.stringify(prompts, null, 2)
             const rootDirPath = type === 'user' ? this.jsonFileUris.user : this.jsonFileUris.workspace
-            if (!rootDirPath || !jsonString) {
-                throw new Error('Invalid file path or json string')
+            if (!rootDirPath) {
+                throw new Error('Invalid file path')
             }
-            const isSaveMode = true
-            await saveJSONFile(jsonString, rootDirPath, isSaveMode)
+            await saveJSONFile(prompts, rootDirPath)
         } catch (error) {
             void vscode.window.showErrorMessage(`Failed to save to cody.json file: ${error}`)
         }
@@ -217,13 +211,18 @@ export class CustomPromptsStore implements vscode.Disposable {
     /**
      * Create a new cody.json file to the user's workspace or home directory
      */
-    public async createConfig(type: CodyPromptType = 'user'): Promise<void> {
-        const isUser = isUserType(type)
+    public async createConfig(type: CustomCommandType = 'user'): Promise<void> {
         const configFileUri = this.getConfigUriByType(type)
         try {
             if (configFileUri) {
-                await createJSONFile(this.extensionPath, configFileUri, isUser)
-                void vscode.window.showInformationMessage('A new cody.json file has been created successfully.')
+                await createJSONFile(this.extensionPath, configFileUri)
+                void vscode.window
+                    .showInformationMessage(`Cody ${type} settings file created`, 'View Documentation')
+                    .then(async choice => {
+                        if (choice === 'View Documentation') {
+                            await openCustomCommandDocsLink()
+                        }
+                    })
                 return
             }
             throw new Error('Please make sure you have a repository opened in your workspace.')
@@ -237,7 +236,7 @@ export class CustomPromptsStore implements vscode.Disposable {
     /**
      * Remove the cody.json file from the user's workspace or home directory
      */
-    public async deleteConfig(type: CodyPromptType = 'user'): Promise<void> {
+    public async deleteConfig(type: CustomCommandType = 'user'): Promise<void> {
         // delete .vscode/cody.json for user command using the vs code api
         const uri = this.getConfigUriByType(type)
         if (this.promptSize[type] === 0 || !uri) {
@@ -252,7 +251,7 @@ export class CustomPromptsStore implements vscode.Disposable {
     /**
      * Open the .vscode/cody.json file for given type in the editor
      */
-    public async openConfig(type: CodyPromptType = 'user'): Promise<void> {
+    public async openConfig(type: CustomCommandType = 'user'): Promise<void> {
         const uri = this.getConfigUriByType(type)
         return vscode.commands.executeCommand('vscode.open', uri)
     }
@@ -260,7 +259,7 @@ export class CustomPromptsStore implements vscode.Disposable {
     /**
      * Get the file content of the cody.json file for the given type
      */
-    private async getPromptsFromFileSystem(type: CodyPromptType): Promise<string | null> {
+    private async getPromptsFromFileSystem(type: CustomCommandType): Promise<string | null> {
         const codyJsonFilePathUri = this.getConfigUriByType(type)
         if (!codyJsonFilePathUri) {
             return null
@@ -275,17 +274,14 @@ export class CustomPromptsStore implements vscode.Disposable {
         this.isActive = false
         this.myPromptsMap = new Map<string, CodyPrompt>()
         this.promptSize = { ...promptSizeInit }
-        this.myPremade = undefined
-        this.myStarter = ''
         this.myPromptsJSON = null
     }
 
     /**
      * Get the uri of the cody.json file for the given type
      */
-    private getConfigUriByType(type: CodyPromptType): vscode.Uri | undefined {
-        const isUserType = type === 'user'
-        const configFileUri = isUserType ? this.jsonFileUris.user : this.jsonFileUris.workspace
+    private getConfigUriByType(type: CustomCommandType): vscode.Uri | undefined {
+        const configFileUri = type === 'user' ? this.jsonFileUris.user : this.jsonFileUris.workspace
         return configFileUri
     }
 }

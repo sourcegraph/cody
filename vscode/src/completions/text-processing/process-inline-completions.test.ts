@@ -1,9 +1,10 @@
+import dedent from 'dedent'
 import { beforeAll, describe, expect, test } from 'vitest'
 import Parser from 'web-tree-sitter'
 
 import { range } from '../../testutils/textDocument'
 import { getCurrentDocContext } from '../get-current-doc-context'
-import { documentAndPosition, initTreeSitterParser } from '../testHelpers'
+import { documentAndPosition, initTreeSitterParser } from '../test-helpers'
 import { updateParseTreeCache } from '../tree-sitter/parse-tree-cache'
 import { InlineCompletionItem } from '../types'
 
@@ -50,7 +51,7 @@ describe('adjustRangeToOverwriteOverlappingCharacters', () => {
     })
 })
 
-describe('parseCompletion', () => {
+describe('process completion item', () => {
     let parser: Parser
 
     beforeAll(async () => {
@@ -59,11 +60,23 @@ describe('parseCompletion', () => {
 
     function testParseInfoProcessor(code: string, completioSnippets: string[]) {
         const { document, position } = documentAndPosition(code)
-        const docContext = getCurrentDocContext(document, position, Infinity, Infinity)
+        const docContext = getCurrentDocContext({
+            document,
+            position,
+            maxPrefixLength: Infinity,
+            maxSuffixLength: Infinity,
+            enableExtendedTriggers: true,
+        })
+
         updateParseTreeCache(document, parser)
 
         return completioSnippets.map(insertText =>
-            processItem({ insertText }, { document, position, multiline: insertText.includes('\n'), docContext })
+            processItem({
+                completion: { insertText },
+                document,
+                position,
+                docContext,
+            })
         )
     }
 
@@ -86,11 +99,40 @@ describe('parseCompletion', () => {
                 alert('hello world!')
             }
 
-            function sort(█)
+            const one = []; function sort(█)
         `,
-            ['array) {\nreturn array.sort()\n}', 'array) new\n']
+            ['array) {\nreturn array.sort()\n} function two() {}', 'array) new\n']
         )
 
         expect(completions.map(c => c.hasParseErrors)).toEqual([false, true])
+    })
+
+    test('truncates multi-line if statements correctly', () => {
+        const [{ insertText }] = testParseInfoProcessor(
+            `
+            function whatever() {
+                console.log(123)
+            }
+            console.log(321); if (check) {
+                █
+            }
+        `,
+            [
+                dedent`console.log('one')
+                    } else {
+                        console.log('two')
+                    } else {
+                        console.log('three')
+                    }
+            `,
+            ]
+        )
+
+        expect(insertText).toBe(dedent`
+                console.log('one')
+            } else {
+                console.log('two')
+            }
+        `)
     })
 })

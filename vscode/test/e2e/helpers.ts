@@ -4,8 +4,9 @@ import * as path from 'path'
 
 import { test as base, Frame, Page } from '@playwright/test'
 import { _electron as electron } from 'playwright'
+import * as uuid from 'uuid'
 
-import { run } from '../fixtures/mock-server'
+import { run, sendTestInfo } from '../fixtures/mock-server'
 
 import { installDeps } from './install-deps'
 
@@ -26,6 +27,8 @@ export const test = base
             const workspaceDirectory = path.join(vscodeRoot, 'test', 'fixtures', 'workspace')
 
             await buildWorkSpaceSettings(workspaceDirectory)
+
+            sendTestInfo(testInfo.title, testInfo.testId, uuid.v4())
 
             // See: https://github.com/microsoft/vscode-test/blob/main/lib/runTest.ts
             const app = await electron.launch({
@@ -122,7 +125,7 @@ async function waitUntil(predicate: () => boolean | Promise<boolean>): Promise<v
 }
 
 function escapeToPath(text: string): string {
-    return text.replace(/\W/g, '_')
+    return text.replaceAll(/\W/g, '_')
 }
 
 // Build a workspace settings file that enables the experimental inline mode
@@ -131,6 +134,7 @@ export async function buildWorkSpaceSettings(workspaceDirectory: string): Promis
         'cody.serverEndpoint': 'http://localhost:49300',
         'cody.experimental.commandLenses': true,
         'cody.experimental.editorTitleCommandIcon': true,
+        'testing.simplified-onboarding': false,
     }
     // create a temporary directory with settings.json and add to the workspaceDirectory
     const workspaceSettingsPath = path.join(workspaceDirectory, '.vscode', 'settings.json')

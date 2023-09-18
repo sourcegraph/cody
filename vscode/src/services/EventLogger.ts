@@ -26,8 +26,11 @@ export async function createOrUpdateEventLogger(
     isExtensionModeDevOrTest: boolean
 ): Promise<void> {
     if (config.telemetryLevel === 'off' || isExtensionModeDevOrTest) {
-        eventLogger = null
-        return
+        // check that CODY_TESTING is not true, because we want to log events when we are testing
+        if (process.env.CODY_TESTING !== 'true') {
+            eventLogger = null
+            return
+        }
     }
 
     const { anonymousUserID, created } = await localStorage.anonymousUserID()
@@ -61,7 +64,11 @@ export async function createOrUpdateEventLogger(
  * @deprecated Use TelemetryService instead.
  */
 export function logEvent(eventName: string, properties?: TelemetryEventProperties): void {
-    logDebug(`logEvent${eventLogger === null ? ' (telemetry disabled)' : ''}`, eventName, JSON.stringify(properties))
+    logDebug(
+        `logEvent${eventLogger === null || process.env.CODY_TESTING === 'true' ? ' (telemetry disabled)' : ''}`,
+        eventName,
+        JSON.stringify(properties)
+    )
     if (!eventLogger || !globalAnonymousUserID) {
         return
     }

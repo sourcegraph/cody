@@ -6,7 +6,7 @@
     "rootDir": ".",
     "outDir": "dist",
     "baseUrl": "./src",
-    "lib": ["DOM"],
+    "lib": ["ESNext", "DOM"],
   },
   "exclude": ["dist"],
   "include": ["globals.d.ts", "remix.env.d.ts", "**/*.ts", "**/*.tsx", "*.js"],

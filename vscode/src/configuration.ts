@@ -40,6 +40,7 @@ export function getConfiguration(config: ConfigGetter = vscode.workspace.getConf
         // NOTE: serverEndpoint is now stored in Local Storage instead but we will still keep supporting the one in confg
         // to use as fallback for users who do not have access to local storage
         serverEndpoint: sanitizeServerEndpoint(config.get(CONFIG_KEY.serverEndpoint, '')),
+        proxy: config.get<string | null>(CONFIG_KEY.proxy, null),
         codebase: sanitizeCodebase(config.get(CONFIG_KEY.codebase)),
         customHeaders: config.get<object>(CONFIG_KEY.customHeaders, {}) as Record<string, string>,
         useContext: config.get<ConfigurationUseContext>(CONFIG_KEY.useContext) || 'embeddings',
@@ -50,6 +51,7 @@ export function getConfiguration(config: ConfigGetter = vscode.workspace.getConf
         autocomplete: config.get(CONFIG_KEY.autocompleteEnabled, true),
         experimentalChatPredictions: config.get(CONFIG_KEY.experimentalChatPredictions, isTesting),
         inlineChat: config.get(CONFIG_KEY.inlineChatEnabled, true),
+        chatPreInstruction: config.get(CONFIG_KEY.chatPreInstruction),
         experimentalGuardrails: config.get(CONFIG_KEY.experimentalGuardrails, isTesting),
         experimentalNonStop: config.get(CONFIG_KEY.experimentalNonStop, isTesting),
         experimentalLocalSymbols: config.get(CONFIG_KEY.experimentalLocalSymbols, false),
@@ -73,12 +75,20 @@ export function getConfiguration(config: ConfigGetter = vscode.workspace.getConf
             CONFIG_KEY.autocompleteExperimentalSyntacticPostProcessing,
             false
         ),
+        autocompleteExperimentalGraphContext: config.get<boolean>(
+            CONFIG_KEY.autocompleteExperimentalGraphContext,
+            false
+        ),
+
+        /**
+         * UNDOCUMENTED FLAGS
+         */
 
         // Note: In spirit, we try to minimize agent-specific code paths in the VSC extension.
         // We currently use this flag for the agent to provide more helpful error messages
         // when something goes wrong, and to suppress event logging in the agent.
         // Rely on this flag sparingly.
-        isRunningInsideAgent: config.get('cody.advanced.agent.running' as any, false),
+        isRunningInsideAgent: config.get<boolean>('cody.advanced.agent.running' as any, false),
     }
 }
 

@@ -12,8 +12,10 @@ describe('getConfiguration', () => {
         }
         expect(getConfiguration(config)).toEqual({
             serverEndpoint: DOTCOM_URL.href,
+            proxy: null,
             codebase: '',
             customHeaders: {},
+            chatPreInstruction: undefined,
             useContext: 'embeddings',
             autocomplete: true,
             experimentalCommandLenses: false,
@@ -37,6 +39,7 @@ describe('getConfiguration', () => {
             autocompleteAdvancedEmbeddings: true,
             autocompleteExperimentalCompleteSuggestWidgetSelection: false,
             autocompleteExperimentalSyntacticPostProcessing: false,
+            autocompleteExperimentalGraphContext: false,
         })
     })
 
@@ -46,6 +49,8 @@ describe('getConfiguration', () => {
                 switch (key) {
                     case 'cody.serverEndpoint':
                         return 'http://example.com'
+                    case 'cody.proxy':
+                        return 'socks5://127.0.0.1:9999'
                     case 'cody.codebase':
                         return 'my/codebase'
                     case 'cody.useContext':
@@ -83,6 +88,8 @@ describe('getConfiguration', () => {
                         return /.*/
                     case 'cody.telemetry.level':
                         return 'off'
+                    case 'cody.chat.preInstruction':
+                        return 'My name is Jeff.'
                     case 'cody.autocomplete.advanced.provider':
                         return 'unstable-codegen'
                     case 'cody.autocomplete.advanced.serverEndpoint':
@@ -97,6 +104,8 @@ describe('getConfiguration', () => {
                         return false
                     case 'cody.autocomplete.experimental.syntacticPostProcessing':
                         return false
+                    case 'cody.autocomplete.experimental.graphContext':
+                        return true
                     case 'cody.advanced.agent.running':
                         return false
                     default:
@@ -106,12 +115,14 @@ describe('getConfiguration', () => {
         }
         expect(getConfiguration(config)).toEqual({
             serverEndpoint: 'http://example.com',
+            proxy: 'socks5://127.0.0.1:9999',
             codebase: 'my/codebase',
             useContext: 'keyword',
             customHeaders: {
                 'Cache-Control': 'no-cache',
                 'Proxy-Authenticate': 'Basic',
             },
+            chatPreInstruction: 'My name is Jeff.',
             autocomplete: false,
             experimentalChatPredictions: true,
             experimentalCommandLenses: true,
@@ -134,6 +145,7 @@ describe('getConfiguration', () => {
             autocompleteAdvancedEmbeddings: false,
             autocompleteExperimentalCompleteSuggestWidgetSelection: false,
             autocompleteExperimentalSyntacticPostProcessing: false,
+            autocompleteExperimentalGraphContext: true,
         })
     })
 })

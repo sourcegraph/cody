@@ -7,21 +7,29 @@ import { CodyPrompt } from '@sourcegraph/cody-shared/src/chat/prompts'
 import { ChatHistory, ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { Configuration } from '@sourcegraph/cody-shared/src/configuration'
 
-import { AuthStatus, defaultAuthStatus, LocalEnv } from '../src/chat/protocol'
+import {
+    AuthMethod,
+    AuthStatus,
+    defaultAuthStatus,
+    Experiments,
+    LocalEnv,
+    OnboardingExperimentArm,
+} from '../src/chat/protocol'
 
 import { Chat } from './Chat'
 import { LoadingPage } from './LoadingPage'
 import { Login } from './Login'
 import { View } from './NavBar'
 import { Notices } from './Notices'
+import { LoginSimplified } from './OnboardingExperiment'
 import { UserHistory } from './UserHistory'
 import { createWebviewTelemetryService } from './utils/telemetry'
 import type { VSCodeWrapper } from './utils/VSCodeApi'
 
 export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vscodeAPI }) => {
-    const [config, setConfig] = useState<(Pick<Configuration, 'debugEnable' | 'serverEndpoint'> & LocalEnv) | null>(
-        null
-    )
+    const [config, setConfig] = useState<
+        (Pick<Configuration, 'debugEnable' | 'serverEndpoint'> & LocalEnv & Experiments) | null
+    >(null)
     const [endpoint, setEndpoint] = useState<string | null>(null)
     const [view, setView] = useState<View | undefined>()
     const [messageInProgress, setMessageInProgress] = useState<ChatMessage | null>(null)
@@ -139,6 +147,16 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
         [setEndpoint, vscodeAPI]
     )
 
+    const simplifiedLoginRedirect = useCallback(
+        (method: AuthMethod) => {
+            // Unlike onLoginRedirect, we do not change the view here. We want
+            // to keep presenting the login buttons until we get a token so
+            // users don't get stuck if they close the browser.
+            vscodeAPI.postMessage({ command: 'auth', type: 'simplified-onboarding', authMethod: method })
+        },
+        [vscodeAPI]
+    )
+
     const telemetryService = useMemo(() => createWebviewTelemetryService(vscodeAPI), [vscodeAPI])
 
     if (!view || !authStatus || !config) {
@@ -148,19 +166,27 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     return (
         <div className="outer-container">
             {view === 'login' || !authStatus.isLoggedIn ? (
-                <Login
-                    authStatus={authStatus}
-                    endpoint={endpoint}
-                    isAppInstalled={isAppInstalled}
-                    isAppRunning={config?.isAppRunning}
-                    vscodeAPI={vscodeAPI}
-                    telemetryService={telemetryService}
-                    appOS={config?.os}
-                    appArch={config?.arch}
-                    uiKindIsWeb={config?.uiKindIsWeb}
-                    callbackScheme={config?.uriScheme}
-                    onLoginRedirect={onLoginRedirect}
-                />
+                config.experimentOnboarding === OnboardingExperimentArm.Simplified ? (
+                    <LoginSimplified
+                        simplifiedLoginRedirect={simplifiedLoginRedirect}
+                        telemetryService={telemetryService}
+                        vscodeAPI={vscodeAPI}
+                    />
+                ) : (
+                    <Login
+                        authStatus={authStatus}
+                        endpoint={endpoint}
+                        isAppInstalled={isAppInstalled}
+                        isAppRunning={config?.isAppRunning}
+                        vscodeAPI={vscodeAPI}
+                        telemetryService={telemetryService}
+                        appOS={config?.os}
+                        appArch={config?.arch}
+                        uiKindIsWeb={config?.uiKindIsWeb}
+                        callbackScheme={config?.uriScheme}
+                        onLoginRedirect={onLoginRedirect}
+                    />
+                )
             ) : (
                 <>
                     <Notices

@@ -19,6 +19,7 @@ import { logDebug } from '../log'
 import { getRerankWithLog } from '../logged-rerank'
 import { repositoryRemoteUrl } from '../repository/repositoryHelpers'
 import { AuthProvider } from '../services/AuthProvider'
+import * as OnboardingExperiment from '../services/OnboardingExperiment'
 
 import { ChatViewProviderWebview } from './ChatViewProvider'
 import { GraphContextProvider } from './GraphContextProvider'
@@ -92,7 +93,7 @@ export class ContextProvider implements vscode.Disposable {
     }
 
     public onConfigurationChange(newConfig: Config): void {
-        logDebug('ContextProvider:onConfigurationChange', '')
+        logDebug('ContextProvider:onConfigurationChange', 'using codebase', newConfig.codebase)
         this.config = newConfig
         const authStatus = this.authProvider.getAuthStatus()
         if (authStatus.endpoint) {
@@ -206,6 +207,7 @@ export class ContextProvider implements vscode.Disposable {
                 ...localProcess,
                 debugEnable: this.config.debugEnable,
                 serverEndpoint: this.config.serverEndpoint,
+                experimentOnboarding: OnboardingExperiment.pickArm(this.telemetryService),
             }
 
             // update codebase context on configuration change

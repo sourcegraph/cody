@@ -11,7 +11,7 @@ import { vsCodeMocks } from '../testutils/mocks'
 import { getInlineCompletions, InlineCompletionsResultSource } from './getInlineCompletions'
 import * as CompletionLogger from './logger'
 import { createProviderConfig } from './providers/anthropic'
-import { documentAndPosition } from './testHelpers'
+import { documentAndPosition } from './test-helpers'
 import { InlineCompletionItem } from './types'
 import { InlineCompletionItemProvider } from './vscodeInlineCompletionItemProvider'
 
@@ -19,9 +19,7 @@ vi.mock('vscode', () => ({
     ...vsCodeMocks,
     workspace: {
         ...vsCodeMocks.workspace,
-        asRelativePath(path: string) {
-            return path
-        },
+
         onDidChangeTextDocument() {
             return null
         },

@@ -7,8 +7,8 @@ import { isAbortError } from '@sourcegraph/cody-shared/src/sourcegraph-api/error
 import { logError } from '../log'
 
 import { GetContextOptions, GetContextResult } from './context/context'
+import { GraphContextFetcher } from './context/context-graph'
 import { DocumentHistory } from './context/history'
-import { detectMultiline } from './detect-multiline'
 import { DocumentContext } from './get-current-doc-context'
 import * as CompletionLogger from './logger'
 import { CompletionProviderTracer, Provider, ProviderConfig, ProviderOptions } from './providers/provider'
@@ -32,6 +32,7 @@ export interface InlineCompletionsParams {
     prefixPercentage: number
     suffixPercentage: number
     isEmbeddingsContextEnabled: boolean
+    graphContextFetcher?: GraphContextFetcher
 
     // Platform
     toWorkspaceRelativePath: (uri: URI) => string
@@ -135,29 +136,33 @@ export async function getInlineCompletions(params: InlineCompletionsParams): Pro
     }
 }
 
-async function doGetInlineCompletions({
-    document,
-    position,
-    context,
-    docContext,
-    promptChars,
-    providerConfig,
-    responsePercentage,
-    prefixPercentage,
-    suffixPercentage,
-    isEmbeddingsContextEnabled,
-    toWorkspaceRelativePath,
-    contextFetcher,
-    getCodebaseContext,
-    documentHistory,
-    requestManager,
-    lastCandidate,
-    debounceInterval,
-    setIsLoading,
-    abortSignal,
-    tracer,
-    completeSuggestWidgetSelection = false,
-}: InlineCompletionsParams): Promise<InlineCompletionsResult | null> {
+async function doGetInlineCompletions(params: InlineCompletionsParams): Promise<InlineCompletionsResult | null> {
+    const {
+        document,
+        position,
+        context,
+        docContext,
+        docContext: { multilineTrigger, currentLineSuffix },
+        promptChars,
+        providerConfig,
+        responsePercentage,
+        prefixPercentage,
+        suffixPercentage,
+        isEmbeddingsContextEnabled,
+        graphContextFetcher,
+        toWorkspaceRelativePath,
+        contextFetcher,
+        getCodebaseContext,
+        documentHistory,
+        requestManager,
+        lastCandidate,
+        debounceInterval,
+        setIsLoading,
+        abortSignal,
+        tracer,
+        completeSuggestWidgetSelection = false,
+    } = params
+
     tracer?.({ params: { document, position, context } })
 
     // If we have a suffix in the same line as the cursor and the suffix contains any word
@@ -166,7 +171,7 @@ async function doGetInlineCompletions({
     //
     // VS Code will attempt to merge the remainder of the current line by characters but for
     // words this will easily get very confusing.
-    if (/\w/.test(docContext.currentLineSuffix)) {
+    if (/\w/.test(currentLineSuffix)) {
         return null
     }
 
@@ -186,12 +191,11 @@ async function doGetInlineCompletions({
         return resultToReuse
     }
 
-    const multiline = detectMultiline(docContext, document.languageId, providerConfig.enableExtendedMultilineTriggers)
-
     // Only log a completion as started if it's either served from cache _or_ the debounce interval
     // has passed to ensure we don't log too many start events where we end up not doing any work at
     // all.
     CompletionLogger.clear()
+    const multiline = Boolean(multilineTrigger)
     const logId = CompletionLogger.create({
         multiline,
         providerIdentifier: providerConfig.identifier,
@@ -201,7 +205,11 @@ async function doGetInlineCompletions({
 
     // Debounce to avoid firing off too many network requests as the user is still typing.
     const interval = multiline ? debounceInterval?.multiLine : debounceInterval?.singleLine
-    if (interval !== undefined && interval > 0) {
+    if (
+        context.triggerKind === vscode.InlineCompletionTriggerKind.Automatic &&
+        interval !== undefined &&
+        interval > 0
+    ) {
         await new Promise<void>(resolve => setTimeout(resolve, interval))
     }
 
@@ -216,8 +224,10 @@ async function doGetInlineCompletions({
     // Fetch context
     const contextResult = await getCompletionContext({
         document,
+        position,
         promptChars,
         isEmbeddingsContextEnabled,
+        graphContextFetcher,
         contextFetcher,
         getCodebaseContext,
         documentHistory,
@@ -236,7 +246,6 @@ async function doGetInlineCompletions({
         responsePercentage,
         prefixPercentage,
         suffixPercentage,
-        multiline,
         docContext,
         toWorkspaceRelativePath,
     })
@@ -248,7 +257,6 @@ async function doGetInlineCompletions({
         document,
         docContext,
         position,
-        multiline,
         context,
     }
 
@@ -288,21 +296,20 @@ interface GetCompletionProvidersParams
         | 'suffixPercentage'
         | 'toWorkspaceRelativePath'
     > {
-    multiline: boolean
     docContext: DocumentContext
 }
 
-function getCompletionProviders({
-    document,
-    context,
-    providerConfig,
-    responsePercentage,
-    prefixPercentage,
-    suffixPercentage,
-    multiline,
-    docContext,
-    toWorkspaceRelativePath,
-}: GetCompletionProvidersParams): Provider[] {
+function getCompletionProviders(params: GetCompletionProvidersParams): Provider[] {
+    const {
+        document,
+        context,
+        providerConfig,
+        responsePercentage,
+        prefixPercentage,
+        suffixPercentage,
+        docContext,
+        toWorkspaceRelativePath,
+    } = params
     const sharedProviderOptions: Omit<ProviderOptions, 'id' | 'n' | 'multiline'> = {
         docContext,
         fileName: toWorkspaceRelativePath(document.uri),
@@ -311,7 +318,7 @@ function getCompletionProviders({
         prefixPercentage,
         suffixPercentage,
     }
-    if (multiline) {
+    if (docContext.multilineTrigger) {
         return [
             providerConfig.create({
                 id: 'multiline',
@@ -337,8 +344,10 @@ interface GetCompletionContextParams
     extends Pick<
         InlineCompletionsParams,
         | 'document'
+        | 'position'
         | 'promptChars'
         | 'isEmbeddingsContextEnabled'
+        | 'graphContextFetcher'
         | 'contextFetcher'
         | 'getCodebaseContext'
         | 'documentHistory'
@@ -348,12 +357,14 @@ interface GetCompletionContextParams
 
 async function getCompletionContext({
     document,
+    position,
     promptChars,
     isEmbeddingsContextEnabled,
+    graphContextFetcher,
     contextFetcher,
     getCodebaseContext,
     documentHistory,
-    docContext: { prefix, suffix },
+    docContext: { prefix, suffix, contextRange },
 }: GetCompletionContextParams): Promise<GetContextResult | null> {
     if (!contextFetcher) {
         return null
@@ -367,13 +378,16 @@ async function getCompletionContext({
 
     return contextFetcher({
         document,
+        position,
         prefix,
         suffix,
+        contextRange,
         history: documentHistory,
         jaccardDistanceWindowSize: SNIPPET_WINDOW_SIZE,
         maxChars: promptChars,
         getCodebaseContext,
         isEmbeddingsContextEnabled,
+        graphContextFetcher,
     })
 }
 

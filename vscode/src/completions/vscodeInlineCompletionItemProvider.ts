@@ -9,6 +9,7 @@ import { logDebug } from '../log'
 import { CodyStatusBar } from '../services/StatusBar'
 
 import { getContext, GetContextOptions, GetContextResult } from './context/context'
+import { GraphContextFetcher } from './context/context-graph'
 import { DocumentHistory } from './context/history'
 import { DocumentContext, getCurrentDocContext } from './get-current-doc-context'
 import {
@@ -20,7 +21,6 @@ import {
 import * as CompletionLogger from './logger'
 import { ProviderConfig } from './providers/provider'
 import { RequestManager } from './request-manager'
-import { getNextNonEmptyLine } from './text-processing'
 import { ProvideInlineCompletionItemsTracer, ProvideInlineCompletionsItemTraceData } from './tracer'
 import { InlineCompletionItem } from './types'
 
@@ -33,11 +33,18 @@ export interface CodyCompletionItemProviderConfig {
     prefixPercentage?: number
     suffixPercentage?: number
     isEmbeddingsContextEnabled?: boolean
+    graphContextFetcher?: GraphContextFetcher | null
     completeSuggestWidgetSelection?: boolean
     tracer?: ProvideInlineCompletionItemsTracer | null
     contextFetcher?: (options: GetContextOptions) => Promise<GetContextResult>
     featureFlagProvider: FeatureFlagProvider
 }
+
+// Only used when the CodyAutocompleteMinimumLatency feature flag is turned on:
+//
+// We don't want to show completions immediately after a user types a character (unless we show the
+// last candidate) to avoid churning the UI too much. Instead, we wait at least
+const MINIMUM_LATENCY_MS = 350
 
 export class InlineCompletionItemProvider implements vscode.InlineCompletionItemProvider {
     private promptChars: number
@@ -61,6 +68,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
         prefixPercentage = 0.6,
         suffixPercentage = 0.1,
         isEmbeddingsContextEnabled = true,
+        graphContextFetcher = null,
         completeSuggestWidgetSelection = false,
         tracer = null,
         ...config
@@ -71,6 +79,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
             prefixPercentage,
             suffixPercentage,
             isEmbeddingsContextEnabled,
+            graphContextFetcher,
             completeSuggestWidgetSelection,
             tracer,
             contextFetcher: config.contextFetcher ?? getContext,
@@ -103,7 +112,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
 
         logDebug(
             'CodyCompletionProvider:initialized',
-            `${this.config.providerConfig.identifier}/${this.config.providerConfig.model}`
+            [this.config.providerConfig.identifier, this.config.providerConfig.model].join('/')
         )
     }
 
@@ -119,7 +128,14 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
         // Making it optional here to execute multiple suggestion in parallel from the CLI script.
         token?: vscode.CancellationToken
     ): Promise<vscode.InlineCompletionList | null> {
+        const start = performance.now()
+        // We start the request early so that we have a high chance of getting a response before we
+        // need it.
+        const minimumLatencyFlagPromise = this.config.featureFlagProvider.evaluateFeatureFlag(
+            FeatureFlag.CodyAutocompleteMinimumLatency
+        )
         const tracer = this.config.tracer ? createTracerForInvocation(this.config.tracer) : undefined
+        const graphContextFetcher = this.config.graphContextFetcher ?? undefined
 
         let stopLoading: () => void | undefined
         const setIsLoading = (isLoading: boolean): void => {
@@ -144,15 +160,15 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
             return null
         }
 
-        const docContext = getCurrentDocContext(
+        const docContext = getCurrentDocContext({
             document,
             position,
-            this.maxPrefixChars,
-            this.maxSuffixChars,
-            // We ignore the current context selection if completeSuggestWidgetSelection is not
-            // enabled
-            this.config.completeSuggestWidgetSelection ? context : undefined
-        )
+            maxPrefixLength: this.maxPrefixChars,
+            maxSuffixLength: this.maxSuffixChars,
+            enableExtendedTriggers: this.config.providerConfig.enableExtendedMultilineTriggers,
+            // We ignore the current context selection if completeSuggestWidgetSelection is not enabled
+            context: this.config.completeSuggestWidgetSelection ? context : undefined,
+        })
 
         const isIncreasedDebounceTimeEnabled = await this.config.featureFlagProvider.evaluateFeatureFlag(
             FeatureFlag.CodyAutocompleteIncreasedDebounceTimeEnabled
@@ -169,6 +185,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
                 prefixPercentage: this.config.prefixPercentage,
                 suffixPercentage: this.config.suffixPercentage,
                 isEmbeddingsContextEnabled: this.config.isEmbeddingsContextEnabled,
+                graphContextFetcher,
                 toWorkspaceRelativePath: uri => vscode.workspace.asRelativePath(uri),
                 contextFetcher: this.config.contextFetcher,
                 getCodebaseContext: this.config.getCodebaseContext,
@@ -182,31 +199,35 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
             })
 
             if (!result) {
+                // Returning null will clear any existing suggestions, thus we need to reset the
+                // last candidate.
+                this.lastCandidate = undefined
                 return null
             }
 
-            // Track the last candidate completion (that is shown as ghost text in the editor) so that
-            // we can reuse it if the user types in such a way that it is still valid (such as by typing
-            // `ab` if the ghost text suggests `abcd`).
+            // Unless the result is from the last candidate, we may want to honor the minimum
+            // latency so that we don't show a result before the user has paused typing for a brief
+            // moment.
             if (result.source !== InlineCompletionsResultSource.LastCandidate) {
-                this.lastCandidate =
-                    result.items.length > 0
-                        ? {
-                              uri: document.uri,
-                              lastTriggerPosition: position,
-                              lastTriggerCurrentLinePrefix: document.lineAt(position).text.slice(0, position.character),
-                              lastTriggerNextNonEmptyLine: getNextNonEmptyLine(
-                                  document.getText(
-                                      new vscode.Range(position, document.lineAt(document.lineCount - 1).range.end)
-                                  )
-                              ),
-                              lastTriggerSelectedInfoItem: context?.selectedCompletionInfo?.text,
-                              result: {
-                                  logId: result.logId,
-                                  items: result.items,
-                              },
-                          }
-                        : undefined
+                const minimumLatencyFlag = await minimumLatencyFlagPromise
+                if (minimumLatencyFlag) {
+                    const delta = performance.now() - start
+                    if (delta < MINIMUM_LATENCY_MS) {
+                        await new Promise(resolve => setTimeout(resolve, MINIMUM_LATENCY_MS - delta))
+                    }
+                }
+            }
+
+            const candidate: LastInlineCompletionCandidate = {
+                uri: document.uri,
+                lastTriggerPosition: position,
+                lastTriggerCurrentLinePrefix: docContext.currentLinePrefix,
+                lastTriggerNextNonEmptyLine: docContext.nextNonEmptyLine,
+                lastTriggerSelectedInfoItem: context?.selectedCompletionInfo?.text,
+                result: {
+                    logId: result.logId,
+                    items: result.items,
+                },
             }
 
             const items = this.processInlineCompletionsForVSCode(
@@ -228,7 +249,18 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
                     abortController.signal
                 )
             ) {
+                // Returning null will clear any existing suggestions, thus we need to reset the
+                // last candidate.
+                this.lastCandidate = undefined
                 return null
+            }
+
+            // Since we now know that the completion is going to be visible in the UI, we save the
+            // completion as the last candidate (that is shown as ghost text in the editor) so that
+            // we can reuse it if the user types in such a way that it is still valid (such as by
+            // typing `ab` if the ghost text suggests `abcd`).
+            if (result.source !== InlineCompletionsResultSource.LastCandidate) {
+                this.lastCandidate = items.length > 0 ? candidate : undefined
             }
 
             const event = CompletionLogger.completionEvent(result.logId)
@@ -252,9 +284,16 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
     public handleDidAcceptCompletionItem(logId: string, completion: InlineCompletionItem): void {
         // When a completion is accepted, the lastCandidate should be cleared. This makes sure the
         // log id is never reused if the completion is accepted.
-        this.lastCandidate = undefined
+        this.clearLastCandidate()
 
         CompletionLogger.accept(logId, completion)
+    }
+
+    /**
+     * Should only be used by agent to allow it access to clear the last candidate
+     */
+    public clearLastCandidate(): void {
+        this.lastCandidate = undefined
     }
 
     /**
@@ -327,7 +366,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
             return
         }
 
-        // @TODO(philipp-spiess): Bring back this code once we have fewer uncaught errors
+        // TODO(philipp-spiess): Bring back this code once we have fewer uncaught errors
         //
         // c.f. https://sourcegraph.slack.com/archives/C05AGQYD528/p1693471486690459
         //

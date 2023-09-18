@@ -1,10 +1,14 @@
 import * as vscode from 'vscode'
 
+import { detectMultiline } from './detect-multiline'
 import { getNextNonEmptyLine, getPrevNonEmptyLine } from './text-processing'
 
 export interface DocumentContext {
     prefix: string
     suffix: string
+
+    /** The range that overlaps the included prefix and suffix */
+    contextRange: vscode.Range
 
     /** Text before the cursor on the same line. */
     currentLinePrefix: string
@@ -13,6 +17,17 @@ export interface DocumentContext {
 
     prevNonEmptyLine: string
     nextNonEmptyLine: string
+
+    multilineTrigger: string | null
+}
+
+interface GetCurrentDocContextParams {
+    document: vscode.TextDocument
+    position: vscode.Position
+    maxPrefixLength: number
+    maxSuffixLength: number
+    enableExtendedTriggers: boolean
+    context?: vscode.InlineCompletionContext
 }
 
 /**
@@ -31,13 +46,8 @@ export interface DocumentContext {
  *
  * @returns An object containing the current document context or null if there are no lines in the document.
  */
-export function getCurrentDocContext(
-    document: vscode.TextDocument,
-    position: vscode.Position,
-    maxPrefixLength: number,
-    maxSuffixLength: number,
-    context?: vscode.InlineCompletionContext
-): DocumentContext {
+export function getCurrentDocContext(params: GetCurrentDocContextParams): DocumentContext {
+    const { document, position, maxPrefixLength, maxSuffixLength, enableExtendedTriggers, context } = params
     const offset = document.offsetAt(position)
 
     // TODO(philipp-spiess): This requires us to read the whole document. Can we limit our ranges
@@ -55,7 +65,7 @@ export function getCurrentDocContext(
     const prefixLines = completePrefixWithContextCompletion.split('\n')
     const suffixLines = completeSuffix.split('\n')
 
-    const currentLinePrefix = prefixLines[prefixLines.length - 1]
+    const currentLinePrefix = prefixLines.at(-1)!
     const currentLineSuffix = suffixLines[0]
 
     let prefix: string
@@ -88,12 +98,21 @@ export function getCurrentDocContext(
     const prevNonEmptyLine = getPrevNonEmptyLine(prefix)
     const nextNonEmptyLine = getNextNonEmptyLine(suffix)
 
-    return {
+    const docContext = {
         prefix,
         suffix,
+        contextRange: new vscode.Range(
+            document.positionAt(offset - prefix.length),
+            document.positionAt(offset + suffix.length)
+        ),
         currentLinePrefix,
         currentLineSuffix,
         prevNonEmptyLine,
         nextNonEmptyLine,
+    }
+
+    return {
+        ...docContext,
+        multilineTrigger: detectMultiline(docContext, document.languageId, enableExtendedTriggers),
     }
 }

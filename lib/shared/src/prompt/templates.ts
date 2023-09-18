@@ -3,7 +3,7 @@ import path from 'path'
 import { getFileExtension, getNormalizedLanguageName } from '../chat/recipes/helpers'
 import { ActiveTextEditorDiagnostic, ActiveTextEditorSelection } from '../editor'
 
-import { MAX_CURRENT_FILE_TOKENS, MAX_RECIPE_INPUT_TOKENS, MAX_RECIPE_SURROUNDING_TOKENS } from './constants'
+import { MAX_RECIPE_INPUT_TOKENS } from './constants'
 import { truncateText, truncateTextStart } from './truncation'
 
 const CODE_CONTEXT_TEMPLATE = `Use following code snippet from file \`{filePath}\`:
@@ -59,12 +59,11 @@ export function populateCurrentEditorContextTemplate(code: string, filePath: str
         (repoName
             ? CURRENT_EDITOR_CODE_TEMPLATE_WITH_REPO.replace('{repoName}', repoName)
             : CURRENT_EDITOR_CODE_TEMPLATE
-        ).replace(/{filePath}/g, filePath) + context
+        ).replaceAll('{filePath}', filePath) + context
     )
 }
 
-const CURRENT_EDITOR_SELECTED_CODE_TEMPLATE =
-    'Here is the selected code from file `{filePath}`, written in {language}: '
+const CURRENT_EDITOR_SELECTED_CODE_TEMPLATE = 'Here is the selected {language} code from file path `{filePath}`: '
 
 const CURRENT_EDITOR_SELECTED_CODE_TEMPLATE_WITH_REPO =
     'Here is the selected code from file `{filePath}` in the {repoName} repository, written in {language}: '
@@ -85,7 +84,7 @@ export function populateCurrentEditorSelectedContextTemplate(
             : CURRENT_EDITOR_SELECTED_CODE_TEMPLATE
         )
             .replace('{language}', languageName)
-            .replace(/{filePath}/g, filePath) + context
+            .replaceAll('{filePath}', filePath) + context
     )
 }
 
@@ -125,12 +124,12 @@ function getExtension(filePath: string): string {
     return path.extname(filePath).slice(1)
 }
 
-const SELECTED_CODE_CONTEXT_TEMPLATE = `"Here is my selected code from a {languageName} file \`{filePath}\`:
+const SELECTED_CODE_CONTEXT_TEMPLATE = `"My selected {languageName} code from file \`{filePath}\`:
 <selected>
 {code}
 </selected>`
 
-const SELECTED_CODE_CONTEXT_TEMPLATE_WITH_REPO = `"Here is my selected code from a {languageName} file \`{filePath}\` in repository \`{repoName}\`:
+const SELECTED_CODE_CONTEXT_TEMPLATE_WITH_REPO = `"My selected {languageName} code from file \`{filePath}\` in \`{repoName}\` repository:
 <selected>
 {code}
 </selected>`
@@ -144,14 +143,12 @@ export function populateCurrentSelectedCodeContextTemplate(code: string, filePat
             : SELECTED_CODE_CONTEXT_TEMPLATE
     )
         .replace('{code}', code)
-        .replace(/{filePath}/g, filePath)
+        .replaceAll('{filePath}', filePath)
         .replace('{languageName}', languageName)
 }
 
-const CURRENT_FILE_CONTEXT_TEMPLATE = `"This is the {languageName} file \`{filePath}\` I am looking at, with my selected code in <selected> tags:
-{precedingText}<selected>
-{selectedText}
-</selected>{followingText}`
+const CURRENT_FILE_CONTEXT_TEMPLATE = `My selected code from file path \`{filePath}\` in <selected> tags:
+{precedingText}<selected>{selectedText}</selected>{followingText}`
 
 export function populateCurrentFileFromEditorSelectionContextTemplate(
     selection: ActiveTextEditorSelection,
@@ -159,15 +156,34 @@ export function populateCurrentFileFromEditorSelectionContextTemplate(
 ): string {
     const extension = getFileExtension(filePath)
     const languageName = getNormalizedLanguageName(extension)
+    const surroundingTextLength = (MAX_RECIPE_INPUT_TOKENS - selection.selectedText.length) / 2
     const truncatedSelectedText = truncateText(selection.selectedText, MAX_RECIPE_INPUT_TOKENS) || ''
-    const truncatedPrecedingText = truncateTextStart(selection.precedingText, MAX_RECIPE_SURROUNDING_TOKENS)
-    const truncatedFollowingText = truncateText(selection.followingText, MAX_RECIPE_SURROUNDING_TOKENS)
+    const truncatedPrecedingText = truncateTextStart(selection.precedingText, surroundingTextLength)
+    const truncatedFollowingText = truncateText(selection.followingText, surroundingTextLength)
 
     const fileContext = CURRENT_FILE_CONTEXT_TEMPLATE.replace('{languageName}', languageName)
-        .replace(/{filePath}/g, filePath)
+        .replaceAll('{filePath}', filePath)
         .replace('{followingText}', truncatedFollowingText)
         .replace('{selectedText}', truncatedSelectedText)
         .replace('{precedingText}', truncatedPrecedingText)
 
-    return truncateText(fileContext, MAX_CURRENT_FILE_TOKENS)
+    return truncateText(fileContext, MAX_RECIPE_INPUT_TOKENS * 3)
+}
+
+const DIRECTORY_FILE_LIST_TEMPLATE = 'Here is a list of files from the directory contains {fileName} in my codebase: '
+const ROOT_DIRECTORY_FILE_LIST_TEMPLATE = 'Here is a list of files from the root codebase directory: '
+
+export function populateListOfFilesContextTemplate(fileList: string, fileName: string): string {
+    const templateText = fileName === 'root' ? ROOT_DIRECTORY_FILE_LIST_TEMPLATE : DIRECTORY_FILE_LIST_TEMPLATE
+    return templateText.replace('{fileName}', fileName) + fileList
+}
+
+export function populateContextTemplateFromText(templateText: string, content: string, fileName: string): string {
+    return templateText.replace('{fileName}', fileName) + content
+}
+
+const FILE_IMPORTS_TEMPLATE = '{fileName} has imported the folowing: '
+
+export function populateImportListContextTemplate(importList: string, fileName: string): string {
+    return FILE_IMPORTS_TEMPLATE.replace('{fileName}', fileName) + importList
 }

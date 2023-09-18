@@ -5,23 +5,28 @@ import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
 import { ContextSnippet } from '../types'
 
 import { getContextFromEmbeddings } from './context-embeddings'
+import { getContextFromGraph, GraphContextFetcher } from './context-graph'
 import { getContextFromCurrentEditor } from './context-local'
 import { DocumentHistory } from './history'
 
 export interface GetContextOptions {
     document: vscode.TextDocument
+    position: vscode.Position
     history: DocumentHistory
     prefix: string
     suffix: string
+    contextRange: vscode.Range
     jaccardDistanceWindowSize: number
     maxChars: number
     getCodebaseContext: () => CodebaseContext
     isEmbeddingsContextEnabled?: boolean
+    graphContextFetcher?: GraphContextFetcher
 }
 
 export type ContextSummary = Readonly<{
     embeddings?: number
     local?: number
+    graph?: number
     duration: number
 }>
 
@@ -31,6 +36,13 @@ export interface GetContextResult {
 }
 
 export async function getContext(options: GetContextOptions): Promise<GetContextResult> {
+    const graphContext = await getContextFromGraph(options)
+    // When we have graph matches, use it exclusively for the context
+    // TODO(philipp-spiess): Do we want to mix this with local context?
+    if (graphContext) {
+        return graphContext
+    }
+
     const { maxChars, isEmbeddingsContextEnabled } = options
     const start = performance.now()
 
