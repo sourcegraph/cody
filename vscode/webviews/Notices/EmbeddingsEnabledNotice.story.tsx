@@ -5,7 +5,7 @@ import { VSCodeStoryDecorator } from '../storybook/VSCodeStoryDecorator'
 import { EmbeddingsEnabledNotice } from './EmbeddingsEnabledNotice'
 
 const meta: Meta<typeof EmbeddingsEnabledNotice> = {
-    title: 'cody/notices/EmbeddingsEnabledNotice',
+    title: 'cody/App-less Onboarding',
     component: EmbeddingsEnabledNotice,
     decorators: [VSCodeStoryDecorator],
 }
