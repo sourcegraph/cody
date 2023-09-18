@@ -122,7 +122,7 @@ export async function logTestingData(data: string): Promise<void> {
     const messageID = await topicPublisher.publishMessage({ data: dataBuffer }).catch(error => {
         console.error('Error publishing message:', error)
     })
-    console.log('Message published. ID:', messageID)
+    console.log('Message published. ID:', messageID, 'TestRunId:', currentTestRunID)
 }
 
 let currentTestName: string
