@@ -35,7 +35,9 @@ const MODEL_MAP = {
     'llama-code-13b-instruct': 'fireworks/accounts/fireworks/models/llama-v2-13b-code-instruct',
 }
 
-function getContextWindowChars(model: string): number {
+type FireworksModel = keyof typeof MODEL_MAP
+
+function getContextWindowChars(model: FireworksModel): number {
     switch (model) {
         case 'starcoder-16b':
         case 'starcoder-7b':
