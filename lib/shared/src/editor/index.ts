@@ -62,6 +62,7 @@ export interface VsCodeFixupTaskRecipeData {
 
 export interface VsCodeFixupController {
     getTaskRecipeData(taskId: string): Promise<VsCodeFixupTaskRecipeData | undefined>
+    removeErrneousTask(taskID: string): void
 }
 
 export interface VsCodeCommandsController {

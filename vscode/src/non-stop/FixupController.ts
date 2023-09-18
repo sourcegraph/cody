@@ -109,6 +109,14 @@ export class FixupController
         return task
     }
 
+    public removeErrneousTask(taskID: taskID): void {
+        const task = this.tasks.get(taskID)
+        if (!task) {
+            return
+        }
+        this.setTaskState(task, CodyTaskState.error)
+    }
+
     // Open fsPath at the selected line in editor on tree item click
     private showThisFixup(taskID: taskID): void {
         const task = this.tasks.get(taskID)
@@ -509,7 +517,7 @@ export class FixupController
             void vscode.commands.executeCommand('setContext', 'cody.fixup.running', false)
         }
 
-        if (task.state === CodyTaskState.fixed) {
+        if (task.state === CodyTaskState.fixed || task.state === CodyTaskState.error) {
             this.discard(task)
             return
         }
