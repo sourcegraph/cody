@@ -362,7 +362,7 @@ describe('GraphSectionObserver', () => {
             textEditor: { document: testDocuments.document1 },
             selections: [{ active: { line: 2, character: 0 } }],
         })
-        expect(getGraphContextFromRange).toHaveBeenCalledWith(expect.anything(), updatedRange)
+        expect(getGraphContextFromRange).toHaveBeenCalledWith(expect.anything(), updatedRange, expect.anything())
     })
 
     describe('getContextAtPosition', () => {
