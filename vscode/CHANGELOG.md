@@ -27,7 +27,7 @@ Starting from `0.2.0`, Cody is using `major.EVEN_NUMBER.patch` for release versi
 - You can now use `alt` + `\` to trigger autocomplete requests manually. [pull/1060](https://github.com/sourcegraph/cody/pull/1060)
 - Slightly reduce latency when manually triggering autocomplete requests. [pull/1060](https://github.com/sourcegraph/cody/pull/1060)
 - Configure autocomplete provider based on cody LLM settings in site config. [pull/1035](https://github.com/sourcegraph/cody/pull/1035)
-- Filters out single character autocomplete results. [pull/](https://github.com/sourcegraph/cody/pull/)
+- Filters out single character autocomplete results. [pull/1109](https://github.com/sourcegraph/cody/pull/1109)
 
 ## [0.10.2]
 
