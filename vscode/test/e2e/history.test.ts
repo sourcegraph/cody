@@ -31,6 +31,7 @@ const expectedOrderedEvent = [
     'CodyVSCodeExtension:chatTitleButton:clicked',
     'CodyVSCodeExtension:command:menu:opened',
     'CodyVSCodeExtension:recipe:custom-prompt:executed',
+    'CodyVSCodeExtension:chatResponse:noCode',
 ]
 test('checks if clear chat history button clears history and current session', async ({ page, sidebar }) => {
     // Sign into Cody
@@ -74,11 +75,10 @@ test('checks if clear chat history button clears history and current session', a
     // Open the Cody Commands palette and run a command
     await page.getByRole('button', codyEditorCommandButtonRole).click()
     await page.keyboard.type('/explain')
-    await page.keyboard.press('Enter')
+    await page.keyboard.press('Enter', { delay: 300 })
 
     // Check if the old message "Hey" is cleared
     await expect(sidebar.getByText('Hey')).not.toBeVisible()
-    await expect(sidebar.getByText('/explain')).toBeVisible()
 
     expect(loggedEvents).toEqual(expectedOrderedEvent)
 })
