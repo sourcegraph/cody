@@ -12,9 +12,9 @@ import { forkSignal } from '../utils'
 
 import { CompletionProviderTracer, Provider, ProviderConfig, ProviderOptions } from './provider'
 
-interface UnstableFireworksOptions {
+export interface UnstableFireworksOptions {
     client: Pick<CodeCompletionsClient, 'complete'>
-    model: keyof typeof MODEL_MAP
+    model: FireworksModel
 }
 
 const PROVIDER_IDENTIFIER = 'fireworks'
@@ -35,10 +35,14 @@ const MODEL_MAP = {
     'llama-code-13b-instruct': 'fireworks/accounts/fireworks/models/llama-v2-13b-code-instruct',
 }
 
-type FireworksModel = keyof typeof MODEL_MAP
+type FireworksModel =
+    | keyof typeof MODEL_MAP
+    // `starcoder-hybrid` uses the 16b model for multiline requests and the 7b model for single line
+    | 'starcoder-hybrid'
 
 function getContextWindowChars(model: FireworksModel): number {
     switch (model) {
+        case 'starcoder-hybrid':
         case 'starcoder-16b':
         case 'starcoder-7b':
         case 'starcoder-3b':
@@ -130,18 +134,24 @@ export class UnstableFireworksProvider extends Provider {
         snippets: ContextSnippet[],
         tracer?: CompletionProviderTracer
     ): Promise<Completion[]> {
+        const { multiline } = this.options
         const prompt = this.createPrompt(snippets)
+
+        const model =
+            this.model === 'starcoder-hybrid'
+                ? MODEL_MAP[multiline ? 'starcoder-16b' : 'starcoder-7b']
+                : MODEL_MAP[this.model]
 
         const args: CompletionParameters = {
             messages: [{ speaker: 'human', text: prompt }],
             // To speed up sample generation in single-line case, we request a lower token limit
             // since we can't terminate on the first `\n`.
-            maxTokensToSample: this.options.multiline ? 256 : 30,
+            maxTokensToSample: multiline ? 256 : 30,
             temperature: 0.2,
             topP: 0.95,
             topK: 0,
-            model: MODEL_MAP[this.model],
-            stopSequences: this.options.multiline ? ['\n\n', '\n\r\n'] : ['\n'],
+            model,
+            stopSequences: multiline ? ['\n\n', '\n\r\n'] : ['\n'],
         }
 
         tracer?.params(args)
@@ -243,7 +253,9 @@ export function createProviderConfig(
 ): ProviderConfig {
     const model =
         unstableFireworksOptions.model === null || unstableFireworksOptions.model === ''
-            ? 'starcoder-7b'
+            ? 'starcoder-hybrid'
+            : unstableFireworksOptions.model === 'starcoder-hybrid'
+            ? 'starcoder-hybrid'
             : Object.prototype.hasOwnProperty.call(MODEL_MAP, unstableFireworksOptions.model)
             ? (unstableFireworksOptions.model as keyof typeof MODEL_MAP)
             : null
