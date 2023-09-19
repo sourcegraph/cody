@@ -160,13 +160,13 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     // Callbacks used for app setup after simplified onboarding
     const onboardingPopupProps = {
         installApp: () => {
-            console.log('install app')
+            vscodeAPI.postMessage({ command: 'simplified-onboarding', type: 'install-app' })
         },
         openApp: () => {
-            console.log('open app')
+            vscodeAPI.postMessage({ command: 'simplified-onboarding', type: 'open-app' })
         },
         reloadStatus: () => {
-            console.log('reload state')
+            vscodeAPI.postMessage({ command: 'simplified-onboarding', type: 'reload-state' })
         },
     }
 
@@ -233,9 +233,9 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                             telemetryService={telemetryService}
                             chatCommands={myPrompts || undefined}
                             isTranscriptError={isTranscriptError}
-                            showOnboardingButtons={userHistory && Object.entries(userHistory).length === 0}
                             applessOnboarding={{
                                 arm: config.experimentOnboarding,
+                                endpoint,
                                 props: { isAppInstalled, onboardingPopupProps },
                             }}
                         />

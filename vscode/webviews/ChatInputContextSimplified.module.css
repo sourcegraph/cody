@@ -5,8 +5,6 @@
     user-select: none;
 }
 
-/* TODO: rationalize unused rules */
-
 .codebase,
 .file {
     font-size: var(--vscode-editor-font-size, inherit);
@@ -14,6 +12,8 @@
 }
 
 .codebase {
+    background: transparent;
+    border: none;
     display: flex;
     align-items: center;
     gap: 0.25rem;
@@ -33,7 +33,7 @@
     overflow: hidden;
 }
 
-.errorColor {
+.error-color {
     display: inline;
     color: var(--vscode-problemsErrorIcon-foreground, inherit);
 }

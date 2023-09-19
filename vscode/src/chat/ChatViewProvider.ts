@@ -10,7 +10,14 @@ import * as OnboardingExperiment from '../services/OnboardingExperiment'
 import { telemetryService } from '../services/telemetry'
 
 import { MessageProvider, MessageProviderOptions } from './MessageProvider'
-import { ExtensionMessage, WebviewMessage } from './protocol'
+import {
+    APP_LANDING_URL,
+    APP_REPOSITORIES_URL,
+    archConvertor,
+    ExtensionMessage,
+    isOsSupportedByApp,
+    WebviewMessage,
+} from './protocol'
 
 export interface ChatViewProviderWebview extends Omit<vscode.Webview, 'postMessage'> {
     postMessage(message: ExtensionMessage): Thenable<boolean>
@@ -132,6 +139,26 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
                           )
                         : undefined
                 )
+                break
+            case 'simplified-onboarding':
+                if (message.type === 'install-app') {
+                    const os = process.platform
+                    const arch = process.arch
+                    const DOWNLOAD_URL =
+                        os && arch && isOsSupportedByApp(os, arch)
+                            ? `https://sourcegraph.com/.api/app/latest?arch=${archConvertor(arch)}&target=${os}`
+                            : APP_LANDING_URL.href
+                    void this.openExternalLinks(DOWNLOAD_URL)
+                    break
+                }
+                if (message.type === 'open-app') {
+                    void this.openExternalLinks(APP_REPOSITORIES_URL.href)
+                    break
+                }
+                if (message.type === 'reload-state') {
+                    void vscode.commands.executeCommand('cody.auth.sync')
+                    break
+                }
                 break
             default:
                 this.handleError('Invalid request type from Webview')

@@ -33,12 +33,11 @@ const CodebaseState: React.FunctionComponent<{
         installApp: () => {},
         reloadStatus: () => {},
     }
-    // TODO: Make this a button, not a H3
     return (
-        <h3 className={classNames(styles.codebase, popupStyles.popupHost)} onClick={togglePopup}>
+        <button type="button" className={classNames(styles.codebase, popupStyles.popupHost)} onClick={togglePopup}>
             <Icon svgPath={icon} className={classNames(styles.codebaseIcon, iconClassName)} />
             {popup?.({ isOpen: !!popupOpen, onDismiss: () => togglePopup?.(), ...onboardingPopupProps })}
-        </h3>
+        </button>
     )
 }
 
