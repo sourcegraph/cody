@@ -38,6 +38,7 @@ export const ChatInputContextAppInstalled: StoryObj<typeof ChatInputContextSimpl
     render: () => {
         const contextStatus: ChatContextStatus = {
             codebase: 'github.com/sourcegraph/example',
+            filePath: 'foo/bar.js',
         }
         return (
             <div style={backdropStyle}>

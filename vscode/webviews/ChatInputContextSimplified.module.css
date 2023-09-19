@@ -34,10 +34,6 @@
 }
 
 .errorColor {
-    color: var(--vscode-errorForeground, inherit);
-}
-
-.warningColor {
     display: inline;
-    color: var(--vscode-list-warningForeground, inherit);
+    color: var(--vscode-problemsErrorIcon-foreground, inherit);
 }

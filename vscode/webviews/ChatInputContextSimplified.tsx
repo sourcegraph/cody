@@ -4,9 +4,11 @@ import { mdiDatabaseCheckOutline, mdiDatabaseOffOutline, mdiDatabaseRemoveOutlin
 import classNames from 'classnames'
 
 import { ChatContextStatus } from '@sourcegraph/cody-shared'
+import { formatFilePath } from '@sourcegraph/cody-ui/src/chat/inputContext/ChatInputContext'
 import { Icon } from '@sourcegraph/cody-ui/src/utils/Icon'
 
 import { EmbeddingsNotFoundPopup, InstallCodyAppPopup } from './Popups/OnboardingExperimentPopups'
+import { PopupOpenProps } from './Popups/Popup'
 
 import styles from './ChatInputContextSimplified.module.css'
 import popupStyles from './Popups/Popup.module.css'
@@ -26,7 +28,7 @@ const CodebaseState: React.FunctionComponent<{
 }> = ({ iconClassName, icon, codebase, popup, popupOpen, togglePopup }) => (
     <h3 className={classNames(styles.codebase, popupStyles.popupHost)} onClick={togglePopup}>
         <Icon svgPath={icon} className={classNames(styles.codebaseIcon, iconClassName)} />
-        {popup?.({ isOpen: !!popupOpen, onDismiss: togglePopup })}
+        {popup?.({ isOpen: !!popupOpen, onDismiss: () => togglePopup?.() })}
     </h3>
 )
 
@@ -49,7 +51,7 @@ export const ChatInputContextSimplified: React.FC<ChatInputContextSimplifiedProp
                     <CodebaseState
                         codebase={contextStatus.codebase}
                         icon={mdiDatabaseRemoveOutline}
-                        iconClassName={styles.warningColor}
+                        iconClassName={styles.errorColor}
                         popup={isAppInstalled ? EmbeddingsNotFoundPopup : InstallCodyAppPopup}
                         popupOpen={popupOpen}
                         togglePopup={togglePopup}
@@ -57,6 +59,15 @@ export const ChatInputContextSimplified: React.FC<ChatInputContextSimplifiedProp
                 )
             ) : (
                 <CodebaseState icon={mdiDatabaseOffOutline} iconClassName={styles.errorColor} />
+            )}
+            {(contextStatus.filePath && (
+                <p className={styles.file} title={contextStatus.filePath}>
+                    {formatFilePath(contextStatus.filePath, contextStatus.selectionRange)}
+                </p>
+            )) || (
+                <p className={styles.file} title={contextStatus.filePath}>
+                    No file selected
+                </p>
             )}
         </div>
     )
