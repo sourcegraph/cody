@@ -71,8 +71,14 @@ export class LocalAppSetupPublisher implements vscode.Disposable {
         }
         const settingsDir = settingsDirPattern.replace(/^~/, homeDir)
         const settingsDirUri = vscode.Uri.file(settingsDir)
-        const settingsDirStats = await vscode.workspace.fs.stat(settingsDirUri)
+        let settingsDirStats
+        try {
+            settingsDirStats = await vscode.workspace.fs.stat(settingsDirUri)
+        } catch {
+            // We could not stat the directory, it probably doesn't exist. Try to create it.
+        }
         if (
+            settingsDirStats &&
             settingsDirStats.type === vscode.FileType.Directory &&
             settingsDirStats.permissions !== undefined &&
             settingsDirStats.permissions ^ vscode.FilePermission.Readonly
