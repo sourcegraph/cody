@@ -20,7 +20,7 @@ import {
 } from './getInlineCompletions'
 import * as CompletionLogger from './logger'
 import { ProviderConfig } from './providers/provider'
-import { RequestManager } from './request-manager'
+import { RequestManager, RequestParams } from './request-manager'
 import { ProvideInlineCompletionItemsTracer, ProvideInlineCompletionsItemTraceData } from './tracer'
 import { InlineCompletionItem } from './types'
 
@@ -205,6 +205,26 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
                 return null
             }
 
+            // Checks if the current line prefix length is less than or equal to the last triggered prefix length
+            // If true, that means user has backspaced/deleted characters to trigger a new completion request,
+            // meaning the previous result is unwanted/rejected.
+            // In that case, we mark the last candidate as "unwanted", remove it from cache, and clear the last candidate
+            const lastTriggeredResultId = this.lastCandidate?.result.logId
+            const currentPrefix = docContext.currentLinePrefix
+            const lastTriggeredPrefix = this.lastCandidate?.lastTriggerCurrentLinePrefix
+            if (
+                lastTriggeredResultId &&
+                lastTriggeredPrefix !== undefined &&
+                currentPrefix.length <= lastTriggeredPrefix.length
+            ) {
+                this.handleUnwantedCompletionItem(lastTriggeredResultId, {
+                    document,
+                    docContext,
+                    position,
+                    context,
+                })
+            }
+
             // Unless the result is from the last candidate, we may want to honor the minimum
             // latency so that we don't show a result before the user has paused typing for a brief
             // moment.
@@ -287,6 +307,23 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
         this.clearLastCandidate()
 
         CompletionLogger.accept(logId, completion)
+    }
+
+    /**
+     * Handles when a completion item was rejected by the user.
+     *
+     * A completion item is marked as rejected/unwanted when:
+     * - pressing backspace on a visible suggestion
+     */
+    public handleUnwantedCompletionItem(logId: string, reqContext: RequestParams): void {
+        const completionItem = this.lastCandidate?.result.items[0]
+        if (!completionItem) {
+            return
+        }
+
+        this.clearLastCandidate()
+
+        this.requestManager.removeUnwanted(reqContext)
     }
 
     /**
