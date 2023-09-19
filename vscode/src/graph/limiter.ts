@@ -11,7 +11,7 @@ interface Queued<T> {
 export type Limiter = <T>(creator: PromiseCreator<T>, abortSignal?: AbortSignal) => Promise<T>
 
 export function createLimiter(limit: number, timeout: number): Limiter {
-    const queue: Queued<any>[] = []
+    const queue: Queued<unknown>[] = []
     let inflightPromises = 0
 
     function processNext(): void {
@@ -69,10 +69,10 @@ export function createLimiter(limit: number, timeout: number): Limiter {
                 reject,
             }
         })
-        queue.push(queued!)
+        queue.push(queued! as Queued<unknown>)
         abortSignal?.addEventListener('abort', () => {
             // Only abort queued requests
-            const index = queue.indexOf(queued!)
+            const index = queue.indexOf(queued! as Queued<unknown>)
             if (index < 0) {
                 return
             }

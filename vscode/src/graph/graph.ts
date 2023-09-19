@@ -13,8 +13,15 @@ import { createLimiter } from './limiter'
 const recursionLimit = 2
 
 const limiter = createLimiter(
-    20, // concurrent requests
-    5000 // ms timeout
+    // The concurrent requests limit is chosen so that it's high enough as to not cause throughput
+    // issues but not too high so that all requests for a section are done concurrently and we have
+    // no way to cancel queued requests.
+    //
+    // Assuming an average size of 40 symbols per scope and the need to fetch up to four sources of
+    // language server APIs per section, this limit should be a good balance.
+    40,
+    // If any language server API takes more than 5 seconds to answer, we should cancel the request
+    5000
 )
 
 /**
