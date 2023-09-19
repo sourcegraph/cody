@@ -121,7 +121,7 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
         this.lastUsedCommands.add(command.slashCommand)
 
         // Log custom command usage
-        const logType = command?.type !== 'default' ? 'custom' : 'default'
+        const logType = command?.type === 'default' ? 'default' : 'custom'
         this.telemetryService.log(`CodyVSCodeExtension:command:${logType}:executed`)
 
         // Fixup request will be taken care by the fixup recipe in the CommandRunner

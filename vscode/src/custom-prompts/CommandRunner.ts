@@ -16,7 +16,7 @@ import { getCursorFoldingRange } from '../editor/utils'
  * TODO bee add status
  */
 export class CommandRunner implements vscode.Disposable {
-    public readonly id = `c${Date.now().toString(36).replace(/\d+/g, '')}`
+    public readonly id = `c${Date.now().toString(36).replaceAll(/\d+/g, '')}`
     private editor: vscode.TextEditor | undefined = undefined
     private contextOutput: string | undefined = undefined
     private disposables: vscode.Disposable[] = []
