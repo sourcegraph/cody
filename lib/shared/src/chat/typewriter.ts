@@ -52,7 +52,7 @@ export class Typewriter implements IncrementalTextConsumer {
         if (this.upstreamClosed) {
             throw new Error('Typewriter already closed')
         }
-        if (this.text.length >= content.length) {
+        if (this.text.length > 0 && this.text.length >= content.length) {
             throw new Error('Content must be supplied incrementally')
         }
         this.text = content
