@@ -221,6 +221,10 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                             chatCommands={myPrompts || undefined}
                             isTranscriptError={isTranscriptError}
                             showOnboardingButtons={userHistory && Object.entries(userHistory).length === 0}
+                            applessOnboarding={{
+                                arm: config.experimentOnboarding,
+                                props: { isAppInstalled },
+                            }}
                         />
                     )}
                 </>

@@ -19,3 +19,19 @@ export const InstallCodyAppPopup: React.FunctionComponent<{}> = () => (
         onDismiss={() => {}}
     />
 )
+
+export const EmbeddingsNotFoundPopup: React.FunctionComponent<{}> = () => (
+    <Popup
+        title="Embeddings Not Found"
+        text="To enable embeddings, add this repository to Cody App and wait for indexing to complete."
+        linkText="Learn more"
+        linkHref="https://docs.sourcegraph.com/cody/overview/app"
+        actionButtons={
+            <>
+                <VSCodeButton>Open App</VSCodeButton>
+                <VSCodeButton>Reload</VSCodeButton>
+            </>
+        }
+        onDismiss={() => {}}
+    />
+)

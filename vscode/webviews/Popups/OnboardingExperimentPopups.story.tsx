@@ -2,7 +2,7 @@ import { Meta, StoryObj } from '@storybook/react'
 
 import { VSCodeStoryDecorator } from '../storybook/VSCodeStoryDecorator'
 
-import { InstallCodyAppPopup } from './InstallCodyAppPopup'
+import { EmbeddingsNotFoundPopup, InstallCodyAppPopup } from './OnboardingExperimentPopups'
 
 import styles from './Popup.module.css'
 
@@ -19,6 +19,17 @@ export const InstallCodyApp: StoryObj<typeof InstallCodyAppPopup> = {
         <div style={{ background: 'lightgrey', height: '60vh', display: 'flex', alignItems: 'end' }}>
             <button className={styles.popupHost} style={{ width: '32px', height: '24px' }}>
                 <InstallCodyAppPopup />
+                <span className="codicon codicon-rocket" />
+            </button>
+        </div>
+    ),
+}
+
+export const EmbeddingsNotFound: StoryObj<typeof EmbeddingsNotFoundPopup> = {
+    render: () => (
+        <div style={{ background: 'lightgrey', height: '60vh', display: 'flex', alignItems: 'end' }}>
+            <button className={styles.popupHost} style={{ width: '32px', height: '24px' }}>
+                <EmbeddingsNotFoundPopup />
                 <span className="codicon codicon-rocket" />
             </button>
         </div>

@@ -18,16 +18,15 @@ import {
 } from '@sourcegraph/cody-ui/src/Chat'
 import { SubmitSvg } from '@sourcegraph/cody-ui/src/utils/icons'
 
-import { CODY_FEEDBACK_URL } from '../src/chat/protocol'
+import { CODY_FEEDBACK_URL, OnboardingExperimentArm } from '../src/chat/protocol'
 
 import { ChatCommandsComponent } from './ChatCommands'
+import { ChatInputContextSimplified } from './ChatInputContextSimplified'
 import { FileLink } from './FileLink'
-import { InstallCodyAppPopup } from './Popups/InstallCodyAppPopup'
 import { SymbolLink } from './SymbolLink'
 import { VSCodeWrapper } from './utils/VSCodeApi'
 
 import styles from './Chat.module.css'
-import popupStyles from './Popups/Popup.module.css'
 
 interface ChatboxProps {
     messageInProgress: ChatMessage | null
@@ -46,6 +45,7 @@ interface ChatboxProps {
     chatCommands?: [string, CodyPrompt][]
     isTranscriptError: boolean
     showOnboardingButtons?: boolean | null
+    applessOnboarding: { arm: OnboardingExperimentArm; props: { isAppInstalled: boolean } }
 }
 
 export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>> = ({
@@ -65,6 +65,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     chatCommands,
     isTranscriptError,
     showOnboardingButtons,
+    applessOnboarding,
 }) => {
     const [abortMessageInProgressInternal, setAbortMessageInProgress] = useState<() => void>(() => () => undefined)
 
@@ -172,12 +173,17 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             chatCommands={chatCommands}
             filterChatCommands={filterChatCommands}
             ChatCommandsComponent={ChatCommandsComponent}
-            contextStatusComponent={() => (
-                <div className={popupStyles.popupHost}>
-                    Hey
-                    <InstallCodyAppPopup />
-                </div>
-            )}
+            contextStatusComponent={
+                applessOnboarding.arm === OnboardingExperimentArm.Simplified ? ChatInputContextSimplified : undefined
+            }
+            contextStatusComponentProps={
+                applessOnboarding.arm === OnboardingExperimentArm.Simplified
+                    ? {
+                          contextStatus,
+                          ...applessOnboarding.props,
+                      }
+                    : undefined
+            }
         />
     )
 }
