@@ -535,30 +535,36 @@ const hoverContextFromResolvedHoverText = (t: ResolvedHoverText): HoverContext[]
     ].filter(isDefined)
 
 const hoverContextFromElement = (
-    e: ResolvedHoverElement | undefined,
+    element: ResolvedHoverElement | undefined,
     type: HoverContext['type'],
     sourceSymbolName?: string
 ): HoverContext | undefined => {
-    if (e === undefined) {
+    if (element === undefined) {
         return undefined
     }
 
-    const content = hoverToStrings(e.hover)
+    let content = hoverToStrings(element.hover)
+
+    // Filter out common hover texts that do not provide additional value
+    content = content.filter(
+        c => c.trim() !== `interface ${element.symbolName}` && c.trim() !== `class ${element.symbolName}`
+    )
+
     if (content.length === 0) {
         return undefined
     }
 
     return {
-        symbolName: e.symbolName,
+        symbolName: element.symbolName,
         sourceSymbolName,
         type,
         content,
-        uri: e.location.uri.toString(),
+        uri: element.location.uri.toString(),
         range: {
-            startLine: e.location.range.start.line,
-            startCharacter: e.location.range.start.character,
-            endLine: e.location.range.end.line,
-            endCharacter: e.location.range.end.character,
+            startLine: element.location.range.start.line,
+            startCharacter: element.location.range.start.character,
+            endLine: element.location.range.end.line,
+            endCharacter: element.location.range.end.character,
         },
     }
 }
