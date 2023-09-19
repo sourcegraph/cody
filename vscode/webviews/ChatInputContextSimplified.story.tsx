@@ -20,6 +20,12 @@ const backdropStyle = {
     alignItems: 'end',
 }
 
+const onboardingCallbacks = {
+    openApp: () => alert('open app'),
+    installApp: () => alert('install app'),
+    reloadStatus: () => alert('reload'),
+}
+
 export const ChatInputContextAppNotInstalled: StoryObj<typeof ChatInputContextSimplified> = {
     render: () => {
         const contextStatus: ChatContextStatus = {
@@ -28,7 +34,11 @@ export const ChatInputContextAppNotInstalled: StoryObj<typeof ChatInputContextSi
         }
         return (
             <div style={backdropStyle}>
-                <ChatInputContextSimplified isAppInstalled={false} contextStatus={contextStatus} />
+                <ChatInputContextSimplified
+                    isAppInstalled={false}
+                    contextStatus={contextStatus}
+                    onboardingPopupProps={onboardingCallbacks}
+                />
             </div>
         )
     },
@@ -42,7 +52,11 @@ export const ChatInputContextAppInstalled: StoryObj<typeof ChatInputContextSimpl
         }
         return (
             <div style={backdropStyle}>
-                <ChatInputContextSimplified isAppInstalled={true} contextStatus={contextStatus} />
+                <ChatInputContextSimplified
+                    isAppInstalled={true}
+                    contextStatus={contextStatus}
+                    onboardingPopupProps={onboardingCallbacks}
+                />
             </div>
         )
     },

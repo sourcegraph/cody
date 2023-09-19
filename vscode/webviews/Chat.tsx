@@ -23,6 +23,7 @@ import { CODY_FEEDBACK_URL, OnboardingExperimentArm } from '../src/chat/protocol
 import { ChatCommandsComponent } from './ChatCommands'
 import { ChatInputContextSimplified } from './ChatInputContextSimplified'
 import { FileLink } from './FileLink'
+import { OnboardingPopupProps } from './Popups/OnboardingExperimentPopups'
 import { SymbolLink } from './SymbolLink'
 import { VSCodeWrapper } from './utils/VSCodeApi'
 
@@ -45,7 +46,10 @@ interface ChatboxProps {
     chatCommands?: [string, CodyPrompt][]
     isTranscriptError: boolean
     showOnboardingButtons?: boolean | null
-    applessOnboarding: { arm: OnboardingExperimentArm; props: { isAppInstalled: boolean } }
+    applessOnboarding: {
+        arm: OnboardingExperimentArm
+        props: { isAppInstalled: boolean; onboardingPopupProps: OnboardingPopupProps }
+    }
 }
 
 export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>> = ({

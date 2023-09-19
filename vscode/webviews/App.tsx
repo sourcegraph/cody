@@ -157,6 +157,19 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
         [vscodeAPI]
     )
 
+    // Callbacks used for app setup after simplified onboarding
+    const onboardingPopupProps = {
+        installApp: () => {
+            console.log('install app')
+        },
+        openApp: () => {
+            console.log('open app')
+        },
+        reloadStatus: () => {
+            console.log('reload state')
+        },
+    }
+
     const telemetryService = useMemo(() => createWebviewTelemetryService(vscodeAPI), [vscodeAPI])
 
     if (!view || !authStatus || !config) {
@@ -223,7 +236,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                             showOnboardingButtons={userHistory && Object.entries(userHistory).length === 0}
                             applessOnboarding={{
                                 arm: config.experimentOnboarding,
-                                props: { isAppInstalled },
+                                props: { isAppInstalled, onboardingPopupProps },
                             }}
                         />
                     )}

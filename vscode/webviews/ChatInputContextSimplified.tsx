@@ -7,7 +7,7 @@ import { ChatContextStatus } from '@sourcegraph/cody-shared'
 import { formatFilePath } from '@sourcegraph/cody-ui/src/chat/inputContext/ChatInputContext'
 import { Icon } from '@sourcegraph/cody-ui/src/utils/Icon'
 
-import { EmbeddingsNotFoundPopup, InstallCodyAppPopup } from './Popups/OnboardingExperimentPopups'
+import { EmbeddingsNotFoundPopup, InstallCodyAppPopup, OnboardingPopupProps } from './Popups/OnboardingExperimentPopups'
 import { PopupOpenProps } from './Popups/Popup'
 
 import styles from './ChatInputContextSimplified.module.css'
@@ -16,21 +16,31 @@ import popupStyles from './Popups/Popup.module.css'
 export interface ChatInputContextSimplifiedProps {
     contextStatus: ChatContextStatus
     isAppInstalled: boolean
+    onboardingPopupProps: OnboardingPopupProps
 }
 
 const CodebaseState: React.FunctionComponent<{
     iconClassName?: string
     icon: string
     codebase?: string
-    popup?: React.FC<PopupOpenProps>
+    popup?: React.FC<OnboardingPopupProps & PopupOpenProps>
     popupOpen?: boolean
     togglePopup?: () => void
-}> = ({ iconClassName, icon, codebase, popup, popupOpen, togglePopup }) => (
-    <h3 className={classNames(styles.codebase, popupStyles.popupHost)} onClick={togglePopup}>
-        <Icon svgPath={icon} className={classNames(styles.codebaseIcon, iconClassName)} />
-        {popup?.({ isOpen: !!popupOpen, onDismiss: () => togglePopup?.() })}
-    </h3>
-)
+    onboardingPopupProps?: OnboardingPopupProps
+}> = ({ iconClassName, icon, popup, popupOpen, togglePopup, onboardingPopupProps }) => {
+    onboardingPopupProps ||= {
+        openApp: () => {},
+        installApp: () => {},
+        reloadStatus: () => {},
+    }
+    // TODO: Make this a button, not a H3
+    return (
+        <h3 className={classNames(styles.codebase, popupStyles.popupHost)} onClick={togglePopup}>
+            <Icon svgPath={icon} className={classNames(styles.codebaseIcon, iconClassName)} />
+            {popup?.({ isOpen: !!popupOpen, onDismiss: () => togglePopup?.(), ...onboardingPopupProps })}
+        </h3>
+    )
+}
 
 // This is a fork of ChatInputContext with extra UI for simplified "App-less"
 // Onboarding. Note, it is just the onboarding that's simplified: This component
@@ -39,6 +49,7 @@ const CodebaseState: React.FunctionComponent<{
 export const ChatInputContextSimplified: React.FC<ChatInputContextSimplifiedProps> = ({
     contextStatus,
     isAppInstalled,
+    onboardingPopupProps,
 }) => {
     const [popupOpen, setPopupOpen] = useState<boolean>(false)
     const togglePopup = (): void => setPopupOpen(!popupOpen)
@@ -55,6 +66,7 @@ export const ChatInputContextSimplified: React.FC<ChatInputContextSimplifiedProp
                         popup={isAppInstalled ? EmbeddingsNotFoundPopup : InstallCodyAppPopup}
                         popupOpen={popupOpen}
                         togglePopup={togglePopup}
+                        onboardingPopupProps={onboardingPopupProps}
                     />
                 )
             ) : (
