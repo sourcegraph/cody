@@ -107,11 +107,11 @@ export class AnthropicProvider extends Provider {
         const { head, tail, overlap } = getHeadAndTail(this.options.docContext.prefix)
 
         // Infill block represents the code we want the model to complete
-        const infillBlock = `${tail.trimmed.trimEnd()}`
+        const infillBlock = `${tail.trimmed}`
         // code before the cursor, after removing the code for the infillBlock
         // Using this instead of head.trimmed to preserve the spacing from prefix so the model can determines the patterns of surrounding code
         // Use regex to makes sure only the last trimmedTail match is replaced to avoid replacing overlapping code
-        const infillBlockRegex = new RegExp(`${infillBlock}\\s*$`, 'g')
+        const infillBlockRegex = new RegExp(`${tail.trimmed.trim()}\\s*$`, 'g')
         const infillPrefix = this.options.docContext.prefix.replace(infillBlockRegex, '')
         // code after the cursor
         const infillSuffix = this.options.docContext.suffix
@@ -127,7 +127,7 @@ export class AnthropicProvider extends Provider {
             },
             {
                 speaker: 'human',
-                text: `Below is the code from file path ${this.options.fileName}. Detect the functionality, formats, style, patterns, and logics in use from code outside ${OPENING_CODE_TAG} XML tags. Then, use what you detect and reuse assetmethods/libraries to complete and enclose completed code only inside ${OPENING_CODE_TAG} tags precisely without duplicating existing implementations. Here is the code:
+                text: `Below is the code from file path ${this.options.fileName}. Detect the functionality, formats, style, patterns, and logics in use from code outside ${OPENING_CODE_TAG} XML tags. Then, use what you detect and reuse any methods/libraries to complete and enclose completed code only inside ${OPENING_CODE_TAG} tags precisely without duplicating existing implementations. Here is the code:
                 ${infillPrefix}${OPENING_CODE_TAG}${CLOSING_CODE_TAG}${infillSuffix}`,
             },
             {
