@@ -96,6 +96,11 @@ export class RequestManager {
         return request.promise
     }
 
+    // Remove unwanted sugggestion from the cache
+    public removeUnwanted(params: RequestParams): void {
+        this.cache.delete(params)
+    }
+
     /**
      * Test if the result can be used for inflight requests. This only works
      * if a completion is a forward-typed version of a previous completion.
@@ -183,5 +188,9 @@ class RequestCache {
 
     public set(key: RequestParams, entry: InlineCompletionItem[]): void {
         this.cache.set(this.toCacheKey(key), entry)
+    }
+
+    public delete(key: RequestParams): void {
+        this.cache.delete(this.toCacheKey(key))
     }
 }
