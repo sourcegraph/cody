@@ -28,7 +28,7 @@ export class FixupTask {
         public selectionRange: vscode.Range,
         public insertMode?: boolean
     ) {
-        this.id = Date.now().toString(36).replace(/\d+/g, '')
+        this.id = Date.now().toString(36).replaceAll(/\d+/g, '')
     }
 
     /**

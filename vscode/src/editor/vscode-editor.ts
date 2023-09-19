@@ -63,7 +63,7 @@ export class VSCodeEditor implements Editor<InlineController, FixupController, C
         return {
             content: documentText,
             filePath: documentUri.fsPath,
-            selectionRange: !documentSelection.isEmpty ? documentSelection : undefined,
+            selectionRange: documentSelection.isEmpty ? undefined : documentSelection,
         }
     }
 

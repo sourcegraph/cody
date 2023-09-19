@@ -21,9 +21,6 @@ export interface RequestParams {
 
     /** The cursor position in the source file where the completion request was triggered. **/
     position: vscode.Position
-
-    /** Wether the completion request is multiline or not. **/
-    multiline: boolean
 }
 
 export interface RequestManagerResult {
@@ -97,6 +94,11 @@ export class RequestManager {
             })
 
         return request.promise
+    }
+
+    // Remove unwanted sugggestion from the cache
+    public removeUnwanted(params: RequestParams): void {
+        this.cache.delete(params)
     }
 
     /**
@@ -186,5 +188,9 @@ class RequestCache {
 
     public set(key: RequestParams, entry: InlineCompletionItem[]): void {
         this.cache.set(this.toCacheKey(key), entry)
+    }
+
+    public delete(key: RequestParams): void {
+        this.cache.delete(this.toCacheKey(key))
     }
 }
