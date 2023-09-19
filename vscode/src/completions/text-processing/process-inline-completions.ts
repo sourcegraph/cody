@@ -27,8 +27,8 @@ export function processInlineCompletions(
     // Shared post-processing logic
     const processedCompletions = items.map(item => processItem({ ...params, completion: item }))
 
-    // Remove empty results
-    const visibleResults = removeEmptyCompletions(processedCompletions)
+    // Remove low quality results
+    const visibleResults = removeLowQualityCompletions(processedCompletions)
 
     // Remove duplicate results
     const uniqueResults = dedupeWith(visibleResults, 'insertText')
@@ -137,6 +137,10 @@ function rankCompletions(completions: ParsedCompletion[]): InlineCompletionItem[
         .map(parsedCompletionToCompletion)
 }
 
-function removeEmptyCompletions(completions: InlineCompletionItem[]): InlineCompletionItem[] {
-    return completions.filter(c => c.insertText.trim() !== '')
+function removeLowQualityCompletions(completions: InlineCompletionItem[]): InlineCompletionItem[] {
+    return (
+        completions
+            // Filter out empty or single character completions.
+            .filter(c => c.insertText.trim().length > 1)
+    )
 }
