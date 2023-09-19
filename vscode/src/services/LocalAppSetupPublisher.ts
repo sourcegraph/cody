@@ -10,6 +10,7 @@ import { LOCAL_APP_SETTINGS_DIR } from './LocalAppFsPaths'
 interface AppSetupJson {
     dotcomAccessToken: string
     repoPaths: string[]
+    redirect: string
 }
 
 // Listens for when a dotcom auth token is available, and pushes it into a file
@@ -51,6 +52,7 @@ export class LocalAppSetupPublisher implements vscode.Disposable {
         const settings: AppSetupJson = {
             dotcomAccessToken: accessToken,
             repoPaths: workspaceRoot ? [workspaceRoot] : [],
+            redirect: vscode.env.uriScheme + '://sourcegraph.cody-ai/app-done',
         }
         void vscode.workspace.fs.writeFile(
             settingsDirUri.with({ path: `${settingsDirUri.path}/vscode.json` }),
