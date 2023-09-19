@@ -1,4 +1,4 @@
-# Cody agent
+# Cody Agent
 
 The `@sourcegraph/cody-agent` package implements a JSON-RPC server to interact
 with Cody via stdout/stdin. This package is intended to be used by
@@ -26,28 +26,51 @@ Currently, clients have to manually write bindings for the JSON-RPC methods.
 
 ## Useful commands
 
-- The command `pnpm build-agent-binaries` builds standalone binaries for
-  macOS, Linux, and Windows. By default, the binaries get written to the `dist/`
-  directory. The destination directory can be configured with the environment
-  variable `AGENT_EXECUTABLE_TARGET_DIRECTORY`.
-- The command `pnpm test` runs the agent against a minimized testing client.
-  The tests are disabled in CI because they run against uses an actual Sourcegraph
-  instance. Set the environment variables `SRC_ENDPOINT` and `SRC_ACCESS_TOKEN`
-  to run the tests against an actual Sourcegraph instance.
-  See the file [`src/index.test.ts`](src/index.test.ts) for a detailed but minimized example
-  interaction between an agent client and agent server.
-- The command `pnpm agent:debug` runs the agent, allowing attaching an
-  [inspector](https://nodejs.org/en/docs/inspector) to it.
+The following commands assume you are in the `agent` directory:
+
+| Command                                                                  | What                                                                                                                                         |
+| ------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| `pnpm build`                                                             | Build `dist/index.js` Node.js script for running the agent                                                                                   |
+| `node dist/index.js`                                                     | Run the agent after `pnpm build`. You normally do this from a client integration.                                                            |
+| `node --inspect dist/index.js`                                           | Run the agent with debugging enabled (see `chrome://inspect/`, [more details](https://nodejs.org/en/docs/guides/debugging-getting-started/)) |
+| `pnpm build-agent-binaries`                                              | Build standalone binaries for macOS, Linux, and Windows to `dist/` directory.                                                                |
+| `AGENT_EXECUTABLE_TARGET_DIRECTORY=/somewhere pnpm build-agent-binaries` | Build standalone binaries for macOS, Linux, and Windows to `/somewhere` directory                                                            |
+| `pnpm run test`                                                          | Run all agent-related tests                                                                                                                  |
+| (optional) `src login`                                                   | Make sure you are logged into your Sourcegraph instance, which is required to run the e2e test in `index.test.ts`                            |
+| `pnpm run test src/index.test.ts`                                        | Run e2e test, requires `src login` to work.                                                                                                  |
+
+## Debugging the agent
+
+- The best way to troubleshoot a problem with the agent is to run
+  `pnpm run test src/index.test.ts` because it gives you the fastest feedback
+  loop. You can easily add a new test case with custom JSON-RPC
+  requests/notifications to reproduce the issue you are troubleshooting. One
+  important benefit of this workflow is that you get nice stack traces point to
+  the original TypeScript source code.
+- To see all incoming/outcoming JSON-RPC traffic, set the environment variable
+  `CODY_AGENT_TRACE_PATH=/somewhere.json` and use `tail -f /somewhere.json` to
+  watch the trace file while running the agent. This is particularly helpful to confirm
+  whether your client is sending the expected JSON-RPC requests/notifications
+  and getting the expected responses.
+- If you have access to stderr of the agent process, you can add
+  `console.log(...)` statements throughout the TypeScript code to trace values at
+  specific points. This is a good fallback when the other debugging workflows are
+  not sufficient.
 
 ## Client implementations
 
-- The Sourcegraph JetBrains plugin is defined in the `sourcegraph` repository's `client/jetbrains` directory. The `CodyAgentClient.java` file implements the client side of the protocol.
+- The Sourcegraph JetBrains plugin is defined in the `sourcegraph` repository's
+  [`client/jetbrains`](https://github.com/sourcegraph/sourcegraph/tree/main/client/jetbrains)
+  directory. The `CodyAgentClient.java` file implements the client side of the
+  protocol.
+- The Sourcegraph Neovim plugin is defined in the
+  [`sourcegraph/sg.nvim`](https://github.com/sourcegraph/sg.nvim) repository.
 
 ## Miscellaneous notes
 
 - By the nature of using JSON-RPC via stdin/stdout, both the agent server and
   client run on the same computer and there can only be one client per server.
   It's normal for both the client and server to be stateful processes. For
-  example, the `connectionConfiguration/didChange` notification is sent from the
+  example, the `extensionConfiguration/didChange` notification is sent from the
   client to the server to notify that subsequent requests should use the new
   connection configuration.
