@@ -22,7 +22,10 @@ const backdropStyle = {
 
 export const ChatInputContextAppNotInstalled: StoryObj<typeof ChatInputContextSimplified> = {
     render: () => {
-        const contextStatus: ChatContextStatus = {}
+        const contextStatus: ChatContextStatus = {
+            connection: false,
+            codebase: 'github.com/sourcegraph/example',
+        }
         return (
             <div style={backdropStyle}>
                 <ChatInputContextSimplified isAppInstalled={false} contextStatus={contextStatus} />
@@ -33,7 +36,9 @@ export const ChatInputContextAppNotInstalled: StoryObj<typeof ChatInputContextSi
 
 export const ChatInputContextAppInstalled: StoryObj<typeof ChatInputContextSimplified> = {
     render: () => {
-        const contextStatus: ChatContextStatus = {}
+        const contextStatus: ChatContextStatus = {
+            codebase: 'github.com/sourcegraph/example',
+        }
         return (
             <div style={backdropStyle}>
                 <ChatInputContextSimplified isAppInstalled={true} contextStatus={contextStatus} />

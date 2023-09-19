@@ -3,7 +3,12 @@ import classNames from 'classnames'
 
 import styles from './Popup.module.css'
 
-interface PopupProps {
+export interface PopupOpenProps {
+    isOpen: boolean
+    onDismiss: () => void
+}
+
+interface PopupProps extends PopupOpenProps {
     className?: string
     title: React.ReactNode
     text: React.ReactNode
@@ -11,7 +16,6 @@ interface PopupProps {
     linkHref: string
     linkTarget?: '_blank' | undefined
     actionButtons?: React.ReactNode
-    onDismiss: () => void
 }
 
 // Note, if the popup's parent is interactive, the button's event handlers should prevent event
@@ -25,31 +29,33 @@ export const Popup: React.FunctionComponent<React.PropsWithChildren<PopupProps>>
     linkTarget,
     actionButtons,
     onDismiss,
-}) => (
-    <>
-        <div className={classNames(styles.popup, className)}>
-            <div className={styles.row}>
-                <div className={styles.noticeText}>
-                    <h1>{title}</h1>
-                    {text && <p>{text}</p>}
-                    {linkText && linkHref && (
-                        <p>
-                            <VSCodeLink href={linkHref} target={linkTarget}>
-                                {linkText}
-                            </VSCodeLink>
-                        </p>
-                    )}
+    isOpen,
+}) =>
+    isOpen && (
+        <>
+            <div className={classNames(styles.popup, className)}>
+                <div className={styles.row}>
+                    <div className={styles.noticeText}>
+                        <h1>{title}</h1>
+                        {text && <p>{text}</p>}
+                        {linkText && linkHref && (
+                            <p>
+                                <VSCodeLink href={linkHref} target={linkTarget}>
+                                    {linkText}
+                                </VSCodeLink>
+                            </p>
+                        )}
+                    </div>
+                    <div className={styles.noticeClose}>
+                        <VSCodeButton appearance="icon" onClick={onDismiss}>
+                            <i className="codicon codicon-close" />
+                        </VSCodeButton>
+                    </div>
                 </div>
-                <div className={styles.noticeClose}>
-                    <VSCodeButton appearance="icon" onClick={onDismiss}>
-                        <i className="codicon codicon-close" />
-                    </VSCodeButton>
-                </div>
+                {actionButtons && (
+                    <div className={classNames(styles.actionButtonContainer, styles.row)}>{actionButtons}</div>
+                )}
             </div>
-            {actionButtons && (
-                <div className={classNames(styles.actionButtonContainer, styles.row)}>{actionButtons}</div>
-            )}
-        </div>
-        <div className={styles.pointyBit} />
-    </>
-)
+            <div className={styles.pointyBit} />
+        </>
+    )
