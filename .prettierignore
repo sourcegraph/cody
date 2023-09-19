@@ -3,3 +3,4 @@ dist/
 vscode/.vscode-test/
 completions-review-tool/data/
 **/__snapshots__
+**/test-data

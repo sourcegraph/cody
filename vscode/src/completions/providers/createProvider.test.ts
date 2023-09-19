@@ -110,7 +110,7 @@ describe('createProviderConfig', () => {
                 {}
             )
             expect(provider?.identifier).toBe('fireworks')
-            expect(provider?.model).toBe('starcoder-7b')
+            expect(provider?.model).toBe('starcoder-hybrid')
         })
 
         it('returns "openai" provider config if specified in VSCode settings; model is ignored', async () => {
@@ -219,7 +219,7 @@ describe('createProviderConfig', () => {
                 },
                 {
                     codyLLMConfig: { provider: 'fireworks' },
-                    expected: { provider: 'fireworks', model: 'starcoder-7b' },
+                    expected: { provider: 'fireworks', model: 'starcoder-hybrid' },
                 },
 
                 // unknown-provider
