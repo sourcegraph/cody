@@ -137,7 +137,7 @@ function renderMarkdown(code: string) {
 
     return marked(
         `\`\`\`javascript
-${truncatedCode.replaceAll(/\\/g, '\\\\')}
+${truncatedCode.replaceAll('\\', '\\\\')}
 \`\`\``,
         { gfm: true }
     )
