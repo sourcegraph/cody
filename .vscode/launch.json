@@ -13,6 +13,8 @@
       "env": {
         "NODE_ENV": "development",
         "CODY_DEBUG_ENABLE": "true"
+        // Enable the Node debug protocol for the TypeScript server:
+        // "TSS_DEBUG": "5859"
       }
     },
     {
