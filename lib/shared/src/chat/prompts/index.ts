@@ -1,6 +1,9 @@
 import * as defaultPrompts from './default-prompts.json'
 import { toSlashCommand } from './utils'
 
+// A list of default cody commands
+export const defaultCodyCommands = ['ask', 'doc', 'edit', 'smell', 'test', 'reset']
+
 export function getDefaultCommandsMap(editorCommands: CodyPrompt[] = []): Map<string, CodyPrompt> {
     const map = new Map<string, CodyPrompt>()
 
@@ -38,13 +41,24 @@ export interface MyPromptsJSON {
     recipes?: { [id: string]: CodyPrompt }
 }
 
+// The blueprint of a Cody Command
 export interface CodyPrompt {
     description?: string
     prompt: string
     context?: CodyPromptContext
     type?: CodyPromptType
     slashCommand: string
+    mode?: CodyPromptMode
 }
+
+/**
+ * - ask mode is the default mode, run prompt in sidebar
+ * - inline mode will run prompt in inline chat
+ * - edit mode will run prompt with fixup
+ * - insert mode is the same as edit, but instead of replacing selection with cody's response,
+ * it adds to the top of the selection instead
+ */
+export type CodyPromptMode = 'ask' | 'inline' | 'edit' | 'insert'
 
 // Type of context available for prompt building
 export interface CodyPromptContext {

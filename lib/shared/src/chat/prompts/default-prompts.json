@@ -2,18 +2,20 @@
   "commands": {
     "doc": {
       "description": "Generate code documentation",
-      "prompt": "Generate a comment documenting the parameters and functionality for the selected code. Only generate the documentation for the selected code, do not generate the code. Use the same documentation style in the file of the selected code to generate the comments. Pay attention to the file path of the selected code to make sure the comments are generated for the correct language. For example, use the JavaDoc documentation style to generate comments for .java files, or Python docstring using Python multi-line string for .py files.",
+      "prompt": "Generate a comment documenting the parameters and functionality for the selected code. Only generate the documentation for the selected code, do not generate the code. Use the same documentation style in the file of the selected code to generate the comments. Pay attention to the file path of the selected code to make sure the comments are generated for the correct language. For example, use the JavaDoc documentation style to generate comments for .java files, or Python docstring using Python multi-line string for .py files. Do not include any other code or comments besides the docstring.",
       "context": {
         "currentDir": true,
         "selection": true
-      }
+      },
+      "mode": "insert"
     },
     "explain": {
       "description": "Explain code",
       "prompt": "Explain what the selected code does in simple terms. Assume the audience is a beginner programmer who has just learned the language features and basic syntax. Focus on explaining: 1) The purpose of the code 2) What input(s) it takes 3) What output(s) it produces 4) How it achieves its purpose through the logic and algorithm. 5) Any important logic flows or data transformations happening. Use simple language a beginner could understand. Include enough detail to give a full picture of what the code aims to accomplish without getting too technical. Format the explanation in coherent paragraphs, using proper punctuation and grammar. Write the explanation assuming no prior context about the code is known. Do not make assumptions about variables or functions not shown in the shared code. Start the answer with the name of the code that is being explained.",
       "context": {
         "currentFile": true
-      }
+      },
+      "mode": "inline"
     },
     "test": {
       "description": "Generate unit tests",

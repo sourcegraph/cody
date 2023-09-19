@@ -26,6 +26,9 @@ const editor: Editor = {
     getActiveInlineChatSelection() {
         return null
     },
+    getActiveTextEditorSmartSelection() {
+        return Promise.resolve(null)
+    },
     getActiveTextEditorSelectionOrEntireFile() {
         return null
     },

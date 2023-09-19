@@ -5,7 +5,7 @@ import { ContextMessage } from '../../codebase-context/messages'
 import { ActiveTextEditorSelection, Editor } from '../../editor'
 import { MAX_HUMAN_INPUT_TOKENS, NUM_CODE_RESULTS, NUM_TEXT_RESULTS } from '../../prompt/constants'
 import { truncateText } from '../../prompt/truncation'
-import { CodyPromptContext } from '../prompts'
+import { CodyPromptContext, defaultCodyPromptContext } from '../prompts'
 import {
     extractTestType,
     getHumanLLMText,
@@ -42,27 +42,30 @@ export class CustomPrompt implements Recipe {
      * Retrieves an Interaction object based on the humanChatInput and RecipeContext provided.
      * The Interaction object contains messages from both the human and the assistant, as well as context information.
      */
-    public async getInteraction(humanChatInput: string, context: RecipeContext): Promise<Interaction | null> {
-        const workspaceRootUri = context.editor.getWorkspaceRootUri()
-        // Check if context is required
-        const contextConfigString = (await context.editor.controllers?.command?.get('context')) || ''
-        const contextConfig = JSON.parse(contextConfigString) as CodyPromptContext
+    public async getInteraction(commandRunnerID: string, context: RecipeContext): Promise<Interaction | null> {
+        const command = context.editor.controllers?.command?.getCommand(commandRunnerID)
+        if (!command) {
+            const errorMessage = 'Invalid command -- command not found.'
+            return newInteractionWithError(errorMessage)
+        }
 
+        const workspaceRootUri = context.editor.getWorkspaceRootUri()
+
+        const contextConfig = command?.context || defaultCodyPromptContext
         // If selection is required, ensure not to accept visible content as selection
         const selection = contextConfig?.selection
-            ? context.editor.getActiveTextEditorSelection()
+            ? await context.editor.getActiveTextEditorSmartSelection()
             : context.editor.getActiveTextEditorSelectionOrVisibleContent()
 
-        const command = context.editor.controllers?.command?.getCurrentCommand()
-
         // Get prompt text from the editor command or from the human input
-        const promptText = humanChatInput.trim() || command?.prompt
-        if (!promptText) {
+        const promptText = command.prompt
+        const commandName = command?.slashCommand || command?.description || promptText
+
+        if (!promptText || !commandName) {
             const errorMessage = 'Please enter a valid prompt for the custom command.'
             return newInteractionWithError(errorMessage, promptText || '')
         }
 
-        const commandName = command?.slashCommand || command?.description || promptText
         if (contextConfig?.selection && !selection?.selectedText) {
             const errorMessage = `__${commandName}__ requires highlighted code. Please select some code in your editor and try again.`
             return newInteractionWithError(errorMessage, commandName)
@@ -78,8 +81,7 @@ export class CustomPrompt implements Recipe {
             return newInteraction({ text, displayText, contextMessages })
         }
 
-        // Get output from the command if any
-        const commandOutput = await context.editor.controllers?.command?.get('output')
+        const commandOutput = command.context?.output
 
         const truncatedText = truncateText(text, MAX_HUMAN_INPUT_TOKENS)
         const contextMessages = this.getContextMessages(

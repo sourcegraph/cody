@@ -187,6 +187,7 @@ const register = async (
             document?: vscode.TextDocument
             instruction?: string
             range?: vscode.Range
+            insertMode?: boolean
         } = {}
     ): Promise<void> => {
         const document = options.document || vscode.window.activeTextEditor?.document
@@ -200,7 +201,7 @@ const register = async (
         }
 
         const task = options.instruction?.replace('/edit', '').trim()
-            ? fixup.createTask(document.uri, options.instruction, range)
+            ? fixup.createTask(document.uri, options.instruction, range, options.insertMode)
             : await fixup.promptUserForTask()
         if (!task) {
             return
@@ -261,8 +262,12 @@ const register = async (
         }),
         vscode.commands.registerCommand(
             'cody.fixup.new',
-            (options: { range?: vscode.Range; instruction?: string; document?: vscode.TextDocument }) =>
-                executeFixup(options)
+            (options: {
+                range?: vscode.Range
+                instruction?: string
+                document?: vscode.TextDocument
+                insertMode?: boolean
+            }) => executeFixup(options)
         ),
         vscode.commands.registerCommand('cody.inline.new', async () => {
             // move focus line to the end of the current selection
@@ -337,7 +342,7 @@ const register = async (
             await executeRecipeInSidebar('custom-prompt', true, '/test')
         }),
         vscode.commands.registerCommand('cody.command.document-code', async () => {
-            await executeRecipeInSidebar('custom-prompt', true, '/doc')
+            await executeRecipeInSidebar('custom-prompt', false, '/doc')
         }),
         vscode.commands.registerCommand('cody.command.smell-code', async () => {
             await executeRecipeInSidebar('custom-prompt', true, '/smell')

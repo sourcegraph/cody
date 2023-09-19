@@ -101,9 +101,14 @@ export class FixupController
         return task
     }
 
-    public createTask(documentUri: vscode.Uri, instruction: string, selectionRange: vscode.Range): FixupTask {
+    public createTask(
+        documentUri: vscode.Uri,
+        instruction: string,
+        selectionRange: vscode.Range,
+        insertMode?: boolean
+    ): FixupTask {
         const fixupFile = this.files.forUri(documentUri)
-        const task = new FixupTask(fixupFile, instruction, selectionRange)
+        const task = new FixupTask(fixupFile, instruction, selectionRange, insertMode)
         this.tasks.set(task.id, task)
         this.setTaskState(task, CodyTaskState.working)
         return task
@@ -413,7 +418,10 @@ export class FixupController
                 continue
             }
             const bufferText = editor.document.getText(task.selectionRange)
-            task.diff = computeDiff(task.original, botText, bufferText, task.selectionRange.start)
+
+            // Add new line at the end of bot text when running insert mode
+            const newLine = task.insertMode ? '\n' : ''
+            task.diff = computeDiff(task.original, `${botText}${newLine}`, bufferText, task.selectionRange.start)
             this.didUpdateDiff(task)
         }
 
