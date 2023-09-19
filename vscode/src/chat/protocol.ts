@@ -30,8 +30,9 @@ export type WebviewMessage =
           range?: { startLine: number; startCharacter: number; endLine: number; endCharacter: number }
       }
     | { command: 'edit'; text: string }
-    | { command: 'insert'; eventType: 'Button' | 'Keydown'; text: string }
-    | { command: 'copy'; eventType: 'Button' | 'Keydown'; text: string }
+    | { command: 'insert'; text: string }
+    | { command: 'newFile'; text: string }
+    | { command: 'copy'; eventType: 'Button' | 'Keydown'; text: string; commandName?: string }
     | {
           command: 'auth'
           type:

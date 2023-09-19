@@ -14,7 +14,8 @@ interface CodeBlocksProps {
     copyButtonClassName?: string
     insertButtonClassName?: string
 
-    CopyButtonProps?: CopyButtonProps['copyButtonOnSubmit']
+    copyButtonOnSubmit?: CopyButtonProps['copyButtonOnSubmit']
+    insertButtonOnSubmit?: CopyButtonProps['insertButtonOnSubmit']
 }
 
 function wrapElement(element: HTMLElement, wrapperElement: HTMLElement): void {
@@ -29,7 +30,8 @@ function createButtons(
     text: string,
     copyButtonClassName?: string,
     copyButtonOnSubmit?: CopyButtonProps['copyButtonOnSubmit'],
-    insertButtonClassName?: string
+    insertButtonClassName?: string,
+    insertButtonOnSubmit?: CopyButtonProps['insertButtonOnSubmit']
 ): HTMLElement {
     const container = document.createElement('div')
     container.className = styles.container
@@ -40,11 +42,14 @@ function createButtons(
     buttons.className = styles.buttons
 
     const copyButton = createCopyButton(text, copyButtonClassName, copyButtonOnSubmit)
-    const insertButton = createInsertButton(text, container, insertButtonClassName, copyButtonOnSubmit)
-
-    // The insert button only exists for IDE integrations
+    const insertButton = createInsertButton(text, container, insertButtonClassName, insertButtonOnSubmit)
+    const insertNewButton = createInsertNewFileButton(text, insertButtonClassName, insertButtonOnSubmit)
+    // The insert buttons only exists for IDE integrations
     if (insertButton) {
         buttons.append(insertButton)
+    }
+    if (insertNewButton) {
+        buttons.append(insertNewButton)
     }
     buttons.append(copyButton)
 
@@ -67,7 +72,7 @@ function createCopyButton(
         button.textContent = 'Copied'
         setTimeout(() => (button.textContent = 'Copy'), 3000)
         if (copyButtonOnSubmit) {
-            copyButtonOnSubmit(text, false)
+            copyButtonOnSubmit(text, 'Button')
         }
     })
     return button
@@ -77,9 +82,9 @@ function createInsertButton(
     text: string,
     container: HTMLElement,
     className?: string,
-    copyButtonOnSubmit?: CopyButtonProps['copyButtonOnSubmit']
+    insertButtonOnSubmit?: CopyButtonProps['insertButtonOnSubmit']
 ): HTMLElement | null {
-    if (!className || !copyButtonOnSubmit) {
+    if (!className || !insertButtonOnSubmit) {
         return null
     }
     const button = document.createElement('button')
@@ -87,7 +92,26 @@ function createInsertButton(
     button.title = 'Insert text at current cursor position'
     button.className = classNames(styles.insertButton, className)
     button.addEventListener('click', () => {
-        copyButtonOnSubmit(text, true)
+        insertButtonOnSubmit(text, false)
+    })
+    return button
+}
+
+function createInsertNewFileButton(
+    text: string,
+    className?: string,
+    insertButtonOnSubmit?: CopyButtonProps['insertButtonOnSubmit']
+): HTMLElement | null {
+    if (!className || !insertButtonOnSubmit) {
+        return null
+    }
+
+    const button = document.createElement('button')
+    button.textContent = 'Insert to File'
+    button.title = 'Insert code to the end of an exisiting or new file'
+    button.className = classNames(styles.insertButton, className)
+    button.addEventListener('click', () => {
+        insertButtonOnSubmit(text, true)
     })
     return button
 }
@@ -95,8 +119,9 @@ function createInsertButton(
 export const CodeBlocks: React.FunctionComponent<CodeBlocksProps> = React.memo(function CodeBlocksContent({
     displayText,
     copyButtonClassName,
+    copyButtonOnSubmit,
     insertButtonClassName,
-    CopyButtonProps,
+    insertButtonOnSubmit,
 }) {
     const rootRef = useRef<HTMLDivElement>(null)
 
@@ -113,17 +138,23 @@ export const CodeBlocks: React.FunctionComponent<CodeBlocksProps> = React.memo(f
                 // the buttons scroll along with the code.
                 wrapElement(
                     preElement,
-                    createButtons(preText, copyButtonClassName, CopyButtonProps, insertButtonClassName)
+                    createButtons(
+                        preText,
+                        copyButtonClassName,
+                        copyButtonOnSubmit,
+                        insertButtonClassName,
+                        insertButtonOnSubmit
+                    )
                 )
                 // capture copy events (right click or keydown) on code block
                 preElement.addEventListener('copy', () => {
-                    if (CopyButtonProps) {
-                        CopyButtonProps(preText, false, 'Keydown')
+                    if (copyButtonOnSubmit) {
+                        copyButtonOnSubmit(preText, 'Keydown')
                     }
                 })
             }
         }
-    }, [displayText, CopyButtonProps, copyButtonClassName, insertButtonClassName, rootRef])
+    }, [displayText, copyButtonClassName, insertButtonClassName, rootRef, copyButtonOnSubmit, insertButtonOnSubmit])
 
     return useMemo(
         () => <div ref={rootRef} dangerouslySetInnerHTML={{ __html: renderCodyMarkdown(displayText) }} />,

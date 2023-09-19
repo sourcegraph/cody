@@ -52,6 +52,7 @@ export const TranscriptItem: React.FunctionComponent<
         feedbackButtonsOnSubmit?: (text: string) => void
         showFeedbackButtons: boolean
         copyButtonOnSubmit?: CopyButtonProps['copyButtonOnSubmit']
+        insertButtonOnSubmit?: CopyButtonProps['insertButtonOnSubmit']
         submitButtonComponent?: React.FunctionComponent<ChatUISubmitButtonProps>
         abortMessageInProgressComponent?: React.FunctionComponent<{ onAbortMessageInProgress: () => void }>
         onAbortMessageInProgress?: () => void
@@ -78,6 +79,7 @@ export const TranscriptItem: React.FunctionComponent<
     feedbackButtonsOnSubmit,
     showFeedbackButtons,
     copyButtonOnSubmit,
+    insertButtonOnSubmit,
     submitButtonComponent: SubmitButton,
     chatInputClassName,
     ChatButtonComponent,
@@ -175,8 +177,9 @@ export const TranscriptItem: React.FunctionComponent<
                         <CodeBlocks
                             displayText={message.displayText}
                             copyButtonClassName={codeBlocksCopyButtonClassName}
-                            CopyButtonProps={copyButtonOnSubmit}
+                            copyButtonOnSubmit={copyButtonOnSubmit}
                             insertButtonClassName={codeBlocksInsertButtonClassName}
+                            insertButtonOnSubmit={insertButtonOnSubmit}
                         />
                     )
                 ) : inProgress ? (

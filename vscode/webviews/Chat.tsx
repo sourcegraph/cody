@@ -99,8 +99,21 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     )
 
     const onCopyBtnClick = useCallback(
-        (text: string, isInsert = false, eventType: 'Button' | 'Keydown' = 'Button') => {
-            const op = isInsert ? 'insert' : 'copy'
+        (text: string, eventType: 'Button' | 'Keydown' = 'Button', command?: string) => {
+            const op = 'copy'
+            const commandName = command
+            // remove the additional /n added by the text area at the end of the text
+            const code = eventType === 'Button' ? text.replace(/\n$/, '') : text
+            // Log the event type and text to telemetry in chat view
+            vscodeAPI.postMessage({ command: op, eventType, text: code, commandName })
+        },
+        [vscodeAPI]
+    )
+
+    const onInsertBtnClick = useCallback(
+        (text: string, newFile = false) => {
+            const op = newFile ? 'newFile' : 'insert'
+            const eventType = 'Button'
             // remove the additional /n added by the text area at the end of the text
             const code = eventType === 'Button' ? text.replace(/\n$/, '') : text
             // Log the event type and text to telemetry in chat view
@@ -141,6 +154,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             FeedbackButtonsContainer={FeedbackButtons}
             feedbackButtonsOnSubmit={onFeedbackBtnClick}
             copyButtonOnSubmit={onCopyBtnClick}
+            insertButtonOnSubmit={onInsertBtnClick}
             suggestions={suggestions}
             setSuggestions={setSuggestions}
             abortMessageInProgressComponent={AbortMessageInProgress}

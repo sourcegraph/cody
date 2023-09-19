@@ -34,6 +34,7 @@ export const Transcript: React.FunctionComponent<
         FeedbackButtonsContainer?: React.FunctionComponent<FeedbackButtonsProps>
         feedbackButtonsOnSubmit?: (text: string) => void
         copyButtonOnSubmit?: CopyButtonProps['copyButtonOnSubmit']
+        insertButtonOnSubmit?: CopyButtonProps['insertButtonOnSubmit']
         submitButtonComponent?: React.FunctionComponent<ChatUISubmitButtonProps>
         ChatButtonComponent?: React.FunctionComponent<ChatButtonProps>
         isTranscriptError?: boolean
@@ -58,6 +59,7 @@ export const Transcript: React.FunctionComponent<
     FeedbackButtonsContainer,
     feedbackButtonsOnSubmit,
     copyButtonOnSubmit,
+    insertButtonOnSubmit,
     submitButtonComponent,
     chatInputClassName,
     ChatButtonComponent,
@@ -135,7 +137,6 @@ export const Transcript: React.FunctionComponent<
             }
             return (
                 <TranscriptItem
-                    // eslint-disable-next-line react/no-array-index-key
                     key={index + offset}
                     message={message}
                     inProgress={false}
@@ -156,6 +157,7 @@ export const Transcript: React.FunctionComponent<
                     FeedbackButtonsContainer={FeedbackButtonsContainer}
                     feedbackButtonsOnSubmit={feedbackButtonsOnSubmit}
                     copyButtonOnSubmit={copyButtonOnSubmit}
+                    insertButtonOnSubmit={insertButtonOnSubmit}
                     showFeedbackButtons={index !== 0 && !isTranscriptError}
                     submitButtonComponent={submitButtonComponent}
                     chatInputClassName={chatInputClassName}
@@ -186,6 +188,7 @@ export const Transcript: React.FunctionComponent<
                         showEditButton={false}
                         showFeedbackButtons={false}
                         copyButtonOnSubmit={copyButtonOnSubmit}
+                        insertButtonOnSubmit={insertButtonOnSubmit}
                         submitButtonComponent={submitButtonComponent}
                         chatInputClassName={chatInputClassName}
                         ChatButtonComponent={ChatButtonComponent}
