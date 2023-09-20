@@ -24,6 +24,11 @@ export abstract class SentryService {
     private prepareReconfigure(): void {
         try {
             const isProd = process.env.NODE_ENV === 'production'
+
+            // Used to enable Sentry reporting in the development environment.
+            console.log('THIS DO BE THE PROCESS SENTRY', process.env.ENABLE_SENTRY, '|', process.env.NODE_ENV)
+            const isSentryEnabled = process.env.ENABLE_SENTRY === 'true'
+
             const options: SentryOptions = {
                 dsn: SENTRY_DSN,
                 release: extensionDetails.version,
@@ -50,7 +55,11 @@ export abstract class SentryService {
                 //
                 // When running inside Agent, we control the whole Node environment so we can safely
                 // listen to unhandled errors/rejections.
-                ...(this.config.isRunningInsideAgent ? {} : { defaultIntegrations: false }),
+                ...(this.config.isRunningInsideAgent
+                    ? {
+                          enabled: false,
+                      }
+                    : { defaultIntegrations: false }),
             }
 
             this.reconfigure(options)

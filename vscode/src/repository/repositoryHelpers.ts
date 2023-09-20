@@ -7,6 +7,8 @@ export function repositoryRemoteUrl(uri: vscode.Uri): string | undefined {
 }
 
 function gitRepositoryRemoteUrl(uri: vscode.Uri): string | undefined {
+    // TODO: agent needs to implement this I guess?
+    // otherwise we'll never have this :'(
     try {
         const extension = vscode.extensions.getExtension<GitExtension>('vscode.git')
         if (!extension) {
