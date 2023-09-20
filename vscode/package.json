@@ -489,7 +489,7 @@
       {
         "command": "editor.action.inlineSuggest.trigger",
         "key": "alt+\\",
-        "when": "editorTextFocus && !editorHasSelection && cody.autocomplete.enabled && !inlineSuggestionsVisible"
+        "when": "editorTextFocus && !editorHasSelection && config.cody.autocomplete.enabled && !inlineSuggestionsVisible"
       }
     ],
     "submenus": [
