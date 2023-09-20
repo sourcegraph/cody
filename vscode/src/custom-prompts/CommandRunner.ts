@@ -18,6 +18,7 @@ import { getCursorFoldingRange } from '../editor/utils'
 export class CommandRunner implements vscode.Disposable {
     public readonly id = `c${Date.now().toString(36).replaceAll(/\d+/g, '')}`
     private editor: vscode.TextEditor | undefined = undefined
+    private docLangId: string | undefined = undefined
     private contextOutput: string | undefined = undefined
     private disposables: vscode.Disposable[] = []
 
@@ -30,6 +31,7 @@ export class CommandRunner implements vscode.Disposable {
         if (!this.editor) {
             return
         }
+        this.docLangId = this.editor.document.languageId
 
         if (command.mode === 'inline') {
             void this.handleInlineRequest()
@@ -94,7 +96,13 @@ export class CommandRunner implements vscode.Disposable {
             return
         }
         // Insert mode - add code returns by Cody to top of selection
-        const range = insertMode ? new vscode.Range(selection.start, selection.start) : selection
+        let range = insertMode ? new vscode.Selection(selection.start, selection.start) : selection
+
+        if (insertMode && this.docLangId === 'python' && this.command.slashCommand === '/doc') {
+            const newPos = new vscode.Position(selection.start.line + 1, selection.start.character)
+            range = new vscode.Selection(newPos, newPos)
+        }
+
         const instruction = insertMode ? addSelectionToPrompt(this.command.prompt, code) : this.command.prompt
         await vscode.commands.executeCommand('cody.fixup.new', {
             range,
