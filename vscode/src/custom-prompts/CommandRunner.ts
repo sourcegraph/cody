@@ -18,7 +18,6 @@ import { getCursorFoldingRange } from '../editor/utils'
 export class CommandRunner implements vscode.Disposable {
     public readonly id = `c${Date.now().toString(36).replaceAll(/\d+/g, '')}`
     private editor: vscode.TextEditor | undefined = undefined
-    private docLangId: string | undefined = undefined
     private contextOutput: string | undefined = undefined
     private disposables: vscode.Disposable[] = []
 
@@ -31,7 +30,6 @@ export class CommandRunner implements vscode.Disposable {
         if (!this.editor) {
             return
         }
-        this.docLangId = this.editor.document.languageId
 
         if (command.mode === 'inline') {
             void this.handleInlineRequest()
@@ -97,36 +95,15 @@ export class CommandRunner implements vscode.Disposable {
             return
         }
 
-        // Insert mode - add code returns by Cody to top of selection
-        let range = insertMode ? new vscode.Selection(selection.start, selection.start) : selection
-        if (this.command.slashCommand === '/doc') {
-            range = this.getRangeForDocCommand(doc, selection)
-        }
-
+        const range = this.command.slashCommand === '/doc' ? getDocCommandRange(doc, selection) : selection
         const instruction = insertMode ? addSelectionToPrompt(this.command.prompt, code) : this.command.prompt
         await vscode.commands.executeCommand('cody.fixup.new', {
             range,
             instruction,
             document: doc,
+            auto: true,
             insertMode,
         })
-    }
-
-    /**
-     * Gets the range to use for inserting documentation from the doc command.
-     *
-     * For Python files, returns a range starting on the line after the selection,
-     * at the first non-whitespace character. This will insert the documentation
-     * on the next line instead of directly in the selection as python docstring
-     * is added below the function definition.
-     *
-     * For other languages, returns the original selection range unmodified.
-     */
-    private getRangeForDocCommand(doc: vscode.TextDocument, selection: vscode.Selection): vscode.Selection {
-        const startLine = this.docLangId === 'python' ? selection.start.line + 1 : selection.start.line
-        const startChar = doc.lineAt(startLine).firstNonWhitespaceCharacterIndex
-        const pos = new vscode.Position(startLine, startChar)
-        return new vscode.Selection(pos, pos)
     }
 
     /**
@@ -169,4 +146,20 @@ export class CommandRunner implements vscode.Disposable {
 
 function addSelectionToPrompt(prompt: string, code: string): string {
     return prompt + '\nHere is the code: \n<Code>' + code + '</Code>'
+}
+
+/**
+ * Gets the range to use for inserting documentation from the doc command.
+ *
+ * For Python files, returns a range starting on the line after the selection,
+ * at the first non-whitespace character. This will insert the documentation
+ * on the next line instead of directly in the selection as python docstring
+ * is added below the function definition.
+ *
+ * For other languages, returns the original selection range unmodified.
+ */
+function getDocCommandRange(doc: vscode.TextDocument, selection: vscode.Selection): vscode.Selection {
+    const startLine = doc.languageId === 'python' ? selection.start.line + 1 : selection.start.line
+    const pos = new vscode.Position(startLine, 0)
+    return new vscode.Selection(pos, pos)
 }
