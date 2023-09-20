@@ -168,6 +168,19 @@ export function accept(id: string, completion: InlineCompletionItem): void {
     if (!completionEvent.suggestedAt) {
         logCompletionEvent('unexpectedNotSuggested')
     }
+    // It is still possible to accept a completion before it was logged as suggested. This is
+    // because we do not have direct access to know when a completion is being shown or hidden from
+    // VS Code. Instead, we rely on subsequent completion callbacks and other heuristics to know
+    // when the current one is rejected.
+    //
+    // One such condition is when using backspace. In VS Code, we create completions such that they
+    // always start at the binning of the line. This means when backspacing past the initial trigger
+    // point, we keep showing the currently rendered completion until the next request is finished.
+    // However, we do log the completion as rejected with the keystroke leaving a small window where
+    // the completion can be accepted after it was marked as suggested.
+    if (completionEvent.suggestionLoggedAt) {
+        logCompletionEvent('unexpectedAlreadySuggested')
+    }
 
     completionEvent.acceptedAt = performance.now()
 

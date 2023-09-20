@@ -193,6 +193,11 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
                 tracer,
             })
 
+            // Avoid any further work if the completion is invalidated already.
+            if (abortController.signal.aborted) {
+                return null
+            }
+
             if (!result) {
                 // Returning null will clear any existing suggestions, thus we need to reset the
                 // last candidate.
@@ -230,6 +235,12 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
                     const delta = performance.now() - start
                     if (delta < minimumLatency) {
                         await new Promise(resolve => setTimeout(resolve, minimumLatency - delta))
+                    }
+
+                    // Avoid any further work if the completion is invalidated during the the
+                    // minimum duration pause
+                    if (abortController.signal.aborted) {
+                        return null
                     }
                 }
             }
@@ -311,7 +322,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
      * A completion item is marked as rejected/unwanted when:
      * - pressing backspace on a visible suggestion
      */
-    public handleUnwantedCompletionItem(logId: string, reqContext: RequestParams): void {
+    private handleUnwantedCompletionItem(logId: string, reqContext: RequestParams): void {
         const completionItem = this.lastCandidate?.result.items[0]
         if (!completionItem) {
             return
