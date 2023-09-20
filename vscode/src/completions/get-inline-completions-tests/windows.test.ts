@@ -48,5 +48,5 @@ describe('[getInlineCompletions] windows ', () => {
 })
 
 function windowsify(string: string): string {
-    return string.replaceAll(/\n/g, '\r\n')
+    return string.replaceAll('\n', '\r\n')
 }
