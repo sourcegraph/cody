@@ -320,31 +320,23 @@ export function shouldIncludeClosingLine(prefixIndentationWithFirstCompletionLin
 }
 
 export function getNextNonEmptyLine(suffix: string): string {
-    const nextNewline = suffix.indexOf('\n')
+    const nextLf = suffix.indexOf('\n')
+    const nextCrLf = suffix.indexOf('\r\n')
     // There is no next line
-    if (nextNewline === -1) {
+    if (nextLf === -1 && nextCrLf === -1) {
         return ''
     }
-    return (
-        suffix
-            .slice(nextNewline + 1)
-            .split('\n')
-            .find(line => line.trim().length > 0) ?? ''
-    )
+    return lines(suffix.slice(nextCrLf >= 0 ? nextCrLf + 2 : nextLf + 1)).find(line => line.trim().length > 0) ?? ''
 }
 
 export function getPrevNonEmptyLine(prefix: string): string {
-    const prevNewline = prefix.lastIndexOf('\n')
+    const prevLf = prefix.lastIndexOf('\n')
+    const prevCrLf = prefix.lastIndexOf('\r\n')
     // There is no prev line
-    if (prevNewline === -1) {
+    if (prevLf === -1 && prevCrLf === -1) {
         return ''
     }
-    return (
-        prefix
-            .slice(0, prevNewline)
-            .split('\n')
-            .findLast(line => line.trim().length > 0) ?? ''
-    )
+    return lines(prefix.slice(0, prevCrLf >= 0 ? prevCrLf : prevLf)).findLast(line => line.trim().length > 0) ?? ''
 }
 
 export const formatSymbolContextRelationship = (
@@ -360,4 +352,8 @@ export const formatSymbolContextRelationship = (
     }
 
     return ''
+}
+
+export function lines(text: string): string[] {
+    return text.split(/\r?\n/)
 }
