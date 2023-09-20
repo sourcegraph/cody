@@ -9,7 +9,7 @@ async function main(): Promise<void> {
     const extensionDevelopmentPath = VSCODE_CODY_ROOT
 
     // The path to the test runner script, passed to --extensionTestsPath.
-    const extensionTestsPath = path.resolve(VSCODE_CODY_ROOT, 'dist', 'tsc', 'test', 'completions-3', 'index')
+    const extensionTestsPath = path.resolve(VSCODE_CODY_ROOT, 'dist', 'tsc', 'test', 'benchmark', 'index')
 
     try {
         // Download VS Code, unzip it, and run the integration test.

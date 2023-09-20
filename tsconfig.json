@@ -23,7 +23,7 @@
     { "path": "slack" },
     { "path": "vscode" },
     { "path": "vscode/test/integration" },
-    { "path": "vscode/test/completions-3" },
+    { "path": "vscode/test/benchmark" },
     { "path": "vscode/test/completions" },
     { "path": "vscode/scripts" },
     { "path": "web" }

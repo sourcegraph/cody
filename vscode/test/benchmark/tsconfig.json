@@ -1,12 +1,14 @@
 {
   "extends": "../../tsconfig.json",
   "compilerOptions": {
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
     "sourceMap": true,
     "rootDir": ".",
-    "outDir": "../../dist/tsc/test/completions-3",
-    "types": ["mocha", "node"],
+    "outDir": "../../dist/tsc/test/benchmark",
+    "types": ["node"],
   },
   "references": [{ "path": "../../" }, { "path": "../../../lib/shared" }],
-  "include": ["*.ts", "datasets/**/*.json"],
+  "include": ["*.ts"],
   "exclude": ["datasets"],
 }

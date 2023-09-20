@@ -9,3 +9,4 @@ packages:
   - web
   - completions-review-tool
   - snippet-extractor
+  - evaluation-tool
