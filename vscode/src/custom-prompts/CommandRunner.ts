@@ -90,17 +90,17 @@ export class CommandRunner implements vscode.Disposable {
         if (selection?.start.isEqual(selection.end)) {
             selection = await getCursorFoldingRange(doc.uri, selection.start.line)
         }
+
         // Get text from selection range
         const code = this.editor?.document.getText(selection)
         if (!code || !selection) {
             return
         }
+
         // Insert mode - add code returns by Cody to top of selection
         let range = insertMode ? new vscode.Selection(selection.start, selection.start) : selection
-
-        if (insertMode && this.docLangId === 'python' && this.command.slashCommand === '/doc') {
-            const newPos = new vscode.Position(selection.start.line + 1, selection.start.character)
-            range = new vscode.Selection(newPos, newPos)
+        if (this.command.slashCommand === '/doc') {
+            range = this.getRangeForDocCommand(doc, selection)
         }
 
         const instruction = insertMode ? addSelectionToPrompt(this.command.prompt, code) : this.command.prompt
@@ -110,6 +110,23 @@ export class CommandRunner implements vscode.Disposable {
             document: doc,
             insertMode,
         })
+    }
+
+    /**
+     * Gets the range to use for inserting documentation from the doc command.
+     *
+     * For Python files, returns a range starting on the line after the selection,
+     * at the first non-whitespace character. This will insert the documentation
+     * on the next line instead of directly in the selection as python docstring
+     * is added below the function definition.
+     *
+     * For other languages, returns the original selection range unmodified.
+     */
+    private getRangeForDocCommand(doc: vscode.TextDocument, selection: vscode.Selection): vscode.Selection {
+        const startLine = this.docLangId === 'python' ? selection.start.line + 1 : selection.start.line
+        const startChar = doc.lineAt(startLine).firstNonWhitespaceCharacterIndex
+        const pos = new vscode.Position(startLine, startChar)
+        return new vscode.Selection(pos, pos)
     }
 
     /**
