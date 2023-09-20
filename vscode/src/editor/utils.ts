@@ -42,33 +42,58 @@ export async function getCursorFoldingRange(
     uri: vscode.Uri,
     activeCursor: number
 ): Promise<vscode.Selection | undefined> {
-    const symbols = await getSymbolRanges(uri).then(r => r.filter(s => s.kind === vscode.SymbolKind.Class))
-    // Get the folding ranges for the document,
-    const ranges = await getFoldingRange(uri).then(r => r.filter(r => r.kind !== 2 && r.kind !== 1 && r.kind !== 3))
-    // remove ranges that match the symbols from ranges
-    for (const s of symbols) {
-        const symbolRange = s.location.range
-        for (let i = 0; i < ranges.length; i++) {
-            const r = ranges[i]
-            if (r.start === symbolRange.start.line && r.end === symbolRange.end.line) {
-                ranges.splice(i, 1)
+    // Get the ranges of all classes and folding ranges in parallel
+    const [classes, ranges] = await Promise.all([
+        getSymbols(uri)
+            .then(r => r.filter(s => s.kind === vscode.SymbolKind.Class))
+            .then(s => s.map(symbol => symbol.location.range)),
+        getFoldingRange(uri).then(r => r.filter(r => !r.kind)),
+    ])
+    const cursorRange = getOutermostRangesInsideClasses(classes, ranges, activeCursor)
+    if (!cursorRange) {
+        return undefined
+    }
+
+    return new vscode.Selection(cursorRange.start, 0, cursorRange.end + 2, 0)
+}
+
+/**
+ * NOTE (bee) The purpose of filtering to keep only folding ranges that contain other folding ranges is to find
+ * the outermost folding range enclosing the cursor position.
+ *
+ * Folding ranges can be nested - you may have a folding range for a function that contains folding ranges for inner code blocks.
+ *
+ * By filtering to ranges that contain other ranges, it removes the inner nested ranges and keeps only the outermost parent ranges.
+ *
+ * This way when it checks for the range containing the cursor, it will return the outer range that fully encloses the cursor location,
+ * rather than an inner range that may only partially cover the cursor line.
+ * '
+ * However, if we keep the ranges for classes, this will then only return ranges for classes that contain individual methods rather
+ * than the outermost range of the methods within a class. So the first step is to remove class ranges.
+ */
+export function getOutermostRangesInsideClasses(
+    classRanges: vscode.Range[],
+    foldingRanges: vscode.FoldingRange[],
+    activeCursor: number
+): vscode.FoldingRange | undefined {
+    // Remove all ranges that are contained within class ranges
+    for (const cRange of classRanges) {
+        for (let i = 0; i < foldingRanges.length; i++) {
+            const r = foldingRanges[i]
+            if (r.start === cRange.start.line && r.end === cRange.end.line) {
+                foldingRanges.splice(i, 1)
                 i--
             }
         }
     }
 
-    // Filter to keep folding ranges that contained other folding ranges
-    const filteredRanges = ranges.filter(r => !ranges.some(r2 => r2 !== r && r2.start <= r.start && r2.end >= r.end))
+    // Filter to only keep folding ranges that contained nested folding ranges (aka removes nested ranges)
     // Get the folding range containing the active cursor
-    const cursorRange = filteredRanges.find(r => r.start <= activeCursor && r.end >= activeCursor)
-    if (cursorRange) {
-        return new vscode.Selection(cursorRange.start, 0, cursorRange.end + 2, 0)
-    }
-    return undefined
-}
+    const cursorRange = foldingRanges
+        .filter(r => !foldingRanges.some(r2 => r2 !== r && r2.start <= r.start && r2.end >= r.end))
+        .find(r => r.start <= activeCursor && r.end >= activeCursor)
 
-export function addSelectionToPrompt(prompt: string, code: string): string {
-    return prompt + '\nHere is the code: \n<Code>' + code + '</Code>'
+    return cursorRange
 }
 
 /**
@@ -78,10 +103,21 @@ export function addSelectionToPrompt(prompt: string, code: string): string {
  * @returns A promise resolving to an array of SymbolInformation objects
  * representing the symbols in the document.
  */
-export async function getSymbolRanges(uri: vscode.Uri): Promise<vscode.SymbolInformation[]> {
-    const ranges = await vscode.commands.executeCommand<vscode.SymbolInformation[]>(
+export async function getSymbols(uri: vscode.Uri): Promise<vscode.SymbolInformation[]> {
+    const symbols = await vscode.commands.executeCommand<vscode.SymbolInformation[]>(
         'vscode.executeDocumentSymbolProvider',
         uri
     )
-    return ranges
+    return symbols
+}
+
+/**
+ * Adds the selection range to the prompt string.
+ *
+ * @param prompt - The original prompt string
+ * @param code - The code snippet to include in the prompt
+ * @returns The updated prompt string with the code snippet added
+ */
+export function addSelectionToPrompt(prompt: string, code: string): string {
+    return prompt + '\nHere is the code: \n<Code>' + code + '</Code>'
 }
