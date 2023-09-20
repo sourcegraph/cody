@@ -51,7 +51,7 @@ describe('lines', () => {
 function withCRLFExamples(examples: string[][]): string[][] {
     const crlfExample = []
     for (const example of examples) {
-        crlfExample.push(example.map(line => line.replace(/\n/g, '\r\n')))
+        crlfExample.push(example.map(line => line.replaceAll(/\n/g, '\r\n')))
     }
     return examples.concat(crlfExample)
 }
