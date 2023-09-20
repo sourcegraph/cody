@@ -40,12 +40,6 @@ export interface CodyCompletionItemProviderConfig {
     featureFlagProvider: FeatureFlagProvider
 }
 
-// Only used when the CodyAutocompleteMinimumLatency feature flag is turned on:
-//
-// We don't want to show completions immediately after a user types a character (unless we show the
-// last candidate) to avoid churning the UI too much. Instead, we wait at least
-const MINIMUM_LATENCY_MS = 350
-
 export class InlineCompletionItemProvider implements vscode.InlineCompletionItemProvider {
     private promptChars: number
     private maxPrefixChars: number
@@ -131,9 +125,10 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
         const start = performance.now()
         // We start the request early so that we have a high chance of getting a response before we
         // need it.
-        const minimumLatencyFlagPromise = this.config.featureFlagProvider.evaluateFeatureFlag(
-            FeatureFlag.CodyAutocompleteMinimumLatency
-        )
+        const minimumLatencyFlagsPromises = [
+            this.config.featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteMinimumLatency350),
+            this.config.featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteMinimumLatency600),
+        ]
         const tracer = this.config.tracer ? createTracerForInvocation(this.config.tracer) : undefined
         const graphContextFetcher = this.config.graphContextFetcher ?? undefined
 
@@ -229,11 +224,12 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
             // latency so that we don't show a result before the user has paused typing for a brief
             // moment.
             if (result.source !== InlineCompletionsResultSource.LastCandidate) {
-                const minimumLatencyFlag = await minimumLatencyFlagPromise
-                if (minimumLatencyFlag) {
+                const [minimumLatency350, minimumLatency600] = await Promise.all(minimumLatencyFlagsPromises)
+                if (minimumLatency350 || minimumLatency600) {
+                    const minimumLatency = minimumLatency350 ? 350 : 600
                     const delta = performance.now() - start
-                    if (delta < MINIMUM_LATENCY_MS) {
-                        await new Promise(resolve => setTimeout(resolve, MINIMUM_LATENCY_MS - delta))
+                    if (delta < minimumLatency) {
+                        await new Promise(resolve => setTimeout(resolve, minimumLatency - delta))
                     }
                 }
             }
