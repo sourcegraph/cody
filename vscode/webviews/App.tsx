@@ -236,7 +236,10 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                             applessOnboarding={{
                                 arm: config.experimentOnboarding,
                                 endpoint,
-                                props: { isAppInstalled, onboardingPopupProps },
+                                props: {
+                                    isAppInstalled,
+                                    onboardingPopupProps,
+                                },
                             }}
                         />
                     )}

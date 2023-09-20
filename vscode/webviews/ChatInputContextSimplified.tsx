@@ -52,23 +52,31 @@ export const ChatInputContextSimplified: React.FC<ChatInputContextSimplifiedProp
 }) => {
     const [popupOpen, setPopupOpen] = useState<boolean>(false)
     const togglePopup = (): void => setPopupOpen(!popupOpen)
+    const connectionHasEmbeddings = contextStatus.mode && contextStatus.connection
+    let popup: React.FC<OnboardingPopupProps & PopupOpenProps> | undefined
+    if (contextStatus.codebase && !connectionHasEmbeddings) {
+        popup = isAppInstalled ? EmbeddingsNotFoundPopup : InstallCodyAppPopup
+    }
     return (
         <div className={styles.container}>
             {contextStatus.codebase ? (
-                contextStatus.mode && contextStatus.connection ? (
+                connectionHasEmbeddings ? (
+                    // Codebase and embeddings
                     <CodebaseState codebase={contextStatus.codebase} icon={mdiDatabaseCheckOutline} />
                 ) : (
+                    // Codebase, but no embeddings
                     <CodebaseState
                         codebase={contextStatus.codebase}
                         icon={mdiDatabaseRemoveOutline}
                         iconClassName={styles.errorColor}
-                        popup={isAppInstalled ? EmbeddingsNotFoundPopup : InstallCodyAppPopup}
+                        popup={popup}
                         popupOpen={popupOpen}
                         togglePopup={togglePopup}
                         onboardingPopupProps={onboardingPopupProps}
                     />
                 )
             ) : (
+                // No codebase
                 <CodebaseState icon={mdiDatabaseOffOutline} iconClassName={styles.errorColor} />
             )}
             {(contextStatus.filePath && (

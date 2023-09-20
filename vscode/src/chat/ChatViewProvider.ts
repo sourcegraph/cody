@@ -142,13 +142,7 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
                 break
             case 'simplified-onboarding':
                 if (message.type === 'install-app') {
-                    const os = process.platform
-                    const arch = process.arch
-                    const DOWNLOAD_URL =
-                        os && arch && isOsSupportedByApp(os, arch)
-                            ? `https://sourcegraph.com/.api/app/latest?arch=${archConvertor(arch)}&target=${os}`
-                            : APP_LANDING_URL.href
-                    void this.openExternalLinks(DOWNLOAD_URL)
+                    void this.simplifiedOnboardingInstallApp()
                     break
                 }
                 if (message.type === 'open-app') {
@@ -156,13 +150,27 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
                     break
                 }
                 if (message.type === 'reload-state') {
-                    void vscode.commands.executeCommand('cody.auth.sync')
+                    void this.simplifiedOnboardingReloadEmbeddingsState()
                     break
                 }
                 break
             default:
                 this.handleError('Invalid request type from Webview')
         }
+    }
+
+    private async simplifiedOnboardingInstallApp(): Promise<void> {
+        const os = process.platform
+        const arch = process.arch
+        const DOWNLOAD_URL =
+            os && arch && isOsSupportedByApp(os, arch)
+                ? `https://sourcegraph.com/.api/app/latest?arch=${archConvertor(arch)}&target=${os}`
+                : APP_LANDING_URL.href
+        await this.openExternalLinks(DOWNLOAD_URL)
+    }
+
+    private async simplifiedOnboardingReloadEmbeddingsState(): Promise<void> {
+        return vscode.commands.executeCommand('cody.auth.sync')
     }
 
     private async onHumanMessageSubmitted(text: string, submitType: 'user' | 'suggestion' | 'example'): Promise<void> {
