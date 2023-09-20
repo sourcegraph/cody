@@ -4,7 +4,7 @@ import path from 'path'
 
 import dedent from 'dedent'
 import { expect } from 'vitest'
-import Parser, { Point, Query } from 'web-tree-sitter'
+import Parser, { Point, Query, SyntaxNode } from 'web-tree-sitter'
 
 import { getLanguageConfig } from '../../language'
 import { SupportedLanguage } from '../grammars'
@@ -62,7 +62,7 @@ interface AnnotateSnippetsParams {
     code: string
     language: SupportedLanguage
     parser: Parser
-    query: Query
+    captures: (...args: Parameters<Query['captures']>) => SyntaxNode | null
 }
 
 /**
@@ -70,7 +70,7 @@ interface AnnotateSnippetsParams {
  * Keeps the position of the query start position to make it easier to review snapshots.
  */
 function annotateSnippets(params: AnnotateSnippetsParams): string {
-    const { code, language, parser, query } = params
+    const { code, language, captures, parser } = params
 
     const { delimiter, indent } = getCommentDelimiter(language)
     const lines = code.split('\n')
@@ -80,20 +80,12 @@ function annotateSnippets(params: AnnotateSnippetsParams): string {
     }
 
     const tree = parser.parse(code)
-    const captures = query.captures(tree.rootNode, caretPoint, caretPoint)
-    if (!captures.length) {
+    const node = captures(tree.rootNode, caretPoint, caretPoint)
+    if (!node) {
         return code
     }
 
-    // Taking the last result to get the most nested node.
-    // See https://github.com/tree-sitter/tree-sitter/discussions/2067
-    const initialNode = captures.at(-1)!.node
-    // Check for special cases where we need match a parent node.
-    // TODO(tree-sitter): extract this logic from the test utility.
-    const potentialParentNodes = captures.filter(capture => capture.name === 'parents')
-    const potentialParent = potentialParentNodes.find(capture => initialNode.parent?.id === capture.node.id)?.node
-    const { startPosition: start, endPosition: end } = potentialParent || initialNode
-
+    const { startPosition: start, endPosition: end } = node
     const result = []
 
     for (let i = 0; i < lines.length; i++) {
@@ -151,14 +143,15 @@ function commentOutLines(text: string, commentSymbol: string): string {
 }
 
 interface AnnotateAndMatchParams {
-    queryPath: string
     sourcesPath: string
     parser: Parser
     language: SupportedLanguage
+    rawQuery: string
+    captures: (...args: Parameters<Query['captures']>) => SyntaxNode | null
 }
 
 export async function annotateAndMatchSnapshot(params: AnnotateAndMatchParams): Promise<void> {
-    const { queryPath, sourcesPath, parser, language } = params
+    const { captures, rawQuery, sourcesPath, parser, language } = params
 
     const { delimiter, separator } = getCommentDelimiter(language)
 
@@ -167,11 +160,6 @@ export async function annotateAndMatchSnapshot(params: AnnotateAndMatchParams): 
     // Queries are used on specific parts of the source code (e.g., range of the inserted multiline completion).
     // Snippets are required to mimick such behavior and test the order of returned captures.
     const snippets = code.split(separator)
-
-    // Compile the tree-sitter query.
-    // TODO(tree-sitter): add multi-lang support and extract from the text helper.
-    const rawQuery = fs.readFileSync(path.join(__dirname, queryPath), 'utf8').trim()
-    const query = parser.getLanguage().query(rawQuery)
 
     const header = dedent`
         ${commentOutLines(DOCUMENTATION_HEADER, delimiter)}
@@ -183,7 +171,7 @@ export async function annotateAndMatchSnapshot(params: AnnotateAndMatchParams): 
 
     const annotated = snippets
         .map(snippet => {
-            return annotateSnippets({ code: snippet, language, parser, query })
+            return annotateSnippets({ code: snippet, language, parser, captures })
         })
         .join(separator)
 

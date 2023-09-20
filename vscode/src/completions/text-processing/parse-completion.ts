@@ -1,5 +1,5 @@
 import { Position, Range, TextDocument } from 'vscode'
-import Parser, { Tree } from 'web-tree-sitter'
+import Parser, { Point, Tree } from 'web-tree-sitter'
 
 import { DocumentContext } from '../get-current-doc-context'
 import { asPoint, getCachedParseTreeForDocument } from '../tree-sitter/parse-tree-cache'
@@ -18,11 +18,11 @@ export interface ParsedCompletion extends InlineCompletionItem {
     // Points for parse-tree queries.
     points?: {
         // Start of completion.insertText in the parse-tree.
-        start?: Parser.Point
+        start?: Point
         // End of completion.insertText in the parse-tree
-        end?: Parser.Point
+        end?: Point
         // Start of the multi-line completion trigger if applicable
-        trigger?: Parser.Point
+        trigger?: Point
     }
 }
 
