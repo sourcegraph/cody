@@ -1,7 +1,7 @@
 import * as vscode from 'vscode'
 
 import { detectMultiline } from './detect-multiline'
-import { getNextNonEmptyLine, getPrevNonEmptyLine } from './text-processing'
+import { getNextNonEmptyLine, getPrevNonEmptyLine, lines } from './text-processing'
 
 export interface DocumentContext {
     prefix: string
@@ -62,8 +62,8 @@ export function getCurrentDocContext(params: GetCurrentDocContextParams): Docume
         completePrefixWithContextCompletion = completePrefix.slice(0, range.start.character - position.character) + text
     }
 
-    const prefixLines = completePrefixWithContextCompletion.split('\n')
-    const suffixLines = completeSuffix.split('\n')
+    const prefixLines = lines(completePrefixWithContextCompletion)
+    const suffixLines = lines(completeSuffix)
 
     const currentLinePrefix = prefixLines.at(-1)!
     const currentLineSuffix = suffixLines[0]
@@ -81,7 +81,7 @@ export function getCurrentDocContext(params: GetCurrentDocContextParams): Docume
         }
         prefix = prefixLines.slice(startLine).join('\n')
     } else {
-        prefix = completePrefixWithContextCompletion
+        prefix = prefixLines.join('\n')
     }
 
     let totalSuffix = 0
