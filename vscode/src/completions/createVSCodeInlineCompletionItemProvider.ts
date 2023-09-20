@@ -69,7 +69,7 @@ export async function createInlineCompletionItemProvider({
                 completionsProvider.handleDidAcceptCompletionItem(codyLogId, codyCompletion)
             }),
             vscode.languages.registerInlineCompletionItemProvider(
-                [{ scheme: 'file', language: '*' }, { notebookType: '*' }],
+                [{ scheme: 'file', language: '*' }, { scheme: 'untitled', language: '*' }, { notebookType: '*' }],
                 completionsProvider
             ),
             registerAutocompleteTraceView(completionsProvider)
