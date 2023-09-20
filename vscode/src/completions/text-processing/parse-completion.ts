@@ -73,7 +73,7 @@ export function parseCompletion(context: CompletionContext): ParsedCompletion {
 
     // Search for ERROR nodes in the completion range.
     const query = parser.getLanguage().query('(ERROR) @error')
-    // TODO: query bigger range to catch higher scope syntactic errors caused by the completion.
+    // TODO(tree-sitter): query bigger range to catch higher scope syntactic errors caused by the completion.
     const matches = query.matches(treeWithCompletion.rootNode, points?.trigger || points.start, points.end)
 
     return {
@@ -123,7 +123,7 @@ function pasteCompletion(params: PasteCompletionParams): Tree {
         newEndPosition: asPoint(completionEndPosition),
     })
 
-    // TODO: consider parsing only the changed part of the document to improve performance.
+    // TODO(tree-sitter): consider parsing only the changed part of the document to improve performance.
     // parser.parse(textWithCompletion, tree, { includedRanges: [...]})
     return parser.parse(textWithCompletion, treeCopy)
 }

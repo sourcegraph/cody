@@ -4,6 +4,7 @@ import { runTests } from '@vscode/test-electron'
 
 import { TEST_WORKSPACE_PATH, VSCODE_CODY_ROOT } from './constants'
 
+console.log(process.env)
 async function main(): Promise<void> {
     // The directory containing the extension's package.json, passed to --extensionDevelopmentPath.
     const extensionDevelopmentPath = VSCODE_CODY_ROOT

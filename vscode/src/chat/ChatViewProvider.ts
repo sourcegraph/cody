@@ -220,7 +220,7 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
 
         const edit = new vscode.WorkspaceEdit()
         // trimEnd() to remove new line added by Cody
-        edit.replace(editor.document.uri, selectionRange, text.trimEnd())
+        edit.insert(editor.document.uri, selectionRange.start, text + '\n')
         await vscode.workspace.applyEdit(edit)
 
         // Log insert event

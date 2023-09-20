@@ -4,12 +4,12 @@ import * as vscode from 'vscode'
 
 import { ExtensionApi } from '../../src/extension-api'
 
-const { SRC_EVAL_ENDPOINT, SRC_EVAL_ACCESS_TOKEN } = process.env
-if (!SRC_EVAL_ENDPOINT || !SRC_EVAL_ACCESS_TOKEN) {
-    throw new Error('Provide SRC_ENDPOINT and SRC_ACCESS_TOKEN to run the evaluation suite')
-}
-
 export async function setup(): Promise<void> {
+    const { BENCHMARK_ENDPOINT, BENCHMARK_ACCESS_TOKEN } = process.env
+    if (!BENCHMARK_ENDPOINT || !BENCHMARK_ACCESS_TOKEN) {
+        throw new Error('Provide SRC_ENDPOINT and SRC_ACCESS_TOKEN to run the on suite')
+    }
+
     // Wait for Cody extension to become ready.
     const api = vscode.extensions.getExtension<ExtensionApi>('sourcegraph.cody-ai')
     assert.ok(api, 'extension not found')
@@ -22,7 +22,7 @@ export async function setup(): Promise<void> {
     await new Promise(resolve => setTimeout(resolve, 500))
 
     // Configure extension.
-    await ensureExecuteCommand('cody.test.token', SRC_EVAL_ENDPOINT, SRC_EVAL_ACCESS_TOKEN)
+    await ensureExecuteCommand('cody.test.token', BENCHMARK_ENDPOINT, BENCHMARK_ACCESS_TOKEN)
     await ensureExecuteCommand('cody.chat.focus')
 }
 

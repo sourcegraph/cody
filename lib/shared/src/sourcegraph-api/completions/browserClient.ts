@@ -75,7 +75,8 @@ export class SourcegraphBrowserCompletionsClient extends SourcegraphCompletionsC
 }
 
 declare const WorkerGlobalScope: never
-const isRunningInWebWorker = WorkerGlobalScope !== undefined && self instanceof WorkerGlobalScope
+// eslint-disable-next-line unicorn/no-typeof-undefined
+const isRunningInWebWorker = typeof WorkerGlobalScope !== 'undefined' && self instanceof WorkerGlobalScope
 
 if (isRunningInWebWorker) {
     // HACK: @microsoft/fetch-event-source tries to call document.removeEventListener, which is not

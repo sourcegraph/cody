@@ -10,6 +10,7 @@
   "include": [
     "src",
     "test/fixtures",
+    "playwright.config.ts",
     "test/e2e",
     "webviews",
     "vite.config.ts",
@@ -18,7 +19,7 @@
     "../lib/shared/src/telemetry/EventLogger.ts",
     "test/completions/completions-dataset.ts",
   ],
-  "exclude": ["scripts", "dist", "test/integration", "test/benchmark"],
+  "exclude": ["scripts", "dist", "test/integration", "**/test-data", "test/benchmark"],
   "references": [
     {
       "path": "../lib/shared",

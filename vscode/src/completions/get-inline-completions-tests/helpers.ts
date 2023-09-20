@@ -14,6 +14,9 @@ import { getInlineCompletions as _getInlineCompletions, InlineCompletionsParams 
 import { createProviderConfig, MULTI_LINE_STOP_SEQUENCES, SINGLE_LINE_STOP_SEQUENCES } from '../providers/anthropic'
 import { RequestManager } from '../request-manager'
 import { documentAndPosition } from '../test-helpers'
+import { SupportedLanguage } from '../tree-sitter/grammars'
+import { updateParseTreeCache } from '../tree-sitter/parse-tree-cache'
+import { getParser } from '../tree-sitter/parser'
 
 // The dedent package seems to replace `\t` with `\\t` so in order to insert a tab character, we
 // have to use interpolation. We abbreviate this to `T` because ${T} is exactly 4 characters,
@@ -63,6 +66,11 @@ export function params(
     })
 
     const { document, position } = documentAndPosition(code, languageId, URI_FIXTURE.toString())
+
+    const parser = getParser(document.languageId as SupportedLanguage)
+    if (parser) {
+        updateParseTreeCache(document, parser)
+    }
 
     const docContext = getCurrentDocContext({
         document,

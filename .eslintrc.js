@@ -25,8 +25,8 @@ const config = {
       __dirname + '/slack/tsconfig.json',
       __dirname + '/vscode/tsconfig.json',
       __dirname + '/vscode/test/integration/tsconfig.json',
-      __dirname + '/vscode/test/benchmark/tsconfig.json',
       __dirname + '/vscode/test/completions/tsconfig.json',
+      __dirname + '/vscode/test/benchmark/tsconfig.json',
       __dirname + '/vscode/scripts/tsconfig.json',
       __dirname + '/web/tsconfig.json',
       __dirname + '/tsconfig.json',
@@ -42,6 +42,7 @@ const config = {
     'import/order': 'off',
     'id-length': 'off',
     'etc/no-deprecated': 'off', // slow
+    'arrow-body-style': 'off',
     'unicorn/switch-case-braces': 'off',
     'unicorn/prefer-event-target': 'off',
     'unicorn/prefer-top-level-await': 'off',
@@ -63,7 +64,7 @@ const config = {
       },
     },
     {
-      files: ['vitest.workspace.js', 'vite.config.ts', 'vitest.config.ts', '**/playwright.config.ts'],
+      files: ['vitest.workspace.js', 'vite.config.ts', 'vitest.config.ts', 'playwright.config.ts'],
       rules: {
         'import/no-default-export': 'off',
       },

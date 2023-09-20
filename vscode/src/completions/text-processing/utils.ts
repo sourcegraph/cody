@@ -55,6 +55,7 @@ export interface TrimmedString {
     trimmed: string
     leadSpace: string
     rearSpace: string
+    raw?: string
 }
 
 /**
@@ -102,7 +103,7 @@ export function getHeadAndTail(s: string): PrefixComponents {
         headAndTail = { head: trimSpace(s), tail: trimSpace(s), overlap: s }
     } else {
         headAndTail = {
-            head: trimSpace(lines.slice(0, tailStart).join('\n')),
+            head: trimSpace(lines.slice(0, tailStart).join('\n') + '\n'),
             tail: trimSpace(lines.slice(tailStart).join('\n')),
         }
     }
@@ -131,7 +132,7 @@ export function getHeadAndTail(s: string): PrefixComponents {
 function trimSpace(s: string): TrimmedString {
     const trimmed = s.trim()
     const headEnd = s.indexOf(trimmed)
-    return { trimmed, leadSpace: s.slice(0, headEnd), rearSpace: s.slice(headEnd + trimmed.length) }
+    return { raw: s, trimmed, leadSpace: s.slice(0, headEnd), rearSpace: s.slice(headEnd + trimmed.length) }
 }
 
 /*

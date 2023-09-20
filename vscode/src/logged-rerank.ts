@@ -18,8 +18,6 @@ export function getRerankWithLog(
         const start = performance.now()
         const rerankedResults = await reranker.rerank(userQuery, results)
         const duration = performance.now() - start
-    
-        // 
         logDebug('Reranker:rerank', JSON.stringify({ duration }))
         return rerankedResults
     }

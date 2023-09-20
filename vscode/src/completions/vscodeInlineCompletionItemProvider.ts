@@ -20,8 +20,7 @@ import {
 } from './getInlineCompletions'
 import * as CompletionLogger from './logger'
 import { ProviderConfig } from './providers/provider'
-import { RequestManager } from './request-manager'
-import { getNextNonEmptyLine } from './text-processing'
+import { RequestManager, RequestParams } from './request-manager'
 import { ProvideInlineCompletionItemsTracer, ProvideInlineCompletionsItemTraceData } from './tracer'
 import { InlineCompletionItem } from './types'
 
@@ -40,12 +39,6 @@ export interface CodyCompletionItemProviderConfig {
     contextFetcher?: (options: GetContextOptions) => Promise<GetContextResult>
     featureFlagProvider: FeatureFlagProvider
 }
-
-// Only used when the CodyAutocompleteMinimumLatency feature flag is turned on:
-//
-// We don't want to show completions immediately after a user types a character (unless we show the
-// last candidate) to avoid churning the UI too much. Instead, we wait at least
-const MINIMUM_LATENCY_MS = 350
 
 export class InlineCompletionItemProvider implements vscode.InlineCompletionItemProvider {
     private promptChars: number
@@ -132,9 +125,10 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
         const start = performance.now()
         // We start the request early so that we have a high chance of getting a response before we
         // need it.
-        const minimumLatencyFlagPromise = this.config.featureFlagProvider.evaluateFeatureFlag(
-            FeatureFlag.CodyAutocompleteMinimumLatency
-        )
+        const minimumLatencyFlagsPromises = [
+            this.config.featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteMinimumLatency350),
+            this.config.featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteMinimumLatency600),
+        ]
         const tracer = this.config.tracer ? createTracerForInvocation(this.config.tracer) : undefined
         const graphContextFetcher = this.config.graphContextFetcher ?? undefined
 
@@ -200,39 +194,56 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
             })
 
             if (!result) {
+                // Returning null will clear any existing suggestions, thus we need to reset the
+                // last candidate.
+                this.lastCandidate = undefined
                 return null
             }
 
-            // Track the last candidate completion (that is shown as ghost text in the editor) so that
-            // we can reuse it if the user types in such a way that it is still valid (such as by typing
-            // `ab` if the ghost text suggests `abcd`).
+            // Checks if the current line prefix length is less than or equal to the last triggered prefix length
+            // If true, that means user has backspaced/deleted characters to trigger a new completion request,
+            // meaning the previous result is unwanted/rejected.
+            // In that case, we mark the last candidate as "unwanted", remove it from cache, and clear the last candidate
+            const lastTriggeredResultId = this.lastCandidate?.result.logId
+            const currentPrefix = docContext.currentLinePrefix
+            const lastTriggeredPrefix = this.lastCandidate?.lastTriggerCurrentLinePrefix
+            if (
+                lastTriggeredResultId &&
+                lastTriggeredPrefix !== undefined &&
+                currentPrefix.length <= lastTriggeredPrefix.length
+            ) {
+                this.handleUnwantedCompletionItem(lastTriggeredResultId, {
+                    document,
+                    docContext,
+                    position,
+                    context,
+                })
+            }
+
+            // Unless the result is from the last candidate, we may want to honor the minimum
+            // latency so that we don't show a result before the user has paused typing for a brief
+            // moment.
             if (result.source !== InlineCompletionsResultSource.LastCandidate) {
-                const minimumLatencyFlag = await minimumLatencyFlagPromise
-                if (minimumLatencyFlag) {
+                const [minimumLatency350, minimumLatency600] = await Promise.all(minimumLatencyFlagsPromises)
+                if (minimumLatency350 || minimumLatency600) {
+                    const minimumLatency = minimumLatency350 ? 350 : 600
                     const delta = performance.now() - start
-                    if (delta < MINIMUM_LATENCY_MS) {
-                        await new Promise(resolve => setTimeout(resolve, MINIMUM_LATENCY_MS - delta))
+                    if (delta < minimumLatency) {
+                        await new Promise(resolve => setTimeout(resolve, minimumLatency - delta))
                     }
                 }
+            }
 
-                this.lastCandidate =
-                    result.items.length > 0
-                        ? {
-                              uri: document.uri,
-                              lastTriggerPosition: position,
-                              lastTriggerCurrentLinePrefix: document.lineAt(position).text.slice(0, position.character),
-                              lastTriggerNextNonEmptyLine: getNextNonEmptyLine(
-                                  document.getText(
-                                      new vscode.Range(position, document.lineAt(document.lineCount - 1).range.end)
-                                  )
-                              ),
-                              lastTriggerSelectedInfoItem: context?.selectedCompletionInfo?.text,
-                              result: {
-                                  logId: result.logId,
-                                  items: result.items,
-                              },
-                          }
-                        : undefined
+            const candidate: LastInlineCompletionCandidate = {
+                uri: document.uri,
+                lastTriggerPosition: position,
+                lastTriggerCurrentLinePrefix: docContext.currentLinePrefix,
+                lastTriggerNextNonEmptyLine: docContext.nextNonEmptyLine,
+                lastTriggerSelectedInfoItem: context?.selectedCompletionInfo?.text,
+                result: {
+                    logId: result.logId,
+                    items: result.items,
+                },
             }
 
             const items = this.processInlineCompletionsForVSCode(
@@ -254,7 +265,18 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
                     abortController.signal
                 )
             ) {
+                // Returning null will clear any existing suggestions, thus we need to reset the
+                // last candidate.
+                this.lastCandidate = undefined
                 return null
+            }
+
+            // Since we now know that the completion is going to be visible in the UI, we save the
+            // completion as the last candidate (that is shown as ghost text in the editor) so that
+            // we can reuse it if the user types in such a way that it is still valid (such as by
+            // typing `ab` if the ghost text suggests `abcd`).
+            if (result.source !== InlineCompletionsResultSource.LastCandidate) {
+                this.lastCandidate = items.length > 0 ? candidate : undefined
             }
 
             const event = CompletionLogger.completionEvent(result.logId)
@@ -281,6 +303,23 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
         this.clearLastCandidate()
 
         CompletionLogger.accept(logId, completion)
+    }
+
+    /**
+     * Handles when a completion item was rejected by the user.
+     *
+     * A completion item is marked as rejected/unwanted when:
+     * - pressing backspace on a visible suggestion
+     */
+    public handleUnwantedCompletionItem(logId: string, reqContext: RequestParams): void {
+        const completionItem = this.lastCandidate?.result.items[0]
+        if (!completionItem) {
+            return
+        }
+
+        this.clearLastCandidate()
+
+        this.requestManager.removeUnwanted(reqContext)
     }
 
     /**
