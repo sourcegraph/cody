@@ -124,7 +124,11 @@ export async function createProviderConfig(
      * If autocomplete provider is not defined neither in VSCode nor in Sourcegraph instance site config,
      * use the default provider config ("anthropic").
      */
-    return defaultAnthropicProviderConfig
+    return createAnthropicProviderConfig({
+        client,
+        contextWindowTokens: 2048,
+        mode: config.autocompleteAdvancedModel === 'claude-instant-infill' ? 'infill' : 'default',
+    })
 }
 
 async function resolveDefaultProviderFromVSCodeConfigOrFeatureFlags(
