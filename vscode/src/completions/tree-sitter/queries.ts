@@ -79,6 +79,8 @@ interface QueryWrappers {
 
 /**
  * Query wrappers with custom logic requred for specific goals.
+ * Memoize this function for each query object because it will be called many times with
+ * no functional changes.
  */
 const getQueryWrappers = memoize((queries: ResolvedQueries, _parser: Parser): QueryWrappers => {
     return {
