@@ -17,6 +17,11 @@ export async function getFoldingRange(uri: vscode.Uri, type?: string): Promise<v
         'vscode.executeFoldingRangeProvider',
         uri
     )
+
+    if (!ranges?.length) {
+        return []
+    }
+
     switch (type) {
         case 'imports':
             return ranges.filter(r => r.kind === vscode.FoldingRangeKind.Imports)
@@ -45,12 +50,13 @@ export async function getCursorFoldingRange(
     // Get the ranges of all classes and folding ranges in parallel
     const [classes, ranges] = await Promise.all([
         getSymbols(uri)
-            .then(r => r.filter(s => s.kind === vscode.SymbolKind.Class))
-            .then(s => s.map(symbol => symbol.location.range)),
-        getFoldingRange(uri).then(r => r.filter(r => !r.kind)),
+            .then(r => r?.filter(s => s.kind === vscode.SymbolKind.Class))
+            .then(s => s?.map(symbol => symbol.location.range)),
+        getFoldingRange(uri).then(r => r?.filter(r => !r.kind)),
     ])
     const cursorRange = getOutermostRangesInsideClasses(classes, ranges, activeCursor)
     if (!cursorRange) {
+        console.error('No folding range found containing cursor')
         return undefined
     }
 
@@ -76,13 +82,19 @@ export function getOutermostRangesInsideClasses(
     foldingRanges: vscode.FoldingRange[],
     activeCursor: number
 ): vscode.FoldingRange | undefined {
+    if (!foldingRanges?.length) {
+        return undefined
+    }
+
     // Remove all ranges that are contained within class ranges
-    for (const cRange of classRanges) {
-        for (let i = 0; i < foldingRanges.length; i++) {
-            const r = foldingRanges[i]
-            if (Math.abs(r.start - cRange.start.line) <= 1 && Math.abs(r.end - cRange.end.line) <= 1) {
-                foldingRanges.splice(i, 1)
-                i--
+    if (classRanges.length) {
+        for (const cRange of classRanges) {
+            for (let i = 0; i < foldingRanges.length; i++) {
+                const r = foldingRanges[i]
+                if (Math.abs(r.start - cRange.start.line) <= 1 && Math.abs(r.end - cRange.end.line) <= 1) {
+                    foldingRanges.splice(i, 1)
+                    i--
+                }
             }
         }
     }
@@ -90,10 +102,10 @@ export function getOutermostRangesInsideClasses(
     // Filter to only keep folding ranges that contained nested folding ranges (aka removes nested ranges)
     // Get the folding range containing the active cursor
     const cursorRange = foldingRanges
-        .filter(r => !foldingRanges.some(r2 => r2 !== r && r2.start <= r.start && r2.end >= r.end))
-        .find(r => r.start <= activeCursor && r.end >= activeCursor)
+        .filter(r => r && !foldingRanges.some(r2 => r2 !== r && r2.start <= r.start && r2.end >= r.end))
+        .find(r => r && r.start <= activeCursor && r.end >= activeCursor)
 
-    return cursorRange
+    return cursorRange || undefined
 }
 
 /**
@@ -104,10 +116,11 @@ export function getOutermostRangesInsideClasses(
  * representing the symbols in the document.
  */
 export async function getSymbols(uri: vscode.Uri): Promise<vscode.SymbolInformation[]> {
-    const symbols = await vscode.commands.executeCommand<vscode.SymbolInformation[]>(
-        'vscode.executeDocumentSymbolProvider',
-        uri
-    )
+    const symbols =
+        (await vscode.commands.executeCommand<vscode.SymbolInformation[]>(
+            'vscode.executeDocumentSymbolProvider',
+            uri
+        )) || []
     return symbols
 }
 
