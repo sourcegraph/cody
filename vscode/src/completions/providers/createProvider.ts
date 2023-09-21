@@ -20,12 +20,6 @@ export async function createProviderConfig(
     featureFlagProvider?: FeatureFlagProvider,
     codyLLMSiteConfig?: CodyLLMSiteConfiguration
 ): Promise<ProviderConfig | null> {
-    const defaultAnthropicProviderConfig = createAnthropicProviderConfig({
-        client,
-        contextWindowTokens: 2048,
-        mode: config.autocompleteAdvancedModel === 'claude-instant-infill' ? 'infill' : 'default',
-    })
-
     /**
      * Look for the autocomplete provider in VSCode settings and return matching provider config.
      */
@@ -61,7 +55,11 @@ export async function createProviderConfig(
                 })
             }
             case 'anthropic': {
-                return defaultAnthropicProviderConfig
+                return createAnthropicProviderConfig({
+                    client,
+                    contextWindowTokens: 2048,
+                    mode: model === 'claude-instant-infill' ? 'infill' : 'default',
+                })
             }
             default:
                 logError(
@@ -107,7 +105,11 @@ export async function createProviderConfig(
                 })
             case 'aws-bedrock':
             case 'anthropic':
-                return defaultAnthropicProviderConfig
+                return createAnthropicProviderConfig({
+                    client,
+                    contextWindowTokens: 2048,
+                    mode: config.autocompleteAdvancedModel === 'claude-instant-infill' ? 'infill' : 'default',
+                })
             default:
                 logError('createProviderConfig', `Unrecognized provider '${provider}' configured.`)
                 return null
