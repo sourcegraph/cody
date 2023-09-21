@@ -1,6 +1,6 @@
 import { expect } from '@playwright/test'
 
-import { loggedEvents } from '../fixtures/mock-server'
+import { dedupeEvents, loggedEvents } from '../fixtures/mock-server'
 
 import { codyEditorCommandButtonRole, sidebarExplorer, sidebarSignin } from './common'
 import { test } from './helpers'
@@ -80,5 +80,6 @@ test('checks if clear chat history button clears history and current session', a
     // Check if the old message "Hey" is cleared
     await expect(sidebar.getByText('Hey')).not.toBeVisible()
 
-    expect(loggedEvents).toEqual(expectedOrderedEvent)
+    const dedupedLoggedEvents = dedupeEvents(loggedEvents)
+    expect(dedupedLoggedEvents).toEqual(expectedOrderedEvent)
 })

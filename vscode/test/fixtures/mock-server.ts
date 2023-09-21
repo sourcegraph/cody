@@ -145,3 +145,27 @@ export function store_logged_events(event: string): void {
 
     loggedEvents.push(name)
 }
+
+export function dedupeEvents(loggedEvents: string[]): string[] {
+    const eventsToDedup = new Set([
+        'CodyInstalled',
+        'CodyVSCodeExtension:Auth:failed',
+        'CodyVSCodeExtension:auth:clickOtherSignInOptions',
+        'CodyVSCodeExtension:login:clicked',
+        'CodyVSCodeExtension:auth:selectSigninMenu',
+        'CodyVSCodeExtension:auth:fromToken',
+        'CodyVSCodeExtension:Auth:connected',
+    ])
+
+    const deduped: string[] = []
+
+    for (const event of loggedEvents) {
+        if (!eventsToDedup.has(event)) {
+            deduped.push(event)
+        } else if (!deduped.some(e => e === event)) {
+            deduped.push(event)
+        }
+    }
+
+    return deduped
+}

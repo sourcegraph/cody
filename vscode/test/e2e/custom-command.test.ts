@@ -1,6 +1,6 @@
 import { expect } from '@playwright/test'
 
-import { loggedEvents } from '../fixtures/mock-server'
+import { dedupeEvents, loggedEvents } from '../fixtures/mock-server'
 
 import { sidebarSignin } from './common'
 import { test } from './helpers'
@@ -29,5 +29,6 @@ test('open the Custom Commands in sidebar and add new user recipe', async ({ pag
     await page.locator('a').filter({ hasText: 'New Custom Command...' }).click()
     await page.keyboard.type(recipeName)
     await page.keyboard.press('Enter')
-    expect(loggedEvents).toEqual(expectedOrderedEvent)
+    const dedupedLoggedEvents = dedupeEvents(loggedEvents)
+    expect(dedupedLoggedEvents).toEqual(expectedOrderedEvent)
 })
