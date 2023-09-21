@@ -42,8 +42,8 @@ describe.each([
             workspaceRootUri: 'file:///path/to/foo',
             workspaceRootPath: '/path/to/foo',
             connectionConfiguration: {
-                accessToken: 'https://sourcegraph.com/',
-                serverEndpoint: '',
+                accessToken: process.env.SRC_ACCESS_TOKEN ?? 'invalid',
+                serverEndpoint: process.env.SRC_ENDPOINT ?? 'invalid',
                 customHeaders: {},
                 autocompleteAdvancedProvider: 'anthropic',
                 autocompleteAdvancedAccessToken: '',
@@ -63,8 +63,8 @@ describe.each([
             workspaceRootUri: 'file:///path/to/foo',
             workspaceRootPath: '/path/to/foo',
             connectionConfiguration: {
-                serverEndpoint: 'https://sourcegraph.com/',
-                accessToken: '',
+                accessToken: process.env.SRC_ACCESS_TOKEN ?? 'invalid',
+                serverEndpoint: process.env.SRC_ENDPOINT ?? 'invalid',
                 customHeaders: {},
             },
         },
@@ -94,14 +94,6 @@ describe.each([
         const serverInfo = await client.handshake(clientInfo)
         assert.deepStrictEqual(serverInfo.name, 'cody-agent', 'Agent should be cody-agent')
         assert.deepStrictEqual(serverInfo.codyEnabled, true, 'Cody should be enabled')
-    })
-
-    it('handles config changes correctly', () => {
-        client.notify('extensionConfiguration/didChange', {
-            accessToken: process.env.SRC_ACCESS_TOKEN ?? 'invalid',
-            serverEndpoint: process.env.SRC_ENDPOINT ?? 'invalid',
-            customHeaders: {},
-        })
     })
 
     it('lists recipes correctly', async () => {
