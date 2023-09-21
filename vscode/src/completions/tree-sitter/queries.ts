@@ -1,21 +1,16 @@
-import { existsSync } from 'fs'
-import fs from 'fs/promises'
-import path from 'path'
-
 import { memoize } from 'lodash'
 import Parser, { Language, Point, Query, SyntaxNode } from 'web-tree-sitter'
 
 import { getParseLanguage, SupportedLanguage } from './grammars'
 import { getParser } from './parser'
+import { languages, QueryName } from './queries/languages'
 
-type QueryName = 'blocks'
 interface ParsedQuery {
     compiled: Query
     raw: string
 }
 type ResolvedQueries = Record<QueryName, ParsedQuery>
 
-const QUERIES_DIR = path.join(__dirname, './queries/languages')
 const QUERIES_LOCAL_CACHE: Partial<Record<SupportedLanguage, ResolvedQueries>> = {}
 
 /**
@@ -28,26 +23,20 @@ export async function initQueries(language: Language, languageId: SupportedLangu
         return
     }
 
-    const languageQueries = path.join(QUERIES_DIR, languageId)
-    if (!existsSync(languageQueries)) {
+    const languageQueries = languages[languageId]
+    if (languageQueries === undefined) {
         return
     }
 
-    const files = (await fs.readdir(languageQueries)) as QueryName[]
-
-    const queryEntries = await Promise.all(
-        files.map(async file => {
-            const raw = await fs.readFile(path.join(languageQueries, file), 'utf8')
-
-            return [
-                path.basename(file, path.extname(file)),
-                {
-                    raw,
-                    compiled: language.query(raw),
-                },
-            ] as const
-        })
-    )
+    const queryEntries = Object.entries(languageQueries).map(([name, raw]) => {
+        return [
+            name,
+            {
+                raw,
+                compiled: language.query(raw),
+            },
+        ] as const
+    })
 
     const queries = Object.fromEntries<ParsedQuery>(queryEntries) as ResolvedQueries
     QUERIES_LOCAL_CACHE[languageId] = queries

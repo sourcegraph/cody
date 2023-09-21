@@ -8,8 +8,7 @@
 // (_ ("{")) @blocks
 // 
 // [(try_statement)
-//  (if_statement)] @parents
-//
+// (if_statement)] @parents
 // ------------------------------------
 
   interface kek {
