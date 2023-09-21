@@ -5,6 +5,8 @@
 /* eslint-disable import/no-duplicates */
 /* eslint-disable @typescript-eslint/no-empty-function */
 // TODO: use implements vscode.XXX on mocked classes to ensure they match the real vscode API.
+import fs from 'fs/promises'
+
 import type {
     Disposable as VSCodeDisposable,
     InlineCompletionTriggerKind as VSCodeInlineCompletionTriggerKind,
@@ -541,6 +543,37 @@ export class CancellationTokenSource implements vscode_types.CancellationTokenSo
     }
 }
 
+const workspaceFs: Partial<vscode_types.FileSystem> = {
+    async stat(uri) {
+        const stat = await fs.stat(uri.fsPath)
+
+        return {
+            ...stat,
+            type: FileType.File,
+            ctime: stat.ctime.getTime(),
+            mtime: stat.mtime.getTime(),
+        } as vscode_types.FileStat
+    },
+    async readDirectory(uri) {
+        const entries = await fs.readdir(uri.fsPath, { withFileTypes: true })
+
+        return entries.map(entry => {
+            const type = entry.isFile()
+                ? FileType.File
+                : entry.isSymbolicLink()
+                ? FileType.SymbolicLink
+                : entry.isDirectory()
+                ? FileType.Directory
+                : FileType.Unknown
+
+            return [entry.name, type]
+        })
+    },
+    readFile(uri) {
+        return fs.readFile(uri.fsPath)
+    },
+}
+
 export const vsCodeMocks = {
     Range,
     Position,
@@ -549,6 +582,7 @@ export const vsCodeMocks = {
     EndOfLine,
     CancellationTokenSource,
     WorkspaceEdit,
+    Uri,
     window: {
         showInformationMessage: () => undefined,
         showWarningMessage: () => undefined,
@@ -564,6 +598,7 @@ export const vsCodeMocks = {
         onDidChangeActiveTextEditor() {},
     },
     workspace: {
+        fs: workspaceFs,
         getConfiguration() {
             return {
                 get(key: string) {
@@ -589,12 +624,6 @@ export const vsCodeMocks = {
     },
     ConfigurationTarget: {
         Global: undefined,
-    },
-    Uri: {
-        file: (path: string) => ({
-            fsPath: path,
-            path,
-        }),
     },
     extensions: {
         getExtension() {

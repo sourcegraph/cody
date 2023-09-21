@@ -1,5 +1,5 @@
 import { Position, Range, TextDocument } from 'vscode'
-import Parser, { Tree } from 'web-tree-sitter'
+import Parser, { Point, Tree } from 'web-tree-sitter'
 
 import { DocumentContext } from '../get-current-doc-context'
 import { asPoint, getCachedParseTreeForDocument } from '../tree-sitter/parse-tree-cache'
@@ -18,11 +18,11 @@ export interface ParsedCompletion extends InlineCompletionItem {
     // Points for parse-tree queries.
     points?: {
         // Start of completion.insertText in the parse-tree.
-        start?: Parser.Point
+        start?: Point
         // End of completion.insertText in the parse-tree
-        end?: Parser.Point
+        end?: Point
         // Start of the multi-line completion trigger if applicable
-        trigger?: Parser.Point
+        trigger?: Point
     }
 }
 
@@ -73,7 +73,7 @@ export function parseCompletion(context: CompletionContext): ParsedCompletion {
 
     // Search for ERROR nodes in the completion range.
     const query = parser.getLanguage().query('(ERROR) @error')
-    // TODO: query bigger range to catch higher scope syntactic errors caused by the completion.
+    // TODO(tree-sitter): query bigger range to catch higher scope syntactic errors caused by the completion.
     const matches = query.matches(treeWithCompletion.rootNode, points?.trigger || points.start, points.end)
 
     return {
@@ -123,7 +123,7 @@ function pasteCompletion(params: PasteCompletionParams): Tree {
         newEndPosition: asPoint(completionEndPosition),
     })
 
-    // TODO: consider parsing only the changed part of the document to improve performance.
+    // TODO(tree-sitter): consider parsing only the changed part of the document to improve performance.
     // parser.parse(textWithCompletion, tree, { includedRanges: [...]})
     return parser.parse(textWithCompletion, treeCopy)
 }

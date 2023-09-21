@@ -8,7 +8,10 @@ import { CodeCompletionsClient } from '../client'
 import { createProviderConfig as createAnthropicProviderConfig } from './anthropic'
 import { ProviderConfig } from './provider'
 import { createProviderConfig as createUnstableCodeGenProviderConfig } from './unstable-codegen'
-import { createProviderConfig as createUnstableFireworksProviderConfig } from './unstable-fireworks'
+import {
+    createProviderConfig as createUnstableFireworksProviderConfig,
+    UnstableFireworksOptions,
+} from './unstable-fireworks'
 import { createProviderConfig as createUnstableOpenAIProviderConfig } from './unstable-openai'
 
 export async function createProviderConfig(
@@ -17,12 +20,6 @@ export async function createProviderConfig(
     featureFlagProvider?: FeatureFlagProvider,
     codyLLMSiteConfig?: CodyLLMSiteConfiguration
 ): Promise<ProviderConfig | null> {
-    const defaultAnthropicProviderConfig = createAnthropicProviderConfig({
-        client,
-        contextWindowTokens: 2048,
-        mode: config.autocompleteAdvancedModel === 'claude-instant-infill' ? 'infill' : 'default',
-    })
-
     /**
      * Look for the autocomplete provider in VSCode settings and return matching provider config.
      */
@@ -58,7 +55,15 @@ export async function createProviderConfig(
                 })
             }
             case 'anthropic': {
-                return defaultAnthropicProviderConfig
+                return createAnthropicProviderConfig({
+                    client,
+                    contextWindowTokens: 2048,
+                    mode:
+                        model === 'claude-instant-infill' ||
+                        config.autocompleteAdvancedModel === 'claude-instant-infill'
+                            ? 'infill'
+                            : 'default',
+                })
             }
             default:
                 logError(
@@ -104,7 +109,11 @@ export async function createProviderConfig(
                 })
             case 'aws-bedrock':
             case 'anthropic':
-                return defaultAnthropicProviderConfig
+                return createAnthropicProviderConfig({
+                    client,
+                    contextWindowTokens: 2048,
+                    mode: config.autocompleteAdvancedModel === 'claude-instant-infill' ? 'infill' : 'default',
+                })
             default:
                 logError('createProviderConfig', `Unrecognized provider '${provider}' configured.`)
                 return null
@@ -115,42 +124,59 @@ export async function createProviderConfig(
      * If autocomplete provider is not defined neither in VSCode nor in Sourcegraph instance site config,
      * use the default provider config ("anthropic").
      */
-    return defaultAnthropicProviderConfig
+    return createAnthropicProviderConfig({
+        client,
+        contextWindowTokens: 2048,
+        mode: config.autocompleteAdvancedModel === 'claude-instant-infill' ? 'infill' : 'default',
+    })
 }
 
 async function resolveDefaultProviderFromVSCodeConfigOrFeatureFlags(
     configuredProvider: string | null,
     featureFlagProvider?: FeatureFlagProvider
-): Promise<{ provider: string; model?: 'starcoder-7b' | 'starcoder-16b' | 'claude-instant-infill' } | null> {
+): Promise<{ provider: string; model?: 'claude-instant-infill' | UnstableFireworksOptions['model'] } | null> {
     if (configuredProvider) {
         return { provider: configuredProvider }
     }
 
-    const [starCoder7b, starCoder16b, claudeInstantInfill] = await Promise.all([
-        featureFlagProvider?.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteStarCoder7B),
-        featureFlagProvider?.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteStarCoder16B),
-        featureFlagProvider?.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteClaudeInstantInfill),
-    ])
+    const [starCoder7b, starCoder16b, starCoderHybrid, llamaCode7b, llamaCode13b, claudeInstantInfill] =
+        await Promise.all([
+            featureFlagProvider?.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteStarCoder7B),
+            featureFlagProvider?.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteStarCoder16B),
+            featureFlagProvider?.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteStarCoderHybrid),
+            featureFlagProvider?.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteLlamaCode7B),
+            featureFlagProvider?.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteLlamaCode13B),
+            featureFlagProvider?.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteClaudeInstantInfill),
+        ])
 
-    if (starCoder7b === true || starCoder16b === true) {
-        return { provider: 'unstable-fireworks', model: starCoder7b ? 'starcoder-7b' : 'starcoder-16b' }
+    if (starCoder7b || starCoder16b || starCoderHybrid || llamaCode7b || llamaCode13b) {
+        const model = starCoder7b
+            ? 'starcoder-7b'
+            : starCoder16b
+            ? 'starcoder-16b'
+            : starCoderHybrid
+            ? 'starcoder-hybrid'
+            : llamaCode7b
+            ? 'llama-code-7b'
+            : 'llama-code-13b'
+        return { provider: 'unstable-fireworks', model }
     }
 
-    if (claudeInstantInfill === true) {
+    if (claudeInstantInfill) {
         return { provider: 'anthropic', model: 'claude-instant-infill' }
     }
 
     return null
 }
 
-const delimeters: Record<string, string> = {
+const delimiters: Record<string, string> = {
     sourcegraph: '/',
     'aws-bedrock': '.',
 }
 
 /**
  * For certain completions providers configured in the Sourcegraph instance site config
- * the model name consists MODEL_PROVIDER and MODEL_NAME separated by a specific delimeter (see {@link delimeters}).
+ * the model name consists MODEL_PROVIDER and MODEL_NAME separated by a specific delimiter (see {@link delimiters}).
  *
  * This function checks if the given provider has a specific model naming format and:
  *   - if it does, parses the model name and returns the parsed provider and model names;
@@ -166,13 +192,13 @@ function parseProviderAndModel({
     provider: string
     model?: string
 }): { provider: string; model?: string } | null {
-    const delimeter = delimeters[provider]
-    if (!delimeter) {
+    const delimiter = delimiters[provider]
+    if (!delimiter) {
         return { provider, model }
     }
 
     if (model) {
-        const index = model.indexOf(delimeter)
+        const index = model.indexOf(delimiter)
         const parsedProvider = model.slice(0, index)
         const parsedModel = model.slice(index + 1)
         if (parsedProvider && parsedModel) {

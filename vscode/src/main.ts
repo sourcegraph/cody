@@ -24,6 +24,7 @@ import { createOrUpdateEventLogger } from './services/EventLogger'
 import { showFeedbackSupportQuickPick } from './services/FeedbackOptions'
 import { GuardrailsProvider } from './services/GuardrailsProvider'
 import { Comment, InlineController } from './services/InlineController'
+import { LocalAppSetupPublisher } from './services/LocalAppSetupPublisher'
 import { localStorage } from './services/LocalStorageProvider'
 import { CODY_ACCESS_TOKEN_SECRET, secretStorage, VSCodeSecretStorage } from './services/SecretStorageProvider'
 import { createStatusBar } from './services/StatusBar'
@@ -135,6 +136,7 @@ const register = async (
         platform
     )
     disposables.push(contextProvider)
+    disposables.push(new LocalAppSetupPublisher(contextProvider))
     await contextProvider.init()
 
     // Shared configuration that is required for chat views to send and receive messages

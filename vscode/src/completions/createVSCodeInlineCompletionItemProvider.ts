@@ -68,7 +68,10 @@ export async function createInlineCompletionItemProvider({
             vscode.commands.registerCommand('cody.autocomplete.inline.accepted', ({ codyLogId, codyCompletion }) => {
                 completionsProvider.handleDidAcceptCompletionItem(codyLogId, codyCompletion)
             }),
-            vscode.languages.registerInlineCompletionItemProvider('*', completionsProvider),
+            vscode.languages.registerInlineCompletionItemProvider(
+                [{ scheme: 'file', language: '*' }, { notebookType: '*' }],
+                completionsProvider
+            ),
             registerAutocompleteTraceView(completionsProvider)
         )
         if (sectionObserver) {

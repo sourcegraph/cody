@@ -41,6 +41,7 @@ const config = {
     'import/order': 'off',
     'id-length': 'off',
     'etc/no-deprecated': 'off', // slow
+    'arrow-body-style': 'off',
     'unicorn/switch-case-braces': 'off',
     'unicorn/prefer-event-target': 'off',
     'unicorn/prefer-top-level-await': 'off',

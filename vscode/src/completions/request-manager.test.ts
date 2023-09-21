@@ -58,7 +58,6 @@ function docState(prefix: string, suffix: string = ';'): RequestParams {
             triggerKind: vsCodeMocks.InlineCompletionTriggerKind.Automatic,
             selectedCompletionInfo: undefined,
         },
-        multiline: false,
     }
 }
 

@@ -94,26 +94,37 @@ function getRunnableTestCases(options: CLIOptions): TestCase[] {
     )
 }
 
+async function runTestCaseAndLogResults(
+    testCase: TestCase,
+    provider: CLIOptions['provider'],
+    getIndex: () => number,
+    total: number
+): Promise<TestResult | null> {
+    const testResult = await runTestCase(testCase, provider)
+    console.log(`Test ${getIndex()}/${total}:`, chalk.blueBright(`${testCase.label} (${testCase.codebase})`))
+    if (testResult instanceof Error) {
+        console.error('Error running the test:', testResult.message)
+        return null
+    }
+    logAggregateResults(aggregateResults([testResult]))
+    console.log()
+    return testResult
+}
+
+function getNextIndex(initial: number): () => number {
+    let count = initial
+    return () => ++count
+}
+
 async function runTestCases(options: CLIOptions): Promise<TestResult[]> {
     const runnableTestCases = getRunnableTestCases(options)
-
-    const testResults = []
-    for (const testCase of runnableTestCases) {
-        console.log(
-            `Testing (${testResults.length + 1}/${runnableTestCases.length}):`,
-            chalk.blueBright(testCase.label, `(${testCase.codebase})`)
+    const increment = getNextIndex(0)
+    const testResults = await Promise.all(
+        runnableTestCases.map((testCase, _i, arr) =>
+            runTestCaseAndLogResults(testCase, options.provider, increment, arr.length)
         )
-        const testResult = await runTestCase(testCase, options.provider)
-        if (testResult instanceof Error) {
-            console.error('Error running the test:', testResult.message)
-            continue
-        }
-        logAggregateResults(aggregateResults([testResult]))
-        console.log()
-        testResults.push(testResult)
-    }
-
-    return testResults
+    )
+    return testResults.filter(Boolean) as TestResult[]
 }
 
 export async function run(): Promise<void> {

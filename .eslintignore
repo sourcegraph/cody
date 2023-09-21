@@ -1,3 +1,4 @@
 out/
 dist/
 build/
+**/test-data/

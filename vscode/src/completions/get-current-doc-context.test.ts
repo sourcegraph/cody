@@ -62,6 +62,21 @@ describe('getCurrentDocContext', () => {
         })
     })
 
+    it('removes \\r from the same current line suffix, prefix, and suffix', () => {
+        const result = testGetCurrentDocContext('console.log(1337);\r\nconst arr = [█\r\n];')
+
+        expect(result).toEqual({
+            prefix: 'console.log(1337);\nconst arr = [',
+            suffix: '\n];',
+            contextRange: expect.any(Object),
+            currentLinePrefix: 'const arr = [',
+            currentLineSuffix: '',
+            prevNonEmptyLine: 'console.log(1337);',
+            nextNonEmptyLine: '];',
+            multilineTrigger: '[',
+        })
+    })
+
     it('returns the right range for the document context', () => {
         const { document, position } = documentAndPosition(
             dedent`

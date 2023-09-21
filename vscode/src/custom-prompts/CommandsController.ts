@@ -121,10 +121,10 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
     public find(id: string): string {
         const myPrompt = this.default.get(id)
 
-        logDebug('CommandsController:command:finding', id, { verbose: myPrompt })
+        logDebug('CommandsController:command:finding', id)
 
         if (!myPrompt) {
-            this.telemetryService.log('CodyVSCodeExtension:command:find:invalid')
+            this.telemetryService.log('CodyVSCodeExtension:command:invalid', { invalidCommand: id })
         }
 
         if (myPrompt) {
@@ -133,9 +133,8 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
         }
 
         // Log custom command usage
-        if (myPrompt?.type !== 'default') {
-            this.telemetryService.log('CodyVSCodeExtension:command:custom:called')
-        }
+        const commandType = myPrompt?.type === 'default' ? 'default' : 'custom'
+        this.telemetryService.log(`CodyVSCodeExtension:command:${commandType}:executed`)
 
         return myPrompt?.prompt || ''
     }
@@ -174,7 +173,7 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
         const commandOutput = await this.tools.exeCommand(fullCommand)
         currentContext.output = commandOutput
         this.myPromptInProgress.context = currentContext
-        this.telemetryService.log('CodyVSCodeExtension:command:execCommand')
+        logDebug('CodyVSCodeExtension:command:execCommand', fullCommand)
         return commandOutput || null
     }
 
@@ -182,7 +181,6 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
      * Menu Controller
      */
     public async menu(type: 'custom' | 'config' | 'default'): Promise<void> {
-        this.telemetryService.log('CodyVSCodeExtension:command:menu:opened', { type })
         await this.refresh()
         switch (type) {
             case 'custom':
@@ -303,34 +301,34 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
                 ?.filter(command => command !== null && command?.[1]?.type !== 'default')
                 .map(commandItem => {
                     const command = commandItem[1]
-                    const description = command.type
-                    return createQuickPickItem(command.description || commandItem[0], description)
+                    const description = commandItem[0]
+                    return createQuickPickItem(command.description, description)
                 })
 
             const configOption = menu_options.config
             const addOption = menu_options.add
+
             promptItems.push(menu_separators.settings, configOption, addOption)
 
             // Show the list of prompts to the user using a quick pick
-            const selectedPrompt = await showCustomCommandMenu([...promptItems])
-            // Find the prompt based on the selected prompt name
-            const promptTitle = selectedPrompt?.label
-            if (!selectedPrompt || !promptTitle) {
+            const selected = await showCustomCommandMenu([...promptItems])
+            const commandKey = selected?.description
+
+            if (!selected || !commandKey) {
                 return
             }
 
-            switch (promptTitle.length > 0) {
-                case promptTitle === addOption.label:
+            switch (commandKey.length > 0) {
+                case commandKey === addOption.label:
                     return await this.addNewUserCommandQuick()
-                case promptTitle === configOption.label:
+                case commandKey === configOption.label:
                     return await this.configMenu('custom')
                 default:
                     // Run the prompt
-                    await vscode.commands.executeCommand('cody.action.commands.exec', promptTitle)
+                    await vscode.commands.executeCommand('cody.action.commands.exec', commandKey)
                     break
             }
-
-            logDebug('CommandsController:promptsQuickPicker:selectedPrompt', promptTitle)
+            logDebug('CommandsController:promptsQuickPicker:selectedPrompt', commandKey)
         } catch (error) {
             logError('CommandsController:promptsQuickPicker', 'error', { verbose: error })
         }

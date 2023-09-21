@@ -3,16 +3,17 @@ import { Position, TextDocument } from 'vscode'
 import { dedupeWith } from '@sourcegraph/cody-shared/src/common'
 
 import { DocumentContext } from '../get-current-doc-context'
+import { getDocumentQuerySDK } from '../tree-sitter/queries'
 import { InlineCompletionItem } from '../types'
 
 import { parseCompletion, ParsedCompletion, parsedCompletionToCompletion } from './parse-completion'
 import { truncateMultilineCompletion } from './truncate-multiline-completion'
+import { truncateParsedCompletion } from './truncate-parsed-completion'
 import { collapseDuplicativeWhitespace, removeTrailingWhitespace, trimUntilSuffix } from './utils'
 
 export interface ProcessInlineCompletionsParams {
     document: TextDocument
     position: Position
-    multiline: boolean
     docContext: DocumentContext
 }
 
@@ -25,10 +26,10 @@ export function processInlineCompletions(
     params: ProcessInlineCompletionsParams
 ): InlineCompletionItem[] {
     // Shared post-processing logic
-    const processedCompletions = items.map(item => processItem(item, params))
+    const processedCompletions = items.map(item => processItem({ ...params, completion: item }))
 
-    // Remove empty results
-    const visibleResults = removeEmptyCompletions(processedCompletions)
+    // Remove low quality results
+    const visibleResults = removeLowQualityCompletions(processedCompletions)
 
     // Remove duplicate results
     const uniqueResults = dedupeWith(visibleResults, 'insertText')
@@ -39,43 +40,58 @@ export function processInlineCompletions(
     return rankedResults
 }
 
-export function processItem(
-    completion: InlineCompletionItem,
-    params: ProcessInlineCompletionsParams
-): ParsedCompletion {
-    const { document, position, multiline, docContext } = params
-    const { prefix, suffix, currentLineSuffix } = docContext
+interface ProcessItemParams {
+    completion: InlineCompletionItem
+    document: TextDocument
+    position: Position
+    docContext: DocumentContext
+}
+
+export function processItem(params: ProcessItemParams): ParsedCompletion {
+    const { document, position, docContext } = params
+    const { prefix, suffix, currentLineSuffix, multilineTrigger } = docContext
 
     // Make a copy to avoid unexpected behavior.
-    completion = { ...completion }
+    let completion = { ...params.completion }
 
     if (typeof completion.insertText !== 'string') {
         throw new TypeError('SnippetText not supported')
     }
 
-    completion = adjustRangeToOverwriteOverlappingCharacters(completion, { position, currentLineSuffix })
-    const parsed = parseCompletion({ completion, document, position, docContext })
-
-    if (multiline) {
-        parsed.insertText = truncateMultilineCompletion(parsed.insertText, prefix, suffix, document.languageId)
-        parsed.insertText = removeTrailingWhitespace(parsed.insertText)
+    if (completion.insertText.length === 0) {
+        return completion
     }
 
-    if (!multiline) {
+    completion = adjustRangeToOverwriteOverlappingCharacters(completion, { position, currentLineSuffix })
+    const parsed = parseCompletion({ completion, document, position, docContext })
+    let { insertText } = parsed
+
+    if (multilineTrigger) {
+        // Use tree-sitter for truncation if `config.autocompleteExperimentalSyntacticPostProcessing` is enabled.
+        if (parsed.tree && getDocumentQuerySDK(document.languageId)) {
+            insertText = truncateParsedCompletion({ completion: parsed, document })
+        } else {
+            insertText = truncateMultilineCompletion(insertText, prefix, suffix, document.languageId)
+        }
+
+        insertText = removeTrailingWhitespace(insertText)
+    }
+
+    if (!multilineTrigger) {
         // Only keep a single line in single-line completions mode
-        const newLineIndex = parsed.insertText.indexOf('\n')
+        const newLineIndex = insertText.indexOf('\n')
         if (newLineIndex !== -1) {
-            parsed.insertText = parsed.insertText.slice(0, newLineIndex + 1)
+            insertText = insertText.slice(0, newLineIndex + 1)
         }
     }
 
-    parsed.insertText = trimUntilSuffix(parsed.insertText, prefix, suffix, document.languageId)
-    parsed.insertText = collapseDuplicativeWhitespace(prefix, parsed.insertText)
+    insertText = trimUntilSuffix(insertText, prefix, suffix, document.languageId)
+    insertText = collapseDuplicativeWhitespace(prefix, insertText)
 
     // Trim start and end of the completion to remove all trailing whitespace.
-    parsed.insertText = parsed.insertText.trimEnd()
+    insertText = insertText.trimEnd()
 
-    return parsed
+    return { ...parsed, insertText }
 }
 
 interface AdjustRangeToOverwriteOverlappingCharactersParams {
@@ -122,6 +138,10 @@ function rankCompletions(completions: ParsedCompletion[]): InlineCompletionItem[
         .map(parsedCompletionToCompletion)
 }
 
-function removeEmptyCompletions(completions: InlineCompletionItem[]): InlineCompletionItem[] {
-    return completions.filter(c => c.insertText.trim() !== '')
+function removeLowQualityCompletions(completions: InlineCompletionItem[]): InlineCompletionItem[] {
+    return (
+        completions
+            // Filter out empty or single character completions.
+            .filter(c => c.insertText.trim().length > 1)
+    )
 }

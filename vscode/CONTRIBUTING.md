@@ -42,7 +42,7 @@ We also have some build-in UI to help during the development of autocomplete req
 
 To publish a new release to the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai) and [Open VSX Registry](https://open-vsx.org/extension/sourcegraph/cody-ai):
 
-1. Increment the `version` in [`package.json`](package.json).
+1. Increment the `version` in [`package.json`](package.json) & [`CHANGELOG`](CHANGELOG.md).
 1. Commit the version increment.
 1. `git tag vscode-v$(jq -r .version package.json)`
 1. `git push --tags`

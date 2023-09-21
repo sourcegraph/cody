@@ -256,6 +256,25 @@ describe('InlineCompletionItemProvider', () => {
             expect(spy).toHaveBeenCalled()
         })
 
+        it('log a completion if the suffix is inside the completion in CRLF format', async () => {
+            const spy = vi.spyOn(CompletionLogger, 'suggested')
+
+            const { document, position } = documentAndPosition(
+                'const a = [1, █];\r\nconsol.log(1234);\r\n',
+                'typescript'
+            )
+            const fn = vi.fn(getInlineCompletions).mockResolvedValue({
+                logId: '1',
+                items: [{ insertText: '2] ;', range: new vsCodeMocks.Range(position, position) }],
+                source: InlineCompletionsResultSource.Network,
+            })
+
+            const provider = new MockableInlineCompletionItemProvider(fn)
+            await provider.provideInlineCompletionItems(document, position, DUMMY_CONTEXT)
+
+            expect(spy).toHaveBeenCalled()
+        })
+
         it('does not log a completion if the suffix does not match', async () => {
             const spy = vi.spyOn(CompletionLogger, 'suggested')
 

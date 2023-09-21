@@ -43,17 +43,23 @@ export function isNetworkError(error: Error): error is NetworkError {
     return error instanceof NetworkError
 }
 
+export function isAuthError(error: unknown): boolean {
+    return error instanceof NetworkError && (error.status === 401 || error.status === 403)
+}
+
+export class AbortError extends Error {}
+
 export function isAbortError(error: unknown): boolean {
     return (
         isError(error) &&
-        // http module
-        (error.message === 'aborted' ||
+        // custom abort error
+        (error instanceof AbortError ||
+            // http module
+            error.message === 'aborted' ||
             // fetch
             error.message.includes('The operation was aborted') ||
             error.message.includes('The user aborted a request'))
     )
 }
 
-export function isAuthError(error: unknown): boolean {
-    return error instanceof NetworkError && (error.status === 401 || error.status === 403)
-}
+export class TimeoutError extends Error {}
