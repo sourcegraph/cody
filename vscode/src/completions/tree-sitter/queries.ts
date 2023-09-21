@@ -17,7 +17,7 @@ const QUERIES_LOCAL_CACHE: Partial<Record<SupportedLanguage, ResolvedQueries>> =
  * Reads all language queries from disk and parses them.
  * Saves queries the local cache for further use.
  */
-export async function initQueries(language: Language, languageId: SupportedLanguage): Promise<void> {
+export function initQueries(language: Language, languageId: SupportedLanguage): void {
     const cachedQueries = QUERIES_LOCAL_CACHE[languageId]
     if (cachedQueries) {
         return
