@@ -2,7 +2,7 @@ import * as os from 'os'
 import * as vscode from 'vscode'
 import { promises as fs } from 'fs'
 
-import { getApi, FileDownloader } from "@microsoft/vscode-file-downloader-api";
+import { getApi, FileDownloader } from '@microsoft/vscode-file-downloader-api';
 import { logDebug } from '../log'
 
 const symfVersion = 'v0.0.0'
@@ -22,13 +22,13 @@ export async function getManagedSymfPath(context: vscode.ExtensionContext): Prom
     // Otherwise, download and return the path to the downloaded symf binary
     const fileDownloader: FileDownloader = await getApi()
 
-    let symfPath = await fileDownloader.tryGetItem('symf', context)
+    const symfPath = await fileDownloader.tryGetItem('symf', context)
     if (symfPath) {
         logDebug('symf', `using symf at ${symfPath.fsPath}`)
         return symfPath.fsPath
     }
 
-    return await downloadSymf(context, fileDownloader)
+    return downloadSymf(context, fileDownloader)
 }
 
 async function downloadSymf(context: vscode.ExtensionContext, fileDownloader: FileDownloader): Promise<string | null> {
@@ -44,7 +44,7 @@ async function downloadSymf(context: vscode.ExtensionContext, fileDownloader: Fi
     // Download symf binary with vscode progress api
     const file = await vscode.window.withProgress({
         location: vscode.ProgressLocation.Notification,
-        title: "Downloading symf tool for semantic code search",
+        title: 'Downloading symf tool for semantic code search',
         cancellable: true
     }, async (progress, token) => {
         const file: vscode.Uri = await fileDownloader.downloadFile(
@@ -82,7 +82,7 @@ function getOSArch(): { platform: string; arch: string } | null {
     const arch = nodeMachineToArch[os.machine()]
     if (!platform || !arch) {
         // show vs code error message
-        vscode.window.showErrorMessage(`No symf binary available for ${os.platform()}/${os.machine()}`)
+        void vscode.window.showErrorMessage(`No symf binary available for ${os.platform()}/${os.machine()}`)
         return null
     }
     return {
