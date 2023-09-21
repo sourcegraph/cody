@@ -1,6 +1,6 @@
 import { expect } from '@playwright/test'
 
-import { dedupeEvents, loggedEvents } from '../fixtures/mock-server'
+import { loggedEvents } from '../fixtures/mock-server'
 
 import { sidebarExplorer, sidebarSignin } from './common'
 import { test } from './helpers'
@@ -75,6 +75,5 @@ test('decorations from un-applied Cody changes appear', async ({ page, sidebar }
 
     // The decorations should change to conflict markers.
     await page.waitForSelector(`${DECORATION_SELECTOR}:not([class*="${decorationClassName}"])`)
-    const dedupedLoggedEvents = dedupeEvents(loggedEvents)
-    expect(dedupedLoggedEvents).toEqual(expectedOrderedEvents)
+    expect(loggedEvents).toEqual(expectedOrderedEvents)
 })

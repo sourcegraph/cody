@@ -1,6 +1,6 @@
 import { expect } from '@playwright/test'
 
-import { dedupeEvents, loggedEvents } from '../fixtures/mock-server'
+import { loggedEvents } from '../fixtures/mock-server'
 
 import { sidebarExplorer, sidebarSignin } from './common'
 import { test } from './helpers'
@@ -52,6 +52,5 @@ test('start a fixup job from inline chat with valid auth', async ({ page, sideba
     await expect(page.getByText('Fixup ready')).toBeVisible()
     await page.getByRole('button', { name: 'Apply' }).click()
     await expect(page.getByText('<title>Goodbye Cody</title>')).toBeVisible()
-    const dedupedLoggedEvents = dedupeEvents(loggedEvents)
-    expect(dedupedLoggedEvents).toEqual(expectedOrderedEvent)
+    expect(loggedEvents).toEqual(expectedOrderedEvent)
 })

@@ -1,6 +1,6 @@
 import { expect } from '@playwright/test'
 
-import { dedupeEvents, loggedEvents, SERVER_URL, VALID_TOKEN } from '../fixtures/mock-server'
+import { loggedEvents, SERVER_URL, VALID_TOKEN } from '../fixtures/mock-server'
 
 import { signOut, test } from './helpers'
 
@@ -51,6 +51,5 @@ test('requires a valid auth token and allows logouts', async ({ page, sidebar })
 
     await expect(sidebar.getByRole('button', { name: 'Other Sign In Options…' })).toBeVisible()
     await expect(sidebar.getByText('Invalid credentials')).not.toBeVisible()
-    const dedupedLoggedEvents = dedupeEvents(loggedEvents)
-    expect(dedupedLoggedEvents).toEqual(expectedOrderedEvents)
+    expect(loggedEvents).toEqual(expectedOrderedEvents)
 })

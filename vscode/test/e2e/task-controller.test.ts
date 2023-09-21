@@ -1,6 +1,6 @@
 import { expect } from '@playwright/test'
 
-import { dedupeEvents, loggedEvents } from '../fixtures/mock-server'
+import { loggedEvents } from '../fixtures/mock-server'
 
 import { sidebarExplorer, sidebarSignin } from './common'
 import { test } from './helpers'
@@ -92,6 +92,5 @@ test('task tree view for non-stop cody', async ({ page, sidebar }) => {
     // Collapse the task tree view
     await page.getByRole('button', { name: 'Fixups Section' }).click()
     await expect(page.getByText('No pending Cody fixups')).not.toBeVisible()
-    const dedupedLoggedEvents = dedupeEvents(loggedEvents)
-    expect(dedupedLoggedEvents).toEqual(expectedOrderedEvent)
+    expect(loggedEvents).toEqual(expectedOrderedEvent)
 })
