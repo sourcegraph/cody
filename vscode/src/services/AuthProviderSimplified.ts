@@ -21,7 +21,7 @@ export class AuthProviderSimplified {
 
 // Opens authentication URLs for simplified onboarding.
 async function openExternalAuthUrl(provider: AuthMethod): Promise<boolean> {
-    // Create the turducken of redirects:
+    // Create the chain of redirects:
     // 1. Specific login page (GitHub, etc.) redirects to the post-sign up survey
     // 2. Post-sign up survery redirects to the new token page
     // 3. New token page redirects back to the extension with the new token
