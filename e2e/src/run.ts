@@ -94,26 +94,42 @@ function getRunnableTestCases(options: CLIOptions): TestCase[] {
     )
 }
 
+async function runTestCaseAndLogResults(
+    testCase: TestCase,
+    provider: CLIOptions['provider'],
+    getIndex: () => number,
+    total: number
+): Promise<TestResult | null> {
+    const testResult = await runTestCase(testCase, provider)
+    console.log(`Test ${getIndex()}/${total}:`, chalk.blueBright(`${testCase.label} (${testCase.codebase})`))
+    if (testResult instanceof Error) {
+        console.error('Error running the test:', testResult.message)
+        return null
+    }
+    logAggregateResults(aggregateResults([testResult]))
+    console.log()
+    return testResult
+}
+
+function useCount(initial: number): { increment: () => number } {
+    let count = initial
+    return {
+        increment: () => {
+            count++
+            return count
+        },
+    }
+}
+
 async function runTestCases(options: CLIOptions): Promise<TestResult[]> {
     const runnableTestCases = getRunnableTestCases(options)
-
-    let count = 0
-    const testResultPromises = runnableTestCases.map((testCase, _i, arr) =>
-        (async () => {
-            const testResult = await runTestCase(testCase, options.provider)
-            console.log(`Test ${++count}/${arr.length}:`, chalk.blueBright(`${testCase.label} (${testCase.codebase})`))
-            if (testResult instanceof Error) {
-                console.error('Error running the test:', testResult.message)
-                return null
-            }
-            logAggregateResults(aggregateResults([testResult]))
-            console.log()
-            return testResult
-        })()
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    const { increment } = useCount(0)
+    const testResults = await Promise.all(
+        runnableTestCases.map((testCase, _i, arr) =>
+            runTestCaseAndLogResults(testCase, options.provider, increment, arr.length)
+        )
     )
-
-    const testResults = await Promise.all(testResultPromises)
-
     return testResults.filter(Boolean) as TestResult[]
 }
 
