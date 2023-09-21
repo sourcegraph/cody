@@ -14,8 +14,6 @@ const expectedOrderedEvent = [
     'CodyVSCodeExtension:auth:fromToken',
     'CodyVSCodeExtension:Auth:connected',
     'CodyVSCodeExtension:chat:submitted',
-    'CodyVSCodeExtension:command:menu:opened',
-    'CodyVSCodeExtension:command:menu:opened',
 ]
 test('open the Custom Commands in sidebar and add new user recipe', async ({ page, sidebar }) => {
     // Sign into Cody

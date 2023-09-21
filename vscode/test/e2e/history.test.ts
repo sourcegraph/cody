@@ -29,7 +29,7 @@ const expectedOrderedEvent = [
     'CodyVSCodeExtension:clearChatHistoryButton:clicked',
     'CodyVSCodeExtension:chatReset:executed',
     'CodyVSCodeExtension:chatTitleButton:clicked',
-    'CodyVSCodeExtension:command:menu:opened',
+    'CodyVSCodeExtension:command:default:executed',
     'CodyVSCodeExtension:recipe:custom-prompt:executed',
     'CodyVSCodeExtension:chatResponse:noCode',
 ]
