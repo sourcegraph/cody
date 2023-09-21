@@ -121,10 +121,10 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
     public find(id: string): string {
         const myPrompt = this.default.get(id)
 
-        logDebug('CommandsController:command:finding', id, { verbose: myPrompt })
+        logDebug('CommandsController:command:finding', id)
 
         if (!myPrompt) {
-            this.telemetryService.log('CodyVSCodeExtension:command:find:invalid')
+            this.telemetryService.log('CodyVSCodeExtension:command:invalid', { invalidCommand: id })
         }
 
         if (myPrompt) {
@@ -133,9 +133,8 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
         }
 
         // Log custom command usage
-        if (myPrompt?.type !== 'default') {
-            this.telemetryService.log('CodyVSCodeExtension:command:custom:called')
-        }
+        const commandType = myPrompt?.type === 'default' ? 'default' : 'custom'
+        this.telemetryService.log(`CodyVSCodeExtension:command:${commandType}:executed`)
 
         return myPrompt?.prompt || ''
     }
@@ -174,7 +173,7 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
         const commandOutput = await this.tools.exeCommand(fullCommand)
         currentContext.output = commandOutput
         this.myPromptInProgress.context = currentContext
-        this.telemetryService.log('CodyVSCodeExtension:command:execCommand')
+        logDebug('CodyVSCodeExtension:command:execCommand', fullCommand)
         return commandOutput || null
     }
 
@@ -182,7 +181,6 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
      * Menu Controller
      */
     public async menu(type: 'custom' | 'config' | 'default'): Promise<void> {
-        this.telemetryService.log('CodyVSCodeExtension:command:menu:opened', { type })
         await this.refresh()
         switch (type) {
             case 'custom':
