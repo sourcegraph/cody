@@ -84,6 +84,17 @@ export function setConnectionConfig(newConfig: ExtensionConfiguration): void {
     connectionConfig = newConfig
 }
 
+export function isAuthenticationChange(newConfig: ExtensionConfiguration): boolean {
+    if (!connectionConfig) {
+        return true
+    }
+
+    return (
+        connectionConfig.accessToken !== newConfig.accessToken ||
+        connectionConfig.serverEndpoint !== newConfig.serverEndpoint
+    )
+}
+
 const configuration: vscode.WorkspaceConfiguration = {
     has(section) {
         return true

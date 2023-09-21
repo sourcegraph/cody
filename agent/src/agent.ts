@@ -249,7 +249,13 @@ export class Agent extends MessageHandler {
     }
 
     private async setClient(config: ExtensionConfiguration): Promise<void> {
+        const isAuthChange = vscode_shim.isAuthenticationChange(config)
         vscode_shim.setConnectionConfig(config)
+        // If this is an authentication change we need to reauthenticate prior to firing events
+        // that update the clients
+        if (isAuthChange) {
+            await vscode_shim.commands.executeCommand('agent.auth.reload')
+        }
         vscode_shim.onDidChangeConfiguration.fire({
             affectsConfiguration: () =>
                 // assuming the return value below only impacts performance (not
