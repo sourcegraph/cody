@@ -32,6 +32,7 @@ export async function createInlineCompletionItemProvider({
     featureFlagProvider,
     authProvider,
 }: InlineCompletionItemProviderArgs): Promise<vscode.Disposable> {
+    console.log({ authStatus: authProvider.getAuthStatus() })
     if (!authProvider.getAuthStatus().isLoggedIn) {
         logDebug('CodyCompletionProvider:notSignedIn', 'You are not signed in.')
 

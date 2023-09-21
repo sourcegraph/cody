@@ -289,6 +289,7 @@ const register = async (
         vscode.commands.registerCommand('cody.auth.signout', () => authProvider.signoutMenu()),
         vscode.commands.registerCommand('cody.auth.support', () => showFeedbackSupportQuickPick()),
         vscode.commands.registerCommand('cody.auth.sync', () => {
+            void authProvider.reloadAuthStatus()
             void contextProvider.syncAuthStatus()
             void featureFlagProvider.syncAuthStatus()
         }),
@@ -451,6 +452,7 @@ const register = async (
     }
     // Reload autocomplete if either the configuration changes or the auth status is updated
     vscode.workspace.onDidChangeConfiguration(event => {
+        console.log('autocomplete;config;changed')
         if (event.affectsConfiguration('cody.autocomplete')) {
             void setupAutocomplete()
         }

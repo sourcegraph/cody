@@ -15,6 +15,7 @@ import {
     unauthenticatedStatus,
 } from '../chat/protocol'
 import { newAuthStatus } from '../chat/utils'
+import { getFullConfig } from '../configuration'
 import { logDebug } from '../log'
 
 import { AuthMenu, showAccessTokenInputBox, showInstanceURLInputBox } from './AuthMenus'
@@ -266,6 +267,7 @@ export class AuthProvider {
 
     // Set auth status in case of reload
     public async reloadAuthStatus(): Promise<void> {
+        this.config = await getFullConfig()
         await this.auth(this.config.serverEndpoint, this.config.accessToken, this.config.customHeaders)
     }
 
