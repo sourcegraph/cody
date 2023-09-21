@@ -80,7 +80,7 @@ export function getOutermostRangesInsideClasses(
     for (const cRange of classRanges) {
         for (let i = 0; i < foldingRanges.length; i++) {
             const r = foldingRanges[i]
-            if (r.start === cRange.start.line && r.end === cRange.end.line) {
+            if (Math.abs(r.start - cRange.start.line) <= 1 && Math.abs(r.end - cRange.end.line) <= 1) {
                 foldingRanges.splice(i, 1)
                 i--
             }
