@@ -1,7 +1,7 @@
 import { TextDocument } from 'vscode'
 
-import { SupportedLanguage } from '../tree-sitter/grammars'
 import { getCachedParseTreeForDocument } from '../tree-sitter/parse-tree-cache'
+import { getDocumentQuerySDK } from '../tree-sitter/queries'
 
 import { ParsedCompletion } from './parse-completion'
 
@@ -9,29 +9,6 @@ interface CompletionContext {
     completion: ParsedCompletion
     document: TextDocument
 }
-
-export const MULTILINE_TRUNCATION_SUPPORTED_LANGUAGES: Set<string> = new Set([
-    SupportedLanguage.JavaScript,
-    SupportedLanguage.TypeScript,
-    SupportedLanguage.JSX,
-    SupportedLanguage.TSX,
-])
-
-// Supports Javascript and Typescript only.
-const BLOCKS_QUERY = `
-    [(class_declaration)
-    (function_declaration)
-    (generator_function_declaration)
-    (arrow_function)
-    (method_definition)
-    (try_statement)
-    (switch_statement)
-    (object)
-    (if_statement)
-    (ambient_declaration)
-    (object_type)
-    (statement_block)] @blocks
-`
 
 /**
  * Truncates the `insertText` of a `ParsedCompletion` based on the syntactic structure
@@ -46,18 +23,21 @@ export function truncateParsedCompletion(context: CompletionContext): string {
     const { completion, document } = context
 
     const parseTreeCache = getCachedParseTreeForDocument(document)
+    const documentQuerySDK = getDocumentQuerySDK(context.document.languageId)
 
-    if (!completion.tree || !parseTreeCache) {
+    if (!completion.tree || !parseTreeCache || !documentQuerySDK) {
         throw new Error('Expected completion and document to have tree-sitter data for truncation')
     }
 
     const { tree, points } = completion
 
-    const query = parseTreeCache.parser.getLanguage().query(BLOCKS_QUERY)
-    const blockCaptures = query.captures(tree.rootNode, points?.trigger || points?.start, points?.end)
+    const node = documentQuerySDK.getFirstMultilineBlockForTruncation(
+        tree.rootNode,
+        points?.trigger || points?.start,
+        points?.end
+    )
 
-    if (blockCaptures.length > 0) {
-        const [{ node }] = blockCaptures
+    if (node) {
         const overlap = findLargestSuffixPrefixOverlap(node.text, completion.insertText)
 
         if (overlap) {
