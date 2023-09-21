@@ -15,7 +15,6 @@ export enum SupportedLanguage {
     Go = 'go',
     Python = 'python',
     Dart = 'dart',
-    C = 'c',
     Cpp = 'cpp',
     CSharp = 'csharp',
     Php = 'php',
