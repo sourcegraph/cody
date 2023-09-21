@@ -108,7 +108,7 @@ const register = async (
         disposables.push(vscode.workspace.onDidChangeTextDocument(updateParseTreeOnEdit))
     }
 
-    const symfRunner = platform.createSymfRunner?.(config.experimentalSymfPath, config.experimentalSymfAnthropicKey)
+    const symfRunner = platform.createSymfRunner?.(context, config.experimentalSymfAnthropicKey)
 
     const {
         featureFlagProvider,
