@@ -111,20 +111,14 @@ async function runTestCaseAndLogResults(
     return testResult
 }
 
-function useCount(initial: number): { increment: () => number } {
+function getNextIndex(initial: number): () => number {
     let count = initial
-    return {
-        increment: () => {
-            count++
-            return count
-        },
-    }
+    return () => ++count
 }
 
 async function runTestCases(options: CLIOptions): Promise<TestResult[]> {
     const runnableTestCases = getRunnableTestCases(options)
-    // eslint-disable-next-line react-hooks/rules-of-hooks
-    const { increment } = useCount(0)
+    const increment = getNextIndex(0)
     const testResults = await Promise.all(
         runnableTestCases.map((testCase, _i, arr) =>
             runTestCaseAndLogResults(testCase, options.provider, increment, arr.length)
