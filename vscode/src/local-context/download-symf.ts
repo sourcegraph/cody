@@ -10,7 +10,7 @@ const symfVersion = 'v0.0.0'
 /**
  * Get the path to `symf`. If the symf binary is not found, download it.
  */
-export async function getManagedSymfPath(context: vscode.ExtensionContext): Promise<string | null> {
+export async function getSymfPath(context: vscode.ExtensionContext): Promise<string | null> {
     // If user-specified symf path is set, use that
     const config = vscode.workspace.getConfiguration()
     const userSymfPath = config.get<string>('experimentalSymfPath')

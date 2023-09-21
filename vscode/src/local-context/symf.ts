@@ -11,7 +11,7 @@ import * as vscode from 'vscode'
 import { IndexedKeywordContextFetcher, Result } from '@sourcegraph/cody-shared/src/local-context'
 
 import { logDebug } from '../log'
-import { getManagedSymfPath as getSymfPath } from './download-symf'
+import { getSymfPath as getSymfPath } from './download-symf'
 
 const execFile = promisify(_execFile)
 
