@@ -58,7 +58,11 @@ export async function createProviderConfig(
                 return createAnthropicProviderConfig({
                     client,
                     contextWindowTokens: 2048,
-                    mode: model === 'claude-instant-infill' ? 'infill' : 'default',
+                    mode:
+                        model === 'claude-instant-infill' ||
+                        config.autocompleteAdvancedModel === 'claude-instant-infill'
+                            ? 'infill'
+                            : 'default',
                 })
             }
             default:
