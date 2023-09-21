@@ -482,12 +482,12 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         if (!text?.startsWith('/')) {
             return { text, recipeId }
         }
-        const commandKey = text.split(' ')[0].replace('/', '')
+
         switch (true) {
             case text === '/':
                 return vscode.commands.executeCommand('cody.action.commands.menu', 'sidebar')
             case text === '/commands-settings':
-                this.telemetryService.log('CodyVSCodeExtension:command:configMenuButton:clicked', { source: 'sidebar' })
+                this.telemetryService.log('CodyVSCodeExtension:commandConfigMenuButton:clicked', { source: 'sidebar' })
                 return vscode.commands.executeCommand('cody.settings.commands')
             case /^\/o(pen)?\s/.test(text) && this.editor.controllers.command !== undefined:
                 // open the user's ~/.vscode/cody.json file
@@ -514,9 +514,6 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
                 await vscode.commands.executeCommand('cody.fixup.new', { instruction: text })
                 return null
             case /^\/(explain|doc|test|smell)$/.test(text):
-                this.telemetryService.log(`CodyVSCodeExtension:command:${commandKey}:executed`, {
-                    source: 'chat',
-                })
             default: {
                 if (!this.editor.getActiveTextEditor()?.filePath) {
                     await this.addCustomInteraction('Command failed. Please open a file and try again.', text)
