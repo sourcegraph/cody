@@ -78,7 +78,7 @@ describe.each([
             workspaceRootPath: '/path/to/foo',
             connectionConfiguration: {
                 accessToken: '',
-                serverEndpoint: 'https://notarealserver.com',
+                serverEndpoint: '',
                 customHeaders: {},
             },
         },
