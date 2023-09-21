@@ -75,7 +75,7 @@ test('checks if clear chat history button clears history and current session', a
     // Open the Cody Commands palette and run a command
     await page.getByRole('button', codyEditorCommandButtonRole).click()
     await page.keyboard.type('/explain')
-    await page.keyboard.press('Enter', { delay: 300 })
+    await page.keyboard.press('Enter', { delay: 350 })
 
     // Check if the old message "Hey" is cleared
     await expect(sidebar.getByText('Hey')).not.toBeVisible()

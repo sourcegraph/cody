@@ -13,7 +13,6 @@ const expectedOrderedEvent = [
     'CodyVSCodeExtension:auth:selectSigninMenu',
     'CodyVSCodeExtension:auth:fromToken',
     'CodyVSCodeExtension:Auth:connected',
-    'CodyVSCodeExtension:command:menu:opened',
     'CodyVSCodeExtension:fixup:created',
     'CodyVSCodeExtension:keywordContext:searchDuration',
     'CodyVSCodeExtension:recipe:fixup:executed',
