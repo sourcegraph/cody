@@ -10,7 +10,7 @@ Starting from `0.2.0`, Cody is using `major.EVEN_NUMBER.patch` for release versi
 
 ### Fixed
 
-- Fixes an issue that caused the `cody-autocomplete-claude-instant-infill` feature flag to have no effect.
+- Fixes an issue that caused the `cody-autocomplete-claude-instant-infill` feature flag to have no effect. [pull/1132](https://github.com/sourcegraph/cody/pull/1132)
 
 ### Changed
 
