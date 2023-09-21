@@ -69,7 +69,21 @@ describe.each([
             },
         },
     },
-])('describe StandardAgent with $name', ({ clientInfo }) => {
+    {
+        name: 'NotConfigured',
+        clientInfo: {
+            name: 'test-client',
+            version: 'v1',
+            workspaceRootUri: 'file:///path/to/foo',
+            workspaceRootPath: '/path/to/foo',
+            connectionConfiguration: {
+                accessToken: '',
+                serverEndpoint: 'https://notarealserver.com',
+                customHeaders: {},
+            },
+        },
+    },
+])('describe StandardAgent with $name', ({ name, clientInfo }) => {
     if (process.env.SRC_ACCESS_TOKEN === undefined || process.env.SRC_ENDPOINT === undefined) {
         it('no-op test because SRC_ACCESS_TOKEN is not set. To actually run the Cody Agent tests, set the environment variables SRC_ENDPOINT and SRC_ACCESS_TOKEN', () => {})
         return
@@ -93,7 +107,18 @@ describe.each([
     it('initializes properly', async () => {
         const serverInfo = await client.handshake(clientInfo)
         assert.deepStrictEqual(serverInfo.name, 'cody-agent', 'Agent should be cody-agent')
-        assert.deepStrictEqual(serverInfo.codyEnabled, true, 'Cody should be enabled')
+        assert.deepStrictEqual(
+            serverInfo.codyEnabled,
+            name != 'NotConfigured',
+            'Cody should be enabled when configured'
+        )
+    })
+    it('handles config changes correctly', () => {
+        client.notify('extensionConfiguration/didChange', {
+            accessToken: process.env.SRC_ACCESS_TOKEN ?? 'invalid',
+            serverEndpoint: process.env.SRC_ENDPOINT ?? 'invalid',
+            customHeaders: {},
+        })
     })
 
     it('lists recipes correctly', async () => {
