@@ -5,10 +5,10 @@ import { ActiveTextEditorSelection, VsCodeInlineController } from '@sourcegraph/
 import { SURROUNDING_LINES } from '@sourcegraph/cody-shared/src/prompt/constants'
 
 import { CodyTaskState } from '../non-stop/utils'
-import { telemetryService } from '../services/telemetry'
 
 import { CodeLensProvider } from './CodeLensProvider'
 import { countCode, editDocByUri, getIconPath, matchCodeSnippets, updateRangeOnDocChange } from './InlineAssist'
+import { telemetryService } from './telemetry'
 
 const initPost = new vscode.Position(0, 0)
 const initRange = new vscode.Range(initPost, initPost)
