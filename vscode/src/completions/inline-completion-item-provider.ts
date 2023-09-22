@@ -126,7 +126,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
         context: vscode.InlineCompletionContext,
         // Making it optional here to execute multiple suggestion in parallel from the CLI script.
         token?: vscode.CancellationToken
-    ): Promise<vscode.InlineCompletionList | null> {
+    ): Promise<AutocompleteResult | null> {
         const start = performance.now()
         // We start the request early so that we have a high chance of getting a response before we
         // need it.

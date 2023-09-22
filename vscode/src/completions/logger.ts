@@ -78,7 +78,6 @@ const displayedCompletions = new LRUCache<string, CompletionEvent>({
 let completionsStartedSinceLastSuggestion = 0
 
 export function logCompletionEvent(name: string, params?: TelemetryEventProperties): void {
-    console.log(name)
     telemetryService.log(`CodyVSCodeExtension:completion:${name}`, params)
 }
 
@@ -186,7 +185,6 @@ export function suggested(id: string, source: InlineCompletionsResultSource, com
 
 export function accept(id: string, completion: InlineCompletionItem): void {
     const completionEvent = displayedCompletions.get(id)
-    console.log('accepted', id, completionEvent)
     if (!completionEvent || completionEvent.acceptedAt) {
         // Log a debug event, this case should not happen in production
         logCompletionEvent('acceptedUntrackedCompletion')
