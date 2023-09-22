@@ -288,8 +288,8 @@ const register = async (
         vscode.commands.registerCommand('cody.auth.signin', () => authProvider.signinMenu()),
         vscode.commands.registerCommand('cody.auth.signout', () => authProvider.signoutMenu()),
         vscode.commands.registerCommand('cody.auth.support', () => showFeedbackSupportQuickPick()),
-        vscode.commands.registerCommand('cody.auth.sync', () => {
-            void contextProvider.syncAuthStatus()
+        vscode.commands.registerCommand('cody.auth.sync', async () => {
+            await contextProvider.syncAuthStatus()
             void featureFlagProvider.syncAuthStatus()
         }),
         // Commands

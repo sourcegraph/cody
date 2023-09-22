@@ -84,6 +84,10 @@ describe.each([
         },
     },
 ])('describe StandardAgent with $name', ({ name, clientInfo }) => {
+    if (process.env.VITEST_ONLY && !process.env.VITEST_ONLY.includes(name)) {
+        it(name + ' tests are skipped due to VITEST_ONLY environment variable', () => {})
+        return
+    }
     if (process.env.SRC_ACCESS_TOKEN === undefined || process.env.SRC_ENDPOINT === undefined) {
         it('no-op test because SRC_ACCESS_TOKEN is not set. To actually run the Cody Agent tests, set the environment variables SRC_ENDPOINT and SRC_ACCESS_TOKEN', () => {})
         return
@@ -109,12 +113,13 @@ describe.each([
         assert.deepStrictEqual(serverInfo.name, 'cody-agent', 'Agent should be cody-agent')
         assert.deepStrictEqual(
             serverInfo.codyEnabled,
-            name != 'NotConfigured',
+            name !== 'NotConfigured',
             'Cody should be enabled when configured'
         )
     })
-    it('handles config changes correctly', () => {
-        client.notify('extensionConfiguration/didChange', {
+
+    it('handles config changes correctly', async () => {
+        await client.request('extensionConfiguration/didChange', {
             accessToken: process.env.SRC_ACCESS_TOKEN ?? 'invalid',
             serverEndpoint: process.env.SRC_ENDPOINT ?? 'invalid',
             customHeaders: {},

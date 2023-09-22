@@ -137,10 +137,12 @@ export class Agent extends MessageHandler {
             vscode_shim.onDidCloseTextDocument.fire(this.workspace.agentTextDocument(document))
         })
 
-        const configurationDidChange = (config: ExtensionConfiguration): Promise<void> => this.setClient(config)
+        const configurationDidChange = async (config: ExtensionConfiguration): Promise<null> => {
+            await this.setClient(config)
+            return null
+        }
 
-        this.registerNotification('connectionConfiguration/didChange', configurationDidChange)
-        this.registerNotification('extensionConfiguration/didChange', configurationDidChange)
+        this.registerRequest('extensionConfiguration/didChange', configurationDidChange)
 
         this.registerRequest('recipes/list', () =>
             Promise.resolve(
@@ -172,7 +174,7 @@ export class Agent extends MessageHandler {
             return null
         })
         this.registerRequest('autocomplete/execute', async (params, token) => {
-            const provider = await vscode_shim.completionProvider
+            const provider = await vscode_shim.completionProvider()
             if (!provider) {
                 console.log('Completion provider is not initialized')
                 return { items: [] }
@@ -240,7 +242,7 @@ export class Agent extends MessageHandler {
         })
 
         this.registerNotification('autocomplete/clearLastCandidate', async () => {
-            const provider = await vscode_shim.completionProvider
+            const provider = await vscode_shim.completionProvider()
             if (!provider) {
                 console.log('Completion provider is not initialized: unable to clear last candidate')
             }
@@ -262,10 +264,7 @@ export class Agent extends MessageHandler {
                 // functionality), we return true to always triggger the callback.
                 true,
         })
-        vscode_shim.commands.executeCommand('cody.auth.sync').then(
-            () => {},
-            () => {}
-        )
+        await vscode_shim.commands.executeCommand('cody.auth.sync')
         const oldClient = await this.client
         this.client = createClient({
             initialTranscript: oldClient?.transcript,

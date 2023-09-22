@@ -325,17 +325,24 @@ const _env: Partial<typeof vscode.env> = {
 }
 export const env = _env as typeof vscode.env
 
-let resolveCompletionProvider: (provider: InlineCompletionItemProvider) => void = () => {}
-export let completionProvider: Promise<InlineCompletionItemProvider> = new Promise(resolve => {
-    resolveCompletionProvider = resolve
+let latestCompletionProvider: InlineCompletionItemProvider | undefined
+let resolveFirstCompletionProvider: (provider: InlineCompletionItemProvider) => void = () => {}
+const firstCompletionProvider = new Promise<InlineCompletionItemProvider>(resolve => {
+    resolveFirstCompletionProvider = resolve
 })
+export function completionProvider(): Promise<InlineCompletionItemProvider> {
+    if (latestCompletionProvider) {
+        return Promise.resolve(latestCompletionProvider)
+    }
+    return firstCompletionProvider
+}
 
 const _languages: Partial<typeof vscode.languages> = {
     registerCodeActionsProvider: () => emptyDisposable,
     registerCodeLensProvider: () => emptyDisposable,
     registerInlineCompletionItemProvider: (_selector, provider) => {
-        resolveCompletionProvider(provider as any)
-        completionProvider = Promise.resolve(provider as any)
+        latestCompletionProvider = provider as any
+        resolveFirstCompletionProvider(provider as any)
         return emptyDisposable
     },
 }
