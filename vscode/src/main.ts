@@ -288,9 +288,12 @@ const register = async (
         vscode.commands.registerCommand('cody.auth.signin', () => authProvider.signinMenu()),
         vscode.commands.registerCommand('cody.auth.signout', () => authProvider.signoutMenu()),
         vscode.commands.registerCommand('cody.auth.support', () => showFeedbackSupportQuickPick()),
-        vscode.commands.registerCommand('cody.auth.sync', async () => {
-            await contextProvider.syncAuthStatus()
+        vscode.commands.registerCommand('cody.auth.sync', () => {
+            const result = contextProvider.syncAuthStatus()
             void featureFlagProvider.syncAuthStatus()
+            // Important that we return a promise here to allow `AuthProvider`
+            // to `await` on the auth config changes to propagate.
+            return result
         }),
         // Commands
         vscode.commands.registerCommand('cody.interactive.clear', async () => {
