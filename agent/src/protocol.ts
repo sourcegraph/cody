@@ -60,6 +60,11 @@ export type Notifications = {
     // The 'exit' notification must be sent after the client receives the 'shutdown' response.
     exit: [null]
 
+    // The server should use the provided connection configuration for all
+    // subsequent requests/notifications. The previous extension configuration
+    // should no longer be used.
+    'extensionConfiguration/didChange': [ExtensionConfiguration]
+
     // Lifecycle notifications for the client to notify the server about text
     // contents of documents and to notify which document is currently focused.
     'textDocument/didOpen': [TextDocument]
@@ -84,11 +89,6 @@ export type Notifications = {
     // This notification should be sent when the user starts a new conversation.
     // The chat transcript grows indefinitely if this notification is never sent.
     'transcript/reset': [null]
-
-    // The server should use the provided connection configuration for all
-    // subsequent requests/notifications. The previous extension configuration
-    // should no longer be used.
-    'extensionConfiguration/didChange': [ExtensionConfiguration]
 
     // ================
     // Server -> Client
