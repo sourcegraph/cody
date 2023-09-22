@@ -461,25 +461,21 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
                 break
         }
         // Get prompt details from controller by title then execute prompt's command
-        const promptText = this.editor.controllers.command?.find(title)
-        await this.editor.controllers.command?.get('command')
-
-        if (promptText) {
-            logDebug('executeCustomCommand:starting', title)
-            await this.executeRecipe('custom-prompt', promptText)
-        }
-        return
+        return this.executeRecipe('custom-prompt', title)
     }
 
     protected async chatCommandsFilter(
         text: string,
         recipeId: RecipeID
     ): Promise<{ text: string; recipeId: RecipeID } | null> {
+        // Inline chat has its own filter for slash commands
+        if (recipeId === 'inline-chat') {
+            return { text, recipeId }
+        }
         text = text.trim()
         if (!text?.startsWith('/')) {
             return { text, recipeId }
         }
-
         switch (true) {
             case text === '/':
                 return vscode.commands.executeCommand('cody.action.commands.menu', 'sidebar')
@@ -510,24 +506,20 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
             case /^\/edit(\s)?/.test(text):
                 await vscode.commands.executeCommand('cody.fixup.new', { instruction: text })
                 return null
-            case /^\/(explain|doc|test|smell)$/.test(text):
             default: {
                 if (!this.editor.getActiveTextEditor()?.filePath) {
                     await this.addCustomInteraction('Command failed. Please open a file and try again.', text)
                     return null
                 }
-                const promptText = this.editor.controllers.command?.find(text)
-                await this.editor.controllers.command?.get('command')
-                if (promptText) {
-                    return { text: promptText, recipeId: 'custom-prompt' }
+                const commandRunnerID = await this.editor.controllers.command?.addCommand(text)
+                if (!commandRunnerID) {
+                    return null
                 }
-                // Inline chat has its own filter for slash commands
-                if (recipeId === 'inline-chat') {
-                    return { text, recipeId }
+                if (commandRunnerID === 'invalid') {
+                    // If no command found, send error message to view
+                    await this.addCustomInteraction(`__${text}__ is not a valid command`, text)
                 }
-                // If no command found, send error message to view
-                await this.addCustomInteraction(`__${text}__ is not a valid command`, text)
-                return null
+                return { text: commandRunnerID, recipeId: 'custom-prompt' }
             }
         }
     }

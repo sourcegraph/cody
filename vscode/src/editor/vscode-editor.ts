@@ -17,6 +17,7 @@ import { FixupController } from '../non-stop/FixupController'
 import { InlineController } from '../services/InlineController'
 
 import { EditorCodeLenses } from './EditorCodeLenses'
+import { getCursorFoldingRange } from './utils'
 
 export class VSCodeEditor implements Editor<InlineController, FixupController, CommandsController> {
     constructor(
@@ -122,6 +123,40 @@ export class VSCodeEditor implements Editor<InlineController, FixupController, C
         return this.createActiveTextEditorSelection(activeEditor, selection)
     }
 
+    /**
+     * Gets the current smart selection for the active text editor.
+     *
+     * Checks if there is an existing selection and returns that if it exists.
+     * Otherwise tries to get the folding range containing the cursor position.
+     *
+     * Returns null if no selection can be determined.
+     *
+     * @returns The smart selection for the active editor, or null if none can be determined.
+     */
+    public async getActiveTextEditorSmartSelection(): Promise<ActiveTextEditorSelection | null> {
+        const activeEditor = this.getActiveTextEditorInstance()
+        if (!activeEditor) {
+            return null
+        }
+        const selection = activeEditor.selection
+        if (!selection?.start.line) {
+            return null
+        }
+
+        if (selection && !selection?.start.isEqual(selection.end)) {
+            return this.createActiveTextEditorSelection(activeEditor, selection)
+        }
+
+        // Get selection for current folding range of cursor
+        const activeCursorPosition = selection.start.line
+        const foldingRange = await getCursorFoldingRange(activeEditor.document.uri, activeCursorPosition)
+        if (foldingRange) {
+            return this.createActiveTextEditorSelection(activeEditor, foldingRange)
+        }
+
+        return null
+    }
+
     public getActiveTextEditorSelectionOrEntireFile(): ActiveTextEditorSelection | null {
         const activeEditor = this.getActiveTextEditorInstance()
         if (!activeEditor) {
@@ -218,6 +253,7 @@ export class VSCodeEditor implements Editor<InlineController, FixupController, C
             precedingText,
             followingText,
             selectionRange: selection,
+            fileUri: activeEditor.document.uri,
         }
     }
 
@@ -242,6 +278,7 @@ export class VSCodeEditor implements Editor<InlineController, FixupController, C
 
         return {
             fileName: vscode.workspace.asRelativePath(activeEditor.document.uri.fsPath),
+            fileUri: activeEditor.document.uri,
             content,
         }
     }

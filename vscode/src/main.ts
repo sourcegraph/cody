@@ -181,24 +181,26 @@ const register = async (
     }
 
     const executeFixup = async (
-        options: {
+        args: {
             document?: vscode.TextDocument
             instruction?: string
             range?: vscode.Range
+            auto?: boolean
+            insertMode?: boolean
         } = {}
     ): Promise<void> => {
-        const document = options.document || vscode.window.activeTextEditor?.document
+        const document = args.document || vscode.window.activeTextEditor?.document
         if (!document) {
             return
         }
 
-        const range = options.range || vscode.window.activeTextEditor?.selection
+        const range = args.range || vscode.window.activeTextEditor?.selection
         if (!range) {
             return
         }
 
-        const task = options.instruction?.replace('/edit', '').trim()
-            ? fixup.createTask(document.uri, options.instruction, range)
+        const task = args.instruction?.replace('/edit', '').trim()
+            ? fixup.createTask(document.uri, args.instruction, range, args.auto, args.insertMode)
             : await fixup.promptUserForTask()
         if (!task) {
             return
@@ -259,8 +261,13 @@ const register = async (
         }),
         vscode.commands.registerCommand(
             'cody.fixup.new',
-            (options: { range?: vscode.Range; instruction?: string; document?: vscode.TextDocument }) =>
-                executeFixup(options)
+            (args: {
+                range?: vscode.Range
+                instruction?: string
+                document?: vscode.TextDocument
+                auto?: boolean
+                insertMode?: boolean
+            }) => executeFixup(args)
         ),
         vscode.commands.registerCommand('cody.inline.new', async () => {
             // move focus line to the end of the current selection
@@ -313,10 +320,6 @@ const register = async (
             await executeRecipeInSidebar('chat-question', true, input)
             telemetryService.log('CodyVSCodeExtension:chat:submitted', { source: 'menu' })
         }),
-        vscode.commands.registerCommand(
-            'cody.action.fixup',
-            (instruction: string, range: vscode.Range): Promise<void> => executeFixup({ instruction, range })
-        ),
         vscode.commands.registerCommand('cody.action.commands.menu', async () => {
             await editor.controllers.command?.menu('default')
         }),
@@ -338,7 +341,7 @@ const register = async (
             await executeRecipeInSidebar('custom-prompt', true, '/test')
         }),
         vscode.commands.registerCommand('cody.command.document-code', async () => {
-            await executeRecipeInSidebar('custom-prompt', true, '/doc')
+            await executeRecipeInSidebar('custom-prompt', false, '/doc')
         }),
         vscode.commands.registerCommand('cody.command.smell-code', async () => {
             await executeRecipeInSidebar('custom-prompt', true, '/smell')
