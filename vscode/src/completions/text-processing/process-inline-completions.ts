@@ -3,11 +3,13 @@ import { Position, TextDocument } from 'vscode'
 import { dedupeWith } from '@sourcegraph/cody-shared/src/common'
 
 import { DocumentContext } from '../get-current-doc-context'
+import { ItemPostProcesssingInfo } from '../logger'
+import { getDocumentQuerySDK } from '../tree-sitter/queries'
 import { InlineCompletionItem } from '../types'
 
-import { parseCompletion, ParsedCompletion, parsedCompletionToCompletion } from './parse-completion'
+import { dropParserFields, parseCompletion, ParsedCompletion } from './parse-completion'
 import { truncateMultilineCompletion } from './truncate-multiline-completion'
-import { MULTILINE_TRUNCATION_SUPPORTED_LANGUAGES, truncateParsedCompletion } from './truncate-parsed-completion'
+import { truncateParsedCompletion } from './truncate-parsed-completion'
 import { collapseDuplicativeWhitespace, removeTrailingWhitespace, trimUntilSuffix } from './utils'
 
 export interface ProcessInlineCompletionsParams {
@@ -16,6 +18,8 @@ export interface ProcessInlineCompletionsParams {
     docContext: DocumentContext
 }
 
+export interface InlineCompletionItemWithAnalytics extends ItemPostProcesssingInfo, InlineCompletionItem {}
+
 /**
  * This function implements post-processing logic that is applied regardless of
  * which provider is chosen.
@@ -23,7 +27,7 @@ export interface ProcessInlineCompletionsParams {
 export function processInlineCompletions(
     items: InlineCompletionItem[],
     params: ProcessInlineCompletionsParams
-): InlineCompletionItem[] {
+): InlineCompletionItemWithAnalytics[] {
     // Shared post-processing logic
     const processedCompletions = items.map(item => processItem({ ...params, completion: item }))
 
@@ -36,7 +40,7 @@ export function processInlineCompletions(
     // Rank results
     const rankedResults = rankCompletions(uniqueResults)
 
-    return rankedResults
+    return rankedResults.map(dropParserFields)
 }
 
 interface ProcessItemParams {
@@ -46,12 +50,9 @@ interface ProcessItemParams {
     docContext: DocumentContext
 }
 
-export function processItem(params: ProcessItemParams): ParsedCompletion {
-    const { document, position, docContext } = params
+export function processItem(params: ProcessItemParams): InlineCompletionItemWithAnalytics {
+    const { completion, document, position, docContext } = params
     const { prefix, suffix, currentLineSuffix, multilineTrigger } = docContext
-
-    // Make a copy to avoid unexpected behavior.
-    let completion = { ...params.completion }
 
     if (typeof completion.insertText !== 'string') {
         throw new TypeError('SnippetText not supported')
@@ -61,17 +62,28 @@ export function processItem(params: ProcessItemParams): ParsedCompletion {
         return completion
     }
 
-    completion = adjustRangeToOverwriteOverlappingCharacters(completion, { position, currentLineSuffix })
-    const parsed = parseCompletion({ completion, document, position, docContext })
+    const adjusted = adjustRangeToOverwriteOverlappingCharacters(completion, { position, currentLineSuffix })
+    const parsed: InlineCompletionItemWithAnalytics & ParsedCompletion = parseCompletion({
+        completion: adjusted,
+        document,
+        position,
+        docContext,
+    })
+
     let { insertText } = parsed
+    const initialLineCount = insertText.split('\n').length
 
     if (multilineTrigger) {
         // Use tree-sitter for truncation if `config.autocompleteExperimentalSyntacticPostProcessing` is enabled.
-        if (parsed.tree && MULTILINE_TRUNCATION_SUPPORTED_LANGUAGES.has(document.languageId)) {
+        if (parsed.tree && getDocumentQuerySDK(document.languageId)) {
             insertText = truncateParsedCompletion({ completion: parsed, document })
+            parsed.truncatedWith = 'tree-sitter'
         } else {
             insertText = truncateMultilineCompletion(insertText, prefix, suffix, document.languageId)
+            parsed.truncatedWith = 'indentation'
         }
+        const truncatedLineCount = insertText.split('\n').length
+        parsed.lineTruncatedCount = initialLineCount - truncatedLineCount
 
         insertText = removeTrailingWhitespace(insertText)
     }
@@ -120,21 +132,19 @@ export function adjustRangeToOverwriteOverlappingCharacters(
     return item
 }
 
-function rankCompletions(completions: ParsedCompletion[]): InlineCompletionItem[] {
-    return completions
-        .sort((a, b) => {
-            // Prioritize completions without parse errors
-            if (a.hasParseErrors && !b.hasParseErrors) {
-                return 1 // b comes first
-            }
-            if (!a.hasParseErrors && b.hasParseErrors) {
-                return -1 // a comes first
-            }
+function rankCompletions(completions: ParsedCompletion[]): ParsedCompletion[] {
+    return completions.sort((a, b) => {
+        // Prioritize completions without parse errors
+        if (a.parseErrorCount && !b.parseErrorCount) {
+            return 1 // b comes first
+        }
+        if (!a.parseErrorCount && b.parseErrorCount) {
+            return -1 // a comes first
+        }
 
-            // If both have or don't have parse errors, compare by insertText length
-            return b.insertText.split('\n').length - a.insertText.split('\n').length
-        })
-        .map(parsedCompletionToCompletion)
+        // If both have or don't have parse errors, compare by insertText length
+        return b.insertText.split('\n').length - a.insertText.split('\n').length
+    })
 }
 
 function removeLowQualityCompletions(completions: InlineCompletionItem[]): InlineCompletionItem[] {

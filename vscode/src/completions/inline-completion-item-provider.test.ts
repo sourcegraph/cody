@@ -8,12 +8,12 @@ import { SourcegraphGraphQLAPIClient } from '@sourcegraph/cody-shared/src/source
 
 import { vsCodeMocks } from '../testutils/mocks'
 
-import { getInlineCompletions, InlineCompletionsResultSource } from './getInlineCompletions'
+import { getInlineCompletions, InlineCompletionsResultSource } from './get-inline-completions'
+import { InlineCompletionItemProvider } from './inline-completion-item-provider'
 import * as CompletionLogger from './logger'
 import { createProviderConfig } from './providers/anthropic'
 import { documentAndPosition } from './test-helpers'
 import { InlineCompletionItem } from './types'
-import { InlineCompletionItemProvider } from './vscodeInlineCompletionItemProvider'
 
 vi.mock('vscode', () => ({
     ...vsCodeMocks,
@@ -244,6 +244,25 @@ describe('InlineCompletionItemProvider', () => {
             const spy = vi.spyOn(CompletionLogger, 'suggested')
 
             const { document, position } = documentAndPosition('const a = [1, █];', 'typescript')
+            const fn = vi.fn(getInlineCompletions).mockResolvedValue({
+                logId: '1',
+                items: [{ insertText: '2] ;', range: new vsCodeMocks.Range(position, position) }],
+                source: InlineCompletionsResultSource.Network,
+            })
+
+            const provider = new MockableInlineCompletionItemProvider(fn)
+            await provider.provideInlineCompletionItems(document, position, DUMMY_CONTEXT)
+
+            expect(spy).toHaveBeenCalled()
+        })
+
+        it('log a completion if the suffix is inside the completion in CRLF format', async () => {
+            const spy = vi.spyOn(CompletionLogger, 'suggested')
+
+            const { document, position } = documentAndPosition(
+                'const a = [1, █];\r\nconsol.log(1234);\r\n',
+                'typescript'
+            )
             const fn = vi.fn(getInlineCompletions).mockResolvedValue({
                 logId: '1',
                 items: [{ insertText: '2] ;', range: new vsCodeMocks.Range(position, position) }],

@@ -2,7 +2,7 @@
   "name": "cody-ai",
   "private": true,
   "displayName": "Cody AI",
-  "version": "0.10.2",
+  "version": "0.12.1",
   "publisher": "sourcegraph",
   "license": "Apache-2.0",
   "icon": "resources/cody.png",
@@ -278,7 +278,7 @@
       {
         "command": "cody.command.smell-code",
         "category": "Ask Cody",
-        "title": "Smell Code"
+        "title": "Find Code Smells"
       },
       {
         "command": "cody.command.context-search",
@@ -371,7 +371,7 @@
       },
       {
         "command": "cody.inline.new",
-        "title": "Start New Thread",
+        "title": "Ask Cody Inline",
         "category": "Cody Inline Chat",
         "when": "cody.activated && config.cody.inlineChat.enabled",
         "enablement": "editorFocus"
@@ -433,8 +433,8 @@
       },
       {
         "command": "cody.action.commands.custom.menu",
-        "category": "Cody",
-        "title": "Custom Commands (Experimental)",
+        "category": "Ask Cody",
+        "title": "Custom Commands",
         "when": "cody.activated",
         "icon": "$(bookmark)"
       },
@@ -459,7 +459,7 @@
         "mac": "alt+/"
       },
       {
-        "command": "cody.fixup.new",
+        "command": "cody.command.edit-code",
         "key": "ctrl+shift+v",
         "mac": "shift+cmd+v",
         "when": "cody.activated && !editorReadonly"
@@ -489,7 +489,7 @@
       {
         "command": "editor.action.inlineSuggest.trigger",
         "key": "alt+\\",
-        "when": "editorTextFocus && !editorHasSelection && cody.autocomplete.enabled && !inlineSuggestionsVisible"
+        "when": "editorTextFocus && !editorHasSelection && config.cody.autocomplete.enabled && !inlineSuggestionsVisible"
       }
     ],
     "submenus": [
@@ -502,11 +502,11 @@
       "commandPalette": [
         {
           "command": "cody.command.explain-code",
-          "when": "cody.activated"
+          "when": "false"
         },
         {
           "command": "cody.command.context-search",
-          "when": "cody.activated"
+          "when": "false"
         },
         {
           "command": "cody.command.inline-touch",
@@ -514,15 +514,15 @@
         },
         {
           "command": "cody.command.smell-code",
-          "when": "cody.activated"
+          "when": "false"
         },
         {
           "command": "cody.command.generate-tests",
-          "when": "cody.activated"
+          "when": "false"
         },
         {
           "command": "cody.command.document-code",
-          "when": "cody.activated"
+          "when": "false"
         },
         {
           "command": "cody.focus",
@@ -587,35 +587,47 @@
       "cody.submenu": [
         {
           "command": "cody.command.explain-code",
-          "when": "cody.activated"
+          "when": "cody.activated",
+          "group": "command"
         },
         {
           "command": "cody.command.edit-code",
-          "when": "cody.activated"
+          "when": "cody.activated",
+          "group": "ask"
         },
         {
           "command": "cody.command.generate-tests",
-          "when": "cody.activated"
+          "when": "cody.activated",
+          "group": "command"
         },
         {
           "command": "cody.command.document-code",
-          "when": "cody.activated"
+          "when": "cody.activated",
+          "group": "command"
         },
         {
           "command": "cody.command.smell-code",
-          "when": "cody.activated"
+          "when": "cody.activated",
+          "group": "command"
         },
         {
           "command": "cody.action.commands.custom.menu",
-          "when": "cody.activated"
+          "when": "cody.activated",
+          "group": "command"
         },
         {
           "command": "cody.focus",
-          "when": "!cody.activated"
+          "when": "!cody.activated",
+          "group": "other"
         },
         {
           "command": "cody.guardrails.debug",
-          "when": "cody.activated && config.cody.experimental.guardrails && editorHasSelection"
+          "when": "cody.activated && config.cody.experimental.guardrails && editorHasSelection",
+          "group": "other"
+        },
+        {
+          "command": "cody.inline.new",
+          "group": "ask"
         }
       ],
       "view/title": [

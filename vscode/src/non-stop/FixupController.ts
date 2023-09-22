@@ -1,10 +1,10 @@
 import * as vscode from 'vscode'
 
 import { VsCodeFixupController, VsCodeFixupTaskRecipeData } from '@sourcegraph/cody-shared/src/editor'
-import { TelemetryService } from '@sourcegraph/cody-shared/src/telemetry'
 
 import { logDebug } from '../log'
 import { countCode } from '../services/InlineAssist'
+import { telemetryService } from '../services/telemetry'
 
 import { computeDiff, Diff } from './diff'
 import { FixupCodeLenses } from './FixupCodeLenses'
@@ -43,7 +43,7 @@ export class FixupController
 
     private _disposables: vscode.Disposable[] = []
 
-    constructor(private telemetryService: TelemetryService) {
+    constructor() {
         // Register commands
         this._disposables.push(
             vscode.workspace.registerTextDocumentContentProvider('cody-fixup', this.contentStore),
@@ -101,9 +101,15 @@ export class FixupController
         return task
     }
 
-    public createTask(documentUri: vscode.Uri, instruction: string, selectionRange: vscode.Range): FixupTask {
+    public createTask(
+        documentUri: vscode.Uri,
+        instruction: string,
+        selectionRange: vscode.Range,
+        autoApply = false,
+        insertMode?: boolean
+    ): FixupTask {
         const fixupFile = this.files.forUri(documentUri)
-        const task = new FixupTask(fixupFile, instruction, selectionRange)
+        const task = new FixupTask(fixupFile, instruction, selectionRange, autoApply, insertMode)
         this.tasks.set(task.id, task)
         this.setTaskState(task, CodyTaskState.working)
         return task
@@ -122,7 +128,7 @@ export class FixupController
 
     // Apply single fixup from task ID. Public for testing.
     public async apply(id: taskID): Promise<void> {
-        this.telemetryService.log('CodyVSCodeExtension:fixup:codeLens:clicked', { op: 'apply' })
+        telemetryService.log('CodyVSCodeExtension:fixup:codeLens:clicked', { op: 'apply' })
         logDebug('FixupController:apply', 'applying', { verbose: { id } })
         const task = this.tasks.get(id)
         if (!task) {
@@ -188,6 +194,31 @@ export class FixupController
         }
 
         editor.revealRange(task.selectionRange)
+
+        const editOk = task.insertMode ? await this.insertEdit(editor, task) : await this.replaceEdit(editor, diff)
+
+        if (!editOk) {
+            // TODO: Try to recover, for example by respinning
+            void vscode.window.showWarningMessage('edit did not apply')
+            return
+        }
+
+        const replacementText = task.replacement
+        if (replacementText) {
+            const tokenCount = countCode(replacementText)
+            telemetryService.log('CodyVSCodeExtension:fixup:applied', tokenCount)
+        }
+
+        // TODO: is this the right transition for being all done?
+        // TODO: Consider keeping tasks around to resurrect them if the user
+        // hits undo.
+        // TODO: See if we can discard a FixupFile now.
+        this.setTaskState(task, CodyTaskState.fixed)
+    }
+
+    // Replace edit returned by Cody at task selection range
+    private async replaceEdit(editor: vscode.TextEditor, diff: Diff): Promise<boolean> {
+        logDebug('FixupController:edit', 'replacing ')
         const editOk = await editor.edit(editBuilder => {
             for (const edit of diff.edits) {
                 editBuilder.replace(
@@ -199,23 +230,28 @@ export class FixupController
                 )
             }
         })
+        return editOk
+    }
 
-        if (!editOk) {
-            // TODO: Try to recover, for example by respinning
-            void vscode.window.showWarningMessage('edit did not apply')
-            return
-        }
-        const replacementText = task.replacement
-        if (replacementText) {
-            const tokenCount = countCode(replacementText)
-            this.telemetryService.log('CodyVSCodeExtension:fixup:applied', tokenCount)
+    // Insert edit returned by Cody at task selection range
+    private async insertEdit(editor: vscode.TextEditor, task: FixupTask): Promise<boolean> {
+        logDebug('FixupController:edit', 'inserting')
+        const text = task.replacement
+        const range = task.selectionRange
+        if (!text) {
+            return false
         }
 
-        // TODO: is this the right transition for being all done?
-        // TODO: Consider keeping tasks around to resurrect them if the user
-        // hits undo.
-        // TODO: See if we can discard a FixupFile now.
-        this.setTaskState(task, CodyTaskState.fixed)
+        // add correct indentation based on first non empty character index
+        const nonEmptyStartIndex = editor.document.lineAt(range.start.line).firstNonWhitespaceCharacterIndex
+        // add indentation to each line
+        const textLines = text.split('\n').map(line => ' '.repeat(nonEmptyStartIndex) + line)
+
+        // Insert updated text at selection range
+        const editOk = await editor.edit(editBuilder => {
+            editBuilder.insert(range.start, textLines.join('\n') + '\n')
+        })
+        return editOk
     }
 
     // Applying fixups from tree item click
@@ -252,7 +288,7 @@ export class FixupController
     }
 
     private cancel(id: taskID): void {
-        this.telemetryService.log('CodyVSCodeExtension:fixup:codeLens:clicked', { op: 'cancel' })
+        telemetryService.log('CodyVSCodeExtension:fixup:codeLens:clicked', { op: 'cancel' })
         const task = this.tasks.get(id)
         if (!task) {
             return
@@ -325,7 +361,7 @@ export class FixupController
                 task.inProgressReplacement = undefined
                 task.replacement = text
                 this.setTaskState(task, CodyTaskState.ready)
-                this.telemetryService.log('CodyVSCodeExtension:fixupResponse:hasCode', countCode(text))
+                telemetryService.log('CodyVSCodeExtension:fixupResponse:hasCode', countCode(text))
                 break
         }
         this.textDidChange(task)
@@ -413,7 +449,10 @@ export class FixupController
                 continue
             }
             const bufferText = editor.document.getText(task.selectionRange)
-            task.diff = computeDiff(task.original, botText, bufferText, task.selectionRange.start)
+
+            // Add new line at the end of bot text when running insert mode
+            const newLine = task.insertMode ? '\n' : ''
+            task.diff = computeDiff(task.original, `${botText}${newLine}`, bufferText, task.selectionRange.start)
             this.didUpdateDiff(task)
         }
 
@@ -448,7 +487,7 @@ export class FixupController
 
     // Show diff between before and after edits
     private async diff(id: taskID): Promise<void> {
-        this.telemetryService.log('CodyVSCodeExtension:fixup:codeLens:clicked', { op: 'diff' })
+        telemetryService.log('CodyVSCodeExtension:fixup:codeLens:clicked', { op: 'diff' })
         const task = this.tasks.get(id)
         if (!task) {
             return
@@ -496,7 +535,6 @@ export class FixupController
             return
         }
 
-        logDebug('FixupController:setTaskState: ', 'changing state', { verbose: { task } })
         task.state = state
 
         // TODO: These state transition actions were moved from FixupTask, but
@@ -516,7 +554,11 @@ export class FixupController
         // Save states of the task
         this.codelenses.didUpdateTask(task)
         this.taskViewProvider.setTreeItem(task)
-        return
+
+        // auto apply task if enabled
+        if (task.state === CodyTaskState.ready && task.autoApply) {
+            void this.apply(task.id)
+        }
     }
 
     private reset(): void {

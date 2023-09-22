@@ -15,7 +15,7 @@ import type * as vscode from 'vscode'
 //     at Object.<anonymous> (/snapshot/dist/agent.js)
 //     at Module._compile (pkg/prelude/bootstrap.js:1926:22)
 // </VERY IMPORTANT>
-import type { InlineCompletionItemProvider } from '../../vscode/src/completions/vscodeInlineCompletionItemProvider'
+import type { InlineCompletionItemProvider } from '../../vscode/src/completions/inline-completion-item-provider'
 import {
     // It's OK to import the VS Code mocks because they don't depend on the 'vscode' module.
     Disposable,
@@ -82,6 +82,17 @@ const emptyFileWatcher: vscode.FileSystemWatcher = {
 export let connectionConfig: ExtensionConfiguration | undefined
 export function setConnectionConfig(newConfig: ExtensionConfiguration): void {
     connectionConfig = newConfig
+}
+
+export function isAuthenticationChange(newConfig: ExtensionConfiguration): boolean {
+    if (!connectionConfig) {
+        return true
+    }
+
+    return (
+        connectionConfig.accessToken !== newConfig.accessToken ||
+        connectionConfig.serverEndpoint !== newConfig.serverEndpoint
+    )
 }
 
 const configuration: vscode.WorkspaceConfiguration = {
@@ -314,17 +325,24 @@ const _env: Partial<typeof vscode.env> = {
 }
 export const env = _env as typeof vscode.env
 
-let resolveCompletionProvider: (provider: InlineCompletionItemProvider) => void = () => {}
-export let completionProvider: Promise<InlineCompletionItemProvider> = new Promise(resolve => {
-    resolveCompletionProvider = resolve
+let latestCompletionProvider: InlineCompletionItemProvider | undefined
+let resolveFirstCompletionProvider: (provider: InlineCompletionItemProvider) => void = () => {}
+const firstCompletionProvider = new Promise<InlineCompletionItemProvider>(resolve => {
+    resolveFirstCompletionProvider = resolve
 })
+export function completionProvider(): Promise<InlineCompletionItemProvider> {
+    if (latestCompletionProvider) {
+        return Promise.resolve(latestCompletionProvider)
+    }
+    return firstCompletionProvider
+}
 
 const _languages: Partial<typeof vscode.languages> = {
     registerCodeActionsProvider: () => emptyDisposable,
     registerCodeLensProvider: () => emptyDisposable,
     registerInlineCompletionItemProvider: (_selector, provider) => {
-        resolveCompletionProvider(provider as any)
-        completionProvider = Promise.resolve(provider as any)
+        latestCompletionProvider = provider as any
+        resolveFirstCompletionProvider(provider as any)
         return emptyDisposable
     },
 }

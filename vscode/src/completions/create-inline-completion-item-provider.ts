@@ -11,9 +11,9 @@ import { CodyStatusBar } from '../services/StatusBar'
 import { CodeCompletionsClient } from './client'
 import { GraphSectionObserver } from './context/graph-section-observer'
 import { VSCodeDocumentHistory } from './context/history'
+import { InlineCompletionItemProvider } from './inline-completion-item-provider'
 import { createProviderConfig } from './providers/createProvider'
 import { registerAutocompleteTraceView } from './tracer/traceView'
-import { InlineCompletionItemProvider } from './vscodeInlineCompletionItemProvider'
 
 interface InlineCompletionItemProviderArgs {
     config: Configuration
@@ -34,6 +34,15 @@ export async function createInlineCompletionItemProvider({
 }: InlineCompletionItemProviderArgs): Promise<vscode.Disposable> {
     if (!authProvider.getAuthStatus().isLoggedIn) {
         logDebug('CodyCompletionProvider:notSignedIn', 'You are not signed in.')
+
+        if (config.isRunningInsideAgent) {
+            // Register an empty completion provider when running inside the
+            // agent to avoid timeouts because it awaits for an
+            // `InlineCompletionItemProvider` to be registered.
+            return vscode.languages.registerInlineCompletionItemProvider('*', {
+                provideInlineCompletionItems: () => Promise.resolve({ items: [] }),
+            })
+        }
 
         return {
             dispose: () => {},
@@ -68,7 +77,10 @@ export async function createInlineCompletionItemProvider({
             vscode.commands.registerCommand('cody.autocomplete.inline.accepted', ({ codyLogId, codyCompletion }) => {
                 completionsProvider.handleDidAcceptCompletionItem(codyLogId, codyCompletion)
             }),
-            vscode.languages.registerInlineCompletionItemProvider('*', completionsProvider),
+            vscode.languages.registerInlineCompletionItemProvider(
+                [{ scheme: 'file', language: '*' }, { notebookType: '*' }],
+                completionsProvider
+            ),
             registerAutocompleteTraceView(completionsProvider)
         )
         if (sectionObserver) {

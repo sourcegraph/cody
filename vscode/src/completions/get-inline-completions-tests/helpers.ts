@@ -10,7 +10,7 @@ import {
 import { vsCodeMocks } from '../../testutils/mocks'
 import { CodeCompletionsClient } from '../client'
 import { getCurrentDocContext } from '../get-current-doc-context'
-import { getInlineCompletions as _getInlineCompletions, InlineCompletionsParams } from '../getInlineCompletions'
+import { getInlineCompletions as _getInlineCompletions, InlineCompletionsParams } from '../get-inline-completions'
 import { createProviderConfig, MULTI_LINE_STOP_SEQUENCES, SINGLE_LINE_STOP_SEQUENCES } from '../providers/anthropic'
 import { RequestManager } from '../request-manager'
 import { documentAndPosition } from '../test-helpers'

@@ -17,12 +17,17 @@ import {
     InlineCompletionsParams,
     InlineCompletionsResultSource,
     LastInlineCompletionCandidate,
-} from './getInlineCompletions'
+} from './get-inline-completions'
 import * as CompletionLogger from './logger'
+import { CompletionEvent } from './logger'
 import { ProviderConfig } from './providers/provider'
 import { RequestManager, RequestParams } from './request-manager'
 import { ProvideInlineCompletionItemsTracer, ProvideInlineCompletionsItemTraceData } from './tracer'
 import { InlineCompletionItem } from './types'
+
+interface AutocompleteResult extends vscode.InlineCompletionList {
+    completionEvent?: CompletionEvent
+}
 
 export interface CodyCompletionItemProviderConfig {
     providerConfig: ProviderConfig
@@ -39,12 +44,6 @@ export interface CodyCompletionItemProviderConfig {
     contextFetcher?: (options: GetContextOptions) => Promise<GetContextResult>
     featureFlagProvider: FeatureFlagProvider
 }
-
-// Only used when the CodyAutocompleteMinimumLatency feature flag is turned on:
-//
-// We don't want to show completions immediately after a user types a character (unless we show the
-// last candidate) to avoid churning the UI too much. Instead, we wait at least
-const MINIMUM_LATENCY_MS = 350
 
 export class InlineCompletionItemProvider implements vscode.InlineCompletionItemProvider {
     private promptChars: number
@@ -127,13 +126,14 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
         context: vscode.InlineCompletionContext,
         // Making it optional here to execute multiple suggestion in parallel from the CLI script.
         token?: vscode.CancellationToken
-    ): Promise<vscode.InlineCompletionList | null> {
+    ): Promise<AutocompleteResult | null> {
         const start = performance.now()
         // We start the request early so that we have a high chance of getting a response before we
         // need it.
-        const minimumLatencyFlagPromise = this.config.featureFlagProvider.evaluateFeatureFlag(
-            FeatureFlag.CodyAutocompleteMinimumLatency
-        )
+        const minimumLatencyFlagsPromises = [
+            this.config.featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteMinimumLatency350),
+            this.config.featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteMinimumLatency600),
+        ]
         const tracer = this.config.tracer ? createTracerForInvocation(this.config.tracer) : undefined
         const graphContextFetcher = this.config.graphContextFetcher ?? undefined
 
@@ -198,6 +198,11 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
                 tracer,
             })
 
+            // Avoid any further work if the completion is invalidated already.
+            if (abortController.signal.aborted) {
+                return null
+            }
+
             if (!result) {
                 // Returning null will clear any existing suggestions, thus we need to reset the
                 // last candidate.
@@ -229,11 +234,18 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
             // latency so that we don't show a result before the user has paused typing for a brief
             // moment.
             if (result.source !== InlineCompletionsResultSource.LastCandidate) {
-                const minimumLatencyFlag = await minimumLatencyFlagPromise
-                if (minimumLatencyFlag) {
+                const [minimumLatency350, minimumLatency600] = await Promise.all(minimumLatencyFlagsPromises)
+                if (minimumLatency350 || minimumLatency600) {
+                    const minimumLatency = minimumLatency350 ? 350 : 600
                     const delta = performance.now() - start
-                    if (delta < MINIMUM_LATENCY_MS) {
-                        await new Promise(resolve => setTimeout(resolve, MINIMUM_LATENCY_MS - delta))
+                    if (delta < minimumLatency) {
+                        await new Promise(resolve => setTimeout(resolve, minimumLatency - delta))
+                    }
+
+                    // Avoid any further work if the completion is invalidated during the the
+                    // minimum duration pause
+                    if (abortController.signal.aborted) {
+                        return null
                     }
                 }
             }
@@ -283,16 +295,17 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
                 this.lastCandidate = items.length > 0 ? candidate : undefined
             }
 
-            const event = CompletionLogger.completionEvent(result.logId)
             if (items.length > 0) {
-                CompletionLogger.suggested(result.logId, InlineCompletionsResultSource[result.source], items[0] as any)
+                CompletionLogger.suggested(result.logId, InlineCompletionsResultSource[result.source], result.items[0])
             } else {
                 CompletionLogger.noResponse(result.logId)
             }
 
-            const completionResult: vscode.InlineCompletionList = { items }
-
-            ;(completionResult as any).completionEvent = event
+            // return `CompletionEvent` telemetry data to the agent command `autocomplete/execute`.
+            const completionResult: AutocompleteResult = {
+                items,
+                completionEvent: CompletionLogger.getCompletionEvent(result.logId),
+            }
 
             return completionResult
         } catch (error) {
@@ -315,7 +328,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
      * A completion item is marked as rejected/unwanted when:
      * - pressing backspace on a visible suggestion
      */
-    public handleUnwantedCompletionItem(logId: string, reqContext: RequestParams): void {
+    private handleUnwantedCompletionItem(logId: string, reqContext: RequestParams): void {
         const completionItem = this.lastCandidate?.result.items[0]
         if (!completionItem) {
             return

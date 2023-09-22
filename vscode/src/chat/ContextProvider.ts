@@ -9,7 +9,6 @@ import { SourcegraphEmbeddingsSearchClient } from '@sourcegraph/cody-shared/src/
 import { IndexedKeywordContextFetcher } from '@sourcegraph/cody-shared/src/local-context'
 import { isLocalApp } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
 import { SourcegraphGraphQLAPIClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
-import { TelemetryService } from '@sourcegraph/cody-shared/src/telemetry'
 import { convertGitCloneURLToCodebaseName, isError } from '@sourcegraph/cody-shared/src/utils'
 
 import { getFullConfig } from '../configuration'
@@ -20,6 +19,7 @@ import { getRerankWithLog } from '../logged-rerank'
 import { repositoryRemoteUrl } from '../repository/repositoryHelpers'
 import { AuthProvider } from '../services/AuthProvider'
 import * as OnboardingExperiment from '../services/OnboardingExperiment'
+import { telemetryService } from '../services/telemetry'
 
 import { ChatViewProviderWebview } from './ChatViewProvider'
 import { GraphContextProvider } from './GraphContextProvider'
@@ -67,7 +67,6 @@ export class ContextProvider implements vscode.Disposable {
         private rgPath: string | null,
         private symf: IndexedKeywordContextFetcher | undefined,
         private authProvider: AuthProvider,
-        private telemetryService: TelemetryService,
         private platform: PlatformContext
     ) {
         this.disposables.push(this.configurationChangeEvent)
@@ -119,7 +118,6 @@ export class ContextProvider implements vscode.Disposable {
             this.symf,
             this.editor,
             this.chat,
-            this.telemetryService,
             this.platform
         )
         if (!codebaseContext) {
@@ -150,7 +148,6 @@ export class ContextProvider implements vscode.Disposable {
                 this.symf,
                 this.editor,
                 this.chat,
-                this.telemetryService,
                 this.platform
             )
             if (codebaseContext) {
@@ -207,7 +204,7 @@ export class ContextProvider implements vscode.Disposable {
                 ...localProcess,
                 debugEnable: this.config.debugEnable,
                 serverEndpoint: this.config.serverEndpoint,
-                experimentOnboarding: OnboardingExperiment.pickArm(this.telemetryService),
+                experimentOnboarding: OnboardingExperiment.pickArm(telemetryService),
             }
 
             // update codebase context on configuration change
@@ -225,7 +222,7 @@ export class ContextProvider implements vscode.Disposable {
     private sendEvent(event: ContextEvent, value: string): void {
         switch (event) {
             case 'auth':
-                this.telemetryService.log(`CodyVSCodeExtension:Auth:${value}`)
+                telemetryService.log(`CodyVSCodeExtension:Auth:${value}`)
                 break
         }
     }
@@ -252,7 +249,6 @@ export async function getCodebaseContext(
     symf: IndexedKeywordContextFetcher | undefined,
     editor: Editor,
     chatClient: ChatClient,
-    telemetryService: TelemetryService,
     platform: PlatformContext
 ): Promise<CodebaseContext | null> {
     const client = new SourcegraphGraphQLAPIClient(config)
@@ -279,9 +275,7 @@ export async function getCodebaseContext(
         config,
         codebase,
         embeddingsSearch,
-        rgPath
-            ? platform.createLocalKeywordContextFetcher?.(rgPath, editor, chatClient, telemetryService) ?? null
-            : null,
+        rgPath ? platform.createLocalKeywordContextFetcher?.(rgPath, editor, chatClient) ?? null : null,
         rgPath ? platform.createFilenameContextFetcher?.(rgPath, editor, chatClient) ?? null : null,
         new GraphContextProvider(editor),
         symf,

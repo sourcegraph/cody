@@ -4,11 +4,13 @@ import * as vscode from 'vscode'
 import { isNetworkError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
 import { TelemetryEventProperties } from '@sourcegraph/cody-shared/src/telemetry'
 
-import { logEvent } from '../services/EventLogger'
 import { captureException, shouldErrorBeReported } from '../services/sentry/sentry'
+import { telemetryService } from '../services/telemetry'
 
 import { ContextSummary } from './context/context'
+import { InlineCompletionsResultSource } from './get-inline-completions'
 import * as statistics from './statistics'
+import { InlineCompletionItemWithAnalytics } from './text-processing/process-inline-completions'
 import { InlineCompletionItem } from './types'
 
 export interface CompletionEvent {
@@ -20,7 +22,7 @@ export interface CompletionEvent {
         providerModel: string
         languageId: string
         contextSummary?: ContextSummary
-        source?: string
+        source?: InlineCompletionsResultSource
         id: string
         lineCount?: number
         charCount?: number
@@ -48,6 +50,23 @@ export interface CompletionEvent {
     suggestionAnalyticsLoggedAt: number | null
     // The timestamp of when a completion was accepted and logged to our backend
     acceptedAt: number | null
+    // Information about each completion item received per one completion event
+    items: CompletionItemInfo[]
+}
+
+export interface ItemPostProcesssingInfo {
+    // Number of ERROR nodes found in the completion insert text after pasting
+    // it into the document and parsing this range with tree-sitter.
+    parseErrorCount?: number
+    // Number of lines truncated for multiline completions.
+    lineTruncatedCount?: number
+    // The truncation approach used.
+    truncatedWith?: 'tree-sitter' | 'indentation'
+}
+
+interface CompletionItemInfo extends ItemPostProcesssingInfo {
+    lineCount: number
+    charCount: number
 }
 
 const READ_TIMEOUT_MS = 750
@@ -59,7 +78,7 @@ const displayedCompletions = new LRUCache<string, CompletionEvent>({
 let completionsStartedSinceLastSuggestion = 0
 
 export function logCompletionEvent(name: string, params?: TelemetryEventProperties): void {
-    logEvent(`CodyVSCodeExtension:completion:${name}`, params)
+    telemetryService.log(`CodyVSCodeExtension:completion:${name}`, params)
 }
 
 export function create(inputParams: Omit<CompletionEvent['params'], 'multilineMode' | 'type' | 'id'>): string {
@@ -82,6 +101,7 @@ export function create(inputParams: Omit<CompletionEvent['params'], 'multilineMo
         suggestionLoggedAt: null,
         suggestionAnalyticsLoggedAt: null,
         acceptedAt: null,
+        items: [],
     })
 
     return id
@@ -103,7 +123,7 @@ export function networkRequestStarted(id: string, contextSummary: ContextSummary
     }
 }
 
-export function loaded(id: string): void {
+export function loaded(id: string, items: InlineCompletionItemWithAnalytics[]): void {
     const event = displayedCompletions.get(id)
     if (!event) {
         return
@@ -111,6 +131,20 @@ export function loaded(id: string): void {
 
     if (!event.loadedAt) {
         event.loadedAt = performance.now()
+    }
+
+    if (event.items.length === 0) {
+        event.items = items.map(item => {
+            const { lineCount, charCount } = lineAndCharCount(item)
+
+            return {
+                lineCount,
+                charCount,
+                parseErrorCount: item.parseErrorCount,
+                lineTruncatedCount: item.lineTruncatedCount,
+                truncatedWith: item.truncatedWith,
+            }
+        })
     }
 }
 
@@ -120,7 +154,7 @@ export function loaded(id: string): void {
 //
 // For statistics logging we start a timeout matching the READ_TIMEOUT_MS so we can increment the
 // suggested completion count as soon as we count it as such.
-export function suggested(id: string, source: string, completion: InlineCompletionItem): void {
+export function suggested(id: string, source: InlineCompletionsResultSource, completion: InlineCompletionItem): void {
     const event = displayedCompletions.get(id)
     if (!event) {
         return
@@ -168,6 +202,19 @@ export function accept(id: string, completion: InlineCompletionItem): void {
     if (!completionEvent.suggestedAt) {
         logCompletionEvent('unexpectedNotSuggested')
     }
+    // It is still possible to accept a completion before it was logged as suggested. This is
+    // because we do not have direct access to know when a completion is being shown or hidden from
+    // VS Code. Instead, we rely on subsequent completion callbacks and other heuristics to know
+    // when the current one is rejected.
+    //
+    // One such condition is when using backspace. In VS Code, we create completions such that they
+    // always start at the binning of the line. This means when backspacing past the initial trigger
+    // point, we keep showing the currently rendered completion until the next request is finished.
+    // However, we do log the completion as rejected with the keystroke leaving a small window where
+    // the completion can be accepted after it was marked as suggested.
+    if (completionEvent.suggestionLoggedAt) {
+        logCompletionEvent('unexpectedAlreadySuggested')
+    }
 
     completionEvent.acceptedAt = performance.now()
 
@@ -182,7 +229,7 @@ export function accept(id: string, completion: InlineCompletionItem): void {
     statistics.logAccepted()
 }
 
-export function completionEvent(id: string): CompletionEvent | undefined {
+export function getCompletionEvent(id: string): CompletionEvent | undefined {
     return displayedCompletions.get(id)
 }
 
