@@ -116,6 +116,19 @@ describe('OnboardingExperiment', () => {
         })
     })
 
+    it('excludes users with corrupt local storage', async () => {
+        vi.spyOn(localStorage, 'get').mockReturnValue('"hi, mom"')
+        vi.spyOn(global.Math, 'random').mockReturnValue(-1)
+        expect(OnboardingExperiment.pickArm(mockTelemetry)).toBe(OnboardingExperimentArm.Simplified)
+
+        const log = vi.spyOn(mockTelemetry, 'log')
+        await OnboardingExperiment.logExposure()
+        expect(log).toHaveBeenCalledWith('CodyVSCodeExtension:experiment:simplifiedOnboarding:exposed', {
+            arm: 'treatment',
+            excludeFromExperiment: true,
+        })
+    })
+
     it('can be overridden ON with a config parameter', async () => {
         vi.spyOn(vscode.workspace, 'getConfiguration').mockReturnValue({
             get: (key: string) => key === 'testing.simplified-onboarding',

@@ -2,10 +2,10 @@ import * as vscode from 'vscode'
 
 import { CodyPrompt, CustomCommandType, MyPrompts } from '@sourcegraph/cody-shared/src/chat/prompts'
 import { VsCodeCommandsController } from '@sourcegraph/cody-shared/src/editor'
-import { TelemetryService } from '@sourcegraph/cody-shared/src/telemetry'
 
 import { logDebug, logError } from '../log'
 import { localStorage } from '../services/LocalStorageProvider'
+import { telemetryService } from '../services/telemetry'
 
 import { CommandRunner } from './CommandRunner'
 import { CustomPromptsStore } from './CustomPromptsStore'
@@ -44,10 +44,7 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
 
     public commandRunners = new Map<string, CommandRunner>()
 
-    constructor(
-        context: vscode.ExtensionContext,
-        private telemetryService: TelemetryService
-    ) {
+    constructor(context: vscode.ExtensionContext) {
         this.tools = new ToolsProvider(context)
         const user = this.tools.getUserInfo()
 
@@ -115,6 +112,8 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
         const defaultEditCommands = new Set(['/edit', '/fix', '/doc'])
         const isFixupRequest = defaultEditCommands.has(commandKey) || command.prompt.startsWith('/edit')
 
+        logDebug('CommandsController:createCodyCommand:creating', commandKey)
+
         // Start the command runner
         const codyCommand = new CommandRunner(command, input, isFixupRequest)
         this.commandRunners.set(codyCommand.id, codyCommand)
@@ -122,7 +121,7 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
 
         // Log custom command usage
         const logType = command?.type === 'default' ? 'default' : 'custom'
-        this.telemetryService.log(`CodyVSCodeExtension:command:${logType}:executed`)
+        telemetryService.log(`CodyVSCodeExtension:command:${logType}:executed`)
 
         // Fixup request will be taken care by the fixup recipe in the CommandRunner
         if (isFixupRequest || command.mode === 'inline') {
@@ -162,7 +161,6 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
      * Menu Controller
      */
     public async menu(type: 'custom' | 'config' | 'default'): Promise<void> {
-        this.telemetryService.log('CodyVSCodeExtension:command:menu:opened', { type })
         await this.refresh()
         switch (type) {
             case 'custom':
@@ -277,34 +275,34 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
                 ?.filter(command => command !== null && command?.[1]?.type !== 'default')
                 .map(commandItem => {
                     const command = commandItem[1]
-                    const description = command.type
-                    return createQuickPickItem(command.description || commandItem[0], description)
+                    const description = commandItem[0]
+                    return createQuickPickItem(command.description, description)
                 })
 
             const configOption = menu_options.config
             const addOption = menu_options.add
+
             promptItems.push(menu_separators.settings, configOption, addOption)
 
             // Show the list of prompts to the user using a quick pick
-            const selectedPrompt = await showCustomCommandMenu([...promptItems])
-            // Find the prompt based on the selected prompt name
-            const promptTitle = selectedPrompt?.label
-            if (!selectedPrompt || !promptTitle) {
+            const selected = await showCustomCommandMenu([...promptItems])
+            const commandKey = selected?.description
+
+            if (!selected || !commandKey) {
                 return
             }
 
-            switch (promptTitle.length > 0) {
-                case promptTitle === addOption.label:
+            switch (commandKey.length > 0) {
+                case commandKey === addOption.label:
                     return await this.addNewUserCommandQuick()
-                case promptTitle === configOption.label:
+                case commandKey === configOption.label:
                     return await this.configMenu('custom')
                 default:
                     // Run the prompt
-                    await vscode.commands.executeCommand('cody.action.commands.exec', promptTitle)
+                    await vscode.commands.executeCommand('cody.action.commands.exec', commandKey)
                     break
             }
-
-            logDebug('CommandsController:promptsQuickPicker:selectedPrompt', promptTitle)
+            logDebug('CommandsController:promptsQuickPicker:selectedPrompt', commandKey)
         } catch (error) {
             logError('CommandsController:promptsQuickPicker', 'error', { verbose: error })
         }

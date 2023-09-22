@@ -4,8 +4,8 @@ import * as vscode from 'vscode'
 import { isNetworkError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
 import { TelemetryEventProperties } from '@sourcegraph/cody-shared/src/telemetry'
 
-import { logEvent } from '../services/EventLogger'
 import { captureException, shouldErrorBeReported } from '../services/sentry/sentry'
+import { telemetryService } from '../services/telemetry'
 
 import { ContextSummary } from './context/context'
 import * as statistics from './statistics'
@@ -59,7 +59,7 @@ const displayedCompletions = new LRUCache<string, CompletionEvent>({
 let completionsStartedSinceLastSuggestion = 0
 
 export function logCompletionEvent(name: string, params?: TelemetryEventProperties): void {
-    logEvent(`CodyVSCodeExtension:completion:${name}`, params)
+    telemetryService.log(`CodyVSCodeExtension:completion:${name}`, params)
 }
 
 export function create(inputParams: Omit<CompletionEvent['params'], 'multilineMode' | 'type' | 'id'>): string {
@@ -167,6 +167,19 @@ export function accept(id: string, completion: InlineCompletionItem): void {
     }
     if (!completionEvent.suggestedAt) {
         logCompletionEvent('unexpectedNotSuggested')
+    }
+    // It is still possible to accept a completion before it was logged as suggested. This is
+    // because we do not have direct access to know when a completion is being shown or hidden from
+    // VS Code. Instead, we rely on subsequent completion callbacks and other heuristics to know
+    // when the current one is rejected.
+    //
+    // One such condition is when using backspace. In VS Code, we create completions such that they
+    // always start at the binning of the line. This means when backspacing past the initial trigger
+    // point, we keep showing the currently rendered completion until the next request is finished.
+    // However, we do log the completion as rejected with the keystroke leaving a small window where
+    // the completion can be accepted after it was marked as suggested.
+    if (completionEvent.suggestionLoggedAt) {
+        logCompletionEvent('unexpectedAlreadySuggested')
     }
 
     completionEvent.acceptedAt = performance.now()

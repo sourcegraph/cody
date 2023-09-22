@@ -20,14 +20,14 @@ import { configureExternalServices } from './external-services'
 import { FixupController } from './non-stop/FixupController'
 import { showSetupNotification } from './notifications/setup-notification'
 import { AuthProvider } from './services/AuthProvider'
-import { createOrUpdateEventLogger } from './services/EventLogger'
 import { showFeedbackSupportQuickPick } from './services/FeedbackOptions'
 import { GuardrailsProvider } from './services/GuardrailsProvider'
 import { Comment, InlineController } from './services/InlineController'
+import { LocalAppSetupPublisher } from './services/LocalAppSetupPublisher'
 import { localStorage } from './services/LocalStorageProvider'
 import { CODY_ACCESS_TOKEN_SECRET, secretStorage, VSCodeSecretStorage } from './services/SecretStorageProvider'
 import { createStatusBar } from './services/StatusBar'
-import { createVSCodeTelemetryService } from './services/telemetry'
+import { createOrUpdateEventLogger, telemetryService } from './services/telemetry'
 import { TestSupport } from './test-support'
 
 /**
@@ -76,12 +76,11 @@ const register = async (
         context.extensionMode === vscode.ExtensionMode.Development ||
         context.extensionMode === vscode.ExtensionMode.Test
     await createOrUpdateEventLogger(initialConfig, isExtensionModeDevOrTest)
-    const telemetryService = createVSCodeTelemetryService()
 
     // Controller for inline Chat
-    const commentController = new InlineController(context.extensionPath, telemetryService)
+    const commentController = new InlineController(context.extensionPath)
     // Controller for Non-Stop Cody
-    const fixup = new FixupController(telemetryService)
+    const fixup = new FixupController()
     disposables.push(fixup)
     if (TestSupport.instance) {
         TestSupport.instance.fixupController.set(fixup)
@@ -90,7 +89,7 @@ const register = async (
     const editor = new VSCodeEditor({
         inline: commentController,
         fixups: fixup,
-        command: platform.createCommandsController?.(context, telemetryService),
+        command: platform.createCommandsController?.(context),
     })
 
     // Could we use the `initialConfig` instead?
@@ -118,9 +117,9 @@ const register = async (
         codeCompletionsClient,
         guardrails,
         onConfigurationChange: externalServicesOnDidConfigurationChange,
-    } = await configureExternalServices(initialConfig, rgPath, symfRunner, editor, telemetryService, platform)
+    } = await configureExternalServices(initialConfig, rgPath, symfRunner, editor, platform)
 
-    const authProvider = new AuthProvider(initialConfig, telemetryService)
+    const authProvider = new AuthProvider(initialConfig)
     await authProvider.init()
 
     const contextProvider = new ContextProvider(
@@ -131,10 +130,10 @@ const register = async (
         rgPath,
         symfRunner,
         authProvider,
-        telemetryService,
         platform
     )
     disposables.push(contextProvider)
+    disposables.push(new LocalAppSetupPublisher(contextProvider))
     await contextProvider.init()
 
     // Shared configuration that is required for chat views to send and receive messages
@@ -145,7 +144,6 @@ const register = async (
         editor,
         authProvider,
         contextProvider,
-        telemetryService,
         platform,
     }
 

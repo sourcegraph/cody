@@ -3,11 +3,12 @@ import { Position, TextDocument } from 'vscode'
 import { dedupeWith } from '@sourcegraph/cody-shared/src/common'
 
 import { DocumentContext } from '../get-current-doc-context'
+import { getDocumentQuerySDK } from '../tree-sitter/queries'
 import { InlineCompletionItem } from '../types'
 
 import { parseCompletion, ParsedCompletion, parsedCompletionToCompletion } from './parse-completion'
 import { truncateMultilineCompletion } from './truncate-multiline-completion'
-import { MULTILINE_TRUNCATION_SUPPORTED_LANGUAGES, truncateParsedCompletion } from './truncate-parsed-completion'
+import { truncateParsedCompletion } from './truncate-parsed-completion'
 import { collapseDuplicativeWhitespace, removeTrailingWhitespace, trimUntilSuffix } from './utils'
 
 export interface ProcessInlineCompletionsParams {
@@ -67,7 +68,7 @@ export function processItem(params: ProcessItemParams): ParsedCompletion {
 
     if (multilineTrigger) {
         // Use tree-sitter for truncation if `config.autocompleteExperimentalSyntacticPostProcessing` is enabled.
-        if (parsed.tree && MULTILINE_TRUNCATION_SUPPORTED_LANGUAGES.has(document.languageId)) {
+        if (parsed.tree && getDocumentQuerySDK(document.languageId)) {
             insertText = truncateParsedCompletion({ completion: parsed, document })
         } else {
             insertText = truncateMultilineCompletion(insertText, prefix, suffix, document.languageId)
