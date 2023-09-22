@@ -15,7 +15,7 @@ import type * as vscode from 'vscode'
 //     at Object.<anonymous> (/snapshot/dist/agent.js)
 //     at Module._compile (pkg/prelude/bootstrap.js:1926:22)
 // </VERY IMPORTANT>
-import type { InlineCompletionItemProvider } from '../../vscode/src/completions/vscodeInlineCompletionItemProvider'
+import type { InlineCompletionItemProvider } from '../../vscode/src/completions/inline-completion-item-provider'
 import {
     // It's OK to import the VS Code mocks because they don't depend on the 'vscode' module.
     Disposable,
