@@ -19,10 +19,15 @@ import {
     LastInlineCompletionCandidate,
 } from './getInlineCompletions'
 import * as CompletionLogger from './logger'
+import { CompletionEvent } from './logger'
 import { ProviderConfig } from './providers/provider'
 import { RequestManager, RequestParams } from './request-manager'
 import { ProvideInlineCompletionItemsTracer, ProvideInlineCompletionsItemTraceData } from './tracer'
 import { InlineCompletionItem } from './types'
+
+interface AutocompleteResult extends vscode.InlineCompletionList {
+    completionEvent?: CompletionEvent
+}
 
 export interface CodyCompletionItemProviderConfig {
     providerConfig: ProviderConfig
@@ -290,16 +295,17 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
                 this.lastCandidate = items.length > 0 ? candidate : undefined
             }
 
-            const event = CompletionLogger.completionEvent(result.logId)
             if (items.length > 0) {
                 CompletionLogger.suggested(result.logId, InlineCompletionsResultSource[result.source], items[0] as any)
             } else {
                 CompletionLogger.noResponse(result.logId)
             }
 
-            const completionResult: vscode.InlineCompletionList = { items }
-
-            ;(completionResult as any).completionEvent = event
+            // return `CompletionEvent` telemetry data to the agent command `autocomplete/execute`.
+            const completionResult: AutocompleteResult = {
+                items,
+                completionEvent: CompletionLogger.getCompletionEvent(result.logId),
+            }
 
             return completionResult
         } catch (error) {

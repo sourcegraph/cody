@@ -65,7 +65,9 @@ export class RequestManager {
         const request = new InflightRequest(params)
         this.inflightRequests.add(request)
 
-        Promise.all(providers.map(c => c.generateCompletions(request.abortController.signal, context, tracer)))
+        Promise.all(
+            providers.map(provider => provider.generateCompletions(request.abortController.signal, context, tracer))
+        )
             .then(res => res.flat())
             .then(completions =>
                 // Shared post-processing logic

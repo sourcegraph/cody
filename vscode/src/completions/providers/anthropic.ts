@@ -201,7 +201,11 @@ export class AnthropicProvider extends Provider {
         tracer?.params(args)
 
         // Issue request
-        const responses = await this.batchAndProcessCompletions(this.client, args, this.options.n, abortSignal)
+        const responses = await Promise.all(
+            Array.from({ length: this.options.n }).map(() => {
+                return this.fetchAndProcessCompletions(this.client, args, abortSignal)
+            })
+        )
 
         const ret = responses.map(resp => [
             {
@@ -215,19 +219,6 @@ export class AnthropicProvider extends Provider {
         tracer?.result({ rawResponses: responses, completions })
 
         return completions
-    }
-
-    private async batchAndProcessCompletions(
-        client: Pick<CodeCompletionsClient, 'complete'>,
-        params: CompletionParameters,
-        n: number,
-        abortSignal: AbortSignal
-    ): Promise<CompletionResponse[]> {
-        const responses: Promise<CompletionResponse>[] = []
-        for (let i = 0; i < n; i++) {
-            responses.push(this.fetchAndProcessCompletions(client, params, abortSignal))
-        }
-        return Promise.all(responses)
     }
 
     private async fetchAndProcessCompletions(
