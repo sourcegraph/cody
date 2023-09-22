@@ -195,7 +195,7 @@ export function accept(id: string, completion: InlineCompletionItem): void {
     statistics.logAccepted()
 }
 
-export function completionEvent(id: string): CompletionEvent | undefined {
+export function getCompletionEvent(id: string): CompletionEvent | undefined {
     return displayedCompletions.get(id)
 }
 
