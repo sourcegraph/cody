@@ -40,6 +40,11 @@ describe('getLanguageForFileName', () => {
         expect(getLanguageForFileName('/test/folder/Dockerfile')).toBe('dockerfile')
         expect(getLanguageForFileName('/test/folder/BUILD')).toBe('starlark')
     })
+
+    it('handles bad data', () => {
+        expect(getLanguageForFileName('#$%^&^%')).toBe('#$%^&^%')
+        expect(getLanguageForFileName('')).toBe('')
+    })
 })
 
 describe('language-file-extensions.json mappings', () => {
