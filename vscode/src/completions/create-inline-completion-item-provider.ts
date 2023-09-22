@@ -35,6 +35,15 @@ export async function createInlineCompletionItemProvider({
     if (!authProvider.getAuthStatus().isLoggedIn) {
         logDebug('CodyCompletionProvider:notSignedIn', 'You are not signed in.')
 
+        if (config.isRunningInsideAgent) {
+            // Register an empty completion provider when running inside the
+            // agent to avoid timeouts because it awaits for an
+            // `InlineCompletionItemProvider` to be registered.
+            return vscode.languages.registerInlineCompletionItemProvider('*', {
+                provideInlineCompletionItems: () => Promise.resolve({ items: [] }),
+            })
+        }
+
         return {
             dispose: () => {},
         }

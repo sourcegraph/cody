@@ -285,8 +285,11 @@ const register = async (
         vscode.commands.registerCommand('cody.auth.signout', () => authProvider.signoutMenu()),
         vscode.commands.registerCommand('cody.auth.support', () => showFeedbackSupportQuickPick()),
         vscode.commands.registerCommand('cody.auth.sync', () => {
-            void contextProvider.syncAuthStatus()
+            const result = contextProvider.syncAuthStatus()
             void featureFlagProvider.syncAuthStatus()
+            // Important that we return a promise here to allow `AuthProvider`
+            // to `await` on the auth config changes to propagate.
+            return result
         }),
         // Commands
         vscode.commands.registerCommand('cody.interactive.clear', async () => {
@@ -388,6 +391,9 @@ const register = async (
                 query: 'cody.inlineChat.enabled',
                 openToSide: true,
             })
+        }),
+        vscode.commands.registerCommand('agent.auth.reload', async () => {
+            await authProvider.reloadAuthStatus()
         })
     )
 
@@ -417,7 +423,6 @@ const register = async (
     disposables.push({ dispose: () => completionsProvider?.dispose() })
     const setupAutocomplete = async (): Promise<void> => {
         const config = getConfiguration(vscode.workspace.getConfiguration())
-
         if (!config.autocomplete) {
             completionsProvider?.dispose()
             completionsProvider = null
