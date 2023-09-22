@@ -1,11 +1,11 @@
 import React, { useEffect, useMemo, useRef } from 'react'
 
-import { mdiCheck, mdiContentCopy, mdiFileMoveOutline, mdiFilePlusOutline } from '@mdi/js'
 import classNames from 'classnames'
 
 import { renderCodyMarkdown } from '@sourcegraph/cody-shared'
 
 import { CopyButtonProps } from '../Chat'
+import { CopyCodeBlockIcon, InsertCodeBlockIcon, SaveCodeBlockIcon } from '../icons/CodeBlockActionIcons'
 
 import styles from './CodeBlocks.module.css'
 
@@ -55,7 +55,7 @@ function createButtons(
         'copy',
         text,
         'Copy text',
-        mdiContentCopy,
+        CopyCodeBlockIcon,
         codeBlockActions,
         copyButtonClassName
     )
@@ -68,7 +68,7 @@ function createButtons(
                 'insert',
                 text,
                 'Insert code at cursor',
-                mdiFileMoveOutline,
+                InsertCodeBlockIcon,
                 codeBlockActions,
                 insertButtonClassName
             )
@@ -79,7 +79,7 @@ function createButtons(
                 'new',
                 text,
                 'Save code to a new file',
-                mdiFilePlusOutline,
+                SaveCodeBlockIcon,
                 codeBlockActions,
                 insertButtonClassName
             )
@@ -91,13 +91,11 @@ function createButtons(
     return container
 }
 
-const svgStyles = 'role="img" height={24} width={24} viewBox="0 0 24 24" fill="currentColor"'
-
 function createCodeBlockActionButton(
     type: 'copy' | 'insert' | 'new',
     text: string,
     title: string,
-    iconPath: string,
+    iconSvg: string,
     codeBlockActions: {
         copy: CopyButtonProps['copyButtonOnSubmit']
         insert?: CopyButtonProps['insertButtonOnSubmit']
@@ -108,18 +106,14 @@ function createCodeBlockActionButton(
 
     const styleClass = type === 'copy' ? styles.copyButton : styles.insertButton
 
-    const icon = `<svg ${svgStyles}><path d="${iconPath}"/></svg>`
-    const iconOnClicked = `<svg ${svgStyles}><path d="${mdiCheck}"/></svg>`
-
-    button.innerHTML = icon
+    button.innerHTML = iconSvg
     button.title = title
     button.className = classNames(styleClass, className)
 
     if (type === 'copy') {
         button.addEventListener('click', () => {
             navigator.clipboard.writeText(text).catch(error => console.error(error))
-            button.innerHTML = iconOnClicked
-            setTimeout(() => (button.innerHTML = icon), 3000)
+            button.className = classNames(styleClass, className)
             codeBlockActions.copy(text, 'Button')
         })
     }
