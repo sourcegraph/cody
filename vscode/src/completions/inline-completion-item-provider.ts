@@ -17,7 +17,7 @@ import {
     InlineCompletionsParams,
     InlineCompletionsResultSource,
     LastInlineCompletionCandidate,
-} from './getInlineCompletions'
+} from './get-inline-completions'
 import * as CompletionLogger from './logger'
 import { CompletionEvent } from './logger'
 import { ProviderConfig } from './providers/provider'
@@ -296,7 +296,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
             }
 
             if (items.length > 0) {
-                CompletionLogger.suggested(result.logId, InlineCompletionsResultSource[result.source], items[0] as any)
+                CompletionLogger.suggested(result.logId, InlineCompletionsResultSource[result.source], result.items[0])
             } else {
                 CompletionLogger.noResponse(result.logId)
             }

@@ -99,9 +99,9 @@ export interface InlineCompletionsResult {
  * The source of the inline completions result.
  */
 export enum InlineCompletionsResultSource {
-    Network,
-    Cache,
-    CacheAfterRequestStart,
+    Network = 'Network',
+    Cache = 'Cache',
+    CacheAfterRequestStart = 'CacheAfterRequestStart',
 
     /**
      * The user is typing as suggested by the currently visible ghost text. For example, if the
@@ -110,7 +110,7 @@ export enum InlineCompletionsResultSource {
      *
      * The last suggestion is passed in {@link InlineCompletionsParams.lastCandidate}.
      */
-    LastCandidate,
+    LastCandidate = 'LastCandidate',
 }
 
 export async function getInlineCompletions(params: InlineCompletionsParams): Promise<InlineCompletionsResult | null> {
@@ -276,7 +276,7 @@ async function doGetInlineCompletions(params: InlineCompletionsParams): Promise<
             ? InlineCompletionsResultSource.CacheAfterRequestStart
             : InlineCompletionsResultSource.Network
 
-    CompletionLogger.loaded(logId)
+    CompletionLogger.loaded(logId, completions)
 
     return {
         logId,

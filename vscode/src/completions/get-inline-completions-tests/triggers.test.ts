@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest'
 import { CompletionParameters } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
 
 import { range } from '../../testutils/textDocument'
-import { InlineCompletionsResultSource } from '../getInlineCompletions'
+import { InlineCompletionsResultSource } from '../get-inline-completions'
 import { completion } from '../test-helpers'
 
 import { getInlineCompletions, params, V } from './helpers'
@@ -23,18 +23,21 @@ describe('[getInlineCompletions] triggers', () => {
                 source: InlineCompletionsResultSource.Network,
             }))
 
-        it('middle of line', async () =>
+        it('middle of line', async () => {
+            const result = await getInlineCompletions(
+                params('function bubbleSort(█)', [completion`array) {`, completion`items) {`])
+            )
+
             expect(
-                await getInlineCompletions(
-                    params('function bubbleSort(█)', [completion`array) {`, completion`items) {`])
-                )
-            ).toEqual<V>({
-                items: [
-                    { insertText: 'array) {', range: range(0, 20, 0, 21) },
-                    { insertText: 'items) {', range: range(0, 20, 0, 21) },
-                ],
-                source: InlineCompletionsResultSource.Network,
-            }))
+                result?.items.map(item => ({
+                    insertText: item.insertText,
+                    range: item.range,
+                }))
+            ).toEqual([
+                { insertText: 'array) {', range: range(0, 20, 0, 21) },
+                { insertText: 'items) {', range: range(0, 20, 0, 21) },
+            ])
+        })
 
         describe('same line suffix behavior', () => {
             it('does not trigger when there are alphanumeric chars in the line suffix', async () =>
