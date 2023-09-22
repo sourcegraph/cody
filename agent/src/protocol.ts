@@ -42,13 +42,6 @@ export type Requests = {
 
     'graphql/getRepoIdIfEmbeddingExists': [{ repoName: string }, string | null]
 
-    // The server should use the provided connection configuration for all
-    // subsequent requests/notifications. The previous extension configuration
-    // should no longer be used.
-    // This notification is functionally equivalent to connectionConfiguration/didChange
-    // and provided to match the updated configuration naming
-    'extensionConfiguration/didChange': [ExtensionConfiguration, null]
-
     // ================
     // Server -> Client
     // ================
@@ -92,11 +85,10 @@ export type Notifications = {
     // The chat transcript grows indefinitely if this notification is never sent.
     'transcript/reset': [null]
 
-    // Removed: the notification below has been replaced with a notification
-    // with the same name. Make sure to await on the response to ensure that the
-    // updated configuration has propagated.
-    // 'extensionConfiguration/didChange': [ExtensionConfiguration]
-    // 'connectionConfiguration/didChange': [ExtensionConfiguration]
+    // The server should use the provided connection configuration for all
+    // subsequent requests/notifications. The previous extension configuration
+    // should no longer be used.
+    'extensionConfiguration/didChange': [ExtensionConfiguration]
 
     // ================
     // Server -> Client

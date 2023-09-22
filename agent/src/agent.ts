@@ -64,6 +64,7 @@ function initializeVscodeExtension(): void {
 
 export class Agent extends MessageHandler {
     private client: Promise<Client | null> = Promise.resolve(null)
+    private oldClient: Client | null = null
     public workspace = new AgentWorkspaceDocuments()
 
     constructor() {
@@ -79,9 +80,8 @@ export class Agent extends MessageHandler {
                 ? vscode_shim.Uri.parse(client.workspaceRootUri)
                 : vscode_shim.Uri.from({ scheme: 'file', path: client.workspaceRootPath })
 
-            const extensionConfig = client.extensionConfiguration ?? client.connectionConfiguration
-            if (extensionConfig) {
-                await this.setClient(extensionConfig)
+            if (client.extensionConfiguration) {
+                this.setClient(client.extensionConfiguration)
             }
 
             setUserAgent(`${client?.name} / ${client?.version}`)
@@ -101,7 +101,7 @@ export class Agent extends MessageHandler {
             return {
                 name: 'cody-agent',
                 authenticated: codyClient.sourcegraphStatus.authenticated,
-                codyEnabled: codyStatus.enabled,
+                codyEnabled: codyStatus.enabled && (client.extensionConfiguration?.accessToken ?? '').length > 0,
                 codyVersion: codyStatus.version,
             }
         })
@@ -137,12 +137,7 @@ export class Agent extends MessageHandler {
             vscode_shim.onDidCloseTextDocument.fire(this.workspace.agentTextDocument(document))
         })
 
-        const configurationDidChange = async (config: ExtensionConfiguration): Promise<null> => {
-            await this.setClient(config)
-            return null
-        }
-
-        this.registerRequest('extensionConfiguration/didChange', configurationDidChange)
+        this.registerNotification('extensionConfiguration/didChange', config => this.setClient(config))
 
         this.registerRequest('recipes/list', () =>
             Promise.resolve(
@@ -174,6 +169,7 @@ export class Agent extends MessageHandler {
             return null
         })
         this.registerRequest('autocomplete/execute', async (params, token) => {
+            await this.client // To let configuration changes propagate
             const provider = await vscode_shim.completionProvider()
             if (!provider) {
                 console.log('Completion provider is not initialized')
@@ -250,7 +246,12 @@ export class Agent extends MessageHandler {
         })
     }
 
-    private async setClient(config: ExtensionConfiguration): Promise<void> {
+    private setClient(config: ExtensionConfiguration): void {
+        this.client = this.createAgentClient(config)
+        return
+    }
+
+    private async createAgentClient(config: ExtensionConfiguration): Promise<Client | null> {
         const isAuthChange = vscode_shim.isAuthenticationChange(config)
         vscode_shim.setConnectionConfig(config)
         // If this is an authentication change we need to reauthenticate prior to firing events
@@ -265,9 +266,8 @@ export class Agent extends MessageHandler {
                 true,
         })
         await vscode_shim.commands.executeCommand('cody.auth.sync')
-        const oldClient = await this.client
-        this.client = createClient({
-            initialTranscript: oldClient?.transcript,
+        const client = await createClient({
+            initialTranscript: this.oldClient?.transcript,
             editor: new AgentEditor(this),
             config: { ...config, useContext: 'embeddings', experimentalLocalSymbols: false },
             setMessageInProgress: messageInProgress => {
@@ -278,5 +278,7 @@ export class Agent extends MessageHandler {
             },
             createCompletionsClient: (...args) => new SourcegraphNodeCompletionsClient(...args),
         })
+        this.oldClient = client
+        return client
     }
 }

@@ -78,7 +78,7 @@ describe.each([
             workspaceRootPath: '/path/to/foo',
             connectionConfiguration: {
                 accessToken: '',
-                serverEndpoint: '',
+                serverEndpoint: 'https://sourcegraph.com/',
                 customHeaders: {},
             },
         },
@@ -118,8 +118,17 @@ describe.each([
         )
     })
 
-    it('handles config changes correctly', async () => {
-        await client.request('extensionConfiguration/didChange', {
+    it('handles config changes correctly', () => {
+        // Send two config change notifications because this is what the
+        // JetBrains client does and there was a bug where everything worked
+        // fine as long as we didn't send the second unauthenticated config
+        // change.
+        client.notify('extensionConfiguration/didChange', {
+            accessToken: 'https://sourcegraph.com/',
+            serverEndpoint: '',
+            customHeaders: {},
+        })
+        client.notify('extensionConfiguration/didChange', {
             accessToken: process.env.SRC_ACCESS_TOKEN ?? 'invalid',
             serverEndpoint: process.env.SRC_ENDPOINT ?? 'invalid',
             customHeaders: {},
