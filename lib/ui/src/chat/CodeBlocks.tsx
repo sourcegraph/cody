@@ -4,7 +4,7 @@ import classNames from 'classnames'
 
 import { renderCodyMarkdown } from '@sourcegraph/cody-shared'
 
-import { CopyButtonProps } from '../Chat'
+import { CodeBlockActionsProps } from '../Chat'
 import { CopyCodeBlockIcon, InsertCodeBlockIcon, SaveCodeBlockIcon } from '../icons/CodeBlockActionIcons'
 
 import styles from './CodeBlocks.module.css'
@@ -15,8 +15,8 @@ interface CodeBlocksProps {
     copyButtonClassName?: string
     insertButtonClassName?: string
 
-    copyButtonOnSubmit?: CopyButtonProps['copyButtonOnSubmit']
-    insertButtonOnSubmit?: CopyButtonProps['insertButtonOnSubmit']
+    copyButtonOnSubmit?: CodeBlockActionsProps['copyButtonOnSubmit']
+    insertButtonOnSubmit?: CodeBlockActionsProps['insertButtonOnSubmit']
 }
 
 function appendElement(element: HTMLElement, buttonElements: HTMLElement): void {
@@ -31,9 +31,9 @@ function appendElement(element: HTMLElement, buttonElements: HTMLElement): void 
 function createButtons(
     text: string,
     copyButtonClassName?: string,
-    copyButtonOnSubmit?: CopyButtonProps['copyButtonOnSubmit'],
+    copyButtonOnSubmit?: CodeBlockActionsProps['copyButtonOnSubmit'],
     insertButtonClassName?: string,
-    insertButtonOnSubmit?: CopyButtonProps['insertButtonOnSubmit']
+    insertButtonOnSubmit?: CodeBlockActionsProps['insertButtonOnSubmit']
 ): HTMLElement {
     const container = document.createElement('div')
     container.className = styles.container
@@ -97,8 +97,8 @@ function createCodeBlockActionButton(
     title: string,
     iconSvg: string,
     codeBlockActions: {
-        copy: CopyButtonProps['copyButtonOnSubmit']
-        insert?: CopyButtonProps['insertButtonOnSubmit']
+        copy: CodeBlockActionsProps['copyButtonOnSubmit']
+        insert?: CodeBlockActionsProps['insertButtonOnSubmit']
     },
     className?: string
 ): HTMLElement {

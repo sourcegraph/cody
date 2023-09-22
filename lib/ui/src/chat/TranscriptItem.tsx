@@ -8,7 +8,7 @@ import {
     ChatButtonProps,
     ChatUISubmitButtonProps,
     ChatUITextAreaProps,
-    CopyButtonProps,
+    CodeBlockActionsProps,
     EditButtonProps,
     FeedbackButtonsProps,
 } from '../Chat'
@@ -51,8 +51,8 @@ export const TranscriptItem: React.FunctionComponent<
         FeedbackButtonsContainer?: React.FunctionComponent<FeedbackButtonsProps>
         feedbackButtonsOnSubmit?: (text: string) => void
         showFeedbackButtons: boolean
-        copyButtonOnSubmit?: CopyButtonProps['copyButtonOnSubmit']
-        insertButtonOnSubmit?: CopyButtonProps['insertButtonOnSubmit']
+        copyButtonOnSubmit?: CodeBlockActionsProps['copyButtonOnSubmit']
+        insertButtonOnSubmit?: CodeBlockActionsProps['insertButtonOnSubmit']
         submitButtonComponent?: React.FunctionComponent<ChatUISubmitButtonProps>
         abortMessageInProgressComponent?: React.FunctionComponent<{ onAbortMessageInProgress: () => void }>
         onAbortMessageInProgress?: () => void

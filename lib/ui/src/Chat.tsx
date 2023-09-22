@@ -40,8 +40,8 @@ interface ChatProps extends ChatClassNames {
     editButtonOnSubmit?: (text: string) => void
     FeedbackButtonsContainer?: React.FunctionComponent<FeedbackButtonsProps>
     feedbackButtonsOnSubmit?: (text: string) => void
-    copyButtonOnSubmit?: CopyButtonProps['copyButtonOnSubmit']
-    insertButtonOnSubmit?: CopyButtonProps['insertButtonOnSubmit']
+    copyButtonOnSubmit?: CodeBlockActionsProps['copyButtonOnSubmit']
+    insertButtonOnSubmit?: CodeBlockActionsProps['insertButtonOnSubmit']
     suggestions?: string[]
     setSuggestions?: (suggestions: undefined | []) => void
     needsEmailVerification?: boolean
@@ -105,8 +105,7 @@ export interface FeedbackButtonsProps {
     feedbackButtonsOnSubmit: (text: string) => void
 }
 
-// TODO: Rename to CodeBlockActionsProps
-export interface CopyButtonProps {
+export interface CodeBlockActionsProps {
     copyButtonOnSubmit: (text: string, event?: 'Keydown' | 'Button') => void
     insertButtonOnSubmit: (text: string, newFile?: boolean) => void
 }
