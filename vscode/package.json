@@ -949,7 +949,6 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.4.2",
-    "@microsoft/vscode-file-downloader-api": "^1.0.1",
     "@sentry/browser": "^7.66.0",
     "@sentry/core": "^7.66.0",
     "@sentry/node": "^7.66.0",
@@ -1009,8 +1008,5 @@
     "playwright": "^1.33.0",
     "progress": "^2.0.3",
     "semver": "^7.5.4"
-  },
-  "extensionDependencies": [
-    "mindaro-dev.file-downloader"
-  ]
+  }
 }
