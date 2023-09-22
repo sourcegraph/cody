@@ -1,25 +1,26 @@
 .container {
     position: relative;
-    overflow: visible;
-}
+    display: flex;
+    align-items: center;
 
-.container > pre {
-    margin-top: 0;
+    height: 1.5rem;
+
+    border-style: solid;
+    border-width: 1px;
+
+    border-style: solid;
+    border-width: 1px;
+    border-color: var(--vscode-sideBarSectionHeader-border);
 }
 
 .buttons {
-    position: absolute;
-    top: 0;
-    right: 0;
-    visibility: hidden;
     display: flex;
-    gap: .25rem;
+    gap: 0.1rem;
 }
 
-.container:hover .buttons {
-    visibility: visible;
-}
-
-.copy-button, .insert-button {
+.copy-button,
+.insert-button {
     cursor: pointer;
+    height: 1.5rem;
+    background-color: transparent !important;
 }

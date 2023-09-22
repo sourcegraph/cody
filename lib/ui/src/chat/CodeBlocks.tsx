@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef } from 'react'
 
+import { mdiCheck, mdiContentCopy, mdiFileMoveOutline, mdiFilePlusOutline } from '@mdi/js'
 import classNames from 'classnames'
 
 import { renderCodyMarkdown } from '@sourcegraph/cody-shared'
@@ -18,12 +19,13 @@ interface CodeBlocksProps {
     insertButtonOnSubmit?: CopyButtonProps['insertButtonOnSubmit']
 }
 
-function wrapElement(element: HTMLElement, wrapperElement: HTMLElement): void {
+function appendElement(element: HTMLElement, buttonElements: HTMLElement): void {
     if (!element.parentNode) {
         return
     }
-    element.parentNode.insertBefore(wrapperElement, element)
-    wrapperElement.append(element)
+
+    // Insert the buttons to element's parent after the element
+    element.parentNode.insertBefore(buttonElements, element.nextSibling)
 }
 
 function createButtons(
@@ -35,84 +37,111 @@ function createButtons(
 ): HTMLElement {
     const container = document.createElement('div')
     container.className = styles.container
+    if (!copyButtonOnSubmit) {
+        return container
+    }
 
     // The container will contain the buttons and the <pre> element with the code.
     // This allows us to position the buttons independent of the code.
     const buttons = document.createElement('div')
     buttons.className = styles.buttons
 
-    const copyButton = createCopyButton(text, copyButtonClassName, copyButtonOnSubmit)
-    const insertButton = createInsertButton(text, container, insertButtonClassName, insertButtonOnSubmit)
-    const insertNewButton = createInsertNewFileButton(text, insertButtonClassName, insertButtonOnSubmit)
-    // The insert buttons only exists for IDE integrations
-    if (insertButton) {
-        buttons.append(insertButton)
+    const codeBlockActions = {
+        copy: copyButtonOnSubmit,
+        insert: insertButtonOnSubmit,
     }
-    if (insertNewButton) {
-        buttons.append(insertNewButton)
-    }
+
+    const copyButton = createCodeBlockActionButton(
+        'copy',
+        text,
+        'Copy text',
+        mdiContentCopy,
+        codeBlockActions,
+        copyButtonClassName
+    )
     buttons.append(copyButton)
+
+    // The insert buttons only exists for IDE integrations
+    if (insertButtonOnSubmit) {
+        buttons.append(
+            createCodeBlockActionButton(
+                'insert',
+                text,
+                'Insert code at cursor',
+                mdiFileMoveOutline,
+                codeBlockActions,
+                insertButtonClassName
+            )
+        )
+
+        buttons.append(
+            createCodeBlockActionButton(
+                'new',
+                text,
+                'Save code to a new file',
+                mdiFilePlusOutline,
+                codeBlockActions,
+                insertButtonClassName
+            )
+        )
+    }
 
     container.append(buttons)
 
     return container
 }
 
-function createCopyButton(
+const svgStyles = 'role="img" height={24} width={24} viewBox="0 0 24 24" fill="currentColor"'
+
+function createCodeBlockActionButton(
+    type: 'copy' | 'insert' | 'new',
     text: string,
-    className?: string,
-    copyButtonOnSubmit?: CopyButtonProps['copyButtonOnSubmit']
+    title: string,
+    iconPath: string,
+    codeBlockActions: {
+        copy: CopyButtonProps['copyButtonOnSubmit']
+        insert?: CopyButtonProps['insertButtonOnSubmit']
+    },
+    className?: string
 ): HTMLElement {
     const button = document.createElement('button')
-    button.textContent = 'Copy'
-    button.title = 'Copy text'
-    button.className = classNames(styles.copyButton, className)
-    button.addEventListener('click', () => {
-        navigator.clipboard.writeText(text).catch(error => console.error(error))
-        button.textContent = 'Copied'
-        setTimeout(() => (button.textContent = 'Copy'), 3000)
-        if (copyButtonOnSubmit) {
-            copyButtonOnSubmit(text, 'Button')
-        }
-    })
-    return button
-}
 
-function createInsertButton(
-    text: string,
-    container: HTMLElement,
-    className?: string,
-    insertButtonOnSubmit?: CopyButtonProps['insertButtonOnSubmit']
-): HTMLElement | null {
-    if (!className || !insertButtonOnSubmit) {
-        return null
-    }
-    const button = document.createElement('button')
-    button.textContent = 'Insert at Cursor'
-    button.title = 'Insert text at current cursor position'
-    button.className = classNames(styles.insertButton, className)
-    button.addEventListener('click', () => {
-        insertButtonOnSubmit(text, false)
-    })
-    return button
-}
+    const styleClass = type === 'copy' ? styles.copyButton : styles.insertButton
 
-function createInsertNewFileButton(
-    text: string,
-    className?: string,
-    insertButtonOnSubmit?: CopyButtonProps['insertButtonOnSubmit']
-): HTMLElement | null {
-    if (!className || !insertButtonOnSubmit) {
-        return null
+    const icon = `<svg ${svgStyles}><path d="${iconPath}"/></svg>`
+    const iconOnClicked = `<svg ${svgStyles}><path d="${mdiCheck}"/></svg>`
+
+    button.innerHTML = icon
+    button.title = title
+    button.className = classNames(styleClass, className)
+
+    if (type === 'copy') {
+        button.addEventListener('click', () => {
+            navigator.clipboard.writeText(text).catch(error => console.error(error))
+            button.innerHTML = iconOnClicked
+            setTimeout(() => (button.innerHTML = icon), 3000)
+            codeBlockActions.copy(text, 'Button')
+        })
     }
 
-    const button = document.createElement('button')
-    button.textContent = 'Insert to File'
-    button.title = 'Insert code to the end of an exisiting or new file'
-    button.className = classNames(styles.insertButton, className)
-    button.addEventListener('click', () => {
-        insertButtonOnSubmit(text, true)
-    })
+    const insertOnSubmit = codeBlockActions.insert
+    if (!insertOnSubmit) {
+        return button
+    }
+
+    switch (type) {
+        case 'insert':
+            button.addEventListener('click', () => {
+                insertOnSubmit(text, false)
+            })
+            break
+        case 'new':
+            button.addEventListener('click', () => {
+                insertOnSubmit(text, true)
+            })
+            break
+    }
+
     return button
 }
 
@@ -136,7 +165,7 @@ export const CodeBlocks: React.FunctionComponent<CodeBlocksProps> = React.memo(f
             if (preText?.trim()) {
                 // We have to wrap the `<pre>` tag in the button container, otherwise
                 // the buttons scroll along with the code.
-                wrapElement(
+                appendElement(
                     preElement,
                     createButtons(
                         preText,
@@ -146,6 +175,7 @@ export const CodeBlocks: React.FunctionComponent<CodeBlocksProps> = React.memo(f
                         insertButtonOnSubmit
                     )
                 )
+
                 // capture copy events (right click or keydown) on code block
                 preElement.addEventListener('copy', () => {
                     if (copyButtonOnSubmit) {

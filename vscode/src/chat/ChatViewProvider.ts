@@ -84,7 +84,7 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
                 await this.handleInsertAtCursor(message.text)
                 break
             case 'newFile':
-                await this.handleInsertToNewFile(message.text)
+                await this.handleSaveToNewFile(message.text)
                 break
             case 'copy':
                 await this.handleCopiedCode(message.text, message.eventType)
@@ -235,9 +235,9 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
     /**
      * Handles insert event to insert text from code block to new file
      */
-    private async handleInsertToNewFile(text: string): Promise<void> {
+    private async handleSaveToNewFile(text: string): Promise<void> {
         // Log insert event
-        const op = 'insertNewFile'
+        const op = 'save'
         const eventName = op + 'Button'
         this.editor.controllers.inline?.setLastCopiedCode(text, eventName)
 

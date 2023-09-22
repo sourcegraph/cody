@@ -288,9 +288,9 @@ export class VSCodeEditor implements Editor<InlineController, FixupController, C
         try {
             const workspaceEditor = new vscode.WorkspaceEdit()
             workspaceEditor.createFile(fileUri, { ignoreIfExists: true })
-            // insert at end of file
-            const position = new vscode.Position(9999, 0)
-            workspaceEditor.insert(fileUri, position, content.trimEnd())
+            // replace whole file with new content
+            const range = new vscode.Range(0, 0, 9999, 0)
+            workspaceEditor.replace(fileUri, range, content.trimEnd())
             await vscode.workspace.applyEdit(workspaceEditor)
             void vscode.commands.executeCommand('vscode.open', fileUri)
         } catch {
