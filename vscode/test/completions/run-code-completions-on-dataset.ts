@@ -11,7 +11,6 @@ import { NoopEditor } from '@sourcegraph/cody-shared/src/editor'
 import { FeatureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
 import { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/nodeClient'
 import { SourcegraphGraphQLAPIClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
-import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/cody-shared/src/telemetry'
 
 import { GetContextResult } from '../../src/completions/context/context'
 import { VSCodeDocumentHistory } from '../../src/completions/context/history'
@@ -70,7 +69,6 @@ async function initCompletionsProvider(context: GetContextResult): Promise<Inlin
         'rg',
         undefined,
         new NoopEditor(),
-        NOOP_TELEMETRY_SERVICE,
         { createCompletionsClient: (...args) => new SourcegraphNodeCompletionsClient(...args) }
     )
 

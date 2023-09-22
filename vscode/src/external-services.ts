@@ -10,7 +10,6 @@ import { IntentDetector } from '@sourcegraph/cody-shared/src/intent-detector'
 import { SourcegraphIntentDetectorClient } from '@sourcegraph/cody-shared/src/intent-detector/client'
 import { IndexedKeywordContextFetcher } from '@sourcegraph/cody-shared/src/local-context'
 import { SourcegraphGraphQLAPIClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
-import { TelemetryService } from '@sourcegraph/cody-shared/src/telemetry'
 import { isError } from '@sourcegraph/cody-shared/src/utils'
 
 import { CodeCompletionsClient, createClient as createCodeCompletionsClint } from './completions/client'
@@ -46,7 +45,6 @@ export async function configureExternalServices(
     rgPath: string | null,
     symf: IndexedKeywordContextFetcher | undefined,
     editor: Editor,
-    telemetryService: TelemetryService,
     platform: Pick<
         PlatformContext,
         | 'createLocalKeywordContextFetcher'
@@ -75,9 +73,7 @@ export async function configureExternalServices(
         initialConfig,
         initialConfig.codebase,
         embeddingsSearch,
-        rgPath
-            ? platform.createLocalKeywordContextFetcher?.(rgPath, editor, chatClient, telemetryService) ?? null
-            : null,
+        rgPath ? platform.createLocalKeywordContextFetcher?.(rgPath, editor, chatClient) ?? null : null,
         rgPath ? platform.createFilenameContextFetcher?.(rgPath, editor, chatClient) ?? null : null,
         null,
         symf,

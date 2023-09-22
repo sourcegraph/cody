@@ -4,8 +4,8 @@ import * as vscode from 'vscode'
 import { isNetworkError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
 import { TelemetryEventProperties } from '@sourcegraph/cody-shared/src/telemetry'
 
-import { logEvent } from '../services/EventLogger'
 import { captureException, shouldErrorBeReported } from '../services/sentry/sentry'
+import { telemetryService } from '../services/telemetry'
 
 import { ContextSummary } from './context/context'
 import * as statistics from './statistics'
@@ -59,7 +59,7 @@ const displayedCompletions = new LRUCache<string, CompletionEvent>({
 let completionsStartedSinceLastSuggestion = 0
 
 export function logCompletionEvent(name: string, params?: TelemetryEventProperties): void {
-    logEvent(`CodyVSCodeExtension:completion:${name}`, params)
+    telemetryService.log(`CodyVSCodeExtension:completion:${name}`, params)
 }
 
 export function create(inputParams: Omit<CompletionEvent['params'], 'multilineMode' | 'type' | 'id'>): string {

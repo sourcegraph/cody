@@ -1,10 +1,10 @@
 import * as vscode from 'vscode'
 
 import { VsCodeFixupController, VsCodeFixupTaskRecipeData } from '@sourcegraph/cody-shared/src/editor'
-import { TelemetryService } from '@sourcegraph/cody-shared/src/telemetry'
 
 import { logDebug } from '../log'
 import { countCode } from '../services/InlineAssist'
+import { telemetryService } from '../services/telemetry'
 
 import { computeDiff, Diff } from './diff'
 import { FixupCodeLenses } from './FixupCodeLenses'
@@ -43,7 +43,7 @@ export class FixupController
 
     private _disposables: vscode.Disposable[] = []
 
-    constructor(private telemetryService: TelemetryService) {
+    constructor() {
         // Register commands
         this._disposables.push(
             vscode.workspace.registerTextDocumentContentProvider('cody-fixup', this.contentStore),
@@ -122,7 +122,7 @@ export class FixupController
 
     // Apply single fixup from task ID. Public for testing.
     public async apply(id: taskID): Promise<void> {
-        this.telemetryService.log('CodyVSCodeExtension:fixup:codeLens:clicked', { op: 'apply' })
+        telemetryService.log('CodyVSCodeExtension:fixup:codeLens:clicked', { op: 'apply' })
         logDebug('FixupController:apply', 'applying', { verbose: { id } })
         const task = this.tasks.get(id)
         if (!task) {
@@ -208,7 +208,7 @@ export class FixupController
         const replacementText = task.replacement
         if (replacementText) {
             const tokenCount = countCode(replacementText)
-            this.telemetryService.log('CodyVSCodeExtension:fixup:applied', tokenCount)
+            telemetryService.log('CodyVSCodeExtension:fixup:applied', tokenCount)
         }
 
         // TODO: is this the right transition for being all done?
@@ -252,7 +252,7 @@ export class FixupController
     }
 
     private cancel(id: taskID): void {
-        this.telemetryService.log('CodyVSCodeExtension:fixup:codeLens:clicked', { op: 'cancel' })
+        telemetryService.log('CodyVSCodeExtension:fixup:codeLens:clicked', { op: 'cancel' })
         const task = this.tasks.get(id)
         if (!task) {
             return
@@ -325,7 +325,7 @@ export class FixupController
                 task.inProgressReplacement = undefined
                 task.replacement = text
                 this.setTaskState(task, CodyTaskState.ready)
-                this.telemetryService.log('CodyVSCodeExtension:fixupResponse:hasCode', countCode(text))
+                telemetryService.log('CodyVSCodeExtension:fixupResponse:hasCode', countCode(text))
                 break
         }
         this.textDidChange(task)
@@ -448,7 +448,7 @@ export class FixupController
 
     // Show diff between before and after edits
     private async diff(id: taskID): Promise<void> {
-        this.telemetryService.log('CodyVSCodeExtension:fixup:codeLens:clicked', { op: 'diff' })
+        telemetryService.log('CodyVSCodeExtension:fixup:codeLens:clicked', { op: 'diff' })
         const task = this.tasks.get(id)
         if (!task) {
             return

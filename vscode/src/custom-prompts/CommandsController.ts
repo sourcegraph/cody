@@ -7,10 +7,10 @@ import {
     MyPrompts,
 } from '@sourcegraph/cody-shared/src/chat/prompts'
 import { VsCodeCommandsController } from '@sourcegraph/cody-shared/src/editor'
-import { TelemetryService } from '@sourcegraph/cody-shared/src/telemetry'
 
 import { logDebug, logError } from '../log'
 import { localStorage } from '../services/LocalStorageProvider'
+import { telemetryService } from '../services/telemetry'
 
 import { CustomPromptsStore } from './CustomPromptsStore'
 import { showCommandConfigMenu, showCommandMenu, showCustomCommandMenu, showNewCustomCommandMenu } from './menus'
@@ -47,10 +47,7 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
     public wsFileWatcher: vscode.FileSystemWatcher | null = null
     public userFileWatcher: vscode.FileSystemWatcher | null = null
 
-    constructor(
-        context: vscode.ExtensionContext,
-        private telemetryService: TelemetryService
-    ) {
+    constructor(context: vscode.ExtensionContext) {
         this.tools = new ToolsProvider(context)
         const user = this.tools.getUserInfo()
 
@@ -124,7 +121,7 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
         logDebug('CommandsController:command:finding', id)
 
         if (!myPrompt) {
-            this.telemetryService.log('CodyVSCodeExtension:command:invalid', { invalidCommand: id })
+            telemetryService.log('CodyVSCodeExtension:command:invalid', { invalidCommand: id })
         }
 
         if (myPrompt) {
@@ -134,7 +131,7 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
 
         // Log custom command usage
         const commandType = myPrompt?.type === 'default' ? 'default' : 'custom'
-        this.telemetryService.log(`CodyVSCodeExtension:command:${commandType}:executed`)
+        telemetryService.log(`CodyVSCodeExtension:command:${commandType}:executed`)
 
         return myPrompt?.prompt || ''
     }
