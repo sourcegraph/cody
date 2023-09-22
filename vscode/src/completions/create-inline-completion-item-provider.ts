@@ -11,9 +11,9 @@ import { CodyStatusBar } from '../services/StatusBar'
 import { CodeCompletionsClient } from './client'
 import { GraphSectionObserver } from './context/graph-section-observer'
 import { VSCodeDocumentHistory } from './context/history'
+import { InlineCompletionItemProvider } from './inline-completion-item-provider'
 import { createProviderConfig } from './providers/createProvider'
 import { registerAutocompleteTraceView } from './tracer/traceView'
-import { InlineCompletionItemProvider } from './vscodeInlineCompletionItemProvider'
 
 interface InlineCompletionItemProviderArgs {
     config: Configuration

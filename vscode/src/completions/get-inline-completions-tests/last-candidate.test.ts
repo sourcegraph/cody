@@ -4,7 +4,7 @@ import { Range } from 'vscode'
 
 import { vsCodeMocks } from '../../testutils/mocks'
 import { range } from '../../testutils/textDocument'
-import { InlineCompletionsResultSource, LastInlineCompletionCandidate } from '../getInlineCompletions'
+import { InlineCompletionsResultSource, LastInlineCompletionCandidate } from '../get-inline-completions'
 import { documentAndPosition } from '../test-helpers'
 import { getNextNonEmptyLine } from '../text-processing'
 

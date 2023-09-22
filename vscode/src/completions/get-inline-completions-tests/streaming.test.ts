@@ -1,7 +1,7 @@
 import dedent from 'dedent'
 import { describe, expect, test } from 'vitest'
 
-import { InlineCompletionsResultSource } from '../getInlineCompletions'
+import { InlineCompletionsResultSource } from '../get-inline-completions'
 import { completion, nextTick } from '../test-helpers'
 
 import { getInlineCompletions, params, V } from './helpers'
@@ -50,46 +50,44 @@ describe('[getInlineCompletions] streaming', () => {
 
     test('uses the multi-line truncation logic to terminate early for multi-line completions', async () => {
         const abortController = new AbortController()
-        expect(
-            await getInlineCompletions({
-                ...params(
-                    dedent`
+        const result = await getInlineCompletions({
+            ...params(
+                dedent`
                             function myFun() {
                                 █
                             }
                         `,
-                    [
-                        completion`
+                [
+                    completion`
                                     ├console.log('what?')
                                 }
 
                                 function never(){}┤
                             `,
-                    ],
-                    {
-                        async onNetworkRequest(_params, onPartialResponse) {
-                            onPartialResponse?.(completion`
+                ],
+                {
+                    async onNetworkRequest(_params, onPartialResponse) {
+                        onPartialResponse?.(completion`
                                         ├console.log('what?')┤
                                     ┴┴┴┴
                                 `)
-                            await nextTick()
-                            expect(abortController.signal.aborted).toBe(false)
-                            onPartialResponse?.(completion`
+                        await nextTick()
+                        expect(abortController.signal.aborted).toBe(false)
+                        onPartialResponse?.(completion`
                                         ├console.log('what?')
                                     }
                                     ┤
                                 `)
-                            await nextTick()
-                            expect(abortController.signal.aborted).toBe(true)
-                        },
-                    }
-                ),
-                abortSignal: abortController.signal,
-            })
-        ).toEqual<V>({
-            items: [{ insertText: "console.log('what?')" }],
-            source: InlineCompletionsResultSource.Network,
+                        await nextTick()
+                        expect(abortController.signal.aborted).toBe(true)
+                    },
+                }
+            ),
+            abortSignal: abortController.signal,
         })
+
+        expect(result?.items.map(item => item.insertText)).toEqual(["console.log('what?')"])
+        expect(result?.source).toBe(InlineCompletionsResultSource.Network)
     })
 
     test('uses the next non-empty line comparison logic to terminate early for multi-line completions', async () => {
