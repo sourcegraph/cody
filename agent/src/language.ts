@@ -1,3 +1,5 @@
+import path from 'path'
+
 import extensionMapping from './language-file-extensions.json'
 
 let mapping: Map<string, string> | undefined
@@ -15,8 +17,9 @@ function getMapping(): Map<string, string> {
     return mapping
 }
 
-export function getLanguageForFileName(filename: string): string {
-    const extension = filename.split('.').splice(-1)[0]
+export function getLanguageForFileName(filePath: string): string {
+    const fileName = path.basename(filePath)
+    const extension = fileName.split('.').pop() || fileName
     const language = getMapping().get(extension)
     return language || extension
 }
