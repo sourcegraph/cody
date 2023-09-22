@@ -101,11 +101,42 @@ export function getOutermostRangesInsideClasses(
 
     // Filter to only keep folding ranges that contained nested folding ranges (aka removes nested ranges)
     // Get the folding range containing the active cursor
-    const cursorRange = foldingRanges
-        .filter(r => r && !foldingRanges.some(r2 => r2 !== r && r2.start <= r.start && r2.end >= r.end))
-        .find(r => r && r.start <= activeCursor && r.end >= activeCursor)
+    const cursorRange = findCursorRange(removeNestedFoldingRanges(foldingRanges), activeCursor)
 
     return cursorRange || undefined
+}
+
+/**
+ * Removes nested folding ranges from the given array of folding ranges.
+ *
+ * This filters the input array to only contain folding ranges that do not have any nested child folding ranges within them.
+ *
+ * Nested folding ranges occur when you have a folding range (e.g. for a function) that contains additional nested folding ranges
+ * (e.g. for inner code blocks).
+ *
+ * By removing the nested ranges, you are left with only the top-level outermost folding ranges.
+ *
+ * @param ranges - Array of folding ranges
+ * @returns Array containing only folding ranges that do not contain any nested child ranges
+ */
+export function removeNestedFoldingRanges(ranges: vscode.FoldingRange[]): vscode.FoldingRange[] {
+    return ranges.filter(
+        range =>
+            !ranges.some(
+                otherRange => otherRange !== range && otherRange.start <= range.start && otherRange.end >= range.end
+            )
+    )
+}
+
+/**
+ * Finds the folding range in the given array that contains the specified cursor position.
+ *
+ * @param ranges - Array of folding ranges to search
+ * @param activeCursor - The cursor position
+ * @returns The folding range containing the cursor, or undefined if none found.
+ */
+export function findCursorRange(ranges: vscode.FoldingRange[], activeCursor: number): vscode.FoldingRange | undefined {
+    return ranges.find(range => range.start <= activeCursor && range.end >= activeCursor)
 }
 
 /**
