@@ -265,7 +265,6 @@ export class Agent extends MessageHandler {
                 // functionality), we return true to always triggger the callback.
                 true,
         })
-        await vscode_shim.commands.executeCommand('cody.auth.sync')
         const client = await createClient({
             initialTranscript: this.oldClient?.transcript,
             editor: new AgentEditor(this),
