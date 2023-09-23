@@ -144,12 +144,15 @@ export class SectionObserver implements vscode.Disposable {
     }
 
     /**
-     * A pretty way to print th e current state of all cached sections
+     * A pretty way to print the current state of all cached sections
+     *
+     * Printed paths are always in posix format (forwards slashes) even on windows
+     * for consistency.
      */
     public debugPrint(selectedDocument?: vscode.TextDocument, selections?: readonly vscode.Selection[]): string {
         const lines: string[] = []
         this.activeDocuments.forEach(document => {
-            lines.push(path.normalize(vscode.workspace.asRelativePath(document.uri)))
+            lines.push(path.posix.normalize(vscode.workspace.asRelativePath(document.uri)))
             for (const section of document.sections) {
                 const isSelected =
                     selectedDocument?.uri.toString() === document.uri.toString() &&
@@ -169,12 +172,9 @@ export class SectionObserver implements vscode.Disposable {
             for (let i = 0; i < lastSections.length; i++) {
                 const section = lastSections[i]
                 const isLast = i === lastSections.length - 1
+                const filePath = path.posix.normalize(vscode.workspace.asRelativePath(section.location.uri))
 
-                lines.push(
-                    `  ${isLast ? '└' : '├'} ${path.normalize(vscode.workspace.asRelativePath(section.location.uri))} ${
-                        section.fuzzyName ?? 'unknown'
-                    }`
-                )
+                lines.push(`  ${isLast ? '└' : '├'} ${filePath} ${section.fuzzyName ?? 'unknown'}`)
             }
         }
 
