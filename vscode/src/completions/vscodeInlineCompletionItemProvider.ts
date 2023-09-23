@@ -5,7 +5,9 @@ import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
 import { FeatureFlag, FeatureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
 import { RateLimitError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
 
+import { ChatViewProvider } from '../chat/ChatViewProvider'
 import { logDebug } from '../log'
+import { localStorage } from '../services/LocalStorageProvider'
 import { CodyStatusBar } from '../services/StatusBar'
 
 import { getContext, GetContextOptions, GetContextResult } from './context/context'
@@ -39,6 +41,7 @@ export interface CodyCompletionItemProviderConfig {
     tracer?: ProvideInlineCompletionItemsTracer | null
     contextFetcher?: (options: GetContextOptions) => Promise<GetContextResult>
     featureFlagProvider: FeatureFlagProvider
+    sidebarChatProvider: ChatViewProvider | null
 }
 
 // Only used when the CodyAutocompleteMinimumLatency feature flag is turned on:
@@ -279,6 +282,14 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
         // When a completion is accepted, the lastCandidate should be cleared. This makes sure the
         // log id is never reused if the completion is accepted.
         this.clearLastCandidate()
+
+        if (this.config.sidebarChatProvider) {
+            const key = 'completion.inline.hasAcceptedFirstCompletion'
+            if (!localStorage.get(key)) {
+                void localStorage.set(key, 'true')
+                this.config.sidebarChatProvider.triggerNotice({ key: 'onboarding-autocomplete' })
+            }
+        }
 
         CompletionLogger.accept(logId, completion)
     }

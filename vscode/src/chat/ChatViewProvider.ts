@@ -253,6 +253,18 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
     }
 
     /**
+     *
+     * @param notice Triggers displaying a notice.
+     * @param notice.key The key of the notice to display.
+     */
+    public triggerNotice(notice: { key: string }): void {
+        void this.webview?.postMessage({
+            type: 'notice',
+            notice,
+        })
+    }
+
+    /**
      * Set webview view
      */
     public async setWebviewView(view: View): Promise<void> {

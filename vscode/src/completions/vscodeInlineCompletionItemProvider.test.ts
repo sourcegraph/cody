@@ -6,6 +6,7 @@ import { FeatureFlagProvider } from '@sourcegraph/cody-shared/src/experimentatio
 import { RateLimitError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
 import { SourcegraphGraphQLAPIClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
 
+import { localStorage } from '../services/LocalStorageProvider'
 import { vsCodeMocks } from '../testutils/mocks'
 
 import { getInlineCompletions, InlineCompletionsResultSource } from './getInlineCompletions'
@@ -66,6 +67,7 @@ class MockableInlineCompletionItemProvider extends InlineCompletionItemProvider 
                 contextWindowTokens: 2048,
             }),
             featureFlagProvider: dummyFeatureFlagProvider,
+            sidebarChatProvider: null,
 
             ...superArgs,
         })
@@ -170,6 +172,48 @@ describe('InlineCompletionItemProvider', () => {
         // On the 2nd call, lastInlineCompletionResult is provided.
         await provider.provideInlineCompletionItems(document, position, DUMMY_CONTEXT)
         expect(fn.mock.calls.map(call => call[0].lastCandidate?.result.items)).toEqual([[item]])
+    })
+
+    describe('onboarding', () => {
+        // Set up local storage backed by an object. Local storage is used to
+        // track whether a completion was accepted for the first time.
+        const localStorageData: { [key: string]: unknown } = {}
+        localStorage.setStorage({
+            get: (key: string) => localStorageData[key],
+            update: (key: string, value: unknown) => (localStorageData[key] = value),
+        } as any as vscode.Memento)
+
+        it('triggers notice the first time an inline complation is accepted', async () => {
+            const { document, position } = documentAndPosition('const foo = █', 'typescript')
+            const fn = vi.fn(getInlineCompletions).mockResolvedValue({
+                logId: '1',
+                items: [{ insertText: 'bar', range: new vsCodeMocks.Range(position, position) }],
+                source: InlineCompletionsResultSource.Network,
+            })
+            const mockChatView = {
+                triggerNotice() {}, // eslint-disable-line @typescript-eslint/no-empty-function
+            }
+            const spy = vi.spyOn(mockChatView, 'triggerNotice')
+
+            const provider = new MockableInlineCompletionItemProvider(fn, {
+                sidebarChatProvider: mockChatView as any,
+            })
+            const completions = await provider.provideInlineCompletionItems(document, position, DUMMY_CONTEXT)
+            expect(completions).not.toBeNull()
+            expect(completions?.items).not.toHaveLength(0)
+
+            // Shuldn't have been called yet.
+            expect(spy).not.toHaveBeenCalled()
+
+            // Called on first accept.
+            provider.handleDidAcceptCompletionItem('1', completions?.items[0] as InlineCompletionItem)
+            expect(spy).toHaveBeenCalledOnce()
+            expect(spy).toHaveBeenCalledWith({ key: 'onboarding-autocomplete' })
+
+            // Not called on second accept.
+            provider.handleDidAcceptCompletionItem('1', completions?.items[0] as InlineCompletionItem)
+            expect(spy).toHaveBeenCalledOnce()
+        })
     })
 
     describe('logger', () => {

@@ -1,4 +1,6 @@
-import { useState } from 'react'
+import React, { useEffect, useState } from 'react'
+
+import { getVSCodeAPI } from '../utils/VSCodeApi'
 
 import { Notice } from './Notice'
 
@@ -7,10 +9,18 @@ import styles from './OnboardingAutocompleteNotice.module.css'
 export const OnboardingAutocompleteNotice: React.FunctionComponent = () => {
     const [showNotice, setShowNotice] = useState<boolean>(false)
 
-    // TODO: Implement actual listener for first autocomplete. It may have to be a prop passed down like probablyNewInstall
-    setTimeout(() => {
-        setShowNotice(true)
-    }, 1500)
+    // On first render we set up a listener for messages from ChatViewProvider
+    useEffect(() => {
+        const cleanup = getVSCodeAPI().onMessage(message => {
+            if (message.type === 'notice' && message.notice.key === 'onboarding-autocomplete') {
+                setShowNotice(true)
+            }
+        })
+
+        return () => {
+            cleanup()
+        }
+    }, [])
 
     if (!showNotice) {
         return undefined

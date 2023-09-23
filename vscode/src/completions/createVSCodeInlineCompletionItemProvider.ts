@@ -3,6 +3,7 @@ import * as vscode from 'vscode'
 import { Configuration } from '@sourcegraph/cody-shared/src/configuration'
 import { FeatureFlag, FeatureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
 
+import { ChatViewProvider } from '../chat/ChatViewProvider'
 import { ContextProvider } from '../chat/ContextProvider'
 import { logDebug } from '../log'
 import type { AuthProvider } from '../services/AuthProvider'
@@ -22,6 +23,7 @@ interface InlineCompletionItemProviderArgs {
     contextProvider: ContextProvider
     featureFlagProvider: FeatureFlagProvider
     authProvider: AuthProvider
+    sidebarChatProvider: ChatViewProvider
 }
 
 export async function createInlineCompletionItemProvider({
@@ -31,6 +33,7 @@ export async function createInlineCompletionItemProvider({
     contextProvider,
     featureFlagProvider,
     authProvider,
+    sidebarChatProvider,
 }: InlineCompletionItemProviderArgs): Promise<vscode.Disposable> {
     if (!authProvider.getAuthStatus().isLoggedIn) {
         logDebug('CodyCompletionProvider:notSignedIn', 'You are not signed in.')
@@ -62,6 +65,7 @@ export async function createInlineCompletionItemProvider({
             graphContextFetcher: sectionObserver,
             completeSuggestWidgetSelection: config.autocompleteExperimentalCompleteSuggestWidgetSelection,
             featureFlagProvider,
+            sidebarChatProvider,
         })
 
         disposables.push(

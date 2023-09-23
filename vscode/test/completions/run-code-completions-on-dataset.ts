@@ -93,6 +93,7 @@ async function initCompletionsProvider(context: GetContextResult): Promise<Inlin
         isEmbeddingsContextEnabled: true,
         contextFetcher: () => Promise.resolve(context),
         featureFlagProvider: dummyFeatureFlagProvider,
+        sidebarChatProvider: null,
     })
 
     return completionsProvider

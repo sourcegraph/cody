@@ -445,6 +445,7 @@ const register = async (
             contextProvider,
             featureFlagProvider,
             authProvider,
+            sidebarChatProvider,
         })
     }
     // Reload autocomplete if either the configuration changes or the auth status is updated
