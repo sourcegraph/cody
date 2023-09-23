@@ -269,7 +269,7 @@ export class GraphSectionObserver implements vscode.Disposable, GraphContextFetc
         const lines: string[] = []
         // eslint-disable-next-line ban/ban
         this.activeDocuments.forEach(document => {
-            lines.push(path.normalize(vscode.workspace.asRelativePath(document.uri)))
+            lines.push(document.uri.toString())
             for (const section of document.sections) {
                 const isSelected =
                     selectedDocument?.uri.toString() === document.uri.toString() &&
@@ -302,11 +302,7 @@ export class GraphSectionObserver implements vscode.Disposable, GraphContextFetc
                 const section = lastSections[i]
                 const isLast = i === lastSections.length - 1
 
-                lines.push(
-                    `  ${isLast ? '└' : '├'} ${path.normalize(vscode.workspace.asRelativePath(section.location.uri))} ${
-                        section.fuzzyName ?? 'unknown'
-                    }`
-                )
+                lines.push(`  ${isLast ? '└' : '├'} ${section.location.uri} ${section.fuzzyName ?? 'unknown'}`)
             }
         }
 

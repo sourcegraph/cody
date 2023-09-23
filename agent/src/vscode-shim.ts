@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 import type * as vscode from 'vscode'
+import { URI } from 'vscode-uri'
 
 // <VERY IMPORTANT - PLEASE READ>
 // This file must not import any module that transitively imports from 'vscode'.
@@ -167,7 +168,7 @@ const _workspace: Partial<typeof vscode.workspace> = {
     openTextDocument: uri => {
         // We currently treat filePath the same as uri for now, but will need to
         // properly pass around URIs once the agent protocol supports URIs
-        const filePath = uri instanceof Uri ? uri.path : uri?.toString() ?? ''
+        const filePath = uri instanceof URI ? uri.path : uri?.toString() ?? ''
         return workspaceDocuments ? workspaceDocuments.openTextDocument(filePath) : ('missingWorkspaceDocuments' as any)
     },
     getWorkspaceFolder: () => {

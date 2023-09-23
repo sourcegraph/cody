@@ -4,14 +4,14 @@ import { URI } from 'vscode-uri'
 import { HoverContext } from '@sourcegraph/cody-shared/src/codebase-context/messages'
 
 import { vsCodeMocks } from '../../testutils/mocks'
-import { range } from '../../testutils/textDocument'
+import { range, testFilePath } from '../../testutils/textDocument'
 
 import { GraphSectionObserver } from './graph-section-observer'
 
 vi.mock('vscode', () => vsCodeMocks)
 
-const document1Uri = URI.file('/document1.ts')
-const document2Uri = URI.file('/document2.ts')
+const document1Uri = URI.file(testFilePath('document1.ts'))
+const document2Uri = URI.file(testFilePath('document2.ts'))
 
 const disposable = {
     dispose: () => {},
@@ -116,7 +116,7 @@ describe('GraphSectionObserver', () => {
 
     it('loads visible documents when it loads', () => {
         expect(sectionObserver.debugPrint()).toMatchInlineSnapshot(`
-          "file:/document1.ts
+          "${document1Uri}
             ├─ foo
             └─ bar"
         `)
@@ -130,10 +130,10 @@ describe('GraphSectionObserver', () => {
         await onDidChangeVisibleTextEditors()
 
         expect(sectionObserver.debugPrint()).toMatchInlineSnapshot(`
-          "file:/document2.ts
+          "${document2Uri}
             ├─ baz
             └─ qux
-          file:/document1.ts
+          ${document1Uri}
             ├─ foo
             └─ bar"
         `)
@@ -144,10 +144,10 @@ describe('GraphSectionObserver', () => {
         await onDidChangeVisibleTextEditors()
 
         expect(sectionObserver.debugPrint()).toMatchInlineSnapshot(`
-          "file:/document2.ts
+          "${document2Uri}
             ├─ baz
             └─ qux
-          file:/document1.ts
+          ${document1Uri}
             ├─ foo
             └─ bar"
         `)
@@ -165,7 +165,7 @@ describe('GraphSectionObserver', () => {
         })
 
         expect(sectionObserver.debugPrint()).toMatchInlineSnapshot(`
-          "file:/document1.ts
+          "${document1Uri}
             ├─ foo
             └─ baz"
         `)
@@ -178,23 +178,23 @@ describe('GraphSectionObserver', () => {
         })
 
         expect(sectionObserver.debugPrint()).toMatchInlineSnapshot(`
-          "file:/document1.ts
+          "${document1Uri}
             ├─ foo
             └─ bar (loading)
 
           Last visited sections:
-            └ file:/document1.ts bar"
+            └ ${document1Uri} bar"
         `)
 
         await promise
 
         expect(sectionObserver.debugPrint()).toMatchInlineSnapshot(`
-          "file:/document1.ts
+          "${document1Uri}
             ├─ foo
             └─ bar (2 snippets)
 
           Last visited sections:
-            └ file:/document1.ts bar"
+            └ ${document1Uri} bar"
         `)
     })
 
@@ -204,12 +204,12 @@ describe('GraphSectionObserver', () => {
             selections: [{ active: { line: 1, character: 0 } }],
         })
         expect(sectionObserver.debugPrint()).toMatchInlineSnapshot(`
-          "file:/document1.ts
+          "${document1Uri}
             ├─ foo (2 snippets)
             └─ bar
 
           Last visited sections:
-            └ file:/document1.ts foo"
+            └ ${document1Uri} foo"
         `)
 
         testDocuments.document1.lineCount = 23
@@ -223,12 +223,12 @@ describe('GraphSectionObserver', () => {
         })
 
         expect(sectionObserver.debugPrint()).toMatchInlineSnapshot(`
-          "file:/document1.ts
+          "${document1Uri}
             ├─ foo (2 snippets, dirty)
             └─ baz
 
           Last visited sections:
-            └ file:/document1.ts foo"
+            └ ${document1Uri} foo"
         `)
     })
 
@@ -238,12 +238,12 @@ describe('GraphSectionObserver', () => {
             selections: [{ active: { line: 1, character: 0 } }],
         })
         expect(sectionObserver.debugPrint()).toMatchInlineSnapshot(`
-          "file:/document1.ts
+          "${document1Uri}
             ├─ foo (2 snippets)
             └─ bar
 
           Last visited sections:
-            └ file:/document1.ts foo"
+            └ ${document1Uri} foo"
         `)
 
         testDocuments.document1.lineCount = 10
@@ -256,11 +256,11 @@ describe('GraphSectionObserver', () => {
         })
 
         expect(sectionObserver.debugPrint()).toMatchInlineSnapshot(`
-          "file:/document1.ts
+          "${document1Uri}
             └─ foo (2 snippets, dirty)
 
           Last visited sections:
-            └ file:/document1.ts foo"
+            └ ${document1Uri} foo"
         `)
 
         getGraphContextFromRange.mockImplementation(() => [
@@ -277,12 +277,12 @@ describe('GraphSectionObserver', () => {
         })
 
         expect(sectionObserver.debugPrint()).toMatchInlineSnapshot(`
-          "file:/document1.ts
+          "${document1Uri}
             └─ foo (1 snippets)
 
           Last visited sections:
-            ├ file:/document1.ts foo
-            └ file:/document1.ts foo"
+            ├ ${document1Uri} foo
+            └ ${document1Uri} foo"
         `)
     })
 
@@ -292,12 +292,12 @@ describe('GraphSectionObserver', () => {
             selections: [{ active: { line: 1, character: 0 } }],
         })
         expect(sectionObserver.debugPrint()).toMatchInlineSnapshot(`
-          "file:/document1.ts
+          "${document1Uri}
             ├─ foo (2 snippets)
             └─ bar
 
           Last visited sections:
-            └ file:/document1.ts foo"
+            └ ${document1Uri} foo"
         `)
 
         await onDidChangeTextDocument({
@@ -311,12 +311,12 @@ describe('GraphSectionObserver', () => {
         })
 
         expect(sectionObserver.debugPrint()).toMatchInlineSnapshot(`
-          "file:/document1.ts
+          "${document1Uri}
             ├─ foo (2 snippets, dirty)
             └─ bar
 
           Last visited sections:
-            └ file:/document1.ts foo"
+            └ ${document1Uri} foo"
         `)
 
         getGraphContextFromRange.mockImplementation(() => [
@@ -333,12 +333,12 @@ describe('GraphSectionObserver', () => {
         })
 
         expect(sectionObserver.debugPrint()).toMatchInlineSnapshot(`
-          "file:/document1.ts
+          "${document1Uri}
             ├─ foo (1 snippets)
             └─ bar
 
           Last visited sections:
-            └ file:/document1.ts foo"
+            └ ${document1Uri} foo"
         `)
     })
 
@@ -353,7 +353,7 @@ describe('GraphSectionObserver', () => {
         })
 
         expect(sectionObserver.debugPrint()).toMatchInlineSnapshot(`
-          "file:/document1.ts
+          "${document1Uri}
             └─ bar"
         `)
 
@@ -373,12 +373,12 @@ describe('GraphSectionObserver', () => {
             })
 
             expect(sectionObserver.debugPrint()).toMatchInlineSnapshot(`
-              "file:/document1.ts
+              "${document1Uri}
                 ├─ foo
                 └─ bar (2 snippets)
 
               Last visited sections:
-                └ file:/document1.ts bar"
+                └ ${document1Uri} bar"
             `)
 
             expect(
@@ -394,13 +394,13 @@ describe('GraphSectionObserver', () => {
               [
                 {
                   "content": "function foo() {}",
-                  "fileName": "/document1.ts",
+                  "fileName": ${JSON.stringify(document1Uri.fsPath)},
                   "sourceSymbolAndRelationship": undefined,
                   "symbol": "foo",
                 },
                 {
                   "content": "function bar() {}",
-                  "fileName": "/document1.ts",
+                  "fileName": ${JSON.stringify(document1Uri.fsPath)},
                   "sourceSymbolAndRelationship": undefined,
                   "symbol": "bar",
                 },
@@ -415,12 +415,12 @@ describe('GraphSectionObserver', () => {
             })
 
             expect(sectionObserver.debugPrint()).toMatchInlineSnapshot(`
-              "file:/document1.ts
+              "${document1Uri}
                 ├─ foo
                 └─ bar (2 snippets)
 
               Last visited sections:
-                └ file:/document1.ts bar"
+                └ ${document1Uri} bar"
             `)
 
             expect(
@@ -437,7 +437,7 @@ describe('GraphSectionObserver', () => {
               [
                 {
                   "content": "function bar() {}",
-                  "fileName": "/document1.ts",
+                  "fileName": ${JSON.stringify(document1Uri.fsPath)},
                   "sourceSymbolAndRelationship": undefined,
                   "symbol": "bar",
                 },
@@ -468,16 +468,16 @@ describe('GraphSectionObserver', () => {
 
                 // We opened and preloaded the first section of both documents and have visited them
                 expect(sectionObserver.debugPrint()).toMatchInlineSnapshot(`
-                  "file:/document1.ts
+                  "${document1Uri}
                     ├─ foo (2 snippets)
                     └─ bar
-                  file:/document2.ts
+                  ${document2Uri}
                     ├─ baz (2 snippets)
                     └─ qux
 
                   Last visited sections:
-                    ├ file:/document1.ts foo
-                    └ file:/document2.ts baz"
+                    ├ ${document1Uri} foo
+                    └ ${document2Uri} baz"
                 `)
 
                 const context = await sectionObserver.getContextAtPosition(
@@ -491,11 +491,12 @@ describe('GraphSectionObserver', () => {
 
                 expect(context[0]).toEqual({
                     content: 'foo\nbar\nfoo',
-                    fileName: '/document2.ts',
+                    fileName: document2Uri.fsPath,
                 })
             })
 
             it('does not include sections that are contained in the prefix/suffix range', async () => {
+                const a = document1Uri.toString()
                 // Visit the first and second section  in document 1
                 await onDidChangeTextEditorSelection({
                     textEditor: { document: testDocuments.document1 },
@@ -507,13 +508,13 @@ describe('GraphSectionObserver', () => {
                 })
 
                 expect(sectionObserver.debugPrint()).toMatchInlineSnapshot(`
-                  "file:/document1.ts
+                  "${document1Uri}
                     ├─ foo (2 snippets)
                     └─ bar (2 snippets)
 
                   Last visited sections:
-                    ├ file:/document1.ts bar
-                    └ file:/document1.ts foo"
+                    ├ ${document1Uri} bar
+                    └ ${document1Uri} foo"
                 `)
 
                 const context = await sectionObserver.getContextAtPosition(

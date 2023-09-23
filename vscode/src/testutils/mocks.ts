@@ -17,74 +17,7 @@ import type {
 import type * as vscode_types from 'vscode'
 import { URI } from 'vscode-uri'
 
-export class Uri {
-    public static parse(value: string, strict?: boolean): Uri {
-        return Uri.from(URI.parse(value, strict).toJSON())
-    }
-    public static file(path: string): URI {
-        return Uri.from(URI.file(path).toJSON())
-    }
-
-    public static joinPath(base: Uri, ...pathSegments: string[]): Uri {
-        return base.with({ path: [base.path, ...pathSegments].join('/') })
-    }
-
-    public static from(components: {
-        readonly scheme: string
-        readonly authority?: string
-        readonly path?: string
-        readonly query?: string
-        readonly fragment?: string
-    }): Uri {
-        const uri = URI.from(components)
-        return new Uri(uri.scheme, uri.authority, uri.path, uri.query, uri.fragment)
-    }
-
-    private uri: URI
-
-    private constructor(
-        public readonly scheme: string,
-        public readonly authority: string,
-        public readonly path: string,
-        public readonly query: string,
-        public readonly fragment: string
-    ) {
-        this.uri = URI.from({ scheme, authority, path, query, fragment })
-        this.fsPath = path // TODO
-    }
-
-    public readonly fsPath: string
-
-    public with(change: {
-        scheme?: string
-        authority?: string
-        path?: string
-        query?: string
-        fragment?: string
-    }): Uri {
-        return Uri.from({
-            scheme: change.scheme || this.scheme,
-            authority: change.authority || this.authority,
-            path: change.path || this.path,
-            query: change.query || this.query,
-            fragment: change.fragment || this.fragment,
-        })
-    }
-
-    public toString(skipEncoding?: boolean): string {
-        return this.uri.toString(skipEncoding)
-    }
-
-    public toJSON(): any {
-        return {
-            scheme: this.scheme,
-            authority: this.authority,
-            path: this.path,
-            query: this.query,
-            fragment: this.fragment,
-        }
-    }
-}
+export type Uri = URI
 
 export class Disposable implements VSCodeDisposable {
     public static from(...disposableLikes: { dispose: () => any }[]): Disposable {
@@ -269,7 +202,7 @@ export class CodeActionKind {
 
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export class QuickInputButtons {
-    public static readonly Back: vscode_types.QuickInputButton = { iconPath: Uri.parse('file://foobar') }
+    public static readonly Back: vscode_types.QuickInputButton = { iconPath: URI.parse('file://foobar') }
 }
 
 export class TreeItem {
@@ -280,7 +213,7 @@ export class TreeItem {
 }
 
 export class RelativePattern implements vscode_types.RelativePattern {
-    public baseUri = Uri.parse('file:///foobar')
+    public baseUri = URI.parse('file:///foobar')
     public base: string
     constructor(
         _base: vscode_types.WorkspaceFolder | Uri | string,
@@ -582,7 +515,10 @@ export const vsCodeMocks = {
     EndOfLine,
     CancellationTokenSource,
     WorkspaceEdit,
-    Uri,
+    Uri: URI,
+    env: {
+        openExternal: (uri: Uri) => Promise.resolve(true),
+    },
     window: {
         showInformationMessage: () => undefined,
         showWarningMessage: () => undefined,
