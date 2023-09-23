@@ -264,12 +264,15 @@ export class GraphSectionObserver implements vscode.Disposable, GraphContextFetc
 
     /**
      * A pretty way to print the current state of all cached sections
+     *
+     * Printed paths are always in posix format (forwards slashes) even on windows
+     * for consistency.
      */
     public debugPrint(selectedDocument?: vscode.TextDocument, selections?: readonly vscode.Selection[]): string {
         const lines: string[] = []
         // eslint-disable-next-line ban/ban
         this.activeDocuments.forEach(document => {
-            lines.push(path.normalize(vscode.workspace.asRelativePath(document.uri)))
+            lines.push(path.posix.normalize(vscode.workspace.asRelativePath(document.uri)))
             for (const section of document.sections) {
                 const isSelected =
                     selectedDocument?.uri.toString() === document.uri.toString() &&
@@ -303,9 +306,9 @@ export class GraphSectionObserver implements vscode.Disposable, GraphContextFetc
                 const isLast = i === lastSections.length - 1
 
                 lines.push(
-                    `  ${isLast ? '└' : '├'} ${path.normalize(vscode.workspace.asRelativePath(section.location.uri))} ${
-                        section.fuzzyName ?? 'unknown'
-                    }`
+                    `  ${isLast ? '└' : '├'} ${path.posix.normalize(
+                        vscode.workspace.asRelativePath(section.location.uri)
+                    )} ${section.fuzzyName ?? 'unknown'}`
                 )
             }
         }

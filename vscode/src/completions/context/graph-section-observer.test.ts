@@ -36,6 +36,25 @@ describe('GraphSectionObserver', () => {
     let getDocumentSections: Mock
     let getGraphContextFromRange: Mock
     let sectionObserver: GraphSectionObserver
+
+    /**
+     * A helper to convert paths on objects to posix form so that test snapshots can always use
+     * forward slashes and work on Windows.
+     *
+     * @param obj the object (or array of objects) to fix paths on
+     * @returns obj
+     */
+    function withPosixPaths<T extends object>(obj: T): T {
+        if ('fileName' in obj && typeof obj.fileName === 'string') {
+            obj.fileName = obj.fileName.replaceAll('\\', '/')
+        } else if (Array.isArray(obj)) {
+            for (const objItem of obj) {
+                withPosixPaths(objItem)
+            }
+        }
+        return obj
+    }
+
     beforeEach(async () => {
         testDocuments = {
             document1: {
@@ -381,13 +400,15 @@ describe('GraphSectionObserver', () => {
             `)
 
             expect(
-                await sectionObserver.getContextAtPosition(
-                    testDocuments.document1 as any,
-                    {
-                        line: 15,
-                        character: 0,
-                    } as any,
-                    1000
+                withPosixPaths(
+                    await sectionObserver.getContextAtPosition(
+                        testDocuments.document1 as any,
+                        {
+                            line: 15,
+                            character: 0,
+                        } as any,
+                        1000
+                    )
                 )
             ).toMatchInlineSnapshot(`
               [
@@ -423,14 +444,16 @@ describe('GraphSectionObserver', () => {
             `)
 
             expect(
-                await sectionObserver.getContextAtPosition(
-                    testDocuments.document1 as any,
-                    {
-                        line: 15,
-                        character: 0,
-                    } as any,
-                    1000,
-                    range(0, 0, 11, 0)
+                withPosixPaths(
+                    await sectionObserver.getContextAtPosition(
+                        testDocuments.document1 as any,
+                        {
+                            line: 15,
+                            character: 0,
+                        } as any,
+                        1000,
+                        range(0, 0, 11, 0)
+                    )
                 )
             ).toMatchInlineSnapshot(`
               [
@@ -479,13 +502,15 @@ describe('GraphSectionObserver', () => {
                     └ file:/document2.ts baz"
                 `)
 
-                const context = await sectionObserver.getContextAtPosition(
-                    testDocuments.document1 as any,
-                    {
-                        line: 0,
-                        character: 0,
-                    } as any,
-                    1000
+                const context = withPosixPaths(
+                    await sectionObserver.getContextAtPosition(
+                        testDocuments.document1 as any,
+                        {
+                            line: 0,
+                            character: 0,
+                        } as any,
+                        1000
+                    )
                 )
 
                 expect(context[0]).toEqual({
@@ -515,14 +540,16 @@ describe('GraphSectionObserver', () => {
                     └ file:/document1.ts foo"
                 `)
 
-                const context = await sectionObserver.getContextAtPosition(
-                    testDocuments.document1 as any,
-                    {
-                        line: 0,
-                        character: 0,
-                    } as any,
-                    1000,
-                    range(0, 0, 20, 0)
+                const context = withPosixPaths(
+                    await sectionObserver.getContextAtPosition(
+                        testDocuments.document1 as any,
+                        {
+                            line: 0,
+                            character: 0,
+                        } as any,
+                        1000,
+                        range(0, 0, 20, 0)
+                    )
                 )
 
                 expect(context.length).toBe(0)
