@@ -156,7 +156,7 @@ async function resolveDefaultProviderFromVSCodeConfigOrFeatureFlags(
         return { provider: 'unstable-fireworks', model }
     }
 
-    return { provider: 'anthropic' }
+    return null
 }
 
 const delimiters: Record<string, string> = {
