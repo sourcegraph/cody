@@ -339,8 +339,6 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
             return
         }
 
-        console.log('removing', completionItem)
-
         this.clearLastCandidate()
 
         this.requestManager.removeUnwanted(reqContext)
