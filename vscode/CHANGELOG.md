@@ -17,7 +17,7 @@ Starting from `0.2.0`, Cody is using `major.EVEN_NUMBER.patch` for release versi
 ### Changed
 
 - Increased the token limit for the selection Cody uses for the `/edit` command. [pull/1139](https://github.com/sourcegraph/cody/pull/1139)
-- Expand the range used for code actions to the enclosing fold rather than just the line. This improves the quality of fixup actions by providing more context. [pull/](https://github.com/sourcegraph/cody/pull/)
+- Expand the range used for code actions to the enclosing fold rather than just the line. This improves the quality of fixup actions by providing more context. [pull/1163](https://github.com/sourcegraph/cody/pull/1163)
 
 ## [0.12.1]
 
