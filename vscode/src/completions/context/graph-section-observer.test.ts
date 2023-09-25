@@ -281,7 +281,6 @@ describe('GraphSectionObserver', () => {
             └─ foo (1 snippets)
 
           Last visited sections:
-            ├ file:/document1.ts foo
             └ file:/document1.ts foo"
         `)
     })
