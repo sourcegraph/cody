@@ -8,11 +8,13 @@ Starting from `0.2.0`, Cody is using `major.EVEN_NUMBER.patch` for release versi
 
 ### Added
 
-- `Save to File` button for exporting code a sidebar chat code block into a new files. [pull/1119](https://github.com/sourcegraph/cody/pull/1119)
+- New "Save Code to File.." button on code blocks. [pull/1119](https://github.com/sourcegraph/cody/pull/1119)
 
 ### Fixed
 
 ### Changed
+
+- Moved "Insert at Cursor" and "Copy" buttons to the bottom of code blocks, and no longer just show on hover. [pull/1119](https://github.com/sourcegraph/cody/pull/1119)
 
 ## [0.12.1]
 
