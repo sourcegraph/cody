@@ -58,11 +58,7 @@ export async function createProviderConfig(
                 return createAnthropicProviderConfig({
                     client,
                     contextWindowTokens: 2048,
-                    mode:
-                        model === 'claude-instant-infill' ||
-                        config.autocompleteAdvancedModel === 'claude-instant-infill'
-                            ? 'infill'
-                            : 'default',
+                    mode: 'infill',
                 })
             }
             default:
@@ -112,7 +108,7 @@ export async function createProviderConfig(
                 return createAnthropicProviderConfig({
                     client,
                     contextWindowTokens: 2048,
-                    mode: config.autocompleteAdvancedModel === 'claude-instant-infill' ? 'infill' : 'default',
+                    mode: 'infill',
                 })
             default:
                 logError('createProviderConfig', `Unrecognized provider '${provider}' configured.`)
@@ -127,27 +123,25 @@ export async function createProviderConfig(
     return createAnthropicProviderConfig({
         client,
         contextWindowTokens: 2048,
-        mode: config.autocompleteAdvancedModel === 'claude-instant-infill' ? 'infill' : 'default',
+        mode: 'infill',
     })
 }
 
 async function resolveDefaultProviderFromVSCodeConfigOrFeatureFlags(
     configuredProvider: string | null,
     featureFlagProvider?: FeatureFlagProvider
-): Promise<{ provider: string; model?: 'claude-instant-infill' | UnstableFireworksOptions['model'] } | null> {
+): Promise<{ provider: string; model?: UnstableFireworksOptions['model'] } | null> {
     if (configuredProvider) {
         return { provider: configuredProvider }
     }
 
-    const [starCoder7b, starCoder16b, starCoderHybrid, llamaCode7b, llamaCode13b, claudeInstantInfill] =
-        await Promise.all([
-            featureFlagProvider?.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteStarCoder7B),
-            featureFlagProvider?.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteStarCoder16B),
-            featureFlagProvider?.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteStarCoderHybrid),
-            featureFlagProvider?.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteLlamaCode7B),
-            featureFlagProvider?.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteLlamaCode13B),
-            featureFlagProvider?.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteClaudeInstantInfill),
-        ])
+    const [starCoder7b, starCoder16b, starCoderHybrid, llamaCode7b, llamaCode13b] = await Promise.all([
+        featureFlagProvider?.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteStarCoder7B),
+        featureFlagProvider?.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteStarCoder16B),
+        featureFlagProvider?.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteStarCoderHybrid),
+        featureFlagProvider?.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteLlamaCode7B),
+        featureFlagProvider?.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteLlamaCode13B),
+    ])
 
     if (starCoder7b || starCoder16b || starCoderHybrid || llamaCode7b || llamaCode13b) {
         const model = starCoder7b
@@ -162,11 +156,7 @@ async function resolveDefaultProviderFromVSCodeConfigOrFeatureFlags(
         return { provider: 'unstable-fireworks', model }
     }
 
-    if (claudeInstantInfill) {
-        return { provider: 'anthropic', model: 'claude-instant-infill' }
-    }
-
-    return null
+    return { provider: 'anthropic' }
 }
 
 const delimiters: Record<string, string> = {

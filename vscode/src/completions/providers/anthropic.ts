@@ -35,7 +35,7 @@ function tokensToChars(tokens: number): number {
 interface AnthropicOptions {
     contextWindowTokens: number
     client: Pick<CodeCompletionsClient, 'complete'>
-    mode?: 'default' | 'infill'
+    mode?: 'infill'
 }
 
 export class AnthropicProvider extends Provider {
@@ -244,6 +244,6 @@ export function createProviderConfig(anthropicOptions: AnthropicOptions): Provid
         maximumContextCharacters: tokensToChars(anthropicOptions.contextWindowTokens),
         enableExtendedMultilineTriggers: true,
         identifier: 'anthropic',
-        model: anthropicOptions.mode === 'infill' ? 'claude-instant-infill' : 'claude-instant-1',
+        model: 'claude-instant-infill',
     }
 }
