@@ -2,7 +2,7 @@ import * as vscode from 'vscode'
 
 import { CodyPrompt } from '@sourcegraph/cody-shared'
 
-import { getCursorFoldingRange } from '../editor/utils'
+import { getTargetFoldingRange } from '../editor/utils/folding-ranges'
 
 /**
  * CommandRunner class implements disposable interface.
@@ -86,7 +86,7 @@ export class CommandRunner implements vscode.Disposable {
         }
         // Get folding range if no selection is found
         if (selection?.start.isEqual(selection.end)) {
-            selection = await getCursorFoldingRange(doc.uri, selection.start.line)
+            selection = await getTargetFoldingRange(doc.uri, selection.start.line)
         }
 
         // Get text from selection range
@@ -126,7 +126,7 @@ export class CommandRunner implements vscode.Disposable {
         }
         // Get folding range if no selection is found
         if (range?.start.isEqual(range.end)) {
-            range = await getCursorFoldingRange(doc.uri, range.start.line)
+            range = await getTargetFoldingRange(doc.uri, range.start.line)
         }
 
         const instruction = this.command.prompt

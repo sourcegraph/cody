@@ -2,14 +2,16 @@ import * as vscode from 'vscode'
 
 import { FixupIntent } from '@sourcegraph/cody-shared/src/chat/recipes/fixup'
 
+import { getTargetFoldingRange } from '../editor/utils/folding-ranges'
+
 export class FixupCodeAction implements vscode.CodeActionProvider {
     public static readonly providedCodeActionKinds = [vscode.CodeActionKind.QuickFix]
 
-    public provideCodeActions(
+    public async provideCodeActions(
         document: vscode.TextDocument,
         range: vscode.Range,
         context: vscode.CodeActionContext
-    ): vscode.CodeAction[] {
+    ): Promise<vscode.CodeAction[]> {
         const diagnostics = context.diagnostics.filter(
             diagnostic =>
                 diagnostic.severity === vscode.DiagnosticSeverity.Error ||
@@ -18,13 +20,21 @@ export class FixupCodeAction implements vscode.CodeActionProvider {
         if (diagnostics.length === 0) {
             return []
         }
-        // Expand range to include the full line for better fixup quality.
-        // TODO: Improve this
+
+        // Expand range to include the full line for better fixup quality
         const expandedRange = new vscode.Range(
             document.lineAt(range.start.line).range.start,
             document.lineAt(range.end.line).range.end
         )
-        return [this.createCommandCodeAction(diagnostics, expandedRange)]
+
+        // TODO bee check if the diagnostics are related to imports and include import ranges instead of error lines
+        // const importDiagnostics = diagnostics.filter(diagnostic => diagnostic.message.includes('import'))
+
+        // Expand range by getting the folding range contains the target (error) area
+        const targetAreaRange = await getTargetFoldingRange(document.uri, range.start.line)
+
+        const newRange = targetAreaRange ? new vscode.Range(targetAreaRange.start, targetAreaRange.end) : expandedRange
+        return [this.createCommandCodeAction(diagnostics, newRange)]
     }
 
     private createCommandCodeAction(diagnostics: vscode.Diagnostic[], range: vscode.Range): vscode.CodeAction {
@@ -42,7 +52,7 @@ export class FixupCodeAction implements vscode.CodeActionProvider {
 
     private getCodeActionInstruction = (diagnostics: vscode.Diagnostic[]): string => {
         const intent: FixupIntent = 'edit'
-        return `/${intent} Fix the following error${diagnostics.length > 1 ? 's' : ''}:\n${diagnostics
+        return `/${intent} Fix the following error${diagnostics.length > 1 ? 's' : ''}: ${diagnostics
             .map(({ message }) => `\`\`\`${message}\`\`\``)
             .join('\n')}`
     }
