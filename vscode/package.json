@@ -975,6 +975,7 @@
     "detect-indent": "^7.0.1",
     "glob": "^7.2.3",
     "isomorphic-fetch": "^3.0.0",
+    "isomorphic-git": "^1.24.5",
     "lodash": "^4.17.21",
     "lru-cache": "^10.0.0",
     "mkdirp": "^3.0.1",
