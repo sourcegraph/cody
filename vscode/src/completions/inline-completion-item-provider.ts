@@ -45,10 +45,17 @@ export interface CodyCompletionItemProviderConfig {
     featureFlagProvider: FeatureFlagProvider
 }
 
+interface CompletionRequest {
+    document: vscode.TextDocument
+    position: vscode.Position
+    context: vscode.InlineCompletionContext
+}
+
 export class InlineCompletionItemProvider implements vscode.InlineCompletionItemProvider {
     private promptChars: number
     private maxPrefixChars: number
     private maxSuffixChars: number
+    private lastCompletionRequest: CompletionRequest | null = null
     // private reportedErrorMessages: Map<string, number> = new Map()
     private resetRateLimitErrorsAfter: number | null = null
 
@@ -127,6 +134,11 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
         // Making it optional here to execute multiple suggestion in parallel from the CLI script.
         token?: vscode.CancellationToken
     ): Promise<AutocompleteResult | null> {
+        // Update the last request
+        const lastCompletionRequest = this.lastCompletionRequest
+        const completionRequest: CompletionRequest = { document, position, context }
+        this.lastCompletionRequest = completionRequest
+
         const start = performance.now()
         // We start the request early so that we have a high chance of getting a response before we
         // need it.
@@ -160,6 +172,18 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
             return null
         }
 
+        let takeSuggestWidgetSelectionIntoAccount = false
+        // Only take the completion widget selection into account if the selection was actively changed
+        // by the user
+        if (
+            this.config.completeSuggestWidgetSelection &&
+            lastCompletionRequest &&
+            onlyCompletionWidgetSelectionChanged(lastCompletionRequest, completionRequest)
+        ) {
+            console.log('++++++++++++++')
+            takeSuggestWidgetSelectionIntoAccount = true
+        }
+
         const docContext = getCurrentDocContext({
             document,
             position,
@@ -167,7 +191,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
             maxSuffixLength: this.maxSuffixChars,
             enableExtendedTriggers: this.config.providerConfig.enableExtendedMultilineTriggers,
             // We ignore the current context selection if completeSuggestWidgetSelection is not enabled
-            context: this.config.completeSuggestWidgetSelection ? context : undefined,
+            context: takeSuggestWidgetSelectionIntoAccount ? context : undefined,
         })
 
         const isIncreasedDebounceTimeEnabled = await this.config.featureFlagProvider.evaluateFeatureFlag(
@@ -267,7 +291,8 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
                 document,
                 position,
                 result.items,
-                context
+                context,
+                takeSuggestWidgetSelectionIntoAccount
             )
 
             // A completion that won't be visible in VS Code will not be returned and not be logged.
@@ -277,7 +302,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
                     document,
                     docContext,
                     context,
-                    this.config.completeSuggestWidgetSelection,
+                    takeSuggestWidgetSelectionIntoAccount,
                     abortController.signal
                 )
             ) {
@@ -354,7 +379,8 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
         document: vscode.TextDocument,
         position: vscode.Position,
         items: InlineCompletionItem[],
-        context: vscode.InlineCompletionContext
+        context: vscode.InlineCompletionContext,
+        takeSuggestWidgetSelectionIntoAccount: boolean = false
     ): vscode.InlineCompletionItem[] {
         return items.map(completion => {
             const currentLine = document.lineAt(position)
@@ -363,9 +389,11 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
 
             // Append any eventual inline completion context item to the prefix if
             // completeSuggestWidgetSelection is enabled.
-            if (this.config.completeSuggestWidgetSelection && context.selectedCompletionInfo) {
+            console.log({ takeSuggestWidgetSelectionIntoAccount, sci: context.selectedCompletionInfo })
+            if (takeSuggestWidgetSelectionIntoAccount && context.selectedCompletionInfo) {
                 const { range, text } = context.selectedCompletionInfo
                 insertText = text.slice(position.character - range.start.character) + insertText
+                console.log({ insertText })
             }
 
             // Return the completion from the start of the current line (instead of starting at the
@@ -562,4 +590,41 @@ function completionMatchesSuffix(completions: vscode.InlineCompletionItem[], doc
     }
 
     return false
+}
+
+/**
+ * Returns true if the only difference between the two requests is the selected completions info
+ * item from the completions widget.
+ */
+function onlyCompletionWidgetSelectionChanged(prev: CompletionRequest, next: CompletionRequest): boolean {
+    if (prev.document.uri.toString() !== next.document.uri.toString()) {
+        console.log('doc changed')
+        return false
+    }
+
+    if (!prev.position.isEqual(next.position)) {
+        console.log('pos changed')
+        return false
+    }
+
+    if (prev.context.triggerKind !== next.context.triggerKind) {
+        console.log('trigger changed')
+        return false
+    }
+
+    const prevSelectedCompletionInfo = prev.context.selectedCompletionInfo
+    const nextSelectedCompletionInfo = next.context.selectedCompletionInfo
+
+    if (!prevSelectedCompletionInfo || !nextSelectedCompletionInfo) {
+        console.log('info changed')
+        return false
+    }
+
+    if (!prevSelectedCompletionInfo.range.isEqual(nextSelectedCompletionInfo.range)) {
+        console.log('range changed')
+        return false
+    }
+
+    console.log(prevSelectedCompletionInfo.text, nextSelectedCompletionInfo.text)
+    return prevSelectedCompletionInfo.text !== nextSelectedCompletionInfo.text
 }
