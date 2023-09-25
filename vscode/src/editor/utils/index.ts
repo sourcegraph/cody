@@ -26,7 +26,10 @@ export async function getSmartSelection(uri: vscode.Uri, target: number): Promis
  *
  * @returns The array of folding ranges for the document.
  */
-export async function getFoldingRanges(uri: vscode.Uri, type?: string): Promise<vscode.FoldingRange[]> {
+export async function getFoldingRanges(
+    uri: vscode.Uri,
+    type?: vscode.FoldingRangeKind
+): Promise<vscode.FoldingRange[]> {
     const ranges = await vscode.commands.executeCommand<vscode.FoldingRange[]>(
         'vscode.executeFoldingRangeProvider',
         uri
@@ -37,14 +40,12 @@ export async function getFoldingRanges(uri: vscode.Uri, type?: string): Promise<
     }
 
     switch (type) {
-        case 'imports':
+        case vscode.FoldingRangeKind.Imports:
             return ranges.filter(r => r.kind === vscode.FoldingRangeKind.Imports)
-        case 'comment':
+        case vscode.FoldingRangeKind.Comment:
             return ranges.filter(r => r.kind === vscode.FoldingRangeKind.Comment)
-        case 'regions':
-            return ranges.filter(
-                r => r.kind !== vscode.FoldingRangeKind.Imports && r.kind !== vscode.FoldingRangeKind.Comment
-            )
+        case vscode.FoldingRangeKind.Region:
+            return ranges.filter(r => r.kind !== vscode.FoldingRangeKind.Region)
         default:
             return ranges
     }
@@ -58,10 +59,10 @@ export async function getFoldingRanges(uri: vscode.Uri, type?: string): Promise<
  * @returns A promise that resolves to an array of SymbolInformation objects representing the symbols in the document.
  */
 export async function getSymbols(uri: vscode.Uri): Promise<vscode.SymbolInformation[]> {
-    const symbols =
+    return (
         (await vscode.commands.executeCommand<vscode.SymbolInformation[]>(
             'vscode.executeDocumentSymbolProvider',
             uri
         )) || []
-    return symbols
+    )
 }
