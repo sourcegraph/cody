@@ -12,7 +12,7 @@ import { getFoldingRanges, getSymbols } from '.'
  * @returns The folding range containing the target position, or undefined if none found
  */
 export async function getTargetFoldingRange(uri: vscode.Uri, target: number): Promise<vscode.Selection | undefined> {
-    // Check if symbols is available in the doc by its file uri and look for langauge id
+    // Check if symbols is available in the doc by its file uri and look for language id
     const doc = await vscode.workspace.openTextDocument(uri)
     // Remove text-based languages that don't support symbols or folding ranges
     const textBaseLangIds = ['markdown', 'plaintext', 'json', 'sql']
@@ -110,7 +110,7 @@ export function findTargetFoldingRange(ranges: vscode.FoldingRange[], target: nu
  */
 async function getOuterClassFoldingRanges(ranges: vscode.FoldingRange[], uri: vscode.Uri): Promise<vscode.Range[]> {
     // Because vscode.FoldingRangeKind.Class is not defined in folding range, we first remove all the nested ranges
-    // we should first find the the range with the largest end range to identify class ranges
+    // we should first find the range with the largest end range to identify class ranges
     const outermostFoldingRanges = removeNestedFoldingRanges(ranges)
 
     // Check outerRanges array for the string 'class' in each starting line to confirm they are class ranges
