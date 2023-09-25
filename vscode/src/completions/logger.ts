@@ -1,5 +1,5 @@
 import { LRUCache } from 'lru-cache'
-import uuid from 'uuid'
+import * as uuid from 'uuid'
 import * as vscode from 'vscode'
 
 import { isNetworkError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
