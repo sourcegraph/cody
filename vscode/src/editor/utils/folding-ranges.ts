@@ -5,6 +5,8 @@ import { getFoldingRanges, getSymbols } from '.'
 /**
  * Gets the folding range containing the target position.
  *
+ * NOTE: Use getSmartSelection from utils/index.ts instead
+ *
  * @param uri - The URI of the document to get folding ranges for
  * @param target - The target position number
  * @returns The folding range containing the target position, or undefined if none found
@@ -40,6 +42,8 @@ export async function getTargetFoldingRange(uri: vscode.Uri, target: number): Pr
 
 /**
  * Gets the outermost non-class folding range containing the target position.
+ *
+ * NOTE: exported for testing purposes only
  *
  * @param classRanges The ranges of folding regions for classes in the document.
  * @param foldingRanges The folding ranges for the entire document.
@@ -80,6 +84,19 @@ export function getNonClassOutermostFoldingRanges(
     const cursorRange = findTargetFoldingRange(removeNestedFoldingRanges(classLessRanges, isPlainText), target)
 
     return cursorRange || undefined
+}
+
+/**
+ * Finds the folding range containing the given target position.
+ *
+ * NOTE: exported for testing purposes only
+ *
+ * @param ranges - The array of folding ranges to search.
+ * @param target - The position to find the containing range for.
+ * @returns The folding range containing the target position, or undefined if not found.
+ */
+export function findTargetFoldingRange(ranges: vscode.FoldingRange[], target: number): vscode.FoldingRange | undefined {
+    return ranges.find(range => range.start <= target && range.end >= target)
 }
 
 // ------------------------ HELPER FUNCTIONS ------------------------ //
@@ -157,17 +174,6 @@ function removeNestedFoldingRanges(ranges: vscode.FoldingRange[], isTextBased = 
     return filtered.filter(
         cur => !filtered.some(next => next !== cur && next.start <= cur.start && next.end >= cur.end)
     )
-}
-
-/**
- * Finds the folding range containing the given target position.
- *
- * @param ranges - The array of folding ranges to search.
- * @param target - The position to find the containing range for.
- * @returns The folding range containing the target position, or undefined if not found.
- */
-function findTargetFoldingRange(ranges: vscode.FoldingRange[], target: number): vscode.FoldingRange | undefined {
-    return ranges.find(range => range.start <= target && range.end >= target)
 }
 
 /**

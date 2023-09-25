@@ -1,5 +1,19 @@
 import * as vscode from 'vscode'
 
+import { getTargetFoldingRange } from './folding-ranges'
+
+/**
+ * Gets a smart selection for the given document and target position.
+ *
+ * @param uri - The document URI.
+ * @param target - The target position in the document.
+ *
+ * @returns A Selection containing the folding range enclosing the target position, if one exists. Otherwise returns undefined.
+ */
+export async function getSmartSelection(uri: vscode.Uri, target: number): Promise<vscode.Selection | undefined> {
+    return getTargetFoldingRange(uri, target)
+}
+
 /**
  * Gets the folding ranges for the given document URI.
  *

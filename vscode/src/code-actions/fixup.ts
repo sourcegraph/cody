@@ -2,7 +2,7 @@ import * as vscode from 'vscode'
 
 import { FixupIntent } from '@sourcegraph/cody-shared/src/chat/recipes/fixup'
 
-import { getTargetFoldingRange } from '../editor/utils/folding-ranges'
+import { getSmartSelection } from '../editor/utils'
 
 export class FixupCodeAction implements vscode.CodeActionProvider {
     public static readonly providedCodeActionKinds = [vscode.CodeActionKind.QuickFix]
@@ -31,7 +31,7 @@ export class FixupCodeAction implements vscode.CodeActionProvider {
         // const importDiagnostics = diagnostics.filter(diagnostic => diagnostic.message.includes('import'))
 
         // Expand range by getting the folding range contains the target (error) area
-        const targetAreaRange = await getTargetFoldingRange(document.uri, range.start.line)
+        const targetAreaRange = await getSmartSelection(document.uri, range.start.line)
 
         const newRange = targetAreaRange ? new vscode.Range(targetAreaRange.start, targetAreaRange.end) : expandedRange
         return [this.createCommandCodeAction(diagnostics, newRange)]

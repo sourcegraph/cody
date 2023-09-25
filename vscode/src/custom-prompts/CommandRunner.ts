@@ -2,7 +2,7 @@ import * as vscode from 'vscode'
 
 import { CodyPrompt } from '@sourcegraph/cody-shared'
 
-import { getTargetFoldingRange } from '../editor/utils/folding-ranges'
+import { getSmartSelection } from '../editor/utils'
 
 /**
  * CommandRunner class implements disposable interface.
@@ -86,7 +86,7 @@ export class CommandRunner implements vscode.Disposable {
         }
         // Get folding range if no selection is found
         if (selection?.start.isEqual(selection.end)) {
-            selection = await getTargetFoldingRange(doc.uri, selection.start.line)
+            selection = await getSmartSelection(doc.uri, selection.start.line)
         }
 
         // Get text from selection range
@@ -126,7 +126,7 @@ export class CommandRunner implements vscode.Disposable {
         }
         // Get folding range if no selection is found
         if (range?.start.isEqual(range.end)) {
-            range = await getTargetFoldingRange(doc.uri, range.start.line)
+            range = await getSmartSelection(doc.uri, range.start.line)
         }
 
         const instruction = this.command.prompt
