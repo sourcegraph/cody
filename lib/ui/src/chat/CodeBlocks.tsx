@@ -19,15 +19,6 @@ interface CodeBlocksProps {
     insertButtonOnSubmit?: CodeBlockActionsProps['insertButtonOnSubmit']
 }
 
-function appendElement(element: HTMLElement, buttonElements: HTMLElement): void {
-    if (!element.parentNode) {
-        return
-    }
-
-    // Insert the buttons to element's parent after the element
-    element.parentNode.insertBefore(buttonElements, element.nextSibling)
-}
-
 function createButtons(
     text: string,
     copyButtonClassName?: string,
@@ -156,19 +147,17 @@ export const CodeBlocks: React.FunctionComponent<CodeBlocksProps> = React.memo(f
 
         for (const preElement of preElements) {
             const preText = preElement.textContent
-            if (preText?.trim()) {
-                // We have to wrap the `<pre>` tag in the button container, otherwise
-                // the buttons scroll along with the code.
-                appendElement(
-                    preElement,
-                    createButtons(
-                        preText,
-                        copyButtonClassName,
-                        copyButtonOnSubmit,
-                        insertButtonClassName,
-                        insertButtonOnSubmit
-                    )
+            if (preText?.trim() && preElement.parentNode) {
+                const buttons = createButtons(
+                    preText,
+                    copyButtonClassName,
+                    copyButtonOnSubmit,
+                    insertButtonClassName,
+                    insertButtonOnSubmit
                 )
+
+                // Insert the buttons after the pre using insertBefore() because there is no insertAfter()
+                preElement.parentNode.insertBefore(buttons, preElement.nextSibling)
 
                 // capture copy events (right click or keydown) on code block
                 preElement.addEventListener('copy', () => {
