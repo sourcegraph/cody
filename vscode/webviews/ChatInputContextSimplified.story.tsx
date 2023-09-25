@@ -61,3 +61,23 @@ export const ChatInputContextAppInstalled: StoryObj<typeof ChatInputContextSimpl
         )
     },
 }
+
+export const ChatInputContextHasEmbeddings: StoryObj<typeof ChatInputContextSimplified> = {
+    render: () => {
+        const contextStatus: ChatContextStatus = {
+            codebase: 'github.com/sourcegraph/example',
+            filePath: 'foo/bar.js',
+            mode: 'embeddings',
+            connection: true,
+        }
+        return (
+            <div style={backdropStyle}>
+                <ChatInputContextSimplified
+                    isAppInstalled={true}
+                    contextStatus={contextStatus}
+                    onboardingPopupProps={onboardingCallbacks}
+                />
+            </div>
+        )
+    },
+}
