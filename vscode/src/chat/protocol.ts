@@ -92,7 +92,7 @@ export const CODY_FEEDBACK_URL = new URL(
 // APP
 export const APP_LANDING_URL = new URL('https://about.sourcegraph.com/app')
 export const APP_CALLBACK_URL = new URL('sourcegraph://user/settings/tokens/new/callback')
-export const APP_REPOSITORIES_URL = new URL('sourcegraph:///users/admin/app-settings/local-repositories')
+export const APP_REPOSITORIES_URL = new URL('sourcegraph://users/admin/app-settings/local-repositories')
 
 /**
  * The status of a users authentication, whether they're authenticated and have a

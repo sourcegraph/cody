@@ -103,6 +103,11 @@ export class ContextProvider implements vscode.Disposable {
         this.configurationChangeEvent.fire()
     }
 
+    public async forceUpdateCodebaseContext(): Promise<void> {
+        this.currentWorkspaceRoot = ''
+        return this.syncAuthStatus()
+    }
+
     private async updateCodebaseContext(): Promise<void> {
         if (!this.editor.getActiveTextEditor() && vscode.window.visibleTextEditors.length !== 0) {
             // these are ephemeral

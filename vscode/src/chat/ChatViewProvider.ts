@@ -170,7 +170,7 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
     }
 
     private async simplifiedOnboardingReloadEmbeddingsState(): Promise<void> {
-        return vscode.commands.executeCommand('cody.auth.sync')
+        await this.contextProvider.forceUpdateCodebaseContext()
     }
 
     private async onHumanMessageSubmitted(text: string, submitType: 'user' | 'suggestion' | 'example'): Promise<void> {
