@@ -91,10 +91,7 @@ export function getNonClassOutermostFoldingRanges(
  * @param uri - The URI of the document
  * @returns The outermost folding ranges corresponding to classes in the document.
  */
-export async function getOuterClassFoldingRanges(
-    ranges: vscode.FoldingRange[],
-    uri: vscode.Uri
-): Promise<vscode.Range[]> {
+async function getOuterClassFoldingRanges(ranges: vscode.FoldingRange[], uri: vscode.Uri): Promise<vscode.Range[]> {
     // Because vscode.FoldingRangeKind.Class is not defined in folding range, we first remove all the nested ranges
     // we should first find the the range with the largest end range to identify class ranges
     const outermostFoldingRanges = removeNestedFoldingRanges(ranges)
@@ -120,7 +117,7 @@ export async function getOuterClassFoldingRanges(
  * @param foldingRanges Array of vscode.FoldingRange objects representing all folding ranges in the document
  * @returns Filtered array containing only foldingRanges that do not match ranges for classes
  */
-export function removeOutermostFoldingRanges(
+function removeOutermostFoldingRanges(
     classRanges: vscode.Range[],
     foldingRanges: vscode.FoldingRange[]
 ): vscode.FoldingRange[] {
@@ -154,38 +151,12 @@ export function removeOutermostFoldingRanges(
  * @param ranges - Array of folding ranges
  * @returns Array containing only folding ranges that do not contain any nested child ranges
  */
-export function removeNestedFoldingRanges(ranges: vscode.FoldingRange[], isTextBased = false): vscode.FoldingRange[] {
+function removeNestedFoldingRanges(ranges: vscode.FoldingRange[], isTextBased = false): vscode.FoldingRange[] {
     const filtered = isTextBased ? combineNeiborFoldingRanges(ranges) : ranges
 
     return filtered.filter(
         cur => !filtered.some(next => next !== cur && next.start <= cur.start && next.end >= cur.end)
     )
-}
-
-/**
- * Combines overlapping folding ranges in the given array into nested ranges.
- *
- * This takes an array of folding ranges, sorts them by start position, and reduces them
- * down to combine any overlapping ranges into nested ranges.
- *
- * @param ranges - Array of folding ranges to combine.
- * @returns Array of combined folding ranges with overlapping ranges nested.
- */
-export function combineNestingRanges(ranges: vscode.FoldingRange[]): vscode.FoldingRange[] {
-    if (!ranges.length) {
-        return ranges
-    }
-
-    ranges.sort((a, b) => a.start - b.start)
-    return ranges.reduce((acc, cur) => {
-        const last = acc.at(-1)
-        if (last && last.end >= cur.start) {
-            last.end = Math.max(last.end, cur.end)
-        } else {
-            acc.push(cur)
-        }
-        return acc
-    }, [] as vscode.FoldingRange[])
 }
 
 /**
@@ -195,7 +166,7 @@ export function combineNestingRanges(ranges: vscode.FoldingRange[]): vscode.Fold
  * @param target - The position to find the containing range for.
  * @returns The folding range containing the target position, or undefined if not found.
  */
-export function findTargetFoldingRange(ranges: vscode.FoldingRange[], target: number): vscode.FoldingRange | undefined {
+function findTargetFoldingRange(ranges: vscode.FoldingRange[], target: number): vscode.FoldingRange | undefined {
     return ranges.find(range => range.start <= target && range.end >= target)
 }
 
@@ -209,7 +180,7 @@ export function findTargetFoldingRange(ranges: vscode.FoldingRange[], target: nu
  * @param ranges - Array of folding ranges to combine
  * @returns Array of combined folding ranges
  */
-export function combineNeiborFoldingRanges(ranges: vscode.FoldingRange[]): vscode.FoldingRange[] {
+function combineNeiborFoldingRanges(ranges: vscode.FoldingRange[]): vscode.FoldingRange[] {
     // look for ranges that end at -1 position from the next folding range
     // then combine them into a single range where the new range will be the union of the start positions of the first range that connected to the n next range(s), and the end position of the last range in the chain
     let chains: vscode.FoldingRange[] = []
@@ -248,15 +219,4 @@ export function combineNeiborFoldingRanges(ranges: vscode.FoldingRange[]): vscod
         chains = []
     }
     return combinedRanges
-}
-
-/**
- * Adds the selection range to the prompt string.
- *
- * @param prompt - The original prompt string
- * @param code - The code snippet to include in the prompt
- * @returns The updated prompt string with the code snippet added
- */
-export function addSelectionToPrompt(prompt: string, code: string): string {
-    return prompt + '\nHere is the code: \n<Code>' + code + '</Code>'
 }

@@ -144,7 +144,14 @@ export class CommandRunner implements vscode.Disposable {
     }
 }
 
-function addSelectionToPrompt(prompt: string, code: string): string {
+/**
+ * Adds the selection range to the prompt string.
+ *
+ * @param prompt - The original prompt string
+ * @param code - The code snippet to include in the prompt
+ * @returns The updated prompt string with the code snippet added
+ */
+export function addSelectionToPrompt(prompt: string, code: string): string {
     return prompt + '\nHere is the code: \n<Code>' + code + '</Code>'
 }
 
