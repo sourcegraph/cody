@@ -7,7 +7,7 @@ import {
     populateCurrentEditorContextTemplate,
     populateCurrentEditorSelectedContextTemplate,
 } from '../../prompt/templates'
-import { truncateText } from '../../prompt/truncation'
+import { getLinuxCommandContextMessages, truncateText } from '../../prompt/truncation'
 import { Interaction } from '../transcript/interaction'
 
 import { isSingleWord, numResults } from './helpers'
@@ -71,9 +71,11 @@ export class ChatQuestion implements Recipe {
 
         // Add selected text as context when available
         if (selection?.selectedText) {
+            // Add some context messages so that the LLM has some context about how to respond with basic Linux commands
             contextMessages.push(...ChatQuestion.getEditorSelectionContext(selection))
         }
 
+        contextMessages.push(...getLinuxCommandContextMessages())
         return contextMessages
     }
 
