@@ -242,7 +242,7 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
                 }
                 case selectedCommandID === menu_options.fix.slashCommand: {
                     if (userPrompt.trim()) {
-                        return await vscode.commands.executeCommand('cody.fixup.new', userPrompt)
+                        return await vscode.commands.executeCommand('cody.fixup.new', { instruction: userPrompt })
                     }
                     return await vscode.commands.executeCommand('cody.fixup.new')
                 }

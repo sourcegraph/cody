@@ -32,7 +32,7 @@ export class FixupCodeAction implements vscode.CodeActionProvider {
         const instruction = this.getCodeActionInstruction(diagnostics)
         action.command = {
             command: 'cody.fixup.new',
-            arguments: [instruction, range],
+            arguments: [{ instruction, range }],
             title: 'Ask Cody to Fix',
         }
         action.diagnostics = diagnostics
