@@ -1,4 +1,5 @@
 import { LRUCache } from 'lru-cache'
+import uuid from 'uuid'
 import * as vscode from 'vscode'
 
 import { isNetworkError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
@@ -82,7 +83,7 @@ export function logCompletionEvent(name: string, params?: TelemetryEventProperti
 }
 
 export function create(inputParams: Omit<CompletionEvent['params'], 'multilineMode' | 'type' | 'id'>): string {
-    const id = createId()
+    const id = uuid.v4()
     const params: CompletionEvent['params'] = {
         ...inputParams,
         type: 'inline',
@@ -244,10 +245,6 @@ export function noResponse(id: string): void {
  */
 export function clear(): void {
     logSuggestionEvents()
-}
-
-function createId(): string {
-    return Math.random().toString(36).slice(2, 11)
 }
 
 function logSuggestionEvents(): void {
