@@ -33,7 +33,7 @@ describe('[getInlineCompletions] reuseLastCandidate', () => {
                 prefix: 'const foo = ',
                 prevNonEmptyLine: '',
                 suffix: '',
-                contextRange: new Range(14, 2, 0, 0),
+                contextRange: new Range(position.character, 0, position.character, 0),
             },
             result: {
                 logId: '1',
