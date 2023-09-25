@@ -6,22 +6,20 @@ import { getDocumentQuerySDK } from '../queries'
 
 import { annotateAndMatchSnapshot } from './annotate-and-match-snapshot'
 
-describe('getFirstMultilineBlockForTruncation', () => {
+describe('getNodeAtCursorAndParents', () => {
     beforeAll(async () => {
         await initTreeSitterParser(SupportedLanguage.TypeScript)
     })
 
     it('typescript', async () => {
-        const { language, parser, queries, getFirstMultilineBlockForTruncation } = getDocumentQuerySDK(
-            SupportedLanguage.TypeScript
-        )!
+        const { language, parser, getNodeAtCursorAndParents } = getDocumentQuerySDK(SupportedLanguage.TypeScript)!
 
         await annotateAndMatchSnapshot({
             parser,
             language,
-            rawQuery: queries.blocks.raw,
-            captures: getFirstMultilineBlockForTruncation,
-            sourcesPath: 'test-data/blocks.ts',
+            rawQuery: 'Gets the "current" node at cursor position and two parents.',
+            captures: getNodeAtCursorAndParents,
+            sourcesPath: 'test-data/parents.ts',
         })
     })
 })

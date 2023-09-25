@@ -16,8 +16,6 @@ interface CompletionContext {
  *
  * Uses `tree-sitter` to query specific code blocks for contextual truncation.
  * Returns the original `insertText` if no truncation is needed or if syntactic post-processing isn't enabled.
- *
- * TODO(tree-sitter): Extend to support multiple languages.
  */
 export function truncateParsedCompletion(context: CompletionContext): string {
     const { completion, document } = context
@@ -31,14 +29,14 @@ export function truncateParsedCompletion(context: CompletionContext): string {
 
     const { tree, points } = completion
 
-    const node = documentQuerySDK.getFirstMultilineBlockForTruncation(
+    const [captureGroup] = documentQuerySDK.getFirstMultilineBlockForTruncation(
         tree.rootNode,
         points?.trigger || points?.start,
         points?.end
     )
 
-    if (node) {
-        const overlap = findLargestSuffixPrefixOverlap(node.text, completion.insertText)
+    if (captureGroup) {
+        const overlap = findLargestSuffixPrefixOverlap(captureGroup.node.text, completion.insertText)
 
         if (overlap) {
             return overlap

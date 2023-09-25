@@ -62,6 +62,13 @@ export interface ItemPostProcesssingInfo {
     lineTruncatedCount?: number
     // The truncation approach used.
     truncatedWith?: 'tree-sitter' | 'indentation'
+    // Syntax node types extracted from the tree-sitter parse-tree.
+    nodeTypes?: {
+        atCursor?: string
+        parent?: string
+        grandParent?: string
+        grandGrandParent?: string
+    }
 }
 
 interface CompletionItemInfo extends ItemPostProcesssingInfo {

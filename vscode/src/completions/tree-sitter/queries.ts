@@ -1,6 +1,8 @@
 import { memoize } from 'lodash'
 import Parser, { Language, Point, Query, SyntaxNode } from 'web-tree-sitter'
 
+import { isDefined } from '@sourcegraph/cody-shared'
+
 import { getParseLanguage, SupportedLanguage } from './grammars'
 import { getParser } from './parser'
 import { languages, QueryName } from './queries/languages'
@@ -69,12 +71,26 @@ export function getDocumentQuerySDK(language: string): DocumentQuerySDK | null {
     }
 }
 
+export type Captures = (
+    node: SyntaxNode,
+    startPosition: Point,
+    endPosition?: Point
+) => readonly Readonly<Parser.QueryCapture>[]
+
 interface QueryWrappers {
     getFirstMultilineBlockForTruncation: (
         node: SyntaxNode,
         startPosition?: Point,
         endPosition?: Point
-    ) => Parser.SyntaxNode | null
+    ) => never[] | readonly [{ readonly node: Parser.SyntaxNode; readonly name: 'blocks' }]
+    getNodeAtCursorAndParents: (
+        node: SyntaxNode,
+        startPosition: Point,
+        endPosition?: Point
+    ) => readonly [
+        { readonly name: 'at_cursor'; readonly node: Parser.SyntaxNode },
+        ...{ name: string; node: Parser.SyntaxNode }[],
+    ]
 }
 
 /**
@@ -84,11 +100,16 @@ interface QueryWrappers {
  */
 const getQueryWrappers = memoize((queries: ResolvedQueries, _parser: Parser): QueryWrappers => {
     return {
+        /**
+         * Returns the first block-like node (block_statement).
+         * Handles special cases where we want to use the parent block instead
+         * if it has a specific node type (if_statement).
+         */
         getFirstMultilineBlockForTruncation(node, startPosition, endPosition) {
             const captures = queries.blocks.compiled.captures(node, startPosition, endPosition)
 
             if (!captures.length) {
-                return null
+                return []
             }
 
             // Taking the last result to get the most nested node.
@@ -100,7 +121,27 @@ const getQueryWrappers = memoize((queries: ResolvedQueries, _parser: Parser): Qu
             const potentialParent = potentialParentNodes.find(capture => initialNode.parent?.id === capture.node.id)
                 ?.node
 
-            return potentialParent || initialNode
+            return [{ node: potentialParent || initialNode, name: 'blocks' }] as const
+        },
+        /**
+         * Returns a descendant node at the start position and two parent nodes if they exist.
+         */
+        getNodeAtCursorAndParents(node, startPosition) {
+            const descendant = node.descendantForPosition(startPosition)
+            const parent = descendant.parent
+
+            const parents = [parent, parent?.parent, parent?.parent?.parent].filter(isDefined).map(node => ({
+                name: 'parents',
+                node,
+            }))
+
+            return [
+                {
+                    name: 'at_cursor',
+                    node: descendant,
+                },
+                ...parents,
+            ] as const
         },
     }
 })
