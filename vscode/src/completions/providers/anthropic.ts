@@ -42,7 +42,6 @@ export class AnthropicProvider extends Provider {
     private promptChars: number
     private responseTokens: number
     private client: Pick<CodeCompletionsClient, 'complete'>
-    private useInfillPrefix = false
 
     constructor(options: ProviderOptions, anthropicOptions: AnthropicOptions) {
         super(options)
@@ -51,54 +50,15 @@ export class AnthropicProvider extends Provider {
             Math.floor(tokensToChars(anthropicOptions.contextWindowTokens) * options.responsePercentage)
         this.responseTokens = Math.floor(anthropicOptions.contextWindowTokens * options.responsePercentage)
         this.client = anthropicOptions.client
-        this.useInfillPrefix = anthropicOptions.mode === 'infill'
     }
 
     public emptyPromptLength(): number {
-        const { messages } = this.useInfillPrefix ? this.createInfillPromptPrefix() : this.createPromptPrefix()
+        const { messages } = this.createPromptPrefix()
         const promptNoSnippets = messagesToText(messages)
         return promptNoSnippets.length - 10 // extra 10 chars of buffer cuz who knows
     }
 
     private createPromptPrefix(): { messages: Message[]; prefix: PrefixComponents } {
-        // TODO(beyang): escape 'Human:' and 'Assistant:'
-        const prefixLines = this.options.docContext.prefix.split('\n')
-        if (prefixLines.length === 0) {
-            throw new Error('no prefix lines')
-        }
-
-        const { head, tail, overlap } = getHeadAndTail(this.options.docContext.prefix)
-        const prefixMessages: Message[] = [
-            {
-                speaker: 'human',
-                text: `You are a code completion AI that writes high-quality code like a senior engineer. You are looking at ${
-                    this.options.fileName
-                }. You write code in between tags like this: ${OPENING_CODE_TAG}${
-                    this.options.languageId === 'python' || this.options.languageId === 'ruby'
-                        ? '# Code goes here'
-                        : '/* Code goes here */'
-                }${CLOSING_CODE_TAG}.`,
-            },
-            {
-                speaker: 'assistant',
-                text: 'I am a code completion AI that writes high-quality code like a senior engineer.',
-            },
-            {
-                speaker: 'human',
-                text: `Complete this code: ${OPENING_CODE_TAG}${head.trimmed}${CLOSING_CODE_TAG}.`,
-            },
-            {
-                speaker: 'assistant',
-                text: `Here is the code: ${OPENING_CODE_TAG}${tail.trimmed}`,
-            },
-        ]
-
-        return { messages: prefixMessages, prefix: { head, tail, overlap } }
-    }
-
-    // NOTE: This revert pull/727 for this prompt branch that causes quality regressions
-    // pull/727: https://github.com/sourcegraph/cody/pull/727
-    private createInfillPromptPrefix(): { messages: Message[]; prefix: PrefixComponents } {
         const prefixLines = this.options.docContext.prefix.split('\n')
         if (prefixLines.length === 0) {
             throw new Error('no prefix lines')
@@ -139,9 +99,7 @@ export class AnthropicProvider extends Provider {
     // Creates the resulting prompt and adds as many snippets from the reference
     // list as possible.
     protected createPrompt(snippets: ContextSnippet[]): { messages: Message[]; prefix: PrefixComponents } {
-        const { messages: prefixMessages, prefix } = this.useInfillPrefix
-            ? this.createInfillPromptPrefix()
-            : this.createPromptPrefix()
+        const { messages: prefixMessages, prefix } = this.createPromptPrefix()
 
         const referenceSnippetMessages: Message[] = []
 
