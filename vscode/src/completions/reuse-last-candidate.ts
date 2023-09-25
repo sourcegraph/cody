@@ -17,6 +17,7 @@ export function reuseLastCandidate({
     context,
     lastCandidate: {
         lastTriggerPosition,
+        lastTriggerDocContext,
         lastTriggerCurrentLinePrefix,
         lastTriggerNextNonEmptyLine,
         lastTriggerSelectedInfoItem,

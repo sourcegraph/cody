@@ -25,6 +25,16 @@ describe('[getInlineCompletions] reuseLastCandidate', () => {
             lastTriggerCurrentLinePrefix: document.lineAt(position).text.slice(0, position.character),
             lastTriggerNextNonEmptyLine: nextNonEmptyLine,
             lastTriggerSelectedInfoItem,
+            lastTriggerDocContext: {
+                currentLinePrefix: 'const foo = ',
+                currentLineSuffix: '',
+                multilineTrigger: null,
+                nextNonEmptyLine: 'console.log(1)',
+                prefix: 'const foo = ',
+                prevNonEmptyLine: '',
+                suffix: '',
+                contextRange: new Range(14, 2, 0, 0),
+            },
             result: {
                 logId: '1',
                 items: Array.isArray(insertText) ? insertText.map(insertText => ({ insertText })) : [{ insertText }],

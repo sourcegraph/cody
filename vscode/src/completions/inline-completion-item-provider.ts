@@ -215,17 +215,21 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
             // meaning the previous result is unwanted/rejected.
             // In that case, we mark the last candidate as "unwanted", remove it from cache, and clear the last candidate
             const lastTriggeredResultId = this.lastCandidate?.result.logId
+            const lastTriggeredDocContext = this.lastCandidate?.lastTriggerDocContext
+            const lastTriggeredPosition = this.lastCandidate?.lastTriggerPosition
             const currentPrefix = docContext.currentLinePrefix
             const lastTriggeredPrefix = this.lastCandidate?.lastTriggerCurrentLinePrefix
             if (
                 lastTriggeredResultId &&
+                lastTriggeredDocContext &&
+                lastTriggeredPosition &&
                 lastTriggeredPrefix !== undefined &&
-                currentPrefix.length <= lastTriggeredPrefix.length
+                currentPrefix.length < lastTriggeredPrefix.length
             ) {
                 this.handleUnwantedCompletionItem(lastTriggeredResultId, {
                     document,
-                    docContext,
-                    position,
+                    docContext: lastTriggeredDocContext,
+                    position: lastTriggeredPosition,
                     context,
                 })
             }
@@ -253,6 +257,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
             const candidate: LastInlineCompletionCandidate = {
                 uri: document.uri,
                 lastTriggerPosition: position,
+                lastTriggerDocContext: docContext,
                 lastTriggerCurrentLinePrefix: docContext.currentLinePrefix,
                 lastTriggerNextNonEmptyLine: docContext.nextNonEmptyLine,
                 lastTriggerSelectedInfoItem: context?.selectedCompletionInfo?.text,
@@ -333,6 +338,8 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
         if (!completionItem) {
             return
         }
+
+        console.log('removing', completionItem)
 
         this.clearLastCandidate()
 

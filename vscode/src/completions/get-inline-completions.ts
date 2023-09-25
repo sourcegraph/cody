@@ -65,6 +65,9 @@ export interface LastInlineCompletionCandidate {
     /** The document URI for which this candidate was generated. */
     uri: URI
 
+    /** The doc context item */
+    lastTriggerDocContext: DocumentContext
+
     /** The position at which this candidate was generated. */
     lastTriggerPosition: vscode.Position
 
