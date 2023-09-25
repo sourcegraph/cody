@@ -54,7 +54,7 @@ function createButtons(
     const copyButton = createCodeBlockActionButton(
         'copy',
         text,
-        'Copy text',
+        'Copy Code',
         CopyCodeBlockIcon,
         codeBlockActions,
         copyButtonClassName
@@ -67,7 +67,7 @@ function createButtons(
             createCodeBlockActionButton(
                 'insert',
                 text,
-                'Insert code at cursor',
+                'Insert Code at Cursor',
                 InsertCodeBlockIcon,
                 codeBlockActions,
                 insertButtonClassName
@@ -78,7 +78,7 @@ function createButtons(
             createCodeBlockActionButton(
                 'new',
                 text,
-                'Save code to a new file',
+                'Save Code to New File...',
                 SaveCodeBlockIcon,
                 codeBlockActions,
                 insertButtonClassName

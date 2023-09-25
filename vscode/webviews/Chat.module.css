@@ -81,28 +81,21 @@ body[data-vscode-theme-kind='vscode-light'] .transcript-item pre {
     margin-top: 5px;
 }
 
-.transcript-action > button {
-    font-size: var(--vscode-editor-font-size);
-}
-
 .code-blocks-copy-button,
 .code-blocks-insert-button {
     color: var(--vscode-foreground);
-    background-color: transparent;
-    border: none;
-    font-size: var(--type-ramp-minus1-font-size);
-    padding: 0.25rem;
+    border-radius: 5px;
+    border-radius: 5px;
+    background: var(--button-icon-background);
+    border-radius: var(--button-icon-corner-radius);
+    color: var(--foreground);
 }
 
 .code-blocks-copy-button:hover,
 .code-blocks-insert-button:hover {
-    /* Flip to the primary button hover styles because the secondary button
-     * hover background is transparent in many themes. The transparent
-     * background which doesn't work with the layered design.
-     */
-    background-color: var(--vscode-button-hoverBackground);
-    color: var(--vscode-button-foreground);
-    border-color: var(--vscode-button-border);
+    background: var(--button-icon-hover-background);
+    outline: 1px dotted var(--contrast-active-border);
+    outline-offset: -1px;
 }
 
 .input-row {
