@@ -84,8 +84,8 @@ export function processItem(params: ProcessItemParams): InlineCompletionItemWith
             parsed.nodeTypes = {
                 atCursor: atCursor.node.type,
                 parent: parents[0]?.node.type,
-                grandParent: parents[1]?.node.type,
-                grandGrandParent: parents[2]?.node.type,
+                grandparent: parents[1]?.node.type,
+                greatGrandparent: parents[2]?.node.type,
             }
         }
     }
