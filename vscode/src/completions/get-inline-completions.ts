@@ -71,12 +71,6 @@ export interface LastInlineCompletionCandidate {
     /** The position at which this candidate was generated. */
     lastTriggerPosition: vscode.Position
 
-    /** The prefix of the line (before the cursor position) where this candidate was generated. */
-    lastTriggerCurrentLinePrefix: string
-
-    /** The next non-empty line in the suffix */
-    lastTriggerNextNonEmptyLine: string
-
     /** The selected info item. */
     lastTriggerSelectedInfoItem: string | undefined
 

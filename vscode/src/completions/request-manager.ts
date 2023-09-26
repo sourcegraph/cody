@@ -119,8 +119,6 @@ export class RequestManager {
             uri: document.uri,
             lastTriggerPosition: position,
             lastTriggerDocContext: docContext,
-            lastTriggerCurrentLinePrefix: docContext.currentLinePrefix,
-            lastTriggerNextNonEmptyLine: docContext.nextNonEmptyLine,
             lastTriggerSelectedInfoItem: context?.selectedCompletionInfo?.text,
             result: {
                 logId: '',

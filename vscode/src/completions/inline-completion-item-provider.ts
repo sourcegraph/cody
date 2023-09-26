@@ -218,7 +218,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
             const lastTriggeredDocContext = this.lastCandidate?.lastTriggerDocContext
             const lastTriggeredPosition = this.lastCandidate?.lastTriggerPosition
             const currentPrefix = docContext.currentLinePrefix
-            const lastTriggeredPrefix = this.lastCandidate?.lastTriggerCurrentLinePrefix
+            const lastTriggeredPrefix = this.lastCandidate?.lastTriggerDocContext.currentLinePrefix
             if (
                 lastTriggeredResultId &&
                 lastTriggeredDocContext &&
@@ -258,8 +258,6 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
                 uri: document.uri,
                 lastTriggerPosition: position,
                 lastTriggerDocContext: docContext,
-                lastTriggerCurrentLinePrefix: docContext.currentLinePrefix,
-                lastTriggerNextNonEmptyLine: docContext.nextNonEmptyLine,
                 lastTriggerSelectedInfoItem: context?.selectedCompletionInfo?.text,
                 result: {
                     logId: result.logId,
