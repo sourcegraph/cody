@@ -232,18 +232,34 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
 const ErrorBanner: React.FunctionComponent<{ errors: string[]; setErrors: (errors: string[]) => void }> = ({
     errors,
     setErrors,
-}) => (
-    <div className="error-container">
-        {errors.map((error, i) => (
-            <div key={i} className="error">
-                <span>{error}</span>
-                <button type="button" className="close-btn" onClick={() => setErrors(errors.filter(e => e !== error))}>
-                    ×
-                </button>
-            </div>
-        ))}
-    </div>
-)
+}) => {
+
+    useEffect(() => {
+        const interval = setInterval(() => {
+          if(errors.length === 0) {
+            clearInterval(interval); 
+            return;
+          }
+          setErrors(errors.slice(1)); 
+        }, 3000);
+      
+        return () => clearInterval(interval);
+      
+      }, [errors]);
+    
+   return (
+        <div className="error-container">
+            {errors.map((error, i) => (
+                <div key={i} className="error">
+                    <span>{error}</span>
+                    <button type="button" className="close-btn" onClick={() => setErrors(errors.filter(e => e !== error))}>
+                        ×
+                    </button>
+                </div>
+            ))}
+        </div>
+    )
+}
 
 /**
  * Adds `isLastInGroup` field to a prompt if represents last item in a group (e.g., default/custom/etc. prompts).
