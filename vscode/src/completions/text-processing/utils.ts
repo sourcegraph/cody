@@ -1,5 +1,6 @@
 import * as vscode from 'vscode'
 
+import { DocumentContext } from '../get-current-doc-context'
 import { getLanguageConfig } from '../language'
 import { logCompletionEvent } from '../logger'
 import { SymbolContextSnippet } from '../types'
@@ -356,4 +357,20 @@ export const formatSymbolContextRelationship = (
 
 export function lines(text: string): string[] {
     return text.split(/\r?\n/)
+}
+
+export function getCurrentDocContext(position: vscode.Position, prefix: string, suffix: string): DocumentContext {
+    const nextNonEmptyLine = getNextNonEmptyLine(suffix)
+    const prevNonEmptyLine = getPrevNonEmptyLine(prefix)
+
+    return {
+        currentLinePrefix: prefix,
+        currentLineSuffix: suffix,
+        multilineTrigger: null,
+        nextNonEmptyLine,
+        prevNonEmptyLine,
+        prefix,
+        suffix,
+        contextRange: new vscode.Range(position.character, 0, position.character, 0),
+    }
 }

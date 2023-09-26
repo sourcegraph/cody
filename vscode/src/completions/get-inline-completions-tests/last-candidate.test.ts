@@ -6,7 +6,7 @@ import { vsCodeMocks } from '../../testutils/mocks'
 import { range } from '../../testutils/textDocument'
 import { InlineCompletionsResultSource, LastInlineCompletionCandidate } from '../get-inline-completions'
 import { documentAndPosition } from '../test-helpers'
-import { getNextNonEmptyLine, getPrevNonEmptyLine } from '../text-processing'
+import { getCurrentDocContext } from '../text-processing'
 
 import { getInlineCompletions, params, V } from './helpers'
 
@@ -17,10 +17,9 @@ describe('[getInlineCompletions] reuseLastCandidate', () => {
         lastTriggerSelectedInfoItem?: string
     ): LastInlineCompletionCandidate {
         const { document, position } = documentAndPosition(code)
-        const suffix = document.getText(new Range(position, document.lineAt(document.lineCount - 1).range.end))
-        const nextNonEmptyLine = getNextNonEmptyLine(suffix)
         const prefix = document.lineAt(position).text.slice(0, position.character)
-        const prevNonEmptyLine = getPrevNonEmptyLine(prefix)
+        const suffix = document.getText(new Range(position, document.lineAt(document.lineCount - 1).range.end))
+        const lastDocContext = getCurrentDocContext(position, prefix, suffix)
         return {
             uri: document.uri,
             lastTriggerPosition: position,
@@ -29,16 +28,7 @@ describe('[getInlineCompletions] reuseLastCandidate', () => {
                 logId: '1',
                 items: Array.isArray(insertText) ? insertText.map(insertText => ({ insertText })) : [{ insertText }],
             },
-            lastTriggerDocContext: {
-                currentLinePrefix: prefix,
-                currentLineSuffix: suffix,
-                multilineTrigger: null,
-                nextNonEmptyLine,
-                prevNonEmptyLine,
-                prefix,
-                suffix,
-                contextRange: new Range(position.character, 0, position.character, 0),
-            },
+            lastTriggerDocContext: lastDocContext,
         }
     }
 
