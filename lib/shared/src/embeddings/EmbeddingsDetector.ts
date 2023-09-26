@@ -20,7 +20,6 @@ export const EmbeddingsDetector = {
             const isError = result instanceof Error
             allFailed &&= isError
             if (isError) {
-                console.log('EmbeddingsDetector', `Error getting embeddings availability for ${codebase}`, result)
                 firstError ||= result
                 continue
             }
@@ -30,7 +29,11 @@ export const EmbeddingsDetector = {
             // We got a result, drop the rest of the promises on the floor.
             return result()
         }
-        return allFailed ? firstError : undefined
+        if (allFailed) {
+            console.log('EmbeddingsDetector', `Error getting embeddings availability for ${codebase}`, firstError)
+            return firstError
+        }
+        return undefined
     },
 
     // Detects whether *one* client has embeddings for the specified codebase.
