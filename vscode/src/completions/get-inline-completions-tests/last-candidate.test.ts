@@ -1,12 +1,11 @@
 import dedent from 'dedent'
 import { describe, expect, test } from 'vitest'
-import { Range } from 'vscode'
 
 import { vsCodeMocks } from '../../testutils/mocks'
 import { range } from '../../testutils/textDocument'
+import { getCurrentDocContext } from '../get-current-doc-context'
 import { InlineCompletionsResultSource, LastInlineCompletionCandidate } from '../get-inline-completions'
 import { documentAndPosition } from '../test-helpers'
-import { getCurrentDocContext } from '../text-processing'
 
 import { getInlineCompletions, params, V } from './helpers'
 
@@ -17,9 +16,13 @@ describe('[getInlineCompletions] reuseLastCandidate', () => {
         lastTriggerSelectedInfoItem?: string
     ): LastInlineCompletionCandidate {
         const { document, position } = documentAndPosition(code)
-        const prefix = document.lineAt(position).text.slice(0, position.character)
-        const suffix = document.getText(new Range(position, document.lineAt(document.lineCount - 1).range.end))
-        const lastDocContext = getCurrentDocContext(position, prefix, suffix)
+        const lastDocContext = getCurrentDocContext({
+            document,
+            position,
+            maxPrefixLength: 100,
+            maxSuffixLength: 100,
+            enableExtendedTriggers: true,
+        })
         return {
             uri: document.uri,
             lastTriggerPosition: position,
