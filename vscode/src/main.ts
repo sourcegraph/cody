@@ -207,7 +207,7 @@ const register = async (
             return
         }
 
-        telemetryService.log(`CodyVSCodeExtension:command:refactor:${source}:executed`)
+        telemetryService.log(`CodyVSCodeExtension:command:edit:${source}:executed`)
         const provider = fixupManager.getProviderForTask(task)
         return provider.startFix()
     }

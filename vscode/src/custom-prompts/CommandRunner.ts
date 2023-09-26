@@ -3,6 +3,7 @@ import * as vscode from 'vscode'
 import { CodyPrompt } from '@sourcegraph/cody-shared'
 
 import { getCursorFoldingRange } from '../editor/utils'
+import { telemetryService } from '../services/telemetry'
 
 /**
  * CommandRunner class implements disposable interface.
@@ -44,6 +45,10 @@ export class CommandRunner implements vscode.Disposable {
             void this.handleFixupRequest(insertMode)
             return
         }
+
+        // Log custom command usage
+        const logType = command?.type === 'default' ? 'default' : 'custom'
+        telemetryService.log(`CodyVSCodeExtension:command:${logType}:executed`)
     }
 
     /**
