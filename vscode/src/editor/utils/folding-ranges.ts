@@ -8,15 +8,22 @@ import { getFoldingRanges, getSymbols } from '.'
  * NOTE: Use getSmartSelection from utils/index.ts instead
  *
  * @param uri - The URI of the document to get folding ranges for
- * @param target - The target position number
+ * @param targetLine - The target line position number
  * @returns The folding range containing the target position, or undefined if none found
  */
-export async function getTargetFoldingRange(uri: vscode.Uri, target: number): Promise<vscode.Selection | undefined> {
+export async function getTargetFoldingRange(
+    uri: vscode.Uri,
+    targetLine: number
+): Promise<vscode.Selection | undefined> {
     // Check if symbols is available in the doc by its file uri and look for language id
     const doc = await vscode.workspace.openTextDocument(uri)
     // Remove text-based languages that don't support symbols or folding ranges
-    const textBaseLangIds = ['markdown', 'plaintext', 'json', 'sql']
+    const textBaseLangIds = ['markdown', 'json', 'sql']
     const isSupported = !textBaseLangIds.includes(doc.languageId)
+
+    if (!doc || !isSupported || !doc.languageId) {
+        return undefined
+    }
 
     // Get the ranges of all classes and folding ranges in parallel
     const [ranges, classes] = await Promise.all([
@@ -28,11 +35,14 @@ export async function getTargetFoldingRange(uri: vscode.Uri, target: number): Pr
             : [],
     ])
 
-    // If lanaguage id not available, find class object ranges heuristically
-    const classRanges = isSupported ? classes : await getOuterClassFoldingRanges(ranges, uri)
+    // doc.languageId for files that do not have symbol support enabled are identified as 'plaintext' in vs code
+    // in those cases, we will try to find class object ranges heuristically
+    const isPlainText = doc.languageId === 'plaintext'
 
-    const isPlainText = !isSupported
-    const targetRange = getNonClassOutermostFoldingRanges(classRanges, ranges, target, isPlainText)
+    const classRanges = isPlainText ? await getOuterClassFoldingRanges(ranges, uri) : classes
+
+    const targetRange = getNestedOutermostFoldingRanges(classRanges, ranges, targetLine, isPlainText)
+
     if (!targetRange) {
         console.error('No folding range found containing cursor')
         return undefined
@@ -42,47 +52,41 @@ export async function getTargetFoldingRange(uri: vscode.Uri, target: number): Pr
 }
 
 /**
- * Gets the outermost non-class folding range containing the target position.
+ * Gets the nested outermost folding range containing the target position.
  *
  * NOTE: exported for testing purposes only
  *
  * @param classRanges The ranges of folding regions for classes in the document.
  * @param foldingRanges The folding ranges for the entire document.
- * @param target The target line number to find the enclosing range for.
+ * @param targetLine The target line number to find the enclosing range for.
  * @param isPlainText Optional flag indicating if the document is plain text.
  * @returns The outermost non-class folding range containing the target position, or undefined if not found.
  */
-export function getNonClassOutermostFoldingRanges(
+export function getNestedOutermostFoldingRanges(
     classRanges: vscode.Range[],
     foldingRanges: vscode.FoldingRange[],
-    target: number,
+    targetLine: number,
     isPlainText?: boolean
 ): vscode.FoldingRange | undefined {
     if (!foldingRanges?.length) {
         return undefined
     }
 
-    /**
-     * NOTE (bee) The purpose of filtering to keep only folding ranges that contain other folding ranges is to find
-     * the outermost folding range enclosing the cursor position.
-     *
-     * Folding ranges can be nested - you may have a folding range for a function that contains folding ranges for inner code blocks.
-     *
-     * By filtering to ranges that contain other ranges, it removes the inner nested ranges and keeps only the outermost parent ranges.
-     *
-     * This way when it checks for the range containing the cursor, it will return the outer range that fully encloses the cursor location,
-     * rather than an inner range that may only partially cover the cursor line.
-     * '
-     * However, if we keep the ranges for classes, this will then only return ranges for classes that contain individual methods rather
-     * than the outermost range of the methods within a class. So the first step is to remove class ranges.
-     */
+    // NOTE (bee) The purpose of filtering to keep only folding ranges that contain other folding ranges is to find
+    // the outermost folding range enclosing the cursor position.
+    // Folding ranges can be nested - you may have a folding range for a function that contains folding ranges for inner code blocks.
+    // By filtering to ranges that contain other ranges, it removes the inner nested ranges and keeps only the outermost parent ranges.
+    // This way when it checks for the range containing the cursor, it will return the outer range that fully encloses the cursor location,
+    // rather than an inner range that may only partially cover the cursor line.
+    // However, if we keep the ranges for classes, this will then only return ranges for classes that contain individual methods rather
+    // than the outermost range of the methods within a class. So the first step is to remove class ranges.
 
     // Remove the ranges of classes from the folding ranges
     const classLessRanges = removeOutermostFoldingRanges(classRanges, foldingRanges)
 
     // Filter to only keep folding ranges that contained nested folding ranges (aka removes nested ranges)
     // Get the folding range containing the active cursor
-    const cursorRange = findTargetFoldingRange(removeNestedFoldingRanges(classLessRanges, isPlainText), target)
+    const cursorRange = findTargetFoldingRange(removeNestedFoldingRanges(classLessRanges, isPlainText), targetLine)
 
     return cursorRange || undefined
 }
@@ -93,11 +97,14 @@ export function getNonClassOutermostFoldingRanges(
  * NOTE: exported for testing purposes only
  *
  * @param ranges - The array of folding ranges to search.
- * @param target - The position to find the containing range for.
+ * @param targetLine - The position to find the containing range for.
  * @returns The folding range containing the target position, or undefined if not found.
  */
-export function findTargetFoldingRange(ranges: vscode.FoldingRange[], target: number): vscode.FoldingRange | undefined {
-    return ranges.find(range => range.start <= target && range.end >= target)
+export function findTargetFoldingRange(
+    ranges: vscode.FoldingRange[],
+    targetLine: number
+): vscode.FoldingRange | undefined {
+    return ranges.find(range => range.start <= targetLine && range.end >= targetLine)
 }
 
 // ------------------------ HELPER FUNCTIONS ------------------------ //
@@ -178,52 +185,41 @@ function removeNestedFoldingRanges(ranges: vscode.FoldingRange[], isTextBased = 
 }
 
 /**
- * Combines neighboring folding ranges in the given array into single ranges.
+ * Combines adjacent folding ranges in the given array into single combined ranges.
  *
- * This looks for folding ranges that end on the line before the next range starts,
- * indicating they are neighbors with no gap between. It combines such neighbors
- * into a single range from the start of the first to the end of the last.
+ * This will iterate through the input ranges, and combine any ranges that are adjacent (end line of previous connects to start line of next)
+ * into a single combined range.
  *
  * @param ranges - Array of folding ranges to combine
  * @returns Array of combined folding ranges
  */
-function combineNeiborFoldingRanges(ranges: vscode.FoldingRange[]): vscode.FoldingRange[] {
-    // look for ranges that end at -1 position from the next folding range
-    // then combine them into a single range where the new range will be the union of the start positions of the first range that connected to the n next range(s), and the end position of the last range in the chain
-    let chains: vscode.FoldingRange[] = []
+function combineNeighborFoldingRanges(ranges: vscode.FoldingRange[]): vscode.FoldingRange[] {
     const combinedRanges: vscode.FoldingRange[] = []
-    // iterate through ranges and add connected ranges into chains array, clean the chains array everytime we find a disconnected range
-    for (let i = 0; i < ranges.length; i++) {
-        const range = ranges[i]
-        // Check if current range is connected to previous range
-        const prevRange = ranges[i - 1]
-        if (prevRange && prevRange.end === range.start - 1) {
-            chains.push(prevRange)
-        }
 
-        // Check if current range is connected to the last combined range
-        const lastCombinedRange = combinedRanges.at(-1)
-        // If connected, add to chains array
-        if (lastCombinedRange && lastCombinedRange.end === range.start - 1) {
-            combinedRanges.pop()
-            chains = [lastCombinedRange, range]
-        }
+    let currentChain: vscode.FoldingRange[] = []
+    let lastChainRange = currentChain.at(-1)
 
-        if (chains.length > 1) {
-            // combine the connected ranges into a single range after finding a disconnected range
-            // we will get the first item in chain and last item to construct the combined range
-            // where the start is the start of first range and end is end of last range
-            const lastConnectedRange = chains.at(-1)
-            if (lastConnectedRange) {
-                // push combined range
-                combinedRanges.push(new vscode.FoldingRange(chains[0].start, lastConnectedRange.end))
-            }
+    for (const range of ranges) {
+        // set the lastChainRange to the last range in the current chain
+        lastChainRange = currentChain.at(-1)
+        if (currentChain.length > 0 && lastChainRange?.end === range.start - 1) {
+            // If this range connects to the previous one, add it to the current chain
+            currentChain.push(range)
         } else {
-            combinedRanges.push(range)
-        }
+            // Otherwise, start a new chain
+            if (currentChain.length > 0 && lastChainRange) {
+                // If there was a previous chain, combine it into a single range
+                combinedRanges.push(new vscode.FoldingRange(currentChain[0].start, lastChainRange.end))
+            }
 
-        // clean chains array
-        chains = []
+            currentChain = [range]
+        }
     }
+
+    // Add the last chain
+    if (lastChainRange && currentChain.length > 0) {
+        combinedRanges.push(new vscode.FoldingRange(currentChain[0].start, lastChainRange.end))
+    }
+
     return combinedRanges
 }

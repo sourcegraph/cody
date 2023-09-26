@@ -152,7 +152,7 @@ export class CommandRunner implements vscode.Disposable {
  * @returns The updated prompt string with the code snippet added
  */
 export function addSelectionToPrompt(prompt: string, code: string): string {
-    return prompt + '\nHere is the code: \n<Code>' + code + '</Code>'
+    return prompt + '\nEnclosed code in <ref> tags: \n<ref>' + code + '</ref>'
 }
 
 /**
