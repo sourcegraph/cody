@@ -134,8 +134,27 @@ describe('InlineCompletionItemProvider', () => {
         // But it is returned and saved.
         expect(provider.lastCandidate).toMatchInlineSnapshot(`
           {
-            "lastTriggerCurrentLinePrefix": "const foo = ",
-            "lastTriggerNextNonEmptyLine": "console.log(1)",
+            "lastTriggerDocContext": {
+              "contextRange": Range {
+                "end": Position {
+                  "character": 14,
+                  "line": 2,
+                },
+                "start": Position {
+                  "character": 0,
+                  "line": 0,
+                },
+              },
+              "currentLinePrefix": "const foo = ",
+              "currentLineSuffix": "",
+              "multilineTrigger": null,
+              "nextNonEmptyLine": "console.log(1)",
+              "prefix": "const foo = ",
+              "prevNonEmptyLine": "",
+              "suffix": "
+console.log(1)
+console.log(2)",
+            },
             "lastTriggerPosition": Position {
               "character": 12,
               "line": 0,

@@ -118,8 +118,7 @@ export class RequestManager {
         const lastCandidate: LastInlineCompletionCandidate = {
             uri: document.uri,
             lastTriggerPosition: position,
-            lastTriggerCurrentLinePrefix: docContext.currentLinePrefix,
-            lastTriggerNextNonEmptyLine: docContext.nextNonEmptyLine,
+            lastTriggerDocContext: docContext,
             lastTriggerSelectedInfoItem: selectedCompletionInfo?.text,
             result: {
                 logId: '',
