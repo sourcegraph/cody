@@ -6,3 +6,6 @@ export const CopyCodeBlockIcon =
 
 export const InsertCodeBlockIcon =
     '<svg role="img" height=16 width=16 viewBox="0 0 16 16" fill="currentColor"><path fillRule="evenodd" clipRule="evenodd" d="M14 1L15 2V6L14 7L6 7L5 6L5 2L6 1L14 1ZM14 2L6 2L6 6L14 6L14 2Z"/><path fillRule="evenodd" clipRule="evenodd" d="M14 9L15 10V14L14 15L6 15L5 14L5 10L6 9L14 9ZM14 10L6 10L6 14L14 14L14 10Z"/><path d="M1 6.39268L2.61414 8.00682L1 9.62096L1.69352 10.3141L4 8.00682L1.69352 5.69995L1 6.39268Z"/></svg>'
+
+export const CheckCodeBlockIcon =
+    '<svg role="img" height=16 width=16 viewBox="0 0 16 16" fill="currentColor"><path fillRule="evenodd" clipRule="evenodd" d="M14.431 3.323l-8.47 10-.79-.036-3.35-4.77.818-.574 2.978 4.24 8.051-9.506.764.646z"/></svg>'

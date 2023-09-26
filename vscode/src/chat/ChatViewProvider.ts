@@ -219,6 +219,7 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
         const selectionRange = vscode.window.activeTextEditor?.selection
         const editor = vscode.window.activeTextEditor
         if (!editor || !selectionRange) {
+            this.handleError('No editor or selection found to insert text')
             return
         }
 
