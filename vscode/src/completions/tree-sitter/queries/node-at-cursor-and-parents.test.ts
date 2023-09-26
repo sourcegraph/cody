@@ -17,7 +17,7 @@ describe('getNodeAtCursorAndParents', () => {
         await annotateAndMatchSnapshot({
             parser,
             language,
-            rawQuery: 'Gets the "current" node at cursor position and two parents.',
+            rawQuery: 'Gets the "current" node at cursor position and tree parents.',
             captures: getNodeAtCursorAndParents,
             sourcesPath: 'test-data/parents.ts',
         })
