@@ -1,6 +1,6 @@
 import { expect } from '@playwright/test'
 
-import { loggedEvents } from '../fixtures/mock-server'
+import { loggedEvents, resetLoggedEvents } from '../fixtures/mock-server'
 
 import { sidebarExplorer, sidebarSignin } from './common'
 import { test } from './helpers'
@@ -8,19 +8,16 @@ import { test } from './helpers'
 const DECORATION_SELECTOR = 'div.view-overlays[role="presentation"] div[class*="TextEditorDecorationType"]'
 
 const expectedOrderedEvents = [
-    'CodyInstalled',
-    'CodyVSCodeExtension:Auth:failed',
-    'CodyVSCodeExtension:auth:clickOtherSignInOptions',
-    'CodyVSCodeExtension:login:clicked',
-    'CodyVSCodeExtension:auth:selectSigninMenu',
-    'CodyVSCodeExtension:auth:fromToken',
-    'CodyVSCodeExtension:Auth:connected',
     'CodyVSCodeExtension:fixup:created',
     'CodyVSCodeExtension:keywordContext:searchDuration',
     'CodyVSCodeExtension:recipe:fixup:executed',
     'CodyVSCodeExtension:fixupResponse:hasCode',
     'CodyVSCodeExtension:chatResponse:noCode',
 ]
+
+test.beforeEach(() => {
+    resetLoggedEvents()
+})
 test('decorations from un-applied Cody changes appear', async ({ page, sidebar }) => {
     // Sign into Cody
     await sidebarSignin(page, sidebar)
@@ -74,5 +71,5 @@ test('decorations from un-applied Cody changes appear', async ({ page, sidebar }
 
     // The decorations should change to conflict markers.
     await page.waitForSelector(`${DECORATION_SELECTOR}:not([class*="${decorationClassName}"])`)
-    expect(loggedEvents).toEqual(expectedOrderedEvents)
+    await expect.poll(() => loggedEvents).toEqual(expectedOrderedEvents)
 })

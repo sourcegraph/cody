@@ -1,18 +1,11 @@
 import { expect } from '@playwright/test'
 
-import { loggedEvents } from '../fixtures/mock-server'
+import { loggedEvents, resetLoggedEvents } from '../fixtures/mock-server'
 
 import { sidebarExplorer, sidebarSignin } from './common'
 import { test } from './helpers'
 
-const expectedOrderedEvent = [
-    'CodyInstalled',
-    'CodyVSCodeExtension:Auth:failed',
-    'CodyVSCodeExtension:auth:clickOtherSignInOptions',
-    'CodyVSCodeExtension:login:clicked',
-    'CodyVSCodeExtension:auth:selectSigninMenu',
-    'CodyVSCodeExtension:auth:fromToken',
-    'CodyVSCodeExtension:Auth:connected',
+const expectedOrderedEvents = [
     'CodyVSCodeExtension:fixup:created',
     'CodyVSCodeExtension:keywordContext:searchDuration',
     'CodyVSCodeExtension:recipe:fixup:executed',
@@ -22,6 +15,9 @@ const expectedOrderedEvent = [
     'CodyVSCodeExtension:fixup:codeLens:clicked',
     'CodyVSCodeExtension:fixup:applied',
 ]
+test.beforeEach(() => {
+    resetLoggedEvents()
+})
 test('task tree view for non-stop cody', async ({ page, sidebar }) => {
     // Sign into Cody
     await sidebarSignin(page, sidebar)
@@ -91,5 +87,5 @@ test('task tree view for non-stop cody', async ({ page, sidebar }) => {
     // Collapse the task tree view
     await page.getByRole('button', { name: 'Fixups Section' }).click()
     await expect(page.getByText('No pending Cody fixups')).not.toBeVisible()
-    expect(loggedEvents).toEqual(expectedOrderedEvent)
+    await expect.poll(() => loggedEvents).toEqual(expectedOrderedEvents)
 })

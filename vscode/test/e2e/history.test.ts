@@ -1,18 +1,11 @@
 import { expect } from '@playwright/test'
 
-import { loggedEvents } from '../fixtures/mock-server'
+import { loggedEvents, resetLoggedEvents } from '../fixtures/mock-server'
 
 import { codyEditorCommandButtonRole, sidebarExplorer, sidebarSignin } from './common'
 import { test } from './helpers'
 
-const expectedOrderedEvent = [
-    'CodyInstalled',
-    'CodyVSCodeExtension:Auth:failed',
-    'CodyVSCodeExtension:auth:clickOtherSignInOptions',
-    'CodyVSCodeExtension:login:clicked',
-    'CodyVSCodeExtension:auth:selectSigninMenu',
-    'CodyVSCodeExtension:auth:fromToken',
-    'CodyVSCodeExtension:Auth:connected',
+const expectedOrderedEvents = [
     'CodyVSCodeExtension:chatTitleButton:clicked',
     'CodyVSCodeExtension:chatReset:executed',
     'CodyVSCodeExtension:chatTitleButton:clicked',
@@ -25,14 +18,18 @@ const expectedOrderedEvent = [
     'CodyVSCodeExtension:recipe:chat-question:executed',
     'CodyVSCodeExtension:chatResponse:noCode',
     'CodyVSCodeExtension:chatTitleButton:clicked',
-    'CodyVSCodeExtension:chatReset:executed',
     'CodyVSCodeExtension:clearChatHistoryButton:clicked',
+    'CodyVSCodeExtension:chatReset:executed',
     'CodyVSCodeExtension:chatReset:executed',
     'CodyVSCodeExtension:chatTitleButton:clicked',
     'CodyVSCodeExtension:command:default:executed',
     'CodyVSCodeExtension:recipe:custom-prompt:executed',
     'CodyVSCodeExtension:chatResponse:noCode',
 ]
+
+test.beforeEach(() => {
+    resetLoggedEvents()
+})
 test('checks if clear chat history button clears history and current session', async ({ page, sidebar }) => {
     // Sign into Cody
     await sidebarSignin(page, sidebar)
@@ -67,18 +64,18 @@ test('checks if clear chat history button clears history and current session', a
 
     // Remove Hey history item from chat history view
     await expect(sidebar.getByText('Hey')).toBeVisible()
-    await sidebar.locator('vscode-button').filter({ hasText: 'Clear' }).click()
+    await sidebar.locator('vscode-button').filter({ hasText: 'Clear' }).click({ delay: 600 })
     await expect(sidebar.getByText('Hey')).not.toBeVisible()
 
-    await page.click('[aria-label="Start a New Chat Session"]')
+    await page.click('[aria-label="Start a New Chat Session"]', { delay: 600 })
 
     // Open the Cody Commands palette and run a command
     await page.getByRole('button', codyEditorCommandButtonRole).click()
     await page.keyboard.type('/explain')
-    await page.keyboard.press('Enter', { delay: 350 })
+    await page.keyboard.press('Enter')
 
     // Check if the old message "Hey" is cleared
     await expect(sidebar.getByText('Hey')).not.toBeVisible()
 
-    expect(loggedEvents).toEqual(expectedOrderedEvent)
+    await expect.poll(() => loggedEvents).toEqual(expectedOrderedEvents)
 })

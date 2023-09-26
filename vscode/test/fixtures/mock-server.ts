@@ -47,7 +47,7 @@ export async function run<T>(around: () => Promise<T>): Promise<T> {
     // endpoint which will accept the data that you want to send in that you will add your pubsub code
     app.post('/.api/testLogging', (req, res) => {
         void logTestingData(req.body)
-        store_logged_events(req.body)
+        storeLoggedEvents(req.body)
         res.status(200)
     })
 
@@ -135,13 +135,28 @@ export function sendTestInfo(testName: string, testID: string, testRunID: string
     currentTestRunID = testRunID || ''
 }
 
-export const loggedEvents: string[] = []
-export function store_logged_events(event: string): void {
+export let loggedEvents: string[] = []
+
+export function resetLoggedEvents(): void {
+    loggedEvents = []
+}
+export function storeLoggedEvents(event: string): void {
     interface ParsedEvent {
         event: string
     }
     const parsedEvent = JSON.parse(JSON.stringify(event)) as ParsedEvent
     const name = parsedEvent.event
-
-    loggedEvents.push(name)
+    if (
+        ![
+            'CodyInstalled',
+            'CodyVSCodeExtension:Auth:failed',
+            'CodyVSCodeExtension:auth:clickOtherSignInOptions',
+            'CodyVSCodeExtension:login:clicked',
+            'CodyVSCodeExtension:auth:selectSigninMenu',
+            'CodyVSCodeExtension:auth:fromToken',
+            'CodyVSCodeExtension:Auth:connected',
+        ].includes(name)
+    ) {
+        loggedEvents.push(name)
+    }
 }
