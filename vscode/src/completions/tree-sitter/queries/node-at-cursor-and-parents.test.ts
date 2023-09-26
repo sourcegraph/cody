@@ -1,6 +1,7 @@
 import { beforeAll, describe, it } from 'vitest'
 
 import { initTreeSitterParser } from '../../test-helpers'
+import { astGetters } from '../ast-getters'
 import { SupportedLanguage } from '../grammars'
 import { getDocumentQuerySDK } from '../queries'
 
@@ -12,13 +13,13 @@ describe('getNodeAtCursorAndParents', () => {
     })
 
     it('typescript', async () => {
-        const { language, parser, getNodeAtCursorAndParents } = getDocumentQuerySDK(SupportedLanguage.TypeScript)!
+        const { language, parser } = getDocumentQuerySDK(SupportedLanguage.TypeScript)!
 
         await annotateAndMatchSnapshot({
             parser,
             language,
             rawQuery: 'Gets the "current" node at cursor position and tree parents.',
-            captures: getNodeAtCursorAndParents,
+            captures: astGetters.getNodeAtCursorAndParents,
             sourcesPath: 'test-data/parents.ts',
         })
     })

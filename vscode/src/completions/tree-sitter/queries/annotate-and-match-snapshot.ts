@@ -4,11 +4,10 @@ import path from 'path'
 
 import dedent from 'dedent'
 import { expect } from 'vitest'
-import Parser, { Point } from 'web-tree-sitter'
+import Parser, { Point, SyntaxNode } from 'web-tree-sitter'
 
 import { getLanguageConfig } from '../../language'
 import { SupportedLanguage } from '../grammars'
-import { Captures } from '../queries'
 
 interface CommentSymbolInfo {
     delimiter: string
@@ -119,6 +118,13 @@ function initEmptyAnnotationsForPoint(annotations: Annotations, point: Point): v
         annotations[point.row][point.column] = []
     }
 }
+
+// Defines the signature for functions that annotate nodes.
+export type Captures = (
+    node: SyntaxNode,
+    startPosition: Point,
+    endPosition?: Point
+) => readonly Readonly<Parser.QueryCapture>[]
 
 interface AnnotateSnippetsParams {
     code: string
