@@ -67,7 +67,6 @@ export async function createInlineCompletionItemProvider({
             history,
             statusBar,
             getCodebaseContext: () => contextProvider.context,
-            isEmbeddingsContextEnabled: config.autocompleteAdvancedEmbeddings,
             graphContextFetcher: sectionObserver,
             completeSuggestWidgetSelection: config.autocompleteExperimentalCompleteSuggestWidgetSelection,
             featureFlagProvider,

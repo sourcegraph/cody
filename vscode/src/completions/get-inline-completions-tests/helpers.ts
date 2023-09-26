@@ -92,7 +92,6 @@ export function params(
         triggerKind,
         selectedCompletionInfo,
         promptChars: 1000,
-        isEmbeddingsContextEnabled: true,
         providerConfig,
         responsePercentage: 0.4,
         prefixPercentage: 0.3,

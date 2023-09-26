@@ -26,7 +26,6 @@ export interface Configuration {
     autocompleteAdvancedServerEndpoint: string | null
     autocompleteAdvancedModel: string | null
     autocompleteAdvancedAccessToken: string | null
-    autocompleteAdvancedEmbeddings: boolean
     autocompleteExperimentalCompleteSuggestWidgetSelection?: boolean
     autocompleteExperimentalSyntacticPostProcessing?: boolean
     autocompleteExperimentalGraphContext?: boolean

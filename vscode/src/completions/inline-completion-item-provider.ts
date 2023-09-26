@@ -38,7 +38,6 @@ export interface CodyCompletionItemProviderConfig {
     responsePercentage?: number
     prefixPercentage?: number
     suffixPercentage?: number
-    isEmbeddingsContextEnabled?: boolean
     graphContextFetcher?: GraphContextFetcher | null
     completeSuggestWidgetSelection?: boolean
     tracer?: ProvideInlineCompletionItemsTracer | null
@@ -71,7 +70,6 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
         responsePercentage = 0.1,
         prefixPercentage = 0.6,
         suffixPercentage = 0.1,
-        isEmbeddingsContextEnabled = true,
         graphContextFetcher = null,
         completeSuggestWidgetSelection = false,
         tracer = null,
@@ -82,7 +80,6 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
             responsePercentage,
             prefixPercentage,
             suffixPercentage,
-            isEmbeddingsContextEnabled,
             graphContextFetcher,
             completeSuggestWidgetSelection,
             tracer,
@@ -198,7 +195,6 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
                 responsePercentage: this.config.responsePercentage,
                 prefixPercentage: this.config.prefixPercentage,
                 suffixPercentage: this.config.suffixPercentage,
-                isEmbeddingsContextEnabled: this.config.isEmbeddingsContextEnabled,
                 graphContextFetcher,
                 toWorkspaceRelativePath: uri => vscode.workspace.asRelativePath(uri),
                 contextFetcher: this.config.contextFetcher,

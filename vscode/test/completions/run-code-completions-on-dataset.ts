@@ -88,7 +88,6 @@ async function initCompletionsProvider(context: GetContextResult): Promise<Inlin
         },
         history,
         getCodebaseContext: () => codebaseContext,
-        isEmbeddingsContextEnabled: true,
         contextFetcher: () => Promise.resolve(context),
         featureFlagProvider: dummyFeatureFlagProvider,
     })

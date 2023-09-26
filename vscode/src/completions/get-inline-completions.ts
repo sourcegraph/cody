@@ -32,7 +32,6 @@ export interface InlineCompletionsParams {
     responsePercentage: number
     prefixPercentage: number
     suffixPercentage: number
-    isEmbeddingsContextEnabled: boolean
     graphContextFetcher?: GraphContextFetcher
 
     // Platform
@@ -162,7 +161,6 @@ async function doGetInlineCompletions(params: InlineCompletionsParams): Promise<
         responsePercentage,
         prefixPercentage,
         suffixPercentage,
-        isEmbeddingsContextEnabled,
         graphContextFetcher,
         toWorkspaceRelativePath,
         contextFetcher,
@@ -238,7 +236,6 @@ async function doGetInlineCompletions(params: InlineCompletionsParams): Promise<
         document,
         position,
         promptChars,
-        isEmbeddingsContextEnabled,
         graphContextFetcher,
         contextFetcher,
         getCodebaseContext,
@@ -358,7 +355,7 @@ interface GetCompletionContextParams
         | 'document'
         | 'position'
         | 'promptChars'
-        | 'isEmbeddingsContextEnabled'
+        | ''
         | 'graphContextFetcher'
         | 'contextFetcher'
         | 'getCodebaseContext'
@@ -371,7 +368,7 @@ async function getCompletionContext({
     document,
     position,
     promptChars,
-    isEmbeddingsContextEnabled,
+    ,
     graphContextFetcher,
     contextFetcher,
     getCodebaseContext,
@@ -398,7 +395,6 @@ async function getCompletionContext({
         jaccardDistanceWindowSize: SNIPPET_WINDOW_SIZE,
         maxChars: promptChars,
         getCodebaseContext,
-        isEmbeddingsContextEnabled,
         graphContextFetcher,
     })
 }
