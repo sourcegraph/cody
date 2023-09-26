@@ -932,7 +932,7 @@
         },
         "cody.autocomplete.experimental.syntacticPostProcessing": {
           "type": "boolean",
-          "default": false,
+          "default": true,
           "markdownDescription": "Rank autocomplete results with tree-sitter."
         },
         "cody.autocomplete.experimental.graphContext": {
