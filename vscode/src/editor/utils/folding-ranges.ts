@@ -48,7 +48,7 @@ export async function getTargetFoldingRange(
         return undefined
     }
 
-    return new vscode.Selection(targetRange.start, 0, targetRange.end + 2, 0)
+    return new vscode.Selection(targetRange.start, 0, Math.min(targetRange.end + 2, doc.lineCount), 0)
 }
 
 /**
