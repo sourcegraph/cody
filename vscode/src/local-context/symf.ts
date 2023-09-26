@@ -12,6 +12,8 @@ import { IndexedKeywordContextFetcher, Result } from '@sourcegraph/cody-shared/s
 
 import { logDebug } from '../log'
 
+import { getSymfPath } from './download-symf'
+
 const execFile = promisify(_execFile)
 
 export class SymfRunner implements IndexedKeywordContextFetcher {
@@ -26,7 +28,7 @@ export class SymfRunner implements IndexedKeywordContextFetcher {
     private indexRoot: string
 
     constructor(
-        private symfPath: string,
+        private context: vscode.ExtensionContext,
         private anthropicKey: string
     ) {
         this.indexRoot = path.join(os.homedir(), '.cody-symf')
@@ -56,9 +58,13 @@ export class SymfRunner implements IndexedKeywordContextFetcher {
      */
     public async getResults(query: string, scopeDir: string): Promise<Result[]> {
         const indexDir = await this.ensureIndexFor(scopeDir)
+        const symfPath = await getSymfPath(this.context)
+        if (!symfPath) {
+            throw new Error('No symf executable')
+        }
         try {
             const { stdout } = await execFile(
-                this.symfPath,
+                symfPath,
                 ['--index-root', indexDir, 'query', '--scopes', scopeDir, '--fmt', 'json', '--natural', query],
                 {
                     env: {
@@ -116,6 +122,10 @@ export class SymfRunner implements IndexedKeywordContextFetcher {
     }
 
     private async upsertIndex(indexDir: string, tmpIndexDir: string, scopeDir: string): Promise<void> {
+        const symfPath = await getSymfPath(this.context)
+        if (!symfPath) {
+            return
+        }
         await Promise.all([
             rm(indexDir, { recursive: true }).catch(() => undefined),
             rm(tmpIndexDir, { recursive: true }).catch(() => undefined),
@@ -124,7 +134,7 @@ export class SymfRunner implements IndexedKeywordContextFetcher {
         logDebug('symf', 'creating index', indexDir)
         const args = ['--index-root', tmpIndexDir, 'add', '--langs', 'go,typescript,python', scopeDir]
         try {
-            await execFile(this.symfPath, args)
+            await execFile(symfPath, args)
             await mkdirp(path.dirname(indexDir))
             await rename(tmpIndexDir, indexDir)
         } catch (error) {

@@ -214,7 +214,7 @@ type NotificationCallback<M extends NotificationMethodName> = (params: ParamsOf<
  * that can be piped with ReadStream/WriteStream.
  */
 export class MessageHandler {
-    private id = 0
+    public id = 0
     private requestHandlers: Map<RequestMethodName, RequestCallback<any>> = new Map()
     private cancelTokens: Map<Id, vscode.CancellationTokenSource> = new Map()
     private notificationHandlers: Map<NotificationMethodName, NotificationCallback<any>> = new Map()
