@@ -14,7 +14,7 @@ import styles from './ChatInputContextSimplified.module.css'
 import popupStyles from './Popups/Popup.module.css'
 
 export interface ChatInputContextSimplifiedProps {
-    contextStatus: ChatContextStatus
+    contextStatus?: ChatContextStatus
     isAppInstalled: boolean
     onboardingPopupProps: OnboardingPopupProps
 }
@@ -52,14 +52,14 @@ export const ChatInputContextSimplified: React.FC<ChatInputContextSimplifiedProp
 }) => {
     const [popupOpen, setPopupOpen] = useState<boolean>(false)
     const togglePopup = (): void => setPopupOpen(!popupOpen)
-    const connectionHasEmbeddings = contextStatus.mode && contextStatus.connection
+    const connectionHasEmbeddings = contextStatus?.mode && contextStatus?.connection
     let popup: React.FC<OnboardingPopupProps & PopupOpenProps> | undefined
-    if (contextStatus.codebase && !connectionHasEmbeddings) {
+    if (contextStatus?.codebase && !connectionHasEmbeddings) {
         popup = isAppInstalled ? EmbeddingsNotFoundPopup : InstallCodyAppPopup
     }
     return (
         <div className={styles.container}>
-            {contextStatus.codebase ? (
+            {contextStatus?.codebase ? (
                 connectionHasEmbeddings ? (
                     // Codebase and embeddings
                     <CodebaseState codebase={contextStatus.codebase} icon={mdiDatabaseCheckOutline} />
@@ -77,17 +77,13 @@ export const ChatInputContextSimplified: React.FC<ChatInputContextSimplifiedProp
                 )
             ) : (
                 // No codebase
-                <CodebaseState icon={mdiDatabaseOffOutline} iconClassName={styles.errorColor} />
+                <CodebaseState icon={mdiDatabaseOffOutline} />
             )}
-            {(contextStatus.filePath && (
+            {(contextStatus?.filePath && (
                 <p className={styles.file} title={contextStatus.filePath}>
                     {formatFilePath(contextStatus.filePath, contextStatus.selectionRange)}
                 </p>
-            )) || (
-                <p className={styles.file} title={contextStatus.filePath}>
-                    No file selected
-                </p>
-            )}
+            )) || <p className={styles.file}>No file selected</p>}
         </div>
     )
 }
