@@ -17,6 +17,7 @@ export enum FeatureFlag {
     CodyAutocompleteMinimumLatency350 = 'cody-autocomplete-minimum-latency-350',
     CodyAutocompleteMinimumLatency600 = 'cody-autocomplete-minimum-latency-600',
     CodyAutocompleteGraphContext = 'cody-autocomplete-graph-context',
+    CodyAutocompleteCompleteSuggestWidgetSelection = 'cody-autocomplete-complete-suggest-widget-selection',
 }
 
 const ONE_HOUR = 60 * 60 * 1000
