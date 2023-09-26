@@ -193,7 +193,6 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
             lastCompletionRequest &&
             onlyCompletionWidgetSelectionChanged(lastCompletionRequest, completionRequest)
         ) {
-            console.log('++++++++++++++')
             takeSuggestWidgetSelectionIntoAccount = true
         }
 
@@ -317,6 +316,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
                 !isCompletionVisible(
                     items,
                     document,
+                    position,
                     docContext,
                     context,
                     takeSuggestWidgetSelectionIntoAccount,
@@ -412,11 +412,9 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
 
             // Append any eventual inline completion context item to the prefix if
             // completeSuggestWidgetSelection is enabled.
-            console.log({ takeSuggestWidgetSelectionIntoAccount, sci: context.selectedCompletionInfo })
             if (takeSuggestWidgetSelectionIntoAccount && context.selectedCompletionInfo) {
                 const { range, text } = context.selectedCompletionInfo
                 insertText = text.slice(position.character - range.start.character) + insertText
-                console.log({ insertText })
             }
 
             // Return the completion from the start of the current line (instead of starting at the
@@ -507,6 +505,7 @@ function createTracerForInvocation(tracer: ProvideInlineCompletionItemsTracer): 
 function isCompletionVisible(
     completions: vscode.InlineCompletionItem[],
     document: vscode.TextDocument,
+    position: vscode.Position,
     docContext: DocumentContext,
     context: vscode.InlineCompletionContext,
     completeSuggestWidgetSelection: boolean,
@@ -533,7 +532,7 @@ function isCompletionVisible(
     const isAborted = abortSignal ? abortSignal.aborted : false
     const isMatchingPopupItem = completeSuggestWidgetSelection
         ? true
-        : completionMatchesPopupItem(completions, document, context)
+        : completionMatchesPopupItem(completions, position, document, context)
     const isMatchingSuffix = completionMatchesSuffix(completions, docContext)
     const isVisible = !isAborted && isMatchingPopupItem && isMatchingSuffix
 
@@ -573,18 +572,27 @@ function currentEditorContentMatchesPopupItem(
 // VS Code won't show a completion if it won't.
 function completionMatchesPopupItem(
     completions: vscode.InlineCompletionItem[],
+    position: vscode.Position,
     document: vscode.TextDocument,
     context: vscode.InlineCompletionContext
 ): boolean {
     if (context.selectedCompletionInfo) {
         const currentText = document.getText(context.selectedCompletionInfo.range)
         const selectedText = context.selectedCompletionInfo.text
+
         if (completions.length > 0) {
             const visibleCompletion = completions[0]
-            if (
-                typeof visibleCompletion.insertText === 'string' &&
-                !(currentText + visibleCompletion.insertText).startsWith(selectedText)
-            ) {
+            const insertText = visibleCompletion.insertText
+            if (typeof insertText !== 'string') {
+                return true
+            }
+
+            // To ensure a good experience, the VS Code insertion might have the range start at the
+            // beginning of the line. When this happens, the insertText needs to be adjusted to only
+            // contain the insertion after the current position.
+            const offset = position.character - (visibleCompletion.range?.start.character ?? position.character)
+            const correctInsertText = insertText.slice(offset)
+            if (!(currentText + correctInsertText).startsWith(selectedText)) {
                 return false
             }
         }
@@ -621,17 +629,14 @@ function completionMatchesSuffix(completions: vscode.InlineCompletionItem[], doc
  */
 function onlyCompletionWidgetSelectionChanged(prev: CompletionRequest, next: CompletionRequest): boolean {
     if (prev.document.uri.toString() !== next.document.uri.toString()) {
-        console.log('doc changed')
         return false
     }
 
     if (!prev.position.isEqual(next.position)) {
-        console.log('pos changed')
         return false
     }
 
     if (prev.context.triggerKind !== next.context.triggerKind) {
-        console.log('trigger changed')
         return false
     }
 
@@ -639,15 +644,12 @@ function onlyCompletionWidgetSelectionChanged(prev: CompletionRequest, next: Com
     const nextSelectedCompletionInfo = next.context.selectedCompletionInfo
 
     if (!prevSelectedCompletionInfo || !nextSelectedCompletionInfo) {
-        console.log('info changed')
         return false
     }
 
     if (!prevSelectedCompletionInfo.range.isEqual(nextSelectedCompletionInfo.range)) {
-        console.log('range changed')
         return false
     }
 
-    console.log(prevSelectedCompletionInfo.text, nextSelectedCompletionInfo.text)
     return prevSelectedCompletionInfo.text !== nextSelectedCompletionInfo.text
 }
