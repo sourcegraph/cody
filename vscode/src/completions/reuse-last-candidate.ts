@@ -14,7 +14,7 @@ import { InlineCompletionItem } from './types'
 export function reuseLastCandidate({
     document,
     position,
-    context,
+    selectedCompletionInfo,
     lastCandidate: {
         lastTriggerPosition,
         lastTriggerCurrentLinePrefix,
@@ -27,7 +27,7 @@ export function reuseLastCandidate({
 }: Required<
     Pick<
         InlineCompletionsParams,
-        'document' | 'position' | 'context' | 'lastCandidate' | 'completeSuggestWidgetSelection'
+        'document' | 'position' | 'selectedCompletionInfo' | 'lastCandidate' | 'completeSuggestWidgetSelection'
     >
 > & {
     docContext: DocumentContext
@@ -39,7 +39,7 @@ export function reuseLastCandidate({
     // If completeSuggestWidgetSelection is enabled, we have to compare that a last candidate is
     // only reused if it is has same completion info selected.
     const isSameTriggerSelectedInfoItem = completeSuggestWidgetSelection
-        ? lastTriggerSelectedInfoItem === context.selectedCompletionInfo?.text
+        ? lastTriggerSelectedInfoItem === selectedCompletionInfo?.text
         : true
 
     if (!isSameDocument || !isSameLine || !isSameNextNonEmptyLine || !isSameTriggerSelectedInfoItem) {

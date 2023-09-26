@@ -9,7 +9,7 @@ import { captureException, shouldErrorBeReported } from '../services/sentry/sent
 import { telemetryService } from '../services/telemetry'
 
 import { ContextSummary } from './context/context'
-import { InlineCompletionsResultSource } from './get-inline-completions'
+import { InlineCompletionsResultSource, TriggerKind } from './get-inline-completions'
 import * as statistics from './statistics'
 import { InlineCompletionItemWithAnalytics } from './text-processing/process-inline-completions'
 import { InlineCompletionItem } from './types'
@@ -19,6 +19,7 @@ export interface CompletionEvent {
         type: 'inline'
         multiline: boolean
         multilineMode: null | 'block'
+        triggerKind: TriggerKind
         providerIdentifier: string
         providerModel: string
         languageId: string

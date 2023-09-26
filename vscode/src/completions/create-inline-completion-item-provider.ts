@@ -74,6 +74,9 @@ export async function createInlineCompletionItemProvider({
         })
 
         disposables.push(
+            vscode.commands.registerCommand('cody.autocomplete.manual-trigger', () =>
+                completionsProvider.manuallyTriggerCompletion()
+            ),
             vscode.commands.registerCommand('cody.autocomplete.inline.accepted', ({ codyLogId, codyCompletion }) => {
                 completionsProvider.handleDidAcceptCompletionItem(codyLogId, codyCompletion)
             }),

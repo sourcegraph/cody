@@ -1,7 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 
-import { vsCodeMocks } from '../testutils/mocks'
-
 import { getCurrentDocContext } from './get-current-doc-context'
 import { Provider } from './providers/provider'
 import { RequestManager, RequestManagerResult, RequestParams } from './request-manager'
@@ -54,10 +52,7 @@ function docState(prefix: string, suffix: string = ';'): RequestParams {
             maxSuffixLength: 100,
             enableExtendedTriggers: true,
         }),
-        context: {
-            triggerKind: vsCodeMocks.InlineCompletionTriggerKind.Automatic,
-            selectedCompletionInfo: undefined,
-        },
+        selectedCompletionInfo: undefined,
     }
 }
 

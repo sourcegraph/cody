@@ -487,7 +487,7 @@
         "key": "ctrl+enter"
       },
       {
-        "command": "editor.action.inlineSuggest.trigger",
+        "command": "cody.autocomplete.manual-trigger",
         "key": "alt+\\",
         "when": "editorTextFocus && !editorHasSelection && config.cody.autocomplete.enabled && !inlineSuggestionsVisible"
       }

@@ -41,10 +41,7 @@ describe('[getInlineCompletions] common', () => {
         expect(
             await getInlineCompletions(
                 params('array.so█', [completion`rt()`], {
-                    context: {
-                        triggerKind: vsCodeMocks.InlineCompletionTriggerKind.Automatic,
-                        selectedCompletionInfo: { text: 'sort', range: new vsCodeMocks.Range(0, 6, 0, 8) },
-                    },
+                    selectedCompletionInfo: { text: 'sort', range: new vsCodeMocks.Range(0, 6, 0, 8) },
                 })
             )
         ).toEqual<V>({
