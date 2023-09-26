@@ -3,7 +3,18 @@ import * as vscode from 'vscode'
 import { getTargetFoldingRange } from './folding-ranges'
 
 /**
- * Gets a smart selection for the given document and target position.
+ * Gets selection range for the given document and target position based on user cursor position.
+ *
+ * This should only be used when there is no existing selection.
+ *
+ * Smart selection removes the need to manually highlight code before running a command.
+ * Instead, this will try to identify the folding range that contains the user's cursor and use it as the selection range.
+ * For example, a docstring will be added to the top of the target folding range for the /doc command.
+ *
+ * NOTE: Smart selection should be treated as a fallback method, as it produces a selection based on guessing user intent.
+ * Manual selection truly reflects the user's real intent and should be used when possible.
+ * In cases where smart selection is unreliable, or if callers need the absolute selection range,
+ * always use the manual selection method to ensure accuracy.
  *
  * @param uri - The document URI.
  * @param target - The target position in the document.

@@ -4,6 +4,7 @@ import { getFoldingRanges, getSymbols } from '.'
 
 /**
  * Gets the folding range containing the target position.
+ * Target position that sits outside of any folding range will return undefined.
  *
  * NOTE: Use getSmartSelection from utils/index.ts instead
  *
@@ -17,31 +18,34 @@ export async function getTargetFoldingRange(
 ): Promise<vscode.Selection | undefined> {
     // Check if symbols is available in the doc by its file uri and look for language id
     const doc = await vscode.workspace.openTextDocument(uri)
-    // Remove text-based languages that don't support symbols or folding ranges
-    const textBaseLangIds = ['markdown', 'json', 'sql']
-    const isSupported = !textBaseLangIds.includes(doc.languageId)
-
-    if (!doc || !isSupported || !doc.languageId) {
+    if (!doc) {
         return undefined
     }
-
-    // Get the ranges of all classes and folding ranges in parallel
-    const [ranges, classes] = await Promise.all([
-        getFoldingRanges(uri).then(r => r?.filter(r => !r.kind)),
-        isSupported
-            ? getSymbols(uri)
-                  .then(r => r?.filter(s => s.kind === vscode.SymbolKind.Class))
-                  .then(s => s?.map(symbol => symbol.location.range))
-            : [],
-    ])
 
     // doc.languageId for files that do not have symbol support enabled are identified as 'plaintext' in vs code
     // in those cases, we will try to find class object ranges heuristically
     const isPlainText = doc.languageId === 'plaintext'
 
+    // Get the ranges of all classes and folding ranges in parallel
+    const [ranges, classes] = await Promise.all([
+        getFoldingRanges(uri).then(r => r?.filter(r => !r.kind)),
+        isPlainText
+            ? []
+            : getSymbols(uri)
+                  .then(r => r?.filter(s => s.kind === vscode.SymbolKind.Class))
+                  .then(s => s?.map(symbol => symbol.location.range)),
+    ])
+
+    // NOTE (bee) In order to find the nested folding range containing the target line:
+    // 1. remove all ranges for classes from folding ranges
+    // 2. filter the filtered folding ranges to only include the outer ranges containing target line
+    //
+    // This way when it checks for the range containing the cursor, it will return the outer range that fully encloses the cursor location,
+    // rather than an inner range that may only partially cover the cursor line.
+
     const classRanges = isPlainText ? await getOuterClassFoldingRanges(ranges, uri) : classes
 
-    const targetRange = getNestedOutermostFoldingRanges(classRanges, ranges, targetLine, isPlainText)
+    const targetRange = getTargetRange(classRanges, ranges, targetLine, isPlainText)
 
     if (!targetRange) {
         console.error('No folding range found containing cursor')
@@ -62,7 +66,7 @@ export async function getTargetFoldingRange(
  * @param isPlainText Optional flag indicating if the document is plain text.
  * @returns The outermost non-class folding range containing the target position, or undefined if not found.
  */
-export function getNestedOutermostFoldingRanges(
+export function getTargetRange(
     classRanges: vscode.Range[],
     foldingRanges: vscode.FoldingRange[],
     targetLine: number,
@@ -71,15 +75,6 @@ export function getNestedOutermostFoldingRanges(
     if (!foldingRanges?.length) {
         return undefined
     }
-
-    // NOTE (bee) The purpose of filtering to keep only folding ranges that contain other folding ranges is to find
-    // the outermost folding range enclosing the cursor position.
-    // Folding ranges can be nested - you may have a folding range for a function that contains folding ranges for inner code blocks.
-    // By filtering to ranges that contain other ranges, it removes the inner nested ranges and keeps only the outermost parent ranges.
-    // This way when it checks for the range containing the cursor, it will return the outer range that fully encloses the cursor location,
-    // rather than an inner range that may only partially cover the cursor line.
-    // However, if we keep the ranges for classes, this will then only return ranges for classes that contain individual methods rather
-    // than the outermost range of the methods within a class. So the first step is to remove class ranges.
 
     // Remove the ranges of classes from the folding ranges
     const classLessRanges = removeOutermostFoldingRanges(classRanges, foldingRanges)

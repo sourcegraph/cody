@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import * as vscode from 'vscode'
 
-import { findTargetFoldingRange, getNestedOutermostFoldingRanges } from './folding-ranges'
+import { findTargetFoldingRange, getTargetRange } from './folding-ranges'
 
-describe('getNestedOutermostFoldingRanges', () => {
+describe('getTargetRange', () => {
     it('returns outermost folding range containing cursor', () => {
         const classRanges = [] as vscode.Range[]
         const foldingRanges = [
@@ -14,7 +14,7 @@ describe('getNestedOutermostFoldingRanges', () => {
         const cursorPos = 7
         const expected = { start: 0, end: 10 }
 
-        expect(getNestedOutermostFoldingRanges(classRanges, foldingRanges, cursorPos)).toEqual(expected)
+        expect(getTargetRange(classRanges, foldingRanges, cursorPos)).toEqual(expected)
     })
 
     it('filters out folding ranges contained in class ranges', () => {
@@ -26,7 +26,7 @@ describe('getNestedOutermostFoldingRanges', () => {
         const cursorPos = 7
         const expected = undefined
 
-        expect(getNestedOutermostFoldingRanges(classRanges, foldingRanges, cursorPos)).toEqual(expected)
+        expect(getTargetRange(classRanges, foldingRanges, cursorPos)).toEqual(expected)
     })
 
     it('returns undefined if no range contains cursor', () => {
@@ -37,7 +37,7 @@ describe('getNestedOutermostFoldingRanges', () => {
         ]
         const cursorPos = 7
 
-        expect(getNestedOutermostFoldingRanges(classRanges, foldingRanges, cursorPos)).toBeUndefined()
+        expect(getTargetRange(classRanges, foldingRanges, cursorPos)).toBeUndefined()
     })
 
     it('returns parent range when cursor is inside nested child range', () => {
@@ -48,7 +48,7 @@ describe('getNestedOutermostFoldingRanges', () => {
         const cursorPos = 3
         const expected = { start: 0, end: 10 }
 
-        expect(getNestedOutermostFoldingRanges([], foldingRanges, cursorPos)).toEqual(expected)
+        expect(getTargetRange([], foldingRanges, cursorPos)).toEqual(expected)
     })
 
     it('returns undefined if cursor is outside all ranges', () => {
@@ -58,7 +58,7 @@ describe('getNestedOutermostFoldingRanges', () => {
         ]
         const cursorPos = 20
 
-        expect(getNestedOutermostFoldingRanges([], foldingRanges, cursorPos)).toBeUndefined()
+        expect(getTargetRange([], foldingRanges, cursorPos)).toBeUndefined()
     })
 })
 
