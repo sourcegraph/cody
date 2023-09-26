@@ -1,22 +1,34 @@
 import * as vscode from 'vscode'
 
+import { LOCAL_APP_URL } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
+
 import { isOsSupportedByApp } from '../chat/protocol'
 
 import { LOCAL_APP_LOCATIONS } from './LocalAppFsPaths'
 
 /**
- * Watches the Cody app install location and monitors if app is installed. This
- * has some overlap with LocalAppDetector, but the way they work is different:
+ * Watches the Cody app install location and monitors if app is installed and
+ * running. This is forked from LocalAppDetector, but the way they work is
+ * different:
+ *
  * - LocalAppDetector can pick up a token from app, and is hooked into
  *   authorization. LocalAppWatcher does not do auth.
- * - LocalAppDetector has a ratchet from installed, to running, and it does not
- *   go back if app is stopped. LocalAppWatcher continues to monitor app.
+ * - LocalAppDetector has a ratchet from installed, to running, and does not go
+ *   backwards. LocalAppWatcher will monitor when app stops running.
+ * - LocalAppDetector gives up monitoring app installs if the user is logged in.
+ *   LocalAppWatcher continues to monitor app.
+ *
+ * Note, VScode file watcher can't watch file deletions outside the workspace.
+ * So LocalAppWatcher won't flip from installed, to not installed, on deletion.
+ * See vscode.workspace.createFileSystemWatcher.
  */
 export class LocalAppWatcher implements vscode.Disposable {
     public readonly isSupported: boolean
+    private disposed = false
     private disposables: vscode.Disposable[] = []
     private changeEventEmitter = new vscode.EventEmitter<LocalAppWatcher>()
     private _isInstalled = false
+    private _isRunning = false
 
     constructor() {
         // Check if the platform is supported and the user has a home directory
@@ -26,6 +38,10 @@ export class LocalAppWatcher implements vscode.Disposable {
 
     public get isInstalled(): boolean {
         return this._isInstalled
+    }
+
+    public get isRunning(): boolean {
+        return this._isRunning
     }
 
     public get onChange(): vscode.Event<LocalAppWatcher> {
@@ -50,7 +66,7 @@ export class LocalAppWatcher implements vscode.Disposable {
             this.disposables.push(watcher.onDidChange(() => this.patternChanged()))
             this.disposables.push(watcher)
         }
-        await this.patternChanged()
+        await Promise.all([this.patternChanged(), this.pollHttp()])
     }
 
     private async patternChanged(): Promise<void> {
@@ -67,7 +83,28 @@ export class LocalAppWatcher implements vscode.Disposable {
         }
     }
 
+    private async pollHttp(): Promise<void> {
+        if (this.disposed) {
+            return
+        }
+        let running = false
+        try {
+            const response = await fetch(`${LOCAL_APP_URL.href}__version`)
+            running = response.status === 200
+        } catch {
+            running = false
+        }
+        if (running !== this._isRunning) {
+            this._isRunning = running
+            this.changeEventEmitter.fire(this)
+        }
+        setTimeout(() => {
+            void this.pollHttp()
+        }, 20_000)
+    }
+
     public dispose(): void {
+        this.disposed = true
         for (const disposable of this.disposables) {
             disposable.dispose()
         }

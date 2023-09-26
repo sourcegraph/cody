@@ -174,12 +174,13 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
         await this.openExternalLinks(DOWNLOAD_URL)
     }
 
-    private async simplifiedOnboardingReloadEmbeddingsState(): Promise<void> {
+    public async simplifiedOnboardingReloadEmbeddingsState(): Promise<void> {
         await this.contextProvider.forceUpdateCodebaseContext()
     }
 
     private appWatcherChanged(appWatcher: LocalAppWatcher): void {
         void this.webview?.postMessage({ type: 'app-state', isInstalled: appWatcher.isInstalled })
+        void this.simplifiedOnboardingReloadEmbeddingsState()
     }
 
     private async onHumanMessageSubmitted(text: string, submitType: 'user' | 'suggestion' | 'example'): Promise<void> {
