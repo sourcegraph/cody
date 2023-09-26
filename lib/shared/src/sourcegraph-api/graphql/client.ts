@@ -1,5 +1,7 @@
 import fetch from 'isomorphic-fetch'
 
+import { TelemetryEventInput } from '@sourcegraph/telemetry/dist/api'
+
 import { ConfigurationWithAccessToken } from '../../configuration'
 import { isError } from '../../utils'
 import { DOTCOM_URL, isDotCom, isLocalApp } from '../environments'
@@ -20,6 +22,7 @@ import {
     LEGACY_SEARCH_EMBEDDINGS_QUERY,
     LOG_EVENT_MUTATION,
     LOG_EVENT_MUTATION_DEPRECATED,
+    RECORD_TELEMETRY_EVENTS_MUTATION,
     REPOSITORY_EMBEDDING_EXISTS_QUERY,
     REPOSITORY_ID_QUERY,
     REPOSITORY_IDS_QUERY,
@@ -212,10 +215,20 @@ export function setUserAgent(newUseragent: string): void {
 
 export class SourcegraphGraphQLAPIClient {
     private dotcomUrl = DOTCOM_URL
+    public anonymousUserID: string | undefined
+
     constructor(private config: GraphQLAPIClientConfig) {}
 
     public onConfigurationChange(newConfig: GraphQLAPIClientConfig): void {
         this.config = newConfig
+    }
+
+    /**
+     * If set, anonymousUID is trasmitted as 'X-Sourcegraph-Actor-Anonymous-UID'
+     * which is automatically picked up by Sourcegraph backends 5.2+
+     */
+    public setAnonymousUserID(anonymousUID: string): void {
+        this.anonymousUserID = anonymousUID
     }
 
     public isDotCom(): boolean {
@@ -226,15 +239,13 @@ export class SourcegraphGraphQLAPIClient {
         return isLocalApp(this.config.serverEndpoint)
     }
 
+    /**
+     * Example values: "5.1.0" or "222587_2023-05-30_5.0-39cbcf1a50f0" for insider builds
+     */
     public async getSiteVersion(): Promise<string | Error> {
         return this.fetchSourcegraphAPI<APIResponse<SiteVersionResponse>>(CURRENT_SITE_VERSION_QUERY, {}).then(
             response =>
-                extractDataOrError(
-                    response,
-                    data =>
-                        // Example values: "5.1.0" or "222587_2023-05-30_5.0-39cbcf1a50f0" for insider builds
-                        data.site?.productVersion ?? new Error('site version not found')
-                )
+                extractDataOrError(response, data => data.site?.productVersion ?? new Error('site version not found'))
         )
     }
 
@@ -392,6 +403,18 @@ export class SourcegraphGraphQLAPIClient {
         return { enabled: insiderBuild || betaVersion, version: siteVersion }
     }
 
+    /**
+     * recordTelemetryEvents uses the new Telemetry API to record events that
+     * gets exported.
+     */
+    public async recordTelemetryEvents(events: TelemetryEventInput[]): Promise<void | Error> {
+        const initialResponse = await this.fetchSourcegraphAPI<APIResponse<void>>(
+            RECORD_TELEMETRY_EVENTS_MUTATION,
+            events
+        )
+        return extractDataOrError(initialResponse, data => data)
+    }
+
     public async logEvent(event: event): Promise<LogEventResponse | Error> {
         if (process.env.CODY_TESTING === 'true') {
             return this.sendEventLogRequestToTestingAPI(event)
@@ -531,6 +554,8 @@ export class SourcegraphGraphQLAPIClient {
         headers.set('Content-Type', 'application/json; charset=utf-8')
         if (this.config.accessToken) {
             headers.set('Authorization', `token ${this.config.accessToken}`)
+        } else if (this.anonymousUserID) {
+            headers.set('X-Sourcegraph-Actor-Anonymous-UID', this.anonymousUserID)
         }
         addCustomUserAgent(headers)
 

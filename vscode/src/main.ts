@@ -28,6 +28,7 @@ import { localStorage } from './services/LocalStorageProvider'
 import { CODY_ACCESS_TOKEN_SECRET, secretStorage, VSCodeSecretStorage } from './services/SecretStorageProvider'
 import { createStatusBar } from './services/StatusBar'
 import { createOrUpdateEventLogger, telemetryService } from './services/telemetry'
+import { createOrUpdateTelemetryRecorderProvider, getRecorder } from './services/telemetryV2'
 import { TestSupport } from './test-support'
 
 /**
@@ -76,6 +77,7 @@ const register = async (
         context.extensionMode === vscode.ExtensionMode.Development ||
         context.extensionMode === vscode.ExtensionMode.Test
     await createOrUpdateEventLogger(initialConfig, isExtensionModeDevOrTest)
+    await createOrUpdateTelemetryRecorderProvider(initialConfig, isExtensionModeDevOrTest)
 
     // Controller for inline Chat
     const commentController = new InlineController(context.extensionPath)
@@ -165,6 +167,7 @@ const register = async (
             const newConfig = await getFullConfig()
             externalServicesOnDidConfigurationChange(newConfig)
             await createOrUpdateEventLogger(newConfig, isExtensionModeDevOrTest)
+            await createOrUpdateTelemetryRecorderProvider(newConfig, isExtensionModeDevOrTest)
         })
     )
 
@@ -207,6 +210,8 @@ const register = async (
         }
 
         telemetryService.log('CodyVSCodeExtension:fixup:created')
+        getRecorder()?.recordEvent('cody.fixup', 'created')
+
         const provider = fixupManager.getProviderForTask(task)
         return provider.startFix()
     }
@@ -496,6 +501,7 @@ const register = async (
             contextProvider.onConfigurationChange(newConfig)
             externalServicesOnDidConfigurationChange(newConfig)
             void createOrUpdateEventLogger(newConfig, isExtensionModeDevOrTest)
+            void createOrUpdateTelemetryRecorderProvider(initialConfig, isExtensionModeDevOrTest)
             platform.onConfigurationChange?.(newConfig)
         },
     }

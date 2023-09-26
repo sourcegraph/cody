@@ -1,5 +1,25 @@
 export type ConfigurationUseContext = 'embeddings' | 'keyword' | 'none' | 'blended' | 'unified'
 
+/**
+ * Get the numeric ID corresponding to the ConfigurationUseContext mode.
+ */
+export function getContextSelectionID(c: ConfigurationUseContext): number {
+    switch (c) {
+        case 'none':
+            return 0
+
+        case 'embeddings':
+            return 1
+        case 'keyword':
+            return 2
+
+        case 'blended':
+            return 10
+        case 'unified':
+            return 11
+    }
+}
+
 // Should we share VS Code specific config via cody-shared?
 export interface Configuration {
     serverEndpoint: string
