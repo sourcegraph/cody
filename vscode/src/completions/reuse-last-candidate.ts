@@ -56,12 +56,15 @@ export function reuseLastCandidate({
             const isTypingAsSuggested =
                 lastCompletion.startsWith(currentLinePrefix) && position.isAfterOrEqual(lastTriggerPosition)
             if (isTypingAsSuggested) {
-                return { insertText: lastCompletion.slice(currentLinePrefix.length) }
+                return { id: item.id, insertText: lastCompletion.slice(currentLinePrefix.length) }
             }
 
             // Allow reuse if only the indentation (leading whitespace) has changed.
             if (isIndentationChange) {
-                return { insertText: lastTriggerCurrentLinePrefix.slice(currentLinePrefix.length) + item.insertText }
+                return {
+                    id: item.id,
+                    insertText: lastTriggerCurrentLinePrefix.slice(currentLinePrefix.length) + item.insertText,
+                }
             }
 
             return undefined

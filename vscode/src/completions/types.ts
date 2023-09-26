@@ -3,7 +3,8 @@ import { Range } from 'vscode-languageserver-textdocument'
 import { HoverContext } from '@sourcegraph/cody-shared/src/codebase-context/messages'
 
 export interface Completion {
-    content: string
+    id: string
+    insertText: string
     stopReason?: string
 }
 
@@ -11,12 +12,14 @@ export interface Completion {
  * @see vscode.InlineCompletionItem
  */
 export interface InlineCompletionItem {
+    id: string
     insertText: string
+
     /**
-     * The range to replace.
-     * Must begin and end on the same line.
+     * The range to replace. Must begin and end on the same line.
      *
-     * Prefer replacements over insertions to provide a better experience when the user deletes typed text.
+     * Prefer replacements over insertions to provide a better experience when the user deletes
+     * typed text.
      */
     range?: Range
 }

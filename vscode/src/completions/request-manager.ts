@@ -74,10 +74,7 @@ export class RequestManager {
             .then(res => res.flat())
             .then(completions =>
                 // Shared post-processing logic
-                processInlineCompletions(
-                    completions.map(item => ({ insertText: item.content })),
-                    params
-                )
+                processInlineCompletions(completions, params)
             )
             .then(processedCompletions => {
                 // Cache even if the request was aborted or already fulfilled.
@@ -115,6 +112,8 @@ export class RequestManager {
         items: InlineCompletionItemWithAnalytics[]
     ): void {
         const { document, position, docContext, selectedCompletionInfo } = resolvedRequest.params
+
+        // Create a fake last candidate, as if this completion came from the last trigger
         const lastCandidate: LastInlineCompletionCandidate = {
             uri: document.uri,
             lastTriggerPosition: position,
@@ -183,7 +182,7 @@ class RequestCache {
     private cache = new LRUCache<string, InlineCompletionItemWithAnalytics[]>({ max: 50 })
 
     private toCacheKey(key: RequestParams): string {
-        return `${key.docContext.prefix}█${key.docContext.nextNonEmptyLine}`
+        return `${key.docContext.prefix}█${key.docContext.suffix}`
     }
 
     public get(key: RequestParams): InlineCompletionItemWithAnalytics[] | undefined {

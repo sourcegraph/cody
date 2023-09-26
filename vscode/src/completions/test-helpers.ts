@@ -95,3 +95,7 @@ export function formatCaptures(captures: QueryCapture[]): FormattedCapture[] {
 export async function nextTick(): Promise<void> {
     await new Promise(resolve => setTimeout(resolve, 0))
 }
+
+export function withoutId<T>({ id, ...t }: { id: string } & T): T {
+    return t as T
+}

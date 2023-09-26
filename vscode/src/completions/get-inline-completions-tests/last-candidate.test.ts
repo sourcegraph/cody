@@ -5,6 +5,7 @@ import { range } from '../../testutils/textDocument'
 import { getCurrentDocContext } from '../get-current-doc-context'
 import { InlineCompletionsResultSource, LastInlineCompletionCandidate } from '../get-inline-completions'
 import { documentAndPosition } from '../test-helpers'
+import { createCompletion } from '../utils'
 
 import { getInlineCompletions, params, V } from './helpers'
 
@@ -28,7 +29,9 @@ describe('[getInlineCompletions] reuseLastCandidate', () => {
             lastTriggerSelectedInfoItem,
             result: {
                 logId: '1',
-                items: Array.isArray(insertText) ? insertText.map(insertText => ({ insertText })) : [{ insertText }],
+                items: Array.isArray(insertText)
+                    ? insertText.map(insertText => createCompletion(insertText))
+                    : [createCompletion(insertText)],
             },
             lastTriggerDocContext: lastDocContext,
         }
@@ -43,7 +46,7 @@ describe('[getInlineCompletions] reuseLastCandidate', () => {
                 params('\nconst x = 1█', [], { lastCandidate: lastCandidate('\n█', 'const x = 123') })
             )
         ).toEqual<V>({
-            items: [{ insertText: '23' }],
+            items: [expect.objectContaining({ insertText: '23' })],
             source: InlineCompletionsResultSource.LastCandidate,
         }))
 
@@ -51,7 +54,7 @@ describe('[getInlineCompletions] reuseLastCandidate', () => {
         // The user types ` `, sees ghost text ` x`, then types ` `. The original completion
         // should still display.
         expect(await getInlineCompletions(params('  █', [], { lastCandidate: lastCandidate(' █', ' x') }))).toEqual<V>({
-            items: [{ insertText: 'x' }],
+            items: [expect.objectContaining({ insertText: 'x' })],
             source: InlineCompletionsResultSource.LastCandidate,
         }))
 
@@ -59,7 +62,7 @@ describe('[getInlineCompletions] reuseLastCandidate', () => {
         // The user sees ghost text `  x`, then types `  `. The original completion should still
         // display.
         expect(await getInlineCompletions(params('  █', [], { lastCandidate: lastCandidate('█', '  x') }))).toEqual<V>({
-            items: [{ insertText: 'x' }],
+            items: [expect.objectContaining({ insertText: 'x' })],
             source: InlineCompletionsResultSource.LastCandidate,
         }))
 
@@ -68,7 +71,7 @@ describe('[getInlineCompletions] reuseLastCandidate', () => {
         // completion should be reused.
         expect(await getInlineCompletions(params(' █', [], { lastCandidate: lastCandidate('█', 'x = 1') }))).toEqual<V>(
             {
-                items: [{ insertText: 'x = 1' }],
+                items: [expect.objectContaining({ insertText: 'x = 1' })],
                 source: InlineCompletionsResultSource.LastCandidate,
             }
         ))
@@ -80,7 +83,7 @@ describe('[getInlineCompletions] reuseLastCandidate', () => {
         expect(
             await getInlineCompletions(params('const x█', [], { lastCandidate: lastCandidate('const x█', ' = 123') }))
         ).toEqual<V>({
-            items: [{ insertText: ' = 123' }],
+            items: [expect.objectContaining({ insertText: ' = 123' })],
             source: InlineCompletionsResultSource.LastCandidate,
         }))
 
@@ -172,7 +175,7 @@ describe('[getInlineCompletions] reuseLastCandidate', () => {
                 })
             )
         ).toEqual<V>({
-            items: [{ insertText: 'i xyz")' }],
+            items: [expect.objectContaining({ insertText: 'i xyz")' })],
             source: InlineCompletionsResultSource.LastCandidate,
         }))
 
@@ -183,7 +186,7 @@ describe('[getInlineCompletions] reuseLastCandidate', () => {
             // The user types on a new line `\t\t`, sees ghost text `const x = 1`, then
             // deletes one `\t`. The same ghost text should still be displayed.
             expect(await getInlineCompletions(params('\t█', [], { lastCandidate: candidate }))).toEqual<V>({
-                items: [{ insertText: '\tconst x = 1' }],
+                items: [expect.objectContaining({ insertText: '\tconst x = 1' })],
                 source: InlineCompletionsResultSource.LastCandidate,
             }))
 
@@ -192,7 +195,7 @@ describe('[getInlineCompletions] reuseLastCandidate', () => {
             // all leading whitespace (both `\t\t`). The same ghost text should still be
             // displayed.
             expect(await getInlineCompletions(params('█', [], { lastCandidate: candidate }))).toEqual<V>({
-                items: [{ insertText: '\t\tconst x = 1' }],
+                items: [expect.objectContaining({ insertText: '\t\tconst x = 1' })],
                 source: InlineCompletionsResultSource.LastCandidate,
             }))
 
@@ -225,7 +228,7 @@ describe('[getInlineCompletions] reuseLastCandidate', () => {
         // The user types ``, sees ghost text `x\ny`, then types ` ` (space). The original
         // completion should be reused.
         expect(await getInlineCompletions(params('x█', [], { lastCandidate: lastCandidate('█', 'x\ny') }))).toEqual<V>({
-            items: [{ insertText: '\ny' }],
+            items: [expect.objectContaining({ insertText: '\ny' })],
             source: InlineCompletionsResultSource.LastCandidate,
         }))
 
@@ -233,7 +236,7 @@ describe('[getInlineCompletions] reuseLastCandidate', () => {
         // The user types ``, sees ghost text `x\ny`, then types ` `. The original completion
         // should be reused.
         expect(await getInlineCompletions(params(' █', [], { lastCandidate: lastCandidate('█', 'x\ny') }))).toEqual<V>({
-            items: [{ insertText: 'x\ny' }],
+            items: [expect.objectContaining({ insertText: 'x\ny' })],
             source: InlineCompletionsResultSource.LastCandidate,
         }))
 

@@ -3,6 +3,7 @@ import { isAbortError } from '@sourcegraph/cody-shared/src/sourcegraph-api/error
 import { fetch } from '../../fetch'
 import { logger } from '../../log'
 import { Completion, ContextSnippet } from '../types'
+import { createCompletion } from '../utils'
 
 import { Provider, ProviderConfig, ProviderOptions } from './provider'
 
@@ -60,7 +61,7 @@ export class UnstableCodeGenProvider extends Provider {
             const completions: string[] = data.completions.map(c => postProcess(c.completion))
             log?.onComplete(completions)
 
-            return completions.map(content => ({ content }))
+            return completions.map(content => createCompletion(content))
         } catch (error: any) {
             if (!isAbortError(error)) {
                 log?.onError(error)

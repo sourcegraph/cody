@@ -4,15 +4,16 @@ import Parser from 'web-tree-sitter'
 
 import { range } from '../../testutils/textDocument'
 import { getCurrentDocContext } from '../get-current-doc-context'
-import { documentAndPosition, initTreeSitterParser } from '../test-helpers'
+import { documentAndPosition, initTreeSitterParser, withoutId } from '../test-helpers'
 import { updateParseTreeCache } from '../tree-sitter/parse-tree-cache'
 import { InlineCompletionItem } from '../types'
+import { createCompletion } from '../utils'
 
 import { adjustRangeToOverwriteOverlappingCharacters, processInlineCompletions } from './process-inline-completions'
 
 describe('adjustRangeToOverwriteOverlappingCharacters', () => {
     test('no adjustment at end of line', () => {
-        const item: InlineCompletionItem = { insertText: 'array) {' }
+        const item = createCompletion('array) {')
         const { position } = documentAndPosition('function sort(█')
         expect(
             adjustRangeToOverwriteOverlappingCharacters(item, {
@@ -23,7 +24,7 @@ describe('adjustRangeToOverwriteOverlappingCharacters', () => {
     })
 
     test('handles non-empty currentLineSuffix', () => {
-        const item: InlineCompletionItem = { insertText: 'array) {' }
+        const item = createCompletion('array) {')
         const { position } = documentAndPosition('function sort(█)')
         expect(
             adjustRangeToOverwriteOverlappingCharacters(item, {
@@ -37,7 +38,7 @@ describe('adjustRangeToOverwriteOverlappingCharacters', () => {
     })
 
     test('handles whitespace in currentLineSuffix', () => {
-        const item: InlineCompletionItem = { insertText: 'array) {' }
+        const item = createCompletion('array) {')
         const { position } = documentAndPosition('function sort(█)')
         expect(
             adjustRangeToOverwriteOverlappingCharacters(item, {
@@ -71,7 +72,7 @@ describe('process completion item', () => {
         updateParseTreeCache(document, parser)
 
         return processInlineCompletions(
-            completionSnippets.map(s => ({ insertText: s })),
+            completionSnippets.map(s => createCompletion(s)),
             {
                 document,
                 position,
@@ -104,7 +105,7 @@ describe('process completion item', () => {
             ['array) {\nreturn array.sort()\n} function two() {}', 'array) new\n']
         )
 
-        expect(completions).toMatchInlineSnapshot(`
+        expect(completions.map(withoutId)).toMatchInlineSnapshot(`
           [
             {
               "insertText": "array) {",
@@ -125,6 +126,7 @@ describe('process completion item', () => {
                   "line": 5,
                 },
               },
+              "stopReason": undefined,
             },
             {
               "insertText": "array) new",
@@ -145,6 +147,7 @@ describe('process completion item', () => {
                   "line": 5,
                 },
               },
+              "stopReason": undefined,
             },
           ]
         `)
@@ -171,7 +174,7 @@ describe('process completion item', () => {
             ]
         )
 
-        expect(completions).toMatchInlineSnapshot(`
+        expect(completions.map(withoutId)).toMatchInlineSnapshot(`
           [
             {
               "insertText": "console.log('one')
@@ -186,6 +189,7 @@ describe('process completion item', () => {
                 "parent": "statement_block",
               },
               "parseErrorCount": 0,
+              "stopReason": undefined,
               "truncatedWith": "tree-sitter",
             },
           ]

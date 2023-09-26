@@ -3,7 +3,7 @@ import { Position, TextDocument } from 'vscode'
 import { dedupeWith } from '@sourcegraph/cody-shared/src/common'
 
 import { DocumentContext } from '../get-current-doc-context'
-import { ItemPostProcesssingInfo } from '../logger'
+import { ItemPostProcessingInfo } from '../logger'
 import { astGetters } from '../tree-sitter/ast-getters'
 import { getDocumentQuerySDK } from '../tree-sitter/queries'
 import { InlineCompletionItem } from '../types'
@@ -11,7 +11,7 @@ import { InlineCompletionItem } from '../types'
 import { dropParserFields, parseCompletion, ParsedCompletion } from './parse-completion'
 import { truncateMultilineCompletion } from './truncate-multiline-completion'
 import { truncateParsedCompletion } from './truncate-parsed-completion'
-import { collapseDuplicativeWhitespace, removeTrailingWhitespace, trimUntilSuffix } from './utils'
+import { collapseDuplicateWhitespace, removeTrailingWhitespace, trimUntilSuffix } from './utils'
 
 export interface ProcessInlineCompletionsParams {
     document: TextDocument
@@ -19,7 +19,7 @@ export interface ProcessInlineCompletionsParams {
     docContext: DocumentContext
 }
 
-export interface InlineCompletionItemWithAnalytics extends ItemPostProcesssingInfo, InlineCompletionItem {}
+export interface InlineCompletionItemWithAnalytics extends ItemPostProcessingInfo, InlineCompletionItem {}
 
 /**
  * This function implements post-processing logic that is applied regardless of
@@ -114,7 +114,7 @@ export function processItem(params: ProcessItemParams): InlineCompletionItemWith
     }
 
     insertText = trimUntilSuffix(insertText, prefix, suffix, document.languageId)
-    insertText = collapseDuplicativeWhitespace(prefix, insertText)
+    insertText = collapseDuplicateWhitespace(prefix, insertText)
 
     // Trim start and end of the completion to remove all trailing whitespace.
     insertText = insertText.trimEnd()
@@ -171,3 +171,5 @@ function removeLowQualityCompletions(completions: InlineCompletionItem[]): Inlin
             .filter(c => c.insertText.trim().length > 1)
     )
 }
+
+// Filter

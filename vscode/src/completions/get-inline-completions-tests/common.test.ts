@@ -33,7 +33,7 @@ describe('[getInlineCompletions] common', () => {
                 )
             )
         ).toEqual<V>({
-            items: [{ insertText: 'if (true) {' }],
+            items: [expect.objectContaining({ insertText: 'if (true) {' })],
             source: InlineCompletionsResultSource.Network,
         }))
 
@@ -45,7 +45,7 @@ describe('[getInlineCompletions] common', () => {
                 })
             )
         ).toEqual<V>({
-            items: [{ insertText: 'rt()' }],
+            items: [expect.objectContaining({ insertText: 'rt()' })],
             source: InlineCompletionsResultSource.Network,
         }))
 
@@ -57,7 +57,7 @@ describe('[getInlineCompletions] common', () => {
                 abortSignal: abortController.signal,
             })
         ).toEqual<V>({
-            items: [{ insertText: '1337' }],
+            items: [expect.objectContaining({ insertText: '1337' })],
             source: InlineCompletionsResultSource.Network,
         })
     })

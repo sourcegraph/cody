@@ -7,7 +7,7 @@ import { CodeCompletionsClient } from '../client'
 import { canUsePartialCompletion } from '../streaming'
 import { getHeadAndTail } from '../text-processing'
 import { Completion, ContextSnippet } from '../types'
-import { forkSignal } from '../utils'
+import { createCompletion, forkSignal } from '../utils'
 
 import { CompletionProviderTracer, Provider, ProviderConfig, ProviderOptions } from './provider'
 
@@ -89,15 +89,7 @@ export class UnstableOpenAIProvider extends Provider {
             })
         )
 
-        const ret = responses.map(resp => [
-            {
-                prefix: this.options.docContext.prefix,
-                content: resp.completion,
-                stopReason: resp.stopReason,
-            },
-        ])
-
-        const completions = ret.flat()
+        const completions = responses.map(resp => createCompletion(resp.completion, resp.stopReason))
         tracer?.result({ rawResponses: responses, completions })
 
         return completions

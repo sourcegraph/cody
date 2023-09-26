@@ -2,7 +2,7 @@ import { describe, expect, it, test } from 'vitest'
 
 import {
     CLOSING_CODE_TAG,
-    collapseDuplicativeWhitespace,
+    collapseDuplicateWhitespace,
     extractFromCodeBlock,
     OPENING_CODE_TAG,
     trimEndOnLastLineIfWhitespaceOnly,
@@ -40,18 +40,18 @@ describe('trimLeadingWhitespaceUntilNewline', () => {
     test('preserves carriage returns', () => expect(trimLeadingWhitespaceUntilNewline('\t\r\n  a')).toBe('\r\n  a'))
 })
 
-describe('collapseDuplicativeWhitespace', () => {
-    test('trims space', () => expect(collapseDuplicativeWhitespace('x = ', ' 7')).toBe('7'))
+describe('collapseDuplicateWhitespace', () => {
+    test('trims space', () => expect(collapseDuplicateWhitespace('x = ', ' 7')).toBe('7'))
     test('trims identical duplicative whitespace chars', () =>
-        expect(collapseDuplicativeWhitespace('x =\t ', '\t 7')).toBe('7'))
+        expect(collapseDuplicateWhitespace('x =\t ', '\t 7')).toBe('7'))
     test('trims non-identical duplicative whitespace chars', () =>
-        expect(collapseDuplicativeWhitespace('x =\t ', '  7')).toBe('7'))
+        expect(collapseDuplicateWhitespace('x =\t ', '  7')).toBe('7'))
     test('trims more whitespace chars from completion than in prefix', () => {
-        expect(collapseDuplicativeWhitespace('x = ', '  7')).toBe('7')
-        expect(collapseDuplicativeWhitespace('x = ', '\t 7')).toBe('7')
+        expect(collapseDuplicateWhitespace('x = ', '  7')).toBe('7')
+        expect(collapseDuplicateWhitespace('x = ', '\t 7')).toBe('7')
     })
     test('does not trim newlines', () => {
-        expect(collapseDuplicativeWhitespace('x = ', '\n7')).toBe('\n7')
+        expect(collapseDuplicateWhitespace('x = ', '\n7')).toBe('\n7')
     })
 })
 

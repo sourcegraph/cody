@@ -13,13 +13,13 @@ describe('[getInlineCompletions] post-processing', () => {
                 params('const isLocalHost = window.location.host█', [completion`├ === 'localhost'┤`])
             )
         ).toEqual<V>({
-            items: [{ insertText: " === 'localhost'" }],
+            items: [expect.objectContaining({ insertText: " === 'localhost'" })],
             source: InlineCompletionsResultSource.Network,
         }))
 
     it('collapses leading whitespace when prefix has trailing whitespace', async () =>
         expect(await getInlineCompletions(params('const x = █', [completion`├${T}1337┤`]))).toEqual<V>({
-            items: [{ insertText: '1337' }],
+            items: [expect.objectContaining({ insertText: '1337' })],
             source: InlineCompletionsResultSource.Network,
         }))
 
@@ -32,7 +32,7 @@ describe('[getInlineCompletions] post-processing', () => {
             [completion`├-  foo┤`, 'foo'],
         ])('fixes %s to %s', async (completion, expected) =>
             expect(await getInlineCompletions(params('█', [completion]))).toEqual<V>({
-                items: [{ insertText: expected }],
+                items: [expect.objectContaining({ insertText: expected })],
                 source: InlineCompletionsResultSource.Network,
             })
         )
@@ -41,7 +41,7 @@ describe('[getInlineCompletions] post-processing', () => {
     describe('odd indentation', () => {
         it('filters out odd indentation in single-line completions', async () =>
             expect(await getInlineCompletions(params('const foo = █', [completion`├ 1337┤`]))).toEqual<V>({
-                items: [{ insertText: '1337' }],
+                items: [expect.objectContaining({ insertText: '1337' })],
                 source: InlineCompletionsResultSource.Network,
             }))
     })

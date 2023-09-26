@@ -20,7 +20,7 @@ import {
     trimLeadingWhitespaceUntilNewline,
 } from '../text-processing'
 import { Completion, ContextSnippet } from '../types'
-import { forkSignal, messagesToText } from '../utils'
+import { createCompletion, forkSignal, messagesToText } from '../utils'
 
 import { CompletionProviderTracer, Provider, ProviderConfig, ProviderOptions } from './provider'
 
@@ -165,15 +165,7 @@ export class AnthropicProvider extends Provider {
             })
         )
 
-        const ret = responses.map(resp => [
-            {
-                prefix: this.options.docContext.prefix,
-                content: resp.completion,
-                stopReason: resp.stopReason,
-            },
-        ])
-
-        const completions = ret.flat()
+        const completions = responses.map(resp => createCompletion(resp.completion, resp.stopReason))
         tracer?.result({ rawResponses: responses, completions })
 
         return completions

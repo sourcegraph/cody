@@ -13,13 +13,13 @@ describe('[getInlineCompletions] triggers', () => {
     describe('singleline', () => {
         it('after whitespace', async () =>
             expect(await getInlineCompletions(params('foo = █', [completion`bar`]))).toEqual<V>({
-                items: [{ insertText: 'bar' }],
+                items: [expect.objectContaining({ insertText: 'bar' })],
                 source: InlineCompletionsResultSource.Network,
             }))
 
         it('end of word', async () =>
             expect(await getInlineCompletions(params('foo█', [completion`()`]))).toEqual<V>({
-                items: [{ insertText: '()' }],
+                items: [expect.objectContaining({ insertText: '()' })],
                 source: InlineCompletionsResultSource.Network,
             }))
 

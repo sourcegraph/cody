@@ -5,6 +5,7 @@ import { Provider } from './providers/provider'
 import { RequestManager, RequestManagerResult, RequestParams } from './request-manager'
 import { documentAndPosition } from './test-helpers'
 import { Completion } from './types'
+import { createCompletion } from './utils'
 
 class MockProvider extends Provider {
     public didFinishNetworkRequest = false
@@ -13,7 +14,7 @@ class MockProvider extends Provider {
 
     public resolveRequest(completions: string[]): void {
         this.didFinishNetworkRequest = true
-        this.resolve(completions.map(content => ({ content })))
+        this.resolve(completions.map(c => createCompletion(c)))
     }
 
     public generateCompletions(abortSignal: AbortSignal): Promise<Completion[]> {

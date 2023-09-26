@@ -3,6 +3,7 @@ import { describe, expect, test } from 'vitest'
 
 import { InlineCompletionsResultSource } from '../get-inline-completions'
 import { completion, nextTick } from '../test-helpers'
+import { createCompletion } from '../utils'
 
 import { getInlineCompletions, params, V } from './helpers'
 
@@ -21,7 +22,7 @@ describe('[getInlineCompletions] streaming', () => {
                 abortSignal: abortController.signal,
             })
         ).toEqual<V>({
-            items: [{ insertText: '1337' }],
+            items: [expect.objectContaining({ insertText: '1337' })],
             source: InlineCompletionsResultSource.Network,
         })
     })
@@ -43,7 +44,7 @@ describe('[getInlineCompletions] streaming', () => {
                 abortSignal: abortController.signal,
             })
         ).toEqual<V>({
-            items: [{ insertText: '1337' }],
+            items: [expect.objectContaining({ insertText: '1337' })],
             source: InlineCompletionsResultSource.Network,
         })
     })
@@ -130,7 +131,7 @@ describe('[getInlineCompletions] streaming', () => {
                 abortSignal: abortController.signal,
             })
         ).toEqual<V>({
-            items: [{ insertText: 'const a = new Array()' }],
+            items: [expect.objectContaining({ insertText: 'const a = new Array()' })],
             source: InlineCompletionsResultSource.Network,
         })
     })

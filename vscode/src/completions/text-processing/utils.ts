@@ -223,7 +223,7 @@ export function trimLeadingWhitespaceUntilNewline(str: string): string {
  *
  * Language-specific customizations are needed here to get greater accuracy.
  */
-export function collapseDuplicativeWhitespace(prefix: string, completion: string): string {
+export function collapseDuplicateWhitespace(prefix: string, completion: string): string {
     if (prefix.endsWith(' ') || prefix.endsWith('\t')) {
         completion = completion.replace(/^[\t ]+/, '')
     }

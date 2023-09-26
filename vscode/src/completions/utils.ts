@@ -1,6 +1,9 @@
 import * as anthropic from '@anthropic-ai/sdk'
+import * as uuid from 'uuid'
 
 import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
+
+import { Completion } from './types'
 
 export function messagesToText(messages: Message[]): string {
     return messages
@@ -66,5 +69,13 @@ export function createSubscriber<T>(): Subscriber<T> {
     return {
         subscribe,
         notify,
+    }
+}
+
+export function createCompletion(insertText: string, stopReason?: string): Completion {
+    return {
+        id: uuid.v4(),
+        insertText,
+        stopReason,
     }
 }
