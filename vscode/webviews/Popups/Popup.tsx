@@ -14,7 +14,7 @@ interface PopupProps extends PopupOpenProps {
     text: React.ReactNode
     linkText: React.ReactNode
     linkHref: string
-    linkTarget?: '_blank' | undefined
+    linkTarget?: '_blank'
     actionButtons?: React.ReactNode
 }
 

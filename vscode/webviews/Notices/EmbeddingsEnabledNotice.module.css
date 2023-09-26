@@ -2,6 +2,10 @@
     font-weight: bold;
 }
 
+.icon {
+    color: #73C991;
+}
+
 .icon path {
     animation: 0s sparkles linear infinite alternate;
     opacity: 0.9;
