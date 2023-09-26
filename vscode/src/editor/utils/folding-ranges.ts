@@ -31,7 +31,8 @@ export async function getTargetFoldingRange(uri: vscode.Uri, target: number): Pr
     // If lanaguage id not available, find class object ranges heuristically
     const classRanges = isSupported ? classes : await getOuterClassFoldingRanges(ranges, uri)
 
-    const targetRange = getNonClassOutermostFoldingRanges(classRanges, ranges, target, isSupported)
+    const isPlainText = !isSupported
+    const targetRange = getNonClassOutermostFoldingRanges(classRanges, ranges, target, isPlainText)
     if (!targetRange) {
         console.error('No folding range found containing cursor')
         return undefined
