@@ -157,4 +157,3 @@ export class FilenameContextFetcher {
             .sort((a, b) => a.length - b.length)
     }
 }
-
