@@ -31,8 +31,8 @@ export class FixupCodeAction implements vscode.CodeActionProvider {
         const action = new vscode.CodeAction('Ask Cody to Fix', vscode.CodeActionKind.QuickFix)
         const instruction = this.getCodeActionInstruction(diagnostics)
         action.command = {
-            command: 'cody.action.fixup',
-            arguments: [instruction, range],
+            command: 'cody.fixup.new',
+            arguments: [{ instruction, range }],
             title: 'Ask Cody to Fix',
         }
         action.diagnostics = diagnostics

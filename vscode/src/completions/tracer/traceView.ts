@@ -7,10 +7,10 @@ import {
     GraphSectionObserver,
     registerDebugListener as registerSectionObserverDebugListener,
 } from '../context/graph-section-observer'
-import { InlineCompletionsResultSource } from '../getInlineCompletions'
+import { InlineCompletionsResultSource } from '../get-inline-completions'
+import { InlineCompletionItemProvider } from '../inline-completion-item-provider'
 import * as statistics from '../statistics'
 import { InlineCompletionItem } from '../types'
-import { InlineCompletionItemProvider } from '../vscodeInlineCompletionItemProvider'
 
 import { ProvideInlineCompletionsItemTraceData } from '.'
 

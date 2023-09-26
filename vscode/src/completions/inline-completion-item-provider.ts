@@ -17,12 +17,17 @@ import {
     InlineCompletionsParams,
     InlineCompletionsResultSource,
     LastInlineCompletionCandidate,
-} from './getInlineCompletions'
+} from './get-inline-completions'
 import * as CompletionLogger from './logger'
+import { CompletionEvent } from './logger'
 import { ProviderConfig } from './providers/provider'
 import { RequestManager, RequestParams } from './request-manager'
 import { ProvideInlineCompletionItemsTracer, ProvideInlineCompletionsItemTraceData } from './tracer'
 import { InlineCompletionItem } from './types'
+
+interface AutocompleteResult extends vscode.InlineCompletionList {
+    completionEvent?: CompletionEvent
+}
 
 export interface CodyCompletionItemProviderConfig {
     providerConfig: ProviderConfig
@@ -121,7 +126,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
         context: vscode.InlineCompletionContext,
         // Making it optional here to execute multiple suggestion in parallel from the CLI script.
         token?: vscode.CancellationToken
-    ): Promise<vscode.InlineCompletionList | null> {
+    ): Promise<AutocompleteResult | null> {
         const start = performance.now()
         // We start the request early so that we have a high chance of getting a response before we
         // need it.
@@ -290,16 +295,17 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
                 this.lastCandidate = items.length > 0 ? candidate : undefined
             }
 
-            const event = CompletionLogger.completionEvent(result.logId)
             if (items.length > 0) {
-                CompletionLogger.suggested(result.logId, InlineCompletionsResultSource[result.source], items[0] as any)
+                CompletionLogger.suggested(result.logId, InlineCompletionsResultSource[result.source], result.items[0])
             } else {
                 CompletionLogger.noResponse(result.logId)
             }
 
-            const completionResult: vscode.InlineCompletionList = { items }
-
-            ;(completionResult as any).completionEvent = event
+            // return `CompletionEvent` telemetry data to the agent command `autocomplete/execute`.
+            const completionResult: AutocompleteResult = {
+                items,
+                completionEvent: CompletionLogger.getCompletionEvent(result.logId),
+            }
 
             return completionResult
         } catch (error) {

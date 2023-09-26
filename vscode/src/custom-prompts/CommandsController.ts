@@ -1,17 +1,13 @@
 import * as vscode from 'vscode'
 
-import {
-    CodyPrompt,
-    CustomCommandType,
-    defaultCodyPromptContext,
-    MyPrompts,
-} from '@sourcegraph/cody-shared/src/chat/prompts'
+import { CodyPrompt, CustomCommandType, MyPrompts } from '@sourcegraph/cody-shared/src/chat/prompts'
 import { VsCodeCommandsController } from '@sourcegraph/cody-shared/src/editor'
-import { TelemetryService } from '@sourcegraph/cody-shared/src/telemetry'
 
 import { logDebug, logError } from '../log'
 import { localStorage } from '../services/LocalStorageProvider'
+import { telemetryService } from '../services/telemetry'
 
+import { CommandRunner } from './CommandRunner'
 import { CustomPromptsStore } from './CustomPromptsStore'
 import { showCommandConfigMenu, showCommandMenu, showCustomCommandMenu, showNewCustomCommandMenu } from './menus'
 import { PromptsProvider } from './PromptsProvider'
@@ -41,16 +37,14 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
     private myPromptsMap = new Map<string, CodyPrompt>()
 
     private lastUsedCommands = new Set<string>()
-    private myPromptInProgress: CodyPrompt | null = null
 
     private webViewMessenger: (() => Promise<void>) | null = null
     public wsFileWatcher: vscode.FileSystemWatcher | null = null
     public userFileWatcher: vscode.FileSystemWatcher | null = null
 
-    constructor(
-        context: vscode.ExtensionContext,
-        private telemetryService: TelemetryService
-    ) {
+    public commandRunners = new Map<string, CommandRunner>()
+
+    constructor(context: vscode.ExtensionContext) {
         this.tools = new ToolsProvider(context)
         const user = this.tools.getUserInfo()
 
@@ -63,80 +57,84 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
     }
 
     /**
-     * Get the prompt, context, output, or current prompt name based on the passed type and id.
+     * Gets a CodyPrompt object for the given command runner ID.
      *
-     * @param type - The type of data to return. Valid values:
-     *   - 'prompt' - Return the prompt text for the command with the given id.
-     *   - 'context' - Return the context for the current prompt in progress as a JSON string.
-     *   - 'codebase' - Return 'codebase' if there is a codebase in the current context.
-     *   - 'output' - Return the output for the current prompt in progress.
-     *   - 'command' - Return the output from executing the command for the current prompt.
-     *   - 'current' - Return the name of the current prompt in progress.
-     * @param id - The id of the command to get the prompt for if type is 'prompt'.
+     * @param commandRunnerId - The ID of the command runner to get the prompt for.
      *
-     * @returns The requested data based on type, or null if not found.
+     * @returns The CodyPrompt object for the command runner, or null if not found.
+     *
+     * Looks up the command runner instance in the commandRunners map by the given ID.
+     * If found, returns the CodyPrompt associated with that runner. Otherwise returns null.
      */
-    public async get(type?: string, id?: string): Promise<string | null> {
-        await this.refresh()
-
-        switch (type) {
-            case 'prompt':
-                return id ? this.default.get(id)?.prompt || null : null
-            case 'context':
-                return JSON.stringify(this.myPromptInProgress?.context || { ...defaultCodyPromptContext })
-            case 'codebase':
-                return this.myPromptInProgress?.context?.codebase ? 'codebase' : null
-            case 'output':
-                return this.myPromptInProgress?.context?.output || null
-            case 'slash':
-                return this.myPromptInProgress?.slashCommand || null
-            case 'command':
-                // return the terminal output from the command for the prompt if any
-                return this.execCommand()
-            case 'current':
-                return this.myPromptInProgress?.description || null
-            default:
-                return this.myPromptInProgress?.prompt || null
+    public getCommand(commandRunnerId: string): CodyPrompt | null {
+        const commandRunner = this.commandRunners.get(commandRunnerId)
+        if (!commandRunner) {
+            return null
         }
+        this.commandRunners.delete(commandRunnerId)
+        return commandRunner?.codyCommand
     }
 
     /**
-     * Get the current cody command that is in progress.
+     * Adds a new command to the commands map.
      *
-     * @returns The current CodyPrompt that the user has initiated and is waiting for output, or null if there is no prompt in progress.
+     * @param key - The unique key for the command. e.g. /test
+     * @param input - Optional input text from the user.
+     *
+     * @returns A promise resolving to the command ID string if successful,
+     * or 'invalid' if the command is not found.
+     *
+     * Looks up the command prompt using the given key in the default prompts map.
+     * If found, creates a new Cody command runner instance for that prompt and input.
+     * Returns the ID of the created runner, or 'invalid' if not found.
      */
-    public getCurrentCommand(): CodyPrompt | null {
-        const currentCommand = this.myPromptInProgress
-        return currentCommand || null
+    public async addCommand(key: string, input?: string): Promise<string> {
+        const command = this.default.get(key)
+        if (!command) {
+            return 'invalid'
+        }
+        return this.createCodyCommand(command, input)
     }
 
     /**
-     * Find the text of the prompt for a command based on its id / title
-     * then set it as the prompt in progress
+     * Creates a new Cody command runner instance and returns the ID.
      *
-     * @param id - The id/name of the command
+     * This creates a new CommandRunner instance with the given CodyPrompt, input text,
+     * and fixup request flag. It adds the runner to the commandRunners map, sets it
+     * as the current prompt in progress, and logs the command usage.
      *
-     * @returns The prompt text for the command if found, empty string otherwise
+     * If the prompt has a shell command in its context, it will execute that command.
+     *
+     * Finally, it returns the unique ID for the created CommandRunner instance.
      */
-    public find(id: string): string {
-        const myPrompt = this.default.get(id)
+    private async createCodyCommand(command: CodyPrompt, input = ''): Promise<string> {
+        const commandKey = command.slashCommand
+        const defaultEditCommands = new Set(['/edit', '/fix', '/doc'])
+        const isFixupRequest = defaultEditCommands.has(commandKey) || command.prompt.startsWith('/edit')
 
-        logDebug('CommandsController:command:finding', id)
+        logDebug('CommandsController:createCodyCommand:creating', commandKey)
 
-        if (!myPrompt) {
-            this.telemetryService.log('CodyVSCodeExtension:command:invalid', { invalidCommand: id })
-        }
-
-        if (myPrompt) {
-            this.myPromptInProgress = myPrompt
-            this.lastUsedCommands.add(id)
-        }
+        // Start the command runner
+        const codyCommand = new CommandRunner(command, input, isFixupRequest)
+        this.commandRunners.set(codyCommand.id, codyCommand)
+        this.lastUsedCommands.add(command.slashCommand)
 
         // Log custom command usage
-        const commandType = myPrompt?.type === 'default' ? 'default' : 'custom'
-        this.telemetryService.log(`CodyVSCodeExtension:command:${commandType}:executed`)
+        const logType = command?.type === 'default' ? 'default' : 'custom'
+        telemetryService.log(`CodyVSCodeExtension:command:${logType}:executed`)
 
-        return myPrompt?.prompt || ''
+        // Fixup request will be taken care by the fixup recipe in the CommandRunner
+        if (isFixupRequest || command.mode === 'inline') {
+            return ''
+        }
+
+        // Run shell command if any
+        const shellCommand = command.context?.command
+        if (shellCommand) {
+            await codyCommand.runShell(this.tools.exeCommand(shellCommand))
+        }
+
+        return codyCommand.id
     }
 
     /**
@@ -157,24 +155,6 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
     public async getCustomConfig(): Promise<MyPrompts> {
         const myPromptsConfig = await this.custom.refresh()
         return myPromptsConfig
-    }
-
-    /**
-     * Executes the command stored in the prompt context if available.
-     *
-     * @returns The output of the command execution, or null if no command was found.
-     */
-    private async execCommand(): Promise<string | null> {
-        const currentContext = this.myPromptInProgress?.context
-        if (!this.myPromptInProgress || !currentContext?.command) {
-            return null
-        }
-        const fullCommand = currentContext.command
-        const commandOutput = await this.tools.exeCommand(fullCommand)
-        currentContext.output = commandOutput
-        this.myPromptInProgress.context = currentContext
-        logDebug('CodyVSCodeExtension:command:execCommand', fullCommand)
-        return commandOutput || null
     }
 
     /**
@@ -262,16 +242,10 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
                 }
                 case selectedCommandID === menu_options.fix.slashCommand: {
                     if (userPrompt.trim()) {
-                        return await vscode.commands.executeCommand('cody.action.fixup', userPrompt)
+                        return await vscode.commands.executeCommand('cody.fixup.new', { instruction: userPrompt })
                     }
                     return await vscode.commands.executeCommand('cody.fixup.new')
                 }
-            }
-
-            // Run the prompt
-            const prompt = await this.get('prompt', selectedCommandID)
-            if (!prompt) {
-                return
             }
 
             await vscode.commands.executeCommand('cody.action.commands.exec', selectedCommandID)
@@ -522,9 +496,11 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
      */
     public dispose(): void {
         this.isEnabled = false
-        this.myPromptInProgress = null
         for (const disposable of this.disposables) {
             disposable.dispose()
+        }
+        for (const runner of this.commandRunners) {
+            runner[1].dispose()
         }
         for (const disposable of this.fileWatcherDisposables) {
             disposable.dispose()
@@ -532,6 +508,7 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
         this.fileWatcherDisposables = []
         this.disposables = []
         this.myPromptsMap = new Map<string, CodyPrompt>()
+        this.commandRunners = new Map()
         logDebug('CommandsController:dispose', 'disposed')
     }
 }

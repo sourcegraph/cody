@@ -3,12 +3,12 @@ import * as vscode from 'vscode'
 
 import { ActiveTextEditorSelection, VsCodeInlineController } from '@sourcegraph/cody-shared/src/editor'
 import { SURROUNDING_LINES } from '@sourcegraph/cody-shared/src/prompt/constants'
-import { TelemetryService } from '@sourcegraph/cody-shared/src/telemetry'
 
 import { CodyTaskState } from '../non-stop/utils'
 
 import { CodeLensProvider } from './CodeLensProvider'
 import { countCode, editDocByUri, getIconPath, matchCodeSnippets, updateRangeOnDocChange } from './InlineAssist'
+import { telemetryService } from './telemetry'
 
 const initPost = new vscode.Position(0, 0)
 const initRange = new vscode.Range(initPost, initPost)
@@ -61,10 +61,7 @@ export class InlineController implements VsCodeInlineController {
     private insertInProgress = false
     private lastClipboardText = ''
 
-    constructor(
-        private extensionPath: string,
-        private telemetryService: TelemetryService
-    ) {
+    constructor(private extensionPath: string) {
         this.codyIcon = getIconPath('cody', this.extensionPath)
         this.userIcon = getIconPath('user', this.extensionPath)
 
@@ -157,7 +154,7 @@ export class InlineController implements VsCodeInlineController {
                 const op = 'paste'
                 const eventType = eventName.startsWith('inlineChat') ? 'inlineChat' : 'keyDown'
                 // 'CodyVSCodeExtension:inlineChat:Paste:clicked' or 'CodyVSCodeExtension:keyDown:Paste:clicked'
-                this.telemetryService.log(`CodyVSCodeExtension:${eventType}:Paste:clicked`, {
+                telemetryService.log(`CodyVSCodeExtension:${eventType}:Paste:clicked`, {
                     op,
                     lineCount,
                     charCount,
@@ -331,14 +328,17 @@ export class InlineController implements VsCodeInlineController {
         code: string,
         eventName: string
     ): { code: string; lineCount: number; charCount: number; eventName: string } {
-        this.insertInProgress = eventName === 'insertButton'
+        // All non-copy events are considered as insertions since we don't need to listen for paste events
+        this.insertInProgress = !eventName.startsWith('copy')
         const { lineCount, charCount } = countCode(code)
         const codeCount = { code, lineCount, charCount, eventName }
         this.lastCopiedCode = codeCount
 
-        const op = eventName.startsWith('insert') ? 'insert' : 'copy'
+        // Currently supported events are: copy, insert, save
+        const op = eventName.includes('copy') ? 'copy' : eventName.startsWith('insert') ? 'insert' : 'save'
+
         const args = { op, charCount, lineCount }
-        this.telemetryService.log(`CodyVSCodeExtension:${eventName}:clicked`, args)
+        telemetryService.log(`CodyVSCodeExtension:${eventName}:clicked`, args)
         return codeCount
     }
 
@@ -438,7 +438,7 @@ export class InlineController implements VsCodeInlineController {
             this.thread.state = error ? 1 : 0
         }
         this.currentTaskId = ''
-        this.telemetryService.log('CodyVSCodeExtension:inline-assist:stopFixup')
+        telemetryService.log('CodyVSCodeExtension:inline-assist:stopFixup')
         if (!error) {
             await vscode.commands.executeCommand('workbench.action.collapseAllComments')
         }
@@ -527,7 +527,7 @@ export class InlineController implements VsCodeInlineController {
             lens?.storeContext(this.currentTaskId, documentUri, original, replacement)
 
             await this.stopEditMode(false, newRange)
-            this.telemetryService.log('CodyVSCodeExtension:inline-assist:replaced')
+            telemetryService.log('CodyVSCodeExtension:inline-assist:replaced')
         } catch (error) {
             await this.stopEditMode(true)
             console.error(error)

@@ -5,6 +5,7 @@ import { CodyPrompt } from '../chat/prompts'
 export interface ActiveTextEditor {
     content: string
     filePath: string
+    fileUri?: URI
     repoName?: string
     revision?: string
     selectionRange?: ActiveTextEditorSelectionRange
@@ -23,6 +24,7 @@ export interface ActiveTextEditorSelectionRange {
 
 export interface ActiveTextEditorSelection {
     fileName: string
+    fileUri?: URI
     repoName?: string
     revision?: string
     precedingText: string
@@ -43,6 +45,7 @@ export interface ActiveTextEditorDiagnostic {
 export interface ActiveTextEditorVisibleContent {
     content: string
     fileName: string
+    fileUri?: URI
     repoName?: string
     revision?: string
 }
@@ -67,8 +70,8 @@ export interface VsCodeFixupController {
 }
 
 export interface VsCodeCommandsController {
-    get(type?: string): Promise<string | null>
-    getCurrentCommand(): CodyPrompt | null
+    addCommand(key: string, input?: string): Promise<string>
+    getCommand(commandRunnerId: string): CodyPrompt | null
     menu(type: 'custom' | 'config' | 'default', showDesc?: boolean): Promise<void>
 }
 
@@ -101,6 +104,7 @@ export interface Editor<
 
     getActiveTextEditor(): ActiveTextEditor | null
     getActiveTextEditorSelection(): ActiveTextEditorSelection | null
+    getActiveTextEditorSmartSelection(): Promise<ActiveTextEditorSelection | null>
 
     getActiveInlineChatTextEditor(): ActiveTextEditor | null
     getActiveInlineChatSelection(): ActiveTextEditorSelection | null
@@ -148,6 +152,10 @@ export class NoopEditor implements Editor {
 
     public getActiveTextEditorSelection(): ActiveTextEditorSelection | null {
         return null
+    }
+
+    public getActiveTextEditorSmartSelection(): Promise<ActiveTextEditorSelection | null> {
+        return Promise.resolve(null)
     }
 
     public getActiveInlineChatTextEditor(): ActiveTextEditor | null {

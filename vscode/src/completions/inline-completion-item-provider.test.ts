@@ -8,12 +8,12 @@ import { SourcegraphGraphQLAPIClient } from '@sourcegraph/cody-shared/src/source
 
 import { vsCodeMocks } from '../testutils/mocks'
 
-import { getInlineCompletions, InlineCompletionsResultSource } from './getInlineCompletions'
+import { getInlineCompletions, InlineCompletionsResultSource } from './get-inline-completions'
+import { InlineCompletionItemProvider } from './inline-completion-item-provider'
 import * as CompletionLogger from './logger'
 import { createProviderConfig } from './providers/anthropic'
 import { documentAndPosition } from './test-helpers'
 import { InlineCompletionItem } from './types'
-import { InlineCompletionItemProvider } from './vscodeInlineCompletionItemProvider'
 
 vi.mock('vscode', () => ({
     ...vsCodeMocks,
