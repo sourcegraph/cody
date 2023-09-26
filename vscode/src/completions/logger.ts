@@ -12,6 +12,7 @@ import { ContextSummary } from './context/context'
 import { InlineCompletionsResultSource } from './get-inline-completions'
 import * as statistics from './statistics'
 import { InlineCompletionItemWithAnalytics } from './text-processing/process-inline-completions'
+import { lines } from './text-processing/utils'
 import { InlineCompletionItem } from './types'
 
 export interface CompletionEvent {
@@ -63,6 +64,13 @@ export interface ItemPostProcesssingInfo {
     lineTruncatedCount?: number
     // The truncation approach used.
     truncatedWith?: 'tree-sitter' | 'indentation'
+    // Syntax node types extracted from the tree-sitter parse-tree.
+    nodeTypes?: {
+        atCursor?: string
+        parent?: string
+        grandparent?: string
+        greatGrandparent?: string
+    }
 }
 
 interface CompletionItemInfo extends ItemPostProcesssingInfo {
@@ -135,17 +143,7 @@ export function loaded(id: string, items: InlineCompletionItemWithAnalytics[]): 
     }
 
     if (event.items.length === 0) {
-        event.items = items.map(item => {
-            const { lineCount, charCount } = lineAndCharCount(item)
-
-            return {
-                lineCount,
-                charCount,
-                parseErrorCount: item.parseErrorCount,
-                lineTruncatedCount: item.lineTruncatedCount,
-                truncatedWith: item.truncatedWith,
-            }
-        })
+        event.items = items.map(completionItemToItemInfo)
     }
 }
 
@@ -221,11 +219,8 @@ export function accept(id: string, completion: InlineCompletionItem): void {
 
     logSuggestionEvents()
     logCompletionEvent('accepted', {
-        ...completionEvent.params,
-        // We overwrite the existing lines and chars in the params and rely on the accepted one in
-        // case the popover is used to insert a completion different from the one that was suggested
-        ...lineAndCharCount(completion),
-        otherCompletionProviderEnabled: otherCompletionProviderEnabled(),
+        ...getSharedParams(completionEvent),
+        acceptedItem: { ...completionItemToItemInfo(completion) },
     })
     statistics.logAccepted()
 }
@@ -256,7 +251,6 @@ function logSuggestionEvents(): void {
             suggestedAt,
             suggestionLoggedAt,
             startedAt,
-            params,
             startLoggedAt,
             acceptedAt,
             suggestionAnalyticsLoggedAt,
@@ -283,12 +277,11 @@ function logSuggestionEvents(): void {
         }
 
         logCompletionEvent('suggested', {
-            ...params,
+            ...getSharedParams(completionEvent),
             latency,
             displayDuration,
             read,
             accepted,
-            otherCompletionProviderEnabled: otherCompletionProviderEnabled(),
             completionsStartedSinceLastSuggestion,
         })
 
@@ -300,24 +293,8 @@ function logSuggestionEvents(): void {
     // need to retain the ability to mark them as seen
 }
 
-const otherCompletionProviders = [
-    'GitHub.copilot',
-    'GitHub.copilot-nightly',
-    'TabNine.tabnine-vscode',
-    'TabNine.tabnine-vscode-self-hosted-updater',
-    'AmazonWebServices.aws-toolkit-vscode', // Includes CodeWhisperer
-    'Codeium.codeium',
-    'Codeium.codeium-enterprise-updater',
-    'CodeComplete.codecomplete-vscode',
-    'Venthe.fauxpilot',
-    'TabbyML.vscode-tabby',
-]
-function otherCompletionProviderEnabled(): boolean {
-    return !!otherCompletionProviders.find(id => vscode.extensions.getExtension(id)?.isActive)
-}
-
 function lineAndCharCount({ insertText }: InlineCompletionItem): { lineCount: number; charCount: number } {
-    const lineCount = insertText.split(/\r\n|\r|\n/).length
+    const lineCount = lines(insertText).length
     const charCount = insertText.length
     return { lineCount, charCount }
 }
@@ -358,4 +335,41 @@ export function logError(error: Error): void {
         }, TEN_MINUTES)
     }
     errorCounts.set(message, count + 1)
+}
+
+function getSharedParams(event: CompletionEvent): TelemetryEventProperties {
+    return {
+        ...event.params,
+        items: event.items.map(i => ({ ...i })),
+        otherCompletionProviderEnabled: otherCompletionProviderEnabled(),
+    }
+}
+
+function completionItemToItemInfo(item: InlineCompletionItemWithAnalytics): CompletionItemInfo {
+    const { lineCount, charCount } = lineAndCharCount(item)
+
+    return {
+        lineCount,
+        charCount,
+        parseErrorCount: item.parseErrorCount,
+        lineTruncatedCount: item.lineTruncatedCount,
+        truncatedWith: item.truncatedWith,
+        nodeTypes: item.nodeTypes,
+    }
+}
+
+const otherCompletionProviders = [
+    'GitHub.copilot',
+    'GitHub.copilot-nightly',
+    'TabNine.tabnine-vscode',
+    'TabNine.tabnine-vscode-self-hosted-updater',
+    'AmazonWebServices.aws-toolkit-vscode', // Includes CodeWhisperer
+    'Codeium.codeium',
+    'Codeium.codeium-enterprise-updater',
+    'CodeComplete.codecomplete-vscode',
+    'Venthe.fauxpilot',
+    'TabbyML.vscode-tabby',
+]
+function otherCompletionProviderEnabled(): boolean {
+    return !!otherCompletionProviders.find(id => vscode.extensions.getExtension(id)?.isActive)
 }

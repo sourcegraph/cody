@@ -4,6 +4,7 @@ import { dedupeWith } from '@sourcegraph/cody-shared/src/common'
 
 import { DocumentContext } from '../get-current-doc-context'
 import { ItemPostProcesssingInfo } from '../logger'
+import { astGetters } from '../tree-sitter/ast-getters'
 import { getDocumentQuerySDK } from '../tree-sitter/queries'
 import { InlineCompletionItem } from '../types'
 
@@ -50,7 +51,7 @@ interface ProcessItemParams {
     docContext: DocumentContext
 }
 
-export function processItem(params: ProcessItemParams): InlineCompletionItemWithAnalytics {
+export function processItem(params: ProcessItemParams): InlineCompletionItemWithAnalytics & ParsedCompletion {
     const { completion, document, position, docContext } = params
     const { prefix, suffix, currentLineSuffix, multilineTrigger } = docContext
 
@@ -72,6 +73,22 @@ export function processItem(params: ProcessItemParams): InlineCompletionItemWith
 
     let { insertText } = parsed
     const initialLineCount = insertText.split('\n').length
+
+    if (parsed.tree && parsed.points) {
+        const { tree, points } = parsed
+        const captures = astGetters.getNodeAtCursorAndParents(tree.rootNode, points?.trigger || points?.start)
+
+        if (captures.length > 0) {
+            const [atCursor, ...parents] = captures
+
+            parsed.nodeTypes = {
+                atCursor: atCursor.node.type,
+                parent: parents[0]?.node.type,
+                grandparent: parents[1]?.node.type,
+                greatGrandparent: parents[2]?.node.type,
+            }
+        }
+    }
 
     if (multilineTrigger) {
         // Use tree-sitter for truncation if `config.autocompleteExperimentalSyntacticPostProcessing` is enabled.

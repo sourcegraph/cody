@@ -54,7 +54,7 @@ export async function createParser(settings: ParserSettings): Promise<Parser> {
     parser.setLanguage(languageGrammar)
     PARSERS_LOCAL_CACHE[language] = parser
 
-    initQueries(languageGrammar, language)
+    initQueries(languageGrammar, language, parser)
 
     return parser
 }

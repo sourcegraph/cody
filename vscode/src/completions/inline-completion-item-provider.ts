@@ -22,8 +22,8 @@ import * as CompletionLogger from './logger'
 import { CompletionEvent } from './logger'
 import { ProviderConfig } from './providers/provider'
 import { RequestManager, RequestParams } from './request-manager'
+import { InlineCompletionItemWithAnalytics } from './text-processing/process-inline-completions'
 import { ProvideInlineCompletionItemsTracer, ProvideInlineCompletionsItemTraceData } from './tracer'
-import { InlineCompletionItem } from './types'
 
 interface AutocompleteResult extends vscode.InlineCompletionList {
     completionEvent?: CompletionEvent
@@ -317,7 +317,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
         }
     }
 
-    public handleDidAcceptCompletionItem(logId: string, completion: InlineCompletionItem): void {
+    public handleDidAcceptCompletionItem(logId: string, completion: InlineCompletionItemWithAnalytics): void {
         // When a completion is accepted, the lastCandidate should be cleared. This makes sure the
         // log id is never reused if the completion is accepted.
         this.clearLastCandidate()
@@ -356,7 +356,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
         logId: string,
         document: vscode.TextDocument,
         position: vscode.Position,
-        items: InlineCompletionItem[],
+        items: InlineCompletionItemWithAnalytics[],
         context: vscode.InlineCompletionContext
     ): vscode.InlineCompletionItem[] {
         return items.map(completion => {
