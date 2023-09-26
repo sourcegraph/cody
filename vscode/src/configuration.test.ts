@@ -36,7 +36,6 @@ describe('getConfiguration', () => {
             autocompleteAdvancedServerEndpoint: null,
             autocompleteAdvancedModel: null,
             autocompleteAdvancedAccessToken: null,
-            : true,
             autocompleteExperimentalCompleteSuggestWidgetSelection: false,
             autocompleteExperimentalSyntacticPostProcessing: true,
             autocompleteExperimentalGraphContext: false,

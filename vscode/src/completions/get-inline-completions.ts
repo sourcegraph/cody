@@ -355,7 +355,6 @@ interface GetCompletionContextParams
         | 'document'
         | 'position'
         | 'promptChars'
-        | ''
         | 'graphContextFetcher'
         | 'contextFetcher'
         | 'getCodebaseContext'
@@ -368,7 +367,6 @@ async function getCompletionContext({
     document,
     position,
     promptChars,
-    ,
     graphContextFetcher,
     contextFetcher,
     getCodebaseContext,
