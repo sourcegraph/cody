@@ -134,18 +134,10 @@ function createCodeBlockActionButton(
 
     switch (type) {
         case 'insert':
-            button.addEventListener('click', () => {
-                button.innerHTML = CheckCodeBlockIcon
-                insertOnSubmit(text, false)
-                setTimeout(() => (button.innerHTML = iconSvg), 5000)
-            })
+            button.addEventListener('click', () => insertOnSubmit(text, false))
             break
         case 'new':
-            button.addEventListener('click', () => {
-                button.innerHTML = CheckCodeBlockIcon
-                insertOnSubmit(text, true)
-                setTimeout(() => (button.innerHTML = iconSvg), 5000)
-            })
+            button.addEventListener('click', () => insertOnSubmit(text, true))
             break
     }
 
