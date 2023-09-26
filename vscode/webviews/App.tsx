@@ -253,7 +253,6 @@ const ErrorBanner: React.FunctionComponent<{ errors: string[]; setErrors: (error
     errors,
     setErrors,
 }) => {
-
     useEffect(() => {
         const interval = setInterval(() => {
           if(errors.length === 0) {
@@ -262,11 +261,9 @@ const ErrorBanner: React.FunctionComponent<{ errors: string[]; setErrors: (error
           }
           setErrors(errors.slice(1)); 
         }, 3000);
-      
-        return () => clearInterval(interval);
-      
-      }, [errors]);
-    
+        
+        return () => clearInterval(interval);      
+      }, [errors, setErrors]);
    return (
         <div className="error-container">
             {errors.map((error, i) => (
