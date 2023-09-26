@@ -108,6 +108,12 @@ describe('process completion item', () => {
           [
             {
               "insertText": "array) {",
+              "nodeTypes": {
+                "atCursor": "identifier",
+                "grandparent": "formal_parameters",
+                "greatGrandparent": "function_declaration",
+                "parent": "required_parameter",
+              },
               "parseErrorCount": 0,
               "range": {
                 "end": Position {
@@ -122,6 +128,12 @@ describe('process completion item', () => {
             },
             {
               "insertText": "array) new",
+              "nodeTypes": {
+                "atCursor": "identifier",
+                "grandparent": "formal_parameters",
+                "greatGrandparent": "ERROR",
+                "parent": "required_parameter",
+              },
               "parseErrorCount": 1,
               "range": {
                 "end": Position {
@@ -167,6 +179,12 @@ describe('process completion item', () => {
               console.log('two')
           }",
               "lineTruncatedCount": 2,
+              "nodeTypes": {
+                "atCursor": "{",
+                "grandparent": "if_statement",
+                "greatGrandparent": "program",
+                "parent": "statement_block",
+              },
               "parseErrorCount": 0,
               "truncatedWith": "tree-sitter",
             },

@@ -14,8 +14,8 @@ import * as CompletionLogger from './logger'
 import { CompletionProviderTracer, Provider, ProviderConfig, ProviderOptions } from './providers/provider'
 import { RequestManager, RequestParams } from './request-manager'
 import { reuseLastCandidate } from './reuse-last-candidate'
+import { InlineCompletionItemWithAnalytics } from './text-processing/process-inline-completions'
 import { ProvideInlineCompletionsItemTraceData } from './tracer'
-import { InlineCompletionItem } from './types'
 import { SNIPPET_WINDOW_SIZE } from './utils'
 
 export interface InlineCompletionsParams {
@@ -92,7 +92,7 @@ export interface InlineCompletionsResult {
     source: InlineCompletionsResultSource
 
     /** The completions. */
-    items: InlineCompletionItem[]
+    items: InlineCompletionItemWithAnalytics[]
 }
 
 /**

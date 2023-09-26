@@ -12,7 +12,22 @@ describe('lexical analysis', () => {
             const matches = query.matches(tree.rootNode)
             const [{ captures }] = formatMatches(matches)
 
-            expect(captures).toEqual([{ name: 'error', text: 'function example(' }])
+            expect(captures).toMatchInlineSnapshot(`
+              [
+                {
+                  "end": {
+                    "column": 17,
+                    "row": 1,
+                  },
+                  "name": "error",
+                  "start": {
+                    "column": 0,
+                    "row": 1,
+                  },
+                  "text": "function example(",
+                },
+              ]
+            `)
         })
     })
 })

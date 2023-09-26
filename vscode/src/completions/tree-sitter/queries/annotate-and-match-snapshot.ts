@@ -4,7 +4,7 @@ import path from 'path'
 
 import dedent from 'dedent'
 import { expect } from 'vitest'
-import Parser, { Point, Query, SyntaxNode } from 'web-tree-sitter'
+import Parser, { Point, SyntaxNode } from 'web-tree-sitter'
 
 import { getLanguageConfig } from '../../language'
 import { SupportedLanguage } from '../grammars'
@@ -16,6 +16,8 @@ interface CommentSymbolInfo {
 }
 
 const SNIPPET_SEPARATOR = '------------------------------------\n'
+const CARET_SYMBOL = '█'
+const ANNOTATION_MARKER = '^'
 
 function getCommentDelimiter(language: SupportedLanguage): CommentSymbolInfo {
     const languageConfig = getLanguageConfig(language)
@@ -37,38 +39,100 @@ function isCursorPositionLine(line: string, commentDelimiter: string): boolean {
     return trimmed.startsWith(commentDelimiter) && trimmed.endsWith('|')
 }
 
+/**
+ * Returns the character position that "|" the symbol highlights in a code sample.
+ */
 function getCaretPoint(lines: string[], commentDelimiter: string): Point | null {
     for (let row = 0; row < lines.length; row++) {
         const line = lines[row]
         const column = line.indexOf('|')
 
         if (isCursorPositionLine(line, commentDelimiter) && column !== -1) {
-            return { row, column }
+            return { row: row - 1, column }
         }
     }
 
     return null
 }
 
-function generateAnnotation(line: string, lineStartColumn: number, lineEndColumn: number): string {
-    return line.slice(lineStartColumn, lineEndColumn).replaceAll(/\S/g, '^').replaceAll(/\s/g, ' ')
+function annotateMultilineEdge(cell: string[], side: 'start' | 'end', annotationId: string): void {
+    // Find the annotation with the same length.
+    // The length is fixed to one because we highlight only one character at start and end of
+    // multiline nodes.
+    const matchingAnnotation = cell.find(annotation => {
+        return annotation.lastIndexOf(ANNOTATION_MARKER) === 0
+    })
+
+    if (matchingAnnotation) {
+        // If matching annotation already includes the side label, just add another annotationId
+        // E.g., ^ start parent[0] -> ^ start parent[0], parent[1]
+        if (matchingAnnotation.includes(` ${side} `)) {
+            cell[0] += `, ${annotationId}`
+        } else {
+            // If label is not included, add the side label and annotationId
+            // E.g., ^ descendant -> ^ descendant, start parent[1]
+            cell[0] += `, ${side} ${annotationId}`
+        }
+    } else {
+        // If matching node is not found add the annotation line
+        // E.g., ^ start parent[1]
+        cell.push(`${ANNOTATION_MARKER} ${side} ${annotationId}`)
+    }
 }
 
-function replaceAt(value: string, index: number, replacement: string): string {
-    return value.slice(0, index) + replacement + value.slice(index + replacement.length)
+interface Annotations {
+    [line: number]: { [column: number]: string[] }
 }
+
+function renderAnnotatedCode(annotations: Annotations, lines: string[], delimiter: string, indent: string): string[] {
+    const result: string[] = []
+
+    for (let i = 0; i < lines.length; i++) {
+        const line = lines[i]
+        result.push(line.length === 0 || line.startsWith(delimiter) ? line : indent + line)
+
+        if (annotations[i]) {
+            for (const col of Object.keys(annotations[i])) {
+                const columnNumber = Number(col)
+
+                for (const annotationLine of annotations[i][columnNumber]) {
+                    result.push(delimiter + ' '.repeat(columnNumber) + annotationLine)
+                }
+            }
+        }
+
+        if (isCursorPositionLine(line, delimiter)) {
+            result.push(delimiter + ' '.repeat(line.length - 1) + CARET_SYMBOL)
+        }
+    }
+
+    return result
+}
+
+function initEmptyAnnotationsForPoint(annotations: Annotations, point: Point): void {
+    if (!annotations[point.row]) {
+        annotations[point.row] = {}
+    }
+
+    if (!annotations[point.row][point.column]) {
+        annotations[point.row][point.column] = []
+    }
+}
+
+// Defines the signature for functions that annotate nodes.
+export type Captures = (
+    node: SyntaxNode,
+    startPosition: Point,
+    endPosition?: Point
+) => readonly Readonly<Parser.QueryCapture>[]
 
 interface AnnotateSnippetsParams {
     code: string
     language: SupportedLanguage
     parser: Parser
-    captures: (...args: Parameters<Query['captures']>) => SyntaxNode | null
+    captures: Captures
 }
 
-/**
- * Adds "^" symbol under every character in the last captured the query node.
- * Keeps the position of the query start position to make it easier to review snapshots.
- */
 function annotateSnippets(params: AnnotateSnippetsParams): string {
     const { code, language, captures, parser } = params
 
@@ -80,54 +144,66 @@ function annotateSnippets(params: AnnotateSnippetsParams): string {
     }
 
     const tree = parser.parse(code)
-    const node = captures(tree.rootNode, caretPoint, caretPoint)
-    if (!node) {
+    const capturedNodes = captures(tree.rootNode, caretPoint, { ...caretPoint, column: caretPoint.column + 1 })
+
+    if (!capturedNodes || capturedNodes.length === 0) {
         return code
     }
 
-    const { startPosition: start, endPosition: end } = node
-    const result = []
+    // Matrix with annotations for each character in the code snippet.
+    const annotations: Annotations = {}
+    // An object to keep track of node-name indices.
+    const nodeNameIndices: Record<string, number> = {}
+    // An array to gather information about each node type.
+    const nodeTypes = []
 
-    for (let i = 0; i < lines.length; i++) {
-        const line = lines[i]
+    for (const { name, node } of capturedNodes) {
+        const { startPosition: start, endPosition, type } = node
 
-        // Add the current line with the proper indentation
-        result.push(line.length === 0 || line.startsWith(delimiter) ? line : indent + line)
+        const end = {
+            row: endPosition.row,
+            // To account for single-char nodes where tree-sitter returns column index + 1.
+            column: Math.max(endPosition.column - 1, 0),
+        }
 
-        // Add annotations if necessary
-        if (i >= start.row && i <= end.row) {
-            // Skip caret lines
-            if (isCursorPositionLine(line, delimiter)) {
-                continue
+        const nameIndex = (nodeNameIndices[name] || 0) + 1
+        nodeNameIndices[name] = nameIndex
+        const annotationId = `${name}[${nameIndex}]`
+        nodeTypes.push(`${delimiter} ${annotationId}: ${type}`)
+
+        initEmptyAnnotationsForPoint(annotations, start)
+        initEmptyAnnotationsForPoint(annotations, end)
+        const startCell = annotations[start.row][start.column]
+
+        // Handle single-line nodes
+        if (start.row === end.row) {
+            const matchingAnnotation = startCell.find(annotation => {
+                return annotation.lastIndexOf(ANNOTATION_MARKER) === node.text.length - 1
+            })
+
+            if (matchingAnnotation) {
+                startCell[0] += `, ${annotationId}`
+            } else {
+                startCell.push('^'.repeat(node.text.length) + ' ' + annotationId)
             }
-
-            const lineStartColumn = i === start.row ? start.column : 0
-            const lineEndColumn = i === end.row ? end.column : line.length
-            const annotation = generateAnnotation(line, lineStartColumn, lineEndColumn)
-
-            if (annotation.trim()) {
-                const spacesBefore = ' '.repeat(lineStartColumn)
-                let annotatedLine = delimiter + spacesBefore + annotation
-
-                // Keep cursor indicator if necessary
-                const nextLine = lines.at(i + 1)
-                const indicatorPosition =
-                    nextLine && isCursorPositionLine(nextLine, delimiter)
-                        ? nextLine.length - 1 + delimiter.length
-                        : undefined
-
-                if (indicatorPosition) {
-                    annotatedLine = replaceAt(annotatedLine, indicatorPosition, '█')
-                }
-
-                result.push(annotatedLine)
-            }
-        } else if (isCursorPositionLine(line, delimiter)) {
-            result.push(delimiter + ' '.repeat(line.length - 1) + '█')
+        } else {
+            // Handle multi-line nodes
+            annotateMultilineEdge(startCell, 'start', annotationId)
+            annotateMultilineEdge(annotations[end.row][end.column], 'end', annotationId)
         }
     }
 
-    return result.filter(line => !isCursorPositionLine(line, delimiter)).join('\n')
+    let annotatedCodeSnippet = renderAnnotatedCode(annotations, lines, delimiter, indent)
+        .filter(line => !isCursorPositionLine(line, delimiter))
+        .join('\n')
+
+    // Add extra line betwee the annotated code and node types annotations if needed.
+    if (!annotatedCodeSnippet.endsWith('\n\n')) {
+        annotatedCodeSnippet += '\n'
+    }
+
+    const nodeTypesAnnotation = `${delimiter} Nodes types:\n` + nodeTypes.join('\n') + '\n\n'
+    return annotatedCodeSnippet + nodeTypesAnnotation
 }
 
 const DOCUMENTATION_HEADER = `
@@ -147,7 +223,7 @@ interface AnnotateAndMatchParams {
     parser: Parser
     language: SupportedLanguage
     rawQuery: string
-    captures: (...args: Parameters<Query['captures']>) => SyntaxNode | null
+    captures: Captures
 }
 
 export async function annotateAndMatchSnapshot(params: AnnotateAndMatchParams): Promise<void> {
