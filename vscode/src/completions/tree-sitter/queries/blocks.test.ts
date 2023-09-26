@@ -12,15 +12,13 @@ describe('getFirstMultilineBlockForTruncation', () => {
     })
 
     it('typescript', async () => {
-        const { language, parser, queries, getFirstMultilineBlockForTruncation } = getDocumentQuerySDK(
-            SupportedLanguage.TypeScript
-        )!
+        const { language, parser, queries } = getDocumentQuerySDK(SupportedLanguage.TypeScript)!
 
         await annotateAndMatchSnapshot({
             parser,
             language,
             rawQuery: queries.blocks.raw,
-            captures: getFirstMultilineBlockForTruncation,
+            captures: queries.blocks.getFirstMultilineBlockForTruncation,
             sourcesPath: 'test-data/blocks.ts',
         })
     })

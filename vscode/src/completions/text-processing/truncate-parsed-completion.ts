@@ -23,13 +23,13 @@ export function truncateParsedCompletion(context: CompletionContext): string {
     const parseTreeCache = getCachedParseTreeForDocument(document)
     const documentQuerySDK = getDocumentQuerySDK(context.document.languageId)
 
-    if (!completion.tree || !parseTreeCache || !documentQuerySDK) {
+    if (!completion.tree || !completion.points || !parseTreeCache || !documentQuerySDK) {
         throw new Error('Expected completion and document to have tree-sitter data for truncation')
     }
 
     const { tree, points } = completion
 
-    const [captureGroup] = documentQuerySDK.getFirstMultilineBlockForTruncation(
+    const [captureGroup] = documentQuerySDK.queries.blocks.getFirstMultilineBlockForTruncation(
         tree.rootNode,
         points?.trigger || points?.start,
         points?.end

@@ -4,6 +4,7 @@ import { dedupeWith } from '@sourcegraph/cody-shared/src/common'
 
 import { DocumentContext } from '../get-current-doc-context'
 import { ItemPostProcesssingInfo } from '../logger'
+import { astGetters } from '../tree-sitter/ast-getters'
 import { getDocumentQuerySDK } from '../tree-sitter/queries'
 import { InlineCompletionItem } from '../types'
 
@@ -73,10 +74,9 @@ export function processItem(params: ProcessItemParams): InlineCompletionItemWith
     let { insertText } = parsed
     const initialLineCount = insertText.split('\n').length
 
-    const documentQuerySDK = getDocumentQuerySDK(document.languageId)
-    if (parsed.tree && parsed.points && documentQuerySDK) {
+    if (parsed.tree && parsed.points) {
         const { tree, points } = parsed
-        const captures = documentQuerySDK.getNodeAtCursorAndParents(tree.rootNode, points?.trigger || points?.start)
+        const captures = astGetters.getNodeAtCursorAndParents(tree.rootNode, points?.trigger || points?.start)
 
         if (captures.length > 0) {
             const [atCursor, ...parents] = captures
@@ -92,7 +92,7 @@ export function processItem(params: ProcessItemParams): InlineCompletionItemWith
 
     if (multilineTrigger) {
         // Use tree-sitter for truncation if `config.autocompleteExperimentalSyntacticPostProcessing` is enabled.
-        if (parsed.tree && documentQuerySDK) {
+        if (parsed.tree && getDocumentQuerySDK(document.languageId)) {
             insertText = truncateParsedCompletion({ completion: parsed, document })
             parsed.truncatedWith = 'tree-sitter'
         } else {
