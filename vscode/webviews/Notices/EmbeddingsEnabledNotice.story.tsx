@@ -4,6 +4,8 @@ import { VSCodeStoryDecorator } from '../storybook/VSCodeStoryDecorator'
 
 import { EmbeddingsEnabledNotice } from './EmbeddingsEnabledNotice'
 
+import styles from '../storybook/VSCodeStoryDecorator.module.css'
+
 const meta: Meta<typeof EmbeddingsEnabledNotice> = {
     title: 'cody/App-less Onboarding',
     component: EmbeddingsEnabledNotice,
@@ -14,7 +16,7 @@ export default meta
 
 export const EmbeddingsEnabled: StoryObj<typeof EmbeddingsEnabledNotice> = {
     render: () => (
-        <div style={{ background: 'rgb(28, 33, 40)' }}>
+        <div className={styles.testDarkSidebar}>
             <EmbeddingsEnabledNotice />
         </div>
     ),

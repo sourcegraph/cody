@@ -276,6 +276,8 @@ export class ContextProvider implements vscode.Disposable {
             // We will just talk to app.
             return result
         }
+        // The other client is talking to non-app (dotcom, etc.) so create a
+        // client to talk to app.
         const appClient = await this.maybeAppClient()
         if (appClient) {
             // By putting the app client first, we prefer to talk to app if

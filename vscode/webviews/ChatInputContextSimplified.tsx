@@ -79,11 +79,13 @@ export const ChatInputContextSimplified: React.FC<ChatInputContextSimplifiedProp
                 // No codebase
                 <CodebaseState icon={mdiDatabaseOffOutline} />
             )}
-            {(contextStatus?.filePath && (
+            {contextStatus?.filePath ? (
                 <p className={styles.file} title={contextStatus.filePath}>
                     {formatFilePath(contextStatus.filePath, contextStatus.selectionRange)}
                 </p>
-            )) || <p className={styles.file}>No file selected</p>}
+            ) : (
+                <p className={styles.file}>No file selected</p>
+            )}
         </div>
     )
 }

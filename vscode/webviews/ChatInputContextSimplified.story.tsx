@@ -5,6 +5,8 @@ import { ChatContextStatus } from '@sourcegraph/cody-shared'
 import { ChatInputContextSimplified } from './ChatInputContextSimplified'
 import { VSCodeStoryDecorator } from './storybook/VSCodeStoryDecorator'
 
+import styles from './storybook/VSCodeStoryDecorator.module.css'
+
 const meta: Meta<typeof ChatInputContextSimplified> = {
     title: 'cody/App-less Onboarding',
     component: ChatInputContextSimplified,
@@ -12,13 +14,6 @@ const meta: Meta<typeof ChatInputContextSimplified> = {
 }
 
 export default meta
-
-const backdropStyle = {
-    background: 'var(--vscode-sideBar-background)',
-    height: '60vh',
-    display: 'flex',
-    alignItems: 'end',
-}
 
 const onboardingCallbacks = {
     openApp: () => alert('open app'),
@@ -33,7 +28,7 @@ export const ChatInputContextAppNotInstalled: StoryObj<typeof ChatInputContextSi
             codebase: 'github.com/sourcegraph/example',
         }
         return (
-            <div style={backdropStyle}>
+            <div className={styles.testDarkSidebarBottom}>
                 <ChatInputContextSimplified
                     isAppInstalled={false}
                     contextStatus={contextStatus}
@@ -51,7 +46,7 @@ export const ChatInputContextAppInstalled: StoryObj<typeof ChatInputContextSimpl
             filePath: 'foo/bar.js',
         }
         return (
-            <div style={backdropStyle}>
+            <div className={styles.testDarkSidebarBottom}>
                 <ChatInputContextSimplified
                     isAppInstalled={true}
                     contextStatus={contextStatus}
@@ -71,7 +66,7 @@ export const ChatInputContextHasEmbeddings: StoryObj<typeof ChatInputContextSimp
             connection: true,
         }
         return (
-            <div style={backdropStyle}>
+            <div className={styles.testDarkSidebarBottom}>
                 <ChatInputContextSimplified
                     isAppInstalled={true}
                     contextStatus={contextStatus}
