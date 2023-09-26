@@ -6,6 +6,7 @@ import { ChatMessage, UserLocalHistory } from '@sourcegraph/cody-shared/src/chat
 import { View } from '../../webviews/NavBar'
 import { logDebug } from '../log'
 import { AuthProviderSimplified } from '../services/AuthProviderSimplified'
+import { LocalAppWatcher } from '../services/LocalAppWatcher'
 import * as OnboardingExperiment from '../services/OnboardingExperiment'
 import { telemetryService } from '../services/telemetry'
 
@@ -34,6 +35,10 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
     constructor({ extensionUri, ...options }: ChatViewProviderOptions) {
         super(options)
         this.extensionUri = extensionUri
+
+        const localAppWatcher = new LocalAppWatcher()
+        this.disposables.push(localAppWatcher)
+        this.disposables.push(localAppWatcher.onChange(appWatcher => this.appWatcherChanged(appWatcher)))
     }
 
     private async onDidReceiveMessage(message: WebviewMessage): Promise<void> {
@@ -171,6 +176,10 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
 
     private async simplifiedOnboardingReloadEmbeddingsState(): Promise<void> {
         await this.contextProvider.forceUpdateCodebaseContext()
+    }
+
+    private appWatcherChanged(appWatcher: LocalAppWatcher): void {
+        void this.webview?.postMessage({ type: 'app-state', isInstalled: appWatcher.isInstalled })
     }
 
     private async onHumanMessageSubmitted(text: string, submitType: 'user' | 'suggestion' | 'example'): Promise<void> {
