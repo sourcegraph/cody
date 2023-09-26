@@ -68,8 +68,8 @@ export interface ItemPostProcesssingInfo {
     nodeTypes?: {
         atCursor?: string
         parent?: string
-        grandParent?: string
-        grandGrandParent?: string
+        grandparent?: string
+        greatGrandparent?: string
     }
 }
 
