@@ -255,21 +255,25 @@ const ErrorBanner: React.FunctionComponent<{ errors: string[]; setErrors: (error
 }) => {
     useEffect(() => {
         const interval = setInterval(() => {
-          if(errors.length === 0) {
-            clearInterval(interval); 
-            return;
-          }
-          setErrors(errors.slice(1)); 
-        }, 3000);
-        
-        return () => clearInterval(interval);      
-      }, [errors, setErrors]);
-   return (
+            if (errors.length === 0) {
+                clearInterval(interval)
+                return
+            }
+            setErrors(errors.slice(1))
+        }, 3000)
+
+        return () => clearInterval(interval)
+    }, [errors, setErrors])
+    return (
         <div className="error-container">
             {errors.map((error, i) => (
                 <div key={i} className="error">
                     <span>{error}</span>
-                    <button type="button" className="close-btn" onClick={() => setErrors(errors.filter(e => e !== error))}>
+                    <button
+                        type="button"
+                        className="close-btn"
+                        onClick={() => setErrors(errors.filter(e => e !== error))}
+                    >
                         ×
                     </button>
                 </div>
