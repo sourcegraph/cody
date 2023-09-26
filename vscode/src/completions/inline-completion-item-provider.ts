@@ -17,6 +17,7 @@ import {
     InlineCompletionsParams,
     InlineCompletionsResultSource,
     LastInlineCompletionCandidate,
+    TriggerKind,
 } from './get-inline-completions'
 import * as CompletionLogger from './logger'
 import { CompletionEvent } from './logger'
@@ -49,6 +50,10 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
     private promptChars: number
     private maxPrefixChars: number
     private maxSuffixChars: number
+    // This field is going to be set if you use the keyboard shortcut to manually trigger a
+    // completion. Since VS Code does not provide a way to distinguish manual vs automatic
+    // completions, we use consult this field inside the completion callback instead.
+    private lastManualCompletionTimestamp: number | null = null
     // private reportedErrorMessages: Map<string, number> = new Map()
     private resetRateLimitErrorsAfter: number | null = null
 
@@ -137,6 +142,14 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
         const tracer = this.config.tracer ? createTracerForInvocation(this.config.tracer) : undefined
         const graphContextFetcher = this.config.graphContextFetcher ?? undefined
 
+        const triggerKind =
+            this.lastManualCompletionTimestamp && this.lastManualCompletionTimestamp > Date.now() - 500
+                ? TriggerKind.Manual
+                : context.triggerKind === vscode.InlineCompletionTriggerKind.Automatic
+                ? TriggerKind.Automatic
+                : TriggerKind.Hover
+        this.lastManualCompletionTimestamp = null
+
         let stopLoading: () => void | undefined
         const setIsLoading = (isLoading: boolean): void => {
             if (isLoading) {
@@ -177,7 +190,8 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
             const result = await this.getInlineCompletions({
                 document,
                 position,
-                context,
+                triggerKind,
+                selectedCompletionInfo: context.selectedCompletionInfo,
                 docContext,
                 promptChars: this.promptChars,
                 providerConfig: this.config.providerConfig,
@@ -230,7 +244,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
                     document,
                     docContext: lastTriggeredDocContext,
                     position: lastTriggeredPosition,
-                    context,
+                    selectedCompletionInfo: context.selectedCompletionInfo,
                 })
             }
 
@@ -323,6 +337,12 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
         this.clearLastCandidate()
 
         CompletionLogger.accept(logId, completion)
+    }
+
+    public async manuallyTriggerCompletion(): Promise<void> {
+        await vscode.commands.executeCommand('editor.action.inlineSuggest.hide')
+        this.lastManualCompletionTimestamp = Date.now()
+        await vscode.commands.executeCommand('editor.action.inlineSuggest.trigger')
     }
 
     /**
