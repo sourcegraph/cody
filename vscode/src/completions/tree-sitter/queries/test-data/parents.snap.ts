@@ -5,7 +5,7 @@
 //
 // Tree-sitter query:
 //
-// Gets the "current" node at cursor position and two parents.
+// Gets the "current" node at cursor position and tree parents.
 // ------------------------------------
 
   export function whatsUp() {
