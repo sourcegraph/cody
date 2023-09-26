@@ -18,7 +18,7 @@ export function truncateTextStart(text: string, maxTokens: number): string {
     return text.length <= maxLength ? text : text.slice(-maxLength - 1)
 }
 
-export function getLinuxCommandContextMessages(): ContextMessage[] {
+export function getTerminalCommandContextMessages(): ContextMessage[] {
     return [
         { speaker: 'human', text: 'Human: What are all the files in my directory?' },
         {
