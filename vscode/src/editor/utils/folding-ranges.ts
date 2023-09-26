@@ -169,7 +169,7 @@ function removeOutermostFoldingRanges(
  * @returns Array containing only folding ranges that do not contain any nested child ranges
  */
 function removeNestedFoldingRanges(ranges: vscode.FoldingRange[], isTextBased = false): vscode.FoldingRange[] {
-    const filtered = isTextBased ? combineNeiborFoldingRanges(ranges) : ranges
+    const filtered = isTextBased ? combineNeighborFoldingRanges(ranges) : ranges
 
     return filtered.filter(
         cur => !filtered.some(next => next !== cur && next.start <= cur.start && next.end >= cur.end)
