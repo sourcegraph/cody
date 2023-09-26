@@ -95,15 +95,22 @@ export class CommandRunner implements vscode.Disposable {
             return
         }
 
-        const range = this.command.slashCommand === '/doc' ? getDocCommandRange(doc, selection) : selection
+        const commandKey = this.command.slashCommand
+        const range = commandKey === '/doc' ? getDocCommandRange(doc, selection) : selection
         const instruction = insertMode ? addSelectionToPrompt(this.command.prompt, code) : this.command.prompt
-        await vscode.commands.executeCommand('cody.fixup.new', {
-            range,
-            instruction,
-            document: doc,
-            auto: true,
-            insertMode,
-        })
+        const source = this.command.type === 'default' ? commandKey.replace('/', '') : 'custom'
+
+        await vscode.commands.executeCommand(
+            'cody.command.edit-code',
+            {
+                range,
+                instruction,
+                document: doc,
+                auto: true,
+                insertMode,
+            },
+            source
+        )
     }
 
     /**

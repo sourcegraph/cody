@@ -241,10 +241,15 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
                     return await vscode.commands.executeCommand('cody.action.chat', input)
                 }
                 case selectedCommandID === menu_options.fix.slashCommand: {
+                    const source = 'menu'
                     if (userPrompt.trim()) {
-                        return await vscode.commands.executeCommand('cody.fixup.new', { instruction: userPrompt })
+                        return await vscode.commands.executeCommand(
+                            'cody.command.edit-code',
+                            { instruction: userPrompt },
+                            source
+                        )
                     }
-                    return await vscode.commands.executeCommand('cody.fixup.new')
+                    return await vscode.commands.executeCommand('cody.command.edit-code', {}, source)
                 }
             }
 

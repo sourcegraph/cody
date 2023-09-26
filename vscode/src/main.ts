@@ -187,7 +187,8 @@ const register = async (
             range?: vscode.Range
             auto?: boolean
             insertMode?: boolean
-        } = {}
+        } = {},
+        source = 'editor' // where the command was triggered from
     ): Promise<void> => {
         const document = args.document || vscode.window.activeTextEditor?.document
         if (!document) {
@@ -206,7 +207,7 @@ const register = async (
             return
         }
 
-        telemetryService.log('CodyVSCodeExtension:fixup:created')
+        telemetryService.log(`CodyVSCodeExtension:command:refactor:${source}:executed`)
         const provider = fixupManager.getProviderForTask(task)
         return provider.startFix()
     }
@@ -223,13 +224,17 @@ const register = async (
              * /chat or /ask could trigger a chat
              */
             if (isEditMode) {
+                const source = 'inline-chat'
                 void vscode.commands.executeCommand('workbench.action.collapseAllComments')
                 const activeDocument = await vscode.workspace.openTextDocument(comment.thread.uri)
-                return executeFixup({
-                    document: activeDocument,
-                    instruction: comment.text.replace(commandRegex.edit, ''),
-                    range: comment.thread.range,
-                })
+                return executeFixup(
+                    {
+                        document: activeDocument,
+                        instruction: comment.text.replace(commandRegex.edit, ''),
+                        range: comment.thread.range,
+                    },
+                    source
+                )
             }
 
             const inlineChatProvider = inlineChatManager.getProviderForThread(comment.thread)
@@ -260,14 +265,17 @@ const register = async (
             telemetryService.log('CodyVSCodeExtension:inline-assist:openInSidebarButton:clicked')
         }),
         vscode.commands.registerCommand(
-            'cody.fixup.new',
-            (args: {
-                range?: vscode.Range
-                instruction?: string
-                document?: vscode.TextDocument
-                auto?: boolean
-                insertMode?: boolean
-            }) => executeFixup(args)
+            'cody.command.edit-code',
+            (
+                args: {
+                    range?: vscode.Range
+                    instruction?: string
+                    document?: vscode.TextDocument
+                    auto?: boolean
+                    insertMode?: boolean
+                },
+                source?: string
+            ) => executeFixup(args, source)
         ),
         vscode.commands.registerCommand('cody.inline.new', async () => {
             // move focus line to the end of the current selection
@@ -350,7 +358,6 @@ const register = async (
             executeRecipeInSidebar('inline-touch', false)
         ),
         vscode.commands.registerCommand('cody.command.context-search', () => executeRecipeInSidebar('context-search')),
-        vscode.commands.registerCommand('cody.command.edit-code', () => executeFixup()),
 
         // Register URI Handler (vscode://sourcegraph.cody-ai)
         vscode.window.registerUriHandler({

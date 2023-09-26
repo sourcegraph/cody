@@ -504,7 +504,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
                 return null
             }
             case /^\/edit(\s)?/.test(text):
-                await vscode.commands.executeCommand('cody.fixup.new', { instruction: text })
+                await vscode.commands.executeCommand('cody.command.edit-code', { instruction: text }, 'sidebar')
                 return null
             default: {
                 if (!this.editor.getActiveTextEditor()?.filePath) {

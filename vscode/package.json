@@ -258,7 +258,8 @@
       {
         "command": "cody.command.edit-code",
         "category": "Ask Cody",
-        "title": "Refactor Code"
+        "title": "Refactor Code",
+        "icon": "$(sparkle)"
       },
       {
         "command": "cody.command.explain-code",
@@ -386,12 +387,6 @@
         "command": "cody.command.inline-touch",
         "category": "Cody",
         "title": "Touch"
-      },
-      {
-        "command": "cody.fixup.new",
-        "category": "Cody",
-        "title": "Fixup",
-        "icon": "$(sparkle)"
       },
       {
         "command": "cody.fixup.open",
