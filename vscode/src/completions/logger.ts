@@ -151,6 +151,7 @@ export function loaded(id: string, items: InlineCompletionItemWithAnalytics[]): 
                 parseErrorCount: item.parseErrorCount,
                 lineTruncatedCount: item.lineTruncatedCount,
                 truncatedWith: item.truncatedWith,
+                nodeTypes: item.nodeTypes,
             }
         })
     }
