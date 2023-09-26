@@ -14,32 +14,26 @@ import { InlineCompletionItem } from './types'
 export function reuseLastCandidate({
     document,
     position,
-    context,
-    lastCandidate: {
-        lastTriggerPosition,
-        lastTriggerCurrentLinePrefix,
-        lastTriggerNextNonEmptyLine,
-        lastTriggerSelectedInfoItem,
-        ...lastCandidate
-    },
+    selectedCompletionInfo,
+    lastCandidate: { lastTriggerPosition, lastTriggerDocContext, lastTriggerSelectedInfoItem, ...lastCandidate },
     docContext: { currentLinePrefix, currentLineSuffix, nextNonEmptyLine },
     completeSuggestWidgetSelection,
 }: Required<
     Pick<
         InlineCompletionsParams,
-        'document' | 'position' | 'context' | 'lastCandidate' | 'completeSuggestWidgetSelection'
+        'document' | 'position' | 'selectedCompletionInfo' | 'lastCandidate' | 'completeSuggestWidgetSelection'
     >
 > & {
     docContext: DocumentContext
 }): InlineCompletionsResult | null {
     const isSameDocument = lastCandidate.uri.toString() === document.uri.toString()
     const isSameLine = lastTriggerPosition.line === position.line
-    const isSameNextNonEmptyLine = lastTriggerNextNonEmptyLine === nextNonEmptyLine
+    const isSameNextNonEmptyLine = lastTriggerDocContext.nextNonEmptyLine === nextNonEmptyLine
 
     // If completeSuggestWidgetSelection is enabled, we have to compare that a last candidate is
     // only reused if it is has same completion info selected.
     const isSameTriggerSelectedInfoItem = completeSuggestWidgetSelection
-        ? lastTriggerSelectedInfoItem === context.selectedCompletionInfo?.text
+        ? lastTriggerSelectedInfoItem === selectedCompletionInfo?.text
         : true
 
     if (!isSameDocument || !isSameLine || !isSameNextNonEmptyLine || !isSameTriggerSelectedInfoItem) {
@@ -47,7 +41,7 @@ export function reuseLastCandidate({
     }
 
     // There are 2 reasons we can reuse a candidate: typing-as-suggested or change-of-indentation.
-
+    const lastTriggerCurrentLinePrefix = lastTriggerDocContext.currentLinePrefix
     const isIndentation = isWhitespace(currentLinePrefix) && currentLinePrefix.startsWith(lastTriggerCurrentLinePrefix)
     const isDeindentation =
         isWhitespace(lastTriggerCurrentLinePrefix) && lastTriggerCurrentLinePrefix.startsWith(currentLinePrefix)

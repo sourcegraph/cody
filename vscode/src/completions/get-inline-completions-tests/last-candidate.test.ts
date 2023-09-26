@@ -1,12 +1,10 @@
 import dedent from 'dedent'
 import { describe, expect, test } from 'vitest'
-import { Range } from 'vscode'
 
-import { vsCodeMocks } from '../../testutils/mocks'
 import { range } from '../../testutils/textDocument'
+import { getCurrentDocContext } from '../get-current-doc-context'
 import { InlineCompletionsResultSource, LastInlineCompletionCandidate } from '../get-inline-completions'
 import { documentAndPosition } from '../test-helpers'
-import { getNextNonEmptyLine } from '../text-processing'
 
 import { getInlineCompletions, params, V } from './helpers'
 
@@ -17,18 +15,22 @@ describe('[getInlineCompletions] reuseLastCandidate', () => {
         lastTriggerSelectedInfoItem?: string
     ): LastInlineCompletionCandidate {
         const { document, position } = documentAndPosition(code)
-        const suffix = document.getText(new Range(position, document.lineAt(document.lineCount - 1).range.end))
-        const nextNonEmptyLine = getNextNonEmptyLine(suffix)
+        const lastDocContext = getCurrentDocContext({
+            document,
+            position,
+            maxPrefixLength: 100,
+            maxSuffixLength: 100,
+            enableExtendedTriggers: true,
+        })
         return {
             uri: document.uri,
             lastTriggerPosition: position,
-            lastTriggerCurrentLinePrefix: document.lineAt(position).text.slice(0, position.character),
-            lastTriggerNextNonEmptyLine: nextNonEmptyLine,
             lastTriggerSelectedInfoItem,
             result: {
                 logId: '1',
                 items: Array.isArray(insertText) ? insertText.map(insertText => ({ insertText })) : [{ insertText }],
             },
+            lastTriggerDocContext: lastDocContext,
         }
     }
 
@@ -244,12 +246,9 @@ describe('[getInlineCompletions] reuseLastCandidate', () => {
                 await getInlineCompletions(
                     params('console█', [], {
                         lastCandidate: lastCandidate('console█', ' = 1', 'log'),
-                        context: {
-                            triggerKind: vsCodeMocks.InlineCompletionTriggerKind.Automatic,
-                            selectedCompletionInfo: {
-                                text: 'dir',
-                                range: range(0, 0, 0, 0),
-                            },
+                        selectedCompletionInfo: {
+                            text: 'dir',
+                            range: range(0, 0, 0, 0),
                         },
                         completeSuggestWidgetSelection: true,
                     })

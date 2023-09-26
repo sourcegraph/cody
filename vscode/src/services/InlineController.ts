@@ -328,12 +328,15 @@ export class InlineController implements VsCodeInlineController {
         code: string,
         eventName: string
     ): { code: string; lineCount: number; charCount: number; eventName: string } {
-        this.insertInProgress = eventName === 'insertButton'
+        // All non-copy events are considered as insertions since we don't need to listen for paste events
+        this.insertInProgress = !eventName.startsWith('copy')
         const { lineCount, charCount } = countCode(code)
         const codeCount = { code, lineCount, charCount, eventName }
         this.lastCopiedCode = codeCount
 
-        const op = eventName.startsWith('insert') ? 'insert' : 'copy'
+        // Currently supported events are: copy, insert, save
+        const op = eventName.includes('copy') ? 'copy' : eventName.startsWith('insert') ? 'insert' : 'save'
+
         const args = { op, charCount, lineCount }
         telemetryService.log(`CodyVSCodeExtension:${eventName}:clicked`, args)
         return codeCount

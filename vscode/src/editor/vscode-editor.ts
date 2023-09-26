@@ -316,6 +316,26 @@ export class VSCodeEditor implements Editor<InlineController, FixupController, C
         return
     }
 
+    public async createWorkspaceFile(content: string, uri?: vscode.Uri): Promise<void> {
+        const fileUri = uri ?? (await vscode.window.showSaveDialog())
+        if (!fileUri) {
+            return
+        }
+
+        try {
+            const workspaceEditor = new vscode.WorkspaceEdit()
+            workspaceEditor.createFile(fileUri, { ignoreIfExists: true })
+            // replace whole file with new content
+            const range = new vscode.Range(0, 0, 9999, 0)
+            workspaceEditor.replace(fileUri, range, content.trimEnd())
+            await vscode.workspace.applyEdit(workspaceEditor)
+            void vscode.commands.executeCommand('vscode.open', fileUri)
+        } catch {
+            const errorMsg = 'Failed to create new file.'
+            await vscode.window.showInformationMessage(errorMsg)
+        }
+    }
+
     public async showQuickPick(labels: string[]): Promise<string | undefined> {
         const label = await vscode.window.showQuickPick(labels)
         return label

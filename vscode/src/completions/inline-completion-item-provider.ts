@@ -17,13 +17,14 @@ import {
     InlineCompletionsParams,
     InlineCompletionsResultSource,
     LastInlineCompletionCandidate,
+    TriggerKind,
 } from './get-inline-completions'
 import * as CompletionLogger from './logger'
 import { CompletionEvent } from './logger'
 import { ProviderConfig } from './providers/provider'
 import { RequestManager, RequestParams } from './request-manager'
+import { InlineCompletionItemWithAnalytics } from './text-processing/process-inline-completions'
 import { ProvideInlineCompletionItemsTracer, ProvideInlineCompletionsItemTraceData } from './tracer'
-import { InlineCompletionItem } from './types'
 
 interface AutocompleteResult extends vscode.InlineCompletionList {
     completionEvent?: CompletionEvent
@@ -56,6 +57,10 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
     private maxPrefixChars: number
     private maxSuffixChars: number
     private lastCompletionRequest: CompletionRequest | null = null
+    // This field is going to be set if you use the keyboard shortcut to manually trigger a
+    // completion. Since VS Code does not provide a way to distinguish manual vs automatic
+    // completions, we use consult this field inside the completion callback instead.
+    private lastManualCompletionTimestamp: number | null = null
     // private reportedErrorMessages: Map<string, number> = new Map()
     private resetRateLimitErrorsAfter: number | null = null
 
@@ -149,6 +154,14 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
         const tracer = this.config.tracer ? createTracerForInvocation(this.config.tracer) : undefined
         const graphContextFetcher = this.config.graphContextFetcher ?? undefined
 
+        const triggerKind =
+            this.lastManualCompletionTimestamp && this.lastManualCompletionTimestamp > Date.now() - 500
+                ? TriggerKind.Manual
+                : context.triggerKind === vscode.InlineCompletionTriggerKind.Automatic
+                ? TriggerKind.Automatic
+                : TriggerKind.Hover
+        this.lastManualCompletionTimestamp = null
+
         let stopLoading: () => void | undefined
         const setIsLoading = (isLoading: boolean): void => {
             if (isLoading) {
@@ -201,7 +214,8 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
             const result = await this.getInlineCompletions({
                 document,
                 position,
-                context,
+                triggerKind,
+                selectedCompletionInfo: context.selectedCompletionInfo,
                 docContext,
                 promptChars: this.promptChars,
                 providerConfig: this.config.providerConfig,
@@ -239,18 +253,22 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
             // meaning the previous result is unwanted/rejected.
             // In that case, we mark the last candidate as "unwanted", remove it from cache, and clear the last candidate
             const lastTriggeredResultId = this.lastCandidate?.result.logId
+            const lastTriggeredDocContext = this.lastCandidate?.lastTriggerDocContext
+            const lastTriggeredPosition = this.lastCandidate?.lastTriggerPosition
             const currentPrefix = docContext.currentLinePrefix
-            const lastTriggeredPrefix = this.lastCandidate?.lastTriggerCurrentLinePrefix
+            const lastTriggeredPrefix = this.lastCandidate?.lastTriggerDocContext.currentLinePrefix
             if (
                 lastTriggeredResultId &&
+                lastTriggeredDocContext &&
+                lastTriggeredPosition &&
                 lastTriggeredPrefix !== undefined &&
-                currentPrefix.length <= lastTriggeredPrefix.length
+                currentPrefix.length < lastTriggeredPrefix.length
             ) {
                 this.handleUnwantedCompletionItem(lastTriggeredResultId, {
                     document,
-                    docContext,
-                    position,
-                    context,
+                    docContext: lastTriggeredDocContext,
+                    position: lastTriggeredPosition,
+                    selectedCompletionInfo: context.selectedCompletionInfo,
                 })
             }
 
@@ -277,8 +295,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
             const candidate: LastInlineCompletionCandidate = {
                 uri: document.uri,
                 lastTriggerPosition: position,
-                lastTriggerCurrentLinePrefix: docContext.currentLinePrefix,
-                lastTriggerNextNonEmptyLine: docContext.nextNonEmptyLine,
+                lastTriggerDocContext: docContext,
                 lastTriggerSelectedInfoItem: context?.selectedCompletionInfo?.text,
                 result: {
                     logId: result.logId,
@@ -339,12 +356,18 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
         }
     }
 
-    public handleDidAcceptCompletionItem(logId: string, completion: InlineCompletionItem): void {
+    public handleDidAcceptCompletionItem(logId: string, completion: InlineCompletionItemWithAnalytics): void {
         // When a completion is accepted, the lastCandidate should be cleared. This makes sure the
         // log id is never reused if the completion is accepted.
         this.clearLastCandidate()
 
         CompletionLogger.accept(logId, completion)
+    }
+
+    public async manuallyTriggerCompletion(): Promise<void> {
+        await vscode.commands.executeCommand('editor.action.inlineSuggest.hide')
+        this.lastManualCompletionTimestamp = Date.now()
+        await vscode.commands.executeCommand('editor.action.inlineSuggest.trigger')
     }
 
     /**
@@ -378,7 +401,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
         logId: string,
         document: vscode.TextDocument,
         position: vscode.Position,
-        items: InlineCompletionItem[],
+        items: InlineCompletionItemWithAnalytics[],
         context: vscode.InlineCompletionContext,
         takeSuggestWidgetSelectionIntoAccount: boolean = false
     ): vscode.InlineCompletionItem[] {

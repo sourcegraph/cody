@@ -6,11 +6,19 @@ import { ChatMessage, UserLocalHistory } from '@sourcegraph/cody-shared/src/chat
 import { View } from '../../webviews/NavBar'
 import { logDebug } from '../log'
 import { AuthProviderSimplified } from '../services/AuthProviderSimplified'
+import { LocalAppWatcher } from '../services/LocalAppWatcher'
 import * as OnboardingExperiment from '../services/OnboardingExperiment'
 import { telemetryService } from '../services/telemetry'
 
 import { MessageProvider, MessageProviderOptions } from './MessageProvider'
-import { ExtensionMessage, WebviewMessage } from './protocol'
+import {
+    APP_LANDING_URL,
+    APP_REPOSITORIES_URL,
+    archConvertor,
+    ExtensionMessage,
+    isOsSupportedByApp,
+    WebviewMessage,
+} from './protocol'
 
 export interface ChatViewProviderWebview extends Omit<vscode.Webview, 'postMessage'> {
     postMessage(message: ExtensionMessage): Thenable<boolean>
@@ -27,6 +35,10 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
     constructor({ extensionUri, ...options }: ChatViewProviderOptions) {
         super(options)
         this.extensionUri = extensionUri
+
+        const localAppWatcher = new LocalAppWatcher()
+        this.disposables.push(localAppWatcher)
+        this.disposables.push(localAppWatcher.onChange(appWatcher => this.appWatcherChanged(appWatcher)))
     }
 
     private async onDidReceiveMessage(message: WebviewMessage): Promise<void> {
@@ -84,6 +96,9 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
             case 'insert':
                 await this.handleInsertAtCursor(message.text)
                 break
+            case 'newFile':
+                await this.handleSaveToNewFile(message.text)
+                break
             case 'copy':
                 await this.handleCopiedCode(message.text, message.eventType)
                 break
@@ -130,9 +145,42 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
                         : undefined
                 )
                 break
+            case 'simplified-onboarding':
+                if (message.type === 'install-app') {
+                    void this.simplifiedOnboardingInstallApp()
+                    break
+                }
+                if (message.type === 'open-app') {
+                    void this.openExternalLinks(APP_REPOSITORIES_URL.href)
+                    break
+                }
+                if (message.type === 'reload-state') {
+                    void this.simplifiedOnboardingReloadEmbeddingsState()
+                    break
+                }
+                break
             default:
                 this.handleError('Invalid request type from Webview')
         }
+    }
+
+    private async simplifiedOnboardingInstallApp(): Promise<void> {
+        const os = process.platform
+        const arch = process.arch
+        const DOWNLOAD_URL =
+            os && arch && isOsSupportedByApp(os, arch)
+                ? `https://sourcegraph.com/.api/app/latest?arch=${archConvertor(arch)}&target=${os}`
+                : APP_LANDING_URL.href
+        await this.openExternalLinks(DOWNLOAD_URL)
+    }
+
+    public async simplifiedOnboardingReloadEmbeddingsState(): Promise<void> {
+        await this.contextProvider.forceUpdateCodebaseContext()
+    }
+
+    private appWatcherChanged(appWatcher: LocalAppWatcher): void {
+        void this.webview?.postMessage({ type: 'app-state', isInstalled: appWatcher.isInstalled })
+        void this.simplifiedOnboardingReloadEmbeddingsState()
     }
 
     private async onHumanMessageSubmitted(text: string, submitType: 'user' | 'suggestion' | 'example'): Promise<void> {
@@ -216,6 +264,7 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
         const selectionRange = vscode.window.activeTextEditor?.selection
         const editor = vscode.window.activeTextEditor
         if (!editor || !selectionRange) {
+            this.handleError('No editor or selection found to insert text')
             return
         }
 
@@ -228,6 +277,18 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
         const op = 'insert'
         const eventName = op + 'Button'
         this.editor.controllers.inline?.setLastCopiedCode(text, eventName)
+    }
+
+    /**
+     * Handles insert event to insert text from code block to new file
+     */
+    private async handleSaveToNewFile(text: string): Promise<void> {
+        // Log insert event
+        const op = 'save'
+        const eventName = op + 'Button'
+        this.editor.controllers.inline?.setLastCopiedCode(text, eventName)
+
+        await this.editor.createWorkspaceFile(text)
     }
 
     /**

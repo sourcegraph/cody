@@ -161,8 +161,18 @@ export class Agent extends MessageHandler {
             if (!client) {
                 return null
             }
+            const abortController = new AbortController()
+            if (token) {
+                if (token.isCancellationRequested) {
+                    abortController.abort()
+                }
+                token.onCancellationRequested(() => {
+                    abortController.abort()
+                })
+            }
 
             await client.executeRecipe(data.id, {
+                signal: abortController.signal,
                 humanChatInput: data.humanChatInput,
                 data: data.data,
             })
