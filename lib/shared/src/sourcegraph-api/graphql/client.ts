@@ -2,7 +2,7 @@ import fetch from 'isomorphic-fetch'
 
 import { ConfigurationWithAccessToken } from '../../configuration'
 import { isError } from '../../utils'
-import { DOTCOM_URL, isDotCom } from '../environments'
+import { DOTCOM_URL, isDotCom, isLocalApp } from '../environments'
 
 import {
     CURRENT_SITE_CODY_LLM_CONFIGURATION,
@@ -194,7 +194,10 @@ export interface event {
     hashedLicenseKey?: string
 }
 
-type GraphQLAPIClientConfig = Pick<ConfigurationWithAccessToken, 'serverEndpoint' | 'accessToken' | 'customHeaders'> &
+export type GraphQLAPIClientConfig = Pick<
+    ConfigurationWithAccessToken,
+    'serverEndpoint' | 'accessToken' | 'customHeaders'
+> &
     Pick<Partial<ConfigurationWithAccessToken>, 'telemetryLevel'>
 
 export let customUserAgent: string | undefined
@@ -217,6 +220,10 @@ export class SourcegraphGraphQLAPIClient {
 
     public isDotCom(): boolean {
         return isDotCom(this.config.serverEndpoint)
+    }
+
+    public isLocalApp(): boolean {
+        return isLocalApp(this.config.serverEndpoint)
     }
 
     public async getSiteVersion(): Promise<string | Error> {

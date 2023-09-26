@@ -362,6 +362,9 @@ importers:
       '@anthropic-ai/sdk':
         specifier: ^0.4.2
         version: 0.4.3
+      '@mdi/js':
+        specifier: ^7.2.96
+        version: 7.2.96
       '@sentry/browser':
         specifier: ^7.66.0
         version: 7.66.0

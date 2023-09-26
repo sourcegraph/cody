@@ -355,7 +355,11 @@ const register = async (
         // Register URI Handler (vscode://sourcegraph.cody-ai)
         vscode.window.registerUriHandler({
             handleUri: async (uri: vscode.Uri) => {
-                await authProvider.tokenCallbackHandler(uri, config.customHeaders)
+                if (uri.path === '/app-done') {
+                    await sidebarChatProvider.simplifiedOnboardingReloadEmbeddingsState()
+                } else {
+                    await authProvider.tokenCallbackHandler(uri, config.customHeaders)
+                }
             },
         }),
         statusBar,

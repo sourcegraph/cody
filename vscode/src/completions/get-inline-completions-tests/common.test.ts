@@ -41,10 +41,7 @@ describe('[getInlineCompletions] common', () => {
         expect(
             await getInlineCompletions(
                 params('array.so█', [completion`rt()`], {
-                    context: {
-                        triggerKind: vsCodeMocks.InlineCompletionTriggerKind.Automatic,
-                        selectedCompletionInfo: { text: 'sort', range: new vsCodeMocks.Range(0, 6, 0, 8) },
-                    },
+                    selectedCompletionInfo: { text: 'sort', range: new vsCodeMocks.Range(0, 6, 0, 8) },
                 })
             )
         ).toEqual<V>({
@@ -86,7 +83,7 @@ describe('[getInlineCompletions] common', () => {
         )
         expect(requests).toHaveLength(3)
         const messages = requests[0].messages
-        expect(messages.at(-1)!.text).toBe('Here is the code: <CODE5711>class Range {\n')
+        expect(messages.at(-1)!.text).toBe('<CODE5711>class Range {\n')
     })
 
     test('uses a more complex prompt for larger files', async () => {
@@ -125,7 +122,7 @@ describe('[getInlineCompletions] common', () => {
         expect(messages.at(-1)).toMatchInlineSnapshot(`
             {
               "speaker": "assistant",
-              "text": "Here is the code: <CODE5711>constructor(startLine: number, startCharacter: number, endLine: number, endCharacter: number) {
+              "text": "<CODE5711>constructor(startLine: number, startCharacter: number, endLine: number, endCharacter: number) {
                     this.startLine =",
             }
         `)

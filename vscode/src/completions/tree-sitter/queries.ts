@@ -1,15 +1,17 @@
-import { memoize } from 'lodash'
 import Parser, { Language, Point, Query, SyntaxNode } from 'web-tree-sitter'
 
 import { getParseLanguage, SupportedLanguage } from './grammars'
 import { getParser } from './parser'
+import { Captures } from './queries/annotate-and-match-snapshot'
 import { languages, QueryName } from './queries/languages'
 
 interface ParsedQuery {
     compiled: Query
     raw: string
 }
-type ResolvedQueries = Record<QueryName, ParsedQuery>
+type ResolvedQueries = {
+    [name in QueryName]: ParsedQuery & QueryWrappers[name]
+}
 
 const QUERIES_LOCAL_CACHE: Partial<Record<SupportedLanguage, ResolvedQueries>> = {}
 
@@ -17,7 +19,7 @@ const QUERIES_LOCAL_CACHE: Partial<Record<SupportedLanguage, ResolvedQueries>> =
  * Reads all language queries from disk and parses them.
  * Saves queries the local cache for further use.
  */
-export function initQueries(language: Language, languageId: SupportedLanguage): void {
+export function initQueries(language: Language, languageId: SupportedLanguage, parser: Parser): void {
     const cachedQueries = QUERIES_LOCAL_CACHE[languageId]
     if (cachedQueries) {
         return
@@ -39,15 +41,30 @@ export function initQueries(language: Language, languageId: SupportedLanguage): 
     })
 
     const queries = Object.fromEntries<ParsedQuery>(queryEntries) as ResolvedQueries
-    QUERIES_LOCAL_CACHE[languageId] = queries
+
+    // Add query wrappers to respective queries.
+    // The resulting object ensures that query wrappers are inaccessible for languages
+    // where queries are not defined yet.
+    const queryWrappers = getLanguageSpecificQueryWrappers(queries, parser)
+    const queriesWithQueryWrappers = Object.fromEntries(
+        Object.entries(queries).map(([name, query]) => {
+            return [name, { ...query, ...queryWrappers[name as keyof QueryWrappers] }] as const
+        })
+    ) as ResolvedQueries
+
+    QUERIES_LOCAL_CACHE[languageId] = queriesWithQueryWrappers
 }
 
-interface DocumentQuerySDK extends QueryWrappers {
+interface DocumentQuerySDK {
     parser: Parser
     queries: ResolvedQueries
     language: SupportedLanguage
 }
 
+/**
+ * Returns the query SDK only if the language has queries defined and
+ * the relevant laguage parser is initialized.
+ */
 export function getDocumentQuerySDK(language: string): DocumentQuerySDK | null {
     const supportedLanguage = getParseLanguage(language)
     if (!supportedLanguage) {
@@ -65,42 +82,48 @@ export function getDocumentQuerySDK(language: string): DocumentQuerySDK | null {
         parser,
         queries,
         language: supportedLanguage,
-        ...getQueryWrappers(queries, parser),
     }
 }
 
 interface QueryWrappers {
-    getFirstMultilineBlockForTruncation: (
-        node: SyntaxNode,
-        startPosition?: Point,
-        endPosition?: Point
-    ) => Parser.SyntaxNode | null
+    blocks: {
+        /**
+         * Returns the first block-like node (block_statement).
+         * Handles special cases where we want to use the parent block instead
+         * if it has a specific node type (if_statement).
+         */
+        getFirstMultilineBlockForTruncation: (
+            node: SyntaxNode,
+            startPosition: Point,
+            endPosition?: Point
+        ) => never[] | readonly [{ readonly node: Parser.SyntaxNode; readonly name: 'blocks' }]
+    }
 }
 
 /**
- * Query wrappers with custom logic requred for specific goals.
- * Memoize this function for each query object because it will be called many times with
- * no functional changes.
+ * Query wrappers with custom post-processing logic.
  */
-const getQueryWrappers = memoize((queries: ResolvedQueries, _parser: Parser): QueryWrappers => {
+function getLanguageSpecificQueryWrappers(queries: ResolvedQueries, _parser: Parser): QueryWrappers {
     return {
-        getFirstMultilineBlockForTruncation(node, startPosition, endPosition) {
-            const captures = queries.blocks.compiled.captures(node, startPosition, endPosition)
+        blocks: {
+            getFirstMultilineBlockForTruncation: (node, startPosition, endPosition) => {
+                const captures = queries.blocks.compiled.captures(node, startPosition, endPosition)
 
-            if (!captures.length) {
-                return null
-            }
+                if (!captures.length) {
+                    return []
+                }
 
-            // Taking the last result to get the most nested node.
-            // See https://github.com/tree-sitter/tree-sitter/discussions/2067
-            const initialNode = captures.at(-1)!.node
+                // Taking the last result to get the most nested node.
+                // See https://github.com/tree-sitter/tree-sitter/discussions/2067
+                const initialNode = captures.at(-1)!.node
 
-            // Check for special cases where we need match a parent node.
-            const potentialParentNodes = captures.filter(capture => capture.name === 'parents')
-            const potentialParent = potentialParentNodes.find(capture => initialNode.parent?.id === capture.node.id)
-                ?.node
+                // Check for special cases where we need match a parent node.
+                const potentialParentNodes = captures.filter(capture => capture.name === 'parents')
+                const potentialParent = potentialParentNodes.find(capture => initialNode.parent?.id === capture.node.id)
+                    ?.node
 
-            return potentialParent || initialNode
+                return [{ node: potentialParent || initialNode, name: 'blocks' }] as const
+            },
         },
-    }
-})
+    } satisfies Record<QueryName, Record<string, Captures>>
+}

@@ -56,7 +56,7 @@ export class VSCodeSecretStorage implements SecretStorage {
 
     constructor() {
         const config = vscode.workspace.getConfiguration('cody')
-        // For user that does not have secret storage implemented in their sever
+        // For user that does not have secret storage implemented in their server
         this.fsPath = config.get('experimental.localTokenPath') || null
         if (this.fsPath) {
             logDebug('VSCodeSecretStorage:experimental.localTokenPath', 'enabled', { verbose: this.fsPath })

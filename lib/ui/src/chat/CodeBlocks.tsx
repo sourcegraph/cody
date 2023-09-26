@@ -5,7 +5,12 @@ import classNames from 'classnames'
 import { renderCodyMarkdown } from '@sourcegraph/cody-shared'
 
 import { CodeBlockActionsProps } from '../Chat'
-import { CopyCodeBlockIcon, InsertCodeBlockIcon, SaveCodeBlockIcon } from '../icons/CodeBlockActionIcons'
+import {
+    CheckCodeBlockIcon,
+    CopyCodeBlockIcon,
+    InsertCodeBlockIcon,
+    SaveCodeBlockIcon,
+} from '../icons/CodeBlockActionIcons'
 
 import styles from './CodeBlocks.module.css'
 
@@ -82,6 +87,17 @@ function createButtons(
     return container
 }
 
+/**
+ * Creates a button to perform an action on a code block.
+ *
+ * @param type - The type of action button: 'copy', 'insert', or 'new'.
+ * @param text - The text content of the code block.
+ * @param title - The title attribute for the button.
+ * @param iconSvg - The SVG icon to display in the button.
+ * @param codeBlockActions - The callback actions to perform on click.
+ * @param className - Optional additional CSS class names for the button.
+ * @returns The button element.
+ */
 function createCodeBlockActionButton(
     type: 'copy' | 'insert' | 'new',
     text: string,
@@ -103,9 +119,11 @@ function createCodeBlockActionButton(
 
     if (type === 'copy') {
         button.addEventListener('click', () => {
+            button.innerHTML = CheckCodeBlockIcon
             navigator.clipboard.writeText(text).catch(error => console.error(error))
             button.className = classNames(styleClass, className)
             codeBlockActions.copy(text, 'Button')
+            setTimeout(() => (button.innerHTML = iconSvg), 5000)
         })
     }
 
@@ -116,14 +134,10 @@ function createCodeBlockActionButton(
 
     switch (type) {
         case 'insert':
-            button.addEventListener('click', () => {
-                insertOnSubmit(text, false)
-            })
+            button.addEventListener('click', () => insertOnSubmit(text, false))
             break
         case 'new':
-            button.addEventListener('click', () => {
-                insertOnSubmit(text, true)
-            })
+            button.addEventListener('click', () => insertOnSubmit(text, true))
             break
     }
 
