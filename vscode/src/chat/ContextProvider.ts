@@ -317,11 +317,11 @@ async function getCodebaseContext(
     }
 
     // Find an embeddings client
-    const embeddingsSearch = await EmbeddingsDetector.newEmbeddingsSearchClient(embeddingsClientCandidates, codebase)
+    let embeddingsSearch = await EmbeddingsDetector.newEmbeddingsSearchClient(embeddingsClientCandidates, codebase)
     if (isError(embeddingsSearch)) {
         const infoMessage = `Cody could not find embeddings for '${codebase}' on your Sourcegraph instance.\n`
         console.info(infoMessage)
-        return null
+        embeddingsSearch = undefined
     }
 
     return new CodebaseContext(

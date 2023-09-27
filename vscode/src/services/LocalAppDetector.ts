@@ -94,7 +94,17 @@ export class LocalAppDetector implements vscode.Disposable {
         if (!this.tokenFsPath || this.localEnv.hasAppJson) {
             return
         }
-        const appJson = await loadAppJson(this.tokenFsPath)
+        await this.tryFetchAppJson(this.tokenFsPath)
+    }
+
+    // Check if `uri` has the an app token. This skips the checks for an
+    // existing token and will forcibly load new tokens.
+    //
+    // This is a stop-gap so LocalAppWatcher/simplified onboarding can force
+    // LocalAppDetector and downstream to pick up an app token even after the
+    // user has logged in to dotcom.
+    public async tryFetchAppJson(uri: vscode.Uri): Promise<void> {
+        const appJson = await loadAppJson(uri)
         if (!appJson) {
             return
         }
