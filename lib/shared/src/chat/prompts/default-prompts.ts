@@ -10,12 +10,14 @@
  * 
  * Tested with:
  *   - Typescript (we want to match https://ts.dev/style/#jsdoc-vs-comments)
- *     - https://github.com/sourcegraph/sourcegraph/blob/b150dedb550f45b6b27cba39b15984e04afecaf3/client/wildcard/src/hooks/useKeyboard.ts#L10 (generates docstring)
- *     - https://github.com/sourcegraph/sourcegraph/blob/b150dedb550f45b6b27cba39b15984e04afecaf3/client/wildcard/src/hooks/useKeyboard.ts#L12 (generates impl comment w/o params)
- *     - https://github.com/sourcegraph/sourcegraph/blob/b150dedb550f45b6b27cba39b15984e04afecaf3/client/wildcard/src/hooks/useKeyboard.ts#L14-26 (generates impl comment w/o params)
- *     - TODO
+ *     - https://github.com/sourcegraph/sourcegraph/blob/b150dedb550f45b6b27cba39b15984e04afecaf3/client/wildcard/src/hooks/useKeyboard.ts#L10-L27 (generates docstring w/ parameters)
+ *     - https://github.com/sourcegraph/sourcegraph/blob/b150dedb550f45b6b27cba39b15984e04afecaf3/client/wildcard/src/hooks/useKeyboard.ts#L12 (generates impl comment)
+ *     - https://github.com/sourcegraph/sourcegraph/blob/b150dedb550f45b6b27cba39b15984e04afecaf3/client/wildcard/src/hooks/useKeyboard.ts#L14-L26 (generates impl comment)
  *   - Javascript
- *     - TODO
+ *     - https://github.com/sourcegraph/wizard/blob/2414828d62f7ababd24a2532708e7e94fb5d92bb/pages/index.js#L4-L256 (generates docstring w/o parameters)
+ *     - https://github.com/sourcegraph/wizard/blob/2414828d62f7ababd24a2532708e7e94fb5d92bb/pages/index.js#L37-L70 (generates impl comment)
+ *     - https://github.com/sourcegraph/wizard/blob/2414828d62f7ababd24a2532708e7e94fb5d92bb/pages/index.js#L99-L120 (generates impl comment)
+ *     - https://github.com/sourcegraph/wizard/blob/2414828d62f7ababd24a2532708e7e94fb5d92bb/pages/index.js#L126 (generates impl comment)
  *   - Golang
  *     - TODO
  */
