@@ -374,7 +374,7 @@
         "title": "Ask Cody Inline",
         "category": "Cody Inline Chat",
         "when": "cody.activated && config.cody.inlineChat.enabled",
-        "enablement": "editorFocus"
+        "enablement": "editorFocus && config.cody.inlineChat.enabled"
       },
       {
         "command": "cody.guardrails.debug",
@@ -474,7 +474,8 @@
         "command": "cody.inline.new",
         "key": "ctrl+shift+c",
         "mac": "cmd+shift+c",
-        "when": "cody.activated && editorFocus && config.cody.inlineChat.enabled"
+        "when": "cody.activated && editorFocus && config.cody.inlineChat.enabled",
+        "enablement": "config.cody.inlineChat.enabled"
       },
       {
         "command": "cody.action.commands.menu",
