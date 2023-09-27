@@ -18,7 +18,7 @@ import {
     InlineCompletionsResultSource,
     LastInlineCompletionCandidate,
 } from './get-inline-completions'
-import { LantencyManager } from './lantency-manager'
+import { LatencyManager } from './latency-manager'
 import * as CompletionLogger from './logger'
 import { CompletionEvent } from './logger'
 import { ProviderConfig } from './providers/provider'
@@ -63,7 +63,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
     /** Accessible for testing only. */
     protected lastCandidate: LastInlineCompletionCandidate | undefined
 
-    private latencyManager = new LantencyManager()
+    private latencyManager = new LatencyManager()
 
     constructor({
         responsePercentage = 0.1,
