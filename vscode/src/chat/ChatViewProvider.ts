@@ -4,7 +4,6 @@ import { CodyPrompt, CustomCommandType } from '@sourcegraph/cody-shared/src/chat
 import { ChatMessage, UserLocalHistory } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 
 import { View } from '../../webviews/NavBar'
-import { isCommand } from '../custom-prompts/utils/helpers'
 import { logDebug } from '../log'
 import { AuthProviderSimplified } from '../services/AuthProviderSimplified'
 import { LocalAppWatcher } from '../services/LocalAppWatcher'
@@ -186,7 +185,6 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
 
     private async onHumanMessageSubmitted(text: string, submitType: 'user' | 'suggestion' | 'example'): Promise<void> {
         logDebug('ChatViewProvider:onHumanMessageSubmitted', 'sidebar', { verbose: { text, submitType } })
-        telemetryService.log('CodyVSCodeExtension:chat:submitted', { source: 'sidebar', command: isCommand(text) })
         if (submitType === 'suggestion') {
             telemetryService.log('CodyVSCodeExtension:chatPredictions:used')
         }

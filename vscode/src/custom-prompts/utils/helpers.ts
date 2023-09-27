@@ -106,7 +106,3 @@ export async function openCustomCommandDocsLink(): Promise<void> {
     const uri = 'https://docs.sourcegraph.com/cody/custom-commands'
     await vscode.env.openExternal(vscode.Uri.parse(uri))
 }
-
-export function isCommand(text: string): boolean {
-    return text.startsWith('/')
-}
