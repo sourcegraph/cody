@@ -15,6 +15,7 @@ const lowPerformanceLanguageIds = new Set(['css', 'html', 'scss', 'vue', 'dart',
 let currentUserLatency = 0
 let lastSuggestionId: undefined | string
 
+// Adjust the minimum latency based on user actions and env
 export function getLatency(
     provider: string,
     lastCandidate: LastInlineCompletionCandidate | undefined,
