@@ -2,7 +2,7 @@ import { LRUCache } from 'lru-cache'
 import * as vscode from 'vscode'
 
 import { DocumentContext } from './get-current-doc-context'
-import { LastInlineCompletionCandidate } from './get-inline-completions'
+import { InlineCompletionsResultSource, LastInlineCompletionCandidate } from './get-inline-completions'
 import { logCompletionEvent } from './logger'
 import { CompletionProviderTracer, Provider } from './providers/provider'
 import { reuseLastCandidate } from './reuse-last-candidate'
@@ -122,6 +122,7 @@ export class RequestManager {
             lastTriggerSelectedInfoItem: selectedCompletionInfo?.text,
             result: {
                 logId: '',
+                source: InlineCompletionsResultSource.Network,
                 items,
             },
         }
