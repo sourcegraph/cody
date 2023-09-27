@@ -15,7 +15,7 @@ export function getRerankWithLog(
 
     const reranker = new LLMReranker(chatClient)
     return async (userQuery: string, results: ContextResult[]): Promise<ContextResult[]> => {
-        const start = performance.noew()
+        const start = performance.now()
         const rerankedResults = await reranker.rerank(userQuery, results)
         const duration = performance.now() - start
         logDebug('Reranker:rerank', JSON.stringify({ duration }))

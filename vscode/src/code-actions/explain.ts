@@ -27,6 +27,7 @@ export class ExplainCodeAction implements vscode.CodeActionProvider {
             arguments: [instruction, range],
             title: 'Ask Cody to Explain',
         }
+        action.diagnostics = diagnostics
         return action
     }
 

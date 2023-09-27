@@ -845,7 +845,7 @@
           "order": 11,
           "title": "Cody Code Actions",
           "type": "boolean",
-          "markdownDescription": "Enables displaying code fix and explain suggestions alongside errors and warnings directly in the editor.",
+          "markdownDescription": "Enables displaying fix and explain suggestions alongside errors and warnings found in your code.",
           "default": true
         },
         "cody.experimental.symf.path": {

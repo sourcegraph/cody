@@ -105,8 +105,7 @@ export function createStatusBar(): CodyStatusBar {
                     undefined,
                     'Enable Cody to fix or explain errors and warnings, directly in your code.',
                     'cody.codeActions.enabled',
-                    c => c.codeActions,
-                    true
+                    c => c.codeActions
                 ),
                 createFeatureToggle(
                     'Chat Suggestions',
