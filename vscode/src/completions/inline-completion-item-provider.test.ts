@@ -152,8 +152,8 @@ describe('InlineCompletionItemProvider', () => {
               "prefix": "const foo = ",
               "prevNonEmptyLine": "",
               "suffix": "
-console.log(1)
-console.log(2)",
+          console.log(1)
+          console.log(2)",
             },
             "lastTriggerPosition": Position {
               "character": 12,
@@ -177,6 +177,7 @@ console.log(2)",
                 },
               ],
               "logId": "1",
+              "source": "Network",
             },
             "uri": {
               "$mid": 1,

@@ -230,6 +230,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
                 setIsLoading,
                 abortSignal: abortController.signal,
                 tracer,
+                handleDidAcceptCompletionItem: this.handleDidAcceptCompletionItem.bind(this),
             })
 
             // Avoid any further work if the completion is invalidated already.
@@ -289,17 +290,6 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
                 }
             }
 
-            const candidate: LastInlineCompletionCandidate = {
-                uri: document.uri,
-                lastTriggerPosition: position,
-                lastTriggerDocContext: docContext,
-                lastTriggerSelectedInfoItem: context?.selectedCompletionInfo?.text,
-                result: {
-                    logId: result.logId,
-                    items: result.items,
-                },
-            }
-
             const items = this.processInlineCompletionsForVSCode(
                 result.logId,
                 document,
@@ -332,6 +322,13 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
             // we can reuse it if the user types in such a way that it is still valid (such as by
             // typing `ab` if the ghost text suggests `abcd`).
             if (result.source !== InlineCompletionsResultSource.LastCandidate) {
+                const candidate: LastInlineCompletionCandidate = {
+                    uri: document.uri,
+                    lastTriggerPosition: position,
+                    lastTriggerDocContext: docContext,
+                    lastTriggerSelectedInfoItem: context?.selectedCompletionInfo?.text,
+                    result,
+                }
                 this.lastCandidate = items.length > 0 ? candidate : undefined
             }
 

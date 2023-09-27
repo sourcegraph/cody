@@ -57,7 +57,7 @@ export interface CompletionEvent {
     items: CompletionItemInfo[]
 }
 
-export interface ItemPostProcesssingInfo {
+export interface ItemPostProcessingInfo {
     // Number of ERROR nodes found in the completion insert text after pasting
     // it into the document and parsing this range with tree-sitter.
     parseErrorCount?: number
@@ -74,7 +74,7 @@ export interface ItemPostProcesssingInfo {
     }
 }
 
-interface CompletionItemInfo extends ItemPostProcesssingInfo {
+interface CompletionItemInfo extends ItemPostProcessingInfo {
     lineCount: number
     charCount: number
 }
