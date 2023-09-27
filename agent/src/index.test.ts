@@ -145,7 +145,7 @@ describe.each([
         const completions = await client.request('autocomplete/execute', {
             filePath,
             position: { line: 1, character: 4 },
-	    triggerKind: 'Automatic',
+            triggerKind: 'Automatic',
         })
         assert(completions.items.length > 0)
     })
