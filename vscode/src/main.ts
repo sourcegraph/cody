@@ -14,6 +14,7 @@ import { CODY_FEEDBACK_URL } from './chat/protocol'
 import { createInlineCompletionItemProvider } from './completions/create-inline-completion-item-provider'
 import { parseAllVisibleDocuments, updateParseTreeOnEdit } from './completions/tree-sitter/parse-tree-cache'
 import { getConfiguration, getFullConfig } from './configuration'
+import { isCommand } from './custom-prompts/utils/helpers'
 import { VSCodeEditor } from './editor/vscode-editor'
 import { PlatformContext } from './extension.common'
 import { configureExternalServices } from './external-services'
@@ -239,7 +240,10 @@ const register = async (
 
             const inlineChatProvider = inlineChatManager.getProviderForThread(comment.thread)
             await inlineChatProvider.addChat(comment.text, false)
-            telemetryService.log('CodyVSCodeExtension:chat:submitted', { source: 'inline' })
+            telemetryService.log('CodyVSCodeExtension:chat:submitted', {
+                source: 'inline',
+                command: isCommand(comment.text),
+            })
         }),
         vscode.commands.registerCommand('cody.comment.delete', (thread: vscode.CommentThread) => {
             inlineChatManager.removeProviderForThread(thread)
@@ -324,9 +328,12 @@ const register = async (
             await sidebarChatProvider.clearHistory()
         }),
         // Recipes
-        vscode.commands.registerCommand('cody.action.chat', async input => {
+        vscode.commands.registerCommand('cody.action.chat', async (input: string) => {
             await executeRecipeInSidebar('chat-question', true, input)
-            telemetryService.log('CodyVSCodeExtension:chat:submitted', { source: 'menu' })
+            telemetryService.log('CodyVSCodeExtension:chat:submitted', {
+                source: 'menu',
+                command: isCommand(input),
+            })
         }),
         vscode.commands.registerCommand('cody.action.commands.menu', async () => {
             await editor.controllers.command?.menu('default')

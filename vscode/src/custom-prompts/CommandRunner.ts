@@ -37,7 +37,7 @@ export class CommandRunner implements vscode.Disposable {
         // Log commands usage
         telemetryService.log(`CodyVSCodeExtension:command:${this.kind}:executed`, {
             mode: command.mode || 'ask',
-            useCodebaseContexr: command.context?.codebase,
+            useCodebaseContex: !!command.context?.codebase,
             useShellCommand: !!command.context?.command,
         })
 
