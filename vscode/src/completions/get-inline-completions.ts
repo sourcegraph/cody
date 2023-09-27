@@ -27,11 +27,7 @@ export interface InlineCompletionsParams {
     docContext: DocumentContext
 
     // Prompt parameters
-    promptChars: number
     providerConfig: ProviderConfig
-    responsePercentage: number
-    prefixPercentage: number
-    suffixPercentage: number
     graphContextFetcher?: GraphContextFetcher
 
     // Platform
@@ -159,11 +155,7 @@ async function doGetInlineCompletions(params: InlineCompletionsParams): Promise<
         selectedCompletionInfo,
         docContext,
         docContext: { multilineTrigger, currentLineSuffix },
-        promptChars,
         providerConfig,
-        responsePercentage,
-        prefixPercentage,
-        suffixPercentage,
         graphContextFetcher,
         toWorkspaceRelativePath,
         contextFetcher,
@@ -240,7 +232,7 @@ async function doGetInlineCompletions(params: InlineCompletionsParams): Promise<
     const contextResult = await getCompletionContext({
         document,
         position,
-        promptChars,
+        providerConfig,
         graphContextFetcher,
         contextFetcher,
         getCodebaseContext,
@@ -257,9 +249,6 @@ async function doGetInlineCompletions(params: InlineCompletionsParams): Promise<
         document,
         triggerKind,
         providerConfig,
-        responsePercentage,
-        prefixPercentage,
-        suffixPercentage,
         docContext,
         toWorkspaceRelativePath,
     })
@@ -300,37 +289,16 @@ async function doGetInlineCompletions(params: InlineCompletionsParams): Promise<
 }
 
 interface GetCompletionProvidersParams
-    extends Pick<
-        InlineCompletionsParams,
-        | 'document'
-        | 'triggerKind'
-        | 'providerConfig'
-        | 'responsePercentage'
-        | 'prefixPercentage'
-        | 'suffixPercentage'
-        | 'toWorkspaceRelativePath'
-    > {
+    extends Pick<InlineCompletionsParams, 'document' | 'triggerKind' | 'providerConfig' | 'toWorkspaceRelativePath'> {
     docContext: DocumentContext
 }
 
 function getCompletionProviders(params: GetCompletionProvidersParams): Provider[] {
-    const {
-        document,
-        triggerKind,
-        providerConfig,
-        responsePercentage,
-        prefixPercentage,
-        suffixPercentage,
-        docContext,
-        toWorkspaceRelativePath,
-    } = params
+    const { document, triggerKind, providerConfig, docContext, toWorkspaceRelativePath } = params
     const sharedProviderOptions: Omit<ProviderOptions, 'id' | 'n' | 'multiline'> = {
         docContext,
         fileName: toWorkspaceRelativePath(document.uri),
         languageId: document.languageId,
-        responsePercentage,
-        prefixPercentage,
-        suffixPercentage,
     }
     if (docContext.multilineTrigger) {
         return [
@@ -359,7 +327,7 @@ interface GetCompletionContextParams
         InlineCompletionsParams,
         | 'document'
         | 'position'
-        | 'promptChars'
+        | 'providerConfig'
         | 'graphContextFetcher'
         | 'contextFetcher'
         | 'getCodebaseContext'
@@ -371,7 +339,7 @@ interface GetCompletionContextParams
 async function getCompletionContext({
     document,
     position,
-    promptChars,
+    providerConfig,
     graphContextFetcher,
     contextFetcher,
     getCodebaseContext,
@@ -396,7 +364,7 @@ async function getCompletionContext({
         contextRange,
         history: documentHistory,
         jaccardDistanceWindowSize: SNIPPET_WINDOW_SIZE,
-        maxChars: promptChars,
+        maxChars: providerConfig.contextSizeHints.totalFileContextChars,
         getCodebaseContext,
         graphContextFetcher,
     })

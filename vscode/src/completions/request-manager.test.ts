@@ -33,9 +33,6 @@ function createProvider(prefix: string) {
         fileName: '',
         languageId: 'typescript',
         multiline: false,
-        responsePercentage: 0,
-        prefixPercentage: 0,
-        suffixPercentage: 0,
         n: 1,
     })
 }
