@@ -367,7 +367,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
         completion: InlineCompletionItemWithAnalytics,
         acceptedLength: number
     ): void {
-        console.log(logId, completion, acceptedLength)
+        CompletionLogger.partiallyAccept(logId, completion, acceptedLength)
     }
 
     public async manuallyTriggerCompletion(): Promise<void> {
