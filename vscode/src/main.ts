@@ -119,6 +119,9 @@ const register = async (
         onConfigurationChange: externalServicesOnDidConfigurationChange,
     } = await configureExternalServices(initialConfig, rgPath, symfRunner, editor, platform)
 
+    // TODO(sqs): optional auth
+    await vscode.commands.executeCommand('setContext', 'cody.activated', true)
+
     const authProvider = new AuthProvider(initialConfig)
     await authProvider.init()
 

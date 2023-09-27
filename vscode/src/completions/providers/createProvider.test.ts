@@ -24,6 +24,7 @@ const DEFAULT_VSCODE_SETTINGS: Configuration = {
     inlineChat: true,
     isRunningInsideAgent: false,
     experimentalNonStop: false,
+    experimentalOffline: false,
     debugEnable: false,
     debugVerbose: false,
     debugFilter: null,

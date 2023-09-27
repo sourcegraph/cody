@@ -843,6 +843,11 @@
           "markdownDescription": "Path to symf binary",
           "default": ""
         },
+        "cody.experimental.offline": {
+          "order": 99,
+          "type": "boolean",
+          "default": false
+        },
         "cody.debug.enable": {
           "order": 99,
           "type": "boolean",

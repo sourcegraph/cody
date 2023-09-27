@@ -38,7 +38,10 @@ export class AuthProvider {
     private listeners: Set<Listener> = new Set()
 
     constructor(
-        private config: Pick<ConfigurationWithAccessToken, 'serverEndpoint' | 'accessToken' | 'customHeaders'>
+        private config: Pick<
+            ConfigurationWithAccessToken,
+            'serverEndpoint' | 'accessToken' | 'customHeaders' | 'experimentalOffline'
+        >
     ) {
         this.authStatus.endpoint = 'init'
         this.loadEndpointHistory()
@@ -174,7 +177,10 @@ export class AuthProvider {
 
     // Create Auth Status
     private async makeAuthStatus(
-        config: Pick<ConfigurationWithAccessToken, 'serverEndpoint' | 'accessToken' | 'customHeaders'>
+        config: Pick<
+            ConfigurationWithAccessToken,
+            'serverEndpoint' | 'accessToken' | 'customHeaders' | 'experimentalOffline'
+        >
     ): Promise<AuthStatus> {
         const endpoint = config.serverEndpoint
         const token = config.accessToken
@@ -250,18 +256,33 @@ export class AuthProvider {
         customHeaders?: {} | null
     ): Promise<{ authStatus: AuthStatus; isLoggedIn: boolean } | null> {
         const endpoint = formatURL(uri) || ''
-        const config = {
+        const config: typeof this.config = {
             serverEndpoint: endpoint,
             accessToken: token,
             customHeaders: customHeaders || this.config.customHeaders,
+            experimentalOffline: this.config.experimentalOffline,
         }
-        const authStatus = await this.makeAuthStatus(config)
-        const isLoggedIn = isAuthed(authStatus)
-        authStatus.isLoggedIn = isLoggedIn
-        await this.storeAuthInfo(endpoint, token)
+        let authStatus: AuthStatus
+        if (this.config.experimentalOffline) {
+            // TODO(sqs): hack to support offline
+            authStatus = {
+                authenticated: true,
+                endpoint: null,
+                hasVerifiedEmail: true,
+                isLoggedIn: true,
+                requiresVerifiedEmail: false,
+                showInvalidAccessTokenError: false,
+                siteHasCodyEnabled: true,
+                siteVersion: '5.4',
+            }
+        } else {
+            authStatus = await this.makeAuthStatus(config)
+            authStatus.isLoggedIn = isAuthed(authStatus)
+            await this.storeAuthInfo(endpoint, token)
+        }
         await this.syncAuthStatus(authStatus)
-        await vscode.commands.executeCommand('setContext', 'cody.activated', isLoggedIn)
-        return { authStatus, isLoggedIn }
+        await vscode.commands.executeCommand('setContext', 'cody.activated', authStatus.isLoggedIn)
+        return { authStatus, isLoggedIn: authStatus.isLoggedIn }
     }
 
     // Set auth status in case of reload
