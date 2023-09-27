@@ -2,6 +2,15 @@
   "version": "0.1.0",
   "configurations": [
     {
+      "name": "Attach to Node (Agent)",
+      "port": 9229,
+      "request": "attach",
+      "skipFiles": [
+        "<node_internals>/**"
+      ],
+      "type": "node"
+    },
+    {
       "name": "Launch VS Code Extension (Desktop)",
       "type": "extensionHost",
       "request": "launch",
