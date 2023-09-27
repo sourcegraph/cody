@@ -84,7 +84,7 @@ export class AnthropicProvider extends Provider {
             },
             {
                 speaker: 'human',
-                text: `Below is the code from file path ${this.options.fileName}. Review the code outside the ${OPENING_CODE_TAG} XML tags to detect the functionality, formats, style, patterns, and logics in use. Then, use what you detect and reuse methods/libraries to complete and enclose completed code only inside the tags precisely and nothing else, without duplicating existing implementations.\nHere is the code:\n${infillPrefix}${OPENING_CODE_TAG}${CLOSING_CODE_TAG}${infillSuffix}`,
+                text: `Below is the code from file path ${this.options.fileName}. Review the code outside the ${OPENING_CODE_TAG} XML tags to detect the functionality, formats, style, patterns, and logics in use. Then, use what you detect and reuse methods/libraries to complete and enclose ONLY the completed code and nothing else inside the tags precisely without duplicating existing implementations: ${infillPrefix}${OPENING_CODE_TAG}${CLOSING_CODE_TAG}${infillSuffix}\n<---end of file--->`,
             },
             {
                 speaker: 'assistant',
@@ -246,3 +246,4 @@ export function createProviderConfig(anthropicOptions: AnthropicOptions): Provid
         model: 'claude-instant-infill',
     }
 }
+
