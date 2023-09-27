@@ -843,12 +843,6 @@
           "markdownDescription": "Path to symf binary",
           "default": ""
         },
-        "cody.experimental.symf.anthropicKey": {
-          "order": 99,
-          "type": "string",
-          "markdownDescription": "API key for Anthropic",
-          "default": ""
-        },
         "cody.debug.enable": {
           "order": 99,
           "type": "boolean",
