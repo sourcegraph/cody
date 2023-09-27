@@ -16,7 +16,7 @@ const symfVersion = 'v0.0.0'
 export async function getSymfPath(context: vscode.ExtensionContext): Promise<string | null> {
     // If user-specified symf path is set, use that
     const config = vscode.workspace.getConfiguration()
-    const userSymfPath = config.get<string>('experimentalSymfPath')
+    const userSymfPath = config.get<string>('cody.experimental.symf.path')
     if (userSymfPath) {
         logDebug('symf', `using user symf: ${userSymfPath}`)
         return userSymfPath

@@ -26,8 +26,6 @@ describe('getConfiguration', () => {
             inlineChat: true,
             isRunningInsideAgent: false,
             experimentalNonStop: false,
-            experimentalSymfAnthropicKey: '',
-            experimentalSymfPath: 'symf',
             debugEnable: false,
             debugVerbose: false,
             debugFilter: null,
@@ -75,8 +73,6 @@ describe('getConfiguration', () => {
                         return true
                     case 'cody.experimental.localSymbols':
                         return true
-                    case 'cody.experimental.symf.anthropicKey':
-                        return 'anthropic_secret_key'
                     case 'cody.experimental.symf.path':
                         return '/usr/local/bin/symf'
                     case 'cody.debug.enable':
@@ -131,8 +127,6 @@ describe('getConfiguration', () => {
             inlineChat: true,
             isRunningInsideAgent: false,
             experimentalNonStop: true,
-            experimentalSymfAnthropicKey: 'anthropic_secret_key',
-            experimentalSymfPath: '/usr/local/bin/symf',
             debugEnable: true,
             debugVerbose: true,
             debugFilter: /.*/,

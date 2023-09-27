@@ -107,7 +107,7 @@ const register = async (
         disposables.push(vscode.workspace.onDidChangeTextDocument(updateParseTreeOnEdit))
     }
 
-    const symfRunner = platform.createSymfRunner?.(context, config.experimentalSymfAnthropicKey)
+    const symfRunner = platform.createSymfRunner?.(context, initialConfig.accessToken)
 
     const {
         featureFlagProvider,
@@ -497,6 +497,7 @@ const register = async (
             externalServicesOnDidConfigurationChange(newConfig)
             void createOrUpdateEventLogger(newConfig, isExtensionModeDevOrTest)
             platform.onConfigurationChange?.(newConfig)
+            symfRunner?.setAuthToken(newConfig.accessToken)
         },
     }
 }

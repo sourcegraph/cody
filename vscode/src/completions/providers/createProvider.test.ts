@@ -24,8 +24,6 @@ const DEFAULT_VSCODE_SETTINGS: Configuration = {
     inlineChat: true,
     isRunningInsideAgent: false,
     experimentalNonStop: false,
-    experimentalSymfAnthropicKey: '',
-    experimentalSymfPath: 'symf',
     debugEnable: false,
     debugVerbose: false,
     debugFilter: null,

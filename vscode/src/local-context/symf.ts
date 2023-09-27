@@ -29,9 +29,13 @@ export class SymfRunner implements IndexedKeywordContextFetcher {
 
     constructor(
         private context: vscode.ExtensionContext,
-        private anthropicKey: string
+        private authToken: string | null
     ) {
         this.indexRoot = path.join(os.homedir(), '.cody-symf')
+    }
+
+    public setAuthToken(authToken: string | null): void {
+        this.authToken = authToken
     }
 
     /**
@@ -57,6 +61,11 @@ export class SymfRunner implements IndexedKeywordContextFetcher {
      * Returns the list of results from symf
      */
     public async getResults(query: string, scopeDir: string): Promise<Result[]> {
+        const accessToken = this.authToken
+        if (!accessToken) {
+            throw new Error('SymfRunner.getResults: No access token')
+        }
+
         const indexDir = await this.ensureIndexFor(scopeDir)
         const symfPath = await getSymfPath(this.context)
         if (!symfPath) {
@@ -68,7 +77,7 @@ export class SymfRunner implements IndexedKeywordContextFetcher {
                 ['--index-root', indexDir, 'query', '--scopes', scopeDir, '--fmt', 'json', '--natural', query],
                 {
                     env: {
-                        ANTHROPIC_API_KEY: this.anthropicKey,
+                        SOURCEGRAPH_TOKEN: accessToken,
                         HOME: process.env.HOME,
                     },
                     maxBuffer: 1024 * 1024 * 1024,
@@ -194,7 +203,7 @@ function handleSymfError(error: unknown): void {
     if (errorString.includes('ENOENT')) {
         errorMessage = `symf binary not found. You should ensure you have (1) installed symf (\`go install github.com/sourcegraph/symf/cmd/symf@latest\`) and (2) set the "cody.experimental.symf.path" value in the VS Code settings. ${error}`
     } else if (errorString.includes('401')) {
-        errorMessage = `symf: Unauthorized. Is "cody.experimental.symf.anthropicKey" set correctly in setttings? ${error}`
+        errorMessage = `symf: Unauthorized. Is Cody signed in? ${error}`
     } else {
         errorMessage = `symf index creation failed: ${error}`
     }
