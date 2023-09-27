@@ -201,7 +201,7 @@ function handleSymfError(error: unknown): void {
     const errorString = `${error}`
     let errorMessage: string
     if (errorString.includes('ENOENT')) {
-        errorMessage = `symf binary not found. You should ensure you have (1) installed symf (\`go install github.com/sourcegraph/symf/cmd/symf@latest\`) and (2) set the "cody.experimental.symf.path" value in the VS Code settings. ${error}`
+        errorMessage = "symf binary not found. Do you have \"cody.experimental.symf.path\" set and is it valid?"
     } else if (errorString.includes('401')) {
         errorMessage = `symf: Unauthorized. Is Cody signed in? ${error}`
     } else {
