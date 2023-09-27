@@ -87,6 +87,8 @@ export function formatCaptures(captures: QueryCapture[]): FormattedCapture[] {
     return captures.map(capture => ({
         name: capture.name,
         text: capture.node.text,
+        start: capture.node.startPosition,
+        end: capture.node.endPosition,
     }))
 }
 

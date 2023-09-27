@@ -2,7 +2,7 @@ import { LRUCache } from 'lru-cache'
 import * as vscode from 'vscode'
 
 import { DocumentContext } from './get-current-doc-context'
-import { LastInlineCompletionCandidate } from './get-inline-completions'
+import { InlineCompletionsResultSource, LastInlineCompletionCandidate } from './get-inline-completions'
 import { logCompletionEvent } from './logger'
 import { CompletionProviderTracer, Provider } from './providers/provider'
 import { reuseLastCandidate } from './reuse-last-candidate'
@@ -19,8 +19,8 @@ export interface RequestParams {
     /** The request's document context **/
     docContext: DocumentContext
 
-    /** The request's inline completion context. **/
-    context: vscode.InlineCompletionContext
+    /** The state of the completion info box **/
+    selectedCompletionInfo: vscode.SelectedCompletionInfo | undefined
 
     /** The cursor position in the source file where the completion request was triggered. **/
     position: vscode.Position
@@ -101,7 +101,7 @@ export class RequestManager {
         return request.promise
     }
 
-    // Remove unwanted sugggestion from the cache
+    // Remove unwanted suggestions from the cache
     public removeUnwanted(params: RequestParams): void {
         this.cache.delete(params)
     }
@@ -114,15 +114,15 @@ export class RequestManager {
         resolvedRequest: InflightRequest,
         items: InlineCompletionItemWithAnalytics[]
     ): void {
-        const { document, position, docContext, context } = resolvedRequest.params
+        const { document, position, docContext, selectedCompletionInfo } = resolvedRequest.params
         const lastCandidate: LastInlineCompletionCandidate = {
             uri: document.uri,
             lastTriggerPosition: position,
-            lastTriggerCurrentLinePrefix: docContext.currentLinePrefix,
-            lastTriggerNextNonEmptyLine: docContext.nextNonEmptyLine,
-            lastTriggerSelectedInfoItem: context?.selectedCompletionInfo?.text,
+            lastTriggerDocContext: docContext,
+            lastTriggerSelectedInfoItem: selectedCompletionInfo?.text,
             result: {
                 logId: '',
+                source: InlineCompletionsResultSource.Network,
                 items,
             },
         }
@@ -141,7 +141,7 @@ export class RequestManager {
                 position: request.params.position,
                 lastCandidate,
                 docContext: request.params.docContext,
-                context: request.params.context,
+                selectedCompletionInfo: request.params.selectedCompletionInfo,
                 completeSuggestWidgetSelection: this.completeSuggestWidgetSelection,
             })
 

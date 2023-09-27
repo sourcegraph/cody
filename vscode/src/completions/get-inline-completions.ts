@@ -14,15 +14,16 @@ import * as CompletionLogger from './logger'
 import { CompletionProviderTracer, Provider, ProviderConfig, ProviderOptions } from './providers/provider'
 import { RequestManager, RequestParams } from './request-manager'
 import { reuseLastCandidate } from './reuse-last-candidate'
+import { InlineCompletionItemWithAnalytics } from './text-processing/process-inline-completions'
 import { ProvideInlineCompletionsItemTraceData } from './tracer'
-import { InlineCompletionItem } from './types'
 import { SNIPPET_WINDOW_SIZE } from './utils'
 
 export interface InlineCompletionsParams {
     // Context
     document: vscode.TextDocument
     position: vscode.Position
-    context: vscode.InlineCompletionContext
+    triggerKind: TriggerKind
+    selectedCompletionInfo: vscode.SelectedCompletionInfo | undefined
     docContext: DocumentContext
 
     // Prompt parameters
@@ -31,7 +32,6 @@ export interface InlineCompletionsParams {
     responsePercentage: number
     prefixPercentage: number
     suffixPercentage: number
-    isEmbeddingsContextEnabled: boolean
     graphContextFetcher?: GraphContextFetcher
 
     // Platform
@@ -56,6 +56,9 @@ export interface InlineCompletionsParams {
 
     // Feature flags
     completeSuggestWidgetSelection?: boolean
+
+    // Callbacks to accept completions
+    handleDidAcceptCompletionItem?: (logId: string, completion: InlineCompletionItemWithAnalytics) => void
 }
 
 /**
@@ -65,20 +68,17 @@ export interface LastInlineCompletionCandidate {
     /** The document URI for which this candidate was generated. */
     uri: URI
 
+    /** The doc context item */
+    lastTriggerDocContext: DocumentContext
+
     /** The position at which this candidate was generated. */
     lastTriggerPosition: vscode.Position
-
-    /** The prefix of the line (before the cursor position) where this candidate was generated. */
-    lastTriggerCurrentLinePrefix: string
-
-    /** The next non-empty line in the suffix */
-    lastTriggerNextNonEmptyLine: string
 
     /** The selected info item. */
     lastTriggerSelectedInfoItem: string | undefined
 
     /** The previously suggested result. */
-    result: Pick<InlineCompletionsResult, 'logId' | 'items'>
+    result: InlineCompletionsResult
 }
 
 /**
@@ -92,7 +92,7 @@ export interface InlineCompletionsResult {
     source: InlineCompletionsResultSource
 
     /** The completions. */
-    items: InlineCompletionItem[]
+    items: InlineCompletionItemWithAnalytics[]
 }
 
 /**
@@ -113,6 +113,21 @@ export enum InlineCompletionsResultSource {
     LastCandidate = 'LastCandidate',
 }
 
+/**
+ * Extends the default VS Code trigger kind to distinguish between manually invoking a completion
+ * via the keyboard shortcut and invoking a completion via hovering over ghost text.
+ */
+export enum TriggerKind {
+    /** Completion was triggered explicitly by a user hovering over ghost text. **/
+    Hover = 'Hover',
+
+    /** Completion was triggered automatically while editing. **/
+    Automatic = 'Automatic',
+
+    /** Completion was triggered manually by the user invoking the keyboard shortcut. **/
+    Manual = 'Manual',
+}
+
 export async function getInlineCompletions(params: InlineCompletionsParams): Promise<InlineCompletionsResult | null> {
     try {
         const result = await doGetInlineCompletions(params)
@@ -123,7 +138,7 @@ export async function getInlineCompletions(params: InlineCompletionsParams): Pro
         const error = unknownError instanceof Error ? unknownError : new Error(unknownError as any)
 
         params.tracer?.({ error: error.toString() })
-        logError('getInlineCompletions:error', error.message, error.stack, { verbose: { params, error } })
+        logError('getInlineCompletions:error', error.message, error.stack, { verbose: { error } })
         CompletionLogger.logError(error)
 
         if (isAbortError(error)) {
@@ -140,7 +155,8 @@ async function doGetInlineCompletions(params: InlineCompletionsParams): Promise<
     const {
         document,
         position,
-        context,
+        triggerKind,
+        selectedCompletionInfo,
         docContext,
         docContext: { multilineTrigger, currentLineSuffix },
         promptChars,
@@ -148,7 +164,6 @@ async function doGetInlineCompletions(params: InlineCompletionsParams): Promise<
         responsePercentage,
         prefixPercentage,
         suffixPercentage,
-        isEmbeddingsContextEnabled,
         graphContextFetcher,
         toWorkspaceRelativePath,
         contextFetcher,
@@ -161,9 +176,10 @@ async function doGetInlineCompletions(params: InlineCompletionsParams): Promise<
         abortSignal,
         tracer,
         completeSuggestWidgetSelection = false,
+        handleDidAcceptCompletionItem,
     } = params
 
-    tracer?.({ params: { document, position, context } })
+    tracer?.({ params: { document, position, triggerKind, selectedCompletionInfo } })
 
     // If we have a suffix in the same line as the cursor and the suffix contains any word
     // characters, do not attempt to make a completion. This means we only make completions if
@@ -171,22 +187,24 @@ async function doGetInlineCompletions(params: InlineCompletionsParams): Promise<
     //
     // VS Code will attempt to merge the remainder of the current line by characters but for
     // words this will easily get very confusing.
-    if (/\w/.test(currentLineSuffix)) {
+    if (triggerKind !== TriggerKind.Manual && /\w/.test(currentLineSuffix)) {
         return null
     }
 
     // Check if the user is typing as suggested by the last candidate completion (that is shown as
     // ghost text in the editor), and reuse it if it is still valid.
-    const resultToReuse = lastCandidate
-        ? reuseLastCandidate({
-              document,
-              position,
-              lastCandidate,
-              docContext,
-              context,
-              completeSuggestWidgetSelection,
-          })
-        : null
+    const resultToReuse =
+        triggerKind !== TriggerKind.Manual && lastCandidate
+            ? reuseLastCandidate({
+                  document,
+                  position,
+                  lastCandidate,
+                  docContext,
+                  selectedCompletionInfo,
+                  completeSuggestWidgetSelection,
+                  handleDidAcceptCompletionItem,
+              })
+            : null
     if (resultToReuse) {
         return resultToReuse
     }
@@ -198,6 +216,7 @@ async function doGetInlineCompletions(params: InlineCompletionsParams): Promise<
     const multiline = Boolean(multilineTrigger)
     const logId = CompletionLogger.create({
         multiline,
+        triggerKind,
         providerIdentifier: providerConfig.identifier,
         providerModel: providerConfig.model,
         languageId: document.languageId,
@@ -205,11 +224,7 @@ async function doGetInlineCompletions(params: InlineCompletionsParams): Promise<
 
     // Debounce to avoid firing off too many network requests as the user is still typing.
     const interval = multiline ? debounceInterval?.multiLine : debounceInterval?.singleLine
-    if (
-        context.triggerKind === vscode.InlineCompletionTriggerKind.Automatic &&
-        interval !== undefined &&
-        interval > 0
-    ) {
+    if (triggerKind === TriggerKind.Automatic && interval !== undefined && interval > 0) {
         await new Promise<void>(resolve => setTimeout(resolve, interval))
     }
 
@@ -226,7 +241,6 @@ async function doGetInlineCompletions(params: InlineCompletionsParams): Promise<
         document,
         position,
         promptChars,
-        isEmbeddingsContextEnabled,
         graphContextFetcher,
         contextFetcher,
         getCodebaseContext,
@@ -241,7 +255,7 @@ async function doGetInlineCompletions(params: InlineCompletionsParams): Promise<
     // Completion providers
     const completionProviders = getCompletionProviders({
         document,
-        context,
+        triggerKind,
         providerConfig,
         responsePercentage,
         prefixPercentage,
@@ -257,7 +271,7 @@ async function doGetInlineCompletions(params: InlineCompletionsParams): Promise<
         document,
         docContext,
         position,
-        context,
+        selectedCompletionInfo,
     }
 
     // Get the processed completions from providers
@@ -289,7 +303,7 @@ interface GetCompletionProvidersParams
     extends Pick<
         InlineCompletionsParams,
         | 'document'
-        | 'context'
+        | 'triggerKind'
         | 'providerConfig'
         | 'responsePercentage'
         | 'prefixPercentage'
@@ -302,7 +316,7 @@ interface GetCompletionProvidersParams
 function getCompletionProviders(params: GetCompletionProvidersParams): Provider[] {
     const {
         document,
-        context,
+        triggerKind,
         providerConfig,
         responsePercentage,
         prefixPercentage,
@@ -334,7 +348,7 @@ function getCompletionProviders(params: GetCompletionProvidersParams): Provider[
             ...sharedProviderOptions,
             // Show more if manually triggered (but only showing 1 is faster, so we use it
             // in the automatic trigger case).
-            n: context.triggerKind === vscode.InlineCompletionTriggerKind.Automatic ? 1 : 3,
+            n: triggerKind === TriggerKind.Automatic ? 1 : 3,
             multiline: false,
         }),
     ]
@@ -346,7 +360,6 @@ interface GetCompletionContextParams
         | 'document'
         | 'position'
         | 'promptChars'
-        | 'isEmbeddingsContextEnabled'
         | 'graphContextFetcher'
         | 'contextFetcher'
         | 'getCodebaseContext'
@@ -359,7 +372,6 @@ async function getCompletionContext({
     document,
     position,
     promptChars,
-    isEmbeddingsContextEnabled,
     graphContextFetcher,
     contextFetcher,
     getCodebaseContext,
@@ -386,7 +398,6 @@ async function getCompletionContext({
         jaccardDistanceWindowSize: SNIPPET_WINDOW_SIZE,
         maxChars: promptChars,
         getCodebaseContext,
-        isEmbeddingsContextEnabled,
         graphContextFetcher,
     })
 }

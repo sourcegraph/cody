@@ -51,9 +51,10 @@ export async function createInlineCompletionItemProvider({
 
     const disposables: vscode.Disposable[] = []
 
-    const [providerConfig, graphContextFlag] = await Promise.all([
+    const [providerConfig, graphContextFlag, completeSuggestWidgetSelectionFlag] = await Promise.all([
         createProviderConfig(config, client, featureFlagProvider, authProvider.getAuthStatus().configOverwrites),
         featureFlagProvider?.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteGraphContext),
+        featureFlagProvider?.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteCompleteSuggestWidgetSelection),
     ])
     if (providerConfig) {
         const history = new VSCodeDocumentHistory()
@@ -67,13 +68,16 @@ export async function createInlineCompletionItemProvider({
             history,
             statusBar,
             getCodebaseContext: () => contextProvider.context,
-            isEmbeddingsContextEnabled: config.autocompleteAdvancedEmbeddings,
             graphContextFetcher: sectionObserver,
-            completeSuggestWidgetSelection: config.autocompleteExperimentalCompleteSuggestWidgetSelection,
+            completeSuggestWidgetSelection:
+                config.autocompleteExperimentalCompleteSuggestWidgetSelection || completeSuggestWidgetSelectionFlag,
             featureFlagProvider,
         })
 
         disposables.push(
+            vscode.commands.registerCommand('cody.autocomplete.manual-trigger', () =>
+                completionsProvider.manuallyTriggerCompletion()
+            ),
             vscode.commands.registerCommand('cody.autocomplete.inline.accepted', ({ codyLogId, codyCompletion }) => {
                 completionsProvider.handleDidAcceptCompletionItem(codyLogId, codyCompletion)
             }),

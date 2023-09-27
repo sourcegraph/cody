@@ -523,12 +523,11 @@ function logHydratedContext(context: HoverContext[], editor: vscode.TextEditor, 
     )
 }
 
-function pushUniqueAndTruncate<T>(array: T[], item: T, truncate: number): T[] {
-    if (array.includes(item)) {
-        // put the item to the front
-        array.splice(array.indexOf(item), 1)
-        array.unshift(item)
-        return array
+function pushUniqueAndTruncate(array: vscode.Location[], item: vscode.Location, truncate: number): vscode.Location[] {
+    const indexOf = array.findIndex(i => locationKeyFn(i) === locationKeyFn(item))
+    if (indexOf > -1) {
+        // Remove the item so it is put to the front again
+        array.splice(indexOf, 1)
     }
     if (array.length >= truncate) {
         array.pop()

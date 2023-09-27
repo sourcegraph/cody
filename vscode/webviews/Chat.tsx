@@ -6,6 +6,7 @@ import classNames from 'classnames'
 import { ChatContextStatus } from '@sourcegraph/cody-shared/src/chat/context'
 import { CodyPrompt } from '@sourcegraph/cody-shared/src/chat/prompts'
 import { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
+import { isDotCom, isLocalApp } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
 import { TelemetryService } from '@sourcegraph/cody-shared/src/telemetry'
 import {
     ChatButtonProps,
@@ -18,10 +19,12 @@ import {
 } from '@sourcegraph/cody-ui/src/Chat'
 import { SubmitSvg } from '@sourcegraph/cody-ui/src/utils/icons'
 
-import { CODY_FEEDBACK_URL } from '../src/chat/protocol'
+import { CODY_FEEDBACK_URL, OnboardingExperimentArm } from '../src/chat/protocol'
 
 import { ChatCommandsComponent } from './ChatCommands'
+import { ChatInputContextSimplified } from './ChatInputContextSimplified'
 import { FileLink } from './FileLink'
+import { OnboardingPopupProps } from './Popups/OnboardingExperimentPopups'
 import { SymbolLink } from './SymbolLink'
 import { VSCodeWrapper } from './utils/VSCodeApi'
 
@@ -43,7 +46,11 @@ interface ChatboxProps {
     setSuggestions?: (suggestions: undefined | string[]) => void
     chatCommands?: [string, CodyPrompt][]
     isTranscriptError: boolean
-    showOnboardingButtons?: boolean | null
+    applessOnboarding: {
+        arm: OnboardingExperimentArm
+        endpoint: string | null
+        props: { isAppInstalled: boolean; onboardingPopupProps: OnboardingPopupProps }
+    }
 }
 
 export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>> = ({
@@ -62,7 +69,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     setSuggestions,
     chatCommands,
     isTranscriptError,
-    showOnboardingButtons,
+    applessOnboarding,
 }) => {
     const [abortMessageInProgressInternal, setAbortMessageInProgress] = useState<() => void>(() => () => undefined)
 
@@ -99,8 +106,21 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     )
 
     const onCopyBtnClick = useCallback(
-        (text: string, isInsert = false, eventType: 'Button' | 'Keydown' = 'Button') => {
-            const op = isInsert ? 'insert' : 'copy'
+        (text: string, eventType: 'Button' | 'Keydown' = 'Button', command?: string) => {
+            const op = 'copy'
+            const commandName = command
+            // remove the additional /n added by the text area at the end of the text
+            const code = eventType === 'Button' ? text.replace(/\n$/, '') : text
+            // Log the event type and text to telemetry in chat view
+            vscodeAPI.postMessage({ command: op, eventType, text: code, commandName })
+        },
+        [vscodeAPI]
+    )
+
+    const onInsertBtnClick = useCallback(
+        (text: string, newFile = false) => {
+            const op = newFile ? 'newFile' : 'insert'
+            const eventType = 'Button'
             // remove the additional /n added by the text area at the end of the text
             const code = eventType === 'Button' ? text.replace(/\n$/, '') : text
             // Log the event type and text to telemetry in chat view
@@ -108,6 +128,11 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
         },
         [vscodeAPI]
     )
+
+    const useSimplifiedAppOnboarding =
+        applessOnboarding.arm === OnboardingExperimentArm.Simplified &&
+        applessOnboarding.endpoint &&
+        (isDotCom(applessOnboarding.endpoint) || isLocalApp(applessOnboarding.endpoint))
 
     return (
         <ChatUI
@@ -141,6 +166,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             FeedbackButtonsContainer={FeedbackButtons}
             feedbackButtonsOnSubmit={onFeedbackBtnClick}
             copyButtonOnSubmit={onCopyBtnClick}
+            insertButtonOnSubmit={onInsertBtnClick}
             suggestions={suggestions}
             setSuggestions={setSuggestions}
             abortMessageInProgressComponent={AbortMessageInProgress}
@@ -156,6 +182,15 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             chatCommands={chatCommands}
             filterChatCommands={filterChatCommands}
             ChatCommandsComponent={ChatCommandsComponent}
+            contextStatusComponent={useSimplifiedAppOnboarding ? ChatInputContextSimplified : undefined}
+            contextStatusComponentProps={
+                useSimplifiedAppOnboarding
+                    ? {
+                          contextStatus,
+                          ...applessOnboarding.props,
+                      }
+                    : undefined
+            }
         />
     )
 }

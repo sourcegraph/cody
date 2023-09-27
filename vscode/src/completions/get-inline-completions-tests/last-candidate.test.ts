@@ -1,12 +1,10 @@
 import dedent from 'dedent'
-import { describe, expect, test } from 'vitest'
-import { Range } from 'vscode'
+import { describe, expect, it, vitest } from 'vitest'
 
-import { vsCodeMocks } from '../../testutils/mocks'
 import { range } from '../../testutils/textDocument'
+import { getCurrentDocContext } from '../get-current-doc-context'
 import { InlineCompletionsResultSource, LastInlineCompletionCandidate } from '../get-inline-completions'
 import { documentAndPosition } from '../test-helpers'
-import { getNextNonEmptyLine } from '../text-processing'
 
 import { getInlineCompletions, params, V } from './helpers'
 
@@ -17,22 +15,27 @@ describe('[getInlineCompletions] reuseLastCandidate', () => {
         lastTriggerSelectedInfoItem?: string
     ): LastInlineCompletionCandidate {
         const { document, position } = documentAndPosition(code)
-        const suffix = document.getText(new Range(position, document.lineAt(document.lineCount - 1).range.end))
-        const nextNonEmptyLine = getNextNonEmptyLine(suffix)
+        const lastDocContext = getCurrentDocContext({
+            document,
+            position,
+            maxPrefixLength: 100,
+            maxSuffixLength: 100,
+            enableExtendedTriggers: true,
+        })
         return {
             uri: document.uri,
             lastTriggerPosition: position,
-            lastTriggerCurrentLinePrefix: document.lineAt(position).text.slice(0, position.character),
-            lastTriggerNextNonEmptyLine: nextNonEmptyLine,
             lastTriggerSelectedInfoItem,
             result: {
                 logId: '1',
+                source: InlineCompletionsResultSource.Network,
                 items: Array.isArray(insertText) ? insertText.map(insertText => ({ insertText })) : [{ insertText }],
             },
+            lastTriggerDocContext: lastDocContext,
         }
     }
 
-    test('reused when typing forward as suggested', async () =>
+    it('is reused when typing forward as suggested', async () =>
         // The user types `\n`, sees ghost text `const x = 123`, then types `const x = 1` (i.e.,
         // all but the last 2 characters of the ghost text). The original completion should
         // still display.
@@ -45,7 +48,7 @@ describe('[getInlineCompletions] reuseLastCandidate', () => {
             source: InlineCompletionsResultSource.LastCandidate,
         }))
 
-    test('reused when typing forward as suggested through partial whitespace', async () =>
+    it('is reused when typing forward as suggested through partial whitespace', async () =>
         // The user types ` `, sees ghost text ` x`, then types ` `. The original completion
         // should still display.
         expect(await getInlineCompletions(params('  █', [], { lastCandidate: lastCandidate(' █', ' x') }))).toEqual<V>({
@@ -53,7 +56,7 @@ describe('[getInlineCompletions] reuseLastCandidate', () => {
             source: InlineCompletionsResultSource.LastCandidate,
         }))
 
-    test('reused when typing forward as suggested through all whitespace', async () =>
+    it('is reused when typing forward as suggested through all whitespace', async () =>
         // The user sees ghost text `  x`, then types `  `. The original completion should still
         // display.
         expect(await getInlineCompletions(params('  █', [], { lastCandidate: lastCandidate('█', '  x') }))).toEqual<V>({
@@ -61,7 +64,7 @@ describe('[getInlineCompletions] reuseLastCandidate', () => {
             source: InlineCompletionsResultSource.LastCandidate,
         }))
 
-    test('reused when adding leading whitespace', async () =>
+    it('is reused when adding leading whitespace', async () =>
         // The user types ``, sees ghost text `x = 1`, then types ` ` (space). The original
         // completion should be reused.
         expect(await getInlineCompletions(params(' █', [], { lastCandidate: lastCandidate('█', 'x = 1') }))).toEqual<V>(
@@ -71,7 +74,7 @@ describe('[getInlineCompletions] reuseLastCandidate', () => {
             }
         ))
 
-    test('reused when the deleting back to the start of the original trigger (but no further)', async () =>
+    it('is reused when the deleting back to the start of the original trigger (but no further)', async () =>
         // The user types `const x`, accepts a completion to `const x = 123`, then deletes back
         // to `const x` (i.e., to the start of the original trigger). The original completion
         // should be reused.
@@ -82,7 +85,7 @@ describe('[getInlineCompletions] reuseLastCandidate', () => {
             source: InlineCompletionsResultSource.LastCandidate,
         }))
 
-    test('not reused when deleting past the entire original trigger', async () =>
+    it('is not reused when deleting past the entire original trigger', async () =>
         // The user types `const x`, accepts a completion to `const x = 1`, then deletes back to
         // `const ` (i.e., *past* the start of the original trigger). The original ghost text
         // should not be reused.
@@ -97,7 +100,7 @@ describe('[getInlineCompletions] reuseLastCandidate', () => {
             source: InlineCompletionsResultSource.Network,
         }))
 
-    test('not reused when the the next non-empty line has changed', async () => {
+    it('is not reused when the the next non-empty line has changed', async () => {
         // The user accepts a completion and then moves the cursor to the previous line and hits
         // enter again, causing a full suffix match with the previous completion that was
         // accepted before.
@@ -129,7 +132,7 @@ describe('[getInlineCompletions] reuseLastCandidate', () => {
         })
     })
 
-    test('not reused when deleting the entire non-whitespace line', async () =>
+    it('is not reused when deleting the entire non-whitespace line', async () =>
         // The user types `const x`, then deletes the entire line. The original ghost text
         // should not be reused.
         expect(
@@ -143,7 +146,7 @@ describe('[getInlineCompletions] reuseLastCandidate', () => {
             source: InlineCompletionsResultSource.Network,
         }))
 
-    test('not reused when prefix changes', async () =>
+    it('is not reused when prefix changes', async () =>
         // The user types `x`, then deletes it, then types `y`. The original ghost text should
         // not be reused.
         expect(
@@ -157,7 +160,24 @@ describe('[getInlineCompletions] reuseLastCandidate', () => {
             source: InlineCompletionsResultSource.Network,
         }))
 
-    test('filtered to only matching last-candidate items', async () =>
+    it('is not reused and marked as accepted when the last character of a completion was typed', async () => {
+        const handleDidAcceptCompletionItem = vitest.fn()
+        // The user types the last character of a completion
+        expect(
+            await getInlineCompletions(
+                params('const x = 1337█', [], {
+                    lastCandidate: lastCandidate('const x = █', '1337'),
+                    handleDidAcceptCompletionItem,
+                })
+            )
+        ).toEqual<V>({
+            items: [],
+            source: InlineCompletionsResultSource.Network,
+        })
+        expect(handleDidAcceptCompletionItem).toHaveBeenCalled()
+    })
+
+    it('filters to only matching last-candidate items', async () =>
         // This behavior and test case is actually not needed for VS Code because it automatically
         // filters out items whose `insertText` does not prefix-match the replace range. (See
         // vscode.InlineCompletionItem.filterText for the docs about this.) But it is good to
@@ -177,7 +197,7 @@ describe('[getInlineCompletions] reuseLastCandidate', () => {
     describe('deleting leading whitespace', () => {
         const candidate = lastCandidate('\t\t█', 'const x = 1')
 
-        test('reused when deleting some (not all) leading whitespace', async () =>
+        it('is reused when deleting some (not all) leading whitespace', async () =>
             // The user types on a new line `\t\t`, sees ghost text `const x = 1`, then
             // deletes one `\t`. The same ghost text should still be displayed.
             expect(await getInlineCompletions(params('\t█', [], { lastCandidate: candidate }))).toEqual<V>({
@@ -185,7 +205,7 @@ describe('[getInlineCompletions] reuseLastCandidate', () => {
                 source: InlineCompletionsResultSource.LastCandidate,
             }))
 
-        test('reused when deleting all leading whitespace', async () =>
+        it('is reused when deleting all leading whitespace', async () =>
             // The user types on a new line `\t\t`, sees ghost text `const x = 1`, then deletes
             // all leading whitespace (both `\t\t`). The same ghost text should still be
             // displayed.
@@ -194,7 +214,7 @@ describe('[getInlineCompletions] reuseLastCandidate', () => {
                 source: InlineCompletionsResultSource.LastCandidate,
             }))
 
-        test('not reused when different leading whitespace is added at end of prefix', async () =>
+        it('is not reused when different leading whitespace is added at end of prefix', async () =>
             // The user types on a new line `\t\t`, sees ghost text `const x = 1`, then deletes
             // `\t` and adds ` ` (space). The same ghost text should not still be displayed.
             expect(await getInlineCompletions(params('\t █', [], { lastCandidate: candidate }))).toEqual<V>({
@@ -202,7 +222,7 @@ describe('[getInlineCompletions] reuseLastCandidate', () => {
                 source: InlineCompletionsResultSource.Network,
             }))
 
-        test('not reused when different leading whitespace is added at start of prefix', async () =>
+        it('is not reused when different leading whitespace is added at start of prefix', async () =>
             // The user types on a new line `\t\t`, sees ghost text `const x = 1`, then deletes
             // `\t\t` and adds ` \t` (space). The same ghost text should not still be displayed.
             expect(await getInlineCompletions(params(' \t█', [], { lastCandidate: candidate }))).toEqual<V>({
@@ -210,7 +230,7 @@ describe('[getInlineCompletions] reuseLastCandidate', () => {
                 source: InlineCompletionsResultSource.Network,
             }))
 
-        test('not reused when prefix replaced by different leading whitespace', async () =>
+        it('is not reused when prefix replaced by different leading whitespace', async () =>
             // The user types on a new line `\t\t`, sees ghost text `const x = 1`, then deletes
             // `\t\t` and adds ` ` (space). The same ghost text should not still be displayed.
             expect(await getInlineCompletions(params(' █', [], { lastCandidate: candidate }))).toEqual<V>({
@@ -219,7 +239,7 @@ describe('[getInlineCompletions] reuseLastCandidate', () => {
             }))
     })
 
-    test('reused for a multi-line completion', async () =>
+    it('is reused for a multi-line completion', async () =>
         // The user types ``, sees ghost text `x\ny`, then types ` ` (space). The original
         // completion should be reused.
         expect(await getInlineCompletions(params('x█', [], { lastCandidate: lastCandidate('█', 'x\ny') }))).toEqual<V>({
@@ -227,7 +247,7 @@ describe('[getInlineCompletions] reuseLastCandidate', () => {
             source: InlineCompletionsResultSource.LastCandidate,
         }))
 
-    test('reused when adding leading whitespace for a multi-line completion', async () =>
+    it('is reused when adding leading whitespace for a multi-line completion', async () =>
         // The user types ``, sees ghost text `x\ny`, then types ` `. The original completion
         // should be reused.
         expect(await getInlineCompletions(params(' █', [], { lastCandidate: lastCandidate('█', 'x\ny') }))).toEqual<V>({
@@ -236,7 +256,7 @@ describe('[getInlineCompletions] reuseLastCandidate', () => {
         }))
 
     describe('completeSuggestWidgetSelection', () => {
-        test('not reused when selected item info differs', async () =>
+        it('is not reused when selected item info differs', async () =>
             // The user types `console`, sees the context menu pop up and receives a completion for
             // the first item. They now use the arrow keys to select the second item. The original
             // ghost text should not be reused as it won't be rendered anyways
@@ -244,12 +264,9 @@ describe('[getInlineCompletions] reuseLastCandidate', () => {
                 await getInlineCompletions(
                     params('console█', [], {
                         lastCandidate: lastCandidate('console█', ' = 1', 'log'),
-                        context: {
-                            triggerKind: vsCodeMocks.InlineCompletionTriggerKind.Automatic,
-                            selectedCompletionInfo: {
-                                text: 'dir',
-                                range: range(0, 0, 0, 0),
-                            },
+                        selectedCompletionInfo: {
+                            text: 'dir',
+                            range: range(0, 0, 0, 0),
                         },
                         completeSuggestWidgetSelection: true,
                     })

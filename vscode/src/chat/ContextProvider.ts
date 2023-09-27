@@ -5,10 +5,11 @@ import { ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
 import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
 import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
 import { Editor } from '@sourcegraph/cody-shared/src/editor'
-import { SourcegraphEmbeddingsSearchClient } from '@sourcegraph/cody-shared/src/embeddings/client'
+import { EmbeddingsDetector } from '@sourcegraph/cody-shared/src/embeddings/EmbeddingsDetector'
 import { IndexedKeywordContextFetcher } from '@sourcegraph/cody-shared/src/local-context'
-import { isLocalApp } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
+import { isLocalApp, LOCAL_APP_URL } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
 import { SourcegraphGraphQLAPIClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
+import { GraphQLAPIClientConfig } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
 import { convertGitCloneURLToCodebaseName, isError } from '@sourcegraph/cody-shared/src/utils'
 
 import { getFullConfig } from '../configuration'
@@ -19,6 +20,7 @@ import { getRerankWithLog } from '../logged-rerank'
 import { repositoryRemoteUrl } from '../repository/repositoryHelpers'
 import { AuthProvider } from '../services/AuthProvider'
 import * as OnboardingExperiment from '../services/OnboardingExperiment'
+import { secretStorage } from '../services/SecretStorageProvider'
 import { telemetryService } from '../services/telemetry'
 
 import { ChatViewProviderWebview } from './ChatViewProvider'
@@ -101,6 +103,11 @@ export class ContextProvider implements vscode.Disposable {
         this.configurationChangeEvent.fire()
     }
 
+    public async forceUpdateCodebaseContext(): Promise<void> {
+        this.currentWorkspaceRoot = ''
+        return this.syncAuthStatus()
+    }
+
     private async updateCodebaseContext(): Promise<void> {
         if (!this.editor.getActiveTextEditor() && vscode.window.visibleTextEditors.length !== 0) {
             // these are ephemeral
@@ -118,7 +125,8 @@ export class ContextProvider implements vscode.Disposable {
             this.symf,
             this.editor,
             this.chat,
-            this.platform
+            this.platform,
+            await this.getEmbeddingClientCandidates(this.config)
         )
         if (!codebaseContext) {
             return
@@ -148,7 +156,8 @@ export class ContextProvider implements vscode.Disposable {
                 this.symf,
                 this.editor,
                 this.chat,
-                this.platform
+                this.platform,
+                await this.getEmbeddingClientCandidates(newConfig)
             )
             if (codebaseContext) {
                 this.codebaseContext = codebaseContext
@@ -233,6 +242,50 @@ export class ContextProvider implements vscode.Disposable {
         }
         this.disposables = []
     }
+
+    // If set, a client to talk to app directly.
+    private appClient?: SourcegraphGraphQLAPIClient
+
+    // Tries to get a GraphQL client config to talk to app. If there's no app
+    // token, we can't do that; in that case, returns `undefined`. Caches the
+    // client.
+    private async maybeAppClient(): Promise<SourcegraphGraphQLAPIClient | undefined> {
+        if (this.appClient) {
+            return this.appClient
+        }
+
+        // App access tokens are written to secret storage by LocalAppDetector.
+        // Retrieve this token here.
+        const accessToken = await secretStorage.get(LOCAL_APP_URL.href)
+        if (!accessToken) {
+            return undefined
+        }
+        const clientConfig = {
+            serverEndpoint: LOCAL_APP_URL.href,
+            accessToken,
+            customHeaders: {},
+        }
+        return (this.appClient = new SourcegraphGraphQLAPIClient(clientConfig))
+    }
+
+    // Gets a list of GraphQL clients to interrogate for embeddings
+    // availability.
+    private async getEmbeddingClientCandidates(config: GraphQLAPIClientConfig): Promise<SourcegraphGraphQLAPIClient[]> {
+        const result = [new SourcegraphGraphQLAPIClient(config)]
+        if (isLocalApp(config.serverEndpoint)) {
+            // We will just talk to app.
+            return result
+        }
+        // The other client is talking to non-app (dotcom, etc.) so create a
+        // client to talk to app.
+        const appClient = await this.maybeAppClient()
+        if (appClient) {
+            // By putting the app client first, we prefer to talk to app if
+            // both app and server have embeddings.
+            result.unshift(appClient)
+        }
+        return result
+    }
 }
 
 /**
@@ -243,15 +296,15 @@ export class ContextProvider implements vscode.Disposable {
  * @param editor Editor instance
  * @returns CodebaseContext if a codebase can be determined, else null
  */
-export async function getCodebaseContext(
+async function getCodebaseContext(
     config: Config,
     rgPath: string | null,
     symf: IndexedKeywordContextFetcher | undefined,
     editor: Editor,
     chatClient: ChatClient,
-    platform: PlatformContext
+    platform: PlatformContext,
+    embeddingsClientCandidates: readonly SourcegraphGraphQLAPIClient[]
 ): Promise<CodebaseContext | null> {
-    const client = new SourcegraphGraphQLAPIClient(config)
     const workspaceRoot = editor.getWorkspaceRootUri()
     if (!workspaceRoot) {
         return null
@@ -262,19 +315,19 @@ export async function getCodebaseContext(
     if (!codebase) {
         return null
     }
-    // Check if repo is embedded in endpoint
-    const repoId = await client.getRepoIdIfEmbeddingExists(codebase)
-    if (isError(repoId)) {
+
+    // Find an embeddings client
+    const embeddingsSearch = await EmbeddingsDetector.newEmbeddingsSearchClient(embeddingsClientCandidates, codebase)
+    if (isError(embeddingsSearch)) {
         const infoMessage = `Cody could not find embeddings for '${codebase}' on your Sourcegraph instance.\n`
         console.info(infoMessage)
         return null
     }
 
-    const embeddingsSearch = repoId && !isError(repoId) ? new SourcegraphEmbeddingsSearchClient(client, repoId) : null
     return new CodebaseContext(
         config,
         codebase,
-        embeddingsSearch,
+        embeddingsSearch || null,
         rgPath ? platform.createLocalKeywordContextFetcher?.(rgPath, editor, chatClient) ?? null : null,
         rgPath ? platform.createFilenameContextFetcher?.(rgPath, editor, chatClient) ?? null : null,
         new GraphContextProvider(editor),

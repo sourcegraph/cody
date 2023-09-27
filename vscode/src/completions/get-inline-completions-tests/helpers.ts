@@ -7,10 +7,13 @@ import {
     CompletionResponse,
 } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
 
-import { vsCodeMocks } from '../../testutils/mocks'
 import { CodeCompletionsClient } from '../client'
 import { getCurrentDocContext } from '../get-current-doc-context'
-import { getInlineCompletions as _getInlineCompletions, InlineCompletionsParams } from '../get-inline-completions'
+import {
+    getInlineCompletions as _getInlineCompletions,
+    InlineCompletionsParams,
+    TriggerKind,
+} from '../get-inline-completions'
 import { createProviderConfig, MULTI_LINE_STOP_SEQUENCES, SINGLE_LINE_STOP_SEQUENCES } from '../providers/anthropic'
 import { RequestManager } from '../request-manager'
 import { documentAndPosition } from '../test-helpers'
@@ -44,10 +47,8 @@ export function params(
     {
         languageId = 'typescript',
         onNetworkRequest,
-        context = {
-            triggerKind: vsCodeMocks.InlineCompletionTriggerKind.Automatic,
-            selectedCompletionInfo: undefined,
-        },
+        triggerKind = TriggerKind.Automatic,
+        selectedCompletionInfo,
         ...params
     }: Params = {}
 ): InlineCompletionsParams {
@@ -87,10 +88,10 @@ export function params(
     return {
         document,
         position,
-        context,
         docContext,
+        triggerKind,
+        selectedCompletionInfo,
         promptChars: 1000,
-        isEmbeddingsContextEnabled: true,
         providerConfig,
         responsePercentage: 0.4,
         prefixPercentage: 0.3,
