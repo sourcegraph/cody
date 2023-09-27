@@ -1,12 +1,31 @@
+/**
+ * Generates code documentation.
+ * 
+ * Cases handled:
+ *   - When a whole file is selected, inserts a multi-line comment at top describing the whole file
+ *   - When a whole function/module is selected, inserts a docstring above w/ purpose and params
+ *   - When multiple lines are selected, inserts a single plain comment above the selection
+ *   - When a single line is selected, inserts a plain comment above above the selection
+ *   - When no code is selected, inserts a comment on nearest containing scope (i.e. function)
+ * 
+ * Tested with:
+ *   - Typescript (we want to match https://ts.dev/style/#jsdoc-vs-comments)
+ *     - https://github.com/sourcegraph/sourcegraph/blob/b150dedb550f45b6b27cba39b15984e04afecaf3/client/wildcard/src/hooks/useKeyboard.ts#L10 (generates docstring)
+ *     - https://github.com/sourcegraph/sourcegraph/blob/b150dedb550f45b6b27cba39b15984e04afecaf3/client/wildcard/src/hooks/useDebounce.ts#L13 (generates plain comment w/o params)
+ *     - https://github.com/sourcegraph/sourcegraph/blob/b150dedb550f45b6b27cba39b15984e04afecaf3/client/wildcard/src/hooks/useDebounce.ts#L18 (generates plain comment w/o params)
+ *   - Javascript
+ *     - TODO
+ *   - Golang
+ *     - TODO
+ */
 const doc = {
     description: 'Generate code documentation',
     prompt: [
-        'Generate a comment documenting the parameters and functionality for the selected code.',
+        'Generate a comment briefly documenting the purpose of the selected code.',
+        'Use the type of comment that is idiomatic for the language and section of code selected (e.g. for Typescript use line comments for implementation details, and jsdoc for exported code).',
+        'Follow the style of any existing documentation comments. If no existing documentation comments exist, pay attention to the file path of the selected code to make sure the comments are generated in the style of that language.',
         'Only generate the documentation for the selected code, do not generate the code.',
-        'Use the same documentation style in the file of the selected code to generate the comments.',
-        'Pay attention to the file path of the selected code to make sure the comments are generated for the correct language.',
-        'For example, use the JavaDoc documentation style to generate comments for .java files, or Python docstring using Python multi-line string for .py files.',
-        'Do not include any other code or comments besides the docstring.',
+        'Do not output any other code or comments besides the documentation.',
     ].join(' '),
     context: {
         currentDir: true,
