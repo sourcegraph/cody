@@ -133,7 +133,7 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
         }
 
         // Log custom command usage
-        const commandType = myPrompt?.type === 'default' ? 'default' : 'custom'
+        const commandType = myPrompt?.type === 'default' ? myPrompt.slashCommand.replace('/', '') : 'custom'
         this.telemetryService.log(`CodyVSCodeExtension:command:${commandType}:executed`)
 
         return myPrompt?.prompt || ''
