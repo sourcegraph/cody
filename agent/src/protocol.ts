@@ -108,6 +108,9 @@ export interface CancelParams {
 export interface AutocompleteParams {
     filePath: string
     position: Position
+    // Defaults to 'Automatic' for autocompletions which were not explicitly
+    // triggered.
+    triggerKind?: 'Automatic' | 'Invoke'
 }
 
 export interface AutocompleteResult {
