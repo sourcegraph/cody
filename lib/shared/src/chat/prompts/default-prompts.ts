@@ -20,6 +20,10 @@
  *     - https://github.com/sourcegraph/wizard/blob/2414828d62f7ababd24a2532708e7e94fb5d92bb/pages/index.js#L126 (generates impl comment)
  *   - Golang
  *     - TODO
+ *   - Java
+ *     - TODO
+ *   - Python
+ *     - TODO
  */
 const doc = {
     description: 'Generate code documentation',
