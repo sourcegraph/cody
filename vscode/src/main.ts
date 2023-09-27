@@ -190,6 +190,7 @@ const register = async (
         } = {},
         source = 'editor' // where the command was triggered from
     ): Promise<void> => {
+        telemetryService.log('CodyVSCodeExtension:command:edit:executed', { source })
         const document = args.document || vscode.window.activeTextEditor?.document
         if (!document) {
             return
@@ -207,7 +208,6 @@ const register = async (
             return
         }
 
-        telemetryService.log(`CodyVSCodeExtension:command:edit:${source}:executed`)
         const provider = fixupManager.getProviderForTask(task)
         return provider.startFix()
     }
