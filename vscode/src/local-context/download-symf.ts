@@ -8,7 +8,7 @@ import * as vscode from 'vscode'
 
 import { logDebug } from '../log'
 
-const symfVersion = 'v0.0.0'
+const symfVersion = 'v0.0.1'
 
 /**
  * Get the path to `symf`. If the symf binary is not found, download it.
