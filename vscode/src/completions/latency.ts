@@ -1,11 +1,9 @@
 import { logDebug } from '../log'
 
-import { LastInlineCompletionCandidate } from './get-inline-completions'
-
-const defaultLatency = {
-    baseline: 600,
+export const defaultLatency = {
+    baseline: 400,
     user: 200,
-    lowPerformance: 1200,
+    lowPerformance: 1000,
     max: 2000,
 }
 
@@ -16,27 +14,23 @@ let currentUserLatency = 0
 let lastSuggestionId: undefined | string
 
 // Adjust the minimum latency based on user actions and env
-export function getLatency(
-    provider: string,
-    lastCandidate: LastInlineCompletionCandidate | undefined,
-    languageId?: string
-): number {
+export function getLatency(provider: string, lastCandidateId?: string, languageId?: string): number {
     // Return early if we are still showing last suggestion
-    if (lastSuggestionId && lastSuggestionId === lastCandidate?.result.logId) {
+    if (lastSuggestionId && lastSuggestionId === lastCandidateId) {
         return 0
     }
 
-    lastSuggestionId = lastCandidate?.result.logId
+    setLastSuggestionId(lastCandidateId)
 
     let baseline = provider === 'anthropic' ? 0 : defaultLatency.baseline
     let user = 0
 
     // set base latency based on provider and low performance languages
-    if (languageId && lowPerformanceLanguageIds.has(languageId)) {
+    if (!languageId || (languageId && lowPerformanceLanguageIds.has(languageId))) {
         baseline += defaultLatency.lowPerformance
     }
 
-    if (!lastCandidate?.result.logId) {
+    if (!lastCandidateId) {
         user = currentUserLatency ? currentUserLatency * 2 : defaultLatency.user
     }
 
@@ -51,4 +45,8 @@ export function resetLatency(): void {
     currentUserLatency = 0
     lastSuggestionId = undefined
     logDebug('CodyCompletionProvider:resetLatency', 'User latency reset')
+}
+
+export function setLastSuggestionId(id: string | undefined): void {
+    lastSuggestionId = id
 }

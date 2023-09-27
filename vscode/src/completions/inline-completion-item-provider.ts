@@ -276,7 +276,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
                 if (minimumLatencyFlag) {
                     const minimumLatency = getLatency(
                         this.config.providerConfig.identifier,
-                        this.lastCandidate,
+                        this.lastCandidate?.result?.logId,
                         document.languageId
                     )
 
