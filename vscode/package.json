@@ -841,6 +841,13 @@
             "Answer all my questions in Spanish."
           ]
         },
+        "cody.codeActions.enabled": {
+          "order": 11,
+          "title": "Cody Code Actions",
+          "type": "boolean",
+          "markdownDescription": "Enables displaying code fix and explain suggestions alongside errors and warnings directly in the editor.",
+          "default": true
+        },
         "cody.experimental.symf.path": {
           "order": 99,
           "type": "string",

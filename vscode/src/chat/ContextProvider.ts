@@ -37,6 +37,7 @@ export type Config = Pick<
     | 'customHeaders'
     | 'accessToken'
     | 'useContext'
+    | 'codeActions'
     | 'experimentalChatPredictions'
     | 'experimentalGuardrails'
     | 'experimentalCommandLenses'

@@ -15,11 +15,13 @@ export class FixupManager implements vscode.Disposable {
 
     constructor(options: MessageProviderOptions) {
         this.messageProviderOptions = options
-        this.disposables.push(
-            vscode.languages.registerCodeActionsProvider('*', new FixupCodeAction(), {
-                providedCodeActionKinds: FixupCodeAction.providedCodeActionKinds,
-            })
-        )
+        if (options.contextProvider.config.codeActions) {
+            this.disposables.push(
+                vscode.languages.registerCodeActionsProvider('*', new FixupCodeAction(), {
+                    providedCodeActionKinds: FixupCodeAction.providedCodeActionKinds,
+                })
+            )
+        }
     }
 
     public getProviderForTask(task: FixupTask): FixupProvider {
