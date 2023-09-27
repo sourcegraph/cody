@@ -18,6 +18,7 @@ import {
     InlineCompletionsResultSource,
     LastInlineCompletionCandidate,
 } from './get-inline-completions'
+import { LantencyManager } from './lantency-manager'
 import * as CompletionLogger from './logger'
 import { CompletionEvent } from './logger'
 import { ProviderConfig } from './providers/provider'
@@ -61,6 +62,8 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
 
     /** Accessible for testing only. */
     protected lastCandidate: LastInlineCompletionCandidate | undefined
+
+    private latencyManager = new LantencyManager()
 
     constructor({
         responsePercentage = 0.1,
@@ -131,8 +134,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
         // We start the request early so that we have a high chance of getting a response before we
         // need it.
         const minimumLatencyFlagsPromises = [
-            this.config.featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteMinimumLatency350),
-            this.config.featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteMinimumLatency600),
+            this.config.featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteMinimumLatency),
         ]
         const tracer = this.config.tracer ? createTracerForInvocation(this.config.tracer) : undefined
         const graphContextFetcher = this.config.graphContextFetcher ?? undefined
@@ -234,15 +236,22 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
                 })
             }
 
-            // Unless the result is from the last candidate, we may want to honor the minimum
+            // Unless the result is from the last candidate, we may want to apply the minimum
             // latency so that we don't show a result before the user has paused typing for a brief
             // moment.
             if (result.source !== InlineCompletionsResultSource.LastCandidate) {
-                const [minimumLatency350, minimumLatency600] = await Promise.all(minimumLatencyFlagsPromises)
-                if (minimumLatency350 || minimumLatency600) {
-                    const minimumLatency = minimumLatency350 ? 350 : 600
+                const [minimumLatencyFlag] = await Promise.all(minimumLatencyFlagsPromises)
+                if (minimumLatencyFlag) {
+                    // Adjust the minimum latency based on user actions
+                    const minimumLatency = this.latencyManager.getMinLatency(
+                        this.config.providerConfig.identifier,
+                        this.lastCandidate,
+                        document.languageId
+                    )
+
                     const delta = performance.now() - start
-                    if (delta < minimumLatency) {
+
+                    if (minimumLatency && delta < minimumLatency) {
                         await new Promise(resolve => setTimeout(resolve, minimumLatency - delta))
                     }
 
@@ -318,6 +327,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
     }
 
     public handleDidAcceptCompletionItem(logId: string, completion: InlineCompletionItem): void {
+        this.latencyManager.resetLatencyOnAccept()
         // When a completion is accepted, the lastCandidate should be cleared. This makes sure the
         // log id is never reused if the completion is accepted.
         this.clearLastCandidate()
