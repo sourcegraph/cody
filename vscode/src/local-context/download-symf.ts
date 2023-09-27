@@ -65,7 +65,7 @@ export async function getSymfPath(context: vscode.ExtensionContext): Promise<str
         )
         void removeOldSymfBinaries(symfContainingDir, symfFilename)
     } catch (error) {
-        vscode.window.showErrorMessage(`Failed to download symf: ${error}`)
+        void vscode.window.showErrorMessage(`Failed to download symf: ${error}`)
         return null
     }
 

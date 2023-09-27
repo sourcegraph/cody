@@ -214,7 +214,7 @@ function handleSymfError(error: unknown): void {
     const errorString = `${error}`
     let errorMessage: string
     if (errorString.includes('ENOENT')) {
-        errorMessage = "symf binary not found. Do you have \"cody.experimental.symf.path\" set and is it valid?"
+        errorMessage = 'symf binary not found. Do you have "cody.experimental.symf.path" set and is it valid?'
     } else if (errorString.includes('401')) {
         errorMessage = `symf: Unauthorized. Is Cody signed in? ${error}`
     } else {
