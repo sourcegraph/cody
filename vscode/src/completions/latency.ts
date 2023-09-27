@@ -4,7 +4,7 @@ import { LastInlineCompletionCandidate } from './get-inline-completions'
 
 const defaultLatency = {
     baseline: 600,
-    user: 200, // ms
+    user: 200,
     lowPerformance: 1200,
     max: 2000,
 }
@@ -49,6 +49,6 @@ export function getLatency(
 
 export function resetLatency(): void {
     currentUserLatency = 0
-
+    lastSuggestionId = undefined
     logDebug('CodyCompletionProvider:resetLatency', 'User latency reset')
 }

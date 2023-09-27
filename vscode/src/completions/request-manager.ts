@@ -19,8 +19,8 @@ export interface RequestParams {
     /** The request's document context **/
     docContext: DocumentContext
 
-    /** The request's inline completion context. **/
-    context: vscode.InlineCompletionContext
+    /** The state of the completion info box **/
+    selectedCompletionInfo: vscode.SelectedCompletionInfo | undefined
 
     /** The cursor position in the source file where the completion request was triggered. **/
     position: vscode.Position
@@ -101,7 +101,7 @@ export class RequestManager {
         return request.promise
     }
 
-    // Remove unwanted sugggestion from the cache
+    // Remove unwanted suggestions from the cache
     public removeUnwanted(params: RequestParams): void {
         this.cache.delete(params)
     }
@@ -114,12 +114,12 @@ export class RequestManager {
         resolvedRequest: InflightRequest,
         items: InlineCompletionItemWithAnalytics[]
     ): void {
-        const { document, position, docContext, context } = resolvedRequest.params
+        const { document, position, docContext, selectedCompletionInfo } = resolvedRequest.params
         const lastCandidate: LastInlineCompletionCandidate = {
             uri: document.uri,
             lastTriggerPosition: position,
             lastTriggerDocContext: docContext,
-            lastTriggerSelectedInfoItem: context?.selectedCompletionInfo?.text,
+            lastTriggerSelectedInfoItem: selectedCompletionInfo?.text,
             result: {
                 logId: '',
                 items,
@@ -140,7 +140,7 @@ export class RequestManager {
                 position: request.params.position,
                 lastCandidate,
                 docContext: request.params.docContext,
-                context: request.params.context,
+                selectedCompletionInfo: request.params.selectedCompletionInfo,
                 completeSuggestWidgetSelection: this.completeSuggestWidgetSelection,
             })
 

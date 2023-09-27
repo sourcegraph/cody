@@ -97,13 +97,10 @@ function renderWebviewHtml(data: ProvideInlineCompletionsItemTraceData | undefin
 - ${markdownInlineCode(data.params.document.fileName)} @ ${data.params.position.line + 1}:${
                 data.params.position.character + 1
             }
-- triggerKind: ${vscode.InlineCompletionTriggerKind[data.params.context.triggerKind]}
+- triggerKind: ${data.params.triggerKind}
 - selectedCompletionInfo: ${
-                data.params.context.selectedCompletionInfo
-                    ? selectedCompletionInfoDescription(
-                          data.params.context.selectedCompletionInfo,
-                          data.params.document
-                      )
+                data.params.selectedCompletionInfo
+                    ? selectedCompletionInfoDescription(data.params.selectedCompletionInfo, data.params.document)
                     : 'none'
             }
 `,

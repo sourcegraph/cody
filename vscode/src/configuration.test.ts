@@ -36,9 +36,8 @@ describe('getConfiguration', () => {
             autocompleteAdvancedServerEndpoint: null,
             autocompleteAdvancedModel: null,
             autocompleteAdvancedAccessToken: null,
-            autocompleteAdvancedEmbeddings: true,
             autocompleteExperimentalCompleteSuggestWidgetSelection: false,
-            autocompleteExperimentalSyntacticPostProcessing: false,
+            autocompleteExperimentalSyntacticPostProcessing: true,
             autocompleteExperimentalGraphContext: false,
         })
     })
@@ -103,7 +102,7 @@ describe('getConfiguration', () => {
                     case 'cody.autocomplete.experimental.completeSuggestWidgetSelection':
                         return false
                     case 'cody.autocomplete.experimental.syntacticPostProcessing':
-                        return false
+                        return true
                     case 'cody.autocomplete.experimental.graphContext':
                         return true
                     case 'cody.advanced.agent.running':
@@ -142,9 +141,8 @@ describe('getConfiguration', () => {
             autocompleteAdvancedServerEndpoint: 'https://example.com/llm',
             autocompleteAdvancedModel: 'starcoder-32b',
             autocompleteAdvancedAccessToken: 'foobar',
-            autocompleteAdvancedEmbeddings: false,
             autocompleteExperimentalCompleteSuggestWidgetSelection: false,
-            autocompleteExperimentalSyntacticPostProcessing: false,
+            autocompleteExperimentalSyntacticPostProcessing: true,
             autocompleteExperimentalGraphContext: true,
         })
     })

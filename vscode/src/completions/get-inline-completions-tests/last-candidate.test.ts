@@ -1,7 +1,6 @@
 import dedent from 'dedent'
 import { describe, expect, test } from 'vitest'
 
-import { vsCodeMocks } from '../../testutils/mocks'
 import { range } from '../../testutils/textDocument'
 import { getCurrentDocContext } from '../get-current-doc-context'
 import { InlineCompletionsResultSource, LastInlineCompletionCandidate } from '../get-inline-completions'
@@ -247,12 +246,9 @@ describe('[getInlineCompletions] reuseLastCandidate', () => {
                 await getInlineCompletions(
                     params('console█', [], {
                         lastCandidate: lastCandidate('console█', ' = 1', 'log'),
-                        context: {
-                            triggerKind: vsCodeMocks.InlineCompletionTriggerKind.Automatic,
-                            selectedCompletionInfo: {
-                                text: 'dir',
-                                range: range(0, 0, 0, 0),
-                            },
+                        selectedCompletionInfo: {
+                            text: 'dir',
+                            range: range(0, 0, 0, 0),
                         },
                         completeSuggestWidgetSelection: true,
                     })

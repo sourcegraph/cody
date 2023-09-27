@@ -20,9 +20,9 @@ export interface ParsedCompletion extends InlineCompletionItem {
     // Points for parse-tree queries.
     points?: {
         // Start of completion.insertText in the parse-tree.
-        start?: Point
+        start: Point
         // End of completion.insertText in the parse-tree
-        end?: Point
+        end: Point
         // Start of the multi-line completion trigger if applicable
         trigger?: Point
     }

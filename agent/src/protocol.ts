@@ -158,7 +158,6 @@ export interface ExtensionConfiguration {
     autocompleteAdvancedServerEndpoint?: string | null
     autocompleteAdvancedModel?: string | null
     autocompleteAdvancedAccessToken?: string | null
-    autocompleteAdvancedEmbeddings?: boolean
     debug?: boolean
     verboseDebug?: boolean
     codebase?: string

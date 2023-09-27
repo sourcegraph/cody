@@ -16,6 +16,7 @@ export enum FeatureFlag {
     CodyAutocompleteLlamaCode13B = 'cody-autocomplete-default-llama-code-13b',
     CodyAutocompleteGraphContext = 'cody-autocomplete-graph-context',
     CodyAutocompleteMinimumLatency = 'cody-autocomplete-minimum-latency',
+    CodyAutocompleteCompleteSuggestWidgetSelection = 'cody-autocomplete-complete-suggest-widget-selection',
 }
 
 const ONE_HOUR = 60 * 60 * 1000
