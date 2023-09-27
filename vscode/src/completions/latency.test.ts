@@ -1,6 +1,6 @@
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 
-import { defaultLatency, getLatency, setLastSuggestionId } from './latency'
+import { getLatency, resetLatency } from './latency'
 
 const mockLastSuggestionId = 'mock-suggestion-id'
 const mockCurrentSuggestionId = 'mock-id'
@@ -10,53 +10,98 @@ describe('getLatency', () => {
     const lastSuggestionAccepted = mockCurrentSuggestionId
     const lastSuggestionUnchanged = mockLastSuggestionId
 
-    setLastSuggestionId(mockLastSuggestionId)
+    afterEach(() => {
+        resetLatency()
+    })
 
-    it('returns default latency for user plus unsupported language at starting point on anthropic provider', () => {
+    it('returns high latency for unsupported language on anthropic provider', () => {
         const provider = 'anthropic'
         const languageId = undefined
 
-        const latency = getLatency(provider, undefined, languageId)
-        expect(latency).toBe(defaultLatency.lowPerformance + defaultLatency.user)
+        // start with default high latency with default user latency added
+        expect(getLatency(provider, undefined, languageId)).toBe(1200)
+        // next one increases user latency when last suggestion was not accepted
+        expect(getLatency(provider, lastSuggestionRejected, languageId)).toBe(1400)
+        // next one doubles the increased user latency when last suggestion was not accepted
+        expect(getLatency(provider, lastSuggestionRejected, languageId)).toBe(1800)
+        // reset latency on accepted suggestion
+        resetLatency()
+        // after the suggestion was accepted, user latency resets to 0
+        expect(getLatency(provider, lastSuggestionAccepted, languageId)).toBe(1000)
+        // reset latency on accepted suggestion
+        resetLatency()
+        // after the suggestion was accepted, user latency resets to 0
+        expect(getLatency(provider, lastSuggestionAccepted, languageId)).toBe(1000)
+        // next one increases user latency when last suggestion was not accepted
+        expect(getLatency(provider, lastSuggestionRejected, languageId)).toBe(1200)
     })
 
-    it('returns unchanged latency on low performance language on same suggestion displayed on anthropic provider', () => {
+    it('returns gradually increasing latency for low performance language on anthropic provider', () => {
         const provider = 'anthropic'
         const languageId = 'css'
 
-        const latency = getLatency(provider, lastSuggestionUnchanged, languageId)
-        expect(latency).toBe(defaultLatency.lowPerformance)
+        // start with default high latency with default user latency added
+        expect(getLatency(provider, undefined, languageId)).toBe(1200)
+        // next one increases user latency when last suggestion was not accepted
+        expect(getLatency(provider, lastSuggestionRejected, languageId)).toBe(1400)
+        // next one maintains user latency when last suggestion is still showing
+        expect(getLatency(provider, lastSuggestionUnchanged, languageId)).toBe(1400)
+        // latency should max at 2000 after multiple rejections
+        expect(getLatency(provider, lastSuggestionRejected, languageId)).toBe(1800)
+        expect(getLatency(provider, lastSuggestionRejected, languageId)).toBe(2000)
+        expect(getLatency(provider, lastSuggestionRejected, languageId)).toBe(2000)
+        expect(getLatency(provider, lastSuggestionRejected, languageId)).toBe(2000)
+        // reset latency on accepted suggestion
+        resetLatency()
+        // after the suggestion was accepted, user latency resets to 0
+        expect(getLatency(provider, lastSuggestionAccepted, languageId)).toBe(1000)
+        // reset latency on accepted suggestion
+        resetLatency()
+        // next one increases user latency when last suggestion was not accepted
+        expect(getLatency(provider, lastSuggestionRejected, languageId)).toBe(1200)
     })
 
-    it('returns increased latency on low performance language after rejecting last suggestion on anthropic provider', () => {
-        const provider = 'anthropic'
-        const languageId = 'css'
-
-        const latency = getLatency(provider, lastSuggestionRejected, languageId)
-        expect(latency).toBe(defaultLatency.lowPerformance + defaultLatency.user)
-    })
-
-    it('returns reset latency on supported lang after accepting last suggestion on non-anthropic provider', () => {
+    it('returns increasing latency for supported language on anthropic provider when suggestions are rejected', () => {
         const provider = 'anthropic'
         const languageId = 'typescript'
 
-        const latency = getLatency(provider, lastSuggestionAccepted, languageId)
-        expect(latency).toBe(0)
+        // start with default latency with default user latency added
+        expect(getLatency(provider, undefined, languageId)).toBe(200)
+        // next one has doubled user latency when last suggestion was not accepted
+        expect(getLatency(provider, lastSuggestionRejected, languageId)).toBe(400)
+        // next one has unchanged user latency when last suggestion is still showing
+        expect(getLatency(provider, lastSuggestionUnchanged, languageId)).toBe(400)
+        // next one has doubled user latency when last suggestion was not accepted
+        expect(getLatency(provider, lastSuggestionRejected, languageId)).toBe(800)
     })
 
-    it('returns baseline + user latency on support lang after rejecting last suggestion on non-anthropic provider', () => {
-        const provider = 'non-anthropic'
-        const languageId = 'typescript'
-
-        const latency = getLatency(provider, lastSuggestionRejected, languageId)
-        expect(latency).toBe(defaultLatency.baseline + defaultLatency.user)
-    })
-
-    it('returns default baseline + low perf lang + user latency after rejecting last candidate on non-anthropic provider', () => {
+    it('returns decreasing latency for low performance language on non-anthropic provider after accepting suggestion', () => {
         const provider = 'non-anthropic'
         const languageId = 'css'
 
-        const latency = getLatency(provider, lastSuggestionRejected, languageId)
-        expect(latency).toBe(defaultLatency.baseline + defaultLatency.lowPerformance + defaultLatency.user)
+        // start with default baseline latency with low performance and user latency added
+        expect(getLatency(provider, undefined, languageId)).toBe(1600)
+        // reset latency on accepted suggestion
+        resetLatency()
+        // next one has decreased latency after accepting last suggestion that reset user latency to 0
+        expect(getLatency(provider, lastSuggestionAccepted, languageId)).toBe(1400)
+    })
+
+    it('returns increasing latency up to max for supported language on non-anthropic provider after rejecting suggestions', () => {
+        const provider = 'non-anthropic'
+        const languageId = 'typescript'
+
+        // start with default baseline latency with low performance and user latency added
+        expect(getLatency(provider, undefined, languageId)).toBe(600)
+        // latency should max at 2000 after multiple rejections
+        expect(getLatency(provider, lastSuggestionRejected, languageId)).toBe(800)
+        expect(getLatency(provider, lastSuggestionRejected, languageId)).toBe(1200)
+        expect(getLatency(provider, lastSuggestionRejected, languageId)).toBe(2000)
+        expect(getLatency(provider, lastSuggestionRejected, languageId)).toBe(2000)
+        expect(getLatency(provider, lastSuggestionRejected, languageId)).toBe(2000)
+        // reset latency on accepted suggestion
+        resetLatency()
+        // back to starting latency after accepting a suggestion
+        expect(getLatency(provider, undefined, languageId)).toBe(600)
     })
 })

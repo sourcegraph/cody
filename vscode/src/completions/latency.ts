@@ -2,7 +2,7 @@ import { logDebug } from '../log'
 
 export const defaultLatency = {
     baseline: 400,
-    user: 200,
+    user: 200, // set to 0 on reset after accepting suggestion
     lowPerformance: 1000,
     max: 2000,
 }
@@ -20,21 +20,21 @@ export function getLatency(provider: string, lastCandidateId?: string, languageI
         return 0
     }
 
-    setLastSuggestionId(lastCandidateId)
+    lastSuggestionId = lastCandidateId
 
     let baseline = provider === 'anthropic' ? 0 : defaultLatency.baseline
-    let user = 0
 
     // set base latency based on provider and low performance languages
     if (!languageId || (languageId && lowPerformanceLanguageIds.has(languageId))) {
         baseline += defaultLatency.lowPerformance
     }
 
+    // last suggestion was rejected when last candidated is undefined
     if (!lastCandidateId) {
-        user = currentUserLatency ? currentUserLatency * 2 : defaultLatency.user
+        currentUserLatency = currentUserLatency > 0 ? currentUserLatency * 2 : defaultLatency.user
     }
 
-    const total = Math.max(baseline, Math.min(baseline + user, defaultLatency.max))
+    const total = Math.max(baseline, Math.min(baseline + currentUserLatency, defaultLatency.max))
 
     logDebug('CodyCompletionProvider:getLatency', `Applied Latency: ${total}`)
 
@@ -45,8 +45,4 @@ export function resetLatency(): void {
     currentUserLatency = 0
     lastSuggestionId = undefined
     logDebug('CodyCompletionProvider:resetLatency', 'User latency reset')
-}
-
-export function setLastSuggestionId(id: string | undefined): void {
-    lastSuggestionId = id
 }
