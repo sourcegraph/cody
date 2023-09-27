@@ -1,45 +1,53 @@
-import * as assert from 'assert'
+// import * as assert from 'assert'
 
 import * as vscode from 'vscode'
 
-import { ExtensionApi } from '../../src/extension-api'
+import { BENCHMARK_ACCESS_TOKEN, BENCHMARK_ENDPOINT } from './config'
+import { CODY_EXTENSION_ID } from './constants'
 
-export async function setup(): Promise<void> {
-    const { BENCHMARK_ENDPOINT, BENCHMARK_ACCESS_TOKEN } = process.env
-    if (!BENCHMARK_ENDPOINT || !BENCHMARK_ACCESS_TOKEN) {
-        throw new Error('Provide SRC_ENDPOINT and SRC_ACCESS_TOKEN to run the on suite')
+const waitForManualExtensionSetupConfirmation = async (): Promise<void> => {
+    const buttonTitle = 'Resume evaluation suite'
+
+    // eslint-disable-next-line @typescript-eslint/no-misused-promises, no-async-promise-executor
+    return new Promise(async resolve => {
+        const choice = await vscode.window.showInformationMessage(
+            'Paused evaluation suite: Setup your extension',
+            buttonTitle
+        )
+        if (choice === buttonTitle) {
+            resolve()
+        }
+    })
+}
+
+export async function initExtension(id: string): Promise<void> {
+    const ext = vscode.extensions.getExtension(id)
+    // Wait a short amount to give extension time to activate
+    await ext?.activate()
+
+    if (id !== CODY_EXTENSION_ID) {
+        // Unknown setup steps
+        return waitForManualExtensionSetupConfirmation()
     }
 
-    // Wait for Cody extension to become ready.
-    const api = vscode.extensions.getExtension<ExtensionApi>('sourcegraph.cody-ai')
-    assert.ok(api, 'extension not found')
-
-    // TODO(sqs): ensure this doesn't run the activate func multiple times
-    await api?.activate()
-
-    // Wait for Cody to become activated.
-    // TODO(sqs)
     await new Promise(resolve => setTimeout(resolve, 500))
-
-    // Configure extension.
     await ensureExecuteCommand('cody.test.token', BENCHMARK_ENDPOINT, BENCHMARK_ACCESS_TOKEN)
     await ensureExecuteCommand('cody.chat.focus')
 }
 
-/**
- * Teardown (`afterEach`) function for integration tests that use {@link beforeIntegrationTest}.
- */
-export async function teardown(): Promise<void> {
+export async function teardownExtension(id: string): Promise<void> {
+    if (id !== CODY_EXTENSION_ID) {
+        // Nothing to do
+        return
+    }
+
     await ensureExecuteCommand('cody.interactive.clear')
     await ensureExecuteCommand('cody.history.clear')
     await ensureExecuteCommand('cody.test.token', null, null)
 }
 
-/**
- * Clean up command for VS Code.
- * Closes all open files.
- */
-export async function cleanup(): Promise<void> {
+export async function cleanUpAfterEvaluation(): Promise<void> {
+    await vscode.commands.executeCommand('_workbench.revertAllDirty')
     await ensureExecuteCommand('workbench.action.closeAllEditors')
 }
 

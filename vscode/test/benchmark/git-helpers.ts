@@ -2,7 +2,7 @@ import { execFileSync } from 'node:child_process'
 import { writeFileSync } from 'node:fs'
 import path from 'path'
 
-const commitSignatureEnv: NodeJS.ProcessEnv = {
+export const commitSignatureEnv: NodeJS.ProcessEnv = {
     GIT_COMMITTER_NAME: 'a',
     GIT_COMMITTER_EMAIL: 'a@a.com',
     GIT_AUTHOR_NAME: 'a',

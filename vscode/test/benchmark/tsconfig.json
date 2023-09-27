@@ -1,8 +1,6 @@
 {
   "extends": "../../tsconfig.json",
   "compilerOptions": {
-    "module": "NodeNext",
-    "moduleResolution": "NodeNext",
     "sourceMap": true,
     "rootDir": ".",
     "outDir": "../../dist/tsc/test/benchmark",
