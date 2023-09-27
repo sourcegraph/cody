@@ -391,14 +391,14 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
         this.requestManager.removeUnwanted(reqContext)
     }
 
-    /* *
+    /**
      * Should only be used by agent to allow it access to clear the last candidate
      */
     public clearLastCandidate(): void {
         this.lastCandidate = undefined
     }
 
-    /* *
+    /**
      * Process completions items in VS Code-specific ways.
      */
     private processInlineCompletionsForVSCode(
@@ -444,7 +444,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
         })
     }
 
-    /* *
+    /**
      * A callback that is called whenever an error happens. We do not want to flood a users UI with
      * error messages so every unexpected error is deduplicated by its message and rate limit errors
      * are only shown once during the rate limit period.
@@ -493,7 +493,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
 
 let globalInvocationSequenceForTracer = 0
 
-/* *
+/**
  * Creates a tracer for a single invocation of
  * {@link CodyCompletionItemProvider.provideInlineCompletionItems} that accumulates all of the data
  * for that invocation.
