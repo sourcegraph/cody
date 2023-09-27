@@ -18,7 +18,7 @@ import {
     InlineCompletionsResultSource,
     LastInlineCompletionCandidate,
 } from './get-inline-completions'
-import { LatencyManager } from './latency-manager'
+import { getLatency, resetLatency } from './latency'
 import * as CompletionLogger from './logger'
 import { CompletionEvent } from './logger'
 import { ProviderConfig } from './providers/provider'
@@ -62,8 +62,6 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
 
     /** Accessible for testing only. */
     protected lastCandidate: LastInlineCompletionCandidate | undefined
-
-    private latencyManager = new LatencyManager()
 
     constructor({
         responsePercentage = 0.1,
@@ -241,9 +239,9 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
             // moment.
             if (result.source !== InlineCompletionsResultSource.LastCandidate) {
                 const [minimumLatencyFlag] = await Promise.all(minimumLatencyFlagsPromises)
-                if (minimumLatencyFlag) {
+                if (!minimumLatencyFlag) {
                     // Adjust the minimum latency based on user actions
-                    const minimumLatency = this.latencyManager.getMinLatency(
+                    const minimumLatency = getLatency(
                         this.config.providerConfig.identifier,
                         this.lastCandidate,
                         document.languageId
@@ -327,7 +325,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
     }
 
     public handleDidAcceptCompletionItem(logId: string, completion: InlineCompletionItem): void {
-        this.latencyManager.resetLatencyOnAccept()
+        resetLatency()
         // When a completion is accepted, the lastCandidate should be cleared. This makes sure the
         // log id is never reused if the completion is accepted.
         this.clearLastCandidate()
@@ -335,7 +333,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
         CompletionLogger.accept(logId, completion)
     }
 
-    /**
+    /* *
      * Handles when a completion item was rejected by the user.
      *
      * A completion item is marked as rejected/unwanted when:
@@ -352,14 +350,14 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
         this.requestManager.removeUnwanted(reqContext)
     }
 
-    /**
+    /* *
      * Should only be used by agent to allow it access to clear the last candidate
      */
     public clearLastCandidate(): void {
         this.lastCandidate = undefined
     }
 
-    /**
+    /* *
      * Process completions items in VS Code-specific ways.
      */
     private processInlineCompletionsForVSCode(
@@ -404,7 +402,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
         })
     }
 
-    /**
+    /* *
      * A callback that is called whenever an error happens. We do not want to flood a users UI with
      * error messages so every unexpected error is deduplicated by its message and rate limit errors
      * are only shown once during the rate limit period.
@@ -453,7 +451,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
 
 let globalInvocationSequenceForTracer = 0
 
-/**
+/* *
  * Creates a tracer for a single invocation of
  * {@link CodyCompletionItemProvider.provideInlineCompletionItems} that accumulates all of the data
  * for that invocation.
