@@ -31,7 +31,7 @@ test('start a fixup job from inline chat with valid auth', async ({ page, sideba
     // await expect(page.getByText('Processing by Cody')).toBeVisible()
 
     // Ensures Code Lens is added
-    await expect(page.getByText('Fixup ready')).toBeVisible()
-    await page.getByRole('button', { name: 'Apply' }).click()
+    await expect(page.getByRole('button', { name: 'Apply Edits' })).toBeVisible()
+    await page.getByRole('button', { name: 'Apply Edits' }).click()
     await expect(page.getByText('<title>Goodbye Cody</title>')).toBeVisible()
 })
