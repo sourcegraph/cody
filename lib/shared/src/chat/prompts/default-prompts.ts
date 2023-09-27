@@ -1,13 +1,13 @@
 /**
  * Generates code documentation.
- * 
+ *
  * Cases handled:
  *   - When a whole file is selected, inserts a multi-line comment at top describing the whole file
  *   - When a whole function/module is selected, inserts a docstring above w/ purpose and params
  *   - When multiple lines are selected, inserts a single plain comment above the selection
  *   - When a single line is selected, inserts a plain comment above above the selection
  *   - When no code is selected, inserts a comment on nearest containing scope (i.e. function)
- * 
+ *
  * Tested with:
  *   - Typescript (best practice is https://ts.dev/style/#jsdoc-vs-comments)
  *     - https://github.com/sourcegraph/sourcegraph/blob/b150dedb550f45b6b27cba39b15984e04afecaf3/client/wildcard/src/hooks/useKeyboard.ts#L10-L27 (generates docstring w/ parameters)
