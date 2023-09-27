@@ -11,17 +11,9 @@ export const defaultLatency = {
 const lowPerformanceLanguageIds = new Set(['css', 'html', 'scss', 'vue', 'dart', 'json', 'yaml', 'postcss'])
 
 let currentUserLatency = 0
-let lastSuggestionId: undefined | string
 
 // Adjust the minimum latency based on user actions and env
-export function getLatency(provider: string, lastCandidateId?: string, languageId?: string): number {
-    // Return early if we are still showing last suggestion
-    if (lastSuggestionId && lastSuggestionId === lastCandidateId) {
-        return 0
-    }
-
-    lastSuggestionId = lastCandidateId
-
+export function getLatency(provider: string, languageId?: string): number {
     let baseline = provider === 'anthropic' ? 0 : defaultLatency.baseline
 
     // set base latency based on provider and low performance languages
@@ -29,12 +21,10 @@ export function getLatency(provider: string, lastCandidateId?: string, languageI
         baseline += defaultLatency.lowPerformance
     }
 
-    // last suggestion was rejected when last candidated is undefined
-    if (!lastCandidateId) {
-        currentUserLatency = currentUserLatency > 0 ? currentUserLatency * 2 : defaultLatency.user
-    }
-
     const total = Math.max(baseline, Math.min(baseline + currentUserLatency, defaultLatency.max))
+
+    // last suggestion was rejected when last candidated is undefined
+    currentUserLatency = currentUserLatency > 0 ? currentUserLatency * 2 : defaultLatency.user
 
     logDebug('CodyCompletionProvider:getLatency', `Applied Latency: ${total}`)
 
@@ -43,6 +33,6 @@ export function getLatency(provider: string, lastCandidateId?: string, languageI
 
 export function resetLatency(): void {
     currentUserLatency = 0
-    lastSuggestionId = undefined
+    // lastSuggestionId = undefined
     logDebug('CodyCompletionProvider:resetLatency', 'User latency reset')
 }
