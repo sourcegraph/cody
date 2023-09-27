@@ -230,6 +230,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
                 abortSignal: abortController.signal,
                 tracer,
                 handleDidAcceptCompletionItem: this.handleDidAcceptCompletionItem.bind(this),
+                handleDidPartiallyAcceptCompletionItem: this.unstable_handleDidPartiallyAcceptCompletionItem.bind(this),
             })
 
             // Avoid any further work if the completion is invalidated already.
@@ -355,6 +356,18 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
         this.clearLastCandidate()
 
         CompletionLogger.accept(logId, completion)
+    }
+
+    /**
+     * Called when the user partially accepts a completion. This API is inspired by the the
+     * be named the same, it's prefixed with `unstable_`
+     */
+    public unstable_handleDidPartiallyAcceptCompletionItem(
+        logId: string,
+        completion: InlineCompletionItemWithAnalytics,
+        acceptedLength: number
+    ): void {
+        console.log(logId, completion, acceptedLength)
     }
 
     public async manuallyTriggerCompletion(): Promise<void> {

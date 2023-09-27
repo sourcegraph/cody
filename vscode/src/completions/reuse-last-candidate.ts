@@ -17,7 +17,10 @@ type ReuseLastCandidateArgument =
         >
     > &
         // optional fields from InlineCompletionsParams
-        Pick<InlineCompletionsParams, 'handleDidAcceptCompletionItem'> & { docContext: DocumentContext } // additional fields
+        Pick<InlineCompletionsParams, 'handleDidAcceptCompletionItem' | 'handleDidPartiallyAcceptCompletionItem'> & {
+            // additional fields
+            docContext: DocumentContext
+        }
 
 /**
  * See test cases for the expected behaviors.
@@ -30,6 +33,7 @@ export function reuseLastCandidate({
     docContext: { currentLinePrefix, currentLineSuffix, nextNonEmptyLine },
     completeSuggestWidgetSelection,
     handleDidAcceptCompletionItem,
+    handleDidPartiallyAcceptCompletionItem,
 }: ReuseLastCandidateArgument): InlineCompletionsResult | null {
     const isSameDocument = lastCandidate.uri.toString() === document.uri.toString()
     const isSameLine = lastTriggerPosition.line === position.line
@@ -71,7 +75,14 @@ export function reuseLastCandidate({
                     handleDidAcceptCompletionItem?.(lastCandidate.result.logId, item)
                     return undefined
                 }
-                // TODO: Handle partial acceptance heres
+
+                // Detect partial acceptance of the last candidate
+                const acceptedLength = currentLinePrefix.length - lastTriggerCurrentLinePrefix.length
+                if (isPartialAcceptance(item.insertText, acceptedLength)) {
+                    console.log('handleDidPartiallyAcceptCompletionItem', acceptedLength)
+                    handleDidPartiallyAcceptCompletionItem?.(lastCandidate.result.logId, item, acceptedLength)
+                }
+
                 return { insertText: remaining }
             }
 
@@ -103,4 +114,14 @@ export function reuseLastCandidate({
 
 function isWhitespace(s: string): boolean {
     return /^\s*$/.test(s)
+}
+
+// Count a completion as partially accepted, when at least one word of the completion was typed
+function isPartialAcceptance(insertText: string, insertedLength: number): boolean {
+    const match = insertText.match(/(\w+)/)
+    const endOfFirstWord = match?.index === undefined ? null : match.index + match[0]!.length
+    if (endOfFirstWord === null) {
+        return false
+    }
+    return insertedLength >= endOfFirstWord
 }
