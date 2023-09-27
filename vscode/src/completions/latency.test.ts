@@ -7,23 +7,19 @@ describe('getLatency', () => {
         resetLatency()
     })
 
-    it('returns high latency for anthropic provider when language is unsupported', () => {
+    it('returns gradually increasing latency for anthropic provider when language is unsupported', () => {
         const provider = 'anthropic'
         const languageId = undefined
 
-        // start with default high latency with default user latency added
+        // start with default high latency for unsupported lang with default user latency added
         expect(getLatency(provider, languageId)).toBe(1000)
-        // next one increases user latency when last suggestion was not accepted
+        // gradually increasing latency
         expect(getLatency(provider, languageId)).toBe(1200)
-        // next one doubles the increased user latency when last suggestion was not accepted
         expect(getLatency(provider, languageId)).toBe(1400)
-        // reset latency on accepted suggestion
+        // after the suggestion was accepted, user latency resets to 0, using baseline only
         resetLatency()
-        // after the suggestion was accepted, user latency resets to 0
         expect(getLatency(provider, languageId)).toBe(1000)
-        // reset latency on accepted suggestion
         resetLatency()
-        // after the suggestion was accepted, user latency resets to 0
         expect(getLatency(provider, languageId)).toBe(1000)
         // next one increases user latency when last suggestion was not accepted
         expect(getLatency(provider, languageId)).toBe(1200)
@@ -33,23 +29,18 @@ describe('getLatency', () => {
         const provider = 'anthropic'
         const languageId = 'css'
 
-        // start with default high latency with default user latency added
+        // start with default high latency for low performance lang with default user latency added
         expect(getLatency(provider, languageId)).toBe(1000)
-        // next one increases user latency when last suggestion was not accepted
+        // gradually increasing latency
         expect(getLatency(provider, languageId)).toBe(1200)
-        // next one doubles the increased user latency when last suggestion was not accepted
         expect(getLatency(provider, languageId)).toBe(1400)
-        // reset latency on accepted suggestion
+        // after the suggestion was accepted, user latency resets to 0, using baseline only
         resetLatency()
-        // after the suggestion was accepted, user latency resets to 0
         expect(getLatency(provider, languageId)).toBe(1000)
-        // reset latency on accepted suggestion
         resetLatency()
-        // after the suggestion was accepted, user latency resets to 0
         expect(getLatency(provider, languageId)).toBe(1000)
-        // next one increases user latency when last suggestion was not accepted
+        // gradually increasing latency again but max at 2000 after multiple rejections
         expect(getLatency(provider, languageId)).toBe(1200)
-        // latency should max at 2000 after multiple rejections
         expect(getLatency(provider, languageId)).toBe(1400)
         expect(getLatency(provider, languageId)).toBe(1800)
         expect(getLatency(provider, languageId)).toBe(2000)
@@ -65,25 +56,21 @@ describe('getLatency', () => {
         expect(getLatency(provider, languageId)).toBe(1000)
     })
 
-    it('returns increasing latency up to max for supported language on anthropic provider after rejecting suggestions', () => {
+    it('returns increasing latency on anthropic provider after rejecting suggestions', () => {
         const provider = 'anthropic'
         const languageId = 'typescript'
 
-        // start with default latency with default user latency added
+        // gradually increasing latency
         expect(getLatency(provider, languageId)).toBe(0)
-        // next one has doubled user latency when last suggestion was not accepted
         expect(getLatency(provider, languageId)).toBe(200)
-        // next one has unchanged user latency when last suggestion is still showing
         expect(getLatency(provider, languageId)).toBe(400)
-        // next one has doubled user latency when last suggestion was not accepted
         expect(getLatency(provider, languageId)).toBe(800)
-        // reset latency on accepted suggestion
+        // after the suggestion was accepted, user latency resets to 0, using baseline only
         resetLatency()
-        // back to starting point
         expect(getLatency(provider, languageId)).toBe(0)
     })
 
-    it('returns decreasing latency for CSS language on non-anthropic provider after accepting suggestion', () => {
+    it('returns default latency for CSS language on non-anthropic provider after accepting suggestion consistently', () => {
         const provider = 'non-anthropic'
         const languageId = 'css'
 
@@ -100,7 +87,7 @@ describe('getLatency', () => {
         expect(getLatency(provider, languageId)).toBe(1400)
     })
 
-    it('returns increasing latency up to max for supported language on non-anthropic provider after rejecting multiple suggestions', () => {
+    it('returns increasing latency up to max latency for supported language on non-anthropic provider after rejecting multiple suggestions consistently', () => {
         const provider = 'non-anthropic'
         const languageId = 'typescript'
 
