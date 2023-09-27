@@ -9,7 +9,7 @@
  *   - When no code is selected, inserts a comment on nearest containing scope (i.e. function)
  * 
  * Tested with:
- *   - Typescript (we want to match https://ts.dev/style/#jsdoc-vs-comments)
+ *   - Typescript (best practice is https://ts.dev/style/#jsdoc-vs-comments)
  *     - https://github.com/sourcegraph/sourcegraph/blob/b150dedb550f45b6b27cba39b15984e04afecaf3/client/wildcard/src/hooks/useKeyboard.ts#L10-L27 (generates docstring w/ parameters)
  *     - https://github.com/sourcegraph/sourcegraph/blob/b150dedb550f45b6b27cba39b15984e04afecaf3/client/wildcard/src/hooks/useKeyboard.ts#L12 (generates impl comment)
  *     - https://github.com/sourcegraph/sourcegraph/blob/b150dedb550f45b6b27cba39b15984e04afecaf3/client/wildcard/src/hooks/useKeyboard.ts#L14-L26 (generates impl comment)
