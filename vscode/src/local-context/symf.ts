@@ -1,4 +1,4 @@
-import { execFile as _execFile } from 'node:child_process'
+import { execFile as _execFile, spawn } from 'node:child_process'
 import fs from 'node:fs'
 import { rename, rm } from 'node:fs/promises'
 import os from 'node:os'
@@ -143,7 +143,20 @@ export class SymfRunner implements IndexedKeywordContextFetcher {
         logDebug('symf', 'creating index', indexDir)
         const args = ['--index-root', tmpIndexDir, 'add', '--langs', 'go,typescript,python', scopeDir]
         try {
-            await execFile(symfPath, args)
+            const proc = spawn(symfPath, args, {
+                stdio: ['ignore', 'ignore', 'ignore'],
+            })
+            // wait for proc to finish
+            await new Promise<void>((resolve, reject) => {
+                proc.on('error', reject)
+                proc.on('exit', code => {
+                    if (code === 0) {
+                        resolve()
+                    } else {
+                        reject(new Error(`symf exited with code ${code}`))
+                    }
+                })
+            })
             await mkdirp(path.dirname(indexDir))
             await rename(tmpIndexDir, indexDir)
         } catch (error) {
