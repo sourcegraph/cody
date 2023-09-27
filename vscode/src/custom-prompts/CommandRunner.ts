@@ -3,6 +3,8 @@ import * as vscode from 'vscode'
 import { CodyPrompt } from '@sourcegraph/cody-shared'
 
 import { getCursorFoldingRange } from '../editor/utils'
+import { logDebug } from '../log'
+import { telemetryService } from '../services/telemetry'
 
 /**
  * CommandRunner class implements disposable interface.
@@ -20,14 +22,33 @@ export class CommandRunner implements vscode.Disposable {
     private editor: vscode.TextEditor | undefined = undefined
     private contextOutput: string | undefined = undefined
     private disposables: vscode.Disposable[] = []
+    private kind: string
 
     constructor(
         private command: CodyPrompt,
         public instruction?: string,
         private isFixupRequest?: boolean
     ) {
+        // use commandKey to identify default command in telemetry
+        // all user and workspace command type should be logged under 'custom'
+        const commandKey = command.slashCommand
+        this.kind = command.type === 'default' ? commandKey.replace('/', '') : 'custom'
+
+        // Log commands usage
+        telemetryService.log(`CodyVSCodeExtension:command:${this.kind}:executed`, {
+            mode: command.mode || 'ask',
+            useCodebaseContex: !!command.context?.codebase,
+            useShellCommand: !!command.context?.command,
+        })
+
+        logDebug('CommandRunner:init', this.kind)
+
+        // Commands only work in active editor / workspace unless context specifies otherwise
         this.editor = vscode.window.activeTextEditor || undefined
-        if (!this.editor) {
+        if (!this.editor || command.context?.none) {
+            const errorMsg = 'Failed to create command: No active text editor found.'
+            logDebug('CommandRunner:int:fail', errorMsg)
+            void vscode.window.showErrorMessage(errorMsg)
             return
         }
 
@@ -71,6 +92,10 @@ export class CommandRunner implements vscode.Disposable {
         if (context) {
             context.output = this.contextOutput
             this.command.context = context
+
+            logDebug('CommandRunner:runShell:output', 'found', {
+                verbose: { command: this.command.context?.command },
+            })
         }
     }
 
@@ -79,6 +104,8 @@ export class CommandRunner implements vscode.Disposable {
      * Creates range and instruction, calls fixup command.
      */
     private async handleFixupRequest(insertMode = false): Promise<void> {
+        logDebug('CommandRunner:handleFixupRequest', 'fixup request detected')
+
         let selection = this.editor?.selection
         const doc = this.editor?.document
         if (!selection || !doc) {
@@ -95,15 +122,20 @@ export class CommandRunner implements vscode.Disposable {
             return
         }
 
-        const range = this.command.slashCommand === '/doc' ? getDocCommandRange(doc, selection) : selection
+        const range = this.kind === 'doc' ? getDocCommandRange(doc, selection) : selection
         const instruction = insertMode ? addSelectionToPrompt(this.command.prompt, code) : this.command.prompt
-        await vscode.commands.executeCommand('cody.fixup.new', {
-            range,
-            instruction,
-            document: doc,
-            auto: true,
-            insertMode,
-        })
+        const source = this.kind
+        await vscode.commands.executeCommand(
+            'cody.command.edit-code',
+            {
+                range,
+                instruction,
+                document: doc,
+                auto: true,
+                insertMode,
+            },
+            source
+        )
     }
 
     /**
@@ -119,6 +151,8 @@ export class CommandRunner implements vscode.Disposable {
      * This executes the inline request using the current selection range in the editor.
      */
     private async handleInlineRequest(): Promise<void> {
+        logDebug('CommandRunner:handleFixupRequest', 'inline chat request detected')
+
         let range = this.editor?.selection
         const doc = this.editor?.document
         if (!range || !doc) {
@@ -144,6 +178,9 @@ export class CommandRunner implements vscode.Disposable {
     }
 }
 
+/**
+ * Adds the selection range to the prompt string.
+ */
 function addSelectionToPrompt(prompt: string, code: string): string {
     return prompt + '\nHere is the code: \n<Code>' + code + '</Code>'
 }
