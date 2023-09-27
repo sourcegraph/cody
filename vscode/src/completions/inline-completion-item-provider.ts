@@ -36,9 +36,6 @@ export interface CodyCompletionItemProviderConfig {
     history: DocumentHistory
     statusBar: CodyStatusBar
     getCodebaseContext: () => CodebaseContext
-    responsePercentage?: number
-    prefixPercentage?: number
-    suffixPercentage?: number
     graphContextFetcher?: GraphContextFetcher | null
     completeSuggestWidgetSelection?: boolean
     tracer?: ProvideInlineCompletionItemsTracer | null
@@ -53,9 +50,6 @@ interface CompletionRequest {
 }
 
 export class InlineCompletionItemProvider implements vscode.InlineCompletionItemProvider {
-    private promptChars: number
-    private maxPrefixChars: number
-    private maxSuffixChars: number
     private lastCompletionRequest: CompletionRequest | null = null
     // This field is going to be set if you use the keyboard shortcut to manually trigger a
     // completion. Since VS Code does not provide a way to distinguish manual vs automatic
@@ -75,9 +69,6 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
     protected lastCandidate: LastInlineCompletionCandidate | undefined
 
     constructor({
-        responsePercentage = 0.1,
-        prefixPercentage = 0.6,
-        suffixPercentage = 0.1,
         graphContextFetcher = null,
         completeSuggestWidgetSelection = false,
         tracer = null,
@@ -85,9 +76,6 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
     }: CodyCompletionItemProviderConfig) {
         this.config = {
             ...config,
-            responsePercentage,
-            prefixPercentage,
-            suffixPercentage,
             graphContextFetcher,
             completeSuggestWidgetSelection,
             tracer,
@@ -108,12 +96,6 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
                 .getConfiguration()
                 .update('editor.inlineSuggest.suppressSuggestions', true, vscode.ConfigurationTarget.Global)
         }
-
-        this.promptChars =
-            this.config.providerConfig.maximumContextCharacters -
-            this.config.providerConfig.maximumContextCharacters * responsePercentage
-        this.maxPrefixChars = Math.floor(this.promptChars * this.config.prefixPercentage)
-        this.maxSuffixChars = Math.floor(this.promptChars * this.config.suffixPercentage)
 
         this.requestManager = new RequestManager({
             completeSuggestWidgetSelection: this.config.completeSuggestWidgetSelection,
@@ -197,8 +179,8 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
         const docContext = getCurrentDocContext({
             document,
             position,
-            maxPrefixLength: this.maxPrefixChars,
-            maxSuffixLength: this.maxSuffixChars,
+            maxPrefixLength: this.config.providerConfig.contextSizeHints.prefixChars,
+            maxSuffixLength: this.config.providerConfig.contextSizeHints.suffixChars,
             enableExtendedTriggers: this.config.providerConfig.enableExtendedMultilineTriggers,
             // We ignore the current context selection if completeSuggestWidgetSelection is not enabled
             context: takeSuggestWidgetSelectionIntoAccount ? context : undefined,
@@ -214,11 +196,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
                 triggerKind,
                 selectedCompletionInfo: context.selectedCompletionInfo,
                 docContext,
-                promptChars: this.promptChars,
                 providerConfig: this.config.providerConfig,
-                responsePercentage: this.config.responsePercentage,
-                prefixPercentage: this.config.prefixPercentage,
-                suffixPercentage: this.config.suffixPercentage,
                 graphContextFetcher,
                 toWorkspaceRelativePath: uri => vscode.workspace.asRelativePath(uri),
                 contextFetcher: this.config.contextFetcher,

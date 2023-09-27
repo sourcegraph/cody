@@ -1,3 +1,4 @@
+import { tokensToChars } from '@sourcegraph/cody-shared/src/prompt/constants'
 import {
     CompletionParameters,
     CompletionResponse,
@@ -9,11 +10,17 @@ import { getHeadAndTail } from '../text-processing'
 import { Completion, ContextSnippet } from '../types'
 import { forkSignal } from '../utils'
 
-import { CompletionProviderTracer, Provider, ProviderConfig, ProviderOptions } from './provider'
+import {
+    CompletionProviderTracer,
+    Provider,
+    ProviderConfig,
+    ProviderOptions,
+    standardContextSizeHints,
+} from './provider'
 
 interface UnstableOpenAIOptions {
+    maxContextTokens?: number
     client: Pick<CodeCompletionsClient, 'complete'>
-    contextWindowTokens: number
 }
 
 const PROVIDER_IDENTIFIER = 'unstable-openai'
@@ -21,20 +28,14 @@ const MAX_RESPONSE_TOKENS = 256
 const OPENING_CODE_TAG = '```'
 const CLOSING_CODE_TAG = '```'
 
-const CHARS_PER_TOKEN = 4
-
-function tokensToChars(tokens: number): number {
-    return tokens * CHARS_PER_TOKEN
-}
-
 export class UnstableOpenAIProvider extends Provider {
     private client: Pick<CodeCompletionsClient, 'complete'>
     private promptChars: number
 
-    constructor(options: ProviderOptions, azureOpenAIOptions: UnstableOpenAIOptions) {
+    constructor(options: ProviderOptions, { maxContextTokens, client }: Required<UnstableOpenAIOptions>) {
         super(options)
-        this.client = azureOpenAIOptions.client
-        this.promptChars = tokensToChars(azureOpenAIOptions.contextWindowTokens) - tokensToChars(MAX_RESPONSE_TOKENS)
+        this.promptChars = tokensToChars(maxContextTokens - MAX_RESPONSE_TOKENS)
+        this.client = client
     }
 
     private createPrompt(snippets: ContextSnippet[]): string {
@@ -146,13 +147,14 @@ export class UnstableOpenAIProvider extends Provider {
 
 export function createProviderConfig({
     model,
-    ...unstableAzureOpenAIOptions
+    maxContextTokens = 2048,
+    ...otherOptions
 }: UnstableOpenAIOptions & { model?: string }): ProviderConfig {
     return {
         create(options: ProviderOptions) {
-            return new UnstableOpenAIProvider(options, { ...unstableAzureOpenAIOptions })
+            return new UnstableOpenAIProvider(options, { maxContextTokens, ...otherOptions })
         },
-        maximumContextCharacters: tokensToChars(unstableAzureOpenAIOptions.contextWindowTokens),
+        contextSizeHints: standardContextSizeHints(maxContextTokens),
         enableExtendedMultilineTriggers: false,
         identifier: PROVIDER_IDENTIFIER,
         model: model ?? 'gpt-35-turbo',

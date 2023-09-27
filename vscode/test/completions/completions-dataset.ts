@@ -667,7 +667,7 @@ export const completionsDataset: Sample[] = [
                     }
                     const providerConfig = createProviderConfig({
                         completionsClient,
-                        contextWindowTokens: 2048,
+                        maxContextTokens: 2048,
                     })
                     const completionProvider = new CodyCompletionItemProvider({
                         ${CURSOR}
