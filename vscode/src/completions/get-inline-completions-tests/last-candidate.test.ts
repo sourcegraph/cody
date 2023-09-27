@@ -28,6 +28,7 @@ describe('[getInlineCompletions] reuseLastCandidate', () => {
             lastTriggerSelectedInfoItem,
             result: {
                 logId: '1',
+                source: InlineCompletionsResultSource.Network,
                 items: Array.isArray(insertText) ? insertText.map(insertText => ({ insertText })) : [{ insertText }],
             },
             lastTriggerDocContext: lastDocContext,

@@ -6,7 +6,18 @@ import {
     InlineCompletionsResult,
     InlineCompletionsResultSource,
 } from './get-inline-completions'
-import { InlineCompletionItem } from './types'
+import { InlineCompletionItemWithAnalytics } from './text-processing/process-inline-completions'
+
+type ReuseLastCandidateArgument =
+    // required fields from InlineCompletionsParams
+    Required<
+        Pick<
+            InlineCompletionsParams,
+            'document' | 'position' | 'selectedCompletionInfo' | 'lastCandidate' | 'completeSuggestWidgetSelection'
+        >
+    > &
+        // optional fields from InlineCompletionsParams
+        Pick<InlineCompletionsParams, 'handleDidAcceptCompletionItem'> & { docContext: DocumentContext } // additional fields
 
 /**
  * See test cases for the expected behaviors.
@@ -18,14 +29,8 @@ export function reuseLastCandidate({
     lastCandidate: { lastTriggerPosition, lastTriggerDocContext, lastTriggerSelectedInfoItem, ...lastCandidate },
     docContext: { currentLinePrefix, currentLineSuffix, nextNonEmptyLine },
     completeSuggestWidgetSelection,
-}: Required<
-    Pick<
-        InlineCompletionsParams,
-        'document' | 'position' | 'selectedCompletionInfo' | 'lastCandidate' | 'completeSuggestWidgetSelection'
-    >
-> & {
-    docContext: DocumentContext
-}): InlineCompletionsResult | null {
+    handleDidAcceptCompletionItem,
+}: ReuseLastCandidateArgument): InlineCompletionsResult | null {
     const isSameDocument = lastCandidate.uri.toString() === document.uri.toString()
     const isSameLine = lastTriggerPosition.line === position.line
     const isSameNextNonEmptyLine = lastTriggerDocContext.nextNonEmptyLine === nextNonEmptyLine
@@ -46,9 +51,10 @@ export function reuseLastCandidate({
     const isDeindentation =
         isWhitespace(lastTriggerCurrentLinePrefix) && lastTriggerCurrentLinePrefix.startsWith(currentLinePrefix)
     const isIndentationChange = currentLineSuffix === '' && (isIndentation || isDeindentation)
+    let didAcceptCompletion = false
 
     const itemsToReuse = lastCandidate.result.items
-        .map((item): InlineCompletionItem | undefined => {
+        .map((item): InlineCompletionItemWithAnalytics | undefined => {
             // Allow reuse if the user is (possibly) typing forward as suggested by the last
             // candidate completion. We still need to filter the candidate items to see which ones
             // the user's typing actually follows.
@@ -56,7 +62,17 @@ export function reuseLastCandidate({
             const isTypingAsSuggested =
                 lastCompletion.startsWith(currentLinePrefix) && position.isAfterOrEqual(lastTriggerPosition)
             if (isTypingAsSuggested) {
-                return { insertText: lastCompletion.slice(currentLinePrefix.length) }
+                const remaining = lastCompletion.slice(currentLinePrefix.length)
+
+                // When the remaining text is empty, the user has forward-typed the full text of the
+                // completion. We mark this as an accepted completion.
+                if (remaining.length === 0) {
+                    didAcceptCompletion = true
+                    handleDidAcceptCompletionItem?.(lastCandidate.result.logId, item)
+                    return undefined
+                }
+                // TODO: Handle partial acceptance heres
+                return { insertText: remaining }
             }
 
             // Allow reuse if only the indentation (leading whitespace) has changed.
@@ -67,6 +83,11 @@ export function reuseLastCandidate({
             return undefined
         })
         .filter(isDefined)
+
+    // Ensure that when one completion was marked as accepted, we don't reuse any others
+    if (didAcceptCompletion) {
+        return null
+    }
 
     return itemsToReuse.length > 0
         ? {

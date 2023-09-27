@@ -56,6 +56,9 @@ export interface InlineCompletionsParams {
 
     // Feature flags
     completeSuggestWidgetSelection?: boolean
+
+    // Callbacks to accept completions
+    handleDidAcceptCompletionItem?: (logId: string, completion: InlineCompletionItemWithAnalytics) => void
 }
 
 /**
@@ -75,7 +78,7 @@ export interface LastInlineCompletionCandidate {
     lastTriggerSelectedInfoItem: string | undefined
 
     /** The previously suggested result. */
-    result: Pick<InlineCompletionsResult, 'logId' | 'items'>
+    result: InlineCompletionsResult
 }
 
 /**
@@ -173,6 +176,7 @@ async function doGetInlineCompletions(params: InlineCompletionsParams): Promise<
         abortSignal,
         tracer,
         completeSuggestWidgetSelection = false,
+        handleDidAcceptCompletionItem,
     } = params
 
     tracer?.({ params: { document, position, triggerKind, selectedCompletionInfo } })
@@ -198,6 +202,7 @@ async function doGetInlineCompletions(params: InlineCompletionsParams): Promise<
                   docContext,
                   selectedCompletionInfo,
                   completeSuggestWidgetSelection,
+                  handleDidAcceptCompletionItem,
               })
             : null
     if (resultToReuse) {
