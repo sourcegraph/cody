@@ -11,8 +11,9 @@
  * Tested with:
  *   - Typescript (we want to match https://ts.dev/style/#jsdoc-vs-comments)
  *     - https://github.com/sourcegraph/sourcegraph/blob/b150dedb550f45b6b27cba39b15984e04afecaf3/client/wildcard/src/hooks/useKeyboard.ts#L10 (generates docstring)
- *     - https://github.com/sourcegraph/sourcegraph/blob/b150dedb550f45b6b27cba39b15984e04afecaf3/client/wildcard/src/hooks/useDebounce.ts#L13 (generates plain comment w/o params)
- *     - https://github.com/sourcegraph/sourcegraph/blob/b150dedb550f45b6b27cba39b15984e04afecaf3/client/wildcard/src/hooks/useDebounce.ts#L18 (generates plain comment w/o params)
+ *     - https://github.com/sourcegraph/sourcegraph/blob/b150dedb550f45b6b27cba39b15984e04afecaf3/client/wildcard/src/hooks/useKeyboard.ts#L12 (generates impl comment w/o params)
+ *     - https://github.com/sourcegraph/sourcegraph/blob/b150dedb550f45b6b27cba39b15984e04afecaf3/client/wildcard/src/hooks/useKeyboard.ts#L14-26 (generates impl comment w/o params)
+ *     - TODO
  *   - Javascript
  *     - TODO
  *   - Golang
