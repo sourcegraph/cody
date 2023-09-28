@@ -28,8 +28,9 @@
 const doc = {
     description: 'Generate code documentation',
     prompt: [
-        'Generate a comment briefly documenting the purpose of the selected code.',
-        'If existing comments exist in this file, or other files with the same file extension, use those comments as examples of style and format.',
+        'Write a brief documentation comment for the selected code.',
+        'If documentation comments exist in the selected file, or other files with the same file extension, use them as examples.',
+        'Pay attention to the scope of the selected code (e.g. exported function/API vs implementation detail in a function), and use the idiomatic style for that type of code scope.',
         'Only generate the documentation for the selected code, do not generate the code.',
         'Do not output any other code or comments besides the documentation.',
     ].join(' '),
