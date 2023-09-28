@@ -116,7 +116,7 @@ const configuration: vscode.WorkspaceConfiguration = {
             case 'cody.autocomplete.enabled':
                 return true
             case 'cody.autocomplete.advanced.provider':
-                return connectionConfig?.autocompleteAdvancedProvider ?? 'anthropic'
+                return connectionConfig?.autocompleteAdvancedProvider ?? null
             case 'cody.autocomplete.advanced.serverEndpoint':
                 return connectionConfig?.autocompleteAdvancedServerEndpoint ?? null
             case 'cody.autocomplete.advanced.model':
