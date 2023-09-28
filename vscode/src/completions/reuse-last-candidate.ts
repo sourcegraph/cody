@@ -79,7 +79,6 @@ export function reuseLastCandidate({
                 // Detect partial acceptance of the last candidate
                 const acceptedLength = currentLinePrefix.length - lastTriggerCurrentLinePrefix.length
                 if (isPartialAcceptance(item.insertText, acceptedLength)) {
-                    console.log('handleDidPartiallyAcceptCompletionItem', acceptedLength)
                     handleDidPartiallyAcceptCompletionItem?.(lastCandidate.result.logId, item, acceptedLength)
                 }
 
