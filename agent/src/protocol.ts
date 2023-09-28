@@ -41,6 +41,7 @@ export type Requests = {
     'graphql/logEvent': [event, null]
 
     'graphql/getRepoIdIfEmbeddingExists': [{ repoName: string }, string | null]
+    'graphql/getRepoId': [{ repoName: string }, string | null]
 
     // ================
     // Server -> Client
