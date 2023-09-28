@@ -1,9 +1,11 @@
 import { AbortError, TimeoutError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
 
+import { CustomAbortSignal } from '../completions/context/utils'
+
 type PromiseCreator<T> = () => Promise<T>
 interface Queued<T> {
     creator: PromiseCreator<T>
-    abortSignal?: AbortSignal
+    abortSignal?: AbortSignal | CustomAbortSignal
     resolve: (value: T) => void
     reject: (reason: Error) => void
 }
@@ -59,7 +61,7 @@ export function createLimiter(limit: number, timeout: number): Limiter {
             })
     }
 
-    return function enqueue<T>(creator: () => Promise<T>, abortSignal?: AbortSignal): Promise<T> {
+    return function enqueue<T>(creator: () => Promise<T>, abortSignal?: AbortSignal | CustomAbortSignal): Promise<T> {
         let queued: Queued<T>
         const promise = new Promise<T>((resolve, reject) => {
             queued = {
@@ -74,7 +76,7 @@ export function createLimiter(limit: number, timeout: number): Limiter {
             // Only abort queued requests
             const index = queue.indexOf(queued! as Queued<unknown>)
             if (index < 0) {
-                return
+                returnf
             }
 
             queued.reject(new AbortError())
