@@ -602,6 +602,7 @@ function completionMatchesSuffix(completions: vscode.InlineCompletionItem[], doc
         }
         const insertion = completion.insertText
         let j = 0
+        // eslint-disable-next-line @typescript-eslint/prefer-for-of
         for (let i = 0; i < insertion.length; i++) {
             if (insertion[i] === suffix[j]) {
                 j++

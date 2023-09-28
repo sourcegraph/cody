@@ -42,8 +42,6 @@ describe('logger', () => {
     it('logs a suggestion life cycle', () => {
         const item = { insertText: 'foo' }
         const id = CompletionLogger.create(defaultArgs)
-
-        expect(id).toBeDefined()
         expect(typeof id).toBe('string')
 
         CompletionLogger.start(id)
