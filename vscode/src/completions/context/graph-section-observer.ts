@@ -16,7 +16,7 @@ import { ContextSnippet, SymbolContextSnippet } from '../types'
 import { createSubscriber } from '../utils'
 
 import { GraphContextFetcher } from './context-graph'
-import { baseLanguageId } from './utils'
+import { baseLanguageId, CustomAbortController } from './utils'
 
 interface Section extends DocumentSection {
     preloadedContext: {
@@ -229,7 +229,7 @@ export class GraphSectionObserver implements vscode.Disposable, GraphContextFetc
 
         const start = performance.now()
         const sectionKey = locationKeyFn(section.location)
-        const abortController = new AbortController()
+        const abortController = new CustomAbortController()
 
         // Abort previous requests that have not yet resolved and are for a different section
         if (this.lastRequestGraphContextSectionKey && this.lastRequestGraphContextSectionKey !== sectionKey) {
@@ -523,12 +523,11 @@ function logHydratedContext(context: HoverContext[], editor: vscode.TextEditor, 
     )
 }
 
-function pushUniqueAndTruncate<T>(array: T[], item: T, truncate: number): T[] {
-    if (array.includes(item)) {
-        // put the item to the front
-        array.splice(array.indexOf(item), 1)
-        array.unshift(item)
-        return array
+function pushUniqueAndTruncate(array: vscode.Location[], item: vscode.Location, truncate: number): vscode.Location[] {
+    const indexOf = array.findIndex(i => locationKeyFn(i) === locationKeyFn(item))
+    if (indexOf > -1) {
+        // Remove the item so it is put to the front again
+        array.splice(indexOf, 1)
     }
     if (array.length >= truncate) {
         array.pop()

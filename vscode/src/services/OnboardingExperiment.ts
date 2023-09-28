@@ -9,7 +9,7 @@ import { localStorage } from './LocalStorageProvider'
 
 // The fraction of users to allocate to the simplified onboarding treatment.
 // This should be between 0 (no users) and 1 (all users).
-const SIMPLIFIED_ARM_ALLOCATION = 0.5
+const SIMPLIFIED_ARM_ALLOCATION = 1
 
 const ONBOARDING_EXPERIMENT_STORAGE_KEY = 'experiment.onboarding'
 
@@ -23,6 +23,12 @@ interface SelectedArm {
     // If a user uses the override for testing, we don't persist the selection
     // to local storage
     setByTestingOverride: boolean
+}
+
+// The JSON we write to local storage.
+interface SerializedSelectedArm {
+    arm: OnboardingExperimentArm
+    excludeFromExperiment: boolean
 }
 
 // TODO(dpc): Refactor TelemetryService to be a globalton like the other
@@ -54,11 +60,10 @@ function loadCachedSelection(): SelectedArm | Error | undefined {
     let arm
     let excludeFromExperiment
     try {
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-        const store = JSON.parse(storedSpec)
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
-        arm = store?.arm
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+        // Assume local storage stores a format we expect. The catch clause
+        // handles any deviations from that.
+        const store = JSON.parse(storedSpec) as SerializedSelectedArm
+        arm = store.arm
         excludeFromExperiment = !!store?.excludeFromExperiment
     } catch {
         // Storage is corrupt because it is not valid JSON.
@@ -99,10 +104,8 @@ async function cacheSelection(): Promise<void> {
         logDebug('simplified-onboarding', 'not caching experiment arm selected by testing override')
         return
     }
-    await localStorage.set(
-        ONBOARDING_EXPERIMENT_STORAGE_KEY,
-        JSON.stringify({ arm: selection.arm, excludeFromExperiment: selection.excludeFromExperiment })
-    )
+    const blob: SerializedSelectedArm = { arm: selection.arm, excludeFromExperiment: selection.excludeFromExperiment }
+    await localStorage.set(ONBOARDING_EXPERIMENT_STORAGE_KEY, JSON.stringify(blob))
 }
 
 export function pickArm(useThisTelemetryService: TelemetryService): OnboardingExperimentArm {

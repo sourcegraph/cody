@@ -10,8 +10,8 @@ import { ContextProvider } from './chat/ContextProvider'
 import { FixupManager } from './chat/FixupViewProvider'
 import { InlineChatViewManager } from './chat/InlineChatViewProvider'
 import { MessageProviderOptions } from './chat/MessageProvider'
-import { CODY_FEEDBACK_URL } from './chat/protocol'
-import { createInlineCompletionItemProvider } from './completions/createVSCodeInlineCompletionItemProvider'
+import { AuthStatus, CODY_FEEDBACK_URL } from './chat/protocol'
+import { createInlineCompletionItemProvider } from './completions/create-inline-completion-item-provider'
 import { parseAllVisibleDocuments, updateParseTreeOnEdit } from './completions/tree-sitter/parse-tree-cache'
 import { getConfiguration, getFullConfig } from './configuration'
 import { VSCodeEditor } from './editor/vscode-editor'
@@ -20,14 +20,14 @@ import { configureExternalServices } from './external-services'
 import { FixupController } from './non-stop/FixupController'
 import { showSetupNotification } from './notifications/setup-notification'
 import { AuthProvider } from './services/AuthProvider'
-import { createOrUpdateEventLogger } from './services/EventLogger'
 import { showFeedbackSupportQuickPick } from './services/FeedbackOptions'
 import { GuardrailsProvider } from './services/GuardrailsProvider'
 import { Comment, InlineController } from './services/InlineController'
+import { LocalAppSetupPublisher } from './services/LocalAppSetupPublisher'
 import { localStorage } from './services/LocalStorageProvider'
-import { secretStorage, VSCodeSecretStorage } from './services/SecretStorageProvider'
+import { getAccessToken, secretStorage, VSCodeSecretStorage } from './services/SecretStorageProvider'
 import { createStatusBar } from './services/StatusBar'
-import { createVSCodeTelemetryService } from './services/telemetry'
+import { createOrUpdateEventLogger, telemetryService } from './services/telemetry'
 import { TestSupport } from './test-support'
 
 /**
@@ -76,12 +76,11 @@ const register = async (
         context.extensionMode === vscode.ExtensionMode.Development ||
         context.extensionMode === vscode.ExtensionMode.Test
     await createOrUpdateEventLogger(initialConfig, isExtensionModeDevOrTest)
-    const telemetryService = createVSCodeTelemetryService()
 
     // Controller for inline Chat
-    const commentController = new InlineController(context.extensionPath, telemetryService)
+    const commentController = new InlineController(context.extensionPath)
     // Controller for Non-Stop Cody
-    const fixup = new FixupController(telemetryService)
+    const fixup = new FixupController()
     disposables.push(fixup)
     if (TestSupport.instance) {
         TestSupport.instance.fixupController.set(fixup)
@@ -90,7 +89,7 @@ const register = async (
     const editor = new VSCodeEditor({
         inline: commentController,
         fixups: fixup,
-        command: platform.createCommandsController?.(context, telemetryService),
+        command: platform.createCommandsController?.(context),
     })
 
     // Could we use the `initialConfig` instead?
@@ -108,7 +107,19 @@ const register = async (
         disposables.push(vscode.workspace.onDidChangeTextDocument(updateParseTreeOnEdit))
     }
 
-    const symfRunner = platform.createSymfRunner?.(config.experimentalSymfPath, config.experimentalSymfAnthropicKey)
+    const authProvider = new AuthProvider(initialConfig)
+    await authProvider.init()
+
+    const symfRunner = platform.createSymfRunner?.(context, initialConfig.accessToken)
+    if (symfRunner) {
+        authProvider.addChangeListener(async (authStatus: AuthStatus) => {
+            if (authStatus.isLoggedIn) {
+                symfRunner.setAuthToken(await getAccessToken())
+            } else {
+                symfRunner.setAuthToken(null)
+            }
+        })
+    }
 
     const {
         featureFlagProvider,
@@ -118,10 +129,7 @@ const register = async (
         codeCompletionsClient,
         guardrails,
         onConfigurationChange: externalServicesOnDidConfigurationChange,
-    } = await configureExternalServices(initialConfig, rgPath, symfRunner, editor, telemetryService, platform)
-
-    const authProvider = new AuthProvider(initialConfig, telemetryService)
-    await authProvider.init()
+    } = await configureExternalServices(initialConfig, rgPath, symfRunner, editor, platform)
 
     const contextProvider = new ContextProvider(
         initialConfig,
@@ -131,10 +139,10 @@ const register = async (
         rgPath,
         symfRunner,
         authProvider,
-        telemetryService,
         platform
     )
     disposables.push(contextProvider)
+    disposables.push(new LocalAppSetupPublisher(contextProvider))
     await contextProvider.init()
 
     // Shared configuration that is required for chat views to send and receive messages
@@ -145,7 +153,6 @@ const register = async (
         editor,
         authProvider,
         contextProvider,
-        telemetryService,
         platform,
     }
 
@@ -183,30 +190,33 @@ const register = async (
     }
 
     const executeFixup = async (
-        options: {
+        args: {
             document?: vscode.TextDocument
             instruction?: string
             range?: vscode.Range
-        } = {}
+            auto?: boolean
+            insertMode?: boolean
+        } = {},
+        source = 'editor' // where the command was triggered from
     ): Promise<void> => {
-        const document = options.document || vscode.window.activeTextEditor?.document
+        telemetryService.log('CodyVSCodeExtension:command:edit:executed', { source })
+        const document = args.document || vscode.window.activeTextEditor?.document
         if (!document) {
             return
         }
 
-        const range = options.range || vscode.window.activeTextEditor?.selection
+        const range = args.range || vscode.window.activeTextEditor?.selection
         if (!range) {
             return
         }
 
-        const task = options.instruction?.replace('/edit', '').trim()
-            ? fixup.createTask(document.uri, options.instruction, range)
+        const task = args.instruction?.replace('/edit', '').trim()
+            ? fixup.createTask(document.uri, args.instruction, range, args.auto, args.insertMode)
             : await fixup.promptUserForTask()
         if (!task) {
             return
         }
 
-        telemetryService.log('CodyVSCodeExtension:fixup:created')
         const provider = fixupManager.getProviderForTask(task)
         return provider.startFix()
     }
@@ -223,18 +233,21 @@ const register = async (
              * /chat or /ask could trigger a chat
              */
             if (isEditMode) {
+                const source = 'inline-chat'
                 void vscode.commands.executeCommand('workbench.action.collapseAllComments')
                 const activeDocument = await vscode.workspace.openTextDocument(comment.thread.uri)
-                return executeFixup({
-                    document: activeDocument,
-                    instruction: comment.text.replace(commandRegex.edit, ''),
-                    range: comment.thread.range,
-                })
+                return executeFixup(
+                    {
+                        document: activeDocument,
+                        instruction: comment.text.replace(commandRegex.edit, ''),
+                        range: comment.thread.range,
+                    },
+                    source
+                )
             }
 
             const inlineChatProvider = inlineChatManager.getProviderForThread(comment.thread)
             await inlineChatProvider.addChat(comment.text, false)
-            telemetryService.log('CodyVSCodeExtension:chat:submitted', { source: 'inline' })
         }),
         vscode.commands.registerCommand('cody.comment.delete', (thread: vscode.CommentThread) => {
             inlineChatManager.removeProviderForThread(thread)
@@ -260,9 +273,17 @@ const register = async (
             telemetryService.log('CodyVSCodeExtension:inline-assist:openInSidebarButton:clicked')
         }),
         vscode.commands.registerCommand(
-            'cody.fixup.new',
-            (options: { range?: vscode.Range; instruction?: string; document?: vscode.TextDocument }) =>
-                executeFixup(options)
+            'cody.command.edit-code',
+            (
+                args: {
+                    range?: vscode.Range
+                    instruction?: string
+                    document?: vscode.TextDocument
+                    auto?: boolean
+                    insertMode?: boolean
+                },
+                source?: string
+            ) => executeFixup(args, source)
         ),
         vscode.commands.registerCommand('cody.inline.new', async () => {
             // move focus line to the end of the current selection
@@ -285,8 +306,11 @@ const register = async (
         vscode.commands.registerCommand('cody.auth.signout', () => authProvider.signoutMenu()),
         vscode.commands.registerCommand('cody.auth.support', () => showFeedbackSupportQuickPick()),
         vscode.commands.registerCommand('cody.auth.sync', () => {
-            void contextProvider.syncAuthStatus()
+            const result = contextProvider.syncAuthStatus()
             void featureFlagProvider.syncAuthStatus()
+            // Important that we return a promise here to allow `AuthProvider`
+            // to `await` on the auth config changes to propagate.
+            return result
         }),
         // Commands
         vscode.commands.registerCommand('cody.interactive.clear', async () => {
@@ -306,14 +330,9 @@ const register = async (
             await sidebarChatProvider.clearHistory()
         }),
         // Recipes
-        vscode.commands.registerCommand('cody.action.chat', async input => {
+        vscode.commands.registerCommand('cody.action.chat', async (input: string) => {
             await executeRecipeInSidebar('chat-question', true, input)
-            telemetryService.log('CodyVSCodeExtension:chat:submitted', { source: 'menu' })
         }),
-        vscode.commands.registerCommand(
-            'cody.action.fixup',
-            (instruction: string, range: vscode.Range): Promise<void> => executeFixup({ instruction, range })
-        ),
         vscode.commands.registerCommand('cody.action.commands.menu', async () => {
             await editor.controllers.command?.menu('default')
         }),
@@ -335,7 +354,7 @@ const register = async (
             await executeRecipeInSidebar('custom-prompt', true, '/test')
         }),
         vscode.commands.registerCommand('cody.command.document-code', async () => {
-            await executeRecipeInSidebar('custom-prompt', true, '/doc')
+            await executeRecipeInSidebar('custom-prompt', false, '/doc')
         }),
         vscode.commands.registerCommand('cody.command.smell-code', async () => {
             await executeRecipeInSidebar('custom-prompt', true, '/smell')
@@ -344,12 +363,15 @@ const register = async (
             executeRecipeInSidebar('inline-touch', false)
         ),
         vscode.commands.registerCommand('cody.command.context-search', () => executeRecipeInSidebar('context-search')),
-        vscode.commands.registerCommand('cody.command.edit-code', () => executeFixup()),
 
         // Register URI Handler (vscode://sourcegraph.cody-ai)
         vscode.window.registerUriHandler({
             handleUri: async (uri: vscode.Uri) => {
-                await authProvider.tokenCallbackHandler(uri, config.customHeaders)
+                if (uri.path === '/app-done') {
+                    await sidebarChatProvider.simplifiedOnboardingReloadEmbeddingsState()
+                } else {
+                    await authProvider.tokenCallbackHandler(uri, config.customHeaders)
+                }
             },
         }),
         statusBar,
@@ -388,6 +410,9 @@ const register = async (
                 query: 'cody.inlineChat.enabled',
                 openToSide: true,
             })
+        }),
+        vscode.commands.registerCommand('agent.auth.reload', async () => {
+            await authProvider.reloadAuthStatus()
         })
     )
 
@@ -417,7 +442,6 @@ const register = async (
     disposables.push({ dispose: () => completionsProvider?.dispose() })
     const setupAutocomplete = async (): Promise<void> => {
         const config = getConfiguration(vscode.workspace.getConfiguration())
-
         if (!config.autocomplete) {
             completionsProvider?.dispose()
             completionsProvider = null
@@ -485,6 +509,7 @@ const register = async (
             externalServicesOnDidConfigurationChange(newConfig)
             void createOrUpdateEventLogger(newConfig, isExtensionModeDevOrTest)
             platform.onConfigurationChange?.(newConfig)
+            symfRunner?.setAuthToken(newConfig.accessToken)
         },
     }
 }

@@ -8,7 +8,7 @@ import {
     ChatButtonProps,
     ChatUISubmitButtonProps,
     ChatUITextAreaProps,
-    CopyButtonProps,
+    CodeBlockActionsProps,
     EditButtonProps,
     FeedbackButtonsProps,
 } from '../Chat'
@@ -33,7 +33,8 @@ export const Transcript: React.FunctionComponent<
         editButtonOnSubmit?: (text: string) => void
         FeedbackButtonsContainer?: React.FunctionComponent<FeedbackButtonsProps>
         feedbackButtonsOnSubmit?: (text: string) => void
-        copyButtonOnSubmit?: CopyButtonProps['copyButtonOnSubmit']
+        copyButtonOnSubmit?: CodeBlockActionsProps['copyButtonOnSubmit']
+        insertButtonOnSubmit?: CodeBlockActionsProps['insertButtonOnSubmit']
         submitButtonComponent?: React.FunctionComponent<ChatUISubmitButtonProps>
         ChatButtonComponent?: React.FunctionComponent<ChatButtonProps>
         isTranscriptError?: boolean
@@ -58,6 +59,7 @@ export const Transcript: React.FunctionComponent<
     FeedbackButtonsContainer,
     feedbackButtonsOnSubmit,
     copyButtonOnSubmit,
+    insertButtonOnSubmit,
     submitButtonComponent,
     chatInputClassName,
     ChatButtonComponent,
@@ -117,7 +119,8 @@ export const Transcript: React.FunctionComponent<
         }
     }, [transcriptContainerRef, scrollAnchoredContainerRef])
 
-    const lastHumanMessageIndex = transcript.findLastIndex(
+    const lastHumanMessageIndex = findLastIndex(
+        transcript,
         message => message.speaker === 'human' && message.displayText !== undefined
     )
     let earlierMessages: ChatMessage[] = []
@@ -135,7 +138,6 @@ export const Transcript: React.FunctionComponent<
             }
             return (
                 <TranscriptItem
-                    // eslint-disable-next-line react/no-array-index-key
                     key={index + offset}
                     message={message}
                     inProgress={false}
@@ -156,6 +158,7 @@ export const Transcript: React.FunctionComponent<
                     FeedbackButtonsContainer={FeedbackButtonsContainer}
                     feedbackButtonsOnSubmit={feedbackButtonsOnSubmit}
                     copyButtonOnSubmit={copyButtonOnSubmit}
+                    insertButtonOnSubmit={insertButtonOnSubmit}
                     showFeedbackButtons={index !== 0 && !isTranscriptError}
                     submitButtonComponent={submitButtonComponent}
                     chatInputClassName={chatInputClassName}
@@ -186,6 +189,7 @@ export const Transcript: React.FunctionComponent<
                         showEditButton={false}
                         showFeedbackButtons={false}
                         copyButtonOnSubmit={copyButtonOnSubmit}
+                        insertButtonOnSubmit={insertButtonOnSubmit}
                         submitButtonComponent={submitButtonComponent}
                         chatInputClassName={chatInputClassName}
                         ChatButtonComponent={ChatButtonComponent}
@@ -196,3 +200,7 @@ export const Transcript: React.FunctionComponent<
         </div>
     )
 })
+
+function findLastIndex<T>(array: T[], predicate: (value: T) => boolean): number {
+    return array.reverse().findIndex(predicate)
+}

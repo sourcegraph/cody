@@ -20,12 +20,6 @@ export async function createProviderConfig(
     featureFlagProvider?: FeatureFlagProvider,
     codyLLMSiteConfig?: CodyLLMSiteConfiguration
 ): Promise<ProviderConfig | null> {
-    const defaultAnthropicProviderConfig = createAnthropicProviderConfig({
-        client,
-        contextWindowTokens: 2048,
-        mode: config.autocompleteAdvancedModel === 'claude-instant-infill' ? 'infill' : 'default',
-    })
-
     /**
      * Look for the autocomplete provider in VSCode settings and return matching provider config.
      */
@@ -51,7 +45,6 @@ export async function createProviderConfig(
             case 'unstable-openai': {
                 return createUnstableOpenAIProviderConfig({
                     client,
-                    contextWindowTokens: 2048,
                 })
             }
             case 'unstable-fireworks': {
@@ -61,7 +54,10 @@ export async function createProviderConfig(
                 })
             }
             case 'anthropic': {
-                return defaultAnthropicProviderConfig
+                return createAnthropicProviderConfig({
+                    client,
+                    mode: 'infill',
+                })
             }
             default:
                 logError(
@@ -95,7 +91,6 @@ export async function createProviderConfig(
             case 'azure-openai':
                 return createUnstableOpenAIProviderConfig({
                     client,
-                    contextWindowTokens: 2048,
                     // Model name for azure openai provider is a deployment name. It shouldn't appear in logs.
                     model: provider === 'azure-openai' && model ? '' : model,
                 })
@@ -107,7 +102,10 @@ export async function createProviderConfig(
                 })
             case 'aws-bedrock':
             case 'anthropic':
-                return defaultAnthropicProviderConfig
+                return createAnthropicProviderConfig({
+                    client,
+                    mode: 'infill',
+                })
             default:
                 logError('createProviderConfig', `Unrecognized provider '${provider}' configured.`)
                 return null
@@ -118,26 +116,27 @@ export async function createProviderConfig(
      * If autocomplete provider is not defined neither in VSCode nor in Sourcegraph instance site config,
      * use the default provider config ("anthropic").
      */
-    return defaultAnthropicProviderConfig
+    return createAnthropicProviderConfig({
+        client,
+        mode: 'infill',
+    })
 }
 
 async function resolveDefaultProviderFromVSCodeConfigOrFeatureFlags(
     configuredProvider: string | null,
     featureFlagProvider?: FeatureFlagProvider
-): Promise<{ provider: string; model?: 'claude-instant-infill' | UnstableFireworksOptions['model'] } | null> {
+): Promise<{ provider: string; model?: UnstableFireworksOptions['model'] } | null> {
     if (configuredProvider) {
         return { provider: configuredProvider }
     }
 
-    const [starCoder7b, starCoder16b, starCoderHybrid, llamaCode7b, llamaCode13b, claudeInstantInfill] =
-        await Promise.all([
-            featureFlagProvider?.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteStarCoder7B),
-            featureFlagProvider?.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteStarCoder16B),
-            featureFlagProvider?.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteStarCoderHybrid),
-            featureFlagProvider?.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteLlamaCode7B),
-            featureFlagProvider?.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteLlamaCode13B),
-            featureFlagProvider?.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteClaudeInstantInfill),
-        ])
+    const [starCoder7b, starCoder16b, starCoderHybrid, llamaCode7b, llamaCode13b] = await Promise.all([
+        featureFlagProvider?.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteStarCoder7B),
+        featureFlagProvider?.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteStarCoder16B),
+        featureFlagProvider?.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteStarCoderHybrid),
+        featureFlagProvider?.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteLlamaCode7B),
+        featureFlagProvider?.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteLlamaCode13B),
+    ])
 
     if (starCoder7b || starCoder16b || starCoderHybrid || llamaCode7b || llamaCode13b) {
         const model = starCoder7b
@@ -150,10 +149,6 @@ async function resolveDefaultProviderFromVSCodeConfigOrFeatureFlags(
             ? 'llama-code-7b'
             : 'llama-code-13b'
         return { provider: 'unstable-fireworks', model }
-    }
-
-    if (claudeInstantInfill) {
-        return { provider: 'anthropic', model: 'claude-instant-infill' }
     }
 
     return null

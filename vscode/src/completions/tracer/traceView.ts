@@ -7,10 +7,10 @@ import {
     GraphSectionObserver,
     registerDebugListener as registerSectionObserverDebugListener,
 } from '../context/graph-section-observer'
-import { InlineCompletionsResultSource } from '../getInlineCompletions'
+import { InlineCompletionsResultSource } from '../get-inline-completions'
+import { InlineCompletionItemProvider } from '../inline-completion-item-provider'
 import * as statistics from '../statistics'
 import { InlineCompletionItem } from '../types'
-import { InlineCompletionItemProvider } from '../vscodeInlineCompletionItemProvider'
 
 import { ProvideInlineCompletionsItemTraceData } from '.'
 
@@ -97,13 +97,10 @@ function renderWebviewHtml(data: ProvideInlineCompletionsItemTraceData | undefin
 - ${markdownInlineCode(data.params.document.fileName)} @ ${data.params.position.line + 1}:${
                 data.params.position.character + 1
             }
-- triggerKind: ${vscode.InlineCompletionTriggerKind[data.params.context.triggerKind]}
+- triggerKind: ${data.params.triggerKind}
 - selectedCompletionInfo: ${
-                data.params.context.selectedCompletionInfo
-                    ? selectedCompletionInfoDescription(
-                          data.params.context.selectedCompletionInfo,
-                          data.params.document
-                      )
+                data.params.selectedCompletionInfo
+                    ? selectedCompletionInfoDescription(data.params.selectedCompletionInfo, data.params.document)
                     : 'none'
             }
 `,

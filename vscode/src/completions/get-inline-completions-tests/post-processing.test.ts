@@ -1,7 +1,7 @@
 import dedent from 'dedent'
 import { describe, expect, it } from 'vitest'
 
-import { InlineCompletionsResultSource } from '../getInlineCompletions'
+import { InlineCompletionsResultSource } from '../get-inline-completions'
 import { completion } from '../test-helpers'
 
 import { getInlineCompletions, getInlineCompletionsInsertText, params, T, V } from './helpers'

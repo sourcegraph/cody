@@ -11,9 +11,9 @@ import { CodyStatusBar } from '../services/StatusBar'
 import { CodeCompletionsClient } from './client'
 import { GraphSectionObserver } from './context/graph-section-observer'
 import { VSCodeDocumentHistory } from './context/history'
+import { InlineCompletionItemProvider } from './inline-completion-item-provider'
 import { createProviderConfig } from './providers/createProvider'
 import { registerAutocompleteTraceView } from './tracer/traceView'
-import { InlineCompletionItemProvider } from './vscodeInlineCompletionItemProvider'
 
 interface InlineCompletionItemProviderArgs {
     config: Configuration
@@ -35,6 +35,15 @@ export async function createInlineCompletionItemProvider({
     if (!authProvider.getAuthStatus().isLoggedIn) {
         logDebug('CodyCompletionProvider:notSignedIn', 'You are not signed in.')
 
+        if (config.isRunningInsideAgent) {
+            // Register an empty completion provider when running inside the
+            // agent to avoid timeouts because it awaits for an
+            // `InlineCompletionItemProvider` to be registered.
+            return vscode.languages.registerInlineCompletionItemProvider('*', {
+                provideInlineCompletionItems: () => Promise.resolve({ items: [] }),
+            })
+        }
+
         return {
             dispose: () => {},
         }
@@ -42,9 +51,10 @@ export async function createInlineCompletionItemProvider({
 
     const disposables: vscode.Disposable[] = []
 
-    const [providerConfig, graphContextFlag] = await Promise.all([
+    const [providerConfig, graphContextFlag, completeSuggestWidgetSelectionFlag] = await Promise.all([
         createProviderConfig(config, client, featureFlagProvider, authProvider.getAuthStatus().configOverwrites),
         featureFlagProvider?.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteGraphContext),
+        featureFlagProvider?.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteCompleteSuggestWidgetSelection),
     ])
     if (providerConfig) {
         const history = new VSCodeDocumentHistory()
@@ -58,16 +68,22 @@ export async function createInlineCompletionItemProvider({
             history,
             statusBar,
             getCodebaseContext: () => contextProvider.context,
-            isEmbeddingsContextEnabled: config.autocompleteAdvancedEmbeddings,
             graphContextFetcher: sectionObserver,
-            completeSuggestWidgetSelection: config.autocompleteExperimentalCompleteSuggestWidgetSelection,
+            completeSuggestWidgetSelection:
+                config.autocompleteExperimentalCompleteSuggestWidgetSelection || completeSuggestWidgetSelectionFlag,
             featureFlagProvider,
         })
 
         disposables.push(
-            vscode.commands.registerCommand('cody.autocomplete.inline.accepted', ({ codyLogId, codyCompletion }) => {
-                completionsProvider.handleDidAcceptCompletionItem(codyLogId, codyCompletion)
-            }),
+            vscode.commands.registerCommand('cody.autocomplete.manual-trigger', () =>
+                completionsProvider.manuallyTriggerCompletion()
+            ),
+            vscode.commands.registerCommand(
+                'cody.autocomplete.inline.accepted',
+                ({ codyLogId, codyCompletion, codyRequest }) => {
+                    completionsProvider.handleDidAcceptCompletionItem(codyLogId, codyCompletion, codyRequest)
+                }
+            ),
             vscode.languages.registerInlineCompletionItemProvider(
                 [{ scheme: 'file', language: '*' }, { notebookType: '*' }],
                 completionsProvider

@@ -4,7 +4,6 @@ import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
 
 import { ContextSnippet } from '../types'
 
-import { getContextFromEmbeddings } from './context-embeddings'
 import { getContextFromGraph, GraphContextFetcher } from './context-graph'
 import { getContextFromCurrentEditor } from './context-local'
 import { DocumentHistory } from './history'
@@ -19,7 +18,6 @@ export interface GetContextOptions {
     jaccardDistanceWindowSize: number
     maxChars: number
     getCodebaseContext: () => CodebaseContext
-    isEmbeddingsContextEnabled?: boolean
     graphContextFetcher?: GraphContextFetcher
 }
 
@@ -43,14 +41,9 @@ export async function getContext(options: GetContextOptions): Promise<GetContext
         return graphContext
     }
 
-    const { maxChars, isEmbeddingsContextEnabled } = options
+    const { maxChars } = options
     const start = performance.now()
 
-    /**
-     * The embeddings context is sync to retrieve to keep the completions latency minimal. If it's
-     * not available in cache yet, we'll retrieve it in the background and cache it for future use.
-     */
-    const embeddingsMatches = isEmbeddingsContextEnabled ? getContextFromEmbeddings(options) : []
     const localMatches = await getContextFromCurrentEditor(options)
 
     /**
@@ -76,14 +69,6 @@ export async function getContext(options: GetContextOptions): Promise<GetContext
         return true
     }
 
-    // TODO(@philipp-spiess): Rank embedding results against local context
-    // snippets instead of always appending embedding results at the top.
-    let includedEmbeddingsMatches = 0
-    for (const match of embeddingsMatches) {
-        if (addMatch(match)) {
-            includedEmbeddingsMatches++
-        }
-    }
     let includedLocalMatches = 0
     for (const match of localMatches) {
         if (addMatch(match)) {
@@ -94,7 +79,6 @@ export async function getContext(options: GetContextOptions): Promise<GetContext
     return {
         context,
         logSummary: {
-            ...(includedEmbeddingsMatches ? { embeddings: includedEmbeddingsMatches } : {}),
             ...(includedLocalMatches ? { local: includedLocalMatches } : {}),
             duration: performance.now() - start,
         },

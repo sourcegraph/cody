@@ -2,12 +2,15 @@ import { LRUCache } from 'lru-cache'
 import * as vscode from 'vscode'
 
 import { DocumentContext } from './get-current-doc-context'
-import { LastInlineCompletionCandidate } from './getInlineCompletions'
-import { logCompletionEvent } from './logger'
+import { InlineCompletionsResultSource, LastInlineCompletionCandidate } from './get-inline-completions'
+import { logCompletionEvent, SuggestionID } from './logger'
 import { CompletionProviderTracer, Provider } from './providers/provider'
 import { reuseLastCandidate } from './reuse-last-candidate'
-import { processInlineCompletions } from './text-processing/process-inline-completions'
-import { ContextSnippet, InlineCompletionItem } from './types'
+import {
+    InlineCompletionItemWithAnalytics,
+    processInlineCompletions,
+} from './text-processing/process-inline-completions'
+import { ContextSnippet } from './types'
 
 export interface RequestParams {
     /** The request's document **/
@@ -16,15 +19,15 @@ export interface RequestParams {
     /** The request's document context **/
     docContext: DocumentContext
 
-    /** The request's inline completion context. **/
-    context: vscode.InlineCompletionContext
+    /** The state of the completion info box **/
+    selectedCompletionInfo: vscode.SelectedCompletionInfo | undefined
 
     /** The cursor position in the source file where the completion request was triggered. **/
     position: vscode.Position
 }
 
 export interface RequestManagerResult {
-    completions: InlineCompletionItem[]
+    completions: InlineCompletionItemWithAnalytics[]
     cacheHit: 'hit' | 'hit-after-request-started' | null
 }
 
@@ -65,7 +68,9 @@ export class RequestManager {
         const request = new InflightRequest(params)
         this.inflightRequests.add(request)
 
-        Promise.all(providers.map(c => c.generateCompletions(request.abortController.signal, context, tracer)))
+        Promise.all(
+            providers.map(provider => provider.generateCompletions(request.abortController.signal, context, tracer))
+        )
             .then(res => res.flat())
             .then(completions =>
                 // Shared post-processing logic
@@ -96,9 +101,10 @@ export class RequestManager {
         return request.promise
     }
 
-    // Remove unwanted sugggestion from the cache
-    public removeUnwanted(params: RequestParams): void {
+    public removeFromCache(params: RequestParams): void {
+        console.log(this.cache)
         this.cache.delete(params)
+        console.log(this.cache)
     }
 
     /**
@@ -107,17 +113,17 @@ export class RequestManager {
      */
     private testIfResultCanBeUsedForInflightRequests(
         resolvedRequest: InflightRequest,
-        items: InlineCompletionItem[]
+        items: InlineCompletionItemWithAnalytics[]
     ): void {
-        const { document, position, docContext, context } = resolvedRequest.params
+        const { document, position, docContext, selectedCompletionInfo } = resolvedRequest.params
         const lastCandidate: LastInlineCompletionCandidate = {
             uri: document.uri,
             lastTriggerPosition: position,
-            lastTriggerCurrentLinePrefix: docContext.currentLinePrefix,
-            lastTriggerNextNonEmptyLine: docContext.nextNonEmptyLine,
-            lastTriggerSelectedInfoItem: context?.selectedCompletionInfo?.text,
+            lastTriggerDocContext: docContext,
+            lastTriggerSelectedInfoItem: selectedCompletionInfo?.text,
             result: {
-                logId: '',
+                logId: '' as SuggestionID,
+                source: InlineCompletionsResultSource.Network,
                 items,
             },
         }
@@ -136,7 +142,7 @@ export class RequestManager {
                 position: request.params.position,
                 lastCandidate,
                 docContext: request.params.docContext,
-                context: request.params.context,
+                selectedCompletionInfo: request.params.selectedCompletionInfo,
                 completeSuggestWidgetSelection: this.completeSuggestWidgetSelection,
             })
 
@@ -176,17 +182,17 @@ class InflightRequest {
 }
 
 class RequestCache {
-    private cache = new LRUCache<string, InlineCompletionItem[]>({ max: 50 })
+    private cache = new LRUCache<string, InlineCompletionItemWithAnalytics[]>({ max: 50 })
 
     private toCacheKey(key: RequestParams): string {
         return `${key.docContext.prefix}█${key.docContext.nextNonEmptyLine}`
     }
 
-    public get(key: RequestParams): InlineCompletionItem[] | undefined {
+    public get(key: RequestParams): InlineCompletionItemWithAnalytics[] | undefined {
         return this.cache.get(this.toCacheKey(key))
     }
 
-    public set(key: RequestParams, entry: InlineCompletionItem[]): void {
+    public set(key: RequestParams, entry: InlineCompletionItemWithAnalytics[]): void {
         this.cache.set(this.toCacheKey(key), entry)
     }
 

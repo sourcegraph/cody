@@ -1,25 +1,29 @@
 .container {
-    position: relative;
-    overflow: visible;
-}
+    display: flex;
+    align-items: center;
 
-.container > pre {
-    margin-top: 0;
+    border-style: solid;
+    border-width: 1px;
+
+    border-style: solid;
+    border-width: 1px;
+    border-color: var(--vscode-sideBarSectionHeader-border);
+    border-bottom-left-radius: 2px;
+    border-bottom-right-radius: 2px;
+
+    padding: 4px;
 }
 
 .buttons {
-    position: absolute;
-    top: 0;
-    right: 0;
-    visibility: hidden;
     display: flex;
-    gap: .25rem;
 }
 
-.container:hover .buttons {
-    visibility: visible;
-}
-
-.copy-button, .insert-button {
+.copy-button,
+.insert-button {
+    all: unset;
+    padding: 3px;
+    width: 16px;
+    height: 16px;
     cursor: pointer;
+    background-color: transparent;
 }

@@ -466,14 +466,18 @@ cases.forEach(isTreeSitterEnabled => {
                                     completion`
                             console.log('foo')
                         console.log('oops')
+                        }
+
+                        console.log('redundant')
                         `,
                                 ]
                             )
                         )
                     )[0]
                 ).toBe(dedent`
-                console.log('foo')
+                    console.log('foo')
                 console.log('oops')
+                }
             `)
             })
         }

@@ -29,7 +29,7 @@ export class CodebaseContext {
     private embeddingResultsError = ''
     constructor(
         private config: Pick<Configuration, 'useContext' | 'serverEndpoint' | 'experimentalLocalSymbols'>,
-        private codebase: string | undefined,
+        private readonly codebase: string | undefined,
         private embeddings: EmbeddingsSearch | null,
         private keywords: KeywordContextFetcher | null,
         private filenames: FilenameContextFetcher | null,
