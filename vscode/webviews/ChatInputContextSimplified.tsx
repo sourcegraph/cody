@@ -17,6 +17,7 @@ export interface ChatInputContextSimplifiedProps {
     contextStatus?: ChatContextStatus
     isAppInstalled: boolean
     onboardingPopupProps: OnboardingPopupProps
+    repoName: string
 }
 
 const CodebaseState: React.FunctionComponent<{
@@ -38,6 +39,12 @@ const CodebaseState: React.FunctionComponent<{
             <Icon svgPath={icon} className={classNames(styles.codebaseIcon, iconClassName)} />
             {popup?.({ isOpen: !!popupOpen, onDismiss: () => togglePopup?.(), ...onboardingPopupProps })}
         </button>
+    )
+}
+
+function EmbeddingsNotFoundPopupShim(): React.FC<PopupOpenProps> {
+    return ({ popupOpenProps }) => (
+        <EmbeddingsNotFoundPopup onboardingPopupProps={onboardingOpenProps} popupOpenProps={popupOpenProps} />
     )
 }
 

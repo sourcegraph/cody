@@ -10,17 +10,14 @@ export interface OnboardingPopupProps {
     reloadStatus: () => void
 }
 
-export const InstallCodyAppPopup: React.FunctionComponent<OnboardingPopupProps & PopupOpenProps> = ({
-    installApp,
-    isOpen,
-    onDismiss,
-    reloadStatus,
-}) => (
+export const InstallCodyAppPopup: React.FunctionComponent<
+    { repoName: string } & OnboardingPopupProps & PopupOpenProps
+> = ({ installApp, isOpen, onDismiss, reloadStatus, repoName }) => (
     <Popup
         isOpen={isOpen}
         onDismiss={onDismiss}
         title="Install Cody App for Embeddings"
-        text="You can increase the quality of Cody's chat and autocomplete by installing the Cody desktop app."
+        text={`You can increase the quality of Cody's chat and autocomplete by installing the Cody desktop app and indexing this repository (${repoName}).`}
         linkText="Learn more"
         linkHref="https://docs.sourcegraph.com/cody/overview/app"
         actionButtons={
@@ -53,3 +50,30 @@ export const EmbeddingsNotFoundPopup: React.FunctionComponent<OnboardingPopupPro
         }
     />
 )
+
+export interface EmbeddingsEnabledPopupProps {
+    repoName: string
+    indexSource: string
+}
+
+export const EmbeddingsEnabledPopup: React.FunctionComponent<EmbeddingsEnabledPopupProps & PopupOpenProps> = ({
+    isOpen,
+    onDismiss,
+    indexSource,
+    repoName,
+}) => {
+    const linkHref =
+        indexSource === 'Cody App'
+            ? 'https://docs.sourcegraph.com/cody/overview/app#embeddings'
+            : 'https://docs.sourcegraph.com/cody/explanations/indexing'
+    return (
+        <Popup
+            isOpen={isOpen}
+            onDismiss={onDismiss}
+            title="Embeddings Enabled"
+            text={`This repository (${repoName}) has been indexed by ${indexSource}.`}
+            linkText="Learn more"
+            linkHref={linkHref}
+        />
+    )
+}
