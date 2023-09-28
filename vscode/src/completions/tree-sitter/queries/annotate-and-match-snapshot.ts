@@ -84,31 +84,6 @@ interface Annotations {
     [line: number]: { [column: number]: string[] }
 }
 
-function renderAnnotatedCode(annotations: Annotations, lines: string[], delimiter: string, indent: string): string[] {
-    const result: string[] = []
-
-    for (let i = 0; i < lines.length; i++) {
-        const line = lines[i]
-        result.push(line.length === 0 || line.startsWith(delimiter) ? line : indent + line)
-
-        if (annotations[i]) {
-            for (const col of Object.keys(annotations[i])) {
-                const columnNumber = Number(col)
-
-                for (const annotationLine of annotations[i][columnNumber]) {
-                    result.push(delimiter + ' '.repeat(columnNumber) + annotationLine)
-                }
-            }
-        }
-
-        if (isCursorPositionLine(line, delimiter)) {
-            result.push(delimiter + ' '.repeat(line.length - 1) + CARET_SYMBOL)
-        }
-    }
-
-    return result
-}
-
 function initEmptyAnnotationsForPoint(annotations: Annotations, point: Point): void {
     if (!annotations[point.row]) {
         annotations[point.row] = {}
@@ -143,7 +118,19 @@ function annotateSnippets(params: AnnotateSnippetsParams): string {
         return code
     }
 
-    const tree = parser.parse(code)
+    const cursorPositionLine = { index: -1, line: '' }
+    const linesWithoutCursorComment = lines.filter((line, index) => {
+        const isCursorLine = isCursorPositionLine(line, delimiter)
+
+        if (isCursorLine) {
+            cursorPositionLine.index = index
+            cursorPositionLine.line = line
+        }
+
+        return !isCursorLine
+    })
+
+    const tree = parser.parse(linesWithoutCursorComment.join('\n'))
     const capturedNodes = captures(tree.rootNode, caretPoint, { ...caretPoint, column: caretPoint.column + 1 })
 
     if (!capturedNodes || capturedNodes.length === 0) {
@@ -193,9 +180,27 @@ function annotateSnippets(params: AnnotateSnippetsParams): string {
         }
     }
 
-    let annotatedCodeSnippet = renderAnnotatedCode(annotations, lines, delimiter, indent)
-        .filter(line => !isCursorPositionLine(line, delimiter))
-        .join('\n')
+    const result: string[] = []
+    for (let i = 0; i < linesWithoutCursorComment.length; i++) {
+        if (i === cursorPositionLine.index) {
+            result.push(delimiter + ' '.repeat(cursorPositionLine.line.length - 1) + CARET_SYMBOL)
+        }
+
+        const line = linesWithoutCursorComment[i]
+        result.push(line.length === 0 || line.startsWith(delimiter) ? line : indent + line)
+
+        if (annotations[i]) {
+            for (const col of Object.keys(annotations[i])) {
+                const columnNumber = Number(col)
+
+                for (const annotationLine of annotations[i][columnNumber]) {
+                    result.push(delimiter + ' '.repeat(columnNumber) + annotationLine)
+                }
+            }
+        }
+    }
+
+    let annotatedCodeSnippet = result.filter(line => !isCursorPositionLine(line, delimiter)).join('\n')
 
     // Add extra line betwee the annotated code and node types annotations if needed.
     if (!annotatedCodeSnippet.endsWith('\n\n')) {
