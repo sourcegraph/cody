@@ -1,3 +1,5 @@
+import * as vscode from 'vscode'
+
 import { isDefined } from '@sourcegraph/cody-shared/src/common'
 
 import { DocumentContext } from './get-current-doc-context'
@@ -5,7 +7,9 @@ import {
     InlineCompletionsParams,
     InlineCompletionsResult,
     InlineCompletionsResultSource,
+    LastInlineCompletionCandidate,
 } from './get-inline-completions'
+import { RequestParams } from './request-manager'
 import { InlineCompletionItemWithAnalytics } from './text-processing/process-inline-completions'
 
 type ReuseLastCandidateArgument =
@@ -29,7 +33,8 @@ export function reuseLastCandidate({
     document,
     position,
     selectedCompletionInfo,
-    lastCandidate: { lastTriggerPosition, lastTriggerDocContext, lastTriggerSelectedInfoItem, ...lastCandidate },
+    lastCandidate: { lastTriggerPosition, lastTriggerDocContext, lastTriggerSelectedInfoItem },
+    lastCandidate,
     docContext: { currentLinePrefix, currentLineSuffix, nextNonEmptyLine },
     completeSuggestWidgetSelection,
     handleDidAcceptCompletionItem,
@@ -72,7 +77,11 @@ export function reuseLastCandidate({
                 // completion. We mark this as an accepted completion.
                 if (remaining.length === 0) {
                     didAcceptCompletion = true
-                    handleDidAcceptCompletionItem?.(lastCandidate.result.logId, item)
+                    handleDidAcceptCompletionItem?.(
+                        lastCandidate.result.logId,
+                        item,
+                        getRequestParamsFromLastCandidate(document, lastCandidate)
+                    )
                     return undefined
                 }
 
@@ -123,4 +132,21 @@ function isPartialAcceptance(insertText: string, insertedLength: number): boolea
         return false
     }
     return insertedLength >= endOfFirstWord
+}
+
+export function getRequestParamsFromLastCandidate(
+    document: vscode.TextDocument,
+    lastCandidate: LastInlineCompletionCandidate
+): RequestParams {
+    return {
+        document,
+        position: lastCandidate.lastTriggerPosition,
+        docContext: lastCandidate.lastTriggerDocContext,
+        selectedCompletionInfo: lastCandidate.lastTriggerSelectedInfoItem
+            ? {
+                  range: new vscode.Range(0, 0, 0, 0),
+                  text: lastCandidate.lastTriggerSelectedInfoItem,
+              }
+            : undefined,
+    }
 }
