@@ -39,6 +39,7 @@ export class CustomAbortSignal {
             listener()
             return
         }
+        this.listeners.add(listener)
     }
 
     public removeEventListener(listener: () => void): void {
