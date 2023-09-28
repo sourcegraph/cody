@@ -217,17 +217,12 @@ function getDocCommandRange(
 
     // move the current selection to the defined selection in the text editor document
     if (editor) {
-        // reveal the range of the selection minus 5 lines
-        editor?.revealRange(
-            selection.with({
-                start:
-                    selection.start.line > 5
-                        ? selection.start.with({ line: selection.start.line - 5 })
-                        : selection.start,
-                end: selection.end,
-            }),
-            vscode.TextEditorRevealType.InCenter
-        )
+        const visibleRange = editor.visibleRanges
+        // reveal the range of the selection minus 5 lines if visibleRange doesn't contain the selection
+        if (!visibleRange.some(range => range.contains(selection))) {
+            // reveal the range of the selection minus 5 lines
+            editor?.revealRange(selection, vscode.TextEditorRevealType.InCenter)
+        }
     }
 
     return new vscode.Selection(pos, pos)
