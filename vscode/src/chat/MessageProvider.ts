@@ -151,7 +151,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         this.cancelCompletion()
         this.currentChatID = chatID
         this.transcript = Transcript.fromJSON(MessageProvider.chatHistory[chatID])
-        await this.transcript.toJSON()
+        await this.transcript.toJSON(undefined, true)
         this.sendTranscript()
         this.sendHistory()
         telemetryService.log('CodyVSCodeExtension:restoreChatHistoryButton:clicked')
@@ -562,7 +562,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         if (this.transcript.isEmpty) {
             return
         }
-        MessageProvider.chatHistory[this.currentChatID] = await this.transcript.toJSON()
+        MessageProvider.chatHistory[this.currentChatID] = await this.transcript.toJSON(undefined, true)
         await this.saveChatHistory()
         this.sendHistory()
     }
