@@ -16,17 +16,17 @@ export async function getTargetFoldingRange(
     uri: vscode.Uri,
     targetLine: number
 ): Promise<vscode.Selection | undefined> {
-    // Check if symbols is available in the doc by its file uri and look for language id
+    // Check if symbol support is available for the document by its URI and look for the language ID
     const doc = await vscode.workspace.openTextDocument(uri)
     if (!doc) {
         return undefined
     }
 
-    // doc.languageId for files that do not have symbol support enabled are identified as 'plaintext' in vs code
-    // in those cases, we will try to find class object ranges heuristically
+    // Documents with language ID 'plaintext' do not have symbol support in VS Code
+    // In those cases, try to find class ranges heuristically
     const isPlainText = doc.languageId === 'plaintext'
 
-    // Get the ranges of all classes and folding ranges in parallel
+    // Get the ranges of all folding regions and classes in parallel
     const [ranges, classes] = await Promise.all([
         getFoldingRanges(uri).then(r => r?.filter(r => !r.kind)),
         isPlainText
@@ -36,19 +36,18 @@ export async function getTargetFoldingRange(
                   .then(s => s?.map(symbol => symbol.location.range)),
     ])
 
-    // NOTE (bee) In order to find the nested folding range containing the target line:
-    // 1. remove all ranges for classes from folding ranges
-    // 2. filter the filtered folding ranges to only include the outer ranges containing target line
-    //
-    // This way when it checks for the range containing the cursor, it will return the outer range that fully encloses the cursor location,
-    // rather than an inner range that may only partially cover the cursor line.
+    // To find the nested folding range containing the target line:
+    // 1. Remove ranges for classes from the folding ranges
+    // 2. Filter the remaining ranges to only outermost ranges containing target line
 
+    // This finds the outermost range fully enclosing the target line,
+    // rather than an inner range partially covering the line.
     const classRanges = isPlainText ? await getOuterClassFoldingRanges(ranges, uri) : classes
 
     const targetRange = getTargetRange(classRanges, ranges, targetLine, isPlainText)
 
     if (!targetRange) {
-        console.error('No folding range found containing cursor')
+        console.error('No folding range found containing target line')
         return undefined
     }
 
@@ -102,8 +101,6 @@ export function findTargetFoldingRange(
     return ranges.find(range => range.start <= targetLine && range.end >= targetLine)
 }
 
-// ------------------------ HELPER FUNCTIONS ------------------------ //
-
 /**
  * Gets the outermost folding ranges for classes in the given document.
  *
@@ -127,28 +124,24 @@ async function getOuterClassFoldingRanges(ranges: vscode.FoldingRange[], uri: vs
 }
 
 /**
- * Removes the outermost folding ranges from the given foldingRanges array that correspond to the given classRanges.
+ * Removes outermost folding ranges from the given folding ranges array.
  *
- * This filters the foldingRanges array to remove any folding ranges that match the line positions of the given classRanges.
- *
- * Used to remove folding ranges for entire classes after we have already processed folding ranges for methods within the classes.
- *
- * @param classRanges Array of vscode.Range objects representing folding ranges for classes
- * @param foldingRanges Array of vscode.FoldingRange objects representing all folding ranges in the document
- * @returns Filtered array containing only foldingRanges that do not match ranges for classes
+ * @param outermostRanges - Array of outermost folding ranges to remove
+ * @param foldingRanges - Array of folding ranges
+ * @returns Updated array of folding ranges with outermost ranges removed
  */
 function removeOutermostFoldingRanges(
-    classRanges: vscode.Range[],
+    outermostRanges: vscode.Range[],
     foldingRanges: vscode.FoldingRange[]
 ): vscode.FoldingRange[] {
-    if (!classRanges.length || !foldingRanges?.length) {
+    if (!outermostRanges.length || !foldingRanges?.length) {
         return foldingRanges
     }
 
-    for (const cRange of classRanges) {
+    for (const oRanges of outermostRanges) {
         for (let i = 0; i < foldingRanges.length; i++) {
             const r = foldingRanges[i]
-            if (Math.abs(r.start - cRange.start.line) <= 1 && Math.abs(r.end - cRange.end.line) <= 1) {
+            if (Math.abs(r.start - oRanges.start.line) <= 1 && Math.abs(r.end - oRanges.end.line) <= 1) {
                 foldingRanges.splice(i, 1)
                 i--
             }

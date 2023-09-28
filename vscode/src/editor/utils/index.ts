@@ -3,23 +3,23 @@ import * as vscode from 'vscode'
 import { getTargetFoldingRange } from './folding-ranges'
 
 /**
- * Gets selection range for the given document and target position based on user cursor position.
+ * Gets the folding range containing the target position to use as a smart selection.
  *
- * This should only be used when there is no existing selection.
+ * This should only be used when there is no existing selection, as a fallback.
  *
- * Smart selection removes the need to manually highlight code before running a command.
- * Instead, this will try to identify the folding range that contains the user's cursor and use it as the selection range.
- * For example, a docstring will be added to the top of the target folding range for the /doc command.
+ * The smart selection removes the need to manually highlight code before running a command.
+ * Instead, this tries to identify the folding range containing the user's cursor to use as the selection range.
+ * For example, a docstring can be added to the target folding range when running the /doc command.
  *
- * NOTE: Smart selection should be treated as a fallback method, as it produces a selection based on guessing user intent.
- * Manual selection truly reflects the user's real intent and should be used when possible.
- * In cases where smart selection is unreliable, or if callers need the absolute selection range,
- * always use the manual selection method to ensure accuracy.
+ * NOTE: Smart selection should be treated as a fallback, since it guesses the user's intent.
+ * A manual selection truly reflects the user's intent and should be preferred when possible.
+ * Smart selection can be unreliable in some cases. Callers needing the true selection range
+ * should always use the manual selection method to ensure accuracy.
  *
  * @param uri - The document URI.
  * @param target - The target position in the document.
  *
- * @returns A Selection containing the folding range enclosing the target position, if one exists. Otherwise returns undefined.
+ * @returns The folding range containing the target position, if one exists. Otherwise returns undefined.
  */
 export async function getSmartSelection(uri: vscode.Uri, target: number): Promise<vscode.Selection | undefined> {
     return getTargetFoldingRange(uri, target)
