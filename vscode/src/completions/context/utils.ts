@@ -47,6 +47,9 @@ export class CustomAbortSignal {
     }
 
     public abort(): void {
+        if (this.aborted) {
+            return
+        } // Ensure abort is idempotent
         this.aborted = true
         for (const listener of this.listeners) {
             listener()
