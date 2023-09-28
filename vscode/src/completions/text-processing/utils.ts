@@ -1,3 +1,4 @@
+import { findLast } from 'lodash'
 import * as vscode from 'vscode'
 
 import { getLanguageConfig } from '../language'
@@ -336,7 +337,7 @@ export function getPrevNonEmptyLine(prefix: string): string {
     if (prevLf === -1 && prevCrLf === -1) {
         return ''
     }
-    return lines(prefix.slice(0, prevCrLf >= 0 ? prevCrLf : prevLf)).findLast(line => line.trim().length > 0) ?? ''
+    return findLast(lines(prefix.slice(0, prevCrLf >= 0 ? prevCrLf : prevLf)), line => line.trim().length > 0) ?? ''
 }
 
 export const formatSymbolContextRelationship = (
