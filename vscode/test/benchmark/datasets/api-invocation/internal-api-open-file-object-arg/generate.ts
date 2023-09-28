@@ -13,6 +13,6 @@ const repository = {
 }
 
 export const getRepoId = () => {
-    return getEditorRepoFileID({🔥}
+    return getEditorRepoFileID({◆}
 }
 

@@ -28,6 +28,20 @@ export const pollToAcceptCompletion = async (originalDocumentVersion: number): P
     return true
 }
 
+const typeUntilPlaceholder = async (input: string): Promise<void> => {
+    const strArr = input.split('')
+
+    for (const char of strArr) {
+        if (char === CURSOR) {
+            return
+        }
+
+        console.log('Typing', char)
+        await vscode.commands.executeCommand('type', { text: char })
+        await new Promise(resolve => setTimeout(resolve, 50))
+    }
+}
+
 export const executeCompletionOnFile = async (
     entryFile: string,
     openFiles: string[],
@@ -41,14 +55,20 @@ export const executeCompletionOnFile = async (
     const entryDocument = await vscode.workspace.openTextDocument(path.resolve(cwd, entryFile))
     const editor = await vscode.window.showTextDocument(entryDocument)
 
-    // Get the position of the placeholder `CURSOR` symbol
+    // // Get the position of the placeholder `CURSOR` symbol
     const cursorPosition = editor.document.positionAt(editor.document.getText().indexOf(CURSOR))
-    const cursorSelection = new vscode.Selection(cursorPosition, cursorPosition.translate(0, 1))
+    // const cursorSelection = new vscode.Selection(cursorPosition, cursorPosition.translate(0, 1))
+
+    const cursorLine = editor.document.lineAt(cursorPosition.line)
+    await editor.edit(edit => edit.delete(cursorLine.range))
+    const cursorSelection = new vscode.Position(cursorLine.lineNumber, 0)
+    editor.selection = new vscode.Selection(cursorSelection, cursorSelection)
 
     // Select the placeholder and remove it, triggering a completion
-    editor.selection = cursorSelection
-    await new Promise(resolve => setTimeout(resolve, 5000))
-    await editor.edit(edit => edit.delete(cursorSelection))
+    // editor.selection = cursorSelection
+    await new Promise(resolve => setTimeout(resolve, 1000))
+    // await editor.edit(edit => edit.delete(cursorSelection))
+    await typeUntilPlaceholder(cursorLine.text)
 
     const startPolling = pollToAcceptCompletion(editor.document.version)
     await ensureExecuteCommand('editor.action.inlineSuggest.trigger')
@@ -58,8 +78,6 @@ export const executeCompletionOnFile = async (
     ])
 
     await editor.document.save()
-
-    await new Promise(resolve => setTimeout(resolve, 20000))
 
     return completed
 }

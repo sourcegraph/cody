@@ -28,7 +28,8 @@ export async function start(): Promise<void> {
     }
 
     try {
-        const vscodeExecutablePath = await downloadAndUnzipVSCode('stable')
+        // TODO: Use 1.80 for improved auth?
+        const vscodeExecutablePath = await downloadAndUnzipVSCode('1.79.1')
         for (const extension of extensionsToBenchmark) {
             if (extension !== CODY_EXTENSION_ID) {
                 // Not the local Cody extension, lets download from the marketplace
