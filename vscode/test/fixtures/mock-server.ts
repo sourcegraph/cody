@@ -21,11 +21,11 @@ export const VALID_TOKEN = 'abcdefgh1234'
 
 const responses = {
     chat: 'hello from the assistant',
-    fixup: '<selection><title>Goodbye Cody</title></selection>',
+    fixup: '<fixup><title>Goodbye Cody</title></fixup>',
 }
 
 const FIXUP_PROMPT_TAG = '<selectedCode>'
-const NON_STOP_FIXUP_PROMPT_TAG = '<selection>'
+const NON_STOP_FIXUP_PROMPT_TAG = '<fixup>'
 
 const pubSubClient = new PubSub({
     projectId: 'sourcegraph-telligent-testing',

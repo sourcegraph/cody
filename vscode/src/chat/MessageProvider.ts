@@ -190,7 +190,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
                 typewriter.close()
                 await typewriter.finished
                 const lastInteraction = this.transcript.getLastInteraction()
-                if (lastInteraction) {
+                if (lastInteraction && multiplexerTopic !== 'fixup') {
                     let displayText = reformatBotMessage(text, responsePrefix)
                     // TODO(keegancsmith) guardrails may be slow, we need to make this async update the interaction.
                     displayText = await this.guardrailsAnnotateAttributions(displayText)
