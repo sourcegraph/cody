@@ -24,8 +24,7 @@ export function baseLanguageId(languageId: string): string {
 // easily reach that limit causing a lot of noise in the console. This is a
 // lightweight abort controller implementation that does not have that limit.
 export class CustomAbortController {
-    private signal = new CustomAbortSignal()
-
+    public signal = new CustomAbortSignal()
     public abort(): void {
         this.signal.abort()
     }
@@ -36,7 +35,7 @@ export class CustomAbortSignal {
 
     public addEventListener(eventName: 'abort', listener: () => void): void {
         if (this.aborted) {
-            listener()
+            void Promise.resolve().then(() => listener())
             return
         }
         this.listeners.add(listener)

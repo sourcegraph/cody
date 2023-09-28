@@ -10,7 +10,7 @@ interface Queued<T> {
     reject: (reason: Error) => void
 }
 
-export type Limiter = <T>(creator: PromiseCreator<T>, abortSignal?: AbortSignal) => Promise<T>
+export type Limiter = <T>(creator: PromiseCreator<T>, abortSignal?: AbortSignal | CustomAbortSignal) => Promise<T>
 
 export function createLimiter(limit: number, timeout: number): Limiter {
     const queue: Queued<unknown>[] = []
