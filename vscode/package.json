@@ -258,7 +258,7 @@
       {
         "command": "cody.command.edit-code",
         "category": "Ask Cody",
-        "title": "Refactor Code",
+        "title": "Edit Code",
         "icon": "$(sparkle)"
       },
       {
