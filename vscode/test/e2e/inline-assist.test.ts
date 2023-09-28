@@ -1,8 +1,23 @@
 import { expect } from '@playwright/test'
 
+import { loggedEvents, resetLoggedEvents } from '../fixtures/mock-server'
+
 import { sidebarExplorer, sidebarSignin } from './common'
 import { test } from './helpers'
 
+const expectedOrderedEvents = [
+    'CodyVSCodeExtension:fixup:created',
+    'CodyVSCodeExtension:keywordContext:searchDuration',
+    'CodyVSCodeExtension:recipe:fixup:executed',
+    'CodyVSCodeExtension:fixupResponse:hasCode',
+    'CodyVSCodeExtension:chatResponse:noCode',
+    'CodyVSCodeExtension:fixup:codeLens:clicked',
+    'CodyVSCodeExtension:fixup:applied',
+]
+
+test.beforeEach(() => {
+    resetLoggedEvents()
+})
 test('start a fixup job from inline chat with valid auth', async ({ page, sidebar }) => {
     // Sign into Cody
     await sidebarSignin(page, sidebar)
@@ -34,4 +49,5 @@ test('start a fixup job from inline chat with valid auth', async ({ page, sideba
     await expect(page.getByRole('button', { name: 'Apply Edits' })).toBeVisible()
     await page.getByRole('button', { name: 'Apply Edits' }).click()
     await expect(page.getByText('<title>Goodbye Cody</title>')).toBeVisible()
+    await expect.poll(() => loggedEvents).toEqual(expectedOrderedEvents)
 })
