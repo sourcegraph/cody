@@ -64,6 +64,7 @@ export const ChatInputContextHasEmbeddings: StoryObj<typeof ChatInputContextSimp
             filePath: 'foo/bar.js',
             mode: 'embeddings',
             connection: true,
+            embeddingsEndpoint: 'http://localhost:3080/',
         }
         return (
             <div className={styles.testDarkSidebarBottom}>

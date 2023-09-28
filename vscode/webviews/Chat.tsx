@@ -49,6 +49,7 @@ interface ChatboxProps {
     applessOnboarding: {
         arm: OnboardingExperimentArm
         endpoint: string | null
+        embeddingsEndpoint?: string
         props: { isAppInstalled: boolean; onboardingPopupProps: OnboardingPopupProps }
     }
 }

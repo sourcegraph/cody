@@ -20,6 +20,7 @@ import popupStyles from './Popups/Popup.module.css'
 
 export interface ChatInputContextSimplifiedProps {
     contextStatus?: ChatContextStatus
+    // TODO(dpc): add 'endpoint' here to show enterprise-style prompts to enterprise users based on endpoint
     isAppInstalled: boolean
     onboardingPopupProps: OnboardingPopupProps
 }
@@ -57,12 +58,11 @@ export const ChatInputContextSimplified: React.FC<ChatInputContextSimplifiedProp
 }) => {
     const [popupOpen, setPopupOpen] = useState<boolean>(false)
     const togglePopup = (): void => setPopupOpen(!popupOpen)
-    const connectionHasEmbeddings = contextStatus?.mode && contextStatus?.connection
     let codebaseState: React.ReactNode
     if (!contextStatus?.codebase) {
         // No codebase
         codebaseState = <CodebaseState icon={mdiDatabaseOffOutline} />
-    } else if (contextStatus?.codebase && !connectionHasEmbeddings) {
+    } else if (contextStatus?.codebase && !contextStatus?.embeddingsEndpoint) {
         // Codebase, but no embeddings
         const repoName = contextStatus.codebase
         const popup: React.FC<OnboardingPopupProps & PopupOpenProps> = isAppInstalled
@@ -88,10 +88,10 @@ export const ChatInputContextSimplified: React.FC<ChatInputContextSimplifiedProp
                 onboardingPopupProps={onboardingPopupProps}
             />
         )
-    } else if (contextStatus?.codebase && connectionHasEmbeddings) {
+    } else if (contextStatus?.codebase && contextStatus?.embeddingsEndpoint) {
         // Codebase and embeddings
         const repoName = contextStatus.codebase
-        const indexSource = 'TODO' // TODO: need to pass the endpoint instead of a boolean here
+        const indexSource = contextStatus.embeddingsEndpoint
         const popup: React.FC<OnboardingPopupProps & PopupOpenProps> = ({ isOpen, onDismiss }) => (
             <EmbeddingsEnabledPopup
                 isOpen={isOpen}
