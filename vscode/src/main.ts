@@ -113,7 +113,6 @@ const register = async (
     const symfRunner = platform.createSymfRunner?.(context, initialConfig.accessToken)
     if (symfRunner) {
         authProvider.addChangeListener(async (authStatus: AuthStatus) => {
-            console.log('# authStatus', authStatus, authStatus.authenticated, authStatus.isLoggedIn)
             if (authStatus.isLoggedIn) {
                 symfRunner.setAuthToken(await getAccessToken())
             } else {
