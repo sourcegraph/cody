@@ -3,7 +3,7 @@ import { Position, TextDocument } from 'vscode'
 import { dedupeWith } from '@sourcegraph/cody-shared/src/common'
 
 import { DocumentContext } from '../get-current-doc-context'
-import { ItemPostProcesssingInfo } from '../logger'
+import { ItemPostProcessingInfo } from '../logger'
 import { astGetters } from '../tree-sitter/ast-getters'
 import { getDocumentQuerySDK } from '../tree-sitter/queries'
 import { InlineCompletionItem } from '../types'
@@ -19,7 +19,7 @@ export interface ProcessInlineCompletionsParams {
     docContext: DocumentContext
 }
 
-export interface InlineCompletionItemWithAnalytics extends ItemPostProcesssingInfo, InlineCompletionItem {}
+export interface InlineCompletionItemWithAnalytics extends ItemPostProcessingInfo, InlineCompletionItem {}
 
 /**
  * This function implements post-processing logic that is applied regardless of

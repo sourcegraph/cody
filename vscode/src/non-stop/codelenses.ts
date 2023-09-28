@@ -15,11 +15,10 @@ export function getLensesForTask(task: FixupTask): vscode.CodeLens[] {
             return [title, cancel]
         }
         case CodyTaskState.ready: {
-            const title = getReadyLens(codeLensRange, task.id)
             const apply = getApplyLens(codeLensRange, task.id)
             const diff = getDiffLens(codeLensRange, task.id)
             const discard = getDiscardLens(codeLensRange, task.id)
-            return [title, apply, diff, discard]
+            return [apply, diff, discard]
         }
         case CodyTaskState.applying: {
             const title = getApplyingLens(codeLensRange)
@@ -41,7 +40,7 @@ export function getLensesForTask(task: FixupTask): vscode.CodeLens[] {
 function getErrorLens(codeLensRange: vscode.Range): vscode.CodeLens {
     const lens = new vscode.CodeLens(codeLensRange)
     lens.command = {
-        title: '$(warning) Fixup failed to apply',
+        title: '$(warning) Applying edits failed',
         command: 'cody.focus',
     }
     return lens
@@ -95,20 +94,10 @@ function getDiffLens(codeLensRange: vscode.Range, id: string): vscode.CodeLens {
     return lens
 }
 
-function getReadyLens(codeLensRange: vscode.Range, id: string): vscode.CodeLens {
-    const lens = new vscode.CodeLens(codeLensRange)
-    lens.command = {
-        title: '$(pencil) Fixup ready',
-        command: 'cody.fixup.codelens.apply',
-        arguments: [id],
-    }
-    return lens
-}
-
 function getApplyLens(codeLensRange: vscode.Range, id: string): vscode.CodeLens {
     const lens = new vscode.CodeLens(codeLensRange)
     lens.command = {
-        title: 'Apply',
+        title: '$(pencil) Apply Edits',
         command: 'cody.fixup.codelens.apply',
         arguments: [id],
     }

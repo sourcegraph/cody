@@ -5,7 +5,6 @@ import { VsCodeCommandsController } from '@sourcegraph/cody-shared/src/editor'
 
 import { logDebug, logError } from '../log'
 import { localStorage } from '../services/LocalStorageProvider'
-import { telemetryService } from '../services/telemetry'
 
 import { CommandRunner } from './CommandRunner'
 import { CustomPromptsStore } from './CustomPromptsStore'
@@ -118,10 +117,6 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
         const codyCommand = new CommandRunner(command, input, isFixupRequest)
         this.commandRunners.set(codyCommand.id, codyCommand)
         this.lastUsedCommands.add(command.slashCommand)
-
-        // Log custom command usage
-        const logType = command?.type === 'default' ? 'default' : 'custom'
-        telemetryService.log(`CodyVSCodeExtension:command:${logType}:executed`)
 
         // Fixup request will be taken care by the fixup recipe in the CommandRunner
         if (isFixupRequest || command.mode === 'inline') {
@@ -241,10 +236,12 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
                     return await vscode.commands.executeCommand('cody.action.chat', input)
                 }
                 case selectedCommandID === menu_options.fix.slashCommand: {
-                    if (userPrompt.trim()) {
-                        return await vscode.commands.executeCommand('cody.fixup.new', { instruction: userPrompt })
-                    }
-                    return await vscode.commands.executeCommand('cody.fixup.new')
+                    const source = 'menu'
+                    return await vscode.commands.executeCommand(
+                        'cody.command.edit-code',
+                        { instruction: userPrompt.trim() },
+                        source
+                    )
                 }
             }
 

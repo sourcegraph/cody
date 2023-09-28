@@ -2,7 +2,7 @@
   "name": "cody-ai",
   "private": true,
   "displayName": "Cody AI",
-  "version": "0.12.1",
+  "version": "0.12.2",
   "publisher": "sourcegraph",
   "license": "Apache-2.0",
   "icon": "resources/cody.png",
@@ -259,6 +259,7 @@
         "command": "cody.command.edit-code",
         "category": "Ask Cody",
         "title": "Edit Code"
+        "icon": "$(sparkle)"
       },
       {
         "command": "cody.command.explain-code",
@@ -374,7 +375,7 @@
         "title": "Ask Cody Inline",
         "category": "Cody Inline Chat",
         "when": "cody.activated && config.cody.inlineChat.enabled",
-        "enablement": "editorFocus"
+        "enablement": "editorFocus && config.cody.inlineChat.enabled"
       },
       {
         "command": "cody.guardrails.debug",
@@ -386,12 +387,6 @@
         "command": "cody.command.inline-touch",
         "category": "Cody",
         "title": "Touch"
-      },
-      {
-        "command": "cody.fixup.new",
-        "category": "Cody",
-        "title": "Fixup",
-        "icon": "$(sparkle)"
       },
       {
         "command": "cody.fixup.open",
@@ -474,7 +469,8 @@
         "command": "cody.inline.new",
         "key": "ctrl+shift+c",
         "mac": "cmd+shift+c",
-        "when": "cody.activated && editorFocus && config.cody.inlineChat.enabled"
+        "when": "cody.activated && editorFocus && config.cody.inlineChat.enabled",
+        "enablement": "config.cody.inlineChat.enabled"
       },
       {
         "command": "cody.action.commands.menu",
@@ -845,12 +841,6 @@
           "order": 99,
           "type": "string",
           "markdownDescription": "Path to symf binary",
-          "default": ""
-        },
-        "cody.experimental.symf.anthropicKey": {
-          "order": 99,
-          "type": "string",
-          "markdownDescription": "API key for Anthropic",
           "default": ""
         },
         "cody.debug.enable": {

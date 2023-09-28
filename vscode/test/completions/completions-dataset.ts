@@ -583,10 +583,6 @@ export const completionsDataset: Sample[] = [
             },
         }))
 
-        vi.mock('./context-embeddings.ts', () => ({
-            getContextFromEmbeddings: () => [],
-        }))
-
         function createCompletionResponse(completion: string): CompletionResponse {
             return {
                 completion: truncateMultilineString(completion),
@@ -671,7 +667,7 @@ export const completionsDataset: Sample[] = [
                     }
                     const providerConfig = createProviderConfig({
                         completionsClient,
-                        contextWindowTokens: 2048,
+                        maxContextTokens: 2048,
                     })
                     const completionProvider = new CodyCompletionItemProvider({
                         ${CURSOR}
