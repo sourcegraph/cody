@@ -7,7 +7,12 @@ import { ChatContextStatus } from '@sourcegraph/cody-shared'
 import { formatFilePath } from '@sourcegraph/cody-ui/src/chat/inputContext/ChatInputContext'
 import { Icon } from '@sourcegraph/cody-ui/src/utils/Icon'
 
-import { EmbeddingsNotFoundPopup, InstallCodyAppPopup, OnboardingPopupProps } from './Popups/OnboardingExperimentPopups'
+import {
+    EmbeddingsEnabledPopup,
+    EmbeddingsNotFoundPopup,
+    InstallCodyAppPopup,
+    OnboardingPopupProps,
+} from './Popups/OnboardingExperimentPopups'
 import { PopupOpenProps } from './Popups/Popup'
 
 import styles from './ChatInputContextSimplified.module.css'
@@ -17,7 +22,6 @@ export interface ChatInputContextSimplifiedProps {
     contextStatus?: ChatContextStatus
     isAppInstalled: boolean
     onboardingPopupProps: OnboardingPopupProps
-    repoName: string
 }
 
 const CodebaseState: React.FunctionComponent<{
@@ -42,12 +46,6 @@ const CodebaseState: React.FunctionComponent<{
     )
 }
 
-function EmbeddingsNotFoundPopupShim(): React.FC<PopupOpenProps> {
-    return ({ popupOpenProps }) => (
-        <EmbeddingsNotFoundPopup onboardingPopupProps={onboardingOpenProps} popupOpenProps={popupOpenProps} />
-    )
-}
-
 // This is a fork of ChatInputContext with extra UI for simplified "App-less"
 // Onboarding. Note, it is just the onboarding that's simplified: This component
 // has *more* UI to guide users through the app setup steps they skipped during
@@ -60,32 +58,60 @@ export const ChatInputContextSimplified: React.FC<ChatInputContextSimplifiedProp
     const [popupOpen, setPopupOpen] = useState<boolean>(false)
     const togglePopup = (): void => setPopupOpen(!popupOpen)
     const connectionHasEmbeddings = contextStatus?.mode && contextStatus?.connection
-    let popup: React.FC<OnboardingPopupProps & PopupOpenProps> | undefined
-    if (contextStatus?.codebase && !connectionHasEmbeddings) {
-        popup = isAppInstalled ? EmbeddingsNotFoundPopup : InstallCodyAppPopup
+    let codebaseState: React.ReactNode
+    if (!contextStatus?.codebase) {
+        // No codebase
+        codebaseState = <CodebaseState icon={mdiDatabaseOffOutline} />
+    } else if (contextStatus?.codebase && !connectionHasEmbeddings) {
+        // Codebase, but no embeddings
+        const repoName = contextStatus.codebase
+        const popup: React.FC<OnboardingPopupProps & PopupOpenProps> = isAppInstalled
+            ? EmbeddingsNotFoundPopup
+            : ({ installApp, isOpen, openApp, onDismiss, reloadStatus }) => (
+                  <InstallCodyAppPopup
+                      installApp={installApp}
+                      openApp={openApp}
+                      isOpen={isOpen}
+                      onDismiss={onDismiss}
+                      reloadStatus={reloadStatus}
+                      repoName={repoName}
+                  />
+              )
+        codebaseState = (
+            <CodebaseState
+                codebase={contextStatus.codebase}
+                icon={mdiDatabaseRemoveOutline}
+                iconClassName={styles.errorColor}
+                popup={popup}
+                popupOpen={popupOpen}
+                togglePopup={togglePopup}
+                onboardingPopupProps={onboardingPopupProps}
+            />
+        )
+    } else if (contextStatus?.codebase && connectionHasEmbeddings) {
+        // Codebase and embeddings
+        const repoName = contextStatus.codebase
+        const indexSource = 'TODO' // TODO: need to pass the endpoint instead of a boolean here
+        const popup: React.FC<OnboardingPopupProps & PopupOpenProps> = ({ isOpen, onDismiss }) => (
+            <EmbeddingsEnabledPopup
+                isOpen={isOpen}
+                onDismiss={onDismiss}
+                repoName={repoName}
+                indexSource={indexSource}
+            />
+        )
+        codebaseState = (
+            <CodebaseState
+                codebase={contextStatus.codebase}
+                icon={mdiDatabaseCheckOutline}
+                popup={popup}
+                popupOpen={popupOpen}
+            />
+        )
     }
     return (
         <div className={styles.container}>
-            {contextStatus?.codebase ? (
-                connectionHasEmbeddings ? (
-                    // Codebase and embeddings
-                    <CodebaseState codebase={contextStatus.codebase} icon={mdiDatabaseCheckOutline} />
-                ) : (
-                    // Codebase, but no embeddings
-                    <CodebaseState
-                        codebase={contextStatus.codebase}
-                        icon={mdiDatabaseRemoveOutline}
-                        iconClassName={styles.errorColor}
-                        popup={popup}
-                        popupOpen={popupOpen}
-                        togglePopup={togglePopup}
-                        onboardingPopupProps={onboardingPopupProps}
-                    />
-                )
-            ) : (
-                // No codebase
-                <CodebaseState icon={mdiDatabaseOffOutline} />
-            )}
+            {codebaseState}
             {contextStatus?.filePath ? (
                 <p className={styles.file} title={contextStatus.filePath}>
                     {formatFilePath(contextStatus.filePath, contextStatus.selectionRange)}
