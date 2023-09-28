@@ -226,6 +226,20 @@ export function accept(id: string, completion: InlineCompletionItem): void {
     statistics.logAccepted()
 }
 
+export function partiallyAccept(id: string, completion: InlineCompletionItem, acceptedLength: number): void {
+    const completionEvent = displayedCompletions.get(id)
+    // Only log partial acceptances if the completion was not yet fully accepted
+    if (!completionEvent || completionEvent.acceptedAt) {
+        return
+    }
+
+    logCompletionEvent('partiallyAccepted', {
+        ...getSharedParams(completionEvent),
+        acceptedItem: { ...completionItemToItemInfo(completion) },
+        acceptedLength,
+    })
+}
+
 export function getCompletionEvent(id: string): CompletionEvent | undefined {
     return displayedCompletions.get(id)
 }

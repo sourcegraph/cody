@@ -194,6 +194,33 @@ describe('[getInlineCompletions] reuseLastCandidate', () => {
             source: InlineCompletionsResultSource.LastCandidate,
         }))
 
+    describe('partial acceptance', () => {
+        it('marks a completion as partially accepted when you type at least one word', async () => {
+            const handleDidPartiallyAcceptCompletionItem = vitest.fn()
+
+            const args = {
+                lastCandidate: lastCandidate('█', 'console.log(1337)'),
+                handleDidPartiallyAcceptCompletionItem,
+            }
+
+            // We did not complete the first word yet
+            await getInlineCompletions(params('consol█', [], args))
+            expect(handleDidPartiallyAcceptCompletionItem).not.toHaveBeenCalled()
+
+            // Now we did
+            await getInlineCompletions(params('console█', [], args))
+            expect(handleDidPartiallyAcceptCompletionItem).toHaveBeenCalledWith(expect.anything(), expect.anything(), 7)
+
+            // Subsequent keystrokes should continue updating the partial acceptance
+            await getInlineCompletions(params('console.log█', [], args))
+            expect(handleDidPartiallyAcceptCompletionItem).toHaveBeenCalledWith(
+                expect.anything(),
+                expect.anything(),
+                11
+            )
+        })
+    })
+
     describe('deleting leading whitespace', () => {
         const candidate = lastCandidate('\t\t█', 'const x = 1')
 
