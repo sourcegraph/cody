@@ -55,6 +55,11 @@ export interface InlineCompletionsParams {
 
     // Callbacks to accept completions
     handleDidAcceptCompletionItem?: (logId: string, completion: InlineCompletionItemWithAnalytics) => void
+    handleDidPartiallyAcceptCompletionItem?: (
+        logId: string,
+        completion: InlineCompletionItemWithAnalytics,
+        acceptedLength: number
+    ) => void
 }
 
 /**
@@ -169,6 +174,7 @@ async function doGetInlineCompletions(params: InlineCompletionsParams): Promise<
         tracer,
         completeSuggestWidgetSelection = false,
         handleDidAcceptCompletionItem,
+        handleDidPartiallyAcceptCompletionItem,
     } = params
 
     tracer?.({ params: { document, position, triggerKind, selectedCompletionInfo } })
@@ -200,6 +206,7 @@ async function doGetInlineCompletions(params: InlineCompletionsParams): Promise<
                   selectedCompletionInfo,
                   completeSuggestWidgetSelection,
                   handleDidAcceptCompletionItem,
+                  handleDidPartiallyAcceptCompletionItem,
               })
             : null
     if (resultToReuse) {
