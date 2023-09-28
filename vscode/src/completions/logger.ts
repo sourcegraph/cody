@@ -21,7 +21,7 @@ import { InlineCompletionItem } from './types'
 type CompletionID = string & { _opaque: typeof CompletionID }
 declare const CompletionID: unique symbol
 
-// A suggestion DI is a unique identifier for a suggestion lifecycle.
+// A suggestion ID is a unique identifier for a suggestion lifecycle.
 export type SuggestionID = string & { _opaque: typeof SuggestionID }
 declare const SuggestionID: unique symbol
 
