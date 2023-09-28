@@ -76,7 +76,7 @@ export function createLimiter(limit: number, timeout: number): Limiter {
             // Only abort queued requests
             const index = queue.indexOf(queued! as Queued<unknown>)
             if (index < 0) {
-                returnf
+                return
             }
 
             queued.reject(new AbortError())
