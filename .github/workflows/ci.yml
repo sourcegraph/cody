@@ -31,7 +31,6 @@ jobs:
       - run: pnpm build
       - run: pnpm run test:unit --run
 
-jobs:
   test-unit-16:
     runs-on: ubuntu-latest
     timeout-minutes: 5
