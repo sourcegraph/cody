@@ -121,7 +121,7 @@ describe('logger', () => {
         CompletionLogger.accept(id2, item)
 
         const loggerItem2 = CompletionLogger.getCompletionEvent(id2)
-        expect(loggerItem2?.params.id).not.toBe(completionId)
+        expect(loggerItem2?.params.id).toBe(completionId)
 
         expect(logSpy).toHaveBeenCalledWith(
             'CodyVSCodeExtension:completion:suggested',
