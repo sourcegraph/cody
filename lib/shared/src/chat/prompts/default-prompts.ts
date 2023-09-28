@@ -8,22 +8,36 @@
  *   - When a single line is selected, inserts a plain comment above above the selection
  *   - When no code is selected, inserts a comment on nearest containing scope (i.e. function)
  *
+ * Issues:
+ *   - Python: Commenting single implementation lines doesn't work well
+ *   - Typescript & JS doesn't consistently use // style comments for implementation lines
+ * 
  * Tested with:
  *   - Typescript (best practice is https://ts.dev/style/#jsdoc-vs-comments)
- *     - https://github.com/sourcegraph/sourcegraph/blob/b150dedb550f45b6b27cba39b15984e04afecaf3/client/wildcard/src/hooks/useKeyboard.ts#L10-L27 (generates docstring w/ parameters)
- *     - https://github.com/sourcegraph/sourcegraph/blob/b150dedb550f45b6b27cba39b15984e04afecaf3/client/wildcard/src/hooks/useKeyboard.ts#L12 (generates impl comment)
- *     - https://github.com/sourcegraph/sourcegraph/blob/b150dedb550f45b6b27cba39b15984e04afecaf3/client/wildcard/src/hooks/useKeyboard.ts#L14-L26 (generates impl comment)
+ *     - https://github.com/sourcegraph/sourcegraph/blob/b150dedb550f45b6b27cba39b15984e04afecaf3/client/wildcard/src/hooks/useKeyboard.ts#L10-L27
+ *     - https://github.com/sourcegraph/sourcegraph/blob/b150dedb550f45b6b27cba39b15984e04afecaf3/client/wildcard/src/hooks/useKeyboard.ts#L12
+ *     - https://github.com/sourcegraph/sourcegraph/blob/b150dedb550f45b6b27cba39b15984e04afecaf3/client/wildcard/src/hooks/useKeyboard.ts#L14-L26
  *   - Javascript
- *     - https://github.com/sourcegraph/wizard/blob/2414828d62f7ababd24a2532708e7e94fb5d92bb/pages/index.js#L4-L256 (generates docstring w/o parameters)
- *     - https://github.com/sourcegraph/wizard/blob/2414828d62f7ababd24a2532708e7e94fb5d92bb/pages/index.js#L37-L70 (generates impl comment)
- *     - https://github.com/sourcegraph/wizard/blob/2414828d62f7ababd24a2532708e7e94fb5d92bb/pages/index.js#L99-L120 (generates impl comment)
- *     - https://github.com/sourcegraph/wizard/blob/2414828d62f7ababd24a2532708e7e94fb5d92bb/pages/index.js#L126 (generates impl comment)
+ *     - https://github.com/sourcegraph/wizard/blob/2414828d62f7ababd24a2532708e7e94fb5d92bb/pages/index.js#L4-L256
+ *     - https://github.com/sourcegraph/wizard/blob/2414828d62f7ababd24a2532708e7e94fb5d92bb/pages/index.js#L37-L70
+ *     - https://github.com/sourcegraph/wizard/blob/2414828d62f7ababd24a2532708e7e94fb5d92bb/pages/index.js#L99-L120
+ *     - https://github.com/sourcegraph/wizard/blob/2414828d62f7ababd24a2532708e7e94fb5d92bb/pages/index.js#L126
  *   - Golang
- *     - TODO
+ *     - https://github.com/sourcegraph/src-cli/blob/bdc0413494d67b44f79306a27be74425702a3da0/cmd/src/batch_common.go#L413-L435
+ *     - https://github.com/sourcegraph/src-cli/blob/bdc0413494d67b44f79306a27be74425702a3da0/cmd/src/batch_common.go#L521-L527
+ *     - https://github.com/sourcegraph/src-cli/blob/bdc0413494d67b44f79306a27be74425702a3da0/cmd/src/batch_common.go#L631
  *   - Java
- *     - TODO
+ *     - https://github.com/microsoft/lsif-java/blob/cfbc3960618a4131b1a935e353c7d2292b16efdb/com.microsoft.java.lsif.core/src/com/microsoft/java/lsif/core/internal/protocol/Document.java#L16-L45
+ *     - https://github.com/microsoft/lsif-java/blob/cfbc3960618a4131b1a935e353c7d2292b16efdb/com.microsoft.java.lsif.core/src/com/microsoft/java/lsif/core/internal/protocol/Document.java#L24-L28
+ *     - https://github.com/microsoft/lsif-java/blob/cfbc3960618a4131b1a935e353c7d2292b16efdb/com.microsoft.java.lsif.core/src/com/microsoft/java/lsif/core/internal/protocol/Document.java#L25C6-L25C6
+ *     - https://github.com/microsoft/lsif-java/blob/cfbc3960618a4131b1a935e353c7d2292b16efdb/com.microsoft.java.lsif.core/src/com/microsoft/java/lsif/core/internal/protocol/Document.java#L42-L44
+ *   - Scala
+ *     - https://github.com/sourcegraph/scip-java/blob/36c9a113efd1926fc26fcd1c2614b8793099a170/scip-java/src/main/scala/com/sourcegraph/io/AutoDeletedFile.scala#L10-L13
+ *     - https://github.com/sourcegraph/scip-java/blob/36c9a113efd1926fc26fcd1c2614b8793099a170/scip-java/src/main/scala/com/sourcegraph/io/AutoDeletedFile.scala#L15-L45
+ *     - https://github.com/sourcegraph/scip-java/blob/36c9a113efd1926fc26fcd1c2614b8793099a170/scip-java/src/main/scala/com/sourcegraph/io/AutoDeletedFile.scala#L23-L28
  *   - Python
- *     - TODO
+ *     - https://github.com/langchain-ai/langchain/blob/8ae9b71e41d1598006163ccf899ac71d4878f7fa/libs/langchain/langchain/adapters/openai.py#L41-L59
+ *     - https://github.com/langchain-ai/langchain/blob/8ae9b71e41d1598006163ccf899ac71d4878f7fa/libs/langchain/langchain/adapters/openai.py#L55
  */
 const doc = {
     description: 'Generate code documentation',
