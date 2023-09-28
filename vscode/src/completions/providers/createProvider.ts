@@ -45,7 +45,6 @@ export async function createProviderConfig(
             case 'unstable-openai': {
                 return createUnstableOpenAIProviderConfig({
                     client,
-                    contextWindowTokens: 2048,
                 })
             }
             case 'unstable-fireworks': {
@@ -57,7 +56,6 @@ export async function createProviderConfig(
             case 'anthropic': {
                 return createAnthropicProviderConfig({
                     client,
-                    contextWindowTokens: 2048,
                     mode: 'infill',
                 })
             }
@@ -93,7 +91,6 @@ export async function createProviderConfig(
             case 'azure-openai':
                 return createUnstableOpenAIProviderConfig({
                     client,
-                    contextWindowTokens: 2048,
                     // Model name for azure openai provider is a deployment name. It shouldn't appear in logs.
                     model: provider === 'azure-openai' && model ? '' : model,
                 })
@@ -107,7 +104,6 @@ export async function createProviderConfig(
             case 'anthropic':
                 return createAnthropicProviderConfig({
                     client,
-                    contextWindowTokens: 2048,
                     mode: 'infill',
                 })
             default:
@@ -122,7 +118,6 @@ export async function createProviderConfig(
      */
     return createAnthropicProviderConfig({
         client,
-        contextWindowTokens: 2048,
         mode: 'infill',
     })
 }

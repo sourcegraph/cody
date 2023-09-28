@@ -63,7 +63,6 @@ export function params(
     }
     const providerConfig = createProviderConfig({
         client,
-        contextWindowTokens: 2048,
     })
 
     const { document, position } = documentAndPosition(code, languageId, URI_FIXTURE.toString())
@@ -91,12 +90,7 @@ export function params(
         docContext,
         triggerKind,
         selectedCompletionInfo,
-        promptChars: 1000,
-        isEmbeddingsContextEnabled: true,
         providerConfig,
-        responsePercentage: 0.4,
-        prefixPercentage: 0.3,
-        suffixPercentage: 0.3,
         toWorkspaceRelativePath: () => 'test.ts',
         requestManager: new RequestManager(),
         ...params,

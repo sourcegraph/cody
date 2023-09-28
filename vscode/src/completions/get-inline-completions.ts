@@ -27,12 +27,7 @@ export interface InlineCompletionsParams {
     docContext: DocumentContext
 
     // Prompt parameters
-    promptChars: number
     providerConfig: ProviderConfig
-    responsePercentage: number
-    prefixPercentage: number
-    suffixPercentage: number
-    isEmbeddingsContextEnabled: boolean
     graphContextFetcher?: GraphContextFetcher
 
     // Platform
@@ -57,6 +52,9 @@ export interface InlineCompletionsParams {
 
     // Feature flags
     completeSuggestWidgetSelection?: boolean
+
+    // Callbacks to accept completions
+    handleDidAcceptCompletionItem?: (logId: string, completion: InlineCompletionItemWithAnalytics) => void
 }
 
 /**
@@ -76,7 +74,7 @@ export interface LastInlineCompletionCandidate {
     lastTriggerSelectedInfoItem: string | undefined
 
     /** The previously suggested result. */
-    result: Pick<InlineCompletionsResult, 'logId' | 'items'>
+    result: InlineCompletionsResult
 }
 
 /**
@@ -136,7 +134,7 @@ export async function getInlineCompletions(params: InlineCompletionsParams): Pro
         const error = unknownError instanceof Error ? unknownError : new Error(unknownError as any)
 
         params.tracer?.({ error: error.toString() })
-        logError('getInlineCompletions:error', error.message, error.stack, { verbose: { params, error } })
+        logError('getInlineCompletions:error', error.message, error.stack, { verbose: { error } })
         CompletionLogger.logError(error)
 
         if (isAbortError(error)) {
@@ -156,13 +154,8 @@ async function doGetInlineCompletions(params: InlineCompletionsParams): Promise<
         triggerKind,
         selectedCompletionInfo,
         docContext,
-        docContext: { multilineTrigger, currentLineSuffix },
-        promptChars,
+        docContext: { multilineTrigger, currentLineSuffix, currentLinePrefix },
         providerConfig,
-        responsePercentage,
-        prefixPercentage,
-        suffixPercentage,
-        isEmbeddingsContextEnabled,
         graphContextFetcher,
         toWorkspaceRelativePath,
         contextFetcher,
@@ -175,6 +168,7 @@ async function doGetInlineCompletions(params: InlineCompletionsParams): Promise<
         abortSignal,
         tracer,
         completeSuggestWidgetSelection = false,
+        handleDidAcceptCompletionItem,
     } = params
 
     tracer?.({ params: { document, position, triggerKind, selectedCompletionInfo } })
@@ -189,6 +183,11 @@ async function doGetInlineCompletions(params: InlineCompletionsParams): Promise<
         return null
     }
 
+    // Do not trigger when the last character is a closing symbol
+    if (triggerKind !== TriggerKind.Manual && /[)\]}]$/.test(currentLinePrefix.trim())) {
+        return null
+    }
+
     // Check if the user is typing as suggested by the last candidate completion (that is shown as
     // ghost text in the editor), and reuse it if it is still valid.
     const resultToReuse =
@@ -200,6 +199,7 @@ async function doGetInlineCompletions(params: InlineCompletionsParams): Promise<
                   docContext,
                   selectedCompletionInfo,
                   completeSuggestWidgetSelection,
+                  handleDidAcceptCompletionItem,
               })
             : null
     if (resultToReuse) {
@@ -237,8 +237,7 @@ async function doGetInlineCompletions(params: InlineCompletionsParams): Promise<
     const contextResult = await getCompletionContext({
         document,
         position,
-        promptChars,
-        isEmbeddingsContextEnabled,
+        providerConfig,
         graphContextFetcher,
         contextFetcher,
         getCodebaseContext,
@@ -255,9 +254,6 @@ async function doGetInlineCompletions(params: InlineCompletionsParams): Promise<
         document,
         triggerKind,
         providerConfig,
-        responsePercentage,
-        prefixPercentage,
-        suffixPercentage,
         docContext,
         toWorkspaceRelativePath,
     })
@@ -298,37 +294,16 @@ async function doGetInlineCompletions(params: InlineCompletionsParams): Promise<
 }
 
 interface GetCompletionProvidersParams
-    extends Pick<
-        InlineCompletionsParams,
-        | 'document'
-        | 'triggerKind'
-        | 'providerConfig'
-        | 'responsePercentage'
-        | 'prefixPercentage'
-        | 'suffixPercentage'
-        | 'toWorkspaceRelativePath'
-    > {
+    extends Pick<InlineCompletionsParams, 'document' | 'triggerKind' | 'providerConfig' | 'toWorkspaceRelativePath'> {
     docContext: DocumentContext
 }
 
 function getCompletionProviders(params: GetCompletionProvidersParams): Provider[] {
-    const {
-        document,
-        triggerKind,
-        providerConfig,
-        responsePercentage,
-        prefixPercentage,
-        suffixPercentage,
-        docContext,
-        toWorkspaceRelativePath,
-    } = params
+    const { document, triggerKind, providerConfig, docContext, toWorkspaceRelativePath } = params
     const sharedProviderOptions: Omit<ProviderOptions, 'id' | 'n' | 'multiline'> = {
         docContext,
         fileName: toWorkspaceRelativePath(document.uri),
         languageId: document.languageId,
-        responsePercentage,
-        prefixPercentage,
-        suffixPercentage,
     }
     if (docContext.multilineTrigger) {
         return [
@@ -357,8 +332,7 @@ interface GetCompletionContextParams
         InlineCompletionsParams,
         | 'document'
         | 'position'
-        | 'promptChars'
-        | 'isEmbeddingsContextEnabled'
+        | 'providerConfig'
         | 'graphContextFetcher'
         | 'contextFetcher'
         | 'getCodebaseContext'
@@ -370,8 +344,7 @@ interface GetCompletionContextParams
 async function getCompletionContext({
     document,
     position,
-    promptChars,
-    isEmbeddingsContextEnabled,
+    providerConfig,
     graphContextFetcher,
     contextFetcher,
     getCodebaseContext,
@@ -396,9 +369,8 @@ async function getCompletionContext({
         contextRange,
         history: documentHistory,
         jaccardDistanceWindowSize: SNIPPET_WINDOW_SIZE,
-        maxChars: promptChars,
+        maxChars: providerConfig.contextSizeHints.totalFileContextChars,
         getCodebaseContext,
-        isEmbeddingsContextEnabled,
         graphContextFetcher,
     })
 }

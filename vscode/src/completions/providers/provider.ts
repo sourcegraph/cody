@@ -1,3 +1,4 @@
+import { tokensToChars } from '@sourcegraph/cody-shared/src/prompt/constants'
 import { CompletionParameters } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
 
 import { DocumentContext } from '../get-current-doc-context'
@@ -12,14 +13,11 @@ export interface ProviderConfig {
     create(options: ProviderOptions): Provider
 
     /**
-     * The maximum number of unicode characters that should be included in the
-     * context window. Note that these are not tokens as the definition can vary
-     * between models.
-     *
-     * This value is used for determining the length of prefix, suffix, and
-     * snippets and can be validated by the provider implementing it.
+     * Hints about the optimal context size (and length of the document prefix and suffix). It is
+     * intended to (or possible to) be precise here because the truncation of the document
+     * prefix/suffix uses characters, not the LLM's tokenizer.
      */
-    maximumContextCharacters: number
+    contextSizeHints: ProviderContextSizeHints
 
     /**
      * When set, multi-line completions will trigger more often. This is
@@ -37,6 +35,25 @@ export interface ProviderConfig {
     model: string
 }
 
+export interface ProviderContextSizeHints {
+    /** Total max length of all file context (prefix + suffix + snippets). */
+    totalFileContextChars: number
+
+    /** Max length of the document prefix (text before the cursor). */
+    prefixChars: number
+
+    /** Max length of the document suffix (text after the cursor). */
+    suffixChars: number
+}
+
+export function standardContextSizeHints(maxContextTokens: number): ProviderContextSizeHints {
+    return {
+        totalFileContextChars: Math.floor(maxContextTokens * 0.9), // keep 10% margin for preamble, etc.
+        prefixChars: Math.floor(tokensToChars(0.6 * maxContextTokens)),
+        suffixChars: Math.floor(tokensToChars(0.1 * maxContextTokens)),
+    }
+}
+
 export interface ProviderOptions {
     // A unique and descriptive identifier for the provider.
     id: string
@@ -45,10 +62,6 @@ export interface ProviderOptions {
     fileName: string
     languageId: string
     multiline: boolean
-    // Relative length to `maximumContextCharacters`
-    responsePercentage: number
-    prefixPercentage: number
-    suffixPercentage: number
     // Number of parallel LLM requests per completion.
     n: number
 }

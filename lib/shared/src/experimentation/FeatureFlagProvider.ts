@@ -14,9 +14,8 @@ export enum FeatureFlag {
     CodyAutocompleteStarCoderHybrid = 'cody-autocomplete-default-starcoder-hybrid',
     CodyAutocompleteLlamaCode7B = 'cody-autocomplete-default-llama-code-7b',
     CodyAutocompleteLlamaCode13B = 'cody-autocomplete-default-llama-code-13b',
-    CodyAutocompleteMinimumLatency350 = 'cody-autocomplete-minimum-latency-350',
-    CodyAutocompleteMinimumLatency600 = 'cody-autocomplete-minimum-latency-600',
     CodyAutocompleteGraphContext = 'cody-autocomplete-graph-context',
+    CodyAutocompleteMinimumLatency = 'cody-autocomplete-minimum-latency',
     CodyAutocompleteCompleteSuggestWidgetSelection = 'cody-autocomplete-complete-suggest-widget-selection',
 }
 

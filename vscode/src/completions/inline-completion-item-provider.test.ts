@@ -63,7 +63,6 @@ class MockableInlineCompletionItemProvider extends InlineCompletionItemProvider 
             providerConfig: createProviderConfig({
                 // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-explicit-any
                 client: null as any,
-                contextWindowTokens: 2048,
             }),
             featureFlagProvider: dummyFeatureFlagProvider,
 
@@ -152,8 +151,8 @@ describe('InlineCompletionItemProvider', () => {
               "prefix": "const foo = ",
               "prevNonEmptyLine": "",
               "suffix": "
-console.log(1)
-console.log(2)",
+          console.log(1)
+          console.log(2)",
             },
             "lastTriggerPosition": Position {
               "character": 12,
@@ -177,6 +176,7 @@ console.log(2)",
                 },
               ],
               "logId": "1",
+              "source": "Network",
             },
             "uri": {
               "$mid": 1,
