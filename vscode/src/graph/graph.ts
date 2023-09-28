@@ -339,6 +339,46 @@ const typescriptKeywords = new Set([
     'yield',
 ])
 
+const pythonKeywords = new Set([
+    'False',
+    'await',
+    'else',
+    'import',
+    'pass',
+    'None',
+    'break',
+    'except',
+    'in',
+    'raise',
+    'True',
+    'class',
+    'finally',
+    'is',
+    'return',
+    'and',
+    'continue',
+    'for',
+    'lambda',
+    'try',
+    'as',
+    'def',
+    'from',
+    'nonlocal',
+    'while',
+    'assert',
+    'del',
+    'global',
+    'not',
+    'with',
+    'async',
+    'elif',
+    'if',
+    'or',
+    'yield',
+])
+
+export const commonKeywords = new Set([...goKeywords, ...typescriptKeywords, ...pythonKeywords])
+
 const commonImportPaths = new Set([
     // The TS lib folder contains the TS standard library and all of ECMAScript.
     'node_modules/typescript/lib',
@@ -353,6 +393,10 @@ const commonImportPaths = new Set([
 
     // Go stdlib installation (covers Brew installs at a minimum)
     'libexec/src/',
+
+    // Python stdlib
+    'lib/python3.',
+    'stdlib/builtins.pyi',
 ])
 
 function isCommonImport(uri: vscode.Uri): boolean {
@@ -363,8 +407,6 @@ function isCommonImport(uri: vscode.Uri): boolean {
     }
     return false
 }
-
-export const commonKeywords = new Set([...goKeywords, ...typescriptKeywords])
 
 interface Request {
     symbolName: string
