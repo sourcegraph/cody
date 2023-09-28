@@ -29,12 +29,12 @@ const doc = {
     description: 'Generate code documentation',
     prompt: [
         'Generate a comment briefly documenting the purpose of the selected code.',
-        'Use the type of comment that is idiomatic for the language and section of code selected (e.g. for Typescript use line comments for implementation details, and jsdoc for exported code).',
-        'Follow the style of any existing documentation comments. If no existing documentation comments exist, pay attention to the file path of the selected code to make sure the comments are generated in the style of that language.',
+        'If existing comments exist in this file, or other files with the same file extension, use those comments as examples of style and format.',
         'Only generate the documentation for the selected code, do not generate the code.',
         'Do not output any other code or comments besides the documentation.',
     ].join(' '),
     context: {
+        currentFile: true,
         currentDir: true,
         selection: true,
     },
