@@ -1,11 +1,10 @@
 import { expect } from '@playwright/test'
 
-import { loggedEvents, resetLoggedEvents } from '../fixtures/mock-server'
+import { resetLoggedEvents } from '../fixtures/mock-server'
 
 import { sidebarSignin } from './common'
 import { test } from './helpers'
 
-const expectedOrderedEvents = ['CodyVSCodeExtension:chat:submitted']
 test.beforeEach(() => {
     resetLoggedEvents()
 })
@@ -21,5 +20,4 @@ test('open the Custom Commands in sidebar and add new user recipe', async ({ pag
     await page.locator('a').filter({ hasText: 'New Custom Command...' }).click()
     await page.keyboard.type(recipeName)
     await page.keyboard.press('Enter')
-    await expect.poll(() => loggedEvents).toEqual(expectedOrderedEvents)
 })

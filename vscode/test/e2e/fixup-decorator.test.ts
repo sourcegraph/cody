@@ -8,7 +8,7 @@ import { test } from './helpers'
 const DECORATION_SELECTOR = 'div.view-overlays[role="presentation"] div[class*="TextEditorDecorationType"]'
 
 const expectedOrderedEvents = [
-    'CodyVSCodeExtension:fixup:created',
+    'CodyVSCodeExtension:command:edit:executed',
     'CodyVSCodeExtension:keywordContext:searchDuration',
     'CodyVSCodeExtension:recipe:fixup:executed',
     'CodyVSCodeExtension:fixupResponse:hasCode',
