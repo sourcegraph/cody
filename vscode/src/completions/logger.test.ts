@@ -59,7 +59,6 @@ describe('logger', () => {
             source: 'Network',
             triggerKind: 'Automatic',
             type: 'inline',
-
             multiline: false,
             multilineMode: null,
             otherCompletionProviderEnabled: false,
@@ -103,7 +102,7 @@ describe('logger', () => {
         })
     })
 
-    it.only('reuses the completion ID for the same completion', () => {
+    it('reuses the completion ID for the same completion', () => {
         const item = { insertText: 'foo' }
 
         const id1 = CompletionLogger.create(defaultArgs)
@@ -122,6 +121,9 @@ describe('logger', () => {
         CompletionLogger.loaded(id2, defaultRequestParams, [item])
         CompletionLogger.suggested(id2, InlineCompletionsResultSource.Cache, item)
         CompletionLogger.accept(id2, item)
+
+        const loggerItem2 = CompletionLogger.getCompletionEvent(id2)
+        expect(loggerItem2?.params.id).not.toBe(completionId)
 
         expect(logSpy).toHaveBeenCalledWith(
             'CodyVSCodeExtension:completion:suggested',
