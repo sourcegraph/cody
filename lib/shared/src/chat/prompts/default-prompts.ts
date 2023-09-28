@@ -11,7 +11,7 @@
  * Issues:
  *   - Python: Commenting single implementation lines doesn't work well
  *   - Typescript & JS doesn't consistently use // style comments for implementation lines
- * 
+ *
  * Tested with:
  *   - Typescript (best practice is https://ts.dev/style/#jsdoc-vs-comments)
  *     - https://github.com/sourcegraph/sourcegraph/blob/b150dedb550f45b6b27cba39b15984e04afecaf3/client/wildcard/src/hooks/useKeyboard.ts#L10-L27
