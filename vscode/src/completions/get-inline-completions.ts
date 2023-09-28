@@ -183,6 +183,11 @@ async function doGetInlineCompletions(params: InlineCompletionsParams): Promise<
         return null
     }
 
+    // Do not trigger when the last character is a closing symbol
+    if (triggerKind !== TriggerKind.Manual && /[)\]}]$/.test(docContext.prefix.trim())) {
+        return null
+    }
+
     // Check if the user is typing as suggested by the last candidate completion (that is shown as
     // ghost text in the editor), and reuse it if it is still valid.
     const resultToReuse =

@@ -167,4 +167,10 @@ describe('[getInlineCompletions] triggers', () => {
             expect(requests).toBeSingleLine()
         })
     })
+
+    describe('closing symbols', () => {
+        it.each(['{}█', '[]█', '()█'])('does not trigger for %s', async prompt =>
+            expect(await getInlineCompletions(params(prompt, [completion`bar`]))).toEqual<V>(null)
+        )
+    })
 })
