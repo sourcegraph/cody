@@ -154,7 +154,7 @@ async function doGetInlineCompletions(params: InlineCompletionsParams): Promise<
         triggerKind,
         selectedCompletionInfo,
         docContext,
-        docContext: { multilineTrigger, currentLineSuffix },
+        docContext: { multilineTrigger, currentLineSuffix, currentLinePrefix },
         providerConfig,
         graphContextFetcher,
         toWorkspaceRelativePath,
@@ -184,7 +184,7 @@ async function doGetInlineCompletions(params: InlineCompletionsParams): Promise<
     }
 
     // Do not trigger when the last character is a closing symbol
-    if (triggerKind !== TriggerKind.Manual && /[)\]}]$/.test(docContext.prefix.trim())) {
+    if (triggerKind !== TriggerKind.Manual && /[)\]}]$/.test(currentLinePrefix.trim())) {
         return null
     }
 
