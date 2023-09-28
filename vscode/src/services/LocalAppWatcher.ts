@@ -4,6 +4,7 @@ import { LOCAL_APP_URL } from '@sourcegraph/cody-shared/src/sourcegraph-api/envi
 
 import { isOsSupportedByApp } from '../chat/protocol'
 
+import { expandHomeDir, pathExists } from './LocalAppDetector'
 import { LOCAL_APP_LOCATIONS } from './LocalAppFsPaths'
 
 /**
@@ -67,7 +68,7 @@ export class LocalAppWatcher implements vscode.Disposable {
         // when you remove app (for example, by dragging it to the trash.)
         const pollPromise = this.pollHttp()
         for (const marker of LOCAL_APP_LOCATIONS[process.platform]) {
-            const dirPath = expandHomeDir(marker.dir)
+            const dirPath = expandHomeDir(marker.dir, process.env.HOME)
             const dirUri = vscode.Uri.file(dirPath)
             const fileUri = dirUri.with({ path: dirUri.path + marker.file })
             const watchPattern = new vscode.RelativePattern(dirUri, marker.file)
@@ -103,7 +104,7 @@ export class LocalAppWatcher implements vscode.Disposable {
         this.needsToCheckFiles = false
         let installed = false
         for (const marker of LOCAL_APP_LOCATIONS[process.platform]) {
-            const dirPath = expandHomeDir(marker.dir)
+            const dirPath = expandHomeDir(marker.dir, process.env.HOME)
             const dirUri = vscode.Uri.file(dirPath)
             const fileUri = dirUri.with({ path: dirUri.path + marker.file })
             installed ||= await pathExists(fileUri)
@@ -144,21 +145,4 @@ export class LocalAppWatcher implements vscode.Disposable {
         }
         this.disposables = []
     }
-}
-
-// Utility functions
-async function pathExists(file: vscode.Uri): Promise<boolean> {
-    try {
-        await vscode.workspace.fs.stat(file)
-        return true
-    } catch {
-        return false
-    }
-}
-
-function expandHomeDir(path: string): string {
-    if (process.env.HOME && path.startsWith('~')) {
-        return path.replace('~', process.env.HOME)
-    }
-    return path
 }
