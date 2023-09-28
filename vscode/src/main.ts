@@ -104,7 +104,10 @@ const register = async (
     }
 
     if (config.autocompleteExperimentalSyntacticPostProcessing) {
-        parseAllVisibleDocuments()
+        parseAllVisibleDocuments().then(
+            () => {},
+            () => {}
+        )
 
         disposables.push(vscode.window.onDidChangeVisibleTextEditors(parseAllVisibleDocuments))
         disposables.push(vscode.workspace.onDidChangeTextDocument(updateParseTreeOnEdit))
@@ -465,14 +468,18 @@ const register = async (
             completionsProvider.dispose()
         }
 
-        completionsProvider = await createInlineCompletionItemProvider({
-            config,
-            client: codeCompletionsClient,
-            statusBar,
-            contextProvider,
-            authProvider,
-            triggerNotice: notice => sidebarChatProvider.triggerNotice(notice),
-        })
+        completionsProvider = await createInlineCompletionItemProvider(
+            {
+                config,
+                client: codeCompletionsClient,
+                statusBar,
+                contextProvider,
+                authProvider,
+                triggerNotice: notice => sidebarChatProvider.triggerNotice(notice),
+            },
+            context,
+            platform
+        )
     }
     // Reload autocomplete if either the configuration changes or the auth status is updated
     vscode.workspace.onDidChangeConfiguration(event => {

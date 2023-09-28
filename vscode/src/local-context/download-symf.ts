@@ -74,7 +74,7 @@ export async function getSymfPath(context: vscode.ExtensionContext): Promise<str
     return symfPath
 }
 
-async function fileExists(path: string): Promise<boolean> {
+export async function fileExists(path: string): Promise<boolean> {
     try {
         await fspromises.access(path)
         return true
@@ -83,7 +83,7 @@ async function fileExists(path: string): Promise<boolean> {
     }
 }
 
-async function downloadFile(url: string, outputPath: string): Promise<void> {
+export async function downloadFile(url: string, outputPath: string): Promise<void> {
     const response = await axios({
         url,
         method: 'GET',

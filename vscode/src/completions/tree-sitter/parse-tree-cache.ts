@@ -110,8 +110,6 @@ export function asPoint(position: Pick<vscode.Position, 'line' | 'character'>): 
     return { row: position.line, column: position.character }
 }
 
-export function parseAllVisibleDocuments(): void {
-    for (const editor of vscode.window.visibleTextEditors) {
-        void parseDocument(editor.document)
-    }
+export async function parseAllVisibleDocuments(): Promise<void> {
+    await Promise.all(vscode.window.visibleTextEditors.map(editor => parseDocument(editor.document)))
 }

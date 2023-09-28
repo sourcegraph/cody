@@ -5,7 +5,7 @@ import { Command } from 'commander'
 import { TextDocument } from 'vscode-languageserver-textdocument'
 
 import { Agent } from '@sourcegraph/cody-agent/src/agent'
-import { AutocompleteItem, AutocompleteParams, AutocompleteResult } from '@sourcegraph/cody-agent/src/protocol'
+import { AutocompleteItem, AutocompleteParams, AutocompleteResult } from '@sourcegraph/cody-agent/src/protocol-alias'
 
 interface CompleteOptions {
     stream: boolean
