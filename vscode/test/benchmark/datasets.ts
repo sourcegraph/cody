@@ -11,7 +11,12 @@ export interface DatasetConfig {
 }
 
 export function parseEvaluationConfig(path: string): DatasetConfig {
-    const file = readFileSync(path, 'utf8')
-    const config = JSON.parse(file) as DatasetConfig
-    return config
+    try {
+        const file = readFileSync(path, 'utf8')
+        const config = JSON.parse(file) as DatasetConfig
+        return config
+    } catch (error) {
+        console.error(`Error parsing dataset config file ${path}: ${error}`)
+        throw error
+    }
 }

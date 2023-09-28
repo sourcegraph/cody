@@ -1,8 +1,10 @@
+import { writeFileSync } from 'fs'
 import path from 'path'
 
 import * as vscode from 'vscode'
 
-import { CURSOR } from './constants'
+import { BENCHMARK_EXTENSION_ID } from './config'
+import { CODY_EXTENSION_CHANNEL_ID, CODY_EXTENSION_ID, CURSOR } from './constants'
 import { DatasetConfig } from './datasets'
 import { ensureExecuteCommand } from './helpers'
 
@@ -35,6 +37,7 @@ export const executeCompletionOnFile = async (
         const doc = await vscode.workspace.openTextDocument(path.resolve(cwd, fileToOpen))
         await vscode.window.showTextDocument(doc, { preview: false })
     }
+
     const entryDocument = await vscode.workspace.openTextDocument(path.resolve(cwd, entryFile))
     const editor = await vscode.window.showTextDocument(entryDocument)
 
@@ -44,7 +47,7 @@ export const executeCompletionOnFile = async (
 
     // Select the placeholder and remove it, triggering a completion
     editor.selection = cursorSelection
-    await new Promise(resolve => setTimeout(resolve, 1000))
+    await new Promise(resolve => setTimeout(resolve, 5000))
     await editor.edit(edit => edit.delete(cursorSelection))
 
     const startPolling = pollToAcceptCompletion(editor.document.version)
@@ -55,6 +58,8 @@ export const executeCompletionOnFile = async (
     ])
 
     await editor.document.save()
+
+    await new Promise(resolve => setTimeout(resolve, 20000))
 
     return completed
 }
@@ -68,20 +73,20 @@ export const executeCompletion = async (
     // Open the relevant files and trigger a completion in the entry file
     await executeCompletionOnFile(evalCaseConfig.entryFile, evalCaseConfig.openFiles, tempWorkspace)
 
-    // if (BENCHMARK_EXTENSION_ID === CODY_EXTENSION_ID) {
-    //     // Dump the output of the extension to a file
-    //     await ensureExecuteCommand(`workbench.action.output.show.${CODY_EXTENSION_CHANNEL_ID}`)
-    //     await new Promise(resolve => setTimeout(resolve, 100)) // Ensure open
+    if (BENCHMARK_EXTENSION_ID === CODY_EXTENSION_ID) {
+        // Dump the output of the extension to a file
+        await ensureExecuteCommand(`workbench.action.output.show.${CODY_EXTENSION_CHANNEL_ID}`)
+        await new Promise(resolve => setTimeout(resolve, 100)) // Ensure open
 
-    //     const channelOutput = vscode.window.visibleTextEditors.find(
-    //         ({ document }) => document.fileName === CODY_EXTENSION_CHANNEL_ID
-    //     )
-    //     if (channelOutput) {
-    //         writeFileSync(path.join(tempWorkspace, 'output.log'), channelOutput.document.getText(), 'utf8')
-    //     }
+        const channelOutput = vscode.window.visibleTextEditors.find(
+            ({ document }) => document.fileName === CODY_EXTENSION_CHANNEL_ID
+        )
+        if (channelOutput) {
+            writeFileSync(path.join(tempWorkspace, 'output.log'), channelOutput.document.getText(), 'utf8')
+        }
 
-    //     await ensureExecuteCommand('workbench.output.action.clearOutput')
-    //     // Additional time to ensure it is cleared
-    //     await new Promise(resolve => setTimeout(resolve, 100))
-    // }
+        await ensureExecuteCommand('workbench.output.action.clearOutput')
+        // Additional time to ensure it is cleared
+        await new Promise(resolve => setTimeout(resolve, 100))
+    }
 }

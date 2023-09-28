@@ -11,3 +11,4 @@ export const BENCHMARK_CONFIG_FILE = process.env.BENCHMARK_CONFIG_FILE
 export const BENCHMARK_DATASET = process.env.BENCHMARK_DATASET || 'api-invocation' // todo
 export const BENCHMARK_COMPARE_WITH = process.env.BENCHMARK_COMPARE_WITH
 export const BENCHMARK_WORKSPACE = process.env.BENCHMARK_WORKSPACE
+export const BENCHMARK_DOCKER_IMAGE = process.env.BENCHMARK_DOCKER_IMAGE

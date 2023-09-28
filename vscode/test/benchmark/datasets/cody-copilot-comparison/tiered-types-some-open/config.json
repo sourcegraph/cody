@@ -1,0 +1,8 @@
+{
+  "entryFile": "generate.ts",
+  "openFiles": ["print-bananas.ts"],
+  "additionalFiles": ["banana.ts"],
+  "solutionFile": "solution.ts",
+  "testFile": "test.ts",
+  "testCommand": "ts-node"
+}

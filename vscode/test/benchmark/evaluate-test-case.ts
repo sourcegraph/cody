@@ -4,6 +4,7 @@ import { tmpdir } from 'os'
 import path from 'path'
 import { promisify } from 'util'
 
+import { BENCHMARK_DOCKER_IMAGE } from './config'
 import { TEST_WORKSPACE_PATH } from './constants'
 import { commitSignatureEnv } from './git-helpers'
 
@@ -24,9 +25,10 @@ export const testCompletionResult = async (
     testCommand: string,
     cwd: string
 ): Promise<CaseStatus.PASS | CaseStatus.FAIL> => {
+    const dockerCommand = `docker run --mount src="${cwd}",target=/app,type=bind ${BENCHMARK_DOCKER_IMAGE}`
     let status: CaseStatus
     try {
-        await exec(`${testCommand} ${testFile}`, { cwd })
+        await exec(`${dockerCommand} ${testCommand} ${testFile}`, { cwd })
         status = CaseStatus.PASS
     } catch {
         status = CaseStatus.FAIL
