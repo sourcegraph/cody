@@ -106,6 +106,7 @@ export const ChatInputContextSimplified: React.FC<ChatInputContextSimplifiedProp
                 icon={mdiDatabaseCheckOutline}
                 popup={popup}
                 popupOpen={popupOpen}
+                togglePopup={togglePopup}
             />
         )
     }
