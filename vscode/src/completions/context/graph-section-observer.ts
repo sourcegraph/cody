@@ -197,6 +197,7 @@ export class GraphSectionObserver implements vscode.Disposable, GraphContextFetc
     }
 
     private async hydrateContextAtCursor(editor: vscode.TextEditor, position: vscode.Position): Promise<void> {
+        logDebug('GraphContext:starting', 'Hydrating context at cursor')
         const section = this.getSectionAtPosition(editor.document, position)
         if (!section) {
             return
@@ -462,6 +463,7 @@ export class GraphSectionObserver implements vscode.Disposable, GraphContextFetc
      * instant access to these sections.
      */
     private async onDidChangeTextEditorSelection(event: vscode.TextEditorSelectionChangeEvent): Promise<void> {
+        logDebug('GraphContext:triggered', 'did change editor selection')
         await this.hydrateContextAtCursor(event.textEditor, event.selections[0].active)
     }
 

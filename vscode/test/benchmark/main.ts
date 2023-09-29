@@ -15,6 +15,12 @@ import { CaseStatus, copyFileToWorkspace, createTemporaryWorkspace, testCompleti
 const glob = promisify(_glob)
 const exec = promisify(_exec)
 
+interface BenchmarkOutput {
+    [testId: string]: {
+        [extensionId: string]: string
+    }
+}
+
 export async function start(): Promise<void> {
     // The path to the test runner script, passed to --extensionTestsPath.
     const EXTENSION_TEST_PATH = path.resolve(VSCODE_CODY_ROOT, 'dist', 'tsc', 'test', 'benchmark', 'index')
@@ -26,6 +32,8 @@ export async function start(): Promise<void> {
     if (BENCHMARK_COMPARE_WITH) {
         extensionsToBenchmark.push(BENCHMARK_COMPARE_WITH)
     }
+
+    const results: BenchmarkOutput = {}
 
     try {
         // TODO: Use 1.80 for improved auth?
@@ -48,7 +56,8 @@ export async function start(): Promise<void> {
 
             for (const benchmarkConfig of benchmarkCases) {
                 const benchmarkDir = path.dirname(benchmarkConfig)
-                const id = path.basename(benchmarkDir)
+                const testId = `${BENCHMARK_DATASET}/${path.basename(benchmarkDir)}`
+
                 const evalCaseConfig = parseEvaluationConfig(benchmarkConfig)
                 // Copy the entry file into a temporary Git directory
                 // This gives us an isolated place where we can allow Cody to make changes, and inspect them later
@@ -84,15 +93,16 @@ export async function start(): Promise<void> {
                 // In the future we may also want to produce edit similarity (ES) and exact match (EM) metrics for further inspection.
                 await copyFileToWorkspace(tempWorkspace, evalCaseConfig.solutionFile, benchmarkDir)
 
-                if (testOutcome === CaseStatus.FAIL) {
-                    console.log(`🔴 FAIL ${id} - ${tempWorkspace}`)
-                    // Also print the diff for quick evaluation
-                    const diff = await exec(`git diff --color=always -U0 ${evalCaseConfig.entryFile} | tail -n +5`, {
-                        cwd: tempWorkspace,
-                    })
-                    console.log(diff.stdout)
-                } else {
-                    console.log(`🟢 PASS ${id} - ${tempWorkspace}`)
+                const testResult = testOutcome === CaseStatus.FAIL ? `🔴 - ${tempWorkspace}` : `🟢 - ${tempWorkspace}`
+                console.log(testResult)
+
+                const diff = await exec(`git diff --color=always -U0 ${evalCaseConfig.entryFile} | tail -n +5`, {
+                    cwd: tempWorkspace,
+                })
+                console.log(diff.stdout)
+
+                results[testId] = {
+                    [extension]: testResult,
                 }
             }
         }
@@ -100,6 +110,8 @@ export async function start(): Promise<void> {
         console.error('Failed to run tests:', error)
         process.exit(1)
     }
+
+    console.table(results)
 }
 
 // eslint-disable-next-line @typescript-eslint/no-floating-promises

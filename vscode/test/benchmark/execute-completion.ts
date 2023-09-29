@@ -40,12 +40,16 @@ export const executeCompletionOnFile = async (
 
     const entryDocument = await vscode.workspace.openTextDocument(path.resolve(cwd, entryFile))
     const editor = await vscode.window.showTextDocument(entryDocument)
+    const topOfFilePosition = new vscode.Position(0, 0)
+    editor.selection = new vscode.Selection(topOfFilePosition, topOfFilePosition)
+    await new Promise(resolve => setTimeout(resolve, 1000))
 
     // // Get the position of the placeholder `CURSOR` symbol
     const cursorPosition = editor.document.positionAt(editor.document.getText().indexOf(CURSOR))
     const cursorSelection = new vscode.Selection(cursorPosition.translate(0, 1), cursorPosition.translate(0, 1))
     editor.selection = cursorSelection
     await vscode.commands.executeCommand('deleteLeft')
+    await ensureExecuteCommand('cody.autocomplete.manual-trigger')
     await new Promise(resolve => setTimeout(resolve, 750))
 
     const startPolling = pollToAcceptCompletion(editor.document.version)
