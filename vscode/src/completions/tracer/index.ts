@@ -3,7 +3,7 @@ import * as vscode from 'vscode'
 import { CompletionParameters } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
 
 import { GetContextResult } from '../context/context'
-import { InlineCompletionsResult } from '../getInlineCompletions'
+import { InlineCompletionsResult, TriggerKind } from '../get-inline-completions'
 import { CompletionProviderTracerResultData, Provider } from '../providers/provider'
 
 /**
@@ -27,7 +27,8 @@ export interface ProvideInlineCompletionsItemTraceData {
     params?: {
         document: vscode.TextDocument
         position: vscode.Position
-        context: vscode.InlineCompletionContext
+        triggerKind: TriggerKind
+        selectedCompletionInfo?: vscode.SelectedCompletionInfo
     }
     completers?: Provider['options'][]
 

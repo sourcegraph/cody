@@ -16,7 +16,7 @@ export class ChatClient {
     constructor(private completions: SourcegraphCompletionsClient) {}
 
     public chat(messages: Message[], cb: CompletionCallbacks, params?: Partial<ChatParameters>): () => void {
-        const isLastMessageFromHuman = messages.length > 0 && messages[messages.length - 1].speaker === 'human'
+        const isLastMessageFromHuman = messages.length > 0 && messages.at(-1)!.speaker === 'human'
         const augmentedMessages = isLastMessageFromHuman ? messages.concat([{ speaker: 'assistant' }]) : messages
 
         return this.completions.stream(

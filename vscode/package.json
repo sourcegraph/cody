@@ -2,7 +2,7 @@
   "name": "cody-ai",
   "private": true,
   "displayName": "Cody AI",
-  "version": "0.10.1",
+  "version": "0.12.4",
   "publisher": "sourcegraph",
   "license": "Apache-2.0",
   "icon": "resources/cody.png",
@@ -37,7 +37,8 @@
     "test:integration": "tsc --build ./test/integration && pnpm run -s build:dev:desktop && node --inspect -r ts-node/register dist/tsc/test/integration/main.js",
     "test:unit": "vitest",
     "vscode:prepublish": "pnpm -s run build",
-    "generate:completions": "OUTFILE=/tmp/run-code-completions-on-dataset.js && esbuild ./test/completions/run-code-completions-on-dataset.ts --bundle --external:vscode --outfile=$OUTFILE --format=cjs --platform=node --sourcemap=inline && node --enable-source-maps $OUTFILE"
+    "generate:completions": "OUTFILE=/tmp/run-code-completions-on-dataset.js && esbuild ./test/completions/run-code-completions-on-dataset.ts --bundle --external:vscode --outfile=$OUTFILE --format=cjs --platform=node --sourcemap=inline && node --enable-source-maps $OUTFILE",
+    "test:unit:tree-sitter-queries": "vitest vscode/src/completions/tree-sitter/queries/**/*.test.ts"
   },
   "categories": [
     "Programming Languages",
@@ -257,7 +258,8 @@
       {
         "command": "cody.command.edit-code",
         "category": "Ask Cody",
-        "title": "Refactor Code"
+        "title": "Edit Code",
+        "icon": "$(sparkle)"
       },
       {
         "command": "cody.command.explain-code",
@@ -277,7 +279,7 @@
       {
         "command": "cody.command.smell-code",
         "category": "Ask Cody",
-        "title": "Smell Code"
+        "title": "Find Code Smells"
       },
       {
         "command": "cody.command.context-search",
@@ -370,10 +372,10 @@
       },
       {
         "command": "cody.inline.new",
-        "title": "Start New Thread",
+        "title": "Ask Cody Inline",
         "category": "Cody Inline Chat",
         "when": "cody.activated && config.cody.inlineChat.enabled",
-        "enablement": "editorFocus"
+        "enablement": "editorFocus && config.cody.inlineChat.enabled"
       },
       {
         "command": "cody.guardrails.debug",
@@ -385,12 +387,6 @@
         "command": "cody.command.inline-touch",
         "category": "Cody",
         "title": "Touch"
-      },
-      {
-        "command": "cody.fixup.new",
-        "category": "Cody",
-        "title": "Fixup",
-        "icon": "$(sparkle)"
       },
       {
         "command": "cody.fixup.open",
@@ -432,8 +428,8 @@
       },
       {
         "command": "cody.action.commands.custom.menu",
-        "category": "Cody",
-        "title": "Custom Commands (Experimental)",
+        "category": "Ask Cody",
+        "title": "Custom Commands",
         "when": "cody.activated",
         "icon": "$(bookmark)"
       },
@@ -458,7 +454,7 @@
         "mac": "alt+/"
       },
       {
-        "command": "cody.fixup.new",
+        "command": "cody.command.edit-code",
         "key": "ctrl+shift+v",
         "mac": "shift+cmd+v",
         "when": "cody.activated && !editorReadonly"
@@ -473,7 +469,8 @@
         "command": "cody.inline.new",
         "key": "ctrl+shift+c",
         "mac": "cmd+shift+c",
-        "when": "cody.activated && editorFocus && config.cody.inlineChat.enabled"
+        "when": "cody.activated && editorFocus && config.cody.inlineChat.enabled",
+        "enablement": "config.cody.inlineChat.enabled"
       },
       {
         "command": "cody.action.commands.menu",
@@ -486,9 +483,9 @@
         "key": "ctrl+enter"
       },
       {
-        "command": "editor.action.inlineSuggest.trigger",
+        "command": "cody.autocomplete.manual-trigger",
         "key": "alt+\\",
-        "when": "editorTextFocus && !editorHasSelection && cody.autocomplete.enabled && !inlineSuggestionsVisible"
+        "when": "editorTextFocus && !editorHasSelection && config.cody.autocomplete.enabled && !inlineSuggestionsVisible"
       }
     ],
     "submenus": [
@@ -501,11 +498,11 @@
       "commandPalette": [
         {
           "command": "cody.command.explain-code",
-          "when": "cody.activated"
+          "when": "false"
         },
         {
           "command": "cody.command.context-search",
-          "when": "cody.activated"
+          "when": "false"
         },
         {
           "command": "cody.command.inline-touch",
@@ -513,15 +510,15 @@
         },
         {
           "command": "cody.command.smell-code",
-          "when": "cody.activated"
+          "when": "false"
         },
         {
           "command": "cody.command.generate-tests",
-          "when": "cody.activated"
+          "when": "false"
         },
         {
           "command": "cody.command.document-code",
-          "when": "cody.activated"
+          "when": "false"
         },
         {
           "command": "cody.focus",
@@ -586,35 +583,47 @@
       "cody.submenu": [
         {
           "command": "cody.command.explain-code",
-          "when": "cody.activated"
+          "when": "cody.activated",
+          "group": "command"
         },
         {
           "command": "cody.command.edit-code",
-          "when": "cody.activated"
+          "when": "cody.activated",
+          "group": "ask"
         },
         {
           "command": "cody.command.generate-tests",
-          "when": "cody.activated"
+          "when": "cody.activated",
+          "group": "command"
         },
         {
           "command": "cody.command.document-code",
-          "when": "cody.activated"
+          "when": "cody.activated",
+          "group": "command"
         },
         {
           "command": "cody.command.smell-code",
-          "when": "cody.activated"
+          "when": "cody.activated",
+          "group": "command"
         },
         {
           "command": "cody.action.commands.custom.menu",
-          "when": "cody.activated"
+          "when": "cody.activated",
+          "group": "command"
         },
         {
           "command": "cody.focus",
-          "when": "!cody.activated"
+          "when": "!cody.activated",
+          "group": "other"
         },
         {
           "command": "cody.guardrails.debug",
-          "when": "cody.activated && config.cody.experimental.guardrails && editorHasSelection"
+          "when": "cody.activated && config.cody.experimental.guardrails && editorHasSelection",
+          "group": "other"
+        },
+        {
+          "command": "cody.inline.new",
+          "group": "ask"
         }
       ],
       "view/title": [
@@ -834,12 +843,6 @@
           "markdownDescription": "Path to symf binary",
           "default": ""
         },
-        "cody.experimental.symf.anthropicKey": {
-          "order": 99,
-          "type": "string",
-          "markdownDescription": "API key for Anthropic",
-          "default": ""
-        },
         "cody.debug.enable": {
           "order": 99,
           "type": "boolean",
@@ -901,8 +904,7 @@
             "wizardcoder-15b",
             "llama-code-7b",
             "llama-code-13b",
-            "llama-code-13b-instruct",
-            "claude-instant-infill"
+            "llama-code-13b-instruct"
           ],
           "markdownDescription": "Overwrite the default model used for code autocompletion inference. This is only supported with the `unstable-fireworks` provider"
         },
@@ -919,7 +921,7 @@
         },
         "cody.autocomplete.experimental.syntacticPostProcessing": {
           "type": "boolean",
-          "default": false,
+          "default": true,
           "markdownDescription": "Rank autocomplete results with tree-sitter."
         },
         "cody.autocomplete.experimental.graphContext": {
@@ -948,6 +950,7 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.4.2",
+    "@mdi/js": "^7.2.96",
     "@sentry/browser": "^7.66.0",
     "@sentry/core": "^7.66.0",
     "@sentry/node": "^7.66.0",
@@ -956,6 +959,7 @@
     "@types/stream-json": "^1.7.3",
     "@vscode/codicons": "^0.0.29",
     "@vscode/webview-ui-toolkit": "^1.2.2",
+    "axios": "^1.3.6",
     "classnames": "^2.3.2",
     "date-fns": "^2.30.0",
     "detect-indent": "^7.0.1",
@@ -968,6 +972,7 @@
     "openai": "^3.2.1",
     "socks-proxy-agent": "^8.0.1",
     "stream-json": "^1.8.0",
+    "unzipper": "^0.10.14",
     "uuid": "^9.0.0",
     "vscode-languageserver-textdocument": "^1.0.8",
     "vscode-uri": "^3.0.7",
@@ -979,6 +984,7 @@
   "devDependencies": {
     "@google-cloud/pubsub": "^3.7.3",
     "@playwright/test": "^1.33.0",
+    "@types/axios": "^0.14.0",
     "@types/dedent": "^0.7.0",
     "@types/express": "^4.17.17",
     "@types/glob": "^8.0.0",
@@ -988,6 +994,7 @@
     "@types/mock-require": "^2.0.1",
     "@types/progress": "^2.0.5",
     "@types/semver": "^7.5.0",
+    "@types/unzipper": "^0.10.7",
     "@types/uuid": "^9.0.2",
     "@types/vscode": "^1.79.0",
     "@types/vscode-webview": "^1.57.1",

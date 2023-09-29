@@ -1,8 +1,9 @@
 import path from 'path'
 
-import type Parser from 'web-tree-sitter'
+import Parser from 'web-tree-sitter'
 
 import { SupportedLanguage } from './grammars'
+import { initQueries } from './queries'
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports,@typescript-eslint/no-var-requires
 const ParserImpl = require('web-tree-sitter') as typeof Parser
@@ -29,6 +30,12 @@ export function getParser(language: SupportedLanguage): Parser | undefined {
     return PARSERS_LOCAL_CACHE[language]
 }
 
+export function resetParsersCache(): void {
+    for (const key of Object.keys(PARSERS_LOCAL_CACHE)) {
+        delete PARSERS_LOCAL_CACHE[key as SupportedLanguage]
+    }
+}
+
 export async function createParser(settings: ParserSettings): Promise<Parser> {
     const { language, grammarDirectory = __dirname } = settings
 
@@ -46,6 +53,8 @@ export async function createParser(settings: ParserSettings): Promise<Parser> {
 
     parser.setLanguage(languageGrammar)
     PARSERS_LOCAL_CACHE[language] = parser
+
+    initQueries(languageGrammar, language, parser)
 
     return parser
 }
@@ -71,7 +80,6 @@ const SUPPORTED_LANGUAGES: Record<SupportedLanguage, GrammarPath> = {
     [SupportedLanguage.Go]: 'tree-sitter-go.wasm',
     [SupportedLanguage.Python]: 'tree-sitter-python.wasm',
     [SupportedLanguage.Dart]: 'tree-sitter-dart.wasm',
-    [SupportedLanguage.C]: 'tree-sitter-c.wasm',
     [SupportedLanguage.Cpp]: 'tree-sitter-cpp.wasm',
     [SupportedLanguage.CSharp]: 'tree-sitter-c_sharp.wasm',
     [SupportedLanguage.Php]: 'tree-sitter-php.wasm',

@@ -49,7 +49,6 @@ describe.each([
                 autocompleteAdvancedAccessToken: '',
                 autocompleteAdvancedServerEndpoint: '',
                 autocompleteAdvancedServerModel: null,
-                autocompleteAdvancedEmbeddings: true,
                 debug: false,
                 verboseDebug: false,
             },
@@ -69,7 +68,25 @@ describe.each([
             },
         },
     },
-])('describe StandardAgent with $name', ({ clientInfo }) => {
+    {
+        name: 'NotConfigured',
+        clientInfo: {
+            name: 'test-client',
+            version: 'v1',
+            workspaceRootUri: 'file:///path/to/foo',
+            workspaceRootPath: '/path/to/foo',
+            connectionConfiguration: {
+                accessToken: '',
+                serverEndpoint: 'https://sourcegraph.com/',
+                customHeaders: {},
+            },
+        },
+    },
+])('describe StandardAgent with $name', ({ name, clientInfo }) => {
+    if (process.env.VITEST_ONLY && !process.env.VITEST_ONLY.includes(name)) {
+        it(name + ' tests are skipped due to VITEST_ONLY environment variable', () => {})
+        return
+    }
     if (process.env.SRC_ACCESS_TOKEN === undefined || process.env.SRC_ENDPOINT === undefined) {
         it('no-op test because SRC_ACCESS_TOKEN is not set. To actually run the Cody Agent tests, set the environment variables SRC_ENDPOINT and SRC_ACCESS_TOKEN', () => {})
         return
@@ -93,7 +110,23 @@ describe.each([
     it('initializes properly', async () => {
         const serverInfo = await client.handshake(clientInfo)
         assert.deepStrictEqual(serverInfo.name, 'cody-agent', 'Agent should be cody-agent')
-        assert.deepStrictEqual(serverInfo.codyEnabled, true, 'Cody should be enabled')
+    })
+
+    it('handles config changes correctly', () => {
+        // Send two config change notifications because this is what the
+        // JetBrains client does and there was a bug where everything worked
+        // fine as long as we didn't send the second unauthenticated config
+        // change.
+        client.notify('extensionConfiguration/didChange', {
+            accessToken: 'https://sourcegraph.com/',
+            serverEndpoint: '',
+            customHeaders: {},
+        })
+        client.notify('extensionConfiguration/didChange', {
+            accessToken: process.env.SRC_ACCESS_TOKEN ?? 'invalid',
+            serverEndpoint: process.env.SRC_ENDPOINT ?? 'invalid',
+            customHeaders: {},
+        })
     })
 
     it('lists recipes correctly', async () => {
@@ -104,27 +137,50 @@ describe.each([
     it('returns non-empty autocomplete', async () => {
         const filePath = '/path/to/foo/file.js'
         const content = 'function sum(a, b) {\n    \n}'
-        client.notify('textDocument/didOpen', { filePath, content })
+        client.notify('textDocument/didOpen', {
+            filePath,
+            content,
+            selection: { start: { line: 1, character: 0 }, end: { line: 1, character: 0 } },
+        })
         const completions = await client.request('autocomplete/execute', {
             filePath,
             position: { line: 1, character: 4 },
+            triggerKind: 'Automatic',
         })
         assert(completions.items.length > 0)
     })
 
-    const streamingChatMessages = new Promise<void>(resolve => {
+    const streamingChatMessages = new Promise<void>((resolve, reject) => {
+        let hasReceivedNonNullMessage = false
+        let isResolved = false
         client.registerNotification('chat/updateMessageInProgress', msg => {
             if (msg === null) {
-                resolve()
+                if (isResolved) {
+                    return
+                }
+                isResolved = true
+                if (hasReceivedNonNullMessage) {
+                    resolve()
+                } else {
+                    reject(new Error('Received null message before non-null message'))
+                }
+            } else {
+                hasReceivedNonNullMessage = true
             }
         })
     })
 
     it('allows us to execute recipes properly', async () => {
-        await client.executeRecipe('chat-question', "What's 2+2?")
-    })
+        await client.executeRecipe('chat-question', 'How do I implement sum?')
+    }, 20_000)
 
-    it('sends back transcript updates and makes sense', () => streamingChatMessages, 20_000)
+    // Timeout is 100ms because we await on `recipes/execute` in the previous test
+    it('executing a recipe sends chat/updateMessageInProgress notifications', () => streamingChatMessages, 100)
+
+    it('allows us to cancel chat', async () => {
+        setTimeout(() => client.notify('$/cancelRequest', { id: client.id - 1 }), 200)
+        await client.executeRecipe('chat-question', 'How do I implement sum?')
+    }, 500)
 
     afterAll(async () => {
         await client.shutdownAndExit()

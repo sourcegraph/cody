@@ -6,10 +6,19 @@ import { ChatMessage, UserLocalHistory } from '@sourcegraph/cody-shared/src/chat
 import { View } from '../../webviews/NavBar'
 import { logDebug } from '../log'
 import { AuthProviderSimplified } from '../services/AuthProviderSimplified'
+import { LocalAppWatcher } from '../services/LocalAppWatcher'
 import * as OnboardingExperiment from '../services/OnboardingExperiment'
+import { telemetryService } from '../services/telemetry'
 
 import { MessageProvider, MessageProviderOptions } from './MessageProvider'
-import { ExtensionMessage, WebviewMessage } from './protocol'
+import {
+    APP_LANDING_URL,
+    APP_REPOSITORIES_URL,
+    archConvertor,
+    ExtensionMessage,
+    isOsSupportedByApp,
+    WebviewMessage,
+} from './protocol'
 
 export interface ChatViewProviderWebview extends Omit<vscode.Webview, 'postMessage'> {
     postMessage(message: ExtensionMessage): Thenable<boolean>
@@ -26,6 +35,11 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
     constructor({ extensionUri, ...options }: ChatViewProviderOptions) {
         super(options)
         this.extensionUri = extensionUri
+
+        const localAppWatcher = new LocalAppWatcher()
+        this.disposables.push(localAppWatcher)
+        this.disposables.push(localAppWatcher.onChange(appWatcher => this.appWatcherChanged(appWatcher)))
+        this.disposables.push(localAppWatcher.onTokenFileChange(tokenFile => this.tokenFileChanged(tokenFile)))
     }
 
     private async onDidReceiveMessage(message: WebviewMessage): Promise<void> {
@@ -45,11 +59,11 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
             case 'edit':
                 this.transcript.removeLastInteraction()
                 await this.onHumanMessageSubmitted(message.text, 'user')
-                this.telemetryService.log('CodyVSCodeExtension:editChatButton:clicked')
+                telemetryService.log('CodyVSCodeExtension:editChatButton:clicked')
                 break
             case 'abort':
                 await this.abortCompletion()
-                this.telemetryService.log('CodyVSCodeExtension:abortButton:clicked', { source: 'sidebar' })
+                telemetryService.log('CodyVSCodeExtension:abortButton:clicked', { source: 'sidebar' })
                 break
             case 'executeRecipe':
                 await this.setWebviewView('chat')
@@ -60,7 +74,7 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
                     await this.authProvider.appAuth(message.endpoint)
                     // Log app button click events: e.g. app:download:clicked or app:connect:clicked
                     const value = message.value === 'download' ? 'app:download' : 'app:connect'
-                    this.telemetryService.log(`CodyVSCodeExtension:${value}:clicked`) // TODO(sqs): remove when new events are working
+                    telemetryService.log(`CodyVSCodeExtension:${value}:clicked`) // TODO(sqs): remove when new events are working
                     break
                 }
                 if (message.type === 'callback' && message.endpoint) {
@@ -83,11 +97,14 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
             case 'insert':
                 await this.handleInsertAtCursor(message.text)
                 break
+            case 'newFile':
+                await this.handleSaveToNewFile(message.text)
+                break
             case 'copy':
                 await this.handleCopiedCode(message.text, message.eventType)
                 break
             case 'event':
-                this.telemetryService.log(message.eventName, message.properties)
+                telemetryService.log(message.eventName, message.properties)
                 break
             case 'history':
                 if (message.action === 'clear') {
@@ -111,7 +128,7 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
                 break
             case 'reload':
                 await this.authProvider.reloadAuthStatus()
-                this.telemetryService.log('CodyVSCodeExtension:authReloadButton:clicked')
+                telemetryService.log('CodyVSCodeExtension:authReloadButton:clicked')
                 break
             case 'openFile':
                 await this.openFilePath(message.filePath)
@@ -129,16 +146,54 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
                         : undefined
                 )
                 break
+            case 'simplified-onboarding':
+                if (message.type === 'install-app') {
+                    void this.simplifiedOnboardingInstallApp()
+                    break
+                }
+                if (message.type === 'open-app') {
+                    void this.openExternalLinks(APP_REPOSITORIES_URL.href)
+                    break
+                }
+                if (message.type === 'reload-state') {
+                    void this.simplifiedOnboardingReloadEmbeddingsState()
+                    break
+                }
+                break
             default:
                 this.handleError('Invalid request type from Webview')
         }
     }
 
+    private async simplifiedOnboardingInstallApp(): Promise<void> {
+        const os = process.platform
+        const arch = process.arch
+        const DOWNLOAD_URL =
+            os && arch && isOsSupportedByApp(os, arch)
+                ? `https://sourcegraph.com/.api/app/latest?arch=${archConvertor(arch)}&target=${os}`
+                : APP_LANDING_URL.href
+        await this.openExternalLinks(DOWNLOAD_URL)
+    }
+
+    public async simplifiedOnboardingReloadEmbeddingsState(): Promise<void> {
+        await this.contextProvider.forceUpdateCodebaseContext()
+    }
+
+    private appWatcherChanged(appWatcher: LocalAppWatcher): void {
+        void this.webview?.postMessage({ type: 'app-state', isInstalled: appWatcher.isInstalled })
+        void this.simplifiedOnboardingReloadEmbeddingsState()
+    }
+
+    private tokenFileChanged(file: vscode.Uri): void {
+        void this.authProvider.appDetector
+            .tryFetchAppJson(file)
+            .then(() => this.simplifiedOnboardingReloadEmbeddingsState())
+    }
+
     private async onHumanMessageSubmitted(text: string, submitType: 'user' | 'suggestion' | 'example'): Promise<void> {
-        logDebug('ChatViewProvider:onHumanMessageSubmitted', '', { verbose: { text, submitType } })
-        this.telemetryService.log('CodyVSCodeExtension:chat:submitted', { source: 'sidebar' })
+        logDebug('ChatViewProvider:onHumanMessageSubmitted', 'sidebar', { verbose: { text, submitType } })
         if (submitType === 'suggestion') {
-            this.telemetryService.log('CodyVSCodeExtension:chatPredictions:used')
+            telemetryService.log('CodyVSCodeExtension:chatPredictions:used')
         }
         if (text === '/') {
             void vscode.commands.executeCommand('cody.action.commands.menu', true)
@@ -155,7 +210,7 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
      * Process custom command click
      */
     private async onCustomPromptClicked(title: string, commandType: CustomCommandType = 'user'): Promise<void> {
-        this.telemetryService.log('CodyVSCodeExtension:command:customMenu:clicked')
+        telemetryService.log('CodyVSCodeExtension:command:customMenu:clicked')
         logDebug('ChatViewProvider:onCustomPromptClicked', title)
         if (!this.isCustomCommandAction(title)) {
             await this.setWebviewView('chat')
@@ -215,18 +270,31 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
         const selectionRange = vscode.window.activeTextEditor?.selection
         const editor = vscode.window.activeTextEditor
         if (!editor || !selectionRange) {
+            this.handleError('No editor or selection found to insert text')
             return
         }
 
         const edit = new vscode.WorkspaceEdit()
         // trimEnd() to remove new line added by Cody
-        edit.replace(editor.document.uri, selectionRange, text.trimEnd())
+        edit.insert(editor.document.uri, selectionRange.start, text + '\n')
         await vscode.workspace.applyEdit(edit)
 
         // Log insert event
         const op = 'insert'
         const eventName = op + 'Button'
         this.editor.controllers.inline?.setLastCopiedCode(text, eventName)
+    }
+
+    /**
+     * Handles insert event to insert text from code block to new file
+     */
+    private async handleSaveToNewFile(text: string): Promise<void> {
+        // Log insert event
+        const op = 'save'
+        const eventName = op + 'Button'
+        this.editor.controllers.inline?.setLastCopiedCode(text, eventName)
+
+        await this.editor.createWorkspaceFile(text)
     }
 
     /**

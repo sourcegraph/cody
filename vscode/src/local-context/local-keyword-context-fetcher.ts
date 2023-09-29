@@ -9,9 +9,9 @@ import winkUtils from 'wink-nlp-utils'
 import { ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
 import { Editor } from '@sourcegraph/cody-shared/src/editor'
 import { ContextResult, KeywordContextFetcher } from '@sourcegraph/cody-shared/src/local-context'
-import { TelemetryService } from '@sourcegraph/cody-shared/src/telemetry'
 
 import { logDebug } from '../log'
+import { telemetryService } from '../services/telemetry'
 
 /**
  * Exclude files without extensions and hidden files (starts with '.')
@@ -92,8 +92,7 @@ export class LocalKeywordContextFetcher implements KeywordContextFetcher {
     constructor(
         private rgPath: string,
         private editor: Editor,
-        private chatClient: ChatClient,
-        private telemetryService: TelemetryService
+        private chatClient: ChatClient
     ) {}
 
     /**
@@ -129,7 +128,7 @@ export class LocalKeywordContextFetcher implements KeywordContextFetcher {
             })
         )
         const searchDuration = performance.now() - startTime
-        this.telemetryService.log('CodyVSCodeExtension:keywordContext:searchDuration', { searchDuration })
+        telemetryService.log('CodyVSCodeExtension:keywordContext:searchDuration', { searchDuration })
         logDebug('LocalKeywordContextFetcher:getContext', JSON.stringify({ searchDuration }))
 
         return messagePairs.reverse().flat()
@@ -537,7 +536,7 @@ function idf(termTotalFiles: { [term: string]: number }, totalFiles: number): { 
 }
 
 function escapeRegex(s: string): string {
-    return s.replace(/[$()*+./?[\\\]^{|}-]/g, '\\$&')
+    return s.replaceAll(/[$()*+./?[\\\]^{|}-]/g, '\\$&')
 }
 
 function uniques(results: { filename: string; score: number }[]): { filename: string; score: number }[] {

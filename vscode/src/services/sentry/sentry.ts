@@ -10,7 +10,7 @@ import {
     NetworkError,
 } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
 
-import { extensionDetails } from '../EventLogger'
+import { extensionDetails } from '../telemetry'
 
 export * from '@sentry/core'
 export const SENTRY_DSN = 'https://f565373301c9c7ef18448a1c60dfde8d@o19358.ingest.sentry.io/4505743319564288'
@@ -38,9 +38,9 @@ export abstract class SentryService {
                 release: extensionDetails.version,
                 environment: this.config.isRunningInsideAgent
                     ? 'agent'
-                    : typeof process !== 'undefined'
-                    ? 'vscode-node'
-                    : 'vscode-web',
+                    : typeof process === 'undefined'
+                    ? 'vscode-web'
+                    : 'vscode-node',
 
                 // In dev mode, have Sentry log extended debug information to the console.
                 debug: !isProd,

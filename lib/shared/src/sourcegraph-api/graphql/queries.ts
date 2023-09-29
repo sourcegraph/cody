@@ -36,6 +36,15 @@ query CurrentUser {
     }
 }`
 
+export const CURRENT_SITE_CODY_LLM_PROVIDER = `
+query CurrentSiteCodyLlmConfiguration {
+    site {
+        codyLLMConfiguration {
+            provider
+        }
+    }
+}`
+
 export const CURRENT_SITE_CODY_LLM_CONFIGURATION = `
 query CurrentSiteCodyLlmConfiguration {
     site {

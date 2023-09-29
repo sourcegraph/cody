@@ -25,9 +25,13 @@ export class FixupTask {
     constructor(
         public readonly fixupFile: FixupFile,
         public readonly instruction: string,
-        public selectionRange: vscode.Range
+        public selectionRange: vscode.Range,
+        // auto apply replacement to selection once received from LLM
+        public autoApply = false,
+        // insert mode means insert replacement at selection, otherwise replace selection contents with replacement
+        public insertMode?: boolean
     ) {
-        this.id = Date.now().toString(36).replace(/\d+/g, '')
+        this.id = Date.now().toString(36).replaceAll(/\d+/g, '')
     }
 
     /**

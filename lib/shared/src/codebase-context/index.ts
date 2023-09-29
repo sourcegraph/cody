@@ -29,7 +29,7 @@ export class CodebaseContext {
     private embeddingResultsError = ''
     constructor(
         private config: Pick<Configuration, 'useContext' | 'serverEndpoint' | 'experimentalLocalSymbols'>,
-        private codebase: string | undefined,
+        private readonly codebase: string | undefined,
         private embeddings: EmbeddingsSearch | null,
         private keywords: KeywordContextFetcher | null,
         private filenames: FilenameContextFetcher | null,
@@ -288,7 +288,7 @@ function mergeConsecutiveResults(results: EmbeddingsSearchResult[]): string[] {
         const previousResult = sortedResults[i - 1]
 
         if (result.startLine === previousResult.endLine) {
-            mergedResults[mergedResults.length - 1] = mergedResults[mergedResults.length - 1] + result.content
+            mergedResults[mergedResults.length - 1] = mergedResults.at(-1)! + result.content
         } else {
             mergedResults.push(result.content)
         }

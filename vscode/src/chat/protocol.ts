@@ -30,8 +30,9 @@ export type WebviewMessage =
           range?: { startLine: number; startCharacter: number; endLine: number; endCharacter: number }
       }
     | { command: 'edit'; text: string }
-    | { command: 'insert'; eventType: 'Button' | 'Keydown'; text: string }
-    | { command: 'copy'; eventType: 'Button' | 'Keydown'; text: string }
+    | { command: 'insert'; text: string }
+    | { command: 'newFile'; text: string }
+    | { command: 'copy'; eventType: 'Button' | 'Keydown'; text: string; commandName?: string }
     | {
           command: 'auth'
           type:
@@ -49,6 +50,10 @@ export type WebviewMessage =
     | { command: 'abort' }
     | { command: 'custom-prompt'; title: string; value?: CustomCommandType }
     | { command: 'reload' }
+    | {
+          command: 'simplified-onboarding'
+          type: 'install-app' | 'open-app' | 'reload-state'
+      }
 
 /**
  * A message sent from the extension host to the webview.
@@ -88,6 +93,7 @@ export const CODY_FEEDBACK_URL = new URL(
 // APP
 export const APP_LANDING_URL = new URL('https://about.sourcegraph.com/app')
 export const APP_CALLBACK_URL = new URL('sourcegraph://user/settings/tokens/new/callback')
+export const APP_REPOSITORIES_URL = new URL('sourcegraph://users/admin/app-settings/local-repositories')
 
 /**
  * The status of a users authentication, whether they're authenticated and have a

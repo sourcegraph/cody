@@ -7,13 +7,19 @@ import {
     CompletionResponse,
 } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
 
-import { vsCodeMocks } from '../../testutils/mocks'
 import { CodeCompletionsClient } from '../client'
 import { getCurrentDocContext } from '../get-current-doc-context'
-import { getInlineCompletions as _getInlineCompletions, InlineCompletionsParams } from '../getInlineCompletions'
+import {
+    getInlineCompletions as _getInlineCompletions,
+    InlineCompletionsParams,
+    TriggerKind,
+} from '../get-inline-completions'
 import { createProviderConfig, MULTI_LINE_STOP_SEQUENCES, SINGLE_LINE_STOP_SEQUENCES } from '../providers/anthropic'
 import { RequestManager } from '../request-manager'
 import { documentAndPosition } from '../test-helpers'
+import { SupportedLanguage } from '../tree-sitter/grammars'
+import { updateParseTreeCache } from '../tree-sitter/parse-tree-cache'
+import { getParser } from '../tree-sitter/parser'
 
 // The dedent package seems to replace `\t` with `\\t` so in order to insert a tab character, we
 // have to use interpolation. We abbreviate this to `T` because ${T} is exactly 4 characters,
@@ -41,10 +47,8 @@ export function params(
     {
         languageId = 'typescript',
         onNetworkRequest,
-        context = {
-            triggerKind: vsCodeMocks.InlineCompletionTriggerKind.Automatic,
-            selectedCompletionInfo: undefined,
-        },
+        triggerKind = TriggerKind.Automatic,
+        selectedCompletionInfo,
         ...params
     }: Params = {}
 ): InlineCompletionsParams {
@@ -59,10 +63,14 @@ export function params(
     }
     const providerConfig = createProviderConfig({
         client,
-        contextWindowTokens: 2048,
     })
 
     const { document, position } = documentAndPosition(code, languageId, URI_FIXTURE.toString())
+
+    const parser = getParser(document.languageId as SupportedLanguage)
+    if (parser) {
+        updateParseTreeCache(document, parser)
+    }
 
     const docContext = getCurrentDocContext({
         document,
@@ -79,14 +87,10 @@ export function params(
     return {
         document,
         position,
-        context,
         docContext,
-        promptChars: 1000,
-        isEmbeddingsContextEnabled: true,
+        triggerKind,
+        selectedCompletionInfo,
         providerConfig,
-        responsePercentage: 0.4,
-        prefixPercentage: 0.3,
-        suffixPercentage: 0.3,
         toWorkspaceRelativePath: () => 'test.ts',
         requestManager: new RequestManager(),
         ...params,

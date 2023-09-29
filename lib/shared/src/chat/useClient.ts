@@ -104,7 +104,7 @@ export const useClient = ({
 
     const messageInProgress: ChatMessage | null = useMemo(() => {
         if (isMessageInProgress) {
-            const lastMessage = chatMessages[chatMessages.length - 1]
+            const lastMessage = chatMessages.at(-1)
 
             if (lastMessage?.speaker === 'assistant') {
                 return lastMessage

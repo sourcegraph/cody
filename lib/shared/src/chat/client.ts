@@ -42,6 +42,7 @@ export interface Client {
     executeRecipe: (
         recipeId: RecipeID,
         options?: {
+            signal?: AbortSignal
             prefilledOptions?: PrefilledOptions
             humanChatInput?: string
             data?: any // returned as is
@@ -99,7 +100,7 @@ export async function createClient({
             if (isMessageInProgress) {
                 const messages = transcript.toChat()
                 setTranscript(transcript)
-                const message = messages[messages.length - 1]
+                const message = messages.at(-1)!
                 if (data) {
                     message.data = data
                 }
@@ -117,6 +118,7 @@ export async function createClient({
         async function executeRecipe(
             recipeId: RecipeID,
             options?: {
+                signal?: AbortSignal
                 prefilledOptions?: PrefilledOptions
                 humanChatInput?: string
                 data?: any
@@ -148,30 +150,39 @@ export async function createClient({
 
             const responsePrefix = interaction.getAssistantMessage().prefix ?? ''
             let rawText = ''
-            chatClient.chat(prompt, {
-                onChange(_rawText) {
-                    rawText = _rawText
+            const chatPromise = new Promise<void>((resolve, reject) => {
+                const onAbort = chatClient.chat(prompt, {
+                    onChange(_rawText) {
+                        rawText = _rawText
 
-                    const text = reformatBotMessage(rawText, responsePrefix)
-                    transcript.addAssistantResponse(text)
+                        const text = reformatBotMessage(rawText, responsePrefix)
+                        transcript.addAssistantResponse(text)
 
-                    sendTranscript(options?.data)
-                },
-                onComplete() {
+                        sendTranscript(options?.data)
+                    },
+                    onComplete() {
+                        isMessageInProgress = false
+
+                        const text = reformatBotMessage(rawText, responsePrefix)
+                        transcript.addAssistantResponse(text)
+                        sendTranscript(options?.data)
+                        resolve()
+                    },
+                    onError(error) {
+                        // Display error message as assistant response
+                        transcript.addErrorAsAssistantResponse(error)
+                        isMessageInProgress = false
+                        sendTranscript(options?.data)
+                        console.error(`Completion request failed: ${error}`)
+                        reject(new Error(error))
+                    },
+                })
+                options?.signal?.addEventListener('abort', () => {
+                    onAbort()
                     isMessageInProgress = false
-
-                    const text = reformatBotMessage(rawText, responsePrefix)
-                    transcript.addAssistantResponse(text)
-                    sendTranscript(options?.data)
-                },
-                onError(error) {
-                    // Display error message as assistant response
-                    transcript.addErrorAsAssistantResponse(error)
-                    isMessageInProgress = false
-                    sendTranscript(options?.data)
-                    console.error(`Completion request failed: ${error}`)
-                },
+                })
             })
+            await chatPromise
         }
 
         return {

@@ -9,7 +9,7 @@ import { Icon } from '../../utils/Icon'
 
 import styles from './ChatInputContext.module.css'
 
-const formatFilePath = (filePath: string, selection: ChatContextStatus['selectionRange']): string => {
+export const formatFilePath = (filePath: string, selection: ChatContextStatus['selectionRange']): string => {
     const fileName = basename(filePath)
 
     if (!selection) {
@@ -35,24 +35,26 @@ export const ChatInputContext: React.FunctionComponent<{
 }> = React.memo(function ChatInputContextContent({ contextStatus, className }) {
     return (
         <div className={classNames(styles.container, className)}>
-            {!contextStatus.codebase ? (
+            {contextStatus.codebase ? (
+                contextStatus.mode && contextStatus.connection ? (
+                    <CodebaseState
+                        codebase={contextStatus.codebase}
+                        tooltip={`Repository ${contextStatus.codebase} is indexed and has embeddings`}
+                        icon={mdiDatabaseCheckOutline}
+                    />
+                ) : (
+                    <CodebaseState
+                        codebase={contextStatus.codebase}
+                        tooltip={`Repository ${contextStatus.codebase} is not indexed and has no embeddings`}
+                        icon={mdiDatabaseRemoveOutline}
+                        iconClassName={styles.warningColor}
+                    />
+                )
+            ) : (
                 <CodebaseState
                     tooltip="No Git repository opened"
                     icon={mdiDatabaseOffOutline}
                     iconClassName={styles.errorColor}
-                />
-            ) : contextStatus.mode && contextStatus.connection ? (
-                <CodebaseState
-                    codebase={contextStatus.codebase}
-                    tooltip={`Repository ${contextStatus.codebase} is indexed and has embeddings`}
-                    icon={mdiDatabaseCheckOutline}
-                />
-            ) : (
-                <CodebaseState
-                    codebase={contextStatus.codebase}
-                    tooltip={`Repository ${contextStatus.codebase} is not indexed and has no embeddings`}
-                    icon={mdiDatabaseRemoveOutline}
-                    iconClassName={styles.warningColor}
                 />
             )}
             {(contextStatus.filePath && (

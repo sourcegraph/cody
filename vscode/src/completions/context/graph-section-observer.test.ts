@@ -281,7 +281,6 @@ describe('GraphSectionObserver', () => {
             └─ foo (1 snippets)
 
           Last visited sections:
-            ├ file:/document1.ts foo
             └ file:/document1.ts foo"
         `)
     })
@@ -362,7 +361,7 @@ describe('GraphSectionObserver', () => {
             textEditor: { document: testDocuments.document1 },
             selections: [{ active: { line: 2, character: 0 } }],
         })
-        expect(getGraphContextFromRange).toHaveBeenCalledWith(expect.anything(), updatedRange)
+        expect(getGraphContextFromRange).toHaveBeenCalledWith(expect.anything(), updatedRange, expect.anything())
     })
 
     describe('getContextAtPosition', () => {

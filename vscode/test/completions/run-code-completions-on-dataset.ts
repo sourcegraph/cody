@@ -11,13 +11,12 @@ import { NoopEditor } from '@sourcegraph/cody-shared/src/editor'
 import { FeatureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
 import { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/nodeClient'
 import { SourcegraphGraphQLAPIClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
-import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/cody-shared/src/telemetry'
 
 import { GetContextResult } from '../../src/completions/context/context'
 import { VSCodeDocumentHistory } from '../../src/completions/context/history'
+import { InlineCompletionItemProvider } from '../../src/completions/inline-completion-item-provider'
 import { createProviderConfig } from '../../src/completions/providers/createProvider'
 import { ProviderConfig } from '../../src/completions/providers/provider'
-import { InlineCompletionItemProvider } from '../../src/completions/vscodeInlineCompletionItemProvider'
 import { getFullConfig } from '../../src/configuration'
 import { configureExternalServices } from '../../src/external-services'
 import { initializeNetworkAgent } from '../../src/fetch.node'
@@ -70,7 +69,6 @@ async function initCompletionsProvider(context: GetContextResult): Promise<Inlin
         'rg',
         undefined,
         new NoopEditor(),
-        NOOP_TELEMETRY_SERVICE,
         { createCompletionsClient: (...args) => new SourcegraphNodeCompletionsClient(...args) }
     )
 
@@ -90,7 +88,6 @@ async function initCompletionsProvider(context: GetContextResult): Promise<Inlin
         },
         history,
         getCodebaseContext: () => codebaseContext,
-        isEmbeddingsContextEnabled: true,
         contextFetcher: () => Promise.resolve(context),
         featureFlagProvider: dummyFeatureFlagProvider,
         triggerNotice: null,

@@ -1,5 +1,6 @@
 import { dirname } from 'path'
 
+import { findLast } from 'lodash'
 import * as vscode from 'vscode'
 import { URI } from 'vscode-uri'
 
@@ -478,7 +479,7 @@ export async function getDirectoryFileListContext(
         }
 
         const fileUri = fileName ? vscode.Uri.joinPath(workspaceRootUri, fileName) : workspaceRootUri
-        const directoryUri = !fileName ? workspaceRootUri : vscode.Uri.joinPath(fileUri, '..')
+        const directoryUri = fileName ? vscode.Uri.joinPath(fileUri, '..') : workspaceRootUri
         const directoryFiles = await getFilesFromDir(directoryUri, isTestRequest)
         const fileNames = directoryFiles.map(file => file[0])
         const truncatedFileNames = truncateText(fileNames.join(', '), MAX_CURRENT_FILE_TOKENS)
@@ -716,7 +717,7 @@ export async function getFoldingRanges(
     }
 
     // Get the line number of the last import statement
-    const lastKind = foldingRanges?.findLast(range => range.kind === kind)
+    const lastKind = foldingRanges ? findLast(foldingRanges, range => range.kind === kind) : undefined
 
     return lastKind ? [lastKind] : []
 }

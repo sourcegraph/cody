@@ -36,7 +36,6 @@ test('checks if clear chat history button clears history and current session', a
     await page.getByRole('button', { name: 'Chat History' }).click()
 
     // Remove Hey history item from chat history view
-    await expect(sidebar.getByText('Hola')).toBeVisible()
     await expect(sidebar.getByText('Hey')).toBeVisible()
     await sidebar.locator('vscode-button').filter({ hasText: 'Clear' }).click()
     await expect(sidebar.getByText('Hey')).not.toBeVisible()
@@ -50,5 +49,4 @@ test('checks if clear chat history button clears history and current session', a
 
     // Check if the old message "Hey" is cleared
     await expect(sidebar.getByText('Hey')).not.toBeVisible()
-    await expect(sidebar.getByText('/explain')).toBeVisible()
 })

@@ -1,5 +1,6 @@
 import * as anthropic from '@anthropic-ai/sdk'
 
+import { tokensToChars } from '@sourcegraph/cody-shared/src/prompt/constants'
 import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
 import {
     CompletionParameters,
@@ -22,83 +23,43 @@ import {
 import { Completion, ContextSnippet } from '../types'
 import { forkSignal, messagesToText } from '../utils'
 
-import { CompletionProviderTracer, Provider, ProviderConfig, ProviderOptions } from './provider'
+import {
+    CompletionProviderTracer,
+    Provider,
+    ProviderConfig,
+    ProviderOptions,
+    standardContextSizeHints,
+} from './provider'
 
-const CHARS_PER_TOKEN = 4
 export const MULTI_LINE_STOP_SEQUENCES = [anthropic.HUMAN_PROMPT, CLOSING_CODE_TAG]
 export const SINGLE_LINE_STOP_SEQUENCES = [anthropic.HUMAN_PROMPT, CLOSING_CODE_TAG, MULTILINE_STOP_SEQUENCE]
 
-function tokensToChars(tokens: number): number {
-    return tokens * CHARS_PER_TOKEN
+interface AnthropicOptions {
+    maxContextTokens?: number
+    client: Pick<CodeCompletionsClient, 'complete'>
+    mode?: 'infill'
 }
 
-interface AnthropicOptions {
-    contextWindowTokens: number
-    client: Pick<CodeCompletionsClient, 'complete'>
-    mode?: 'default' | 'infill'
-}
+const MAX_RESPONSE_TOKENS = 256
 
 export class AnthropicProvider extends Provider {
     private promptChars: number
-    private responseTokens: number
     private client: Pick<CodeCompletionsClient, 'complete'>
-    private useInfillPrefix = false
 
-    constructor(options: ProviderOptions, anthropicOptions: AnthropicOptions) {
+    constructor(options: ProviderOptions, { maxContextTokens, client }: Required<AnthropicOptions>) {
         super(options)
-        this.promptChars =
-            tokensToChars(anthropicOptions.contextWindowTokens) -
-            Math.floor(tokensToChars(anthropicOptions.contextWindowTokens) * options.responsePercentage)
-        this.responseTokens = Math.floor(anthropicOptions.contextWindowTokens * options.responsePercentage)
-        this.client = anthropicOptions.client
-        this.useInfillPrefix = anthropicOptions.mode === 'infill'
+        this.promptChars = tokensToChars(maxContextTokens - MAX_RESPONSE_TOKENS)
+
+        this.client = client
     }
 
     public emptyPromptLength(): number {
-        const { messages } = this.useInfillPrefix ? this.createInfillPromptPrefix() : this.createPromptPrefix()
+        const { messages } = this.createPromptPrefix()
         const promptNoSnippets = messagesToText(messages)
         return promptNoSnippets.length - 10 // extra 10 chars of buffer cuz who knows
     }
 
     private createPromptPrefix(): { messages: Message[]; prefix: PrefixComponents } {
-        // TODO(beyang): escape 'Human:' and 'Assistant:'
-        const prefixLines = this.options.docContext.prefix.split('\n')
-        if (prefixLines.length === 0) {
-            throw new Error('no prefix lines')
-        }
-
-        const { head, tail, overlap } = getHeadAndTail(this.options.docContext.prefix)
-        const prefixMessages: Message[] = [
-            {
-                speaker: 'human',
-                text: `You are a code completion AI that writes high-quality code like a senior engineer. You are looking at ${
-                    this.options.fileName
-                }. You write code in between tags like this: ${OPENING_CODE_TAG}${
-                    this.options.languageId === 'python' || this.options.languageId === 'ruby'
-                        ? '# Code goes here'
-                        : '/* Code goes here */'
-                }${CLOSING_CODE_TAG}.`,
-            },
-            {
-                speaker: 'assistant',
-                text: 'I am a code completion AI that writes high-quality code like a senior engineer.',
-            },
-            {
-                speaker: 'human',
-                text: `Complete this code: ${OPENING_CODE_TAG}${head.trimmed}${CLOSING_CODE_TAG}.`,
-            },
-            {
-                speaker: 'assistant',
-                text: `Here is the code: ${OPENING_CODE_TAG}${tail.trimmed}`,
-            },
-        ]
-
-        return { messages: prefixMessages, prefix: { head, tail, overlap } }
-    }
-
-    // NOTE: This revert pull/727 for this prompt branch that causes quality regressions
-    // pull/727: https://github.com/sourcegraph/cody/pull/727
-    private createInfillPromptPrefix(): { messages: Message[]; prefix: PrefixComponents } {
         const prefixLines = this.options.docContext.prefix.split('\n')
         if (prefixLines.length === 0) {
             throw new Error('no prefix lines')
@@ -107,12 +68,9 @@ export class AnthropicProvider extends Provider {
         const { head, tail, overlap } = getHeadAndTail(this.options.docContext.prefix)
 
         // Infill block represents the code we want the model to complete
-        const infillBlock = `${tail.trimmed.trimEnd()}`
-        // code before the cursor, after removing the code for the infillBlock
-        // Using this instead of head.trimmed to preserve the spacing from prefix so the model can determines the patterns of surrounding code
-        // Use regex to makes sure only the last trimmedTail match is replaced to avoid replacing overlapping code
-        const infillBlockRegex = new RegExp(`${infillBlock}\\s*$`, 'g')
-        const infillPrefix = this.options.docContext.prefix.replace(infillBlockRegex, '')
+        const infillBlock = tail.trimmed
+        // code before the cursor, without the code extracted for the infillBlock
+        const infillPrefix = head.raw
         // code after the cursor
         const infillSuffix = this.options.docContext.suffix
 
@@ -127,8 +85,8 @@ export class AnthropicProvider extends Provider {
             },
             {
                 speaker: 'human',
-                text: `Below is the code from file path ${this.options.fileName}. Detect the functionality, formats, style, patterns, and logics in use from code outside ${OPENING_CODE_TAG} XML tags. Then, use what you detect and reuse assetmethods/libraries to complete and enclose completed code only inside ${OPENING_CODE_TAG} tags precisely without duplicating existing implementations. Here is the code:
-                ${infillPrefix}${OPENING_CODE_TAG}${CLOSING_CODE_TAG}${infillSuffix}`,
+                text: `Below is the code from file path ${this.options.fileName}. Review the code outside the XML tags to detect the functionality, formats, style, patterns, and logics in use. Then, use what you detect and reuse methods/libraries to complete and enclose completed code only inside XML tags precisely without duplicating existing implementations.
+                Here is the code: ${infillPrefix}${OPENING_CODE_TAG}${CLOSING_CODE_TAG}${infillSuffix}`,
             },
             {
                 speaker: 'assistant',
@@ -142,9 +100,7 @@ export class AnthropicProvider extends Provider {
     // Creates the resulting prompt and adds as many snippets from the reference
     // list as possible.
     protected createPrompt(snippets: ContextSnippet[]): { messages: Message[]; prefix: PrefixComponents } {
-        const { messages: prefixMessages, prefix } = this.useInfillPrefix
-            ? this.createInfillPromptPrefix()
-            : this.createPromptPrefix()
+        const { messages: prefixMessages, prefix } = this.createPromptPrefix()
 
         const referenceSnippetMessages: Message[] = []
 
@@ -192,19 +148,23 @@ export class AnthropicProvider extends Provider {
             ? {
                   temperature: 0.5,
                   messages: prompt,
-                  maxTokensToSample: this.responseTokens,
+                  maxTokensToSample: MAX_RESPONSE_TOKENS,
                   stopSequences: MULTI_LINE_STOP_SEQUENCES,
               }
             : {
                   temperature: 0.5,
                   messages: prompt,
-                  maxTokensToSample: Math.min(50, this.responseTokens),
+                  maxTokensToSample: Math.min(50, MAX_RESPONSE_TOKENS),
                   stopSequences: SINGLE_LINE_STOP_SEQUENCES,
               }
         tracer?.params(args)
 
         // Issue request
-        const responses = await this.batchAndProcessCompletions(this.client, args, this.options.n, abortSignal)
+        const responses = await Promise.all(
+            Array.from({ length: this.options.n }).map(() => {
+                return this.fetchAndProcessCompletions(this.client, args, abortSignal)
+            })
+        )
 
         const ret = responses.map(resp => [
             {
@@ -218,19 +178,6 @@ export class AnthropicProvider extends Provider {
         tracer?.result({ rawResponses: responses, completions })
 
         return completions
-    }
-
-    private async batchAndProcessCompletions(
-        client: Pick<CodeCompletionsClient, 'complete'>,
-        params: CompletionParameters,
-        n: number,
-        abortSignal: AbortSignal
-    ): Promise<CompletionResponse[]> {
-        const responses: Promise<CompletionResponse>[] = []
-        for (let i = 0; i < n; i++) {
-            responses.push(this.fetchAndProcessCompletions(client, params, abortSignal))
-        }
-        return Promise.all(responses)
     }
 
     private async fetchAndProcessCompletions(
@@ -290,14 +237,18 @@ export class AnthropicProvider extends Provider {
     }
 }
 
-export function createProviderConfig(anthropicOptions: AnthropicOptions): ProviderConfig {
+export function createProviderConfig({
+    maxContextTokens = 2048,
+    mode = 'infill',
+    ...otherOptions
+}: AnthropicOptions): ProviderConfig {
     return {
         create(options: ProviderOptions) {
-            return new AnthropicProvider(options, anthropicOptions)
+            return new AnthropicProvider(options, { maxContextTokens, mode, ...otherOptions })
         },
-        maximumContextCharacters: tokensToChars(anthropicOptions.contextWindowTokens),
+        contextSizeHints: standardContextSizeHints(maxContextTokens),
         enableExtendedMultilineTriggers: true,
         identifier: 'anthropic',
-        model: anthropicOptions.mode === 'infill' ? 'claude-instant-infill' : 'claude-instant-1',
+        model: 'claude-instant-infill',
     }
 }

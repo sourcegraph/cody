@@ -8,6 +8,7 @@ import styles from './Notice.module.css'
 export interface NoticeProps {
     icon: React.ReactNode
     title: React.ReactNode
+    text?: React.ReactNode
     linkText?: React.ReactNode
     linkHref?: string
     linkTarget?: '_blank' | undefined
@@ -24,6 +25,7 @@ export interface NoticeProps {
 export const Notice: React.FunctionComponent<React.PropsWithChildren<NoticeProps>> = ({
     icon,
     title,
+    text,
     linkText,
     linkHref,
     linkTarget,
@@ -49,6 +51,7 @@ export const Notice: React.FunctionComponent<React.PropsWithChildren<NoticeProps
             <div className={styles.noticeIcon}>{icon}</div>
             <div className={styles.noticeText}>
                 <h1>{title}</h1>
+                {text && <p>{text}</p>}
                 {linkText && linkHref && (
                     <p>
                         <VSCodeLink href={linkHref} target={linkTarget}>

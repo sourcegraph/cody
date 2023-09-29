@@ -10,12 +10,11 @@ import { IntentDetector } from '@sourcegraph/cody-shared/src/intent-detector'
 import { SourcegraphIntentDetectorClient } from '@sourcegraph/cody-shared/src/intent-detector/client'
 import { IndexedKeywordContextFetcher } from '@sourcegraph/cody-shared/src/local-context'
 import { SourcegraphGraphQLAPIClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
-import { TelemetryService } from '@sourcegraph/cody-shared/src/telemetry'
 import { isError } from '@sourcegraph/cody-shared/src/utils'
 
 import { CodeCompletionsClient, createClient as createCodeCompletionsClint } from './completions/client'
 import { PlatformContext } from './extension.common'
-import { logger } from './log'
+import { logDebug, logger } from './log'
 import { getRerankWithLog } from './logged-rerank'
 
 interface ExternalServices {
@@ -46,7 +45,6 @@ export async function configureExternalServices(
     rgPath: string | null,
     symf: IndexedKeywordContextFetcher | undefined,
     editor: Editor,
-    telemetryService: TelemetryService,
     platform: Pick<
         PlatformContext,
         | 'createLocalKeywordContextFetcher'
@@ -63,10 +61,11 @@ export async function configureExternalServices(
 
     const repoId = initialConfig.codebase ? await client.getRepoId(initialConfig.codebase) : null
     if (isError(repoId)) {
-        const infoMessage =
+        logDebug(
+            'external-services:configureExternalServices',
             `Cody could not find the '${initialConfig.codebase}' repository on your Sourcegraph instance.\n` +
-            'Please check that the repository exists. You can override the repository with the "cody.codebase" setting.'
-        console.info(infoMessage)
+                'Please check that the repository exists. You can override the repository with the "cody.codebase" setting.'
+        )
     }
     const embeddingsSearch = repoId && !isError(repoId) ? new SourcegraphEmbeddingsSearchClient(client, repoId) : null
 
@@ -75,9 +74,7 @@ export async function configureExternalServices(
         initialConfig,
         initialConfig.codebase,
         embeddingsSearch,
-        rgPath
-            ? platform.createLocalKeywordContextFetcher?.(rgPath, editor, chatClient, telemetryService) ?? null
-            : null,
+        rgPath ? platform.createLocalKeywordContextFetcher?.(rgPath, editor, chatClient) ?? null : null,
         rgPath ? platform.createFilenameContextFetcher?.(rgPath, editor, chatClient) ?? null : null,
         null,
         symf,

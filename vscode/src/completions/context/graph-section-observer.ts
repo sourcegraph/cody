@@ -6,15 +6,17 @@ import { URI } from 'vscode-uri'
 
 import { HoverContext } from '@sourcegraph/cody-shared/src/codebase-context/messages'
 import { dedupeWith, isDefined } from '@sourcegraph/cody-shared/src/common'
+import { isAbortError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
+import { isError } from '@sourcegraph/cody-shared/src/utils'
 
 import { getGraphContextFromRange as defaultGetGraphContextFromRange, locationKeyFn } from '../../graph/graph'
 import { getDocumentSections as defaultGetDocumentSections, DocumentSection } from '../../graph/sections'
-import { logDebug } from '../../log'
+import { logDebug, logError } from '../../log'
 import { ContextSnippet, SymbolContextSnippet } from '../types'
 import { createSubscriber } from '../utils'
 
 import { GraphContextFetcher } from './context-graph'
-import { baseLanguageId } from './utils'
+import { baseLanguageId, CustomAbortController } from './utils'
 
 interface Section extends DocumentSection {
     preloadedContext: {
@@ -60,6 +62,10 @@ export class GraphSectionObserver implements vscode.Disposable, GraphContextFetc
     })
     // A list of up to ten sections that were being visited last as identifier via their location.
     private lastVisitedSections: vscode.Location[] = []
+
+    // Some book keeping so we can abort non-resolved graph context requests.
+    private lastRequestGraphContextSectionKey: string | null = null
+    private abortLastRequestGraphContext: () => void = () => {}
 
     private constructor(
         private window: Pick<
@@ -208,26 +214,46 @@ export class GraphSectionObserver implements vscode.Disposable, GraphContextFetc
             }
         }
 
-        if (!section.preloadedContext) {
+        if (section.preloadedContext) {
+            section.preloadedContext.lastRevalidateAt = Date.now()
+            section.preloadedContext.isStale = false
+        } else {
             section.preloadedContext = {
                 lastRevalidateAt: Date.now(),
                 graphContext: null,
                 isStale: false,
             }
-        } else {
-            section.preloadedContext.lastRevalidateAt = Date.now()
-            section.preloadedContext.isStale = false
         }
 
         debugSubscriber.notify()
 
         const start = performance.now()
-        const context = await this.getGraphContextFromRange(editor, section.location.range)
+        const sectionKey = locationKeyFn(section.location)
+        const abortController = new CustomAbortController()
 
-        logHydratedContext(context, editor, section, start)
-        section.preloadedContext.graphContext = context
+        // Abort previous requests that have not yet resolved and are for a different section
+        if (this.lastRequestGraphContextSectionKey && this.lastRequestGraphContextSectionKey !== sectionKey) {
+            this.abortLastRequestGraphContext()
+        }
+        this.lastRequestGraphContextSectionKey = sectionKey
+        this.abortLastRequestGraphContext = () => abortController.abort()
 
-        debugSubscriber.notify()
+        try {
+            const context = await this.getGraphContextFromRange(editor, section.location.range, abortController.signal)
+
+            logHydratedContext(context, editor, section, start)
+            section.preloadedContext.graphContext = context
+        } catch (error) {
+            section.preloadedContext = null
+
+            if (!isAbortError(error)) {
+                logError('GraphContext:error', isError(error) ? error.message : 'error', { verbose: error })
+            }
+
+            throw error
+        } finally {
+            debugSubscriber.notify()
+        }
     }
 
     private getSectionAtPosition(document: vscode.TextDocument, position: vscode.Position): Section | undefined {
@@ -248,7 +274,7 @@ export class GraphSectionObserver implements vscode.Disposable, GraphContextFetc
                 const isSelected =
                     selectedDocument?.uri.toString() === document.uri.toString() &&
                     selections?.some(selection => section.location.range.contains(selection))
-                const isLast = document.sections[document.sections.length - 1] === section
+                const isLast = document.sections.at(-1) === section
                 const isHydrated = !!section.preloadedContext
                 const isStale = section.preloadedContext?.isStale ?? false
 
@@ -497,12 +523,11 @@ function logHydratedContext(context: HoverContext[], editor: vscode.TextEditor, 
     )
 }
 
-function pushUniqueAndTruncate<T>(array: T[], item: T, truncate: number): T[] {
-    if (array.includes(item)) {
-        // put the item to the front
-        array.splice(array.indexOf(item), 1)
-        array.unshift(item)
-        return array
+function pushUniqueAndTruncate(array: vscode.Location[], item: vscode.Location, truncate: number): vscode.Location[] {
+    const indexOf = array.findIndex(i => locationKeyFn(i) === locationKeyFn(item))
+    if (indexOf > -1) {
+        // Remove the item so it is put to the front again
+        array.splice(indexOf, 1)
     }
     if (array.length >= truncate) {
         array.pop()

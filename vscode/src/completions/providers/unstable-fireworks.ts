@@ -1,3 +1,4 @@
+import { tokensToChars } from '@sourcegraph/cody-shared/src/prompt/constants'
 import {
     CompletionParameters,
     CompletionResponse,
@@ -10,15 +11,21 @@ import { formatSymbolContextRelationship } from '../text-processing'
 import { Completion, ContextSnippet } from '../types'
 import { forkSignal } from '../utils'
 
-import { CompletionProviderTracer, Provider, ProviderConfig, ProviderOptions } from './provider'
+import {
+    CompletionProviderTracer,
+    Provider,
+    ProviderConfig,
+    ProviderOptions,
+    standardContextSizeHints,
+} from './provider'
 
-interface UnstableFireworksOptions {
+export interface UnstableFireworksOptions {
+    model: FireworksModel
+    maxContextTokens?: number
     client: Pick<CodeCompletionsClient, 'complete'>
-    model: keyof typeof MODEL_MAP
 }
 
 const PROVIDER_IDENTIFIER = 'fireworks'
-const CONTEXT_WINDOW_CHARS = 5000 // ~ 2000 token limit
 
 const EOT_STARCODER = '<|endoftext|>'
 const EOT_LLAMA_CODE = ' <EOT>'
@@ -36,18 +43,50 @@ const MODEL_MAP = {
     'llama-code-13b-instruct': 'fireworks/accounts/fireworks/models/llama-v2-13b-code-instruct',
 }
 
-export class UnstableFireworksProvider extends Provider {
-    private client: Pick<CodeCompletionsClient, 'complete'>
-    private model: keyof typeof MODEL_MAP
+type FireworksModel =
+    | keyof typeof MODEL_MAP
+    // `starcoder-hybrid` uses the 16b model for multiline requests and the 7b model for single line
+    | 'starcoder-hybrid'
 
-    constructor(options: ProviderOptions, { client, model }: UnstableFireworksOptions) {
+function getMaxContextTokens(model: FireworksModel): number {
+    switch (model) {
+        case 'starcoder-hybrid':
+        case 'starcoder-16b':
+        case 'starcoder-7b':
+        case 'starcoder-3b':
+        case 'starcoder-1b':
+            // StarCoder supports up to 8k tokens, we limit it to ~2k for evaluation against
+            // our current Anthropic prompt
+            return 2048
+        case 'wizardcoder-15b':
+            // TODO: Confirm what the limit is for WizardCoder
+            return 2048
+        case 'llama-code-7b':
+        case 'llama-code-13b':
+        case 'llama-code-13b-instruct':
+            // Llama Code was trained on 16k context windows, we're constraining it here to better
+            // compare the results
+            return 2048
+        default:
+            return 1200
+    }
+}
+
+const MAX_RESPONSE_TOKENS = 256
+
+export class UnstableFireworksProvider extends Provider {
+    private model: FireworksModel
+    private promptChars: number
+    private client: Pick<CodeCompletionsClient, 'complete'>
+
+    constructor(options: ProviderOptions, { model, maxContextTokens, client }: Required<UnstableFireworksOptions>) {
         super(options)
-        this.client = client
         this.model = model
+        this.promptChars = tokensToChars(maxContextTokens - MAX_RESPONSE_TOKENS)
+        this.client = client
     }
 
     private createPrompt(snippets: ContextSnippet[]): string {
-        const maxPromptChars = CONTEXT_WINDOW_CHARS - CONTEXT_WINDOW_CHARS * this.options.responsePercentage
         const { prefix, suffix } = this.options.docContext
 
         const intro: string[] = []
@@ -90,7 +129,7 @@ export class UnstableFireworksProvider extends Provider {
                 suffixAfterFirstNewline
             )
 
-            if (nextPrompt.length >= maxPromptChars) {
+            if (nextPrompt.length >= this.promptChars) {
                 return prompt
             }
 
@@ -105,24 +144,34 @@ export class UnstableFireworksProvider extends Provider {
         snippets: ContextSnippet[],
         tracer?: CompletionProviderTracer
     ): Promise<Completion[]> {
+        const { multiline } = this.options
         const prompt = this.createPrompt(snippets)
+
+        const model =
+            this.model === 'starcoder-hybrid'
+                ? MODEL_MAP[multiline ? 'starcoder-16b' : 'starcoder-7b']
+                : MODEL_MAP[this.model]
 
         const args: CompletionParameters = {
             messages: [{ speaker: 'human', text: prompt }],
             // To speed up sample generation in single-line case, we request a lower token limit
             // since we can't terminate on the first `\n`.
-            maxTokensToSample: this.options.multiline ? 256 : 30,
+            maxTokensToSample: multiline ? MAX_RESPONSE_TOKENS : 30,
             temperature: 0.2,
             topP: 0.95,
             topK: 0,
-            model: MODEL_MAP[this.model],
-            stopSequences: this.options.multiline ? ['\n\n', '\n\r\n'] : ['\n'],
+            model,
+            stopSequences: multiline ? ['\n\n', '\n\r\n'] : ['\n'],
         }
 
         tracer?.params(args)
 
         // Issue request
-        const responses = await this.batchAndProcessCompletions(this.client, args, this.options.n, abortSignal)
+        const responses = await Promise.all(
+            Array.from({ length: this.options.n }).map(() => {
+                return this.fetchAndProcessCompletions(this.client, args, abortSignal)
+            })
+        )
 
         const ret = responses.map(resp => [
             {
@@ -151,19 +200,6 @@ export class UnstableFireworksProvider extends Provider {
 
         console.error('Could not generate infilling prompt for', this.model)
         return `${intro}${prefix}`
-    }
-
-    private async batchAndProcessCompletions(
-        client: Pick<CodeCompletionsClient, 'complete'>,
-        params: CompletionParameters,
-        n: number,
-        abortSignal: AbortSignal
-    ): Promise<CompletionResponse[]> {
-        const responses: Promise<CompletionResponse>[] = []
-        for (let i = 0; i < n; i++) {
-            responses.push(this.fetchAndProcessCompletions(client, params, abortSignal))
-        }
-        return Promise.all(responses)
     }
 
     private async fetchAndProcessCompletions(
@@ -213,28 +249,33 @@ export class UnstableFireworksProvider extends Provider {
     }
 }
 
-export function createProviderConfig(
-    unstableFireworksOptions: Omit<UnstableFireworksOptions, 'model'> & { model: string | null }
-): ProviderConfig {
-    const model =
-        unstableFireworksOptions.model === null || unstableFireworksOptions.model === ''
-            ? 'starcoder-7b'
-            : Object.prototype.hasOwnProperty.call(MODEL_MAP, unstableFireworksOptions.model)
-            ? (unstableFireworksOptions.model as keyof typeof MODEL_MAP)
+export function createProviderConfig({
+    model,
+    ...otherOptions
+}: Omit<UnstableFireworksOptions, 'model' | 'maxContextTokens'> & { model: string | null }): ProviderConfig {
+    const resolvedModel =
+        model === null || model === ''
+            ? 'starcoder-hybrid'
+            : model === 'starcoder-hybrid'
+            ? 'starcoder-hybrid'
+            : Object.prototype.hasOwnProperty.call(MODEL_MAP, model)
+            ? (model as keyof typeof MODEL_MAP)
             : null
 
-    if (model === null) {
-        throw new Error(`Unknown model: \`${unstableFireworksOptions.model}\``)
+    if (resolvedModel === null) {
+        throw new Error(`Unknown model: \`${model}\``)
     }
+
+    const maxContextTokens = getMaxContextTokens(resolvedModel)
 
     return {
         create(options: ProviderOptions) {
-            return new UnstableFireworksProvider(options, { ...unstableFireworksOptions, model })
+            return new UnstableFireworksProvider(options, { model: resolvedModel, maxContextTokens, ...otherOptions })
         },
-        maximumContextCharacters: CONTEXT_WINDOW_CHARS,
+        contextSizeHints: standardContextSizeHints(maxContextTokens),
         enableExtendedMultilineTriggers: true,
         identifier: PROVIDER_IDENTIFIER,
-        model,
+        model: resolvedModel,
     }
 }
 

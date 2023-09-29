@@ -1,8 +1,30 @@
+import * as vscode from 'vscode'
+
 import { isDefined } from '@sourcegraph/cody-shared/src/common'
 
 import { DocumentContext } from './get-current-doc-context'
-import { InlineCompletionsParams, InlineCompletionsResult, InlineCompletionsResultSource } from './getInlineCompletions'
-import { InlineCompletionItem } from './types'
+import {
+    InlineCompletionsParams,
+    InlineCompletionsResult,
+    InlineCompletionsResultSource,
+    LastInlineCompletionCandidate,
+} from './get-inline-completions'
+import { RequestParams } from './request-manager'
+import { InlineCompletionItemWithAnalytics } from './text-processing/process-inline-completions'
+
+type ReuseLastCandidateArgument =
+    // required fields from InlineCompletionsParams
+    Required<
+        Pick<
+            InlineCompletionsParams,
+            'document' | 'position' | 'selectedCompletionInfo' | 'lastCandidate' | 'completeSuggestWidgetSelection'
+        >
+    > &
+        // optional fields from InlineCompletionsParams
+        Pick<InlineCompletionsParams, 'handleDidAcceptCompletionItem' | 'handleDidPartiallyAcceptCompletionItem'> & {
+            // additional fields
+            docContext: DocumentContext
+        }
 
 /**
  * See test cases for the expected behaviors.
@@ -10,32 +32,22 @@ import { InlineCompletionItem } from './types'
 export function reuseLastCandidate({
     document,
     position,
-    context,
-    lastCandidate: {
-        lastTriggerPosition,
-        lastTriggerCurrentLinePrefix,
-        lastTriggerNextNonEmptyLine,
-        lastTriggerSelectedInfoItem,
-        ...lastCandidate
-    },
+    selectedCompletionInfo,
+    lastCandidate: { lastTriggerPosition, lastTriggerDocContext, lastTriggerSelectedInfoItem },
+    lastCandidate,
     docContext: { currentLinePrefix, currentLineSuffix, nextNonEmptyLine },
     completeSuggestWidgetSelection,
-}: Required<
-    Pick<
-        InlineCompletionsParams,
-        'document' | 'position' | 'context' | 'lastCandidate' | 'completeSuggestWidgetSelection'
-    >
-> & {
-    docContext: DocumentContext
-}): InlineCompletionsResult | null {
+    handleDidAcceptCompletionItem,
+    handleDidPartiallyAcceptCompletionItem,
+}: ReuseLastCandidateArgument): InlineCompletionsResult | null {
     const isSameDocument = lastCandidate.uri.toString() === document.uri.toString()
     const isSameLine = lastTriggerPosition.line === position.line
-    const isSameNextNonEmptyLine = lastTriggerNextNonEmptyLine === nextNonEmptyLine
+    const isSameNextNonEmptyLine = lastTriggerDocContext.nextNonEmptyLine === nextNonEmptyLine
 
     // If completeSuggestWidgetSelection is enabled, we have to compare that a last candidate is
     // only reused if it is has same completion info selected.
     const isSameTriggerSelectedInfoItem = completeSuggestWidgetSelection
-        ? lastTriggerSelectedInfoItem === context.selectedCompletionInfo?.text
+        ? lastTriggerSelectedInfoItem === selectedCompletionInfo?.text
         : true
 
     if (!isSameDocument || !isSameLine || !isSameNextNonEmptyLine || !isSameTriggerSelectedInfoItem) {
@@ -43,14 +55,15 @@ export function reuseLastCandidate({
     }
 
     // There are 2 reasons we can reuse a candidate: typing-as-suggested or change-of-indentation.
-
+    const lastTriggerCurrentLinePrefix = lastTriggerDocContext.currentLinePrefix
     const isIndentation = isWhitespace(currentLinePrefix) && currentLinePrefix.startsWith(lastTriggerCurrentLinePrefix)
     const isDeindentation =
         isWhitespace(lastTriggerCurrentLinePrefix) && lastTriggerCurrentLinePrefix.startsWith(currentLinePrefix)
     const isIndentationChange = currentLineSuffix === '' && (isIndentation || isDeindentation)
+    let didAcceptCompletion = false
 
     const itemsToReuse = lastCandidate.result.items
-        .map((item): InlineCompletionItem | undefined => {
+        .map((item): InlineCompletionItemWithAnalytics | undefined => {
             // Allow reuse if the user is (possibly) typing forward as suggested by the last
             // candidate completion. We still need to filter the candidate items to see which ones
             // the user's typing actually follows.
@@ -58,7 +71,27 @@ export function reuseLastCandidate({
             const isTypingAsSuggested =
                 lastCompletion.startsWith(currentLinePrefix) && position.isAfterOrEqual(lastTriggerPosition)
             if (isTypingAsSuggested) {
-                return { insertText: lastCompletion.slice(currentLinePrefix.length) }
+                const remaining = lastCompletion.slice(currentLinePrefix.length)
+
+                // When the remaining text is empty, the user has forward-typed the full text of the
+                // completion. We mark this as an accepted completion.
+                if (remaining.length === 0) {
+                    didAcceptCompletion = true
+                    handleDidAcceptCompletionItem?.(
+                        lastCandidate.result.logId,
+                        item,
+                        getRequestParamsFromLastCandidate(document, lastCandidate)
+                    )
+                    return undefined
+                }
+
+                // Detect partial acceptance of the last candidate
+                const acceptedLength = currentLinePrefix.length - lastTriggerCurrentLinePrefix.length
+                if (isPartialAcceptance(item.insertText, acceptedLength)) {
+                    handleDidPartiallyAcceptCompletionItem?.(lastCandidate.result.logId, item, acceptedLength)
+                }
+
+                return { insertText: remaining }
             }
 
             // Allow reuse if only the indentation (leading whitespace) has changed.
@@ -69,6 +102,11 @@ export function reuseLastCandidate({
             return undefined
         })
         .filter(isDefined)
+
+    // Ensure that when one completion was marked as accepted, we don't reuse any others
+    if (didAcceptCompletion) {
+        return null
+    }
 
     return itemsToReuse.length > 0
         ? {
@@ -84,4 +122,31 @@ export function reuseLastCandidate({
 
 function isWhitespace(s: string): boolean {
     return /^\s*$/.test(s)
+}
+
+// Count a completion as partially accepted, when at least one word of the completion was typed
+function isPartialAcceptance(insertText: string, insertedLength: number): boolean {
+    const match = insertText.match(/(\w+)/)
+    const endOfFirstWord = match?.index === undefined ? null : match.index + match[0]!.length
+    if (endOfFirstWord === null) {
+        return false
+    }
+    return insertedLength >= endOfFirstWord
+}
+
+export function getRequestParamsFromLastCandidate(
+    document: vscode.TextDocument,
+    lastCandidate: LastInlineCompletionCandidate
+): RequestParams {
+    return {
+        document,
+        position: lastCandidate.lastTriggerPosition,
+        docContext: lastCandidate.lastTriggerDocContext,
+        selectedCompletionInfo: lastCandidate.lastTriggerSelectedInfoItem
+            ? {
+                  range: new vscode.Range(0, 0, 0, 0),
+                  text: lastCandidate.lastTriggerSelectedInfoItem,
+              }
+            : undefined,
+    }
 }
