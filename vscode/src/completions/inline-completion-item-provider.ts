@@ -393,13 +393,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
         return items.map(completion => {
             const currentLine = document.lineAt(position)
             const currentLinePrefix = document.getText(currentLine.range.with({ end: position }))
-            let insertText = completion.insertText
-
-            // Append any eventual inline completion context item to the prefix if
-            // completeSuggestWidgetSelection is enabled.
-            if (docContext.injectedPrefix) {
-                insertText = docContext.injectedPrefix + insertText
-            }
+            const insertText = completion.insertText
 
             // Return the completion from the start of the current line (instead of starting at the
             // given position). This avoids UI jitter in VS Code; when typing or deleting individual

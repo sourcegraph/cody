@@ -63,7 +63,14 @@ export function processItem(params: ProcessItemParams): InlineCompletionItemWith
         return completion
     }
 
-    const adjusted = adjustRangeToOverwriteOverlappingCharacters(completion, { position, currentLineSuffix })
+    // Append any eventual inline completion context item to the prefix if
+    // completeSuggestWidgetSelection is enabled.
+    let withInjectedPrefix = completion
+    if (docContext.injectedPrefix) {
+        withInjectedPrefix = { ...completion, insertText: docContext.injectedPrefix + completion.insertText }
+    }
+
+    const adjusted = adjustRangeToOverwriteOverlappingCharacters(withInjectedPrefix, { position, currentLineSuffix })
     const parsed: InlineCompletionItemWithAnalytics & ParsedCompletion = parseCompletion({
         completion: adjusted,
         document,
