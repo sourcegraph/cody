@@ -103,7 +103,7 @@ export function createStatusBar(): CodyStatusBar {
                 createFeatureToggle(
                     'Code Actions',
                     undefined,
-                    'Enable Cody to fix or explain errors and warnings, directly in your code.',
+                    'Enable Cody fix and explain options in the Quick Fix menu',
                     'cody.codeActions.enabled',
                     c => c.codeActions
                 ),

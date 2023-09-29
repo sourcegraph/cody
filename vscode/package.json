@@ -845,7 +845,7 @@
           "order": 11,
           "title": "Cody Code Actions",
           "type": "boolean",
-          "markdownDescription": "Enable Cody to fix or explain errors and warnings, directly in your code.",
+          "markdownDescription": "Enable Cody fix and explain options in the Quick Fix menu",
           "default": true
         },
         "cody.experimental.symf.path": {
