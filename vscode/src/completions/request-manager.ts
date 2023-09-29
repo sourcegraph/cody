@@ -3,7 +3,7 @@ import * as vscode from 'vscode'
 
 import { DocumentContext } from './get-current-doc-context'
 import { InlineCompletionsResultSource, LastInlineCompletionCandidate } from './get-inline-completions'
-import { logCompletionEvent } from './logger'
+import { logCompletionEvent, SuggestionID } from './logger'
 import { CompletionProviderTracer, Provider } from './providers/provider'
 import { reuseLastCandidate } from './reuse-last-candidate'
 import {
@@ -101,9 +101,10 @@ export class RequestManager {
         return request.promise
     }
 
-    // Remove unwanted suggestions from the cache
-    public removeUnwanted(params: RequestParams): void {
+    public removeFromCache(params: RequestParams): void {
+        console.log(this.cache)
         this.cache.delete(params)
+        console.log(this.cache)
     }
 
     /**
@@ -121,7 +122,7 @@ export class RequestManager {
             lastTriggerDocContext: docContext,
             lastTriggerSelectedInfoItem: selectedCompletionInfo?.text,
             result: {
-                logId: '',
+                logId: '' as SuggestionID,
                 source: InlineCompletionsResultSource.Network,
                 items,
             },

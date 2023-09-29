@@ -11,6 +11,7 @@ import { vsCodeMocks } from '../testutils/mocks'
 import { getInlineCompletions, InlineCompletionsResultSource } from './get-inline-completions'
 import { InlineCompletionItemProvider } from './inline-completion-item-provider'
 import * as CompletionLogger from './logger'
+import { SuggestionID } from './logger'
 import { createProviderConfig } from './providers/anthropic'
 import { documentAndPosition } from './test-helpers'
 import { InlineCompletionItem } from './types'
@@ -78,7 +79,7 @@ describe('InlineCompletionItemProvider', () => {
     it('returns results that span the whole line', async () => {
         const { document, position } = documentAndPosition('const foo = █', 'typescript')
         const fn = vi.fn(getInlineCompletions).mockResolvedValue({
-            logId: '1',
+            logId: '1' as SuggestionID,
             items: [{ insertText: 'test', range: new vsCodeMocks.Range(position, position) }],
             source: InlineCompletionsResultSource.Network,
         })
@@ -116,7 +117,7 @@ describe('InlineCompletionItemProvider', () => {
 
         const item: InlineCompletionItem = { insertText: 'test', range: new vsCodeMocks.Range(position, position) }
         const fn = vi.fn(getInlineCompletions).mockResolvedValue({
-            logId: '1',
+            logId: '1' as SuggestionID,
             items: [item],
             source: InlineCompletionsResultSource.Network,
         })
@@ -197,7 +198,7 @@ describe('InlineCompletionItemProvider', () => {
 
             const { document, position } = documentAndPosition('const foo = █', 'typescript')
             const fn = vi.fn(getInlineCompletions).mockResolvedValue({
-                logId: '1',
+                logId: '1' as SuggestionID,
                 items: [{ insertText: 'bar', range: new vsCodeMocks.Range(position, position) }],
                 source: InlineCompletionsResultSource.Network,
             })
@@ -228,7 +229,7 @@ describe('InlineCompletionItemProvider', () => {
             const fn = vi.fn(getInlineCompletions).mockImplementation(() => {
                 cancel()
                 return Promise.resolve({
-                    logId: '1',
+                    logId: '1' as SuggestionID,
                     items: [{ insertText: 'bar', range: new vsCodeMocks.Range(position, position) }],
                     source: InlineCompletionsResultSource.Network,
                 })
@@ -245,7 +246,7 @@ describe('InlineCompletionItemProvider', () => {
 
             const { document, position } = documentAndPosition('console.█', 'typescript')
             const fn = vi.fn(getInlineCompletions).mockResolvedValue({
-                logId: '1',
+                logId: '1' as SuggestionID,
                 items: [{ insertText: 'log()', range: new vsCodeMocks.Range(position, position) }],
                 source: InlineCompletionsResultSource.Network,
             })
@@ -264,7 +265,7 @@ describe('InlineCompletionItemProvider', () => {
 
             const { document, position } = documentAndPosition('const a = [1, █];', 'typescript')
             const fn = vi.fn(getInlineCompletions).mockResolvedValue({
-                logId: '1',
+                logId: '1' as SuggestionID,
                 items: [{ insertText: '2] ;', range: new vsCodeMocks.Range(position, position) }],
                 source: InlineCompletionsResultSource.Network,
             })
@@ -283,7 +284,7 @@ describe('InlineCompletionItemProvider', () => {
                 'typescript'
             )
             const fn = vi.fn(getInlineCompletions).mockResolvedValue({
-                logId: '1',
+                logId: '1' as SuggestionID,
                 items: [{ insertText: '2] ;', range: new vsCodeMocks.Range(position, position) }],
                 source: InlineCompletionsResultSource.Network,
             })
@@ -299,7 +300,7 @@ describe('InlineCompletionItemProvider', () => {
 
             const { document, position } = documentAndPosition('const a = [1, █)(123);', 'typescript')
             const fn = vi.fn(getInlineCompletions).mockResolvedValue({
-                logId: '1',
+                logId: '1' as SuggestionID,
                 items: [{ insertText: '2];', range: new vsCodeMocks.Range(position, position) }],
                 source: InlineCompletionsResultSource.Network,
             })
@@ -323,7 +324,7 @@ describe('InlineCompletionItemProvider', () => {
                 'typescript'
             )
             const fn = vi.fn(getInlineCompletions).mockResolvedValue({
-                logId: '1',
+                logId: '1' as SuggestionID,
                 items: [{ insertText: "('hello world!')", range: new vsCodeMocks.Range(1, 12, 1, 13) }],
                 source: InlineCompletionsResultSource.Network,
             })
@@ -360,7 +361,7 @@ describe('InlineCompletionItemProvider', () => {
                 'typescript'
             )
             const fn = vi.fn(getInlineCompletions).mockResolvedValue({
-                logId: '1',
+                logId: '1' as SuggestionID,
                 items: [{ insertText: "('hello world!')", range: new vsCodeMocks.Range(1, 12, 1, 13) }],
                 source: InlineCompletionsResultSource.Network,
             })
@@ -427,7 +428,7 @@ describe('InlineCompletionItemProvider', () => {
                 'typescript'
             )
             const fn = vi.fn(getInlineCompletions).mockResolvedValue({
-                logId: '1',
+                logId: '1' as SuggestionID,
                 items: [{ insertText: 'dir', range: new vsCodeMocks.Range(position, position) }],
                 source: InlineCompletionsResultSource.Network,
             })

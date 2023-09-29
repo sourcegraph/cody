@@ -39,6 +39,7 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
         const localAppWatcher = new LocalAppWatcher()
         this.disposables.push(localAppWatcher)
         this.disposables.push(localAppWatcher.onChange(appWatcher => this.appWatcherChanged(appWatcher)))
+        this.disposables.push(localAppWatcher.onTokenFileChange(tokenFile => this.tokenFileChanged(tokenFile)))
     }
 
     private async onDidReceiveMessage(message: WebviewMessage): Promise<void> {
@@ -181,6 +182,12 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
     private appWatcherChanged(appWatcher: LocalAppWatcher): void {
         void this.webview?.postMessage({ type: 'app-state', isInstalled: appWatcher.isInstalled })
         void this.simplifiedOnboardingReloadEmbeddingsState()
+    }
+
+    private tokenFileChanged(file: vscode.Uri): void {
+        void this.authProvider.appDetector
+            .tryFetchAppJson(file)
+            .then(() => this.simplifiedOnboardingReloadEmbeddingsState())
     }
 
     private async onHumanMessageSubmitted(text: string, submitType: 'user' | 'suggestion' | 'example'): Promise<void> {
