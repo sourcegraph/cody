@@ -496,7 +496,6 @@ describe('GraphSectionObserver', () => {
             })
 
             it('does not include sections that are contained in the prefix/suffix range', async () => {
-                const a = document1Uri.toString()
                 // Visit the first and second section  in document 1
                 await onDidChangeTextEditorSelection({
                     textEditor: { document: testDocuments.document1 },
