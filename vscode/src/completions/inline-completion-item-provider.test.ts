@@ -205,8 +205,9 @@ describe('InlineCompletionItemProvider', () => {
 
         it('triggers notice the first time an inline complation is accepted', async () => {
             const { document, position } = documentAndPosition('const foo = █', 'typescript')
+            const logId = '1' as SuggestionID
             const fn = vi.fn(getInlineCompletions).mockResolvedValue({
-                logId: '1',
+                logId,
                 items: [{ insertText: 'bar', range: new vsCodeMocks.Range(position, position) }],
                 source: InlineCompletionsResultSource.Network,
             })
@@ -223,12 +224,12 @@ describe('InlineCompletionItemProvider', () => {
             expect(triggerNotice).not.toHaveBeenCalled()
 
             // Called on first accept.
-            provider.handleDidAcceptCompletionItem('1', completions?.items[0] as InlineCompletionItem)
+            provider.handleDidAcceptCompletionItem(logId, completions?.items[0] as InlineCompletionItem, {} as any)
             expect(triggerNotice).toHaveBeenCalledOnce()
             expect(triggerNotice).toHaveBeenCalledWith({ key: 'onboarding-autocomplete' })
 
             // Not called on second accept.
-            provider.handleDidAcceptCompletionItem('1', completions?.items[0] as InlineCompletionItem)
+            provider.handleDidAcceptCompletionItem(logId, completions?.items[0] as InlineCompletionItem, {} as any)
             expect(triggerNotice).toHaveBeenCalledOnce()
         })
     })
