@@ -27,8 +27,11 @@ function initializeVscodeExtension(): void {
         environmentVariableCollection: {} as any,
         extension: {} as any,
         extensionMode: {} as any,
-        extensionPath: {} as any,
-        extensionUri: {} as any,
+        // Placeholder string values for extension path/uri. These are only used
+        // to resolve paths to icon in the UI. They need to have compatible
+        // types but don't have to point to a meaningful path/URI.
+        extensionPath: '__extensionPath_should_never_be_read_from',
+        extensionUri: vscode.Uri.from({ scheme: 'file', path: '__extensionUri__should_never_be_read_from' }),
         globalState: {
             keys: () => [],
             get: () => undefined,
@@ -77,8 +80,8 @@ export class Agent extends MessageHandler {
             )
             initializeVscodeExtension()
             this.workspace.workspaceRootUri = client.workspaceRootUri
-                ? vscode_shim.Uri.parse(client.workspaceRootUri)
-                : vscode_shim.Uri.from({ scheme: 'file', path: client.workspaceRootPath })
+                ? vscode.Uri.parse(client.workspaceRootUri)
+                : vscode.Uri.from({ scheme: 'file', path: client.workspaceRootPath })
 
             if (client.extensionConfiguration) {
                 this.setClient(client.extensionConfiguration)

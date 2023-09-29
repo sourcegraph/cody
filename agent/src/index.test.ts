@@ -41,7 +41,7 @@ describe.each([
             version: 'v1',
             workspaceRootUri: 'file:///path/to/foo',
             workspaceRootPath: '/path/to/foo',
-            connectionConfiguration: {
+            extensionConfiguration: {
                 accessToken: process.env.SRC_ACCESS_TOKEN ?? 'invalid',
                 serverEndpoint: process.env.SRC_ENDPOINT ?? 'invalid',
                 customHeaders: {},
@@ -61,7 +61,7 @@ describe.each([
             version: 'v1',
             workspaceRootUri: 'file:///path/to/foo',
             workspaceRootPath: '/path/to/foo',
-            connectionConfiguration: {
+            extensionConfiguration: {
                 accessToken: process.env.SRC_ACCESS_TOKEN ?? 'invalid',
                 serverEndpoint: process.env.SRC_ENDPOINT ?? 'invalid',
                 customHeaders: {},
@@ -75,7 +75,7 @@ describe.each([
             version: 'v1',
             workspaceRootUri: 'file:///path/to/foo',
             workspaceRootPath: '/path/to/foo',
-            connectionConfiguration: {
+            extensionConfiguration: {
                 accessToken: '',
                 serverEndpoint: 'https://sourcegraph.com/',
                 customHeaders: {},
@@ -96,7 +96,7 @@ describe.each([
     // Bundle the agent. When running `pnpm run test`, vitest doesn't re-run this step.
     execSync('pnpm run build')
 
-    const agentProcess = spawn('node', ['--inspect', path.join(__dirname, '../dist/index.js'), '--inspect'], {
+    const agentProcess = spawn('node', ['--inspect', path.join(__dirname, '..', 'dist', 'index.js'), '--inspect'], {
         stdio: 'pipe',
     })
 

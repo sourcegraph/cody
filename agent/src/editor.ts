@@ -1,3 +1,5 @@
+import type * as vscode from 'vscode'
+
 import {
     ActiveTextEditor,
     ActiveTextEditorDiagnostic,
@@ -10,7 +12,6 @@ import {
 import { Agent } from './agent'
 import { DocumentOffsets } from './offsets'
 import { TextDocument } from './protocol'
-import * as vscode_shim from './vscode-shim'
 
 export class AgentEditor implements Editor {
     public controllers?: ActiveTextEditorViewControllers | undefined
@@ -27,7 +28,7 @@ export class AgentEditor implements Editor {
         return uri?.scheme === 'file' ? uri.fsPath : null
     }
 
-    public getWorkspaceRootUri(): vscode_shim.Uri | null {
+    public getWorkspaceRootUri(): vscode.Uri | null {
         return this.agent.workspace.workspaceRootUri ?? null
     }
 
