@@ -37,7 +37,6 @@ export class FixupCodeAction implements vscode.CodeActionProvider {
             title: 'Ask Cody to Fix',
         }
         action.diagnostics = diagnostics
-        action.isPreferred = true
         return action
     }
 

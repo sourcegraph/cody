@@ -4,19 +4,42 @@ import { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messag
 
 import { ExplainCodeAction } from '../code-actions/explain'
 
+import { Config } from './ContextProvider'
 import { MessageProvider, MessageProviderOptions } from './MessageProvider'
 
 export class InlineChatViewManager implements vscode.Disposable {
     private inlineChatThreadProviders = new Map<vscode.CommentThread, InlineChatViewProvider>()
     private messageProviderOptions: MessageProviderOptions
-    private disposables: vscode.Disposable[] = []
+    private configurationChangeListener: vscode.Disposable
+    private codeActionProvider: vscode.Disposable | null = null
 
     constructor(options: MessageProviderOptions) {
         this.messageProviderOptions = options
-        this.disposables.push(
-            vscode.languages.registerCodeActionsProvider('*', new ExplainCodeAction(), {
+        this.configureCodeAction(options.contextProvider.config)
+        this.configurationChangeListener = options.contextProvider.configurationChangeEvent.event(() => {
+            this.configureCodeAction(options.contextProvider.config)
+        })
+    }
+
+    private configureCodeAction(config: Omit<Config, 'codebase'>): void {
+        // Disable the code action provider if currently enabled
+        if (!config.codeActions) {
+            this.codeActionProvider?.dispose()
+            this.codeActionProvider = null
+            return
+        }
+
+        // Code action provider already exists, skip re-registering
+        if (this.codeActionProvider) {
+            return
+        }
+
+        this.codeActionProvider = vscode.languages.registerCodeActionsProvider(
+            '*',
+            new ExplainCodeAction(config.inlineChat),
+            {
                 providedCodeActionKinds: ExplainCodeAction.providedCodeActionKinds,
-            })
+            }
         )
     }
 
@@ -42,10 +65,9 @@ export class InlineChatViewManager implements vscode.Disposable {
     }
 
     public dispose(): void {
-        for (const disposable of this.disposables) {
-            disposable.dispose()
-        }
-        this.disposables = []
+        this.configurationChangeListener.dispose()
+        this.codeActionProvider?.dispose()
+        this.codeActionProvider = null
     }
 }
 

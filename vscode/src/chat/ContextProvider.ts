@@ -37,11 +37,13 @@ export type Config = Pick<
     | 'customHeaders'
     | 'accessToken'
     | 'useContext'
+    | 'codeActions'
     | 'experimentalChatPredictions'
     | 'experimentalGuardrails'
     | 'experimentalCommandLenses'
     | 'experimentalEditorTitleCommandIcon'
     | 'experimentalLocalSymbols'
+    | 'inlineChat'
 >
 
 export enum ContextEvent {

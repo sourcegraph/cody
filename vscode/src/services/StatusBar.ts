@@ -101,6 +101,13 @@ export function createStatusBar(): CodyStatusBar {
                     c => c.inlineChat
                 ),
                 createFeatureToggle(
+                    'Code Actions',
+                    undefined,
+                    'Enable Cody fix and explain options in the Quick Fix menu',
+                    'cody.codeActions.enabled',
+                    c => c.codeActions
+                ),
+                createFeatureToggle(
                     'Chat Suggestions',
                     'Experimental',
                     'Enable automatically suggested chat questions',
