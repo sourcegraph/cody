@@ -17,8 +17,19 @@ export function getOSArch(): {
         i686: 'x86',
     }
 
-    const platform = nodePlatformToPlatform[os.platform()]
-    const arch = nodeMachineToArch[os.machine()]
+    let platform
+    try {
+        platform = nodePlatformToPlatform[os.platform()]
+    } catch {
+        // Ignore errors
+    }
+
+    let arch
+    try {
+        arch = nodeMachineToArch[os.arch()]
+    } catch {
+        // Ignore errors
+    }
 
     return {
         platform,
