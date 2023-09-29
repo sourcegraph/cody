@@ -9,7 +9,7 @@ import { localStorage } from './LocalStorageProvider'
 
 // The fraction of users to allocate to the simplified onboarding treatment.
 // This should be between 0 (no users) and 1 (all users).
-const SIMPLIFIED_ARM_ALLOCATION = 0.5
+const SIMPLIFIED_ARM_ALLOCATION = 1
 
 const ONBOARDING_EXPERIMENT_STORAGE_KEY = 'experiment.onboarding'
 

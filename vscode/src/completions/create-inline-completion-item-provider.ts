@@ -78,9 +78,12 @@ export async function createInlineCompletionItemProvider({
             vscode.commands.registerCommand('cody.autocomplete.manual-trigger', () =>
                 completionsProvider.manuallyTriggerCompletion()
             ),
-            vscode.commands.registerCommand('cody.autocomplete.inline.accepted', ({ codyLogId, codyCompletion }) => {
-                completionsProvider.handleDidAcceptCompletionItem(codyLogId, codyCompletion)
-            }),
+            vscode.commands.registerCommand(
+                'cody.autocomplete.inline.accepted',
+                ({ codyLogId, codyCompletion, codyRequest }) => {
+                    completionsProvider.handleDidAcceptCompletionItem(codyLogId, codyCompletion, codyRequest)
+                }
+            ),
             vscode.languages.registerInlineCompletionItemProvider(
                 [{ scheme: 'file', language: '*' }, { notebookType: '*' }],
                 completionsProvider

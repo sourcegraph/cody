@@ -11,6 +11,7 @@ import { GraphContextFetcher } from './context/context-graph'
 import { DocumentHistory } from './context/history'
 import { DocumentContext } from './get-current-doc-context'
 import * as CompletionLogger from './logger'
+import { SuggestionID } from './logger'
 import { CompletionProviderTracer, Provider, ProviderConfig, ProviderOptions } from './providers/provider'
 import { RequestManager, RequestParams } from './request-manager'
 import { reuseLastCandidate } from './reuse-last-candidate'
@@ -54,7 +55,16 @@ export interface InlineCompletionsParams {
     completeSuggestWidgetSelection?: boolean
 
     // Callbacks to accept completions
-    handleDidAcceptCompletionItem?: (logId: string, completion: InlineCompletionItemWithAnalytics) => void
+    handleDidAcceptCompletionItem?: (
+        logId: SuggestionID,
+        completion: InlineCompletionItemWithAnalytics,
+        request: RequestParams
+    ) => void
+    handleDidPartiallyAcceptCompletionItem?: (
+        logId: SuggestionID,
+        completion: InlineCompletionItemWithAnalytics,
+        acceptedLength: number
+    ) => void
 }
 
 /**
@@ -82,7 +92,7 @@ export interface LastInlineCompletionCandidate {
  */
 export interface InlineCompletionsResult {
     /** The unique identifier for logging this result. */
-    logId: string
+    logId: SuggestionID
 
     /** Where this result was generated from. */
     source: InlineCompletionsResultSource
@@ -169,6 +179,7 @@ async function doGetInlineCompletions(params: InlineCompletionsParams): Promise<
         tracer,
         completeSuggestWidgetSelection = false,
         handleDidAcceptCompletionItem,
+        handleDidPartiallyAcceptCompletionItem,
     } = params
 
     tracer?.({ params: { document, position, triggerKind, selectedCompletionInfo } })
@@ -200,6 +211,7 @@ async function doGetInlineCompletions(params: InlineCompletionsParams): Promise<
                   selectedCompletionInfo,
                   completeSuggestWidgetSelection,
                   handleDidAcceptCompletionItem,
+                  handleDidPartiallyAcceptCompletionItem,
               })
             : null
     if (resultToReuse) {
@@ -209,7 +221,7 @@ async function doGetInlineCompletions(params: InlineCompletionsParams): Promise<
     // Only log a completion as started if it's either served from cache _or_ the debounce interval
     // has passed to ensure we don't log too many start events where we end up not doing any work at
     // all.
-    CompletionLogger.clear()
+    CompletionLogger.flushActiveSuggestions()
     const multiline = Boolean(multilineTrigger)
     const logId = CompletionLogger.create({
         multiline,
@@ -284,7 +296,7 @@ async function doGetInlineCompletions(params: InlineCompletionsParams): Promise<
             ? InlineCompletionsResultSource.CacheAfterRequestStart
             : InlineCompletionsResultSource.Network
 
-    CompletionLogger.loaded(logId, completions)
+    CompletionLogger.loaded(logId, reqContext, completions)
 
     return {
         logId,

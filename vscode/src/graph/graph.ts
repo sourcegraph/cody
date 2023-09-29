@@ -5,6 +5,7 @@ import { HoverContext, PreciseContext } from '@sourcegraph/cody-shared/src/codeb
 import { dedupeWith, isDefined } from '@sourcegraph/cody-shared/src/common'
 import { ActiveTextEditorSelectionRange, Editor } from '@sourcegraph/cody-shared/src/editor'
 
+import { CustomAbortSignal } from '../completions/context/utils'
 import { logDebug } from '../log'
 
 import { createLimiter } from './limiter'
@@ -66,7 +67,7 @@ export const getGraphContextFromEditor = async (editor: Editor): Promise<Precise
 export const getGraphContextFromRange = async (
     editor: vscode.TextEditor,
     range: vscode.Range,
-    abortSignal?: AbortSignal
+    abortSignal?: CustomAbortSignal
 ): Promise<HoverContext[]> => {
     const uri = editor.document.uri
     const contentMap = new Map([[uri.fsPath, editor.document.getText().split('\n')]])
@@ -594,7 +595,7 @@ function extractMarkdownCodeBlock(string: string): string {
 export const gatherHoverText = async (
     contentMap: Map<string, string[]>,
     requests: Request[],
-    abortSignal?: AbortSignal,
+    abortSignal?: CustomAbortSignal,
     getHover: typeof defaultGetHover = defaultGetHover,
     getDefinitions: typeof defaultGetDefinitions = defaultGetDefinitions,
     getTypeDefinitions: typeof defaultGetTypeDefinitions = defaultGetTypeDefinitions,
