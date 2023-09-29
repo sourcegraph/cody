@@ -108,7 +108,7 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
      */
     private async createCodyCommand(command: CodyPrompt, input = ''): Promise<string> {
         const commandKey = command.slashCommand
-        const defaultEditCommands = new Set(['/edit', '/fix'])
+        const defaultEditCommands = new Set(['/edit', '/fix', '/doc'])
         const isFixupRequest = defaultEditCommands.has(commandKey) || command.prompt.startsWith('/edit')
 
         logDebug('CommandsController:createCodyCommand:creating', commandKey)

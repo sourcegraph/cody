@@ -634,7 +634,9 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
                 (a, b) => +new Date(b[1].lastInteractionTimestamp) - +new Date(a[1].lastInteractionTimestamp)
             )
             const chatID = sortedChats[0][0]
-            await this.restoreSession(chatID)
+            if (chatID !== this.currentChatID) {
+                await this.restoreSession(chatID)
+            }
         }
     }
 
