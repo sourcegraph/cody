@@ -22,8 +22,8 @@ export const VALID_TOKEN = 'abcdefgh1234'
 const responses = {
     chat: 'hello from the assistant',
     fixup: '<selection><title>Goodbye Cody</title></selection>',
-    firstCode: { completion: `myFirstCompletion`, stopReason: 'stop_sequence' },
-    code: { completion: `myNotFirstCompletion`, stopReason: 'stop_sequence' },
+    firstCode: { completion: 'myFirstCompletion', stopReason: 'stop_sequence' },
+    code: { completion: 'myNotFirstCompletion', stopReason: 'stop_sequence' },
 }
 
 const FIXUP_PROMPT_TAG = '<selectedCode>'
