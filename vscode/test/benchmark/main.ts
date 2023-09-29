@@ -62,7 +62,7 @@ export async function start(): Promise<void> {
                     vscodeExecutablePath,
                     extensionDevelopmentPath: VSCODE_CODY_ROOT,
                     extensionTestsPath: EXTENSION_TEST_PATH,
-                    launchArgs: [tempWorkspace, extensionDirArg],
+                    launchArgs: [tempWorkspace, extensionDirArg, '--log=off'],
                     extensionTestsEnv: {
                         BENCHMARK_EXTENSION_ID: extension,
                         BENCHMARK_CONFIG_FILE: benchmarkConfig,
