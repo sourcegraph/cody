@@ -61,7 +61,10 @@
       "autoAttachChildProcesses": true,
       "skipFiles": ["<node_internals>/**", "**/node_modules/**"],
       "program": "${workspaceFolder}/node_modules/vitest/vitest.mjs",
-      "args": ["run", "${relativeFile}"],
+      // ${relativeFile} will guarantee the "current" file, but fileBaseNameNoExtension
+      // can be convenient because running with a file like "graph-section-observer.ts"
+      // (the implementation, not the test) will run the correct tests.
+      "args": ["run", "${fileBasenameNoExtension}"],
       "smartStep": true
     }
   ]
