@@ -10,13 +10,25 @@ import { telemetryService } from '../services/telemetry'
 
 import { ContextSummary } from './context/context'
 import { InlineCompletionsResultSource, TriggerKind } from './get-inline-completions'
+import { RequestParams } from './request-manager'
 import * as statistics from './statistics'
 import { InlineCompletionItemWithAnalytics } from './text-processing/process-inline-completions'
 import { lines } from './text-processing/utils'
 import { InlineCompletionItem } from './types'
 
+// A completion ID is a unique identifier for a specific completion text displayed at a specific
+// point in the document. A single completion can be suggested multiple times.
+type CompletionID = string & { _opaque: typeof CompletionID }
+declare const CompletionID: unique symbol
+
+// A suggestion ID is a unique identifier for a suggestion lifecycle.
+export type SuggestionID = string & { _opaque: typeof SuggestionID }
+declare const SuggestionID: unique symbol
+
 export interface CompletionEvent {
+    id: SuggestionID
     params: {
+        id: CompletionID | null
         type: 'inline'
         multiline: boolean
         multilineMode: null | 'block'
@@ -26,7 +38,6 @@ export interface CompletionEvent {
         languageId: string
         contextSummary?: ContextSummary
         source?: InlineCompletionsResultSource
-        id: string
         lineCount?: number
         charCount?: number
     }
@@ -81,8 +92,26 @@ interface CompletionItemInfo extends ItemPostProcessingInfo {
 
 const READ_TIMEOUT_MS = 750
 
-const displayedCompletions = new LRUCache<string, CompletionEvent>({
-    max: 100, // Maximum number of completions that we are keeping track of
+// Maintain a cache of active suggestion lifecycle
+const activeSuggestions = new LRUCache<SuggestionID, CompletionEvent>({
+    max: 20,
+})
+
+// Maintain a history of the last n displayed completions and their generated completion IDs. This
+// allows us to reuse the completion ID across multiple suggestions.
+const recentCompletions = new LRUCache<string, CompletionID>({
+    max: 20,
+})
+function getRecentCompletionsKey(params: RequestParams, completion: string): string {
+    return `${params.docContext.prefix}█${completion}█${params.docContext.nextNonEmptyLine}`
+}
+
+// On our analytics dashboards, we apply a distinct count on the completion ID to count unique
+// completions as suggested. Since we don't have want to maintain a list of all completion IDs in
+// the client, we instead retain the last few completion IDs that were marked as suggested to
+// prevent local over counting.
+const completionIdsMarkedAsSuggested = new LRUCache<CompletionID, true>({
+    max: 50,
 })
 
 let completionsStartedSinceLastSuggestion = 0
@@ -91,17 +120,18 @@ export function logCompletionEvent(name: string, params?: TelemetryEventProperti
     telemetryService.log(`CodyVSCodeExtension:completion:${name}`, params)
 }
 
-export function create(inputParams: Omit<CompletionEvent['params'], 'multilineMode' | 'type' | 'id'>): string {
-    const id = uuid.v4()
+export function create(inputParams: Omit<CompletionEvent['params'], 'multilineMode' | 'type' | 'id'>): SuggestionID {
+    const id = uuid.v4() as SuggestionID
     const params: CompletionEvent['params'] = {
         ...inputParams,
         type: 'inline',
         // @deprecated: We only keep the legacy name for backward compatibility in analytics
         multilineMode: inputParams.multiline ? 'block' : null,
-        id,
+        id: null,
     }
 
-    displayedCompletions.set(id, {
+    activeSuggestions.set(id, {
+        id,
         params,
         startedAt: performance.now(),
         networkRequestStartedAt: null,
@@ -117,27 +147,33 @@ export function create(inputParams: Omit<CompletionEvent['params'], 'multilineMo
     return id
 }
 
-export function start(id: string): void {
-    const event = displayedCompletions.get(id)
+export function start(id: SuggestionID): void {
+    const event = activeSuggestions.get(id)
     if (event && !event.startLoggedAt) {
         event.startLoggedAt = performance.now()
         completionsStartedSinceLastSuggestion++
     }
 }
 
-export function networkRequestStarted(id: string, contextSummary: ContextSummary | undefined): void {
-    const event = displayedCompletions.get(id)
+export function networkRequestStarted(id: SuggestionID, contextSummary: ContextSummary | undefined): void {
+    const event = activeSuggestions.get(id)
     if (event && !event.networkRequestStartedAt) {
         event.networkRequestStartedAt = performance.now()
         event.params.contextSummary = contextSummary
     }
 }
 
-export function loaded(id: string, items: InlineCompletionItemWithAnalytics[]): void {
-    const event = displayedCompletions.get(id)
+export function loaded(id: SuggestionID, params: RequestParams, items: InlineCompletionItemWithAnalytics[]): void {
+    const event = activeSuggestions.get(id)
     if (!event) {
         return
     }
+
+    // Check if we already have a completion id for the loaded completion item
+    const key = items.length > 0 ? getRecentCompletionsKey(params, items[0].insertText) : ''
+    const completionId: CompletionID = recentCompletions.get(key) ?? (uuid.v4() as CompletionID)
+    recentCompletions.set(key, completionId)
+    event.params.id = completionId
 
     if (!event.loadedAt) {
         event.loadedAt = performance.now()
@@ -154,10 +190,19 @@ export function loaded(id: string, items: InlineCompletionItemWithAnalytics[]): 
 //
 // For statistics logging we start a timeout matching the READ_TIMEOUT_MS so we can increment the
 // suggested completion count as soon as we count it as such.
-export function suggested(id: string, source: InlineCompletionsResultSource, completion: InlineCompletionItem): void {
-    const event = displayedCompletions.get(id)
+export function suggested(
+    id: SuggestionID,
+    source: InlineCompletionsResultSource,
+    completion: InlineCompletionItem
+): void {
+    const event = activeSuggestions.get(id)
     if (!event) {
         return
+    }
+
+    const completionId = event.params.id
+    if (!completionId) {
+        throw new Error('Completion ID not set, make sure to call loaded() first')
     }
 
     if (!event.suggestedAt) {
@@ -168,23 +213,27 @@ export function suggested(id: string, source: InlineCompletionsResultSource, com
         event.suggestedAt = performance.now()
 
         setTimeout(() => {
-            const event = displayedCompletions.get(id)
+            const event = activeSuggestions.get(id)
             if (!event) {
                 return
             }
 
+            // We can assume that this completion will be marked as `read: true` because
+            // READ_TIMEOUT_MS has passed without the completion being logged yet.
             if (event.suggestedAt && !event.suggestionAnalyticsLoggedAt && !event.suggestionLoggedAt) {
-                // We can assume that this completion will be marked as `read: true` because
-                // READ_TIMEOUT_MS has passed without the completion being logged yet.
+                if (completionIdsMarkedAsSuggested.has(completionId)) {
+                    return
+                }
                 statistics.logSuggested()
+                completionIdsMarkedAsSuggested.set(completionId, true)
                 event.suggestionAnalyticsLoggedAt = performance.now()
             }
         }, READ_TIMEOUT_MS)
     }
 }
 
-export function accept(id: string, completion: InlineCompletionItem): void {
-    const completionEvent = displayedCompletions.get(id)
+export function accept(id: SuggestionID, completion: InlineCompletionItem): void {
+    const completionEvent = activeSuggestions.get(id)
     if (!completionEvent || completionEvent.acceptedAt) {
         // Log a debug event, this case should not happen in production
         logCompletionEvent('acceptedUntrackedCompletion')
@@ -216,6 +265,23 @@ export function accept(id: string, completion: InlineCompletionItem): void {
         logCompletionEvent('unexpectedAlreadySuggested')
     }
 
+    if (!completionEvent.params.id) {
+        throw new Error('Completion ID not set, make sure to call loaded() first')
+    }
+
+    // Ensure the CompletionID is never reused by removing it from the recent completions cache
+    let key: string | null = null
+    // eslint-disable-next-line ban/ban
+    recentCompletions.forEach((v, k) => {
+        if (v === completionEvent.params.id) {
+            key = k
+        }
+    })
+
+    if (key) {
+        recentCompletions.delete(key)
+    }
+
     completionEvent.acceptedAt = performance.now()
 
     logSuggestionEvents()
@@ -226,8 +292,8 @@ export function accept(id: string, completion: InlineCompletionItem): void {
     statistics.logAccepted()
 }
 
-export function partiallyAccept(id: string, completion: InlineCompletionItem, acceptedLength: number): void {
-    const completionEvent = displayedCompletions.get(id)
+export function partiallyAccept(id: SuggestionID, completion: InlineCompletionItem, acceptedLength: number): void {
+    const completionEvent = activeSuggestions.get(id)
     // Only log partial acceptances if the completion was not yet fully accepted
     if (!completionEvent || completionEvent.acceptedAt) {
         return
@@ -240,12 +306,12 @@ export function partiallyAccept(id: string, completion: InlineCompletionItem, ac
     })
 }
 
-export function getCompletionEvent(id: string): CompletionEvent | undefined {
-    return displayedCompletions.get(id)
+export function getCompletionEvent(id: SuggestionID): CompletionEvent | undefined {
+    return activeSuggestions.get(id)
 }
 
-export function noResponse(id: string): void {
-    const completionEvent = displayedCompletions.get(id)
+export function noResponse(id: SuggestionID): void {
+    const completionEvent = activeSuggestions.get(id)
     logCompletionEvent('noResponse', completionEvent?.params ?? {})
 }
 
@@ -253,15 +319,16 @@ export function noResponse(id: string): void {
  * This callback should be triggered whenever VS Code tries to highlight a new completion and it's
  * used to measure how long previous completions were visible.
  */
-export function clear(): void {
+export function flushActiveSuggestions(): void {
     logSuggestionEvents()
 }
 
 function logSuggestionEvents(): void {
     const now = performance.now()
     // eslint-disable-next-line ban/ban
-    displayedCompletions.forEach(completionEvent => {
+    activeSuggestions.forEach(completionEvent => {
         const {
+            params,
             loadedAt,
             suggestedAt,
             suggestionLoggedAt,
@@ -273,7 +340,7 @@ function logSuggestionEvents(): void {
 
         // Only log suggestion events that were already shown to the user and
         // have not been logged yet.
-        if (!loadedAt || !startLoggedAt || !suggestedAt || suggestionLoggedAt) {
+        if (!loadedAt || !startLoggedAt || !suggestedAt || suggestionLoggedAt || !params.id) {
             return
         }
         completionEvent.suggestionLoggedAt = now
@@ -286,8 +353,9 @@ function logSuggestionEvents(): void {
 
         if (!suggestionAnalyticsLoggedAt) {
             completionEvent.suggestionAnalyticsLoggedAt = now
-            if (read) {
+            if (read && !completionIdsMarkedAsSuggested.has(params.id)) {
                 statistics.logSuggested()
+                completionIdsMarkedAsSuggested.set(params.id, true)
             }
         }
 
@@ -306,6 +374,14 @@ function logSuggestionEvents(): void {
     // Completions are kept in the LRU cache for longer. This is because they
     // can still become visible if e.g. they are served from the cache and we
     // need to retain the ability to mark them as seen
+}
+
+// Restores the logger's internals to a pristine state§
+export function reset_testOnly(): void {
+    activeSuggestions.clear()
+    completionIdsMarkedAsSuggested.clear()
+    recentCompletions.clear()
+    completionsStartedSinceLastSuggestion = 0
 }
 
 function lineAndCharCount({ insertText }: InlineCompletionItem): { lineCount: number; charCount: number } {

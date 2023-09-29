@@ -16,7 +16,7 @@ import { ContextSnippet, SymbolContextSnippet } from '../types'
 import { createSubscriber } from '../utils'
 
 import { GraphContextFetcher } from './context-graph'
-import { baseLanguageId } from './utils'
+import { baseLanguageId, CustomAbortController } from './utils'
 
 interface Section extends DocumentSection {
     preloadedContext: {
@@ -229,7 +229,7 @@ export class GraphSectionObserver implements vscode.Disposable, GraphContextFetc
 
         const start = performance.now()
         const sectionKey = locationKeyFn(section.location)
-        const abortController = new AbortController()
+        const abortController = new CustomAbortController()
 
         // Abort previous requests that have not yet resolved and are for a different section
         if (this.lastRequestGraphContextSectionKey && this.lastRequestGraphContextSectionKey !== sectionKey) {

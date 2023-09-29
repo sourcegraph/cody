@@ -6,6 +6,8 @@ import { getCursorFoldingRange } from '../editor/utils'
 import { logDebug } from '../log'
 import { telemetryService } from '../services/telemetry'
 
+const release = false
+
 /**
  * CommandRunner class implements disposable interface.
  * Manages executing a Cody command and optional fixup.
@@ -58,7 +60,7 @@ export class CommandRunner implements vscode.Disposable {
         }
 
         // Run fixup if this is a edit command
-        const insertMode = command.mode === 'insert'
+        const insertMode = command.mode === 'insert' && release
         const fixupMode = command.mode === 'edit' || instruction?.startsWith('/edit ')
         this.isFixupRequest = isFixupRequest || fixupMode || insertMode
         if (this.isFixupRequest) {
@@ -139,8 +141,8 @@ export class CommandRunner implements vscode.Disposable {
                 range,
                 instruction,
                 document: doc,
-                auto: true,
-                insertMode,
+                auto: release,
+                insertMode: release,
             },
             source
         )
@@ -213,17 +215,12 @@ function getDocCommandRange(
 
     // move the current selection to the defined selection in the text editor document
     if (editor) {
-        // reveal the range of the selection minus 5 lines
-        editor?.revealRange(
-            selection.with({
-                start:
-                    selection.start.line > 5
-                        ? selection.start.with({ line: selection.start.line - 5 })
-                        : selection.start,
-                end: selection.end,
-            }),
-            vscode.TextEditorRevealType.InCenter
-        )
+        const visibleRange = editor.visibleRanges
+        // reveal the range of the selection minus 5 lines if visibleRange doesn't contain the selection
+        if (!visibleRange.some(range => range.contains(selection))) {
+            // reveal the range of the selection minus 5 lines
+            editor?.revealRange(selection, vscode.TextEditorRevealType.InCenter)
+        }
     }
 
     return new vscode.Selection(pos, pos)
