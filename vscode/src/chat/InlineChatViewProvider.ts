@@ -4,6 +4,7 @@ import { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messag
 
 import { ExplainCodeAction } from '../code-actions/explain'
 
+import { Config } from './ContextProvider'
 import { MessageProvider, MessageProviderOptions } from './MessageProvider'
 
 export class InlineChatViewManager implements vscode.Disposable {
@@ -14,15 +15,15 @@ export class InlineChatViewManager implements vscode.Disposable {
 
     constructor(options: MessageProviderOptions) {
         this.messageProviderOptions = options
-        this.configureCodeAction(options.contextProvider.config.codeActions)
+        this.configureCodeAction(options.contextProvider.config)
         this.configurationChangeListener = options.contextProvider.configurationChangeEvent.event(() => {
-            this.configureCodeAction(options.contextProvider.config.codeActions)
+            this.configureCodeAction(options.contextProvider.config)
         })
     }
 
-    private configureCodeAction(enabled: boolean): void {
+    private configureCodeAction(config: Omit<Config, 'codebase'>): void {
         // Disable the code action provider if currently enabled
-        if (!enabled) {
+        if (!config.codeActions) {
             this.codeActionProvider?.dispose()
             this.codeActionProvider = null
             return
@@ -33,9 +34,13 @@ export class InlineChatViewManager implements vscode.Disposable {
             return
         }
 
-        this.codeActionProvider = vscode.languages.registerCodeActionsProvider('*', new ExplainCodeAction(), {
-            providedCodeActionKinds: ExplainCodeAction.providedCodeActionKinds,
-        })
+        this.codeActionProvider = vscode.languages.registerCodeActionsProvider(
+            '*',
+            new ExplainCodeAction(config.inlineChat),
+            {
+                providedCodeActionKinds: ExplainCodeAction.providedCodeActionKinds,
+            }
+        )
     }
 
     public getProviderForThread(thread: vscode.CommentThread): InlineChatViewProvider {
