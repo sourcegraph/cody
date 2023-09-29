@@ -9,11 +9,13 @@ import { SourcegraphGraphQLAPIClient } from '@sourcegraph/cody-shared/src/source
 import { localStorage } from '../services/LocalStorageProvider'
 import { vsCodeMocks } from '../testutils/mocks'
 
+import { getCurrentDocContext } from './get-current-doc-context'
 import { getInlineCompletions, InlineCompletionsResultSource } from './get-inline-completions'
 import { InlineCompletionItemProvider } from './inline-completion-item-provider'
 import * as CompletionLogger from './logger'
 import { SuggestionID } from './logger'
 import { createProviderConfig } from './providers/anthropic'
+import { RequestParams } from './request-manager'
 import { documentAndPosition } from './test-helpers'
 import { InlineCompletionItem } from './types'
 
@@ -205,6 +207,19 @@ describe('InlineCompletionItemProvider', () => {
 
         it('triggers notice the first time an inline complation is accepted', async () => {
             const { document, position } = documentAndPosition('const foo = █', 'typescript')
+            const requestParams: RequestParams = {
+                document,
+                position,
+                docContext: getCurrentDocContext({
+                    document,
+                    position,
+                    maxSuffixLength: 100,
+                    maxPrefixLength: 100,
+                    enableExtendedTriggers: true,
+                }),
+                selectedCompletionInfo: undefined,
+            }
+
             const logId = '1' as SuggestionID
             const fn = vi.fn(getInlineCompletions).mockResolvedValue({
                 logId,
@@ -224,12 +239,12 @@ describe('InlineCompletionItemProvider', () => {
             expect(triggerNotice).not.toHaveBeenCalled()
 
             // Called on first accept.
-            provider.handleDidAcceptCompletionItem(logId, completions?.items[0] as InlineCompletionItem, {} as any)
+            provider.handleDidAcceptCompletionItem(logId, completions?.items[0] as InlineCompletionItem, requestParams)
             expect(triggerNotice).toHaveBeenCalledOnce()
             expect(triggerNotice).toHaveBeenCalledWith({ key: 'onboarding-autocomplete' })
 
             // Not called on second accept.
-            provider.handleDidAcceptCompletionItem(logId, completions?.items[0] as InlineCompletionItem, {} as any)
+            provider.handleDidAcceptCompletionItem(logId, completions?.items[0] as InlineCompletionItem, requestParams)
             expect(triggerNotice).toHaveBeenCalledOnce()
         })
     })
