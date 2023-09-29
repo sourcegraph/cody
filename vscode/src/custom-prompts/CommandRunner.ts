@@ -6,8 +6,6 @@ import { getCursorFoldingRange } from '../editor/utils'
 import { logDebug } from '../log'
 import { telemetryService } from '../services/telemetry'
 
-const release = false
-
 /**
  * CommandRunner class implements disposable interface.
  * Manages executing a Cody command and optional fixup.
@@ -60,7 +58,7 @@ export class CommandRunner implements vscode.Disposable {
         }
 
         // Run fixup if this is a edit command
-        const insertMode = command.mode === 'insert' && release
+        const insertMode = command.mode === 'insert'
         const fixupMode = command.mode === 'edit' || instruction?.startsWith('/edit ')
         this.isFixupRequest = isFixupRequest || fixupMode || insertMode
         if (this.isFixupRequest) {
@@ -141,8 +139,8 @@ export class CommandRunner implements vscode.Disposable {
                 range,
                 instruction,
                 document: doc,
-                auto: release,
-                insertMode: release,
+                auto: true,
+                insertMode,
             },
             source
         )

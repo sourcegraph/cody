@@ -19,8 +19,6 @@ import { InlineController } from '../services/InlineController'
 import { EditorCodeLenses } from './EditorCodeLenses'
 import { getCursorFoldingRange } from './utils'
 
-const release = false
-
 export class VSCodeEditor implements Editor<InlineController, FixupController, CommandsController> {
     constructor(
         public readonly controllers: ActiveTextEditorViewControllers<
@@ -136,9 +134,6 @@ export class VSCodeEditor implements Editor<InlineController, FixupController, C
      * @returns The smart selection for the active editor, or null if none can be determined.
      */
     public async getActiveTextEditorSmartSelection(): Promise<ActiveTextEditorSelection | null> {
-        if (!release) {
-            return this.getActiveTextEditorSelection()
-        }
         const activeEditor = this.getActiveTextEditorInstance()
         if (!activeEditor) {
             return null
