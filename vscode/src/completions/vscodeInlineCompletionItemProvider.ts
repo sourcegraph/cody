@@ -5,7 +5,6 @@ import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
 import { FeatureFlag, FeatureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
 import { RateLimitError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
 
-import { ChatViewProvider } from '../chat/ChatViewProvider'
 import { logDebug } from '../log'
 import { localStorage } from '../services/LocalStorageProvider'
 import { CodyStatusBar } from '../services/StatusBar'
@@ -41,7 +40,7 @@ export interface CodyCompletionItemProviderConfig {
     tracer?: ProvideInlineCompletionItemsTracer | null
     contextFetcher?: (options: GetContextOptions) => Promise<GetContextResult>
     featureFlagProvider: FeatureFlagProvider
-    sidebarChatProvider: ChatViewProvider | null
+    triggerNotice: ((notice: { key: string }) => void) | null
 }
 
 // Only used when the CodyAutocompleteMinimumLatency feature flag is turned on:
@@ -283,11 +282,11 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
         // log id is never reused if the completion is accepted.
         this.clearLastCandidate()
 
-        if (this.config.sidebarChatProvider) {
+        if (this.config.triggerNotice) {
             const key = 'completion.inline.hasAcceptedFirstCompletion'
             if (!localStorage.get(key)) {
                 void localStorage.set(key, 'true')
-                this.config.sidebarChatProvider.triggerNotice({ key: 'onboarding-autocomplete' })
+                this.config.triggerNotice({ key: 'onboarding-autocomplete' })
             }
         }
 

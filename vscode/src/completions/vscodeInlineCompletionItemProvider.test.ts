@@ -67,7 +67,7 @@ class MockableInlineCompletionItemProvider extends InlineCompletionItemProvider 
                 contextWindowTokens: 2048,
             }),
             featureFlagProvider: dummyFeatureFlagProvider,
-            sidebarChatProvider: null,
+            triggerNotice: null,
 
             ...superArgs,
         })
@@ -190,29 +190,26 @@ describe('InlineCompletionItemProvider', () => {
                 items: [{ insertText: 'bar', range: new vsCodeMocks.Range(position, position) }],
                 source: InlineCompletionsResultSource.Network,
             })
-            const mockChatView = {
-                triggerNotice() {}, // eslint-disable-line @typescript-eslint/no-empty-function
-            }
-            const spy = vi.spyOn(mockChatView, 'triggerNotice')
 
+            const triggerNotice = vi.fn()
             const provider = new MockableInlineCompletionItemProvider(fn, {
-                sidebarChatProvider: mockChatView as any,
+                triggerNotice,
             })
             const completions = await provider.provideInlineCompletionItems(document, position, DUMMY_CONTEXT)
             expect(completions).not.toBeNull()
             expect(completions?.items).not.toHaveLength(0)
 
             // Shuldn't have been called yet.
-            expect(spy).not.toHaveBeenCalled()
+            expect(triggerNotice).not.toHaveBeenCalled()
 
             // Called on first accept.
             provider.handleDidAcceptCompletionItem('1', completions?.items[0] as InlineCompletionItem)
-            expect(spy).toHaveBeenCalledOnce()
-            expect(spy).toHaveBeenCalledWith({ key: 'onboarding-autocomplete' })
+            expect(triggerNotice).toHaveBeenCalledOnce()
+            expect(triggerNotice).toHaveBeenCalledWith({ key: 'onboarding-autocomplete' })
 
             // Not called on second accept.
             provider.handleDidAcceptCompletionItem('1', completions?.items[0] as InlineCompletionItem)
-            expect(spy).toHaveBeenCalledOnce()
+            expect(triggerNotice).toHaveBeenCalledOnce()
         })
     })
 
