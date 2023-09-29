@@ -30,6 +30,21 @@ describe('getLanguageForFileName', () => {
         expect(getLanguageForFileName('test.bad')).toBe('bad')
         expect(getLanguageForFileName('test.invalid')).toBe('invalid')
     })
+
+    it('returns the extension event when there is a path', () => {
+        expect(getLanguageForFileName('/test/folder/test.js')).toBe('javascript')
+        expect(getLanguageForFileName('test/folder/file.js')).toBe('javascript')
+    })
+
+    it('handles files with no extension', () => {
+        expect(getLanguageForFileName('/test/folder/Dockerfile')).toBe('dockerfile')
+        expect(getLanguageForFileName('/test/folder/BUILD')).toBe('starlark')
+    })
+
+    it('handles bad data', () => {
+        expect(getLanguageForFileName('#$%^&^%')).toBe('#$%^&^%')
+        expect(getLanguageForFileName('')).toBe('')
+    })
 })
 
 describe('language-file-extensions.json mappings', () => {

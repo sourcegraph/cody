@@ -16,7 +16,7 @@ import { URI } from 'vscode-uri'
 //     at Object.<anonymous> (/snapshot/dist/agent.js)
 //     at Module._compile (pkg/prelude/bootstrap.js:1926:22)
 // </VERY IMPORTANT>
-import type { InlineCompletionItemProvider } from '../../vscode/src/completions/vscodeInlineCompletionItemProvider'
+import type { InlineCompletionItemProvider } from '../../vscode/src/completions/inline-completion-item-provider'
 import {
     // It's OK to import the VS Code mocks because they don't depend on the 'vscode' module.
     Disposable,
@@ -117,15 +117,13 @@ const configuration: vscode.WorkspaceConfiguration = {
             case 'cody.autocomplete.enabled':
                 return true
             case 'cody.autocomplete.advanced.provider':
-                return connectionConfig?.autocompleteAdvancedProvider ?? 'anthropic'
+                return connectionConfig?.autocompleteAdvancedProvider ?? null
             case 'cody.autocomplete.advanced.serverEndpoint':
                 return connectionConfig?.autocompleteAdvancedServerEndpoint ?? null
             case 'cody.autocomplete.advanced.model':
                 return connectionConfig?.autocompleteAdvancedModel ?? null
             case 'cody.autocomplete.advanced.accessToken':
                 return connectionConfig?.autocompleteAdvancedAccessToken ?? null
-            case 'cody.autocomplete.advanced.embeddings':
-                return connectionConfig?.autocompleteAdvancedEmbeddings ?? true
             case 'cody.advanced.agent.running':
                 return true
             case 'cody.debug.enable':

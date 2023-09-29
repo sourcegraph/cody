@@ -1,7 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 
-import { vsCodeMocks } from '../testutils/mocks'
-
 import { getCurrentDocContext } from './get-current-doc-context'
 import { Provider } from './providers/provider'
 import { RequestManager, RequestManagerResult, RequestParams } from './request-manager'
@@ -35,9 +33,6 @@ function createProvider(prefix: string) {
         fileName: '',
         languageId: 'typescript',
         multiline: false,
-        responsePercentage: 0,
-        prefixPercentage: 0,
-        suffixPercentage: 0,
         n: 1,
     })
 }
@@ -54,10 +49,7 @@ function docState(prefix: string, suffix: string = ';'): RequestParams {
             maxSuffixLength: 100,
             enableExtendedTriggers: true,
         }),
-        context: {
-            triggerKind: vsCodeMocks.InlineCompletionTriggerKind.Automatic,
-            selectedCompletionInfo: undefined,
-        },
+        selectedCompletionInfo: undefined,
     }
 }
 

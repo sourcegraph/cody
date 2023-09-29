@@ -5,6 +5,8 @@ import { DocumentContext } from '../get-current-doc-context'
 import { asPoint, getCachedParseTreeForDocument } from '../tree-sitter/parse-tree-cache'
 import { InlineCompletionItem } from '../types'
 
+import { InlineCompletionItemWithAnalytics } from './process-inline-completions'
+
 export interface CompletionContext {
     completion: InlineCompletionItem
     document: TextDocument
@@ -14,13 +16,13 @@ export interface CompletionContext {
 
 export interface ParsedCompletion extends InlineCompletionItem {
     tree?: Tree
-    hasParseErrors?: boolean
+    parseErrorCount?: number
     // Points for parse-tree queries.
     points?: {
         // Start of completion.insertText in the parse-tree.
-        start?: Point
+        start: Point
         // End of completion.insertText in the parse-tree
-        end?: Point
+        end: Point
         // Start of the multi-line completion trigger if applicable
         trigger?: Point
     }
@@ -36,7 +38,7 @@ export function parseCompletion(context: CompletionContext): ParsedCompletion {
 
     // Do nothig if the syntactic post-processing is not enabled.
     if (!parseTreeCache) {
-        return { ...completion, hasParseErrors: false }
+        return completion
     }
 
     const { parser, tree } = parseTreeCache
@@ -74,13 +76,13 @@ export function parseCompletion(context: CompletionContext): ParsedCompletion {
     // Search for ERROR nodes in the completion range.
     const query = parser.getLanguage().query('(ERROR) @error')
     // TODO(tree-sitter): query bigger range to catch higher scope syntactic errors caused by the completion.
-    const matches = query.matches(treeWithCompletion.rootNode, points?.trigger || points.start, points.end)
+    const captures = query.captures(treeWithCompletion.rootNode, points?.trigger || points.start, points.end)
 
     return {
         ...completion,
         points,
         tree: treeWithCompletion,
-        hasParseErrors: matches.length > 0,
+        parseErrorCount: captures.length,
     }
 }
 
@@ -128,9 +130,8 @@ function pasteCompletion(params: PasteCompletionParams): Tree {
     return parser.parse(textWithCompletion, treeCopy)
 }
 
-export function parsedCompletionToCompletion(completion: ParsedCompletion): InlineCompletionItem {
-    return {
-        range: completion.range,
-        insertText: completion.insertText,
-    }
+export function dropParserFields(completion: ParsedCompletion): InlineCompletionItemWithAnalytics {
+    const { points, tree, ...rest } = completion
+
+    return rest
 }

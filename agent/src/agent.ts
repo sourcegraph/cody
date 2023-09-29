@@ -162,8 +162,18 @@ export class Agent extends MessageHandler {
             if (!client) {
                 return null
             }
+            const abortController = new AbortController()
+            if (token) {
+                if (token.isCancellationRequested) {
+                    abortController.abort()
+                }
+                token.onCancellationRequested(() => {
+                    abortController.abort()
+                })
+            }
 
             await client.executeRecipe(data.id, {
+                signal: abortController.signal,
                 humanChatInput: data.humanChatInput,
                 data: data.data,
             })
@@ -185,10 +195,16 @@ export class Agent extends MessageHandler {
             const textDocument = new AgentTextDocument(document)
 
             try {
+                if (params.triggerKind === 'Invoke') {
+                    await provider.manuallyTriggerCompletion()
+                }
                 const result = await provider.provideInlineCompletionItems(
                     textDocument,
                     new vscode.Position(params.position.line, params.position.character),
-                    { triggerKind: vscode.InlineCompletionTriggerKind.Automatic, selectedCompletionInfo: undefined },
+                    {
+                        triggerKind: vscode.InlineCompletionTriggerKind[params.triggerKind || 'Automatic'],
+                        selectedCompletionInfo: undefined,
+                    },
                     token
                 )
                 const items: AutocompleteItem[] =
@@ -234,6 +250,15 @@ export class Agent extends MessageHandler {
             const result = await client?.graphqlClient.getRepoIdIfEmbeddingExists(repoName)
             if (result instanceof Error) {
                 console.error('getRepoIdIfEmbeddingExists', result)
+            }
+            return typeof result === 'string' ? result : null
+        })
+
+        this.registerRequest('graphql/getRepoId', async ({ repoName }) => {
+            const client = await this.client
+            const result = await client?.graphqlClient.getRepoId(repoName)
+            if (result instanceof Error) {
+                console.error('getRepoId', result)
             }
             return typeof result === 'string' ? result : null
         })

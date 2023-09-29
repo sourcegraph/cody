@@ -101,9 +101,15 @@ export class FixupController
         return task
     }
 
-    public createTask(documentUri: vscode.Uri, instruction: string, selectionRange: vscode.Range): FixupTask {
+    public createTask(
+        documentUri: vscode.Uri,
+        instruction: string,
+        selectionRange: vscode.Range,
+        autoApply = false,
+        insertMode?: boolean
+    ): FixupTask {
         const fixupFile = this.files.forUri(documentUri)
-        const task = new FixupTask(fixupFile, instruction, selectionRange)
+        const task = new FixupTask(fixupFile, instruction, selectionRange, autoApply, insertMode)
         this.tasks.set(task.id, task)
         this.setTaskState(task, CodyTaskState.working)
         return task
@@ -188,23 +194,15 @@ export class FixupController
         }
 
         editor.revealRange(task.selectionRange)
-        const editOk = await editor.edit(editBuilder => {
-            for (const edit of diff.edits) {
-                editBuilder.replace(
-                    new vscode.Range(
-                        new vscode.Position(edit.range.start.line, edit.range.start.character),
-                        new vscode.Position(edit.range.end.line, edit.range.end.character)
-                    ),
-                    edit.text
-                )
-            }
-        })
+
+        const editOk = task.insertMode ? await this.insertEdit(editor, task) : await this.replaceEdit(editor, diff)
 
         if (!editOk) {
             // TODO: Try to recover, for example by respinning
             void vscode.window.showWarningMessage('edit did not apply')
             return
         }
+
         const replacementText = task.replacement
         if (replacementText) {
             const tokenCount = countCode(replacementText)
@@ -216,6 +214,44 @@ export class FixupController
         // hits undo.
         // TODO: See if we can discard a FixupFile now.
         this.setTaskState(task, CodyTaskState.fixed)
+    }
+
+    // Replace edit returned by Cody at task selection range
+    private async replaceEdit(editor: vscode.TextEditor, diff: Diff): Promise<boolean> {
+        logDebug('FixupController:edit', 'replacing ')
+        const editOk = await editor.edit(editBuilder => {
+            for (const edit of diff.edits) {
+                editBuilder.replace(
+                    new vscode.Range(
+                        new vscode.Position(edit.range.start.line, edit.range.start.character),
+                        new vscode.Position(edit.range.end.line, edit.range.end.character)
+                    ),
+                    edit.text
+                )
+            }
+        })
+        return editOk
+    }
+
+    // Insert edit returned by Cody at task selection range
+    private async insertEdit(editor: vscode.TextEditor, task: FixupTask): Promise<boolean> {
+        logDebug('FixupController:edit', 'inserting')
+        const text = task.replacement
+        const range = task.selectionRange
+        if (!text) {
+            return false
+        }
+
+        // add correct indentation based on first non empty character index
+        const nonEmptyStartIndex = editor.document.lineAt(range.start.line).firstNonWhitespaceCharacterIndex
+        // add indentation to each line
+        const textLines = text.split('\n').map(line => ' '.repeat(nonEmptyStartIndex) + line)
+
+        // Insert updated text at selection range
+        const editOk = await editor.edit(editBuilder => {
+            editBuilder.insert(range.start, textLines.join('\n') + '\n')
+        })
+        return editOk
     }
 
     // Applying fixups from tree item click
@@ -413,7 +449,10 @@ export class FixupController
                 continue
             }
             const bufferText = editor.document.getText(task.selectionRange)
-            task.diff = computeDiff(task.original, botText, bufferText, task.selectionRange.start)
+
+            // Add new line at the end of bot text when running insert mode
+            const newLine = task.insertMode ? '\n' : ''
+            task.diff = computeDiff(task.original, `${botText}${newLine}`, bufferText, task.selectionRange.start)
             this.didUpdateDiff(task)
         }
 
@@ -496,7 +535,6 @@ export class FixupController
             return
         }
 
-        logDebug('FixupController:setTaskState: ', 'changing state', { verbose: { task } })
         task.state = state
 
         // TODO: These state transition actions were moved from FixupTask, but
@@ -516,7 +554,11 @@ export class FixupController
         // Save states of the task
         this.codelenses.didUpdateTask(task)
         this.taskViewProvider.setTreeItem(task)
-        return
+
+        // auto apply task if enabled
+        if (task.state === CodyTaskState.ready && task.autoApply) {
+            void this.apply(task.id)
+        }
     }
 
     private reset(): void {

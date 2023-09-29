@@ -20,14 +20,7 @@ export interface TelemetryService {
  * Properties related to a telemetry event.
  */
 export interface TelemetryEventProperties {
-    [key: string]:
-        | string
-        | number
-        | boolean
-        | null
-        | undefined
-        | string[]
-        | { [key: string]: string | number | boolean | null | undefined }
+    [key: string]: string | number | boolean | null | undefined | TelemetryEventProperties[] | TelemetryEventProperties
 }
 
 /** For testing. */
