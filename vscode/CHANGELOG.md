@@ -8,6 +8,14 @@ Starting from `0.2.0`, Cody is using `major.EVEN_NUMBER.patch` for release versi
 
 ### Added
 
+### Fixed
+
+### Changed
+
+## [0.12.4]
+
+### Added
+
 - New "Save Code to File.." button on code blocks. [pull/1119](https://github.com/sourcegraph/cody/pull/1119)
 - Add logging for partially accepting completions. [pull/1214](https://github.com/sourcegraph/cody/pull/1214)
 
