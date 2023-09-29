@@ -147,6 +147,7 @@ describe('InlineCompletionItemProvider', () => {
               },
               "currentLinePrefix": "const foo = ",
               "currentLineSuffix": "",
+              "injectedPrefix": null,
               "multilineTrigger": null,
               "nextNonEmptyLine": "console.log(1)",
               "prefix": "const foo = ",

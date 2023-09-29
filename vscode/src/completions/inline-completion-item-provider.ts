@@ -239,9 +239,9 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
                 this.handleUnwantedCompletionItem(getRequestParamsFromLastCandidate(document, this.lastCandidate))
             }
 
-            //  Unless the result is from the last candidate, we may want to apply the minimum
-            //  latency so that we don't show a result before the user has paused typing for a brief
-            //  moment.
+            // Unless the result is from the last candidate, we may want to apply the minimum
+            // latency so that we don't show a result before the user has paused typing for a brief
+            // moment.
             if (result.source !== InlineCompletionsResultSource.LastCandidate) {
                 const minimumLatencyFlag = await Promise.resolve(minimumLatencyFlagsPromise)
                 if (minimumLatencyFlag) {
@@ -252,8 +252,8 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
                         await new Promise(resolve => setTimeout(resolve, minimumLatency - delta))
                     }
 
-                    //  Avoid any further work if the completion is invalidated during the the
-                    //  minimum duration pause
+                    // Avoid any further work if the completion is invalidated during the the
+                    // minimum duration pause
                     if (abortController.signal.aborted) {
                         return null
                     }
@@ -266,11 +266,10 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
                 docContext,
                 position,
                 result.items,
-                context,
-                takeSuggestWidgetSelectionIntoAccount
+                context
             )
 
-            //  A completion that won't be visible in VS Code will not be returned and not be logged.
+            // A completion that won't be visible in VS Code will not be returned and not be logged.
             if (
                 !isCompletionVisible(
                     items,
@@ -282,16 +281,16 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
                     abortController.signal
                 )
             ) {
-                //  Returning null will clear any existing suggestions, thus we need to reset the
-                //  last candidate.
+                // Returning null will clear any existing suggestions, thus we need to reset the
+                // last candidate.
                 this.lastCandidate = undefined
                 return null
             }
 
-            //  Since we now know that the completion is going to be visible in the UI, we save the
-            //  completion as the last candidate (that is shown as ghost text in the editor) so that
-            //  we can reuse it if the user types in such a way that it is still valid (such as by
-            //  typing `ab` if the ghost text suggests `abcd`).
+            // Since we now know that the completion is going to be visible in the UI, we save the
+            // completion as the last candidate (that is shown as ghost text in the editor) so that
+            // we can reuse it if the user types in such a way that it is still valid (such as by
+            // typing `ab` if the ghost text suggests `abcd`).
             if (result.source !== InlineCompletionsResultSource.LastCandidate) {
                 const candidate: LastInlineCompletionCandidate = {
                     uri: document.uri,
@@ -309,7 +308,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
                 CompletionLogger.noResponse(result.logId)
             }
 
-            //  return `CompletionEvent` telemetry data to the agent command `autocomplete/execute`.
+            // return `CompletionEvent` telemetry data to the agent command `autocomplete/execute`.
             const completionResult: AutocompleteResult = {
                 items,
                 completionEvent: CompletionLogger.getCompletionEvent(result.logId),
@@ -328,11 +327,11 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
         request: RequestParams
     ): void {
         resetLatency()
-        //  When a completion is accepted, the lastCandidate should be cleared. This makes sure the
-        //  log id is never reused if the completion is accepted.
+        // When a completion is accepted, the lastCandidate should be cleared. This makes sure the
+        // log id is never reused if the completion is accepted.
         this.clearLastCandidate()
 
-        //  Remove the completion from the network cache
+        // Remove the completion from the network cache
         this.requestManager.removeFromCache(request)
 
         CompletionLogger.accept(logId, completion)
@@ -389,29 +388,27 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
         docContext: DocumentContext,
         position: vscode.Position,
         items: InlineCompletionItemWithAnalytics[],
-        context: vscode.InlineCompletionContext,
-        takeSuggestWidgetSelectionIntoAccount: boolean = false
+        context: vscode.InlineCompletionContext
     ): vscode.InlineCompletionItem[] {
         return items.map(completion => {
             const currentLine = document.lineAt(position)
             const currentLinePrefix = document.getText(currentLine.range.with({ end: position }))
             let insertText = completion.insertText
 
-            //  Append any eventual inline completion context item to the prefix if
-            //  completeSuggestWidgetSelection is enabled.
-            if (takeSuggestWidgetSelectionIntoAccount && context.selectedCompletionInfo) {
-                const { range, text } = context.selectedCompletionInfo
-                insertText = text.slice(position.character - range.start.character) + insertText
+            // Append any eventual inline completion context item to the prefix if
+            // completeSuggestWidgetSelection is enabled.
+            if (docContext.injectedPrefix) {
+                insertText = docContext.injectedPrefix + insertText
             }
 
-            //  Return the completion from the start of the current line (instead of starting at the
-            //  given position). This avoids UI jitter in VS Code; when typing or deleting individual
-            //  characters, VS Code reuses the existing completion while it waits for the new one to
-            //  come in.
+            // Return the completion from the start of the current line (instead of starting at the
+            // given position). This avoids UI jitter in VS Code; when typing or deleting individual
+            // characters, VS Code reuses the existing completion while it waits for the new one to
+            // come in.
             const start = currentLine.range.start
 
-            //  The completion will always exclude the same line suffix, so it has to overwrite the
-            //  current same line suffix and reach to the end of the line.
+            // The completion will always exclude the same line suffix, so it has to overwrite the
+            // current same line suffix and reach to the end of the line.
             const end = currentLine.range.end
 
             return new vscode.InlineCompletionItem(currentLinePrefix + insertText, new vscode.Range(start, end), {
@@ -458,25 +455,25 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
             return
         }
 
-        //  TODO(philipp-spiess): Bring back this code once we have fewer uncaught errors
+        // TODO(philipp-spiess): Bring back this code once we have fewer uncaught errors
         //
-        //  c.f. https://sourcegraph.slack.com/archives/C05AGQYD528/p1693471486690459
+        // c.f. https://sourcegraph.slack.com/archives/C05AGQYD528/p1693471486690459
         //
-        //  const now = Date.now()
-        //  if (
-        //     this.reportedErrorMessages.has(error.message) &&
-        //     this.reportedErrorMessages.get(error.message)! + ONE_HOUR >= now
-        //  ) {
-        //     return
-        //  }
-        //  this.reportedErrorMessages.set(error.message, now)
-        //  this.config.statusBar.addError({
-        //     title: 'Cody Autocomplete Encountered an Unexpected Error',
-        //     description: error.message,
-        //     onSelect: () => {
-        //         outputChannel.show()
-        //     },
-        //  })
+        // const now = Date.now()
+        // if (
+        //    this.reportedErrorMessages.has(error.message) &&
+        //    this.reportedErrorMessages.get(error.message)! + ONE_HOUR >= now
+        // ) {
+        //    return
+        // }
+        // this.reportedErrorMessages.set(error.message, now)
+        // this.config.statusBar.addError({
+        //    title: 'Cody Autocomplete Encountered an Unexpected Error',
+        //    description: error.message,
+        //    onSelect: () => {
+        //        outputChannel.show()
+        //    },
+        // })
     }
 }
 
@@ -504,24 +501,24 @@ function isCompletionVisible(
     completeSuggestWidgetSelection: boolean,
     abortSignal: AbortSignal | undefined
 ): boolean {
-    //  There are these cases when a completion is being returned here but won't
-    //  be displayed by VS Code.
+    // There are these cases when a completion is being returned here but won't
+    // be displayed by VS Code.
     //
-    //  - When the abort signal was already triggered and a new completion
-    //   request was stared.
+    // - When the abort signal was already triggered and a new completion
+    //  request was stared.
     //
-    //  - When the VS Code completion popup is open and we suggest a completion
-    //   that does not match the currently selected completion. For now we make
-    //   sure to not log these completions as displayed.
+    // - When the VS Code completion popup is open and we suggest a completion
+    //  that does not match the currently selected completion. For now we make
+    //  sure to not log these completions as displayed.
     //
-    //   This check is only needed if we do not already take the completion
-    //   popup into account when generating completions as we do with the
-    //   completeSuggestWidgetSelection flag
+    //  This check is only needed if we do not already take the completion
+    //  popup into account when generating completions as we do with the
+    //  completeSuggestWidgetSelection flag
     //
-    //  - When no completions contains characters in the current line that are
-    //   not in the current line suffix. Since VS Code will try to merge
-    //   completion with the suffix, we have to do a per-character diff to test
-    //   this.
+    // - When no completions contains characters in the current line that are
+    //  not in the current line suffix. Since VS Code will try to merge
+    //  completion with the suffix, we have to do a per-character diff to test
+    //  this.
     const isAborted = abortSignal ? abortSignal.aborted : false
     const isMatchingPopupItem = completeSuggestWidgetSelection
         ? true
@@ -580,9 +577,9 @@ function completionMatchesPopupItem(
                 return true
             }
 
-            //  To ensure a good experience, the VS Code insertion might have the range start at the
-            //  beginning of the line. When this happens, the insertText needs to be adjusted to only
-            //  contain the insertion after the current position.
+            // To ensure a good experience, the VS Code insertion might have the range start at the
+            // beginning of the line. When this happens, the insertText needs to be adjusted to only
+            // contain the insertion after the current position.
             const offset = position.character - (visibleCompletion.range?.start.character ?? position.character)
             const correctInsertText = insertText.slice(offset)
             if (!(currentText + correctInsertText).startsWith(selectedText)) {
