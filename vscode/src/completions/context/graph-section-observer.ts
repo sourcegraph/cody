@@ -302,7 +302,11 @@ export class GraphSectionObserver implements vscode.Disposable, GraphContextFetc
                 const section = lastSections[i]
                 const isLast = i === lastSections.length - 1
 
-                lines.push(`  ${isLast ? '└' : '├'} ${section.location.uri} ${section.fuzzyName ?? 'unknown'}`)
+                lines.push(
+                    `  ${isLast ? '└' : '├'} ${vscode.workspace.asRelativePath(section.location.uri)} ${
+                        section.fuzzyName ?? 'unknown'
+                    }`
+                )
             }
         }
 
