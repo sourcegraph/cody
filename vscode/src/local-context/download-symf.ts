@@ -7,6 +7,7 @@ import * as unzip from 'unzipper'
 import * as vscode from 'vscode'
 
 import { logDebug } from '../log'
+import { getOSArch } from '../os'
 
 const symfVersion = 'v0.0.1'
 
@@ -22,11 +23,12 @@ export async function getSymfPath(context: vscode.ExtensionContext): Promise<str
         return userSymfPath
     }
 
-    const osArch = getOSArch()
-    if (!osArch) {
+    const { platform, arch } = getOSArch()
+    if (!platform || !arch) {
+        // show vs code error message
+        void vscode.window.showErrorMessage(`No symf binary available for ${os.platform()}/${os.machine()}`)
         return null
     }
-    const { platform, arch } = osArch
 
     const symfContainingDir = path.join(context.globalStorageUri.fsPath, 'symf')
     const symfFilename = `symf-${symfVersion}-${arch}-${platform}`
@@ -70,33 +72,6 @@ export async function getSymfPath(context: vscode.ExtensionContext): Promise<str
     }
 
     return symfPath
-}
-
-function getOSArch(): { platform: string; arch: string } | null {
-    const nodePlatformToPlatform: { [key: string]: string } = {
-        darwin: 'macos',
-        linux: 'linux',
-        win32: 'windows',
-    }
-    const nodeMachineToArch: { [key: string]: string } = {
-        arm64: 'aarch64',
-        aarch64: 'aarch64',
-        x86_64: 'x86_64',
-        i386: 'x86',
-        i686: 'x86',
-    }
-
-    const platform = nodePlatformToPlatform[os.platform()]
-    const arch = nodeMachineToArch[os.machine()]
-    if (!platform || !arch) {
-        // show vs code error message
-        void vscode.window.showErrorMessage(`No symf binary available for ${os.platform()}/${os.machine()}`)
-        return null
-    }
-    return {
-        platform,
-        arch,
-    }
 }
 
 async function fileExists(path: string): Promise<boolean> {
