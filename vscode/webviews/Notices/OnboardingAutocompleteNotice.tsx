@@ -33,7 +33,7 @@ export const OnboardingAutocompleteNotice: React.FunctionComponent = () => {
             linkText="Next: Run a Command →"
             linkHref="command:cody.action.commands.menu"
             dismissKey="onboarding-autocomplete"
-            className={styles.notice}
+            className="onboarding-autocomplete"
         />
     )
 }
