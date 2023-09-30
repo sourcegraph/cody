@@ -1,7 +1,7 @@
 import { ConfigurationWithAccessToken } from '../../configuration'
 import { FeatureFlagProvider } from '../../experimentation/FeatureFlagProvider'
 
-import { CompletionCallbacks, CompletionParameters, CompletionResponse, Event } from './types'
+import { CompletionCallbacks, CompletionParameters, CompletionResponse, Event, Logprobs } from './types'
 
 export interface CompletionLogger {
     startCompletion(params: CompletionParameters | {}):
@@ -42,7 +42,7 @@ export abstract class SourcegraphCompletionsClient {
         for (const event of events) {
             switch (event.type) {
                 case 'completion':
-                    cb.onChange(event.completion)
+                    cb.onChange(event.completion, event.logprobs)
                     break
                 case 'error':
                     this.errorEncountered = true
@@ -71,7 +71,7 @@ export function bufferStream(
     return new Promise((resolve, reject) => {
         let buffer = ''
         const callbacks: CompletionCallbacks = {
-            onChange(text: string) {
+            onChange(text: string, logprobs?: Logprobs) {
                 buffer = text
             },
             onComplete() {
