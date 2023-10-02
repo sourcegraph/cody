@@ -20,7 +20,11 @@ export const sidebarSignin = async (page: Page, sidebar: Frame): Promise<void> =
 }
 
 // Selector for the Explorer button in the sidebar that would match on Mac and Linux
-const sidbarExplorerRole = { name: /Explorer.*/ }
-export const sidebarExplorer = (page: Page): Locator => page.getByRole('tab', sidbarExplorerRole)
+const sidebarExplorerRole = { name: /Explorer.*/ }
+export const sidebarExplorer = (page: Page): Locator => page.getByRole('tab', sidebarExplorerRole)
+
+// Selector for the Cody button in the sidebar
+const sidebarCodyRole = { name: /Cody.*/ }
+export const sidebarCody = (page: Page): Locator => page.getByRole('tab', sidebarCodyRole)
 
 export const codyEditorCommandButtonRole = { name: /Commands.*/ }

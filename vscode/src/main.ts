@@ -474,6 +474,7 @@ const register = async (
             contextProvider,
             featureFlagProvider,
             authProvider,
+            triggerNotice: notice => sidebarChatProvider.triggerNotice(notice),
         })
     }
     // Reload autocomplete if either the configuration changes or the auth status is updated
