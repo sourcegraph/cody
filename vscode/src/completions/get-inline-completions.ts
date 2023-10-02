@@ -11,6 +11,7 @@ import { GraphContextFetcher } from './context/context-graph'
 import { DocumentHistory } from './context/history'
 import { DocumentContext } from './get-current-doc-context'
 import * as CompletionLogger from './logger'
+import { SuggestionID } from './logger'
 import { CompletionProviderTracer, Provider, ProviderConfig, ProviderOptions } from './providers/provider'
 import { RequestManager, RequestParams } from './request-manager'
 import { reuseLastCandidate } from './reuse-last-candidate'
@@ -54,7 +55,16 @@ export interface InlineCompletionsParams {
     completeSuggestWidgetSelection?: boolean
 
     // Callbacks to accept completions
-    handleDidAcceptCompletionItem?: (logId: string, completion: InlineCompletionItemWithAnalytics) => void
+    handleDidAcceptCompletionItem?: (
+        logId: SuggestionID,
+        completion: InlineCompletionItemWithAnalytics,
+        request: RequestParams
+    ) => void
+    handleDidPartiallyAcceptCompletionItem?: (
+        logId: SuggestionID,
+        completion: InlineCompletionItemWithAnalytics,
+        acceptedLength: number
+    ) => void
 }
 
 /**
@@ -82,7 +92,7 @@ export interface LastInlineCompletionCandidate {
  */
 export interface InlineCompletionsResult {
     /** The unique identifier for logging this result. */
-    logId: string
+    logId: SuggestionID
 
     /** Where this result was generated from. */
     source: InlineCompletionsResultSource
@@ -122,6 +132,9 @@ export enum TriggerKind {
 
     /** Completion was triggered manually by the user invoking the keyboard shortcut. **/
     Manual = 'Manual',
+
+    /** When the user uses the suggest widget to cycle through different completions. */
+    SuggestWidget = 'SuggestWidget',
 }
 
 export async function getInlineCompletions(params: InlineCompletionsParams): Promise<InlineCompletionsResult | null> {
@@ -154,7 +167,7 @@ async function doGetInlineCompletions(params: InlineCompletionsParams): Promise<
         triggerKind,
         selectedCompletionInfo,
         docContext,
-        docContext: { multilineTrigger, currentLineSuffix },
+        docContext: { multilineTrigger, currentLineSuffix, currentLinePrefix },
         providerConfig,
         graphContextFetcher,
         toWorkspaceRelativePath,
@@ -167,8 +180,9 @@ async function doGetInlineCompletions(params: InlineCompletionsParams): Promise<
         setIsLoading,
         abortSignal,
         tracer,
-        completeSuggestWidgetSelection = false,
+        completeSuggestWidgetSelection = true,
         handleDidAcceptCompletionItem,
+        handleDidPartiallyAcceptCompletionItem,
     } = params
 
     tracer?.({ params: { document, position, triggerKind, selectedCompletionInfo } })
@@ -180,6 +194,11 @@ async function doGetInlineCompletions(params: InlineCompletionsParams): Promise<
     // VS Code will attempt to merge the remainder of the current line by characters but for
     // words this will easily get very confusing.
     if (triggerKind !== TriggerKind.Manual && /\w/.test(currentLineSuffix)) {
+        return null
+    }
+
+    // Do not trigger when the last character is a closing symbol
+    if (triggerKind !== TriggerKind.Manual && /[)\]}]$/.test(currentLinePrefix.trim())) {
         return null
     }
 
@@ -195,6 +214,7 @@ async function doGetInlineCompletions(params: InlineCompletionsParams): Promise<
                   selectedCompletionInfo,
                   completeSuggestWidgetSelection,
                   handleDidAcceptCompletionItem,
+                  handleDidPartiallyAcceptCompletionItem,
               })
             : null
     if (resultToReuse) {
@@ -204,7 +224,7 @@ async function doGetInlineCompletions(params: InlineCompletionsParams): Promise<
     // Only log a completion as started if it's either served from cache _or_ the debounce interval
     // has passed to ensure we don't log too many start events where we end up not doing any work at
     // all.
-    CompletionLogger.clear()
+    CompletionLogger.flushActiveSuggestions()
     const multiline = Boolean(multilineTrigger)
     const logId = CompletionLogger.create({
         multiline,
@@ -279,7 +299,7 @@ async function doGetInlineCompletions(params: InlineCompletionsParams): Promise<
             ? InlineCompletionsResultSource.CacheAfterRequestStart
             : InlineCompletionsResultSource.Network
 
-    CompletionLogger.loaded(logId, completions)
+    CompletionLogger.loaded(logId, reqContext, completions)
 
     return {
         logId,

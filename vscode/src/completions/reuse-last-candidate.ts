@@ -1,3 +1,5 @@
+import * as vscode from 'vscode'
+
 import { isDefined } from '@sourcegraph/cody-shared/src/common'
 
 import { DocumentContext } from './get-current-doc-context'
@@ -5,7 +7,9 @@ import {
     InlineCompletionsParams,
     InlineCompletionsResult,
     InlineCompletionsResultSource,
+    LastInlineCompletionCandidate,
 } from './get-inline-completions'
+import { RequestParams } from './request-manager'
 import { InlineCompletionItemWithAnalytics } from './text-processing/process-inline-completions'
 
 type ReuseLastCandidateArgument =
@@ -17,7 +21,10 @@ type ReuseLastCandidateArgument =
         >
     > &
         // optional fields from InlineCompletionsParams
-        Pick<InlineCompletionsParams, 'handleDidAcceptCompletionItem'> & { docContext: DocumentContext } // additional fields
+        Pick<InlineCompletionsParams, 'handleDidAcceptCompletionItem' | 'handleDidPartiallyAcceptCompletionItem'> & {
+            // additional fields
+            docContext: DocumentContext
+        }
 
 /**
  * See test cases for the expected behaviors.
@@ -26,10 +33,12 @@ export function reuseLastCandidate({
     document,
     position,
     selectedCompletionInfo,
-    lastCandidate: { lastTriggerPosition, lastTriggerDocContext, lastTriggerSelectedInfoItem, ...lastCandidate },
+    lastCandidate: { lastTriggerPosition, lastTriggerDocContext, lastTriggerSelectedInfoItem },
+    lastCandidate,
     docContext: { currentLinePrefix, currentLineSuffix, nextNonEmptyLine },
     completeSuggestWidgetSelection,
     handleDidAcceptCompletionItem,
+    handleDidPartiallyAcceptCompletionItem,
 }: ReuseLastCandidateArgument): InlineCompletionsResult | null {
     const isSameDocument = lastCandidate.uri.toString() === document.uri.toString()
     const isSameLine = lastTriggerPosition.line === position.line
@@ -68,10 +77,20 @@ export function reuseLastCandidate({
                 // completion. We mark this as an accepted completion.
                 if (remaining.length === 0) {
                     didAcceptCompletion = true
-                    handleDidAcceptCompletionItem?.(lastCandidate.result.logId, item)
+                    handleDidAcceptCompletionItem?.(
+                        lastCandidate.result.logId,
+                        item,
+                        getRequestParamsFromLastCandidate(document, lastCandidate)
+                    )
                     return undefined
                 }
-                // TODO: Handle partial acceptance heres
+
+                // Detect partial acceptance of the last candidate
+                const acceptedLength = currentLinePrefix.length - lastTriggerCurrentLinePrefix.length
+                if (isPartialAcceptance(item.insertText, acceptedLength)) {
+                    handleDidPartiallyAcceptCompletionItem?.(lastCandidate.result.logId, item, acceptedLength)
+                }
+
                 return { insertText: remaining }
             }
 
@@ -103,4 +122,31 @@ export function reuseLastCandidate({
 
 function isWhitespace(s: string): boolean {
     return /^\s*$/.test(s)
+}
+
+// Count a completion as partially accepted, when at least one word of the completion was typed
+function isPartialAcceptance(insertText: string, insertedLength: number): boolean {
+    const match = insertText.match(/(\w+)/)
+    const endOfFirstWord = match?.index === undefined ? null : match.index + match[0]!.length
+    if (endOfFirstWord === null) {
+        return false
+    }
+    return insertedLength >= endOfFirstWord
+}
+
+export function getRequestParamsFromLastCandidate(
+    document: vscode.TextDocument,
+    lastCandidate: LastInlineCompletionCandidate
+): RequestParams {
+    return {
+        document,
+        position: lastCandidate.lastTriggerPosition,
+        docContext: lastCandidate.lastTriggerDocContext,
+        selectedCompletionInfo: lastCandidate.lastTriggerSelectedInfoItem
+            ? {
+                  range: new vscode.Range(0, 0, 0, 0),
+                  text: lastCandidate.lastTriggerSelectedInfoItem,
+              }
+            : undefined,
+    }
 }

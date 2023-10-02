@@ -39,6 +39,7 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
         const localAppWatcher = new LocalAppWatcher()
         this.disposables.push(localAppWatcher)
         this.disposables.push(localAppWatcher.onChange(appWatcher => this.appWatcherChanged(appWatcher)))
+        this.disposables.push(localAppWatcher.onTokenFileChange(tokenFile => this.tokenFileChanged(tokenFile)))
     }
 
     private async onDidReceiveMessage(message: WebviewMessage): Promise<void> {
@@ -183,6 +184,12 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
         void this.simplifiedOnboardingReloadEmbeddingsState()
     }
 
+    private tokenFileChanged(file: vscode.Uri): void {
+        void this.authProvider.appDetector
+            .tryFetchAppJson(file)
+            .then(() => this.simplifiedOnboardingReloadEmbeddingsState())
+    }
+
     private async onHumanMessageSubmitted(text: string, submitType: 'user' | 'suggestion' | 'example'): Promise<void> {
         logDebug('ChatViewProvider:onHumanMessageSubmitted', 'sidebar', { verbose: { text, submitType } })
         if (submitType === 'suggestion') {
@@ -310,6 +317,26 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
         void this.webview?.postMessage({
             type: 'custom-prompts',
             prompts,
+        })
+    }
+
+    /**
+     *
+     * @param notice Triggers displaying a notice.
+     * @param notice.key The key of the notice to display.
+     */
+    public triggerNotice(notice: { key: string }): void {
+        // They may not have chat open, and given the current notices are
+        // designed to be triggered once only during onboarding, we open the
+        // chat view. If we have other notices and this feels too aggressive, we
+        // can make it be conditional on the type of notice being triggered.
+        void vscode.commands.executeCommand('cody.chat.focus', {
+            // Notices are not meant to steal focus from the editor
+            preserveFocus: true,
+        })
+        void this.webview?.postMessage({
+            type: 'notice',
+            notice,
         })
     }
 

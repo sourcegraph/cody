@@ -2,7 +2,7 @@ import * as vscode from 'vscode'
 
 import { CodyPrompt } from '@sourcegraph/cody-shared'
 
-import { getCursorFoldingRange } from '../editor/utils'
+import { getSmartSelection } from '../editor/utils'
 import { logDebug } from '../log'
 import { telemetryService } from '../services/telemetry'
 
@@ -108,12 +108,20 @@ export class CommandRunner implements vscode.Disposable {
 
         let selection = this.editor?.selection
         const doc = this.editor?.document
-        if (!selection || !doc) {
+        if (!this.editor || !selection || !doc) {
             return
         }
         // Get folding range if no selection is found
+        // or use current line range if no folding range is found
         if (selection?.start.isEqual(selection.end)) {
-            selection = await getCursorFoldingRange(doc.uri, selection.start.line)
+            const curLine = selection.start.line
+            const curLineRange = doc.lineAt(curLine).range
+            selection =
+                (await getSmartSelection(doc.uri, curLine)) ||
+                new vscode.Selection(curLineRange.start, curLineRange.end)
+            if (selection?.isEmpty) {
+                return
+            }
         }
 
         // Get text from selection range
@@ -122,7 +130,7 @@ export class CommandRunner implements vscode.Disposable {
             return
         }
 
-        const range = this.kind === 'doc' ? getDocCommandRange(doc, selection) : selection
+        const range = this.kind === 'doc' ? getDocCommandRange(this.editor, selection, doc.languageId) : selection
         const instruction = insertMode ? addSelectionToPrompt(this.command.prompt, code) : this.command.prompt
         const source = this.kind
         await vscode.commands.executeCommand(
@@ -160,7 +168,7 @@ export class CommandRunner implements vscode.Disposable {
         }
         // Get folding range if no selection is found
         if (range?.start.isEqual(range.end)) {
-            range = await getCursorFoldingRange(doc.uri, range.start.line)
+            range = await getSmartSelection(doc.uri, range.start.line)
         }
 
         const instruction = this.command.prompt
@@ -180,9 +188,13 @@ export class CommandRunner implements vscode.Disposable {
 
 /**
  * Adds the selection range to the prompt string.
+ *
+ * @param prompt - The original prompt string
+ * @param code - The code snippet to include in the prompt
+ * @returns The updated prompt string with the code snippet added
  */
-function addSelectionToPrompt(prompt: string, code: string): string {
-    return prompt + '\nHere is the code: \n<Code>' + code + '</Code>'
+export function addSelectionToPrompt(prompt: string, code: string): string {
+    return prompt + '\nHere is the code: \n<code>' + code + '</code>'
 }
 
 /**
@@ -195,8 +207,23 @@ function addSelectionToPrompt(prompt: string, code: string): string {
  *
  * For other languages, returns the original selection range unmodified.
  */
-function getDocCommandRange(doc: vscode.TextDocument, selection: vscode.Selection): vscode.Selection {
-    const startLine = doc.languageId === 'python' ? selection.start.line + 1 : selection.start.line
+function getDocCommandRange(
+    editor: vscode.TextEditor,
+    selection: vscode.Selection,
+    languageId?: string
+): vscode.Selection {
+    const startLine = languageId === 'python' ? selection.start.line + 1 : selection.start.line
     const pos = new vscode.Position(startLine, 0)
+
+    // move the current selection to the defined selection in the text editor document
+    if (editor) {
+        const visibleRange = editor.visibleRanges
+        // reveal the range of the selection minus 5 lines if visibleRange doesn't contain the selection
+        if (!visibleRange.some(range => range.contains(selection))) {
+            // reveal the range of the selection minus 5 lines
+            editor?.revealRange(selection, vscode.TextEditorRevealType.InCenter)
+        }
+    }
+
     return new vscode.Selection(pos, pos)
 }

@@ -2,6 +2,11 @@ import * as vscode from 'vscode'
 
 export class ExplainCodeAction implements vscode.CodeActionProvider {
     public static readonly providedCodeActionKinds = [vscode.CodeActionKind.QuickFix]
+    private command: string
+
+    constructor(inline: boolean) {
+        this.command = inline ? 'cody.inline.add' : 'cody.action.chat'
+    }
 
     public provideCodeActions(
         document: vscode.TextDocument,
@@ -23,10 +28,11 @@ export class ExplainCodeAction implements vscode.CodeActionProvider {
         const action = new vscode.CodeAction('Ask Cody to Explain', vscode.CodeActionKind.QuickFix)
         const instruction = this.getCodeActionInstruction(diagnostics)
         action.command = {
-            command: 'cody.inline.add',
+            command: this.command,
             arguments: [instruction, range],
             title: 'Ask Cody to Explain',
         }
+        action.diagnostics = diagnostics
         return action
     }
 

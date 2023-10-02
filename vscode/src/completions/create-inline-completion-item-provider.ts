@@ -22,6 +22,7 @@ interface InlineCompletionItemProviderArgs {
     contextProvider: ContextProvider
     featureFlagProvider: FeatureFlagProvider
     authProvider: AuthProvider
+    triggerNotice: ((notice: { key: string }) => void) | null
 }
 
 export async function createInlineCompletionItemProvider({
@@ -31,6 +32,7 @@ export async function createInlineCompletionItemProvider({
     contextProvider,
     featureFlagProvider,
     authProvider,
+    triggerNotice,
 }: InlineCompletionItemProviderArgs): Promise<vscode.Disposable> {
     if (!authProvider.getAuthStatus().isLoggedIn) {
         logDebug('CodyCompletionProvider:notSignedIn', 'You are not signed in.')
@@ -51,10 +53,9 @@ export async function createInlineCompletionItemProvider({
 
     const disposables: vscode.Disposable[] = []
 
-    const [providerConfig, graphContextFlag, completeSuggestWidgetSelectionFlag] = await Promise.all([
+    const [providerConfig, graphContextFlag] = await Promise.all([
         createProviderConfig(config, client, featureFlagProvider, authProvider.getAuthStatus().configOverwrites),
         featureFlagProvider?.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteGraphContext),
-        featureFlagProvider?.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteCompleteSuggestWidgetSelection),
     ])
     if (providerConfig) {
         const history = new VSCodeDocumentHistory()
@@ -69,18 +70,21 @@ export async function createInlineCompletionItemProvider({
             statusBar,
             getCodebaseContext: () => contextProvider.context,
             graphContextFetcher: sectionObserver,
-            completeSuggestWidgetSelection:
-                config.autocompleteExperimentalCompleteSuggestWidgetSelection || completeSuggestWidgetSelectionFlag,
+            completeSuggestWidgetSelection: config.autocompleteCompleteSuggestWidgetSelection,
             featureFlagProvider,
+            triggerNotice,
         })
 
         disposables.push(
             vscode.commands.registerCommand('cody.autocomplete.manual-trigger', () =>
                 completionsProvider.manuallyTriggerCompletion()
             ),
-            vscode.commands.registerCommand('cody.autocomplete.inline.accepted', ({ codyLogId, codyCompletion }) => {
-                completionsProvider.handleDidAcceptCompletionItem(codyLogId, codyCompletion)
-            }),
+            vscode.commands.registerCommand(
+                'cody.autocomplete.inline.accepted',
+                ({ codyLogId, codyCompletion, codyRequest }) => {
+                    completionsProvider.handleDidAcceptCompletionItem(codyLogId, codyCompletion, codyRequest)
+                }
+            ),
             vscode.languages.registerInlineCompletionItemProvider(
                 [{ scheme: 'file', language: '*' }, { notebookType: '*' }],
                 completionsProvider

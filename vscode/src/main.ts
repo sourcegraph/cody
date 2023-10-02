@@ -10,7 +10,7 @@ import { ContextProvider } from './chat/ContextProvider'
 import { FixupManager } from './chat/FixupViewProvider'
 import { InlineChatViewManager } from './chat/InlineChatViewProvider'
 import { MessageProviderOptions } from './chat/MessageProvider'
-import { CODY_FEEDBACK_URL } from './chat/protocol'
+import { AuthStatus, CODY_FEEDBACK_URL } from './chat/protocol'
 import { createInlineCompletionItemProvider } from './completions/create-inline-completion-item-provider'
 import { parseAllVisibleDocuments, updateParseTreeOnEdit } from './completions/tree-sitter/parse-tree-cache'
 import { getConfiguration, getFullConfig } from './configuration'
@@ -25,7 +25,12 @@ import { GuardrailsProvider } from './services/GuardrailsProvider'
 import { Comment, InlineController } from './services/InlineController'
 import { LocalAppSetupPublisher } from './services/LocalAppSetupPublisher'
 import { localStorage } from './services/LocalStorageProvider'
-import { CODY_ACCESS_TOKEN_SECRET, secretStorage, VSCodeSecretStorage } from './services/SecretStorageProvider'
+import {
+    CODY_ACCESS_TOKEN_SECRET,
+    getAccessToken,
+    secretStorage,
+    VSCodeSecretStorage,
+} from './services/SecretStorageProvider'
 import { createStatusBar } from './services/StatusBar'
 import { createOrUpdateEventLogger, telemetryService } from './services/telemetry'
 import { TestSupport } from './test-support'
@@ -107,7 +112,19 @@ const register = async (
         disposables.push(vscode.workspace.onDidChangeTextDocument(updateParseTreeOnEdit))
     }
 
+    const authProvider = new AuthProvider(initialConfig)
+    await authProvider.init()
+
     const symfRunner = platform.createSymfRunner?.(context, initialConfig.accessToken)
+    if (symfRunner) {
+        authProvider.addChangeListener(async (authStatus: AuthStatus) => {
+            if (authStatus.isLoggedIn) {
+                symfRunner.setAuthToken(await getAccessToken())
+            } else {
+                symfRunner.setAuthToken(null)
+            }
+        })
+    }
 
     const {
         featureFlagProvider,
@@ -118,9 +135,6 @@ const register = async (
         guardrails,
         onConfigurationChange: externalServicesOnDidConfigurationChange,
     } = await configureExternalServices(initialConfig, rgPath, symfRunner, editor, platform)
-
-    const authProvider = new AuthProvider(initialConfig)
-    await authProvider.init()
 
     const contextProvider = new ContextProvider(
         initialConfig,
@@ -460,6 +474,7 @@ const register = async (
             contextProvider,
             featureFlagProvider,
             authProvider,
+            triggerNotice: notice => sidebarChatProvider.triggerNotice(notice),
         })
     }
     // Reload autocomplete if either the configuration changes or the auth status is updated

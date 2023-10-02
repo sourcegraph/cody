@@ -97,6 +97,7 @@ async function codyAgentComplete({
     return client.request('autocomplete/execute', {
         filePath,
         position,
+        triggerKind: 'Invoke',
     })
 }
 

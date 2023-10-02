@@ -80,7 +80,7 @@ export class LocalAppDetector implements vscode.Disposable {
         if (this.localEnv.isAppInstalled || !this.appFsPaths) {
             return
         }
-        if (await Promise.any(this.appFsPaths.map(file => pathExists(file)))) {
+        if (await Promise.any(this.appFsPaths.map(file => pathExists(vscode.Uri.file(file))))) {
             this.localEnv.isAppInstalled = true
             this.appFsPaths = []
             await this.found('app')
@@ -94,7 +94,17 @@ export class LocalAppDetector implements vscode.Disposable {
         if (!this.tokenFsPath || this.localEnv.hasAppJson) {
             return
         }
-        const appJson = await loadAppJson(this.tokenFsPath)
+        await this.tryFetchAppJson(this.tokenFsPath)
+    }
+
+    // Check if `uri` has the an app token. This skips the checks for an
+    // existing token and will forcibly load new tokens.
+    //
+    // This is a stop-gap so LocalAppWatcher/simplified onboarding can force
+    // LocalAppDetector and downstream to pick up an app token even after the
+    // user has logged in to dotcom.
+    public async tryFetchAppJson(uri: vscode.Uri): Promise<void> {
+        const appJson = await loadAppJson(uri)
         if (!appJson) {
             return
         }
@@ -148,16 +158,16 @@ export class LocalAppDetector implements vscode.Disposable {
 }
 
 // Utility functions
-async function pathExists(path: string): Promise<boolean> {
+export async function pathExists(uri: vscode.Uri): Promise<boolean> {
     try {
-        await vscode.workspace.fs.stat(vscode.Uri.file(path))
+        await vscode.workspace.fs.stat(uri)
         return true
     } catch {
         return false
     }
 }
 
-function expandHomeDir(path: string, homeDir: string | null): string {
+export function expandHomeDir(path: string, homeDir: string | null | undefined): string {
     if (homeDir && path.startsWith('~/')) {
         return path.replace('~', homeDir)
     }

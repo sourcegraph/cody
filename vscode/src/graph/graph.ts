@@ -5,6 +5,7 @@ import { HoverContext, PreciseContext } from '@sourcegraph/cody-shared/src/codeb
 import { dedupeWith, isDefined } from '@sourcegraph/cody-shared/src/common'
 import { ActiveTextEditorSelectionRange, Editor } from '@sourcegraph/cody-shared/src/editor'
 
+import { CustomAbortSignal } from '../completions/context/utils'
 import { logDebug } from '../log'
 
 import { createLimiter } from './limiter'
@@ -17,11 +18,11 @@ const limiter = createLimiter(
     // issues but not too high so that all requests for a section are done concurrently and we have
     // no way to cancel queued requests.
     //
-    // Assuming an average size of 40 symbols per scope and the need to fetch up to four sources of
+    // Assuming an average size of 40 symbols per scope and the need to fetch up to eight sources of
     // language server APIs per section, this limit should be a good balance.
-    40,
-    // If any language server API takes more than 5 seconds to answer, we should cancel the request
-    5000
+    20,
+    // If any language server API takes more than 2 seconds to answer, we should cancel the request
+    2000
 )
 
 /**
@@ -66,7 +67,7 @@ export const getGraphContextFromEditor = async (editor: Editor): Promise<Precise
 export const getGraphContextFromRange = async (
     editor: vscode.TextEditor,
     range: vscode.Range,
-    abortSignal?: AbortSignal
+    abortSignal?: CustomAbortSignal
 ): Promise<HoverContext[]> => {
     const uri = editor.document.uri
     const contentMap = new Map([[uri.fsPath, editor.document.getText().split('\n')]])
@@ -594,7 +595,7 @@ function extractMarkdownCodeBlock(string: string): string {
 export const gatherHoverText = async (
     contentMap: Map<string, string[]>,
     requests: Request[],
-    abortSignal?: AbortSignal,
+    abortSignal?: CustomAbortSignal,
     getHover: typeof defaultGetHover = defaultGetHover,
     getDefinitions: typeof defaultGetDefinitions = defaultGetDefinitions,
     getTypeDefinitions: typeof defaultGetTypeDefinitions = defaultGetTypeDefinitions,

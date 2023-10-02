@@ -1,5 +1,6 @@
 import { dirname } from 'path'
 
+import { findLast } from 'lodash'
 import * as vscode from 'vscode'
 import { URI } from 'vscode-uri'
 
@@ -716,7 +717,7 @@ export async function getFoldingRanges(
     }
 
     // Get the line number of the last import statement
-    const lastKind = foldingRanges?.findLast(range => range.kind === kind)
+    const lastKind = foldingRanges ? findLast(foldingRanges, range => range.kind === kind) : undefined
 
     return lastKind ? [lastKind] : []
 }

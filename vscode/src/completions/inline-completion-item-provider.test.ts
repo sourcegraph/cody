@@ -6,12 +6,16 @@ import { FeatureFlagProvider } from '@sourcegraph/cody-shared/src/experimentatio
 import { RateLimitError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
 import { SourcegraphGraphQLAPIClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
 
+import { localStorage } from '../services/LocalStorageProvider'
 import { vsCodeMocks } from '../testutils/mocks'
 
+import { getCurrentDocContext } from './get-current-doc-context'
 import { getInlineCompletions, InlineCompletionsResultSource } from './get-inline-completions'
 import { InlineCompletionItemProvider } from './inline-completion-item-provider'
 import * as CompletionLogger from './logger'
+import { SuggestionID } from './logger'
 import { createProviderConfig } from './providers/anthropic'
+import { RequestParams } from './request-manager'
 import { documentAndPosition } from './test-helpers'
 import { InlineCompletionItem } from './types'
 
@@ -50,7 +54,7 @@ class MockableInlineCompletionItemProvider extends InlineCompletionItemProvider 
         superArgs?: Partial<ConstructorParameters<typeof InlineCompletionItemProvider>[0]>
     ) {
         super({
-            completeSuggestWidgetSelection: false,
+            completeSuggestWidgetSelection: true,
             // Most of these are just passed directly to `getInlineCompletions`, which we've mocked, so
             // we can just make them `null`.
             //
@@ -65,6 +69,7 @@ class MockableInlineCompletionItemProvider extends InlineCompletionItemProvider 
                 client: null as any,
             }),
             featureFlagProvider: dummyFeatureFlagProvider,
+            triggerNotice: null,
 
             ...superArgs,
         })
@@ -78,7 +83,7 @@ describe('InlineCompletionItemProvider', () => {
     it('returns results that span the whole line', async () => {
         const { document, position } = documentAndPosition('const foo = █', 'typescript')
         const fn = vi.fn(getInlineCompletions).mockResolvedValue({
-            logId: '1',
+            logId: '1' as SuggestionID,
             items: [{ insertText: 'test', range: new vsCodeMocks.Range(position, position) }],
             source: InlineCompletionsResultSource.Network,
         })
@@ -116,7 +121,7 @@ describe('InlineCompletionItemProvider', () => {
 
         const item: InlineCompletionItem = { insertText: 'test', range: new vsCodeMocks.Range(position, position) }
         const fn = vi.fn(getInlineCompletions).mockResolvedValue({
-            logId: '1',
+            logId: '1' as SuggestionID,
             items: [item],
             source: InlineCompletionsResultSource.Network,
         })
@@ -191,13 +196,66 @@ describe('InlineCompletionItemProvider', () => {
         expect(fn.mock.calls.map(call => call[0].lastCandidate?.result.items)).toEqual([[item]])
     })
 
+    describe('onboarding', () => {
+        // Set up local storage backed by an object. Local storage is used to
+        // track whether a completion was accepted for the first time.
+        const localStorageData: { [key: string]: unknown } = {}
+        localStorage.setStorage({
+            get: (key: string) => localStorageData[key],
+            update: (key: string, value: unknown) => (localStorageData[key] = value),
+        } as any as vscode.Memento)
+
+        it('triggers notice the first time an inline complation is accepted', async () => {
+            const { document, position } = documentAndPosition('const foo = █', 'typescript')
+            const requestParams: RequestParams = {
+                document,
+                position,
+                docContext: getCurrentDocContext({
+                    document,
+                    position,
+                    maxSuffixLength: 100,
+                    maxPrefixLength: 100,
+                    enableExtendedTriggers: true,
+                }),
+                selectedCompletionInfo: undefined,
+            }
+
+            const logId = '1' as SuggestionID
+            const fn = vi.fn(getInlineCompletions).mockResolvedValue({
+                logId,
+                items: [{ insertText: 'bar', range: new vsCodeMocks.Range(position, position) }],
+                source: InlineCompletionsResultSource.Network,
+            })
+
+            const triggerNotice = vi.fn()
+            const provider = new MockableInlineCompletionItemProvider(fn, {
+                triggerNotice,
+            })
+            const completions = await provider.provideInlineCompletionItems(document, position, DUMMY_CONTEXT)
+            expect(completions).not.toBeNull()
+            expect(completions?.items).not.toHaveLength(0)
+
+            // Shuldn't have been called yet.
+            expect(triggerNotice).not.toHaveBeenCalled()
+
+            // Called on first accept.
+            provider.handleDidAcceptCompletionItem(logId, completions?.items[0] as InlineCompletionItem, requestParams)
+            expect(triggerNotice).toHaveBeenCalledOnce()
+            expect(triggerNotice).toHaveBeenCalledWith({ key: 'onboarding-autocomplete' })
+
+            // Not called on second accept.
+            provider.handleDidAcceptCompletionItem(logId, completions?.items[0] as InlineCompletionItem, requestParams)
+            expect(triggerNotice).toHaveBeenCalledOnce()
+        })
+    })
+
     describe('logger', () => {
         it('logs a completion as shown', async () => {
             const spy = vi.spyOn(CompletionLogger, 'suggested')
 
             const { document, position } = documentAndPosition('const foo = █', 'typescript')
             const fn = vi.fn(getInlineCompletions).mockResolvedValue({
-                logId: '1',
+                logId: '1' as SuggestionID,
                 items: [{ insertText: 'bar', range: new vsCodeMocks.Range(position, position) }],
                 source: InlineCompletionsResultSource.Network,
             })
@@ -228,7 +286,7 @@ describe('InlineCompletionItemProvider', () => {
             const fn = vi.fn(getInlineCompletions).mockImplementation(() => {
                 cancel()
                 return Promise.resolve({
-                    logId: '1',
+                    logId: '1' as SuggestionID,
                     items: [{ insertText: 'bar', range: new vsCodeMocks.Range(position, position) }],
                     source: InlineCompletionsResultSource.Network,
                 })
@@ -245,7 +303,7 @@ describe('InlineCompletionItemProvider', () => {
 
             const { document, position } = documentAndPosition('console.█', 'typescript')
             const fn = vi.fn(getInlineCompletions).mockResolvedValue({
-                logId: '1',
+                logId: '1' as SuggestionID,
                 items: [{ insertText: 'log()', range: new vsCodeMocks.Range(position, position) }],
                 source: InlineCompletionsResultSource.Network,
             })
@@ -264,7 +322,7 @@ describe('InlineCompletionItemProvider', () => {
 
             const { document, position } = documentAndPosition('const a = [1, █];', 'typescript')
             const fn = vi.fn(getInlineCompletions).mockResolvedValue({
-                logId: '1',
+                logId: '1' as SuggestionID,
                 items: [{ insertText: '2] ;', range: new vsCodeMocks.Range(position, position) }],
                 source: InlineCompletionsResultSource.Network,
             })
@@ -283,7 +341,7 @@ describe('InlineCompletionItemProvider', () => {
                 'typescript'
             )
             const fn = vi.fn(getInlineCompletions).mockResolvedValue({
-                logId: '1',
+                logId: '1' as SuggestionID,
                 items: [{ insertText: '2] ;', range: new vsCodeMocks.Range(position, position) }],
                 source: InlineCompletionsResultSource.Network,
             })
@@ -299,7 +357,7 @@ describe('InlineCompletionItemProvider', () => {
 
             const { document, position } = documentAndPosition('const a = [1, █)(123);', 'typescript')
             const fn = vi.fn(getInlineCompletions).mockResolvedValue({
-                logId: '1',
+                logId: '1' as SuggestionID,
                 items: [{ insertText: '2];', range: new vsCodeMocks.Range(position, position) }],
                 source: InlineCompletionsResultSource.Network,
             })
@@ -323,12 +381,12 @@ describe('InlineCompletionItemProvider', () => {
                 'typescript'
             )
             const fn = vi.fn(getInlineCompletions).mockResolvedValue({
-                logId: '1',
+                logId: '1' as SuggestionID,
                 items: [{ insertText: "('hello world!')", range: new vsCodeMocks.Range(1, 12, 1, 13) }],
                 source: InlineCompletionsResultSource.Network,
             })
 
-            const provider = new MockableInlineCompletionItemProvider(fn, { completeSuggestWidgetSelection: true })
+            const provider = new MockableInlineCompletionItemProvider(fn)
             const items = await provider.provideInlineCompletionItems(document, position, {
                 triggerKind: vsCodeMocks.InlineCompletionTriggerKind.Automatic,
                 selectedCompletionInfo: { text: 'log', range: new vsCodeMocks.Range(1, 12, 1, 13) },
@@ -360,12 +418,12 @@ describe('InlineCompletionItemProvider', () => {
                 'typescript'
             )
             const fn = vi.fn(getInlineCompletions).mockResolvedValue({
-                logId: '1',
+                logId: '1' as SuggestionID,
                 items: [{ insertText: "('hello world!')", range: new vsCodeMocks.Range(1, 12, 1, 13) }],
                 source: InlineCompletionsResultSource.Network,
             })
 
-            const provider = new MockableInlineCompletionItemProvider(fn, { completeSuggestWidgetSelection: true })
+            const provider = new MockableInlineCompletionItemProvider(fn)
 
             // Ignore the first call, it will not use the selected completion info
             await provider.provideInlineCompletionItems(document, position, {
@@ -427,12 +485,12 @@ describe('InlineCompletionItemProvider', () => {
                 'typescript'
             )
             const fn = vi.fn(getInlineCompletions).mockResolvedValue({
-                logId: '1',
+                logId: '1' as SuggestionID,
                 items: [{ insertText: 'dir', range: new vsCodeMocks.Range(position, position) }],
                 source: InlineCompletionsResultSource.Network,
             })
 
-            const provider = new MockableInlineCompletionItemProvider(fn, { completeSuggestWidgetSelection: true })
+            const provider = new MockableInlineCompletionItemProvider(fn)
             const items = await provider.provideInlineCompletionItems(document, position, {
                 triggerKind: vsCodeMocks.InlineCompletionTriggerKind.Automatic,
                 selectedCompletionInfo: { text: 'dir', range: new vsCodeMocks.Range(1, 12, 1, 13) },

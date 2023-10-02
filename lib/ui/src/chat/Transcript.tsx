@@ -119,7 +119,8 @@ export const Transcript: React.FunctionComponent<
         }
     }, [transcriptContainerRef, scrollAnchoredContainerRef])
 
-    const lastHumanMessageIndex = transcript.findLastIndex(
+    const lastHumanMessageIndex = findLastIndex(
+        transcript,
         message => message.speaker === 'human' && message.displayText !== undefined
     )
     let earlierMessages: ChatMessage[] = []
@@ -199,3 +200,9 @@ export const Transcript: React.FunctionComponent<
         </div>
     )
 })
+
+function findLastIndex<T>(array: T[], predicate: (value: T) => boolean): number {
+    const arr = array.slice()
+    arr.reverse()
+    return arr.findIndex(predicate)
+}

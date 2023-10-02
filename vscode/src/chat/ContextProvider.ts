@@ -37,11 +37,13 @@ export type Config = Pick<
     | 'customHeaders'
     | 'accessToken'
     | 'useContext'
+    | 'codeActions'
     | 'experimentalChatPredictions'
     | 'experimentalGuardrails'
     | 'experimentalCommandLenses'
     | 'experimentalEditorTitleCommandIcon'
     | 'experimentalLocalSymbols'
+    | 'inlineChat'
 >
 
 export enum ContextEvent {
@@ -317,11 +319,13 @@ async function getCodebaseContext(
     }
 
     // Find an embeddings client
-    const embeddingsSearch = await EmbeddingsDetector.newEmbeddingsSearchClient(embeddingsClientCandidates, codebase)
+    let embeddingsSearch = await EmbeddingsDetector.newEmbeddingsSearchClient(embeddingsClientCandidates, codebase)
     if (isError(embeddingsSearch)) {
-        const infoMessage = `Cody could not find embeddings for '${codebase}' on your Sourcegraph instance.\n`
-        console.info(infoMessage)
-        return null
+        logDebug(
+            'ContextProvider:getCodebaseContext',
+            `Cody could not find embeddings for '${codebase}' on your Sourcegraph instance`
+        )
+        embeddingsSearch = undefined
     }
 
     return new CodebaseContext(

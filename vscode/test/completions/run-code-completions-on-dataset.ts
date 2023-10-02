@@ -90,6 +90,7 @@ async function initCompletionsProvider(context: GetContextResult): Promise<Inlin
         getCodebaseContext: () => codebaseContext,
         contextFetcher: () => Promise.resolve(context),
         featureFlagProvider: dummyFeatureFlagProvider,
+        triggerNotice: null,
     })
 
     return completionsProvider

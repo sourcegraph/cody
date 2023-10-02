@@ -3,7 +3,7 @@ import * as vscode from 'vscode'
 
 import { DocumentContext } from './get-current-doc-context'
 import { InlineCompletionsResultSource, LastInlineCompletionCandidate } from './get-inline-completions'
-import { logCompletionEvent } from './logger'
+import { logCompletionEvent, SuggestionID } from './logger'
 import { CompletionProviderTracer, Provider } from './providers/provider'
 import { reuseLastCandidate } from './reuse-last-candidate'
 import {
@@ -44,11 +44,11 @@ export interface RequestManagerResult {
 export class RequestManager {
     private cache = new RequestCache()
     private readonly inflightRequests: Set<InflightRequest> = new Set()
-    private completeSuggestWidgetSelection = false
+    private completeSuggestWidgetSelection = true
 
     constructor(
-        { completeSuggestWidgetSelection = false }: { completeSuggestWidgetSelection: boolean } = {
-            completeSuggestWidgetSelection: false,
+        { completeSuggestWidgetSelection = true }: { completeSuggestWidgetSelection: boolean } = {
+            completeSuggestWidgetSelection: true,
         }
     ) {
         this.completeSuggestWidgetSelection = completeSuggestWidgetSelection
@@ -74,10 +74,7 @@ export class RequestManager {
             .then(res => res.flat())
             .then(completions =>
                 // Shared post-processing logic
-                processInlineCompletions(
-                    completions.map(item => ({ insertText: item.content })),
-                    params
-                )
+                processInlineCompletions(completions, params)
             )
             .then(processedCompletions => {
                 // Cache even if the request was aborted or already fulfilled.
@@ -101,9 +98,10 @@ export class RequestManager {
         return request.promise
     }
 
-    // Remove unwanted suggestions from the cache
-    public removeUnwanted(params: RequestParams): void {
+    public removeFromCache(params: RequestParams): void {
+        console.log(this.cache)
         this.cache.delete(params)
+        console.log(this.cache)
     }
 
     /**
@@ -121,7 +119,7 @@ export class RequestManager {
             lastTriggerDocContext: docContext,
             lastTriggerSelectedInfoItem: selectedCompletionInfo?.text,
             result: {
-                logId: '',
+                logId: '' as SuggestionID,
                 source: InlineCompletionsResultSource.Network,
                 items,
             },
