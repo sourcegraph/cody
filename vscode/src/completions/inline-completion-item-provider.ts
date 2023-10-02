@@ -6,6 +6,7 @@ import { FeatureFlag, FeatureFlagProvider } from '@sourcegraph/cody-shared/src/e
 import { RateLimitError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
 
 import { logDebug } from '../log'
+import { localStorage } from '../services/LocalStorageProvider'
 import { CodyStatusBar } from '../services/StatusBar'
 
 import { getContext, GetContextOptions, GetContextResult } from './context/context'
@@ -42,6 +43,7 @@ export interface CodyCompletionItemProviderConfig {
     tracer?: ProvideInlineCompletionItemsTracer | null
     contextFetcher?: (options: GetContextOptions) => Promise<GetContextResult>
     featureFlagProvider: FeatureFlagProvider
+    triggerNotice: ((notice: { key: string }) => void) | null
 }
 
 interface CompletionRequest {
@@ -333,6 +335,14 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
 
         // Remove the completion from the network cache
         this.requestManager.removeFromCache(request)
+
+        if (this.config.triggerNotice) {
+            const key = 'completion.inline.hasAcceptedFirstCompletion'
+            if (!localStorage.get(key)) {
+                void localStorage.set(key, 'true')
+                this.config.triggerNotice({ key: 'onboarding-autocomplete' })
+            }
+        }
 
         CompletionLogger.accept(logId, completion)
     }

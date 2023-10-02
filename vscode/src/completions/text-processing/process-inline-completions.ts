@@ -6,7 +6,7 @@ import { DocumentContext } from '../get-current-doc-context'
 import { ItemPostProcessingInfo } from '../logger'
 import { astGetters } from '../tree-sitter/ast-getters'
 import { getDocumentQuerySDK } from '../tree-sitter/queries'
-import { InlineCompletionItem } from '../types'
+import { Completion, InlineCompletionItem } from '../types'
 
 import { dropParserFields, parseCompletion, ParsedCompletion } from './parse-completion'
 import { truncateMultilineCompletion } from './truncate-multiline-completion'
@@ -19,21 +19,23 @@ export interface ProcessInlineCompletionsParams {
     docContext: DocumentContext
 }
 
-export interface InlineCompletionItemWithAnalytics extends ItemPostProcessingInfo, InlineCompletionItem {}
+export interface InlineCompletionItemWithAnalytics extends ItemPostProcessingInfo, InlineCompletionItem {
+    stopReason?: string
+}
 
 /**
  * This function implements post-processing logic that is applied regardless of
  * which provider is chosen.
  */
 export function processInlineCompletions(
-    items: InlineCompletionItem[],
+    items: Completion[],
     params: ProcessInlineCompletionsParams
 ): InlineCompletionItemWithAnalytics[] {
     // Shared post-processing logic
-    const processedCompletions = items.map(item => processItem({ ...params, completion: item }))
+    const completionItems = items.map(item => processCompletion({ ...params, completion: item }))
 
     // Remove low quality results
-    const visibleResults = removeLowQualityCompletions(processedCompletions)
+    const visibleResults = removeLowQualityCompletions(completionItems)
 
     // Remove duplicate results
     const uniqueResults = dedupeWith(visibleResults, 'insertText')
@@ -45,32 +47,37 @@ export function processInlineCompletions(
 }
 
 interface ProcessItemParams {
-    completion: InlineCompletionItem
+    completion: Completion
     document: TextDocument
     position: Position
     docContext: DocumentContext
 }
 
-export function processItem(params: ProcessItemParams): InlineCompletionItemWithAnalytics & ParsedCompletion {
+function processCompletion(params: ProcessItemParams): InlineCompletionItemWithAnalytics & ParsedCompletion {
     const { completion, document, position, docContext } = params
     const { prefix, suffix, currentLineSuffix, multilineTrigger } = docContext
 
-    if (typeof completion.insertText !== 'string') {
+    if (typeof completion.content !== 'string') {
         throw new TypeError('SnippetText not supported')
-    }
-
-    if (completion.insertText.length === 0) {
-        return completion
     }
 
     // Append any eventual inline completion context item to the prefix if
     // completeSuggestWidgetSelection is enabled.
     let withInjectedPrefix = completion
     if (docContext.injectedPrefix) {
-        withInjectedPrefix = { ...completion, insertText: docContext.injectedPrefix + completion.insertText }
+        withInjectedPrefix = { ...completion, content: docContext.injectedPrefix + completion.content }
     }
 
-    const adjusted = adjustRangeToOverwriteOverlappingCharacters(withInjectedPrefix, { position, currentLineSuffix })
+    const completionItem: InlineCompletionItemWithAnalytics = {
+        insertText: withInjectedPrefix.content,
+        stopReason: withInjectedPrefix.stopReason,
+    }
+
+    if (completionItem.insertText.length === 0) {
+        return completionItem
+    }
+
+    const adjusted = adjustRangeToOverwriteOverlappingCharacters(completionItem, { position, currentLineSuffix })
     const parsed: InlineCompletionItemWithAnalytics & ParsedCompletion = parseCompletion({
         completion: adjusted,
         document,

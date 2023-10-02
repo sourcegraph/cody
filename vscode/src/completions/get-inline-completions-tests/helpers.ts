@@ -115,7 +115,10 @@ export async function getInlineCompletions(
     const result = await _getInlineCompletions(...args)
     if (result) {
         const { logId: _discard, ...rest } = result
-        return rest
+        return {
+            ...rest,
+            items: result.items.map(({ stopReason: discard, ...item }) => item),
+        }
     }
     return result
 }

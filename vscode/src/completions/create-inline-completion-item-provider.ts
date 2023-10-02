@@ -22,6 +22,7 @@ interface InlineCompletionItemProviderArgs {
     contextProvider: ContextProvider
     featureFlagProvider: FeatureFlagProvider
     authProvider: AuthProvider
+    triggerNotice: ((notice: { key: string }) => void) | null
 }
 
 export async function createInlineCompletionItemProvider({
@@ -31,6 +32,7 @@ export async function createInlineCompletionItemProvider({
     contextProvider,
     featureFlagProvider,
     authProvider,
+    triggerNotice,
 }: InlineCompletionItemProviderArgs): Promise<vscode.Disposable> {
     if (!authProvider.getAuthStatus().isLoggedIn) {
         logDebug('CodyCompletionProvider:notSignedIn', 'You are not signed in.')
@@ -72,6 +74,7 @@ export async function createInlineCompletionItemProvider({
             completeSuggestWidgetSelection:
                 config.autocompleteExperimentalCompleteSuggestWidgetSelection || completeSuggestWidgetSelectionFlag,
             featureFlagProvider,
+            triggerNotice,
         })
 
         disposables.push(
