@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/consistent-type-definitions */
+
 import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 import { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { event } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
@@ -132,8 +133,6 @@ export interface ClientInfo {
     /** @deprecated Use `workspaceRootUri` instead. */
     workspaceRootPath?: string
 
-    /** @deprecated Use `extensionConfiguration` instead. */
-    connectionConfiguration?: ExtensionConfiguration
     extensionConfiguration?: ExtensionConfiguration
     capabilities?: ClientCapabilities
 }
@@ -165,6 +164,21 @@ export interface ExtensionConfiguration {
     debug?: boolean
     verboseDebug?: boolean
     codebase?: string
+    eventProperties?: EventProperties
+}
+
+export interface EventProperties {
+    /** Anonymous user ID */
+    user: string
+
+    /** Event prefix, like 'CodyNeovimPlugin' */
+    prefix: string
+
+    /** Name of client, like 'NEOVIM_CODY_EXTENSION' */
+    client: string
+
+    /** Source type enum*/
+    source: 'IDEEXTENSION'
 }
 
 export interface Position {

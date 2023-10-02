@@ -14,7 +14,7 @@ import { newTextEditor } from './AgentTextEditor'
 import { AgentWorkspaceDocuments } from './AgentWorkspaceDocuments'
 import { AgentEditor } from './editor'
 import { MessageHandler } from './jsonrpc'
-import { AutocompleteItem, ExtensionConfiguration, RecipeInfo } from './protocol'
+import { AutocompleteItem, ClientInfo, ExtensionConfiguration, RecipeInfo } from './protocol'
 import * as vscode_shim from './vscode-shim'
 
 const secretStorage = new Map<string, string>()
@@ -70,24 +70,27 @@ export class Agent extends MessageHandler {
     private oldClient: Client | null = null
     public workspace = new AgentWorkspaceDocuments()
 
+    private clientInfo: ClientInfo | null = null
+
     constructor() {
         super()
         vscode_shim.setWorkspaceDocuments(this.workspace)
         vscode_shim.setAgent(this)
-        this.registerRequest('initialize', async client => {
+        this.registerRequest('initialize', async clientInfo => {
             process.stderr.write(
-                `Cody Agent: handshake with client '${client.name}' (version '${client.version}') at workspace root path '${client.workspaceRootUri}'\n`
+                `Cody Agent: handshake with client '${clientInfo.name}' (version '${clientInfo.version}') at workspace root path '${clientInfo.workspaceRootUri}'\n`
             )
             initializeVscodeExtension()
-            this.workspace.workspaceRootUri = client.workspaceRootUri
-                ? vscode.Uri.parse(client.workspaceRootUri)
-                : vscode.Uri.from({ scheme: 'file', path: client.workspaceRootPath })
+            this.workspace.workspaceRootUri = clientInfo.workspaceRootUri
+                ? vscode.Uri.parse(clientInfo.workspaceRootUri)
+                : vscode.Uri.from({ scheme: 'file', path: clientInfo.workspaceRootPath })
 
-            if (client.extensionConfiguration) {
-                this.setClient(client.extensionConfiguration)
+            if (clientInfo.extensionConfiguration) {
+                this.setClient(clientInfo.extensionConfiguration)
             }
 
-            setUserAgent(`${client?.name} / ${client?.version}`)
+            this.clientInfo = clientInfo
+            setUserAgent(`${clientInfo?.name} / ${clientInfo?.version}`)
 
             const codyClient = await this.client
 
@@ -104,7 +107,7 @@ export class Agent extends MessageHandler {
             return {
                 name: 'cody-agent',
                 authenticated: codyClient.sourcegraphStatus.authenticated,
-                codyEnabled: codyStatus.enabled && (client.extensionConfiguration?.accessToken ?? '').length > 0,
+                codyEnabled: codyStatus.enabled && (clientInfo.extensionConfiguration?.accessToken ?? '').length > 0,
                 codyVersion: codyStatus.version,
             }
         })
@@ -153,10 +156,7 @@ export class Agent extends MessageHandler {
 
         this.registerNotification('transcript/reset', async () => {
             const client = await this.client
-            if (!client) {
-                return
-            }
-            client.reset()
+            client?.reset()
         })
 
         this.registerRequest('recipes/execute', async (data, token) => {
@@ -164,6 +164,7 @@ export class Agent extends MessageHandler {
             if (!client) {
                 return null
             }
+
             const abortController = new AbortController()
             if (token) {
                 if (token.isCancellationRequested) {
@@ -174,6 +175,7 @@ export class Agent extends MessageHandler {
                 })
             }
 
+            this.logEvent(`recipe:${data.id}:executed`)
             await client.executeRecipe(data.id, {
                 signal: abortController.signal,
                 humanChatInput: data.humanChatInput,
@@ -307,5 +309,47 @@ export class Agent extends MessageHandler {
         })
         this.oldClient = client
         return client
+    }
+
+    private async logEvent(name: string): Promise<null> {
+        const client = await this.client
+        if (!client) {
+            return null
+        }
+
+        const clientInfo = this.clientInfo
+        if (!clientInfo) {
+            return null
+        }
+
+        const extensionConfiguration = clientInfo.extensionConfiguration
+        if (!extensionConfiguration) {
+            return null
+        }
+
+        const eventProperties = extensionConfiguration.eventProperties
+        if (!eventProperties) {
+            return null
+        }
+
+        const event = `${clientInfo.name}:${name}`
+        await client.graphqlClient.logEvent({
+            event,
+            url: '',
+            client: eventProperties.client,
+            userCookieID: eventProperties.user,
+            source: eventProperties.source,
+            argument: {},
+            publicArgument: {
+                serverEndpoint: extensionConfiguration.serverEndpoint,
+                extensionDetails: {
+                    ide: clientInfo.name,
+                    ideExtensionType: 'Cody',
+                    version: clientInfo.version,
+                },
+            },
+        })
+
+        return null
     }
 }
