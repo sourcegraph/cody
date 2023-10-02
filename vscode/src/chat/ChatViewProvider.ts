@@ -332,7 +332,7 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
         // can make it be conditional on the type of notice being triggered.
         void vscode.commands.executeCommand('cody.chat.focus', {
             // Notices are not meant to steal focus from the editor
-            preserveFocus: true
+            preserveFocus: true,
         })
         void this.webview?.postMessage({
             type: 'notice',
