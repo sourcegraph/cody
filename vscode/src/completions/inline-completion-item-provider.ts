@@ -533,10 +533,12 @@ function isCompletionVisible(
     //   popup into account when generating completions as we do with the
     //   completeSuggestWidgetSelection flag
     //
-    // - When no completions contains characters in the current line that are
-    //   not in the current line suffix. Since VS Code will try to merge
-    //   completion with the suffix, we have to do a per-character diff to test
-    //   this.
+    // - When no completion contains all characters that are in the suffix of
+    //   the current line. This happens because we extend the insert range of
+    //   the completion to the whole line and any characters that are in the
+    //   suffix that would be overwritten, will need to be part of the inserted
+    //   completion (the VS Code UI does not allow character deletion). To test
+    //   for this, we have to do a per-character diff.
     const isAborted = abortSignal ? abortSignal.aborted : false
     const isMatchingPopupItem = completeSuggestWidgetSelection
         ? true
