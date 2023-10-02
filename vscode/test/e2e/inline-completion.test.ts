@@ -1,6 +1,6 @@
 import { expect, Page } from '@playwright/test'
 
-import { sidebarCody, sidebarExplorer, sidebarSignin } from './common'
+import { sidebarExplorer, sidebarSignin } from './common'
 import { test } from './helpers'
 
 test('shows completion onboarding notice on first completion accept', async ({ page, sidebar }) => {
@@ -18,9 +18,6 @@ test('shows completion onboarding notice on first completion accept', async ({ p
     // Open the index.html file from explorer.
     await sidebarExplorer(page).click()
     await indexFile.dblclick()
-
-    // Make Cody visible again.
-    await sidebarCody(page).click()
 
     // Trigger inline-completion and ensure no notice (yet).
     await triggerInlineCompletionInBody(page)
