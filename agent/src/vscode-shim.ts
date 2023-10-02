@@ -152,7 +152,7 @@ export const onDidRenameFiles = new EventEmitter<vscode.FileRenameEvent>()
 export const onDidDeleteFiles = new EventEmitter<vscode.FileDeleteEvent>()
 
 export interface WorkspaceDocuments {
-    workspaceRootUri?: Uri
+    workspaceRootUri?: vscode.Uri
     openTextDocument: (filePath: string) => Promise<vscode.TextDocument>
 }
 let workspaceDocuments: WorkspaceDocuments | undefined

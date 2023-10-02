@@ -12,7 +12,7 @@ import * as vscode_shim from './vscode-shim'
 export class AgentTextDocument implements vscode.TextDocument {
     constructor(public readonly textDocument: TextDocument) {
         this.content = textDocument.content ?? ''
-        this.uri = vscode_shim.Uri.from({ scheme: 'file', path: textDocument.filePath })
+        this.uri = vscode.Uri.from({ scheme: 'file', path: textDocument.filePath })
         this.fileName = textDocument.filePath
         this.isUntitled = false
         this.languageId = getLanguageForFileName(this.fileName)

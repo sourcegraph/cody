@@ -2,8 +2,6 @@ import { describe, expect, test } from 'vitest'
 import * as vscode from 'vscode'
 import { URI } from 'vscode-uri'
 
-import { Uri } from '../testutils/mocks'
-
 import {
     extractDefinitionContexts,
     extractRelevantDocumentSymbolRanges,
@@ -89,7 +87,7 @@ describe('extractRelevantDocumentSymbolRanges', () => {
 
 describe('gatherDefinitions', () => {
     test('returns definitions referencing multiple files', async () => {
-        const uri = Uri.parse('/test-3.test')
+        const uri = URI.parse('/test-3.test')
         const selections = [
             {
                 uri,
@@ -106,19 +104,19 @@ describe('gatherDefinitions', () => {
         const getDefinitions = async (uri: URI, position: vscode.Position): Promise<vscode.Location[]> => {
             switch (position.character) {
                 case 6:
-                    return [{ uri: Uri.file('/test-3.test'), range: new vscode.Range(7, 5, 7, 7) }]
+                    return [{ uri: URI.file('/test-3.test'), range: new vscode.Range(7, 5, 7, 7) }]
                 case 29: // bar
-                    return [{ uri: Uri.file('/test-1.test'), range: new vscode.Range(10, 6, 10, 9) }]
+                    return [{ uri: URI.file('/test-1.test'), range: new vscode.Range(10, 6, 10, 9) }]
                 case 35: // Bar
-                    return [{ uri: Uri.file('/test-1.test'), range: new vscode.Range(11, 6, 11, 9) }]
+                    return [{ uri: URI.file('/test-1.test'), range: new vscode.Range(11, 6, 11, 9) }]
                 case 43: // foo
-                    return [{ uri: Uri.file('/test-1.test'), range: new vscode.Range(2, 6, 2, 9) }]
+                    return [{ uri: URI.file('/test-1.test'), range: new vscode.Range(2, 6, 2, 9) }]
                 case 49: // Foo
-                    return [{ uri: Uri.file('/test-1.test'), range: new vscode.Range(3, 6, 3, 9) }]
+                    return [{ uri: URI.file('/test-1.test'), range: new vscode.Range(3, 6, 3, 9) }]
                 case 56: // baz
-                    return [{ uri: Uri.file('/test-2.test'), range: new vscode.Range(3, 6, 3, 8) }]
+                    return [{ uri: URI.file('/test-2.test'), range: new vscode.Range(3, 6, 3, 8) }]
                 case 60: // Foo
-                    return [{ uri: Uri.file('/test-1.test'), range: new vscode.Range(3, 6, 3, 9) }]
+                    return [{ uri: URI.file('/test-1.test'), range: new vscode.Range(3, 6, 3, 9) }]
             }
 
             return []
@@ -135,47 +133,66 @@ describe('gatherDefinitions', () => {
             getImplementations
         )
 
-        expect(definitions).toEqual([
+        // Use URI.toString() to avoid comparing non-public properties of the `URI` class.
+        const definitionsWithStringURI = definitions.map(definition => ({
+            ...definition,
+            definitionLocations: definition.definitionLocations.map(location => ({
+                ...location,
+                uri: location.uri.toString(),
+            })),
+        }))
+
+        expect(definitionsWithStringURI).toEqual([
             // Empty locations are pruned
             // { symbolName: 'Some', locations: [] },
             // { symbolName: 'docstring', locations: [] },
             // { symbolName: 'here', locations: [] },
 
             // Definitions within input selection are pruned
-            // { symbolName: 'bonk', locations: [{ uri: Uri.file('/test-3.test'), range: new vscode.Range(7, 5, 7, 7) }] },
+            // { symbolName: 'bonk', locations: [{ uri: URI.file('/test-3.test'), range: new vscode.Range(7, 5, 7, 7) }] },
 
             {
                 symbolName: 'bar',
                 hover: [],
-                definitionLocations: [{ uri: Uri.file('/test-1.test'), range: new vscode.Range(10, 6, 10, 9) }],
+                definitionLocations: [
+                    { uri: URI.file('/test-1.test').toString(), range: new vscode.Range(10, 6, 10, 9) },
+                ],
                 typeDefinitionLocations: [],
                 implementationLocations: [],
             },
             {
                 symbolName: 'Bar',
                 hover: [],
-                definitionLocations: [{ uri: Uri.file('/test-1.test'), range: new vscode.Range(11, 6, 11, 9) }],
+                definitionLocations: [
+                    { uri: URI.file('/test-1.test').toString(), range: new vscode.Range(11, 6, 11, 9) },
+                ],
                 typeDefinitionLocations: [],
                 implementationLocations: [],
             },
             {
                 symbolName: 'foo',
                 hover: [],
-                definitionLocations: [{ uri: Uri.file('/test-1.test'), range: new vscode.Range(2, 6, 2, 9) }],
+                definitionLocations: [
+                    { uri: URI.file('/test-1.test').toString(), range: new vscode.Range(2, 6, 2, 9) },
+                ],
                 typeDefinitionLocations: [],
                 implementationLocations: [],
             },
             {
                 symbolName: 'Foo',
                 hover: [],
-                definitionLocations: [{ uri: Uri.file('/test-1.test'), range: new vscode.Range(3, 6, 3, 9) }],
+                definitionLocations: [
+                    { uri: URI.file('/test-1.test').toString(), range: new vscode.Range(3, 6, 3, 9) },
+                ],
                 typeDefinitionLocations: [],
                 implementationLocations: [],
             },
             {
                 symbolName: 'baz',
                 hover: [],
-                definitionLocations: [{ uri: Uri.file('/test-2.test'), range: new vscode.Range(3, 6, 3, 8) }],
+                definitionLocations: [
+                    { uri: URI.file('/test-2.test').toString(), range: new vscode.Range(3, 6, 3, 8) },
+                ],
                 typeDefinitionLocations: [],
                 implementationLocations: [],
             },
@@ -184,7 +201,7 @@ describe('gatherDefinitions', () => {
             // {
             //     symbolName: 'Foo',
             //     hover: [],
-            //     locations: [{ uri: Uri.file('/test-1.test'), range: new vscode.Range(3, 6, 3, 9) }],
+            //     locations: [{ uri: URI.file('/test-1.test'), range: new vscode.Range(3, 6, 3, 9) }],
             // },
         ])
     })
@@ -197,22 +214,22 @@ describe('extractDefinitionContexts', () => {
                 {
                     symbolName: 'foo',
                     hover: [],
-                    location: { uri: Uri.file('/test-1.test'), range: new vscode.Range(2, 6, 2, 9) },
+                    location: { uri: URI.file('/test-1.test'), range: new vscode.Range(2, 6, 2, 9) },
                 },
                 {
                     symbolName: 'bar',
                     hover: [],
-                    location: { uri: Uri.file('/test-1.test'), range: new vscode.Range(10, 6, 10, 9) },
+                    location: { uri: URI.file('/test-1.test'), range: new vscode.Range(10, 6, 10, 9) },
                 },
                 {
                     symbolName: 'baz',
                     hover: [],
-                    location: { uri: Uri.file('/test-2.test'), range: new vscode.Range(3, 6, 3, 8) },
+                    location: { uri: URI.file('/test-2.test'), range: new vscode.Range(3, 6, 3, 8) },
                 },
                 {
                     symbolName: 'bonk',
                     hover: [],
-                    location: { uri: Uri.file('/test-3.test'), range: new vscode.Range(7, 5, 7, 7) },
+                    location: { uri: URI.file('/test-3.test'), range: new vscode.Range(7, 5, 7, 7) },
                 },
             ],
             new Map<string, string[]>([
