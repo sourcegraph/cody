@@ -1,3 +1,5 @@
+import { OllamaOptions } from './modelProviders/ollama'
+
 export type ConfigurationUseContext = 'embeddings' | 'keyword' | 'none' | 'blended' | 'unified'
 
 // Should we share VS Code specific config via cody-shared?
@@ -21,13 +23,20 @@ export interface Configuration {
     experimentalGuardrails: boolean
     experimentalNonStop: boolean
     experimentalLocalSymbols: boolean
-    autocompleteAdvancedProvider: 'anthropic' | 'unstable-codegen' | 'unstable-fireworks' | 'unstable-openai' | null
+    autocompleteAdvancedProvider:
+        | 'anthropic'
+        | 'unstable-codegen'
+        | 'unstable-fireworks'
+        | 'unstable-openai'
+        | 'ollama-experimental'
+        | null
     autocompleteAdvancedServerEndpoint: string | null
     autocompleteAdvancedModel: string | null
     autocompleteAdvancedAccessToken: string | null
     autocompleteExperimentalCompleteSuggestWidgetSelection?: boolean
     autocompleteExperimentalSyntacticPostProcessing?: boolean
     autocompleteExperimentalGraphContext?: boolean
+    autocompleteExperimentalOllamaOptions?: OllamaOptions
     isRunningInsideAgent?: boolean
 }
 

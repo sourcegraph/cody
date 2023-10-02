@@ -7,6 +7,8 @@ import type {
 } from '@sourcegraph/cody-shared/src/configuration'
 import { DOTCOM_URL } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
 
+import packageJson from '../package.json'
+
 import { CONFIG_KEY, ConfigKeys } from './configuration-keys'
 import { localStorage } from './services/LocalStorageProvider'
 import { getAccessToken } from './services/SecretStorageProvider'
@@ -76,6 +78,10 @@ export function getConfiguration(config: ConfigGetter = vscode.workspace.getConf
         autocompleteExperimentalGraphContext: config.get<boolean>(
             CONFIG_KEY.autocompleteExperimentalGraphContext,
             false
+        ),
+        autocompleteExperimentalOllamaOptions: config.get(
+            CONFIG_KEY.autocompleteExperimentalOllamaOptions,
+            packageJson.contributes.configuration.properties['cody.autocomplete.experimental.ollamaOptions'].default
         ),
 
         /**

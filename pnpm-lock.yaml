@@ -486,6 +486,9 @@ importers:
       '@types/mock-require':
         specifier: ^2.0.1
         version: 2.0.1
+      '@types/node-fetch':
+        specifier: ^2.6.4
+        version: 2.6.4
       '@types/progress':
         specifier: ^2.0.5
         version: 2.0.5

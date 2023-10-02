@@ -67,7 +67,7 @@ export function createClient(
             const enableStreaming = !!isNode
 
             const url = getCodeCompletionsEndpoint()
-            const response: Response = await fetch(url, {
+            const response = (await fetch(url, {
                 method: 'POST',
                 body: JSON.stringify({
                     ...params,
@@ -75,7 +75,7 @@ export function createClient(
                 }),
                 headers,
                 signal,
-            })
+            })) as Response
 
             const traceId = response.headers.get('x-trace') ?? undefined
 

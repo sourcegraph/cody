@@ -887,7 +887,8 @@
             "anthropic",
             "unstable-codegen",
             "unstable-fireworks",
-            "unstable-openai"
+            "unstable-openai",
+            "ollama-experimental"
           ],
           "markdownDescription": "The provider used for code autocomplete. Most providers other than `anthropic` require the `cody.autocomplete.advanced.serverEndpoint` and `cody.autocomplete.advanced.accessToken` settings to also be set. Check the Cody output channel for error messages if autocomplete is not working as expected."
         },
@@ -935,6 +936,39 @@
           "type": "boolean",
           "default": false,
           "markdownDescription": "Use the code graph to retrieve context for autocomplete requests."
+        },
+        "cody.autocomplete.experimental.ollamaOptions": {
+          "type": "object",
+          "markdownDescription": "Options for the Ollama experimental autocomplete provider.",
+          "default": {
+            "url": "http://localhost:11434",
+            "model": "codellama:7b-code"
+          },
+          "properties": {
+            "url": {
+              "type": "string",
+              "description": "The URL of the Ollama API.",
+              "default": "http://localhost:11434"
+            },
+            "model": {
+              "type": "string",
+              "default": "codellama:7b-code",
+              "examples": [
+                "codellama:7b-code",
+                "codellama:13b-code"
+              ]
+            },
+            "parameters": {
+              "type": "object",
+              "description": "Parameters for how Ollama will run the model. See Ollama PARAMETER documentation.",
+              "properties": {
+                "num_ctx": "number",
+                "temperature": "number",
+                "top_k": "number",
+                "top_p": "number"
+              }
+            }
+          }
         }
       }
     },
@@ -1000,6 +1034,7 @@
     "@types/lodash": "^4.14.195",
     "@types/mocha": "^10.0.1",
     "@types/mock-require": "^2.0.1",
+    "@types/node-fetch": "^2.6.4",
     "@types/progress": "^2.0.5",
     "@types/semver": "^7.5.0",
     "@types/unzipper": "^0.10.7",

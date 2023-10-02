@@ -38,6 +38,7 @@ describe('getConfiguration', () => {
             autocompleteExperimentalCompleteSuggestWidgetSelection: false,
             autocompleteExperimentalSyntacticPostProcessing: true,
             autocompleteExperimentalGraphContext: false,
+            autocompleteExperimentalOllamaOptions: { url: 'http://localhost:11434', model: 'codellama:7b-code' },
         })
     })
 
@@ -106,6 +107,8 @@ describe('getConfiguration', () => {
                         return true
                     case 'cody.advanced.agent.running':
                         return false
+                    case 'cody.autocomplete.experimental.ollamaOptions':
+                        return {}
                     default:
                         throw new Error(`unexpected key: ${key}`)
                 }
@@ -142,6 +145,7 @@ describe('getConfiguration', () => {
             autocompleteExperimentalCompleteSuggestWidgetSelection: false,
             autocompleteExperimentalSyntacticPostProcessing: true,
             autocompleteExperimentalGraphContext: true,
+            autocompleteExperimentalOllamaOptions: {},
         })
     })
 })
