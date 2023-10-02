@@ -514,15 +514,15 @@ function isCompletionVisible(
     // be displayed by VS Code.
     //
     // - When the abort signal was already triggered and a new completion
-    //  request was stared.
+    //   request was stared.
     //
     // - When the VS Code completion popup is open and we suggest a completion
-    //  that does not match the currently selected completion. For now we make
-    //  sure to not log these completions as displayed.
+    //   that does not match the currently selected completion. For now we make
+    //   sure to not log these completions as displayed.
     //
-    //  This check is only needed if we do not already take the completion
-    //  popup into account when generating completions as we do with the
-    //  completeSuggestWidgetSelection flag
+    //   This check is only needed if we do not already take the completion
+    //   popup into account when generating completions as we do with the
+    //   completeSuggestWidgetSelection flag
     //
     // - When no completion contains all characters that are in the suffix of
     //   the current line. This happens because we extend the insert range of
