@@ -16,6 +16,12 @@ import type {
 } from 'vscode'
 import type * as vscode_types from 'vscode'
 
+// NOTE(olafurpg): We use a inlined copy of `vscode.Uri` instead of the
+// vscode-uri package because vscode-uri is not a drop-in replacement of
+// `vscode.Uri`. Specifically, `Uri.joinPath` is missing in vscode-uri, see
+// https://sourcegraph.com/npm/vscode-uri@v3.0.7/-/blob/lib/umd/uri.d.ts
+// Ideally, we should replace the inlined copy of `vscode.Uri` with vscode-uri
+// in the future when it becomes a drop-in replacement.
 import { Uri } from './vscode/uri'
 
 export { Uri } from './vscode/uri'
