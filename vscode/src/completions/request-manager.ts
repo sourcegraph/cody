@@ -74,10 +74,7 @@ export class RequestManager {
             .then(res => res.flat())
             .then(completions =>
                 // Shared post-processing logic
-                processInlineCompletions(
-                    completions.map(item => ({ insertText: item.content })),
-                    params
-                )
+                processInlineCompletions(completions, params)
             )
             .then(processedCompletions => {
                 // Cache even if the request was aborted or already fulfilled.

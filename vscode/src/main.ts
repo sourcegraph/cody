@@ -25,7 +25,12 @@ import { GuardrailsProvider } from './services/GuardrailsProvider'
 import { Comment, InlineController } from './services/InlineController'
 import { LocalAppSetupPublisher } from './services/LocalAppSetupPublisher'
 import { localStorage } from './services/LocalStorageProvider'
-import { CODY_ACCESS_TOKEN_SECRET, getAccessToken, secretStorage, VSCodeSecretStorage } from './services/SecretStorageProvider'
+import {
+    CODY_ACCESS_TOKEN_SECRET,
+    getAccessToken,
+    secretStorage,
+    VSCodeSecretStorage,
+} from './services/SecretStorageProvider'
 import { createStatusBar } from './services/StatusBar'
 import { createOrUpdateEventLogger, telemetryService } from './services/telemetry'
 import { TestSupport } from './test-support'
@@ -450,7 +455,7 @@ const register = async (
             if (config.isRunningInsideAgent) {
                 throw new Error(
                     'The setting `config.autocomplete` evaluated to `false`. It must be true when running inside the agent. ' +
-                    'To fix this problem, make sure that the setting cody.autocomplete.enabled has the value true.'
+                        'To fix this problem, make sure that the setting cody.autocomplete.enabled has the value true.'
                 )
             }
             return
@@ -469,6 +474,7 @@ const register = async (
             contextProvider,
             featureFlagProvider,
             authProvider,
+            triggerNotice: notice => sidebarChatProvider.triggerNotice(notice),
         })
     }
     // Reload autocomplete if either the configuration changes or the auth status is updated
