@@ -1,10 +1,10 @@
 {
+  /* START - DO NOT MODIFY */
   "cody.autocomplete.enabled": true,
   "cody.debug.enable": true,
   "cody.debug.verbose": true,
-  "cody.autocomplete.experimental.graphContext": true,
-  // Stop extra notifications in VS Code window
-  "git.openRepositoryInParentFolders": "never",
-  // Hide prompt when opening the folder for debuggging
-  "security.workspace.trust.enabled": false,
+  "git.openRepositoryInParentFolders": "never", // Stop extra notifications in VS Code window
+  /* END - DO NOT MODIFY */
+
+  /* ADD ANY ADDITIONAL SETTINGS FOR YOUR BENCHMARK BELOW */
 }

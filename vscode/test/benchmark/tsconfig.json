@@ -7,6 +7,6 @@
     "types": ["node"],
   },
   "references": [{ "path": "../../" }, { "path": "../../../lib/shared" }],
-  "include": ["*.ts"],
-  "exclude": ["datasets"],
+  "include": ["**/*.ts"],
+  "exclude": ["datasets", "fixtures"],
 }
