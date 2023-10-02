@@ -24,6 +24,7 @@ describe('getConfiguration', () => {
             experimentalGuardrails: false,
             experimentalLocalSymbols: false,
             inlineChat: true,
+            codeActions: true,
             isRunningInsideAgent: false,
             experimentalNonStop: false,
             debugEnable: false,
@@ -34,7 +35,7 @@ describe('getConfiguration', () => {
             autocompleteAdvancedServerEndpoint: null,
             autocompleteAdvancedModel: null,
             autocompleteAdvancedAccessToken: null,
-            autocompleteExperimentalCompleteSuggestWidgetSelection: false,
+            autocompleteCompleteSuggestWidgetSelection: true,
             autocompleteExperimentalSyntacticPostProcessing: true,
             autocompleteExperimentalGraphContext: false,
         })
@@ -69,6 +70,8 @@ describe('getConfiguration', () => {
                         return true
                     case 'cody.inlineChat.enabled':
                         return true
+                    case 'cody.codeActions.enabled':
+                        return true
                     case 'cody.experimental.nonStop':
                         return true
                     case 'cody.experimental.localSymbols':
@@ -95,7 +98,7 @@ describe('getConfiguration', () => {
                         return 'foobar'
                     case 'cody.autocomplete.advanced.embeddings':
                         return false
-                    case 'cody.autocomplete.experimental.completeSuggestWidgetSelection':
+                    case 'cody.autocomplete.completeSuggestWidgetSelection':
                         return false
                     case 'cody.autocomplete.experimental.syntacticPostProcessing':
                         return true
@@ -125,6 +128,7 @@ describe('getConfiguration', () => {
             experimentalGuardrails: true,
             experimentalLocalSymbols: true,
             inlineChat: true,
+            codeActions: true,
             isRunningInsideAgent: false,
             experimentalNonStop: true,
             debugEnable: true,
@@ -135,7 +139,7 @@ describe('getConfiguration', () => {
             autocompleteAdvancedServerEndpoint: 'https://example.com/llm',
             autocompleteAdvancedModel: 'starcoder-32b',
             autocompleteAdvancedAccessToken: 'foobar',
-            autocompleteExperimentalCompleteSuggestWidgetSelection: false,
+            autocompleteCompleteSuggestWidgetSelection: false,
             autocompleteExperimentalSyntacticPostProcessing: true,
             autocompleteExperimentalGraphContext: true,
         })

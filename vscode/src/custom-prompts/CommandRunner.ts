@@ -2,7 +2,7 @@ import * as vscode from 'vscode'
 
 import { CodyPrompt } from '@sourcegraph/cody-shared'
 
-import { getCursorFoldingRange } from '../editor/utils'
+import { getSmartSelection } from '../editor/utils'
 import { logDebug } from '../log'
 import { telemetryService } from '../services/telemetry'
 
@@ -117,7 +117,7 @@ export class CommandRunner implements vscode.Disposable {
             const curLine = selection.start.line
             const curLineRange = doc.lineAt(curLine).range
             selection =
-                (await getCursorFoldingRange(doc.uri, curLine)) ||
+                (await getSmartSelection(doc.uri, curLine)) ||
                 new vscode.Selection(curLineRange.start, curLineRange.end)
             if (selection?.isEmpty) {
                 return
@@ -168,7 +168,7 @@ export class CommandRunner implements vscode.Disposable {
         }
         // Get folding range if no selection is found
         if (range?.start.isEqual(range.end)) {
-            range = await getCursorFoldingRange(doc.uri, range.start.line)
+            range = await getSmartSelection(doc.uri, range.start.line)
         }
 
         const instruction = this.command.prompt
@@ -188,9 +188,13 @@ export class CommandRunner implements vscode.Disposable {
 
 /**
  * Adds the selection range to the prompt string.
+ *
+ * @param prompt - The original prompt string
+ * @param code - The code snippet to include in the prompt
+ * @returns The updated prompt string with the code snippet added
  */
-function addSelectionToPrompt(prompt: string, code: string): string {
-    return prompt + '\nHere is the code: \n<Code>' + code + '</Code>'
+export function addSelectionToPrompt(prompt: string, code: string): string {
+    return prompt + '\nHere is the code: \n<code>' + code + '</code>'
 }
 
 /**

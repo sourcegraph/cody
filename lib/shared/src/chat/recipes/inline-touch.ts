@@ -135,10 +135,10 @@ export class InlineTouch implements Recipe {
     - Think carefully and use the shared context as reference before produce the new code
     - Make sure the new code works with the shared context and the selected code.
     - Use the same framework, language and style as the shared context that are also from current directory I am working on.
-    - Put all new content inside <selection> tags.
-    - I only want to see the new code enclosed with the <selection> tags only if you understand my instructions.
-    - Do not enclose any part of your answer with <selection> tags if you are not sure about the answer.
-    - Only provide me with the code inside <selection> and nothing else.
+    - Put all new content inside <fixup> tags.
+    - I only want to see the new code enclosed with the <fixup> tags only if you understand my instructions.
+    - Do not enclose any part of your answer with <fixup> tags if you are not sure about the answer.
+    - Only provide me with the code inside <fixup> and nothing else.
     - Do not enclose your answer with markdowns.
     ## Guidelines for the new file
     - Include all the import statements that are required for the new code to work.

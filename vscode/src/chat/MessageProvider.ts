@@ -151,7 +151,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         this.cancelCompletion()
         this.currentChatID = chatID
         this.transcript = Transcript.fromJSON(MessageProvider.chatHistory[chatID])
-        await this.transcript.toJSON()
+        await this.transcript.toJSON(undefined, true)
         this.sendTranscript()
         this.sendHistory()
         telemetryService.log('CodyVSCodeExtension:restoreChatHistoryButton:clicked')
@@ -172,7 +172,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         const typewriter = new Typewriter({
             update: content => {
                 const displayText = reformatBotMessage(content, responsePrefix)
-                this.transcript.addAssistantResponse(displayText)
+                this.transcript.addAssistantResponse(content, displayText)
                 this.sendTranscript()
             },
             close: () => {},
@@ -190,11 +190,11 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
                 typewriter.close()
                 await typewriter.finished
                 const lastInteraction = this.transcript.getLastInteraction()
-                if (lastInteraction) {
+                if (lastInteraction && multiplexerTopic !== 'fixup') {
                     let displayText = reformatBotMessage(text, responsePrefix)
                     // TODO(keegancsmith) guardrails may be slow, we need to make this async update the interaction.
                     displayText = await this.guardrailsAnnotateAttributions(displayText)
-                    this.transcript.addAssistantResponse(text || '', displayText)
+                    this.transcript.addAssistantResponse(text, displayText)
                 }
                 await this.onCompletionEnd()
                 // Count code generated from response
@@ -562,7 +562,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         if (this.transcript.isEmpty) {
             return
         }
-        MessageProvider.chatHistory[this.currentChatID] = await this.transcript.toJSON()
+        MessageProvider.chatHistory[this.currentChatID] = await this.transcript.toJSON(undefined, true)
         await this.saveChatHistory()
         this.sendHistory()
     }

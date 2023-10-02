@@ -71,7 +71,7 @@ describe('process completion item', () => {
         updateParseTreeCache(document, parser)
 
         return processInlineCompletions(
-            completionSnippets.map(s => ({ insertText: s })),
+            completionSnippets.map(s => ({ content: s, stopReason: 'unknown' })),
             {
                 document,
                 position,
@@ -125,6 +125,7 @@ describe('process completion item', () => {
                   "line": 5,
                 },
               },
+              "stopReason": "unknown",
             },
             {
               "insertText": "array) new",
@@ -145,6 +146,7 @@ describe('process completion item', () => {
                   "line": 5,
                 },
               },
+              "stopReason": "unknown",
             },
           ]
         `)
@@ -186,6 +188,7 @@ describe('process completion item', () => {
                 "parent": "statement_block",
               },
               "parseErrorCount": 0,
+              "stopReason": "unknown",
               "truncatedWith": "tree-sitter",
             },
           ]
