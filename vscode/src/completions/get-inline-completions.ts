@@ -132,6 +132,9 @@ export enum TriggerKind {
 
     /** Completion was triggered manually by the user invoking the keyboard shortcut. **/
     Manual = 'Manual',
+
+    /** When the user uses the suggest widget to cycle through different completions. */
+    SuggestWidget = 'SuggestWidget',
 }
 
 export async function getInlineCompletions(params: InlineCompletionsParams): Promise<InlineCompletionsResult | null> {
@@ -177,7 +180,7 @@ async function doGetInlineCompletions(params: InlineCompletionsParams): Promise<
         setIsLoading,
         abortSignal,
         tracer,
-        completeSuggestWidgetSelection = false,
+        completeSuggestWidgetSelection = true,
         handleDidAcceptCompletionItem,
         handleDidPartiallyAcceptCompletionItem,
     } = params

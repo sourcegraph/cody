@@ -44,11 +44,11 @@ export interface RequestManagerResult {
 export class RequestManager {
     private cache = new RequestCache()
     private readonly inflightRequests: Set<InflightRequest> = new Set()
-    private completeSuggestWidgetSelection = false
+    private completeSuggestWidgetSelection = true
 
     constructor(
-        { completeSuggestWidgetSelection = false }: { completeSuggestWidgetSelection: boolean } = {
-            completeSuggestWidgetSelection: false,
+        { completeSuggestWidgetSelection = true }: { completeSuggestWidgetSelection: boolean } = {
+            completeSuggestWidgetSelection: true,
         }
     ) {
         this.completeSuggestWidgetSelection = completeSuggestWidgetSelection
