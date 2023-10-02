@@ -128,22 +128,18 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
         this.lastCompletionRequest = completionRequest
 
         const start = performance.now()
-        // We start the request early so that we have a high chance of getting a response before we
-        // need it.
-        const minimumLatencyFlagsPromise = this.config.featureFlagProvider.evaluateFeatureFlag(
-            FeatureFlag.CodyAutocompleteMinimumLatency
-        )
+
+        // We start feature flag requests early so that we have a high chance of getting a response
+        // before we need it.
+        const [isIncreasedDebounceTimeEnabledPromise, minimumLatencyFlagsPromise] = [
+            this.config.featureFlagProvider.evaluateFeatureFlag(
+                FeatureFlag.CodyAutocompleteIncreasedDebounceTimeEnabled
+            ),
+            this.config.featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteMinimumLatency),
+        ]
 
         const tracer = this.config.tracer ? createTracerForInvocation(this.config.tracer) : undefined
         const graphContextFetcher = this.config.graphContextFetcher ?? undefined
-
-        const triggerKind =
-            this.lastManualCompletionTimestamp && this.lastManualCompletionTimestamp > Date.now() - 500
-                ? TriggerKind.Manual
-                : context.triggerKind === vscode.InlineCompletionTriggerKind.Automatic
-                ? TriggerKind.Automatic
-                : TriggerKind.Hover
-        this.lastManualCompletionTimestamp = null
 
         let stopLoading: () => void | undefined
         const setIsLoading = (isLoading: boolean): void => {
@@ -179,6 +175,16 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
             takeSuggestWidgetSelectionIntoAccount = true
         }
 
+        const triggerKind =
+            this.lastManualCompletionTimestamp && this.lastManualCompletionTimestamp > Date.now() - 500
+                ? TriggerKind.Manual
+                : context.triggerKind === vscode.InlineCompletionTriggerKind.Automatic
+                ? TriggerKind.Automatic
+                : takeSuggestWidgetSelectionIntoAccount
+                ? TriggerKind.SuggestWidget
+                : TriggerKind.Hover
+        this.lastManualCompletionTimestamp = null
+
         const docContext = getCurrentDocContext({
             document,
             position,
@@ -189,9 +195,8 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
             context: takeSuggestWidgetSelectionIntoAccount ? context : undefined,
         })
 
-        const isIncreasedDebounceTimeEnabled = await this.config.featureFlagProvider.evaluateFeatureFlag(
-            FeatureFlag.CodyAutocompleteIncreasedDebounceTimeEnabled
-        )
+        const isIncreasedDebounceTimeEnabled = await isIncreasedDebounceTimeEnabledPromise
+
         try {
             const result = await this.getInlineCompletions({
                 document,
@@ -246,7 +251,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
             // moment.
             if (result.source !== InlineCompletionsResultSource.LastCandidate) {
                 const minimumLatencyFlag = await Promise.resolve(minimumLatencyFlagsPromise)
-                if (minimumLatencyFlag) {
+                if (triggerKind === TriggerKind.Automatic && minimumLatencyFlag) {
                     const minimumLatency = getLatency(this.config.providerConfig.identifier, document.languageId)
 
                     const delta = performance.now() - start
@@ -485,8 +490,8 @@ let globalInvocationSequenceForTracer = 0
 
 /**
  * Creates a tracer for a single invocation of
- * {@link CodyCompletionItemProvider.provideInlineCompletionItems} that accumulates all of the data
- * for that invocation.
+ * {@link InlineCompletionItemProvider.provideInlineCompletionItems} that accumulates all of the
+ * data for that invocation.
  */
 function createTracerForInvocation(tracer: ProvideInlineCompletionItemsTracer): InlineCompletionsParams['tracer'] {
     let data: ProvideInlineCompletionsItemTraceData = { invocationSequence: ++globalInvocationSequenceForTracer }
@@ -519,10 +524,12 @@ function isCompletionVisible(
     //  popup into account when generating completions as we do with the
     //  completeSuggestWidgetSelection flag
     //
-    // - When no completions contains characters in the current line that are
-    //  not in the current line suffix. Since VS Code will try to merge
-    //  completion with the suffix, we have to do a per-character diff to test
-    //  this.
+    // - When no completion contains all characters that are in the suffix of
+    //   the current line. This happens because we extend the insert range of
+    //   the completion to the whole line and any characters that are in the
+    //   suffix that would be overwritten, will need to be part of the inserted
+    //   completion (the VS Code UI does not allow character deletion). To test
+    //   for this, we have to do a per-character diff.
     const isAborted = abortSignal ? abortSignal.aborted : false
     const isMatchingPopupItem = completeSuggestWidgetSelection
         ? true
@@ -533,12 +540,12 @@ function isCompletionVisible(
     return isVisible
 }
 
-//  Check if the current text in the editor overlaps with the currently selected
-//  item in the completion widget.
+// Check if the current text in the editor overlaps with the currently selected
+// item in the completion widget.
 //
-//  If it won't VS Code will never show an inline completions.
+// If it won't VS Code will never show an inline completions.
 //
-//  Here's an example of how to trigger this case:
+// Here's an example of how to trigger this case:
 //
 //  1. Type the text `console.l` in a TypeScript file.
 //  2. Use the arrow keys to navigate to a suggested method that start with a
@@ -560,10 +567,10 @@ function currentEditorContentMatchesPopupItem(
     return true
 }
 
-//  Checks if the currently selected completion widget item overlaps with the
-//  proposed completion.
+// Checks if the currently selected completion widget item overlaps with the
+// proposed completion.
 //
-//  VS Code won't show a completion if it won't.
+// VS Code won't show a completion if it won't.
 function completionMatchesPopupItem(
     completions: vscode.InlineCompletionItem[],
     position: vscode.Position,

@@ -54,7 +54,7 @@ class MockableInlineCompletionItemProvider extends InlineCompletionItemProvider 
         superArgs?: Partial<ConstructorParameters<typeof InlineCompletionItemProvider>[0]>
     ) {
         super({
-            completeSuggestWidgetSelection: false,
+            completeSuggestWidgetSelection: true,
             // Most of these are just passed directly to `getInlineCompletions`, which we've mocked, so
             // we can just make them `null`.
             //
@@ -387,7 +387,7 @@ describe('InlineCompletionItemProvider', () => {
                 source: InlineCompletionsResultSource.Network,
             })
 
-            const provider = new MockableInlineCompletionItemProvider(fn, { completeSuggestWidgetSelection: true })
+            const provider = new MockableInlineCompletionItemProvider(fn)
             const items = await provider.provideInlineCompletionItems(document, position, {
                 triggerKind: vsCodeMocks.InlineCompletionTriggerKind.Automatic,
                 selectedCompletionInfo: { text: 'log', range: new vsCodeMocks.Range(1, 12, 1, 13) },
@@ -424,7 +424,7 @@ describe('InlineCompletionItemProvider', () => {
                 source: InlineCompletionsResultSource.Network,
             })
 
-            const provider = new MockableInlineCompletionItemProvider(fn, { completeSuggestWidgetSelection: true })
+            const provider = new MockableInlineCompletionItemProvider(fn)
 
             // Ignore the first call, it will not use the selected completion info
             await provider.provideInlineCompletionItems(document, position, {
@@ -491,7 +491,7 @@ describe('InlineCompletionItemProvider', () => {
                 source: InlineCompletionsResultSource.Network,
             })
 
-            const provider = new MockableInlineCompletionItemProvider(fn, { completeSuggestWidgetSelection: true })
+            const provider = new MockableInlineCompletionItemProvider(fn)
             const items = await provider.provideInlineCompletionItems(document, position, {
                 triggerKind: vsCodeMocks.InlineCompletionTriggerKind.Automatic,
                 selectedCompletionInfo: { text: 'dir', range: new vsCodeMocks.Range(1, 12, 1, 13) },

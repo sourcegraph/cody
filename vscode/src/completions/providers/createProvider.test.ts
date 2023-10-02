@@ -33,7 +33,7 @@ const DEFAULT_VSCODE_SETTINGS: Configuration = {
     autocompleteAdvancedServerEndpoint: null,
     autocompleteAdvancedModel: null,
     autocompleteAdvancedAccessToken: null,
-    autocompleteExperimentalCompleteSuggestWidgetSelection: false,
+    autocompleteCompleteSuggestWidgetSelection: false,
     autocompleteExperimentalSyntacticPostProcessing: false,
     autocompleteExperimentalGraphContext: false,
 }

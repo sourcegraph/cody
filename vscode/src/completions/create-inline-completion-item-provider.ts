@@ -53,10 +53,9 @@ export async function createInlineCompletionItemProvider({
 
     const disposables: vscode.Disposable[] = []
 
-    const [providerConfig, graphContextFlag, completeSuggestWidgetSelectionFlag] = await Promise.all([
+    const [providerConfig, graphContextFlag] = await Promise.all([
         createProviderConfig(config, client, featureFlagProvider, authProvider.getAuthStatus().configOverwrites),
         featureFlagProvider?.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteGraphContext),
-        featureFlagProvider?.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteCompleteSuggestWidgetSelection),
     ])
     if (providerConfig) {
         const history = new VSCodeDocumentHistory()
@@ -71,8 +70,7 @@ export async function createInlineCompletionItemProvider({
             statusBar,
             getCodebaseContext: () => contextProvider.context,
             graphContextFetcher: sectionObserver,
-            completeSuggestWidgetSelection:
-                config.autocompleteExperimentalCompleteSuggestWidgetSelection || completeSuggestWidgetSelectionFlag,
+            completeSuggestWidgetSelection: config.autocompleteCompleteSuggestWidgetSelection,
             featureFlagProvider,
             triggerNotice,
         })
