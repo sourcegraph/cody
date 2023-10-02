@@ -249,7 +249,7 @@ export class FixupController
 
         // Insert updated text at selection range
         const editOk = await editor.edit(editBuilder => {
-            editBuilder.insert(range.start, textLines.join('\n') + '\n')
+            editBuilder.insert(range.start, textLines.join('\n').trimEnd() + '\n')
         })
         return editOk
     }

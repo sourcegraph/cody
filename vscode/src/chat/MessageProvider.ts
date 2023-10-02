@@ -43,6 +43,11 @@ import { countGeneratedCode } from './utils'
 const SAFETY_PROMPT_TOKENS = 100
 
 /**
+ * Multiplexer topics that should not be displayed in chat view
+ */
+const nonDisplayTopics = new Set(['fixup'])
+
+/**
  * A derived class of MessageProvider must implement these handler methods.
  * This contract ensures that MessageProvider is focused solely on building, sending and receiving messages.
  * It does not assume anything about how those messages will be displayed to the user.
@@ -151,7 +156,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         this.cancelCompletion()
         this.currentChatID = chatID
         this.transcript = Transcript.fromJSON(MessageProvider.chatHistory[chatID])
-        await this.transcript.toJSON(undefined, true)
+        await this.transcript.toJSON()
         this.sendTranscript()
         this.sendHistory()
         telemetryService.log('CodyVSCodeExtension:restoreChatHistoryButton:clicked')
@@ -190,11 +195,15 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
                 typewriter.close()
                 await typewriter.finished
                 const lastInteraction = this.transcript.getLastInteraction()
-                if (lastInteraction && multiplexerTopic !== 'fixup') {
+                if (lastInteraction) {
                     let displayText = reformatBotMessage(text, responsePrefix)
                     // TODO(keegancsmith) guardrails may be slow, we need to make this async update the interaction.
                     displayText = await this.guardrailsAnnotateAttributions(displayText)
                     this.transcript.addAssistantResponse(text, displayText)
+                    // remove display text from last interaction if this is a non-display topic
+                    if (nonDisplayTopics.has(multiplexerTopic)) {
+                        this.transcript.removeDisplayTextFromLastInteraction()
+                    }
                 }
                 await this.onCompletionEnd()
                 // Count code generated from response
@@ -562,7 +571,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         if (this.transcript.isEmpty) {
             return
         }
-        MessageProvider.chatHistory[this.currentChatID] = await this.transcript.toJSON(undefined, true)
+        MessageProvider.chatHistory[this.currentChatID] = await this.transcript.toJSON()
         await this.saveChatHistory()
         this.sendHistory()
     }
