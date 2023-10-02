@@ -175,7 +175,7 @@ export class Agent extends MessageHandler {
                 })
             }
 
-            this.logEvent(`recipe:${data.id}:executed`)
+            await this.logEvent(`recipe:${data.id}:executed`)
             await client.executeRecipe(data.id, {
                 signal: abortController.signal,
                 humanChatInput: data.humanChatInput,
