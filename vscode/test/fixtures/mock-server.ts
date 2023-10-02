@@ -21,11 +21,13 @@ export const VALID_TOKEN = 'abcdefgh1234'
 
 const responses = {
     chat: 'hello from the assistant',
-    fixup: '<selection><title>Goodbye Cody</title></selection>',
+    fixup: '<fixup><title>Goodbye Cody</title></fixup>',
+    firstCode: { completion: 'myFirstCompletion', stopReason: 'stop_sequence' },
+    code: { completion: 'myNotFirstCompletion', stopReason: 'stop_sequence' },
 }
 
 const FIXUP_PROMPT_TAG = '<selectedCode>'
-const NON_STOP_FIXUP_PROMPT_TAG = '<selection>'
+const NON_STOP_FIXUP_PROMPT_TAG = '<fixup>'
 
 const pubSubClient = new PubSub({
     projectId: 'sourcegraph-telligent-testing',
@@ -64,6 +66,13 @@ export async function run<T>(around: () => Promise<T>): Promise<T> {
                 ? responses.fixup
                 : responses.chat
         res.send(`event: completion\ndata: {"completion": ${JSON.stringify(response)}}\n\nevent: done\ndata: {}\n\n`)
+    })
+
+    let isFirstCompletion = true
+    app.post('/.api/completions/code', (req, res) => {
+        const response = isFirstCompletion ? responses.firstCode : responses.code
+        isFirstCompletion = false
+        res.send(JSON.stringify(response))
     })
 
     app.post('/.api/graphql', (req, res) => {

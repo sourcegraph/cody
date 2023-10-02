@@ -921,9 +921,9 @@
           "default": true,
           "markdownDescription": "Enables the use of embeddings as code completions context."
         },
-        "cody.autocomplete.experimental.completeSuggestWidgetSelection": {
+        "cody.autocomplete.completeSuggestWidgetSelection": {
           "type": "boolean",
-          "default": false,
+          "default": true,
           "markdownDescription": "Autocomplete based on the currently selection in the suggest widget. Requires the VS Code user setting `editor.inlineSuggest.suppressSuggestions` set to true and will change it to true in user settings if it is not true."
         },
         "cody.autocomplete.experimental.syntacticPostProcessing": {

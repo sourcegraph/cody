@@ -321,6 +321,26 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
     }
 
     /**
+     *
+     * @param notice Triggers displaying a notice.
+     * @param notice.key The key of the notice to display.
+     */
+    public triggerNotice(notice: { key: string }): void {
+        // They may not have chat open, and given the current notices are
+        // designed to be triggered once only during onboarding, we open the
+        // chat view. If we have other notices and this feels too aggressive, we
+        // can make it be conditional on the type of notice being triggered.
+        void vscode.commands.executeCommand('cody.chat.focus', {
+            // Notices are not meant to steal focus from the editor
+            preserveFocus: true,
+        })
+        void this.webview?.postMessage({
+            type: 'notice',
+            notice,
+        })
+    }
+
+    /**
      * Set webview view
      */
     public async setWebviewView(view: View): Promise<void> {
