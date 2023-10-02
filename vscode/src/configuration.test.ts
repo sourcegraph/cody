@@ -24,6 +24,7 @@ describe('getConfiguration', () => {
             experimentalGuardrails: false,
             experimentalLocalSymbols: false,
             inlineChat: true,
+            codeActions: true,
             isRunningInsideAgent: false,
             experimentalNonStop: false,
             debugEnable: false,
@@ -68,6 +69,8 @@ describe('getConfiguration', () => {
                     case 'cody.experimental.guardrails':
                         return true
                     case 'cody.inlineChat.enabled':
+                        return true
+                    case 'cody.codeActions.enabled':
                         return true
                     case 'cody.experimental.nonStop':
                         return true
@@ -125,6 +128,7 @@ describe('getConfiguration', () => {
             experimentalGuardrails: true,
             experimentalLocalSymbols: true,
             inlineChat: true,
+            codeActions: true,
             isRunningInsideAgent: false,
             experimentalNonStop: true,
             debugEnable: true,

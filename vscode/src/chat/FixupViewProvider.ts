@@ -11,15 +11,33 @@ import { MessageProvider, MessageProviderOptions } from './MessageProvider'
 export class FixupManager implements vscode.Disposable {
     private fixupProviders = new Map<FixupTask, FixupProvider>()
     private messageProviderOptions: MessageProviderOptions
-    private disposables: vscode.Disposable[] = []
+    private configurationChangeListener: vscode.Disposable
+    private codeActionProvider: vscode.Disposable | null = null
 
     constructor(options: MessageProviderOptions) {
         this.messageProviderOptions = options
-        this.disposables.push(
-            vscode.languages.registerCodeActionsProvider('*', new FixupCodeAction(), {
-                providedCodeActionKinds: FixupCodeAction.providedCodeActionKinds,
-            })
-        )
+        this.configureCodeAction(options.contextProvider.config.codeActions)
+        this.configurationChangeListener = options.contextProvider.configurationChangeEvent.event(() => {
+            this.configureCodeAction(options.contextProvider.config.codeActions)
+        })
+    }
+
+    private configureCodeAction(enabled: boolean): void {
+        // Disable the code action provider if currently enabled
+        if (!enabled) {
+            this.codeActionProvider?.dispose()
+            this.codeActionProvider = null
+            return
+        }
+
+        // Code action provider already exists, skip re-registering
+        if (this.codeActionProvider) {
+            return
+        }
+
+        this.codeActionProvider = vscode.languages.registerCodeActionsProvider('*', new FixupCodeAction(), {
+            providedCodeActionKinds: FixupCodeAction.providedCodeActionKinds,
+        })
     }
 
     public getProviderForTask(task: FixupTask): FixupProvider {
@@ -43,10 +61,9 @@ export class FixupManager implements vscode.Disposable {
     }
 
     public dispose(): void {
-        for (const disposable of this.disposables) {
-            disposable.dispose()
-        }
-        this.disposables = []
+        this.configurationChangeListener.dispose()
+        this.codeActionProvider?.dispose()
+        this.codeActionProvider = null
     }
 }
 

@@ -51,6 +51,7 @@ export function getConfiguration(config: ConfigGetter = vscode.workspace.getConf
         autocomplete: config.get(CONFIG_KEY.autocompleteEnabled, true),
         experimentalChatPredictions: config.get(CONFIG_KEY.experimentalChatPredictions, isTesting),
         inlineChat: config.get(CONFIG_KEY.inlineChatEnabled, true),
+        codeActions: config.get(CONFIG_KEY.codeActionsEnabled, true),
         chatPreInstruction: config.get(CONFIG_KEY.chatPreInstruction),
         experimentalGuardrails: config.get(CONFIG_KEY.experimentalGuardrails, isTesting),
         experimentalNonStop: config.get(CONFIG_KEY.experimentalNonStop, isTesting),
