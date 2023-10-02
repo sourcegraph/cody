@@ -244,8 +244,12 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
             //  moment.
             if (result.source !== InlineCompletionsResultSource.LastCandidate) {
                 const minimumLatencyFlag = await Promise.resolve(minimumLatencyFlagsPromise)
-                if (minimumLatencyFlag) {
-                    const minimumLatency = getLatency(this.config.providerConfig.identifier, document.languageId)
+                if (!minimumLatencyFlag) {
+                    const minimumLatency = getLatency(
+                        this.config.providerConfig.identifier,
+                        document.fileName,
+                        document.languageId
+                    )
 
                     const delta = performance.now() - start
                     if (minimumLatency && delta < minimumLatency) {
