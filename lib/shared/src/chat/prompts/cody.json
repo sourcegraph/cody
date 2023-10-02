@@ -2,8 +2,9 @@
   "commands": {
     "doc": {
       "description": "Generate code documentation",
-      "prompt": "Generate a comment documenting the parameters and functionality for the selected code. Only generate the documentation for the selected code, do not generate the code. Use the same documentation style in the file of the selected code to generate the comments. Pay attention to the file path of the selected code to make sure the comments are generated for the correct language. For example, use the JavaDoc documentation style to generate comments for .java files, or Python docstring using Python multi-line string for .py files. Do not include any other code or comments besides the docstring.",
+      "prompt": "Write a brief documentation comment for the selected code. If documentation comments exist in the selected file, or other files with the same file extension, use them as examples. Pay attention to the scope of the selected code (e.g. exported function/API vs implementation detail in a function), and use the idiomatic style for that type of code scope. Only generate the documentation for the selected code, do not generate the code. Do not output any other code or comments besides the documentation.",
       "context": {
+        "currentFile": true,
         "currentDir": true,
         "selection": true
       },
