@@ -172,7 +172,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         const typewriter = new Typewriter({
             update: content => {
                 const displayText = reformatBotMessage(content, responsePrefix)
-                this.transcript.addAssistantResponse(displayText)
+                this.transcript.addAssistantResponse(content, displayText)
                 this.sendTranscript()
             },
             close: () => {},
@@ -194,7 +194,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
                     let displayText = reformatBotMessage(text, responsePrefix)
                     // TODO(keegancsmith) guardrails may be slow, we need to make this async update the interaction.
                     displayText = await this.guardrailsAnnotateAttributions(displayText)
-                    this.transcript.addAssistantResponse(text || '', displayText)
+                    this.transcript.addAssistantResponse(text, displayText)
                 }
                 await this.onCompletionEnd()
                 // Count code generated from response
