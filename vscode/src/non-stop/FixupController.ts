@@ -246,10 +246,11 @@ export class FixupController
         const nonEmptyStartIndex = editor.document.lineAt(range.start.line).firstNonWhitespaceCharacterIndex
         // add indentation to each line
         const textLines = text.split('\n').map(line => ' '.repeat(nonEmptyStartIndex) + line)
-
+        // join text with new lines, and then remove everything after the last new line if it only contains white spaces
+        const replacementText = textLines.join('\n').replace(/ +$/, '')
         // Insert updated text at selection range
         const editOk = await editor.edit(editBuilder => {
-            editBuilder.insert(range.start, textLines.join('\n').trimEnd() + '\n')
+            editBuilder.insert(range.start, replacementText)
         })
         return editOk
     }

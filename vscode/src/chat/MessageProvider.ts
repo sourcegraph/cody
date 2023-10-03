@@ -196,14 +196,12 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
                 await typewriter.finished
                 const lastInteraction = this.transcript.getLastInteraction()
                 if (lastInteraction) {
-                    let displayText = reformatBotMessage(text, responsePrefix)
-                    // TODO(keegancsmith) guardrails may be slow, we need to make this async update the interaction.
-                    displayText = await this.guardrailsAnnotateAttributions(displayText)
-                    this.transcript.addAssistantResponse(text, displayText)
                     // remove display text from last interaction if this is a non-display topic
-                    if (nonDisplayTopics.has(multiplexerTopic)) {
-                        this.transcript.removeDisplayTextFromLastInteraction()
-                    }
+                    // TODO(keegancsmith) guardrails may be slow, we need to make this async update the interaction.
+                    const displayText = nonDisplayTopics.has(multiplexerTopic)
+                        ? undefined
+                        : await this.guardrailsAnnotateAttributions(reformatBotMessage(text, responsePrefix))
+                    this.transcript.addAssistantResponse(text, displayText)
                 }
                 await this.onCompletionEnd()
                 // Count code generated from response

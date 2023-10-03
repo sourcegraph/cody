@@ -80,13 +80,4 @@ export class Interaction {
             timestamp: this.timestamp,
         }
     }
-
-    public removeDisplayText(): void {
-        if (this.humanMessage) {
-            this.humanMessage.displayText = undefined
-        }
-        if (this.assistantMessage) {
-            this.assistantMessage.displayText = undefined
-        }
-    }
 }

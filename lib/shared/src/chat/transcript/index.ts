@@ -129,10 +129,6 @@ export class Transcript {
         })
     }
 
-    public removeDisplayTextFromLastInteraction(): void {
-        this.getLastInteraction()?.removeDisplayText()
-    }
-
     /**
      * Adds a error div to the assistant response. If the assistant has collected
      * some response before, we will add the error message after it.
