@@ -24,6 +24,8 @@ Starting from `0.2.0`, Cody is using `major.EVEN_NUMBER.patch` for release versi
 
 ### Changed
 
+- Improved detection for the most common test runner files. [pull/1297](https://github.com/sourcegraph/cody/pull/1297)
+
 ## [0.12.4]
 
 ### Added
