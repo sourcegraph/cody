@@ -623,6 +623,7 @@
         },
         {
           "command": "cody.inline.new",
+          "when": "cody.activated",
           "group": "ask"
         }
       ],
