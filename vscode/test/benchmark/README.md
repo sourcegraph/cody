@@ -76,3 +76,7 @@ Benchmark cases are defined in the `/datasets` folder in this directory. Each ca
 **testFile**: This is the file that will be used to evaluate Cody's completion. It should point at the `entryFile` when running the test, but you should be able to validate the test is correct by manually pointing it at the `solutionFile`.
 
 **testCommand**: This is the command that should be used in order to run the test in `testFile`. This can be any command, which means we can be flexible when testing things across language (e.g. the `python` command for Python completions). If you are adding a new `testCommand`, **you need to ensure a valid executable has been installed in the test container**. If you need to add a new executable, you can do so here: `./datasets/Dockerfile`.
+
+## Configuring the benchmark suite
+
+The benchmark suite can be configured differently depending on your needs. Every benchmark case will inherit the file: `vscode/test/benchmark/fixtures/workspace/settings.json`. You can add new editor settings and change Cody-specific settings to support enabling feature flags, trialing different models and more.
