@@ -71,6 +71,8 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
     /** Accessible for testing only. */
     protected lastCandidate: LastInlineCompletionCandidate | undefined
 
+    private isProbablyNewInstall = true
+
     constructor({
         graphContextFetcher = null,
         completeSuggestWidgetSelection = false,
@@ -103,6 +105,9 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
         this.requestManager = new RequestManager({
             completeSuggestWidgetSelection: this.config.completeSuggestWidgetSelection,
         })
+
+        const chatHistory = localStorage.getChatHistory()?.chat
+        this.isProbablyNewInstall = !chatHistory || Object.entries(chatHistory).length === 0
 
         logDebug(
             'CodyCompletionProvider:initialized',
@@ -342,15 +347,35 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
         // Remove the completion from the network cache
         this.requestManager.removeFromCache(request)
 
-        if (this.config.triggerNotice) {
-            const key = 'completion.inline.hasAcceptedFirstCompletion'
-            if (!localStorage.get(key)) {
-                void localStorage.set(key, 'true')
-                this.config.triggerNotice({ key: 'onboarding-autocomplete' })
-            }
-        }
+        this.handleFirstCompletionOnboardingNotice()
 
         CompletionLogger.accept(logId, completion)
+    }
+
+    /**
+     * Handles showing a notification on the first completion acceptance.
+     */
+    private handleFirstCompletionOnboardingNotice(): void {
+        if (!this.config.triggerNotice) {
+            return // no trigger handler.
+        }
+
+        const key = 'completion.inline.hasAcceptedFirstCompletion'
+        if (localStorage.get(key)) {
+            return // Already seen notice.
+        }
+
+        // Mark as seen, so we don't show again after this.
+        void localStorage.set(key, 'true')
+
+        if (!this.isProbablyNewInstall) {
+            // Only trigger for new installs for now, to avoid existing users from
+            // seeing this. Consider removing this check in future, because existing
+            // users would have had the key set above.
+            return
+        }
+
+        this.config.triggerNotice({ key: 'onboarding-autocomplete' })
     }
 
     /**

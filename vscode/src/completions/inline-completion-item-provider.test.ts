@@ -1,5 +1,5 @@
 import dedent from 'dedent'
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import * as vscode from 'vscode'
 
 import { FeatureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
@@ -199,11 +199,15 @@ describe('InlineCompletionItemProvider', () => {
     describe('onboarding', () => {
         // Set up local storage backed by an object. Local storage is used to
         // track whether a completion was accepted for the first time.
-        const localStorageData: { [key: string]: unknown } = {}
+        let localStorageData: { [key: string]: unknown } = {}
         localStorage.setStorage({
             get: (key: string) => localStorageData[key],
             update: (key: string, value: unknown) => (localStorageData[key] = value),
         } as any as vscode.Memento)
+
+        beforeEach(() => {
+            localStorageData = {}
+        })
 
         it('triggers notice the first time an inline complation is accepted', async () => {
             const { document, position } = documentAndPosition('const foo = █', 'typescript')
@@ -246,6 +250,46 @@ describe('InlineCompletionItemProvider', () => {
             // Not called on second accept.
             provider.handleDidAcceptCompletionItem(logId, completions?.items[0] as InlineCompletionItem, requestParams)
             expect(triggerNotice).toHaveBeenCalledOnce()
+        })
+
+        it('does not triggers notice the first time an inline complation is accepted if not a new install', async () => {
+            await localStorage.setChatHistory({
+                chat: { a: null as any },
+                input: [''],
+            })
+
+            const { document, position } = documentAndPosition('const foo = █', 'typescript')
+            const requestParams: RequestParams = {
+                document,
+                position,
+                docContext: getCurrentDocContext({
+                    document,
+                    position,
+                    maxSuffixLength: 100,
+                    maxPrefixLength: 100,
+                    enableExtendedTriggers: true,
+                }),
+                selectedCompletionInfo: undefined,
+            }
+
+            const logId = '1' as SuggestionID
+            const fn = vi.fn(getInlineCompletions).mockResolvedValue({
+                logId,
+                items: [{ insertText: 'bar', range: new vsCodeMocks.Range(position, position) }],
+                source: InlineCompletionsResultSource.Network,
+            })
+
+            const triggerNotice = vi.fn()
+            const provider = new MockableInlineCompletionItemProvider(fn, {
+                triggerNotice,
+            })
+            const completions = await provider.provideInlineCompletionItems(document, position, DUMMY_CONTEXT)
+            expect(completions).not.toBeNull()
+            expect(completions?.items).not.toHaveLength(0)
+
+            // Accepting completion should not have triggered the notice.
+            provider.handleDidAcceptCompletionItem(logId, completions?.items[0] as InlineCompletionItem, requestParams)
+            expect(triggerNotice).not.toHaveBeenCalled()
         })
     })
 
