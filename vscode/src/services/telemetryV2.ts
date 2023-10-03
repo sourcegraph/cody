@@ -13,9 +13,17 @@ let telemetryRecorderProvider: TelemetryRecorderProvider | undefined
 /**
  * Recorder for recording telemetry events in the new telemetry framework:
  * https://docs.sourcegraph.com/dev/background-information/telemetry
+ *
+ * The default recorder throws an error if it is used before initialization
+ * via createOrUpdateTelemetryRecorderProvider.
  */
-export let telemetryRecorder =
-    telemetryRecorderProvider?.getRecorder() || new NoOpTelemetryRecorderProvider().getRecorder()
+export let telemetryRecorder = new NoOpTelemetryRecorderProvider().getRecorder([
+    {
+        processEvent: () => {
+            throw new Error('telemetry recorder used before initialization')
+        },
+    },
+])
 
 function updateGlobalInstances(provider: TelemetryRecorderProvider): void {
     telemetryRecorderProvider?.complete()
