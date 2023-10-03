@@ -16,6 +16,7 @@ const DEFAULT_VSCODE_SETTINGS: Configuration = {
     chatPreInstruction: 'My name is John Doe.',
     useContext: 'embeddings',
     autocomplete: true,
+    autocompleteLanguages: { '*': true, scminput: false },
     experimentalCommandLenses: false,
     experimentalEditorTitleCommandIcon: false,
     experimentalChatPredictions: false,

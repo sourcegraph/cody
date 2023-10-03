@@ -14,6 +14,7 @@ Starting from `0.2.0`, Cody is using `major.EVEN_NUMBER.patch` for release versi
 - Experimentally added `smart selection` which removes the need to manually highlight code before running the `/doc` and `/test` commands. [pull/1116](https://github.com/sourcegraph/cody/pull/1116)
 - Show a notice on first autocomplete. [pull/1071](https://github.com/sourcegraph/cody/pull/1071)
 - Autocomplete now takes the currently selected item in the suggest widget into account. This behavior can be disabled by setting `cody.autocomplete.suggestWidgetSelection` to `false`.
+- Add the `cody.autocomplete.languages` user setting to enable or disable inline code suggestions for specified languages. [pull/1290](https://github.com/sourcegraph/cody/pull/1290)
 
 ### Fixed
 

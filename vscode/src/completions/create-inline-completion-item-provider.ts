@@ -75,6 +75,8 @@ export async function createInlineCompletionItemProvider({
             triggerNotice,
         })
 
+        const documentFilters = await getInlineCompletionItemProviderFilters(config.autocompleteLanguages)
+
         disposables.push(
             vscode.commands.registerCommand('cody.autocomplete.manual-trigger', () =>
                 completionsProvider.manuallyTriggerCompletion()
@@ -86,7 +88,7 @@ export async function createInlineCompletionItemProvider({
                 }
             ),
             vscode.languages.registerInlineCompletionItemProvider(
-                [{ scheme: 'file', language: '*' }, { notebookType: '*' }],
+                [{ notebookType: '*' }, ...documentFilters],
                 completionsProvider
             ),
             registerAutocompleteTraceView(completionsProvider)
@@ -110,4 +112,17 @@ export async function createInlineCompletionItemProvider({
             }
         },
     }
+}
+
+export async function getInlineCompletionItemProviderFilters(
+    autocompleteLanguages: Record<string, boolean>
+): Promise<vscode.DocumentFilter[]> {
+    const { '*': isEnabledForAll, ...perLanguageConfig } = autocompleteLanguages
+    const languageIds = await vscode.languages.getLanguages()
+
+    return languageIds.flatMap(language => {
+        const enabled = language in perLanguageConfig ? perLanguageConfig[language] : isEnabledForAll
+
+        return enabled ? [{ language, scheme: 'file' }] : []
+    })
 }
