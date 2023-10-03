@@ -1,13 +1,8 @@
 import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
 import {
-    BillingCategory,
-    BillingProduct,
-    EventAction,
-    EventFeature,
-    MetadataKey,
-} from '@sourcegraph/cody-shared/src/telemetry-v2'
-import { TelemetryRecorderProvider } from '@sourcegraph/cody-shared/src/telemetry-v2/TelemetryRecorderProvider'
-import { TelemetryRecorder } from '@sourcegraph/telemetry'
+    NoOpTelemetryRecorderProvider,
+    TelemetryRecorderProvider,
+} from '@sourcegraph/cody-shared/src/telemetry-v2/TelemetryRecorderProvider'
 
 import { localStorage } from './LocalStorageProvider'
 import { extensionDetails } from './telemetry'
@@ -15,17 +10,11 @@ import { extensionDetails } from './telemetry'
 let telemetryRecorderProvider: TelemetryRecorderProvider | undefined
 
 /**
- * Get a recorder for recording telemetry events in the new telemetry framework:
+ * Recorder for recording telemetry events in the new telemetry framework:
  * https://docs.sourcegraph.com/dev/background-information/telemetry
- *
- * A new recorder should generally be retrieved in order to pick up configuration
- * changes.
  */
-export function getRecorder():
-    | TelemetryRecorder<EventFeature, EventAction, MetadataKey, BillingCategory, BillingProduct>
-    | undefined {
-    return telemetryRecorderProvider?.getRecorder()
-}
+export let telemetryRecorder =
+    telemetryRecorderProvider?.getRecorder() || new NoOpTelemetryRecorderProvider().getRecorder()
 
 export async function createOrUpdateTelemetryRecorderProvider(
     config: ConfigurationWithAccessToken,
@@ -42,11 +31,12 @@ export async function createOrUpdateTelemetryRecorderProvider(
 
     if (telemetryRecorderProvider === undefined) {
         telemetryRecorderProvider = new TelemetryRecorderProvider(extensionDetails, config, anonymousUserID)
-        const recorder = telemetryRecorderProvider.getRecorder()
+        // Update default recorder instance
+        telemetryRecorder = telemetryRecorderProvider.getRecorder()
         if (created) {
-            recorder.recordEvent('cody', 'installed')
+            telemetryRecorder.recordEvent('cody', 'installed')
         } else {
-            recorder.recordEvent('cody.savedLogin', 'executed')
+            telemetryRecorder.recordEvent('cody.savedLogin', 'executed')
         }
     } else {
         // Stop the existing provider and create a new one entirely.

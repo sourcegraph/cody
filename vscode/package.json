@@ -963,7 +963,7 @@
     "@sentry/node": "^7.66.0",
     "@sourcegraph/cody-shared": "workspace:*",
     "@sourcegraph/cody-ui": "workspace:*",
-    "@sourcegraph/telemetry": "^0.2.0",
+    "@sourcegraph/telemetry": "^0.4.0",
     "@types/stream-json": "^1.7.3",
     "@vscode/codicons": "^0.0.29",
     "@vscode/webview-ui-toolkit": "^1.2.2",

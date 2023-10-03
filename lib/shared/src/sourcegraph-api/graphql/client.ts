@@ -1,6 +1,6 @@
 import fetch from 'isomorphic-fetch'
 
-import { TelemetryEventInput } from '@sourcegraph/telemetry/dist/api'
+import { TelemetryEventInput } from '@sourcegraph/telemetry'
 
 import { ConfigurationWithAccessToken } from '../../configuration'
 import { isError } from '../../utils'

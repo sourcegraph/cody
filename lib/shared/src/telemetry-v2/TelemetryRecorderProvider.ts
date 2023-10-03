@@ -1,9 +1,10 @@
 import {
     TelemetryRecorderProvider as BaseTelemetryRecorderProvider,
     defaultEventRecordingOptions,
+    NoOpTelemetryExporter,
+    TelemetryEventInput,
+    TelemetryProcessor,
 } from '@sourcegraph/telemetry'
-import { TelemetryEventInput } from '@sourcegraph/telemetry/dist/api'
-import { TelemetryProcessor } from '@sourcegraph/telemetry/dist/processors'
 
 import { ConfigurationWithAccessToken, getContextSelectionID } from '../configuration'
 import { SourcegraphGraphQLAPIClient } from '../sourcegraph-api/graphql'
@@ -40,6 +41,18 @@ export class TelemetryRecorderProvider extends BaseTelemetryRecorderProvider<
                 bufferTimeMs: 0, // disable buffering for now
             }
         )
+    }
+}
+
+export class NoOpTelemetryRecorderProvider extends BaseTelemetryRecorderProvider<
+    EventFeature,
+    EventAction,
+    MetadataKey,
+    BillingCategory,
+    BillingProduct
+> {
+    constructor() {
+        super({ client: '' }, new NoOpTelemetryExporter(), [])
     }
 }
 

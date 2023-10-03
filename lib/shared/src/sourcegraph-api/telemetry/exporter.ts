@@ -1,5 +1,4 @@
-import { TelemetryEventInput } from '@sourcegraph/telemetry/dist/api'
-import { TelemetryExporter } from '@sourcegraph/telemetry/dist/exporters'
+import { TelemetryEventInput, TelemetryExporter } from '@sourcegraph/telemetry'
 
 import { isError } from '../../utils'
 import { SourcegraphGraphQLAPIClient } from '../graphql/client'

@@ -33,7 +33,7 @@ import {
 } from './services/SecretStorageProvider'
 import { createStatusBar } from './services/StatusBar'
 import { createOrUpdateEventLogger, telemetryService } from './services/telemetry'
-import { createOrUpdateTelemetryRecorderProvider, getRecorder } from './services/telemetryV2'
+import { createOrUpdateTelemetryRecorderProvider, telemetryRecorder } from './services/telemetryV2'
 import { TestSupport } from './test-support'
 
 /**
@@ -226,7 +226,7 @@ const register = async (
         }
 
         telemetryService.log('CodyVSCodeExtension:fixup:created')
-        getRecorder()?.recordEvent('cody.fixup', 'created')
+        telemetryRecorder.recordEvent('cody.fixup', 'created')
 
         const provider = fixupManager.getProviderForTask(task)
         return provider.startFix()
