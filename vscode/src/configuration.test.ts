@@ -60,6 +60,8 @@ describe('getConfiguration', () => {
                         }
                     case 'cody.autocomplete.enabled':
                         return false
+                    case 'cody.autocomplete.languages':
+                        return { '*': true, scminput: false }
                     case 'cody.experimental.chatPredictions':
                         return true
                     case 'cody.experimental.commandLenses':

@@ -1,5 +1,6 @@
 import * as vscode from 'vscode'
 
+import { isDefined } from '@sourcegraph/cody-shared'
 import { Configuration } from '@sourcegraph/cody-shared/src/configuration'
 import { FeatureFlag, FeatureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
 
@@ -75,6 +76,8 @@ export async function createInlineCompletionItemProvider({
             triggerNotice,
         })
 
+        const documentFilters = await getInlineCompletionItemProviderFilters(config.autocompleteLanguages)
+
         disposables.push(
             vscode.commands.registerCommand('cody.autocomplete.manual-trigger', () =>
                 completionsProvider.manuallyTriggerCompletion()
@@ -86,7 +89,7 @@ export async function createInlineCompletionItemProvider({
                 }
             ),
             vscode.languages.registerInlineCompletionItemProvider(
-                [{ scheme: 'file', language: '*' }, { notebookType: '*' }],
+                [{ notebookType: '*' }, ...documentFilters],
                 completionsProvider
             ),
             registerAutocompleteTraceView(completionsProvider)
@@ -110,4 +113,36 @@ export async function createInlineCompletionItemProvider({
             }
         },
     }
+}
+
+export async function getInlineCompletionItemProviderFilters(
+    autocompleteLanguages: Record<string, boolean>
+): Promise<vscode.DocumentFilter[]> {
+    const { '*': isEnabledForAll, ...perLanguageConfig } = autocompleteLanguages
+
+    // Enable for every known langauge ID if it's not explicitly disabled in `perLanguageConfig`.
+    if (isEnabledForAll) {
+        const languageIds = await vscode.languages.getLanguages()
+
+        return languageIds
+            .map(language => {
+                if (perLanguageConfig[language] === undefined || perLanguageConfig[language] === true) {
+                    return { language, scheme: 'file' }
+                }
+
+                return null
+            })
+            .filter(isDefined)
+    }
+
+    // Enable only for explicitly enabled languages in `perLanguageConfig`.
+    return Object.entries(perLanguageConfig)
+        .map(([language, isEnabled]) => {
+            if (isEnabled) {
+                return { language, scheme: 'file' }
+            }
+
+            return null
+        })
+        .filter(isDefined)
 }
