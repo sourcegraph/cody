@@ -13,6 +13,30 @@ export BENCHMARK_ACCESS_TOKEN=sgp_aaaaaaaaaaaaaaaa
 pnpm run test:benchmark
 ```
 
+**Benchmarking Cody on a specific dataset:**
+
+You will often want to run Cody against a specific dataset. This can be helpful for running a series of small benchmarks, or even quickly evaluating against a specific benchmark.
+
+```shell
+export BENCHMARK_ENDPOINT=https://sourcegraph.com
+export BENCHMARK_ACCESS_TOKEN=sgp_aaaaaaaaaaaaaaaa
+export BENCHMARK_DATASET=./test/benchmark/datasets/api-invocation
+
+pnpm run test:benchmark
+```
+
+**Benchmarking Cody on external datasets:**
+
+We have some external, larger datasets (e.g. HumanEval), defined in the [cody-evaluation-datasets](https://github.com/sourcegraph/cody-evaluation-datasets) repository. You can still provide these to the benchmark script by ensuring you have that repository cloned, and provding the path to the relevant dataset.
+
+```shell
+export BENCHMARK_ENDPOINT=https://sourcegraph.com
+export BENCHMARK_ACCESS_TOKEN=sgp_aaaaaaaaaaaaaaaa
+export BENCHMARK_DATASET=../../cody-evaluation-datasets/human-eval-infill-single-line
+
+pnpm run test:benchmark
+```
+
 **Benchmarking Cody + Copilot:**
 
 The script will run Cody against all benchmark cases, and then run Copilot against the same cases.
@@ -36,8 +60,8 @@ pnpm run test:benchmark:copilot
 
 `BENCHMARK_ACCESS_TOKEN`: The authentication token to provide to the endpoint.
 
-`BENCHMARK_DATASET`: The dataset directory to benchmark against. Scoped within the `./datasets` directory.
-Can either be a specific case, e.g. `BENCHMARK_DATASET=api-invocation/internal-api-closed-file-multiple-args`, or multiple cases e.g. `BENCHMARK_DATASET=api-invocation`. Defaults to all datasets.
+`BENCHMARK_DATASET`: The path to the dataset directory to benchmark against, relative to the current directory.
+Can either be a specific case, e.g. `BENCHMARK_DATASET=./test/benchmark/datasets/api-invocation/internal-api-closed-file-multiple-args`, or multiple cases e.g. `BENCHMARK_DATASET=./test/benchmark/datasets/api-invocation`. Defaults to all datasets within `./test/benchmark/datasets`.
 
 `BENCHMARK_COMPARE_WITH`: An alternative extension to benchmark against the same dataset. Will be downloaded from the VS Code marketplace before the tests start. Case-by-case comparisons can be viewed in the console after the tests have finished executing.
 e.g. `BENCHMARK_COMPARE_WITH=GitHub.copilot`

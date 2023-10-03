@@ -22,7 +22,7 @@ interface BenchmarkOutput {
 
 export async function start(): Promise<void> {
     const benchmarkDataset = process.env.BENCHMARK_DATASET || DATASETS_PATH
-    const datasetPath = path.resolve(DATASETS_PATH, benchmarkDataset)
+    const datasetPath = path.resolve(VSCODE_CODY_ROOT, benchmarkDataset)
     const benchmarkCases = await glob(path.join(datasetPath, '**/*config.json'))
     if (benchmarkCases.length === 0) {
         throw new Error(`No benchmark cases found inside ${datasetPath}`)
