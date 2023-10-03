@@ -121,18 +121,8 @@ export async function getInlineCompletionItemProviderFilters(
     const languageIds = await vscode.languages.getLanguages()
 
     return languageIds.flatMap(language => {
-        const isEnabledForSpecificLanguage = perLanguageConfig[language]
+        const enabled = language in perLanguageConfig ? perLanguageConfig[language] : isEnabledForAll
 
-        // If enabled for all and not explicitly disabled for this language
-        if (isEnabledForAll && isEnabledForSpecificLanguage !== false) {
-            return [{ language, scheme: 'file' }]
-        }
-
-        // If not enabled for all but explicitly enabled for this language
-        if (!isEnabledForAll && isEnabledForSpecificLanguage === true) {
-            return [{ language, scheme: 'file' }]
-        }
-
-        return []
+        return enabled ? [{ language, scheme: 'file' }] : []
     })
 }
