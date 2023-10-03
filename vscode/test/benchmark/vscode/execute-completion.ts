@@ -13,7 +13,7 @@ import { ensureExecuteCommand } from './helpers'
  * Ideally we could listen directly to the inlineCompletionItem provider through VS Code, but this is not currently possible.
  * Related GitHub issue: https://github.com/microsoft/vscode-discussions/discussions/483
  */
-export const pollToAcceptCompletion = async (originalDocumentVersion: number): Promise<boolean> => {
+const pollToAcceptCompletion = async (originalDocumentVersion: number): Promise<boolean> => {
     await ensureExecuteCommand('editor.action.inlineSuggest.commit')
     await new Promise(resolve => setTimeout(resolve, 100))
 
@@ -50,10 +50,11 @@ export const executeCompletion = async ({ entryFile, openFiles }: DatasetConfig,
     const cursorPosition = entryEditor.document.positionAt(entryEditor.document.getText().indexOf(CURSOR))
     const cursorSelection = new vscode.Selection(cursorPosition.translate(0, 1), cursorPosition.translate(0, 1))
     entryEditor.selection = cursorSelection
-    await ensureExecuteCommand('deleteLeft')
-
     // We add a short delay to allow fetching any specific context for this selection
     await new Promise(resolve => setTimeout(resolve, 500))
+
+    await ensureExecuteCommand('deleteLeft')
+    await ensureExecuteCommand('editor.action.inlineSuggest.trigger')
 
     const startPolling = pollToAcceptCompletion(entryEditor.document.version)
     await Promise.race([

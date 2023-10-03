@@ -69,8 +69,6 @@ export const getGraphContextFromRange = async (
     range: vscode.Range,
     abortSignal?: CustomAbortSignal
 ): Promise<HoverContext[]> => {
-    logDebug('GraphContext:snippetsRetrieved', 'Fetching context snippets for range')
-
     const uri = editor.document.uri
     const contentMap = new Map([[uri.fsPath, editor.document.getText().split('\n')]])
     const selections = [{ uri, range }]

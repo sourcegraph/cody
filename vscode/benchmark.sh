@@ -1,8 +1,5 @@
 #!/bin/sh
 
-[ -z "$BENCHMARK_ENDPOINT" ] && echo "BENCHMARK_ENDPOINT not provided" 1>&2 && exit 1
-[ -z "$BENCHMARK_ACCESS_TOKEN" ] && echo "BENCHMARK_ACCESS_TOKEN not provided" 1>&2 && exit 1
-
 export BENCHMARK_DOCKER_IMAGE=cody-benchmark-harness
 
 # Build the test harness, installs any required dependencies for tests

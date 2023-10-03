@@ -19,7 +19,7 @@
     "../lib/shared/src/telemetry/EventLogger.ts",
     "test/completions/completions-dataset.ts",
   ],
-  "exclude": ["scripts", "dist", "test/integration", "**/test-data", "test/benchmark/**"],
+  "exclude": ["scripts", "dist", "test/integration", "**/test-data"],
   "references": [
     {
       "path": "../lib/shared",

@@ -54,7 +54,6 @@ export async function start(): Promise<void> {
 
             for (const benchmarkConfig of benchmarkCases) {
                 const benchmarkDir = path.dirname(benchmarkConfig)
-                const testId = `${benchmarkDataset}/${path.basename(benchmarkDir)}`
                 const evalCaseConfig = parseEvaluationConfig(benchmarkConfig)
 
                 // Copy the entry file into a temporary Git directory
@@ -101,6 +100,7 @@ export async function start(): Promise<void> {
                 })
                 console.log(diff.stdout)
 
+                const testId = `${benchmarkDataset}/${path.basename(benchmarkDir)}`
                 results[testId] = {
                     ...results[testId],
                     [extension]: testResult,

@@ -1,7 +1,0 @@
-.git
-node_modules
-**/node_modules
-dist
-**/dist
-**/.vscode-test
-**/tsconfig.tsbuildinfo
