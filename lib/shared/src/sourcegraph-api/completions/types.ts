@@ -40,6 +40,7 @@ export interface CompletionParameters {
     topK?: number
     topP?: number
     model?: string
+    logprobs?: number
 }
 
 export interface CompletionCallbacks {

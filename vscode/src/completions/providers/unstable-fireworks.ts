@@ -162,6 +162,7 @@ export class UnstableFireworksProvider extends Provider {
             topK: 0,
             model,
             stopSequences: multiline ? ['\n\n', '\n\r\n'] : ['\n'],
+            logprobs: 0,
         }
 
         tracer?.params(args)
