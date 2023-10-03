@@ -41,6 +41,7 @@ export type Requests = {
     'graphql/logEvent': [event, null]
 
     'graphql/getRepoIdIfEmbeddingExists': [{ repoName: string }, string | null]
+    'graphql/getRepoId': [{ repoName: string }, string | null]
 
     // ================
     // Server -> Client
@@ -108,6 +109,9 @@ export interface CancelParams {
 export interface AutocompleteParams {
     filePath: string
     position: Position
+    // Defaults to 'Automatic' for autocompletions which were not explicitly
+    // triggered.
+    triggerKind?: 'Automatic' | 'Invoke'
 }
 
 export interface AutocompleteResult {
@@ -158,7 +162,6 @@ export interface ExtensionConfiguration {
     autocompleteAdvancedServerEndpoint?: string | null
     autocompleteAdvancedModel?: string | null
     autocompleteAdvancedAccessToken?: string | null
-    autocompleteAdvancedEmbeddings?: boolean
     debug?: boolean
     verboseDebug?: boolean
     codebase?: string

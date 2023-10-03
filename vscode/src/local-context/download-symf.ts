@@ -7,8 +7,9 @@ import * as unzip from 'unzipper'
 import * as vscode from 'vscode'
 
 import { logDebug } from '../log'
+import { getOSArch } from '../os'
 
-const symfVersion = 'v0.0.0'
+const symfVersion = 'v0.0.1'
 
 /**
  * Get the path to `symf`. If the symf binary is not found, download it.
@@ -16,22 +17,24 @@ const symfVersion = 'v0.0.0'
 export async function getSymfPath(context: vscode.ExtensionContext): Promise<string | null> {
     // If user-specified symf path is set, use that
     const config = vscode.workspace.getConfiguration()
-    const userSymfPath = config.get<string>('experimentalSymfPath')
+    const userSymfPath = config.get<string>('cody.experimental.symf.path')
     if (userSymfPath) {
         logDebug('symf', `using user symf: ${userSymfPath}`)
         return userSymfPath
     }
 
-    const osArch = getOSArch()
-    if (!osArch) {
+    const { platform, arch } = getOSArch()
+    if (!platform || !arch) {
+        // show vs code error message
+        void vscode.window.showErrorMessage(`No symf binary available for ${os.platform()}/${os.machine()}`)
         return null
     }
-    const { platform, arch } = osArch
 
     const symfContainingDir = path.join(context.globalStorageUri.fsPath, 'symf')
     const symfFilename = `symf-${symfVersion}-${arch}-${platform}`
     const symfPath = path.join(symfContainingDir, symfFilename)
     if (await fileExists(symfPath)) {
+        logDebug('symf', `using downloaded symf "${symfPath}"`)
         return symfPath
     }
 
@@ -39,58 +42,36 @@ export async function getSymfPath(context: vscode.ExtensionContext): Promise<str
     logDebug('symf', `downloading symf from ${symfURL}`)
 
     // Download symf binary with vscode progress api
-    await vscode.window.withProgress(
-        {
-            location: vscode.ProgressLocation.Notification,
-            title: 'Downloading semantic code search utility, symf',
-            cancellable: false,
-        },
-        async progress => {
-            progress.report({ message: 'Downloading symf and extracting symf' })
+    try {
+        await vscode.window.withProgress(
+            {
+                location: vscode.ProgressLocation.Notification,
+                title: 'Downloading semantic code search utility, symf',
+                cancellable: false,
+            },
+            async progress => {
+                progress.report({ message: 'Downloading symf and extracting symf' })
 
-            const symfTmpDir = symfPath + '.tmp'
+                const symfTmpDir = symfPath + '.tmp'
 
-            await downloadFile(symfURL, symfTmpDir)
-            logDebug('symf', `downloaded symf to ${symfTmpDir}`)
+                await downloadFile(symfURL, symfTmpDir)
+                logDebug('symf', `downloaded symf to ${symfTmpDir}`)
 
-            const tmpFile = path.join(symfTmpDir, `symf-${arch}-${platform}`)
-            await fspromises.chmod(tmpFile, 0o755)
-            await fspromises.rename(tmpFile, symfPath)
-            await fspromises.rmdir(symfTmpDir, { recursive: true })
+                const tmpFile = path.join(symfTmpDir, `symf-${arch}-${platform}`)
+                await fspromises.chmod(tmpFile, 0o755)
+                await fspromises.rename(tmpFile, symfPath)
+                await fspromises.rmdir(symfTmpDir, { recursive: true })
 
-            logDebug('symf', `extracted symf to ${symfPath}`)
-        }
-    )
-    void removeOldSymfBinaries(symfContainingDir, symfFilename)
-
-    return symfPath
-}
-
-function getOSArch(): { platform: string; arch: string } | null {
-    const nodePlatformToPlatform: { [key: string]: string } = {
-        darwin: 'macos',
-        linux: 'linux',
-        win32: 'windows',
-    }
-    const nodeMachineToArch: { [key: string]: string } = {
-        arm64: 'aarch64',
-        aarch64: 'aarch64',
-        x86_64: 'x86_64',
-        i386: 'x86',
-        i686: 'x86',
-    }
-
-    const platform = nodePlatformToPlatform[os.platform()]
-    const arch = nodeMachineToArch[os.machine()]
-    if (!platform || !arch) {
-        // show vs code error message
-        void vscode.window.showErrorMessage(`No symf binary available for ${os.platform()}/${os.machine()}`)
+                logDebug('symf', `extracted symf to ${symfPath}`)
+            }
+        )
+        void removeOldSymfBinaries(symfContainingDir, symfFilename)
+    } catch (error) {
+        void vscode.window.showErrorMessage(`Failed to download symf: ${error}`)
         return null
     }
-    return {
-        platform,
-        arch,
-    }
+
+    return symfPath
 }
 
 async function fileExists(path: string): Promise<boolean> {

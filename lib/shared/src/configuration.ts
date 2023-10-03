@@ -33,21 +33,19 @@ export interface Configuration {
     customHeaders: Record<string, string>
     chatPreInstruction: string
     autocomplete: boolean
-    experimentalChatPredictions: boolean
     inlineChat: boolean
+    codeActions: boolean
+    experimentalChatPredictions: boolean
     experimentalCommandLenses: boolean
     experimentalEditorTitleCommandIcon: boolean
     experimentalGuardrails: boolean
     experimentalNonStop: boolean
     experimentalLocalSymbols: boolean
-    experimentalSymfPath: string
-    experimentalSymfAnthropicKey: string
     autocompleteAdvancedProvider: 'anthropic' | 'unstable-codegen' | 'unstable-fireworks' | 'unstable-openai' | null
     autocompleteAdvancedServerEndpoint: string | null
     autocompleteAdvancedModel: string | null
     autocompleteAdvancedAccessToken: string | null
-    autocompleteAdvancedEmbeddings: boolean
-    autocompleteExperimentalCompleteSuggestWidgetSelection?: boolean
+    autocompleteCompleteSuggestWidgetSelection?: boolean
     autocompleteExperimentalSyntacticPostProcessing?: boolean
     autocompleteExperimentalGraphContext?: boolean
     isRunningInsideAgent?: boolean

@@ -3,10 +3,10 @@ import { Position, TextDocument } from 'vscode'
 import { dedupeWith } from '@sourcegraph/cody-shared/src/common'
 
 import { DocumentContext } from '../get-current-doc-context'
-import { ItemPostProcesssingInfo } from '../logger'
+import { ItemPostProcessingInfo } from '../logger'
 import { astGetters } from '../tree-sitter/ast-getters'
 import { getDocumentQuerySDK } from '../tree-sitter/queries'
-import { InlineCompletionItem } from '../types'
+import { Completion, InlineCompletionItem } from '../types'
 
 import { dropParserFields, parseCompletion, ParsedCompletion } from './parse-completion'
 import { truncateMultilineCompletion } from './truncate-multiline-completion'
@@ -19,21 +19,23 @@ export interface ProcessInlineCompletionsParams {
     docContext: DocumentContext
 }
 
-export interface InlineCompletionItemWithAnalytics extends ItemPostProcesssingInfo, InlineCompletionItem {}
+export interface InlineCompletionItemWithAnalytics extends ItemPostProcessingInfo, InlineCompletionItem {
+    stopReason?: string
+}
 
 /**
  * This function implements post-processing logic that is applied regardless of
  * which provider is chosen.
  */
 export function processInlineCompletions(
-    items: InlineCompletionItem[],
+    items: Completion[],
     params: ProcessInlineCompletionsParams
 ): InlineCompletionItemWithAnalytics[] {
     // Shared post-processing logic
-    const processedCompletions = items.map(item => processItem({ ...params, completion: item }))
+    const completionItems = items.map(item => processCompletion({ ...params, completion: item }))
 
     // Remove low quality results
-    const visibleResults = removeLowQualityCompletions(processedCompletions)
+    const visibleResults = removeLowQualityCompletions(completionItems)
 
     // Remove duplicate results
     const uniqueResults = dedupeWith(visibleResults, 'insertText')
@@ -45,25 +47,30 @@ export function processInlineCompletions(
 }
 
 interface ProcessItemParams {
-    completion: InlineCompletionItem
+    completion: Completion
     document: TextDocument
     position: Position
     docContext: DocumentContext
 }
 
-export function processItem(params: ProcessItemParams): InlineCompletionItemWithAnalytics & ParsedCompletion {
+function processCompletion(params: ProcessItemParams): InlineCompletionItemWithAnalytics & ParsedCompletion {
     const { completion, document, position, docContext } = params
     const { prefix, suffix, currentLineSuffix, multilineTrigger } = docContext
 
-    if (typeof completion.insertText !== 'string') {
+    if (typeof completion.content !== 'string') {
         throw new TypeError('SnippetText not supported')
     }
 
-    if (completion.insertText.length === 0) {
-        return completion
+    const completionItem: InlineCompletionItemWithAnalytics = {
+        insertText: completion.content,
+        stopReason: completion.stopReason,
     }
 
-    const adjusted = adjustRangeToOverwriteOverlappingCharacters(completion, { position, currentLineSuffix })
+    if (completionItem.insertText.length === 0) {
+        return completionItem
+    }
+
+    const adjusted = adjustRangeToOverwriteOverlappingCharacters(completionItem, { position, currentLineSuffix })
     const parsed: InlineCompletionItemWithAnalytics & ParsedCompletion = parseCompletion({
         completion: adjusted,
         document,

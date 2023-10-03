@@ -27,8 +27,11 @@ function initializeVscodeExtension(): void {
         environmentVariableCollection: {} as any,
         extension: {} as any,
         extensionMode: {} as any,
-        extensionPath: {} as any,
-        extensionUri: {} as any,
+        // Placeholder string values for extension path/uri. These are only used
+        // to resolve paths to icon in the UI. They need to have compatible
+        // types but don't have to point to a meaningful path/URI.
+        extensionPath: '__extensionPath_should_never_be_read_from',
+        extensionUri: vscode.Uri.from({ scheme: 'file', path: '__extensionUri__should_never_be_read_from' }),
         globalState: {
             keys: () => [],
             get: () => undefined,
@@ -77,8 +80,8 @@ export class Agent extends MessageHandler {
             )
             initializeVscodeExtension()
             this.workspace.workspaceRootUri = client.workspaceRootUri
-                ? vscode_shim.Uri.parse(client.workspaceRootUri)
-                : vscode_shim.Uri.from({ scheme: 'file', path: client.workspaceRootPath })
+                ? vscode.Uri.parse(client.workspaceRootUri)
+                : vscode.Uri.from({ scheme: 'file', path: client.workspaceRootPath })
 
             if (client.extensionConfiguration) {
                 this.setClient(client.extensionConfiguration)
@@ -194,10 +197,16 @@ export class Agent extends MessageHandler {
             const textDocument = new AgentTextDocument(document)
 
             try {
+                if (params.triggerKind === 'Invoke') {
+                    await provider.manuallyTriggerCompletion()
+                }
                 const result = await provider.provideInlineCompletionItems(
                     textDocument,
                     new vscode.Position(params.position.line, params.position.character),
-                    { triggerKind: vscode.InlineCompletionTriggerKind.Automatic, selectedCompletionInfo: undefined },
+                    {
+                        triggerKind: vscode.InlineCompletionTriggerKind[params.triggerKind || 'Automatic'],
+                        selectedCompletionInfo: undefined,
+                    },
                     token
                 )
                 const items: AutocompleteItem[] =
@@ -243,6 +252,15 @@ export class Agent extends MessageHandler {
             const result = await client?.graphqlClient.getRepoIdIfEmbeddingExists(repoName)
             if (result instanceof Error) {
                 console.error('getRepoIdIfEmbeddingExists', result)
+            }
+            return typeof result === 'string' ? result : null
+        })
+
+        this.registerRequest('graphql/getRepoId', async ({ repoName }) => {
+            const client = await this.client
+            const result = await client?.graphqlClient.getRepoId(repoName)
+            if (result instanceof Error) {
+                console.error('getRepoId', result)
             }
             return typeof result === 'string' ? result : null
         })

@@ -1,5 +1,6 @@
 import * as anthropic from '@anthropic-ai/sdk'
 
+import { tokensToChars } from '@sourcegraph/cody-shared/src/prompt/constants'
 import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
 import {
     CompletionParameters,
@@ -22,34 +23,34 @@ import {
 import { Completion, ContextSnippet } from '../types'
 import { forkSignal, messagesToText } from '../utils'
 
-import { CompletionProviderTracer, Provider, ProviderConfig, ProviderOptions } from './provider'
+import {
+    CompletionProviderTracer,
+    Provider,
+    ProviderConfig,
+    ProviderOptions,
+    standardContextSizeHints,
+} from './provider'
 
-const CHARS_PER_TOKEN = 4
 export const MULTI_LINE_STOP_SEQUENCES = [anthropic.HUMAN_PROMPT, CLOSING_CODE_TAG]
 export const SINGLE_LINE_STOP_SEQUENCES = [anthropic.HUMAN_PROMPT, CLOSING_CODE_TAG, MULTILINE_STOP_SEQUENCE]
 
-function tokensToChars(tokens: number): number {
-    return tokens * CHARS_PER_TOKEN
-}
-
 interface AnthropicOptions {
-    contextWindowTokens: number
+    maxContextTokens?: number
     client: Pick<CodeCompletionsClient, 'complete'>
     mode?: 'infill'
 }
 
+const MAX_RESPONSE_TOKENS = 256
+
 export class AnthropicProvider extends Provider {
     private promptChars: number
-    private responseTokens: number
     private client: Pick<CodeCompletionsClient, 'complete'>
 
-    constructor(options: ProviderOptions, anthropicOptions: AnthropicOptions) {
+    constructor(options: ProviderOptions, { maxContextTokens, client }: Required<AnthropicOptions>) {
         super(options)
-        this.promptChars =
-            tokensToChars(anthropicOptions.contextWindowTokens) -
-            Math.floor(tokensToChars(anthropicOptions.contextWindowTokens) * options.responsePercentage)
-        this.responseTokens = Math.floor(anthropicOptions.contextWindowTokens * options.responsePercentage)
-        this.client = anthropicOptions.client
+        this.promptChars = tokensToChars(maxContextTokens - MAX_RESPONSE_TOKENS)
+
+        this.client = client
     }
 
     public emptyPromptLength(): number {
@@ -147,13 +148,13 @@ export class AnthropicProvider extends Provider {
             ? {
                   temperature: 0.5,
                   messages: prompt,
-                  maxTokensToSample: this.responseTokens,
+                  maxTokensToSample: MAX_RESPONSE_TOKENS,
                   stopSequences: MULTI_LINE_STOP_SEQUENCES,
               }
             : {
                   temperature: 0.5,
                   messages: prompt,
-                  maxTokensToSample: Math.min(50, this.responseTokens),
+                  maxTokensToSample: Math.min(50, MAX_RESPONSE_TOKENS),
                   stopSequences: SINGLE_LINE_STOP_SEQUENCES,
               }
         tracer?.params(args)
@@ -236,12 +237,16 @@ export class AnthropicProvider extends Provider {
     }
 }
 
-export function createProviderConfig(anthropicOptions: AnthropicOptions): ProviderConfig {
+export function createProviderConfig({
+    maxContextTokens = 2048,
+    mode = 'infill',
+    ...otherOptions
+}: AnthropicOptions): ProviderConfig {
     return {
         create(options: ProviderOptions) {
-            return new AnthropicProvider(options, anthropicOptions)
+            return new AnthropicProvider(options, { maxContextTokens, mode, ...otherOptions })
         },
-        maximumContextCharacters: tokensToChars(anthropicOptions.contextWindowTokens),
+        contextSizeHints: standardContextSizeHints(maxContextTokens),
         enableExtendedMultilineTriggers: true,
         identifier: 'anthropic',
         model: 'claude-instant-infill',

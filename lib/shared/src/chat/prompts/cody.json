@@ -2,7 +2,7 @@
   "commands": {
     "doc": {
       "description": "Generate code documentation",
-      "prompt": "Generate a comment documenting the parameters and functionality for the selected code. Only generate the documentation for the selected code, do not generate the code. Use the same documentation style in the file of the selected code to generate the comments. Pay attention to the file path of the selected code to make sure the comments are generated for the correct language. For example, use the JavaDoc documentation style to generate comments for .java files, or Python docstring using Python multi-line string for .py files. Do not include any other code or comments besides the docstring.",
+      "prompt": "Generate a docstring for the selected code that follows the docstring or comment style used in the share contex. Pay attention to the file extension of the file path to determine the programming language. If there is an existing docstring style in the shared context, match that format. For example, use multiline string docstrings for Python (.py) or JavaDoc style for Java (.java). If there is no existing docstring style in the file, use best practice docstring formats. For Python, use a multiline string with parameters, return values and descriptions. For Java, use JavaDoc style with @params, @returns etc. Only generate the docstring, not any other code or comments. The docstring should document the parameters and functionality of the selected code block in a style consistent with the rest of the file or best practices if no context shared. Response and enclose ONLY the docstring without any existing code.",
       "context": {
         "currentDir": true,
         "selection": true

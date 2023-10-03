@@ -116,15 +116,13 @@ const configuration: vscode.WorkspaceConfiguration = {
             case 'cody.autocomplete.enabled':
                 return true
             case 'cody.autocomplete.advanced.provider':
-                return connectionConfig?.autocompleteAdvancedProvider ?? 'anthropic'
+                return connectionConfig?.autocompleteAdvancedProvider ?? null
             case 'cody.autocomplete.advanced.serverEndpoint':
                 return connectionConfig?.autocompleteAdvancedServerEndpoint ?? null
             case 'cody.autocomplete.advanced.model':
                 return connectionConfig?.autocompleteAdvancedModel ?? null
             case 'cody.autocomplete.advanced.accessToken':
                 return connectionConfig?.autocompleteAdvancedAccessToken ?? null
-            case 'cody.autocomplete.advanced.embeddings':
-                return connectionConfig?.autocompleteAdvancedEmbeddings ?? true
             case 'cody.advanced.agent.running':
                 return true
             case 'cody.debug.enable':
@@ -154,7 +152,7 @@ export const onDidRenameFiles = new EventEmitter<vscode.FileRenameEvent>()
 export const onDidDeleteFiles = new EventEmitter<vscode.FileDeleteEvent>()
 
 export interface WorkspaceDocuments {
-    workspaceRootUri?: Uri
+    workspaceRootUri?: vscode.Uri
     openTextDocument: (filePath: string) => Promise<vscode.TextDocument>
 }
 let workspaceDocuments: WorkspaceDocuments | undefined

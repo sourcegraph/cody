@@ -6,15 +6,20 @@ import { EventLogger, ExtensionDetails } from '@sourcegraph/cody-shared/src/tele
 
 import { version as packageVersion } from '../../package.json'
 import { logDebug } from '../log'
+import { getOSArch } from '../os'
 
 import { localStorage } from './LocalStorageProvider'
 
 export let eventLogger: EventLogger | null = null
 let globalAnonymousUserID: string
 
+const { platform, arch } = getOSArch()
+
 export const extensionDetails: ExtensionDetails = {
     ide: 'VSCode',
     ideExtensionType: 'Cody',
+    platform: platform ?? 'browser',
+    arch,
     // Prefer the runtime package json over the version that is inlined during build times. This
     // way we will be able to include pre-release builds that are published with a different version
     // identifier.

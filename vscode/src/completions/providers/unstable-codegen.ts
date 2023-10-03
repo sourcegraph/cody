@@ -4,9 +4,11 @@ import { fetch } from '../../fetch'
 import { logger } from '../../log'
 import { Completion, ContextSnippet } from '../types'
 
-import { Provider, ProviderConfig, ProviderOptions } from './provider'
+import { Provider, ProviderConfig, ProviderOptions, standardContextSizeHints } from './provider'
 
 const PROVIDER_IDENTIFIER = 'codegen'
+const MAX_CONTEXT_TOKENS = 500
+const MAX_RESPONSE_TOKENS = 128
 
 export class UnstableCodeGenProvider extends Provider {
     constructor(
@@ -27,7 +29,7 @@ export class UnstableCodeGenProvider extends Provider {
             suffix: suffixAfterFirstNewline,
             top_p: 0.95,
             temperature: 0.2,
-            max_tokens: this.options.multiline ? 128 : 40,
+            max_tokens: this.options.multiline ? MAX_RESPONSE_TOKENS : 40,
             // The backend expects an even number of requests since it will
             // divide it into two different batches.
             batch_size: makeEven(4),
@@ -138,12 +140,11 @@ function prepareContext(snippets: ContextSnippet[], fileName: string): Context {
 }
 
 export function createProviderConfig(serverEndpoint: string): ProviderConfig {
-    const contextWindowChars = 8_000 // ~ 2k token limit
     return {
         create(options: ProviderOptions) {
             return new UnstableCodeGenProvider(options, serverEndpoint)
         },
-        maximumContextCharacters: contextWindowChars,
+        contextSizeHints: standardContextSizeHints(MAX_CONTEXT_TOKENS),
         enableExtendedMultilineTriggers: false,
         identifier: PROVIDER_IDENTIFIER,
         model: 'codegen',

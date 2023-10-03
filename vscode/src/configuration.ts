@@ -51,6 +51,7 @@ export function getConfiguration(config: ConfigGetter = vscode.workspace.getConf
         autocomplete: config.get(CONFIG_KEY.autocompleteEnabled, true),
         experimentalChatPredictions: config.get(CONFIG_KEY.experimentalChatPredictions, isTesting),
         inlineChat: config.get(CONFIG_KEY.inlineChatEnabled, true),
+        codeActions: config.get(CONFIG_KEY.codeActionsEnabled, true),
         chatPreInstruction: config.get(CONFIG_KEY.chatPreInstruction),
         experimentalGuardrails: config.get(CONFIG_KEY.experimentalGuardrails, isTesting),
         experimentalNonStop: config.get(CONFIG_KEY.experimentalNonStop, isTesting),
@@ -58,18 +59,15 @@ export function getConfiguration(config: ConfigGetter = vscode.workspace.getConf
         experimentalCommandLenses: config.get(CONFIG_KEY.experimentalCommandLenses, false),
         experimentalEditorTitleCommandIcon: config.get(CONFIG_KEY.experimentalEditorTitleCommandIcon, false),
         autocompleteAdvancedProvider: config.get(CONFIG_KEY.autocompleteAdvancedProvider, null),
-        experimentalSymfPath: config.get<string>(CONFIG_KEY.experimentalSymfPath, 'symf'),
-        experimentalSymfAnthropicKey: config.get<string>(CONFIG_KEY.experimentalSymfAnthropicKey, ''),
         autocompleteAdvancedServerEndpoint: config.get<string | null>(
             CONFIG_KEY.autocompleteAdvancedServerEndpoint,
             null
         ),
         autocompleteAdvancedModel: config.get<string | null>(CONFIG_KEY.autocompleteAdvancedModel, null),
         autocompleteAdvancedAccessToken: config.get<string | null>(CONFIG_KEY.autocompleteAdvancedAccessToken, null),
-        autocompleteAdvancedEmbeddings: config.get(CONFIG_KEY.autocompleteAdvancedEmbeddings, true),
-        autocompleteExperimentalCompleteSuggestWidgetSelection: config.get(
-            CONFIG_KEY.autocompleteExperimentalCompleteSuggestWidgetSelection,
-            false
+        autocompleteCompleteSuggestWidgetSelection: config.get(
+            CONFIG_KEY.autocompleteCompleteSuggestWidgetSelection,
+            true
         ),
         autocompleteExperimentalSyntacticPostProcessing: config.get(
             CONFIG_KEY.autocompleteExperimentalSyntacticPostProcessing,

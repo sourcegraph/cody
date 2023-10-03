@@ -2,7 +2,9 @@ import * as vscode from 'vscode'
 
 import { CodyPrompt } from '@sourcegraph/cody-shared'
 
-import { getCursorFoldingRange } from '../editor/utils'
+import { getSmartSelection } from '../editor/utils'
+import { logDebug } from '../log'
+import { telemetryService } from '../services/telemetry'
 
 /**
  * CommandRunner class implements disposable interface.
@@ -20,14 +22,33 @@ export class CommandRunner implements vscode.Disposable {
     private editor: vscode.TextEditor | undefined = undefined
     private contextOutput: string | undefined = undefined
     private disposables: vscode.Disposable[] = []
+    private kind: string
 
     constructor(
         private command: CodyPrompt,
         public instruction?: string,
         private isFixupRequest?: boolean
     ) {
+        // use commandKey to identify default command in telemetry
+        // all user and workspace command type should be logged under 'custom'
+        const commandKey = command.slashCommand
+        this.kind = command.type === 'default' ? commandKey.replace('/', '') : 'custom'
+
+        // Log commands usage
+        telemetryService.log(`CodyVSCodeExtension:command:${this.kind}:executed`, {
+            mode: command.mode || 'ask',
+            useCodebaseContex: !!command.context?.codebase,
+            useShellCommand: !!command.context?.command,
+        })
+
+        logDebug('CommandRunner:init', this.kind)
+
+        // Commands only work in active editor / workspace unless context specifies otherwise
         this.editor = vscode.window.activeTextEditor || undefined
-        if (!this.editor) {
+        if (!this.editor || command.context?.none) {
+            const errorMsg = 'Failed to create command: No active text editor found.'
+            logDebug('CommandRunner:int:fail', errorMsg)
+            void vscode.window.showErrorMessage(errorMsg)
             return
         }
 
@@ -71,6 +92,10 @@ export class CommandRunner implements vscode.Disposable {
         if (context) {
             context.output = this.contextOutput
             this.command.context = context
+
+            logDebug('CommandRunner:runShell:output', 'found', {
+                verbose: { command: this.command.context?.command },
+            })
         }
     }
 
@@ -79,14 +104,24 @@ export class CommandRunner implements vscode.Disposable {
      * Creates range and instruction, calls fixup command.
      */
     private async handleFixupRequest(insertMode = false): Promise<void> {
+        logDebug('CommandRunner:handleFixupRequest', 'fixup request detected')
+
         let selection = this.editor?.selection
         const doc = this.editor?.document
-        if (!selection || !doc) {
+        if (!this.editor || !selection || !doc) {
             return
         }
         // Get folding range if no selection is found
+        // or use current line range if no folding range is found
         if (selection?.start.isEqual(selection.end)) {
-            selection = await getCursorFoldingRange(doc.uri, selection.start.line)
+            const curLine = selection.start.line
+            const curLineRange = doc.lineAt(curLine).range
+            selection =
+                (await getSmartSelection(doc.uri, curLine)) ||
+                new vscode.Selection(curLineRange.start, curLineRange.end)
+            if (selection?.isEmpty) {
+                return
+            }
         }
 
         // Get text from selection range
@@ -95,15 +130,20 @@ export class CommandRunner implements vscode.Disposable {
             return
         }
 
-        const range = this.command.slashCommand === '/doc' ? getDocCommandRange(doc, selection) : selection
+        const range = this.kind === 'doc' ? getDocCommandRange(this.editor, selection, doc.languageId) : selection
         const instruction = insertMode ? addSelectionToPrompt(this.command.prompt, code) : this.command.prompt
-        await vscode.commands.executeCommand('cody.fixup.new', {
-            range,
-            instruction,
-            document: doc,
-            auto: true,
-            insertMode,
-        })
+        const source = this.kind
+        await vscode.commands.executeCommand(
+            'cody.command.edit-code',
+            {
+                range,
+                instruction,
+                document: doc,
+                auto: true,
+                insertMode,
+            },
+            source
+        )
     }
 
     /**
@@ -119,6 +159,8 @@ export class CommandRunner implements vscode.Disposable {
      * This executes the inline request using the current selection range in the editor.
      */
     private async handleInlineRequest(): Promise<void> {
+        logDebug('CommandRunner:handleFixupRequest', 'inline chat request detected')
+
         let range = this.editor?.selection
         const doc = this.editor?.document
         if (!range || !doc) {
@@ -126,7 +168,7 @@ export class CommandRunner implements vscode.Disposable {
         }
         // Get folding range if no selection is found
         if (range?.start.isEqual(range.end)) {
-            range = await getCursorFoldingRange(doc.uri, range.start.line)
+            range = await getSmartSelection(doc.uri, range.start.line)
         }
 
         const instruction = this.command.prompt
@@ -144,8 +186,15 @@ export class CommandRunner implements vscode.Disposable {
     }
 }
 
-function addSelectionToPrompt(prompt: string, code: string): string {
-    return prompt + '\nHere is the code: \n<Code>' + code + '</Code>'
+/**
+ * Adds the selection range to the prompt string.
+ *
+ * @param prompt - The original prompt string
+ * @param code - The code snippet to include in the prompt
+ * @returns The updated prompt string with the code snippet added
+ */
+export function addSelectionToPrompt(prompt: string, code: string): string {
+    return prompt + '\nHere is the code: \n<code>' + code + '</code>'
 }
 
 /**
@@ -158,8 +207,23 @@ function addSelectionToPrompt(prompt: string, code: string): string {
  *
  * For other languages, returns the original selection range unmodified.
  */
-function getDocCommandRange(doc: vscode.TextDocument, selection: vscode.Selection): vscode.Selection {
-    const startLine = doc.languageId === 'python' ? selection.start.line + 1 : selection.start.line
+function getDocCommandRange(
+    editor: vscode.TextEditor,
+    selection: vscode.Selection,
+    languageId?: string
+): vscode.Selection {
+    const startLine = languageId === 'python' ? selection.start.line + 1 : selection.start.line
     const pos = new vscode.Position(startLine, 0)
+
+    // move the current selection to the defined selection in the text editor document
+    if (editor) {
+        const visibleRange = editor.visibleRanges
+        // reveal the range of the selection minus 5 lines if visibleRange doesn't contain the selection
+        if (!visibleRange.some(range => range.contains(selection))) {
+            // reveal the range of the selection minus 5 lines
+            editor?.revealRange(selection, vscode.TextEditorRevealType.InCenter)
+        }
+    }
+
     return new vscode.Selection(pos, pos)
 }

@@ -29,7 +29,7 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                     ...this.config.customHeaders,
                 },
                 // So we can send requests to the Sourcegraph local development instance, which has an incompatible cert.
-                rejectUnauthorized: !this.config.debugEnable,
+                rejectUnauthorized: process.env.NODE_TLS_REJECT_UNAUTHORIZED !== '0' && !this.config.debugEnable,
             },
             (res: http.IncomingMessage) => {
                 if (res.statusCode === undefined) {

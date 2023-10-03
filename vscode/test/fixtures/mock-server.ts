@@ -21,11 +21,13 @@ export const VALID_TOKEN = 'abcdefgh1234'
 
 const responses = {
     chat: 'hello from the assistant',
-    fixup: '<selection><title>Goodbye Cody</title></selection>',
+    fixup: '<fixup><title>Goodbye Cody</title></fixup>',
+    firstCode: { completion: 'myFirstCompletion', stopReason: 'stop_sequence' },
+    code: { completion: 'myNotFirstCompletion', stopReason: 'stop_sequence' },
 }
 
 const FIXUP_PROMPT_TAG = '<selectedCode>'
-const NON_STOP_FIXUP_PROMPT_TAG = '<selection>'
+const NON_STOP_FIXUP_PROMPT_TAG = '<fixup>'
 
 const pubSubClient = new PubSub({
     projectId: 'sourcegraph-telligent-testing',
@@ -47,6 +49,7 @@ export async function run<T>(around: () => Promise<T>): Promise<T> {
     // endpoint which will accept the data that you want to send in that you will add your pubsub code
     app.post('/.api/testLogging', (req, res) => {
         void logTestingData(req.body)
+        storeLoggedEvents(req.body)
         res.status(200)
     })
 
@@ -63,6 +66,13 @@ export async function run<T>(around: () => Promise<T>): Promise<T> {
                 ? responses.fixup
                 : responses.chat
         res.send(`event: completion\ndata: {"completion": ${JSON.stringify(response)}}\n\nevent: done\ndata: {}\n\n`)
+    })
+
+    let isFirstCompletion = true
+    app.post('/.api/completions/code', (req, res) => {
+        const response = isFirstCompletion ? responses.firstCode : responses.code
+        isFirstCompletion = false
+        res.send(JSON.stringify(response))
     })
 
     app.post('/.api/graphql', (req, res) => {
@@ -121,7 +131,7 @@ export async function logTestingData(data: string): Promise<void> {
     const messageID = await topicPublisher.publishMessage({ data: dataBuffer }).catch(error => {
         console.error('Error publishing message:', error)
     })
-    console.log('Message published. ID:', messageID)
+    console.log('Message published. ID:', messageID, 'TestRunId:', currentTestRunID)
 }
 
 let currentTestName: string
@@ -132,4 +142,30 @@ export function sendTestInfo(testName: string, testID: string, testRunID: string
     currentTestName = testName || ''
     currentTestID = testID || ''
     currentTestRunID = testRunID || ''
+}
+
+export let loggedEvents: string[] = []
+
+export function resetLoggedEvents(): void {
+    loggedEvents = []
+}
+export function storeLoggedEvents(event: string): void {
+    interface ParsedEvent {
+        event: string
+    }
+    const parsedEvent = JSON.parse(JSON.stringify(event)) as ParsedEvent
+    const name = parsedEvent.event
+    if (
+        ![
+            'CodyInstalled',
+            'CodyVSCodeExtension:Auth:failed',
+            'CodyVSCodeExtension:auth:clickOtherSignInOptions',
+            'CodyVSCodeExtension:login:clicked',
+            'CodyVSCodeExtension:auth:selectSigninMenu',
+            'CodyVSCodeExtension:auth:fromToken',
+            'CodyVSCodeExtension:Auth:connected',
+        ].includes(name)
+    ) {
+        loggedEvents.push(name)
+    }
 }

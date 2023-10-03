@@ -1,4 +1,4 @@
-import * as defaultPrompts from './default-prompts.json'
+import * as defaultPrompts from './cody.json'
 import { toSlashCommand } from './utils'
 
 // A list of default cody commands
