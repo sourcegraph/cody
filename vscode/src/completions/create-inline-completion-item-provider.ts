@@ -118,23 +118,18 @@ export async function getInlineCompletionItemProviderFilters(
     autocompleteLanguages: Record<string, boolean>
 ): Promise<vscode.DocumentFilter[]> {
     const { '*': isEnabledForAll, ...perLanguageConfig } = autocompleteLanguages
+    const languageIds = await vscode.languages.getLanguages()
 
-    // Enable for every known langauge ID if it's not explicitly disabled in `perLanguageConfig`.
-    if (isEnabledForAll) {
-        const languageIds = await vscode.languages.getLanguages()
+    return languageIds.flatMap(language => {
+        const isEnabledForSpecificLanguage = perLanguageConfig[language]
 
-        return languageIds.flatMap(language => {
-            if (perLanguageConfig[language] === undefined || perLanguageConfig[language] === true) {
-                return [{ language, scheme: 'file' }]
-            }
+        // If enabled for all and not explicitly disabled for this language
+        if (isEnabledForAll && isEnabledForSpecificLanguage !== false) {
+            return [{ language, scheme: 'file' }]
+        }
 
-            return []
-        })
-    }
-
-    // Enable only for explicitly enabled languages in `perLanguageConfig`.
-    return Object.entries(perLanguageConfig).flatMap(([language, isEnabled]) => {
-        if (isEnabled) {
+        // If not enabled for all but explicitly enabled for this language
+        if (!isEnabledForAll && isEnabledForSpecificLanguage === true) {
             return [{ language, scheme: 'file' }]
         }
 
