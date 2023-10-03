@@ -515,6 +515,7 @@ const workspaceFs: Partial<vscode_types.FileSystem> = {
 }
 
 const languages: Partial<typeof vscode_types.languages> = {
+    // Copied from the `console.log(vscode.languages.getLanguages())` output.
     getLanguages() {
         return Promise.resolve([
             'plaintext',
