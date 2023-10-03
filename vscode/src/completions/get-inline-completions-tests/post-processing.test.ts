@@ -1,6 +1,7 @@
 import dedent from 'dedent'
 import { describe, expect, it } from 'vitest'
 
+import { range } from '../../testutils/textDocument'
 import { InlineCompletionsResultSource } from '../get-inline-completions'
 import { completion } from '../test-helpers'
 
@@ -114,5 +115,22 @@ describe('[getInlineCompletions] post-processing', () => {
                 )
             )
         ).toEqual([])
+    })
+
+    it('removes appends the injected prefix to the completion response since this is not sent to the LLM', async () => {
+        expect(
+            await getInlineCompletionsInsertText(
+                params(
+                    dedent`
+                        console.l█
+                    `,
+                    [completion`('hello world')`],
+                    {
+                        takeSuggestWidgetSelectionIntoAccount: true,
+                        selectedCompletionInfo: { text: 'log', range: range(0, 8, 0, 9) },
+                    }
+                )
+            )
+        ).toEqual(["og('hello world')"])
     })
 })

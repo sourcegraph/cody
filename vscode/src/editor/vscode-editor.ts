@@ -17,7 +17,7 @@ import { FixupController } from '../non-stop/FixupController'
 import { InlineController } from '../services/InlineController'
 
 import { EditorCodeLenses } from './EditorCodeLenses'
-import { getCursorFoldingRange } from './utils'
+import { getSmartSelection } from './utils'
 
 export class VSCodeEditor implements Editor<InlineController, FixupController, CommandsController> {
     constructor(
@@ -149,7 +149,7 @@ export class VSCodeEditor implements Editor<InlineController, FixupController, C
 
         // Get selection for current folding range of cursor
         const activeCursorPosition = selection.start.line
-        const foldingRange = await getCursorFoldingRange(activeEditor.document.uri, activeCursorPosition)
+        const foldingRange = await getSmartSelection(activeEditor.document.uri, activeCursorPosition)
         if (foldingRange) {
             return this.createActiveTextEditorSelection(activeEditor, foldingRange)
         }

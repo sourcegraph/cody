@@ -125,7 +125,7 @@ export class Transcript {
         this.getLastInteraction()?.setAssistantMessage({
             speaker: 'assistant',
             text,
-            displayText: displayText ?? text,
+            displayText,
         })
     }
 

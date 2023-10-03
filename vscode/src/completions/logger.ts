@@ -88,6 +88,7 @@ export interface ItemPostProcessingInfo {
 interface CompletionItemInfo extends ItemPostProcessingInfo {
     lineCount: number
     charCount: number
+    stopReason?: string
 }
 
 const READ_TIMEOUT_MS = 750
@@ -442,6 +443,7 @@ function completionItemToItemInfo(item: InlineCompletionItemWithAnalytics): Comp
     return {
         lineCount,
         charCount,
+        stopReason: item.stopReason,
         parseErrorCount: item.parseErrorCount,
         lineTruncatedCount: item.lineTruncatedCount,
         truncatedWith: item.truncatedWith,

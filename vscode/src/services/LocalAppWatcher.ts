@@ -4,6 +4,7 @@ import { LOCAL_APP_URL } from '@sourcegraph/cody-shared/src/sourcegraph-api/envi
 
 import { isOsSupportedByApp } from '../chat/protocol'
 
+import { expandHomeDir, pathExists } from './LocalAppDetector'
 import { LOCAL_APP_LOCATIONS } from './LocalAppFsPaths'
 
 /**
@@ -12,9 +13,11 @@ import { LOCAL_APP_LOCATIONS } from './LocalAppFsPaths'
  * different:
  *
  * - LocalAppDetector can pick up a token from app, and is hooked into
- *   authorization. LocalAppWatcher does not do auth.
+ *   authorization. LocalAppWatcher can watch the token file, but relies on
+ *   LocalAppDetector to extract and store tokens.
  * - LocalAppDetector has a ratchet from installed, to running, and does not go
- *   backwards. LocalAppWatcher will monitor when app stops running.
+ *   backwards. LocalAppWatcher will monitor when app stops running and can
+ *   transition from "running" back to just "installed."
  * - LocalAppDetector gives up monitoring app installs if the user is logged in.
  *   LocalAppWatcher continues to monitor app.
  *
@@ -27,6 +30,7 @@ export class LocalAppWatcher implements vscode.Disposable {
     private disposed = false
     private disposables: vscode.Disposable[] = []
     private changeEventEmitter = new vscode.EventEmitter<LocalAppWatcher>()
+    private tokenFileChangeEventEmitter = new vscode.EventEmitter<vscode.Uri>()
     private _isInstalled = false
     private _isRunning = false
 
@@ -48,7 +52,11 @@ export class LocalAppWatcher implements vscode.Disposable {
         return this.changeEventEmitter.event
     }
 
-    public async init(): Promise<void> {
+    public get onTokenFileChange(): vscode.Event<vscode.Uri> {
+        return this.tokenFileChangeEventEmitter.event
+    }
+
+    private async init(): Promise<void> {
         // Start with init state
         const homeDir = process.env.HOME
         // if conditions are not met, this will be a noop
@@ -58,25 +66,52 @@ export class LocalAppWatcher implements vscode.Disposable {
         // Watch the installed app paths
         // TODO: These paths include configuration files which aren't deleted
         // when you remove app (for example, by dragging it to the trash.)
+        const pollPromise = this.pollHttp()
         for (const marker of LOCAL_APP_LOCATIONS[process.platform]) {
-            const dirPath = expandHomeDir(marker.dir)
+            const dirPath = expandHomeDir(marker.dir, process.env.HOME)
             const dirUri = vscode.Uri.file(dirPath)
+            const fileUri = dirUri.with({ path: dirUri.path + marker.file })
             const watchPattern = new vscode.RelativePattern(dirUri, marker.file)
             const watcher = vscode.workspace.createFileSystemWatcher(watchPattern)
-            this.disposables.push(watcher.onDidChange(() => this.patternChanged()))
+            const fireEvent = (): void => this.patternChanged(fileUri, !!marker.hasToken)
+            this.disposables.push(watcher.onDidCreate(fireEvent))
+            this.disposables.push(watcher.onDidChange(fireEvent))
+            this.disposables.push(watcher.onDidDelete(fireEvent))
             this.disposables.push(watcher)
+            fireEvent()
         }
-        await Promise.all([this.patternChanged(), this.pollHttp()])
+        await pollPromise
     }
 
-    private async patternChanged(): Promise<void> {
-        const installed = (
-            await Promise.all(
-                LOCAL_APP_LOCATIONS[process.platform].map(marker =>
-                    pathExists(vscode.Uri.file(expandHomeDir(marker.dir) + marker.file).fsPath)
-                )
-            )
-        ).some(id => id)
+    private patternChanged(file: vscode.Uri, fileMayHaveToken: boolean): void {
+        this.setNeedsToCheckFiles()
+        if (fileMayHaveToken) {
+            this.tokenFileChangeEventEmitter.fire(file)
+        }
+    }
+
+    private needsToCheckFiles = false
+
+    private setNeedsToCheckFiles(): void {
+        if (this.needsToCheckFiles) {
+            return
+        }
+        this.needsToCheckFiles = true
+        void this.checkFiles()
+    }
+
+    private async checkFiles(): Promise<void> {
+        this.needsToCheckFiles = false
+        let installed = false
+        for (const marker of LOCAL_APP_LOCATIONS[process.platform]) {
+            const dirPath = expandHomeDir(marker.dir, process.env.HOME)
+            const dirUri = vscode.Uri.file(dirPath)
+            const fileUri = dirUri.with({ path: dirUri.path + marker.file })
+            installed ||= await pathExists(fileUri)
+            if (installed) {
+                break
+            }
+        }
         if (installed !== this._isInstalled) {
             this._isInstalled = installed
             this.changeEventEmitter.fire(this)
@@ -110,21 +145,4 @@ export class LocalAppWatcher implements vscode.Disposable {
         }
         this.disposables = []
     }
-}
-
-// Utility functions
-async function pathExists(path: string): Promise<boolean> {
-    try {
-        await vscode.workspace.fs.stat(vscode.Uri.file(path))
-        return true
-    } catch {
-        return false
-    }
-}
-
-function expandHomeDir(path: string): string {
-    if (process.env.HOME && path.startsWith('~')) {
-        return path.replace('~', process.env.HOME)
-    }
-    return path
 }

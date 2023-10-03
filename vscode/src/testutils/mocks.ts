@@ -15,76 +15,16 @@ import type {
     Range as VSCodeRange,
 } from 'vscode'
 import type * as vscode_types from 'vscode'
-import { URI } from 'vscode-uri'
 
-export class Uri {
-    public static parse(value: string, strict?: boolean): Uri {
-        return Uri.from(URI.parse(value, strict).toJSON())
-    }
-    public static file(path: string): URI {
-        return Uri.from(URI.file(path).toJSON())
-    }
+// NOTE(olafurpg): We use a inlined copy of `vscode.Uri` instead of the
+// vscode-uri package because vscode-uri is not a drop-in replacement of
+// `vscode.Uri`. Specifically, `Uri.joinPath` is missing in vscode-uri, see
+// https://sourcegraph.com/npm/vscode-uri@v3.0.7/-/blob/lib/umd/uri.d.ts
+// Ideally, we should replace the inlined copy of `vscode.Uri` with vscode-uri
+// in the future when it becomes a drop-in replacement.
+import { Uri } from './vscode/uri'
 
-    public static joinPath(base: Uri, ...pathSegments: string[]): Uri {
-        return base.with({ path: [base.path, ...pathSegments].join('/') })
-    }
-
-    public static from(components: {
-        readonly scheme: string
-        readonly authority?: string
-        readonly path?: string
-        readonly query?: string
-        readonly fragment?: string
-    }): Uri {
-        const uri = URI.from(components)
-        return new Uri(uri.scheme, uri.authority, uri.path, uri.query, uri.fragment)
-    }
-
-    private uri: URI
-
-    private constructor(
-        public readonly scheme: string,
-        public readonly authority: string,
-        public readonly path: string,
-        public readonly query: string,
-        public readonly fragment: string
-    ) {
-        this.uri = URI.from({ scheme, authority, path, query, fragment })
-        this.fsPath = path // TODO
-    }
-
-    public readonly fsPath: string
-
-    public with(change: {
-        scheme?: string
-        authority?: string
-        path?: string
-        query?: string
-        fragment?: string
-    }): Uri {
-        return Uri.from({
-            scheme: change.scheme || this.scheme,
-            authority: change.authority || this.authority,
-            path: change.path || this.path,
-            query: change.query || this.query,
-            fragment: change.fragment || this.fragment,
-        })
-    }
-
-    public toString(skipEncoding?: boolean): string {
-        return this.uri.toString(skipEncoding)
-    }
-
-    public toJSON(): any {
-        return {
-            scheme: this.scheme,
-            authority: this.authority,
-            path: this.path,
-            query: this.query,
-            fragment: this.fragment,
-        }
-    }
-}
+export { Uri } from './vscode/uri'
 
 export class Disposable implements VSCodeDisposable {
     public static from(...disposableLikes: { dispose: () => any }[]): Disposable {
@@ -574,6 +514,109 @@ const workspaceFs: Partial<vscode_types.FileSystem> = {
     },
 }
 
+const languages: Partial<typeof vscode_types.languages> = {
+    // Copied from the `console.log(vscode.languages.getLanguages())` output.
+    getLanguages() {
+        return Promise.resolve([
+            'plaintext',
+            'code-text-binary',
+            'Log',
+            'log',
+            'scminput',
+            'bat',
+            'clojure',
+            'coffeescript',
+            'jsonc',
+            'json',
+            'c',
+            'cpp',
+            'cuda-cpp',
+            'csharp',
+            'css',
+            'dart',
+            'diff',
+            'dockerfile',
+            'ignore',
+            'fsharp',
+            'git-commit',
+            'git-rebase',
+            'go',
+            'groovy',
+            'handlebars',
+            'hlsl',
+            'html',
+            'ini',
+            'properties',
+            'java',
+            'javascriptreact',
+            'javascript',
+            'jsx-tags',
+            'jsonl',
+            'snippets',
+            'julia',
+            'juliamarkdown',
+            'tex',
+            'latex',
+            'bibtex',
+            'cpp_embedded_latex',
+            'markdown_latex_combined',
+            'less',
+            'lua',
+            'makefile',
+            'markdown',
+            'markdown-math',
+            'wat',
+            'objective-c',
+            'objective-cpp',
+            'perl',
+            'perl6',
+            'php',
+            'powershell',
+            'jade',
+            'python',
+            'r',
+            'razor',
+            'restructuredtext',
+            'ruby',
+            'rust',
+            'scss',
+            'search-result',
+            'shaderlab',
+            'shellscript',
+            'sql',
+            'swift',
+            'typescript',
+            'typescriptreact',
+            'vb',
+            'xml',
+            'xsl',
+            'dockercompose',
+            'yaml',
+            'tailwindcss',
+            'editorconfig',
+            'graphql',
+            'vue',
+            'go.mod',
+            'go.work',
+            'go.sum',
+            'gotmpl',
+            'govulncheck',
+            'kotlin',
+            'kotlinscript',
+            'lisp',
+            'toml',
+            'jinja',
+            'pip-requirements',
+            'raw',
+            'prisma',
+            'starlark',
+            'bazel',
+            'bazelrc',
+            'vimrc',
+        ])
+    },
+}
+
 export const vsCodeMocks = {
     Range,
     Position,
@@ -583,6 +626,7 @@ export const vsCodeMocks = {
     CancellationTokenSource,
     WorkspaceEdit,
     Uri,
+    languages,
     window: {
         showInformationMessage: () => undefined,
         showWarningMessage: () => undefined,
@@ -618,7 +662,7 @@ export const vsCodeMocks = {
         }),
         applyEdit: (edit: WorkspaceEdit) => true,
         save: () => true,
-        asRelativePath(path: string | URI) {
+        asRelativePath(path: string | Uri) {
             return path.toString()
         },
     },

@@ -448,7 +448,7 @@ const register = async (
             if (config.isRunningInsideAgent) {
                 throw new Error(
                     'The setting `config.autocomplete` evaluated to `false`. It must be true when running inside the agent. ' +
-                    'To fix this problem, make sure that the setting cody.autocomplete.enabled has the value true.'
+                        'To fix this problem, make sure that the setting cody.autocomplete.enabled has the value true.'
                 )
             }
             return
@@ -467,6 +467,7 @@ const register = async (
             contextProvider,
             featureFlagProvider,
             authProvider,
+            triggerNotice: notice => sidebarChatProvider.triggerNotice(notice),
         })
     }
     // Reload autocomplete if either the configuration changes or the auth status is updated

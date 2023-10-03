@@ -9,7 +9,7 @@ import * as vscode_shim from './vscode-shim'
 
 export class AgentWorkspaceDocuments implements vscode_shim.WorkspaceDocuments {
     private readonly documents: Map<string, TextDocument> = new Map()
-    public workspaceRootUri: vscode_shim.Uri | undefined
+    public workspaceRootUri: vscode.Uri | undefined
     public activeDocumentFilePath: string | null = null
     public loadedDocument(document: TextDocument): TextDocument {
         const fromCache = this.documents.get(document.filePath)

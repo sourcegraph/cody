@@ -18,12 +18,17 @@ describe('getConfiguration', () => {
             chatPreInstruction: undefined,
             useContext: 'embeddings',
             autocomplete: true,
+            autocompleteLanguages: {
+                '*': true,
+                scminput: false,
+            },
             experimentalCommandLenses: false,
             experimentalEditorTitleCommandIcon: false,
             experimentalChatPredictions: false,
             experimentalGuardrails: false,
             experimentalLocalSymbols: false,
             inlineChat: true,
+            codeActions: true,
             isRunningInsideAgent: false,
             experimentalNonStop: false,
             debugEnable: false,
@@ -34,7 +39,7 @@ describe('getConfiguration', () => {
             autocompleteAdvancedServerEndpoint: null,
             autocompleteAdvancedModel: null,
             autocompleteAdvancedAccessToken: null,
-            autocompleteExperimentalCompleteSuggestWidgetSelection: false,
+            autocompleteCompleteSuggestWidgetSelection: true,
             autocompleteExperimentalSyntacticPostProcessing: true,
             autocompleteExperimentalGraphContext: false,
         })
@@ -59,6 +64,8 @@ describe('getConfiguration', () => {
                         }
                     case 'cody.autocomplete.enabled':
                         return false
+                    case 'cody.autocomplete.languages':
+                        return { '*': true, scminput: false }
                     case 'cody.experimental.chatPredictions':
                         return true
                     case 'cody.experimental.commandLenses':
@@ -68,6 +75,8 @@ describe('getConfiguration', () => {
                     case 'cody.experimental.guardrails':
                         return true
                     case 'cody.inlineChat.enabled':
+                        return true
+                    case 'cody.codeActions.enabled':
                         return true
                     case 'cody.experimental.nonStop':
                         return true
@@ -95,7 +104,7 @@ describe('getConfiguration', () => {
                         return 'foobar'
                     case 'cody.autocomplete.advanced.embeddings':
                         return false
-                    case 'cody.autocomplete.experimental.completeSuggestWidgetSelection':
+                    case 'cody.autocomplete.completeSuggestWidgetSelection':
                         return false
                     case 'cody.autocomplete.experimental.syntacticPostProcessing':
                         return true
@@ -119,12 +128,17 @@ describe('getConfiguration', () => {
             },
             chatPreInstruction: 'My name is Jeff.',
             autocomplete: false,
+            autocompleteLanguages: {
+                '*': true,
+                scminput: false,
+            },
             experimentalChatPredictions: true,
             experimentalCommandLenses: true,
             experimentalEditorTitleCommandIcon: true,
             experimentalGuardrails: true,
             experimentalLocalSymbols: true,
             inlineChat: true,
+            codeActions: true,
             isRunningInsideAgent: false,
             experimentalNonStop: true,
             debugEnable: true,
@@ -135,7 +149,7 @@ describe('getConfiguration', () => {
             autocompleteAdvancedServerEndpoint: 'https://example.com/llm',
             autocompleteAdvancedModel: 'starcoder-32b',
             autocompleteAdvancedAccessToken: 'foobar',
-            autocompleteExperimentalCompleteSuggestWidgetSelection: false,
+            autocompleteCompleteSuggestWidgetSelection: false,
             autocompleteExperimentalSyntacticPostProcessing: true,
             autocompleteExperimentalGraphContext: true,
         })

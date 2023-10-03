@@ -2,3 +2,4 @@ out/
 dist/
 build/
 **/test-data/
+vscode/src/testutils/vscode/

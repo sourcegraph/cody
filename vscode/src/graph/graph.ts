@@ -18,11 +18,11 @@ const limiter = createLimiter(
     // issues but not too high so that all requests for a section are done concurrently and we have
     // no way to cancel queued requests.
     //
-    // Assuming an average size of 40 symbols per scope and the need to fetch up to four sources of
+    // Assuming an average size of 40 symbols per scope and the need to fetch up to eight sources of
     // language server APIs per section, this limit should be a good balance.
-    40,
-    // If any language server API takes more than 5 seconds to answer, we should cancel the request
-    5000
+    20,
+    // If any language server API takes more than 2 seconds to answer, we should cancel the request
+    2000
 )
 
 /**
