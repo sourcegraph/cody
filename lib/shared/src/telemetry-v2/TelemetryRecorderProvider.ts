@@ -1,5 +1,6 @@
 import {
     TelemetryRecorderProvider as BaseTelemetryRecorderProvider,
+    ConsoleTelemetryExporter,
     defaultEventRecordingOptions,
     NoOpTelemetryExporter,
     TelemetryEventInput,
@@ -53,6 +54,25 @@ export class NoOpTelemetryRecorderProvider extends BaseTelemetryRecorderProvider
 > {
     constructor() {
         super({ client: '' }, new NoOpTelemetryExporter(), [])
+    }
+}
+
+export class ConsoleTelemetryRecorderProvider extends BaseTelemetryRecorderProvider<
+    EventFeature,
+    EventAction,
+    MetadataKey,
+    BillingCategory,
+    BillingProduct
+> {
+    constructor(extensionDetails: ExtensionDetails, config: ConfigurationWithAccessToken) {
+        super(
+            {
+                client: `${extensionDetails.ide}.${extensionDetails.ideExtensionType}`,
+                clientVersion: extensionDetails.version,
+            },
+            new ConsoleTelemetryExporter(),
+            [new ConfigurationMetadataProcessor(config)]
+        )
     }
 }
 

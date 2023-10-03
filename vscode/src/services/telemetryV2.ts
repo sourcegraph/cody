@@ -1,5 +1,6 @@
 import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
 import {
+    ConsoleTelemetryRecorderProvider,
     NoOpTelemetryRecorderProvider,
     TelemetryRecorderProvider,
 } from '@sourcegraph/cody-shared/src/telemetry-v2/TelemetryRecorderProvider'
@@ -16,15 +17,27 @@ let telemetryRecorderProvider: TelemetryRecorderProvider | undefined
 export let telemetryRecorder =
     telemetryRecorderProvider?.getRecorder() || new NoOpTelemetryRecorderProvider().getRecorder()
 
+function updateGlobalInstances(provider: TelemetryRecorderProvider): void {
+    telemetryRecorderProvider?.complete()
+    telemetryRecorderProvider = provider
+    telemetryRecorder = provider.getRecorder()
+}
+
 export async function createOrUpdateTelemetryRecorderProvider(
     config: ConfigurationWithAccessToken,
     isExtensionModeDevOrTest: boolean
 ): Promise<void> {
-    if (config.telemetryLevel === 'off' || isExtensionModeDevOrTest) {
-        // check that CODY_TESTING is not true, because we want to log events when we are testing
-        if (process.env.CODY_TESTING !== 'true') {
-            return
-        }
+    if (config.telemetryLevel === 'off') {
+        updateGlobalInstances(new NoOpTelemetryRecorderProvider())
+        return
+    }
+
+    // In dev, log events to console.
+    //
+    // Check that CODY_TESTING is not true, because we want to log events when we are testing
+    if (isExtensionModeDevOrTest && process.env.CODY_TESTING !== 'true') {
+        updateGlobalInstances(new ConsoleTelemetryRecorderProvider(extensionDetails, config))
+        return
     }
 
     const { anonymousUserID, created } = await localStorage.anonymousUserID()
@@ -39,8 +52,6 @@ export async function createOrUpdateTelemetryRecorderProvider(
             telemetryRecorder.recordEvent('cody.savedLogin', 'executed')
         }
     } else {
-        // Stop the existing provider and create a new one entirely.
-        telemetryRecorderProvider.complete()
-        telemetryRecorderProvider = new TelemetryRecorderProvider(extensionDetails, config, anonymousUserID)
+        updateGlobalInstances(new TelemetryRecorderProvider(extensionDetails, config, anonymousUserID))
     }
 }
