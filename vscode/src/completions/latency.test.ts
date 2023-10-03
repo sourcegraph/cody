@@ -111,22 +111,22 @@ describe('getLatency', () => {
         const languageId = 'css'
 
         // start with default baseline latency with low performance and user latency added
-        expect(getLatency(provider, fileName, languageId)).toBe(1400)
+        expect(getLatency(provider, fileName, languageId)).toBe(1000)
         // reset to starting point on every accepted suggestion
         resetLatency()
-        expect(getLatency(provider, fileName, languageId)).toBe(1400)
+        expect(getLatency(provider, fileName, languageId)).toBe(1000)
         resetLatency()
-        expect(getLatency(provider, fileName, languageId)).toBe(1400)
-        expect(getLatency(provider, fileName, languageId)).toBe(1400)
+        expect(getLatency(provider, fileName, languageId)).toBe(1000)
+        expect(getLatency(provider, fileName, languageId)).toBe(1000)
         // Latency will not reset before 5 minutes
         vi.advanceTimersByTime(3 * 60 * 1000)
-        expect(getLatency(provider, fileName, languageId)).toBe(1400)
-        expect(getLatency(provider, fileName, languageId)).toBe(1400)
-        expect(getLatency(provider, fileName, languageId)).toBe(1400)
-        expect(getLatency(provider, fileName, languageId)).toBe(1600)
+        expect(getLatency(provider, fileName, languageId)).toBe(1000)
+        expect(getLatency(provider, fileName, languageId)).toBe(1000)
+        expect(getLatency(provider, fileName, languageId)).toBe(1000)
+        expect(getLatency(provider, fileName, languageId)).toBe(1200)
         // Latency will be reset after 5 minutes
         vi.advanceTimersByTime(5 * 60 * 1000)
-        expect(getLatency(provider, fileName, languageId)).toBe(1400)
+        expect(getLatency(provider, fileName, languageId)).toBe(1000)
     })
 
     it('returns increasing latency up to max after multiple rejections for supported language on non-anthropic provider', () => {

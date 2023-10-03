@@ -2,7 +2,7 @@ import { logDebug } from '../log'
 
 export const defaultLatency = {
     baseline: 400,
-    user: 200, // set to 0 on reset after accepting suggestion or after 5 mins
+    user: 200,
     lowPerformance: 1000,
     max: 2000,
 }
@@ -25,7 +25,7 @@ export function getLatency(provider: string, fsPath: string, languageId?: string
     let baseline = provider === 'anthropic' ? 0 : defaultLatency.baseline
     // set base latency based on provider and low performance languages
     if (!languageId || (languageId && lowPerformanceLanguageIds.has(languageId))) {
-        baseline += defaultLatency.lowPerformance
+        baseline = defaultLatency.lowPerformance
     }
 
     const timestamp = Date.now()
