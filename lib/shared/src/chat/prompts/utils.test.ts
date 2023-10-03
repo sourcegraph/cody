@@ -42,8 +42,8 @@ describe('extractTestType', () => {
 
 describe('isValidTestFileName', () => {
     it.each([
-        ['/path/to/testFile.java', true],
-        ['/path/to/testFile.js', true],
+        ['/path/to/testFile.java', false],
+        ['/path/to/testFile.js', false],
         ['/path/to/test_file.py', true],
         ['/path/to/test-file.js', false],
         ['/path/to/node_modules/file.js', false],
@@ -67,6 +67,9 @@ describe('isValidTestFileName', () => {
         ['example_test.cpp', true],
         ['example_test.js', true],
         ['test_example.rb', true],
+
+        // Should not cache false positives
+        ['contest.ts', false],
     ])('for filename %j it returns %j', (path, condition) => {
         expect(isValidTestFileName(path)).toBe(condition)
     })

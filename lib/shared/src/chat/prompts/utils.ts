@@ -217,17 +217,9 @@ export function isValidTestFileName(fsPath: string): boolean {
         return false
     }
 
-    const fileNameWithoutExt = basename(fsPath, extname(fsPath)).toLowerCase()
-    // Invalid test file name pattern
-    if (fileNameWithoutExt.startsWith('test-')) {
-        return false
-    }
+    const fileNameWithoutExt = basename(fsPath, extname(fsPath))
 
-    // Check if file name starts with 'test' or ends with 'test'
-    return (
-        fileNameWithoutExt.startsWith('test') ||
-        fileNameWithoutExt.endsWith('test') ||
-        fileNameWithoutExt.endsWith('tests') ||
-        fileNameWithoutExt.endsWith('spec')
-    )
+    const suffixTest = /([._-](test|spec))|Test|Spec$/
+
+    return fileNameWithoutExt.startsWith('test_') || suffixTest.test(fileNameWithoutExt)
 }
