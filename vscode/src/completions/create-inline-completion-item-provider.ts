@@ -1,6 +1,5 @@
 import * as vscode from 'vscode'
 
-import { isDefined } from '@sourcegraph/cody-shared'
 import { Configuration } from '@sourcegraph/cody-shared/src/configuration'
 import { FeatureFlag, FeatureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
 
@@ -124,25 +123,21 @@ export async function getInlineCompletionItemProviderFilters(
     if (isEnabledForAll) {
         const languageIds = await vscode.languages.getLanguages()
 
-        return languageIds
-            .map(language => {
-                if (perLanguageConfig[language] === undefined || perLanguageConfig[language] === true) {
-                    return { language, scheme: 'file' }
-                }
+        return languageIds.flatMap(language => {
+            if (perLanguageConfig[language] === undefined || perLanguageConfig[language] === true) {
+                return [{ language, scheme: 'file' }]
+            }
 
-                return null
-            })
-            .filter(isDefined)
+            return []
+        })
     }
 
     // Enable only for explicitly enabled languages in `perLanguageConfig`.
-    return Object.entries(perLanguageConfig)
-        .map(([language, isEnabled]) => {
-            if (isEnabled) {
-                return { language, scheme: 'file' }
-            }
+    return Object.entries(perLanguageConfig).flatMap(([language, isEnabled]) => {
+        if (isEnabled) {
+            return [{ language, scheme: 'file' }]
+        }
 
-            return null
-        })
-        .filter(isDefined)
+        return []
+    })
 }
