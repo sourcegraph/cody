@@ -49,6 +49,10 @@ export function getConfiguration(config: ConfigGetter = vscode.workspace.getConf
         debugFilter: debugRegex,
         telemetryLevel: config.get<'all' | 'off'>(CONFIG_KEY.telemetryLevel, 'all'),
         autocomplete: config.get(CONFIG_KEY.autocompleteEnabled, true),
+        autocompleteLanguages: config.get(CONFIG_KEY.autocompleteLanguages, {
+            '*': true,
+            scminput: false,
+        }),
         experimentalChatPredictions: config.get(CONFIG_KEY.experimentalChatPredictions, isTesting),
         inlineChat: config.get(CONFIG_KEY.inlineChatEnabled, true),
         codeActions: config.get(CONFIG_KEY.codeActionsEnabled, true),

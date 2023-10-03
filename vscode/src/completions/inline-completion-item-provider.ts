@@ -273,8 +273,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
                 docContext,
                 position,
                 result.items,
-                context,
-                takeSuggestWidgetSelectionIntoAccount
+                context
             )
 
             // A completion that won't be visible in VS Code will not be returned and not be logged.
@@ -404,20 +403,12 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
         docContext: DocumentContext,
         position: vscode.Position,
         items: InlineCompletionItemWithAnalytics[],
-        context: vscode.InlineCompletionContext,
-        takeSuggestWidgetSelectionIntoAccount: boolean = false
+        context: vscode.InlineCompletionContext
     ): vscode.InlineCompletionItem[] {
         return items.map(completion => {
             const currentLine = document.lineAt(position)
             const currentLinePrefix = document.getText(currentLine.range.with({ end: position }))
-            let insertText = completion.insertText
-
-            // Append any eventual inline completion context item to the prefix if
-            // completeSuggestWidgetSelection is enabled.
-            if (takeSuggestWidgetSelectionIntoAccount && context.selectedCompletionInfo) {
-                const { range, text } = context.selectedCompletionInfo
-                insertText = text.slice(position.character - range.start.character) + insertText
-            }
+            const insertText = completion.insertText
 
             // Return the completion from the start of the current line (instead of starting at the
             // given position). This avoids UI jitter in VS Code; when typing or deleting individual

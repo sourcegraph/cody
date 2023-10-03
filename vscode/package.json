@@ -623,6 +623,7 @@
         },
         {
           "command": "cody.inline.new",
+          "when": "cody.activated",
           "group": "ask"
         }
       ],
@@ -785,6 +786,15 @@
           "type": "boolean",
           "markdownDescription": "Enables inline code suggestions in your editor.",
           "default": true
+        },
+        "cody.autocomplete.languages": {
+          "order": 5,
+          "type": "object",
+          "markdownDescription": "Enable or disable inline code suggestions for specified [languages](https://code.visualstudio.com/docs/languages/identifiers).",
+          "default": {
+            "*": true,
+            "scminput": false
+          }
         },
         "cody.inlineChat.enabled": {
           "order": 6,

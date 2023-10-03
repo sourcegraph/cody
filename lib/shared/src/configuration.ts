@@ -13,6 +13,7 @@ export interface Configuration {
     customHeaders: Record<string, string>
     chatPreInstruction: string
     autocomplete: boolean
+    autocompleteLanguages: Record<string, boolean>
     inlineChat: boolean
     codeActions: boolean
     experimentalChatPredictions: boolean

@@ -18,6 +18,10 @@ describe('getConfiguration', () => {
             chatPreInstruction: undefined,
             useContext: 'embeddings',
             autocomplete: true,
+            autocompleteLanguages: {
+                '*': true,
+                scminput: false,
+            },
             experimentalCommandLenses: false,
             experimentalEditorTitleCommandIcon: false,
             experimentalChatPredictions: false,
@@ -60,6 +64,8 @@ describe('getConfiguration', () => {
                         }
                     case 'cody.autocomplete.enabled':
                         return false
+                    case 'cody.autocomplete.languages':
+                        return { '*': true, scminput: false }
                     case 'cody.experimental.chatPredictions':
                         return true
                     case 'cody.experimental.commandLenses':
@@ -122,6 +128,10 @@ describe('getConfiguration', () => {
             },
             chatPreInstruction: 'My name is Jeff.',
             autocomplete: false,
+            autocompleteLanguages: {
+                '*': true,
+                scminput: false,
+            },
             experimentalChatPredictions: true,
             experimentalCommandLenses: true,
             experimentalEditorTitleCommandIcon: true,

@@ -228,12 +228,8 @@ export class Transcript {
         return [...(await Promise.all(this.interactions.map(interaction => interaction.toChatPromise())))].flat()
     }
 
-    public async toJSON(scope?: TranscriptJSONScope, displayTextInteractionsOnly?: boolean): Promise<TranscriptJSON> {
-        const allInteractions = await Promise.all(this.interactions.map(interaction => interaction.toJSON()))
-        // remove all interactions that do not have displayText
-        const interactions = displayTextInteractionsOnly
-            ? allInteractions.filter(i => i.assistantMessage.displayText)
-            : allInteractions
+    public async toJSON(scope?: TranscriptJSONScope): Promise<TranscriptJSON> {
+        const interactions = await Promise.all(this.interactions.map(interaction => interaction.toJSON()))
 
         return {
             id: this.id,
