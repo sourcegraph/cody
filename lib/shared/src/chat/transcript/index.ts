@@ -130,9 +130,6 @@ export class Transcript {
     }
 
     public removeDisplayTextFromLastInteraction(): void {
-        if (!this.getLastInteraction()) {
-            return
-        }
         this.getLastInteraction()?.removeDisplayText()
     }
 
