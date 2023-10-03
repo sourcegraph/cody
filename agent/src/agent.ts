@@ -175,7 +175,7 @@ export class Agent extends MessageHandler {
                 })
             }
 
-            await this.logEvent(`recipe:${data.id}:executed`)
+            await this.recordEvent(`recipe:${data.id}`, 'executed')
             await client.executeRecipe(data.id, {
                 signal: abortController.signal,
                 humanChatInput: data.humanChatInput,
@@ -311,7 +311,7 @@ export class Agent extends MessageHandler {
         return client
     }
 
-    private async logEvent(name: string): Promise<null> {
+    private async recordEvent(feature: string, name: string): Promise<null> {
         const client = await this.client
         if (!client) {
             return null
@@ -332,12 +332,12 @@ export class Agent extends MessageHandler {
             return null
         }
 
-        const event = `${clientInfo.name}:${name}`
+        const event = `${clientInfo.name}:${feature}:${name}`
         await client.graphqlClient.logEvent({
             event,
             url: '',
             client: eventProperties.client,
-            userCookieID: eventProperties.user,
+            userCookieID: eventProperties.anonymousUserID,
             source: eventProperties.source,
             argument: {},
             publicArgument: {

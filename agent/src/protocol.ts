@@ -164,12 +164,15 @@ export interface ExtensionConfiguration {
     debug?: boolean
     verboseDebug?: boolean
     codebase?: string
+
+    /** When passed, the Agent will handle recording events.
+     * If not passed, client must send `graphql/logEvent` requests manually. **/
     eventProperties?: EventProperties
 }
 
 export interface EventProperties {
     /** Anonymous user ID */
-    user: string
+    anonymousUserID: string
 
     /** Event prefix, like 'CodyNeovimPlugin' */
     prefix: string
