@@ -61,9 +61,16 @@ function processCompletion(params: ProcessItemParams): InlineCompletionItemWithA
         throw new TypeError('SnippetText not supported')
     }
 
+    // Append any eventual inline completion context item to the prefix if
+    // completeSuggestWidgetSelection is enabled.
+    let withInjectedPrefix = completion
+    if (docContext.injectedPrefix) {
+        withInjectedPrefix = { ...completion, content: docContext.injectedPrefix + completion.content }
+    }
+
     const completionItem: InlineCompletionItemWithAnalytics = {
-        insertText: completion.content,
-        stopReason: completion.stopReason,
+        insertText: withInjectedPrefix.content,
+        stopReason: withInjectedPrefix.stopReason,
     }
 
     if (completionItem.insertText.length === 0) {

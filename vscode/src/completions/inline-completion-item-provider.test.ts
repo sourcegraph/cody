@@ -151,6 +151,7 @@ describe('InlineCompletionItemProvider', () => {
               },
               "currentLinePrefix": "const foo = ",
               "currentLineSuffix": "",
+              "injectedPrefix": null,
               "multilineTrigger": null,
               "nextNonEmptyLine": "console.log(1)",
               "prefix": "const foo = ",
@@ -407,7 +408,7 @@ describe('InlineCompletionItemProvider', () => {
             expect(items).toBe(null)
         })
 
-        it('appends the current selected widget item to the doc context for the completer and removes the injected prefix from the result when the context item was changed', async () => {
+        it('appends the current selected widget item to the doc context for the completer from the result when the context item was changed', async () => {
             const { document, position } = documentAndPosition(
                 dedent`
                     function foo() {
@@ -419,7 +420,7 @@ describe('InlineCompletionItemProvider', () => {
             )
             const fn = vi.fn(getInlineCompletions).mockResolvedValue({
                 logId: '1' as SuggestionID,
-                items: [{ insertText: "('hello world!')", range: new vsCodeMocks.Range(1, 12, 1, 13) }],
+                items: [{ insertText: "og('hello world!')", range: new vsCodeMocks.Range(1, 12, 1, 13) }],
                 source: InlineCompletionsResultSource.Network,
             })
 

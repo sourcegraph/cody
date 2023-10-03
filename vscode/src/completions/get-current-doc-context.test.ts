@@ -1,10 +1,13 @@
 import dedent from 'dedent'
 import { describe, expect, it } from 'vitest'
+import * as vscode from 'vscode'
+
+import { range } from '../testutils/textDocument'
 
 import { getCurrentDocContext } from './get-current-doc-context'
 import { documentAndPosition } from './test-helpers'
 
-function testGetCurrentDocContext(code: string) {
+function testGetCurrentDocContext(code: string, context?: vscode.InlineCompletionContext) {
     const { document, position } = documentAndPosition(code)
 
     return getCurrentDocContext({
@@ -13,6 +16,7 @@ function testGetCurrentDocContext(code: string) {
         maxPrefixLength: 100,
         maxSuffixLength: 100,
         enableExtendedTriggers: true,
+        context,
     })
 }
 
@@ -29,6 +33,7 @@ describe('getCurrentDocContext', () => {
             prevNonEmptyLine: 'function myFunction() {',
             nextNonEmptyLine: '',
             multilineTrigger: '{',
+            injectedPrefix: null,
         })
     })
 
@@ -44,6 +49,7 @@ describe('getCurrentDocContext', () => {
             prevNonEmptyLine: 'if (true) {',
             nextNonEmptyLine: '}',
             multilineTrigger: '{',
+            injectedPrefix: null,
         })
     })
 
@@ -59,6 +65,7 @@ describe('getCurrentDocContext', () => {
             prevNonEmptyLine: '',
             nextNonEmptyLine: '];',
             multilineTrigger: '[',
+            injectedPrefix: null,
         })
     })
 
@@ -74,6 +81,61 @@ describe('getCurrentDocContext', () => {
             prevNonEmptyLine: 'console.log(1337);',
             nextNonEmptyLine: '];',
             multilineTrigger: '[',
+            injectedPrefix: null,
+        })
+    })
+
+    it('injects the selected item from the suggestions widget into the prompt', () => {
+        const result = testGetCurrentDocContext(
+            dedent`
+                console.a█
+            `,
+            {
+                triggerKind: 0,
+                selectedCompletionInfo: {
+                    range: range(0, 8, 0, 10),
+                    text: 'assert',
+                },
+            }
+        )
+
+        expect(result).toEqual({
+            prefix: 'console.assert',
+            suffix: '',
+            contextRange: expect.any(Object),
+            currentLinePrefix: 'console.assert',
+            currentLineSuffix: '',
+            prevNonEmptyLine: '',
+            nextNonEmptyLine: '',
+            multilineTrigger: null,
+            injectedPrefix: 'ssert',
+        })
+    })
+
+    it('handles suggestion widget items at the end of the word', () => {
+        const result = testGetCurrentDocContext(
+            dedent`
+                console█
+            `,
+            {
+                triggerKind: 0,
+                selectedCompletionInfo: {
+                    range: range(0, 0, 0, 7),
+                    text: 'console',
+                },
+            }
+        )
+
+        expect(result).toEqual({
+            prefix: 'console',
+            suffix: '',
+            contextRange: expect.any(Object),
+            currentLinePrefix: 'console',
+            currentLineSuffix: '',
+            prevNonEmptyLine: '',
+            nextNonEmptyLine: '',
+            multilineTrigger: null,
+            injectedPrefix: null,
         })
     })
 
