@@ -18,6 +18,10 @@ describe('getConfiguration', () => {
             chatPreInstruction: undefined,
             useContext: 'embeddings',
             autocomplete: true,
+            autocompleteLanguages: {
+                '*': true,
+                scminput: false,
+            },
             experimentalCommandLenses: false,
             experimentalEditorTitleCommandIcon: false,
             experimentalChatPredictions: false,
@@ -124,6 +128,10 @@ describe('getConfiguration', () => {
             },
             chatPreInstruction: 'My name is Jeff.',
             autocomplete: false,
+            autocompleteLanguages: {
+                '*': true,
+                scminput: false,
+            },
             experimentalChatPredictions: true,
             experimentalCommandLenses: true,
             experimentalEditorTitleCommandIcon: true,
