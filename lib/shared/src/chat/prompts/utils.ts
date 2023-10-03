@@ -224,5 +224,10 @@ export function isValidTestFileName(fsPath: string): boolean {
     }
 
     // Check if file name starts with 'test' or ends with 'test'
-    return fileNameWithoutExt.startsWith('test') || fileNameWithoutExt.endsWith('test')
+    return (
+        fileNameWithoutExt.startsWith('test') ||
+        fileNameWithoutExt.endsWith('test') ||
+        fileNameWithoutExt.endsWith('tests') ||
+        fileNameWithoutExt.endsWith('spec')
+    )
 }

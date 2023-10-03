@@ -41,33 +41,33 @@ describe('extractTestType', () => {
 })
 
 describe('isValidTestFileName', () => {
-    it('returns true for file starting with "test"', () => {
-        const filePath = '/path/to/testFile.java'
-        expect(isValidTestFileName(filePath)).toBe(true)
-    })
+    it.each([
+        ['/path/to/testFile.java', true],
+        ['/path/to/testFile.js', true],
+        ['/path/to/test_file.py', true],
+        ['/path/to/test-file.js', false],
+        ['/path/to/node_modules/file.js', false],
+        ['/path/to/file.js', false],
 
-    it('returns true for file ending with "test"', () => {
-        const filePath = '/path/to/fileTest.js'
-        expect(isValidTestFileName(filePath)).toBe(true)
-    })
-
-    it('returns true for file starting with "test_"', () => {
-        const filePath = '/path/to/test_file.py'
-        expect(isValidTestFileName(filePath)).toBe(true)
-    })
-
-    it('returns false for file starting with "test-" prefix', () => {
-        const filePath = '/path/to/test-file.js'
-        expect(isValidTestFileName(filePath)).toBe(false)
-    })
-
-    it('returns false for file in node_modules directory', () => {
-        const filePath = '/path/to/node_modules/file.js'
-        expect(isValidTestFileName(filePath)).toBe(false)
-    })
-
-    it('returns false for non-test file name', () => {
-        const filePath = '/path/to/file.js'
-        expect(isValidTestFileName(filePath)).toBe(false)
+        // Examples from various programming languages
+        ['test_example.py', true],
+        ['example.test.js', true],
+        ['ExampleTest.java', true],
+        ['example_spec.rb', true],
+        ['ExampleTest.cs', true],
+        ['ExampleTest.php', true],
+        ['ExampleSpec.scala', true],
+        ['example_test.go', true],
+        ['ExampleTest.kt', true],
+        ['ExampleTests.swift', true],
+        ['example.spec.ts', true],
+        ['ExampleTest.pl', true],
+        ['example_test.rs', true],
+        ['ExampleSpec.groovy', true],
+        ['example_test.cpp', true],
+        ['example_test.js', true],
+        ['test_example.rb', true],
+    ])('for filename %j it returns %j', (path, condition) => {
+        expect(isValidTestFileName(path)).toBe(condition)
     })
 })
