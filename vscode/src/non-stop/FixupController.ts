@@ -247,7 +247,7 @@ export class FixupController
         // add indentation to each line
         const textLines = text.split('\n').map(line => ' '.repeat(nonEmptyStartIndex) + line)
         // join text with new lines, and then remove everything after the last new line if it only contains white spaces
-        const replacementText = textLines.join('\n').replace(/ +$/, '')
+        const replacementText = textLines.join('\n').replace(/[ \t]+$/, '')
         // Insert updated text at selection range
         const editOk = await editor.edit(editBuilder => {
             editBuilder.insert(range.start, replacementText)
