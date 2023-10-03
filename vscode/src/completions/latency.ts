@@ -14,14 +14,14 @@ let userMetrics = {
     sessionTimestamp: 0,
     currentLatency: 0,
     suggested: 0,
-    fileName: '',
+    fsPath: '',
 }
 
 // Adjust the minimum latency based on user actions and env
 // Start when the last 5 suggestions were not accepted
 // Increment latency by 200ms linearly up to max latency
 // Reset every 5 minutes, or on file change, or on accepting a suggestion
-export function getLatency(provider: string, fileName: string, languageId?: string): number {
+export function getLatency(provider: string, fsPath: string, languageId?: string): number {
     let baseline = provider === 'anthropic' ? 0 : defaultLatency.baseline
     // set base latency based on provider and low performance languages
     if (!languageId || (languageId && lowPerformanceLanguageIds.has(languageId))) {
@@ -35,12 +35,12 @@ export function getLatency(provider: string, fileName: string, languageId?: stri
 
     const elapsed = timestamp - userMetrics.sessionTimestamp
     // reset metrics and timer after 5 minutes or file change
-    if (elapsed >= 5 * 60 * 1000 || userMetrics.fileName !== fileName) {
+    if (elapsed >= 5 * 60 * 1000 || userMetrics.fsPath !== fsPath) {
         resetLatency()
     }
 
     userMetrics.suggested++
-    userMetrics.fileName = fileName
+    userMetrics.fsPath = fsPath
 
     // Start after 5 rejected suggestions
     if (userMetrics.suggested < 5) {
@@ -49,9 +49,12 @@ export function getLatency(provider: string, fileName: string, languageId?: stri
 
     const total = Math.max(baseline, Math.min(baseline + userMetrics.currentLatency, defaultLatency.max))
 
-    userMetrics.currentLatency += defaultLatency.user
+    // Increase latency linearly up to max
+    if (userMetrics.currentLatency < defaultLatency.max) {
+        userMetrics.currentLatency += defaultLatency.user
+    }
 
-    logDebug('CodyCompletionProvider:getLatency', `Applied Latency: ${total}`)
+    logDebug('CodyCompletionProvider:getLatency', `Latency Applied: ${total}`)
 
     return total
 }
@@ -65,7 +68,7 @@ export function resetLatency(): void {
         sessionTimestamp: 0,
         currentLatency: 0,
         suggested: 0,
-        fileName: '',
+        fsPath: '',
     }
-    logDebug('CodyCompletionProvider:resetLatency', 'Latency reset')
+    logDebug('CodyCompletionProvider:resetLatency', 'Latency Reset')
 }

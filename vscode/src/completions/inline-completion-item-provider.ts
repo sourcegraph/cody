@@ -254,7 +254,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
                 if (triggerKind === TriggerKind.Automatic && minimumLatencyFlag) {
                     const minimumLatency = getLatency(
                         this.config.providerConfig.identifier,
-                        document.fileName,
+                        document.uri.fsPath,
                         document.languageId
                     )
 
