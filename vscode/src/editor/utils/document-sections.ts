@@ -195,13 +195,8 @@ function combineNeighborFoldingRanges(ranges: vscode.FoldingRange[]): vscode.Fol
     return combinedRanges
 }
 
-async function defaultGetFoldingRanges(uri: vscode.Uri): Promise<vscode.FoldingRange[]> {
-    return (
-        (await vscode.commands.executeCommand<vscode.FoldingRange[]>('vscode.executeFoldingRangeProvider', uri)) || []
-    )
-}
-
 const closingSymbols = /^(}|]|\)|>|end|fi|elsif)/
+
 /**
  * Approximates a range that starts at the first character of the first line and ends at the last
  * character of the last line.
@@ -224,6 +219,10 @@ function foldingRangeToRange(doc: vscode.TextDocument, range: vscode.FoldingRang
     return new vscode.Range(start, 0, end, endLine.length - 1)
 }
 
+function rangeLines(range: vscode.Range): number {
+    return range.end.line - range.start.line
+}
+
 async function defaultGetSymbols(uri: vscode.Uri): Promise<vscode.SymbolInformation[]> {
     return (
         (await vscode.commands.executeCommand<vscode.SymbolInformation[]>(
@@ -233,6 +232,8 @@ async function defaultGetSymbols(uri: vscode.Uri): Promise<vscode.SymbolInformat
     )
 }
 
-function rangeLines(range: vscode.Range): number {
-    return range.end.line - range.start.line
+async function defaultGetFoldingRanges(uri: vscode.Uri): Promise<vscode.FoldingRange[]> {
+    return (
+        (await vscode.commands.executeCommand<vscode.FoldingRange[]>('vscode.executeFoldingRangeProvider', uri)) || []
+    )
 }
