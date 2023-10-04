@@ -20,7 +20,7 @@ import {
     LastInlineCompletionCandidate,
     TriggerKind,
 } from './get-inline-completions'
-import { getLatency, resetLatency } from './latency'
+import { getLatency, isLineComment, resetLatency } from './latency'
 import * as CompletionLogger from './logger'
 import { CompletionEvent, SuggestionID } from './logger'
 import { ProviderConfig } from './providers/provider'
@@ -260,7 +260,8 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
                     const minimumLatency = getLatency(
                         this.config.providerConfig.identifier,
                         document.uri.fsPath,
-                        document.languageId
+                        document.languageId,
+                        isLineComment(currentPrefix.trim(), document.languageId)
                     )
 
                     const delta = performance.now() - start

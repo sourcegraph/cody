@@ -8,7 +8,19 @@ export const defaultLatency = {
 }
 
 // Languages with lower performance get additional latency to avoid spamming users with unhelpful suggestions
-const lowPerformanceLanguageIds = new Set(['css', 'html', 'scss', 'vue', 'dart', 'json', 'yaml', 'postcss'])
+export const lowPerformanceLanguageIds = new Set([
+    'css',
+    'html',
+    'scss',
+    'vue',
+    'dart',
+    'json',
+    'yaml',
+    'postcss',
+    'markdown',
+    'plaintext',
+    'xml',
+])
 
 let userMetrics = {
     sessionTimestamp: 0,
@@ -21,10 +33,11 @@ let userMetrics = {
 // Start when the last 5 suggestions were not accepted
 // Increment latency by 200ms linearly up to max latency
 // Reset every 5 minutes, or on file change, or on accepting a suggestion
-export function getLatency(provider: string, fsPath: string, languageId?: string): number {
+export function getLatency(provider: string, fsPath: string, languageId?: string, isComment?: boolean): number {
+    // set base latency based on provider and low performance languages or comments when available
     let baseline = provider === 'anthropic' ? 0 : defaultLatency.baseline
-    // set base latency based on provider and low performance languages
-    if (!languageId || (languageId && lowPerformanceLanguageIds.has(languageId))) {
+    const isLowPerformance = languageId && lowPerformanceLanguageIds.has(languageId)
+    if (!languageId || isLowPerformance || isComment) {
         baseline = defaultLatency.lowPerformance
     }
 
@@ -42,15 +55,10 @@ export function getLatency(provider: string, fsPath: string, languageId?: string
     userMetrics.suggested++
     userMetrics.fsPath = fsPath
 
-    // Start after 5 rejected suggestions
-    if (userMetrics.suggested < 5) {
-        return baseline
-    }
-
     const total = Math.max(baseline, Math.min(baseline + userMetrics.currentLatency, defaultLatency.max))
 
-    // Increase latency linearly up to max
-    if (userMetrics.currentLatency < defaultLatency.max) {
+    // Increase latency linearly up to max after 5 rejected suggestions
+    if (userMetrics.suggested >= 5 && userMetrics.currentLatency < defaultLatency.max) {
         userMetrics.currentLatency += defaultLatency.user
     }
 
@@ -71,4 +79,32 @@ export function resetLatency(): void {
         fsPath: '',
     }
     logDebug('CodyCompletionProvider:resetLatency', 'Latency Reset')
+}
+
+// Checks if a line is a comment based on the language ID.
+export function isLineComment(trimmedLine: string, languageId?: string): boolean {
+    if (!languageId || !trimmedLine) {
+        return false
+    }
+
+    switch (languageId) {
+        case 'lua':
+            return trimmedLine.startsWith('--')
+        case 'shellscript':
+        case 'perl':
+        case 'r':
+            return trimmedLine.startsWith('#')
+        case 'ocaml':
+            return trimmedLine.startsWith('(*')
+        case 'powershell':
+            return trimmedLine.startsWith('<#')
+        case 'python':
+            return trimmedLine.startsWith('#') || trimmedLine.startsWith('"""')
+        case 'ruby':
+            return trimmedLine.startsWith('#') || trimmedLine.startsWith('=begin')
+        // javascript', 'typescript', 'typescriptreact', 'javascriptreact', 'java', 'c', 'cpp', 'csharp', 'go', 'scala', 'swift', 'rust', 'php', 'objectivec'
+        // use '//', '/*', '*/'. '*'
+        default:
+            return trimmedLine.startsWith('/') || trimmedLine.startsWith('*') || trimmedLine.startsWith('<!') // html and react
+    }
 }
