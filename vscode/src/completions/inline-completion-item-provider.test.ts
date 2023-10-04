@@ -186,6 +186,7 @@ describe('InlineCompletionItemProvider', () => {
             },
             "uri": {
               "$mid": 1,
+              "external": "file:///test.ts",
               "path": "/test.ts",
               "scheme": "file",
             },

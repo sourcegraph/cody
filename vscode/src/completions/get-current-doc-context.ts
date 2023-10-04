@@ -125,6 +125,6 @@ export function getCurrentDocContext(params: GetCurrentDocContextParams): Docume
 
     return {
         ...docContext,
-        multilineTrigger: detectMultiline(docContext, document.languageId, enableExtendedTriggers),
+        multilineTrigger: detectMultiline(docContext, document, enableExtendedTriggers),
     }
 }

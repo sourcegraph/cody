@@ -1,4 +1,4 @@
-import Parser, { Language, Point, Query, SyntaxNode } from 'web-tree-sitter'
+import Parser, { Language, Point, Query, QueryCapture, SyntaxNode } from 'web-tree-sitter'
 
 import { getParseLanguage, SupportedLanguage } from './grammars'
 import { getParser } from './parser'
@@ -98,6 +98,13 @@ interface QueryWrappers {
             end?: Point
         ) => never[] | readonly [{ readonly node: SyntaxNode; readonly name: 'blocks' }]
     }
+    singlelineTriggers: {
+        getEnclosingTrigger: (
+            node: SyntaxNode,
+            start: Point,
+            end?: Point
+        ) => never[] | readonly [{ readonly node: SyntaxNode; readonly name: 'trigger' }]
+    }
 }
 
 /**
@@ -125,5 +132,93 @@ function getLanguageSpecificQueryWrappers(queries: ResolvedQueries, _parser: Par
                 return [{ node: potentialParent || initialNode, name: 'blocks' }] as const
             },
         },
+        singlelineTriggers: {
+            getEnclosingTrigger: (root, start, end) => {
+                const captures = queries.singlelineTriggers.compiled.captures(root, start, end)
+                const node = getTriggerNodeWithBlockStaringAtPoint(captures, start)
+
+                if (!node) {
+                    return []
+                }
+
+                return [{ node, name: 'trigger' }] as const
+            },
+        },
     } satisfies Partial<Record<QueryName, Record<string, Captures>>>
+}
+
+function getTriggerNodeWithBlockStaringAtPoint(captures: QueryCapture[], point: Point): SyntaxNode | null {
+    if (!captures.length) {
+        return null
+    }
+
+    const blockStartNode = getNodeIfMatchesPoint({
+        captures,
+        name: 'block_start',
+        // Taking the last result to get the most nested node.
+        // See https://github.com/tree-sitter/tree-sitter/discussions/2067
+        index: -1,
+        point,
+    })
+
+    const multilineTrigger = getCapturedNodeAt({
+        captures,
+        name: 'trigger',
+        index: -1,
+    })
+
+    const blockNode = blockStartNode?.parent
+
+    if (!blockStartNode || !blockNode || !multilineTrigger) {
+        return null
+    }
+
+    // Verify that the block node is empty and ends at the same position as the trigger node.
+    if (!isBlockNodeEmpty(blockNode) || multilineTrigger.endIndex !== blockNode?.endIndex) {
+        return null
+    }
+
+    return multilineTrigger
+}
+
+interface GetNodeIfMatchesPointParams {
+    captures: QueryCapture[]
+    name: string
+    index: number
+    point: Point
+}
+
+function getNodeIfMatchesPoint(params: GetNodeIfMatchesPointParams): SyntaxNode | null {
+    const { captures, name, index, point } = params
+
+    const node = getCapturedNodeAt({ captures, name, index })
+
+    if (node && node.startPosition.column === point.column && node.startPosition.row === point.row) {
+        return node
+    }
+
+    return null
+}
+
+interface GetCapturedNodeAtParams {
+    captures: QueryCapture[]
+    name: string
+    index: number
+}
+
+function getCapturedNodeAt(params: GetCapturedNodeAtParams): SyntaxNode | null {
+    const { captures, name, index } = params
+
+    return captures.filter(capture => capture.name === name).at(index)?.node || null
+}
+
+/**
+ * Consider a block empty if it does not have any named children or is missing its closing tag.
+ */
+function isBlockNodeEmpty(node: SyntaxNode | null): boolean {
+    // Consider a node empty if it does not have any named children.
+    const isBlockEmpty = node?.children.filter(c => c.isNamed()).length === 0
+    const isMissingBlockEnd = Boolean(node?.lastChild?.isMissing())
+
+    return isBlockEmpty || isMissingBlockEnd
 }
