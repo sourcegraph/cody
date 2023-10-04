@@ -24,4 +24,11 @@ export const languages: Partial<Record<SupportedLanguage, Record<QueryName, stri
     [SupportedLanguage.TSX]: {
         blocks: JS_BLOCKS_QUERY,
     },
+    [SupportedLanguage.Go]: {
+        blocks: dedent`
+            (_ ("{")) @blocks
+
+            [(if_statement)] @parents
+        `,
+    },
 } as const

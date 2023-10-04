@@ -18,4 +18,16 @@ describe('getFirstMultilineBlockForTruncation', () => {
             sourcesPath: 'test-data/blocks.ts',
         })
     })
+
+    it('go', async () => {
+        await initTreeSitterParser(SupportedLanguage.Go)
+        const { language, parser, queries } = getDocumentQuerySDK(SupportedLanguage.Go)!
+
+        await annotateAndMatchSnapshot({
+            parser,
+            language,
+            captures: queries.blocks.getFirstMultilineBlockForTruncation,
+            sourcesPath: 'test-data/blocks.go',
+        })
+    })
 })
