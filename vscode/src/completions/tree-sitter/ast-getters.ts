@@ -2,7 +2,7 @@ import Parser, { Point, SyntaxNode } from 'web-tree-sitter'
 
 import { isDefined } from '@sourcegraph/cody-shared'
 
-import { Captures } from './queries/annotate-and-match-snapshot'
+import { Captures } from './query-tests/annotate-and-match-snapshot'
 
 interface AstGetters {
     getNodeAtCursorAndParents: (

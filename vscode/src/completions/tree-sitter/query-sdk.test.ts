@@ -4,7 +4,7 @@ import { initTreeSitterParser } from '../test-helpers'
 
 import { SupportedLanguage } from './grammars'
 import { resetParsersCache } from './parser'
-import { getDocumentQuerySDK } from './queries'
+import { getDocumentQuerySDK } from './query-sdk'
 
 describe('getDocumentQuerySDK', () => {
     afterEach(() => {

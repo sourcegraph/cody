@@ -3,12 +3,6 @@
 // █ – query start position in the annotated file.
 // ^ – characters matching the last query result.
 //
-// Tree-sitter query:
-//
-// (_ ("{")) @blocks
-// 
-// [(try_statement)
-// (if_statement)] @parents
 // ------------------------------------
 
   interface kek {

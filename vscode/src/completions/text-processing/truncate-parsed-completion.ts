@@ -1,7 +1,7 @@
 import { TextDocument } from 'vscode'
 
 import { getCachedParseTreeForDocument } from '../tree-sitter/parse-tree-cache'
-import { getDocumentQuerySDK } from '../tree-sitter/queries'
+import { getDocumentQuerySDK } from '../tree-sitter/query-sdk'
 
 import { ParsedCompletion } from './parse-completion'
 

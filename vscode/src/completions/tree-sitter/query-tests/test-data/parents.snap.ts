@@ -3,9 +3,6 @@
 // █ – query start position in the annotated file.
 // ^ – characters matching the last query result.
 //
-// Tree-sitter query:
-//
-// Gets the "current" node at cursor position and tree parents.
 // ------------------------------------
 
   export function whatsUp() {

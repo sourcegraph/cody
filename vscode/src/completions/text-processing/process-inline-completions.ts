@@ -5,7 +5,7 @@ import { dedupeWith } from '@sourcegraph/cody-shared/src/common'
 import { DocumentContext } from '../get-current-doc-context'
 import { ItemPostProcessingInfo } from '../logger'
 import { astGetters } from '../tree-sitter/ast-getters'
-import { getDocumentQuerySDK } from '../tree-sitter/queries'
+import { getDocumentQuerySDK } from '../tree-sitter/query-sdk'
 import { Completion, InlineCompletionItem } from '../types'
 
 import { dropParserFields, parseCompletion, ParsedCompletion } from './parse-completion'

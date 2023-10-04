@@ -12,7 +12,7 @@
 The underlying command:
 
 ```sh
-pnpm vitest --watch vscode/src/completions/tree-sitter/queries/**/*.test.ts
+pnpm vitest --watch vscode/src/completions/tree-sitter/query-tests/**/*.test.ts
 ```
 
 ### Annotation format
