@@ -7,8 +7,8 @@ import {
     CustomCommandType,
     MyPrompts,
     MyPromptsJSON,
-} from '@sourcegraph/cody-shared/src/chat/prompts'
-import { fromSlashCommand, toSlashCommand } from '@sourcegraph/cody-shared/src/chat/prompts/utils'
+} from '@sourcegraph/cody-shared/src/chat/commands'
+import { fromSlashCommand, toSlashCommand } from '@sourcegraph/cody-shared/src/chat/commands/utils'
 
 import { logDebug, logError } from '../log'
 

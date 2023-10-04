@@ -1,7 +1,7 @@
 import { commands, QuickInputButtons, QuickPickItem, ThemeIcon, window } from 'vscode'
 
 import { CodyPrompt } from '@sourcegraph/cody-shared'
-import { CustomCommandType } from '@sourcegraph/cody-shared/src/chat/prompts'
+import { CustomCommandType } from '@sourcegraph/cody-shared/src/chat/commands'
 
 import { ContextOption } from '.'
 

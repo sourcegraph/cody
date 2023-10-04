@@ -1,6 +1,6 @@
 import * as vscode from 'vscode'
 
-import { CodyPrompt, CustomCommandType, MyPrompts } from '@sourcegraph/cody-shared/src/chat/prompts'
+import { CodyPrompt, CustomCommandType, MyPrompts } from '@sourcegraph/cody-shared/src/chat/commands'
 import { VsCodeCommandsController } from '@sourcegraph/cody-shared/src/editor'
 
 import { logDebug, logError } from '../log'

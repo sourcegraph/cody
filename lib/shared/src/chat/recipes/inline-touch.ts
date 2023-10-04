@@ -5,7 +5,6 @@ import { ActiveTextEditorSelection } from '../../editor'
 import { MAX_HUMAN_INPUT_TOKENS, MAX_RECIPE_INPUT_TOKENS, MAX_RECIPE_SURROUNDING_TOKENS } from '../../prompt/constants'
 import { truncateText } from '../../prompt/truncation'
 import { BufferedBotResponseSubscriber } from '../bot-response-multiplexer'
-import { getEditorDirContext, getEditorOpenTabsContext } from '../prompts/vscode-context'
 import { Interaction } from '../transcript/interaction'
 
 import { ChatQuestion } from './chat-question'
@@ -23,6 +22,10 @@ export class InlineTouch implements Recipe {
     constructor(private debug: (filterLabel: string, text: string, ...args: unknown[]) => void) {}
 
     public async getInteraction(humanChatInput: string, context: RecipeContext): Promise<Interaction | null> {
+        if (!context.contextBuilder) {
+            console.error('Context builder not available')
+            return null
+        }
         const selection = context.editor.getActiveTextEditorSelection() || context.editor.controllers?.inline?.selection
         if (!selection || !this.workspacePath) {
             await context.editor.controllers?.inline?.error()
@@ -99,7 +102,7 @@ export class InlineTouch implements Recipe {
                     speaker: 'assistant',
                     prefix: 'Working on it! I will show you the new file when it is ready.\n\n',
                 },
-                this.getContextMessages(selection, currentDir),
+                this.getContextMessages(selection, currentDir, context),
                 []
             )
         )
@@ -159,16 +162,20 @@ export class InlineTouch implements Recipe {
 
     private async getContextMessages(
         selection: ActiveTextEditorSelection,
-        currentDir: string
+        currentDir: string,
+        context: RecipeContext
     ): Promise<ContextMessage[]> {
+        if (!context.contextBuilder) {
+            return []
+        }
         const contextMessages: ContextMessage[] = []
         // Add selected text and current file as context and create context messages from current directory
         const selectedContext = ChatQuestion.getEditorSelectionContext(selection)
-        const currentDirContext = await getEditorDirContext(currentDir, selection.fileName, true)
+        const currentDirContext = await context.contextBuilder.getEditorDirContext(currentDir, selection.fileName, true)
         contextMessages.push(...selectedContext, ...currentDirContext)
         // Create context messages from open tabs
         if (contextMessages.length < 10) {
-            const tabsContext = await getEditorOpenTabsContext(currentDir)
+            const tabsContext = await context.contextBuilder.getEditorOpenTabsContext(currentDir)
             contextMessages.push(...tabsContext)
         }
         return contextMessages.slice(-10)

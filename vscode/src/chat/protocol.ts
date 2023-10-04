@@ -1,5 +1,5 @@
+import { CodyPrompt, CustomCommandType } from '@sourcegraph/cody-shared/src/chat/commands'
 import { ChatContextStatus } from '@sourcegraph/cody-shared/src/chat/context'
-import { CodyPrompt, CustomCommandType } from '@sourcegraph/cody-shared/src/chat/prompts'
 import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 import { ChatMessage, UserLocalHistory } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { Configuration } from '@sourcegraph/cody-shared/src/configuration'

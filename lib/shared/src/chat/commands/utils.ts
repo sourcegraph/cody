@@ -140,46 +140,6 @@ export function toSlashCommand(command: string): string {
 }
 
 /**
- * Creates a VS Code search pattern to find files matching the given file path.
- *
- * @param fsPath - The file system path of the file to generate a search pattern for.
- * @param fromRoot - Whether to search from the root directory. Default false.
- * @returns A search pattern string to find matching files.
- *
- * This generates a search pattern by taking the base file name without extension
- * and appending wildcards.
- *
- * If fromRoot is true, the pattern will search recursively from the repo root.
- * Otherwise, it will search only the current directory.
- */
-export function createVSCodeSearchPattern(fsPath: string, fromRoot = false): string {
-    const fileName = basename(fsPath)
-    const fileExtension = extname(fsPath)
-    const fileNameWithoutExt = fileName.replace(fileExtension, '')
-
-    const root = fromRoot ? '**' : ''
-
-    const currentFilePattern = `/*${fileNameWithoutExt}*${fileExtension}`
-    return root + currentFilePattern
-}
-
-export function createVSCodeTestSearchPattern(fsPath: string, allTestFiles?: boolean): string {
-    const fileExtension = extname(fsPath)
-    const fileName = basename(fsPath, fileExtension)
-
-    const root = '**'
-    const defaultTestFilePattern = `/*test*${fileExtension}`
-    const currentTestFilePattern = `/*{test_${fileName},${fileName}_test,test.${fileName},${fileName}.test,${fileName}Test}${fileExtension}`
-
-    if (allTestFiles) {
-        return `${root}${defaultTestFilePattern}`
-    }
-
-    // pattern to search for test files with the same name as current file
-    return `${root}${currentTestFilePattern}`
-}
-
-/**
  * Creates an object containing the start line and line range
  * of the given editor selection.
  *

@@ -1,6 +1,6 @@
 import * as vscode from 'vscode'
 
-import { CodyPrompt, CustomCommandType } from '@sourcegraph/cody-shared/src/chat/prompts'
+import { CodyPrompt, CustomCommandType } from '@sourcegraph/cody-shared/src/chat/commands'
 import { ChatMessage, UserLocalHistory } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 
 import { View } from '../../webviews/NavBar'

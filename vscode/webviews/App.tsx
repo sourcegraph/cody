@@ -2,8 +2,8 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import './App.css'
 
+import { CodyPrompt } from '@sourcegraph/cody-shared/src/chat/commands'
 import { ChatContextStatus } from '@sourcegraph/cody-shared/src/chat/context'
-import { CodyPrompt } from '@sourcegraph/cody-shared/src/chat/prompts'
 import { ChatHistory, ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { Configuration } from '@sourcegraph/cody-shared/src/configuration'
 

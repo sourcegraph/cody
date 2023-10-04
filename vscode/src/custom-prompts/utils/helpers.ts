@@ -1,6 +1,6 @@
 import * as vscode from 'vscode'
 
-import { ConfigFileName } from '@sourcegraph/cody-shared/src/chat/prompts'
+import { ConfigFileName } from '@sourcegraph/cody-shared/src/chat/commands'
 
 export function constructFileUri(fileName: string, rootDirPath?: string): vscode.Uri | undefined {
     if (!rootDirPath) {

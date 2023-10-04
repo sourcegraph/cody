@@ -1,6 +1,6 @@
 import { QuickPickItem } from 'vscode'
 
-import { CodyPromptType, CustomCommandType } from '@sourcegraph/cody-shared/src/chat/prompts'
+import { CodyPromptType, CustomCommandType } from '@sourcegraph/cody-shared/src/chat/commands'
 
 export type CustomCommandMenuAction = 'add' | 'file' | 'delete' | 'list' | 'open' | 'cancel' | 'docs' | 'back'
 

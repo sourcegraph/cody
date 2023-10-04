@@ -2,9 +2,9 @@ import * as vscode from 'vscode'
 
 import { BotResponseMultiplexer } from '@sourcegraph/cody-shared/src/chat/bot-response-multiplexer'
 import { ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
+import { CodyPrompt, CustomCommandType } from '@sourcegraph/cody-shared/src/chat/commands'
+import { newInteraction } from '@sourcegraph/cody-shared/src/chat/commands/utils'
 import { getPreamble } from '@sourcegraph/cody-shared/src/chat/preamble'
-import { CodyPrompt, CustomCommandType } from '@sourcegraph/cody-shared/src/chat/prompts'
-import { newInteraction } from '@sourcegraph/cody-shared/src/chat/prompts/utils'
 import { Recipe, RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 import { Transcript } from '@sourcegraph/cody-shared/src/chat/transcript'
 import { Interaction } from '@sourcegraph/cody-shared/src/chat/transcript/interaction'
@@ -17,6 +17,7 @@ import { ANSWER_TOKENS, DEFAULT_MAX_TOKENS } from '@sourcegraph/cody-shared/src/
 import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
 
 import { showAskQuestionQuickPick } from '../custom-prompts/utils/menu'
+import { VSCodeEditorContext } from '../editor/vscode-context'
 import { VSCodeEditor } from '../editor/vscode-editor'
 import { PlatformContext } from '../extension.common'
 import { logDebug, logError } from '../log'
@@ -317,6 +318,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
             codebaseContext: this.contextProvider.context,
             responseMultiplexer: this.multiplexer,
             firstInteraction: this.transcript.isEmpty,
+            contextBuilder: new VSCodeEditorContext(),
         })
         if (!interaction) {
             return
