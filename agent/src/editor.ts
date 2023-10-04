@@ -99,6 +99,10 @@ export class AgentEditor implements Editor {
         throw new Error('Method not implemented.')
     }
 
+    public getActiveFixupTextEditorSmartSelection(): Promise<ActiveTextEditorSelection | null> {
+        throw new Error('Method not implemented.')
+    }
+
     public getActiveTextEditorSelectionOrVisibleContent(): ActiveTextEditorSelection | null {
         throw new Error('Method not implemented.')
     }

@@ -47,4 +47,9 @@ export class FixupTask {
     public get state(): CodyTaskState {
         return this.state_
     }
+
+    // Overwrites a selection range with a newly computed range
+    public overwriteSelectionRange(newRange: vscode.Range): void {
+        this.selectionRange = newRange
+    }
 }

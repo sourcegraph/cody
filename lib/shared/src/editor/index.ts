@@ -1,3 +1,4 @@
+import * as vscode from 'vscode'
 import { URI } from 'vscode-uri'
 
 import { CodyPrompt } from '../chat/prompts'
@@ -67,6 +68,7 @@ export interface VsCodeFixupTaskRecipeData {
 
 export interface VsCodeFixupController {
     getTaskRecipeData(taskId: string): Promise<VsCodeFixupTaskRecipeData | undefined>
+    resetSelectionRange(taskid: string, newRange: vscode.Range): Promise<void>
 }
 
 export interface VsCodeCommandsController {
@@ -105,7 +107,7 @@ export interface Editor<
     getActiveTextEditor(): ActiveTextEditor | null
     getActiveTextEditorSelection(): ActiveTextEditorSelection | null
     getActiveTextEditorSmartSelection(): Promise<ActiveTextEditorSelection | null>
-
+    getActiveFixupTextEditorSmartSelection(): Promise<ActiveTextEditorSelection | null>
     getActiveInlineChatTextEditor(): ActiveTextEditor | null
     getActiveInlineChatSelection(): ActiveTextEditorSelection | null
 
@@ -155,6 +157,10 @@ export class NoopEditor implements Editor {
     }
 
     public getActiveTextEditorSmartSelection(): Promise<ActiveTextEditorSelection | null> {
+        return Promise.resolve(null)
+    }
+
+    public getActiveFixupTextEditorSmartSelection(): Promise<ActiveTextEditorSelection | null> {
         return Promise.resolve(null)
     }
 

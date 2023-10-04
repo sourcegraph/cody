@@ -157,6 +157,52 @@ export class VSCodeEditor implements Editor<InlineController, FixupController, C
         return null
     }
 
+    /**
+     * This function retrieves a "smart" selection from the active editor for a "fixup" recipe
+     * The idea of a "smart" selection is to look at both the start and end positions of the current selection,
+     * and attempt to expand those positions to encompass more meaningful chunks of code, such as folding regions.
+     *
+     * The function does the following:
+     * 1. Checks if there's an active editor.
+     * 2. Determines the current selection's start and end line numbers.
+     * 3. For both the start and end line numbers, it tries to find a more encompassing folding range.
+     *    - If a folding range is found, it uses that. Otherwise, it defaults to the original selection.
+     * 4. The function then creates a new selection that starts at the beginning of the expanded start range
+     *    and ends at the end of the expanded end range.
+     * 5. Returns this combined range as the final "smart" selection.
+     *
+     * @returns A Promise that resolves to an `ActiveTextEditorSelection` which represents the combined "smart" selection.
+     *          Returns null if no active editor is found or if the starting line of the selection is not defined.
+     */
+    public async getActiveFixupTextEditorSmartSelection(): Promise<ActiveTextEditorSelection | null> {
+        // Get the instance of the active text editor.
+        const activeEditor = this.getActiveTextEditorInstance()
+        if (!activeEditor) {
+            return null
+        }
+
+        const selection = activeEditor.selection
+        if (!selection?.start.line) {
+            return null
+        }
+
+        // Try to retrieve a folding range for the start position of the current selection.
+        const activeCursorStartPosition = selection.start.line
+        const foldingRangeStart =
+            (await getSmartSelection(activeEditor.document.uri, activeCursorStartPosition)) || selection
+
+        // Similarly, try to retrieve a folding range for the end position of the current selection.
+        const activeCursorEndPosition = selection.end.line
+        const foldingRangeEnd =
+            (await getSmartSelection(activeEditor.document.uri, activeCursorEndPosition)) || selection
+
+        // Create a new combined selection range that starts from the beginning of the folding rangeat the start position
+        // and ends at the end of the folding range at the end position.
+        const combinedFoldingRange = new vscode.Selection(foldingRangeStart.start.line, 0, foldingRangeEnd.end.line, 0)
+
+        return this.createActiveTextEditorSelection(activeEditor, combinedFoldingRange)
+    }
+
     public getActiveTextEditorSelectionOrEntireFile(): ActiveTextEditorSelection | null {
         const activeEditor = this.getActiveTextEditorInstance()
         if (!activeEditor) {

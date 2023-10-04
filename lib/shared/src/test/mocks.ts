@@ -84,6 +84,10 @@ export class MockEditor implements Editor {
         return this.mocks.getActiveTextEditorSmartSelection?.() ?? Promise.resolve(null)
     }
 
+    public getActiveFixupTextEditorSmartSelection(): Promise<ActiveTextEditorSelection | null> {
+        return this.mocks.getActiveFixupTextEditorSmartSelection?.() ?? Promise.resolve(null)
+    }
+
     public getActiveTextEditorSelectionOrEntireFile(): ActiveTextEditorSelection | null {
         return this.mocks.getActiveTextEditorSelection?.() ?? null
     }

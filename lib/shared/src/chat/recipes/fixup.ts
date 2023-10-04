@@ -1,3 +1,5 @@
+import * as vscode from 'vscode'
+
 import { ContextMessage, getContextMessageWithResponse } from '../../codebase-context/messages'
 import { VsCodeFixupTaskRecipeData } from '../../editor'
 import { IntentClassificationOption } from '../../intent-detector'
@@ -52,21 +54,41 @@ export class Fixup implements Recipe {
             return null
         }
 
-        const fixupTask = await fixupController.getTaskRecipeData(taskId)
-        if (!fixupTask) {
+        const originalFixupTask = await fixupController.getTaskRecipeData(taskId)
+        if (!originalFixupTask) {
             await context.editor.showWarningMessage('Select some code to fixup.')
             return null
         }
 
         const quarterFileContext = Math.floor(MAX_CURRENT_FILE_TOKENS / 4)
-        if (truncateText(fixupTask.selectedText, MAX_CURRENT_FILE_TOKENS) !== fixupTask.selectedText) {
+        if (truncateText(originalFixupTask.selectedText, quarterFileContext * 2) !== originalFixupTask.selectedText) {
             const msg = "The amount of text selected exceeds Cody's current capacity."
             await context.editor.showWarningMessage(msg)
             return null
         }
 
-        const intent = await this.getIntent(fixupTask, context)
-        const promptText = this.getPrompt(fixupTask, intent)
+        const intent = await this.getIntent(originalFixupTask, context)
+
+        // Default to the initial task. It will be overwritten if the intent requires modification.
+        let finalFixupTask = originalFixupTask
+
+        // If the intent is 'edit', then potentially modify the fixup task.
+        if (intent === 'edit') {
+            const newRangeSmartSelection = (await context.editor.getActiveFixupTextEditorSmartSelection())
+                ?.selectionRange
+            if (newRangeSmartSelection) {
+                const newRange = new vscode.Range(
+                    newRangeSmartSelection.start.line,
+                    0,
+                    newRangeSmartSelection.end.line,
+                    0
+                )
+                await fixupController.resetSelectionRange(taskId, newRange)
+                // Update the fixup task if the range was modified.
+                finalFixupTask = (await fixupController.getTaskRecipeData(taskId)) || originalFixupTask
+            }
+        }
+        const promptText = this.getPrompt(finalFixupTask, intent)
 
         return Promise.resolve(
             new Interaction(
@@ -77,7 +99,7 @@ export class Fixup implements Recipe {
                 {
                     speaker: 'assistant',
                 },
-                this.getContextFromIntent(intent, fixupTask, quarterFileContext, context),
+                this.getContextFromIntent(intent, finalFixupTask, quarterFileContext, context),
                 []
             )
         )

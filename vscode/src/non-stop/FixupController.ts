@@ -255,6 +255,21 @@ export class FixupController
         return editOk
     }
 
+    /**
+     * OverWrites the selectionRange of the FixupTask and selects new text corresponding to that range
+     */
+    public async resetSelectionRange(taskid: string, newRange: vscode.Range): Promise<void> {
+        const task = this.tasks.get(taskid)
+        if (!task) {
+            return undefined
+        }
+        task.selectionRange = newRange
+        const document = await vscode.workspace.openTextDocument(task.fixupFile.uri)
+        const originalTextFromNewSelectionRange = document.getText(task.selectionRange)
+        task.original = originalTextFromNewSelectionRange
+        return Promise.resolve()
+    }
+
     // Applying fixups from tree item click
     private async applyFixups(treeItem?: FixupTaskTreeItem): Promise<void> {
         // TODO: Add support for applying all fixups
