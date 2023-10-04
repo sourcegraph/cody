@@ -59,6 +59,12 @@ export async function start(): Promise<void> {
                 })
             }
 
+            console.log(
+                chalk.yellow(
+                    'Running VS Code with `--log=error` to improve benchmark output. Remove this arg for debugging.'
+                )
+            )
+
             for (const benchmarkConfig of benchmarkCases) {
                 const benchmarkDir = path.dirname(benchmarkConfig)
                 const evalCaseConfig = parseEvaluationConfig(benchmarkConfig)
@@ -71,31 +77,26 @@ export async function start(): Promise<void> {
                     benchmarkDir
                 )
 
-                console.log(
-                    chalk.yellow(
-                        'Running VS Code with `--log=error` to improve benchmark output. Remove this arg for debugging.'
-                    )
-                )
+                const extensionTestsEnv: { [key: string]: string } = {
+                    BENCHMARK_EXTENSION_ID: extension,
+                    BENCHMARK_CONFIG_FILE: benchmarkConfig,
+                    BENCHMARK_WORKSPACE: benchmarkWorkspace,
+                }
+
+                if (extension === COPILOT_EXTENSION_ID && process.env.BENCHMARK_COPILOT_TOKEN) {
+                    // Support programmatically signing into Copilot via a token
+                    // This is a bit of a hack to give us some way of running Copilot programmatically
+                    // We should look into a better way to do this.
+                    extensionTestsEnv.CODESPACES = 'true'
+                    extensionTestsEnv.GITHUB_TOKEN = process.env.BENCHMARK_COPILOT_TOKEN
+                }
 
                 await runTests({
                     vscodeExecutablePath,
                     extensionDevelopmentPath: VSCODE_CODY_ROOT,
                     extensionTestsPath: EXTENSION_TEST_PATH,
                     launchArgs: [benchmarkWorkspace, extensionDirArg, userDataDirArg, '--log=error'],
-                    extensionTestsEnv: {
-                        BENCHMARK_EXTENSION_ID: extension,
-                        BENCHMARK_CONFIG_FILE: benchmarkConfig,
-                        BENCHMARK_WORKSPACE: benchmarkWorkspace,
-                        // Support programmatically signing into Copilot via a token
-                        // This is a bit of a hack to give us some way of running Copilot programmatically
-                        // We should look into a better way to do this.
-                        ...(extension === COPILOT_EXTENSION_ID && process.env.BENCHMARK_COPILOT_TOKEN
-                            ? {
-                                  CODESPACES: 'true',
-                                  GITHUB_TOKEN: process.env.BENCHMARK_COPILOT_TOKEN,
-                              }
-                            : {}),
-                    },
+                    extensionTestsEnv,
                 })
 
                 // Copy the solution file. This is primarily so we can compare the generation vs the solution.
