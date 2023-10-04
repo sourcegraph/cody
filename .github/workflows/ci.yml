@@ -13,9 +13,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        runner: [ubuntu-latest, windows-latest, macos-latest]
+        runner: [ubuntu, windows, macos]
         node: [16, 20]
-    runs-on: ${{ matrix.runner }}
+    runs-on: ${{ matrix.runner }}-latest
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v3
@@ -40,8 +40,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        runner: [ubuntu-latest, windows-latest, macos-latest]
-    runs-on: ${{ matrix.runner }}
+        runner: [ubuntu, windows, macos]
+    runs-on: ${{ matrix.runner }}-latest
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v3
@@ -68,8 +68,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        runner: [ubuntu-latest] # TODO(sqs): enable e2e tests for Windows and macOS?
-    runs-on: ${{ matrix.runner }}
+        runner: [ubuntu, windows, macos]
+    runs-on: ${{ matrix.runner }}-latest
     timeout-minutes: 15
     permissions:
       id-token: write
