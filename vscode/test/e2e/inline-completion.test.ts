@@ -1,8 +1,19 @@
 import { expect, Page } from '@playwright/test'
 
+import { loggedEvents, resetLoggedEvents } from '../fixtures/mock-server'
+
 import { sidebarExplorer, sidebarSignin } from './common'
 import { test } from './helpers'
 
+const expectedOrderedEvents = [
+    'CodyVSCodeExtension:completion:suggested',
+    'CodyVSCodeExtension:completion:accepted',
+    'CodyVSCodeExtension:completion:suggested',
+]
+
+test.beforeEach(() => {
+    resetLoggedEvents()
+})
 test('shows completion onboarding notice on first completion accept', async ({ page, sidebar }) => {
     const indexFile = page.getByRole('treeitem', { name: 'index.html' }).locator('a')
     const editor = page.locator('[id="workbench\\.parts\\.editor"]')
@@ -38,6 +49,7 @@ test('shows completion onboarding notice on first completion accept', async ({ p
     await acceptInlineCompletion(page)
     await expect(otherAcceptedCompletion).toBeVisible()
     await expect(notice).not.toBeVisible()
+    await expect.poll(() => loggedEvents.sort()).toEqual(expectedOrderedEvents.sort())
 })
 
 async function triggerInlineCompletionInBody(page: Page): Promise<void> {

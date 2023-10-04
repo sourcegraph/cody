@@ -255,9 +255,13 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
             // latency so that we don't show a result before the user has paused typing for a brief
             // moment.
             if (result.source !== InlineCompletionsResultSource.LastCandidate) {
-                const minimumLatencyFlag = await Promise.resolve(minimumLatencyFlagsPromise)
+                const minimumLatencyFlag = await minimumLatencyFlagsPromise
                 if (triggerKind === TriggerKind.Automatic && minimumLatencyFlag) {
-                    const minimumLatency = getLatency(this.config.providerConfig.identifier, document.languageId)
+                    const minimumLatency = getLatency(
+                        this.config.providerConfig.identifier,
+                        document.uri.fsPath,
+                        document.languageId
+                    )
 
                     const delta = performance.now() - start
                     if (minimumLatency && delta < minimumLatency) {

@@ -7,10 +7,12 @@ import { logDebug } from '../log'
 
 import { localStorage } from './LocalStorageProvider'
 
-// The fraction of users to allocate to the simplified onboarding treatment.
-// This should be between 0 (no users) and 1 (all users).
-const SIMPLIFIED_ARM_ALLOCATION = 1
+// Simplified onboarding is the default now. Classic onboarding is still used
+// for web, dotcom redirects to vscode://... do not work on web. We also use
+// classic if testing.simplified-onboarding: false override is set in user
+// settings JSON.
 
+// TODO: Delete this key to clean up storage after 0.16.x.
 const ONBOARDING_EXPERIMENT_STORAGE_KEY = 'experiment.onboarding'
 
 interface SelectedArm {
@@ -71,25 +73,16 @@ function loadCachedSelection(): SelectedArm | Error | undefined {
     }
     if (typeof arm === 'number' && OnboardingExperimentArm.MinValue <= arm && arm <= OnboardingExperimentArm.MaxValue) {
         return {
-            arm,
-            excludeFromExperiment,
+            // Ignore the allocated arm from storage and give every user
+            // simplified onboarding--even those who were in the control group.
+            arm: OnboardingExperimentArm.Simplified,
+            // Exclude users who were previously in the control group from the experiment.
+            excludeFromExperiment: excludeFromExperiment || arm === OnboardingExperimentArm.Classic,
             setByTestingOverride: false,
         }
     }
     // Storage is corrupt: it is JSON but properties aren't what we expect
     return new Error(`storage present but properties invalid: ${storedSpec}`)
-}
-
-// Picks a new selection but does not cache it to local storage. We cache on
-// exposure so unexposed users can be allocated if experiment weights change
-// in later versions.
-function pickSelection(excludeFromExperiment: boolean): SelectedArm {
-    if (vscode.env.uiKind === vscode.UIKind.Web) {
-        return { arm: OnboardingExperimentArm.Classic, excludeFromExperiment: true, setByTestingOverride: false }
-    }
-    const arm =
-        Math.random() < SIMPLIFIED_ARM_ALLOCATION ? OnboardingExperimentArm.Simplified : OnboardingExperimentArm.Classic
-    return { arm, excludeFromExperiment, setByTestingOverride: false }
 }
 
 // Cache the current selection to local storage. Selections because of a manual
@@ -124,6 +117,12 @@ export function pickArm(useThisTelemetryService: TelemetryService): OnboardingEx
         return selection.arm
     }
 
+    // TODO: Port simplified onboarding to web, then delete classic onboarding.
+    if (vscode.env.uiKind === vscode.UIKind.Web) {
+        selection = { arm: OnboardingExperimentArm.Classic, excludeFromExperiment: true, setByTestingOverride: false }
+        return selection.arm
+    }
+
     // Try to load an earlier selection from storage.
     const cachedSelection = loadCachedSelection()
     if (cachedSelection && !(cachedSelection instanceof Error)) {
@@ -140,8 +139,12 @@ export function pickArm(useThisTelemetryService: TelemetryService): OnboardingEx
         logDebug('simplified-onboarding', 'error loading cached selection', cachedSelection)
     }
 
-    // This is the first time we are picking an arm. Pick randomly.
-    selection = pickSelection(cachedSelection instanceof Error)
+    selection = {
+        // All non-web users get simplified onboarding now.
+        arm: OnboardingExperimentArm.Simplified,
+        excludeFromExperiment: cachedSelection instanceof Error,
+        setByTestingOverride: false,
+    }
     logDebug('simplified-onboarding', 'picked new onboarding experiment arm selection', JSON.stringify(selection))
     return selection.arm
 }
