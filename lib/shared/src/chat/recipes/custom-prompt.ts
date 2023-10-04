@@ -9,7 +9,7 @@ import { Recipe, RecipeContext, RecipeID } from './recipe'
 
 /** ======================================================
  * Recipe for running custom prompts from the cody.json files
- * Works with VS Code only
+ * Works with editorContext only
 ====================================================== **/
 export class CustomPrompt implements Recipe {
     public id: RecipeID = 'custom-prompt'
@@ -21,10 +21,9 @@ export class CustomPrompt implements Recipe {
      */
     public async getInteraction(commandRunnerID: string, context: RecipeContext): Promise<Interaction | null> {
         if (!context.editorContext) {
-            console.error('Context builder not available')
+            console.error('editorContext is required to run this recipe.')
             return null
         }
-
         const command = context.editor.controllers?.command?.getCommand(commandRunnerID)
         if (!command) {
             const errorMessage = 'Invalid command -- command not found.'

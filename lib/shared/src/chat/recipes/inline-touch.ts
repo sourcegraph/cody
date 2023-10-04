@@ -1,13 +1,12 @@
 import * as vscode from 'vscode'
 
-import { ContextMessage } from '../../codebase-context/messages'
-import { ActiveTextEditorSelection } from '../../editor'
+import { EditorContext } from '../../editor-context'
 import { MAX_HUMAN_INPUT_TOKENS, MAX_RECIPE_INPUT_TOKENS, MAX_RECIPE_SURROUNDING_TOKENS } from '../../prompt/constants'
 import { truncateText } from '../../prompt/truncation'
 import { BufferedBotResponseSubscriber } from '../bot-response-multiplexer'
+import { defaultCodyPromptContext } from '../commands'
 import { Interaction } from '../transcript/interaction'
 
-import { ChatQuestion } from './chat-question'
 import { commandRegex, contentSanitizer } from './helpers'
 import { Recipe, RecipeContext, RecipeID } from './recipe'
 
@@ -22,8 +21,8 @@ export class InlineTouch implements Recipe {
     constructor(private debug: (filterLabel: string, text: string, ...args: unknown[]) => void) {}
 
     public async getInteraction(humanChatInput: string, context: RecipeContext): Promise<Interaction | null> {
-        if (!context.contextBuilder) {
-            console.error('Context builder not available')
+        if (!context.editorContext) {
+            console.error('editorContext is required to run this recipe.')
             return null
         }
         const selection = context.editor.getActiveTextEditorSelection() || context.editor.controllers?.inline?.selection
@@ -90,6 +89,16 @@ export class InlineTouch implements Recipe {
                 this.debug('InlineTouch:responseMultiplexer', 'BufferedBotResponseSubscriber', content)
             })
         )
+        const contextConfig = defaultCodyPromptContext
+        contextConfig.currentDir = true
+        contextConfig.openTabs = true
+        const contextMessages = new EditorContext(
+            context.editorContext,
+            truncatedText,
+            context.editor,
+            context.codebaseContext,
+            selection
+        ).getContextMessages(contextConfig)
 
         return Promise.resolve(
             new Interaction(
@@ -102,7 +111,7 @@ export class InlineTouch implements Recipe {
                     speaker: 'assistant',
                     prefix: 'Working on it! I will show you the new file when it is ready.\n\n',
                 },
-                this.getContextMessages(selection, currentDir, context),
+                contextMessages,
                 []
             )
         )
@@ -155,31 +164,6 @@ export class InlineTouch implements Recipe {
     // Prompt template for displaying the prompt to users in chat view
     public static readonly displayPrompt = `\n
     File: `
-
-    // ======================================================== //
-    //                      GET CONTEXT                         //
-    // ======================================================== //
-
-    private async getContextMessages(
-        selection: ActiveTextEditorSelection,
-        currentDir: string,
-        context: RecipeContext
-    ): Promise<ContextMessage[]> {
-        if (!context.contextBuilder) {
-            return []
-        }
-        const contextMessages: ContextMessage[] = []
-        // Add selected text and current file as context and create context messages from current directory
-        const selectedContext = ChatQuestion.getEditorSelectionContext(selection)
-        const currentDirContext = await context.contextBuilder.getEditorDirContext(currentDir, selection.fileName, true)
-        contextMessages.push(...selectedContext, ...currentDirContext)
-        // Create context messages from open tabs
-        if (contextMessages.length < 10) {
-            const tabsContext = await context.contextBuilder.getEditorOpenTabsContext(currentDir)
-            contextMessages.push(...tabsContext)
-        }
-        return contextMessages.slice(-10)
-    }
 
     // ======================================================== //
     //                          HELPERS                         //
