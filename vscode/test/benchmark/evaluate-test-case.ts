@@ -8,7 +8,7 @@ const exec = promisify(_exec)
 export enum CaseStatus {
     'PASS',
     'FAIL',
-    'TIMED_OUT',
+    'NO_CHANGE',
 }
 
 export const testCompletionResult = async (

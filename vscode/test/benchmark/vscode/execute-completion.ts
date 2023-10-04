@@ -57,10 +57,14 @@ export const executeCompletion = async ({ entryFile, openFiles }: DatasetConfig,
     await ensureExecuteCommand('editor.action.inlineSuggest.trigger')
 
     const startPolling = pollToAcceptCompletion(entryEditor.document.version)
-    await Promise.race([
+    const completed = await Promise.race([
         startPolling,
         new Promise<false>(resolve => setTimeout(() => resolve(false), 5000)), // Maximum 5s wait
     ])
+
+    if (!completed) {
+        return
+    }
 
     await entryEditor.document.save()
 }

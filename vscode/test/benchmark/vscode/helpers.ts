@@ -3,7 +3,7 @@ import * as vscode from 'vscode'
 import { CODY_EXTENSION_ID } from '../constants'
 import { assertEnv } from '../utils'
 
-const waitForManualExtensionSetupConfirmation = async (): Promise<void> => {
+export const waitForManualExtensionSetupConfirmation = async (): Promise<void> => {
     const buttonTitle = 'Resume benchmark suite'
 
     // eslint-disable-next-line @typescript-eslint/no-misused-promises, no-async-promise-executor
@@ -22,9 +22,15 @@ export async function initExtension(id: string): Promise<void> {
     const ext = vscode.extensions.getExtension(id)
     await ext?.activate()
 
+    // if (id !== CODY_EXTENSION_ID) {
+    //     // Unknown setup steps, wait for manual prompt
+    //     // return waitForManualExtensionSetupConfirmation()
+    //     // return
+    // }
+
     if (id !== CODY_EXTENSION_ID) {
-        // Unknown setup steps, wait for manual prompt
-        return waitForManualExtensionSetupConfirmation()
+        // await ensureExecuteCommand()
+        return
     }
 
     // Wait a short amount to give Cody time to activate

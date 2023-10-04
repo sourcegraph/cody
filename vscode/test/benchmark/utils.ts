@@ -33,6 +33,15 @@ export const createTemporaryWorkspace = async (filePaths: string[], cwd: string)
     return tempDir
 }
 
+export const hasGitChanges = async (file: string, cwd: string): Promise<boolean> => {
+    try {
+        await exec(`git diff --quiet ${file}`, { cwd })
+        return false
+    } catch {
+        return true
+    }
+}
+
 export interface DatasetConfig {
     entryFile: string
     openFiles: string[]
