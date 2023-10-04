@@ -1,5 +1,5 @@
 import { Configuration } from '@sourcegraph/cody-shared/src/configuration'
-import { FeatureFlag, FeatureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
+import { FeatureFlag, featureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
 import { CodyLLMSiteConfiguration } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
 
 import { logError } from '../../log'
@@ -17,15 +17,13 @@ import { createProviderConfig as createUnstableOpenAIProviderConfig } from './un
 export async function createProviderConfig(
     config: Configuration,
     client: CodeCompletionsClient,
-    featureFlagProvider?: FeatureFlagProvider,
     codyLLMSiteConfig?: CodyLLMSiteConfiguration
 ): Promise<ProviderConfig | null> {
     /**
      * Look for the autocomplete provider in VSCode settings and return matching provider config.
      */
     const providerAndModelFromVSCodeConfig = await resolveDefaultProviderFromVSCodeConfigOrFeatureFlags(
-        config.autocompleteAdvancedProvider,
-        featureFlagProvider
+        config.autocompleteAdvancedProvider
     )
     if (providerAndModelFromVSCodeConfig) {
         const { provider, model } = providerAndModelFromVSCodeConfig
@@ -123,19 +121,18 @@ export async function createProviderConfig(
 }
 
 async function resolveDefaultProviderFromVSCodeConfigOrFeatureFlags(
-    configuredProvider: string | null,
-    featureFlagProvider?: FeatureFlagProvider
+    configuredProvider: string | null
 ): Promise<{ provider: string; model?: UnstableFireworksOptions['model'] } | null> {
     if (configuredProvider) {
         return { provider: configuredProvider }
     }
 
     const [starCoder7b, starCoder16b, starCoderHybrid, llamaCode7b, llamaCode13b] = await Promise.all([
-        featureFlagProvider?.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteStarCoder7B),
-        featureFlagProvider?.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteStarCoder16B),
-        featureFlagProvider?.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteStarCoderHybrid),
-        featureFlagProvider?.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteLlamaCode7B),
-        featureFlagProvider?.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteLlamaCode13B),
+        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteStarCoder7B),
+        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteStarCoder16B),
+        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteStarCoderHybrid),
+        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteLlamaCode7B),
+        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteLlamaCode13B),
     ])
 
     if (starCoder7b || starCoder16b || starCoderHybrid || llamaCode7b || llamaCode13b) {

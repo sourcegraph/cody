@@ -212,10 +212,28 @@ export function setUserAgent(newUseragent: string): void {
 
 export class SourcegraphGraphQLAPIClient {
     private dotcomUrl = DOTCOM_URL
-    constructor(private config: GraphQLAPIClientConfig) {}
+
+    /**
+     * Should be set on extension activation via `localStorage.onConfigurationChange(config)`
+     * Done to avoid passing the graphql client around as a parameter and instead
+     * access it as a singleton via the module import.
+     */
+    private _config: GraphQLAPIClientConfig | null = null
+
+    private get config(): GraphQLAPIClientConfig {
+        if (!this._config) {
+            throw new Error('GraphQLAPIClientConfig is not set')
+        }
+
+        return this._config
+    }
+
+    constructor(config: GraphQLAPIClientConfig | null = null) {
+        this._config = config
+    }
 
     public onConfigurationChange(newConfig: GraphQLAPIClientConfig): void {
-        this.config = newConfig
+        this._config = newConfig
     }
 
     public isDotCom(): boolean {
@@ -578,6 +596,12 @@ export class SourcegraphGraphQLAPIClient {
             .catch(error => new Error(`error fetching Testing Sourcegraph API: ${error} (${url})`))
     }
 }
+
+/**
+ * Singleton instance of the graphql client.
+ * Should be configured on the extension activation via `graphqlClient.onConfigurationChange(config)`.
+ */
+export const graphqlClient = new SourcegraphGraphQLAPIClient()
 
 function verifyResponseCode(response: Response): Response {
     if (!response.ok) {

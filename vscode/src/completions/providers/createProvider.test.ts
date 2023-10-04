@@ -2,7 +2,11 @@ import { describe, expect, it } from 'vitest'
 
 import { Configuration } from '@sourcegraph/cody-shared/src/configuration'
 import { DOTCOM_URL } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
-import { CodyLLMSiteConfiguration } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
+import {
+    CodyLLMSiteConfiguration,
+    GraphQLAPIClientConfig,
+    graphqlClient,
+} from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
 
 import { CodeCompletionsClient } from '../client'
 
@@ -49,6 +53,8 @@ const dummyCodeCompletionsClient: CodeCompletionsClient = {
     onConfigurationChange: () => undefined,
 }
 
+graphqlClient.onConfigurationChange({} as unknown as GraphQLAPIClientConfig)
+
 describe('createProviderConfig', () => {
     describe('if completions provider fields are defined in VSCode settings', () => {
         it('returns null if completions provider is not supported', async () => {
@@ -57,7 +63,6 @@ describe('createProviderConfig', () => {
                     autocompleteAdvancedProvider: 'nasa-ai' as Configuration['autocompleteAdvancedProvider'],
                 }),
                 dummyCodeCompletionsClient,
-                undefined,
                 {}
             )
             expect(provider).toBeNull()
@@ -71,7 +76,6 @@ describe('createProviderConfig', () => {
                     autocompleteAdvancedProvider: null as Configuration['autocompleteAdvancedProvider'],
                 }),
                 dummyCodeCompletionsClient,
-                undefined,
                 {}
             )
             expect(provider?.identifier).toBe('anthropic')
@@ -85,7 +89,6 @@ describe('createProviderConfig', () => {
                     autocompleteAdvancedServerEndpoint: 'https://unstable-codegen.com',
                 }),
                 dummyCodeCompletionsClient,
-                undefined,
                 {}
             )
             expect(provider?.identifier).toBe('codegen')
@@ -96,7 +99,6 @@ describe('createProviderConfig', () => {
             const provider = await createProviderConfig(
                 getVSCodeSettings({ autocompleteAdvancedProvider: 'unstable-codegen' }),
                 dummyCodeCompletionsClient,
-                undefined,
                 {}
             )
             expect(provider).toBeNull()
@@ -109,7 +111,6 @@ describe('createProviderConfig', () => {
                     autocompleteAdvancedModel: 'starcoder-3b',
                 }),
                 dummyCodeCompletionsClient,
-                undefined,
                 {}
             )
             expect(provider?.identifier).toBe('fireworks')
@@ -120,7 +121,6 @@ describe('createProviderConfig', () => {
             const provider = await createProviderConfig(
                 getVSCodeSettings({ autocompleteAdvancedProvider: 'unstable-fireworks' }),
                 dummyCodeCompletionsClient,
-                undefined,
                 {}
             )
             expect(provider?.identifier).toBe('fireworks')
@@ -134,7 +134,6 @@ describe('createProviderConfig', () => {
                     autocompleteAdvancedModel: 'hello-world',
                 }),
                 dummyCodeCompletionsClient,
-                undefined,
                 {}
             )
             expect(provider?.identifier).toBe('unstable-openai')
@@ -148,7 +147,6 @@ describe('createProviderConfig', () => {
                     autocompleteAdvancedModel: 'hello-world',
                 }),
                 dummyCodeCompletionsClient,
-                undefined,
                 {}
             )
             expect(provider?.identifier).toBe('anthropic')
@@ -162,7 +160,6 @@ describe('createProviderConfig', () => {
                     autocompleteAdvancedServerEndpoint: 'https://unstable-codegen.com',
                 }),
                 dummyCodeCompletionsClient,
-                undefined,
                 { provider: 'azure-open-ai', completionModel: 'gpt-35-turbo-test' }
             )
             expect(provider?.identifier).toBe('codegen')
@@ -256,7 +253,6 @@ describe('createProviderConfig', () => {
                     const provider = await createProviderConfig(
                         getVSCodeSettings(),
                         dummyCodeCompletionsClient,
-                        undefined,
                         codyLLMConfig
                     )
                     if (expected === null) {
@@ -271,7 +267,7 @@ describe('createProviderConfig', () => {
     })
 
     it('returns anthropic provider config if no completions provider specified in VSCode settings or site config', async () => {
-        const provider = await createProviderConfig(getVSCodeSettings(), dummyCodeCompletionsClient, undefined, {})
+        const provider = await createProviderConfig(getVSCodeSettings(), dummyCodeCompletionsClient, {})
         expect(provider?.identifier).toBe('anthropic')
         expect(provider?.model).toBe('claude-instant-infill')
     })

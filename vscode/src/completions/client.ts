@@ -1,4 +1,4 @@
-import { FeatureFlag, type FeatureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
+import { FeatureFlag, featureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
 import type {
     CompletionLogger,
     CompletionsClientConfig,
@@ -30,11 +30,7 @@ export interface CodeCompletionsClient {
 /**
  * Access the code completion LLM APIs via a Sourcegraph server instance.
  */
-export function createClient(
-    config: CompletionsClientConfig,
-    featureFlagProvider?: FeatureFlagProvider,
-    logger?: CompletionLogger
-): CodeCompletionsClient {
+export function createClient(config: CompletionsClientConfig, logger?: CompletionLogger): CodeCompletionsClient {
     function getCodeCompletionsEndpoint(): string {
         return new URL('/.api/completions/code', config.serverEndpoint).href
     }
@@ -43,7 +39,7 @@ export function createClient(
         async complete(params, onPartialResponse, signal): Promise<CompletionResponse> {
             const log = logger?.startCompletion(params)
 
-            const tracingFlagEnabled = await featureFlagProvider?.evaluateFeatureFlag(
+            const tracingFlagEnabled = await featureFlagProvider.evaluateFeatureFlag(
                 FeatureFlag.CodyAutocompleteTracing
             )
 

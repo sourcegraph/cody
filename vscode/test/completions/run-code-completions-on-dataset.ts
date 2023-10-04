@@ -8,9 +8,8 @@ import * as vscode from 'vscode'
 import { TextDocument } from 'vscode-languageserver-textdocument'
 
 import { NoopEditor } from '@sourcegraph/cody-shared/src/editor'
-import { FeatureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
 import { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/nodeClient'
-import { SourcegraphGraphQLAPIClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
+import { graphqlClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
 
 import { GetContextResult } from '../../src/completions/context/context'
 import { VSCodeDocumentHistory } from '../../src/completions/context/history'
@@ -30,14 +29,6 @@ import { findSubstringPosition } from './utils'
 
 let didLogConfig = false
 let providerConfig: ProviderConfig | null
-
-const dummyFeatureFlagProvider = new FeatureFlagProvider(
-    new SourcegraphGraphQLAPIClient({
-        accessToken: 'access-token',
-        serverEndpoint: 'https://sourcegraph.com',
-        customHeaders: {},
-    })
-)
 
 initializeNetworkAgent()
 
@@ -64,6 +55,7 @@ async function initCompletionsProvider(context: GetContextResult): Promise<Inlin
         throw new Error('`cody.autocomplete` is not true!')
     }
 
+    graphqlClient.onConfigurationChange(initialConfig)
     const { codeCompletionsClient, codebaseContext } = await configureExternalServices(
         initialConfig,
         'rg',
@@ -89,7 +81,6 @@ async function initCompletionsProvider(context: GetContextResult): Promise<Inlin
         history,
         getCodebaseContext: () => codebaseContext,
         contextFetcher: () => Promise.resolve(context),
-        featureFlagProvider: dummyFeatureFlagProvider,
         triggerNotice: null,
     })
 
