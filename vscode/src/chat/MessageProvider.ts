@@ -318,7 +318,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
             codebaseContext: this.contextProvider.context,
             responseMultiplexer: this.multiplexer,
             firstInteraction: this.transcript.isEmpty,
-            contextBuilder: new VSCodeEditorContext(),
+            editorContext: new VSCodeEditorContext(),
         })
         if (!interaction) {
             return
