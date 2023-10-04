@@ -77,6 +77,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
     constructor({
         graphContextFetcher = null,
         completeSuggestWidgetSelection = false,
+        syntacticTriggers = false,
         tracer = null,
         ...config
     }: CodyCompletionItemProviderConfig) {
@@ -84,6 +85,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
             ...config,
             graphContextFetcher,
             completeSuggestWidgetSelection,
+            syntacticTriggers,
             tracer,
             contextFetcher: config.contextFetcher ?? getContext,
         }
