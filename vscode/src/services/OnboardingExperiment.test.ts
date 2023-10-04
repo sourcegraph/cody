@@ -56,38 +56,27 @@ describe('OnboardingExperiment', () => {
     })
 
     it('caches arms on exposure, not when picking them', async () => {
-        vi.spyOn(global.Math, 'random').mockReturnValueOnce(2)
         const set = vi.spyOn(localStorage, 'set')
         OnboardingExperiment.pickArm(mockTelemetry)
         expect(set).not.toHaveBeenCalled()
         await OnboardingExperiment.logExposure()
-        expect(set).toHaveBeenCalledWith('experiment.onboarding', '{"arm":0,"excludeFromExperiment":false}')
+        expect(set).toHaveBeenCalledWith('experiment.onboarding', '{"arm":1,"excludeFromExperiment":false}')
     })
 
-    it('randomly assigns arms', () => {
-        // A number less than zero will always trigger the experiment.
-        const random = vi.spyOn(global.Math, 'random').mockReturnValueOnce(-1)
+    it('always assigns the treatment arm', () => {
+        const random = vi.spyOn(global.Math, 'random')
         expect(OnboardingExperiment.pickArm(mockTelemetry)).toBe(OnboardingExperimentArm.Simplified)
-        expect(random).toBeCalled()
-
-        OnboardingExperiment.resetForTesting()
-        // A number greater than 1 will always trigger the control arm of the trial.
-        random.mockReturnValueOnce(2)
-        expect(OnboardingExperiment.pickArm(mockTelemetry)).toBe(OnboardingExperimentArm.Classic)
+        expect(random).not.toBeCalled()
     })
 
     it('caches the arm in memory once picked', () => {
         const localStorageGet = vi.spyOn(localStorage, 'get')
-        const random = vi.spyOn(global.Math, 'random')
         const arm = OnboardingExperiment.pickArm(mockTelemetry)
         expect(localStorageGet).toBeCalled()
-        expect(random).toBeCalled()
 
         localStorageGet.mockReset()
-        random.mockReset()
         expect(OnboardingExperiment.pickArm(mockTelemetry)).toBe(arm)
         expect(localStorageGet).not.toBeCalled()
-        expect(random).not.toBeCalled()
     })
 
     it('logs exposures', async () => {
@@ -101,24 +90,21 @@ describe('OnboardingExperiment', () => {
         })
     })
 
-    it('defers to arms cached in local storage', async () => {
-        const localStorageGet = vi.spyOn(localStorage, 'get').mockReturnValue('{"arm":0,"excludeFromExperiment":true}')
-        const random = vi.spyOn(global.Math, 'random')
-        expect(OnboardingExperiment.pickArm(mockTelemetry)).toBe(OnboardingExperimentArm.Classic)
+    it('excludes users with cached control arms from the experiment', async () => {
+        const localStorageGet = vi.spyOn(localStorage, 'get').mockReturnValue('{"arm":0,"excludeFromExperiment":false}')
+        expect(OnboardingExperiment.pickArm(mockTelemetry)).toBe(OnboardingExperimentArm.Simplified)
         expect(localStorageGet).toBeCalled()
-        expect(random).not.toBeCalled()
 
         const log = vi.spyOn(mockTelemetry, 'log')
         await OnboardingExperiment.logExposure()
         expect(log).toHaveBeenCalledWith('CodyVSCodeExtension:experiment:simplifiedOnboarding:exposed', {
-            arm: 'control',
+            arm: 'treatment',
             excludeFromExperiment: true,
         })
     })
 
     it('excludes users with corrupt local storage', async () => {
         vi.spyOn(localStorage, 'get').mockReturnValue('"hi, mom"')
-        vi.spyOn(global.Math, 'random').mockReturnValue(-1)
         expect(OnboardingExperiment.pickArm(mockTelemetry)).toBe(OnboardingExperimentArm.Simplified)
 
         const log = vi.spyOn(mockTelemetry, 'log')
@@ -134,10 +120,8 @@ describe('OnboardingExperiment', () => {
             get: (key: string) => key === 'testing.simplified-onboarding',
         } as unknown as vscode.WorkspaceConfiguration)
         const localStorageGet = vi.spyOn(localStorage, 'get')
-        const random = vi.spyOn(global.Math, 'random')
         expect(OnboardingExperiment.pickArm(mockTelemetry)).toBe(OnboardingExperimentArm.Simplified)
         expect(localStorageGet).not.toBeCalled()
-        expect(random).not.toBeCalled()
 
         const log = vi.spyOn(mockTelemetry, 'log')
         await OnboardingExperiment.logExposure()
@@ -149,10 +133,8 @@ describe('OnboardingExperiment', () => {
             get: () => false,
         } as unknown as vscode.WorkspaceConfiguration)
         const localStorageGet = vi.spyOn(localStorage, 'get')
-        const random = vi.spyOn(global.Math, 'random')
         expect(OnboardingExperiment.pickArm(mockTelemetry)).toBe(OnboardingExperimentArm.Classic)
         expect(localStorageGet).not.toBeCalled()
-        expect(random).not.toBeCalled()
 
         const log = vi.spyOn(mockTelemetry, 'log')
         await OnboardingExperiment.logExposure()
