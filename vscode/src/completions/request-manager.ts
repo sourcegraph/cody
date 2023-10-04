@@ -99,9 +99,7 @@ export class RequestManager {
     }
 
     public removeFromCache(params: RequestParams): void {
-        console.log(this.cache)
         this.cache.delete(params)
-        console.log(this.cache)
     }
 
     /**
