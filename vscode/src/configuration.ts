@@ -77,6 +77,10 @@ export function getConfiguration(config: ConfigGetter = vscode.workspace.getConf
             CONFIG_KEY.autocompleteExperimentalSyntacticPostProcessing,
             true
         ),
+        autocompleteExperimentalSyntacticTriggers: config.get(
+            CONFIG_KEY.autocompleteExperimentalSyntacticTriggers,
+            false
+        ),
         autocompleteExperimentalGraphContext: config.get<boolean>(
             CONFIG_KEY.autocompleteExperimentalGraphContext,
             false

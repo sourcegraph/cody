@@ -33,6 +33,7 @@ interface GetCurrentDocContextParams {
     maxPrefixLength: number
     maxSuffixLength: number
     enableExtendedTriggers: boolean
+    syntacticTriggers?: boolean
     context?: vscode.InlineCompletionContext
 }
 
@@ -53,7 +54,8 @@ interface GetCurrentDocContextParams {
  * @returns An object containing the current document context or null if there are no lines in the document.
  */
 export function getCurrentDocContext(params: GetCurrentDocContextParams): DocumentContext {
-    const { document, position, maxPrefixLength, maxSuffixLength, enableExtendedTriggers, context } = params
+    const { document, position, maxPrefixLength, maxSuffixLength, enableExtendedTriggers, context, syntacticTriggers } =
+        params
     const offset = document.offsetAt(position)
 
     // TODO(philipp-spiess): This requires us to read the whole document. Can we limit our ranges
@@ -125,6 +127,6 @@ export function getCurrentDocContext(params: GetCurrentDocContextParams): Docume
 
     return {
         ...docContext,
-        multilineTrigger: detectMultiline(docContext, document, enableExtendedTriggers),
+        multilineTrigger: detectMultiline({ docContext, document, enableExtendedTriggers, syntacticTriggers }),
     }
 }

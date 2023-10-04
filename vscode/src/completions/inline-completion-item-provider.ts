@@ -40,6 +40,7 @@ export interface CodyCompletionItemProviderConfig {
     getCodebaseContext: () => CodebaseContext
     graphContextFetcher?: GraphContextFetcher | null
     completeSuggestWidgetSelection?: boolean
+    syntacticTriggers?: boolean
     tracer?: ProvideInlineCompletionItemsTracer | null
     contextFetcher?: (options: GetContextOptions) => Promise<GetContextResult>
     featureFlagProvider: FeatureFlagProvider
@@ -196,6 +197,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
             maxPrefixLength: this.config.providerConfig.contextSizeHints.prefixChars,
             maxSuffixLength: this.config.providerConfig.contextSizeHints.suffixChars,
             enableExtendedTriggers: this.config.providerConfig.enableExtendedMultilineTriggers,
+            syntacticTriggers: this.config.syntacticTriggers,
             // We ignore the current context selection if completeSuggestWidgetSelection is not enabled
             context: takeSuggestWidgetSelectionIntoAccount ? context : undefined,
         })

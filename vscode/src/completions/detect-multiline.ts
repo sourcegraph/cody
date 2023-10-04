@@ -11,11 +11,15 @@ import {
 import { getCachedParseTreeForDocument } from './tree-sitter/parse-tree-cache'
 import { getDocumentQuerySDK } from './tree-sitter/query-sdk'
 
-export function detectMultiline(
-    docContext: Omit<DocumentContext, 'multilineTrigger'>,
-    document: vscode.TextDocument,
+interface DetectMultilineParams {
+    docContext: Omit<DocumentContext, 'multilineTrigger'>
+    document: vscode.TextDocument
     enableExtendedTriggers: boolean
-): string | null {
+    syntacticTriggers?: boolean
+}
+
+export function detectMultiline(params: DetectMultilineParams): string | null {
+    const { syntacticTriggers, docContext, document, enableExtendedTriggers } = params
     const { prefix, prevNonEmptyLine, nextNonEmptyLine, currentLinePrefix, currentLineSuffix } = docContext
 
     const parseTreeCache = getCachedParseTreeForDocument(document)
@@ -23,7 +27,7 @@ export function detectMultiline(
     const blockStart = getLanguageConfig(document.languageId)?.blockStart
     const isBlockStartActive = blockStart && prefix.trimEnd().endsWith(blockStart)
 
-    if (parseTreeCache && documentQuerySDK && isBlockStartActive) {
+    if (syntacticTriggers && parseTreeCache && documentQuerySDK && isBlockStartActive) {
         const triggerPosition = document.positionAt(docContext.prefix.lastIndexOf(blockStart))
 
         const queryStartPoint = {
