@@ -61,7 +61,7 @@ export async function start(): Promise<void> {
 
             console.log(
                 chalk.yellow(
-                    'Running VS Code with `--log=error` to improve benchmark output. Remove this arg for debugging.'
+                    'Running VS Code with `--log=critical` to improve benchmark output. Adjust this arg for easier debugging.'
                 )
             )
 
@@ -95,7 +95,7 @@ export async function start(): Promise<void> {
                     vscodeExecutablePath,
                     extensionDevelopmentPath: VSCODE_CODY_ROOT,
                     extensionTestsPath: EXTENSION_TEST_PATH,
-                    launchArgs: [benchmarkWorkspace, extensionDirArg, userDataDirArg, '--log=error'],
+                    launchArgs: [benchmarkWorkspace, extensionDirArg, userDataDirArg, '--log=critical'],
                     extensionTestsEnv,
                 })
 
@@ -169,12 +169,14 @@ export async function start(): Promise<void> {
         )
 
         const passRate = (passCount / (passCount + failCount + noChangeCount)) * 100
+        const passRateExcludingNoChange = (passCount / (passCount + failCount)) * 100
 
         console.log(`\n${extension}:`)
         console.log(chalk.green(`Pass: ${passCount}`))
         console.log(chalk.red(`Fail: ${failCount}`))
         console.log(chalk.yellow(`No Change: ${noChangeCount}`))
-        console.log(chalk.blue(`Pass rate: ${passRate.toFixed(2)}%\n`))
+        console.log(chalk.blue(`Pass rate: ${passRate.toFixed(2)}%`))
+        console.log(chalk.blue(`Pass rate (excluding No Change): ${passRateExcludingNoChange.toFixed(2)}%\n`))
     }
 }
 
