@@ -332,7 +332,7 @@ export class Agent extends MessageHandler {
             return null
         }
 
-        const event = `${clientInfo.name}:${feature}:${name}`
+        const event = `${eventProperties.prefix}:${feature}:${name}`
         await client.graphqlClient.logEvent({
             event,
             url: '',
