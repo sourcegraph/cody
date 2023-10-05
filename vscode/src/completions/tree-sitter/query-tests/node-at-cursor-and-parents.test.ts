@@ -1,25 +1,25 @@
 import { beforeAll, describe, it } from 'vitest'
 
 import { initTreeSitterParser } from '../../test-helpers'
+import { astGetters } from '../ast-getters'
 import { SupportedLanguage } from '../grammars'
-import { getDocumentQuerySDK } from '../queries'
+import { getDocumentQuerySDK } from '../query-sdk'
 
 import { annotateAndMatchSnapshot } from './annotate-and-match-snapshot'
 
-describe('getFirstMultilineBlockForTruncation', () => {
+describe('getNodeAtCursorAndParents', () => {
     beforeAll(async () => {
         await initTreeSitterParser(SupportedLanguage.TypeScript)
     })
 
     it('typescript', async () => {
-        const { language, parser, queries } = getDocumentQuerySDK(SupportedLanguage.TypeScript)!
+        const { language, parser } = getDocumentQuerySDK(SupportedLanguage.TypeScript)!
 
         await annotateAndMatchSnapshot({
             parser,
             language,
-            rawQuery: queries.blocks.raw,
-            captures: queries.blocks.getFirstMultilineBlockForTruncation,
-            sourcesPath: 'test-data/blocks.ts',
+            captures: astGetters.getNodeAtCursorAndParents,
+            sourcesPath: 'test-data/parents.ts',
         })
     })
 })
