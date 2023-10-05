@@ -10,7 +10,7 @@ import { isAbortError } from '@sourcegraph/cody-shared/src/sourcegraph-api/error
 import { isError } from '@sourcegraph/cody-shared/src/utils'
 
 import { getGraphContextFromRange as defaultGetGraphContextFromRange, locationKeyFn } from '../../graph/graph'
-import { getDocumentSections as defaultGetDocumentSections, DocumentSection } from '../../graph/sections'
+import { getGraphDocumentSections as defaultGetDocumentSections, DocumentSection } from '../../graph/sections'
 import { logDebug, logError } from '../../log'
 import { ContextSnippet, SymbolContextSnippet } from '../types'
 import { createSubscriber } from '../utils'

@@ -395,6 +395,20 @@ export class Selection extends Range {
     isReversed = false
 }
 
+export enum FoldingRangeKind {
+    Comment = 1,
+    Imports = 2,
+    Region = 3,
+}
+
+export class FoldingRange {
+    constructor(
+        public start: number,
+        public end: number,
+        public kind?: FoldingRangeKind
+    ) {}
+}
+
 export class InlineCompletionItem {
     public insertText: string
     public range: Range | undefined
@@ -675,6 +689,9 @@ export const vsCodeMocks = {
         },
     },
     InlineCompletionTriggerKind,
+    SymbolKind,
+    FoldingRange,
+    FoldingRangeKind,
 } as const
 
 export enum UIKind {
