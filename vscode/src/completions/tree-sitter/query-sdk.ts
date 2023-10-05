@@ -98,6 +98,13 @@ interface QueryWrappers {
             end?: Point
         ) => never[] | readonly [{ readonly node: SyntaxNode; readonly name: 'blocks' }]
     }
+    multilineTriggers: {
+        getEnclosingTrigger: (
+            node: SyntaxNode,
+            start: Point,
+            end?: Point
+        ) => never[] | readonly [{ readonly node: SyntaxNode; readonly name: 'trigger' }]
+    }
     singlelineTriggers: {
         getEnclosingTrigger: (
             node: SyntaxNode,
@@ -130,6 +137,18 @@ function getLanguageSpecificQueryWrappers(queries: ResolvedQueries, _parser: Par
                     ?.node
 
                 return [{ node: potentialParent || initialNode, name: 'blocks' }] as const
+            },
+        },
+        multilineTriggers: {
+            getEnclosingTrigger: (root, start, end) => {
+                const captures = queries.multilineTriggers.compiled.captures(root, start, end)
+                const node = getTriggerNodeWithBlockStaringAtPoint(captures, start)
+
+                if (!node) {
+                    return []
+                }
+
+                return [{ node, name: 'trigger' }] as const
             },
         },
         singlelineTriggers: {
