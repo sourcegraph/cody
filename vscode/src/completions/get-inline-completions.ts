@@ -202,6 +202,14 @@ async function doGetInlineCompletions(params: InlineCompletionsParams): Promise<
         return null
     }
 
+    // Do not trigger when cusor is at the start of the file ending line, and the line above is empty
+    if (triggerKind !== TriggerKind.Manual && position.line && position.line === document.lineCount - 1) {
+        const lineAbove = Math.max(position.line - 1, 0)
+        if (document.lineAt(lineAbove).isEmptyOrWhitespace && !position.character) {
+            return null
+        }
+    }
+
     // Check if the user is typing as suggested by the last candidate completion (that is shown as
     // ghost text in the editor), and reuse it if it is still valid.
     const resultToReuse =
