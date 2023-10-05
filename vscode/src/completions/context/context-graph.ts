@@ -68,7 +68,7 @@ export async function getContextFromGraph(options: Options): Promise<GetContextR
     }
 }
 
-function supportedLanguageId(languageId: string): boolean {
+export function supportedLanguageId(languageId: string): boolean {
     switch (languageId) {
         case 'python':
         case 'go':

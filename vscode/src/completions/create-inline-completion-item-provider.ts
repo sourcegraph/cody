@@ -9,8 +9,8 @@ import type { AuthProvider } from '../services/AuthProvider'
 import { CodyStatusBar } from '../services/StatusBar'
 
 import { CodeCompletionsClient } from './client'
-import { GraphSectionObserver } from './context/graph-section-observer'
 import { VSCodeDocumentHistory } from './context/history'
+import { LspLightGraphCache } from './context/lsp-light-graph-cache'
 import { InlineCompletionItemProvider } from './inline-completion-item-provider'
 import { createProviderConfig } from './providers/createProvider'
 import { registerAutocompleteTraceView } from './tracer/traceView'
@@ -57,9 +57,13 @@ export async function createInlineCompletionItemProvider({
     ])
     if (providerConfig) {
         const history = new VSCodeDocumentHistory()
-        const sectionObserver =
+        // const sectionObserver =
+        //     config.autocompleteExperimentalGraphContext || graphContextFlag
+        //         ? GraphSectionObserver.createInstance()
+        //         : undefined
+        const lspLightGraphCache =
             config.autocompleteExperimentalGraphContext || graphContextFlag
-                ? GraphSectionObserver.createInstance()
+                ? LspLightGraphCache.createInstance()
                 : undefined
 
         const completionsProvider = new InlineCompletionItemProvider({
@@ -67,7 +71,8 @@ export async function createInlineCompletionItemProvider({
             history,
             statusBar,
             getCodebaseContext: () => contextProvider.context,
-            graphContextFetcher: sectionObserver,
+            graphContextFetcher: lspLightGraphCache,
+
             completeSuggestWidgetSelection: config.autocompleteCompleteSuggestWidgetSelection,
             triggerNotice,
         })
@@ -90,9 +95,9 @@ export async function createInlineCompletionItemProvider({
             ),
             registerAutocompleteTraceView(completionsProvider)
         )
-        if (sectionObserver) {
-            disposables.push(sectionObserver)
-        }
+        // if (sectionObserver) {
+        //     disposables.push(sectionObserver)
+        // }
     } else if (config.isRunningInsideAgent) {
         throw new Error(
             "Can't register completion provider because `providerConfig` evaluated to `null`. " +

@@ -239,7 +239,11 @@ export class GraphSectionObserver implements vscode.Disposable, GraphContextFetc
         this.abortLastRequestGraphContext = () => abortController.abort()
 
         try {
-            const context = await this.getGraphContextFromRange(editor, section.location.range, abortController.signal)
+            const context = await this.getGraphContextFromRange(
+                editor.document,
+                section.location.range,
+                abortController.signal
+            )
 
             logHydratedContext(context, editor, section, start)
             section.preloadedContext.graphContext = context

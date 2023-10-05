@@ -65,22 +65,23 @@ export const getGraphContextFromEditor = async (editor: Editor): Promise<Precise
  * The resulting snippets will all be from the same workspace.
  */
 export const getGraphContextFromRange = async (
-    editor: vscode.TextEditor,
+    document: vscode.TextDocument,
     range: vscode.Range,
-    abortSignal?: CustomAbortSignal
+    abortSignal?: CustomAbortSignal,
+    recursionLimit: number = 0,
+    contentMap: Map<string, string[]> = new Map()
 ): Promise<HoverContext[]> => {
-    const uri = editor.document.uri
-    const contentMap = new Map([[uri.fsPath, editor.document.getText().split('\n')]])
+    const uri = document.uri
+    contentMap = contentMap.size === 0 ? new Map([[uri.fsPath, document.getText().split('\n')]]) : contentMap
     const selections = [{ uri, range }]
 
     const label = 'getGraphContextFromRange'
     performance.mark(label)
 
-    // Get the document symbols in the current file and extract their definition range
-    const definitionSelections = await extractRelevantDocumentSymbolRanges(selections)
-
     // Find the candidate identifiers to request definitions for in the selection
-    const requestCandidates = gatherDefinitionRequestCandidates(definitionSelections, contentMap)
+    const requestCandidates = gatherDefinitionRequestCandidates(selections, contentMap)
+
+    console.log({ requestCandidates })
 
     // Extract hover (symbol, definition, type def, impl) text related to all of the request
     // candidates
@@ -90,6 +91,36 @@ export const getGraphContextFromRange = async (
 
     logDebug('GraphContext:snippetsRetrieved', `Retrieved ${contexts.length} hover context snippets`)
     performance.mark(label)
+
+    if (recursionLimit > 0) {
+        console.log({ contexts: [...contexts] })
+        console.log('RECURS', recursionLimit)
+        const locations = dedupeWith(
+            contexts.flatMap(context => {
+                if (!context.range) {
+                    return []
+                }
+                const range = new vscode.Range(
+                    context.range.startLine,
+                    context.range.startCharacter,
+                    context.range.endLine,
+                    context.range.endCharacter
+                )
+                return [new vscode.Location(URI.parse(context.uri), range)]
+            }),
+            item => locationKeyFn(item)
+        )
+
+        const recursiveContexts = await Promise.all(
+            locations.map(async location => {
+                const document = await vscode.workspace.openTextDocument(location.uri)
+                return getGraphContextFromRange(document, range, abortSignal, recursionLimit - 1, contentMap)
+            })
+        )
+
+        contexts.push(...recursiveContexts.flat())
+    }
+
     return contexts
 }
 
@@ -653,6 +684,7 @@ export const gatherHoverText = async (
     // significant segment of real world questions, though.
 
     for (const { uri, symbolName, position } of dedupeWith(requests, 'symbolName')) {
+        console.log('hovering over', symbolName, uri.toString(), JSON.stringify(position))
         hoverMatches.push({
             symbolName,
             symbolLocation: new vscode.Location(uri, position),
@@ -667,15 +699,20 @@ export const gatherHoverText = async (
     const locationsForHover = dedupeWith(
         (
             await Promise.all(
-                hoverMatches.map(async ({ definitionsPromise, typeDefinitionsPromise, implementationsPromise }) => [
-                    ...(await definitionsPromise),
-                    ...(await typeDefinitionsPromise),
-                    ...(await implementationsPromise),
-                ])
+                hoverMatches.map(
+                    async ({ symbolLocation, definitionsPromise, typeDefinitionsPromise, implementationsPromise }) => [
+                        symbolLocation,
+                        ...(await definitionsPromise),
+                        ...(await typeDefinitionsPromise),
+                        ...(await implementationsPromise),
+                    ]
+                )
             )
         ).flat(),
         locationKeyFn
     )
+
+    console.log(locationsForHover)
 
     // NOTE: Before asking for data about a document it must be opened in the workspace. This forces
     // a resolution so that the following queries that require the document context will not fail with
