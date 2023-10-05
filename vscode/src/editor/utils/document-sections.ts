@@ -40,7 +40,6 @@ export async function getSelectionAroundLine(
     const range = findRangeByLine(smartRanges, line)
 
     if (!range) {
-        console.error('No folding range found containing target line')
         return undefined
     }
 

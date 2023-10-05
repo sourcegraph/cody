@@ -1,13 +1,11 @@
 import dedent from 'dedent'
-import { describe, expect, it, vi } from 'vitest'
+import { describe, expect, it } from 'vitest'
 
 import { document } from '../../completions/test-helpers'
 import { vsCodeMocks } from '../../testutils/mocks'
 import { range } from '../../testutils/textDocument'
 
 import { findRangeByLine, getDocumentSections } from './document-sections'
-
-vi.mock('vscode', () => vsCodeMocks)
 
 describe('getDocumentSections', () => {
     it('filters out top level classes for languages with closing braces and symbols', async () => {
