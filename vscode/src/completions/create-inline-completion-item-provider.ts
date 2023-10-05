@@ -69,7 +69,6 @@ export async function createInlineCompletionItemProvider({
             getCodebaseContext: () => contextProvider.context,
             graphContextFetcher: sectionObserver,
             completeSuggestWidgetSelection: config.autocompleteCompleteSuggestWidgetSelection,
-            syntacticTriggers: config.autocompleteExperimentalSyntacticTriggers,
             triggerNotice,
         })
 
