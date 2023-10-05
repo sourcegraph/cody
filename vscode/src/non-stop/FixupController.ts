@@ -264,9 +264,6 @@ export class FixupController
             return undefined
         }
         task.selectionRange = newRange
-        const document = await vscode.workspace.openTextDocument(task.fixupFile.uri)
-        const originalTextFromNewSelectionRange = document.getText(task.selectionRange)
-        task.original = originalTextFromNewSelectionRange
         return Promise.resolve()
     }
 

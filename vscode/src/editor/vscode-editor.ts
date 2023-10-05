@@ -182,7 +182,7 @@ export class VSCodeEditor implements Editor<InlineController, FixupController, C
         }
 
         const selection = activeEditor.selection
-        if (!selection?.start.line) {
+        if (!selection) {
             return null
         }
 

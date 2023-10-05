@@ -85,7 +85,7 @@ export class Fixup implements Recipe {
                 )
                 await fixupController.resetSelectionRange(taskId, newRange)
                 // Update the fixup task if the range was modified.
-                finalFixupTask = (await fixupController.getTaskRecipeData(taskId)) || originalFixupTask
+                finalFixupTask = (await fixupController.getTaskRecipeData(taskId)) || finalFixupTask
             }
         }
         const promptText = this.getPrompt(finalFixupTask, intent)
