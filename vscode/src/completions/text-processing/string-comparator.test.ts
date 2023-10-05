@@ -14,10 +14,11 @@ describe('isAlmostTheSameString', () => {
         ],
         [
             false,
-            "console.log('Hello world', getSumAandB(a, b))",
+            "console.log('Hello world', getSumAAndB(a, b))",
             "console.error('Error log', getDBConnection(context))",
         ],
-    ])('should return %b for strings %s and %s', (expected, stringA, stringB) => {
+        [false, '    chatId: z.string(),', '    prompt: z.string(),'],
+    ])('should return %s for strings %j and %j', (expected, stringA, stringB) => {
         expect(isAlmostTheSameString(stringA, stringB)).toBe(expected)
     })
 })

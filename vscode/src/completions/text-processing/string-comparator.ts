@@ -9,7 +9,7 @@
  *
  * For more details see https://en.wikipedia.org/wiki/Levenshtein_distance
  */
-export const isAlmostTheSameString = (stringA: string, stringB: string, percentage: number = 0.33): boolean => {
+export const isAlmostTheSameString = (stringA: string, stringB: string, percentage: number = 0.2): boolean => {
     const maxLength = Math.max(stringA.length, stringB.length)
     const editOperations = LevenshteinCompare(stringA, stringB)
 
