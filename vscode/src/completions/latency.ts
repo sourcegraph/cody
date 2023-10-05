@@ -33,10 +33,11 @@ let userMetrics = {
 // Start when the last 5 suggestions were not accepted
 // Increment latency by 200ms linearly up to max latency
 // Reset every 5 minutes, or on file change, or on accepting a suggestion
-export function getLatency(provider: string, fsPath: string, languageId?: string, isComment?: boolean): number {
+export function getLatency(provider: string, fsPath: string, languageId?: string, nodeType?: string): number {
     // set base latency based on provider and low performance languages or comments when available
     let baseline = provider === 'anthropic' ? 0 : defaultLatency.baseline
     const isLowPerformance = languageId && lowPerformanceLanguageIds.has(languageId)
+    const isComment = nodeType === 'comment'
     if (!languageId || isLowPerformance || isComment) {
         baseline = defaultLatency.lowPerformance
     }
@@ -79,32 +80,4 @@ export function resetLatency(): void {
         fsPath: '',
     }
     logDebug('CodyCompletionProvider:resetLatency', 'Latency Reset')
-}
-
-// Checks if a line is a comment based on the language ID.
-export function isLineComment(trimmedLine: string, languageId?: string): boolean {
-    if (!languageId || !trimmedLine) {
-        return false
-    }
-
-    switch (languageId) {
-        case 'lua':
-            return trimmedLine.startsWith('--')
-        case 'shellscript':
-        case 'perl':
-        case 'r':
-            return trimmedLine.startsWith('#')
-        case 'ocaml':
-            return trimmedLine.startsWith('(*')
-        case 'powershell':
-            return trimmedLine.startsWith('<#')
-        case 'python':
-            return trimmedLine.startsWith('#') || trimmedLine.startsWith('"""')
-        case 'ruby':
-            return trimmedLine.startsWith('#') || trimmedLine.startsWith('=begin')
-        // javascript', 'typescript', 'typescriptreact', 'javascriptreact', 'java', 'c', 'cpp', 'csharp', 'go', 'scala', 'swift', 'rust', 'php', 'objectivec'
-        // use '//', '/*', '*/'. '*'
-        default:
-            return trimmedLine.startsWith('/') || trimmedLine.startsWith('*') || trimmedLine.startsWith('<!') // html and react
-    }
 }
