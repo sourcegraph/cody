@@ -40,7 +40,6 @@ const DEFAULT_VSCODE_SETTINGS: Configuration = {
     autocompleteAdvancedAccessToken: null,
     autocompleteCompleteSuggestWidgetSelection: false,
     autocompleteExperimentalSyntacticPostProcessing: false,
-    autocompleteExperimentalSyntacticTriggers: false,
     autocompleteExperimentalGraphContext: false,
 }
 

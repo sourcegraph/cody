@@ -935,11 +935,6 @@
           "default": true,
           "markdownDescription": "Rank autocomplete results with tree-sitter."
         },
-        "cody.autocomplete.experimental.syntacticTriggers": {
-          "type": "boolean",
-          "default": false,
-          "markdownDescription": "Use tree-sitter to choose between multiline and singleline modes."
-        },
         "cody.autocomplete.experimental.graphContext": {
           "type": "boolean",
           "default": false,

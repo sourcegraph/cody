@@ -40,7 +40,6 @@ export interface CodyCompletionItemProviderConfig {
     getCodebaseContext: () => CodebaseContext
     graphContextFetcher?: GraphContextFetcher | null
     completeSuggestWidgetSelection?: boolean
-    syntacticTriggers?: boolean
     tracer?: ProvideInlineCompletionItemsTracer | null
     contextFetcher?: (options: GetContextOptions) => Promise<GetContextResult>
     triggerNotice: ((notice: { key: string }) => void) | null
@@ -76,7 +75,6 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
     constructor({
         graphContextFetcher = null,
         completeSuggestWidgetSelection = false,
-        syntacticTriggers = false,
         tracer = null,
         ...config
     }: CodyCompletionItemProviderConfig) {
@@ -84,7 +82,6 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
             ...config,
             graphContextFetcher,
             completeSuggestWidgetSelection,
-            syntacticTriggers,
             tracer,
             contextFetcher: config.contextFetcher ?? getContext,
         }
@@ -138,9 +135,10 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
 
         // We start feature flag requests early so that we have a high chance of getting a response
         // before we need it.
-        const [isIncreasedDebounceTimeEnabledPromise, minimumLatencyFlagsPromise] = [
+        const [isIncreasedDebounceTimeEnabledPromise, minimumLatencyFlagsPromise, syntacticTriggersPromise] = [
             featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteIncreasedDebounceTimeEnabled),
             featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteMinimumLatency),
+            featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteSyntacticTriggers),
         ]
 
         const tracer = this.config.tracer ? createTracerForInvocation(this.config.tracer) : undefined
@@ -196,7 +194,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
             maxPrefixLength: this.config.providerConfig.contextSizeHints.prefixChars,
             maxSuffixLength: this.config.providerConfig.contextSizeHints.suffixChars,
             enableExtendedTriggers: this.config.providerConfig.enableExtendedMultilineTriggers,
-            syntacticTriggers: this.config.syntacticTriggers,
+            syntacticTriggers: await syntacticTriggersPromise,
             // We ignore the current context selection if completeSuggestWidgetSelection is not enabled
             context: takeSuggestWidgetSelectionIntoAccount ? context : undefined,
         })

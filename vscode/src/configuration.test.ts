@@ -41,7 +41,6 @@ describe('getConfiguration', () => {
             autocompleteAdvancedAccessToken: null,
             autocompleteCompleteSuggestWidgetSelection: true,
             autocompleteExperimentalSyntacticPostProcessing: true,
-            autocompleteExperimentalSyntacticTriggers: false,
             autocompleteExperimentalGraphContext: false,
         })
     })
@@ -107,8 +106,6 @@ describe('getConfiguration', () => {
                         return false
                     case 'cody.autocomplete.experimental.syntacticPostProcessing':
                         return true
-                    case 'cody.autocomplete.experimental.syntacticTriggers':
-                        return false
                     case 'cody.autocomplete.experimental.graphContext':
                         return true
                     case 'cody.advanced.agent.running':
@@ -152,7 +149,6 @@ describe('getConfiguration', () => {
             autocompleteAdvancedAccessToken: 'foobar',
             autocompleteCompleteSuggestWidgetSelection: false,
             autocompleteExperimentalSyntacticPostProcessing: true,
-            autocompleteExperimentalSyntacticTriggers: false,
             autocompleteExperimentalGraphContext: true,
         })
     })
