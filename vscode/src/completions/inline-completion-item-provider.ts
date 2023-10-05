@@ -40,6 +40,7 @@ export interface CodyCompletionItemProviderConfig {
     getCodebaseContext: () => CodebaseContext
     graphContextFetcher?: GraphContextFetcher | null
     completeSuggestWidgetSelection?: boolean
+    syntacticTriggers?: boolean
     tracer?: ProvideInlineCompletionItemsTracer | null
     contextFetcher?: (options: GetContextOptions) => Promise<GetContextResult>
     triggerNotice: ((notice: { key: string }) => void) | null
@@ -75,6 +76,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
     constructor({
         graphContextFetcher = null,
         completeSuggestWidgetSelection = false,
+        syntacticTriggers = false,
         tracer = null,
         ...config
     }: CodyCompletionItemProviderConfig) {
@@ -82,6 +84,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
             ...config,
             graphContextFetcher,
             completeSuggestWidgetSelection,
+            syntacticTriggers,
             tracer,
             contextFetcher: config.contextFetcher ?? getContext,
         }
@@ -193,6 +196,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
             maxPrefixLength: this.config.providerConfig.contextSizeHints.prefixChars,
             maxSuffixLength: this.config.providerConfig.contextSizeHints.suffixChars,
             enableExtendedTriggers: this.config.providerConfig.enableExtendedMultilineTriggers,
+            syntacticTriggers: this.config.syntacticTriggers,
             // We ignore the current context selection if completeSuggestWidgetSelection is not enabled
             context: takeSuggestWidgetSelectionIntoAccount ? context : undefined,
         })

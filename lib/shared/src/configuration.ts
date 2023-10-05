@@ -28,6 +28,7 @@ export interface Configuration {
     autocompleteAdvancedAccessToken: string | null
     autocompleteCompleteSuggestWidgetSelection?: boolean
     autocompleteExperimentalSyntacticPostProcessing?: boolean
+    autocompleteExperimentalSyntacticTriggers?: boolean
     autocompleteExperimentalGraphContext?: boolean
     isRunningInsideAgent?: boolean
 }
