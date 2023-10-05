@@ -2,7 +2,7 @@
   "name": "cody-ai",
   "private": true,
   "displayName": "Cody AI",
-  "version": "0.12.4",
+  "version": "0.14.0",
   "publisher": "sourcegraph",
   "license": "Apache-2.0",
   "icon": "resources/cody.png",
@@ -923,13 +923,7 @@
             "llama-code-13b",
             "llama-code-13b-instruct"
           ],
-          "markdownDescription": "Overwrite the default model used for code autocompletion inference. This is only supported with the `unstable-fireworks` provider"
-        },
-        "cody.autocomplete.advanced.embeddings": {
-          "order": 99,
-          "type": "boolean",
-          "default": true,
-          "markdownDescription": "Enables the use of embeddings as code completions context."
+          "markdownDescription": "Overwrite the  model used for code autocompletion inference. This is only supported with the `unstable-fireworks` provider"
         },
         "cody.autocomplete.completeSuggestWidgetSelection": {
           "type": "boolean",

@@ -129,6 +129,9 @@ const configuration: vscode.WorkspaceConfiguration = {
                 return connectionConfig?.debug ?? false
             case 'cody.debug.verbose':
                 return connectionConfig?.verboseDebug ?? false
+            case 'cody.autocomplete.experimental.syntacticPostProcessing':
+                // False because we don't embed WASM with the agent yet.
+                return false
             case 'cody.codebase':
                 return connectionConfig?.codebase
             default:
@@ -336,6 +339,7 @@ export function completionProvider(): Promise<InlineCompletionItemProvider> {
 }
 
 const _languages: Partial<typeof vscode.languages> = {
+    getLanguages: () => Promise.resolve([]),
     registerCodeActionsProvider: () => emptyDisposable,
     registerCodeLensProvider: () => emptyDisposable,
     registerInlineCompletionItemProvider: (_selector, provider) => {
