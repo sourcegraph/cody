@@ -31,7 +31,7 @@ describe('FeatureFlagProvider', () => {
         expect(apiClient.evaluateFeatureFlag).not.toHaveBeenCalled()
     })
 
-    it('loads all evaluated feature flag on startup', async () => {
+    it('loads all evaluated feature flag on `syncAuthStatus`', async () => {
         const apiClient = {
             isDotCom: () => true,
             getEvaluatedFeatureFlags: vitest.fn().mockResolvedValue({
@@ -41,6 +41,7 @@ describe('FeatureFlagProvider', () => {
         }
 
         const provider = new FeatureFlagProvider(apiClient as unknown as SourcegraphGraphQLAPIClient)
+        provider.syncAuthStatus()
 
         // Wait for the async initialization
         await nextTick()
@@ -101,6 +102,7 @@ describe('FeatureFlagProvider', () => {
             }
 
             const provider = new FeatureFlagProvider(apiClient as unknown as SourcegraphGraphQLAPIClient)
+            provider.syncAuthStatus()
 
             // Wait for the async initialization
             await nextTick()

@@ -37,7 +37,6 @@ test('shows completion onboarding notice on first completion accept', async ({ p
     // Accept the completion and expect the text to be added and
     // the notice to be shown.
     await acceptInlineCompletion(page)
-    console.log('1')
     await expect(firstAcceptedCompletion).toBeVisible()
     await expect(notice).toBeVisible()
 

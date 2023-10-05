@@ -1,7 +1,7 @@
 import * as vscode from 'vscode'
 
 import { Configuration } from '@sourcegraph/cody-shared/src/configuration'
-import { FeatureFlag, FeatureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
+import { FeatureFlag, featureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
 
 import { ContextProvider } from '../chat/ContextProvider'
 import { logDebug } from '../log'
@@ -20,7 +20,6 @@ interface InlineCompletionItemProviderArgs {
     client: CodeCompletionsClient
     statusBar: CodyStatusBar
     contextProvider: ContextProvider
-    featureFlagProvider: FeatureFlagProvider
     authProvider: AuthProvider
     triggerNotice: ((notice: { key: string }) => void) | null
 }
@@ -30,7 +29,6 @@ export async function createInlineCompletionItemProvider({
     client,
     statusBar,
     contextProvider,
-    featureFlagProvider,
     authProvider,
     triggerNotice,
 }: InlineCompletionItemProviderArgs): Promise<vscode.Disposable> {
@@ -54,8 +52,8 @@ export async function createInlineCompletionItemProvider({
     const disposables: vscode.Disposable[] = []
 
     const [providerConfig, graphContextFlag] = await Promise.all([
-        createProviderConfig(config, client, featureFlagProvider, authProvider.getAuthStatus().configOverwrites),
-        featureFlagProvider?.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteGraphContext),
+        createProviderConfig(config, client, authProvider.getAuthStatus().configOverwrites),
+        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteGraphContext),
     ])
     if (providerConfig) {
         const history = new VSCodeDocumentHistory()
@@ -72,7 +70,6 @@ export async function createInlineCompletionItemProvider({
             graphContextFetcher: sectionObserver,
             completeSuggestWidgetSelection: config.autocompleteCompleteSuggestWidgetSelection,
             syntacticTriggers: config.autocompleteExperimentalSyntacticTriggers,
-            featureFlagProvider,
             triggerNotice,
         })
 

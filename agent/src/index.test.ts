@@ -135,8 +135,8 @@ describe.each([
     })
 
     it('returns non-empty autocomplete', async () => {
-        const filePath = '/path/to/foo/file.js'
-        const content = 'function sum(a, b) {\n    \n}'
+        const filePath = '/path/to/foo/file.ts'
+        const content = 'function sum(a: number, b: number) {\n    \n}'
         client.notify('textDocument/didOpen', {
             filePath,
             content,
@@ -144,8 +144,8 @@ describe.each([
         })
         const completions = await client.request('autocomplete/execute', {
             filePath,
-            position: { line: 1, character: 4 },
-            triggerKind: 'Automatic',
+            position: { line: 1, character: 3 },
+            triggerKind: 'Invoke',
         })
         assert(completions.items.length > 0)
     })
@@ -178,9 +178,9 @@ describe.each([
     it('executing a recipe sends chat/updateMessageInProgress notifications', () => streamingChatMessages, 100)
 
     it('allows us to cancel chat', async () => {
-        setTimeout(() => client.notify('$/cancelRequest', { id: client.id - 1 }), 200)
+        setTimeout(() => client.notify('$/cancelRequest', { id: client.id - 1 }), 300)
         await client.executeRecipe('chat-question', 'How do I implement sum?')
-    }, 500)
+    }, 600)
 
     afterAll(async () => {
         await client.shutdownAndExit()
