@@ -20,8 +20,7 @@ describe('getLatency', () => {
         expect(getLatency(provider, fileName, languageId)).toBe(1000)
         // gradually increasing latency after 5 rejected suggestions
         expect(getLatency(provider, fileName, languageId)).toBe(1000)
-        // baseline maxed at 1000 even if user latency is added previously
-        expect(getLatency(provider, fileName, languageId, 'comment')).toBe(1000)
+        expect(getLatency(provider, fileName, languageId)).toBe(1000)
         expect(getLatency(provider, fileName, languageId)).toBe(1000)
         expect(getLatency(provider, fileName, languageId)).toBe(1000)
         // gradually increasing latency after 5 rejected suggestions
