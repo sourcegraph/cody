@@ -5,7 +5,7 @@ export function getEquipment(sport: Sport): Equipment {
         case 'football':
             return 'ball'
         case 'hockey':
-            ◆
+            █
         default:
             throw new Error(`Unknown operation: ${sport}`)
     }
