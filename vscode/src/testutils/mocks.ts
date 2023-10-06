@@ -209,18 +209,18 @@ export class CodeActionKind {
 
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export class QuickInputButtons {
-    public static readonly Back: vscode_types.QuickInputButton = { iconPath: URI.parse('file://foobar') }
+    public static readonly Back: vscode_types.QuickInputButton = { iconPath: Uri.parse('file://foobar') }
 }
 
 export class TreeItem {
     constructor(
-        public readonly resourceUri: URI,
+        public readonly resourceUri: Uri,
         public readonly collapsibleState?: TreeItemCollapsibleState
     ) {}
 }
 
 export class RelativePattern implements vscode_types.RelativePattern {
-    public baseUri = URI.parse('file:///foobar')
+    public baseUri = Uri.parse('file:///foobar')
     public base: string
     constructor(
         _base: vscode_types.WorkspaceFolder | Uri | string,
@@ -282,7 +282,7 @@ export class Location implements VSCodeLocation {
     public range: VSCodeRange
 
     constructor(
-        public readonly uri: URI,
+        public readonly uri: Uri,
         rangeOrPosition: VSCodeRange | VSCodePosition
     ) {
         if ('line' in rangeOrPosition && 'character' in rangeOrPosition) {
@@ -419,10 +419,10 @@ export class InlineCompletionItem {
 
 // TODO(abeatrix): Implement delete and insert mocks
 export class WorkspaceEdit {
-    public delete(uri: URI, range: Range): Range {
+    public delete(uri: Uri, range: Range): Range {
         return range
     }
-    public insert(uri: URI, position: Position, content: string): string {
+    public insert(uri: Uri, position: Position, content: string): string {
         return content
     }
 }
@@ -675,7 +675,7 @@ export const vsCodeMocks = {
         }),
         applyEdit: (edit: WorkspaceEdit) => true,
         save: () => true,
-        asRelativePath(path: string | URI) {
+        asRelativePath(path: string | Uri) {
             return path.toString()
         },
     },
