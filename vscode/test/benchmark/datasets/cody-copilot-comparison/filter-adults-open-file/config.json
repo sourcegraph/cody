@@ -1,8 +1,0 @@
-{
-  "entryFile": "generate.ts",
-  "openFiles": ["generate.ts"],
-  "closedFiles": [],
-  "solutionFile": "solution.ts",
-  "testFile": "test.ts",
-  "testCommand": "ts-node test.ts"
-}

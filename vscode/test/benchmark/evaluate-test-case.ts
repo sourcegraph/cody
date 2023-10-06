@@ -5,23 +5,13 @@ import { BENCHMARK_DOCKER_IMAGE } from './env'
 
 const exec = promisify(_exec)
 
-export enum CaseStatus {
-    'PASS',
-    'FAIL',
-}
-
-export const testCompletionResult = async (
-    testCommand: string,
-    cwd: string
-): Promise<CaseStatus.PASS | CaseStatus.FAIL> => {
+export const testCompletionResult = async (testCommand: string, cwd: string): Promise<boolean> => {
     const dockerCommand = `docker run --mount src="${cwd}",target=/app,type=bind ${BENCHMARK_DOCKER_IMAGE}`
-    let status: CaseStatus
     try {
         await exec(`${dockerCommand} ${testCommand}`, { cwd })
-        status = CaseStatus.PASS
+        return true
     } catch (error) {
         console.error(error)
-        status = CaseStatus.FAIL
+        return false
     }
-    return status
 }
