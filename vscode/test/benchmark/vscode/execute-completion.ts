@@ -34,10 +34,7 @@ const acceptCompletion = async (currentVersion: number): Promise<boolean> => {
 const triggerAndWaitForCompletion = async (
     editor: vscode.TextEditor
 ): Promise<Omit<BenchmarkResult, 'workspacePath'>> => {
-    // Find the `CURSOR` placeholder, remove it, and place the actual cursor there
     const cursorPosition = editor.document.positionAt(editor.document.getText().indexOf(CURSOR))
-    // editor.selection = cursorSelection
-    // await new Promise(resolve => setTimeout(resolve, 500))
 
     if (BENCHMARK_AUTOMATIC_COMPLETIONS) {
         editor.selection = new vscode.Selection(cursorPosition.translate(0, 1), cursorPosition.translate(0, 1))
