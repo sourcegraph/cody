@@ -65,8 +65,8 @@ export {
     SymbolKind,
     ViewColumn,
     QuickInputButtons,
-    Uri,
     UIKind,
+    Uri,
 } from '../../vscode/src/testutils/mocks'
 
 const emptyFileWatcher: vscode.FileSystemWatcher = {

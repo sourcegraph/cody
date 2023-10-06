@@ -15,16 +15,26 @@ import type {
     Range as VSCodeRange,
 } from 'vscode'
 import type * as vscode_types from 'vscode'
+import { URI, Utils as UriUtils } from 'vscode-uri'
 
-// NOTE(olafurpg): We use a inlined copy of `vscode.Uri` instead of the
-// vscode-uri package because vscode-uri is not a drop-in replacement of
-// `vscode.Uri`. Specifically, `Uri.joinPath` is missing in vscode-uri, see
-// https://sourcegraph.com/npm/vscode-uri@v3.0.7/-/blob/lib/umd/uri.d.ts
-// Ideally, we should replace the inlined copy of `vscode.Uri` with vscode-uri
-// in the future when it becomes a drop-in replacement.
-import { Uri } from './vscode/uri'
-
-export { Uri } from './vscode/uri'
+/**
+ * A proxy for the vscode-uri URI class as a replacement for the VS Code
+ * URI class.
+ *
+ * For methods that don't exist on vscode-uri.URI, vscode-uri.Utils will be
+ * used since that's where static methods like joinPath() are.
+ */
+export const Uri = new Proxy(URI, {
+    get(obj, prop) {
+        if (prop in obj) {
+            return (obj as any)[prop]
+        }
+        if (prop in UriUtils) {
+            return (UriUtils as any)[prop]
+        }
+        return undefined
+    },
+})
 
 export class Disposable implements VSCodeDisposable {
     public static from(...disposableLikes: { dispose: () => any }[]): Disposable {
@@ -214,7 +224,7 @@ export class QuickInputButtons {
 
 export class TreeItem {
     constructor(
-        public readonly resourceUri: Uri,
+        public readonly resourceUri: vscode_types.Uri,
         public readonly collapsibleState?: TreeItemCollapsibleState
     ) {}
 }
@@ -223,7 +233,7 @@ export class RelativePattern implements vscode_types.RelativePattern {
     public baseUri = Uri.parse('file:///foobar')
     public base: string
     constructor(
-        _base: vscode_types.WorkspaceFolder | Uri | string,
+        _base: vscode_types.WorkspaceFolder | vscode_types.Uri | string,
         public readonly pattern: string
     ) {
         // eslint-disable-next-line @typescript-eslint/no-base-to-string
@@ -420,10 +430,10 @@ export class InlineCompletionItem {
 
 // TODO(abeatrix): Implement delete and insert mocks
 export class WorkspaceEdit {
-    public delete(uri: Uri, range: Range): Range {
+    public delete(uri: vscode_types.Uri, range: Range): Range {
         return range
     }
-    public insert(uri: Uri, position: Position, content: string): string {
+    public insert(uri: vscode_types.Uri, position: Position, content: string): string {
         return content
     }
 }
@@ -676,7 +686,7 @@ export const vsCodeMocks = {
         }),
         applyEdit: (edit: WorkspaceEdit) => true,
         save: () => true,
-        asRelativePath(path: string | Uri) {
+        asRelativePath(path: string | vscode_types.Uri) {
             return path.toString()
         },
     },
