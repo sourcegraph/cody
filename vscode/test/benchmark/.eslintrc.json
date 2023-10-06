@@ -1,0 +1,24 @@
+{
+  "extends": "../../.eslintrc.json",
+  "rules": {
+    "no-restricted-imports": [
+      "error",
+      {
+        "patterns": [
+          {
+            "group": ["./vscode", "vscode"],
+            "message": "VS Code will not be accessible here. Move this to the ./vscode folder."
+          }
+        ]
+      }
+    ]
+  },
+  "overrides": [
+    {
+      "files": ["./vscode/**/*"],
+      "rules": {
+        "no-restricted-imports": "off"
+      }
+    }
+  ]
+}

@@ -35,7 +35,7 @@
     "storybook": "storybook dev -p 6007 --no-open --no-version-updates --no-release-notes",
     "test:e2e": "tsc --build && { pnpm exec playwright install chromium & install_pw_pid=$!; node dist/tsc/test/e2e/install-deps.js & install_vscode_pid=$!; wait $install_pw_pid && wait $install_vscode_pid; } && pnpm run -s build:dev:desktop && playwright test",
     "test:integration": "tsc --build ./test/integration && pnpm run -s build:dev:desktop && node --inspect -r ts-node/register dist/tsc/test/integration/main.js",
-    "test:benchmark": "tsc --build ./test/benchmark && pnpm run -s build:dev:desktop && ./benchmark.sh",
+    "test:benchmark": "BENCHMARK_DISABLE_FEATURE_FLAGS=true tsc --build ./test/benchmark && pnpm run -s build:dev:desktop && ./benchmark.sh",
     "test:benchmark:copilot": "BENCHMARK_COMPARE_WITH=github.copilot pnpm run test:benchmark",
     "test:unit": "vitest",
     "vscode:prepublish": "pnpm -s run build",

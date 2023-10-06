@@ -37,10 +37,10 @@ export const createTemporaryWorkspace = async (filePaths: string[], cwd: string)
 
 export interface DatasetConfig {
     entryFile: string
-    openFiles: string[]
-    closedFiles: string[]
-    solutionFile: string
-    testFile: string
+    openFiles?: string[]
+    closedFiles?: string[]
+    solutionFile?: string
+    testFile?: string
     testCommand: string
 }
 
@@ -53,16 +53,6 @@ export function parseEvaluationConfig(path: string): DatasetConfig {
         console.error(`Error parsing dataset config file ${path}: ${error}`)
         throw error
     }
-}
-
-export const assertEnv = (key: string): string => {
-    const env = process.env[key]
-
-    if (!env) {
-        throw new Error(`${key} is required.`)
-    }
-
-    return env
 }
 
 export interface CompletionResult {
