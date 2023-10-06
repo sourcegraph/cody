@@ -85,7 +85,7 @@ Benchmark cases are defined in the `/datasets` folder in this directory. Each ca
   "closedFiles": [],
   "solutionFile": "solution.ts",
   "testFile": "test.ts",
-  "testCommand": "ts-node"
+  "testCommand": "ts-node test.ts"
 }
 ```
 
