@@ -33,8 +33,6 @@ export async function initExtension(id: string): Promise<void> {
         return
     }
 
-    // Wait a short amount to give Cody time to activate
-    await new Promise(resolve => setTimeout(resolve, 500))
     await ensureExecuteCommand('cody.test.token', assertEnv('BENCHMARK_ENDPOINT'), assertEnv('BENCHMARK_ACCESS_TOKEN'))
     await ensureExecuteCommand('cody.chat.focus')
 }

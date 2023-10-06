@@ -1,25 +1,27 @@
 import { exec as _exec } from 'child_process'
-import { readFileSync } from 'fs'
+import { existsSync, readFileSync, writeFileSync } from 'fs'
 import { copyFile, cp, mkdtemp } from 'fs/promises'
 import { tmpdir } from 'os'
 import path from 'path'
 import { promisify } from 'util'
 
 import { TEST_WORKSPACE_PATH } from './constants'
+import { CaseStatus } from './evaluate-test-case'
 import { commitSignatureEnv } from './git'
 
 const exec = promisify(_exec)
 
-export const copyFileToWorkspace = async (workspaceDir: string, fileName: string, cwd: string): Promise<void> => {
+export const copyFileToDir = async (cwd: string, fileName: string, newDir: string): Promise<string> => {
     const filePath = path.join(cwd, fileName)
-    const tempFilePath = path.join(workspaceDir, path.basename(filePath))
-    await copyFile(filePath, tempFilePath)
+    const newFilePath = path.join(newDir, path.basename(filePath))
+    await copyFile(filePath, newFilePath)
+    return newFilePath
 }
 
 export const createTemporaryWorkspace = async (filePaths: string[], cwd: string): Promise<string> => {
     const tempDir = await mkdtemp(path.join(tmpdir(), 'cody-benchmark-'))
     for (const file of filePaths) {
-        await copyFileToWorkspace(tempDir, file, cwd)
+        await copyFileToDir(cwd, file, tempDir)
     }
 
     // Add any workspace fixture files
@@ -31,15 +33,6 @@ export const createTemporaryWorkspace = async (filePaths: string[], cwd: string)
     await exec('git commit -m "init"', { cwd: tempDir, env: commitSignatureEnv })
 
     return tempDir
-}
-
-export const hasGitChanges = async (file: string, cwd: string): Promise<boolean> => {
-    try {
-        await exec(`git diff --quiet ${file}`, { cwd })
-        return false
-    } catch {
-        return true
-    }
 }
 
 export interface DatasetConfig {
@@ -70,4 +63,80 @@ export const assertEnv = (key: string): string => {
     }
 
     return env
+}
+
+export interface CompletionResult {
+    completed: boolean
+    timeToCompletion?: number
+}
+
+const COMPLETION_FILE = 'completion.json'
+export const readCompletionResult = (dir: string): CompletionResult => {
+    const filePath = path.join(dir, COMPLETION_FILE)
+    try {
+        const file = readFileSync(filePath, 'utf8')
+        const config = JSON.parse(file) as CompletionResult
+        return config
+    } catch (error) {
+        console.error(`Error parsing completion result file ${filePath}: ${error}`)
+        throw error
+    }
+}
+export const writeCompletionResult = (dir: string, result: CompletionResult): void => {
+    const filePath = path.join(dir, COMPLETION_FILE)
+    return writeFileSync(filePath, JSON.stringify(result, null, 2), 'utf-8')
+}
+
+export interface BenchmarkResult extends CompletionResult {
+    // TODO: Remove NO_CHANGE
+    testOutcome?: CaseStatus
+    workspacePath: string
+}
+
+export interface BenchmarkOutput {
+    [testId: string]: {
+        [extensionId: string]: BenchmarkResult
+    }
+}
+export const readBenchmarkSuiteResults = (path: string): BenchmarkOutput => {
+    const existingResults = existsSync(path)
+
+    if (existingResults) {
+        try {
+            const fileContents = readFileSync(path, 'utf8')
+            const config = JSON.parse(fileContents) as BenchmarkOutput
+            return config
+        } catch (error) {
+            console.error(`Error reading benchmark results file ${path}: ${error}`)
+            throw error
+        }
+    }
+
+    return {}
+}
+
+interface WriteBenchmarkResult {
+    path: string
+    testId: string
+    extensionId: string
+    result: BenchmarkResult
+}
+export const writeBenchmarkResult = ({ path, testId, extensionId, result }: WriteBenchmarkResult): void => {
+    const existingOutput = readBenchmarkSuiteResults(path)
+
+    return writeFileSync(
+        path,
+        JSON.stringify(
+            {
+                ...existingOutput,
+                [testId]: {
+                    ...existingOutput[testId],
+                    [extensionId]: result,
+                },
+            },
+            null,
+            2
+        ),
+        'utf-8'
+    )
 }

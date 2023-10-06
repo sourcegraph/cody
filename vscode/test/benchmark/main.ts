@@ -13,18 +13,49 @@ import {
     COPILOT_EXTENSION_ID,
     DATASETS_PATH,
     EXTENSION_TEST_PATH,
+    RESULTS_PATH,
     VSCODE_CODY_ROOT,
 } from './constants'
 import { CaseStatus, testCompletionResult } from './evaluate-test-case'
-import { copyFileToWorkspace, createTemporaryWorkspace, hasGitChanges, parseEvaluationConfig } from './utils'
+import {
+    BenchmarkOutput,
+    BenchmarkResult,
+    copyFileToDir,
+    createTemporaryWorkspace,
+    parseEvaluationConfig,
+    readBenchmarkSuiteResults,
+    readCompletionResult,
+    writeBenchmarkResult,
+} from './utils'
 
 const glob = promisify(_glob)
 const exec = promisify(_exec)
 
-interface BenchmarkOutput {
-    [testId: string]: {
-        [extensionId: string]: string
+function calculateTimeToCompletions(
+    data: BenchmarkOutput,
+    extensionId: string
+): { averageTimeToCompletion: number; medianTimeToCompletion: number } {
+    // 1. Gather latencies for given extension ID
+    const timesToCompletion: number[] = []
+    for (const test of Object.values(data)) {
+        const extensionData = test[extensionId]
+        if (extensionData.completed && typeof extensionData.timeToCompletion === 'number') {
+            timesToCompletion.push(extensionData.timeToCompletion)
+        }
     }
+
+    // 2. Calculate average latency
+    const averageTimeToCompletion = timesToCompletion.reduce((a, b) => a + b, 0) / timesToCompletion.length
+
+    // 3. Determine median latency
+    timesToCompletion.sort((a, b) => a - b)
+    const mid = Math.floor(timesToCompletion.length / 2)
+    const medianTimeToCompletion =
+        timesToCompletion.length % 2 === 0
+            ? (timesToCompletion[mid - 1] + timesToCompletion[mid]) / 2
+            : timesToCompletion[mid]
+
+    return { averageTimeToCompletion, medianTimeToCompletion }
 }
 
 export async function start(): Promise<void> {
@@ -44,7 +75,7 @@ export async function start(): Promise<void> {
         extensionsToBenchmark.push(benchmarkCompareWith)
     }
 
-    const results: BenchmarkOutput = {}
+    const resultsPath = path.join(RESULTS_PATH, `results-${Date.now()}.json`)
 
     try {
         const vscodeExecutablePath = await downloadAndUnzipVSCode('stable')
@@ -101,42 +132,64 @@ export async function start(): Promise<void> {
 
                 // Copy the solution file. This is primarily so we can compare the generation vs the solution.
                 // In the future we may also want to produce edit similarity (ES) and exact match (EM) metrics for further inspection.
-                await copyFileToWorkspace(benchmarkWorkspace, evalCaseConfig.solutionFile, benchmarkDir)
+                await copyFileToDir(benchmarkDir, evalCaseConfig.solutionFile, benchmarkWorkspace)
 
-                let testOutcome: CaseStatus
+                // Extract the completion result from the test run
+                const benchmarkResult: BenchmarkResult = {
+                    ...readCompletionResult(benchmarkWorkspace),
+                    workspacePath: benchmarkWorkspace,
+                }
 
-                const hasChanged = await hasGitChanges(evalCaseConfig.entryFile, benchmarkWorkspace)
-                if (hasChanged) {
+                if (benchmarkResult.completed) {
                     // Copy the test file. We do this after the evaluation is completed to ensure there is no chance it is included as context.
-                    await copyFileToWorkspace(benchmarkWorkspace, evalCaseConfig.testFile, benchmarkDir)
+                    await copyFileToDir(benchmarkDir, evalCaseConfig.testFile, benchmarkWorkspace)
 
                     // Run the test file against the generated completion
-                    testOutcome = await testCompletionResult(
+                    benchmarkResult.testOutcome = await testCompletionResult(
                         evalCaseConfig.testFile,
                         evalCaseConfig.testCommand,
                         benchmarkWorkspace
                     )
-                } else {
-                    // If the file has not changed, we should handle it differently and skip running the test.
-                    // This will indicate that the extension did not provide any completion, which is an important data point.
-                    testOutcome = CaseStatus.NO_CHANGE
                 }
 
-                const testEmoji = testOutcome === CaseStatus.PASS ? '🟢' : testOutcome === CaseStatus.FAIL ? '🔴' : '🟡'
-                const benchmarkOutput = `${testEmoji} - ${benchmarkWorkspace}`
-                console.log(benchmarkOutput)
+                const testId = `${benchmarkDataset} - ${path.basename(benchmarkDir)}`
 
-                // Log a pretty Git diff, omitting the patch header
+                // Write to result file so we can parse it in the final summary
+                writeBenchmarkResult({
+                    path: resultsPath,
+                    testId,
+                    extensionId: extension,
+                    result: benchmarkResult,
+                })
+
                 const diff = await exec(`git diff --color=always -U0 ${evalCaseConfig.entryFile} | tail -n +5`, {
                     cwd: benchmarkWorkspace,
                 })
-                console.log(diff.stdout)
 
-                const testId = `${benchmarkDataset} - ${path.basename(benchmarkDir)}`
-                results[testId] = {
-                    ...results[testId],
-                    [extension]: benchmarkOutput,
-                }
+                // Also log summary to console for immediate easy viewing
+                const testEmoji =
+                    benchmarkResult.testOutcome === CaseStatus.PASS
+                        ? '🟢'
+                        : benchmarkResult.testOutcome === CaseStatus.FAIL
+                        ? '🔴'
+                        : '🟡'
+                console.log(
+                    `${testEmoji} ${testId}:\n`,
+                    `Completion: ${
+                        benchmarkResult.completed
+                            ? chalk.green(`Generated in ${benchmarkResult.timeToCompletion}ms`)
+                            : chalk.yellow('Completion did not generate')
+                    }\n`,
+                    `Evaluation: ${
+                        benchmarkResult.testOutcome === CaseStatus.PASS
+                            ? chalk.green('PASS')
+                            : benchmarkResult.testOutcome === CaseStatus.FAIL
+                            ? chalk.red('FAIL')
+                            : chalk.gray('IGNORED')
+                    }\n`,
+                    `Workspace: ${benchmarkResult.workspacePath}\n`,
+                    `Diff:\n${diff.stdout}\n`
+                )
             }
         }
     } catch (error) {
@@ -144,40 +197,50 @@ export async function start(): Promise<void> {
         process.exit(1)
     }
 
-    // This is a pretty rudimentary final output that just spits the results into a table,
-    // and does some basic filtering to get final test counts.
-    // TODO: Consider the best format for viewing results, HTML file? JSON?
-    console.table(results)
+    const finalResults = readBenchmarkSuiteResults(resultsPath)
+
     // Log a final summary count for each extension
     for (const extension of extensionsToBenchmark) {
-        const { passCount, failCount, noChangeCount } = Object.values(results).reduce(
+        const { passCount, failCount, noCompletionCount } = Object.values(finalResults).reduce(
             (acc, result) => {
-                if (result[extension].startsWith('🟢')) {
+                if (result[extension].testOutcome === CaseStatus.PASS) {
                     acc.passCount++
-                } else if (result[extension].startsWith('🔴')) {
+                } else if (result[extension].testOutcome === CaseStatus.FAIL) {
                     acc.failCount++
                 } else {
-                    acc.noChangeCount++
+                    acc.noCompletionCount++
                 }
                 return acc
             },
             {
                 passCount: 0,
                 failCount: 0,
-                noChangeCount: 0,
+                noCompletionCount: 0,
             }
         )
 
-        const passRate = (passCount / (passCount + failCount + noChangeCount)) * 100
-        const passRateExcludingNoChange = (passCount / (passCount + failCount)) * 100
+        const passRate = (passCount / (passCount + failCount + noCompletionCount)) * 100
+        const passRateExcludingNoCompletion = (passCount / (passCount + failCount)) * 100
+        const { averageTimeToCompletion, medianTimeToCompletion } = calculateTimeToCompletions(finalResults, extension)
 
-        console.log(`\n${extension}:`)
+        console.log(`${extension}:`)
         console.log(chalk.green(`Pass: ${passCount}`))
         console.log(chalk.red(`Fail: ${failCount}`))
-        console.log(chalk.yellow(`No Change: ${noChangeCount}`))
-        console.log(chalk.blue(`Pass rate: ${passRate.toFixed(2)}%`))
-        console.log(chalk.blue(`Pass rate (excluding No Change): ${passRateExcludingNoChange.toFixed(2)}%\n`))
+        console.log(chalk.yellow(`No Completion: ${noCompletionCount}`))
+        console.log(chalk.cyanBright(`Average Time to Completion*: ${averageTimeToCompletion.toFixed(0)}ms`))
+        console.log(chalk.cyanBright(`Median Time to Completion*: ${medianTimeToCompletion.toFixed(0)}ms`))
+        console.log(chalk.blue(`Pass Rate: ${passRate.toFixed(2)}%`))
+        console.log(chalk.blue(`Adjusted Pass Rate**: ${passRateExcludingNoCompletion.toFixed(2)}%\n`))
     }
+
+    console.log(
+        chalk.gray(
+            '* Time to Completion is the time difference between when the completion request is triggered, to when the completion is accepted back into the document.'
+        )
+    )
+    console.log(chalk.gray('** Adjusted Pass Rate excludes cases where no completion was generated.'))
+
+    console.log(`\nFull results: ${resultsPath}`)
 }
 
 // eslint-disable-next-line @typescript-eslint/no-floating-promises

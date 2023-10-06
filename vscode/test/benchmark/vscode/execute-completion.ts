@@ -2,34 +2,86 @@ import path from 'path'
 
 import * as vscode from 'vscode'
 
-import { CURSOR } from '../constants'
-import { DatasetConfig } from '../utils'
+import { CODY_EXTENSION_ID, CURSOR } from '../constants'
+import { assertEnv, BenchmarkResult, DatasetConfig } from '../utils'
 
 import { ensureExecuteCommand } from './helpers'
 
 /**
- * Polls the VS Command `editor.action.inlineSuggest.commit` every 100ms in order to attempt to accept a completion.
+ * Polls the VS Command `editor.action.inlineSuggest.commit` every 50ms in order to attempt to accept a completion.
  * Resolves when we have any document change.
  * Ideally we could listen directly to the inlineCompletionItem provider through VS Code, but this is not currently possible.
  * Related GitHub issue: https://github.com/microsoft/vscode-discussions/discussions/483
  */
-const pollToAcceptCompletion = async (originalDocumentVersion: number): Promise<boolean> => {
+const acceptCompletion = async (currentVersion: number): Promise<boolean> => {
     await ensureExecuteCommand('editor.action.inlineSuggest.commit')
-    await new Promise(resolve => setTimeout(resolve, 100))
+    await new Promise(resolve => setTimeout(resolve, 50))
 
     if (!vscode.window.activeTextEditor) {
         throw new Error('Unable to access the active text editor')
     }
 
     // If the document version has changed, an edit must have occurred
-    if (vscode.window.activeTextEditor.document.version === originalDocumentVersion) {
-        return pollToAcceptCompletion(originalDocumentVersion)
+    if (vscode.window.activeTextEditor.document.version === currentVersion) {
+        return acceptCompletion(currentVersion)
     }
 
     return true
 }
 
-export const executeCompletion = async ({ entryFile, openFiles }: DatasetConfig, cwd: string): Promise<void> => {
+const triggerAndWaitForCompletion = async (
+    editor: vscode.TextEditor
+): Promise<Omit<BenchmarkResult, 'workspacePath'>> => {
+    const benchmarkId = assertEnv('BENCHMARK_EXTENSION_ID')
+
+    // Find the `CURSOR` placeholder, remove it, and place the actual cursor there
+    const cursorPosition = editor.document.positionAt(editor.document.getText().indexOf(CURSOR))
+    // editor.selection = cursorSelection
+    // await new Promise(resolve => setTimeout(resolve, 500))
+
+    if (process.env.BENCHMARK_AUTOMATIC_COMPLETIONS) {
+        editor.selection = new vscode.Selection(cursorPosition.translate(0, 1), cursorPosition.translate(0, 1))
+
+        // We add a short delay to allow fetching any specific context for this selection
+        await new Promise(resolve => setTimeout(resolve, 500))
+
+        // Trigger an automatic completion by manually deleting the placeholder text
+        await ensureExecuteCommand('deleteLeft')
+    } else {
+        await editor.edit(edit => edit.delete(new vscode.Selection(cursorPosition, cursorPosition.translate(0, 1))))
+        editor.selection = new vscode.Selection(cursorPosition, cursorPosition)
+
+        // We add a short delay to allow fetching any specific context for this selection
+        await new Promise(resolve => setTimeout(resolve, 500))
+
+        // Trigger an manual completion by executing the relevant command
+        await vscode.commands.executeCommand(
+            benchmarkId === CODY_EXTENSION_ID
+                ? 'cody.autocomplete.manual-trigger'
+                : 'editor.action.inlineSuggest.trigger'
+        )
+    }
+
+    const startTime = performance.now()
+    const completed = await Promise.race<boolean>([
+        acceptCompletion(editor.document.version),
+        new Promise(resolve => setTimeout(() => resolve(false), 5000)), // Maximum 5s wait
+    ])
+    const endTime = performance.now()
+
+    // Save the changes so we can test it later
+    await editor.document.save()
+
+    return {
+        completed,
+        timeToCompletion: completed ? endTime - startTime : undefined,
+    }
+}
+
+export const executeCompletion = async (
+    { entryFile, openFiles }: DatasetConfig,
+    cwd: string
+): Promise<Omit<BenchmarkResult, 'workspacePath'>> => {
     for (const fileToOpen of openFiles) {
         // Open any relevant 'open` files that can be used as additional context
         const doc = await vscode.workspace.openTextDocument(path.resolve(cwd, fileToOpen))
@@ -46,25 +98,5 @@ export const executeCompletion = async ({ entryFile, openFiles }: DatasetConfig,
     entryEditor.selection = new vscode.Selection(topOfFilePosition, topOfFilePosition)
     await new Promise(resolve => setTimeout(resolve, 500))
 
-    // Find the `CURSOR` placeholder, remove it, and place the actual cursor there
-    const cursorPosition = entryEditor.document.positionAt(entryEditor.document.getText().indexOf(CURSOR))
-    const cursorSelection = new vscode.Selection(cursorPosition.translate(0, 1), cursorPosition.translate(0, 1))
-    entryEditor.selection = cursorSelection
-    // We add a short delay to allow fetching any specific context for this selection
-    await new Promise(resolve => setTimeout(resolve, 500))
-
-    await ensureExecuteCommand('deleteLeft')
-    await ensureExecuteCommand('editor.action.inlineSuggest.trigger')
-
-    const startPolling = pollToAcceptCompletion(entryEditor.document.version)
-    const completed = await Promise.race([
-        startPolling,
-        new Promise<false>(resolve => setTimeout(() => resolve(false), 5000)), // Maximum 5s wait
-    ])
-
-    if (!completed) {
-        return
-    }
-
-    await entryEditor.document.save()
+    return triggerAndWaitForCompletion(entryEditor)
 }
