@@ -11,11 +11,11 @@ import _glob from 'glob'
 import {
     CODY_EXTENSION_ID,
     COPILOT_EXTENSION_ID,
-    DATASETS_PATH,
     EXTENSION_TEST_PATH,
     RESULTS_PATH,
     VSCODE_CODY_ROOT,
 } from './constants'
+import { BENCHMARK_COMPARE_WITH, BENCHMARK_COPILOT_TOKEN, BENCHMARK_DATASET } from './env'
 import { CaseStatus, testCompletionResult } from './evaluate-test-case'
 import {
     BenchmarkOutput,
@@ -59,8 +59,7 @@ function calculateTimeToCompletions(
 }
 
 export async function start(): Promise<void> {
-    const benchmarkDataset = process.env.BENCHMARK_DATASET || DATASETS_PATH
-    const datasetPath = path.resolve(VSCODE_CODY_ROOT, benchmarkDataset)
+    const datasetPath = path.resolve(VSCODE_CODY_ROOT, BENCHMARK_DATASET)
     const benchmarkCases = await glob(path.join(datasetPath, '**/*config.json'))
     if (benchmarkCases.length === 0) {
         throw new Error(`No benchmark cases found inside ${datasetPath}`)
@@ -70,9 +69,8 @@ export async function start(): Promise<void> {
     const userDataDirArg = `--user-data-dir=${mkdtempSync(path.join(tmpdir(), 'benchmark-evaluation-'))}`
 
     const extensionsToBenchmark = [CODY_EXTENSION_ID]
-    const benchmarkCompareWith = process.env.BENCHMARK_COMPARE_WITH
-    if (benchmarkCompareWith) {
-        extensionsToBenchmark.push(benchmarkCompareWith)
+    if (BENCHMARK_COMPARE_WITH) {
+        extensionsToBenchmark.push(BENCHMARK_COMPARE_WITH)
     }
 
     const resultsPath = path.join(RESULTS_PATH, `results-${Date.now()}.json`)
@@ -98,15 +96,19 @@ export async function start(): Promise<void> {
 
             for (const benchmarkConfig of benchmarkCases) {
                 const benchmarkDir = path.dirname(benchmarkConfig)
-                const evalCaseConfig = parseEvaluationConfig(benchmarkConfig)
+                const {
+                    entryFile,
+                    testCommand,
+                    openFiles = [],
+                    closedFiles = [],
+                    solutionFile,
+                    testFile,
+                } = parseEvaluationConfig(benchmarkConfig)
 
                 // Copy the entry file into a temporary Git directory
                 // This gives us an isolated place where we can allow Cody to make changes, and inspect them later
-                const additionalFiles = [...new Set([...evalCaseConfig.openFiles, ...evalCaseConfig.closedFiles])]
-                const benchmarkWorkspace = await createTemporaryWorkspace(
-                    [evalCaseConfig.entryFile, ...additionalFiles],
-                    benchmarkDir
-                )
+                const additionalFiles = [...new Set([...openFiles, ...closedFiles])]
+                const benchmarkWorkspace = await createTemporaryWorkspace([entryFile, ...additionalFiles], benchmarkDir)
 
                 const extensionTestsEnv: { [key: string]: string } = {
                     BENCHMARK_EXTENSION_ID: extension,
@@ -114,12 +116,12 @@ export async function start(): Promise<void> {
                     BENCHMARK_WORKSPACE: benchmarkWorkspace,
                 }
 
-                if (extension === COPILOT_EXTENSION_ID && process.env.BENCHMARK_COPILOT_TOKEN) {
+                if (extension === COPILOT_EXTENSION_ID && BENCHMARK_COPILOT_TOKEN) {
                     // Support programmatically signing into Copilot via a token
                     // This is a bit of a hack to give us some way of running Copilot programmatically
                     // We should look into a better way to do this.
                     extensionTestsEnv.CODESPACES = 'true'
-                    extensionTestsEnv.GITHUB_TOKEN = process.env.BENCHMARK_COPILOT_TOKEN
+                    extensionTestsEnv.GITHUB_TOKEN = BENCHMARK_COPILOT_TOKEN
                 }
 
                 await runTests({
@@ -130,9 +132,11 @@ export async function start(): Promise<void> {
                     extensionTestsEnv,
                 })
 
-                // Copy the solution file. This is primarily so we can compare the generation vs the solution.
-                // In the future we may also want to produce edit similarity (ES) and exact match (EM) metrics for further inspection.
-                await copyFileToDir(benchmarkDir, evalCaseConfig.solutionFile, benchmarkWorkspace)
+                if (solutionFile) {
+                    // Copy the solution file. This is primarily so we can compare the generation vs the solution.
+                    // In the future we may also want to produce edit similarity (ES) and exact match (EM) metrics for further inspection.
+                    await copyFileToDir(benchmarkDir, solutionFile, benchmarkWorkspace)
+                }
 
                 // Extract the completion result from the test run
                 const benchmarkResult: BenchmarkResult = {
@@ -141,18 +145,16 @@ export async function start(): Promise<void> {
                 }
 
                 if (benchmarkResult.completed) {
-                    // Copy the test file. We do this after the evaluation is completed to ensure there is no chance it is included as context.
-                    await copyFileToDir(benchmarkDir, evalCaseConfig.testFile, benchmarkWorkspace)
+                    if (testFile) {
+                        // Copy the test file. We do this after the evaluation is completed to ensure there is no chance it is included as context.
+                        await copyFileToDir(benchmarkDir, testFile, benchmarkWorkspace)
+                    }
 
                     // Run the test file against the generated completion
-                    benchmarkResult.testOutcome = await testCompletionResult(
-                        evalCaseConfig.testFile,
-                        evalCaseConfig.testCommand,
-                        benchmarkWorkspace
-                    )
+                    benchmarkResult.testOutcome = await testCompletionResult(testCommand, benchmarkWorkspace)
                 }
 
-                const testId = `${benchmarkDataset} - ${path.basename(benchmarkDir)}`
+                const testId = `${BENCHMARK_DATASET} - ${path.basename(benchmarkDir)}`
 
                 // Write to result file so we can parse it in the final summary
                 writeBenchmarkResult({
@@ -162,7 +164,7 @@ export async function start(): Promise<void> {
                     result: benchmarkResult,
                 })
 
-                const diff = await exec(`git diff --color=always -U0 ${evalCaseConfig.entryFile} | tail -n +5`, {
+                const diff = await exec(`git diff --color=always -U0 ${entryFile} | tail -n +5`, {
                     cwd: benchmarkWorkspace,
                 })
 

@@ -1,7 +1,7 @@
 import * as vscode from 'vscode'
 
 import { CODY_EXTENSION_ID } from '../constants'
-import { assertEnv } from '../utils'
+import { BENCHMARK_ACCESS_TOKEN, BENCHMARK_ENDPOINT } from '../env'
 
 export const waitForManualExtensionSetupConfirmation = async (): Promise<void> => {
     const buttonTitle = 'Resume benchmark suite'
@@ -33,7 +33,7 @@ export async function initExtension(id: string): Promise<void> {
         return
     }
 
-    await ensureExecuteCommand('cody.test.token', assertEnv('BENCHMARK_ENDPOINT'), assertEnv('BENCHMARK_ACCESS_TOKEN'))
+    await ensureExecuteCommand('cody.test.token', BENCHMARK_ENDPOINT, BENCHMARK_ACCESS_TOKEN)
     await ensureExecuteCommand('cody.chat.focus')
 }
 

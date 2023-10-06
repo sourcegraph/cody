@@ -3,8 +3,10 @@ import path from 'path'
 import * as vscode from 'vscode'
 
 import { CODY_EXTENSION_ID, CURSOR } from '../constants'
-import { assertEnv, BenchmarkResult, DatasetConfig } from '../utils'
+import { BENCHMARK_AUTOMATIC_COMPLETIONS } from '../env'
+import { BenchmarkResult, DatasetConfig } from '../utils'
 
+import { BENCHMARK_EXTENSION_ID } from './env'
 import { ensureExecuteCommand } from './helpers'
 
 /**
@@ -32,14 +34,12 @@ const acceptCompletion = async (currentVersion: number): Promise<boolean> => {
 const triggerAndWaitForCompletion = async (
     editor: vscode.TextEditor
 ): Promise<Omit<BenchmarkResult, 'workspacePath'>> => {
-    const benchmarkId = assertEnv('BENCHMARK_EXTENSION_ID')
-
     // Find the `CURSOR` placeholder, remove it, and place the actual cursor there
     const cursorPosition = editor.document.positionAt(editor.document.getText().indexOf(CURSOR))
     // editor.selection = cursorSelection
     // await new Promise(resolve => setTimeout(resolve, 500))
 
-    if (process.env.BENCHMARK_AUTOMATIC_COMPLETIONS) {
+    if (BENCHMARK_AUTOMATIC_COMPLETIONS) {
         editor.selection = new vscode.Selection(cursorPosition.translate(0, 1), cursorPosition.translate(0, 1))
 
         // We add a short delay to allow fetching any specific context for this selection
@@ -56,7 +56,7 @@ const triggerAndWaitForCompletion = async (
 
         // Trigger an manual completion by executing the relevant command
         await vscode.commands.executeCommand(
-            benchmarkId === CODY_EXTENSION_ID
+            BENCHMARK_EXTENSION_ID === CODY_EXTENSION_ID
                 ? 'cody.autocomplete.manual-trigger'
                 : 'editor.action.inlineSuggest.trigger'
         )
@@ -79,7 +79,7 @@ const triggerAndWaitForCompletion = async (
 }
 
 export const executeCompletion = async (
-    { entryFile, openFiles }: DatasetConfig,
+    { entryFile, openFiles = [] }: DatasetConfig,
     cwd: string
 ): Promise<Omit<BenchmarkResult, 'workspacePath'>> => {
     for (const fileToOpen of openFiles) {
