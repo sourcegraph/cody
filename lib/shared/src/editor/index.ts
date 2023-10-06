@@ -107,7 +107,7 @@ export interface Editor<
     getActiveTextEditor(): ActiveTextEditor | null
     getActiveTextEditorSelection(): ActiveTextEditorSelection | null
     getActiveTextEditorSmartSelection(): Promise<ActiveTextEditorSelection | null>
-    getActiveFixupTextEditorSmartSelection(): Promise<ActiveTextEditorSelection | null>
+    getActiveFixupTextEditorSmartSelection(): Promise<vscode.Range | null>
     getActiveInlineChatTextEditor(): ActiveTextEditor | null
     getActiveInlineChatSelection(): ActiveTextEditorSelection | null
 
@@ -160,7 +160,7 @@ export class NoopEditor implements Editor {
         return Promise.resolve(null)
     }
 
-    public getActiveFixupTextEditorSmartSelection(): Promise<ActiveTextEditorSelection | null> {
+    public getActiveFixupTextEditorSmartSelection(): Promise<vscode.Range | null> {
         return Promise.resolve(null)
     }
 

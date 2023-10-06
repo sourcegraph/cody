@@ -1,5 +1,3 @@
-import * as vscode from 'vscode'
-
 import { ContextMessage, getContextMessageWithResponse } from '../../codebase-context/messages'
 import { VsCodeFixupTaskRecipeData } from '../../editor'
 import { IntentClassificationOption } from '../../intent-detector'
@@ -74,15 +72,8 @@ export class Fixup implements Recipe {
 
         // If the intent is 'edit', then potentially modify the fixup task.
         if (intent === 'edit') {
-            const newRangeSmartSelection = (await context.editor.getActiveFixupTextEditorSmartSelection())
-                ?.selectionRange
-            if (newRangeSmartSelection) {
-                const newRange = new vscode.Range(
-                    newRangeSmartSelection.start.line,
-                    0,
-                    newRangeSmartSelection.end.line,
-                    0
-                )
+            const newRange = await context.editor.getActiveFixupTextEditorSmartSelection()
+            if (newRange) {
                 await fixupController.resetSelectionRange(taskId, newRange)
                 // Update the fixup task if the range was modified.
                 finalFixupTask = (await fixupController.getTaskRecipeData(taskId)) || finalFixupTask

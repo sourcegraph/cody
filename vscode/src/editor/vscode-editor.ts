@@ -174,7 +174,7 @@ export class VSCodeEditor implements Editor<InlineController, FixupController, C
      * @returns A Promise that resolves to an `ActiveTextEditorSelection` which represents the combined "smart" selection.
      *          Returns null if no active editor is found or if the starting line of the selection is not defined.
      */
-    public async getActiveFixupTextEditorSmartSelection(): Promise<ActiveTextEditorSelection | null> {
+    public async getActiveFixupTextEditorSmartSelection(): Promise<vscode.Range | null> {
         // Get the instance of the active text editor.
         const activeEditor = this.getActiveTextEditorInstance()
         if (!activeEditor) {
@@ -199,8 +199,12 @@ export class VSCodeEditor implements Editor<InlineController, FixupController, C
         // Create a new combined selection range that starts from the beginning of the folding rangeat the start position
         // and ends at the end of the folding range at the end position.
         const combinedFoldingRange = new vscode.Selection(foldingRangeStart.start.line, 0, foldingRangeEnd.end.line, 0)
-
-        return this.createActiveTextEditorSelection(activeEditor, combinedFoldingRange)
+        const activeSelection = this.createActiveTextEditorSelection(activeEditor, combinedFoldingRange)
+        const newRangeSmartSelection = activeSelection.selectionRange
+        if (newRangeSmartSelection) {
+            return new vscode.Range(newRangeSmartSelection.start.line, 0, newRangeSmartSelection.end.line, 0)
+        }
+        return null
     }
 
     public getActiveTextEditorSelectionOrEntireFile(): ActiveTextEditorSelection | null {
