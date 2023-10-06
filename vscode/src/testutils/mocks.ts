@@ -17,27 +17,24 @@ import type {
 import type * as vscode_types from 'vscode'
 import { URI, Utils as UriUtils } from 'vscode-uri'
 
-// Create a shim URI class that is the vscode-uri URI class with the Utils static
-// methods to match the real vscode.Uri implementation.
-export class Uri {} // eslint-disable-line @typescript-eslint/no-extraneous-class
-// eslint-disable-next-line guard-for-in
-for (const p in UriUtils) {
-    ;(Uri as any)[p] = (UriUtils as any)[p] // eslint-disable-line @typescript-eslint/no-unsafe-member-access
-}
-Object.setPrototypeOf(Uri, URI)
-
 /**
- * A helper to parse a URI.
+ * A proxy for the vscode-uri URI class as a replacement for the VS Code
+ * URI class.
  *
- * This is used in this file because TS doesn't know about the interface of the Uri class above.
- *
- * @param input The string to parse.
- * @returns The parsed Uri.
+ * For methods that don't exist on vscode-uri.URI, vscode-uri.Utils will be
+ * used since that's where static methods like joinPath() are.
  */
-function parseUri(input: string): vscode_types.Uri {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
-    return (Uri as any).parse(input)
-}
+export const Uri = new Proxy(URI, {
+    get(obj, prop) {
+        if (prop in obj) {
+            return (obj as any)[prop]
+        }
+        if (prop in UriUtils) {
+            return (UriUtils as any)[prop]
+        }
+        return undefined
+    },
+})
 
 export class Disposable implements VSCodeDisposable {
     public static from(...disposableLikes: { dispose: () => any }[]): Disposable {
@@ -222,18 +219,18 @@ export class CodeActionKind {
 
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export class QuickInputButtons {
-    public static readonly Back: vscode_types.QuickInputButton = { iconPath: parseUri('file://foobar') }
+    public static readonly Back: vscode_types.QuickInputButton = { iconPath: Uri.parse('file://foobar') }
 }
 
 export class TreeItem {
     constructor(
-        public readonly resourceUri: Uri,
+        public readonly resourceUri: vscode_types.Uri,
         public readonly collapsibleState?: TreeItemCollapsibleState
     ) {}
 }
 
 export class RelativePattern implements vscode_types.RelativePattern {
-    public baseUri = parseUri('file:///foobar')
+    public baseUri = Uri.parse('file:///foobar')
     public base: string
     constructor(
         _base: vscode_types.WorkspaceFolder | vscode_types.Uri | string,
@@ -433,10 +430,10 @@ export class InlineCompletionItem {
 
 // TODO(abeatrix): Implement delete and insert mocks
 export class WorkspaceEdit {
-    public delete(uri: Uri, range: Range): Range {
+    public delete(uri: vscode_types.Uri, range: Range): Range {
         return range
     }
-    public insert(uri: Uri, position: Position, content: string): string {
+    public insert(uri: vscode_types.Uri, position: Position, content: string): string {
         return content
     }
 }
