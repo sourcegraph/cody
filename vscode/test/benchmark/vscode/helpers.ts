@@ -1,9 +1,10 @@
 import * as vscode from 'vscode'
 
-import { CODY_EXTENSION_ID } from '../constants'
 import { BENCHMARK_ACCESS_TOKEN, BENCHMARK_ENDPOINT } from '../env'
 
-export const waitForManualExtensionSetupConfirmation = async (): Promise<void> => {
+import { BENCHMARK_EXTENSION_MANUAL_SETUP } from './env'
+
+const waitForManualExtensionSetupConfirmation = async (): Promise<void> => {
     const buttonTitle = 'Resume benchmark suite'
 
     // eslint-disable-next-line @typescript-eslint/no-misused-promises, no-async-promise-executor
@@ -22,15 +23,8 @@ export async function initExtension(id: string): Promise<void> {
     const ext = vscode.extensions.getExtension(id)
     await ext?.activate()
 
-    // if (id !== CODY_EXTENSION_ID) {
-    //     // Unknown setup steps, wait for manual prompt
-    //     // return waitForManualExtensionSetupConfirmation()
-    //     // return
-    // }
-
-    if (id !== CODY_EXTENSION_ID) {
-        // await ensureExecuteCommand()
-        return
+    if (BENCHMARK_EXTENSION_MANUAL_SETUP) {
+        return waitForManualExtensionSetupConfirmation()
     }
 
     await ensureExecuteCommand('cody.test.token', BENCHMARK_ENDPOINT, BENCHMARK_ACCESS_TOKEN)

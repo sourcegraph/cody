@@ -6,7 +6,6 @@ import path from 'path'
 import { promisify } from 'util'
 
 import { TEST_WORKSPACE_PATH } from './constants'
-import { CaseStatus } from './evaluate-test-case'
 import { commitSignatureEnv } from './git'
 
 const exec = promisify(_exec)
@@ -78,8 +77,7 @@ export const writeCompletionResult = (dir: string, result: CompletionResult): vo
 }
 
 export interface BenchmarkResult extends CompletionResult {
-    // TODO: Remove NO_CHANGE
-    testOutcome?: CaseStatus
+    testPassed?: boolean
     workspacePath: string
 }
 
