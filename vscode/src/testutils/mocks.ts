@@ -17,15 +17,23 @@ import type {
 import type * as vscode_types from 'vscode'
 import { URI, Utils as UriUtils } from 'vscode-uri'
 
-// eslint-disable-next-line @typescript-eslint/no-extraneous-class
-export class Uri {}
+// Create a shim URI class that is the vscode-uri URI class with the Utils static
+// methods to match the real vscode.Uri implementation.
+export class Uri {} // eslint-disable-line @typescript-eslint/no-extraneous-class
 // eslint-disable-next-line guard-for-in
 for (const p in UriUtils) {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-    ;(Uri as any)[p] = (UriUtils as any)[p]
+    ;(Uri as any)[p] = (UriUtils as any)[p] // eslint-disable-line @typescript-eslint/no-unsafe-member-access
 }
 Object.setPrototypeOf(Uri, URI)
 
+/**
+ * A helper to parse a URI.
+ *
+ * This is used in this file because TS doesn't know about the interface of the Uri class above.
+ *
+ * @param input The string to parse.
+ * @returns The parsed Uri.
+ */
 function parseUri(input: string): vscode_types.Uri {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
     return (Uri as any).parse(input)

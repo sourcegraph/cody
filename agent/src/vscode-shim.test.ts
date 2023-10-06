@@ -12,5 +12,9 @@ describe('vscode-shim', () => {
                 vscode.Uri.parse('http://example.org/one/two').toString()
             )
         })
+
+        it('instanceof can be used', () => {
+            assert.ok(vscode.Uri.parse('http://example.org/one/two') instanceof vscode.Uri)
+        })
     })
 })
