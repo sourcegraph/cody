@@ -15,16 +15,15 @@ import type {
     Range as VSCodeRange,
 } from 'vscode'
 import type * as vscode_types from 'vscode'
+import { URI, Utils as UriUtils } from 'vscode-uri'
 
-// NOTE(olafurpg): We use a inlined copy of `vscode.Uri` instead of the
-// vscode-uri package because vscode-uri is not a drop-in replacement of
-// `vscode.Uri`. Specifically, `Uri.joinPath` is missing in vscode-uri, see
-// https://sourcegraph.com/npm/vscode-uri@v3.0.7/-/blob/lib/umd/uri.d.ts
-// Ideally, we should replace the inlined copy of `vscode.Uri` with vscode-uri
-// in the future when it becomes a drop-in replacement.
-import { Uri } from './vscode/uri'
-
-export { Uri } from './vscode/uri'
+export const Uri = {
+    // Merge the URI class and the static utility methods like joinPath()
+    // from the vscode-uri library so that it mirrors the real VS Code
+    // Uri class.
+    ...URI,
+    ...UriUtils,
+}
 
 export class Disposable implements VSCodeDisposable {
     public static from(...disposableLikes: { dispose: () => any }[]): Disposable {
@@ -209,21 +208,21 @@ export class CodeActionKind {
 
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export class QuickInputButtons {
-    public static readonly Back: vscode_types.QuickInputButton = { iconPath: Uri.parse('file://foobar') }
+    public static readonly Back: vscode_types.QuickInputButton = { iconPath: URI.parse('file://foobar') }
 }
 
 export class TreeItem {
     constructor(
-        public readonly resourceUri: Uri,
+        public readonly resourceUri: URI,
         public readonly collapsibleState?: TreeItemCollapsibleState
     ) {}
 }
 
 export class RelativePattern implements vscode_types.RelativePattern {
-    public baseUri = Uri.parse('file:///foobar')
+    public baseUri = URI.parse('file:///foobar')
     public base: string
     constructor(
-        _base: vscode_types.WorkspaceFolder | Uri | string,
+        _base: vscode_types.WorkspaceFolder | URI | string,
         public readonly pattern: string
     ) {
         // eslint-disable-next-line @typescript-eslint/no-base-to-string
@@ -283,7 +282,7 @@ export class Location implements VSCodeLocation {
     public range: VSCodeRange
 
     constructor(
-        public readonly uri: vscode_types.Uri,
+        public readonly uri: URI,
         rangeOrPosition: VSCodeRange | VSCodePosition
     ) {
         if ('line' in rangeOrPosition && 'character' in rangeOrPosition) {
@@ -420,10 +419,10 @@ export class InlineCompletionItem {
 
 // TODO(abeatrix): Implement delete and insert mocks
 export class WorkspaceEdit {
-    public delete(uri: Uri, range: Range): Range {
+    public delete(uri: URI, range: Range): Range {
         return range
     }
-    public insert(uri: Uri, position: Position, content: string): string {
+    public insert(uri: URI, position: Position, content: string): string {
         return content
     }
 }
@@ -676,7 +675,7 @@ export const vsCodeMocks = {
         }),
         applyEdit: (edit: WorkspaceEdit) => true,
         save: () => true,
-        asRelativePath(path: string | Uri) {
+        asRelativePath(path: string | URI) {
             return path.toString()
         },
     },
