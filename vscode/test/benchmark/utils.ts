@@ -1,11 +1,11 @@
 import { exec as _exec } from 'child_process'
-import { existsSync, readFileSync, writeFileSync } from 'fs'
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs'
 import { copyFile, cp, mkdtemp } from 'fs/promises'
 import { tmpdir } from 'os'
 import path from 'path'
 import { promisify } from 'util'
 
-import { TEST_WORKSPACE_PATH } from './constants'
+import { RESULTS_PATH, TEST_WORKSPACE_PATH } from './constants'
 import { commitSignatureEnv } from './git'
 
 const exec = promisify(_exec)
@@ -127,4 +127,12 @@ export const writeBenchmarkResult = ({ path, testId, extensionId, result }: Writ
         ),
         'utf-8'
     )
+}
+
+export const getResultsPath = (): string => {
+    if (!existsSync(RESULTS_PATH)) {
+        mkdirSync(RESULTS_PATH)
+    }
+
+    return path.join(RESULTS_PATH, `results-${Date.now()}.json`)
 }

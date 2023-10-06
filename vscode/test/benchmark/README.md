@@ -74,6 +74,10 @@ Can either be a specific case, e.g. `BENCHMARK_DATASET=./test/benchmark/datasets
 `BENCHMARK_COMPARE_WITH`: An alternative extension to benchmark against the same dataset. Will be downloaded from the VS Code marketplace before the tests start. Case-by-case comparisons can be viewed in the console after the tests have finished executing.
 e.g. `BENCHMARK_COMPARE_WITH=GitHub.copilot`
 
+`BENCHMARK_AUTOMATIC_COMPLETIONS`: If the benchmark script should stop manually triggering completions, and instead have them trigger automatically from a keypress. This will replicate a more typical user experience, but may not capture as many results. Defaults to `false`.
+
+`BENCHMARK_COPILOT_TOKEN`: A user-to-server token for authenticating with Copilot. This allows the benchmark script to also run Copilot against the same test cases for comparison purposes.
+
 ## Architecture
 
 LLMs are very difficult to evaluate. This suite attempts to fix this by prompting Cody to generate code from a **"masked" code example**. Given we know the actual solution, we can then **run a prewritten test** against the newly generated code to see if Cody produced a correct result.
@@ -97,7 +101,7 @@ Benchmark cases are defined in the `/datasets` folder in this directory. Each ca
 }
 ```
 
-**entryFile**: This is the file that Cody will generate its completion in. It should define the exact position for Cody's completion using the placeholder character: `◆``. You can see other cases for examples of this.
+**entryFile**: This is the file that Cody will generate its completion in. It should define the exact position for Cody's completion using the placeholder character: `█`. You can see other cases for examples of this.
 
 **openFiles** (Optional): These are files that should be opened before Cody generates its completion. This can be used as a way of providing additional context to Cody. You do not need to specify the `entryFile` here, as Cody will automatically open this file.
 
