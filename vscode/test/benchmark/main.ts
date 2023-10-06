@@ -8,13 +8,7 @@ import { downloadAndUnzipVSCode, resolveCliArgsFromVSCodeExecutablePath, runTest
 import chalk from 'chalk'
 import _glob from 'glob'
 
-import {
-    CODY_EXTENSION_ID,
-    COPILOT_EXTENSION_ID,
-    EXTENSION_TEST_PATH,
-    RESULTS_PATH,
-    VSCODE_CODY_ROOT,
-} from './constants'
+import { CODY_EXTENSION_ID, COPILOT_EXTENSION_ID, EXTENSION_TEST_PATH, VSCODE_CODY_ROOT } from './constants'
 import { BENCHMARK_COMPARE_WITH, BENCHMARK_COPILOT_TOKEN, BENCHMARK_DATASET } from './env'
 import { testCompletionResult } from './evaluate-test-case'
 import { summarizeResultsInConsole } from './results'
@@ -22,6 +16,7 @@ import {
     BenchmarkResult,
     copyFileToDir,
     createTemporaryWorkspace,
+    getResultsPath,
     parseEvaluationConfig,
     readCompletionResult,
     writeBenchmarkResult,
@@ -40,7 +35,7 @@ export async function start(): Promise<void> {
     const extensionDirArg = `--extensions-dir=${mkdtempSync(path.join(tmpdir(), 'benchmark-evaluation-'))}`
     const userDataDirArg = `--user-data-dir=${mkdtempSync(path.join(tmpdir(), 'benchmark-evaluation-'))}`
 
-    const resultsPath = path.join(RESULTS_PATH, `results-${Date.now()}.json`)
+    const resultsPath = getResultsPath()
     const extensionsToBenchmark = [CODY_EXTENSION_ID]
     if (BENCHMARK_COMPARE_WITH) {
         extensionsToBenchmark.push(BENCHMARK_COMPARE_WITH)
