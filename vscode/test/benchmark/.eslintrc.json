@@ -1,6 +1,5 @@
 {
   "extends": "../../.eslintrc.json",
-  "ignorePatterns": ["datasets", "fixtures"],
   "rules": {
     "no-restricted-imports": [
       "error",
