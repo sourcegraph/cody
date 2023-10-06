@@ -26,6 +26,11 @@ for (const p in UriUtils) {
 }
 Object.setPrototypeOf(Uri, URI)
 
+function parseUri(input: string): vscode_types.Uri {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
+    return (Uri as any).parse(input)
+}
+
 export class Disposable implements VSCodeDisposable {
     public static from(...disposableLikes: { dispose: () => any }[]): Disposable {
         return new Disposable(() => {
@@ -209,7 +214,7 @@ export class CodeActionKind {
 
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export class QuickInputButtons {
-    public static readonly Back: vscode_types.QuickInputButton = { iconPath: Uri.parse('file://foobar') }
+    public static readonly Back: vscode_types.QuickInputButton = { iconPath: parseUri('file://foobar') }
 }
 
 export class TreeItem {
@@ -220,12 +225,13 @@ export class TreeItem {
 }
 
 export class RelativePattern implements vscode_types.RelativePattern {
-    public baseUri = Uri.parse('file:///foobar')
+    public baseUri = parseUri('file:///foobar')
     public base: string
     constructor(
-        _base: vscode_types.WorkspaceFolder | Uri | string,
+        _base: vscode_types.WorkspaceFolder | vscode_types.Uri | string,
         public readonly pattern: string
     ) {
+        // eslint-disable-next-line @typescript-eslint/no-base-to-string
         this.base = _base.toString()
     }
 }
@@ -282,7 +288,7 @@ export class Location implements VSCodeLocation {
     public range: VSCodeRange
 
     constructor(
-        public readonly uri: Uri,
+        public readonly uri: vscode_types.Uri,
         rangeOrPosition: VSCodeRange | VSCodePosition
     ) {
         if ('line' in rangeOrPosition && 'character' in rangeOrPosition) {
@@ -675,7 +681,7 @@ export const vsCodeMocks = {
         }),
         applyEdit: (edit: WorkspaceEdit) => true,
         save: () => true,
-        asRelativePath(path: string | Uri) {
+        asRelativePath(path: string | vscode_types.Uri) {
             return path.toString()
         },
     },

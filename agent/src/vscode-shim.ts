@@ -168,7 +168,7 @@ const _workspace: Partial<typeof vscode.workspace> = {
     openTextDocument: uri => {
         // We currently treat filePath the same as uri for now, but will need to
         // properly pass around URIs once the agent protocol supports URIs
-        const filePath = uri instanceof Uri ? uri.path : uri?.toString() ?? ''
+        const filePath = uri instanceof Uri ? (uri as vscode.Uri).path : uri?.toString() ?? ''
         return workspaceDocuments ? workspaceDocuments.openTextDocument(filePath) : ('missingWorkspaceDocuments' as any)
     },
     getWorkspaceFolder: () => {
