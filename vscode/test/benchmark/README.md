@@ -41,11 +41,19 @@ pnpm run test:benchmark
 
 The script will run Cody against all benchmark cases, and then run Copilot against the same cases.
 
-We cannot programmatically authenticate with Copilot yet, so the script will pause when Copilot is installed. You need to click the Copilot "Sign in" notification manually in the opened VS Code window, and then the "Resume benchmark suite" notification to continue with the tests.
+To programatically authenticate with Copilot, you need a valid user-to-server token. This will typically already be stored on your machine.
 
-**Note:** There is currently a bug where authentication state is not shared across VS Code instances in these tests. This means that we need to sign in manually for each test case. This takes too long right now so we should debug and fix this.
+```shell
+cat ~/.config/github-copilot/hosts.json
+```
 
-**Note:** Copilot uses a URL-based authentication flow. VS Code often struggles to open the correct VS Code window when returning to the editor. If you run into issues, you should try closing all other VS Code windows and try from a separate terminal.
+Take the `oauth_token` from this file and set a new environment variable:
+
+```shell
+export BENCHMARK_COPILOT_TOKEN=ghu_aaaaaaaaaaaaaa
+```
+
+Finally provide Cody specific environment variables, and run the benchmark script that also includes Copilot:
 
 ```shell
 export BENCHMARK_ENDPOINT=https://sourcegraph.com
@@ -91,15 +99,15 @@ Benchmark cases are defined in the `/datasets` folder in this directory. Each ca
 
 **entryFile**: This is the file that Cody will generate its completion in. It should define the exact position for Cody's completion using the placeholder character: `◆``. You can see other cases for examples of this.
 
-**openFiles**: These are files that should be opened before Cody generates its completion. This can be used as a way of providing additional context to Cody.
+**openFiles** (Optional): These are files that should be opened before Cody generates its completion. This can be used as a way of providing additional context to Cody. You do not need to specify the `entryFile` here, as Cody will automatically open this file.
 
-**closedFiles**: These are files that exist in the editor, but are not open. Cody may still use these as context, but not directly because they have already been opened.
+**closedFiles** (Optional): These are files that exist in the editor, but are not open. Cody may still use these as context, but not directly because they have already been opened.
 
-**solutionFile**: This is the file with the completed solution code that we want Cody to write. **It is not provided to Cody at completion time**. It is primarily as reference example for evaluating Cody's output manually and validating any tests. In the future, we may want to use this as an evaluation point by using edit similarity (ES) and exact match (EM) metrics.
+**solutionFile** (Optional): This is the file with the completed solution code that we want Cody to write. **It is not provided to Cody at completion time**. It is primarily as reference example for evaluating Cody's output manually and validating any tests. In the future, we may want to use this as an evaluation point by using edit similarity (ES) and exact match (EM) metrics.
 
-**testFile**: This is the file that will be used to evaluate Cody's completion. It should point at the `entryFile` when running the test, but you should be able to validate the test is correct by manually pointing it at the `solutionFile`.
+**testFile** (Optional): This is the file that will be used to evaluate Cody's completion. It should point at the `entryFile` when running the test, but you should be able to validate the test is correct by manually pointing it at the `solutionFile`. Despite `testCommand` being required, this is an optional value as you may want to evaluate the output using just a single command (e.g. `go build main.go`)
 
-**testCommand**: This is the command that should be used in order to run the test in `testFile`. This can be any command, which means we can be flexible when testing things across language (e.g. the `python` command for Python completions). If you are adding a new `testCommand`, **you need to ensure a valid executable has been installed in the test container**. If you need to add a new executable, you can do so here: `./datasets/Dockerfile`.
+**testCommand**: This is the command that should be used to determine if the generated code is correct. This can be any command, which means we can be flexible when testing things across language (e.g. the `python` command for Python completions). If you are adding a new `testCommand`, **you need to ensure a valid executable has been installed in the test container**. If you need to add a new executable, you can do so here: `./datasets/Dockerfile`.
 
 ## Configuring the benchmark suite
 
