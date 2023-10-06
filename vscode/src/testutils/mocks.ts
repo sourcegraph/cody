@@ -17,13 +17,14 @@ import type {
 import type * as vscode_types from 'vscode'
 import { URI, Utils as UriUtils } from 'vscode-uri'
 
-export const Uri = {
-    // Merge the URI class and the static utility methods like joinPath()
-    // from the vscode-uri library so that it mirrors the real VS Code
-    // Uri class.
-    ...URI,
-    ...UriUtils,
+// eslint-disable-next-line @typescript-eslint/no-extraneous-class
+export class Uri {}
+// eslint-disable-next-line guard-for-in
+for (const p in UriUtils) {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+    ;(Uri as any)[p] = (UriUtils as any)[p]
 }
+Object.setPrototypeOf(Uri, URI)
 
 export class Disposable implements VSCodeDisposable {
     public static from(...disposableLikes: { dispose: () => any }[]): Disposable {
@@ -222,10 +223,9 @@ export class RelativePattern implements vscode_types.RelativePattern {
     public baseUri = URI.parse('file:///foobar')
     public base: string
     constructor(
-        _base: vscode_types.WorkspaceFolder | URI | string,
+        _base: vscode_types.WorkspaceFolder | Uri | string,
         public readonly pattern: string
     ) {
-        // eslint-disable-next-line @typescript-eslint/no-base-to-string
         this.base = _base.toString()
     }
 }
