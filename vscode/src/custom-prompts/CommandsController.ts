@@ -19,6 +19,7 @@ import {
     showcommandTypeQuickPick,
     showRemoveConfirmationInput,
 } from './utils/menu'
+import { extractCommandArgs } from './utils/process_input'
 
 /**
  * Manage commands built with prompts from CustomPromptsStore and PromptsProvider
@@ -113,8 +114,13 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
 
         logDebug('CommandsController:createCodyCommand:creating', commandKey)
 
+        const [instruction, commandArg] = extractCommandArgs(input)
+        if (commandArg && command.context?.command) {
+            command.context.command = [command.context?.command, commandArg].join(' ')
+        }
+
         // Start the command runner
-        const codyCommand = new CommandRunner(command, input, isFixupRequest)
+        const codyCommand = new CommandRunner(command, instruction, isFixupRequest)
         this.commandRunners.set(codyCommand.id, codyCommand)
         this.lastUsedCommands.add(command.slashCommand)
 

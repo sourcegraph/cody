@@ -531,7 +531,10 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
                     await this.addCustomInteraction('Command failed. Please open a file and try again.', text)
                     return null
                 }
-                const commandRunnerID = await this.editor.controllers.command?.addCommand(text)
+                // Split the text into two part, first part contains the command and the second part contains the arguments
+                // e.g. /add-command foo -c bar => ['/add-command', 'foo -c bar']
+                const [command, ...args] = text.split(' ')
+                const commandRunnerID = await this.editor.controllers.command?.addCommand(command, args?.join(' '))
                 if (!commandRunnerID) {
                     return null
                 }

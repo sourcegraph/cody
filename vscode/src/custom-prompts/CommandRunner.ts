@@ -26,7 +26,7 @@ export class CommandRunner implements vscode.Disposable {
 
     constructor(
         private command: CodyPrompt,
-        public instruction?: string,
+        public instruction?: string, // additional instruction to add to end of prompt
         private isFixupRequest?: boolean
     ) {
         // use commandKey to identify default command in telemetry
@@ -43,13 +43,17 @@ export class CommandRunner implements vscode.Disposable {
 
         logDebug('CommandRunner:init', this.kind)
 
-        // Commands only work in active editor / workspace unless context specifies otherwise
+        // Commands only work in active editor / workspace unless context is set to none
         this.editor = vscode.window.activeTextEditor || undefined
-        if (!this.editor || command.context?.none) {
+        if (!this.editor && !command.context?.none) {
             const errorMsg = 'Failed to create command: No active text editor found.'
             logDebug('CommandRunner:int:fail', errorMsg)
             void vscode.window.showErrorMessage(errorMsg)
             return
+        }
+
+        if (instruction) {
+            this.command.prompt = `${command.prompt} ${instruction}`
         }
 
         if (command.mode === 'inline') {
