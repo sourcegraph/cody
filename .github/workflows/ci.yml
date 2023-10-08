@@ -16,7 +16,7 @@ jobs:
         runner: [ubuntu, windows, macos]
         node: [16, 20]
     runs-on: ${{ matrix.runner }}-latest
-    timeout-minutes: 5
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-node@v3
