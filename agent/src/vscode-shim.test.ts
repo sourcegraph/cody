@@ -30,6 +30,10 @@ describe('vscode-shim', () => {
             assert.equal(vscode.Uri.file('a.txt').fsPath, `${path.sep}a.txt`)
         })
 
+        it('with is available', () => {
+            assert.equal(vscode.Uri.file('a.txt').with({ path: 'b.txt' }).path, `${path.sep}b.txt`)
+        })
+
         it('instanceof can be used', () => {
             // eslint-disable-next-line @typescript-eslint/no-extraneous-class
             class Qux {}
@@ -40,6 +44,8 @@ describe('vscode-shim', () => {
             expect(vscode.Uri.parse('http://example.org/one/two') instanceof Qux).toBe(false)
 
             expect(vscode.Uri.parse('http://example.org/one/two') instanceof URI).toBe(false)
+            expect(vscode.Uri.file('a.txt').with({ path: 'b.txt' }) instanceof vscode.Uri).toBe(true)
+            expect(vscode.Uri.file('a.txt').with({ path: 'b.txt' }) instanceof URI).toBe(false)
         })
     })
 })
