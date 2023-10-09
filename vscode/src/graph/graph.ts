@@ -75,8 +75,12 @@ export const getGraphContextFromRange = async (
     const label = 'getGraphContextFromRange'
     performance.mark(label)
 
-    // Find the candidate identifiers to request definitions for in the selection
-    const requestCandidates = gatherDefinitionRequestCandidates(locations, contentMap)
+    // Find the candidate identifiers to request definitions for in the
+    // selection
+    //
+    // We limit the number of candidates to 50 to avoid large implementations in
+    // recursive calls to overflow the language server.
+    const requestCandidates = gatherDefinitionRequestCandidates(locations, contentMap).slice(0, 50)
 
     // Extract hover text related to all of the request candidates
     const resolvedHoverText = await gatherHoverText(contentMap, requestCandidates, abortSignal, recursionLimit > 0)
