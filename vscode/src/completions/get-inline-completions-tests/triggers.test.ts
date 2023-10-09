@@ -179,4 +179,52 @@ describe('[getInlineCompletions] triggers', () => {
             })
         )
     })
+
+    describe('empty line at end of file', () => {
+        it.each(['function foo(){\n console.log()\n}\n\n█', 'const foo = bar\n\n█', 'function foo()\n\n█'])(
+            'does not trigger for empty line with an empty line above %s',
+            async prompt => expect(await getInlineCompletions(params(prompt, [completion`bar`]))).toBeNull()
+        )
+
+        it.each(['function log(foo: string){\n█', '// console.log foo\n█', '// log foo\nconst foo = bar\n█'])(
+            'triggers completion for empty line when the line above is not empty %s',
+            async prompt =>
+                expect(await getInlineCompletions(params(prompt, [completion`console.log(foo)`]))).toEqual<V>({
+                    items: [{ insertText: 'console.log(foo)' }],
+                    source: InlineCompletionsResultSource.Network,
+                })
+        )
+
+        it('trigger completion in an empty text doc', async () => {
+            expect(await getInlineCompletions(params('█', [completion`bar`]))).toEqual<V>({
+                items: [{ insertText: 'bar' }],
+                source: InlineCompletionsResultSource.Network,
+            })
+        })
+
+        it('triggers completion at the start of an empty line where the line above is not empty', async () => {
+            expect(await getInlineCompletions(params('function bubbleSort() {\n}\n█', [completion`bar`]))).toEqual<V>({
+                items: [{ insertText: 'bar' }],
+                source: InlineCompletionsResultSource.Network,
+            })
+        })
+
+        it('trigger completion at cursor position greater than 0', async () => {
+            expect(await getInlineCompletions(params('\n  █', [completion`bar`]))).toEqual<V>({
+                items: [{ insertText: 'bar' }],
+                source: InlineCompletionsResultSource.Network,
+            })
+        })
+
+        it('trigger multi-line completion at cursor position greater than 0 inside a function', async () => {
+            const requests: CompletionParameters[] = []
+            await getInlineCompletions(
+                params('function bubbleSort() {\n    █', [], {
+                    onNetworkRequest(request) {
+                        requests.push(request)
+                    },
+                })
+            )
+        })
+    })
 })
