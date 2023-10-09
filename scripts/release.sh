@@ -12,7 +12,7 @@ pnpm install && pnpm generate
 popd > /dev/null || exit
 
 # Build the JavaScript artifacts
-pnpm build
+./gradlew copyCodeSearchAssets
 
 # Ensure the plugin fulfills compatibility requirements
 ./gradlew runPluginVerifier

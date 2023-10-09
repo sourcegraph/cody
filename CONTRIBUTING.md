@@ -12,6 +12,7 @@ using the `jetbrains-ide` & `team/integrations` labels.
 
 ## Development
 
+
 - Install Java 11 via SDKMAN! https://sdkman.io. Once you have SDKMAN! installed, run `sdk use java 11.0.15-tem`. Confirm that you have Java 11 installed with `java -version`.
 - Clone `https://github.com/sourcegraph/sourcegraph`
 - Clone `https://github.com/sourcegraph/cody` in a sibling directory. The toplevel directories for
@@ -20,16 +21,17 @@ using the `jetbrains-ide` & `team/integrations` labels.
   - https://plugins.jetbrains.com/plugin/8527-google-java-format
   - https://plugins.jetbrains.com/plugin/14912-ktfmt
 
-| What                                                         | Command                                                                  |
-| ------------------------------------------------------------ | ------------------------------------------------------------------------ |
-| Run the plugin locally                                       | `./gradlew :runIDE`                                                      |
-| Run the plugin locally with fresh build of Cody              | `./gradlew -PforceAgentBuild=true :runIDE`                               |
-| Build Code Search assets (separate terminal)                 | `pnpm build`                                                             |
-| Continuously re-build Code Search assets (separate terminal) | `pnpm watch`                                                             |
-| Code Search "Find with Sourcegraph" window                   | `pnpm standalone && open http://localhost:3000/`                         |
-| Build deployable plugin                                      | `./gradlew buildPlugin` (artifact is generated in `build/distributions`) |
-| Reformat Java and Kotlin sources                             | `./gradlew spotlessApply`                                                |
-| Debug agent JSON-RPC communication                           | `tail -f build/sourcegraph/cody-agent-trace.json`                        |
+| What                                                          | Command                                                                  |
+|---------------------------------------------------------------|--------------------------------------------------------------------------|
+| Run the plugin locally                                        | `./gradlew :runIDE`                                                      |
+| Run the plugin locally with fresh build of Cody               | `./gradlew -PforceAgentBuild=true :runIDE`                               |
+| Run the plugin locally with fresh build of Code Search assets | `./gradlew -PforceCodeSearchBuild=true :runIDE`                          |
+| Build Code Search assets (separate terminal)                  | `pnpm build`                                                             |
+| Continuously re-build Code Search assets (separate terminal)  | `pnpm watch`                                                             |
+| Code Search "Find with Sourcegraph" window                    | `pnpm standalone && open http://localhost:3000/`                         |
+| Build deployable plugin                                       | `./gradlew buildPlugin` (artifact is generated in `build/distributions`) |
+| Reformat Java and Kotlin sources                              | `./gradlew spotlessApply`                                                |
+| Debug agent JSON-RPC communication                            | `tail -f build/sourcegraph/cody-agent-trace.json`                        |
 
 ## Using Alpha channel releases
 
@@ -72,12 +74,12 @@ Take the steps below _before_ [running JetBrains plugin with agent](#developing-
 - To create pre-release builds with the same version as a previous one, append `.{N}`. For example, `1.0.0-alpha`,
   then `1.0.0-alpha.1`, `1.0.0-alpha.2`, and so on.
 
-2. Describe the changes in the `[Unreleased]` section of `client/jetbrains/CHANGELOG.md` then remove any empty headers
+2. Describe the changes in the `[Unreleased]` section of `CHANGELOG.md` then remove any empty headers
 3. Go through
    the [manual test cases](https://docs.sourcegraph.com/integration/jetbrains/manual_testing)
 4. Make sure `runIde` is not running
 5. Commit your changes
-6. Run `PUBLISH_TOKEN=<YOUR TOKEN HERE> ./scripts/release.sh` from inside the `client/jetbrains` directory (You
+6. Run `PUBLISH_TOKEN=<YOUR TOKEN HERE> ./scripts/release.sh` from the root directory (You
    can [generate tokens on the JetBrains marketplace](https://plugins.jetbrains.com/author/me/tokens)).
 7. Commit changes and create PR
 

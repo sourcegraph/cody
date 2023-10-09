@@ -7,7 +7,7 @@ import org.jetbrains.annotations.Nullable;
 // ChatMessage uses an enum for Message.speaker that doesn't decode nicely with Gson.
 public class ChatMessage extends Message {
   @Nullable public String displayText;
-  @Nullable private List<ContextFile> contextFiles;
+  @Nullable public List<ContextFile> contextFiles;
 
   public ChatMessage(@Nullable List<ContextFile> contextFiles) {
     this.contextFiles = contextFiles;

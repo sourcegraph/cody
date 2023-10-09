@@ -38,3 +38,4 @@ src/main/resources/dist/*
 
 # VSCode langserver artifacts
 /bin/
+.DS_Store

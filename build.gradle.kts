@@ -3,6 +3,7 @@ import java.nio.file.Files
 import java.nio.file.Paths
 import java.util.EnumSet
 import java.util.zip.ZipFile
+import okio.Path.Companion.toPath
 import org.jetbrains.changelog.markdownToHTML
 import org.jetbrains.intellij.tasks.RunPluginVerifierTask.FailureLevel
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
@@ -119,7 +120,9 @@ tasks {
     )
   }
 
-  val agentSourceDirectory = Paths.get("..", "..", "..", "cody", "agent").normalize()
+  val agentSourceDirectoryPath =
+      System.getenv("CODY_DIR") ?: Paths.get("..", "cody", "agent").normalize().toString()
+  val agentSourceDirectory = Paths.get(agentSourceDirectoryPath)
   val agentTargetDirectory = buildDir.resolve("sourcegraph").resolve("agent").toPath()
 
   fun cleanAgentTargetDirectory() {
@@ -128,7 +131,49 @@ tasks {
     }
   }
 
+  fun buildCodeSearchAssets() {
+    if (System.getenv("SKIP_CODE_SEARCH_ASSETS_BUILD") == "true") {
+      println(
+          "Skipping code search assets build because SKIP_CODE_SEARCH_ASSETS_BUILD is set to true")
+      return
+    }
+    val sourcegraphDirectoryString =
+        System.getenv("SOURCEGRAPH_DIR") ?: Paths.get("..", "sourcegraph").normalize().toString()
+    val sourcegraphDirectory = Paths.get(sourcegraphDirectoryString)
+    val jetbrainsClientDirectory = sourcegraphDirectory.resolve("client").resolve("jetbrains")
+    val sourceDirectory =
+        jetbrainsClientDirectory
+            .resolve("src")
+            .resolve("main")
+            .resolve("resources")
+            .resolve("dist")
+            .toString()
+    val destinationDirectory =
+        rootDir.resolve("src").resolve("main").resolve("resources").resolve("dist").toString()
+    val shouldBuildCodeSearchAssets =
+        findProperty("forceCodeSearchBuild") == "true" ||
+            !destinationDirectory.toPath().toFile().isDirectory
+    if (!shouldBuildCodeSearchAssets) {
+      return
+    }
+    exec {
+      workingDir(sourcegraphDirectory)
+      commandLine("pnpm", "install", "--frozen-lockfile")
+    }
+    exec {
+      workingDir(jetbrainsClientDirectory.toString())
+      commandLine("pnpm", "build")
+    }
+    copy {
+      Files.createDirectories(destinationDirectory.toPath().toNioPath().parent)
+      println("Copying $sourceDirectory to $destinationDirectory")
+      from(sourceDirectory)
+      into(destinationDirectory)
+    }
+  }
+
   fun copyAgentBinariesToPluginPath(targetPath: String) {
+    buildCodeSearchAssets()
     val shouldBuildBinaries =
         agentSourceDirectory.isDirectory &&
             (findProperty("forceAgentBuild") == "true" ||
@@ -136,7 +181,7 @@ tasks {
                 agentTargetDirectory.toFile().list()?.isEmpty() ?: false)
     if (shouldBuildBinaries) {
       exec {
-        commandLine("pnpm", "install")
+        commandLine("pnpm", "install", "--frozen-lockfile")
         workingDir(agentSourceDirectory.toString())
       }
       exec {
@@ -149,6 +194,8 @@ tasks {
   register("copyAgentBinariesToPluginPath") {
     doLast { copyAgentBinariesToPluginPath(agentTargetDirectory.toString()) }
   }
+
+  register("buildCodeSearchAssets") { doLast { buildCodeSearchAssets() } }
 
   buildPlugin {
     dependsOn("copyAgentBinariesToPluginPath")

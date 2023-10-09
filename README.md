@@ -86,7 +86,7 @@ Cody Enterprise requires the use of a Sourcegraph Enterprise instance, and gives
 
 ## License
 
-[Cody's code](https://github.com/sourcegraph/sourcegraph/tree/main/client/jetbrains) is open source (Apache License 2.0).
+[Cody's code](https://github.com/sourcegraph/jetbrains) is open source (Apache License 2.0).
 
 ## Code Search features
 
@@ -211,4 +211,4 @@ If you have any questions, feedback, or bug report, we appreciate if you [open a
 
 ## Version History
 
-See [`CHANGELOG.md`](https://github.com/sourcegraph/sourcegraph/blob/main/client/jetbrains/CHANGELOG.md).
+See [`CHANGELOG.md`](https://github.com/sourcegraph/jetbrains/blob/main/CHANGELOG.md).
