@@ -389,6 +389,8 @@ Starting from `0.2.0`, Cody is using `major.EVEN_NUMBER.patch` for release versi
 
 ### Fixed
 
+- Fixed HTML escaping in inline chat markdown.
+
 ### Changed
 
 ## [0.4.1]
