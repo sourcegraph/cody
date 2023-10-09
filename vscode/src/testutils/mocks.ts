@@ -15,26 +15,10 @@ import type {
     Range as VSCodeRange,
 } from 'vscode'
 import type * as vscode_types from 'vscode'
-import { URI, Utils as UriUtils } from 'vscode-uri'
 
-/**
- * A proxy for the vscode-uri URI class as a replacement for the VS Code
- * URI class.
- *
- * For methods that don't exist on vscode-uri.URI, vscode-uri.Utils will be
- * used since that's where static methods like joinPath() are.
- */
-export const Uri = new Proxy(URI, {
-    get(obj, prop) {
-        if (prop in obj) {
-            return (obj as any)[prop]
-        }
-        if (prop in UriUtils) {
-            return (UriUtils as any)[prop]
-        }
-        return undefined
-    },
-})
+import { Uri } from './uri'
+
+export { Uri } from './uri'
 
 export class Disposable implements VSCodeDisposable {
     public static from(...disposableLikes: { dispose: () => any }[]): Disposable {

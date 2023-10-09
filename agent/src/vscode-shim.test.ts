@@ -1,8 +1,9 @@
 import assert from 'assert'
 import * as path from 'path'
 
-import { describe, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import * as vscode from 'vscode'
+import { URI } from 'vscode-uri'
 
 describe('vscode-shim', () => {
     describe('vscode.Uri', () => {
@@ -30,7 +31,14 @@ describe('vscode-shim', () => {
         })
 
         it('instanceof can be used', () => {
+            class Qux {}
+
             assert.ok(vscode.Uri.parse('http://example.org/one/two') instanceof vscode.Uri)
+            expect(new Qux() instanceof vscode.Uri).toBe(false)
+
+            expect(vscode.Uri.parse('http://example.org/one/two') instanceof Qux).toBe(false)
+
+            expect(vscode.Uri.parse('http://example.org/one/two') instanceof URI).toBe(false)
         })
     })
 })
