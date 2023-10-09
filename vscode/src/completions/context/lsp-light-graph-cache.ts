@@ -34,9 +34,7 @@ export class LspLightGraphCache implements vscode.Disposable, GraphContextFetche
 
     private constructor() {
         this.onDidChangeTextEditorSelection = debounce(this.onDidChangeTextEditorSelection.bind(this), 100)
-        this.disposables.push(
-            vscode.window.onDidChangeTextEditorSelection(this.onDidChangeTextEditorSelection.bind(this))
-        )
+        this.disposables.push(vscode.window.onDidChangeTextEditorSelection(this.onDidChangeTextEditorSelection.bind(this))
     }
 
     public async getContextAtPosition(
