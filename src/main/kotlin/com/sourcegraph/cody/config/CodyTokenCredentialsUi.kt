@@ -25,11 +25,11 @@ import javax.swing.JTextField
 
 internal class CodyTokenCredentialsUi(
     private val serverTextField: ExtendableTextField,
-    private val customRequestHeadersField: ExtendableTextField,
     val factory: SourcegraphApiRequestExecutor.Factory,
     val isAccountUnique: UniqueLoginPredicate
 ) : CodyCredentialsUi() {
 
+  lateinit var customRequestHeadersField: ExtendableTextField
   private val tokenTextField = JBTextField()
   private var fixedLogin: String? = null
 
@@ -48,17 +48,22 @@ internal class CodyTokenCredentialsUi(
                 it.isNotEmpty() && isServerPathValid(it)
               })
     }
-    row("Custom request headers: ") {
-      cell(customRequestHeadersField)
-          .horizontalAlign(HorizontalAlign.FILL)
-          .comment(
-              """Any custom headers to send with every request to Sourcegraph.<br>
+    collapsibleGroup("Advanced settings", indent = false) {
+      row("Custom request headers: ") {
+        customRequestHeadersField = ExtendableTextField("", 0)
+        cell(customRequestHeadersField)
+            .horizontalAlign(HorizontalAlign.FILL)
+            .comment(
+                """Any custom headers to send with every request to Sourcegraph.<br>
                   |Use any number of pairs: "header1, value1, header2, value2, ...".<br>
                   |Whitespace around commas doesn't matter.
               """
-                  .trimMargin(),
-              MAX_LINE_LENGTH_NO_WRAP)
-          .applyToComponent { this.setEmptyState("Client-ID, client-one, X-Extra, some metadata") }
+                    .trimMargin(),
+                MAX_LINE_LENGTH_NO_WRAP)
+            .applyToComponent {
+              this.setEmptyState("Client-ID, client-one, X-Extra, some metadata")
+            }
+      }
     }
   }
 
