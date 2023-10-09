@@ -171,7 +171,7 @@ const getGraphContextFromSelection = async (
         definitionMatches.map(({ definitionLocations }) => definitionLocations.map(({ uri }) => uri)).flat()
     )
 
-    // Resolve, extract , and deduplicate the symbol and location match pairs from the definition matches
+    // Resolve, extract, and deduplicate the symbol and location match pairs from the definition matches
     const matches = dedupeWith(
         definitionMatches
             .map(({ definitionLocations, typeDefinitionLocations, implementationLocations, ...rest }) =>
@@ -213,13 +213,13 @@ const getGraphContextFromSelection = async (
 }
 
 /**
- * Open each UR I referenced by a definition match in the current workspace, and make the document
+ * Open each URI referenced by a definition match in the current workspace, and make the document
  * content retrievable by filepath by adding it to the shared content map.
  */
 const updateContentMap = async (contentMap: Map<string, string[]>, locations: vscode.Uri[]): Promise<void> => {
     const unseenDefinitionUris = dedupeWith(locations, 'fsPath').filter(uri => !contentMap.has(uri.fsPath))
 
-    // Remove ultra-com mon type definitions that are probably already known by the LLM
+    // Remove ultra-common type definitions that are probably already known by the LLM
     const filteredUnseenDefinitionUris = unseenDefinitionUris.filter(uri => !isCommonImport(uri))
 
     const newContentMap = new Map(
@@ -235,7 +235,7 @@ const updateContentMap = async (contentMap: Map<string, string[]>, locations: vs
 }
 
 /**
- * Get the docu ment symbols in files indicated by the given selections and extract the symbol
+ * Get the document symbols in files indicated by the given selections and extract the symbol
  * ranges. This will give us indication of where either the user selection and cursor is located or
  * the range of a relevant definition we've fetched in a previous iteration, which we assume to be
  * the most relevant code to the current question.
@@ -515,7 +515,7 @@ interface ResolvedSymbolDefinitionMatches {
 }
 
 /**
- * Query each o f the candidate requests for definitions which are resolved in parallel before return.
+ * Query each of the candidate requests for definitions which are resolved in parallel before return.
  */
 export const gatherDefinitions = async (
     selections: Selection[],
@@ -543,7 +543,7 @@ export const gatherDefinitions = async (
         })
     }
 
-    // Resolve all in-f light promises in parallel
+    // Resolve all in-flight promises in parallel
     const resolvedDefinitionMatches = await Promise.all(
         definitionMatches.map(
             async ({ symbolName, hover, definitionLocations, typeDefinitionLocations, implementationLocations }) => ({
@@ -714,7 +714,7 @@ export const extractDefinitionContexts = async (
 
     // NOTE: In order to make sure the loop below is unblocked we'll also force resolve the entirety
     // of the folding range requests. That way we don't have a situation where the first iteration of
-    // the loop is wait ing on the last promise to be resolved in the set.
+    // the loop is waiting on the last promise to be resolved in the set.
     await Promise.all([...documentSymbolsMap.values()])
 
     // Piece everything together. For each matching definition, extract the relevant lines given the
@@ -814,7 +814,7 @@ const defaultGetImplementations = async (uri: URI, position: vscode.Position): P
         .then(locations => locations.flatMap(extractLocation))
 
 /**
- * Extract the  definition range from the given symbol information or document symbol.
+ * Extract the definition range from the given symbol information or document symbol.
  */
 const extractSymbolRange = (d: vscode.SymbolInformation | vscode.DocumentSymbol): vscode.Range =>
     isDocumentSymbol(d) ? d.range : d.location.range
@@ -823,7 +823,7 @@ const isDocumentSymbol = (s: vscode.SymbolInformation | vscode.DocumentSymbol): 
     (s as vscode.DocumentSymbol).range !== undefined
 
 /**
- * Convert the  given location or location link into a location.
+ * Convert the given location or location link into a location.
  */
 const extractLocation = (l: vscode.Location | vscode.LocationLink): vscode.Location =>
     isLocationLink(l) ? new vscode.Location(l.targetUri, l.targetRange) : l

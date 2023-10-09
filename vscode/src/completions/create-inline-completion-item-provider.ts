@@ -57,10 +57,6 @@ export async function createInlineCompletionItemProvider({
     ])
     if (providerConfig) {
         const history = new VSCodeDocumentHistory()
-        // const sectionObserver =
-        //     config.autocompleteExperimentalGraphContext || graphContextFlag
-        //         ? GraphSectionObserver.createInstance()
-        //         : undefined
         const lspLightGraphCache =
             config.autocompleteExperimentalGraphContext || graphContextFlag
                 ? LspLightGraphCache.createInstance()
@@ -95,9 +91,9 @@ export async function createInlineCompletionItemProvider({
             ),
             registerAutocompleteTraceView(completionsProvider)
         )
-        // if (sectionObserver) {
-        //     disposables.push(sectionObserver)
-        // }
+        if (lspLightGraphCache) {
+            disposables.push(lspLightGraphCache)
+        }
     } else if (config.isRunningInsideAgent) {
         throw new Error(
             "Can't register completion provider because `providerConfig` evaluated to `null`. " +
