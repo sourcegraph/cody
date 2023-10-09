@@ -31,6 +31,7 @@ describe('vscode-shim', () => {
         })
 
         it('instanceof can be used', () => {
+            // eslint-disable-next-line @typescript-eslint/no-extraneous-class
             class Qux {}
 
             assert.ok(vscode.Uri.parse('http://example.org/one/two') instanceof vscode.Uri)

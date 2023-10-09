@@ -18,7 +18,7 @@ import { UriComponents } from 'vscode-uri/lib/umd/uri'
  * We tried copy-pasting the full implementation of `vscode.Uri` into this
  * repository but it required adding >3k lines of code with minor that we have
  * to keep up-to-date and maintain. https://github.com/sourcegraph/cody/pull/1264
-
+ 
  * We tried using `Proxy` to avoid having to reimplement all APIs but this
  * solution didn't faithfully reproduce the behavior of `instanceof` checks.
  * https://github.com/sourcegraph/cody/pull/1335
@@ -59,26 +59,26 @@ export class Uri {
         }
     }
 
-    get scheme() {
+    public get scheme(): string {
         return this.uri.scheme
     }
 
-    get authority() {
+    public get authority(): string {
         return this.uri.authority
     }
-    get path() {
+    public get path(): string {
         return this.uri.path
     }
 
-    get query() {
+    public get query(): string {
         return this.uri.query
     }
 
-    get fragment() {
+    public get fragment(): string {
         return this.uri.fragment
     }
 
-    get fsPath() {
+    public get fsPath(): string {
         return this.uri.fsPath
     }
 
