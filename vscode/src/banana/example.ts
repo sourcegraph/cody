@@ -1,3 +1,3 @@
 import { sum } from './sum'
 
-sum()
+sum(
