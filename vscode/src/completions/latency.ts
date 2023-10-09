@@ -33,13 +33,25 @@ let userMetrics = {
 // Start when the last 5 suggestions were not accepted
 // Increment latency by 200ms linearly up to max latency
 // Reset every 5 minutes, or on file change, or on accepting a suggestion
-export function getLatency(provider: string, fsPath: string, languageId?: string, nodeType?: string): number {
+export function getLatency(
+    lowPerformanceLanguagesOnly: boolean,
+    provider: string,
+    fsPath: string,
+    languageId?: string,
+    nodeType?: string
+): number {
     // set base latency based on provider and low performance languages or comments when available
     let baseline = provider === 'anthropic' ? 0 : defaultLatency.baseline
+
     const isLowPerformance = languageId && lowPerformanceLanguageIds.has(languageId)
     const isComment = nodeType === 'comment'
     if (!languageId || isLowPerformance || isComment) {
         baseline = defaultLatency.lowPerformance
+    }
+
+    // Do not add latency when feature flag for low performance languages only is enabled and the current language is not low performance
+    if (lowPerformanceLanguagesOnly && !isLowPerformance) {
+        return 0
     }
 
     const timestamp = Date.now()
@@ -49,7 +61,7 @@ export function getLatency(provider: string, fsPath: string, languageId?: string
 
     const elapsed = timestamp - userMetrics.sessionTimestamp
     // reset metrics and timer after 5 minutes or file change
-    if (elapsed >= 5 * 60 * 1000 || userMetrics.fsPath !== fsPath) {
+    if (elapsed >= 5 * 60 * 1000 || (userMetrics.fsPath && userMetrics.fsPath !== fsPath)) {
         resetLatency()
     }
 

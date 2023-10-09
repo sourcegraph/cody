@@ -135,10 +135,13 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
 
         // We start feature flag requests early so that we have a high chance of getting a response
         // before we need it.
-        const [isIncreasedDebounceTimeEnabledPromise, minimumLatencyFlagsPromise, syntacticTriggersPromise] = [
+        const [isIncreasedDebounceTimeEnabledPromise, syntacticTriggersPromise] = [
             featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteIncreasedDebounceTimeEnabled),
-            featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteMinimumLatency),
             featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteSyntacticTriggers),
+        ]
+        const minLatencyFlagsPromises = [
+            featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteUserBasedLatency),
+            featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteLangBasedLatency),
         ]
 
         const tracer = this.config.tracer ? createTracerForInvocation(this.config.tracer) : undefined
@@ -254,9 +257,10 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
             // latency so that we don't show a result before the user has paused typing for a brief
             // moment.
             if (result.source !== InlineCompletionsResultSource.LastCandidate) {
-                const minimumLatencyFlag = await minimumLatencyFlagsPromise
-                if (triggerKind === TriggerKind.Automatic && minimumLatencyFlag) {
+                const [userBasedLatencyFlag, lowPerformanceOnlyLatencyFlag] = await Promise.all(minLatencyFlagsPromises)
+                if (triggerKind === TriggerKind.Automatic && userBasedLatencyFlag) {
                     const minimumLatency = getLatency(
+                        lowPerformanceOnlyLatencyFlag,
                         this.config.providerConfig.identifier,
                         document.uri.fsPath,
                         document.languageId,
