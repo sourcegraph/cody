@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, Mock, vi, vitest } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, Mock, vitest } from 'vitest'
 import { URI } from 'vscode-uri'
 
 import { range } from '../../testutils/textDocument'
