@@ -1,10 +1,7 @@
 import { tokensToChars } from '@sourcegraph/cody-shared/src/prompt/constants'
-import {
-    CompletionParameters,
-    CompletionResponse,
-} from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
+import { CompletionResponse } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
 
-import { CodeCompletionsClient } from '../client'
+import { CodeCompletionsClient, CodeCompletionsParams } from '../client'
 import { getLanguageConfig } from '../language'
 import { canUsePartialCompletion } from '../streaming'
 import { formatSymbolContextRelationship } from '../text-processing'
@@ -152,7 +149,7 @@ export class UnstableFireworksProvider extends Provider {
                 ? MODEL_MAP[multiline ? 'starcoder-16b' : 'starcoder-7b']
                 : MODEL_MAP[this.model]
 
-        const args: CompletionParameters = {
+        const args: CodeCompletionsParams = {
             messages: [{ speaker: 'human', text: prompt }],
             // To speed up sample generation in single-line case, we request a lower token limit
             // since we can't terminate on the first `\n`.
@@ -162,6 +159,7 @@ export class UnstableFireworksProvider extends Provider {
             topK: 0,
             model,
             stopSequences: multiline ? ['\n\n', '\n\r\n'] : ['\n'],
+            timeoutMs: multiline ? 1500 : 5000,
         }
 
         tracer?.params(args)
@@ -204,7 +202,7 @@ export class UnstableFireworksProvider extends Provider {
 
     private async fetchAndProcessCompletions(
         client: Pick<CodeCompletionsClient, 'complete'>,
-        params: CompletionParameters,
+        params: CodeCompletionsParams,
         abortSignal: AbortSignal
     ): Promise<CompletionResponse> {
         // The Async executor is required to return the completion early if a partial result from SSE can be used.
