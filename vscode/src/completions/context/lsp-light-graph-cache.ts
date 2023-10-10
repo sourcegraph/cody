@@ -85,8 +85,8 @@ export class LspLightGraphCache implements vscode.Disposable, GraphContextFetche
         let usedContextChars = 0
         const context: ContextSnippet[] = []
 
-        function overlapsContextRange(uri: vscode.Uri, range?: { startLine: number; endLine: number }): boolean {
-            if (!contextRange || !range || uri.toString() !== document.uri.toString()) {
+        function overlapsContextRange(uri: string, range?: { startLine: number; endLine: number }): boolean {
+            if (!contextRange || !range || uri !== document.uri.toString()) {
                 return false
             }
 
@@ -110,7 +110,7 @@ export class LspLightGraphCache implements vscode.Disposable, GraphContextFetche
 
         if (sectionGraphContext) {
             const preciseContexts = hoverContextsToSnippets(
-                sectionGraphContext.filter(context => !overlapsContextRange(URI.parse(context.uri), context.range))
+                sectionGraphContext.filter(context => !overlapsContextRange(context.uri, context.range))
             )
             for (const preciseContext of preciseContexts) {
                 if (usedContextChars + preciseContext.content.length > maxChars) {
