@@ -90,7 +90,7 @@ export class LspLightGraphCache implements vscode.Disposable, GraphContextFetche
                 return false
             }
 
-            return contextRange.start.line <= range.startLine && contextRange.end.line >= range.endLine
+            return contextRange.start.line <= range.startLine && range.endLine <= contextRange.end.line
         }
 
         // Allocate up to 40% of the maxChars budget to inlining previous section unless we have no
