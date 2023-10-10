@@ -5,8 +5,8 @@ import * as vscode from 'vscode'
 import { afterIntegrationTest, beforeIntegrationTest, getFixupTasks, getTranscript, waitUntil } from './helpers'
 
 suite('Commands', function () {
-    this.beforeEach(() => beforeIntegrationTest())
-    this.afterEach(() => afterIntegrationTest())
+    this.beforeEach(beforeIntegrationTest)
+    this.afterEach(afterIntegrationTest)
 
     test('Explain Code', async () => {
         // Open Main.java
