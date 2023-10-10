@@ -8,7 +8,7 @@ suite('Commands', function () {
     this.beforeEach(beforeIntegrationTest)
     this.afterEach(afterIntegrationTest)
 
-    test('Explain Code', async () => {
+    async function getTextEditorWithSelection(): Promise<void> {
         // Open Main.java
         assert.ok(vscode.workspace.workspaceFolders)
         const mainJavaUri = vscode.Uri.parse(`${vscode.workspace.workspaceFolders[0].uri.toString()}/Main.java`)
@@ -16,6 +16,13 @@ suite('Commands', function () {
 
         // Select the "main" method
         textEditor.selection = new vscode.Selection(5, 0, 7, 0)
+    }
+
+    // regex for /^hello from the assistant$/
+    const assistantRegex = /^hello from the assistant$/
+
+    test('Explain Code', async () => {
+        await getTextEditorWithSelection()
 
         // Run the "explain" command
         await vscode.commands.executeCommand('cody.command.explain-code')
@@ -24,17 +31,11 @@ suite('Commands', function () {
         const humanMessage = await getTranscript(0)
         assert.match(humanMessage.displayText || '', /^\/explain/)
 
-        await waitUntil(async () => /^hello from the assistant$/.test((await getTranscript(1)).displayText || ''))
+        await waitUntil(async () => assistantRegex.test((await getTranscript(1)).displayText || ''))
     })
 
     test('Find Code Smells', async () => {
-        // Open Main.java
-        assert.ok(vscode.workspace.workspaceFolders)
-        const mainJavaUri = vscode.Uri.parse(`${vscode.workspace.workspaceFolders[0].uri.toString()}/Main.java`)
-        const textEditor = await vscode.window.showTextDocument(mainJavaUri)
-
-        // Select the "main" method
-        textEditor.selection = new vscode.Selection(5, 0, 7, 0)
+        await getTextEditorWithSelection()
 
         // Run the "/smell" command
         await vscode.commands.executeCommand('cody.command.smell-code')
@@ -43,17 +44,11 @@ suite('Commands', function () {
         const humanMessage = await getTranscript(0)
         assert.match(humanMessage.displayText || '', /^\/smell/)
 
-        await waitUntil(async () => /^hello from the assistant$/.test((await getTranscript(1)).displayText || ''))
+        await waitUntil(async () => assistantRegex.test((await getTranscript(1)).displayText || ''))
     })
 
     test('Generate Unit Tests', async () => {
-        // Open Main.java
-        assert.ok(vscode.workspace.workspaceFolders)
-        const mainJavaUri = vscode.Uri.parse(`${vscode.workspace.workspaceFolders[0].uri.toString()}/Main.java`)
-        const textEditor = await vscode.window.showTextDocument(mainJavaUri)
-
-        // Select the "main" method
-        textEditor.selection = new vscode.Selection(5, 0, 7, 0)
+        await getTextEditorWithSelection()
 
         // Run the "/test" command
         await vscode.commands.executeCommand('cody.command.generate-tests')
@@ -62,17 +57,11 @@ suite('Commands', function () {
         const humanMessage = await getTranscript(0)
         assert.match(humanMessage.displayText || '', /^\/test/)
 
-        await waitUntil(async () => /^hello from the assistant$/.test((await getTranscript(1)).displayText || ''))
+        await waitUntil(async () => assistantRegex.test((await getTranscript(1)).displayText || ''))
     })
 
     test('Document Code', async () => {
-        // Open Main.java
-        assert.ok(vscode.workspace.workspaceFolders)
-        const mainJavaUri = vscode.Uri.parse(`${vscode.workspace.workspaceFolders[0].uri.toString()}/Main.java`)
-        const textEditor = await vscode.window.showTextDocument(mainJavaUri)
-
-        // Select the "main" method
-        textEditor.selection = new vscode.Selection(5, 0, 7, 0)
+        await getTextEditorWithSelection()
 
         // Run the "/doc" command
         await vscode.commands.executeCommand('cody.command.document-code')
