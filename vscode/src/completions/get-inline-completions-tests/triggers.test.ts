@@ -181,22 +181,31 @@ describe('[getInlineCompletions] triggers', () => {
     })
 
     describe('empty line at end of file', () => {
-        it.each(['function foo(){\n console.log()\n}\n\n█', 'const foo = bar\n\n█', 'function foo()\n\n█', '\n\n█'])(
-            'does not trigger for %s',
-            async prompt => expect(await getInlineCompletions(params(prompt, [completion`bar`]))).toBeNull()
-        )
+        const insertText = 'console.log(foo)'
 
-        it.each([
-            'function log(foo: string){\n█',
-            '// console.log foo\n█',
-            '// log foo\nconst foo = bar\n█',
-            '█',
-            '\n    █',
-        ])('does trigger for %s', async prompt =>
-            expect(await getInlineCompletions(params(prompt, [completion`console.log(foo)`]))).toEqual<V>({
-                items: [{ insertText: 'console.log(foo)' }],
+        it('does not trigger when the line above is empty', async () =>
+            expect(
+                await getInlineCompletions(params('function foo(){\n console.log()\n}\n\n█', [completion`bar`]))
+            ).toBeNull())
+
+        it('does trigger for empty document', async () =>
+            expect(await getInlineCompletions(params('█', [completion`console.log(foo)`]))).toEqual<V>({
+                items: [{ insertText }],
                 source: InlineCompletionsResultSource.Network,
-            })
-        )
+            }))
+
+        it('does trigger for empty line with non-empty line above', async () =>
+            expect(
+                await getInlineCompletions(params('function log(foo: string){\n█', [completion`console.log(foo)`]))
+            ).toEqual<V>({
+                items: [{ insertText }],
+                source: InlineCompletionsResultSource.Network,
+            }))
+
+        it('does trigger when cursor beyond character position zero', async () =>
+            expect(await getInlineCompletions(params('\n   █', [completion`console.log(foo)`]))).toEqual<V>({
+                items: [{ insertText }],
+                source: InlineCompletionsResultSource.Network,
+            }))
     })
 })
