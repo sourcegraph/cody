@@ -8,7 +8,7 @@ import { URI } from 'vscode-uri'
 import { HoverContext } from '@sourcegraph/cody-shared/src/codebase-context/messages'
 import { dedupeWith } from '@sourcegraph/cody-shared/src/common'
 
-import { getGraphContextFromRange } from '../../graph/lsp/graph'
+import { getGraphContextFromRange as defaultGetGraphContextFromRange } from '../../graph/lsp/graph'
 import { ContextSnippet, SymbolContextSnippet } from '../types'
 
 import { GraphContextFetcher, supportedLanguageId } from './context-graph'
@@ -18,24 +18,34 @@ import { CustomAbortController, CustomAbortSignal } from './utils'
 export class LspLightGraphCache implements vscode.Disposable, GraphContextFetcher {
     private disposables: vscode.Disposable[] = []
     private cache: GraphCache = new GraphCache()
-    private sectionObserver: SectionObserver = SectionObserver.createInstance()
 
     private lastRequestKey: string | null = null
     private abortLastRequest: () => void = () => {}
 
     public static instance: LspLightGraphCache | null = null
-    public static createInstance(): LspLightGraphCache {
+    public static createInstance(
+        window?: Pick<typeof vscode.window, 'onDidChangeTextEditorSelection'>,
+        workspace?: Pick<typeof vscode.workspace, 'onDidChangeTextDocument'>,
+        getGraphContextFromRange?: typeof defaultGetGraphContextFromRange,
+        sectionObserver?: null
+    ): LspLightGraphCache {
         if (this.instance) {
             throw new Error('LspLightGraphCache has already been initialized')
         }
-        this.instance = new LspLightGraphCache()
+        this.instance = new LspLightGraphCache(window, workspace, getGraphContextFromRange, sectionObserver)
         return this.instance
     }
 
-    private constructor() {
+    private constructor(
+        private window: Pick<typeof vscode.window, 'onDidChangeTextEditorSelection'> = vscode.window,
+        private workspace: Pick<typeof vscode.workspace, 'onDidChangeTextDocument'> = vscode.workspace,
+        private getGraphContextFromRange = defaultGetGraphContextFromRange,
+        private sectionObserver: SectionObserver | null = SectionObserver.createInstance()
+    ) {
         this.onDidChangeTextEditorSelection = debounce(this.onDidChangeTextEditorSelection.bind(this), 100)
         this.disposables.push(
-            vscode.window.onDidChangeTextEditorSelection(this.onDidChangeTextEditorSelection.bind(this))
+            this.window.onDidChangeTextEditorSelection(this.onDidChangeTextEditorSelection.bind(this)),
+            this.workspace.onDidChangeTextDocument(this.onDidChangeTextDocument.bind(this))
         )
     }
 
@@ -61,7 +71,7 @@ export class LspLightGraphCache implements vscode.Disposable, GraphContextFetche
         const [prevLineContext, currentLineContext, sectionHistory] = await Promise.all([
             this.getLspContextForLine(document, prevLine, 0, abortController.signal),
             this.getLspContextForLine(document, currentLine, 1, abortController.signal),
-            this.sectionObserver.getSectionHistory(document, position, contextRange),
+            this.sectionObserver?.getSectionHistory(document, position, contextRange),
         ])
 
         const sectionGraphContext = [...prevLineContext, ...currentLineContext]
@@ -85,15 +95,17 @@ export class LspLightGraphCache implements vscode.Disposable, GraphContextFetche
 
         // Allocate up to 40% of the maxChars budget to inlining previous section unless we have no
         // graph context
-        const maxCharsForPreviousSections = sectionGraphContext ? maxChars * 0.4 : maxChars
-        for (const historyContext of sectionHistory) {
-            if (usedContextChars + historyContext.content.length > maxCharsForPreviousSections) {
-                // We use continue here to test potentially smaller context snippets that might
-                // still fit inside the budget
-                continue
+        if (sectionHistory) {
+            const maxCharsForPreviousSections = sectionGraphContext ? maxChars * 0.4 : maxChars
+            for (const historyContext of sectionHistory) {
+                if (usedContextChars + historyContext.content.length > maxCharsForPreviousSections) {
+                    // We use continue here to test potentially smaller context snippets that might
+                    // still fit inside the budget
+                    continue
+                }
+                usedContextChars += historyContext.content.length
+                context.push(historyContext)
             }
-            usedContextChars += historyContext.content.length
-            context.push(historyContext)
         }
 
         if (sectionGraphContext) {
@@ -135,7 +147,7 @@ export class LspLightGraphCache implements vscode.Disposable, GraphContextFetche
 
         let finished = false
 
-        const promise = getGraphContextFromRange(document, range, abortSignal, recursion).then(response => {
+        const promise = this.getGraphContextFromRange(document, range, abortSignal, recursion).then(response => {
             finished = true
             return response
         })
@@ -153,9 +165,12 @@ export class LspLightGraphCache implements vscode.Disposable, GraphContextFetche
     }
 
     public dispose(): void {
+        this.abortLastRequest()
+        this.sectionObserver?.dispose()
         for (const disposable of this.disposables) {
             disposable.dispose()
         }
+        LspLightGraphCache.instance = null
     }
 
     /**
@@ -168,6 +183,14 @@ export class LspLightGraphCache implements vscode.Disposable, GraphContextFetche
 
         void this.getContextAtPosition(event.textEditor.document, event.selections[0].active, 0)
     }
+
+    /**
+     * Whenever there are changes to a document, all cached contexts for other documents must be
+     * evicted
+     */
+    private onDidChangeTextDocument(event: vscode.TextDocumentChangeEvent): void {
+        this.cache.evictForOtherDocuments(event.document.uri)
+    }
 }
 
 interface GraphCacheParams {
@@ -175,23 +198,57 @@ interface GraphCacheParams {
     line: number
     recursion: number
 }
+const MAX_CACHED_DOCUMENTS = 10
+const MAX_CACHED_LINES = 100
 class GraphCache {
-    private cache = new LRUCache<string, Promise<HoverContext[]>>({ max: 50 })
+    // This is a nested cache. The first level is the file uri, the second level is the line inside
+    // the file.
+    private cache = new LRUCache<string, LRUCache<string, Promise<HoverContext[]>>>({ max: MAX_CACHED_DOCUMENTS })
 
-    private toCacheKey(key: GraphCacheParams): string {
-        return `${key.document.uri.toString()}█${key.line}█${key.document.lineAt(key.line).text}█${key.recursion}`
+    private toCacheKeys(key: GraphCacheParams): [string, string] {
+        return [key.document.uri.toString(), `${key.line}█${key.document.lineAt(key.line).text}█${key.recursion}`]
     }
 
     public get(key: GraphCacheParams): Promise<HoverContext[]> | undefined {
-        return this.cache.get(this.toCacheKey(key))
+        const [docKey, lineKey] = this.toCacheKeys(key)
+
+        const docCache = this.cache.get(docKey)
+        if (!docCache) {
+            return undefined
+        }
+
+        return docCache.get(lineKey)
     }
 
     public set(key: GraphCacheParams, entry: Promise<HoverContext[]>): void {
-        this.cache.set(this.toCacheKey(key), entry)
+        const [docKey, lineKey] = this.toCacheKeys(key)
+
+        let docCache = this.cache.get(docKey)
+        if (!docCache) {
+            docCache = new LRUCache<string, Promise<HoverContext[]>>({ max: MAX_CACHED_LINES })
+            this.cache.set(docKey, docCache)
+        }
+        docCache.set(lineKey, entry)
     }
 
     public delete(key: GraphCacheParams): void {
-        this.cache.delete(this.toCacheKey(key))
+        const [docKey, lineKey] = this.toCacheKeys(key)
+
+        const docCache = this.cache.get(docKey)
+        if (!docCache) {
+            return undefined
+        }
+        docCache.delete(lineKey)
+    }
+
+    public evictForOtherDocuments(uri: vscode.Uri): void {
+        // eslint-disable-next-line ban/ban
+        this.cache.forEach((_, otherUri) => {
+            if (otherUri === uri.toString()) {
+                return
+            }
+            this.cache.delete(otherUri)
+        })
     }
 }
 

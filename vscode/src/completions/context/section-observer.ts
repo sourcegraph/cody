@@ -197,7 +197,6 @@ export class SectionObserver implements vscode.Disposable {
             ...section,
             lastRevalidateAt,
             lastLines: section.location.range.end.line - section.location.range.start.line,
-            preloadedContext: null,
         }))
 
         const existingDocument = this.activeDocuments.get(uri.toString())

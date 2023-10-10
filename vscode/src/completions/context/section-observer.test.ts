@@ -1,12 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, Mock, vi, vitest } from 'vitest'
 import { URI } from 'vscode-uri'
 
-import { vsCodeMocks } from '../../testutils/mocks'
 import { range } from '../../testutils/textDocument'
 
 import { SectionObserver } from './section-observer'
-
-vi.mock('vscode', () => vsCodeMocks)
 
 const document1Uri = URI.file('/document1.ts')
 const document2Uri = URI.file('/document2.ts')
