@@ -74,8 +74,6 @@
     </extensions>
 
     <applicationListeners>
-        <listener class="com.sourcegraph.cody.CodyAgentProjectListener"
-                  topic="com.intellij.openapi.project.ProjectManagerListener"/>
         <listener class="com.sourcegraph.cody.CodyFileEditorListener"
                   topic="com.intellij.openapi.fileEditor.FileEditorManagerListener"/>
         <!-- CodyAgentFocusListener is commented out since it doesn't seem possible to register a listener via plugin.xml.

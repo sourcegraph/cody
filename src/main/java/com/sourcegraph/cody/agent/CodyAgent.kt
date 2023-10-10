@@ -35,9 +35,6 @@ import org.eclipse.lsp4j.jsonrpc.Launcher
  * Orchestrator for the Cody agent, which is a Node.js program that implements the prompt logic for
  * Cody. The agent communicates via a JSON-RPC protocol that is documented in the file
  * "cody/agent/src/protocol.ts".
- *
- * The class {{[com.sourcegraph.cody.CodyAgentProjectListener]}} is responsible for initializing and
- * shutting down the agent.
  */
 @Service(Service.Level.PROJECT)
 class CodyAgent(private val project: Project) : Disposable {
@@ -168,6 +165,7 @@ class CodyAgent(private val project: Project) : Disposable {
   }
 
   override fun dispose() {
+    shutdown()
     disposable.dispose()
   }
 
