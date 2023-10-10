@@ -156,7 +156,7 @@ export class CustomPrompt implements Recipe {
         }
         if (promptContext.command && commandOutput) {
             const outputMessages = getTerminalOutputContext(commandOutput)
-            contextMessages.push(...outputMe ssages)
+            contextMessages.push(...outputMessages)
         }
         // Return sliced results
         const maxResults = Math.floor((NUM_CODE_RESULTS + NUM_TEXT_RESULTS) / 2) * 2
@@ -172,12 +172,12 @@ export class CustomPrompt implements Recipe {
 
         if (workspaceRootUri) {
             const rootFileNames = await getDirectoryFileListContext(workspaceRootUri, true)
-            contextMessages.push(...rootFil eNames)
+            contextMessages.push(...rootFileNames)
         }
         // Add package.json content only if files matches the ts/js extension regex
         if (selection?.fileName && getFileExtension(selection?.fileName).match(/ts|js/)) {
             const packageJson = await getPackageJsonContext(selection?.fileName)
-            contextMessages.push(...packa geJson)
+            contextMessages.push(...packageJson)
         }
         // Try adding import statements from current file as context
         if (selection?.fileName) {
