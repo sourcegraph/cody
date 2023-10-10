@@ -205,7 +205,7 @@ describe('getLatency', () => {
         expect(getLatency(false, provider, newFileName, languageId)).toBe(400)
     })
 
-    it('returns 0 if unsupport flag feature flag is enabled and the current language is not low performance', () => {
+    it('returns 0 if unsupported flag feature flag is enabled and the current language is not low performance', () => {
         const provider = 'anthropic'
         const fileName = 'foo/bar/test.go'
         const languageId = 'go'

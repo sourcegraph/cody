@@ -258,7 +258,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
             // moment.
             if (result.source !== InlineCompletionsResultSource.LastCandidate) {
                 const [userBasedLatencyFlag, lowPerformanceOnlyLatencyFlag] = await Promise.all(minLatencyFlagsPromises)
-                if (triggerKind === TriggerKind.Automatic && userBasedLatencyFlag) {
+                if (triggerKind === TriggerKind.Automatic && (userBasedLatencyFlag || lowPerformanceOnlyLatencyFlag)) {
                     const minimumLatency = getLatency(
                         lowPerformanceOnlyLatencyFlag,
                         this.config.providerConfig.identifier,
