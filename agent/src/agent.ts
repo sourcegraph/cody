@@ -1,5 +1,6 @@
 import path from 'path'
 
+import * as uuid from 'uuid'
 import * as vscode from 'vscode'
 
 import { Client, createClient } from '@sourcegraph/cody-shared/src/chat/client'
@@ -265,6 +266,61 @@ export class Agent extends MessageHandler {
                 console.error('getRepoId', result)
             }
             return typeof result === 'string' ? result : null
+        })
+
+        this.registerAutocompleteHandlers()
+    }
+
+    private registerAutocompleteHandlers() {
+        this.registerRequest('autocomplete/execute', async (params, token) => {
+            await this.client // To let configuration changes propagate
+            const provider = await vscode_shim.completionProvider()
+            if (!provider) {
+                console.log('Completion provider is not initialized')
+                return { items: [] }
+            }
+            const document = this.workspace.getDocument(params.filePath)
+            if (!document) {
+                console.log('No document found for file path', params.filePath, [...this.workspace.allFilePaths()])
+                return { items: [] }
+            }
+
+            const textDocument = new AgentTextDocument(document)
+
+            try {
+                if (params.triggerKind === 'Invoke') {
+                    await provider.manuallyTriggerCompletion()
+                }
+                const result = await provider.provideInlineCompletionItems(
+                    textDocument,
+                    new vscode.Position(params.position.line, params.position.character),
+                    {
+                        triggerKind: vscode.InlineCompletionTriggerKind[params.triggerKind || 'Automatic'],
+                        selectedCompletionInfo: undefined,
+                    },
+                    token
+                )
+                const items: AutocompleteItem[] =
+                    result === null
+                        ? []
+                        : result.items.flatMap(({ insertText, range }) =>
+                              typeof insertText === 'string' && range !== undefined
+                                  ? [{ id: uuid.v4(), insertText, range }]
+                                  : []
+                          )
+                return { items, completionEvent: (result as any)?.completionEvent }
+            } catch (error) {
+                console.log('autocomplete failed', error)
+                return { items: [] }
+            }
+        })
+
+        this.registerNotification('autocomplete/displayed', async item => {
+            console.error('autocomplete/displayed:', item)
+        })
+
+        this.registerNotification('autocomplete/accept', async item => {
+            console.error('autocomplete/accept:', item)
         })
 
         this.registerNotification('autocomplete/clearLastCandidate', async () => {

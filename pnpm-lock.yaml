@@ -117,10 +117,16 @@ importers:
       '@sourcegraph/cody-shared':
         specifier: workspace:*
         version: link:../lib/shared
+      uuid:
+        specifier: ^9.0.0
+        version: 9.0.0
       vscode-uri:
         specifier: ^3.0.7
         version: 3.0.7
     devDependencies:
+      '@types/uuid':
+        specifier: ^9.0.2
+        version: 9.0.2
       '@types/vscode':
         specifier: ^1.80.0
         version: 1.80.0

@@ -24,10 +24,12 @@
   },
   "dependencies": {
     "@sourcegraph/cody-shared": "workspace:*",
+    "uuid": "^9.0.0",
     "vscode-uri": "^3.0.7"
   },
   "devDependencies": {
     "pkg": "^5.8.1",
+    "@types/uuid": "^9.0.2",
     "@types/vscode": "^1.80.0"
   }
 }

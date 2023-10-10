@@ -83,9 +83,16 @@ export type Notifications = {
     'textDocument/didClose': [TextDocument]
 
     '$/cancelRequest': [CancelParams]
+
     // The user no longer wishes to consider the last autocomplete candidate
     // and the current autocomplete id should not be reused.
     'autocomplete/clearLastCandidate': [null]
+
+    // Autocomplete request is displayed
+    'autocomplete/displayed': [AutocompleteDisplayed]
+
+    // User accepted a completion
+    'autocomplete/accept': [AutocompleteAccept]
 
     // Resets the chat transcript and clears any in-progress interactions.
     // This notification should be sent when the user starts a new conversation.
@@ -121,8 +128,17 @@ export interface AutocompleteResult {
 }
 
 export interface AutocompleteItem {
+    id: string
     insertText: string
     range: Range
+}
+
+export interface AutocompleteDisplayed {
+    id: string
+}
+
+export interface AutocompleteAccept {
+    id: string
 }
 
 export interface ClientInfo {
@@ -182,6 +198,12 @@ export interface EventProperties {
 
     /** Source type enum*/
     source: 'IDEEXTENSION'
+
+    // TODO: Should we add this to make it easy to not get double counted?
+    // events: {
+    //     'recipes/execute'?: boolean
+    //     executeAutocomplete?: boolean
+    // }
 }
 
 export interface Position {
