@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import assert from 'assert'
 import { appendFileSync, existsSync, mkdirSync, rmSync } from 'fs'
 import { dirname } from 'path'
@@ -220,6 +219,9 @@ export class MessageHandler {
     private notificationHandlers: Map<NotificationMethodName, NotificationCallback<any>> = new Map()
     private responseHandlers: Map<Id, (params: any) => void> = new Map()
 
+    protected onSuccess: (method: any, result: any) => Promise<void> | void = () => {}
+    protected onError: (method: any, err: Error) => Promise<void> | void = () => {}
+
     // TODO: RPC error handling
     public messageDecoder: MessageDecoder = new MessageDecoder((err: Error | null, msg: Message | null) => {
         if (err) {
@@ -249,6 +251,7 @@ export class MessageHandler {
                                 result,
                             }
                             this.messageEncoder.send(data)
+                            return this.onSuccess(msg.method, result)
                         },
                         error => {
                             const message = error instanceof Error ? error.message : `${error}`
@@ -263,6 +266,7 @@ export class MessageHandler {
                                 },
                             }
                             this.messageEncoder.send(data)
+                            return this.onError(msg.method, error)
                         }
                     )
                     .finally(() => {

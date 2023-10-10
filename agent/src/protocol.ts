@@ -101,6 +101,10 @@ export type Notifications = {
     'chat/updateMessageInProgress': [ChatMessage | null]
 
     'debug/message': [DebugMessage]
+
+    'auth/invalidToken': [null]
+
+    'auth/validToken': [null]
 }
 
 export interface CancelParams {

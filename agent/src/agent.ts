@@ -5,7 +5,9 @@ import * as vscode from 'vscode'
 import { Client, createClient } from '@sourcegraph/cody-shared/src/chat/client'
 import { registeredRecipes } from '@sourcegraph/cody-shared/src/chat/recipes/agent-recipes'
 import { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/nodeClient'
+import { isNetworkError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
 import { setUserAgent } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
+import { isError } from '@sourcegraph/cody-shared/src/utils'
 
 import { activate } from '../../vscode/src/extension.node'
 
@@ -70,14 +72,35 @@ export class Agent extends MessageHandler {
     private oldClient: Client | null = null
     public workspace = new AgentWorkspaceDocuments()
 
+    private tokenCheckTimer?: NodeJS.Timeout
+    private lastWasTokenError = false
+
     private clientInfo: ClientInfo | null = null
+
+    protected override onSuccess: (method: any, result: any) => void | Promise<void> = (method, result) => {
+        if (
+            ((typeof method === 'string' && method.startsWith('graphql/')) ||
+                method === 'autocomplete/execute' ||
+                method === 'recipes/execute') &&
+            this.lastWasTokenError
+        ) {
+            this.notify('auth/validToken', null)
+        }
+    }
+
+    protected override onError: (method: any, err: Error) => void = (method, err) => {
+        if (isNetworkError(err) && err.status === 401) {
+            this.notify('auth/invalidToken', null)
+            this.lastWasTokenError = true
+        }
+    }
 
     constructor() {
         super()
         vscode_shim.setWorkspaceDocuments(this.workspace)
         vscode_shim.setAgent(this)
         this.registerRequest('initialize', async clientInfo => {
-            process.stderr.write(
+            console.log(
                 `Cody Agent: handshake with client '${clientInfo.name}' (version '${clientInfo.version}') at workspace root path '${clientInfo.workspaceRootUri}'\n`
             )
             initializeVscodeExtension()
@@ -295,6 +318,7 @@ export class Agent extends MessageHandler {
                 // functionality), we return true to always triggger the callback.
                 true,
         })
+        this.oldClient = await this.client
         const client = await createClient({
             initialTranscript: this.oldClient?.transcript,
             editor: new AgentEditor(this),
@@ -307,8 +331,42 @@ export class Agent extends MessageHandler {
             },
             createCompletionsClient: (...args) => new SourcegraphNodeCompletionsClient(...args),
         })
-        this.oldClient = client
+
+        if (client !== null) {
+            const oldExecuteRecipe = client.executeRecipe
+            client.executeRecipe = async (recipeId, options) => {
+                await oldExecuteRecipe(recipeId, options).catch(error => {
+                    if (error instanceof Error) {
+                        throw error
+                    }
+                })
+            }
+            this.createAccountTokenWatcher(client)
+        }
         return client
+    }
+
+    private createAccountTokenWatcher(client: Client): void {
+        const minuteMs = 60000
+        clearInterval(this.tokenCheckTimer)
+
+        let lastState: 'success' | 'error' = 'success'
+
+        // eslint-disable-next-line @typescript-eslint/no-misused-promises
+        this.tokenCheckTimer = setInterval(async () => {
+            const response = await client.graphqlClient.getSiteVersion()
+            console.log(`GOT CHECK ERROR ${JSON.stringify(response)}`)
+            if (isError(response) && lastState === 'success') {
+                if (response.message.includes('Invalid access token')) {
+                    lastState = 'error'
+                    this.notify('auth/invalidToken', null)
+                }
+            } else if (lastState === 'error') {
+                console.log('TOKEN CHECK SUCCESS')
+                lastState = 'success'
+                this.notify('auth/validToken', null)
+            }
+        }, minuteMs)
     }
 
     private async recordEvent(feature: string, name: string): Promise<null> {

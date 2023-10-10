@@ -3,6 +3,7 @@
   "rules": {
     "id-length": "off",
     "no-console": "off",
-    "unicorn/filename-case": "off"
+    "unicorn/filename-case": "off",
+    "@typescript-eslint/no-explicit-any": "off"
   }
 }
