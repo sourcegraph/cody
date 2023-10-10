@@ -23,7 +23,7 @@ export async function createCodebaseContext(
     const embeddingsSearch = repoId && !isError(repoId) ? new SourcegraphEmbeddingsSearchClient(client, repoId) : null
 
     const codebaseContext = new CodebaseContext(
-        { useContext: contextType, serverEndpoint, experimentalLocalSymbols: false },
+        { useContext: contextType, serverEndpoint, experimentalLocalSymbols: false, excludeFiles: [] },
         codebase,
         embeddingsSearch,
         new LocalKeywordContextFetcherMock(),

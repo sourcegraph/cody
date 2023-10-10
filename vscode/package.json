@@ -854,6 +854,19 @@
           "markdownDescription": "Enable Cody fix and explain options in the Quick Fix menu",
           "default": true
         },
+        "cody.excludeFiles": {
+          "order": 12,
+          "type": "array",
+          "markdownDescription": "Files to exclude from sending to Cody. This is useful for files that contain secrets or other sensitive information.",
+          "examples": [
+            [
+              ".json",
+              ".env",
+              "path/to/my/file.js",
+              "/dirName/"
+            ]
+          ]
+        },
         "cody.experimental.symf.path": {
           "order": 99,
           "type": "string",

@@ -30,6 +30,7 @@ export interface Configuration {
     autocompleteExperimentalSyntacticPostProcessing?: boolean
     autocompleteExperimentalGraphContext?: boolean
     isRunningInsideAgent?: boolean
+    excludeFiles: string[]
 }
 
 export interface ConfigurationWithAccessToken extends Configuration {

@@ -48,6 +48,10 @@ export class InlineChat implements Recipe {
         // Text display in UI fpr human that includes the selected code
         const displayText = humanChatInput + InlineChat.displayPrompt.replace('{selectedText}', selection.selectedText)
 
+        const contextMessages = context.codebaseContext.removeExcludedFilesFromContext(
+            Promise.resolve(this.getContextMessages(truncatedText, context.codebaseContext, selection, context.editor))
+        )
+
         return Promise.resolve(
             new Interaction(
                 {
@@ -56,7 +60,7 @@ export class InlineChat implements Recipe {
                     displayText,
                 },
                 { speaker: 'assistant' },
-                this.getContextMessages(truncatedText, context.codebaseContext, selection, context.editor),
+                contextMessages,
                 []
             )
         )

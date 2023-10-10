@@ -151,7 +151,12 @@ export function newRecipeContext(args?: Partial<RecipeContext>): RecipeContext {
         codebaseContext:
             args.codebaseContext ||
             new CodebaseContext(
-                { useContext: 'none', serverEndpoint: 'https://example.com', experimentalLocalSymbols: false },
+                {
+                    useContext: 'none',
+                    serverEndpoint: 'https://example.com',
+                    experimentalLocalSymbols: false,
+                    excludeFiles: [],
+                },
                 'dummy-codebase',
                 defaultEmbeddingsClient,
                 defaultKeywordContextFetcher,

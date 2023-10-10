@@ -23,7 +23,13 @@ export { Transcript }
 
 export type ClientInitConfig = Pick<
     ConfigurationWithAccessToken,
-    'serverEndpoint' | 'codebase' | 'useContext' | 'accessToken' | 'customHeaders' | 'experimentalLocalSymbols'
+    | 'serverEndpoint'
+    | 'codebase'
+    | 'useContext'
+    | 'accessToken'
+    | 'customHeaders'
+    | 'experimentalLocalSymbols'
+    | 'excludeFiles'
 >
 
 export interface ClientInit {

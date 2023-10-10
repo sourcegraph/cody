@@ -88,6 +88,10 @@ export class InlineTouch implements Recipe {
             })
         )
 
+        const contextMessages = context.codebaseContext.removeExcludedFilesFromContext(
+            Promise.resolve(this.getContextMessages(selection, currentDir))
+        )
+
         return Promise.resolve(
             new Interaction(
                 {
@@ -99,7 +103,7 @@ export class InlineTouch implements Recipe {
                     speaker: 'assistant',
                     prefix: 'Working on it! I will show you the new file when it is ready.\n\n',
                 },
-                this.getContextMessages(selection, currentDir),
+                contextMessages,
                 []
             )
         )

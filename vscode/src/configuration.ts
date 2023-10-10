@@ -81,6 +81,7 @@ export function getConfiguration(config: ConfigGetter = vscode.workspace.getConf
             CONFIG_KEY.autocompleteExperimentalGraphContext,
             false
         ),
+        excludeFiles: config.get<string[]>(CONFIG_KEY.excludeFiles, []),
 
         /**
          * UNDOCUMENTED FLAGS

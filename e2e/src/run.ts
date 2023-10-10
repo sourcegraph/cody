@@ -24,6 +24,7 @@ async function runTestCase(testCase: TestCase, provider: CLIOptions['provider'])
             useContext: testCase.context,
             customHeaders: {},
             experimentalLocalSymbols: false,
+            excludeFiles: [],
         },
         setMessageInProgress: message => {
             latestMessage = message

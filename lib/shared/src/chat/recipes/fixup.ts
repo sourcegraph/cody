@@ -68,6 +68,10 @@ export class Fixup implements Recipe {
         const intent = await this.getIntent(fixupTask, context)
         const promptText = this.getPrompt(fixupTask, intent)
 
+        const contextMessages = context.codebaseContext.removeExcludedFilesFromContext(
+            Promise.resolve(this.getContextFromIntent(intent, fixupTask, quarterFileContext, context))
+        )
+
         return Promise.resolve(
             new Interaction(
                 {
@@ -77,7 +81,7 @@ export class Fixup implements Recipe {
                 {
                     speaker: 'assistant',
                 },
-                this.getContextFromIntent(intent, fixupTask, quarterFileContext, context),
+                contextMessages,
                 []
             )
         )

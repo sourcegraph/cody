@@ -42,6 +42,7 @@ describe('getConfiguration', () => {
             autocompleteCompleteSuggestWidgetSelection: true,
             autocompleteExperimentalSyntacticPostProcessing: true,
             autocompleteExperimentalGraphContext: false,
+            excludeFiles: [],
         })
     })
 
@@ -110,6 +111,8 @@ describe('getConfiguration', () => {
                         return true
                     case 'cody.advanced.agent.running':
                         return false
+                    case 'cody.excludeFiles':
+                        return []
                     default:
                         throw new Error(`unexpected key: ${key}`)
                 }
@@ -150,6 +153,7 @@ describe('getConfiguration', () => {
             autocompleteCompleteSuggestWidgetSelection: false,
             autocompleteExperimentalSyntacticPostProcessing: true,
             autocompleteExperimentalGraphContext: true,
+            excludeFiles: [],
         })
     })
 })

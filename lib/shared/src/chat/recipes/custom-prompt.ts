@@ -84,13 +84,16 @@ export class CustomPrompt implements Recipe {
         const commandOutput = command.context?.output
 
         const truncatedText = truncateText(text, MAX_HUMAN_INPUT_TOKENS)
-        const contextMessages = this.getContextMessages(
-            truncatedText,
-            context.editor,
-            context.codebaseContext,
-            contextConfig,
-            selection,
-            commandOutput
+
+        const contextMessages = context.codebaseContext.removeExcludedFilesFromContext(
+            this.getContextMessages(
+                truncatedText,
+                context.editor,
+                context.codebaseContext,
+                contextConfig,
+                selection,
+                commandOutput
+            )
         )
 
         return newInteraction({ text: truncatedText, displayText, contextMessages })
@@ -153,10 +156,11 @@ export class CustomPrompt implements Recipe {
         }
         if (promptContext.command && commandOutput) {
             const outputMessages = getTerminalOutputContext(commandOutput)
-            contextMessages.push(...outputMessages)
+            contextMessages.push(...outputMe ssages)
         }
         // Return sliced results
         const maxResults = Math.floor((NUM_CODE_RESULTS + NUM_TEXT_RESULTS) / 2) * 2
+
         return contextMessages.slice(-maxResults * 2)
     }
 
@@ -168,12 +172,12 @@ export class CustomPrompt implements Recipe {
 
         if (workspaceRootUri) {
             const rootFileNames = await getDirectoryFileListContext(workspaceRootUri, true)
-            contextMessages.push(...rootFileNames)
+            contextMessages.push(...rootFil eNames)
         }
         // Add package.json content only if files matches the ts/js extension regex
         if (selection?.fileName && getFileExtension(selection?.fileName).match(/ts|js/)) {
             const packageJson = await getPackageJsonContext(selection?.fileName)
-            contextMessages.push(...packageJson)
+            contextMessages.push(...packa geJson)
         }
         // Try adding import statements from current file as context
         if (selection?.fileName) {

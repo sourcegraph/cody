@@ -81,6 +81,7 @@ describe('Transcript', () => {
                         useContext: 'embeddings',
                         serverEndpoint: 'https://example.com',
                         experimentalLocalSymbols: false,
+                        excludeFiles: [],
                     },
                     'dummy-codebase',
                     embeddings,
@@ -123,6 +124,7 @@ describe('Transcript', () => {
                         useContext: 'embeddings',
                         serverEndpoint: 'https://example.com',
                         experimentalLocalSymbols: false,
+                        excludeFiles: [],
                     },
                     'dummy-codebase',
                     embeddings,
@@ -159,7 +161,12 @@ describe('Transcript', () => {
         })
         const intentDetector = new MockIntentDetector({ isCodebaseContextRequired: async () => Promise.resolve(true) })
         const codebaseContext = new CodebaseContext(
-            { useContext: 'embeddings', serverEndpoint: 'https://example.com', experimentalLocalSymbols: false },
+            {
+                useContext: 'embeddings',
+                serverEndpoint: 'https://example.com',
+                experimentalLocalSymbols: false,
+                excludeFiles: [],
+            },
             'dummy-codebase',
             embeddings,
             defaultKeywordContextFetcher,
@@ -246,7 +253,12 @@ describe('Transcript', () => {
         })
         const intentDetector = new MockIntentDetector({ isCodebaseContextRequired: async () => Promise.resolve(true) })
         const codebaseContext = new CodebaseContext(
-            { useContext: 'embeddings', serverEndpoint: 'https://example.com', experimentalLocalSymbols: false },
+            {
+                useContext: 'embeddings',
+                serverEndpoint: 'https://example.com',
+                experimentalLocalSymbols: false,
+                excludeFiles: [],
+            },
             'dummy-codebase',
             embeddings,
             defaultKeywordContextFetcher,
@@ -324,7 +336,12 @@ describe('Transcript', () => {
         })
         const intentDetector = new MockIntentDetector({ isCodebaseContextRequired: async () => Promise.resolve(true) })
         const codebaseContext = new CodebaseContext(
-            { useContext: 'embeddings', serverEndpoint: 'https://example.com', experimentalLocalSymbols: false },
+            {
+                useContext: 'embeddings',
+                serverEndpoint: 'https://example.com',
+                experimentalLocalSymbols: false,
+                excludeFiles: [],
+            },
             'dummy-codebase',
             embeddings,
             defaultKeywordContextFetcher,

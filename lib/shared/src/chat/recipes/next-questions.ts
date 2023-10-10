@@ -25,6 +25,9 @@ export class NextQuestions implements Recipe {
         const promptMessage = `${promptPrefix}\n\n\`\`\`\n${truncatedText}\n\`\`\`\n\n${promptSuffix}`
 
         const assistantResponsePrefix = 'Sure, here are great follow-up discussion topics and learning ideas:\n\n - '
+        const contextMessages = context.codebaseContext.removeExcludedFilesFromContext(
+            this.getContextMessages(truncatedText, context.editor, context.intentDetector, context.codebaseContext)
+        )
         return Promise.resolve(
             new Interaction(
                 { speaker: 'human', text: promptMessage },
@@ -33,7 +36,7 @@ export class NextQuestions implements Recipe {
                     prefix: assistantResponsePrefix,
                     text: assistantResponsePrefix,
                 },
-                this.getContextMessages(truncatedText, context.editor, context.intentDetector, context.codebaseContext),
+                contextMessages,
                 []
             )
         )

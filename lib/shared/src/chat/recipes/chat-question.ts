@@ -22,18 +22,22 @@ export class ChatQuestion implements Recipe {
     public async getInteraction(humanChatInput: string, context: RecipeContext): Promise<Interaction | null> {
         const truncatedText = truncateText(humanChatInput, MAX_HUMAN_INPUT_TOKENS)
 
+        const contextMessages = context.codebaseContext.removeExcludedFilesFromContext(
+            this.getContextMessages(
+                truncatedText,
+                context.editor,
+                context.firstInteraction,
+                context.intentDetector,
+                context.codebaseContext,
+                context.editor.getActiveTextEditorSelection() || null
+            )
+        )
+
         return Promise.resolve(
             new Interaction(
                 { speaker: 'human', text: truncatedText, displayText: humanChatInput },
                 { speaker: 'assistant' },
-                this.getContextMessages(
-                    truncatedText,
-                    context.editor,
-                    context.firstInteraction,
-                    context.intentDetector,
-                    context.codebaseContext,
-                    context.editor.getActiveTextEditorSelection() || null
-                ),
+                contextMessages,
                 []
             )
         )
@@ -74,7 +78,7 @@ export class ChatQuestion implements Recipe {
             contextMessages.push(...ChatQuestion.getEditorSelectionContext(selection))
         }
 
-        return contextMessages
+        return codebaseContext.removeExcludedFilesFromContext(Promise.resolve(contextMessages))
     }
 
     public static getEditorContext(editor: Editor): ContextMessage[] {

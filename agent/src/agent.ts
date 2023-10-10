@@ -298,7 +298,7 @@ export class Agent extends MessageHandler {
         const client = await createClient({
             initialTranscript: this.oldClient?.transcript,
             editor: new AgentEditor(this),
-            config: { ...config, useContext: 'embeddings', experimentalLocalSymbols: false },
+            config: { ...config, useContext: 'embeddings', experimentalLocalSymbols: false, excludeFiles: [] },
             setMessageInProgress: messageInProgress => {
                 this.notify('chat/updateMessageInProgress', messageInProgress)
             },

@@ -18,6 +18,7 @@ import { EmbeddingsSearchResult } from '../sourcegraph-api/graphql/client'
 import { UnifiedContextFetcher } from '../unified-context'
 import { isError } from '../utils'
 
+import { filterFilesToExclude } from './exclude-files'
 import { ContextFile, ContextFileSource, ContextMessage, getContextMessageWithResponse } from './messages'
 
 export interface ContextSearchOptions {
@@ -28,7 +29,10 @@ export interface ContextSearchOptions {
 export class CodebaseContext {
     private embeddingResultsError = ''
     constructor(
-        private config: Pick<Configuration, 'useContext' | 'serverEndpoint' | 'experimentalLocalSymbols'>,
+        private config: Pick<
+            Configuration,
+            'useContext' | 'serverEndpoint' | 'experimentalLocalSymbols' | 'excludeFiles'
+        >,
         private readonly codebase: string | undefined,
         private embeddings: EmbeddingsSearch | null,
         private keywords: KeywordContextFetcher | null,
@@ -89,6 +93,10 @@ export class CodebaseContext {
                     ? this.getEmbeddingsContextMessages(query, options)
                     : this.getLocalContextMessages(query, options)
         }
+    }
+
+    public async removeExcludedFilesFromContext(messages: Promise<ContextMessage[]>): Promise<ContextMessage[]> {
+        return filterFilesToExclude(messages, this.config.excludeFiles)
     }
 
     public checkEmbeddingsConnection(): boolean {
