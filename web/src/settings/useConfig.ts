@@ -8,6 +8,7 @@ const DEFAULT_WEB_CONFIGURATION: WebConfiguration = {
     useContext: 'embeddings',
     customHeaders: {},
     experimentalLocalSymbols: false,
+    excludeFiles: [],
 }
 
 export type WebConfiguration = ClientInit['config']

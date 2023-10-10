@@ -41,6 +41,7 @@ const DEFAULT_VSCODE_SETTINGS: Configuration = {
     autocompleteCompleteSuggestWidgetSelection: false,
     autocompleteExperimentalSyntacticPostProcessing: false,
     autocompleteExperimentalGraphContext: false,
+    excludeFiles: [],
 }
 
 const getVSCodeSettings = (config: Partial<Configuration> = {}): Configuration => ({
