@@ -44,6 +44,7 @@ export type Config = Pick<
     | 'experimentalEditorTitleCommandIcon'
     | 'experimentalLocalSymbols'
     | 'inlineChat'
+    | 'excludeFiles'
 >
 
 export enum ContextEvent {

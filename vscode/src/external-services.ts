@@ -36,6 +36,7 @@ type ExternalServicesConfiguration = Pick<
     | 'accessToken'
     | 'debugEnable'
     | 'experimentalLocalSymbols'
+    | 'excludeFiles'
 >
 
 export async function configureExternalServices(
