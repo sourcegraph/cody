@@ -1,5 +1,11 @@
 import { logDebug } from '../log'
 
+export interface LatencyFeatureFlags {
+    user?: boolean
+    language?: boolean
+    provider?: boolean
+}
+
 export const defaultLatency = {
     baseline: 400,
     user: 200,
@@ -34,24 +40,19 @@ let userMetrics = {
 // Increment latency by 200ms linearly up to max latency
 // Reset every 5 minutes, or on file change, or on accepting a suggestion
 export function getLatency(
-    lowPerformanceLanguagesOnly: boolean,
+    featureFlags: LatencyFeatureFlags,
     provider: string,
     fsPath: string,
     languageId?: string,
     nodeType?: string
 ): number {
     // set base latency based on provider and low performance languages or comments when available
-    let baseline = provider === 'anthropic' ? 0 : defaultLatency.baseline
+    let baseline = provider === 'anthropic' || !featureFlags.provider ? 0 : defaultLatency.baseline
 
-    const isLowPerformance = languageId && lowPerformanceLanguageIds.has(languageId)
+    const isLowPerformance = featureFlags.language && languageId && lowPerformanceLanguageIds.has(languageId)
     const isComment = nodeType === 'comment'
     if (!languageId || isLowPerformance || isComment) {
         baseline = defaultLatency.lowPerformance
-    }
-
-    // Do not add latency when feature flag for low performance languages only is enabled and the current language is not low performance
-    if (lowPerformanceLanguagesOnly && !isLowPerformance) {
-        return 0
     }
 
     const timestamp = Date.now()
@@ -61,8 +62,8 @@ export function getLatency(
 
     const elapsed = timestamp - userMetrics.sessionTimestamp
     // reset metrics and timer after 5 minutes or file change
-    if (elapsed >= 5 * 60 * 1000 || (userMetrics.fsPath && userMetrics.fsPath !== fsPath)) {
-        resetLatency()
+    if (elapsed >= 5 * 60 * 1000 || userMetrics.fsPath !== fsPath) {
+        resetLatency(timestamp)
     }
 
     userMetrics.suggested++
@@ -72,7 +73,7 @@ export function getLatency(
 
     // Increase latency linearly up to max after 5 rejected suggestions
     if (userMetrics.suggested >= 5 && userMetrics.currentLatency < defaultLatency.max) {
-        userMetrics.currentLatency += defaultLatency.user
+        userMetrics.currentLatency += featureFlags.user ? defaultLatency.user : 0
     }
 
     logDebug('CodyCompletionProvider:getLatency', `Latency Applied: ${total}`)
@@ -84,9 +85,9 @@ export function getLatency(
 // - on acceptance
 // - every 5 minutes
 // - on file change
-export function resetLatency(): void {
+export function resetLatency(timestamp = 0): void {
     userMetrics = {
-        sessionTimestamp: 0,
+        sessionTimestamp: timestamp,
         currentLatency: 0,
         suggested: 0,
         fsPath: '',
