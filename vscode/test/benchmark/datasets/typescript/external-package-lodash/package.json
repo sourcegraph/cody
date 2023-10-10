@@ -1,0 +1,11 @@
+{
+  "name": "external-package-lodash",
+  "version": "1.0.0",
+  "license": "ISC",
+  "dependencies": {
+    "lodash": "^4.17.21"
+  },
+  "devDependencies": {
+    "@types/lodash": "^4.14.195"
+  }
+}
