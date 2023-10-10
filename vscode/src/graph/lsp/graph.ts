@@ -9,7 +9,7 @@ import { ActiveTextEditorSelectionRange, Editor } from '@sourcegraph/cody-shared
 import { CustomAbortSignal } from '../../completions/context/utils'
 import { logDebug } from '../../log'
 
-import { commonImportPaths, commonKeywords } from './languages'
+import { commonKeywords, identifierPattern, isCommonImport } from './languages'
 import { createLimiter } from './limiter'
 
 // TODO(efritz) - move to options object
@@ -84,7 +84,7 @@ export const getGraphContextFromRange = async (
     const requestCandidates = gatherDefinitionRequestCandidates(locations, contentMap).slice(0, 50)
 
     // Extract hover text related to all of the request candidates
-    const resolvedHoverText = await gatherHoverText(contentMap, requestCandidates, abortSignal, recursionLimit > 0)
+    const resolvedHoverText = await gatherHoverText(requestCandidates, abortSignal, recursionLimit > 0)
 
     const contexts = resolvedHoverText.flatMap(hoverContextFromResolvedHoverText)
 
@@ -280,17 +280,6 @@ export const extractRelevantDocumentSymbolRanges = async (
     }
 
     return combinedRanges
-}
-
-export const identifierPattern = /[$A-Z_a-z][\w$]*/g
-
-function isCommonImport(uri: vscode.Uri): boolean {
-    for (const importPath of commonImportPaths) {
-        if (uri.fsPath.includes(importPath)) {
-            return true
-        }
-    }
-    return false
 }
 
 interface Request {
@@ -500,8 +489,7 @@ function extractMarkdownCodeBlock(string: string): string {
 /**
  * Query each of the candidate requests for hover texts which are resolved in parallel before return
  */
-export const gatherHoverText = async (
-    contentMap: Map<string, string[]>,
+const gatherHoverText = async (
     requests: Request[],
     abortSignal?: CustomAbortSignal,
     includeDefinition: boolean = false,

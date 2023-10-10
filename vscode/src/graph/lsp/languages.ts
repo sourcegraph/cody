@@ -1,3 +1,5 @@
+import * as vscode from 'vscode'
+
 const goKeywords = new Set([
     'break',
     'case',
@@ -135,7 +137,9 @@ const pythonKeywords = new Set([
 
 export const commonKeywords = new Set([...goKeywords, ...typescriptKeywords, ...pythonKeywords])
 
-export const commonImportPaths = new Set([
+export const identifierPattern = /[$A-Z_a-z][\w$]*/g
+
+const commonImportPaths = new Set([
     // The TS lib folder contains the TS standard library and all of ECMAScript.
     'node_modules/typescript/lib',
     // The node library contains the standard node library.
@@ -154,3 +158,12 @@ export const commonImportPaths = new Set([
     'lib/python3.',
     'stdlib/builtins.pyi',
 ])
+
+export function isCommonImport(uri: vscode.Uri): boolean {
+    for (const importPath of commonImportPaths) {
+        if (uri.fsPath.includes(importPath)) {
+            return true
+        }
+    }
+    return false
+}
