@@ -6,7 +6,7 @@ import { URI } from 'vscode-uri'
 
 import { isDefined } from '@sourcegraph/cody-shared/src/common'
 
-import { locationKeyFn } from '../../graph/graph'
+import { locationKeyFn } from '../../graph/lsp/graph'
 import { getGraphDocumentSections as defaultGetDocumentSections, DocumentSection } from '../../graph/sections'
 import { ContextSnippet } from '../types'
 import { createSubscriber } from '../utils'

@@ -6,9 +6,10 @@ import { HoverContext, PreciseContext } from '@sourcegraph/cody-shared/src/codeb
 import { dedupeWith, isDefined } from '@sourcegraph/cody-shared/src/common'
 import { ActiveTextEditorSelectionRange, Editor } from '@sourcegraph/cody-shared/src/editor'
 
-import { CustomAbortSignal } from '../completions/context/utils'
-import { logDebug } from '../log'
+import { CustomAbortSignal } from '../../completions/context/utils'
+import { logDebug } from '../../log'
 
+import { commonImportPaths, commonKeywords } from './languages'
 import { createLimiter } from './limiter'
 
 // TODO(efritz) - move to options object
@@ -118,7 +119,6 @@ export const getGraphContextFromRange = async (
 
         contexts.push(...recursiveContexts.flat())
     } else {
-        logDebug('GraphContext:snippetsRetrieved', `Retrieved ${contexts.length} hover context snippets`)
         performance.mark(label)
     }
 
@@ -283,163 +283,6 @@ export const extractRelevantDocumentSymbolRanges = async (
 }
 
 export const identifierPattern = /[$A-Z_a-z][\w$]*/g
-
-const goKeywords = new Set([
-    'break',
-    'case',
-    'chan',
-    'const',
-    'continue',
-    'default',
-    'defer',
-    'else',
-    'fallthrough',
-    'for',
-    'func',
-    'go',
-    'goto',
-    'if',
-    'import',
-    'interface',
-    'map',
-    'package',
-    'range',
-    'return',
-    'select',
-    'struct',
-    'switch',
-    'type',
-    'var',
-
-    // common variables , types we don't need to follow
-    'ctx',
-    'Context',
-    'err',
-    'error',
-    'ok',
-])
-
-const typescriptKeywords = new Set([
-    'any',
-    'as',
-    'async',
-    'boolean',
-    'break',
-    'case',
-    'catch',
-    'class',
-    'const',
-    'constructor',
-    'continue',
-    'debugger',
-    'declare',
-    'default',
-    'delete',
-    'do',
-    'else',
-    'enum',
-    'export',
-    'extends',
-    'false',
-    'finally',
-    'for',
-    'from',
-    'function',
-    'if',
-    'implements',
-    'import',
-    'in',
-    'instanceof',
-    'interface',
-    'let',
-    'module',
-    'new',
-    'null',
-    'number',
-    'of',
-    'package',
-    'private',
-    'protected',
-    'public',
-    'require',
-    'return',
-    'static',
-    'string',
-    'super',
-    'switch',
-    'symbol',
-    'this',
-    'throw',
-    'true',
-    'try',
-    'type',
-    'typeof',
-    'var',
-    'void',
-    'while',
-    'with',
-    'yield',
-])
-
-const pythonKeywords = new Set([
-    'False',
-    'await',
-    'else',
-    'import',
-    'pass',
-    'None',
-    'break',
-    'except',
-    'in',
-    'raise',
-    'True',
-    'class',
-    'finally',
-    'is',
-    'return',
-    'and',
-    'continue',
-    'for',
-    'lambda',
-    'try',
-    'as',
-    'def',
-    'from',
-    'nonlocal',
-    'while',
-    'assert',
-    'del',
-    'global',
-    'not',
-    'with',
-    'async',
-    'elif',
-    'if',
-    'or',
-    'yield',
-])
-
-export const commonKeywords = new Set([...goKeywords, ...typescriptKeywords, ...pythonKeywords])
-
-const commonImportPaths = new Set([
-    // The TS lib folder contains the TS standard library and all of ECMAScript.
-    'node_modules/typescript/lib',
-    // The node library contains the standard node library.
-    'node_modules/@types/node',
-    // All CSS properties as TS types.
-    'node_modules/csstype',
-    // Common React type definitions.
-    'node_modules/@types/react/',
-    'node_modules/@types/prop-types',
-    'node_modules/next/',
-
-    // Go stdlib installation (covers Brew installs at a minimum)
-    'libexec/src/',
-
-    // Python stdlib
-    'lib/python3.',
-    'stdlib/builtins.pyi',
-])
 
 function isCommonImport(uri: vscode.Uri): boolean {
     for (const importPath of commonImportPaths) {

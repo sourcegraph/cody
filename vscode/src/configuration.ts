@@ -36,6 +36,15 @@ export function getConfiguration(config: ConfigGetter = vscode.workspace.getConf
         debugRegex = new RegExp('.*')
     }
 
+    let autocompleteExperimentalGraphContext: 'lsp-light' | null = config.get(
+        CONFIG_KEY.autocompleteExperimentalGraphContext,
+        null
+    )
+    // Handle the old `true` option
+    if (autocompleteExperimentalGraphContext === true) {
+        autocompleteExperimentalGraphContext = 'lsp-light'
+    }
+
     return {
         // NOTE: serverEndpoint is now stored in Local Storage instead but we will still keep supporting the one in confg
         // to use as fallback for users who do not have access to local storage
@@ -77,10 +86,7 @@ export function getConfiguration(config: ConfigGetter = vscode.workspace.getConf
             CONFIG_KEY.autocompleteExperimentalSyntacticPostProcessing,
             true
         ),
-        autocompleteExperimentalGraphContext: config.get<boolean>(
-            CONFIG_KEY.autocompleteExperimentalGraphContext,
-            false
-        ),
+        autocompleteExperimentalGraphContext,
 
         /**
          * UNDOCUMENTED FLAGS

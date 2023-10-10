@@ -40,7 +40,7 @@ const DEFAULT_VSCODE_SETTINGS: Configuration = {
     autocompleteAdvancedAccessToken: null,
     autocompleteCompleteSuggestWidgetSelection: false,
     autocompleteExperimentalSyntacticPostProcessing: false,
-    autocompleteExperimentalGraphContext: false,
+    autocompleteExperimentalGraphContext: null,
 }
 
 const getVSCodeSettings = (config: Partial<Configuration> = {}): Configuration => ({

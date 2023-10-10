@@ -8,7 +8,7 @@ import { URI } from 'vscode-uri'
 import { HoverContext } from '@sourcegraph/cody-shared/src/codebase-context/messages'
 import { dedupeWith } from '@sourcegraph/cody-shared/src/common'
 
-import { getGraphContextFromRange } from '../../graph/graph'
+import { getGraphContextFromRange } from '../../graph/lsp/graph'
 import { ContextSnippet, SymbolContextSnippet } from '../types'
 
 import { GraphContextFetcher, supportedLanguageId } from './context-graph'
@@ -34,7 +34,9 @@ export class LspLightGraphCache implements vscode.Disposable, GraphContextFetche
 
     private constructor() {
         this.onDidChangeTextEditorSelection = debounce(this.onDidChangeTextEditorSelection.bind(this), 100)
-        this.disposables.push(vscode.window.onDidChangeTextEditorSelection(this.onDidChangeTextEditorSelection.bind(this))
+        this.disposables.push(
+            vscode.window.onDidChangeTextEditorSelection(this.onDidChangeTextEditorSelection.bind(this))
+        )
     }
 
     public async getContextAtPosition(

@@ -28,7 +28,7 @@ export interface Configuration {
     autocompleteAdvancedAccessToken: string | null
     autocompleteCompleteSuggestWidgetSelection?: boolean
     autocompleteExperimentalSyntacticPostProcessing?: boolean
-    autocompleteExperimentalGraphContext?: boolean
+    autocompleteExperimentalGraphContext: 'lsp-light' | null
     isRunningInsideAgent?: boolean
 }
 

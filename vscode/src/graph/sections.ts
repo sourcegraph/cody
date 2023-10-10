@@ -2,7 +2,7 @@ import * as vscode from 'vscode'
 
 import { getDocumentSections } from '../editor/utils/document-sections'
 
-import { commonKeywords, identifierPattern } from './graph'
+import { commonKeywords, identifierPattern } from './lsp/graph'
 
 export interface DocumentSection {
     fuzzyName: string | null
