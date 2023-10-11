@@ -52,40 +52,38 @@ export class Fixup implements Recipe {
             return null
         }
 
-        const originalFixupTask = await fixupController.getTaskRecipeData(taskId)
-        if (!originalFixupTask) {
+        let fixupTask = await fixupController.getTaskRecipeData(taskId)
+        if (!fixupTask) {
             await context.editor.showWarningMessage('Select some code to fixup.')
             return null
         }
 
         const quarterFileContext = Math.floor(MAX_CURRENT_FILE_TOKENS / 4)
-        if (truncateText(originalFixupTask.selectedText, quarterFileContext * 2) !== originalFixupTask.selectedText) {
+        if (truncateText(fixupTask.selectedText, quarterFileContext * 2) !== fixupTask.selectedText) {
             const msg = "The amount of text selected exceeds Cody's current capacity."
             await context.editor.showWarningMessage(msg)
             return null
         }
 
-        const intent = await this.getIntent(originalFixupTask, context)
+        const intent = await this.getIntent(fixupTask, context)
 
-        // Default to the initial task. It will be overwritten if the intent requires modification.
-        let finalFixupTask = originalFixupTask
         // If the intent is 'edit', then potentially modify the fixup task.
         if (intent === 'edit') {
             const newRange = await context.editor.getActiveFixupTextEditorSmartSelection(
-                finalFixupTask.selectionRange,
-                finalFixupTask.fileName
+                fixupTask.selectionRange,
+                fixupTask.fileName
             )
             if (newRange) {
                 await fixupController.resetSelectionRange(taskId, newRange)
                 const newTaskData = await fixupController.getTaskRecipeData(taskId)
                 if (newTaskData) {
-                    finalFixupTask = newTaskData
+                    fixupTask = newTaskData
                 } else {
                     return null
                 }
             }
         }
-        const promptText = this.getPrompt(finalFixupTask, intent)
+        const promptText = this.getPrompt(fixupTask, intent)
 
         return Promise.resolve(
             new Interaction(
@@ -96,7 +94,7 @@ export class Fixup implements Recipe {
                 {
                     speaker: 'assistant',
                 },
-                this.getContextFromIntent(intent, finalFixupTask, quarterFileContext, context),
+                this.getContextFromIntent(intent, fixupTask, quarterFileContext, context),
                 []
             )
         )
