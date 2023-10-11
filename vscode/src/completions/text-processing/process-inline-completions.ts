@@ -4,7 +4,8 @@ import { dedupeWith } from '@sourcegraph/cody-shared/src/common'
 
 import { DocumentContext } from '../get-current-doc-context'
 import { ItemPostProcessingInfo } from '../logger'
-import { astGetters } from '../tree-sitter/ast-getters'
+import { getNodeAtCursorAndParents } from '../tree-sitter/ast-getters'
+import { asPoint, getCachedParseTreeForDocument } from '../tree-sitter/parse-tree-cache'
 import { getDocumentQuerySDK } from '../tree-sitter/query-sdk'
 import { Completion, InlineCompletionItem } from '../types'
 
@@ -88,14 +89,36 @@ function processCompletion(params: ProcessItemParams): InlineCompletionItemWithA
     let { insertText } = parsed
     const initialLineCount = insertText.split('\n').length
 
-    if (parsed.tree && parsed.points) {
-        const { tree, points } = parsed
-        const captures = astGetters.getNodeAtCursorAndParents(tree.rootNode, points?.trigger || points?.start)
+    const positionBeforeCursor = asPoint(position.translate(undefined, -1))
+
+    // Use the parse tree WITHOUT the pasted completion to get surrounding node types.
+    // Helpful to optimize the completion AST triggers for higher CAR.
+    const parseTreeCache = getCachedParseTreeForDocument(document)
+    if (parseTreeCache) {
+        const captures = getNodeAtCursorAndParents(parseTreeCache.tree.rootNode, positionBeforeCursor)
 
         if (captures.length > 0) {
             const [atCursor, ...parents] = captures
 
             parsed.nodeTypes = {
+                atCursor: atCursor.node.type,
+                parent: parents[0]?.node.type,
+                grandparent: parents[1]?.node.type,
+                greatGrandparent: parents[2]?.node.type,
+            }
+        }
+    }
+
+    // Use the parse tree WITH the pasted completion to get surrounding node types.
+    // Helpful to understand CAR for incomplete code snippets.
+    // E.g., `const value = ` does not produce a valid AST, but `const value = 'someValue'` does
+    if (parsed.tree && parsed.points) {
+        const captures = getNodeAtCursorAndParents(parsed.tree.rootNode, positionBeforeCursor)
+
+        if (captures.length > 0) {
+            const [atCursor, ...parents] = captures
+
+            parsed.nodeTypesWithCompletion = {
                 atCursor: atCursor.node.type,
                 parent: parents[0]?.node.type,
                 grandparent: parents[1]?.node.type,

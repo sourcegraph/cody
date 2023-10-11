@@ -1,7 +1,7 @@
 import { beforeAll, describe, it } from 'vitest'
 
 import { initTreeSitterParser } from '../../test-helpers'
-import { astGetters } from '../ast-getters'
+import { getNodeAtCursorAndParents } from '../ast-getters'
 import { SupportedLanguage } from '../grammars'
 import { getDocumentQuerySDK } from '../query-sdk'
 
@@ -18,7 +18,7 @@ describe('getNodeAtCursorAndParents', () => {
         await annotateAndMatchSnapshot({
             parser,
             language,
-            captures: astGetters.getNodeAtCursorAndParents,
+            captures: getNodeAtCursorAndParents,
             sourcesPath: 'test-data/parents.ts',
         })
     })

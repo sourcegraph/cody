@@ -76,8 +76,15 @@ export interface ItemPostProcessingInfo {
     lineTruncatedCount?: number
     // The truncation approach used.
     truncatedWith?: 'tree-sitter' | 'indentation'
-    // Syntax node types extracted from the tree-sitter parse-tree.
+    // Syntax node types extracted from the tree-sitter parse-tree without the completion pasted.
     nodeTypes?: {
+        atCursor?: string
+        parent?: string
+        grandparent?: string
+        greatGrandparent?: string
+    }
+    // Syntax node types extracted from the tree-sitter parse-tree with the completion pasted.
+    nodeTypesWithCompletion?: {
         atCursor?: string
         parent?: string
         grandparent?: string
@@ -448,6 +455,7 @@ function completionItemToItemInfo(item: InlineCompletionItemWithAnalytics): Comp
         lineTruncatedCount: item.lineTruncatedCount,
         truncatedWith: item.truncatedWith,
         nodeTypes: item.nodeTypes,
+        nodeTypesWithCompletion: item.nodeTypesWithCompletion,
     }
 }
 
