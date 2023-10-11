@@ -140,8 +140,8 @@ describe('createProviderConfig', () => {
                 dummyCodeCompletionsClient,
                 { provider: 'azure-open-ai', completionModel: 'gpt-35-turbo-test' }
             )
-            expect(provider?.identifier).toBe('openai')
-            expect(provider?.model).toBe('openai')
+            expect(provider?.identifier).toBe('unstable-openai')
+            expect(provider?.model).toBe('gpt-35-turbo')
         })
     })
 
