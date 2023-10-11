@@ -89,7 +89,10 @@ function processCompletion(params: ProcessItemParams): InlineCompletionItemWithA
     let { insertText } = parsed
     const initialLineCount = insertText.split('\n').length
 
-    const positionBeforeCursor = asPoint(position.translate(undefined, -1))
+    const positionBeforeCursor = asPoint({
+        line: position.line,
+        character: Math.max(0, position.character - 1),
+    })
 
     // Use the parse tree WITHOUT the pasted completion to get surrounding node types.
     // Helpful to optimize the completion AST triggers for higher CAR.
