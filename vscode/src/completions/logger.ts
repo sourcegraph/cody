@@ -66,6 +66,8 @@ export interface CompletionEvent {
     acceptedAt: number | null
     // Information about each completion item received per one completion event
     items: CompletionItemInfo[]
+    // Already logged partially accepted length
+    loggedPartialAcceptedLength: number
 }
 
 export interface ItemPostProcessingInfo {
@@ -150,6 +152,7 @@ export function create(inputParams: Omit<CompletionEvent['params'], 'multilineMo
         suggestionAnalyticsLoggedAt: null,
         acceptedAt: null,
         items: [],
+        loggedPartialAcceptedLength: 0,
     })
 
     return id
@@ -307,10 +310,14 @@ export function partiallyAccept(id: SuggestionID, completion: InlineCompletionIt
         return
     }
 
+    const loggedPartialAcceptedLength = completionEvent.loggedPartialAcceptedLength
+    completionEvent.loggedPartialAcceptedLength = acceptedLength
+
     logCompletionEvent('partiallyAccepted', {
         ...getSharedParams(completionEvent),
         acceptedItem: { ...completionItemToItemInfo(completion) },
         acceptedLength,
+        acceptedLengthDelta: acceptedLength - loggedPartialAcceptedLength,
     })
 }
 

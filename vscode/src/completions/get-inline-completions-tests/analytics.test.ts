@@ -62,6 +62,7 @@ describe('[getInlineCompletions] completion event', () => {
                 "truncatedWith": "tree-sitter",
               },
             ],
+            "loggedPartialAcceptedLength": 0,
             "params": {
               "contextSummary": undefined,
               "id": "stable-uuid",
