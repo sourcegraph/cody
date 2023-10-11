@@ -1,4 +1,4 @@
-import path from 'node:path'
+import path from 'path'
 
 import { debounce } from 'lodash'
 import { LRUCache } from 'lru-cache'
