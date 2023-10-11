@@ -1,5 +1,5 @@
 import dedent from 'dedent'
-import { beforeAll, describe, expect, test } from 'vitest'
+import { beforeAll, describe, expect, it } from 'vitest'
 import Parser from 'web-tree-sitter'
 
 import { range } from '../../testutils/textDocument'
@@ -11,7 +11,7 @@ import { InlineCompletionItem } from '../types'
 import { adjustRangeToOverwriteOverlappingCharacters, processInlineCompletions } from './process-inline-completions'
 
 describe('adjustRangeToOverwriteOverlappingCharacters', () => {
-    test('no adjustment at end of line', () => {
+    it('no adjustment at end of line', () => {
         const item: InlineCompletionItem = { insertText: 'array) {' }
         const { position } = documentAndPosition('function sort(█')
         expect(
@@ -22,7 +22,7 @@ describe('adjustRangeToOverwriteOverlappingCharacters', () => {
         ).toEqual<InlineCompletionItem>(item)
     })
 
-    test('handles non-empty currentLineSuffix', () => {
+    it('handles non-empty currentLineSuffix', () => {
         const item: InlineCompletionItem = { insertText: 'array) {' }
         const { position } = documentAndPosition('function sort(█)')
         expect(
@@ -36,7 +36,7 @@ describe('adjustRangeToOverwriteOverlappingCharacters', () => {
         })
     })
 
-    test('handles whitespace in currentLineSuffix', () => {
+    it('handles whitespace in currentLineSuffix', () => {
         const item: InlineCompletionItem = { insertText: 'array) {' }
         const { position } = documentAndPosition('function sort(█)')
         expect(
@@ -80,19 +80,19 @@ describe('process completion item', () => {
         )
     }
 
-    test('adds parse info to single-line completions', () => {
+    it('adds parse info to single-line completions', () => {
         const completions = processCompletions('function sort(█', ['array) {}', 'array) new'])
 
         expect(completions.map(c => Boolean(c.parseErrorCount))).toEqual([false, true])
     })
 
-    test('respects completion insert ranges', () => {
+    it('respects completion insert ranges', () => {
         const completions = processCompletions('function sort(█)', ['array) {}', 'array) new'])
 
         expect(completions.map(c => Boolean(c.parseErrorCount))).toEqual([false, true])
     })
 
-    test('adds parse info to multi-line completions', () => {
+    it('adds parse info to multi-line completions', () => {
         const completions = processCompletions(
             `
             function hello() {
@@ -109,10 +109,16 @@ describe('process completion item', () => {
             {
               "insertText": "array) {",
               "nodeTypes": {
-                "atCursor": "identifier",
-                "grandparent": "formal_parameters",
-                "greatGrandparent": "function_declaration",
-                "parent": "required_parameter",
+                "atCursor": "(",
+                "grandparent": "function_signature",
+                "greatGrandparent": "program",
+                "parent": "formal_parameters",
+              },
+              "nodeTypesWithCompletion": {
+                "atCursor": "(",
+                "grandparent": "function_declaration",
+                "greatGrandparent": "program",
+                "parent": "formal_parameters",
               },
               "parseErrorCount": 0,
               "range": {
@@ -130,10 +136,16 @@ describe('process completion item', () => {
             {
               "insertText": "array) new",
               "nodeTypes": {
-                "atCursor": "identifier",
-                "grandparent": "formal_parameters",
-                "greatGrandparent": "ERROR",
-                "parent": "required_parameter",
+                "atCursor": "(",
+                "grandparent": "function_signature",
+                "greatGrandparent": "program",
+                "parent": "formal_parameters",
+              },
+              "nodeTypesWithCompletion": {
+                "atCursor": "(",
+                "grandparent": "ERROR",
+                "greatGrandparent": "program",
+                "parent": "formal_parameters",
               },
               "parseErrorCount": 1,
               "range": {
@@ -152,7 +164,7 @@ describe('process completion item', () => {
         `)
     })
 
-    test('truncates multi-line if statements correctly', () => {
+    it('truncates multi-line if statements correctly', () => {
         const completions = processCompletions(
             `
             function whatever() {
@@ -182,14 +194,46 @@ describe('process completion item', () => {
           }",
               "lineTruncatedCount": 2,
               "nodeTypes": {
-                "atCursor": "{",
-                "grandparent": "if_statement",
-                "greatGrandparent": "program",
-                "parent": "statement_block",
+                "atCursor": "statement_block",
+                "grandparent": "program",
+                "greatGrandparent": undefined,
+                "parent": "if_statement",
+              },
+              "nodeTypesWithCompletion": {
+                "atCursor": "statement_block",
+                "grandparent": "program",
+                "greatGrandparent": undefined,
+                "parent": "if_statement",
               },
               "parseErrorCount": 0,
               "stopReason": "unknown",
               "truncatedWith": "tree-sitter",
+            },
+          ]
+        `)
+    })
+
+    it('adds parse info to single-line completions', () => {
+        const completions = processCompletions('const one = █', ['"one"'])
+
+        expect(completions).toMatchInlineSnapshot(`
+          [
+            {
+              "insertText": "\\"one\\"",
+              "nodeTypes": {
+                "atCursor": "program",
+                "grandparent": undefined,
+                "greatGrandparent": undefined,
+                "parent": undefined,
+              },
+              "nodeTypesWithCompletion": {
+                "atCursor": "variable_declarator",
+                "grandparent": "program",
+                "greatGrandparent": undefined,
+                "parent": "lexical_declaration",
+              },
+              "parseErrorCount": 0,
+              "stopReason": "unknown",
             },
           ]
         `)

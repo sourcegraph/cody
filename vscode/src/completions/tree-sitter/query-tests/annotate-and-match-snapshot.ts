@@ -112,10 +112,11 @@ function annotateSnippets(params: AnnotateSnippetsParams): string {
     const { code, language, captures, parser } = params
 
     const { delimiter, indent } = getCommentDelimiter(language)
-    const lines = code.split('\n')
+    // eslint-disable-next-line unicorn/prefer-string-replace-all
+    const lines = code.split('\n').map(line => line.replaceAll(/\t/g, ' '.repeat(4)))
     const caretPoint = getCaretPoint(lines, delimiter)
     if (!caretPoint) {
-        return code
+        throw new Error('No caret point found')
     }
 
     const cursorPositionLine = { index: -1, line: '' }
@@ -227,12 +228,11 @@ interface AnnotateAndMatchParams {
     sourcesPath: string
     parser: Parser
     language: SupportedLanguage
-    rawQuery: string
     captures: Captures
 }
 
 export async function annotateAndMatchSnapshot(params: AnnotateAndMatchParams): Promise<void> {
-    const { captures, rawQuery, sourcesPath, parser, language } = params
+    const { captures, sourcesPath, parser, language } = params
 
     const { delimiter, separator } = getCommentDelimiter(language)
 
@@ -245,9 +245,6 @@ export async function annotateAndMatchSnapshot(params: AnnotateAndMatchParams): 
     const header = dedent`
         ${commentOutLines(DOCUMENTATION_HEADER, delimiter)}
         ${delimiter}
-        ${delimiter} Tree-sitter query:
-        ${delimiter}
-        ${commentOutLines(rawQuery, delimiter)}
     `.trim()
 
     const annotated = snippets

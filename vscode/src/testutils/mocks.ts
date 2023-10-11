@@ -16,15 +16,9 @@ import type {
 } from 'vscode'
 import type * as vscode_types from 'vscode'
 
-// NOTE(olafurpg): We use a inlined copy of `vscode.Uri` instead of the
-// vscode-uri package because vscode-uri is not a drop-in replacement of
-// `vscode.Uri`. Specifically, `Uri.joinPath` is missing in vscode-uri, see
-// https://sourcegraph.com/npm/vscode-uri@v3.0.7/-/blob/lib/umd/uri.d.ts
-// Ideally, we should replace the inlined copy of `vscode.Uri` with vscode-uri
-// in the future when it becomes a drop-in replacement.
-import { Uri } from './vscode/uri'
+import { Uri } from './uri'
 
-export { Uri } from './vscode/uri'
+export { Uri } from './uri'
 
 export class Disposable implements VSCodeDisposable {
     public static from(...disposableLikes: { dispose: () => any }[]): Disposable {
@@ -214,7 +208,7 @@ export class QuickInputButtons {
 
 export class TreeItem {
     constructor(
-        public readonly resourceUri: Uri,
+        public readonly resourceUri: vscode_types.Uri,
         public readonly collapsibleState?: TreeItemCollapsibleState
     ) {}
 }
@@ -223,7 +217,7 @@ export class RelativePattern implements vscode_types.RelativePattern {
     public baseUri = Uri.parse('file:///foobar')
     public base: string
     constructor(
-        _base: vscode_types.WorkspaceFolder | Uri | string,
+        _base: vscode_types.WorkspaceFolder | vscode_types.Uri | string,
         public readonly pattern: string
     ) {
         // eslint-disable-next-line @typescript-eslint/no-base-to-string
@@ -395,6 +389,20 @@ export class Selection extends Range {
     isReversed = false
 }
 
+export enum FoldingRangeKind {
+    Comment = 1,
+    Imports = 2,
+    Region = 3,
+}
+
+export class FoldingRange {
+    constructor(
+        public start: number,
+        public end: number,
+        public kind?: FoldingRangeKind
+    ) {}
+}
+
 export class InlineCompletionItem {
     public insertText: string
     public range: Range | undefined
@@ -406,10 +414,10 @@ export class InlineCompletionItem {
 
 // TODO(abeatrix): Implement delete and insert mocks
 export class WorkspaceEdit {
-    public delete(uri: Uri, range: Range): Range {
+    public delete(uri: vscode_types.Uri, range: Range): Range {
         return range
     }
-    public insert(uri: Uri, position: Position, content: string): string {
+    public insert(uri: vscode_types.Uri, position: Position, content: string): string {
         return content
     }
 }
@@ -662,7 +670,7 @@ export const vsCodeMocks = {
         }),
         applyEdit: (edit: WorkspaceEdit) => true,
         save: () => true,
-        asRelativePath(path: string | Uri) {
+        asRelativePath(path: string | vscode_types.Uri) {
             return path.toString()
         },
     },
@@ -675,6 +683,9 @@ export const vsCodeMocks = {
         },
     },
     InlineCompletionTriggerKind,
+    SymbolKind,
+    FoldingRange,
+    FoldingRangeKind,
 } as const
 
 export enum UIKind {

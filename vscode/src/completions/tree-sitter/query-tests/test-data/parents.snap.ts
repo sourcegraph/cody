@@ -3,9 +3,6 @@
 // █ – query start position in the annotated file.
 // ^ – characters matching the last query result.
 //
-// Tree-sitter query:
-//
-// Gets the "current" node at cursor position and tree parents.
 // ------------------------------------
 
   export function whatsUp() {
@@ -173,8 +170,8 @@
 // ------------------------------------
 // Captures the whole try_statement block
 
-  export function tryHard() {
-//                          ^ start parents[3]
+  export function tryHard(message: string) {
+//                                         ^ start parents[3]
       try {
 //    ^ start parents[2]
 //        ^ at_cursor[1], start parents[1]
@@ -184,7 +181,7 @@
 //    ^ end parents[1]
           console.error('Opps!')
       } finally {
-          console.log('Done trying...')
+          console.log(message)
       }
 //    ^ end parents[2]
   }
@@ -195,4 +192,18 @@
 // parents[1]: statement_block
 // parents[2]: try_statement
 // parents[3]: statement_block
+
+// ------------------------------------
+
+  tryHard('Hello')
+//^^^^^^^^^^^^^^^^ parents[2], parents[3]
+//       ^^^^^^^^^ parents[1]
+//               ^ at_cursor[1]
+//               █
+
+// Nodes types:
+// at_cursor[1]: )
+// parents[1]: arguments
+// parents[2]: call_expression
+// parents[3]: expression_statement
 

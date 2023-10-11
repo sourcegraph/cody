@@ -202,7 +202,10 @@ export const Transcript: React.FunctionComponent<
 })
 
 function findLastIndex<T>(array: T[], predicate: (value: T) => boolean): number {
-    const arr = array.slice()
-    arr.reverse()
-    return arr.findIndex(predicate)
+    for (let i = array.length - 1; i >= 0; i--) {
+        if (predicate(array[i])) {
+            return i
+        }
+    }
+    return -1
 }

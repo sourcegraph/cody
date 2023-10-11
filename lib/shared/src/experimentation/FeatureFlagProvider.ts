@@ -1,5 +1,5 @@
 /* eslint-disable no-void */
-import { SourcegraphGraphQLAPIClient } from '../sourcegraph-api/graphql'
+import { graphqlClient, SourcegraphGraphQLAPIClient } from '../sourcegraph-api/graphql'
 import { isError } from '../utils'
 
 export enum FeatureFlag {
@@ -16,6 +16,8 @@ export enum FeatureFlag {
     CodyAutocompleteLlamaCode13B = 'cody-autocomplete-default-llama-code-13b',
     CodyAutocompleteGraphContext = 'cody-autocomplete-graph-context',
     CodyAutocompleteMinimumLatency = 'cody-autocomplete-minimum-latency',
+    CodyAutocompleteSyntacticTriggers = 'cody-autocomplete-syntactic-triggers',
+    CodyAutocompleteStarCoderExtendedTokenWindow = 'cody-autocomplete-starcoder-extended-token-window',
 }
 
 const ONE_HOUR = 60 * 60 * 1000
@@ -24,9 +26,7 @@ export class FeatureFlagProvider {
     private featureFlags: Record<string, boolean> = {}
     private lastUpdated = 0
 
-    constructor(private apiClient: SourcegraphGraphQLAPIClient) {
-        void this.refreshFeatureFlags()
-    }
+    constructor(private apiClient: SourcegraphGraphQLAPIClient) {}
 
     private getFromCache(flagName: FeatureFlag): boolean | undefined {
         const now = Date.now()
@@ -67,3 +67,5 @@ export class FeatureFlagProvider {
         this.lastUpdated = Date.now()
     }
 }
+
+export const featureFlagProvider = new FeatureFlagProvider(graphqlClient)

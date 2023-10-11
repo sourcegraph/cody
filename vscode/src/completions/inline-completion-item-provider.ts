@@ -2,7 +2,7 @@ import { formatDistance } from 'date-fns'
 import * as vscode from 'vscode'
 
 import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
-import { FeatureFlag, FeatureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
+import { FeatureFlag, featureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
 import { RateLimitError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
 
 import { logDebug } from '../log'
@@ -42,7 +42,6 @@ export interface CodyCompletionItemProviderConfig {
     completeSuggestWidgetSelection?: boolean
     tracer?: ProvideInlineCompletionItemsTracer | null
     contextFetcher?: (options: GetContextOptions) => Promise<GetContextResult>
-    featureFlagProvider: FeatureFlagProvider
     triggerNotice: ((notice: { key: string }) => void) | null
 }
 
@@ -136,11 +135,10 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
 
         // We start feature flag requests early so that we have a high chance of getting a response
         // before we need it.
-        const [isIncreasedDebounceTimeEnabledPromise, minimumLatencyFlagsPromise] = [
-            this.config.featureFlagProvider.evaluateFeatureFlag(
-                FeatureFlag.CodyAutocompleteIncreasedDebounceTimeEnabled
-            ),
-            this.config.featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteMinimumLatency),
+        const [isIncreasedDebounceTimeEnabledPromise, minimumLatencyFlagsPromise, syntacticTriggersPromise] = [
+            featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteIncreasedDebounceTimeEnabled),
+            featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteMinimumLatency),
+            featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteSyntacticTriggers),
         ]
 
         const tracer = this.config.tracer ? createTracerForInvocation(this.config.tracer) : undefined
@@ -196,6 +194,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
             maxPrefixLength: this.config.providerConfig.contextSizeHints.prefixChars,
             maxSuffixLength: this.config.providerConfig.contextSizeHints.suffixChars,
             enableExtendedTriggers: this.config.providerConfig.enableExtendedMultilineTriggers,
+            syntacticTriggers: await syntacticTriggersPromise,
             // We ignore the current context selection if completeSuggestWidgetSelection is not enabled
             context: takeSuggestWidgetSelectionIntoAccount ? context : undefined,
         })
@@ -260,7 +259,8 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
                     const minimumLatency = getLatency(
                         this.config.providerConfig.identifier,
                         document.uri.fsPath,
-                        document.languageId
+                        document.languageId,
+                        result.items[0]?.nodeTypes?.atCursor
                     )
 
                     const delta = performance.now() - start
