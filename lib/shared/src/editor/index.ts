@@ -69,7 +69,7 @@ export interface VsCodeFixupTaskRecipeData {
 
 export interface VsCodeFixupController {
     getTaskRecipeData(taskId: string, enableSmartSelection: boolean): Promise<VsCodeFixupTaskRecipeData | undefined>
-    getRecipeIntent(taskId: string, intentDetector: IntentDetector): Promise<FixupIntent>
+    getTaskIntent(taskId: string, intentDetector: IntentDetector): Promise<FixupIntent>
 }
 
 export interface VsCodeCommandsController {

@@ -182,17 +182,30 @@ export class FixupController
         return undefined
     }
 
-    public async getRecipeIntent(taskId: string, intentDetector: IntentDetector): Promise<FixupIntent> {
+    /**
+     * Retrieves the intent for a specific task based on the selected text and other contextual information.
+     *
+     * @param taskId - The ID of the task for which the intent is to be determined.
+     * @param intentDetector - The detector used to classify the intent from available options.
+     *
+     * @returns A promise that resolves to a `FixupIntent` which can be one of the intents like 'add', 'edit', etc.
+     *
+     * @throws
+     * - Will throw an error if no code is selected for fixup.
+     * - Will throw an error if the selected text exceeds the defined maximum limit.
+     *
+     * @todo (umpox): Explore shorter and more efficient ways to detect intent.
+     * Possible methods:
+     * - Input -> Match first word against update|fix|add|delete verbs
+     * - Context -> Infer intent from context, e.g. Current file is a test -> Test intent, Current selection is a comment symbol -> Documentation intent
+     */
+    public async getTaskIntent(taskId: string, intentDetector: IntentDetector): Promise<FixupIntent> {
         const task = this.tasks.get(taskId)
         if (!task) {
             throw new Error('Select some code to fixup.')
         }
         const document = await vscode.workspace.openTextDocument(task.fixupFile.uri)
         const selectedText = document.getText(task.selectionRange)
-        if (selectedText.length === 0) {
-            // Nothing selected, assume this is always 'add'.
-            return 'add'
-        }
         if (truncateText(selectedText, MAX_CURRENT_FILE_TOKENS) !== selectedText) {
             const msg = "The amount of text selected exceeds Cody's current capacity."
             throw new Error(msg)
@@ -203,12 +216,6 @@ export class FixupController
             return 'add'
         }
 
-        /**
-         * TODO(umpox): We should probably find a shorter way of detecting intent when possible.
-         * Possible methods:
-         * - Input -> Match first word against update|fix|add|delete verbs
-         * - Context -> Infer intent from context, e.g. Current file is a test -> Test intent, Current selection is a comment symbol -> Documentation intent
-         */
         const intent = await intentDetector.classifyIntentFromOptions(
             task.instruction,
             FixupIntentClassification,

@@ -83,7 +83,8 @@ export class Fixup implements Recipe {
         context: RecipeContext
     ): Promise<FixupIntent | null> {
         try {
-            return await fixupController.getRecipeIntent(taskId, context.intentDetector)
+            const intent = await fixupController.getTaskIntent(taskId, context.intentDetector)
+            return intent
         } catch (error) {
             await context.editor.showWarningMessage((error as Error).message)
             return null
