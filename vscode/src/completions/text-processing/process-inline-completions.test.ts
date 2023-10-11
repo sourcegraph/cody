@@ -214,12 +214,7 @@ describe('process completion item', () => {
     })
 
     it('adds parse info to single-line completions', () => {
-        const completions = processCompletions(
-            `
-            const one = █
-        `,
-            ['"one"']
-        )
+        const completions = processCompletions('const one = █', ['"one"'])
 
         expect(completions).toMatchInlineSnapshot(`
           [
