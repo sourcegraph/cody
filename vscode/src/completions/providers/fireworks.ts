@@ -16,7 +16,7 @@ import {
     standardContextSizeHints,
 } from './provider'
 
-export interface UnstableFireworksOptions {
+export interface FireworksOptions {
     model: FireworksModel
     maxContextTokens?: number
     client: Pick<CodeCompletionsClient, 'complete'>
@@ -71,12 +71,12 @@ function getMaxContextTokens(model: FireworksModel): number {
 
 const MAX_RESPONSE_TOKENS = 256
 
-export class UnstableFireworksProvider extends Provider {
+export class FireworksProvider extends Provider {
     private model: FireworksModel
     private promptChars: number
     private client: Pick<CodeCompletionsClient, 'complete'>
 
-    constructor(options: ProviderOptions, { model, maxContextTokens, client }: Required<UnstableFireworksOptions>) {
+    constructor(options: ProviderOptions, { model, maxContextTokens, client }: Required<FireworksOptions>) {
         super(options)
         this.model = model
         this.promptChars = tokensToChars(maxContextTokens - MAX_RESPONSE_TOKENS)
@@ -250,7 +250,7 @@ export class UnstableFireworksProvider extends Provider {
 export function createProviderConfig({
     model,
     ...otherOptions
-}: Omit<UnstableFireworksOptions, 'model' | 'maxContextTokens'> & { model: string | null }): ProviderConfig {
+}: Omit<FireworksOptions, 'model' | 'maxContextTokens'> & { model: string | null }): ProviderConfig {
     const resolvedModel =
         model === null || model === ''
             ? 'starcoder-hybrid'
@@ -268,7 +268,7 @@ export function createProviderConfig({
 
     return {
         create(options: ProviderOptions) {
-            return new UnstableFireworksProvider(options, { model: resolvedModel, maxContextTokens, ...otherOptions })
+            return new FireworksProvider(options, { model: resolvedModel, maxContextTokens, ...otherOptions })
         },
         contextSizeHints: standardContextSizeHints(maxContextTokens),
         enableExtendedMultilineTriggers: true,

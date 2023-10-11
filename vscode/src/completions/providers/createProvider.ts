@@ -6,12 +6,9 @@ import { logError } from '../../log'
 import { CodeCompletionsClient } from '../client'
 
 import { createProviderConfig as createAnthropicProviderConfig } from './anthropic'
+import { createProviderConfig as createFireworksProviderConfig, FireworksOptions } from './fireworks'
 import { ProviderConfig } from './provider'
 import { createProviderConfig as createUnstableCodeGenProviderConfig } from './unstable-codegen'
-import {
-    createProviderConfig as createUnstableFireworksProviderConfig,
-    UnstableFireworksOptions,
-} from './unstable-fireworks'
 import { createProviderConfig as createUnstableOpenAIProviderConfig } from './unstable-openai'
 
 export async function createProviderConfig(
@@ -45,8 +42,8 @@ export async function createProviderConfig(
                     client,
                 })
             }
-            case 'unstable-fireworks': {
-                return createUnstableFireworksProviderConfig({
+            case 'fireworks': {
+                return createFireworksProviderConfig({
                     client,
                     model: config.autocompleteAdvancedModel ?? model ?? null,
                 })
@@ -94,7 +91,7 @@ export async function createProviderConfig(
                 })
 
             case 'fireworks':
-                return createUnstableFireworksProviderConfig({
+                return createFireworksProviderConfig({
                     client,
                     model: model ?? null,
                 })
@@ -122,7 +119,7 @@ export async function createProviderConfig(
 
 async function resolveDefaultProviderFromVSCodeConfigOrFeatureFlags(
     configuredProvider: string | null
-): Promise<{ provider: string; model?: UnstableFireworksOptions['model'] } | null> {
+): Promise<{ provider: string; model?: FireworksOptions['model'] } | null> {
     if (configuredProvider) {
         return { provider: configuredProvider }
     }
@@ -145,7 +142,7 @@ async function resolveDefaultProviderFromVSCodeConfigOrFeatureFlags(
             : llamaCode7b
             ? 'llama-code-7b'
             : 'llama-code-13b'
-        return { provider: 'unstable-fireworks', model }
+        return { provider: 'fireworks', model }
     }
 
     return null
