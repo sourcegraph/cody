@@ -71,6 +71,7 @@
         <!-- status bar -->
         <statusBarWidgetFactory order="first" id="cody.statusBarWidget"
                                 implementation="com.sourcegraph.cody.statusbar.CodyWidgetFactory"/>
+        <actionPromoter order="last" implementation="com.sourcegraph.cody.autocomplete.action.CodyActionPromoter"/>
     </extensions>
 
     <applicationListeners>

@@ -8,4 +8,4 @@ import com.intellij.openapi.editor.actionSystem.EditorAction
  * The action works by reading the Inlay at the caret position and inserting the completion text
  * into the editor.
  */
-object AcceptCodyAutocompleteAction : EditorAction(AcceptAutocompleteActionHandler())
+object AcceptCodyAutocompleteAction : EditorAction(AcceptAutocompleteActionHandler()), CodyAction
