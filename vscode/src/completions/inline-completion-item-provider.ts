@@ -264,7 +264,8 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
                     provider: await minLatencyFlagsPromises.provider,
                 }
 
-                const isMinLatencyEnabled = latencyFeatureFlags.user || latencyFeatureFlags.language || latencyFeatureFlags.provider
+                const isMinLatencyEnabled =
+                    latencyFeatureFlags.user || latencyFeatureFlags.language || latencyFeatureFlags.provider
                 if (triggerKind === TriggerKind.Automatic && isMinLatencyEnabled) {
                     const minimumLatency = getLatency(
                         latencyFeatureFlags,
