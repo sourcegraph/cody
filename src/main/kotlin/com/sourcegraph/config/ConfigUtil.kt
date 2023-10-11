@@ -16,6 +16,8 @@ import com.sourcegraph.cody.config.CodyAuthenticationManager
 import com.sourcegraph.cody.config.ServerAuthLoader
 import com.sourcegraph.cody.config.SourcegraphServerPath
 import com.sourcegraph.cody.config.SourcegraphServerPath.Companion.from
+import java.nio.file.Path
+import java.nio.file.Paths
 import java.util.*
 import java.util.stream.Collectors
 import org.jetbrains.annotations.Contract
@@ -110,6 +112,11 @@ object ConfigUtil {
 
   @JvmStatic
   fun getCustomAutocompleteColor(): Int? = CodyApplicationSettings.instance.customAutocompleteColor
+
+  @JvmStatic
+  fun getWorkspaceRootPath(project: Project): Path {
+    return Paths.get(getWorkspaceRoot(project))
+  }
 
   @JvmStatic
   fun getWorkspaceRoot(project: Project): String {
