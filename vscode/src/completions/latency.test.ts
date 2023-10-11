@@ -342,28 +342,28 @@ describe('getLatency', () => {
         const languageId = 'css'
         expect(lowPerformanceLanguageIds.has(languageId)).toBe(true)
 
-        const providerAndUserFlags = {
+        const featureFlagsNoUser = {
             user: false,
             language: true,
             provider: true,
         }
 
         // latency starts with default provider latency, ignore language based latency
-        expect(getLatency(providerAndUserFlags, provider, fileName, languageId)).toBe(1000)
-        expect(getLatency(providerAndUserFlags, provider, fileName, languageId)).toBe(1000)
-        expect(getLatency(providerAndUserFlags, provider, fileName, languageId)).toBe(1000)
-        expect(getLatency(providerAndUserFlags, provider, fileName, languageId)).toBe(1000)
-        expect(getLatency(providerAndUserFlags, provider, fileName, languageId)).toBe(1000)
+        expect(getLatency(featureFlagsNoUser, provider, fileName, languageId)).toBe(1000)
+        expect(getLatency(featureFlagsNoUser, provider, fileName, languageId)).toBe(1000)
+        expect(getLatency(featureFlagsNoUser, provider, fileName, languageId)).toBe(1000)
+        expect(getLatency(featureFlagsNoUser, provider, fileName, languageId)).toBe(1000)
+        expect(getLatency(featureFlagsNoUser, provider, fileName, languageId)).toBe(1000)
         // latency should remains unchanged after 5 rejections
-        expect(getLatency(providerAndUserFlags, provider, fileName, languageId)).toBe(1000)
-        expect(getLatency(providerAndUserFlags, provider, fileName, languageId)).toBe(1000)
-        expect(getLatency(providerAndUserFlags, provider, fileName, languageId)).toBe(1000)
+        expect(getLatency(featureFlagsNoUser, provider, fileName, languageId)).toBe(1000)
+        expect(getLatency(featureFlagsNoUser, provider, fileName, languageId)).toBe(1000)
+        expect(getLatency(featureFlagsNoUser, provider, fileName, languageId)).toBe(1000)
 
         // switch to a non-low-performance language - go is not a low performance language
         const goLanguageId = 'go'
         const goFileName = 'foo/bar/test.go'
         expect(lowPerformanceLanguageIds.has(goLanguageId)).toBe(false)
         // reset to provider latency because language latency is ignored for non-low-performance languages
-        expect(getLatency(providerAndUserFlags, provider, goFileName, goLanguageId)).toBe(400)
+        expect(getLatency(featureFlagsNoUser, provider, goFileName, goLanguageId)).toBe(400)
     })
 })
