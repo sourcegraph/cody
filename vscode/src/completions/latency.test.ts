@@ -224,9 +224,9 @@ describe('getLatency', () => {
         expect(getLatency(featureFlags, provider, newFileName, languageId)).toBe(400)
     })
 
-    it('returns increased latency for user-based language only when only user flag is enabled', () => {
+    it('returns increased latency for user-based only when only user flag is enabled', () => {
         const provider = 'non-anthropic'
-        const fileName = 'foo/bar/test.ts'
+        const fileName = 'foo/bar/test.css'
 
         // css is a low performance language
         const languageId = 'css'
@@ -254,7 +254,7 @@ describe('getLatency', () => {
 
     it('returns default latency for low performance language only when only language flag is enabled', () => {
         const provider = 'non-anthropic'
-        const fileName = 'foo/bar/test.ts'
+        const fileName = 'foo/bar/test.css'
 
         const featureFlagsLangOnly = {
             user: false,
@@ -268,6 +268,7 @@ describe('getLatency', () => {
 
         // go is not a low performance language
         const languageId = 'go'
+        const goFileName = 'foo/bar/test.go'
         expect(lowPerformanceLanguageIds.has(languageId)).toBe(false)
 
         // latency should only change based on language id when only the language flag is enabled
@@ -278,12 +279,12 @@ describe('getLatency', () => {
         expect(getLatency(featureFlagsLangOnly, provider, fileName, lowPerformLanguageId)).toBe(1000)
         expect(getLatency(featureFlagsLangOnly, provider, fileName, lowPerformLanguageId)).toBe(1000)
         // latency back to 0 when language is no longer low-performance
-        expect(getLatency(featureFlagsLangOnly, provider, fileName, languageId)).toBe(0)
+        expect(getLatency(featureFlagsLangOnly, provider, goFileName, languageId)).toBe(0)
     })
 
     it('returns default latency for non-anthropic provider only when only provider flag is enabled', () => {
         const provider = 'non-anthropic'
-        const fileName = 'foo/bar/test.ts'
+        const fileName = 'foo/bar/test.css'
         const languageId = 'css'
 
         const featureFlagsProviderOnly = {
@@ -300,5 +301,69 @@ describe('getLatency', () => {
         expect(getLatency(featureFlagsProviderOnly, provider, fileName, languageId)).toBe(400)
         // confirm latency remains the same for provider-based latency
         expect(getLatency(featureFlagsProviderOnly, provider, fileName, languageId)).toBe(400)
+    })
+
+    it('returns increased latency for user-based and provider only when language flag is disabled', () => {
+        const provider = 'non-anthropic'
+        const fileName = 'foo/bar/test.css'
+
+        // css is a low performance language
+        const languageId = 'css'
+        expect(lowPerformanceLanguageIds.has(languageId)).toBe(true)
+
+        const providerAndUserFlags = {
+            user: true,
+            language: false,
+            provider: true,
+        }
+
+        // latency starts with default provider latency, ignore language based latency
+        expect(getLatency(providerAndUserFlags, provider, fileName, languageId)).toBe(400)
+        expect(getLatency(providerAndUserFlags, provider, fileName, languageId)).toBe(400)
+        expect(getLatency(providerAndUserFlags, provider, fileName, languageId)).toBe(400)
+        expect(getLatency(providerAndUserFlags, provider, fileName, languageId)).toBe(400)
+        expect(getLatency(providerAndUserFlags, provider, fileName, languageId)).toBe(400)
+        // latency for user should start increasing after 5 rejections gradually
+        expect(getLatency(providerAndUserFlags, provider, fileName, languageId)).toBe(600)
+        expect(getLatency(providerAndUserFlags, provider, fileName, languageId)).toBe(800)
+        expect(getLatency(providerAndUserFlags, provider, fileName, languageId)).toBe(1000)
+        expect(getLatency(providerAndUserFlags, provider, fileName, languageId)).toBe(1200)
+        expect(getLatency(providerAndUserFlags, provider, fileName, languageId)).toBe(1400)
+        // reset to starting point on every accepted suggestion
+        resetLatency()
+        expect(getLatency(providerAndUserFlags, provider, fileName, languageId)).toBe(400)
+    })
+
+    it('returns latency based on language and provider only when user flag is disabled', () => {
+        const provider = 'non-anthropic'
+        const fileName = 'foo/bar/test.css'
+
+        // css is a low performance language
+        const languageId = 'css'
+        expect(lowPerformanceLanguageIds.has(languageId)).toBe(true)
+
+        const providerAndUserFlags = {
+            user: false,
+            language: true,
+            provider: true,
+        }
+
+        // latency starts with default provider latency, ignore language based latency
+        expect(getLatency(providerAndUserFlags, provider, fileName, languageId)).toBe(1000)
+        expect(getLatency(providerAndUserFlags, provider, fileName, languageId)).toBe(1000)
+        expect(getLatency(providerAndUserFlags, provider, fileName, languageId)).toBe(1000)
+        expect(getLatency(providerAndUserFlags, provider, fileName, languageId)).toBe(1000)
+        expect(getLatency(providerAndUserFlags, provider, fileName, languageId)).toBe(1000)
+        // latency should remains unchanged after 5 rejections
+        expect(getLatency(providerAndUserFlags, provider, fileName, languageId)).toBe(1000)
+        expect(getLatency(providerAndUserFlags, provider, fileName, languageId)).toBe(1000)
+        expect(getLatency(providerAndUserFlags, provider, fileName, languageId)).toBe(1000)
+
+        // switch to a non-low-performance language - go is not a low performance language
+        const goLanguageId = 'go'
+        const goFileName = 'foo/bar/test.go'
+        expect(lowPerformanceLanguageIds.has(goLanguageId)).toBe(false)
+        // reset to provider latency because language latency is ignored for non-low-performance languages
+        expect(getLatency(providerAndUserFlags, provider, goFileName, goLanguageId)).toBe(400)
     })
 })
