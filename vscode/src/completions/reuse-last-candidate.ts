@@ -91,12 +91,15 @@ export function reuseLastCandidate({
                     handleDidPartiallyAcceptCompletionItem?.(lastCandidate.result.logId, item, acceptedLength)
                 }
 
-                return { insertText: remaining }
+                return { ...item, insertText: remaining }
             }
 
             // Allow reuse if only the indentation (leading whitespace) has changed.
             if (isIndentationChange) {
-                return { insertText: lastTriggerCurrentLinePrefix.slice(currentLinePrefix.length) + item.insertText }
+                return {
+                    ...item,
+                    insertText: lastTriggerCurrentLinePrefix.slice(currentLinePrefix.length) + item.insertText,
+                }
             }
 
             return undefined

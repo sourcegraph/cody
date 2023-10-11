@@ -107,7 +107,7 @@ describe('createProviderConfig', () => {
         it('returns "fireworks" provider config and corresponding model if specified', async () => {
             const provider = await createProviderConfig(
                 getVSCodeSettings({
-                    autocompleteAdvancedProvider: 'unstable-fireworks',
+                    autocompleteAdvancedProvider: 'fireworks',
                     autocompleteAdvancedModel: 'starcoder-3b',
                 }),
                 dummyCodeCompletionsClient,
@@ -119,7 +119,7 @@ describe('createProviderConfig', () => {
 
         it('returns "fireworks" provider config if specified in settings and default model', async () => {
             const provider = await createProviderConfig(
-                getVSCodeSettings({ autocompleteAdvancedProvider: 'unstable-fireworks' }),
+                getVSCodeSettings({ autocompleteAdvancedProvider: 'fireworks' }),
                 dummyCodeCompletionsClient,
                 {}
             )

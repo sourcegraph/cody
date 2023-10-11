@@ -91,9 +91,10 @@ describe('getLatency', () => {
         const languageId = 'typescript'
 
         // start at default, but gradually increasing latency after 5 rejected suggestions
-        expect(getLatency(provider, fileName, languageId)).toBe(0)
-        expect(getLatency(provider, fileName, languageId)).toBe(0)
-        expect(getLatency(provider, fileName, languageId)).toBe(0)
+        expect(getLatency(provider, fileName, languageId, 'programe')).toBe(0)
+        expect(getLatency(provider, fileName, languageId, '')).toBe(0)
+        // baseline latency increased to 1000 due to comment node type
+        expect(getLatency(provider, fileName, languageId, 'comment')).toBe(1000)
         expect(getLatency(provider, fileName, languageId)).toBe(0)
         expect(getLatency(provider, fileName, languageId)).toBe(0)
         // gradually increasing latency after 5 rejected suggestions
@@ -152,7 +153,8 @@ describe('getLatency', () => {
         expect(getLatency(provider, fileName, languageId)).toBe(1800)
         // max at 2000 after multiple rejections
         expect(getLatency(provider, fileName, languageId)).toBe(2000)
-        expect(getLatency(provider, fileName, languageId)).toBe(2000)
+        // Writing a comment will not increase latency over max
+        expect(getLatency(provider, fileName, languageId, 'comment')).toBe(2000)
         expect(getLatency(provider, fileName, languageId)).toBe(2000)
         // reset latency on accepted suggestion
         resetLatency()
@@ -173,7 +175,9 @@ describe('getLatency', () => {
         expect(getLatency(provider, fileName, languageId)).toBe(400)
 
         expect(getLatency(provider, fileName, languageId)).toBe(600)
-        expect(getLatency(provider, fileName, languageId)).toBe(800)
+        // line is a comment, so latency should be increased where:
+        // base is 1000 due to line is a comment, and user latency is 400 as this is the 7th rejection
+        expect(getLatency(provider, fileName, languageId, 'comment')).toBe(1400)
         expect(getLatency(provider, fileName, languageId)).toBe(1000)
         expect(getLatency(provider, fileName, languageId)).toBe(1200)
         expect(getLatency(provider, fileName, languageId)).toBe(1400)
@@ -189,7 +193,8 @@ describe('getLatency', () => {
         // latency should start increasing again after 5 rejections
         expect(getLatency(provider, newFileName, languageId)).toBe(400)
         expect(getLatency(provider, newFileName, languageId)).toBe(400)
-        expect(getLatency(provider, newFileName, languageId)).toBe(400)
+        // line is a comment, so latency should be increased
+        expect(getLatency(provider, newFileName, languageId, 'comment')).toBe(1000)
         expect(getLatency(provider, newFileName, languageId)).toBe(400)
         expect(getLatency(provider, newFileName, languageId)).toBe(400)
         // Latency will not reset before 5 minutes

@@ -220,7 +220,7 @@ export class Agent extends MessageHandler {
                 return { items, completionEvent: (result as any)?.completionEvent }
             } catch (error) {
                 console.log('autocomplete failed', error)
-                return { items: [] }
+                return Promise.reject(error)
             }
         })
 
@@ -339,15 +339,14 @@ export class Agent extends MessageHandler {
             client: eventProperties.client,
             userCookieID: eventProperties.anonymousUserID,
             source: eventProperties.source,
-            argument: {},
-            publicArgument: {
+            publicArgument: JSON.stringify({
                 serverEndpoint: extensionConfiguration.serverEndpoint,
                 extensionDetails: {
                     ide: clientInfo.name,
                     ideExtensionType: 'Cody',
                     version: clientInfo.version,
                 },
-            },
+            }),
         })
 
         return null

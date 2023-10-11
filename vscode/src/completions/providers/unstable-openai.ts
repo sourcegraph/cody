@@ -1,10 +1,7 @@
 import { tokensToChars } from '@sourcegraph/cody-shared/src/prompt/constants'
-import {
-    CompletionParameters,
-    CompletionResponse,
-} from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
+import { CompletionResponse } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
 
-import { CodeCompletionsClient } from '../client'
+import { CodeCompletionsClient, CodeCompletionsParams } from '../client'
 import { canUsePartialCompletion } from '../streaming'
 import { getHeadAndTail } from '../text-processing'
 import { Completion, ContextSnippet } from '../types'
@@ -73,12 +70,13 @@ export class UnstableOpenAIProvider extends Provider {
             stopSequences.push('\n')
         }
 
-        const args: CompletionParameters = {
+        const args: CodeCompletionsParams = {
             messages: [{ speaker: 'human', text: prompt }],
             maxTokensToSample: this.options.multiline ? MAX_RESPONSE_TOKENS : 50,
             temperature: 1,
             topP: 0.5,
             stopSequences,
+            timeoutMs: this.options.multiline ? 15000 : 5000,
         }
 
         tracer?.params(args)
@@ -106,7 +104,7 @@ export class UnstableOpenAIProvider extends Provider {
 
     private async fetchAndProcessCompletions(
         client: Pick<CodeCompletionsClient, 'complete'>,
-        params: CompletionParameters,
+        params: CodeCompletionsParams,
         abortSignal: AbortSignal
     ): Promise<CompletionResponse> {
         // The Async executor is required to return the completion early if a partial result from SSE can be used.

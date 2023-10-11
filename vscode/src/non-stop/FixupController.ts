@@ -167,6 +167,7 @@ export class FixupController
     private scheduleRespin(task: FixupTask): void {
         const MAX_SPIN_COUNT_PER_TASK = 5
         if (task.spinCount >= MAX_SPIN_COUNT_PER_TASK) {
+            telemetryService.log('CodyVSCodeExtension:fixup:respin', { count: task.spinCount })
             // TODO: Report an error message
             // task.error = `Cody tried ${task.spinCount} times but failed to edit the file`
             this.setTaskState(task, CodyTaskState.error)
@@ -198,6 +199,7 @@ export class FixupController
         const editOk = task.insertMode ? await this.insertEdit(editor, task) : await this.replaceEdit(editor, diff)
 
         if (!editOk) {
+            telemetryService.log('CodyVSCodeExtension:fixup:apply:failed')
             // TODO: Try to recover, for example by respinning
             void vscode.window.showWarningMessage('edit did not apply')
             return

@@ -259,7 +259,8 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
                     const minimumLatency = getLatency(
                         this.config.providerConfig.identifier,
                         document.uri.fsPath,
-                        document.languageId
+                        document.languageId,
+                        result.items[0]?.nodeTypes?.atCursor
                     )
 
                     const delta = performance.now() - start
