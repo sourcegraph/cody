@@ -1,7 +1,8 @@
-import * as vscode from 'vscode'
 import { URI } from 'vscode-uri'
 
 import { CodyPrompt } from '../chat/prompts'
+import { FixupIntent } from '../chat/recipes/fixup'
+import { IntentDetector } from '../intent-detector'
 
 export interface ActiveTextEditor {
     content: string
@@ -67,8 +68,8 @@ export interface VsCodeFixupTaskRecipeData {
 }
 
 export interface VsCodeFixupController {
-    getTaskRecipeData(taskId: string): Promise<VsCodeFixupTaskRecipeData | undefined>
-    resetSelectionRange(taskid: string, newRange: vscode.Range): Promise<void>
+    getTaskRecipeData(taskId: string, enableSmartSelection: boolean): Promise<VsCodeFixupTaskRecipeData | undefined>
+    getRecipeIntent(taskId: string, intentDetector: IntentDetector): Promise<FixupIntent>
 }
 
 export interface VsCodeCommandsController {
@@ -107,10 +108,6 @@ export interface Editor<
     getActiveTextEditor(): ActiveTextEditor | null
     getActiveTextEditorSelection(): ActiveTextEditorSelection | null
     getActiveTextEditorSmartSelection(): Promise<ActiveTextEditorSelection | null>
-    getFixupRecipeSmartSelection(
-        selectionRange: ActiveTextEditorSelectionRange,
-        fileName: string
-    ): Promise<vscode.Range | null>
     getActiveInlineChatTextEditor(): ActiveTextEditor | null
     getActiveInlineChatSelection(): ActiveTextEditorSelection | null
 
@@ -160,13 +157,6 @@ export class NoopEditor implements Editor {
     }
 
     public getActiveTextEditorSmartSelection(): Promise<ActiveTextEditorSelection | null> {
-        return Promise.resolve(null)
-    }
-
-    public getFixupRecipeSmartSelection(
-        selectionRange: ActiveTextEditorSelectionRange,
-        fileName: string
-    ): Promise<vscode.Range | null> {
         return Promise.resolve(null)
     }
 

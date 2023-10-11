@@ -4,7 +4,6 @@ import {
     ActiveTextEditor,
     ActiveTextEditorDiagnostic,
     ActiveTextEditorSelection,
-    ActiveTextEditorSelectionRange,
     ActiveTextEditorViewControllers,
     ActiveTextEditorVisibleContent,
     Editor,
@@ -97,13 +96,6 @@ export class AgentEditor implements Editor {
     }
 
     public getActiveTextEditorSmartSelection(): Promise<ActiveTextEditorSelection | null> {
-        throw new Error('Method not implemented.')
-    }
-
-    public getFixupRecipeSmartSelection(
-        selectionRange: ActiveTextEditorSelectionRange,
-        fileName: string
-    ): Promise<vscode.Range | null> {
         throw new Error('Method not implemented.')
     }
 

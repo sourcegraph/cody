@@ -1,7 +1,12 @@
 import * as vscode from 'vscode'
 
+import { FixupIntent, FixupIntentClassification } from '@sourcegraph/cody-shared/src/chat/recipes/fixup'
 import { VsCodeFixupController, VsCodeFixupTaskRecipeData } from '@sourcegraph/cody-shared/src/editor'
+import { IntentDetector } from '@sourcegraph/cody-shared/src/intent-detector'
+import { MAX_CURRENT_FILE_TOKENS } from '@sourcegraph/cody-shared/src/prompt/constants'
+import { truncateText } from '@sourcegraph/cody-shared/src/prompt/truncation'
 
+import { getSmartSelection } from '../editor/utils'
 import { logDebug } from '../log'
 import { countCode } from '../services/InlineAssist'
 import { telemetryService } from '../services/telemetry'
@@ -177,6 +182,81 @@ export class FixupController
         return undefined
     }
 
+    public async getRecipeIntent(taskId: string, intentDetector: IntentDetector): Promise<FixupIntent> {
+        const task = this.tasks.get(taskId)
+        if (!task) {
+            throw new Error('Select some code to fixup.')
+        }
+        const document = await vscode.workspace.openTextDocument(task.fixupFile.uri)
+        const selectedText = document.getText(task.selectionRange)
+        if (selectedText.length === 0) {
+            // Nothing selected, assume this is always 'add'.
+            return 'add'
+        }
+        if (truncateText(selectedText, MAX_CURRENT_FILE_TOKENS) !== selectedText) {
+            const msg = "The amount of text selected exceeds Cody's current capacity."
+            throw new Error(msg)
+        }
+
+        if (selectedText.trim().length === 0) {
+            // Nothing selected, assume this is always 'add'.
+            return 'add'
+        }
+
+        /**
+         * TODO(umpox): We should probably find a shorter way of detecting intent when possible.
+         * Possible methods:
+         * - Input -> Match first word against update|fix|add|delete verbs
+         * - Context -> Infer intent from context, e.g. Current file is a test -> Test intent, Current selection is a comment symbol -> Documentation intent
+         */
+        const intent = await intentDetector.classifyIntentFromOptions(
+            task.instruction,
+            FixupIntentClassification,
+            'edit'
+        )
+        return intent
+    }
+
+    /**
+     * This function retrieves a "smart" selection given the selectionRange and the fileName for a fixup recipe.
+     * The idea of a "smart" selection is to look at both the start and end positions of the current selection,
+     * and attempt to expand those positions to encompass more meaningful chunks of code, such as folding regions.
+     *
+     * The function does the following:
+     * 1. Finds the document URI from it's fileName
+     * 2. If the selection starts in a folding range, moves the selection start position back to the start of that folding range.
+     * 3. If the selection ends in a folding range, moves the selection end positionforward to the end of that folding range.
+     *
+     * @returns A Promise that resolves to an `vscode.Range` which represents the combined "smart" selection.
+     */
+    private async getFixupRecipeSmartSelection(task: FixupTask, selectionRange: vscode.Range): Promise<vscode.Range> {
+        const fileName = task.fixupFile.uri.fsPath
+        const documentUri = vscode.Uri.file(fileName)
+
+        // Retreive the start position of the current selection
+        const activeCursorStartPosition = selectionRange.start
+        // If we find a new expanded selection positon then we set it as the new start position
+        // and if we don't then we fallback to the original selection made by the user
+        const newSelectionStartingPosition =
+            (await getSmartSelection(documentUri, activeCursorStartPosition.line))?.start || selectionRange.start
+
+        // Retreive the ending line of the current selection
+        const activeCursorEndPosition = selectionRange.end
+        // If we find a new expanded selection positon then we set it as the new ending position
+        // and if we don't then we fallback to the original selection made by the user
+        const newSelectionEndingPosition =
+            (await getSmartSelection(documentUri, activeCursorEndPosition.line))?.end || selectionRange.end
+
+        // Create a new range that starts from the beginning of the folding range at the start position
+        // and ends at the end of the folding range at the end position.
+        return new vscode.Range(
+            newSelectionStartingPosition.line,
+            newSelectionStartingPosition.character,
+            newSelectionEndingPosition.line,
+            newSelectionEndingPosition.character
+        )
+    }
+
     private async applyTask(task: FixupTask): Promise<void> {
         if (task.state !== CodyTaskState.ready) {
             return
@@ -255,18 +335,6 @@ export class FixupController
         return editOk
     }
 
-    /**
-     * Overwrites the selectionRange of the FixupTask
-     */
-    public async resetSelectionRange(taskid: string, newRange: vscode.Range): Promise<void> {
-        const task = this.tasks.get(taskid)
-        if (!task) {
-            return undefined
-        }
-        task.selectionRange = newRange
-        return Promise.resolve()
-    }
-
     // Applying fixups from tree item click
     private async applyFixups(treeItem?: FixupTaskTreeItem): Promise<void> {
         // TODO: Add support for applying all fixups
@@ -324,12 +392,20 @@ export class FixupController
     }
 
     // Called by the non-stop recipe to gather current state for the task.
-    public async getTaskRecipeData(id: string): Promise<VsCodeFixupTaskRecipeData | undefined> {
+    public async getTaskRecipeData(
+        id: string,
+        enableSmartSelection: boolean
+    ): Promise<VsCodeFixupTaskRecipeData | undefined> {
         const task = this.tasks.get(id)
         if (!task) {
             return undefined
         }
         const document = await vscode.workspace.openTextDocument(task.fixupFile.uri)
+        if (enableSmartSelection || task.selectionRange) {
+            const newRange = await this.getFixupRecipeSmartSelection(task, task.selectionRange)
+            task.selectionRange = newRange
+        }
+
         const precedingText = document.getText(
             new vscode.Range(
                 task.selectionRange.start.translate({ lineDelta: -Math.min(task.selectionRange.start.line, 50) }),

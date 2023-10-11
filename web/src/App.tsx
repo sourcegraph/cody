@@ -29,9 +29,6 @@ const editor: Editor = {
     getActiveTextEditorSmartSelection() {
         return Promise.resolve(null)
     },
-    getFixupRecipeSmartSelection() {
-        return Promise.resolve(null)
-    },
     getActiveTextEditorSelectionOrEntireFile() {
         return null
     },
