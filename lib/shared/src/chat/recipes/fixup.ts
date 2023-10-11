@@ -69,14 +69,20 @@ export class Fixup implements Recipe {
 
         // Default to the initial task. It will be overwritten if the intent requires modification.
         let finalFixupTask = originalFixupTask
-
         // If the intent is 'edit', then potentially modify the fixup task.
         if (intent === 'edit') {
-            const newRange = await context.editor.getActiveFixupTextEditorSmartSelection()
+            const newRange = await context.editor.getActiveFixupTextEditorSmartSelection(
+                finalFixupTask.selectionRange,
+                finalFixupTask.fileName
+            )
             if (newRange) {
                 await fixupController.resetSelectionRange(taskId, newRange)
-                // Update the fixup task if the range was modified.
-                finalFixupTask = (await fixupController.getTaskRecipeData(taskId)) || finalFixupTask
+                const newTaskData = await fixupController.getTaskRecipeData(taskId)
+                if (newTaskData) {
+                    finalFixupTask = newTaskData
+                } else {
+                    return null
+                }
             }
         }
         const promptText = this.getPrompt(finalFixupTask, intent)

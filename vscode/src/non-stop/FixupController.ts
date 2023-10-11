@@ -256,7 +256,7 @@ export class FixupController
     }
 
     /**
-     * OverWrites the selectionRange of the FixupTask and selects new text corresponding to that range
+     * Overwrites the selectionRange of the FixupTask
      */
     public async resetSelectionRange(taskid: string, newRange: vscode.Range): Promise<void> {
         const task = this.tasks.get(taskid)
