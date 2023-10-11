@@ -242,13 +242,17 @@ class GraphCache {
     }
 
     public evictForOtherDocuments(uri: vscode.Uri): void {
+        const keysToDelete: string[] = []
         // eslint-disable-next-line ban/ban
         this.cache.forEach((_, otherUri) => {
             if (otherUri === uri.toString()) {
                 return
             }
-            this.cache.delete(otherUri)
+            keysToDelete.push(otherUri)
         })
+        for (const key of keysToDelete) {
+            this.cache.delete(key)
+        }
     }
 }
 
