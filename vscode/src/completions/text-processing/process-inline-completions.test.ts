@@ -114,6 +114,12 @@ describe('process completion item', () => {
                 "greatGrandparent": "program",
                 "parent": "formal_parameters",
               },
+              "nodeTypesWithCompletion": {
+                "atCursor": "(",
+                "grandparent": "function_declaration",
+                "greatGrandparent": "program",
+                "parent": "formal_parameters",
+              },
               "parseErrorCount": 0,
               "range": {
                 "end": Position {
@@ -132,6 +138,12 @@ describe('process completion item', () => {
               "nodeTypes": {
                 "atCursor": "(",
                 "grandparent": "function_signature",
+                "greatGrandparent": "program",
+                "parent": "formal_parameters",
+              },
+              "nodeTypesWithCompletion": {
+                "atCursor": "(",
+                "grandparent": "ERROR",
                 "greatGrandparent": "program",
                 "parent": "formal_parameters",
               },
@@ -187,9 +199,46 @@ describe('process completion item', () => {
                 "greatGrandparent": undefined,
                 "parent": "if_statement",
               },
+              "nodeTypesWithCompletion": {
+                "atCursor": "statement_block",
+                "grandparent": "program",
+                "greatGrandparent": undefined,
+                "parent": "if_statement",
+              },
               "parseErrorCount": 0,
               "stopReason": "unknown",
               "truncatedWith": "tree-sitter",
+            },
+          ]
+        `)
+    })
+
+    it('adds parse info to single-line completions', () => {
+        const completions = processCompletions(
+            `
+            const one = █
+        `,
+            ['"one"']
+        )
+
+        expect(completions).toMatchInlineSnapshot(`
+          [
+            {
+              "insertText": "\\"one\\"",
+              "nodeTypes": {
+                "atCursor": "program",
+                "grandparent": undefined,
+                "greatGrandparent": undefined,
+                "parent": undefined,
+              },
+              "nodeTypesWithCompletion": {
+                "atCursor": "variable_declarator",
+                "grandparent": "program",
+                "greatGrandparent": undefined,
+                "parent": "lexical_declaration",
+              },
+              "parseErrorCount": 0,
+              "stopReason": "unknown",
             },
           ]
         `)

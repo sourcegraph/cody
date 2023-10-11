@@ -51,6 +51,12 @@ describe('[getInlineCompletions] completion event', () => {
                   "greatGrandparent": "program",
                   "parent": "statement_block",
                 },
+                "nodeTypesWithCompletion": {
+                  "atCursor": "{",
+                  "grandparent": "function_declaration",
+                  "greatGrandparent": "program",
+                  "parent": "statement_block",
+                },
                 "parseErrorCount": 0,
                 "stopReason": "unit-test",
                 "truncatedWith": "tree-sitter",
