@@ -109,10 +109,16 @@ describe('process completion item', () => {
             {
               "insertText": "array) {",
               "nodeTypes": {
-                "atCursor": "identifier",
-                "grandparent": "formal_parameters",
-                "greatGrandparent": "function_declaration",
-                "parent": "required_parameter",
+                "atCursor": "(",
+                "grandparent": "function_signature",
+                "greatGrandparent": "program",
+                "parent": "formal_parameters",
+              },
+              "nodeTypesWithCompletion": {
+                "atCursor": "(",
+                "grandparent": "function_declaration",
+                "greatGrandparent": "program",
+                "parent": "formal_parameters",
               },
               "parseErrorCount": 0,
               "range": {
@@ -130,10 +136,16 @@ describe('process completion item', () => {
             {
               "insertText": "array) new",
               "nodeTypes": {
-                "atCursor": "identifier",
-                "grandparent": "formal_parameters",
-                "greatGrandparent": "ERROR",
-                "parent": "required_parameter",
+                "atCursor": "(",
+                "grandparent": "function_signature",
+                "greatGrandparent": "program",
+                "parent": "formal_parameters",
+              },
+              "nodeTypesWithCompletion": {
+                "atCursor": "(",
+                "grandparent": "ERROR",
+                "greatGrandparent": "program",
+                "parent": "formal_parameters",
               },
               "parseErrorCount": 1,
               "range": {
@@ -182,14 +194,46 @@ describe('process completion item', () => {
           }",
               "lineTruncatedCount": 2,
               "nodeTypes": {
-                "atCursor": "{",
-                "grandparent": "if_statement",
-                "greatGrandparent": "program",
-                "parent": "statement_block",
+                "atCursor": "statement_block",
+                "grandparent": "program",
+                "greatGrandparent": undefined,
+                "parent": "if_statement",
+              },
+              "nodeTypesWithCompletion": {
+                "atCursor": "statement_block",
+                "grandparent": "program",
+                "greatGrandparent": undefined,
+                "parent": "if_statement",
               },
               "parseErrorCount": 0,
               "stopReason": "unknown",
               "truncatedWith": "tree-sitter",
+            },
+          ]
+        `)
+    })
+
+    it('adds parse info to single-line completions', () => {
+        const completions = processCompletions('const one = █', ['"one"'])
+
+        expect(completions).toMatchInlineSnapshot(`
+          [
+            {
+              "insertText": "\\"one\\"",
+              "nodeTypes": {
+                "atCursor": "program",
+                "grandparent": undefined,
+                "greatGrandparent": undefined,
+                "parent": undefined,
+              },
+              "nodeTypesWithCompletion": {
+                "atCursor": "variable_declarator",
+                "grandparent": "program",
+                "greatGrandparent": undefined,
+                "parent": "lexical_declaration",
+              },
+              "parseErrorCount": 0,
+              "stopReason": "unknown",
             },
           ]
         `)
