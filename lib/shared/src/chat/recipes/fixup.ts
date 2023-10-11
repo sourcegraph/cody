@@ -75,9 +75,9 @@ export class Fixup implements Recipe {
             )
             if (newRange) {
                 await fixupController.resetSelectionRange(taskId, newRange)
-                const newTaskData = await fixupController.getTaskRecipeData(taskId)
-                if (newTaskData) {
-                    fixupTask = newTaskData
+                const fixupTaskwithUpdatedSelectionRange = await fixupController.getTaskRecipeData(taskId)
+                if (fixupTaskwithUpdatedSelectionRange) {
+                    fixupTask = fixupTaskwithUpdatedSelectionRange
                 } else {
                     return null
                 }
