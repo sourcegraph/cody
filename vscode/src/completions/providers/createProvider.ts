@@ -23,7 +23,7 @@ export async function createProviderConfig(
         config.autocompleteAdvancedProvider
     )
     if (providerAndModelFromVSCodeConfig) {
-        const { provider, model } = providerAndModelFromVSCodeConfig
+        const { provider, model, starcoderExtendedTokenWindow } = providerAndModelFromVSCodeConfig
 
         switch (provider) {
             case 'unstable-codegen': {
@@ -46,6 +46,7 @@ export async function createProviderConfig(
                 return createFireworksProviderConfig({
                     client,
                     model: config.autocompleteAdvancedModel ?? model ?? null,
+                    starcoderExtendedTokenWindow,
                 })
             }
             case 'anthropic': {
@@ -117,20 +118,24 @@ export async function createProviderConfig(
     })
 }
 
-async function resolveDefaultProviderFromVSCodeConfigOrFeatureFlags(
-    configuredProvider: string | null
-): Promise<{ provider: string; model?: FireworksOptions['model'] } | null> {
+async function resolveDefaultProviderFromVSCodeConfigOrFeatureFlags(configuredProvider: string | null): Promise<{
+    provider: string
+    model?: FireworksOptions['model']
+    starcoderExtendedTokenWindow?: boolean
+} | null> {
     if (configuredProvider) {
         return { provider: configuredProvider }
     }
 
-    const [starCoder7b, starCoder16b, starCoderHybrid, llamaCode7b, llamaCode13b] = await Promise.all([
-        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteStarCoder7B),
-        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteStarCoder16B),
-        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteStarCoderHybrid),
-        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteLlamaCode7B),
-        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteLlamaCode13B),
-    ])
+    const [starCoder7b, starCoder16b, starCoderHybrid, llamaCode7b, llamaCode13b, starcoderExtendedTokenWindow] =
+        await Promise.all([
+            featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteStarCoder7B),
+            featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteStarCoder16B),
+            featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteStarCoderHybrid),
+            featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteLlamaCode7B),
+            featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteLlamaCode13B),
+            featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteStarCoderExtendedTokenWindow),
+        ])
 
     if (starCoder7b || starCoder16b || starCoderHybrid || llamaCode7b || llamaCode13b) {
         const model = starCoder7b
@@ -142,7 +147,7 @@ async function resolveDefaultProviderFromVSCodeConfigOrFeatureFlags(
             : llamaCode7b
             ? 'llama-code-7b'
             : 'llama-code-13b'
-        return { provider: 'fireworks', model }
+        return { provider: 'fireworks', model, starcoderExtendedTokenWindow }
     }
 
     return null
