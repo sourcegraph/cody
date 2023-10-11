@@ -2,12 +2,9 @@ import * as anthropic from '@anthropic-ai/sdk'
 
 import { tokensToChars } from '@sourcegraph/cody-shared/src/prompt/constants'
 import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
-import {
-    CompletionParameters,
-    CompletionResponse,
-} from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
+import { CompletionResponse } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
 
-import { CodeCompletionsClient } from '../client'
+import { CodeCompletionsClient, CodeCompletionsParams } from '../client'
 import { canUsePartialCompletion } from '../streaming'
 import {
     CLOSING_CODE_TAG,
@@ -143,18 +140,20 @@ export class AnthropicProvider extends Provider {
             throw new Error(`prompt length (${prompt.length}) exceeded maximum character length (${this.promptChars})`)
         }
 
-        const args: CompletionParameters = this.options.multiline
+        const args: CodeCompletionsParams = this.options.multiline
             ? {
                   temperature: 0.5,
                   messages: prompt,
                   maxTokensToSample: MAX_RESPONSE_TOKENS,
                   stopSequences: MULTI_LINE_STOP_SEQUENCES,
+                  timeoutMs: 15000,
               }
             : {
                   temperature: 0.5,
                   messages: prompt,
                   maxTokensToSample: Math.min(50, MAX_RESPONSE_TOKENS),
                   stopSequences: SINGLE_LINE_STOP_SEQUENCES,
+                  timeoutMs: 5000,
               }
         tracer?.params(args)
 
@@ -181,7 +180,7 @@ export class AnthropicProvider extends Provider {
 
     private async fetchAndProcessCompletions(
         client: Pick<CodeCompletionsClient, 'complete'>,
-        params: CompletionParameters,
+        params: CodeCompletionsParams,
         abortSignal: AbortSignal
     ): Promise<CompletionResponse> {
         // The Async executor is required to return the completion early if a partial result from SSE can be used.

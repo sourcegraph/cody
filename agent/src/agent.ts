@@ -220,7 +220,7 @@ export class Agent extends MessageHandler {
                 return { items, completionEvent: (result as any)?.completionEvent }
             } catch (error) {
                 console.log('autocomplete failed', error)
-                return { items: [] }
+                return Promise.reject(error)
             }
         })
 

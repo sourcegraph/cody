@@ -329,6 +329,11 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         this.isMessageInProgress = true
         this.transcript.addInteraction(interaction)
 
+        const contextSummary = {
+            embeddings: 0,
+            local: 0,
+        }
+
         // Check whether or not to connect to LLM backend for responses
         // Ex: performing fuzzy / context-search does not require responses from LLM backend
         switch (recipeId) {
@@ -347,9 +352,17 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
                 this.transcript.setUsedContextFilesForLastInteraction(contextFiles, preciseContexts)
                 this.sendPrompt(prompt, interaction.getAssistantMessage().prefix ?? '', recipe.multiplexerTopic)
                 await this.saveTranscriptToChatHistory()
+
+                contextFiles.map(file => {
+                    if (file.source) {
+                        contextSummary.embeddings++
+                    } else {
+                        contextSummary.local++
+                    }
+                })
             }
         }
-        telemetryService.log(`CodyVSCodeExtension:recipe:${recipe.id}:executed`)
+        telemetryService.log(`CodyVSCodeExtension:recipe:${recipe.id}:executed`, { contextSummary })
     }
 
     protected async runRecipeForSuggestion(recipeId: RecipeID, humanChatInput: string = ''): Promise<void> {

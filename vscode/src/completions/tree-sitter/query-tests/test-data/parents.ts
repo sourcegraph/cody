@@ -75,13 +75,18 @@ export function whatIf() {
 // ------------------------------------
 // Captures the whole try_statement block
 
-export function tryHard() {
+export function tryHard(message: string) {
     try {
     //  |
         new Doggo()
     } catch (error) {
         console.error('Opps!')
     } finally {
-        console.log('Done trying...')
+        console.log(message)
     }
 }
+
+// ------------------------------------
+
+tryHard('Hello')
+//             |
