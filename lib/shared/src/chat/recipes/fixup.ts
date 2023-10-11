@@ -53,7 +53,8 @@ export class Fixup implements Recipe {
         }
 
         const intent = await this.fetchRecipeIntent(fixupController, taskId, context)
-        const fixupTask = await fixupController.getTaskRecipeData(taskId, intent === 'edit')
+        const enableSmartSelection = intent === 'edit'
+        const fixupTask = await fixupController.getTaskRecipeData(taskId, enableSmartSelection)
 
         if (!fixupTask || !intent) {
             return null

@@ -225,7 +225,7 @@ export class FixupController
     }
 
     /**
-     * This function retrieves a "smart" selection given the selectionRange and the fileName for a fixup recipe.
+     * This function retrieves a "smart" selection a fixup recipe.
      * The idea of a "smart" selection is to look at both the start and end positions of the current selection,
      * and attempt to expand those positions to encompass more meaningful chunks of code, such as folding regions.
      *
