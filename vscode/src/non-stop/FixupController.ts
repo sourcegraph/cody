@@ -236,7 +236,7 @@ export class FixupController
      *
      * @returns A Promise that resolves to an `vscode.Range` which represents the combined "smart" selection.
      */
-    private async getFixupRecipeSmartSelection(task: FixupTask, selectionRange: vscode.Range): Promise<vscode.Range> {
+    private async getFixupTaskSmartSelection(task: FixupTask, selectionRange: vscode.Range): Promise<vscode.Range> {
         const fileName = task.fixupFile.uri.fsPath
         const documentUri = vscode.Uri.file(fileName)
 
@@ -409,7 +409,7 @@ export class FixupController
         }
         const document = await vscode.workspace.openTextDocument(task.fixupFile.uri)
         if (enableSmartSelection || task.selectionRange) {
-            const newRange = await this.getFixupRecipeSmartSelection(task, task.selectionRange)
+            const newRange = await this.getFixupTaskSmartSelection(task, task.selectionRange)
             task.selectionRange = newRange
         }
 
