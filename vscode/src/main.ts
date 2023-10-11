@@ -27,12 +27,7 @@ import { GuardrailsProvider } from './services/GuardrailsProvider'
 import { Comment, InlineController } from './services/InlineController'
 import { LocalAppSetupPublisher } from './services/LocalAppSetupPublisher'
 import { localStorage } from './services/LocalStorageProvider'
-import {
-    CODY_ACCESS_TOKEN_SECRET,
-    getAccessToken,
-    secretStorage,
-    VSCodeSecretStorage,
-} from './services/SecretStorageProvider'
+import { getAccessToken, secretStorage, VSCodeSecretStorage } from './services/SecretStorageProvider'
 import { createStatusBar } from './services/StatusBar'
 import { createOrUpdateEventLogger, telemetryService } from './services/telemetry'
 import { TestSupport } from './test-support'
@@ -309,9 +304,7 @@ const register = async (
         }),
         // Tests
         // Access token - this is only used in configuration tests
-        vscode.commands.registerCommand('cody.test.token', async token =>
-            secretStorage.store(CODY_ACCESS_TOKEN_SECRET, token)
-        ),
+        vscode.commands.registerCommand('cody.test.token', async (url, token) => authProvider.auth(url, token)),
         // Auth
         vscode.commands.registerCommand('cody.auth.signin', () => authProvider.signinMenu()),
         vscode.commands.registerCommand('cody.auth.signout', () => authProvider.signoutMenu()),

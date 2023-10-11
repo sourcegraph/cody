@@ -1,0 +1,12 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "sourceMap": true,
+    "rootDir": ".",
+    "outDir": "../../dist/tsc/test/benchmark",
+    "types": ["node"],
+  },
+  "references": [{ "path": "../../" }, { "path": "../../../lib/shared" }],
+  "include": ["**/*.ts"],
+  "exclude": ["datasets", "fixtures"],
+}

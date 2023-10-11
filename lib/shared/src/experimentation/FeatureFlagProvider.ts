@@ -41,7 +41,7 @@ export class FeatureFlagProvider {
     }
 
     public async evaluateFeatureFlag(flagName: FeatureFlag): Promise<boolean> {
-        if (!this.apiClient.isDotCom()) {
+        if (!this.apiClient.isDotCom() || process.env.BENCHMARK_DISABLE_FEATURE_FLAGS) {
             return false
         }
 

@@ -26,6 +26,7 @@ const config = {
       __dirname + '/vscode/tsconfig.json',
       __dirname + '/vscode/test/integration/tsconfig.json',
       __dirname + '/vscode/test/completions/tsconfig.json',
+      __dirname + '/vscode/test/benchmark/tsconfig.json',
       __dirname + '/vscode/scripts/tsconfig.json',
       __dirname + '/web/tsconfig.json',
       __dirname + '/tsconfig.json',
