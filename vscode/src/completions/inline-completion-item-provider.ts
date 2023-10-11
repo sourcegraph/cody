@@ -139,11 +139,11 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
             featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteIncreasedDebounceTimeEnabled),
             featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteSyntacticTriggers),
         ]
-        const minLatencyFlagsPromises = [
-            featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteUserLatency),
-            featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteLanguageLatency),
-            featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteProviderLatency),
-        ]
+        const minLatencyFlagsPromises = {
+            user: featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteUserLatency),
+            language: featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteLanguageLatency),
+            provider: featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteProviderLatency),
+        }
 
         const tracer = this.config.tracer ? createTracerForInvocation(this.config.tracer) : undefined
         const graphContextFetcher = this.config.graphContextFetcher ?? undefined
@@ -258,15 +258,13 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
             // latency so that we don't show a result before the user has paused typing for a brief
             // moment.
             if (result.source !== InlineCompletionsResultSource.LastCandidate) {
-                const [userLatencyFlag, languageLatencyFlag, providerLatencyFlag] =
-                    await Promise.all(minLatencyFlagsPromises)
                 const latencyFeatureFlags: LatencyFeatureFlags = {
-                    user: userLatencyFlag,
-                    language: languageLatencyFlag,
-                    provider: providerLatencyFlag,
+                    user: await minLatencyFlagsPromises.user,
+                    language: await minLatencyFlagsPromises.language,
+                    provider: await minLatencyFlagsPromises.provider,
                 }
 
-                const isMinLatencyEnabled = userLatencyFlag || languageLatencyFlag || providerLatencyFlag
+                const isMinLatencyEnabled = latencyFeatureFlags.user || latencyFeatureFlags.language || latencyFeatureFlags.provider
                 if (triggerKind === TriggerKind.Automatic && isMinLatencyEnabled) {
                     const minimumLatency = getLatency(
                         latencyFeatureFlags,
