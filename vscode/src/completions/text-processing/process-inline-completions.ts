@@ -4,7 +4,8 @@ import { dedupeWith } from '@sourcegraph/cody-shared/src/common'
 
 import { DocumentContext } from '../get-current-doc-context'
 import { ItemPostProcessingInfo } from '../logger'
-import { astGetters } from '../tree-sitter/ast-getters'
+import { getNodeAtCursorAndParents } from '../tree-sitter/ast-getters'
+import { asPoint, getCachedParseTreeForDocument } from '../tree-sitter/parse-tree-cache'
 import { getDocumentQuerySDK } from '../tree-sitter/query-sdk'
 import { Completion, InlineCompletionItem } from '../types'
 
@@ -88,9 +89,13 @@ function processCompletion(params: ProcessItemParams): InlineCompletionItemWithA
     let { insertText } = parsed
     const initialLineCount = insertText.split('\n').length
 
-    if (parsed.tree && parsed.points) {
-        const { tree, points } = parsed
-        const captures = astGetters.getNodeAtCursorAndParents(tree.rootNode, points?.trigger || points?.start)
+    // Use the parse tree without the pasted completion to get surrounding node types.
+    const parseTreeCache = getCachedParseTreeForDocument(document)
+    if (parseTreeCache) {
+        const captures = getNodeAtCursorAndParents(
+            parseTreeCache.tree.rootNode,
+            asPoint(position.translate(undefined, -1))
+        )
 
         if (captures.length > 0) {
             const [atCursor, ...parents] = captures

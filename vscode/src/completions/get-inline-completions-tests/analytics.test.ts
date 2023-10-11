@@ -14,7 +14,7 @@ describe('[getInlineCompletions] completion event', () => {
         const spy = vi.spyOn(CompletionLogger, 'loaded')
 
         await getInlineCompletions(
-            params('function foo() {█', [
+            params('function foo() {█}', [
                 {
                     completion: 'console.log(bar)\nreturn false}',
                     stopReason: 'unit-test',
