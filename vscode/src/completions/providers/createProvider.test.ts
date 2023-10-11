@@ -82,28 +82,6 @@ describe('createProviderConfig', () => {
             expect(provider?.model).toBe('claude-instant-infill')
         })
 
-        it('returns "codegen" provider config if the corresponding provider name and endpoint are specified', async () => {
-            const provider = await createProviderConfig(
-                getVSCodeSettings({
-                    autocompleteAdvancedProvider: 'unstable-codegen',
-                    autocompleteAdvancedServerEndpoint: 'https://unstable-codegen.com',
-                }),
-                dummyCodeCompletionsClient,
-                {}
-            )
-            expect(provider?.identifier).toBe('codegen')
-            expect(provider?.model).toBe('codegen')
-        })
-
-        it('returns null if provider is "unstable-codegen", but the server endpoint is not set', async () => {
-            const provider = await createProviderConfig(
-                getVSCodeSettings({ autocompleteAdvancedProvider: 'unstable-codegen' }),
-                dummyCodeCompletionsClient,
-                {}
-            )
-            expect(provider).toBeNull()
-        })
-
         it('returns "fireworks" provider config and corresponding model if specified', async () => {
             const provider = await createProviderConfig(
                 getVSCodeSettings({
@@ -156,14 +134,14 @@ describe('createProviderConfig', () => {
         it('provider specified in VSCode settings takes precedence over the one defined in the site config', async () => {
             const provider = await createProviderConfig(
                 getVSCodeSettings({
-                    autocompleteAdvancedProvider: 'unstable-codegen',
-                    autocompleteAdvancedServerEndpoint: 'https://unstable-codegen.com',
+                    autocompleteAdvancedProvider: 'unstable-openai',
+                    autocompleteAdvancedServerEndpoint: 'https://unstable-openai.com',
                 }),
                 dummyCodeCompletionsClient,
                 { provider: 'azure-open-ai', completionModel: 'gpt-35-turbo-test' }
             )
-            expect(provider?.identifier).toBe('codegen')
-            expect(provider?.model).toBe('codegen')
+            expect(provider?.identifier).toBe('openai')
+            expect(provider?.model).toBe('openai')
         })
     })
 
