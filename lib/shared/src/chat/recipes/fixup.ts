@@ -69,7 +69,7 @@ export class Fixup implements Recipe {
 
         // If the intent is 'edit', then potentially modify the fixup task.
         if (intent === 'edit') {
-            const newRange = await context.editor.getActiveFixupTextEditorSmartSelection(
+            const newRange = await context.editor.getFixupRecipeSmartSelection(
                 fixupTask.selectionRange,
                 fixupTask.fileName
             )

@@ -107,7 +107,7 @@ export interface Editor<
     getActiveTextEditor(): ActiveTextEditor | null
     getActiveTextEditorSelection(): ActiveTextEditorSelection | null
     getActiveTextEditorSmartSelection(): Promise<ActiveTextEditorSelection | null>
-    getActiveFixupTextEditorSmartSelection(
+    getFixupRecipeSmartSelection(
         selectionRange: ActiveTextEditorSelectionRange,
         fileName: string
     ): Promise<vscode.Range | null>
@@ -163,7 +163,7 @@ export class NoopEditor implements Editor {
         return Promise.resolve(null)
     }
 
-    public getActiveFixupTextEditorSmartSelection(
+    public getFixupRecipeSmartSelection(
         selectionRange: ActiveTextEditorSelectionRange,
         fileName: string
     ): Promise<vscode.Range | null> {

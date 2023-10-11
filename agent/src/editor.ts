@@ -100,7 +100,7 @@ export class AgentEditor implements Editor {
         throw new Error('Method not implemented.')
     }
 
-    public getActiveFixupTextEditorSmartSelection(
+    public getFixupRecipeSmartSelection(
         selectionRange: ActiveTextEditorSelectionRange,
         fileName: string
     ): Promise<vscode.Range | null> {

@@ -158,19 +158,19 @@ export class VSCodeEditor implements Editor<InlineController, FixupController, C
     }
 
     /**
-     * This function retrieves a "smart" selection given the selectionRange and the fileName
+     * This function retrieves a "smart" selection given the selectionRange and the fileName for a fixup recipe.
      * The idea of a "smart" selection is to look at both the start and end positions of the current selection,
      * and attempt to expand those positions to encompass more meaningful chunks of code, such as folding regions.
      *
      * The function does the following:
      * 1. Finds the document URI from it's fileName
-     * 2. If the selection starts in a folding range, moves the selection start back to the start of that folding range.
-     * 3. If the selection ends in a folding range, moves the selection end forward to the end of that folding range.
+     * 2. If the selection starts in a folding range, moves the selection start position back to the start of that folding range.
+     * 3. If the selection ends in a folding range, moves the selection end positionforward to the end of that folding range.
      *
      * @returns A Promise that resolves to an `vscode.Range` which represents the combined "smart" selection.
      *          Returns null if selectionRange is null
      */
-    public async getActiveFixupTextEditorSmartSelection(
+    public async getFixupRecipeSmartSelection(
         selectionRange: ActiveTextEditorSelectionRange,
         fileName: string
     ): Promise<vscode.Range | null> {
@@ -179,20 +179,28 @@ export class VSCodeEditor implements Editor<InlineController, FixupController, C
         }
         const documentUri = vscode.Uri.file(fileName)
 
-        // Try to retrieve a folding range for the start line of the current selection.
-        const activeCursorStartLine = selectionRange.start.line
-        const foldingRangeStart = (await getSmartSelection(documentUri, activeCursorStartLine)) || selectionRange
+        // Retreive the start position of the current selection
+        const activeCursorStartPosition = selectionRange.start
+        // If we find a new expanded selection positon then we set it as the new start position
+        // and if we don't then we fallback to the original selection made by the user
+        const newSelectionStartingPosition =
+            (await getSmartSelection(documentUri, activeCursorStartPosition.line))?.start || selectionRange.start
 
-        // Similarly, try to retrieve a folding range for the ending line of the current selection.
-        const activeCursorEndLine = selectionRange.end.line
-        const foldingRangeEnd = (await getSmartSelection(documentUri, activeCursorEndLine)) || selectionRange
+        // Retreive the ending line of the current selection
+        const activeCursorEndPosition = selectionRange.end
+        // If we find a new expanded selection positon then we set it as the new ending position
+        // and if we don't then we fallback to the original selection made by the user
+        const newSelectionEndingPosition =
+            (await getSmartSelection(documentUri, activeCursorEndPosition.line))?.end || selectionRange.end
 
-        // Create a new combined selection range that starts from the beginning of the folding range at the start position
+        // Create a new range that starts from the beginning of the folding range at the start position
         // and ends at the end of the folding range at the end position.
-        const combinedFoldingRange = new vscode.Selection(foldingRangeStart.start.line, 0, foldingRangeEnd.end.line, 0)
-        return combinedFoldingRange
-            ? new vscode.Range(combinedFoldingRange.start.line, 0, combinedFoldingRange.end.line, 0)
-            : null
+        return new vscode.Range(
+            newSelectionStartingPosition.line,
+            newSelectionStartingPosition.character,
+            newSelectionEndingPosition.line,
+            newSelectionEndingPosition.character
+        )
     }
 
     public getActiveTextEditorSelectionOrEntireFile(): ActiveTextEditorSelection | null {
