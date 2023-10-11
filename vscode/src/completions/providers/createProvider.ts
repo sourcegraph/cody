@@ -8,7 +8,6 @@ import { CodeCompletionsClient } from '../client'
 import { createProviderConfig as createAnthropicProviderConfig } from './anthropic'
 import { createProviderConfig as createFireworksProviderConfig, FireworksOptions } from './fireworks'
 import { ProviderConfig } from './provider'
-import { createProviderConfig as createUnstableCodeGenProviderConfig } from './unstable-codegen'
 import { createProviderConfig as createUnstableOpenAIProviderConfig } from './unstable-openai'
 
 export async function createProviderConfig(
@@ -26,17 +25,6 @@ export async function createProviderConfig(
         const { provider, model, starcoderExtendedTokenWindow } = providerAndModelFromVSCodeConfig
 
         switch (provider) {
-            case 'unstable-codegen': {
-                if (config.autocompleteAdvancedServerEndpoint !== null) {
-                    return createUnstableCodeGenProviderConfig(config.autocompleteAdvancedServerEndpoint)
-                }
-
-                logError(
-                    'createProviderConfig',
-                    'Provider `unstable-codegen` can not be used without configuring `cody.autocomplete.advanced.serverEndpoint`.'
-                )
-                return null
-            }
             case 'unstable-openai': {
                 return createUnstableOpenAIProviderConfig({
                     client,

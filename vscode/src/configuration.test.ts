@@ -95,7 +95,7 @@ describe('getConfiguration', () => {
                     case 'cody.chat.preInstruction':
                         return 'My name is Jeff.'
                     case 'cody.autocomplete.advanced.provider':
-                        return 'unstable-codegen'
+                        return 'unstable-openai'
                     case 'cody.autocomplete.advanced.serverEndpoint':
                         return 'https://example.com/llm'
                     case 'cody.autocomplete.advanced.model':
@@ -143,7 +143,7 @@ describe('getConfiguration', () => {
             debugVerbose: true,
             debugFilter: /.*/,
             telemetryLevel: 'off',
-            autocompleteAdvancedProvider: 'unstable-codegen',
+            autocompleteAdvancedProvider: 'unstable-openai',
             autocompleteAdvancedServerEndpoint: 'https://example.com/llm',
             autocompleteAdvancedModel: 'starcoder-32b',
             autocompleteAdvancedAccessToken: 'foobar',

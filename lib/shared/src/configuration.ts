@@ -22,7 +22,7 @@ export interface Configuration {
     experimentalGuardrails: boolean
     experimentalNonStop: boolean
     experimentalLocalSymbols: boolean
-    autocompleteAdvancedProvider: 'anthropic' | 'unstable-codegen' | 'fireworks' | 'unstable-openai' | null
+    autocompleteAdvancedProvider: 'anthropic' | 'fireworks' | 'unstable-openai' | null
     autocompleteAdvancedServerEndpoint: string | null
     autocompleteAdvancedModel: string | null
     autocompleteAdvancedAccessToken: string | null

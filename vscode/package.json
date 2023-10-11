@@ -748,7 +748,7 @@
         },
         "cody.proxy": {
           "type": "string",
-          "markdownDeprecationMessage": "The SOCKS proxy endpoint to access server endpoint. This is only supported with `unstable-codegen` provider and only for use with the Cody Agent (for instance with JetBrains plugin). For VS Code please use http.proxy instead."
+          "markdownDeprecationMessage": "The SOCKS proxy endpoint to access server endpoint. This is only supported with some autocomplete providers and only for use with the Cody Agent (for instance with JetBrains plugin). For VS Code please use http.proxy instead."
         },
         "cody.codebase": {
           "order": 2,
@@ -898,7 +898,6 @@
             null,
             "anthropic",
             "fireworks",
-            "unstable-codegen",
             "unstable-openai"
           ],
           "markdownDescription": "The provider used for code autocomplete. Most providers other than `anthropic` require the `cody.autocomplete.advanced.serverEndpoint` and `cody.autocomplete.advanced.accessToken` settings to also be set. Check the Cody output channel for error messages if autocomplete is not working as expected."
