@@ -24,6 +24,9 @@ export async function initExtension(id: string): Promise<void> {
     const ext = vscode.extensions.getExtension(id)
     await ext?.activate()
 
+    // Short delay to allow extensions to activate
+    await new Promise(resolve => setTimeout(resolve, 500))
+
     if (BENCHMARK_EXTENSION_MANUAL_SETUP) {
         return waitForManualExtensionSetupConfirmation()
     }
