@@ -17,6 +17,7 @@ export enum FeatureFlag {
     CodyAutocompleteGraphContext = 'cody-autocomplete-graph-context',
     CodyAutocompleteMinimumLatency = 'cody-autocomplete-minimum-latency',
     CodyAutocompleteSyntacticTriggers = 'cody-autocomplete-syntactic-triggers',
+    CodyAutocompleteStarCoderExtendedTokenWindow = 'cody-autocomplete-starcoder-extended-token-window',
 }
 
 const ONE_HOUR = 60 * 60 * 1000

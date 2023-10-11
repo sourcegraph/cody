@@ -16,10 +16,11 @@ import {
     standardContextSizeHints,
 } from './provider'
 
-export interface UnstableFireworksOptions {
+export interface FireworksOptions {
     model: FireworksModel
     maxContextTokens?: number
     client: Pick<CodeCompletionsClient, 'complete'>
+    starcoderExtendedTokenWindow?: boolean
 }
 
 const PROVIDER_IDENTIFIER = 'fireworks'
@@ -45,16 +46,18 @@ type FireworksModel =
     // `starcoder-hybrid` uses the 16b model for multiline requests and the 7b model for single line
     | 'starcoder-hybrid'
 
-function getMaxContextTokens(model: FireworksModel): number {
+function getMaxContextTokens(model: FireworksModel, starcoderExtendedTokenWindow?: boolean): number {
     switch (model) {
         case 'starcoder-hybrid':
         case 'starcoder-16b':
         case 'starcoder-7b':
         case 'starcoder-3b':
-        case 'starcoder-1b':
+        case 'starcoder-1b': {
             // StarCoder supports up to 8k tokens, we limit it to ~2k for evaluation against
-            // our current Anthropic prompt
-            return 2048
+            // our current Anthropic prompt but allow for 6k for the extended token window as
+            // defined by the feature flag
+            return starcoderExtendedTokenWindow ? 6144 : 2048
+        }
         case 'wizardcoder-15b':
             // TODO: Confirm what the limit is for WizardCoder
             return 2048
@@ -71,12 +74,15 @@ function getMaxContextTokens(model: FireworksModel): number {
 
 const MAX_RESPONSE_TOKENS = 256
 
-export class UnstableFireworksProvider extends Provider {
+export class FireworksProvider extends Provider {
     private model: FireworksModel
     private promptChars: number
     private client: Pick<CodeCompletionsClient, 'complete'>
 
-    constructor(options: ProviderOptions, { model, maxContextTokens, client }: Required<UnstableFireworksOptions>) {
+    constructor(
+        options: ProviderOptions,
+        { model, maxContextTokens, client }: Required<Omit<FireworksOptions, 'starcoderExtendedTokenWindow'>>
+    ) {
         super(options)
         this.model = model
         this.promptChars = tokensToChars(maxContextTokens - MAX_RESPONSE_TOKENS)
@@ -250,7 +256,7 @@ export class UnstableFireworksProvider extends Provider {
 export function createProviderConfig({
     model,
     ...otherOptions
-}: Omit<UnstableFireworksOptions, 'model' | 'maxContextTokens'> & { model: string | null }): ProviderConfig {
+}: Omit<FireworksOptions, 'model' | 'maxContextTokens'> & { model: string | null }): ProviderConfig {
     const resolvedModel =
         model === null || model === ''
             ? 'starcoder-hybrid'
@@ -264,11 +270,11 @@ export function createProviderConfig({
         throw new Error(`Unknown model: \`${model}\``)
     }
 
-    const maxContextTokens = getMaxContextTokens(resolvedModel)
+    const maxContextTokens = getMaxContextTokens(resolvedModel, otherOptions.starcoderExtendedTokenWindow)
 
     return {
         create(options: ProviderOptions) {
-            return new UnstableFireworksProvider(options, { model: resolvedModel, maxContextTokens, ...otherOptions })
+            return new FireworksProvider(options, { model: resolvedModel, maxContextTokens, ...otherOptions })
         },
         contextSizeHints: standardContextSizeHints(maxContextTokens),
         enableExtendedMultilineTriggers: true,
