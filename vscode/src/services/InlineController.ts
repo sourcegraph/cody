@@ -28,12 +28,11 @@ export class InlineController implements VsCodeInlineController {
     // Controller init
     private readonly id = 'cody-inline-chat'
     private readonly label = 'Cody: Inline Chat'
-    private readonly threadLabel =
-        '[TIPS] New Inline Chat: `ctrl + shift + c` | Submit: `cmd + enter` | Hide: `shift + esc`'
+    private readonly threadLabel = '[SHORTCUTS] New Inline Chat: CMD/CTRL+SHIFT+C | Hide: SHIFT+ESC'
     private options = {
         prompt: 'Cody Inline Chat - Ask Cody a question or request inline fix with `/edit` or `/touch`.',
         placeHolder:
-            'Examples: "How can I improve this?", "/edit convert tabs to spaces", "/touch Create 5 different versions of this function". "What does this regex do?"',
+            'Examples: "How can I improve this?", "/edit convert tabs to spaces", "/touch Create 5 different versions of this function". "/explain"',
     }
     private readonly codyIcon: vscode.Uri
     private readonly userIcon: vscode.Uri
