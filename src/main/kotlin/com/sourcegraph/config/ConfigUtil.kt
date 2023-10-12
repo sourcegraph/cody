@@ -42,7 +42,6 @@ object ConfigUtil {
             proxy = UserLevelConfig.getProxy(),
             autocompleteAdvancedServerEndpoint = UserLevelConfig.getAutocompleteServerEndpoint(),
             autocompleteAdvancedAccessToken = UserLevelConfig.getAutocompleteAccessToken(),
-            autocompleteAdvancedEmbeddings = UserLevelConfig.getAutocompleteAdvancedEmbeddings(),
             debug = isCodyDebugEnabled(),
             verboseDebug = isCodyVerboseDebugEnabled(),
             codebase = codyAgentCodebase?.currentCodebase(),

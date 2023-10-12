@@ -8,7 +8,6 @@ data class ExtensionConfiguration(
     var autocompleteAdvancedProvider: String? = null,
     var autocompleteAdvancedServerEndpoint: String? = null,
     var autocompleteAdvancedAccessToken: String? = null,
-    var autocompleteAdvancedEmbeddings: Boolean = false,
     var debug: Boolean? = false,
     var verboseDebug: Boolean? = false,
     var codebase: String? = null

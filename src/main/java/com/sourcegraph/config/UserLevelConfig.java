@@ -33,12 +33,6 @@ public class UserLevelConfig {
         .orElse(null);
   }
 
-  public static boolean getAutocompleteAdvancedEmbeddings() {
-    Properties properties = readProperties();
-    return Boolean.parseBoolean(
-        properties.getProperty("cody.autocomplete.advanced.embeddings", "true"));
-  }
-
   /**
    * Overrides the server endpoint used for generating autocomplete suggestions. This is only
    * supported with the `unstable-codegen` provider right now.
