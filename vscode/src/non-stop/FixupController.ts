@@ -362,11 +362,13 @@ export class FixupController
         if (task.state === CodyTaskState.fixed) {
             this.needsDiffUpdate_.delete(task)
         }
-        if (this.needsDiffUpdate_.size === 0) {
-            this.updateDiffs()
-        }
         if (!this.needsDiffUpdate_.has(task)) {
             this.needsDiffUpdate_.add(task)
+        }
+
+        // Recompute diffs if needed
+        if (this.needsDiffUpdate_.size > 0) {
+            this.updateDiffs()
         }
     }
 
@@ -404,11 +406,9 @@ export class FixupController
             if (this.needsEditor_.has(file)) {
                 this.needsEditor_.delete(file)
                 for (const task of this.tasksForFile(file)) {
-                    if (this.needsDiffUpdate_.size === 0) {
-                        this.updateDiffs()
-                    }
                     this.needsDiffUpdate_.add(task)
                 }
+                this.updateDiffs()
             }
         }
         // Apply any decorations we have to the visible editors.
