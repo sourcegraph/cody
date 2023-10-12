@@ -138,7 +138,7 @@ export class InlineChatViewProvider extends MessageProvider {
      * Unlike the sidebar, this message is displayed as an assistant response.
      * TODO(umpox): Should we render these differently for inline chat? We are limited in UI options.
      */
-    public handleError(errorMsg: string): void {
+    protected handleError(errorMsg: string): void {
         void this.editor.controllers.inline?.error(errorMsg)
     }
 
