@@ -18,13 +18,14 @@
     align-items: center;
     gap: 0.25rem;
     font-weight: normal;
+    color: var(--vscode-sideBar-foreground);
 }
 
 .codebase-icon {
     width: 1rem;
     height: 1rem;
     flex-shrink: 0;
-    color: var(--vscode-sideBar-foreground, inherit);
+    display: inline;
 }
 
 .file,
