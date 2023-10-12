@@ -13,29 +13,20 @@ import { FixupDecorator } from './FixupDecorator'
 import { FixupDocumentEditObserver } from './FixupDocumentEditObserver'
 import { FixupFile } from './FixupFile'
 import { FixupFileObserver } from './FixupFileObserver'
-import { FixupScheduler } from './FixupScheduler'
 import { FixupTask, taskID } from './FixupTask'
 import { FixupTypingUI } from './FixupTypingUI'
-import { FixupFileCollection, FixupIdleTaskRunner, FixupTaskFactory, FixupTextChanged } from './roles'
+import { FixupFileCollection, FixupTaskFactory, FixupTextChanged } from './roles'
 import { FixupTaskTreeItem, TaskViewProvider } from './TaskViewProvider'
 import { CodyTaskState } from './utils'
 
 // This class acts as the factory for Fixup Tasks and handles communication between the Tree View and editor
 export class FixupController
-    implements
-        VsCodeFixupController,
-        FixupFileCollection,
-        FixupIdleTaskRunner,
-        FixupTaskFactory,
-        FixupTextChanged,
-        vscode.Disposable
+    implements VsCodeFixupController, FixupFileCollection, FixupTaskFactory, FixupTextChanged, vscode.Disposable
 {
     private tasks = new Map<taskID, FixupTask>()
     private readonly taskViewProvider: TaskViewProvider
     private readonly files: FixupFileObserver
     private readonly editObserver: FixupDocumentEditObserver
-    // TODO: Make the fixup scheduler use a cooldown timer with a longer delay
-    private readonly scheduler = new FixupScheduler(10)
     private readonly decorator = new FixupDecorator()
     private readonly codelenses = new FixupCodeLenses(this)
     private readonly contentStore = new ContentProvider()
@@ -88,12 +79,6 @@ export class FixupController
 
     public maybeFileForUri(uri: vscode.Uri): FixupFile | undefined {
         return this.files.maybeForUri(uri)
-    }
-
-    // FixupIdleTaskScheduler
-
-    public scheduleIdle<T>(callback: () => T): Promise<T> {
-        return this.scheduler.scheduleIdle(callback)
     }
 
     public async promptUserForTask(): Promise<FixupTask | null> {
@@ -157,14 +142,14 @@ export class FixupController
             this.didUpdateDiff(task)
         }
         if (!diff?.clean) {
-            this.scheduleRespin(task)
+            this.respin(task)
             return undefined
         }
         return diff
     }
 
-    // Schedule a re-spin for diffs with conflicts.
-    private scheduleRespin(task: FixupTask): void {
+    // Re-spin for diffs with conflicts.
+    private respin(task: FixupTask): void {
         const MAX_SPIN_COUNT_PER_TASK = 5
         if (task.spinCount >= MAX_SPIN_COUNT_PER_TASK) {
             telemetryService.log('CodyVSCodeExtension:fixup:respin', { count: task.spinCount })
@@ -378,7 +363,7 @@ export class FixupController
             this.needsDiffUpdate_.delete(task)
         }
         if (this.needsDiffUpdate_.size === 0) {
-            void this.scheduler.scheduleIdle(() => this.updateDiffs())
+            this.updateDiffs()
         }
         if (!this.needsDiffUpdate_.has(task)) {
             this.needsDiffUpdate_.add(task)
@@ -420,7 +405,7 @@ export class FixupController
                 this.needsEditor_.delete(file)
                 for (const task of this.tasksForFile(file)) {
                     if (this.needsDiffUpdate_.size === 0) {
-                        void this.scheduler.scheduleIdle(() => this.updateDiffs())
+                        this.updateDiffs()
                     }
                     this.needsDiffUpdate_.add(task)
                 }
@@ -433,10 +418,7 @@ export class FixupController
     }
 
     private updateDiffs(): void {
-        const deadlineMsec = Date.now() + 500
-
-        while (this.needsDiffUpdate_.size && Date.now() < deadlineMsec) {
-            const task = this.needsDiffUpdate_.keys().next().value as FixupTask
+        for (const task of this.needsDiffUpdate_.keys()) {
             this.needsDiffUpdate_.delete(task)
             const editor = vscode.window.visibleTextEditors.find(editor => editor.document.uri === task.fixupFile.uri)
             if (!editor) {
@@ -458,11 +440,6 @@ export class FixupController
             task.diff = computeDiff(task.original, `${botText}${newLine}`, bufferText, task.selectionRange.start)
             this.didUpdateDiff(task)
         }
-
-        if (this.needsDiffUpdate_.size) {
-            // We did not get through the work; schedule more later.
-            void this.scheduler.scheduleIdle(() => this.updateDiffs())
-        }
     }
 
     private didUpdateDiff(task: FixupTask): void {
@@ -474,8 +451,7 @@ export class FixupController
         }
         this.decorator.didUpdateDiff(task)
         if (!task.diff.clean) {
-            // TODO: If this isn't an in-progress diff, then schedule
-            // a re-spin or notify failure
+            // TODO: If this isn't an in-progress diff, then re-spin or notify failure
             return
         }
     }
