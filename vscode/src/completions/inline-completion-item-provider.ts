@@ -1,6 +1,7 @@
 import { formatDistance } from 'date-fns'
 import * as vscode from 'vscode'
 
+import { isCodyIgnoreFile } from '@sourcegraph/cody-shared/src/chat/context-filter'
 import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
 import { FeatureFlag, featureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
 import { RateLimitError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
@@ -126,6 +127,11 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
         // Making it optional here to execute multiple suggestion in parallel from the CLI script.
         token?: vscode.CancellationToken
     ): Promise<AutocompleteResult | null> {
+        // Do not create item for files that are on the cody ignore list
+        if (isCodyIgnoreFile(document.fileName)) {
+            return null
+        }
+
         // Update the last request
         const lastCompletionRequest = this.lastCompletionRequest
         const completionRequest: CompletionRequest = { document, position, context }

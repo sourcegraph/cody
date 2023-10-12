@@ -1,4 +1,5 @@
 import { ContextFile, ContextMessage, PreciseContext } from '../../codebase-context/messages'
+import { isCodyIgnoreFile } from '../context-filter'
 
 import { ChatMessage, InteractionMessage } from './messages'
 
@@ -22,7 +23,35 @@ export class Interaction {
         private usedContextFiles: ContextFile[],
         private usedPreciseContext: PreciseContext[] = [],
         public readonly timestamp: string = new Date().toISOString()
-    ) {}
+    ) {
+        this.removeCodyIgnoredFiles().catch(() => {})
+    }
+
+    /**
+     * Removes context messages for files that should be ignored.
+     *
+     * Loops through the context messages and builds a new array, omitting any
+     * messages for files that match the CODY_IGNORE files filter.
+     * Also omits the assistant message after any ignored human message.
+     *
+     * This ensures context from ignored files does not get used.
+     */
+    private async removeCodyIgnoredFiles(): Promise<void> {
+        const contextMessages = await this.fullContext
+        const newMessages = []
+        for (let i = 0; i < contextMessages.length; i++) {
+            const message = contextMessages[i]
+            if (message.speaker === 'human' && message.file?.fileName) {
+                // find filesToExclude to see if the filename matches
+                if (isCodyIgnoreFile(message.file?.fileName)) {
+                    i++
+                    continue
+                }
+            }
+            newMessages.push(message)
+        }
+        this.fullContext = Promise.resolve(newMessages)
+    }
 
     public getAssistantMessage(): InteractionMessage {
         return { ...this.assistantMessage }

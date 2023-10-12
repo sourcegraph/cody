@@ -1,5 +1,6 @@
 import type * as vscode from 'vscode'
 
+import { isCodyIgnoreFile } from '@sourcegraph/cody-shared/src/chat/context-filter'
 import {
     ActiveTextEditor,
     ActiveTextEditorDiagnostic,
@@ -34,6 +35,9 @@ export class AgentEditor implements Editor {
 
     private activeDocument(): TextDocument | undefined {
         if (this.agent.workspace.activeDocumentFilePath === null) {
+            return undefined
+        }
+        if (isCodyIgnoreFile(this.agent.workspace.activeDocumentFilePath)) {
             return undefined
         }
         return this.agent.workspace.getDocument(this.agent.workspace.activeDocumentFilePath)

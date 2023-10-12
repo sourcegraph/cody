@@ -1,5 +1,7 @@
 import * as vscode from 'vscode'
 
+import { isCodyIgnoreFile } from '@sourcegraph/cody-shared/src/chat/context-filter'
+
 import { logDebug } from '../../log'
 import { ContextSnippet } from '../types'
 
@@ -45,6 +47,10 @@ export async function getContextFromGraph(options: Options): Promise<GetContextR
     let totalChars = 0
     let includedGraphMatches = 0
     for (const match of graphMatches) {
+        // skip file that is on the ignore list
+        if (isCodyIgnoreFile(match.fileName)) {
+            continue
+        }
         if (totalChars + match.content.length > options.maxChars) {
             continue
         }
