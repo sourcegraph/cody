@@ -217,35 +217,32 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                         />
                     )}
                     {view === 'chat' && (
-                        <>
-                            Embeddings: {contextStatus?.embeddingsEndpoint}
-                            <Chat
-                                messageInProgress={messageInProgress}
-                                messageBeingEdited={messageBeingEdited}
-                                setMessageBeingEdited={setMessageBeingEdited}
-                                transcript={transcript}
-                                contextStatus={contextStatus}
-                                formInput={formInput}
-                                setFormInput={setFormInput}
-                                inputHistory={inputHistory}
-                                setInputHistory={setInputHistory}
-                                vscodeAPI={vscodeAPI}
-                                suggestions={suggestions}
-                                setSuggestions={setSuggestions}
-                                telemetryService={telemetryService}
-                                chatCommands={myPrompts || undefined}
-                                isTranscriptError={isTranscriptError}
-                                applessOnboarding={{
-                                    arm: config.experimentOnboarding,
-                                    endpoint,
-                                    embeddingsEndpoint: contextStatus?.embeddingsEndpoint,
-                                    props: {
-                                        isAppInstalled,
-                                        onboardingPopupProps,
-                                    },
-                                }}
-                            />
-                        </>
+                        <Chat
+                            messageInProgress={messageInProgress}
+                            messageBeingEdited={messageBeingEdited}
+                            setMessageBeingEdited={setMessageBeingEdited}
+                            transcript={transcript}
+                            contextStatus={contextStatus}
+                            formInput={formInput}
+                            setFormInput={setFormInput}
+                            inputHistory={inputHistory}
+                            setInputHistory={setInputHistory}
+                            vscodeAPI={vscodeAPI}
+                            suggestions={suggestions}
+                            setSuggestions={setSuggestions}
+                            telemetryService={telemetryService}
+                            chatCommands={myPrompts || undefined}
+                            isTranscriptError={isTranscriptError}
+                            applessOnboarding={{
+                                arm: config.experimentOnboarding,
+                                endpoint,
+                                embeddingsEndpoint: contextStatus?.embeddingsEndpoint,
+                                props: {
+                                    isAppInstalled,
+                                    onboardingPopupProps,
+                                },
+                            }}
+                        />
                     )}
                 </>
             )}

@@ -453,10 +453,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                     />
                 </div>
                 {ContextStatusComponent ? (
-                    <>
-                        NEW context, has status? {contextStatus ? 'yes' : 'no'}
-                        <ContextStatusComponent {...contextStatusComponentProps} />
-                    </>
+                    <ContextStatusComponent {...contextStatusComponentProps} />
                 ) : (
                     contextStatus && (
                         <ChatInputContext contextStatus={contextStatus} className={chatInputContextClassName} />
