@@ -48,6 +48,13 @@ const SAFETY_PROMPT_TOKENS = 100
 const nonDisplayTopics = new Set(['fixup'])
 
 /**
+ * The types of errors that should be handled from MessageProvider.
+ * `transcript`: Errors that can be displayed directly within a chat transcript, if available.
+ * `system`: Errors that should be handled differently, e.g. alerted to the user.
+ */
+export type MessageErrorType = 'transcript' | 'system'
+
+/**
  * A derived class of MessageProvider must implement these handler methods.
  * This contract ensures that MessageProvider is focused solely on building, sending and receiving messages.
  * It does not assume anything about how those messages will be displayed to the user.
@@ -55,10 +62,9 @@ const nonDisplayTopics = new Set(['fixup'])
 abstract class MessageHandler {
     protected abstract handleTranscript(transcript: ChatMessage[], messageInProgress: boolean): void
     protected abstract handleHistory(history: UserLocalHistory): void
-    protected abstract handleError(errorMsg: string): void
     protected abstract handleSuggestions(suggestions: string[]): void
     protected abstract handleCodyCommands(prompts: [string, CodyPrompt][]): void
-    protected abstract handleTranscriptErrors(transciptError: boolean): void
+    protected abstract handleError(errorMsg: string, type: MessageErrorType): void
 }
 
 export interface MessageProviderOptions {
@@ -249,7 +255,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
                     err = 'Cody could not respond due to network error.'
                 }
                 // Display error message as assistant response
-                this.transcript.addErrorAsAssistantResponse(err)
+                this.handleError(err, 'transcript')
                 // We ignore embeddings errors in this instance because we're already showing an
                 // error message and don't want to overwhelm the user.
                 void this.onCompletionEnd(true)
@@ -287,7 +293,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
 
     public async executeRecipe(recipeId: RecipeID, humanChatInput = ''): Promise<void> {
         if (this.isMessageInProgress) {
-            this.handleError('Cannot execute multiple recipes. Please wait for the current recipe to finish.')
+            this.handleError('Cannot execute multiple recipes. Please wait for the current recipe to finish.', 'system')
             return
         }
 
@@ -561,7 +567,6 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         })
         this.transcript.addInteraction(interaction || customInteraction)
         this.sendTranscript()
-        this.handleTranscriptErrors(true)
         await this.saveTranscriptToChatHistory()
     }
 
@@ -680,8 +685,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         const searchErrors = this.contextProvider.context.getEmbeddingSearchErrors()
         // Display error message as assistant response for users with indexed codebase but getting search errors
         if (this.contextProvider.context.checkEmbeddingsConnection() && searchErrors) {
-            this.transcript.addErrorAsAssistantResponse(searchErrors)
-            this.handleTranscriptErrors(true)
+            this.handleError(searchErrors, 'transcript')
             logError('ChatViewProvider:onLogEmbeddingsErrors', '', { verbose: searchErrors })
         }
     }

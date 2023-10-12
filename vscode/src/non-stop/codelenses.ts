@@ -25,7 +25,7 @@ export function getLensesForTask(task: FixupTask): vscode.CodeLens[] {
             return [title]
         }
         case CodyTaskState.error: {
-            const title = getErrorLens(codeLensRange)
+            const title = getErrorLens(codeLensRange, task.id)
             const discard = getDiscardLens(codeLensRange, task.id)
             return [title, discard]
         }
@@ -35,13 +35,12 @@ export function getLensesForTask(task: FixupTask): vscode.CodeLens[] {
 }
 
 // List of lenses
-// TODO: Replace cody.focus with appropriate tasks
-// TODO (bea) send error messages to the chat UI so that they can see the task progress in the chat and chat history
-function getErrorLens(codeLensRange: vscode.Range): vscode.CodeLens {
+function getErrorLens(codeLensRange: vscode.Range, id: string): vscode.CodeLens {
     const lens = new vscode.CodeLens(codeLensRange)
     lens.command = {
         title: '$(warning) Applying edits failed',
-        command: 'cody.focus',
+        command: 'cody.fixup.codelens.show-error',
+        arguments: [id],
     }
     return lens
 }

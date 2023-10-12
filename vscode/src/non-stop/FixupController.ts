@@ -54,7 +54,8 @@ export class FixupController
             vscode.commands.registerCommand('cody.fixup.diff', treeItem => this.showDiff(treeItem)),
             vscode.commands.registerCommand('cody.fixup.codelens.apply', id => this.apply(id)),
             vscode.commands.registerCommand('cody.fixup.codelens.diff', id => this.diff(id)),
-            vscode.commands.registerCommand('cody.fixup.codelens.cancel', id => this.cancel(id))
+            vscode.commands.registerCommand('cody.fixup.codelens.cancel', id => this.cancel(id)),
+            vscode.commands.registerCommand('cody.fixup.codelens.show-error', id => this.showError(id))
         )
         // Observe file renaming and deletion
         this.files = new FixupFileObserver()
@@ -296,8 +297,27 @@ export class FixupController
         if (!task) {
             return
         }
-        this.setTaskState(task, task.state === CodyTaskState.error ? CodyTaskState.error : CodyTaskState.fixed)
+        this.setTaskState(task, CodyTaskState.fixed)
         this.discard(task)
+    }
+
+    public error(id: taskID, message: string): void {
+        const task = this.tasks.get(id)
+        if (!task) {
+            return
+        }
+
+        task.error = message
+        this.setTaskState(task, CodyTaskState.error)
+    }
+
+    private showError(id: taskID): void {
+        const task = this.tasks.get(id)
+        if (!task?.error) {
+            return
+        }
+
+        void vscode.window.showErrorMessage('Error applying edits:', { modal: true, detail: task.error })
     }
 
     private discard(task: FixupTask): void {
