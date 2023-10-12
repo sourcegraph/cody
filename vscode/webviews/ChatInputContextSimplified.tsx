@@ -15,7 +15,7 @@ import {
     InstallCodyAppPopup,
     OnboardingPopupProps,
 } from './Popups/OnboardingExperimentPopups'
-import { PopupOpenProps } from './Popups/Popup'
+import { Popup, PopupOpenProps } from './Popups/Popup'
 
 import styles from './ChatInputContextSimplified.module.css'
 import popupStyles from './Popups/Popup.module.css'
@@ -63,7 +63,26 @@ export const ChatInputContextSimplified: React.FC<ChatInputContextSimplifiedProp
     let codebaseState: React.ReactNode
     if (!contextStatus?.codebase) {
         // No codebase
-        codebaseState = <CodebaseState icon={mdiDatabaseOffOutline} />
+        const popup: React.FC<OnboardingPopupProps & PopupOpenProps> = ({ isOpen, onDismiss }) => (
+            <Popup
+                isOpen={isOpen}
+                onDismiss={onDismiss}
+                title="No Repository Found"
+                text="Open a git repository that has a remote to enable indexing."
+                linkText=""
+                linkHref=""
+            />
+        )
+
+        codebaseState = (
+            <CodebaseState
+                icon={mdiDatabaseOffOutline}
+                popup={popup}
+                popupOpen={popupOpen}
+                togglePopup={togglePopup}
+                onboardingPopupProps={onboardingPopupProps}
+            />
+        )
     } else if (contextStatus?.codebase && !contextStatus?.embeddingsEndpoint) {
         // Codebase, but no embeddings
         const repoName = contextStatus.codebase

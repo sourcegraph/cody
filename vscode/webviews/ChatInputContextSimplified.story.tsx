@@ -21,6 +21,23 @@ const onboardingCallbacks = {
     reloadStatus: () => alert('reload'),
 }
 
+export const ChatInputContextNoRepoOpen: StoryObj<typeof ChatInputContextSimplified> = {
+    render: () => {
+        const contextStatus: ChatContextStatus = {
+            connection: false,
+        }
+        return (
+            <div className={styles.testDarkSidebarBottom}>
+                <ChatInputContextSimplified
+                    isAppInstalled={false}
+                    contextStatus={contextStatus}
+                    onboardingPopupProps={onboardingCallbacks}
+                />
+            </div>
+        )
+    },
+}
+
 export const ChatInputContextAppNotInstalled: StoryObj<typeof ChatInputContextSimplified> = {
     render: () => {
         const contextStatus: ChatContextStatus = {
