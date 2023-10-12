@@ -27,7 +27,8 @@ class EditCodebaseContextAction(val project: Project) : AbstractAction("Cody Con
   private val currentIndicator: AtomicReference<ProgressIndicator> = AtomicReference()
 
   private inner class EditCodebaseDialog : DialogWrapper(null, true) {
-    val gitURL = ExtendableTextField(CodyAgent.getClient(project).codebase?.getUrl() ?: "", 40)
+    val gitURL =
+        ExtendableTextField(CodyAgent.getClient(project).codebase?.currentCodebase() ?: "", 40)
     val loadingLayerUI = LoadingLayerUI()
     val layeredGitURL = JLayer(gitURL, loadingLayerUI)
 
@@ -92,7 +93,7 @@ class EditCodebaseContextAction(val project: Project) : AbstractAction("Cody Con
     }
 
     override fun doOKAction() {
-      CodyAgent.getClient(project).codebase?.setUrl(gitURL.text)
+      CodyAgent.getClient(project).codebase?.onNewExplicitCodebase(gitURL.text)
       super.doOKAction()
     }
 
