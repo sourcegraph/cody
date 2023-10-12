@@ -37,6 +37,7 @@ export class LspLightGraphCache implements vscode.Disposable, GraphContextFetche
     }
 
     private constructor(
+        // All arguments are optional, because they are only used in tests.
         private window: Pick<typeof vscode.window, 'onDidChangeTextEditorSelection'> = vscode.window,
         private workspace: Pick<typeof vscode.workspace, 'onDidChangeTextDocument'> = vscode.workspace,
         private getGraphContextFromRange = defaultGetGraphContextFromRange,
@@ -69,9 +70,14 @@ export class LspLightGraphCache implements vscode.Disposable, GraphContextFetche
         const currentLine = position.line
 
         const [prevLineContext, currentLineContext, sectionHistory] = await Promise.all([
-            this.getLspContextForLine(document, prevLine, 0, abortController.signal),
-            this.getLspContextForLine(document, currentLine, 1, abortController.signal),
-            this.sectionObserver?.getSectionHistory(document, position, contextRange),
+            this.getLspContextForLine({ document, line: prevLine, recursion: 0, abortSignal: abortController.signal }),
+            this.getLspContextForLine({
+                document,
+                line: currentLine,
+                recursion: 1,
+                abortSignal: abortController.signal,
+            }),
+            this.sectionObserver?.getLastVisitedSections(document, position, contextRange),
         ])
 
         const sectionGraphContext = [...prevLineContext, ...currentLineContext]
@@ -126,12 +132,17 @@ export class LspLightGraphCache implements vscode.Disposable, GraphContextFetche
         return context
     }
 
-    private getLspContextForLine(
-        document: vscode.TextDocument,
-        line: number,
-        recursion: number,
+    private getLspContextForLine({
+        document,
+        line,
+        recursion,
+        abortSignal,
+    }: {
+        document: vscode.TextDocument
+        line: number
+        recursion: number
         abortSignal: CustomAbortSignal
-    ): Promise<HoverContext[]> {
+    }): Promise<HoverContext[]> {
         const request = {
             document,
             line,
@@ -181,6 +192,7 @@ export class LspLightGraphCache implements vscode.Disposable, GraphContextFetche
             return
         }
 
+        // Start a preloading requests as identifier by setting the maxChars to 0
         void this.getContextAtPosition(event.textEditor.document, event.selections[0].active, 0)
     }
 
@@ -243,7 +255,6 @@ class GraphCache {
 
     public evictForOtherDocuments(uri: vscode.Uri): void {
         const keysToDelete: string[] = []
-        // eslint-disable-next-line ban/ban
         this.cache.forEach((_, otherUri) => {
             if (otherUri === uri.toString()) {
                 return

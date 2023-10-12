@@ -211,7 +211,7 @@ describe('GraphSectionObserver', () => {
                 └ file:/document2.ts baz"
             `)
 
-            const context = await sectionObserver.getSectionHistory(
+            const context = await sectionObserver.getLastVisitedSections(
                 testDocuments.document1 as any,
                 {
                     line: 0,
@@ -246,7 +246,7 @@ describe('GraphSectionObserver', () => {
                 └ file:/document1.ts foo"
             `)
 
-            const context = await sectionObserver.getSectionHistory(
+            const context = await sectionObserver.getLastVisitedSections(
                 testDocuments.document1 as any,
                 {
                     line: 0,

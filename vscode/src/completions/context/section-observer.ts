@@ -77,7 +77,7 @@ export class SectionObserver implements vscode.Disposable {
         return this.instance
     }
 
-    public async getSectionHistory(
+    public async getLastVisitedSections(
         document: vscode.TextDocument,
         position: vscode.Position,
         contextRange?: vscode.Range
@@ -148,7 +148,6 @@ export class SectionObserver implements vscode.Disposable {
      */
     public debugPrint(selectedDocument?: vscode.TextDocument, selections?: readonly vscode.Selection[]): string {
         const lines: string[] = []
-        // eslint-disable-next-line ban/ban
         this.activeDocuments.forEach(document => {
             lines.push(path.normalize(vscode.workspace.asRelativePath(document.uri)))
             for (const section of document.sections) {
