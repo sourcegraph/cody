@@ -550,6 +550,7 @@ export class FixupController
         // Remove the code lens for the previous task
         this.cancel(id)
         void vscode.commands.executeCommand('cody.command.edit-code', { range, instruction })
+        telemetryService.log('CodyVSCodeExtension:fixup:retried')
     }
 
     private setTaskState(task: FixupTask, state: CodyTaskState): void {
