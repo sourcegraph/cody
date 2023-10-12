@@ -1,5 +1,6 @@
 package com.sourcegraph.cody.config
 
+import com.sourcegraph.cody.config.ui.UpdateChannel
 import java.awt.Color
 
 data class SettingsModel(
@@ -13,4 +14,5 @@ data class SettingsModel(
     var customAutocompleteColor: Color? = null,
     var blacklistedLanguageIds: List<String> = listOf(),
     var shouldAcceptNonTrustedCertificatesAutomatically: Boolean = false,
+    var channel: UpdateChannel = UpdateChannel.Stable
 )
