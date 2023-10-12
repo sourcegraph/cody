@@ -167,8 +167,12 @@ describe('RequestManager', () => {
         provider1.resolveRequest(["log('hello')"])
 
         expect((await promise1).completions[0].insertText).toBe("log('hello')")
-        const { completions } = await promise2
-        expect(completions[0].insertText).toBe("'hello')")
+        const [completion] = (await promise2).completions
+        expect(completion.insertText).toBe("'hello')")
+
+        // Keeps completion meta-data on cache-hit
+        expect(completion).toHaveProperty('stopReason')
+        expect(completion).toHaveProperty('range')
 
         expect(provider2.didAbort).toBe(true)
     })

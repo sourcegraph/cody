@@ -1,6 +1,6 @@
 import { AbortError, TimeoutError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
 
-import { CustomAbortSignal } from '../completions/context/utils'
+import { CustomAbortSignal } from '../../completions/context/utils'
 
 type PromiseCreator<T> = () => Promise<T>
 interface Queued<T> {

@@ -14,7 +14,7 @@ describe('[getInlineCompletions] completion event', () => {
         const spy = vi.spyOn(CompletionLogger, 'loaded')
 
         await getInlineCompletions(
-            params('function foo() {█', [
+            params('function foo() {█}', [
                 {
                     completion: 'console.log(bar)\nreturn false}',
                     stopReason: 'unit-test',
@@ -51,11 +51,18 @@ describe('[getInlineCompletions] completion event', () => {
                   "greatGrandparent": "program",
                   "parent": "statement_block",
                 },
+                "nodeTypesWithCompletion": {
+                  "atCursor": "{",
+                  "grandparent": "function_declaration",
+                  "greatGrandparent": "program",
+                  "parent": "statement_block",
+                },
                 "parseErrorCount": 0,
                 "stopReason": "unit-test",
                 "truncatedWith": "tree-sitter",
               },
             ],
+            "loggedPartialAcceptedLength": 0,
             "params": {
               "contextSummary": undefined,
               "id": "stable-uuid",

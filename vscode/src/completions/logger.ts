@@ -66,6 +66,8 @@ export interface CompletionEvent {
     acceptedAt: number | null
     // Information about each completion item received per one completion event
     items: CompletionItemInfo[]
+    // Already logged partially accepted length
+    loggedPartialAcceptedLength: number
 }
 
 export interface ItemPostProcessingInfo {
@@ -76,8 +78,15 @@ export interface ItemPostProcessingInfo {
     lineTruncatedCount?: number
     // The truncation approach used.
     truncatedWith?: 'tree-sitter' | 'indentation'
-    // Syntax node types extracted from the tree-sitter parse-tree.
+    // Syntax node types extracted from the tree-sitter parse-tree without the completion pasted.
     nodeTypes?: {
+        atCursor?: string
+        parent?: string
+        grandparent?: string
+        greatGrandparent?: string
+    }
+    // Syntax node types extracted from the tree-sitter parse-tree with the completion pasted.
+    nodeTypesWithCompletion?: {
         atCursor?: string
         parent?: string
         grandparent?: string
@@ -143,6 +152,7 @@ export function create(inputParams: Omit<CompletionEvent['params'], 'multilineMo
         suggestionAnalyticsLoggedAt: null,
         acceptedAt: null,
         items: [],
+        loggedPartialAcceptedLength: 0,
     })
 
     return id
@@ -272,7 +282,6 @@ export function accept(id: SuggestionID, completion: InlineCompletionItem): void
 
     // Ensure the CompletionID is never reused by removing it from the recent completions cache
     let key: string | null = null
-    // eslint-disable-next-line ban/ban
     recentCompletions.forEach((v, k) => {
         if (v === completionEvent.params.id) {
             key = k
@@ -300,10 +309,14 @@ export function partiallyAccept(id: SuggestionID, completion: InlineCompletionIt
         return
     }
 
+    const loggedPartialAcceptedLength = completionEvent.loggedPartialAcceptedLength
+    completionEvent.loggedPartialAcceptedLength = acceptedLength
+
     logCompletionEvent('partiallyAccepted', {
         ...getSharedParams(completionEvent),
         acceptedItem: { ...completionItemToItemInfo(completion) },
         acceptedLength,
+        acceptedLengthDelta: acceptedLength - loggedPartialAcceptedLength,
     })
 }
 
@@ -326,7 +339,6 @@ export function flushActiveSuggestions(): void {
 
 function logSuggestionEvents(): void {
     const now = performance.now()
-    // eslint-disable-next-line ban/ban
     activeSuggestions.forEach(completionEvent => {
         const {
             params,
@@ -448,6 +460,7 @@ function completionItemToItemInfo(item: InlineCompletionItemWithAnalytics): Comp
         lineTruncatedCount: item.lineTruncatedCount,
         truncatedWith: item.truncatedWith,
         nodeTypes: item.nodeTypes,
+        nodeTypesWithCompletion: item.nodeTypesWithCompletion,
     }
 }
 

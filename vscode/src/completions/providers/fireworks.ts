@@ -1,13 +1,9 @@
 import { tokensToChars } from '@sourcegraph/cody-shared/src/prompt/constants'
-import {
-    CompletionParameters,
-    CompletionResponse,
-} from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
+import { CompletionResponse } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
 
-import { CodeCompletionsClient } from '../client'
+import { CodeCompletionsClient, CodeCompletionsParams } from '../client'
 import { getLanguageConfig } from '../language'
 import { canUsePartialCompletion } from '../streaming'
-import { formatSymbolContextRelationship } from '../text-processing'
 import { Completion, ContextSnippet } from '../types'
 import { forkSignal } from '../utils'
 
@@ -19,10 +15,11 @@ import {
     standardContextSizeHints,
 } from './provider'
 
-export interface UnstableFireworksOptions {
+export interface FireworksOptions {
     model: FireworksModel
     maxContextTokens?: number
     client: Pick<CodeCompletionsClient, 'complete'>
+    starcoderExtendedTokenWindow?: boolean
 }
 
 const PROVIDER_IDENTIFIER = 'fireworks'
@@ -48,16 +45,18 @@ type FireworksModel =
     // `starcoder-hybrid` uses the 16b model for multiline requests and the 7b model for single line
     | 'starcoder-hybrid'
 
-function getMaxContextTokens(model: FireworksModel): number {
+function getMaxContextTokens(model: FireworksModel, starcoderExtendedTokenWindow?: boolean): number {
     switch (model) {
         case 'starcoder-hybrid':
         case 'starcoder-16b':
         case 'starcoder-7b':
         case 'starcoder-3b':
-        case 'starcoder-1b':
+        case 'starcoder-1b': {
             // StarCoder supports up to 8k tokens, we limit it to ~2k for evaluation against
-            // our current Anthropic prompt
-            return 2048
+            // our current Anthropic prompt but allow for 6k for the extended token window as
+            // defined by the feature flag
+            return starcoderExtendedTokenWindow ? 6144 : 2048
+        }
         case 'wizardcoder-15b':
             // TODO: Confirm what the limit is for WizardCoder
             return 2048
@@ -74,12 +73,15 @@ function getMaxContextTokens(model: FireworksModel): number {
 
 const MAX_RESPONSE_TOKENS = 256
 
-export class UnstableFireworksProvider extends Provider {
+export class FireworksProvider extends Provider {
     private model: FireworksModel
     private promptChars: number
     private client: Pick<CodeCompletionsClient, 'complete'>
 
-    constructor(options: ProviderOptions, { model, maxContextTokens, client }: Required<UnstableFireworksOptions>) {
+    constructor(
+        options: ProviderOptions,
+        { model, maxContextTokens, client }: Required<Omit<FireworksOptions, 'starcoderExtendedTokenWindow'>>
+    ) {
         super(options)
         this.model = model
         this.promptChars = tokensToChars(maxContextTokens - MAX_RESPONSE_TOKENS)
@@ -103,11 +105,7 @@ export class UnstableFireworksProvider extends Provider {
             if (snippetsToInclude > 0) {
                 const snippet = snippets[snippetsToInclude - 1]
                 if ('symbol' in snippet && snippet.symbol !== '') {
-                    intro.push(
-                        `Additional documentation for \`${snippet.symbol}\`${formatSymbolContextRelationship(
-                            snippet.sourceSymbolAndRelationship
-                        )}:\n\n${snippet.content}`
-                    )
+                    intro.push(`Additional documentation for \`${snippet.symbol}\`:\n\n${snippet.content}`)
                 } else {
                     intro.push(`Here is a reference snippet of code from ${snippet.fileName}:\n\n${snippet.content}`)
                 }
@@ -152,7 +150,7 @@ export class UnstableFireworksProvider extends Provider {
                 ? MODEL_MAP[multiline ? 'starcoder-16b' : 'starcoder-7b']
                 : MODEL_MAP[this.model]
 
-        const args: CompletionParameters = {
+        const args: CodeCompletionsParams = {
             messages: [{ speaker: 'human', text: prompt }],
             // To speed up sample generation in single-line case, we request a lower token limit
             // since we can't terminate on the first `\n`.
@@ -162,6 +160,7 @@ export class UnstableFireworksProvider extends Provider {
             topK: 0,
             model,
             stopSequences: multiline ? ['\n\n', '\n\r\n'] : ['\n'],
+            timeoutMs: multiline ? 1500 : 5000,
         }
 
         tracer?.params(args)
@@ -204,7 +203,7 @@ export class UnstableFireworksProvider extends Provider {
 
     private async fetchAndProcessCompletions(
         client: Pick<CodeCompletionsClient, 'complete'>,
-        params: CompletionParameters,
+        params: CodeCompletionsParams,
         abortSignal: AbortSignal
     ): Promise<CompletionResponse> {
         // The Async executor is required to return the completion early if a partial result from SSE can be used.
@@ -252,7 +251,7 @@ export class UnstableFireworksProvider extends Provider {
 export function createProviderConfig({
     model,
     ...otherOptions
-}: Omit<UnstableFireworksOptions, 'model' | 'maxContextTokens'> & { model: string | null }): ProviderConfig {
+}: Omit<FireworksOptions, 'model' | 'maxContextTokens'> & { model: string | null }): ProviderConfig {
     const resolvedModel =
         model === null || model === ''
             ? 'starcoder-hybrid'
@@ -266,11 +265,11 @@ export function createProviderConfig({
         throw new Error(`Unknown model: \`${model}\``)
     }
 
-    const maxContextTokens = getMaxContextTokens(resolvedModel)
+    const maxContextTokens = getMaxContextTokens(resolvedModel, otherOptions.starcoderExtendedTokenWindow)
 
     return {
         create(options: ProviderOptions) {
-            return new UnstableFireworksProvider(options, { model: resolvedModel, maxContextTokens, ...otherOptions })
+            return new FireworksProvider(options, { model: resolvedModel, maxContextTokens, ...otherOptions })
         },
         contextSizeHints: standardContextSizeHints(maxContextTokens),
         enableExtendedMultilineTriggers: true,

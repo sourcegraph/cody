@@ -3,7 +3,9 @@ import * as vscode from 'vscode'
 import { commandRegex } from '@sourcegraph/cody-shared/src/chat/recipes/helpers'
 import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
+import { featureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
 import { newPromptMixin, PromptMixin } from '@sourcegraph/cody-shared/src/prompt/prompt-mixin'
+import { graphqlClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
 
 import { ChatViewProvider } from './chat/ChatViewProvider'
 import { ContextProvider } from './chat/ContextProvider'
@@ -121,8 +123,10 @@ const register = async (
         })
     }
 
+    graphqlClient.onConfigurationChange(initialConfig)
+    void featureFlagProvider.syncAuthStatus()
+
     const {
-        featureFlagProvider,
         intentDetector,
         codebaseContext: initialCodebaseContext,
         chatClient,
@@ -465,7 +469,6 @@ const register = async (
             client: codeCompletionsClient,
             statusBar,
             contextProvider,
-            featureFlagProvider,
             authProvider,
             triggerNotice: notice => sidebarChatProvider.triggerNotice(notice),
         })
@@ -506,6 +509,7 @@ const register = async (
     return {
         disposable: vscode.Disposable.from(...disposables),
         onConfigurationChange: newConfig => {
+            graphqlClient.onConfigurationChange(newConfig)
             contextProvider.onConfigurationChange(newConfig)
             externalServicesOnDidConfigurationChange(newConfig)
             void createOrUpdateEventLogger(newConfig, isExtensionModeDevOrTest)

@@ -1,5 +1,6 @@
 import * as vscode from 'vscode'
 
+import { CODY_EXTENSION_ID } from '../constants'
 import { BENCHMARK_ACCESS_TOKEN, BENCHMARK_ENDPOINT } from '../env'
 
 import { BENCHMARK_EXTENSION_MANUAL_SETUP } from './env'
@@ -23,12 +24,17 @@ export async function initExtension(id: string): Promise<void> {
     const ext = vscode.extensions.getExtension(id)
     await ext?.activate()
 
+    // Short delay to allow extensions to activate
+    await new Promise(resolve => setTimeout(resolve, 500))
+
     if (BENCHMARK_EXTENSION_MANUAL_SETUP) {
         return waitForManualExtensionSetupConfirmation()
     }
 
-    await ensureExecuteCommand('cody.test.token', BENCHMARK_ENDPOINT, BENCHMARK_ACCESS_TOKEN)
-    await ensureExecuteCommand('cody.chat.focus')
+    if (id === CODY_EXTENSION_ID) {
+        await ensureExecuteCommand('cody.test.token', BENCHMARK_ENDPOINT, BENCHMARK_ACCESS_TOKEN)
+        await ensureExecuteCommand('cody.chat.focus')
+    }
 }
 
 // executeCommand specifies ...any[] https://code.visualstudio.com/api/references/vscode-api#commands

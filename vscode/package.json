@@ -40,7 +40,7 @@
     "test:unit": "vitest",
     "vscode:prepublish": "pnpm -s run build",
     "generate:completions": "OUTFILE=/tmp/run-code-completions-on-dataset.js && esbuild ./test/completions/run-code-completions-on-dataset.ts --bundle --external:vscode --outfile=$OUTFILE --format=cjs --platform=node --sourcemap=inline && node --enable-source-maps $OUTFILE",
-    "test:unit:tree-sitter-queries": "vitest vscode/src/completions/tree-sitter/queries/**/*.test.ts"
+    "test:unit:tree-sitter-queries": "vitest vscode/src/completions/tree-sitter/query-tests/**/*.test.ts"
   },
   "categories": [
     "Programming Languages",
@@ -748,7 +748,7 @@
         },
         "cody.proxy": {
           "type": "string",
-          "markdownDeprecationMessage": "The SOCKS proxy endpoint to access server endpoint. This is only supported with `unstable-codegen` provider and only for use with the Cody Agent (for instance with JetBrains plugin). For VS Code please use http.proxy instead."
+          "markdownDeprecationMessage": "The SOCKS proxy endpoint to access server endpoint. This is only supported with some autocomplete providers and only for use with the Cody Agent (for instance with JetBrains plugin). For VS Code please use http.proxy instead."
         },
         "cody.codebase": {
           "order": 2,
@@ -897,8 +897,7 @@
           "enum": [
             null,
             "anthropic",
-            "unstable-codegen",
-            "unstable-fireworks",
+            "fireworks",
             "unstable-openai"
           ],
           "markdownDescription": "The provider used for code autocomplete. Most providers other than `anthropic` require the `cody.autocomplete.advanced.serverEndpoint` and `cody.autocomplete.advanced.accessToken` settings to also be set. Check the Cody output channel for error messages if autocomplete is not working as expected."
@@ -938,9 +937,13 @@
           "markdownDescription": "Rank autocomplete results with tree-sitter."
         },
         "cody.autocomplete.experimental.graphContext": {
-          "type": "boolean",
-          "default": false,
-          "markdownDescription": "Use the code graph to retrieve context for autocomplete requests."
+          "type": "enum",
+          "default": null,
+          "enum": [
+            null,
+            "lsp-light"
+          ],
+          "markdownDescription": "Retrieve information from the code graph to augment the autocomplete results. This is only supported with the `unstable-codegen` provider"
         }
       }
     },

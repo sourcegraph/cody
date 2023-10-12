@@ -1,3 +1,5 @@
+import * as vscode from 'vscode'
+
 import { DocumentContext } from './get-current-doc-context'
 import { getLanguageConfig } from './language'
 import {
@@ -6,17 +8,49 @@ import {
     indentation,
     OPENING_BRACKET_REGEX,
 } from './text-processing'
+import { getCachedParseTreeForDocument } from './tree-sitter/parse-tree-cache'
+import { getDocumentQuerySDK } from './tree-sitter/query-sdk'
 
-export function detectMultiline(
-    docContext: Omit<DocumentContext, 'multilineTrigger'>,
-    languageId: string,
+interface DetectMultilineParams {
+    docContext: Omit<DocumentContext, 'multilineTrigger'>
+    document: vscode.TextDocument
     enableExtendedTriggers: boolean
-): string | null {
+    syntacticTriggers?: boolean
+}
+
+export function detectMultiline(params: DetectMultilineParams): string | null {
+    const { syntacticTriggers, docContext, document, enableExtendedTriggers } = params
     const { prefix, prevNonEmptyLine, nextNonEmptyLine, currentLinePrefix, currentLineSuffix } = docContext
 
-    const languageConfig = getLanguageConfig(languageId)
-    if (!languageConfig) {
-        return null
+    const parseTreeCache = getCachedParseTreeForDocument(document)
+    const documentQuerySDK = getDocumentQuerySDK(document.languageId)
+    const blockStart = getLanguageConfig(document.languageId)?.blockStart
+    const isBlockStartActive = blockStart && prefix.trimEnd().endsWith(blockStart)
+
+    if (syntacticTriggers && parseTreeCache && documentQuerySDK && isBlockStartActive) {
+        const triggerPosition = document.positionAt(docContext.prefix.lastIndexOf(blockStart))
+
+        const queryStartPoint = {
+            row: triggerPosition.line,
+            column: triggerPosition.character,
+        }
+
+        const queryEndPoint = {
+            row: triggerPosition.line,
+            // Querying around one character after trigger position.
+            column: triggerPosition.character + 1,
+        }
+
+        const singleLineTriggers = documentQuerySDK.queries.singlelineTriggers.getEnclosingTrigger(
+            parseTreeCache.tree.rootNode,
+            queryStartPoint,
+            queryEndPoint
+        )
+
+        // Don't trigger multiline completion if single line trigger is found.
+        if (singleLineTriggers.length > 0) {
+            return null
+        }
     }
 
     const checkInvocation =
@@ -42,13 +76,11 @@ export function detectMultiline(
         return openingBracketMatch[0]
     }
 
-    const { blockStart } = languageConfig
-
     if (
         currentLinePrefix.trim() === '' &&
         currentLineSuffix.trim() === '' &&
         // Only trigger multiline suggestions for the beginning of blocks
-        prefix.trimEnd().endsWith(blockStart) &&
+        isBlockStartActive &&
         // Only trigger multiline suggestions when the new current line is indented
         indentation(prevNonEmptyLine) < indentation(currentLinePrefix) &&
         // Only trigger multiline suggestions when the next non-empty line is indented less

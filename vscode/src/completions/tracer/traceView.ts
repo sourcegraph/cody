@@ -4,9 +4,9 @@ import { isDefined } from '@sourcegraph/cody-shared'
 import { renderMarkdown } from '@sourcegraph/cody-shared/src/common/markdown'
 
 import {
-    GraphSectionObserver,
     registerDebugListener as registerSectionObserverDebugListener,
-} from '../context/graph-section-observer'
+    SectionObserver,
+} from '../context/section-observer'
 import { InlineCompletionsResultSource } from '../get-inline-completions'
 import { InlineCompletionItemProvider } from '../inline-completion-item-provider'
 import * as statistics from '../statistics'
@@ -181,7 +181,7 @@ ${
 
 ${markdownCodeBlock(data.error)}
 `,
-        GraphSectionObserver.instance
+        SectionObserver.instance
             ? `
 ## Document sections
 
@@ -211,10 +211,10 @@ function statisticSummary(): string {
 }
 
 function documentSections(): string {
-    if (!GraphSectionObserver.instance) {
+    if (!SectionObserver.instance) {
         return ''
     }
-    return `\`\`\`\n${GraphSectionObserver.instance.debugPrint()}\n\`\`\``
+    return `\`\`\`\n${SectionObserver.instance.debugPrint()}\n\`\`\``
 }
 
 function codeDetailsWithSummary(

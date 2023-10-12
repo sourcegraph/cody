@@ -5,3 +5,4 @@ completions-review-tool/data/
 **/__snapshots__
 **/test-data
 vscode/src/testutils/vscode/
+vscode/test/benchmark/datasets/

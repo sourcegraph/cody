@@ -2,7 +2,7 @@ import { formatDistance } from 'date-fns'
 import * as vscode from 'vscode'
 
 import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
-import { FeatureFlag, FeatureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
+import { FeatureFlag, featureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
 import { RateLimitError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
 
 import { logDebug } from '../log'
@@ -20,7 +20,7 @@ import {
     LastInlineCompletionCandidate,
     TriggerKind,
 } from './get-inline-completions'
-import { getLatency, resetLatency } from './latency'
+import { getLatency, LatencyFeatureFlags, resetLatency } from './latency'
 import * as CompletionLogger from './logger'
 import { CompletionEvent, SuggestionID } from './logger'
 import { ProviderConfig } from './providers/provider'
@@ -42,7 +42,6 @@ export interface CodyCompletionItemProviderConfig {
     completeSuggestWidgetSelection?: boolean
     tracer?: ProvideInlineCompletionItemsTracer | null
     contextFetcher?: (options: GetContextOptions) => Promise<GetContextResult>
-    featureFlagProvider: FeatureFlagProvider
     triggerNotice: ((notice: { key: string }) => void) | null
 }
 
@@ -136,12 +135,15 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
 
         // We start feature flag requests early so that we have a high chance of getting a response
         // before we need it.
-        const [isIncreasedDebounceTimeEnabledPromise, minimumLatencyFlagsPromise] = [
-            this.config.featureFlagProvider.evaluateFeatureFlag(
-                FeatureFlag.CodyAutocompleteIncreasedDebounceTimeEnabled
-            ),
-            this.config.featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteMinimumLatency),
+        const [isIncreasedDebounceTimeEnabledPromise, syntacticTriggersPromise] = [
+            featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteIncreasedDebounceTimeEnabled),
+            featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteSyntacticTriggers),
         ]
+        const minLatencyFlagsPromises = {
+            user: featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteUserLatency),
+            language: featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteLanguageLatency),
+            provider: featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteProviderLatency),
+        }
 
         const tracer = this.config.tracer ? createTracerForInvocation(this.config.tracer) : undefined
         const graphContextFetcher = this.config.graphContextFetcher ?? undefined
@@ -196,6 +198,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
             maxPrefixLength: this.config.providerConfig.contextSizeHints.prefixChars,
             maxSuffixLength: this.config.providerConfig.contextSizeHints.suffixChars,
             enableExtendedTriggers: this.config.providerConfig.enableExtendedMultilineTriggers,
+            syntacticTriggers: await syntacticTriggersPromise,
             // We ignore the current context selection if completeSuggestWidgetSelection is not enabled
             context: takeSuggestWidgetSelectionIntoAccount ? context : undefined,
         })
@@ -255,12 +258,21 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
             // latency so that we don't show a result before the user has paused typing for a brief
             // moment.
             if (result.source !== InlineCompletionsResultSource.LastCandidate) {
-                const minimumLatencyFlag = await minimumLatencyFlagsPromise
-                if (triggerKind === TriggerKind.Automatic && minimumLatencyFlag) {
+                const latencyFeatureFlags: LatencyFeatureFlags = {
+                    user: await minLatencyFlagsPromises.user,
+                    language: await minLatencyFlagsPromises.language,
+                    provider: await minLatencyFlagsPromises.provider,
+                }
+
+                const isMinLatencyEnabled =
+                    latencyFeatureFlags.user || latencyFeatureFlags.language || latencyFeatureFlags.provider
+                if (triggerKind === TriggerKind.Automatic && isMinLatencyEnabled) {
                     const minimumLatency = getLatency(
+                        latencyFeatureFlags,
                         this.config.providerConfig.identifier,
                         document.uri.fsPath,
-                        document.languageId
+                        document.languageId,
+                        result.items[0]?.nodeTypes?.atCursor
                     )
 
                     const delta = performance.now() - start

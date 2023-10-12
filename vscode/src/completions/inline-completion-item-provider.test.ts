@@ -2,9 +2,9 @@ import dedent from 'dedent'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import * as vscode from 'vscode'
 
-import { FeatureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
 import { RateLimitError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
-import { SourcegraphGraphQLAPIClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
+import { graphqlClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
+import { GraphQLAPIClientConfig } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
 
 import { localStorage } from '../services/LocalStorageProvider'
 import { vsCodeMocks } from '../testutils/mocks'
@@ -40,13 +40,7 @@ const DUMMY_CONTEXT: vscode.InlineCompletionContext = {
     triggerKind: vsCodeMocks.InlineCompletionTriggerKind.Automatic,
 }
 
-const dummyFeatureFlagProvider = new FeatureFlagProvider(
-    new SourcegraphGraphQLAPIClient({
-        accessToken: 'access-token',
-        serverEndpoint: 'https://sourcegraph.com',
-        customHeaders: {},
-    })
-)
+graphqlClient.onConfigurationChange({} as unknown as GraphQLAPIClientConfig)
 
 class MockableInlineCompletionItemProvider extends InlineCompletionItemProvider {
     constructor(
@@ -68,7 +62,6 @@ class MockableInlineCompletionItemProvider extends InlineCompletionItemProvider 
                 // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-explicit-any
                 client: null as any,
             }),
-            featureFlagProvider: dummyFeatureFlagProvider,
             triggerNotice: null,
 
             ...superArgs,
@@ -186,6 +179,7 @@ describe('InlineCompletionItemProvider', () => {
             },
             "uri": {
               "$mid": 1,
+              "external": "file:///test.ts",
               "path": "/test.ts",
               "scheme": "file",
             },

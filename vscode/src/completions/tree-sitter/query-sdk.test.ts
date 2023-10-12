@@ -4,7 +4,7 @@ import { initTreeSitterParser } from '../test-helpers'
 
 import { SupportedLanguage } from './grammars'
 import { resetParsersCache } from './parser'
-import { getDocumentQuerySDK } from './queries'
+import { getDocumentQuerySDK } from './query-sdk'
 
 describe('getDocumentQuerySDK', () => {
     afterEach(() => {
@@ -16,6 +16,7 @@ describe('getDocumentQuerySDK', () => {
         { languageId: SupportedLanguage.TypeScript },
         { languageId: SupportedLanguage.JSX },
         { languageId: SupportedLanguage.TSX },
+        { languageId: SupportedLanguage.Go },
     ])('returns valid SDK for $languageId', async ({ languageId }) => {
         const nonInitializedSDK = getDocumentQuerySDK(languageId)
         expect(nonInitializedSDK).toBeNull()
@@ -31,7 +32,6 @@ describe('getDocumentQuerySDK', () => {
         { languageId: SupportedLanguage.CSharp },
         { languageId: SupportedLanguage.Cpp },
         { languageId: SupportedLanguage.Dart },
-        { languageId: SupportedLanguage.Go },
         { languageId: SupportedLanguage.Php },
         { languageId: SupportedLanguage.Python },
     ])('returns null for $languageId because queries are not defined', async ({ languageId }) => {
