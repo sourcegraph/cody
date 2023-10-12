@@ -54,7 +54,8 @@ export class FixupController
             vscode.commands.registerCommand('cody.fixup.diff', treeItem => this.showDiff(treeItem)),
             vscode.commands.registerCommand('cody.fixup.codelens.apply', id => this.apply(id)),
             vscode.commands.registerCommand('cody.fixup.codelens.diff', id => this.diff(id)),
-            vscode.commands.registerCommand('cody.fixup.codelens.cancel', id => this.cancel(id))
+            vscode.commands.registerCommand('cody.fixup.codelens.cancel', id => this.cancel(id)),
+            vscode.commands.registerCommand('cody.fixup.codelens.retry', id => this.retry(id))
         )
         // Observe file renaming and deletion
         this.files = new FixupFileObserver()
@@ -529,6 +530,26 @@ export class FixupController
                 description: 'Cody Fixup Diff View: ' + task.fixupFile.uri.fsPath,
             }
         )
+    }
+
+    public retry(id: taskID): void {
+        telemetryService.log('CodyVSCodeExtension:fixup:codeLens:clicked', { op: 'retry' })
+        const task = this.tasks.get(id)
+        if (!task) {
+            return
+        }
+        task.spinCount++
+        // Get diagnostics from vscode api
+        const diagnostics = vscode.languages.getDiagnostics(task.fixupFile.uri)
+        // Find the first error diagnostic that is within the range of the task
+        const range = task.selectionRange
+        const error = diagnostics.find(diagnostic => range.contains(diagnostic.range))
+        const instruction = error
+            ? `${task.instruction}. Lets think step by step to also resolve the following error: ${error.message}`
+            : task.instruction
+        // Remove the code lens for the previous task
+        this.cancel(id)
+        void vscode.commands.executeCommand('cody.command.edit-code', { range, instruction })
     }
 
     private setTaskState(task: FixupTask, state: CodyTaskState): void {

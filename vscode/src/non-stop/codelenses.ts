@@ -18,7 +18,8 @@ export function getLensesForTask(task: FixupTask): vscode.CodeLens[] {
             const apply = getApplyLens(codeLensRange, task.id)
             const diff = getDiffLens(codeLensRange, task.id)
             const discard = getDiscardLens(codeLensRange, task.id)
-            return [apply, diff, discard]
+            const retry = getRetryLens(codeLensRange, task.id)
+            return [apply, diff, discard, retry]
         }
         case CodyTaskState.applying: {
             const title = getApplyingLens(codeLensRange)
@@ -99,6 +100,16 @@ function getApplyLens(codeLensRange: vscode.Range, id: string): vscode.CodeLens 
     lens.command = {
         title: '$(pencil) Apply Edits',
         command: 'cody.fixup.codelens.apply',
+        arguments: [id],
+    }
+    return lens
+}
+
+function getRetryLens(codeLensRange: vscode.Range, id: string): vscode.CodeLens {
+    const lens = new vscode.CodeLens(codeLensRange)
+    lens.command = {
+        title: 'Retry',
+        command: 'cody.fixup.codelens.retry',
         arguments: [id],
     }
     return lens
