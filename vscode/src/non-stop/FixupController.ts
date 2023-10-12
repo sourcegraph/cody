@@ -169,10 +169,7 @@ export class FixupController
         const MAX_SPIN_COUNT_PER_TASK = 5
         if (task.spinCount >= MAX_SPIN_COUNT_PER_TASK) {
             telemetryService.log('CodyVSCodeExtension:fixup:respin', { count: task.spinCount })
-            // TODO: Report an error message
-            // task.error = `Cody tried ${task.spinCount} times but failed to edit the file`
-            this.setTaskState(task, CodyTaskState.error)
-            return
+            return this.error(task.id, `Cody tried ${task.spinCount} times but failed to edit the file`)
         }
         void vscode.window.showInformationMessage('Cody will rewrite to include your changes')
         this.setTaskState(task, CodyTaskState.working)
