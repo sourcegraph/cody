@@ -4,7 +4,6 @@ import { CompletionResponse } from '@sourcegraph/cody-shared/src/sourcegraph-api
 import { CodeCompletionsClient, CodeCompletionsParams } from '../client'
 import { getLanguageConfig } from '../language'
 import { canUsePartialCompletion } from '../streaming'
-import { formatSymbolContextRelationship } from '../text-processing'
 import { Completion, ContextSnippet } from '../types'
 import { forkSignal } from '../utils'
 
@@ -106,11 +105,7 @@ export class FireworksProvider extends Provider {
             if (snippetsToInclude > 0) {
                 const snippet = snippets[snippetsToInclude - 1]
                 if ('symbol' in snippet && snippet.symbol !== '') {
-                    intro.push(
-                        `Additional documentation for \`${snippet.symbol}\`${formatSymbolContextRelationship(
-                            snippet.sourceSymbolAndRelationship
-                        )}:\n\n${snippet.content}`
-                    )
+                    intro.push(`Additional documentation for \`${snippet.symbol}\`:\n\n${snippet.content}`)
                 } else {
                     intro.push(`Here is a reference snippet of code from ${snippet.fileName}:\n\n${snippet.content}`)
                 }

@@ -282,7 +282,6 @@ export function accept(id: SuggestionID, completion: InlineCompletionItem): void
 
     // Ensure the CompletionID is never reused by removing it from the recent completions cache
     let key: string | null = null
-    // eslint-disable-next-line ban/ban
     recentCompletions.forEach((v, k) => {
         if (v === completionEvent.params.id) {
             key = k
@@ -340,7 +339,6 @@ export function flushActiveSuggestions(): void {
 
 function logSuggestionEvents(): void {
     const now = performance.now()
-    // eslint-disable-next-line ban/ban
     activeSuggestions.forEach(completionEvent => {
         const {
             params,

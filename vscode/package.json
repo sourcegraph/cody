@@ -937,9 +937,13 @@
           "markdownDescription": "Rank autocomplete results with tree-sitter."
         },
         "cody.autocomplete.experimental.graphContext": {
-          "type": "boolean",
-          "default": false,
-          "markdownDescription": "Use the code graph to retrieve context for autocomplete requests."
+          "type": "enum",
+          "default": null,
+          "enum": [
+            null,
+            "lsp-light"
+          ],
+          "markdownDescription": "Retrieve information from the code graph to augment the autocomplete results. This is only supported with the `unstable-codegen` provider"
         }
       }
     },
