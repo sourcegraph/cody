@@ -2,8 +2,10 @@ import { useState } from 'react'
 
 import { mdiDatabaseCheckOutline, mdiDatabaseOffOutline, mdiDatabaseRemoveOutline } from '@mdi/js'
 import classNames from 'classnames'
+import { URI } from 'vscode-uri'
 
 import { ChatContextStatus } from '@sourcegraph/cody-shared'
+import { LOCAL_APP_URL } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
 import { formatFilePath } from '@sourcegraph/cody-ui/src/chat/inputContext/ChatInputContext'
 import { Icon } from '@sourcegraph/cody-ui/src/utils/Icon'
 
@@ -91,7 +93,12 @@ export const ChatInputContextSimplified: React.FC<ChatInputContextSimplifiedProp
     } else if (contextStatus?.codebase && contextStatus?.embeddingsEndpoint) {
         // Codebase and embeddings
         const repoName = contextStatus.codebase
-        const indexSource = contextStatus.embeddingsEndpoint
+        let indexSource = contextStatus.embeddingsEndpoint
+        if (contextStatus.embeddingsEndpoint === LOCAL_APP_URL.toString()) {
+            indexSource = 'Cody App'
+        } else {
+            indexSource = URI.parse(contextStatus.embeddingsEndpoint).authority
+        }
         const popup: React.FC<OnboardingPopupProps & PopupOpenProps> = ({ isOpen, onDismiss }) => (
             <EmbeddingsEnabledPopup
                 isOpen={isOpen}
