@@ -242,7 +242,7 @@ export class FixupController
 
         // Retrieve the start position of the current selection
         const activeCursorStartPosition = selectionRange.start
-        // If we find a new expanded selection positon then we set it as the new start position
+        // If we find a new expanded selection position then we set it as the new start position
         // and if we don't then we fallback to the original selection made by the user
         const newSelectionStartingPosition =
             (await getSmartSelection(documentUri, activeCursorStartPosition.line))?.start || selectionRange.start
