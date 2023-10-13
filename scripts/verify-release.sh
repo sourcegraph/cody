@@ -5,4 +5,6 @@ echo "====================================================="
 echo "= Running automated tests before publishing release ="
 echo "====================================================="
 set -x
-./gradlew clean buildCodeSearchAssets buildPluginAndAssertAgentBinariesExist runPluginVerifier
+unset CODY_DIR
+./gradlew clean
+./gradlew buildPluginAndAssertAgentBinariesExist runPluginVerifier

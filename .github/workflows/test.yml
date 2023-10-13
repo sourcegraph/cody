@@ -20,6 +20,8 @@ jobs:
           distribution: zulu
           java-version: 11
           cache: gradle
+      # Skip Code Search build in CI because it's slow, and we don't use it anyway for testing purposes.
+      - run: echo "SKIP_CODE_SEARCH_BUILD=true" >> $GITHUB_ENV
       - name: Run Tests
         run: ./gradlew --stacktrace --info test
       - name: Run Build Plugin

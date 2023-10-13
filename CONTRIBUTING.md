@@ -33,16 +33,16 @@ using the `jetbrains-ide` & `team/integrations` labels.
 | Reformat Java and Kotlin sources                              | `./gradlew spotlessApply`                                                |
 | Debug agent JSON-RPC communication                            | `tail -f build/sourcegraph/cody-agent-trace.json`                        |
 
-## Using Alpha channel releases
+## Using Nightly channel releases
 
-We occasionally publish plugins to the "Alpha" channel instead of the default
-"Stable" channel. The alpha channel is primarily intended to publish
+We occasionally publish plugins to the "Nightly" channel instead of the default
+"Stable" channel. The nightly channel is primarily intended to publish
 pre-releases for internal (within Sourcegraph) testing.
 
 - Open Settings
 - Open "Plugins"
 - Click on cogwheel in the top bar, select "Manage plugin repositories"
-- Add the URL https://plugins.jetbrains.com/plugins/list?channel=alpha&pluginId=9682
+- Add the URL https://plugins.jetbrains.com/plugins/list?channel=nightly&pluginId=9682
 
 Remove the URL from the plugin repository list to go back to the stable channel.
 
@@ -67,9 +67,9 @@ Take the steps below _before_ [running JetBrains plugin with agent](#developing-
       Note: After [#56254](https://github.com/sourcegraph/sourcegraph/issues/56254) is resolved this step is not needed
       anymore.
 
-## Publishing a new alpha version
+## Publishing a new nightly version
 
-Run the following script to publish a new **alpha** version
+Run the following script to publish a new **nightly** version
 
 ```shell
 ./scripts/push-git-tag-for-next-release.sh
@@ -80,9 +80,9 @@ CI. When you have a local cache of IDEA installations then this script can run d
 
 ## Publishing a new stable version
 
-This workflow is not automated yet. Our goal is to publish stable releases by promoting alpha releases that have been
-manually tested. What we're missing is a script to download the zip file of an alpha release, correct the version
-to be non-alpha and then upload it to the JetBrains Marketplace.
+This workflow is not automated yet. Our goal is to publish stable releases by promoting nightly releases that have been
+manually tested. What we're missing is a script to download the zip file of a nightly release, correct the version
+to be non-nightly and then upload it to the JetBrains Marketplace.
 
 ## Enabling web view debugging
 

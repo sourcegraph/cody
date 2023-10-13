@@ -1,6 +1,15 @@
 import com.jetbrains.plugin.structure.base.utils.isDirectory
-import de.undercouch.gradle.tasks.download.Download
+import java.lang.IllegalArgumentException
+import java.net.URL
+import java.nio.file.FileSystems
+import java.nio.file.FileVisitResult
+import java.nio.file.Files
+import java.nio.file.PathMatcher
+import java.nio.file.SimpleFileVisitor
+import java.nio.file.StandardCopyOption
+import java.nio.file.attribute.BasicFileAttributes
 import java.util.EnumSet
+import java.util.jar.JarFile
 import java.util.zip.ZipFile
 import org.jetbrains.changelog.markdownToHTML
 import org.jetbrains.intellij.tasks.RunPluginVerifierTask.FailureLevel
@@ -80,118 +89,160 @@ java {
   }
 }
 
+fun download(url: String, output: File) {
+  if (output.exists()) {
+    println("Cached $output")
+    return
+  }
+  println("Downloading... $url")
+  assert(output.parentFile.mkdirs()) { output.parentFile }
+  Files.copy(URL(url).openStream(), output.toPath())
+}
+
+fun copyRecursively(input: File, output: File) {
+  if (!input.isDirectory) {
+    throw IllegalArgumentException("not a directory: $input")
+  }
+  if (!output.isDirectory) {
+    throw IllegalArgumentException("not a directory: $output")
+  }
+  val inputPath = input.toPath()
+  val outputPath = output.toPath()
+  Files.walkFileTree(
+      inputPath,
+      object : SimpleFileVisitor<java.nio.file.Path>() {
+        override fun visitFile(
+            file: java.nio.file.Path?,
+            attrs: BasicFileAttributes?
+        ): FileVisitResult {
+          if (file != null) {
+            val destination = outputPath.resolve(file.fileName)
+            if (!destination.parent.isDirectory) {
+              Files.createDirectories(destination.parent)
+            }
+            println("Copy ${inputPath.relativize(file)}")
+            Files.copy(file, outputPath.resolve(file.fileName), StandardCopyOption.REPLACE_EXISTING)
+          }
+          return super.visitFile(file, attrs)
+        }
+      })
+}
+
+fun unzip(input: File, output: File, excludeMatcher: PathMatcher? = null) {
+  var first = true
+  val outputPath = output.toPath()
+  JarFile(input).use { zip ->
+    val entries = zip.entries()
+    while (entries.hasMoreElements()) {
+      val element = entries.nextElement()
+      if (element.name.endsWith("/")) {
+        continue
+      }
+      zip.getInputStream(element).use { stream ->
+        val dest = outputPath.resolve(element.name)
+        if (!dest.parent.isDirectory) {
+          Files.createDirectories(dest.parent)
+        }
+        if (first) {
+          if (Files.isRegularFile(dest)) {
+            println("Cached $output")
+            return
+          } else {
+            println("Unzipping... $input")
+          }
+        }
+        first = false
+        if (excludeMatcher?.matches(dest) != true) {
+          println("unzip: ${element.name}")
+          Files.copy(stream, dest, StandardCopyOption.REPLACE_EXISTING)
+        }
+      }
+    }
+  }
+}
+
 tasks {
   val codeSearchCommit = "9d86a4f7d183e980acfe5d6b6468f06aaa0d8acf"
-  val downloadCodeSearch =
-      register<Download>("downloadCodeSearch") {
-        val url = "https://github.com/sourcegraph/sourcegraph/archive/$codeSearchCommit.zip"
-        src(url)
-        dest(buildDir.resolve("$codeSearchCommit.zip"))
-        overwrite(false)
-      }
+  fun downloadCodeSearch(): File {
+    val url = "https://github.com/sourcegraph/sourcegraph/archive/$codeSearchCommit.zip"
+    val destination = buildDir.resolve("$codeSearchCommit.zip")
+    download(url, destination)
+    return destination
+  }
 
-  val unzipCodeSearch =
-      register<Copy>("unzipCodeSearch") {
-        dependsOn(downloadCodeSearch)
-        from(zipTree(downloadCodeSearch.get().dest))
-        val dir = buildDir.resolve("code-search")
-        into(dir)
-        include("**/*")
-        exclude("**/*.go")
-        destinationDir = dir.resolve("sourcegraph-$codeSearchCommit")
-      }
+  fun unzipCodeSearch(): File {
+    val zip = downloadCodeSearch()
+    val dir = buildDir.resolve("code-search")
+    unzip(zip, dir, FileSystems.getDefault().getPathMatcher("glob:**.go"))
+    return dir.resolve("sourcegraph-$codeSearchCommit")
+  }
 
-  val buildCodeSearch =
-      register<Copy>("buildCodeSearch") {
-        val unzipDir = unzipCodeSearch.get().destinationDir
-        if (!unzipDir.exists()) {
-          dependsOn(unzipCodeSearch)
-        } else {
-          println("Cached $unzipDir")
-        }
-        doLast {
-          val sourcegraphDir = unzipCodeSearch.get().destinationDir
-          val destinationDir =
-              rootDir.resolve("src").resolve("main").resolve("resources").resolve("dist")
-          if (destinationDir.isDirectory && !isForceCodeSearchBuild) {
-            println("Cached $destinationDir")
-            return@doLast
-          }
-          exec {
-            workingDir(sourcegraphDir.toString())
-            commandLine("pnpm", "install", "--frozen-lockfile")
-          }
-          exec {
-            workingDir(sourcegraphDir.toString())
-            commandLine("pnpm", "generate")
-          }
-          val jetbrainsDir = sourcegraphDir.resolve("client").resolve("jetbrains")
-          exec {
-            commandLine("pnpm", "build")
-            workingDir(jetbrainsDir)
-          }
-          val buildOutput =
-              jetbrainsDir.resolve("src").resolve("main").resolve("resources").resolve("dist")
-          from(fileTree(buildOutput))
-          into(destinationDir)
-          include("**/*")
-        }
-      }
-
-  processResources { dependsOn(buildCodeSearch) }
+  fun buildCodeSearch(): File? {
+    if (System.getenv("SKIP_CODE_SEARCH_BUILD") == "true") return null
+    val sourcegraphDir = unzipCodeSearch()
+    val destinationDir = rootDir.resolve("src").resolve("main").resolve("resources").resolve("dist")
+    if (!isForceCodeSearchBuild && destinationDir.exists()) {
+      println("Cached $destinationDir")
+      return destinationDir
+    }
+    exec {
+      workingDir(sourcegraphDir.toString())
+      commandLine("pnpm", "install", "--frozen-lockfile")
+    }
+    exec {
+      workingDir(sourcegraphDir.toString())
+      commandLine("pnpm", "generate")
+    }
+    val jetbrainsDir = sourcegraphDir.resolve("client").resolve("jetbrains")
+    exec {
+      commandLine("pnpm", "build")
+      workingDir(jetbrainsDir)
+    }
+    val buildOutput =
+        jetbrainsDir.resolve("src").resolve("main").resolve("resources").resolve("dist")
+    copyRecursively(buildOutput, destinationDir)
+    return destinationDir
+  }
 
   val codyCommit = "68281675fd0731c0b2d30f61b85bb84dea165242"
-  val downloadCody =
-      register<Download>("downloadCody") {
-        val url = "https://github.com/sourcegraph/cody/archive/$codyCommit.zip"
-        src(url)
-        dest(buildDir.resolve("$codyCommit.zip"))
-        overwrite(false)
-      }
+  fun downloadCody(): File {
+    val url = "https://github.com/sourcegraph/cody/archive/$codyCommit.zip"
+    val destination = buildDir.resolve("$codyCommit.zip")
+    download(url, destination)
+    return destination
+  }
+  fun unzipCody(): File {
+    val zipFile = downloadCody()
+    val destination = buildDir.resolve("cody").resolve("cody-$codyCommit")
+    unzip(zipFile, destination.parentFile)
+    return destination
+  }
+  fun buildCody(): File {
+    val codyDir = unzipCody()
+    val destinationDir = buildDir.resolve("sourcegraph").resolve("agent")
+    if (!isForceAgentBuild && (destinationDir.listFiles()?.size ?: 0) > 0) {
+      println("Cached $destinationDir")
+      return destinationDir
+    }
+    println("pnpm install in directory $codyDir")
+    println("children ${codyDir.listFiles()?.map { it.absolutePath }}")
+    exec {
+      workingDir(codyDir)
+      commandLine("pnpm", "install", "--frozen-lockfile")
+    }
+    val agentDir = codyDir.resolve("agent").toString()
+    exec {
+      workingDir(agentDir)
+      commandLine("pnpm", "run", "build-agent-binaries")
+      environment("AGENT_EXECUTABLE_TARGET_DIRECTORY", destinationDir.toString())
+    }
+    return destinationDir
+  }
 
-  val unzipCody =
-      register<Copy>("unzipCody") {
-        val customCodyDir = System.getenv("CODY_DIR")
-        if (customCodyDir != null) {
-          destinationDir = file(customCodyDir)
-          return@register
-        }
-        dependsOn(downloadCody)
-        from(zipTree(downloadCody.get().dest))
-        val dir = buildDir.resolve("cody")
-        into(dir)
-        include("**/*")
-        destinationDir = dir.resolve("cody-$codyCommit")
-      }
+  register("buildCodeSearch") { buildCodeSearch() }
+  register("buildCody") { buildCody() }
 
-  val buildCody =
-      register<Copy>("buildCody") {
-        val unzipDir = unzipCody.get().destinationDir
-        if (!unzipDir.exists()) {
-          dependsOn(unzipCody)
-        } else {
-          println("Cached $unzipDir")
-        }
-        destinationDir = buildDir.resolve("sourcegraph").resolve("agent")
-        doLast {
-          val codyDir = unzipCody.get().destinationDir
-          if (destinationDir.isDirectory && !isForceAgentBuild) {
-            println("Cached $destinationDir")
-            return@doLast
-          }
-          println("pnpm install in directory $codyDir")
-          println("children ${codyDir.listFiles()?.map { it.absolutePath }}")
-          exec {
-            workingDir(codyDir.toString())
-            commandLine("pnpm", "install", "--frozen-lockfile")
-          }
-          exec {
-            commandLine("pnpm", "run", "build-agent-binaries")
-            workingDir(codyDir.resolve("agent").toString())
-            environment("AGENT_EXECUTABLE_TARGET_DIRECTORY", destinationDir.toString())
-          }
-        }
-      }
+  processResources { dependsOn(":buildCodeSearch") }
 
   // Set the JVM compatibility versions
   properties("javaVersion").let {
@@ -237,8 +288,8 @@ tasks {
   }
 
   buildPlugin {
-    dependsOn(buildCodeSearch)
-    val agentDir = buildCody.get().destinationDir.toString()
+    buildCodeSearch()
+    val agentDir = buildCody()
     from(
         fileTree(agentDir) { include("*") },
     ) {
@@ -247,7 +298,7 @@ tasks {
   }
 
   register("buildPluginAndAssertAgentBinariesExist") {
-    dependsOn(buildPlugin)
+    dependsOn(":buildPlugin")
     doLast {
       val pluginPath = buildPlugin.get().outputs.files.first()
       ZipFile(pluginPath).use { zip ->
@@ -267,10 +318,10 @@ tasks {
   }
 
   runIde {
-    dependsOn(buildCody)
+    buildCody()
     jvmArgs("-Djdk.module.illegalAccess.silent=true")
     systemProperty("cody-agent.trace-path", "$buildDir/sourcegraph/cody-agent-trace.json")
-    systemProperty("cody-agent.directory", buildCody.get().destinationDir.toString())
+    systemProperty("cody-agent.directory", buildCody().toString())
     systemProperty("sourcegraph.verbose-logging", "true")
   }
 
@@ -304,7 +355,7 @@ tasks {
     dependsOn("patchChangelog")
     token.set(System.getenv("PUBLISH_TOKEN"))
     // pluginVersion is based on the SemVer (https://semver.org) and supports pre-release labels,
-    // like 2.1.7-alpha.3
+    // like 2.1.7-nightly
     // Specify pre-release label to publish the plugin in a custom Release Channel automatically.
     // Read more:
     // https://plugins.jetbrains.com/docs/intellij/deployment.html#specifying-a-release-channel
