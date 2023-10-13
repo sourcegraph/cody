@@ -442,10 +442,12 @@ export function logError(error: Error): void {
 }
 
 function getSharedParams(event: CompletionEvent): TelemetryEventProperties {
+    const otherCompletionProviders = getOtherCompletionProvider()
     return {
         ...event.params,
         items: event.items.map(i => ({ ...i })),
-        otherCompletionProviderEnabled: otherCompletionProviderEnabled(),
+        otherCompletionProviderEnabled: otherCompletionProviders.length > 0,
+        otherCompletionProviders,
     }
 }
 
@@ -475,7 +477,12 @@ const otherCompletionProviders = [
     'CodeComplete.codecomplete-vscode',
     'Venthe.fauxpilot',
     'TabbyML.vscode-tabby',
+    'blackboxapp.blackbox',
+    'devsense.intelli-php-vscode',
+    'aminer.codegeex',
+    'svipas.code-autocomplete',
+    'mutable-ai.mutable-ai',
 ]
-function otherCompletionProviderEnabled(): boolean {
-    return !!otherCompletionProviders.find(id => vscode.extensions.getExtension(id)?.isActive)
+function getOtherCompletionProvider(): string[] {
+    return otherCompletionProviders.filter(id => vscode.extensions.getExtension(id)?.isActive)
 }

@@ -60,6 +60,7 @@ describe('logger', () => {
             multiline: false,
             multilineMode: null,
             otherCompletionProviderEnabled: false,
+            otherCompletionProviders: [],
             providerIdentifier: 'bfl',
             providerModel: 'blazing-fast-llm',
             charCount: 3,
