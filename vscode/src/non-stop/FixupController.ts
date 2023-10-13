@@ -401,14 +401,14 @@ export class FixupController
     // Called by the non-stop recipe to gather current state for the task.
     public async getTaskRecipeData(
         id: string,
-        enableSmartSelection: boolean
+        options: { enableSmartSelection?: boolean }
     ): Promise<VsCodeFixupTaskRecipeData | undefined> {
         const task = this.tasks.get(id)
         if (!task) {
             return undefined
         }
         const document = await vscode.workspace.openTextDocument(task.fixupFile.uri)
-        if (enableSmartSelection && task.selectionRange) {
+        if (options.enableSmartSelection && task.selectionRange) {
             const newRange = await this.getFixupTaskSmartSelection(task, task.selectionRange)
             task.selectionRange = newRange
         }
