@@ -2,16 +2,12 @@ import * as vscode from 'vscode'
 
 import { updateRangeMultipleChanges } from '../non-stop/tracked-range'
 
-import { CompletionID } from './logger'
+import { CompletionID, logCompletionEvent } from './logger'
 import { lines } from './text-processing'
 import { LevenshteinCompare } from './text-processing/string-comparator'
 import { InlineCompletionItem } from './types'
 
 const MEASURE_TIMEOUTS = [
-    1 * 1000, // 1 second
-    5 * 1000, // 5 seconds
-    15 * 1000, // 15 seconds
-    // -- cut off for debug
     30 * 1000, // 30 seconds
     120 * 1000, // 2 minutes
     300 * 1000, // 5 minutes
@@ -108,7 +104,7 @@ export class PersistenceTracker implements vscode.Disposable {
 
         if (latestText.length === 0) {
             // Text was fully deleted
-            console.log('text was fully deleted, cleaning up tracking')
+            logCompletionEvent('persistence:removed', { id: trackedCompletion.id })
         } else {
             const maxLength = Math.max(initialText.length, latestText.length)
             const editOperations = LevenshteinCompare(initialText, latestText)
@@ -118,12 +114,13 @@ export class PersistenceTracker implements vscode.Disposable {
             console.log({ initialText, latestText, editOperations, maxLength })
             const isMostlyUnchanged = difference < 0.33
 
-            console.log({
-                run: MEASURE_TIMEOUTS[measureTimeoutsIndex] / 1000,
+            logCompletionEvent('persistence:present', {
+                id: trackedCompletion.id,
+                afterSec: MEASURE_TIMEOUTS[measureTimeoutsIndex] / 1000,
                 isMostlyUnchanged,
                 difference,
-                initialText,
-                latestText,
+                lineCount: trackedCompletion.latestRange.end.line - trackedCompletion.latestRange.start.line + 1,
+                charCount: latestText.length,
             })
 
             // If the text is not deleted yet and there are more timeouts, schedule a new run.
