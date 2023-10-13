@@ -4,8 +4,7 @@ on:
     tags: [ "*" ]
 jobs:
   publish:
-    # Using macos-16-xlarge based on this recommendation
-    runs-on: macos-13-xlarge
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-node@v3
