@@ -46,15 +46,15 @@ See [cody.dev](https://cody.dev) for more info.
 
 **Autocomplete**
 
-> <img src="https://storage.googleapis.com/sourcegraph-assets/blog/cody-completions-may2023-optim-sm2.gif" width=400>
+> <img src="https://camo.githubusercontent.com/183f8e41ee44b604ef9085addc80503739452bdd343c872e4a5d617d3732b3c9/68747470733a2f2f73746f726167652e676f6f676c65617069732e636f6d2f736f7572636567726170682d6173736574732f626c6f672f636f64792d636f6d706c6574696f6e732d6d6179323032332d6f7074696d2d736d322e676966" width="400" data-canonical-src="https://storage.googleapis.com/sourcegraph-assets/blog/cody-completions-may2023-optim-sm2.gif">
 
 **Inline chat**
 
-> <img src="https://storage.googleapis.com/sourcegraph-assets/website/Product%20Animations/GIFS/cody_inline_June23-sm.gif" width=400>
+> <img src="https://camo.githubusercontent.com/1bd5c73139701356807b9e998261e70ba69f2ea26ed29a9b8c233e16ec8b4ed4/68747470733a2f2f73746f726167652e676f6f676c65617069732e636f6d2f736f7572636567726170682d6173736574732f776562736974652f50726f64756374253230416e696d6174696f6e732f474946532f636f64795f696e6c696e655f4a756e6532332d736d2e676966" width="400" data-canonical-src="https://storage.googleapis.com/sourcegraph-assets/website/Product%20Animations/GIFS/cody_inline_June23-sm.gif">
 
 **Codebase-wide chat:**
 
-> <img src="https://storage.googleapis.com/sourcegraph-assets/website/Product%20Animations/GIFS/cody-chat-may2023-optim.gif" width=400>
+> <img src="https://camo.githubusercontent.com/2a0b73e75d1cc54a8eb2394c3694c28c2c325b04530abbfc383ba718913808c1/68747470733a2f2f73746f726167652e676f6f676c65617069732e636f6d2f736f7572636567726170682d6173736574732f776562736974652f50726f64756374253230416e696d6174696f6e732f474946532f636f64792d636861742d6d6179323032332d6f7074696d2e676966" width="400" data-canonical-src="https://storage.googleapis.com/sourcegraph-assets/website/Product%20Animations/GIFS/cody-chat-may2023-optim.gif">
 
 ## Contributing
 
