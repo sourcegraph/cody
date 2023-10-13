@@ -186,6 +186,7 @@ export class ContextProvider implements vscode.Disposable {
                 contextStatus: {
                     mode: this.config.useContext,
                     connection: this.codebaseContext.checkEmbeddingsConnection(),
+                    embeddingsEndpoint: this.codebaseContext.embeddingsEndpoint,
                     codebase: this.codebaseContext.getCodebase(),
                     filePath: editorContext ? vscode.workspace.asRelativePath(editorContext.filePath) : undefined,
                     selectionRange: editorContext ? editorContext.selectionRange : undefined,
