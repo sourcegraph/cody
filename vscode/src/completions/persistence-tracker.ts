@@ -56,14 +56,6 @@ export class PersistenceTracker implements vscode.Disposable {
             textLines.length > 1 ? textLines.at(-1)!.length : completion.range.end.character + textLines[0].length
         )
 
-        console.log(
-            'start tracking',
-            id,
-            JSON.stringify(completion.range),
-            document.getText(latestRange),
-            completion.insertText
-        )
-
         const trackedCompletion = {
             completion,
             document,
@@ -86,7 +78,6 @@ export class PersistenceTracker implements vscode.Disposable {
 
     private enqueueMeasure(trackedCompletion: TrackedCompletion, nextTimeoutIndex: number): void {
         const timeout = trackedCompletion.insertedAt + MEASURE_TIMEOUTS[nextTimeoutIndex] - Date.now()
-        console.log('schedule timeout', timeout)
         const timeoutId = setTimeout(() => {
             this.managedTimeouts.delete(timeoutId)
             this.measure(trackedCompletion, nextTimeoutIndex)
@@ -108,10 +99,7 @@ export class PersistenceTracker implements vscode.Disposable {
         } else {
             const maxLength = Math.max(initialText.length, latestText.length)
             const editOperations = LevenshteinCompare(initialText, latestText)
-
             const difference = editOperations / maxLength
-
-            console.log({ initialText, latestText, editOperations, maxLength })
             const isMostlyUnchanged = difference < 0.33
 
             logCompletionEvent('persistence:present', {

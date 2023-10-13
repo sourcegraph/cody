@@ -13,7 +13,7 @@ import {
     ProviderConfig,
     ProviderOptions,
     standardContextSizeHints,
-} from './provider2131'
+} from './provider'
 
 export interface FireworksOptions {
     model: FireworksModel

@@ -23,7 +23,7 @@ import {
 import { getLatency, LatencyFeatureFlags, resetLatency } from './latency'
 import * as CompletionLogger from './logger'
 import { CompletionEvent, SuggestionID } from './logger'
-import { ProviderConfig } from './providers/provider2131'
+import { ProviderConfig } from './providers/provider'
 import { RequestManager, RequestParams } from './request-manager'
 import { getRequestParamsFromLastCandidate } from './reuse-last-candidate'
 import { InlineCompletionItemWithAnalytics } from './text-processing/process-inline-completions'

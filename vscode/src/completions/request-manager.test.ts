@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 
 import { getCurrentDocContext } from './get-current-doc-context'
-import { Provider } from './providers/provider2131'
+import { Provider } from './providers/provider'
 import { RequestManager, RequestManagerResult, RequestParams } from './request-manager'
 import { documentAndPosition } from './test-helpers'
 import { Completion } from './types'
