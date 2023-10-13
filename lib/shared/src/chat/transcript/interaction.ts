@@ -23,9 +23,7 @@ export class Interaction {
         private usedContextFiles: ContextFile[],
         private usedPreciseContext: PreciseContext[] = [],
         public readonly timestamp: string = new Date().toISOString()
-    ) {
-        this.removeCodyIgnoredFiles().catch(() => {})
-    }
+    ) {}
 
     /**
      * Removes context messages for files that should be ignored.
@@ -36,7 +34,7 @@ export class Interaction {
      *
      * This ensures context from ignored files does not get used.
      */
-    private async removeCodyIgnoredFiles(): Promise<void> {
+    private async removeCodyIgnoredFiles(): Promise<ContextMessage[]> {
         const contextMessages = await this.fullContext
         const newMessages = []
         for (let i = 0; i < contextMessages.length; i++) {
@@ -51,6 +49,7 @@ export class Interaction {
             newMessages.push(message)
         }
         this.fullContext = Promise.resolve(newMessages)
+        return newMessages
     }
 
     public getAssistantMessage(): InteractionMessage {
@@ -66,12 +65,12 @@ export class Interaction {
     }
 
     public async getFullContext(): Promise<ContextMessage[]> {
-        const msgs = await this.fullContext
+        const msgs = await this.removeCodyIgnoredFiles()
         return msgs.map(msg => ({ ...msg }))
     }
 
     public async hasContext(): Promise<boolean> {
-        const contextMessages = await this.fullContext
+        const contextMessages = await this.removeCodyIgnoredFiles()
         return contextMessages.length > 0
     }
 
