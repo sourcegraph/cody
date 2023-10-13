@@ -35,14 +35,11 @@ using the `jetbrains-ide` & `team/integrations` labels.
 
 ## Using Nightly channel releases
 
-We occasionally publish plugins to the "Nightly" channel instead of the default
-"Stable" channel. The nightly channel is primarily intended to publish
-pre-releases for internal (within Sourcegraph) testing.
-
-- Open Settings
+- Open "Sourcegraph & Cody" settings
+- Change to "Nightly" update channel
 - Open "Plugins"
-- Click on cogwheel in the top bar, select "Manage plugin repositories"
-- Add the URL https://plugins.jetbrains.com/plugins/list?channel=nightly&pluginId=9682
+- Update Sourcegraph plugin
+- Restart IDE
 
 Remove the URL from the plugin repository list to go back to the stable channel.
 

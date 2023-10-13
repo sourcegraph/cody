@@ -5,6 +5,7 @@ import java.nio.file.FileSystems
 import java.nio.file.FileVisitResult
 import java.nio.file.Files
 import java.nio.file.PathMatcher
+import java.nio.file.Paths
 import java.nio.file.SimpleFileVisitor
 import java.nio.file.StandardCopyOption
 import java.nio.file.attribute.BasicFileAttributes
@@ -26,7 +27,6 @@ val isForceCodeSearchBuild = isForceBuild || properties("forceCodeSearchBuild") 
 
 plugins {
   id("java")
-  id("de.undercouch.download") version "5.5.0"
   // Dependencies are locked at this version to work with JDK 11 on CI.
   id("org.jetbrains.kotlin.jvm") version "1.9.10"
   id("org.jetbrains.intellij") version "1.15.0"
@@ -161,18 +161,21 @@ fun unzip(input: File, output: File, excludeMatcher: PathMatcher? = null) {
   }
 }
 
+val githubArchiveCache =
+    Paths.get(System.getProperty("user.home"), ".gradle", "caches", "sourcegraph").toFile()
+
 tasks {
   val codeSearchCommit = "9d86a4f7d183e980acfe5d6b6468f06aaa0d8acf"
   fun downloadCodeSearch(): File {
     val url = "https://github.com/sourcegraph/sourcegraph/archive/$codeSearchCommit.zip"
-    val destination = buildDir.resolve("$codeSearchCommit.zip")
+    val destination = githubArchiveCache.resolve("$codeSearchCommit.zip")
     download(url, destination)
     return destination
   }
 
   fun unzipCodeSearch(): File {
     val zip = downloadCodeSearch()
-    val dir = buildDir.resolve("code-search")
+    val dir = githubArchiveCache.resolve("code-search")
     unzip(zip, dir, FileSystems.getDefault().getPathMatcher("glob:**.go"))
     return dir.resolve("sourcegraph-$codeSearchCommit")
   }
@@ -207,13 +210,13 @@ tasks {
   val codyCommit = "68281675fd0731c0b2d30f61b85bb84dea165242"
   fun downloadCody(): File {
     val url = "https://github.com/sourcegraph/cody/archive/$codyCommit.zip"
-    val destination = buildDir.resolve("$codyCommit.zip")
+    val destination = githubArchiveCache.resolve("$codyCommit.zip")
     download(url, destination)
     return destination
   }
   fun unzipCody(): File {
     val zipFile = downloadCody()
-    val destination = buildDir.resolve("cody").resolve("cody-$codyCommit")
+    val destination = githubArchiveCache.resolve("cody").resolve("cody-$codyCommit")
     unzip(zipFile, destination.parentFile)
     return destination
   }
