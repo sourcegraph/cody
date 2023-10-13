@@ -240,7 +240,7 @@ export class FixupController
         const fileName = task.fixupFile.uri.fsPath
         const documentUri = vscode.Uri.file(fileName)
 
-        // Retreive the start position of the current selection
+        // Retrieve the start position of the current selection
         const activeCursorStartPosition = selectionRange.start
         // If we find a new expanded selection positon then we set it as the new start position
         // and if we don't then we fallback to the original selection made by the user
