@@ -4,8 +4,8 @@ import { tokensToChars } from '@sourcegraph/cody-shared/src/prompt/constants'
 import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
 import { CompletionResponse } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
 
+import { canUsePartialCompletion } from '../can-use-partial-completion'
 import { CodeCompletionsClient, CodeCompletionsParams } from '../client'
-import { canUsePartialCompletion } from '../streaming'
 import {
     CLOSING_CODE_TAG,
     extractFromCodeBlock,
@@ -190,13 +190,13 @@ export class AnthropicProvider extends Provider {
                     params,
                     (incompleteResponse: CompletionResponse) => {
                         const processedCompletion = this.postProcess(incompleteResponse.completion)
-                        if (
-                            canUsePartialCompletion(processedCompletion, {
-                                document: { languageId: this.options.languageId },
-                                multiline: this.options.multiline,
-                                docContext: this.options.docContext,
-                            })
-                        ) {
+                        const usePartialCompletion = canUsePartialCompletion(processedCompletion, {
+                            document: { languageId: this.options.languageId },
+                            multiline: this.options.multiline,
+                            docContext: this.options.docContext,
+                        })
+
+                        if (usePartialCompletion) {
                             resolve({ ...incompleteResponse, completion: processedCompletion })
                             abortController.abort()
                         }

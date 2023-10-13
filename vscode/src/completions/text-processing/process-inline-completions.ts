@@ -136,7 +136,7 @@ function processCompletion(params: ProcessItemParams): InlineCompletionItemWithA
             insertText = truncateParsedCompletion({ completion: parsed, document })
             parsed.truncatedWith = 'tree-sitter'
         } else {
-            insertText = truncateMultilineCompletion(insertText, prefix, suffix, document.languageId)
+            insertText = truncateMultilineCompletion(insertText, prefix, suffix, document.languageId).text
             parsed.truncatedWith = 'indentation'
         }
         const truncatedLineCount = insertText.split('\n').length

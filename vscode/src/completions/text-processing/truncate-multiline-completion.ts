@@ -4,15 +4,27 @@ import { getLanguageConfig } from '../language'
 
 import { getEditorTabSize, indentation, shouldIncludeClosingLine } from './utils'
 
+interface TruncateResult {
+    truncatedStart: boolean
+    truncatedEnd: boolean
+    text: string
+}
+
 export function truncateMultilineCompletion(
     completion: string,
     prefix: string,
     suffix: string,
     languageId: string
-): string {
+): TruncateResult {
     const config = getLanguageConfig(languageId)
+    const result: TruncateResult = {
+        truncatedStart: false,
+        truncatedEnd: false,
+        text: completion,
+    }
+
     if (!config) {
-        return completion
+        return result
     }
 
     // Ensure that the completion has the same or larger indentation
@@ -36,6 +48,7 @@ export function truncateMultilineCompletion(
     if (lines.length > 1 && lines[0] === '' && indentation(lines[1]) === startIndent) {
         lines.shift()
         lines[0] = lines[0].trimStart()
+        result.truncatedStart = true
     }
 
     const includeClosingLine = shouldIncludeClosingLine(prefixIndentationWithFirstCompletionLine, suffix)
@@ -63,7 +76,12 @@ export function truncateMultilineCompletion(
         }
     }
 
-    return lines.slice(0, cutOffIndex).join('\n')
+    if (cutOffIndex < lines.length) {
+        result.truncatedEnd = true
+        result.text = lines.slice(0, cutOffIndex).join('\n')
+    }
+
+    return result
 }
 
 /**
