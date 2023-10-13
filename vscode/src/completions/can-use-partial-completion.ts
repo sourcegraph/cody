@@ -23,6 +23,7 @@ export function canUsePartialCompletion(
     partialResponse: string,
     { document, multiline, docContext: { prefix, suffix } }: CanUsePartialCompletionParams
 ): boolean {
+    // return false
     const lastNlIndex = partialResponse.lastIndexOf('\n')
 
     // If there is no `\n` in the completion, we have not received a single full line yet
@@ -34,10 +35,18 @@ export function canUsePartialCompletion(
     const completion = partialResponse.slice(0, lastNlIndex)
 
     if (multiline) {
-        let truncated = truncateMultilineCompletion(completion, prefix, suffix, document.languageId)
-        truncated = trimUntilSuffix(truncated, prefix, suffix, document.languageId)
+        // `truncateMultilineCompletion` removes the leading new line in some cases
+        // so we explicitly check if lines the end of the completions were deleted.
+        const { truncatedEnd, text: withTruncatedBlock } = truncateMultilineCompletion(
+            completion,
+            prefix,
+            suffix,
+            document.languageId
+        )
 
-        return truncated.split('\n').length < completion.split('\n').length
+        const withTruncatedSuffix = trimUntilSuffix(withTruncatedBlock, prefix, suffix, document.languageId)
+
+        return truncatedEnd || withTruncatedSuffix.split('\n').length < withTruncatedBlock.split('\n').length
     }
 
     const isNonEmptyLine = completion.trim() !== ''

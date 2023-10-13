@@ -1,9 +1,9 @@
 import { tokensToChars } from '@sourcegraph/cody-shared/src/prompt/constants'
 import { CompletionResponse } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
 
+import { canUsePartialCompletion } from '../can-use-partial-completion'
 import { CodeCompletionsClient, CodeCompletionsParams } from '../client'
 import { getLanguageConfig } from '../language'
-import { canUsePartialCompletion } from '../streaming'
 import { Completion, ContextSnippet } from '../types'
 import { forkSignal } from '../utils'
 
