@@ -14,7 +14,7 @@ const meta: Meta<typeof EmbeddingsEnabledNotice> = {
 
 export default meta
 
-export const EmbeddingsEnabled: StoryObj<typeof EmbeddingsEnabledNotice> = {
+export const EmbeddingsEnabledToast: StoryObj<typeof EmbeddingsEnabledNotice> = {
     render: () => (
         <div className={styles.testDarkSidebar}>
             <EmbeddingsEnabledNotice />

@@ -124,17 +124,13 @@ export class CustomPrompt implements Recipe {
             const currentDirMessages = await getCurrentDirContext(isUnitTestRequest)
             contextMessages.push(...currentDirMessages)
         }
-        if (!promptContext.directoryPath) {
-            if (promptContext.directoryPath) {
-                const dirMessages = await getEditorDirContext(promptContext.directoryPath, selection?.fileName)
-                contextMessages.push(...dirMessages)
-            }
+        if (promptContext.directoryPath) {
+            const dirMessages = await getEditorDirContext(promptContext.directoryPath, selection?.fileName)
+            contextMessages.push(...dirMessages)
         }
-        if (!promptContext.filePath) {
-            if (promptContext.filePath) {
-                const fileMessages = await getFilePathContext(promptContext.filePath)
-                contextMessages.push(...fileMessages)
-            }
+        if (promptContext.filePath) {
+            const fileMessages = await getFilePathContext(promptContext.filePath)
+            contextMessages.push(...fileMessages)
         }
 
         // Context for unit tests requests
