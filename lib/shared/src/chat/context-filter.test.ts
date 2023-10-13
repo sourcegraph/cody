@@ -26,22 +26,19 @@ describe('isCodyIgnoredFile', () => {
     it.each([
         'node_modules/foo',
         'cody',
-        'cody.ts',
         'cody/test.ts',
         'foo/bar',
         'foo/bar/index.css',
         'foo/foobarz.js',
         'fooz',
-        'barz/foo',
         '.git',
-        '.gitignore',
         '.git/foo',
         'foo/.git',
     ])('returns true for file in ignore list %s', (file: string) => {
         expect(isCodyIgnoredFile(file)).toBe(true)
     })
 
-    it.each(['src/app.ts', 'env/foobarz.js', 'foobar.go', '.barz', 'bar'])(
+    it.each(['src/app.ts', 'env/foobarz.js', 'foobar.go', '.barz', 'bar', '.gitignore', 'barz/foo', 'cody.ts'])(
         'returns false for file not in ignore list %s',
         (file: string) => {
             expect(isCodyIgnoredFile(file)).toBe(false)

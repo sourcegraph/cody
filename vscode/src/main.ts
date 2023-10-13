@@ -82,6 +82,8 @@ const register = async (
 
     // Set codyignore list on startup
     await createCodyIgnoreList()
+    // const codyIgnoreWatcher = await getCodyIgnoreFileWatcher()
+    // disposables.push(codyIgnoreWatcher)
 
     // Controller for inline Chat
     const commentController = new InlineController(context.extensionPath)

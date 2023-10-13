@@ -1,8 +1,10 @@
+import path from 'path'
+
 import ignore from 'ignore'
 
-export const CODY_IGNORE_FILENAME = '.codyignore'
+export const CODY_IGNORE_FILENAME = '.cody/.ignore'
 
-const codyIgnored = ignore().add(['.env'])
+let codyIgnored = ignore().add(['.env'])
 
 /**
  * Checks if a given file path is ignored by .codyignore rules.
@@ -14,8 +16,8 @@ export function isCodyIgnoredFile(filePath?: string): boolean {
     if (!filePath) {
         return false
     }
-    // check if the file path is ignored by the codyignore file
-    return codyIgnored.ignores(filePath)
+    // ignores should be path.relative d string
+    return codyIgnored.ignores(path.relative('/', filePath))
 }
 
 /**
@@ -45,5 +47,5 @@ export function setCodyIgnoreList(codyIgnoreFileContent: string): void {
         }
         patternList.add(line.trim())
     }
-    ignore().add(Array.from(patternList))
+    codyIgnored = ignore().add(Array.from(patternList))
 }
