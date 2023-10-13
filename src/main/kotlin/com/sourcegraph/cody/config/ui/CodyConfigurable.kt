@@ -4,10 +4,8 @@ import com.intellij.openapi.components.service
 import com.intellij.openapi.options.BoundConfigurable
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogPanel
-import com.intellij.openapi.updateSettings.impl.UpdateSettings
 import com.intellij.ui.ColorPanel
 import com.intellij.ui.JBColor
-import com.intellij.ui.SimpleListCellRenderer
 import com.intellij.ui.components.JBCheckBox
 import com.intellij.ui.dsl.builder.*
 import com.intellij.ui.dsl.gridLayout.HorizontalAlign
@@ -54,16 +52,6 @@ class CodyConfigurable(val project: Project) : BoundConfigurable(ConfigUtil.CODY
           checkBox("Accept non-trusted certificates")
               .enabledIf(enableCodyCheckbox.selected)
               .bindSelected(settingsModel::shouldAcceptNonTrustedCertificatesAutomatically)
-        }
-      }
-
-      group("Plugin") {
-        row {
-          label("Update channel:")
-          comboBox(
-                  UpdateChannel.values().toList(),
-                  SimpleListCellRenderer.create("") { it.presentableText })
-              .bindItem(settingsModel::channel.toNullableProperty())
         }
       }
 
@@ -114,7 +102,6 @@ class CodyConfigurable(val project: Project) : BoundConfigurable(ConfigUtil.CODY
     settingsModel.blacklistedLanguageIds = codyApplicationSettings.blacklistedLanguageIds
     settingsModel.shouldAcceptNonTrustedCertificatesAutomatically =
         codyApplicationSettings.shouldAcceptNonTrustedCertificatesAutomatically
-    settingsModel.channel = findConfiguredChannel()
     dialogPanel.reset()
   }
 
@@ -146,36 +133,8 @@ class CodyConfigurable(val project: Project) : BoundConfigurable(ConfigUtil.CODY
     codyApplicationSettings.blacklistedLanguageIds = settingsModel.blacklistedLanguageIds
     codyApplicationSettings.shouldAcceptNonTrustedCertificatesAutomatically =
         settingsModel.shouldAcceptNonTrustedCertificatesAutomatically
-    applyChannelConfiguration()
 
     publisher.afterAction(context)
-  }
-
-  private fun applyChannelConfiguration() {
-    val configuredChannel = findConfiguredChannel()
-    val newChannel = settingsModel.channel
-
-    if (!configuredChannel.equals(newChannel)) {
-      if (!UpdateChannel.Stable.equals(configuredChannel)) {
-        UpdateSettings.getInstance().storedPluginHosts.remove(configuredChannel.channelUrl)
-      }
-
-      if (!UpdateChannel.Stable.equals(newChannel)) {
-        UpdateSettings.getInstance().storedPluginHosts.add(newChannel.channelUrl)
-      }
-    }
-  }
-
-  private fun findConfiguredChannel(): UpdateChannel {
-    var currentChannel = UpdateChannel.Stable
-    for (channel in UpdateChannel.values()) {
-      val url = channel.channelUrl
-      if (url != null && UpdateSettings.getInstance().storedPluginHosts.contains(url)) {
-        currentChannel = channel
-        break
-      }
-    }
-    return currentChannel
   }
 }
 

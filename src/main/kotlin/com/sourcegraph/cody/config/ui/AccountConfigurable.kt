@@ -6,7 +6,10 @@ import com.intellij.openapi.components.service
 import com.intellij.openapi.options.BoundConfigurable
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogPanel
+import com.intellij.openapi.updateSettings.impl.UpdateSettings
 import com.intellij.openapi.util.Disposer
+import com.intellij.ui.SimpleListCellRenderer
+import com.intellij.ui.dsl.builder.bindItem
 import com.intellij.ui.dsl.builder.panel
 import com.intellij.ui.dsl.gridLayout.HorizontalAlign
 import com.intellij.ui.dsl.gridLayout.VerticalAlign
@@ -30,6 +33,7 @@ class AccountConfigurable(val project: Project) :
   private val accountsModel = CodyAccountListModel(project)
   private val activeAccountHolder = project.service<CodyProjectActiveAccountHolder>()
   private lateinit var dialogPanel: DialogPanel
+  private var channel: UpdateChannel = findConfiguredChannel()
 
   override fun createPanel(): DialogPanel {
     dialogPanel = panel {
@@ -56,6 +60,16 @@ class AccountConfigurable(val project: Project) :
                   if (CodyAccountsHost.DATA_KEY.`is`(key)) accountsModel else null
                 }
               }
+        }
+      }
+
+      group("Plugin") {
+        row {
+          label("Update channel:")
+          comboBox(
+                  UpdateChannel.values().toList(),
+                  SimpleListCellRenderer.create("") { it.presentableText })
+              .bindItem({ channel }, { channel = it!! })
         }
       }
     }
@@ -93,5 +107,34 @@ class AccountConfigurable(val project: Project) :
     CodyAuthenticationManager.instance.setActiveAccount(project, activeAccount)
     accountsModel.activeAccount = activeAccount
     publisher.afterAction(context)
+
+    applyChannelConfiguration()
+  }
+
+  private fun applyChannelConfiguration() {
+    val configuredChannel = findConfiguredChannel()
+    val newChannel = channel
+
+    if (!configuredChannel.equals(newChannel)) {
+      if (!UpdateChannel.Stable.equals(configuredChannel)) {
+        UpdateSettings.getInstance().storedPluginHosts.remove(configuredChannel.channelUrl)
+      }
+
+      if (!UpdateChannel.Stable.equals(newChannel)) {
+        UpdateSettings.getInstance().storedPluginHosts.add(newChannel.channelUrl)
+      }
+    }
+  }
+
+  private fun findConfiguredChannel(): UpdateChannel {
+    var currentChannel = UpdateChannel.Stable
+    for (channel in UpdateChannel.values()) {
+      val url = channel.channelUrl
+      if (url != null && UpdateSettings.getInstance().storedPluginHosts.contains(url)) {
+        currentChannel = channel
+        break
+      }
+    }
+    return currentChannel
   }
 }
