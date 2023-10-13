@@ -249,7 +249,7 @@ export class FixupController
 
         // Retreive the ending line of the current selection
         const activeCursorEndPosition = selectionRange.end
-        // If we find a new expanded selection positon then we set it as the new ending position
+        // If we find a new expanded selection position then we set it as the new ending position
         // and if we don't then we fallback to the original selection made by the user
         const newSelectionEndingPosition =
             (await getSmartSelection(documentUri, activeCursorEndPosition.line))?.end || selectionRange.end
