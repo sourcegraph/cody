@@ -21,6 +21,6 @@ jobs:
       - run: |
           echo "RELEASE_VERSION=$(./scripts/version-from-git-tag.sh)-nightly" >> $GITHUB_ENV
       - run: echo "Publishing version $RELEASE_VERSION"
-      - run: ./gradlew "-DpluginVersion=$RELEASE_VERSION" publishPlugin
+      - run: ./gradlew "-PpluginVersion=$RELEASE_VERSION" publishPlugin
         env:
           PUBLISH_TOKEN: ${{ secrets.PUBLISH_TOKEN }}
