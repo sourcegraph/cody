@@ -10,6 +10,15 @@ jobs:
       - name: Fetch Sources
         uses: actions/checkout@v3
       - run: yarn global add pnpm@8.6.7
+      - run: echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
+        shell: bash
+        id: pnpm-cache
+      - name: Cache pnpm store
+        uses: actions/cache@v3
+        with:
+          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+          key: ${{ runner.os }}-${{ matrix.node }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: ${{ runner.os }}-${{ matrix.node }}-pnpm-store-k
       - name: Gradle Wrapper Validation
         uses: gradle/wrapper-validation-action@v1.0.4
       - uses: actions/setup-node@v3
@@ -23,6 +32,10 @@ jobs:
           cache: gradle
       # Skip Code Search build in CI because it's slow, and we don't use it anyway for testing purposes.
       - run: echo "SKIP_CODE_SEARCH_BUILD=true" >> $GITHUB_ENV
+      - uses: burrunan/gradle-cache-action@v1
+        with:
+          arguments: compileKotlin
+          gradle-version: wrapper
       - name: Run Tests
         run: ./gradlew --stacktrace --info test
       - name: Run Build Plugin
