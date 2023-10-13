@@ -1,12 +1,3 @@
-# GitHub Actions Workflow created for testing the JetBrains extension plugin in following steps:
-#
-# - validate Gradle Wrapper
-# - run 'test' tasks
-# - run 'buildPlugin' task
-#
-# Note: This workflow works in isolation to the JavaScript artifacts necessary for full testing. It
-#       is intended to only test if the Java plugin compiles without issues.
-
 name: JetBrains Tests
 on:
   pull_request:
@@ -15,50 +6,23 @@ jobs:
     name: JetBrains tests
     runs-on: ubuntu-latest
     steps:
-      # Check out current repository
       - name: Fetch Sources
         uses: actions/checkout@v3
-      - run: yarn global add pnpm
-      - run: git clone https://github.com/sourcegraph/cody.git ../cody
-      - run: pnpm install --frozen-lockfile
-        working-directory: ../cody
-      - run: echo "SKIP_CODE_SEARCH_ASSETS_BUILD=true" >> $GITHUB_ENV
-
-      # Validate wrapper
+      - run: yarn global add pnpm@8.6.7
       - name: Gradle Wrapper Validation
         uses: gradle/wrapper-validation-action@v1.0.4
-
-
-      # Setup Java 11 environment for the next steps
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 20
       - name: Setup Java
         uses: actions/setup-java@v3
         with:
           distribution: zulu
           java-version: 11
           cache: gradle
-
-      #      # Note: necessary to enable plugin verification
-      #      - name: Cache Gradle downloads & JetBrains IDE platforms for verification
-      #        id: cache-platform-versions
-      #        uses: actions/cache@v3
-      #        with:
-      #          path:  |
-      #            ~/.gradle/caches
-      #            ~/.cache/pluginVerifier
-      #          key: ${{ runner.os }}-gradle-ides-${{ hashFiles('**/build.gradle.kts') }}
-      #          restore-keys: |
-      #            ${{ runner.os }}-gradle-ides-
-      #            ${{ runner.os }}-
-
       - name: Run Tests
-        run: ./gradlew --info test
-
+        run: ./gradlew --stacktrace --info test
       - name: Run Build Plugin
         run: ./gradlew --info buildPlugin
-
-      #      # Note: very time & memory consuming, can enable when resources are available
-      #      - name: Verify Plugin Compatibility
-      #        run: ./gradlew runPluginVerifier
-
       - name: Check formatting
         run: ./gradlew spotlessCheck

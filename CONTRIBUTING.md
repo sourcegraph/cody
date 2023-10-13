@@ -12,14 +12,14 @@ using the `jetbrains-ide` & `team/integrations` labels.
 
 ## Development
 
-
-- Install Java 11 via SDKMAN! https://sdkman.io. Once you have SDKMAN! installed, run `sdk use java 11.0.15-tem`. Confirm that you have Java 11 installed with `java -version`.
+- Install Java 11 via SDKMAN! https://sdkman.io. Once you have SDKMAN! installed, run `sdk use java 11.0.15-tem`.
+  Confirm that you have Java 11 installed with `java -version`.
 - Clone `https://github.com/sourcegraph/sourcegraph`
 - Clone `https://github.com/sourcegraph/cody` in a sibling directory. The toplevel directories for
   sourcegraph/sourcegraph and sourcegraph/cody must be next to each other.
 - Install the following two IntelliJ plugins to format Java and Kotlin on file save
-  - https://plugins.jetbrains.com/plugin/8527-google-java-format
-  - https://plugins.jetbrains.com/plugin/14912-ktfmt
+    - https://plugins.jetbrains.com/plugin/8527-google-java-format
+    - https://plugins.jetbrains.com/plugin/14912-ktfmt
 
 | What                                                          | Command                                                                  |
 |---------------------------------------------------------------|--------------------------------------------------------------------------|
@@ -57,46 +57,32 @@ Take the steps below _before_ [running JetBrains plugin with agent](#developing-
   cody.autocomplete.advanced.serverEndpoint: https://backend.example.com/complete_batch
   ```
 - Run `gcloud` SOCKS proxy to access the LLM backend:
-  - Make sure to authorize with GCP: `gcloud auth login`
-  - Request Sourcegraph GCP access through Entitle.
-  - Bring up the proxy:
-    ```
-    gcloud --verbosity "debug" compute ssh --zone "us-central1-a" "codegen-access-test" --project "sourcegraph-dogfood" --ssh-flag="-D" --ssh-flag="9999" --ssh-flag="-N"
-    ```
-  - Patch in [sg/socks-proxy](https://github.com/sourcegraph/cody/compare/sg/socks-proxy?expand=1).
-    Note: After [#56254](https://github.com/sourcegraph/sourcegraph/issues/56254) is resolved this step is not needed
-    anymore.
+    - Make sure to authorize with GCP: `gcloud auth login`
+    - Request Sourcegraph GCP access through Entitle.
+    - Bring up the proxy:
+      ```
+      gcloud --verbosity "debug" compute ssh --zone "us-central1-a" "codegen-access-test" --project "sourcegraph-dogfood" --ssh-flag="-D" --ssh-flag="9999" --ssh-flag="-N"
+      ```
+    - Patch in [sg/socks-proxy](https://github.com/sourcegraph/cody/compare/sg/socks-proxy?expand=1).
+      Note: After [#56254](https://github.com/sourcegraph/sourcegraph/issues/56254) is resolved this step is not needed
+      anymore.
 
-## Publishing a new version
+## Publishing a new alpha version
 
-1. Update `pluginVersion` in `gradle.properties`
+Run the following script to publish a new **alpha** version
 
-- To create pre-release builds with the same version as a previous one, append `.{N}`. For example, `1.0.0-alpha`,
-  then `1.0.0-alpha.1`, `1.0.0-alpha.2`, and so on.
+```shell
+./scripts/push-git-tag-for-next-release.sh
+```
 
-2. Describe the changes in the `[Unreleased]` section of `CHANGELOG.md` then remove any empty headers
-3. Go through
-   the [manual test cases](https://docs.sourcegraph.com/integration/jetbrains/manual_testing)
-4. Make sure `runIde` is not running
-5. Commit your changes
-6. Run `PUBLISH_TOKEN=<YOUR TOKEN HERE> ./scripts/release.sh` from the root directory (You
-   can [generate tokens on the JetBrains marketplace](https://plugins.jetbrains.com/author/me/tokens)).
-7. Commit changes and create PR
+This script runs `verify-release.sh`, which takes a long time to run with a clean cache, which is why we don't run it in
+CI. When you have a local cache of IDEA installations then this script can run decently fast (~1-2min).
 
-## Retrying a release
+## Publishing a new stable version
 
-It happened in the past that we had compatibility issues and the version got rejected.
-Here is what to do in this case:
-
-1. Go to the [versions](https://plugins.jetbrains.com/plugin/9682-sourcegraph/versions/) page logged in with a JetBrains
-   plugin admin account
-2. Go to the latest (failed) version, and click the Trash icon to delete it.
-3. Fix the problem in the code
-4. **Important:** Don't forget to revert the info in CHANGELOG.md to the pre-release state. Then you'll need to commit.
-5. Publish the version again
-6. (Here, of course, you'll need to commit CHANGELOG.md again)
-7. You don't need to wait for JetBrains' email—compatibility checks are visible after a few minutes on the same page.
-8. If the version is still rejected, repeat the process.
+This workflow is not automated yet. Our goal is to publish stable releases by promoting alpha releases that have been
+manually tested. What we're missing is a script to download the zip file of an alpha release, correct the version
+to be non-alpha and then upload it to the JetBrains Marketplace.
 
 ## Enabling web view debugging
 
