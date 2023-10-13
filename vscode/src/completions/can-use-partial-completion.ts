@@ -23,7 +23,6 @@ export function canUsePartialCompletion(
     partialResponse: string,
     { document, multiline, docContext: { prefix, suffix } }: CanUsePartialCompletionParams
 ): boolean {
-    // return false
     const lastNlIndex = partialResponse.lastIndexOf('\n')
 
     // If there is no `\n` in the completion, we have not received a single full line yet
