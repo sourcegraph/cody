@@ -198,7 +198,6 @@ const register = async (
             document?: vscode.TextDocument
             instruction?: string
             range?: vscode.Range
-            auto?: boolean
             insertMode?: boolean
         } = {},
         source = 'editor' // where the command was triggered from
@@ -215,7 +214,7 @@ const register = async (
         }
 
         const task = args.instruction?.replace('/edit', '').trim()
-            ? fixup.createTask(document.uri, args.instruction, range, args.auto, args.insertMode)
+            ? fixup.createTask(document.uri, args.instruction, range, args.insertMode)
             : await fixup.promptUserForTask()
         if (!task) {
             return
@@ -283,7 +282,6 @@ const register = async (
                     range?: vscode.Range
                     instruction?: string
                     document?: vscode.TextDocument
-                    auto?: boolean
                     insertMode?: boolean
                 },
                 source?: string

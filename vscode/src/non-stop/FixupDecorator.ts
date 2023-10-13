@@ -7,30 +7,39 @@ import { FixupTask } from './FixupTask'
 interface TaskDecorations {
     edits: vscode.Range[]
     conflicts: vscode.Range[]
+    unvisitedLines: number[]
 }
 
-function makeDecorations(diff: Diff | undefined): TaskDecorations {
+function makeDecorations(diff: Diff | undefined, selection: vscode.Range): TaskDecorations {
     if (!diff) {
         return {
+            unvisitedLines: selection,
             edits: [],
             conflicts: [],
         }
     }
+
+    const edits = diff.edits.map(
+        edit =>
+            new vscode.Range(
+                new vscode.Position(edit.range.start.line, edit.range.start.character),
+                new vscode.Position(edit.range.end.line, edit.range.end.character)
+            )
+    )
+    const conflicts = diff.conflicts.map(
+        conflict =>
+            new vscode.Range(
+                new vscode.Position(conflict.start.line, conflict.start.character),
+                new vscode.Position(conflict.end.line, conflict.end.character)
+            )
+    )
+
+    const unvisitedLines = selection.
+
     return {
-        edits: diff.edits.map(
-            edit =>
-                new vscode.Range(
-                    new vscode.Position(edit.range.start.line, edit.range.start.character),
-                    new vscode.Position(edit.range.end.line, edit.range.end.character)
-                )
-        ),
-        conflicts: diff.conflicts.map(
-            conflict =>
-                new vscode.Range(
-                    new vscode.Position(conflict.start.line, conflict.start.character),
-                    new vscode.Position(conflict.end.line, conflict.end.character)
-                )
-        ),
+        selection,
+        edits,
+        conflicts,
     }
 }
 
@@ -39,6 +48,10 @@ export class FixupDecorator implements vscode.Disposable {
     private decorationCodyConflictMarker_: vscode.TextEditorDecorationType
     private decorationCodyConflicted_: vscode.TextEditorDecorationType
     private decorationCodyIncoming_: vscode.TextEditorDecorationType
+
+    private decorationCodyUnvisitedLine_: vscode.TextEditorDecorationType
+    private decorationCodyChangedLine_: vscode.TextEditorDecorationType
+
     private decorations_: Map<FixupFile, Map<FixupTask, TaskDecorations>> = new Map()
 
     constructor() {
@@ -60,6 +73,19 @@ export class FixupDecorator implements vscode.Disposable {
             borderStyle: 'solid',
             borderWidth: '1px',
         })
+
+        this.decorationCodyUnvisitedLine_ = vscode.window.createTextEditorDecorationType({
+            backgroundColor: new vscode.ThemeColor('cody.fixup.conflictedBackground'),
+            borderColor: new vscode.ThemeColor('cody.fixup.conflictedBorder'),
+            borderStyle: 'solid',
+            borderWidth: '1px',
+        })
+        this.decorationCodyChangedLine_ = vscode.window.createTextEditorDecorationType({
+            backgroundColor: new vscode.ThemeColor('cody.fixup.incomingBackground'),
+            borderColor: new vscode.ThemeColor('cody.fixup.incomingBorder'),
+            borderStyle: 'solid',
+            borderWidth: '1px',
+        })
     }
 
     public dispose(): void {
@@ -73,16 +99,16 @@ export class FixupDecorator implements vscode.Disposable {
     }
 
     public didUpdateDiff(task: FixupTask): void {
-        this.updateTaskDecorations(task, task.diff)
+        this.updateTaskDecorations(task, task.diff, task.selectionRange)
     }
 
     // TODO: Call this so we can delete old decorations some time.
     public didCompleteTask(task: FixupTask): void {
-        this.updateTaskDecorations(task, undefined)
+        this.updateTaskDecorations(task, undefined, task.selectionRange)
     }
 
-    private updateTaskDecorations(task: FixupTask, diff: Diff | undefined): void {
-        const decorations = makeDecorations(diff)
+    private updateTaskDecorations(task: FixupTask, diff: Diff | undefined, selection: vscode.Range): void {
+        const decorations = makeDecorations(diff, selection)
         const isEmpty = decorations.edits.length === 0 && decorations.conflicts.length === 0
         let fileTasks = this.decorations_.get(task.fixupFile)
         if (!fileTasks && isEmpty) {
@@ -119,14 +145,17 @@ export class FixupDecorator implements vscode.Disposable {
         const incoming: vscode.Range[] = []
         const conflicted: vscode.Range[] = []
         const conflicts: vscode.Range[] = []
+        const selections: vscode.Range[] = []
         for (const decoration of decorations) {
             ;(decoration.conflicts.length ? conflicted : incoming).push(...decoration.edits)
             conflicts.push(...decoration.conflicts)
+            selections.push(decoration.selection)
         }
         for (const editor of editors) {
-            editor.setDecorations(this.decorationCodyConflictMarker_, conflicts)
-            editor.setDecorations(this.decorationCodyConflicted_, conflicted)
-            editor.setDecorations(this.decorationCodyIncoming_, incoming)
+            // editor.setDecorations(this.decorationCodyConflictMarker_, conflicts)
+            // editor.setDecorations(this.decorationCodyConflicted_, conflicted)
+            // editor.setDecorations(this.decorationCodyIncoming_, incoming)
+            editor.setDecorations(this.decorationCodyChangedLine_, selections)
         }
     }
 }

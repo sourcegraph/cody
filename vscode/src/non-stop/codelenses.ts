@@ -14,15 +14,16 @@ export function getLensesForTask(task: FixupTask): vscode.CodeLens[] {
             const cancel = getCancelLens(codeLensRange, task.id)
             return [title, cancel]
         }
-        case CodyTaskState.ready: {
-            const apply = getApplyLens(codeLensRange, task.id)
-            const diff = getDiffLens(codeLensRange, task.id)
-            const discard = getDiscardLens(codeLensRange, task.id)
-            return [apply, diff, discard]
-        }
         case CodyTaskState.applying: {
             const title = getApplyingLens(codeLensRange)
             return [title]
+        }
+        case CodyTaskState.applied: {
+            const title = getAppliedLens(codeLensRange)
+            const diff = getDiffLens(codeLensRange, task.id)
+            const undo = getUndoLens(codeLensRange, task.id)
+            const accept = getAcceptLens(codeLensRange, task.id)
+            return [title, diff, undo, accept]
         }
         case CodyTaskState.error: {
             const title = getErrorLens(codeLensRange)
@@ -84,21 +85,40 @@ function getDiscardLens(codeLensRange: vscode.Range, id: string): vscode.CodeLen
     return lens
 }
 
+function getAppliedLens(codeLensRange: vscode.Range): vscode.CodeLens {
+    const lens = new vscode.CodeLens(codeLensRange)
+    lens.command = {
+        title: '✨ Edited by Cody',
+        command: '',
+    }
+    return lens
+}
+
 function getDiffLens(codeLensRange: vscode.Range, id: string): vscode.CodeLens {
     const lens = new vscode.CodeLens(codeLensRange)
     lens.command = {
-        title: 'Show Diff',
+        title: 'Diff',
         command: 'cody.fixup.codelens.diff',
         arguments: [id],
     }
     return lens
 }
 
-function getApplyLens(codeLensRange: vscode.Range, id: string): vscode.CodeLens {
+function getUndoLens(codeLensRange: vscode.Range, id: string): vscode.CodeLens {
     const lens = new vscode.CodeLens(codeLensRange)
     lens.command = {
-        title: '$(pencil) Apply Edits',
-        command: 'cody.fixup.codelens.apply',
+        title: 'Undo',
+        command: 'cody.fixup.codelens.undo',
+        arguments: [id],
+    }
+    return lens
+}
+
+function getAcceptLens(codeLensRange: vscode.Range, id: string): vscode.CodeLens {
+    const lens = new vscode.CodeLens(codeLensRange)
+    lens.command = {
+        title: 'Accept',
+        command: 'cody.fixup.codelens.accept',
         arguments: [id],
     }
     return lens
