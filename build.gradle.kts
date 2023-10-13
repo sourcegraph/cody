@@ -104,7 +104,7 @@ fun copyRecursively(input: File, output: File) {
     throw IllegalArgumentException("not a directory: $input")
   }
   if (!output.isDirectory) {
-    throw IllegalArgumentException("not a directory: $output")
+    Files.createDirectories(output.toPath())
   }
   val inputPath = input.toPath()
   val outputPath = output.toPath()
