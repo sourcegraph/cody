@@ -2,6 +2,8 @@ name: JetBrains Tests
 on:
   pull_request:
   push:
+    branches:
+      - main
 jobs:
   test:
     name: JetBrains tests
