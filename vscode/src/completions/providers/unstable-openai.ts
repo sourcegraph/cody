@@ -13,7 +13,7 @@ import {
     ProviderConfig,
     ProviderOptions,
     standardContextSizeHints,
-} from './provider'
+} from './provider2131'
 
 interface UnstableOpenAIOptions {
     maxContextTokens?: number

@@ -4,7 +4,7 @@ import { CompletionParameters } from '@sourcegraph/cody-shared/src/sourcegraph-a
 
 import { GetContextResult } from '../context/context'
 import { InlineCompletionsResult, TriggerKind } from '../get-inline-completions'
-import { CompletionProviderTracerResultData, Provider } from '../providers/provider'
+import { CompletionProviderTracerResultData, Provider } from '../providers/provider2131'
 
 /**
  * Traces invocations of {@link CodyCompletionItemProvider.provideInlineCompletionItems}.

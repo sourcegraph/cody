@@ -7,7 +7,7 @@ import { CodeCompletionsClient } from '../client'
 
 import { createProviderConfig as createAnthropicProviderConfig } from './anthropic'
 import { createProviderConfig as createFireworksProviderConfig, FireworksOptions } from './fireworks'
-import { ProviderConfig } from './provider'
+import { ProviderConfig } from './provider2131'
 import { createProviderConfig as createUnstableOpenAIProviderConfig } from './unstable-openai'
 
 export async function createProviderConfig(

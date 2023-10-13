@@ -25,7 +25,7 @@ import {
     ProviderConfig,
     ProviderOptions,
     standardContextSizeHints,
-} from './provider'
+} from './provider2131'
 
 export const MULTI_LINE_STOP_SEQUENCES = [anthropic.HUMAN_PROMPT, CLOSING_CODE_TAG]
 export const SINGLE_LINE_STOP_SEQUENCES = [anthropic.HUMAN_PROMPT, CLOSING_CODE_TAG, MULTILINE_STOP_SEQUENCE]

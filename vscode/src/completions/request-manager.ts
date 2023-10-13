@@ -4,7 +4,7 @@ import * as vscode from 'vscode'
 import { DocumentContext } from './get-current-doc-context'
 import { InlineCompletionsResultSource, LastInlineCompletionCandidate } from './get-inline-completions'
 import { logCompletionEvent, SuggestionID } from './logger'
-import { CompletionProviderTracer, Provider } from './providers/provider'
+import { CompletionProviderTracer, Provider } from './providers/provider2131'
 import { reuseLastCandidate } from './reuse-last-candidate'
 import {
     InlineCompletionItemWithAnalytics,

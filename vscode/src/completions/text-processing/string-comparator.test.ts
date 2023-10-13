@@ -32,6 +32,8 @@ describe('Levenshtein comparator', () => {
         ['', 'bb', 2],
         ['Mark', 'Zack', 2],
         ['POLYNOMIAL', 'EXPONENTIAL', 6],
+        ['foo', 'foo bar', 4],
+        ['foo bar', 'foo', 4],
     ])('should return a correct number of edit for %s and %s strings (edits = %i)', (a, b, expected) => {
         const numbersOfEdit = LevenshteinCompare(a, b)
 
