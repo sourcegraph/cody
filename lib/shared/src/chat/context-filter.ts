@@ -1,42 +1,37 @@
+import ignore from 'ignore'
+
 export const CODY_IGNORE_FILENAME = '.codyignore'
 
-let codyIgnoreList: string[] = []
+const codyIgnored = ignore().add(['.env'])
 
 /**
- * Checks if the given file name should be ignored by Cody.
+ * Checks if a given file path is ignored by .codyignore rules.
  *
- * @param fileName - The file name to check.
- * @returns A boolean indicating if the file should be ignored.
+ * @param filePath - The file path to check.
+ * @returns A boolean indicating if the file path is ignored.
  */
-export function isCodyIgnoredFile(uri?: vscode.Uri): boolean {
-    if (!fileName) {
+export function isCodyIgnoredFile(filePath?: string): boolean {
+    if (!filePath) {
         return false
     }
-    // check if the file name is included by one of the gitignore patterns defined in codyIgnoreList
-    // the pattern is a regex, so we need to escape the special characters
-    for (const pattern of codyIgnoreList) {
-        if (new RegExp(pattern).test(fileName)) {
-            return true
-        }
-    }
-    return false
+    // check if the file path is ignored by the codyignore file
+    return codyIgnored.ignores(filePath)
 }
 
 /**
- * Parses a Cody ignore file content and sets the global codyIgnoreList array with the rules.
+ * Sets the ignore rules for Cody by parsing a .codyignore file.
  *
- * NOTE: Each client should call this function at the start of the client, and every time the.codyignore file changes.
+ * NOTE: Each client must call this function at startup + every time the.codyignore file changes.
  *
- * The codyIgnoreFileContent string is split into lines. Each non-comment, non-blank line has
- * the leading ! removed and is added to a Set to remove duplicates. Finally the Set is converted to an array.
+ * This will get the contents of the .codyignore file, split it into lines,
+ * add any non-comment non-blank lines to a Set of ignore patterns, and add
+ * that Set to the ignore module to configure the ignore rules.
  *
- * This allows efficiently parsing a ignore file while removing duplicate rules.
- *
- * @param codyIgnoreFileContent - The raw string content of the .codyignore file
+ * @param codyIgnoreFileContent - The contents of the .codyignore file as a string
  */
 export function setCodyIgnoreList(codyIgnoreFileContent: string): void {
     // Get a list of files to exclude from the codyignore file
-    const filesToExclude = new Set<string>(['.env'])
+    const patternList = new Set<string>(['.env'])
     // Split the content of the file by new lines
     const codyIgnoreFileLines = codyIgnoreFileContent.toString().split('\n')
     // Loop through each line of the gitignore file
@@ -45,20 +40,10 @@ export function setCodyIgnoreList(codyIgnoreFileContent: string): void {
         if (line.startsWith('#')) {
             continue
         }
-        // If the line is blank, then we can ignore it
         if (!line.trim()) {
             continue
         }
-        // Add the rule to the list of rules to exclude
-        filesToExclude.add(patternToRegExpString(line.trim()))
+        patternList.add(line.trim())
     }
-    codyIgnoreList = Array.from(filesToExclude)
-}
-
-function patternToRegExpString(pattern: string): string {
-    // Escape special characters and convert '*' and '?' to their regex equivalents
-    return pattern
-        .replace(/^\*\*\//, '')
-        .replaceAll('*', '.*')
-        .replaceAll('?', '.')
+    ignore().add(Array.from(patternList))
 }

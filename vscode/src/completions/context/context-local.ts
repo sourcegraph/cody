@@ -2,7 +2,7 @@ import path from 'path'
 
 import * as vscode from 'vscode'
 
-import { isCodyIgnoreFile } from '@sourcegraph/cody-shared/src/chat/context-filter'
+import { isCodyIgnoredFile } from '@sourcegraph/cody-shared/src/chat/context-filter'
 
 import { ContextSnippet } from '../types'
 
@@ -24,7 +24,7 @@ interface Options {
 export async function getContextFromCurrentEditor(options: Options): Promise<ContextSnippet[]> {
     const { document, history, prefix, jaccardDistanceWindowSize } = options
     // Return early if current document is on the ignore list
-    if (isCodyIgnoreFile(document.uri.fsPath)) {
+    if (isCodyIgnoredFile(document.uri.fsPath)) {
         return []
     }
 
@@ -34,7 +34,7 @@ export async function getContextFromCurrentEditor(options: Options): Promise<Con
     const matches: JaccardMatchWithFilename[] = []
     for (const { uri, contents } of files) {
         // skip file that is on the ignore list
-        if (isCodyIgnoreFile(uri.fsPath)) {
+        if (isCodyIgnoredFile(uri.fsPath)) {
             continue
         }
 
@@ -93,7 +93,7 @@ async function getRelevantFiles(
         }
 
         // Do not add files that are on the codyignore list
-        if (isCodyIgnoreFile(document.uri.fsPath)) {
+        if (isCodyIgnoredFile(document.uri.fsPath)) {
             return
         }
 

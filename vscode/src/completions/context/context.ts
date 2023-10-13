@@ -1,6 +1,6 @@
 import * as vscode from 'vscode'
 
-import { isCodyIgnoreFile } from '@sourcegraph/cody-shared/src/chat/context-filter'
+import { isCodyIgnoredFile } from '@sourcegraph/cody-shared/src/chat/context-filter'
 import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
 
 import { ContextSnippet } from '../types'
@@ -57,7 +57,7 @@ export async function getContext(options: GetContextOptions): Promise<GetContext
     function addMatch(match: ContextSnippet): boolean {
         // TODO(@philipp-spiess): We should de-dupe on the snippet range and not
         // return early if the file is on ignore list
-        if (isCodyIgnoreFile(match.fileName)) {
+        if (isCodyIgnoredFile(match.fileName)) {
             return false
         }
         // the file name to allow for more than one snippet of the same file

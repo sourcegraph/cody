@@ -22,6 +22,7 @@ import { configureExternalServices } from './external-services'
 import { FixupController } from './non-stop/FixupController'
 import { showSetupNotification } from './notifications/setup-notification'
 import { AuthProvider } from './services/AuthProvider'
+import { createCodyIgnoreList } from './services/context-filter'
 import { showFeedbackSupportQuickPick } from './services/FeedbackOptions'
 import { GuardrailsProvider } from './services/GuardrailsProvider'
 import { Comment, InlineController } from './services/InlineController'
@@ -78,6 +79,9 @@ const register = async (
         context.extensionMode === vscode.ExtensionMode.Development ||
         context.extensionMode === vscode.ExtensionMode.Test
     await createOrUpdateEventLogger(initialConfig, isExtensionModeDevOrTest)
+
+    // Set codyignore list on startup
+    await createCodyIgnoreList()
 
     // Controller for inline Chat
     const commentController = new InlineController(context.extensionPath)

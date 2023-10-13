@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
 
-import { isCodyIgnoreFile, setCodyIgnoreList } from './context-filter'
+import { isCodyIgnoredFile, setCodyIgnoreList } from './context-filter'
 
-describe('isCodyIgnoreFile', () => {
+describe('isCodyIgnoredFile', () => {
     // Set the ignore list to the following content:
     const codyIgnoreFileContent = `
         node_modules
@@ -16,11 +16,11 @@ describe('isCodyIgnoreFile', () => {
     setCodyIgnoreList(codyIgnoreFileContent)
 
     it('returns false for no file name', () => {
-        expect(isCodyIgnoreFile()).toBe(false)
+        expect(isCodyIgnoredFile()).toBe(false)
     })
 
     it('returns true for .env file even if it is not in the ignore list', () => {
-        expect(isCodyIgnoreFile('.env')).toBe(true)
+        expect(isCodyIgnoredFile('.env')).toBe(true)
     })
 
     it.each([
@@ -38,13 +38,13 @@ describe('isCodyIgnoreFile', () => {
         '.git/foo',
         'foo/.git',
     ])('returns true for file in ignore list %s', (file: string) => {
-        expect(isCodyIgnoreFile(file)).toBe(true)
+        expect(isCodyIgnoredFile(file)).toBe(true)
     })
 
     it.each(['src/app.ts', 'env/foobarz.js', 'foobar.go', '.barz', 'bar'])(
         'returns false for file not in ignore list %s',
         (file: string) => {
-            expect(isCodyIgnoreFile(file)).toBe(false)
+            expect(isCodyIgnoredFile(file)).toBe(false)
         }
     )
 
@@ -55,12 +55,12 @@ describe('isCodyIgnoreFile', () => {
         `
         setCodyIgnoreList(beforeModifiedCodyIgnoreFileContent)
 
-        expect(isCodyIgnoreFile('cody/index.html')).toBe(true)
+        expect(isCodyIgnoredFile('cody/index.html')).toBe(true)
 
         const afterModifiedCodyIgnoreFileContent = `
         node_modules
         `
         setCodyIgnoreList(afterModifiedCodyIgnoreFileContent)
-        expect(isCodyIgnoreFile('cody/index.html')).toBe(false)
+        expect(isCodyIgnoredFile('cody/index.html')).toBe(false)
     })
 })

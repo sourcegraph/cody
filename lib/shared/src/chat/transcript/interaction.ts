@@ -1,5 +1,5 @@
 import { ContextFile, ContextMessage, PreciseContext } from '../../codebase-context/messages'
-import { isCodyIgnoreFile } from '../context-filter'
+import { isCodyIgnoredFile } from '../context-filter'
 
 import { ChatMessage, InteractionMessage } from './messages'
 
@@ -43,7 +43,7 @@ export class Interaction {
             const message = contextMessages[i]
             if (message.speaker === 'human' && message.file?.fileName) {
                 // find filesToExclude to see if the filename matches
-                if (isCodyIgnoreFile(message.file?.fileName)) {
+                if (isCodyIgnoredFile(message.file?.fileName)) {
                     i++
                     continue
                 }

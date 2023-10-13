@@ -1,7 +1,7 @@
 import { formatDistance } from 'date-fns'
 import * as vscode from 'vscode'
 
-import { isCodyIgnoreFile } from '@sourcegraph/cody-shared/src/chat/context-filter'
+import { isCodyIgnoredFile } from '@sourcegraph/cody-shared/src/chat/context-filter'
 import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
 import { FeatureFlag, featureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
 import { RateLimitError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
@@ -128,7 +128,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
         token?: vscode.CancellationToken
     ): Promise<AutocompleteResult | null> {
         // Do not create item for files that are on the cody ignore list
-        if (isCodyIgnoreFile(document.fileName)) {
+        if (isCodyIgnoredFile(document.fileName)) {
             return null
         }
 

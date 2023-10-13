@@ -1,6 +1,6 @@
 import * as vscode from 'vscode'
 
-import { isCodyIgnoreFile } from '@sourcegraph/cody-shared/src/chat/context-filter'
+import { isCodyIgnoredFile } from '@sourcegraph/cody-shared/src/chat/context-filter'
 import type {
     ActiveTextEditor,
     ActiveTextEditorDiagnostic,
@@ -15,7 +15,6 @@ import { SURROUNDING_LINES } from '@sourcegraph/cody-shared/src/prompt/constants
 
 import { CommandsController } from '../custom-prompts/CommandsController'
 import { FixupController } from '../non-stop/FixupController'
-import { updateCodyIgnoreList } from '../services/context-filter'
 import { InlineController } from '../services/InlineController'
 
 import { EditorCodeLenses } from './EditorCodeLenses'
@@ -30,8 +29,6 @@ export class VSCodeEditor implements Editor<InlineController, FixupController, C
         >
     ) {
         new EditorCodeLenses()
-        // Set codyignore list on startup
-        updateCodyIgnoreList().catch(() => {})
     }
 
     public get fileName(): string {
@@ -60,7 +57,7 @@ export class VSCodeEditor implements Editor<InlineController, FixupController, C
         if (!activeEditor) {
             return null
         }
-        if (isCodyIgnoreFile(activeEditor.document.fileName)) {
+        if (isCodyIgnoredFile(activeEditor.document.fileName)) {
             return null
         }
         const documentUri = activeEditor.document.uri
