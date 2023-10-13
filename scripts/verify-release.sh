@@ -9,5 +9,5 @@ unset CODY_DIR
 unset SKIP_CODE_SEARCH_BUILD
 
 ./gradlew clean || ./gradlew clean # Run it twice because Gradle clean is brittle
-./gradlew buildPluginAndAssertAgentBinariesExist
+./gradlew buildPlugin
 ./gradlew runPluginVerifier

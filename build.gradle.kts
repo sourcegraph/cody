@@ -182,12 +182,13 @@ tasks {
 
   fun buildCodeSearch(): File? {
     if (System.getenv("SKIP_CODE_SEARCH_BUILD") == "true") return null
-    val sourcegraphDir = unzipCodeSearch()
     val destinationDir = rootDir.resolve("src").resolve("main").resolve("resources").resolve("dist")
     if (!isForceCodeSearchBuild && destinationDir.exists()) {
       println("Cached $destinationDir")
       return destinationDir
     }
+
+    val sourcegraphDir = unzipCodeSearch()
     exec {
       workingDir(sourcegraphDir.toString())
       commandLine("pnpm", "install", "--frozen-lockfile")
@@ -220,13 +221,13 @@ tasks {
     unzip(zipFile, destination.parentFile)
     return destination
   }
+  val buildCodyDir = buildDir.resolve("sourcegraph").resolve("agent")
   fun buildCody(): File {
-    val codyDir = unzipCody()
-    val destinationDir = buildDir.resolve("sourcegraph").resolve("agent")
-    if (!isForceAgentBuild && (destinationDir.listFiles()?.size ?: 0) > 0) {
-      println("Cached $destinationDir")
-      return destinationDir
+    if (!isForceAgentBuild && (buildCodyDir.listFiles()?.size ?: 0) > 0) {
+      println("Cached $buildCodyDir")
+      return buildCodyDir
     }
+    val codyDir = unzipCody()
     exec {
       workingDir(codyDir)
       commandLine("pnpm", "install", "--frozen-lockfile")
@@ -235,9 +236,9 @@ tasks {
     exec {
       workingDir(agentDir)
       commandLine("pnpm", "run", "build-agent-binaries")
-      environment("AGENT_EXECUTABLE_TARGET_DIRECTORY", destinationDir.toString())
+      environment("AGENT_EXECUTABLE_TARGET_DIRECTORY", buildCodyDir.toString())
     }
-    return destinationDir
+    return buildCodyDir
   }
 
   register("buildCodeSearch") { buildCodeSearch() }
@@ -289,18 +290,15 @@ tasks {
   }
 
   buildPlugin {
-    buildCodeSearch()
-    val agentDir = buildCody()
+    buildCody()
     from(
-        fileTree(agentDir) { include("*") },
+        fileTree(buildCodyDir) { include("*") },
     ) {
       into("agent/")
     }
-  }
 
-  register("buildPluginAndAssertAgentBinariesExist") {
-    dependsOn(":buildPlugin")
     doLast {
+      // Assert that agent binaries are included in the plugin
       val pluginPath = buildPlugin.get().outputs.files.first()
       ZipFile(pluginPath).use { zip ->
         fun assertExists(name: String): Unit {
@@ -319,10 +317,9 @@ tasks {
   }
 
   runIde {
-    buildCody()
     jvmArgs("-Djdk.module.illegalAccess.silent=true")
     systemProperty("cody-agent.trace-path", "$buildDir/sourcegraph/cody-agent-trace.json")
-    systemProperty("cody-agent.directory", buildCody().toString())
+    systemProperty("cody-agent.directory", buildCodyDir.parent)
     systemProperty("sourcegraph.verbose-logging", "true")
   }
 
