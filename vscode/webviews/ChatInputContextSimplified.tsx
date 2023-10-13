@@ -1,6 +1,7 @@
 import { useState } from 'react'
 
 import { mdiDatabaseCheckOutline, mdiDatabaseOffOutline, mdiDatabaseRemoveOutline } from '@mdi/js'
+import { VSCodeButton } from '@vscode/webview-ui-toolkit/react'
 import classNames from 'classnames'
 import { URI } from 'vscode-uri'
 
@@ -19,7 +20,6 @@ import { Popup, PopupOpenProps } from './Popups/Popup'
 
 import styles from './ChatInputContextSimplified.module.css'
 import popupStyles from './Popups/Popup.module.css'
-import { VSCodeButton } from '@vscode/webview-ui-toolkit/react'
 
 export interface ChatInputContextSimplifiedProps {
     contextStatus?: ChatContextStatus
@@ -43,7 +43,11 @@ const CodebaseState: React.FunctionComponent<{
         reloadStatus: () => {},
     }
     return (
-        <VSCodeButton appearance="icon" className={classNames(styles.codebase, popupStyles.popupHost)} onClick={togglePopup}>
+        <VSCodeButton
+            appearance="icon"
+            className={classNames(styles.codebase, popupStyles.popupHost)}
+            onClick={togglePopup}
+        >
             <Icon svgPath={icon} className={classNames(styles.codebaseIcon, iconClassName)} />
             {popup?.({ isOpen: !!popupOpen, onDismiss: () => togglePopup?.(), ...onboardingPopupProps })}
         </VSCodeButton>
