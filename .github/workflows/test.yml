@@ -1,6 +1,7 @@
 name: JetBrains Tests
 on:
   pull_request:
+  push:
 jobs:
   test:
     name: JetBrains tests
