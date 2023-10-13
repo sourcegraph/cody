@@ -46,7 +46,7 @@ See [cody.dev](https://cody.dev) for more info.
 
 **Autocomplete**
 
-> <img src="https://storage.googleapis.com/sourcegraph-assets/website/Product%20Animations/GIFS/cody-completions-may2023-optim-sm2.gif" width=400>
+> <img src="https://storage.googleapis.com/sourcegraph-assets/blog/cody-completions-may2023-optim-sm2.gif" width=400>
 
 **Inline chat**
 
