@@ -22,7 +22,7 @@ import { configureExternalServices } from './external-services'
 import { FixupController } from './non-stop/FixupController'
 import { showSetupNotification } from './notifications/setup-notification'
 import { AuthProvider } from './services/AuthProvider'
-import { createCodyIgnoreList } from './services/context-filter'
+import { getCodyignoreFileWatcher } from './services/context-filter'
 import { showFeedbackSupportQuickPick } from './services/FeedbackOptions'
 import { GuardrailsProvider } from './services/GuardrailsProvider'
 import { Comment, InlineController } from './services/InlineController'
@@ -81,9 +81,10 @@ const register = async (
     await createOrUpdateEventLogger(initialConfig, isExtensionModeDevOrTest)
 
     // Set codyignore list on startup
-    await createCodyIgnoreList()
-    // const codyIgnoreWatcher = await getCodyIgnoreFileWatcher()
-    // disposables.push(codyIgnoreWatcher)
+    const codyIgnoreWatcher = await getCodyignoreFileWatcher()
+    if (codyIgnoreWatcher) {
+        disposables.push(codyIgnoreWatcher)
+    }
 
     // Controller for inline Chat
     const commentController = new InlineController(context.extensionPath)

@@ -4,16 +4,16 @@ import { isCodyIgnoredFile, setCodyIgnoreList } from './context-filter'
 
 describe('isCodyIgnoredFile', () => {
     // Set the ignore list to the following content:
-    const codyIgnoreFileContent = `
-        node_modules
+    const codyignoreFileContent = `
+        node_modules/
         **/cody
         **/foo/**
         /bar
         fooz
-        barz/**
+        barz/*
         .git
         `
-    setCodyIgnoreList(codyIgnoreFileContent)
+    setCodyIgnoreList(codyignoreFileContent)
 
     it('returns false for no file name', () => {
         expect(isCodyIgnoredFile()).toBe(false)
@@ -27,18 +27,20 @@ describe('isCodyIgnoredFile', () => {
         'node_modules/foo',
         'cody',
         'cody/test.ts',
-        'foo/bar',
-        'foo/bar/index.css',
         'foo/foobarz.js',
+        'foo/bar',
         'fooz',
         '.git',
-        '.git/foo',
+        'barz/index.css',
+        'barz/foo/index.css',
+        'foo/bar/index.css',
         'foo/.git',
+        '.git/foo',
     ])('returns true for file in ignore list %s', (file: string) => {
         expect(isCodyIgnoredFile(file)).toBe(true)
     })
 
-    it.each(['src/app.ts', 'env/foobarz.js', 'foobar.go', '.barz', 'bar', '.gitignore', 'barz/foo', 'cody.ts'])(
+    it.each(['src/app.ts', 'barz', 'env/foobarz.js', 'foobar.go', '.barz', '.gitignore', 'cody.ts'])(
         'returns false for file not in ignore list %s',
         (file: string) => {
             expect(isCodyIgnoredFile(file)).toBe(false)
@@ -48,7 +50,7 @@ describe('isCodyIgnoredFile', () => {
     it('returns updated value after modifying the ignore list', () => {
         const beforeModifiedCodyIgnoreFileContent = `
         node_modules
-        cody
+        cody/
         `
         setCodyIgnoreList(beforeModifiedCodyIgnoreFileContent)
 

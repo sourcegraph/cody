@@ -7,45 +7,38 @@ export const CODY_IGNORE_FILENAME = '.cody/.ignore'
 let codyIgnored = ignore().add(['.env'])
 
 /**
- * Checks if a given file path is ignored by .codyignore rules.
- *
- * @param filePath - The file path to check.
- * @returns A boolean indicating if the file path is ignored.
+ * Checks if a file should be ignored by Cody based on the .codyignore rules.
  */
-export function isCodyIgnoredFile(filePath?: string): boolean {
-    if (!filePath) {
+export function isCodyIgnoredFile(fileName?: string): boolean {
+    if (!fileName) {
         return false
     }
-    // ignores should be path.relative d string
-    return codyIgnored.ignores(path.relative('/', filePath))
+    // file must be path.relative - remove '/' from the start of the path
+    return codyIgnored.ignores(path.join(fileName.replace(/^\//, '')))
 }
 
 /**
  * Sets the ignore rules for Cody by parsing a .codyignore file.
  *
- * NOTE: Each client must call this function at startup + every time the.codyignore file changes.
+ *  * NOTE: Each client must call this function at startup + every time the .cody/.ignore file & workspace changes.
  *
- * This will get the contents of the .codyignore file, split it into lines,
- * add any non-comment non-blank lines to a Set of ignore patterns, and add
- * that Set to the ignore module to configure the ignore rules.
- *
- * @param codyIgnoreFileContent - The contents of the .codyignore file as a string
+ * Takes the contents of the .codyignore file and the workspace root directory as input.
+ * Splits the file contents into lines, trims whitespace, and adds each non-empty line to a Set of ignore patterns.
+ * Also adds .env files to the ignore patterns by default.
+ * Converts the Set into an Array and passes it to the ignore() library to generate the ignore rules.
+ * Stores the ignore instance and workspace root globally for use later in checking if a file path is ignored.
  */
 export function setCodyIgnoreList(codyIgnoreFileContent: string): void {
     // Get a list of files to exclude from the codyignore file
-    const patternList = new Set<string>(['.env'])
+    const patternList = new Set<string>()
+    patternList.add('.env')
     // Split the content of the file by new lines
     const codyIgnoreFileLines = codyIgnoreFileContent.toString().split('\n')
     // Loop through each line of the gitignore file
     for (const line of codyIgnoreFileLines) {
-        // If the line starts with a #, then it is a comment and we can ignore it
-        if (line.startsWith('#')) {
-            continue
+        if (line.trim()) {
+            patternList.add(line.trim())
         }
-        if (!line.trim()) {
-            continue
-        }
-        patternList.add(line.trim())
     }
     codyIgnored = ignore().add(Array.from(patternList))
 }
