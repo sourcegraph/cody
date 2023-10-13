@@ -5,31 +5,12 @@
     user-select: none;
 }
 
-.codebase,
 .file {
     font-size: var(--vscode-editor-font-size, inherit);
     margin: 0;
 }
 
-.codebase {
-    background: transparent;
-    border: none;
-    display: flex;
-    align-items: center;
-    gap: 0.25rem;
-    font-weight: normal;
-    color: var(--vscode-sideBar-foreground);
-}
-
-.codebase-icon {
-    width: 1rem;
-    height: 1rem;
-    flex-shrink: 0;
-    display: inline;
-}
-
-.file,
-.codebase-label {
+.file {
     white-space: nowrap;
     text-overflow: ellipsis;
     overflow: hidden;

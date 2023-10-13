@@ -19,6 +19,7 @@ import { Popup, PopupOpenProps } from './Popups/Popup'
 
 import styles from './ChatInputContextSimplified.module.css'
 import popupStyles from './Popups/Popup.module.css'
+import { VSCodeButton } from '@vscode/webview-ui-toolkit/react'
 
 export interface ChatInputContextSimplifiedProps {
     contextStatus?: ChatContextStatus
@@ -42,10 +43,10 @@ const CodebaseState: React.FunctionComponent<{
         reloadStatus: () => {},
     }
     return (
-        <button type="button" className={classNames(styles.codebase, popupStyles.popupHost)} onClick={togglePopup}>
+        <VSCodeButton appearance="icon" className={classNames(styles.codebase, popupStyles.popupHost)} onClick={togglePopup}>
             <Icon svgPath={icon} className={classNames(styles.codebaseIcon, iconClassName)} />
             {popup?.({ isOpen: !!popupOpen, onDismiss: () => togglePopup?.(), ...onboardingPopupProps })}
-        </button>
+        </VSCodeButton>
     )
 }
 
