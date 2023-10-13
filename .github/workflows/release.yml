@@ -16,7 +16,7 @@ jobs:
           java-version: 11
           cache: "gradle"
       - name: Gradle Wrapper Validation
-        uses: gradle/wrapper-validation-action@v1.0.4
+        uses: gradle/wrapper-validation-action@v1.1.0
       - run: yarn global add pnpm@8.6.7
       - run: |
           echo "RELEASE_VERSION=$(./scripts/version-from-git-tag.sh)-nightly" >> $GITHUB_ENV
