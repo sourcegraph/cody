@@ -538,7 +538,6 @@ export class FixupController
         if (!task) {
             return
         }
-        task.spinCount++
         // Get diagnostics from vscode api
         const diagnostics = vscode.languages.getDiagnostics(task.fixupFile.uri)
         // Find the first error diagnostic that is within the range of the task
