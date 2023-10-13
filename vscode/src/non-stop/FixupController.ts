@@ -408,7 +408,7 @@ export class FixupController
             return undefined
         }
         const document = await vscode.workspace.openTextDocument(task.fixupFile.uri)
-        if (enableSmartSelection || task.selectionRange) {
+        if (enableSmartSelection && task.selectionRange) {
             const newRange = await this.getFixupTaskSmartSelection(task, task.selectionRange)
             task.selectionRange = newRange
         }
