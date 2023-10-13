@@ -1,4 +1,4 @@
-export const CodyIgnoreFileName = '.codyignore'
+export const CODY_IGNORE_FILENAME = '.codyignore'
 
 let codyIgnoreList: string[] = []
 
@@ -8,7 +8,7 @@ let codyIgnoreList: string[] = []
  * @param fileName - The file name to check.
  * @returns A boolean indicating if the file should be ignored.
  */
-export function isCodyIgnoreFile(fileName?: string): boolean {
+export function isCodyIgnoredFile(uri?: vscode.Uri): boolean {
     if (!fileName) {
         return false
     }
