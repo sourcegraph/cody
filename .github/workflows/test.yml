@@ -21,6 +21,14 @@ jobs:
           path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
           key: ${{ runner.os }}-${{ matrix.node }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
           restore-keys: ${{ runner.os }}-${{ matrix.node }}-pnpm-store-k
+      - uses: actions/cache@v3
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
       - name: Gradle Wrapper Validation
         uses: gradle/wrapper-validation-action@v1.0.4
       - uses: actions/setup-node@v3
@@ -34,13 +42,7 @@ jobs:
           cache: gradle
       # Skip Code Search build in CI because it's slow, and we don't use it anyway for testing purposes.
       - run: echo "SKIP_CODE_SEARCH_BUILD=true" >> $GITHUB_ENV
-      - uses: burrunan/gradle-cache-action@v1
-        with:
-          arguments: compileKotlin
-          gradle-version: wrapper
-      - name: Run Tests
-        run: ./gradlew --stacktrace --info test
-      - name: Run Build Plugin
-        run: ./gradlew --info buildPlugin
-      - name: Check formatting
-        run: ./gradlew spotlessCheck
+      - run: ./gradlew test
+      - run: ./gradlew buildPlugin
+      - run: ./gradlew spotlessCheck
+      - run: ./gradlew --stop
