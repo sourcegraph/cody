@@ -545,7 +545,7 @@ export class FixupController
         const range = task.selectionRange
         const error = diagnostics.find(diagnostic => range.contains(diagnostic.range))
         const instruction = error
-            ? `${task.instruction}. Lets think step by step to also resolve the following error: ${error.message}`
+            ? `${task.instruction}. Start from the beginning and think step-by-step to make sure your code address the following error: ${error.message}`
             : task.instruction
         // Remove the code lens for the previous task
         this.cancel(id)
