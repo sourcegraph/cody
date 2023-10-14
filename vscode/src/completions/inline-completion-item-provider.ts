@@ -119,6 +119,8 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
         this.config.tracer = value
     }
 
+    private lastCompletionRequestTimestamp = 0
+
     public async provideInlineCompletionItems(
         document: vscode.TextDocument,
         position: vscode.Position,
@@ -132,6 +134,10 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
         this.lastCompletionRequest = completionRequest
 
         const start = performance.now()
+
+        if (!this.lastCompletionRequestTimestamp) {
+            this.lastCompletionRequestTimestamp = start
+        }
 
         // We start feature flag requests early so that we have a high chance of getting a response
         // before we need it.
@@ -263,10 +269,12 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
                     language: await minLatencyFlagsPromises.language,
                     provider: await minLatencyFlagsPromises.provider,
                 }
-
+                // Do not apply the minimum latency if the last suggestion was not read, e.g when user was typing
+                const isLastSuggestionRead = start - this.lastCompletionRequestTimestamp > 750
+                this.lastCompletionRequestTimestamp = start
                 const isMinLatencyEnabled =
                     latencyFeatureFlags.user || latencyFeatureFlags.language || latencyFeatureFlags.provider
-                if (triggerKind === TriggerKind.Automatic && isMinLatencyEnabled) {
+                if (isLastSuggestionRead && triggerKind === TriggerKind.Automatic && isMinLatencyEnabled) {
                     const minimumLatency = getLatency(
                         latencyFeatureFlags,
                         this.config.providerConfig.identifier,
