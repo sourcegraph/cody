@@ -8,7 +8,7 @@ import * as uuid from 'uuid'
 
 import { run, sendTestInfo } from '../fixtures/mock-server'
 
-import { installDeps } from './install-deps'
+import { installVsCode } from './install-deps'
 
 export const test = base
     .extend<{}>({
@@ -17,7 +17,7 @@ export const test = base
 
             const vscodeRoot = path.resolve(__dirname, '..', '..')
 
-            const vscodeExecutablePath = await installDeps()
+            const vscodeExecutablePath = await installVsCode()
             const extensionDevelopmentPath = vscodeRoot
 
             const userDataDirectory = mkdtempSync(path.join(tmpdir(), 'cody-vsce'))
