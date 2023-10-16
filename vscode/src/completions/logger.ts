@@ -125,7 +125,7 @@ const completionIdsMarkedAsSuggested = new LRUCache<CompletionID, true>({
     max: 50,
 })
 
-const persistenceTracker = new PersistenceTracker()
+let persistenceTracker: PersistenceTracker | null = null
 
 let completionsStartedSinceLastSuggestion = 0
 
@@ -303,6 +303,10 @@ export function accept(id: SuggestionID, document: vscode.TextDocument, completi
         acceptedItem: { ...completionItemToItemInfo(completion) },
     })
     statistics.logAccepted()
+
+    if (persistenceTracker === null) {
+        persistenceTracker = new PersistenceTracker()
+    }
     persistenceTracker.track(completionEvent.params.id, Date.now(), completion, document)
 }
 

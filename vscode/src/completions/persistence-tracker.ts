@@ -30,10 +30,15 @@ export class PersistenceTracker implements vscode.Disposable {
     // improve performance of the `onDidChangeTextDocument` event handler.
     private trackedCompletions: Map<string, Set<TrackedCompletion>> = new Map()
 
-    constructor() {
-        this.disposables.push(vscode.workspace.onDidChangeTextDocument(this.onDidChangeTextDocument.bind(this)))
-        this.disposables.push(vscode.workspace.onDidRenameFiles(this.onDidRenameFiles.bind(this)))
-        this.disposables.push(vscode.workspace.onDidDeleteFiles(this.onDidDeleteFiles.bind(this)))
+    constructor(
+        workspace: Pick<
+            typeof vscode.workspace,
+            'onDidChangeTextDocument' | 'onDidRenameFiles' | 'onDidDeleteFiles'
+        > = vscode.workspace
+    ) {
+        this.disposables.push(workspace.onDidChangeTextDocument(this.onDidChangeTextDocument.bind(this)))
+        this.disposables.push(workspace.onDidRenameFiles(this.onDidRenameFiles.bind(this)))
+        this.disposables.push(workspace.onDidDeleteFiles(this.onDidDeleteFiles.bind(this)))
     }
 
     public track(
@@ -90,6 +95,11 @@ export class PersistenceTracker implements vscode.Disposable {
         // The index in the MEASURE_TIMEOUTS array
         measureTimeoutsIndex: number
     ): void {
+        const isStillTracked = this.trackedCompletions.get(trackedCompletion.uri.toString())?.has(trackedCompletion)
+        if (!isStillTracked) {
+            return
+        }
+
         const initialText = trackedCompletion.completion.insertText
         const latestText = trackedCompletion.document.getText(trackedCompletion.latestRange)
 
