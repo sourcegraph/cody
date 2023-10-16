@@ -28,7 +28,6 @@ const WebLogin: React.FunctionComponent<
         vscodeAPI: VSCodeWrapper
     }>
 > = ({ telemetryService, vscodeAPI }) => {
-    // vscodeAPI.postMessage({ command: 'auth', type: 'callback', endpoint: uri })
     return (
         <ol>
             <li>
