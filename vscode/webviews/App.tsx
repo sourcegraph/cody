@@ -7,7 +7,7 @@ import { CodyPrompt } from '@sourcegraph/cody-shared/src/chat/prompts'
 import { ChatHistory, ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { Configuration } from '@sourcegraph/cody-shared/src/configuration'
 
-import { AuthMethod, AuthStatus, defaultAuthStatus, Experiments, LocalEnv } from '../src/chat/protocol'
+import { AuthMethod, AuthStatus, Experiments, LocalEnv } from '../src/chat/protocol'
 
 import { Chat } from './Chat'
 import { LoadingPage } from './LoadingPage'
@@ -128,22 +128,11 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
         }
     }, [view, vscodeAPI])
 
-    const onLoginRedirect = useCallback(
-        (uri: string) => {
-            setConfig(null)
-            setEndpoint(null)
-            setAuthStatus(defaultAuthStatus)
-            setView('login')
-            vscodeAPI.postMessage({ command: 'auth', type: 'callback', endpoint: uri })
-        },
-        [setEndpoint, vscodeAPI]
-    )
-
     const simplifiedLoginRedirect = useCallback(
         (method: AuthMethod) => {
-            // Unlike onLoginRedirect, we do not change the view here. We want
-            // to keep presenting the login buttons until we get a token so
-            // users don't get stuck if they close the browser.
+            // We do not change the view here. We want to keep presenting the
+            // login buttons until we get a token so users don't get stuck if
+            // they close the browser during an auth flow.
             vscodeAPI.postMessage({ command: 'auth', type: 'simplified-onboarding', authMethod: method })
         },
         [vscodeAPI]
