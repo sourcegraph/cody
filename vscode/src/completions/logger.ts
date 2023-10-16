@@ -100,7 +100,7 @@ interface CompletionItemInfo extends ItemPostProcessingInfo {
     stopReason?: string
 }
 
-const READ_TIMEOUT_MS = 750
+export const READ_TIMEOUT_MS = 750
 
 // Maintain a cache of active suggestion lifecycle
 const activeSuggestions = new LRUCache<SuggestionID, CompletionEvent>({

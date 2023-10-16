@@ -22,7 +22,7 @@ import {
 } from './get-inline-completions'
 import { getLatency, LatencyFeatureFlags, resetLatency } from './latency'
 import * as CompletionLogger from './logger'
-import { CompletionEvent, SuggestionID } from './logger'
+import { CompletionEvent, READ_TIMEOUT_MS, SuggestionID } from './logger'
 import { ProviderConfig } from './providers/provider'
 import { RequestManager, RequestParams } from './request-manager'
 import { getRequestParamsFromLastCandidate } from './reuse-last-candidate'
@@ -270,7 +270,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
                     provider: await minLatencyFlagsPromises.provider,
                 }
                 // Do not apply the minimum latency if the last suggestion was not read, e.g when user was typing
-                const isLastSuggestionRead = start - this.lastCompletionRequestTimestamp > 750
+                const isLastSuggestionRead = start - this.lastCompletionRequestTimestamp > READ_TIMEOUT_MS
                 this.lastCompletionRequestTimestamp = start
                 const isMinLatencyEnabled =
                     latencyFeatureFlags.user || latencyFeatureFlags.language || latencyFeatureFlags.provider
