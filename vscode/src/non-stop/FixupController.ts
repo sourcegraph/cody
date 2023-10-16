@@ -143,12 +143,12 @@ export class FixupController
     // will return undefined. This may update the task with the newly computed
     // diff.
     private applicableDiffOrRespin(task: FixupTask, document: vscode.TextDocument): Diff | undefined {
-        if (!(task.state === CodyTaskState.ready || task.state === CodyTaskState.applying)) {
-            // We haven't received a response from the LLM yet, so there is
-            // no diff.
-            console.warn('no response cached from LLM so no applicable diff')
-            return undefined
-        }
+        // if (!(task.state === CodyTaskState.ready || task.state === CodyTaskState.applying)) {
+        //     // We haven't received a response from the LLM yet, so there is
+        //     // no diff.
+        //     console.warn('no response cached from LLM so no applicable diff')
+        //     return undefined
+        // }
         const bufferText = document.getText(task.selectionRange)
         let diff = task.diff
         if (task.replacement !== undefined && bufferText !== diff?.bufferText) {
@@ -157,9 +157,11 @@ export class FixupController
             this.didUpdateDiff(task)
         }
         if (!diff?.clean) {
-            this.scheduleRespin(task)
+            // this.scheduleRespin(task)
             return undefined
         }
+        console.log('GOT DIFF', diff)
+
         return diff
     }
 
@@ -179,10 +181,10 @@ export class FixupController
     }
 
     private async applyTask(task: FixupTask): Promise<void> {
-        if (task.state !== CodyTaskState.ready) {
-            return
-        }
-        this.setTaskState(task, CodyTaskState.applying)
+        // if (task.state !== CodyTaskState.ready) {
+        //     return
+        // }
+        // this.setTaskState(task, CodyTaskState.applying)
 
         let editor = vscode.window.visibleTextEditors.find(editor => editor.document.uri === task.fixupFile.uri)
         if (!editor) {
@@ -195,6 +197,8 @@ export class FixupController
         }
 
         editor.revealRange(task.selectionRange)
+
+        console.log('GOT DIFF NOW APPLYING', diff)
 
         const editOk = task.insertMode ? await this.insertEdit(editor, task) : await this.replaceEdit(editor, diff)
 
@@ -215,23 +219,29 @@ export class FixupController
         // TODO: Consider keeping tasks around to resurrect them if the user
         // hits undo.
         // TODO: See if we can discard a FixupFile now.
-        this.setTaskState(task, CodyTaskState.fixed)
+        // this.setTaskState(task, CodyTaskState.fixed)
     }
 
     // Replace edit returned by Cody at task selection range
     private async replaceEdit(editor: vscode.TextEditor, diff: Diff): Promise<boolean> {
         logDebug('FixupController:edit', 'replacing ')
-        const editOk = await editor.edit(editBuilder => {
-            for (const edit of diff.edits) {
-                editBuilder.replace(
-                    new vscode.Range(
-                        new vscode.Position(edit.range.start.line, edit.range.start.character),
-                        new vscode.Position(edit.range.end.line, edit.range.end.character)
-                    ),
-                    edit.text
-                )
+        const editOk = await editor.edit(
+            editBuilder => {
+                for (const edit of diff.edits) {
+                    editBuilder.replace(
+                        new vscode.Range(
+                            new vscode.Position(edit.range.start.line, edit.range.start.character),
+                            new vscode.Position(edit.range.end.line, edit.range.end.character)
+                        ),
+                        edit.text
+                    )
+                }
+            },
+            {
+                undoStopAfter: false,
+                undoStopBefore: false,
             }
-        })
+        )
         return editOk
     }
 
@@ -349,12 +359,12 @@ export class FixupController
         if (!task) {
             return Promise.resolve()
         }
-        if (task.state !== CodyTaskState.working) {
-            // TODO: Update this when we re-spin tasks with conflicts so that
-            // we store the new text but can also display something reasonably
-            // stable in the editor
-            return Promise.resolve()
-        }
+        // if (task.state !== CodyTaskState.working) {
+        //     // TODO: Update this when we re-spin tasks with conflicts so that
+        //     // we store the new text but can also display something reasonably
+        //     // stable in the editor
+        //     return Promise.resolve()
+        // }
 
         switch (state) {
             case 'streaming':
@@ -383,6 +393,7 @@ export class FixupController
         if (!this.needsDiffUpdate_.has(task)) {
             this.needsDiffUpdate_.add(task)
         }
+        void this.applyTask(task)
     }
 
     // Handles when the range associated with a fixup task changes.
@@ -433,9 +444,7 @@ export class FixupController
     }
 
     private updateDiffs(): void {
-        const deadlineMsec = Date.now() + 500
-
-        while (this.needsDiffUpdate_.size && Date.now() < deadlineMsec) {
+        while (this.needsDiffUpdate_.size) {
             const task = this.needsDiffUpdate_.keys().next().value as FixupTask
             this.needsDiffUpdate_.delete(task)
             const editor = vscode.window.visibleTextEditors.find(editor => editor.document.uri === task.fixupFile.uri)
@@ -455,13 +464,11 @@ export class FixupController
 
             // Add new line at the end of bot text when running insert mode
             const newLine = task.insertMode ? '\n' : ''
-            task.diff = computeDiff(task.original, `${botText}${newLine}`, bufferText, task.selectionRange.start)
+            const diff = computeDiff(task.original, `${botText}${newLine}`, bufferText, task.selectionRange.start)
+            task.diff = diff
+            console.log('GOT DIFF', diff)
+            console.log('Debug')
             this.didUpdateDiff(task)
-        }
-
-        if (this.needsDiffUpdate_.size) {
-            // We did not get through the work; schedule more later.
-            void this.scheduler.scheduleIdle(() => this.updateDiffs())
         }
     }
 

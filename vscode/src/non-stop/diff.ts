@@ -83,11 +83,11 @@ export function longestCommonSubsequence(a: string, b: string): Uint8Array {
     const program = new Uint16Array((lenA + 1) * (lenB + 1))
     const ops = new Array<Op>((lenA + 1) * (lenB + 1))
     ops[0] = '*'
-    // Top row: Delete all of the characters in A.
-    for (let i = 1; i <= lenA; i++) {
-        program[i] = i
-        ops[i] = 'X'
-    }
+    // // Top row: Delete all of the characters in A.
+    // for (let i = 1; i <= lenA; i++) {
+    //     program[i] = i
+    //     ops[i] = 'X'
+    // }
     // Left column: Insert all of the characters in B.
     for (let i = 1; i <= lenB; i++) {
         program[i * (lenA + 1)] = i
@@ -102,8 +102,7 @@ export function longestCommonSubsequence(a: string, b: string): Uint8Array {
             const costSkipReplace = program[(iB - 1) * (lenA + 1) + iA - 1] + (chA === chB ? 0 : 2)
             const cost = Math.min(costDeleteA, costInsertB, costSkipReplace)
             program[iB * (lenA + 1) + iA] = cost
-            ops[iB * (lenA + 1) + iA] =
-                cost === costSkipReplace ? (chA === chB ? '-' : 'R') : cost === costDeleteA ? 'X' : 'I'
+            ops[iB * (lenA + 1) + iA] = cost === costSkipReplace ? (chA === chB ? '-' : 'R') : 'I'
         }
     }
     // dumpProgram(program, ops, a, b)
@@ -264,6 +263,7 @@ export function computeDiff(original: string, a: string, b: string, bStart: Posi
     let originalPos = bStart
     let mergedPos = bStart
     const mergedText: string[] = []
+    console.log('COMPUTING CHUNKS', chunks)
     for (const chunk of chunks) {
         const originalEnd = updatedPosition(originalPos, chunk[2])
         if (chunk[1] === chunk[2] && chunk[0] !== chunk[1]) {
