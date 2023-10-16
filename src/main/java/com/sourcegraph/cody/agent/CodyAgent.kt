@@ -218,7 +218,7 @@ class CodyAgent(private val project: Project) : Disposable {
       val os = if (SystemInfoRt.isMac) "macos" else if (SystemInfoRt.isWindows) "win" else "linux"
       // Only use x86 for macOS because of this issue here https://github.com/vercel/pkg/issues/2004
       // TLDR; we're not able to run macos-arm64 binaries when they're created on ubuntu-latest
-      val arch = if (CpuArch.isArm64() && !SystemInfoRt.isMac) "arm64" else "x64"
+      val arch = if (CpuArch.isArm64()) "arm64" else "x64"
       return "agent-" + os + "-" + arch + binarySuffix()
     }
 
