@@ -45,8 +45,8 @@ jobs:
         working-directory: agent
       - run: ./install-ldid.sh
       - run: ldid2 -S agent/dist/agent-macos-arm64
-      - run: zip -r agent.zip agent/dist
-      - uses: actions/upload-artifact@v2
+      - run: zip -r agent.zip agent/dist/agent-*
+      - uses: actions/upload-artifact@v3.1.3
         with:
           name: agent
           path: agent.zip
