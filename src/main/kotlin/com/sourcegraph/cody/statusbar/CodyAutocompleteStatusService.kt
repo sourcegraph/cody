@@ -7,7 +7,6 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ProjectManager
 import com.sourcegraph.cody.agent.CodyAgent
 import com.sourcegraph.cody.config.CodyAuthenticationManager
-import com.sourcegraph.config.CodySignedOutNotification
 import com.sourcegraph.config.ConfigUtil
 import javax.annotation.concurrent.GuardedBy
 
@@ -48,10 +47,8 @@ class CodyAutocompleteStatusService : CodyAutocompleteStatusListener, Disposable
               } else if (!CodyAgent.isConnected(project)) {
                 CodyAutocompleteStatus.CodyAgentNotRunning
               } else if (CodyAuthenticationManager.instance.getActiveAccount(project) == null) {
-                CodySignedOutNotification.show(project)
                 CodyAutocompleteStatus.CodyNotSignedIn
               } else {
-                CodySignedOutNotification.expire()
                 CodyAutocompleteStatus.Ready
               }
           return@synchronized oldStatus != status
