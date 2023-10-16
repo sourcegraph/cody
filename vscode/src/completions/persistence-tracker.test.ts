@@ -4,8 +4,6 @@ import type * as vscode from 'vscode'
 import { telemetryService } from '../services/telemetry'
 import { range } from '../testutils/textDocument'
 
-// import { range } from '../testutils/textDocument'
-
 import { PersistenceTracker } from './persistence-tracker'
 import { document } from './test-helpers'
 
