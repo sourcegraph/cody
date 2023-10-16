@@ -1,4 +1,7 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
+import * as fs from 'fs'
+import * as fspromises from 'fs/promises'
+
 import type * as vscode from 'vscode'
 
 // <VERY IMPORTANT - PLEASE READ>
@@ -22,6 +25,7 @@ import {
     emptyDisposable,
     emptyEvent,
     EventEmitter,
+    FileType,
     UIKind,
     Uri,
 } from '../../vscode/src/testutils/mocks'
@@ -194,6 +198,26 @@ const _workspace: Partial<typeof vscode.workspace> = {
     asRelativePath: (pathOrUri: string | vscode.Uri, includeWorkspaceFolder?: boolean): string => pathOrUri.toString(),
     createFileSystemWatcher: () => emptyFileWatcher,
     getConfiguration: (() => configuration) as any,
+    fs: {
+        stat: async uri => {
+            const stat = await fspromises.stat(uri.fsPath)
+            return {
+                type: stat.isFile()
+                    ? FileType.File
+                    : stat.isDirectory()
+                    ? FileType.Directory
+                    : stat.isSymbolicLink()
+                    ? FileType.SymbolicLink
+                    : FileType.Unknown,
+                ctime: stat.ctimeMs,
+                mtime: stat.mtimeMs,
+                size: stat.size,
+            }
+        },
+        readDirectory: async uri => {
+            /* .. */
+        },
+    },
 }
 export const workspace = _workspace as typeof vscode.workspace
 
