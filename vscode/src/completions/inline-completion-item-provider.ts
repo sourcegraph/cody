@@ -208,7 +208,8 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
             triggerKind === TriggerKind.Automatic && lowPerformanceLanguageIds.has(document.languageId)
 
         const isIncreasedDebounceTimeEnabled = await isIncreasedDebounceTimeEnabledPromise
-        const isLowPerformanceDebounceTimeEnabled = await lowPerformanceDebouncePromise
+        const isLowPerformanceDebounceTimeEnabled =
+            (await lowPerformanceDebouncePromise) && !(await minLatencyFlagsPromises.language)
 
         const debounceInterval =
             isLowPerformanceDebounceTimeEnabled && isLowPerformanceLanguage
@@ -276,7 +277,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
             if (result.source !== InlineCompletionsResultSource.LastCandidate) {
                 const latencyFeatureFlags: LatencyFeatureFlags = {
                     user: await minLatencyFlagsPromises.user,
-                    language: await minLatencyFlagsPromises.language,
+                    language: (await minLatencyFlagsPromises.language) && !(await lowPerformanceDebouncePromise), // only one language flag should be enabled at a time
                     provider: await minLatencyFlagsPromises.provider,
                 }
 
