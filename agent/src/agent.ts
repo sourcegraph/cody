@@ -176,53 +176,13 @@ export class Agent extends MessageHandler {
                 })
             }
 
-            await this.recordEvent(`recipe:${data.id}`, 'executed')
+            await this.recordEvent(`recipe:${data.id}`, 'executed', {})
             await client.executeRecipe(data.id, {
                 signal: abortController.signal,
                 humanChatInput: data.humanChatInput,
                 data: data.data,
             })
             return null
-        })
-        this.registerRequest('autocomplete/execute', async (params, token) => {
-            await this.client // To let configuration changes propagate
-            const provider = await vscode_shim.completionProvider()
-            if (!provider) {
-                console.log('Completion provider is not initialized')
-                return { items: [] }
-            }
-            const document = this.workspace.getDocument(params.filePath)
-            if (!document) {
-                console.log('No document found for file path', params.filePath, [...this.workspace.allFilePaths()])
-                return { items: [] }
-            }
-
-            const textDocument = new AgentTextDocument(document)
-
-            try {
-                if (params.triggerKind === 'Invoke') {
-                    await provider.manuallyTriggerCompletion()
-                }
-                const result = await provider.provideInlineCompletionItems(
-                    textDocument,
-                    new vscode.Position(params.position.line, params.position.character),
-                    {
-                        triggerKind: vscode.InlineCompletionTriggerKind[params.triggerKind || 'Automatic'],
-                        selectedCompletionInfo: undefined,
-                    },
-                    token
-                )
-                const items: AutocompleteItem[] =
-                    result === null
-                        ? []
-                        : result.items.flatMap(({ insertText, range }) =>
-                              typeof insertText === 'string' && range !== undefined ? [{ insertText, range }] : []
-                          )
-                return { items, completionEvent: (result as any)?.completionEvent }
-            } catch (error) {
-                console.log('autocomplete failed', error)
-                return Promise.reject(error)
-            }
         })
 
         this.registerRequest('graphql/currentUserId', async () => {
@@ -272,6 +232,13 @@ export class Agent extends MessageHandler {
     }
 
     private registerAutocompleteHandlers() {
+        // TODO: After working on this PR, I'm wondering why this doesn't happen directly
+        // in some of the provider stuff for inline completion items?...
+
+        // TODO: Need a way to clear the latencies once completed
+        //       Could periodically just delete ones that are older than 1 minute (for example)
+        const latencies = new Map<string, number>()
+
         this.registerRequest('autocomplete/execute', async (params, token) => {
             await this.client // To let configuration changes propagate
             const provider = await vscode_shim.completionProvider()
@@ -285,9 +252,14 @@ export class Agent extends MessageHandler {
                 return { items: [] }
             }
 
+            // TODO: Is this really what we want to send every time we get this request?
+            await this.recordEvent('autocomplete', 'started', {})
+
             const textDocument = new AgentTextDocument(document)
 
             try {
+                const startTime = Date.now()
+
                 if (params.triggerKind === 'Invoke') {
                     await provider.manuallyTriggerCompletion()
                 }
@@ -308,15 +280,39 @@ export class Agent extends MessageHandler {
                                   ? [{ id: uuid.v4(), insertText, range }]
                                   : []
                           )
+
+                // Record latency for each item
+                const latency = Date.now() - startTime
+                for (const item of items) {
+                    latencies.set(item.id, latency)
+                }
+
                 return { items, completionEvent: (result as any)?.completionEvent }
             } catch (error) {
                 console.log('autocomplete failed', error)
-                return { items: [] }
+                return Promise.reject(error)
             }
         })
 
-        this.registerNotification('autocomplete/displayed', async item => {
-            console.error('autocomplete/displayed:', item)
+        this.registerNotification('autocomplete/suggested', async item => {
+            this.recordEvent('autocomplete', 'displayed', {
+                latency: latencies.get(item.id),
+                displayDuration: item.displayDuration,
+                isAnyKnownPluginEnabled: false,
+                // It looks like "extensionDetails" is in the contextSummary?
+                // Why would it be in the contextSummary instead of top level, like the others?
+                contextSummary: {
+                    id: item.id,
+                    languageId: item.languageId,
+                    // TODO: local <- i'm not even sure what this one is
+                    // TODO: embeddings
+                    // TODO: source
+                    // TODO: charCount
+                    // TODO: lineCount
+                    // TODO: multilineMode
+                    // TODO: providerIdentifier
+                },
+            })
         })
 
         this.registerNotification('autocomplete/accept', async item => {
@@ -367,7 +363,7 @@ export class Agent extends MessageHandler {
         return client
     }
 
-    private async recordEvent(feature: string, name: string): Promise<null> {
+    private async recordEvent(feature: string, name: string, additionalArgument: object): Promise<null> {
         const client = await this.client
         if (!client) {
             return null
@@ -401,7 +397,9 @@ export class Agent extends MessageHandler {
                     ide: clientInfo.name,
                     ideExtensionType: 'Cody',
                     version: clientInfo.version,
+                    // TODO: platform
                 },
+                ...additionalArgument,
             }),
         })
 

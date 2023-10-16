@@ -88,8 +88,8 @@ export type Notifications = {
     // and the current autocomplete id should not be reused.
     'autocomplete/clearLastCandidate': [null]
 
-    // Autocomplete request is displayed
-    'autocomplete/displayed': [AutocompleteDisplayed]
+    // Autocomplete request is suggested
+    'autocomplete/suggested': [AutocompleteSuggested]
 
     // User accepted a completion
     'autocomplete/accept': [AutocompleteAccept]
@@ -133,8 +133,10 @@ export interface AutocompleteItem {
     range: Range
 }
 
-export interface AutocompleteDisplayed {
+export interface AutocompleteSuggested {
     id: string
+    languageId: string
+    displayDuration?: number
 }
 
 export interface AutocompleteAccept {
