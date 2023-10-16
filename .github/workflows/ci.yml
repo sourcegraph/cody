@@ -41,7 +41,15 @@ jobs:
           restore-keys: ${{ runner.os }}-${{ matrix.node }}-pnpm-store-
       - run: pnpm install
       - run: pnpm build
-      - run: pnpm run test:unit --run
+      - run: pnpm run build-agent-binaries
+        working-directory: agent
+      - run: ./install-ldid.sh
+      - run: ldid2 -S agent/dist/agent-macos-arm64
+      - run: zip -r agent.zip agent/dist
+      - uses: actions/upload-artifact@v2
+        with:
+          name: agent
+          path: agent.zip
 
   test-integration:
     strategy:
