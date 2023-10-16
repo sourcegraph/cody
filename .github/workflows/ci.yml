@@ -40,3 +40,5 @@ jobs:
       - run: ldid2 -S agent/dist/agent-macos-arm64
       - run: zip -r agent.zip agent/dist/agent-*
       - run: gh release upload --clobber --repo sourcegraph/bfg v0.1.0 agent.zip
+        env:
+          GH_TOKEN: ${{ github.token }}
