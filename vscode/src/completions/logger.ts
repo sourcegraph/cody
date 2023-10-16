@@ -303,11 +303,7 @@ export function accept(id: SuggestionID, document: vscode.TextDocument, completi
         acceptedItem: { ...completionItemToItemInfo(completion) },
     })
     statistics.logAccepted()
-    try {
-        persistenceTracker.track(completionEvent.params.id, Date.now(), completion, document)
-    } catch (error) {
-        console.error(error)
-    }
+    persistenceTracker.track(completionEvent.params.id, Date.now(), completion, document)
 }
 
 export function partiallyAccept(id: SuggestionID, completion: InlineCompletionItem, acceptedLength: number): void {

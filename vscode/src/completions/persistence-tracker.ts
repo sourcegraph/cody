@@ -43,7 +43,7 @@ export class PersistenceTracker implements vscode.Disposable {
         document: vscode.TextDocument
     ): void {
         if (!completion.range) {
-            throw new Error('Completion insertion must have a range')
+            return
         }
 
         // The range for the completion is relative to the state before the completion was inserted.
@@ -171,6 +171,11 @@ export class PersistenceTracker implements vscode.Disposable {
     }
 
     public dispose(): void {
+        for (const timeoutId of this.managedTimeouts) {
+            clearTimeout(timeoutId)
+        }
+        this.managedTimeouts.clear()
+        this.trackedCompletions.clear()
         for (const disposable of this.disposables) {
             disposable.dispose()
         }
