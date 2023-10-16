@@ -18,16 +18,56 @@ import styles from './OnboardingExperiment.module.css'
 interface LoginProps {
     simplifiedLoginRedirect: (method: AuthMethod) => void
     telemetryService: TelemetryService
+    uiKindIsWeb: boolean
     vscodeAPI: VSCodeWrapper
+}
+
+const WebLogin: React.FunctionComponent<
+    React.PropsWithoutRef<{
+        telemetryService: TelemetryService
+        vscodeAPI: VSCodeWrapper
+    }>
+> = ({ telemetryService, vscodeAPI }) => {
+    // vscodeAPI.postMessage({ command: 'auth', type: 'callback', endpoint: uri })
+    return (
+        <ol>
+            <li>
+                <a href="https://sourcegraph.com/sign-up" target="site">
+                    Sign up at sourcegraph.com
+                </a>
+            </li>
+            <li>
+                <a href="https://sourcegraph.com/user/settings/tokens" target="site">
+                    Generate an Access Token
+                </a>
+            </li>
+            <li>
+                <a
+                    href="about:blank"
+                    onClick={event => {
+                        telemetryService.log('CodyVSCodeExtension:auth:clickSignInWeb')
+                        vscodeAPI.postMessage({
+                            command: 'simplified-onboarding',
+                            type: 'web-sign-in-token',
+                        })
+                        event.preventDefault()
+                        event.stopPropagation()
+                    }}
+                >
+                    Add the Access Token to VScode
+                </a>
+            </li>
+        </ol>
+    )
 }
 
 // A login component which is simplified by not having an app setup flow.
 export const LoginSimplified: React.FunctionComponent<React.PropsWithoutRef<LoginProps>> = ({
     simplifiedLoginRedirect,
     telemetryService,
+    uiKindIsWeb,
     vscodeAPI,
 }) => {
-    // TODO: Log exposures to the experiment.
     const otherSignInClick = (): void => {
         telemetryService.log('CodyVSCodeExtension:auth:clickOtherSignInOptions')
         vscodeAPI.postMessage({ command: 'auth', type: 'signin' })
@@ -43,39 +83,45 @@ export const LoginSimplified: React.FunctionComponent<React.PropsWithoutRef<Logi
                     Sign in to get started:
                     <div className={styles.buttonWidthSizer}>
                         <div className={styles.buttonStack}>
-                            <VSCodeButton
-                                className={styles.button}
-                                type="button"
-                                onClick={() => {
-                                    telemetryService.log('CodyVSCodeExtension:auth:simplifiedSignInGitHubClick')
-                                    simplifiedLoginRedirect('github')
-                                }}
-                            >
-                                <img src={signInLogoGitHub} alt="GitHub logo" />
-                                Sign In with GitHub
-                            </VSCodeButton>
-                            <VSCodeButton
-                                className={styles.button}
-                                type="button"
-                                onClick={() => {
-                                    telemetryService.log('CodyVSCodeExtension:auth:simplifiedSignInGitLabClick')
-                                    simplifiedLoginRedirect('gitlab')
-                                }}
-                            >
-                                <img src={signInLogoGitLab} alt="GitLab logo" />
-                                Sign In with GitLab
-                            </VSCodeButton>
-                            <VSCodeButton
-                                className={styles.button}
-                                type="button"
-                                onClick={() => {
-                                    telemetryService.log('CodyVSCodeExtension:auth:simplifiedSignInGoogleClick')
-                                    simplifiedLoginRedirect('google')
-                                }}
-                            >
-                                <img src={signInLogoGoogle} alt="Google logo" />
-                                Sign In with Google
-                            </VSCodeButton>
+                            {uiKindIsWeb ? (
+                                <WebLogin telemetryService={telemetryService} vscodeAPI={vscodeAPI} />
+                            ) : (
+                                <>
+                                    <VSCodeButton
+                                        className={styles.button}
+                                        type="button"
+                                        onClick={() => {
+                                            telemetryService.log('CodyVSCodeExtension:auth:simplifiedSignInGitHubClick')
+                                            simplifiedLoginRedirect('github')
+                                        }}
+                                    >
+                                        <img src={signInLogoGitHub} alt="GitHub logo" />
+                                        Sign In with GitHub
+                                    </VSCodeButton>
+                                    <VSCodeButton
+                                        className={styles.button}
+                                        type="button"
+                                        onClick={() => {
+                                            telemetryService.log('CodyVSCodeExtension:auth:simplifiedSignInGitLabClick')
+                                            simplifiedLoginRedirect('gitlab')
+                                        }}
+                                    >
+                                        <img src={signInLogoGitLab} alt="GitLab logo" />
+                                        Sign In with GitLab
+                                    </VSCodeButton>
+                                    <VSCodeButton
+                                        className={styles.button}
+                                        type="button"
+                                        onClick={() => {
+                                            telemetryService.log('CodyVSCodeExtension:auth:simplifiedSignInGoogleClick')
+                                            simplifiedLoginRedirect('google')
+                                        }}
+                                    >
+                                        <img src={signInLogoGoogle} alt="Google logo" />
+                                        Sign In with Google
+                                    </VSCodeButton>
+                                </>
+                            )}
                         </div>
                     </div>
                 </div>

@@ -52,7 +52,7 @@ export type WebviewMessage =
     | { command: 'reload' }
     | {
           command: 'simplified-onboarding'
-          type: 'install-app' | 'open-app' | 'reload-state'
+          type: 'install-app' | 'open-app' | 'reload-state' | 'web-sign-in-token'
       }
 
 /**

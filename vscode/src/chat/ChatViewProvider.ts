@@ -2,6 +2,7 @@ import * as vscode from 'vscode'
 
 import { CodyPrompt, CustomCommandType } from '@sourcegraph/cody-shared/src/chat/prompts'
 import { ChatMessage, UserLocalHistory } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
+import { DOTCOM_URL } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
 
 import { View } from '../../webviews/NavBar'
 import { logDebug } from '../log'
@@ -157,6 +158,20 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
                 }
                 if (message.type === 'reload-state') {
                     void this.simplifiedOnboardingReloadEmbeddingsState()
+                    break
+                }
+                if (message.type === 'web-sign-in-token') {
+                    void vscode.window.showInputBox({ prompt: 'Enter web sign-in token' }).then(async token => {
+                        if (!token) {
+                            return
+                        }
+                        const authStatus = await this.authProvider.auth(DOTCOM_URL.href, token)
+                        if (!authStatus?.isLoggedIn) {
+                            void vscode.window.showErrorMessage(
+                                'Authentication failed. Please check your token and try again.'
+                            )
+                        }
+                    })
                     break
                 }
                 break

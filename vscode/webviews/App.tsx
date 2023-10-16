@@ -7,18 +7,10 @@ import { CodyPrompt } from '@sourcegraph/cody-shared/src/chat/prompts'
 import { ChatHistory, ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { Configuration } from '@sourcegraph/cody-shared/src/configuration'
 
-import {
-    AuthMethod,
-    AuthStatus,
-    defaultAuthStatus,
-    Experiments,
-    LocalEnv,
-    OnboardingExperimentArm,
-} from '../src/chat/protocol'
+import { AuthMethod, AuthStatus, defaultAuthStatus, Experiments, LocalEnv } from '../src/chat/protocol'
 
 import { Chat } from './Chat'
 import { LoadingPage } from './LoadingPage'
-import { Login } from './Login'
 import { View } from './NavBar'
 import { Notices } from './Notices'
 import { LoginSimplified } from './OnboardingExperiment'
@@ -179,27 +171,12 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     return (
         <div className="outer-container">
             {view === 'login' || !authStatus.isLoggedIn ? (
-                config.experimentOnboarding === OnboardingExperimentArm.Simplified ? (
-                    <LoginSimplified
-                        simplifiedLoginRedirect={simplifiedLoginRedirect}
-                        telemetryService={telemetryService}
-                        vscodeAPI={vscodeAPI}
-                    />
-                ) : (
-                    <Login
-                        authStatus={authStatus}
-                        endpoint={endpoint}
-                        isAppInstalled={isAppInstalled}
-                        isAppRunning={config?.isAppRunning}
-                        vscodeAPI={vscodeAPI}
-                        telemetryService={telemetryService}
-                        appOS={config?.os}
-                        appArch={config?.arch}
-                        uiKindIsWeb={config?.uiKindIsWeb}
-                        callbackScheme={config?.uriScheme}
-                        onLoginRedirect={onLoginRedirect}
-                    />
-                )
+                <LoginSimplified
+                    simplifiedLoginRedirect={simplifiedLoginRedirect}
+                    telemetryService={telemetryService}
+                    uiKindIsWeb={config?.uiKindIsWeb}
+                    vscodeAPI={vscodeAPI}
+                />
             ) : (
                 <>
                     <Notices
