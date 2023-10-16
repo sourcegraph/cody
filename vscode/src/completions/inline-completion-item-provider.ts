@@ -22,7 +22,7 @@ import {
 } from './get-inline-completions'
 import { getLatency, LatencyFeatureFlags, resetLatency } from './latency'
 import * as CompletionLogger from './logger'
-import { CompletionEvent, SuggestionID } from './logger'
+import { CompletionEvent, READ_TIMEOUT_MS, SuggestionID } from './logger'
 import { ProviderConfig } from './providers/provider'
 import { RequestManager, RequestParams } from './request-manager'
 import { getRequestParamsFromLastCandidate } from './reuse-last-candidate'
@@ -119,6 +119,8 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
         this.config.tracer = value
     }
 
+    private lastCompletionRequestTimestamp = 0
+
     public async provideInlineCompletionItems(
         document: vscode.TextDocument,
         position: vscode.Position,
@@ -132,6 +134,10 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
         this.lastCompletionRequest = completionRequest
 
         const start = performance.now()
+
+        if (!this.lastCompletionRequestTimestamp) {
+            this.lastCompletionRequestTimestamp = start
+        }
 
         // We start feature flag requests early so that we have a high chance of getting a response
         // before we need it.
@@ -263,10 +269,12 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
                     language: await minLatencyFlagsPromises.language,
                     provider: await minLatencyFlagsPromises.provider,
                 }
-
+                // Do not apply the minimum latency if the last suggestion was not read, e.g when user was typing
+                const isLastSuggestionRead = start - this.lastCompletionRequestTimestamp > READ_TIMEOUT_MS
+                this.lastCompletionRequestTimestamp = start
                 const isMinLatencyEnabled =
                     latencyFeatureFlags.user || latencyFeatureFlags.language || latencyFeatureFlags.provider
-                if (triggerKind === TriggerKind.Automatic && isMinLatencyEnabled) {
+                if (isLastSuggestionRead && triggerKind === TriggerKind.Automatic && isMinLatencyEnabled) {
                     const minimumLatency = getLatency(
                         latencyFeatureFlags,
                         this.config.providerConfig.identifier,
