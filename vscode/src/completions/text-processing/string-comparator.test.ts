@@ -1,4 +1,3 @@
-import levenshtein from 'js-levenshtein'
 import { describe, expect, it } from 'vitest'
 
 import { isAlmostTheSameString } from './string-comparator'
@@ -21,23 +20,5 @@ describe('isAlmostTheSameString', () => {
         [false, '    chatId: z.string(),', '    prompt: z.string(),'],
     ])('should return %s for strings %j and %j', (expected, stringA, stringB) => {
         expect(isAlmostTheSameString(stringA, stringB)).toBe(expected)
-    })
-})
-
-describe('Levenshtein comparator', () => {
-    it.each([
-        ['', '', 0],
-        ['a', '', 1],
-        ['aa', '', 2],
-        ['', 'b', 1],
-        ['', 'bb', 2],
-        ['Mark', 'Zack', 2],
-        ['POLYNOMIAL', 'EXPONENTIAL', 6],
-        ['foo', 'foo bar', 4],
-        ['foo bar', 'foo', 4],
-    ])('should return a correct number of edit for %s and %s strings (edits = %i)', (a, b, expected) => {
-        const numbersOfEdit = levenshtein(a, b)
-
-        expect(numbersOfEdit).toBe(expected)
     })
 })
