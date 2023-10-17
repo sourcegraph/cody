@@ -407,8 +407,9 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
      */
     public async createWebviewPanel(): Promise<void> {
         if (this.webviewPanel) {
-            await this.clearAndRestartSession()
-            this.webviewPanel.reveal()
+            if (!this.webviewPanel.visible) {
+                this.webviewPanel.reveal(vscode.ViewColumn.Two)
+            }
             return
         }
 
@@ -449,10 +450,14 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
         this.contextProvider.webview = panel.webview
 
         this.webviewPanel = panel
+
         panel.onDidDispose(() => {
             this.webviewPanel = undefined
             panel.dispose()
         })
+
+        await this.clearAndRestartSession()
+
         await vscode.commands.executeCommand('setContext', 'cody.webviewPanel', true)
     }
 

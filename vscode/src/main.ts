@@ -188,6 +188,7 @@ const register = async (
         humanInput?: string
     ): Promise<void> => {
         if (openChatView) {
+            await sidebarChatProvider.createWebviewPanel()
             await sidebarChatProvider.setWebviewView('chat')
         }
 
