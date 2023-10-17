@@ -4,19 +4,19 @@ import { getCurrentDocContext } from './get-current-doc-context'
 import { Provider } from './providers/provider'
 import { RequestManager, RequestManagerResult, RequestParams } from './request-manager'
 import { documentAndPosition } from './test-helpers'
-import { Completion } from './types'
+import { InlineCompletionItemWithAnalytics } from './text-processing/process-inline-completions'
 
 class MockProvider extends Provider {
     public didFinishNetworkRequest = false
     public didAbort = false
-    protected resolve: (completion: Completion[]) => void = () => {}
+    protected resolve: (completion: InlineCompletionItemWithAnalytics[]) => void = () => {}
 
     public resolveRequest(completions: string[]): void {
         this.didFinishNetworkRequest = true
-        this.resolve(completions.map(content => ({ content })))
+        this.resolve(completions.map(content => ({ insertText: content, stopReason: 'test' })))
     }
 
-    public generateCompletions(abortSignal: AbortSignal): Promise<Completion[]> {
+    public generateCompletions(abortSignal: AbortSignal): Promise<InlineCompletionItemWithAnalytics[]> {
         abortSignal.addEventListener('abort', () => {
             this.didAbort = true
         })
@@ -27,11 +27,14 @@ class MockProvider extends Provider {
 }
 
 function createProvider(prefix: string) {
+    const { docContext, document, position } = docState(prefix)
+
     return new MockProvider({
         id: 'mock-provider',
-        docContext: docState(prefix).docContext,
+        docContext,
         fileName: '',
-        languageId: 'typescript',
+        document,
+        position,
         multiline: false,
         n: 1,
     })

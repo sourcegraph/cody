@@ -16,7 +16,9 @@ import {
     PrefixComponents,
     trimLeadingWhitespaceUntilNewline,
 } from '../text-processing'
-import { Completion, ContextSnippet } from '../types'
+import { parseAndTruncateCompletion } from '../text-processing/parse-and-truncate-completion'
+import { InlineCompletionItemWithAnalytics } from '../text-processing/process-inline-completions'
+import { ContextSnippet } from '../types'
 import { forkSignal, messagesToText } from '../utils'
 
 import {
@@ -130,14 +132,14 @@ export class AnthropicProvider extends Provider {
         abortSignal: AbortSignal,
         snippets: ContextSnippet[],
         tracer?: CompletionProviderTracer
-    ): Promise<Completion[]> {
+    ): Promise<InlineCompletionItemWithAnalytics[]> {
         // Create prompt
         const { messages: prompt } = this.createPrompt(snippets)
         if (prompt.length > this.promptChars) {
             throw new Error(`prompt length (${prompt.length}) exceeded maximum character length (${this.promptChars})`)
         }
 
-        const args: CodeCompletionsParams = this.options.multiline
+        const requestParams: CodeCompletionsParams = this.options.multiline
             ? {
                   temperature: 0.5,
                   messages: prompt,
@@ -152,26 +154,15 @@ export class AnthropicProvider extends Provider {
                   stopSequences: SINGLE_LINE_STOP_SEQUENCES,
                   timeoutMs: 5000,
               }
-        tracer?.params(args)
+        tracer?.params(requestParams)
 
-        // Issue request
-        const responses = await Promise.all(
+        const completions = await Promise.all(
             Array.from({ length: this.options.n }).map(() => {
-                return this.fetchAndProcessCompletions(this.client, args, abortSignal)
+                return this.fetchAndProcessCompletions(this.client, requestParams, abortSignal)
             })
         )
 
-        const ret = responses.map(resp => [
-            {
-                prefix: this.options.docContext.prefix,
-                content: resp.completion,
-                stopReason: resp.stopReason,
-            },
-        ])
-
-        const completions = ret.flat()
-        tracer?.result({ rawResponses: responses, completions })
-
+        tracer?.result({ completions })
         return completions
     }
 
@@ -179,7 +170,7 @@ export class AnthropicProvider extends Provider {
         client: Pick<CodeCompletionsClient, 'complete'>,
         params: CodeCompletionsParams,
         abortSignal: AbortSignal
-    ): Promise<CompletionResponse> {
+    ): Promise<InlineCompletionItemWithAnalytics> {
         // The Async executor is required to return the completion early if a partial result from SSE can be used.
         // eslint-disable-next-line @typescript-eslint/no-misused-promises, no-async-promise-executor
         return new Promise(async (resolve, reject) => {
@@ -189,22 +180,23 @@ export class AnthropicProvider extends Provider {
                 const result = await client.complete(
                     params,
                     (incompleteResponse: CompletionResponse) => {
-                        const processedCompletion = this.postProcess(incompleteResponse.completion)
-                        const usePartialCompletion = canUsePartialCompletion(processedCompletion, {
-                            document: { languageId: this.options.languageId },
-                            multiline: this.options.multiline,
-                            docContext: this.options.docContext,
-                        })
+                        if (this.options.useStreamingTruncation) {
+                            const processedCompletion = this.postProcess(incompleteResponse.completion)
+                            const completion = canUsePartialCompletion(processedCompletion, this.options)
 
-                        if (usePartialCompletion) {
-                            resolve({ ...incompleteResponse, completion: processedCompletion })
-                            abortController.abort()
+                            if (completion) {
+                                resolve({ ...completion, stopReason: 'streaming-truncation' })
+                                abortController.abort()
+                            }
                         }
                     },
                     abortController.signal
                 )
 
-                resolve({ ...result, completion: this.postProcess(result.completion) })
+                const processedCompletion = this.postProcess(result.completion)
+                const completion = parseAndTruncateCompletion(processedCompletion, this.options)
+
+                resolve({ ...completion, stopReason: result.stopReason })
             } catch (error) {
                 reject(error)
             }

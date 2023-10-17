@@ -296,7 +296,10 @@ cases.forEach(isTreeSitterEnabled => {
                     await getInlineCompletionsInsertText(
                         params(
                             dedent`
-                    if (check) {
+                    function whatever() {
+                        console.log(123)
+                    }
+                    console.log(321); if (check) {
                         █
                     }
                 `,
@@ -552,6 +555,50 @@ cases.forEach(isTreeSitterEnabled => {
                 console.log('oops')
                 }
             `)
+            })
+        }
+
+        if (isTreeSitterEnabled) {
+            it('kek', async () => {
+                expect(
+                    (
+                        await getInlineCompletionsInsertText(
+                            params(
+                                dedent`
+                        class Animal {
+                            █
+                        }
+                    `,
+                                [
+                                    completion`\nconstructor() {\n  this.logger = new Logger();\n}\n\nlogAction(action: string) {\n  this.logger.log(action); \n}\n\n}`,
+                                    // completion`
+                                    //     constructor(name: string) {}
+
+                                    //     bark() {
+                                    //         const barkData = {}
+                                    //         console.log(barkData)
+                                    //     }
+
+                                    //     wasuup() {
+                                    //         console.log('Hello World!');
+                                    //     }
+                                    // }
+
+                                    // console.log('redundant')
+                                    // `,
+                                ]
+                            )
+                        )
+                    )[0]
+                ).toMatchInlineSnapshot(`
+                  "constructor() {
+                    this.logger = new Logger();
+                  }
+
+                  logAction(action: string) {
+                    this.logger.log(action);
+                  }"
+                `)
             })
         }
     })

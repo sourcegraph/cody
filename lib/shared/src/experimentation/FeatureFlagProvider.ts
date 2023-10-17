@@ -20,6 +20,7 @@ export enum FeatureFlag {
     CodyAutocompleteLanguageLatency = 'cody-autocomplete-language-latency',
     CodyAutocompleteUserLatency = 'cody-autocomplete-user-latency',
     CodyAutocompleteProviderLatency = 'cody-autocomplete-provider-latency',
+    CodyAutocompleteStreamingTruncation = 'cody-autocomplete-streaming-truncation',
 }
 
 const ONE_HOUR = 60 * 60 * 1000

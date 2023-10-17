@@ -55,7 +55,7 @@ export function initQueries(language: Language, languageId: SupportedLanguage, p
     QUERIES_LOCAL_CACHE[languageId] = queriesWithQueryWrappers
 }
 
-interface DocumentQuerySDK {
+export interface DocumentQuerySDK {
     parser: Parser
     queries: ResolvedQueries
     language: SupportedLanguage

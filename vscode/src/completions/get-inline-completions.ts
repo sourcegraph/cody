@@ -53,6 +53,7 @@ export interface InlineCompletionsParams {
 
     // Feature flags
     completeSuggestWidgetSelection?: boolean
+    useStreamingTruncation?: boolean
 
     // Callbacks to accept completions
     handleDidAcceptCompletionItem?: (
@@ -181,6 +182,7 @@ async function doGetInlineCompletions(params: InlineCompletionsParams): Promise<
         abortSignal,
         tracer,
         completeSuggestWidgetSelection = true,
+        useStreamingTruncation = true,
         handleDidAcceptCompletionItem,
         handleDidPartiallyAcceptCompletionItem,
     } = params
@@ -275,10 +277,12 @@ async function doGetInlineCompletions(params: InlineCompletionsParams): Promise<
     // Completion providers
     const completionProviders = getCompletionProviders({
         document,
+        position,
         triggerKind,
         providerConfig,
         docContext,
         toWorkspaceRelativePath,
+        useStreamingTruncation,
     })
     tracer?.({ completers: completionProviders.map(({ options }) => options) })
 
@@ -317,17 +321,33 @@ async function doGetInlineCompletions(params: InlineCompletionsParams): Promise<
 }
 
 interface GetCompletionProvidersParams
-    extends Pick<InlineCompletionsParams, 'document' | 'triggerKind' | 'providerConfig' | 'toWorkspaceRelativePath'> {
+    extends Pick<
+        InlineCompletionsParams,
+        'document' | 'position' | 'triggerKind' | 'providerConfig' | 'toWorkspaceRelativePath'
+    > {
     docContext: DocumentContext
+    useStreamingTruncation?: boolean
 }
 
 function getCompletionProviders(params: GetCompletionProvidersParams): Provider[] {
-    const { document, triggerKind, providerConfig, docContext, toWorkspaceRelativePath } = params
+    const {
+        document,
+        position,
+        triggerKind,
+        providerConfig,
+        docContext,
+        toWorkspaceRelativePath,
+        useStreamingTruncation,
+    } = params
+
     const sharedProviderOptions: Omit<ProviderOptions, 'id' | 'n' | 'multiline'> = {
         docContext,
+        document,
+        position,
         fileName: toWorkspaceRelativePath(document.uri),
-        languageId: document.languageId,
+        useStreamingTruncation: Boolean(useStreamingTruncation),
     }
+
     if (docContext.multilineTrigger) {
         return [
             providerConfig.create({
