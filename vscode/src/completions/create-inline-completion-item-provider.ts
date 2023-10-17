@@ -55,7 +55,7 @@ export async function createInlineCompletionItemProvider({
         await Promise.all([
             createProviderConfig(config, client, authProvider.getAuthStatus().configOverwrites),
             featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteGraphContext),
-            true, // featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteDisableNetworkCache),
+            featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteDisableNetworkCache),
             featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteDisableRecyclingOfPreviousRequests),
         ])
     if (providerConfig) {
