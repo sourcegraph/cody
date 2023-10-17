@@ -184,6 +184,7 @@ export class ContextProvider implements vscode.Disposable {
                 type: 'contextStatus',
                 contextStatus: {
                     mode: this.config.useContext,
+                    endpoint: this.authProvider.getAuthStatus().endpoint || undefined,
                     connection: this.codebaseContext.checkEmbeddingsConnection(),
                     embeddingsEndpoint: this.codebaseContext.embeddingsEndpoint,
                     codebase: this.codebaseContext.getCodebase(),
