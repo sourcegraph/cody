@@ -47,12 +47,12 @@ export function parseAndTruncateCompletion(
             useTreeSitter,
         })
 
+        const initialLineCount = insertTextBeforeTruncation.split('\n').length
+        const truncatedLineCount = truncationResult.insertText.split('\n').length
+
+        parsed.lineTruncatedCount = initialLineCount - truncatedLineCount
         parsed.insertText = truncationResult.insertText
         parsed.truncatedWith = truncationResult.truncatedWith
-
-        const initialLineCount = insertTextBeforeTruncation.split('\n').length
-        const truncatedLineCount = parsed.insertText.split('\n').length
-        parsed.lineTruncatedCount = initialLineCount - truncatedLineCount
     }
 
     return parsed
