@@ -203,7 +203,7 @@ async function doGetInlineCompletions(params: InlineCompletionsParams): Promise<
         return null
     }
 
-    // Do not trigger when cusor is at the start of the file ending line, and the line above is empty
+    // Do not trigger when cursor is at the start of the file ending line and the line above is empty
     if (triggerKind !== TriggerKind.Manual && position.line !== 0 && position.line === document.lineCount - 1) {
         const lineAbove = Math.max(position.line - 1, 0)
         if (document.lineAt(lineAbove).isEmptyOrWhitespace && !position.character) {
