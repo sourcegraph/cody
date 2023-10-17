@@ -55,7 +55,7 @@ export class FixupController
             vscode.commands.registerCommand('cody.fixup.codelens.apply', id => this.apply(id)),
             vscode.commands.registerCommand('cody.fixup.codelens.diff', id => this.diff(id)),
             vscode.commands.registerCommand('cody.fixup.codelens.cancel', id => this.cancel(id)),
-            vscode.commands.registerCommand('cody.fixup.codelens.retry', id => this.retry(id))
+            vscode.commands.registerCommand('cody.fixup.codelens.regenerate', async id => this.regenerate(id))
         )
         // Observe file renaming and deletion
         this.files = new FixupFileObserver()
@@ -532,24 +532,19 @@ export class FixupController
         )
     }
 
-    public retry(id: taskID): void {
-        telemetryService.log('CodyVSCodeExtension:fixup:codeLens:clicked', { op: 'retry' })
+    // Regenerate code with the same set of instruction
+    public async regenerate(id: taskID): Promise<void> {
+        telemetryService.log('CodyVSCodeExtension:fixup:codeLens:clicked', { op: 'regenerate' })
         const task = this.tasks.get(id)
         if (!task) {
             return
         }
-        // Get diagnostics from vscode api
-        const diagnostics = vscode.languages.getDiagnostics(task.fixupFile.uri)
-        // Find the first error diagnostic that is within the range of the task
         const range = task.selectionRange
-        const error = diagnostics.find(diagnostic => range.contains(diagnostic.range))
-        const instruction = error
-            ? `${task.instruction}. Start from the beginning and think step-by-step to make sure your code address the following error: ${error.message}`
-            : task.instruction
-        // Remove the code lens for the previous task
+        const instruction = task.instruction
+        const document = await vscode.workspace.openTextDocument(task.fixupFile.uri)
+        // Remove the previous task and code lenses
         this.cancel(id)
-        void vscode.commands.executeCommand('cody.command.edit-code', { range, instruction })
-        telemetryService.log('CodyVSCodeExtension:fixup:retried')
+        void vscode.commands.executeCommand('cody.command.edit-code', { range, instruction, document }, 'regenerate')
     }
 
     private setTaskState(task: FixupTask, state: CodyTaskState): void {
