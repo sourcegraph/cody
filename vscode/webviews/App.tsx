@@ -7,7 +7,7 @@ import { CodyPrompt } from '@sourcegraph/cody-shared/src/chat/prompts'
 import { ChatHistory, ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { Configuration } from '@sourcegraph/cody-shared/src/configuration'
 
-import { AuthMethod, AuthStatus, Experiments, LocalEnv } from '../src/chat/protocol'
+import { AuthMethod, AuthStatus, LocalEnv } from '../src/chat/protocol'
 
 import { Chat } from './Chat'
 import { LoadingPage } from './LoadingPage'
@@ -19,9 +19,9 @@ import { createWebviewTelemetryService } from './utils/telemetry'
 import type { VSCodeWrapper } from './utils/VSCodeApi'
 
 export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vscodeAPI }) => {
-    const [config, setConfig] = useState<
-        (Pick<Configuration, 'debugEnable' | 'serverEndpoint'> & LocalEnv & Experiments) | null
-    >(null)
+    const [config, setConfig] = useState<(Pick<Configuration, 'debugEnable' | 'serverEndpoint'> & LocalEnv) | null>(
+        null
+    )
     const [endpoint, setEndpoint] = useState<string | null>(null)
     const [view, setView] = useState<View | undefined>()
     const [messageInProgress, setMessageInProgress] = useState<ChatMessage | null>(null)
@@ -128,7 +128,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
         }
     }, [view, vscodeAPI])
 
-    const simplifiedLoginRedirect = useCallback(
+    const loginRedirect = useCallback(
         (method: AuthMethod) => {
             // We do not change the view here. We want to keep presenting the
             // login buttons until we get a token so users don't get stuck if
@@ -138,7 +138,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
         [vscodeAPI]
     )
 
-    // Callbacks used for app setup after simplified onboarding
+    // Callbacks used for app setup after onboarding
     const onboardingPopupProps = {
         installApp: () => {
             vscodeAPI.postMessage({ command: 'simplified-onboarding', type: 'install-app' })
@@ -161,7 +161,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
         <div className="outer-container">
             {view === 'login' || !authStatus.isLoggedIn ? (
                 <LoginSimplified
-                    simplifiedLoginRedirect={simplifiedLoginRedirect}
+                    simplifiedLoginRedirect={loginRedirect}
                     telemetryService={telemetryService}
                     uiKindIsWeb={config?.uiKindIsWeb}
                     vscodeAPI={vscodeAPI}
@@ -200,7 +200,6 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                             chatCommands={myPrompts || undefined}
                             isTranscriptError={isTranscriptError}
                             applessOnboarding={{
-                                arm: config.experimentOnboarding,
                                 endpoint,
                                 embeddingsEndpoint: contextStatus?.embeddingsEndpoint,
                                 props: {

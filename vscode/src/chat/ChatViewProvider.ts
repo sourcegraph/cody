@@ -8,7 +8,6 @@ import { View } from '../../webviews/NavBar'
 import { logDebug } from '../log'
 import { AuthProviderSimplified } from '../services/AuthProviderSimplified'
 import { LocalAppWatcher } from '../services/LocalAppWatcher'
-import * as OnboardingExperiment from '../services/OnboardingExperiment'
 import { telemetryService } from '../services/telemetry'
 
 import { MessageProvider, MessageProviderOptions } from './MessageProvider'
@@ -86,10 +85,6 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
                     const authProviderSimplified = new AuthProviderSimplified()
                     const authMethod = message.authMethod || 'dotcom'
                     void authProviderSimplified.openExternalAuthUrl(this.authProvider, authMethod)
-                    break
-                }
-                if (message.type === 'simplified-onboarding-exposure') {
-                    await OnboardingExperiment.logExposure()
                     break
                 }
                 // cody.auth.signin or cody.auth.signout
