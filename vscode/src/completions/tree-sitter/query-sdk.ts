@@ -96,7 +96,7 @@ interface QueryWrappers {
             node: SyntaxNode,
             start: Point,
             end?: Point
-        ) => never[] | readonly [{ readonly node: SyntaxNode; readonly name: 'blocks' }]
+        ) => never[] | readonly [{ readonly node: SyntaxNode; readonly name: 'trigger' }]
     }
     singlelineTriggers: {
         getEnclosingTrigger: (
@@ -126,7 +126,7 @@ function getLanguageSpecificQueryWrappers(queries: ResolvedQueries, _parser: Par
                 const potentialParent = potentialParentNodes.find(capture => trigger.parent?.id === capture.node.id)
                     ?.node
 
-                return [{ node: potentialParent || trigger, name: 'blocks' }] as const
+                return [{ node: potentialParent || trigger, name: 'trigger' }] as const
             },
         },
         singlelineTriggers: {
