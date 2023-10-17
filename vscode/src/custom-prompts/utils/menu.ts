@@ -31,11 +31,20 @@ const fixOption: QuickPickItemWithSlashCommand = {
     description: EDIT_COMMAND.description,
     slashCommand: EDIT_COMMAND.slashCommand,
 }
+// Seperators
 const commandsSeparator: QuickPickItem = { kind: -1, label: 'commands' }
 const customCommandsSeparator: QuickPickItem = { kind: -1, label: 'custom commands (experimental)' }
-const configOption: QuickPickItem = { label: 'Configure Custom Commands...' }
 const settingsSeparator: QuickPickItem = { kind: -1, label: 'settings' }
-const addOption: QuickPickItem = { label: 'New Custom Command...', alwaysShow: true }
+// Common options
+const configOption: QuickPickItem = {
+    label: 'Configure Custom Commands...',
+    description: 'Manage your custom reusable commands',
+}
+const addOption: QuickPickItem = {
+    label: 'New Custom Command...',
+    alwaysShow: true,
+    description: 'Create a new reusable command',
+}
 
 export const recentlyUsedSeparatorAsPrompt: [string, CodyPrompt][] = [
     ['separator', { prompt: 'separator', slashCommand: '' }],
