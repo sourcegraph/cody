@@ -556,10 +556,8 @@ cases.forEach(isTreeSitterEnabled => {
                 }
             `)
             })
-        }
 
-        if (isTreeSitterEnabled) {
-            it('kek', async () => {
+            it('truncates multiline completions with many nested block statements', async () => {
                 expect(
                     (
                         await getInlineCompletionsInsertText(
@@ -570,34 +568,36 @@ cases.forEach(isTreeSitterEnabled => {
                         }
                     `,
                                 [
-                                    completion`\nconstructor() {\n  this.logger = new Logger();\n}\n\nlogAction(action: string) {\n  this.logger.log(action); \n}\n\n}`,
-                                    // completion`
-                                    //     constructor(name: string) {}
+                                    completion`
+                                        constructor(name: string) {}
 
-                                    //     bark() {
-                                    //         const barkData = {}
-                                    //         console.log(barkData)
-                                    //     }
+                                        bark() {
+                                            const barkData = { tone: 'loud' }
+                                            this.produceSound(barkData)
+                                        }
 
-                                    //     wasuup() {
-                                    //         console.log('Hello World!');
-                                    //     }
-                                    // }
+                                        wasuup() {
+                                            this.bark()
+                                        }
+                                    }
 
-                                    // console.log('redundant')
-                                    // `,
+                                    redundantFunctionCall(123)
+                                    `,
                                 ]
                             )
                         )
                     )[0]
                 ).toMatchInlineSnapshot(`
-                  "constructor() {
-                    this.logger = new Logger();
-                  }
+                  "constructor(name: string) {}
 
-                  logAction(action: string) {
-                    this.logger.log(action);
-                  }"
+                      bark() {
+                          const barkData = { tone: 'loud' }
+                          this.produceSound(barkData)
+                      }
+
+                      wasuup() {
+                          this.bark()
+                      }"
                 `)
             })
         }
