@@ -11,6 +11,7 @@ import {
     processInlineCompletions,
 } from './text-processing/process-inline-completions'
 import { ContextSnippet } from './types'
+import { forkSignal } from './utils'
 
 export interface RequestParams {
     /** The request's document **/
@@ -24,6 +25,9 @@ export interface RequestParams {
 
     /** The cursor position in the source file where the completion request was triggered. **/
     position: vscode.Position
+
+    /** The abort signal for the request. **/
+    abortSignal?: AbortSignal
 }
 
 export interface RequestManagerResult {
@@ -81,7 +85,15 @@ export class RequestManager {
             }
         }
 
-        const request = new InflightRequest(params)
+        // When request recycling is enabled, we do not pass the original abort signal forward as to
+        // not interrupt requests that are no longer relevant. Instead, we let all previous requests
+        // complete and try to see if their results can be reused for other inflight requests.
+        let abortController: AbortController = new AbortController()
+        if (this.disableRecyclingOfPreviousRequests && params.abortSignal) {
+            abortController = forkSignal(params.abortSignal)
+        }
+
+        const request = new InflightRequest(params, abortController)
         this.inflightRequests.add(request)
 
         Promise.all(
@@ -177,9 +189,11 @@ class InflightRequest {
     public promise: Promise<RequestManagerResult>
     public resolve: (result: RequestManagerResult) => void
     public reject: (error: Error) => void
-    public abortController: AbortController
 
-    constructor(public params: RequestParams) {
+    constructor(
+        public params: RequestParams,
+        public abortController: AbortController
+    ) {
         // The promise constructor is called synchronously, so this is just to
         // make TS happy
         this.resolve = () => {}
@@ -189,10 +203,6 @@ class InflightRequest {
             this.resolve = res
             this.reject = rej
         })
-        // We forward a different abort controller to the network request so we
-        // can cancel the network request independently of the user cancelling
-        // the completion.
-        this.abortController = new AbortController()
     }
 }
 

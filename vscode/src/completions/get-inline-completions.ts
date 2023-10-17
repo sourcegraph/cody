@@ -290,6 +290,7 @@ async function doGetInlineCompletions(params: InlineCompletionsParams): Promise<
         docContext,
         position,
         selectedCompletionInfo,
+        abortSignal,
     }
 
     // Get the processed completions from providers
@@ -297,7 +298,6 @@ async function doGetInlineCompletions(params: InlineCompletionsParams): Promise<
         reqContext,
         completionProviders,
         contextResult?.context ?? [],
-
         tracer ? createCompletionProviderTracer(tracer) : undefined
     )
 
