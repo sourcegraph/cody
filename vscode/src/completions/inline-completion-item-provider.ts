@@ -372,7 +372,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
 
         this.handleFirstCompletionOnboardingNotice()
 
-        CompletionLogger.accept(logId, completion)
+        CompletionLogger.accept(logId, request.document, completion)
     }
 
     /**
@@ -469,13 +469,21 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
             // current same line suffix and reach to the end of the line.
             const end = currentLine.range.end
 
-            return new vscode.InlineCompletionItem(currentLinePrefix + insertText, new vscode.Range(start, end), {
+            const vscodeInsertRange = new vscode.Range(start, end)
+            const trackedRange = new vscode.Range(
+                currentLine.range.start.line,
+                currentLinePrefix.length,
+                end.line,
+                end.character
+            )
+
+            return new vscode.InlineCompletionItem(currentLinePrefix + insertText, vscodeInsertRange, {
                 title: 'Completion accepted',
                 command: 'cody.autocomplete.inline.accepted',
                 arguments: [
                     {
                         codyLogId: logId,
-                        codyCompletion: completion,
+                        codyCompletion: { ...completion, range: trackedRange },
                         codyRequest: {
                             document,
                             docContext,
