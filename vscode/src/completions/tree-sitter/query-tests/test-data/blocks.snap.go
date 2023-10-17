@@ -37,7 +37,7 @@
   func printNumbers() {
       for i := 0; i < 10; i++ {
 //                            ^ start blocks[1]
-//                                █
+//                            █
           fmt.Println(i)
       }
 //    ^ end blocks[1]
@@ -51,7 +51,7 @@
   func compare(x int) {
       if x > 5 {
 //    ^ start blocks[1]
-//                 █
+//             █
           fmt.Println("Greater than 5")
       } else {
           fmt.Println("Less than or equal to 5")

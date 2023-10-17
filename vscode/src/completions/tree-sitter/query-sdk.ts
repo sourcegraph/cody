@@ -55,7 +55,7 @@ export function initQueries(language: Language, languageId: SupportedLanguage, p
     QUERIES_LOCAL_CACHE[languageId] = queriesWithQueryWrappers
 }
 
-interface DocumentQuerySDK {
+export interface DocumentQuerySDK {
     parser: Parser
     queries: ResolvedQueries
     language: SupportedLanguage
@@ -113,46 +113,51 @@ interface QueryWrappers {
 function getLanguageSpecificQueryWrappers(queries: ResolvedQueries, _parser: Parser): QueryWrappers {
     return {
         blocks: {
-            getFirstMultilineBlockForTruncation: (node, start, end) => {
-                const captures = queries.blocks.compiled.captures(node, start, end)
+            getFirstMultilineBlockForTruncation: (root, start, end) => {
+                const captures = queries.blocks.compiled.captures(root, start, end)
+                const { trigger } = getTriggerNodeWithBlockStaringAtPoint(captures, start)
 
-                if (!captures.length) {
+                if (!trigger) {
                     return []
                 }
 
-                // Taking the last result to get the most nested node.
-                // See https://github.com/tree-sitter/tree-sitter/discussions/2067
-                const initialNode = captures.at(-1)!.node
-
                 // Check for special cases where we need match a parent node.
                 const potentialParentNodes = captures.filter(capture => capture.name === 'parents')
-                const potentialParent = potentialParentNodes.find(capture => initialNode.parent?.id === capture.node.id)
+                const potentialParent = potentialParentNodes.find(capture => trigger.parent?.id === capture.node.id)
                     ?.node
 
-                return [{ node: potentialParent || initialNode, name: 'blocks' }] as const
+                return [{ node: potentialParent || trigger, name: 'blocks' }] as const
             },
         },
         singlelineTriggers: {
             getEnclosingTrigger: (root, start, end) => {
                 const captures = queries.singlelineTriggers.compiled.captures(root, start, end)
-                const node = getTriggerNodeWithBlockStaringAtPoint(captures, start)
+                const { trigger, block } = getTriggerNodeWithBlockStaringAtPoint(captures, start)
 
-                if (!node) {
+                if (!trigger || !block || !isBlockNodeEmpty(block)) {
                     return []
                 }
 
-                return [{ node, name: 'trigger' }] as const
+                return [{ node: trigger, name: 'trigger' }] as const
             },
         },
     } satisfies Partial<Record<QueryName, Record<string, Captures>>>
 }
 
-function getTriggerNodeWithBlockStaringAtPoint(captures: QueryCapture[], point: Point): SyntaxNode | null {
-    if (!captures.length) {
-        return null
+function getTriggerNodeWithBlockStaringAtPoint(
+    captures: QueryCapture[],
+    point: Point
+): { trigger?: SyntaxNode; block?: SyntaxNode } {
+    const emptyResult = {
+        trigger: undefined,
+        block: undefined,
     }
 
-    const blockStartNode = getNodeIfMatchesPoint({
+    if (!captures.length) {
+        return emptyResult
+    }
+
+    const blockStart = getNodeIfMatchesPoint({
         captures,
         name: 'block_start',
         // Taking the last result to get the most nested node.
@@ -161,24 +166,24 @@ function getTriggerNodeWithBlockStaringAtPoint(captures: QueryCapture[], point: 
         point,
     })
 
-    const multilineTrigger = getCapturedNodeAt({
+    const trigger = getCapturedNodeAt({
         captures,
         name: 'trigger',
         index: -1,
     })
 
-    const blockNode = blockStartNode?.parent
+    const block = blockStart?.parent
 
-    if (!blockStartNode || !blockNode || !multilineTrigger) {
-        return null
+    if (!blockStart || !block || !trigger) {
+        return emptyResult
     }
 
-    // Verify that the block node is empty and ends at the same position as the trigger node.
-    if (!isBlockNodeEmpty(blockNode) || multilineTrigger.endIndex !== blockNode?.endIndex) {
-        return null
+    // Verify that the block node ends at the same position as the trigger node.
+    if (trigger.endIndex !== block?.endIndex) {
+        return emptyResult
     }
 
-    return multilineTrigger
+    return { trigger, block }
 }
 
 interface GetNodeIfMatchesPointParams {
