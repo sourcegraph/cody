@@ -151,7 +151,7 @@ export class FixupTaskTreeItem extends vscode.TreeItem {
 
     // For parent node to track children states
     public addChildren(taskID: string, state: CodyTaskState): void {
-        if (this.contextValue !== 'fsPath' || state === CodyTaskState.fixed) {
+        if (this.contextValue !== 'fsPath' || state === CodyTaskState.done) {
             return
         }
         this.tasks.add(taskID)
@@ -177,7 +177,7 @@ export class FixupTaskTreeItem extends vscode.TreeItem {
                 text += ', 1 applying'
                 ready--
                 break
-            case CodyTaskState.fixed:
+            case CodyTaskState.done:
                 ready--
                 break
         }

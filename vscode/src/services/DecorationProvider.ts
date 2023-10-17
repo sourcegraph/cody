@@ -69,7 +69,8 @@ export class DecorationProvider {
             editor.setDecorations(this.decorationTypeError, this.decorations)
             return
         }
-        if (this.status === CodyTaskState.fixed) {
+        // TODO: fixed state
+        if (this.status === CodyTaskState.applied) {
             this.decorationTypePending.dispose()
             this.decorationsForIcon.push({ range: rangeStartLine })
             editor.setDecorations(this.decorationTypeIcon, this.decorationsForIcon)

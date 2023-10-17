@@ -430,7 +430,7 @@ export class InlineController implements VsCodeInlineController {
             return
         }
         const range = newRange || this.selectionRange
-        const status = error ? CodyTaskState.error : CodyTaskState.fixed
+        const status = error ? CodyTaskState.error : CodyTaskState.done
         const lens = this.codeLenses.get(this.currentTaskId)
         lens?.updateState(status, range)
         if (this.thread) {
