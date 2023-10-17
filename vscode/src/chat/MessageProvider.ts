@@ -476,7 +476,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
                 if (!type) {
                     break
                 }
-                await this.editor.controllers.command?.config('add', type)
+                await this.editor.controllers.command?.configFileAction('add', type)
                 telemetryService.log('CodyVSCodeExtension:addCommandButton:clicked')
                 break
         }
