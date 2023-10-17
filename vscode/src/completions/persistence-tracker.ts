@@ -115,12 +115,10 @@ export class PersistenceTracker implements vscode.Disposable {
             const maxLength = Math.max(initialText.length, latestText.length)
             const editOperations = levenshtein(initialText, latestText)
             const difference = editOperations / maxLength
-            const isMostlyUnchanged = difference < 0.33
 
             logCompletionEvent('persistence:present', {
                 id: trackedCompletion.id,
                 afterSec: MEASURE_TIMEOUTS[measureTimeoutsIndex] / 1000,
-                isMostlyUnchanged,
                 difference,
                 lineCount: trackedCompletion.latestRange.end.line - trackedCompletion.latestRange.start.line + 1,
                 charCount: latestText.length,

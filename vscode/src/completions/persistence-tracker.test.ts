@@ -54,7 +54,6 @@ describe('PersistenceTracker', () => {
             id: '123',
             charCount: 3,
             difference: 0,
-            isMostlyUnchanged: true,
             lineCount: 1,
         }
 
@@ -103,7 +102,6 @@ describe('PersistenceTracker', () => {
         expect(logSpy).toHaveBeenCalledWith('CodyVSCodeExtension:completion:persistence:present', {
             ...sharedArgs,
             afterSec: 30,
-            isMostlyUnchanged: true,
             difference: 0,
         })
 
@@ -125,7 +123,6 @@ describe('PersistenceTracker', () => {
         expect(logSpy).toHaveBeenCalledWith('CodyVSCodeExtension:completion:persistence:present', {
             ...sharedArgs,
             afterSec: 120,
-            isMostlyUnchanged: false,
             difference: 1 / 3,
         })
     })
@@ -170,7 +167,6 @@ describe('PersistenceTracker', () => {
             charCount: 3,
             difference: 1 / 3,
             id: '123',
-            isMostlyUnchanged: false,
             lineCount: 1,
         })
     })
