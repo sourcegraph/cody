@@ -377,26 +377,13 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
         this.contextProvider.webview = webviewView.webview
 
         const webviewPath = vscode.Uri.joinPath(this.extensionUri, 'dist', 'webviews')
-
         webviewView.webview.options = {
             enableScripts: true,
             localResourceRoots: [webviewPath],
             enableCommandUris: true,
         }
 
-        // Create Webview using vscode/index.html
-        const root = vscode.Uri.joinPath(webviewPath, 'index.html')
-        const bytes = await vscode.workspace.fs.readFile(root)
-        const decoded = new TextDecoder('utf-8').decode(bytes)
-        const resources = webviewView.webview.asWebviewUri(webviewPath)
-
-        // Set HTML for webview
-        // This replace variables from the vscode/dist/index.html with webview info
-        // 1. Update URIs to load styles and scripts into webview (eg. path that starts with ./)
-        // 2. Update URIs for content security policy to only allow specific scripts to be run
-        webviewView.webview.html = decoded
-            .replaceAll('./', `${resources.toString()}/`)
-            .replaceAll('{cspSource}', webviewView.webview.cspSource)
+        await this.addWebviewViewHTML(webviewView)
 
         // Register webview
         this.disposables.push(webviewView.webview.onDidReceiveMessage(message => this.onDidReceiveMessage(message)))
@@ -427,21 +414,8 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
             }
         )
 
-        // Create Webview using vscode/index.html
-        const root = vscode.Uri.joinPath(webviewPath, 'index.html')
-        const bytes = await vscode.workspace.fs.readFile(root)
-        const decoded = new TextDecoder('utf-8').decode(bytes)
-        const resources = panel.webview.asWebviewUri(webviewPath)
-
         panel.iconPath = vscode.Uri.joinPath(this.extensionUri, 'resources', 'cody.png')
-
-        // Set HTML for webview
-        // This replace variables from the vscode/dist/index.html with webview info
-        // 1. Update URIs to load styles and scripts into webview (eg. path that starts with ./)
-        // 2. Update URIs for content security policy to only allow specific scripts to be run
-        panel.webview.html = decoded
-            .replaceAll('./', `${resources.toString()}/`)
-            .replaceAll('{cspSource}', panel.webview.cspSource)
+        await this.addWebviewViewHTML(panel)
 
         // Register webview
         this.disposables.push(panel.webview.onDidReceiveMessage(message => this.onDidReceiveMessage(message)))
@@ -459,6 +433,25 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
         await this.clearAndRestartSession()
 
         await vscode.commands.executeCommand('setContext', 'cody.webviewPanel', true)
+    }
+
+    /**
+     * Set HTML for webview
+     */
+    private async addWebviewViewHTML(view: vscode.WebviewView | vscode.WebviewPanel): Promise<void> {
+        const webviewPath = vscode.Uri.joinPath(this.extensionUri, 'dist', 'webviews')
+        // Create Webview using vscode/index.html
+        const root = vscode.Uri.joinPath(webviewPath, 'index.html')
+        const bytes = await vscode.workspace.fs.readFile(root)
+        const decoded = new TextDecoder('utf-8').decode(bytes)
+        const resources = view.webview.asWebviewUri(webviewPath)
+
+        // This replace variables from the vscode/dist/index.html with webview info
+        // 1. Update URIs to load styles and scripts into webview (eg. path that starts with ./)
+        // 2. Update URIs for content security policy to only allow specific scripts to be run
+        view.webview.html = decoded
+            .replaceAll('./', `${resources.toString()}/`)
+            .replaceAll('{cspSource}', view.webview.cspSource)
     }
 
     /**

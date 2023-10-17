@@ -233,6 +233,10 @@ const register = async (
     vscode.window.registerTreeDataProvider('cody.search.tree.view', new TreeViewProvider('search'))
 
     disposables.push(
+        // Placeholder for search panel command
+        vscode.commands.registerCommand('cody.search.panel', () =>
+            vscode.window.showInformationMessage('Coming soon...')
+        ),
         // Inline Chat Provider
         vscode.commands.registerCommand('cody.comment.add', async (comment: vscode.CommentReply) => {
             const isEditMode = commandRegex.edit.test(comment.text.trimStart())
