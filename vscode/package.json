@@ -224,22 +224,50 @@
           "type": "webview",
           "id": "cody.chat",
           "name": "Chat",
-          "visibility": "visible"
+          "when": "!cody.webviewPanel"
+        },
+        {
+          "id": "cody.commands.tree.view",
+          "name": "Commands",
+          "when": "cody.activated"
+        },
+        {
+          "id": "cody.search.tree.view",
+          "name": "Search",
+          "when": "cody.activated"
+        },
+        {
+          "id": "cody.chat.tree.view",
+          "name": "Chat",
+          "when": "cody.activated"
         },
         {
           "id": "cody.fixup.tree.view",
-          "name": "Fixups",
-          "when": "cody.nonstop.fixups.enabled && cody.activated",
-          "icon": "cody.svg",
-          "contextualTitle": "Fixups"
+          "name": "Edits",
+          "when": "cody.activated"
+        },
+        {
+          "id": "cody.support.tree.view",
+          "name": "Settings & Support",
+          "when": "cody.activated"
         }
       ]
     },
     "viewsWelcome": [
       {
         "view": "cody.fixup.tree.view",
-        "contents": "No pending Cody fixups",
+        "contents": "No pending edits",
         "when": "cody.nonstop.fixups.enabled && cody.activated"
+      },
+      {
+        "view": "cody.chat.tree.view",
+        "contents": "Chat alongside your code, attach files, add additional context, and try out different LLM providers.\n[New Chat](command:cody.chat.panel.new)\nTo learn more about chat, [read the docs](https://docs.sourcegraph.com/).",
+        "when": "cody.activated"
+      },
+      {
+        "view": "cody.search.tree.view",
+        "contents": "Search code using natural language queries, such as 'Password hashing' or 'Authentication redirects'.\n[Enable Search Indexing](command:cody.search.panel)\nTo learn more about AI search, [read the docs](https://docs.sourcegraph.com/).",
+        "when": "cody.activated"
       }
     ],
     "commands": [
@@ -312,18 +340,26 @@
         "title": "Sign In"
       },
       {
-        "command": "cody.interactive.clear",
+        "command": "cody.chat.panel.new",
         "category": "Cody",
         "title": "Start a New Chat Session",
+        "when": "cody.activated",
         "group": "Cody",
         "icon": "$(add)"
       },
       {
-        "command": "cody.history",
+        "command": "cody.chat.history.clear",
         "category": "Cody",
-        "title": "Chat History",
+        "title": "Clear Chat History",
         "group": "Cody",
-        "icon": "$(history)"
+        "icon": "$(trash)"
+      },
+      {
+        "command": "cody.chat.history.export",
+        "category": "Cody",
+        "title": "Export Chat History",
+        "group": "Cody",
+        "icon": "$(export)"
       },
       {
         "command": "cody.status-bar.interacted",
@@ -631,38 +667,35 @@
       ],
       "view/title": [
         {
-          "command": "cody.interactive.clear",
-          "when": "view == cody.chat && cody.activated",
+          "command": "cody.chat.panel.new",
+          "when": "view == cody.chat.tree.view && cody.activated",
           "group": "navigation@1"
         },
         {
-          "command": "cody.history",
-          "when": "view == cody.chat && cody.activated",
+          "command": "cody.chat.history.clear",
+          "when": "view == cody.chat.tree.view && cody.activated",
+          "enablement": "!cody.chat.history.isEmpty",
           "group": "navigation@2"
         },
         {
-          "command": "cody.status-bar.interacted",
-          "when": "view == cody.chat && cody.activated",
-          "group": "navigation@4"
+          "command": "cody.chat.history.export",
+          "when": "view == cody.chat.tree.view && cody.activated",
+          "enablement": "!cody.chat.history.isEmpty",
+          "group": "navigation@3"
         },
         {
           "command": "cody.feedback",
-          "when": "view == cody.chat",
+          "when": "view == cody.support.tree.view",
           "group": "7_cody@0"
         },
         {
           "command": "cody.welcome",
-          "when": "view == cody.chat",
+          "when": "view == cody.support.tree.view",
           "group": "7_cody@0"
         },
         {
-          "command": "cody.auth.signout",
-          "when": "view == cody.chat && cody.activated",
-          "group": "9_cody@2"
-        },
-        {
           "command": "cody.auth.signin",
-          "when": "view == cody.chat && cody.activated",
+          "when": "view == cody.support.tree.view && cody.activated",
           "group": "9_cody@0"
         },
         {

@@ -32,7 +32,7 @@ export async function beforeIntegrationTest(): Promise<void> {
  */
 export async function afterIntegrationTest(): Promise<void> {
     await ensureExecuteCommand('cody.interactive.clear')
-    await ensureExecuteCommand('cody.history.clear')
+    await ensureExecuteCommand('cody.chat.history.clear')
     await ensureExecuteCommand('cody.test.token', null)
 }
 

@@ -74,6 +74,7 @@ export class FixupController
         this._disposables.push(
             vscode.workspace.onDidChangeTextDocument(this.editObserver.textDocumentChanged.bind(this.editObserver))
         )
+        this.registerTreeView()
     }
 
     /**
@@ -81,8 +82,9 @@ export class FixupController
      * Call this if the feature is enabled.
      * TODO: We should move this to a QuickPick and enable it by default.
      */
-    public registerTreeView(): void {
+    private registerTreeView(): void {
         this._disposables.push(vscode.window.registerTreeDataProvider('cody.fixup.tree.view', this.taskViewProvider))
+        void vscode.commands.executeCommand('setContext', 'cody.nonstop.fixups.enabled', true)
     }
 
     // FixupFileCollection

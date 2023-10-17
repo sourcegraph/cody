@@ -30,6 +30,7 @@ import { localStorage } from './services/LocalStorageProvider'
 import { getAccessToken, secretStorage, VSCodeSecretStorage } from './services/SecretStorageProvider'
 import { createStatusBar } from './services/StatusBar'
 import { createOrUpdateEventLogger, telemetryService } from './services/telemetry'
+import { TreeViewProvider } from './services/TreeViewProvider'
 import { TestSupport } from './test-support'
 
 /**
@@ -227,6 +228,9 @@ const register = async (
 
     const statusBar = createStatusBar()
 
+    vscode.window.registerTreeDataProvider('cody.support.tree.view', new TreeViewProvider('support'))
+    vscode.window.registerTreeDataProvider('cody.search.tree.view', new TreeViewProvider('search'))
+
     disposables.push(
         // Inline Chat Provider
         vscode.commands.registerCommand('cody.comment.add', async (comment: vscode.CommentReply) => {
@@ -326,13 +330,6 @@ const register = async (
         vscode.commands.registerCommand('cody.settings.extension', () =>
             vscode.commands.executeCommand('workbench.action.openSettings', { query: '@ext:sourcegraph.cody-ai' })
         ),
-        vscode.commands.registerCommand('cody.history', async () => {
-            await sidebarChatProvider.setWebviewView('history')
-            telemetryService.log('CodyVSCodeExtension:chatTitleButton:clicked', { name: 'history' })
-        }),
-        vscode.commands.registerCommand('cody.history.clear', async () => {
-            await sidebarChatProvider.clearHistory()
-        }),
         // Recipes
         vscode.commands.registerCommand('cody.action.chat', async (input: string) => {
             await executeRecipeInSidebar('chat-question', true, input)
@@ -496,13 +493,6 @@ const register = async (
                 await guardrailsProvider.debugEditorSelection()
             })
         )
-    }
-    // Register task view when feature flag is on
-    // TODO(umpox): We should move the task view to a quick pick before enabling it everywhere.
-    // It is too obstructive when it is in the same window as the sidebar chat.
-    if (initialConfig.experimentalNonStop || process.env.CODY_TESTING === 'true') {
-        fixup.registerTreeView()
-        await vscode.commands.executeCommand('setContext', 'cody.nonstop.fixups.enabled', true)
     }
 
     await showSetupNotification(initialConfig)

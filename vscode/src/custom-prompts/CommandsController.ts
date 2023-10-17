@@ -5,6 +5,7 @@ import { VsCodeCommandsController } from '@sourcegraph/cody-shared/src/editor'
 
 import { logDebug, logError } from '../log'
 import { localStorage } from '../services/LocalStorageProvider'
+import { TreeViewProvider } from '../services/TreeViewProvider'
 
 import { CommandRunner } from './CommandRunner'
 import { CustomPromptsStore } from './CustomPromptsStore'
@@ -42,6 +43,7 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
     public userFileWatcher: vscode.FileSystemWatcher | null = null
 
     public commandRunners = new Map<string, CommandRunner>()
+    private treeView = new TreeViewProvider('command')
 
     constructor(context: vscode.ExtensionContext) {
         this.tools = new ToolsProvider(context)
@@ -53,6 +55,8 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
         this.lastUsedCommands = new Set(localStorage.getLastUsedCommands())
         this.custom.activate()
         this.fileWatcherInit()
+
+        vscode.window.registerTreeDataProvider('cody.commands.tree.view', this.treeView)
     }
 
     /**
