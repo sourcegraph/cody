@@ -95,13 +95,13 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
                 await vscode.commands.executeCommand(`cody.auth.${message.type}`)
                 break
             case 'insert':
-                await this.handleInsertAtCursor(message.text)
+                await this.handleInsertAtCursor(message.text, message.source)
                 break
             case 'newFile':
-                await this.handleSaveToNewFile(message.text)
+                await this.handleSaveToNewFile(message.text, message.source)
                 break
             case 'copy':
-                await this.handleCopiedCode(message.text, message.eventType)
+                await this.handleCopiedCode(message.text, message.eventType, message.source)
                 break
             case 'event':
                 telemetryService.log(message.eventName, message.properties)
@@ -266,7 +266,7 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
      * Replace selection if there is one and then log insert event
      * Note: Using workspaceEdit instead of 'editor.action.insertSnippet' as the later reformats the text incorrectly
      */
-    private async handleInsertAtCursor(text: string): Promise<void> {
+    private async handleInsertAtCursor(text: string, source?: string): Promise<void> {
         const selectionRange = vscode.window.activeTextEditor?.selection
         const editor = vscode.window.activeTextEditor
         if (!editor || !selectionRange) {
@@ -282,17 +282,17 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
         // Log insert event
         const op = 'insert'
         const eventName = op + 'Button'
-        this.editor.controllers.inline?.setLastCopiedCode(text, eventName)
+        this.editor.controllers.inline?.setLastCopiedCode(text, eventName, source)
     }
 
     /**
      * Handles insert event to insert text from code block to new file
      */
-    private async handleSaveToNewFile(text: string): Promise<void> {
+    private async handleSaveToNewFile(text: string, source?: string): Promise<void> {
         // Log insert event
         const op = 'save'
         const eventName = op + 'Button'
-        this.editor.controllers.inline?.setLastCopiedCode(text, eventName)
+        this.editor.controllers.inline?.setLastCopiedCode(text, eventName, source)
 
         await this.editor.createWorkspaceFile(text)
     }
@@ -303,13 +303,13 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
      * @param text - The text from code block when copy event is triggered
      * @param eventType - Either 'Button' or 'Keydown'
      */
-    private async handleCopiedCode(text: string, eventType: 'Button' | 'Keydown'): Promise<void> {
+    private async handleCopiedCode(text: string, eventType: 'Button' | 'Keydown', source?: string): Promise<void> {
         // If it's a Button event, then the text is already passed in from the whole code block
         const copiedCode = eventType === 'Button' ? text : await vscode.env.clipboard.readText()
         const eventName = eventType === 'Button' ? 'copyButton' : 'keyDown:Copy'
         // Send to Inline Controller for tracking
         if (copiedCode) {
-            this.editor.controllers.inline?.setLastCopiedCode(copiedCode, eventName)
+            this.editor.controllers.inline?.setLastCopiedCode(copiedCode, eventName, source)
         }
     }
 

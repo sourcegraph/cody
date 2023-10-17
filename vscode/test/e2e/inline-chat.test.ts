@@ -8,7 +8,6 @@ import { test } from './helpers'
 const expectedOrderedEvents = [
     'CodyVSCodeExtension:keywordContext:searchDuration',
     'CodyVSCodeExtension:recipe:inline-chat:executed',
-    'CodyVSCodeExtension:chatResponse:noCode',
 ]
 
 test.beforeEach(() => {
