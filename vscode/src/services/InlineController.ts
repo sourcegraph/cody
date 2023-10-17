@@ -328,7 +328,7 @@ export class InlineController implements VsCodeInlineController {
         code: string,
         eventName: string,
         source = ''
-    ): { code: string; lineCount: number; charCount: number; eventName: string } {
+    ): { code: string; lineCount: number; charCount: number; eventName: string; source?: string } {
         // All non-copy events are considered as insertions since we don't need to listen for paste events
         this.insertInProgress = !eventName.startsWith('copy')
         const { lineCount, charCount } = countCode(code)

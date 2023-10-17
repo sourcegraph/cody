@@ -462,7 +462,7 @@ export class FixupController
                 task.replacement = text
                 this.setTaskState(task, CodyTaskState.ready)
                 telemetryService.log('CodyVSCodeExtension:fixupResponse:hasCode', {
-                    codeCount: countCode(text),
+                    ...countCode(text),
                     source: task.source,
                 })
                 break
