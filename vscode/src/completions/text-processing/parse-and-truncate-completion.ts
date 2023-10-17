@@ -79,11 +79,11 @@ export function truncateMultilineBlock(params: TruncateMultilineBlockParams): Tr
         return {
             truncatedWith: 'tree-sitter',
             insertText: truncateParsedCompletion({ completion: parsed, document, documentQuerySDK }),
-        } as const
+        }
     }
 
     return {
         truncatedWith: 'indentation',
         insertText: truncateMultilineCompletion(parsed.insertText, prefix, suffix, document.languageId),
-    } as const
+    }
 }
