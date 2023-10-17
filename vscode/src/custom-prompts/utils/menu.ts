@@ -35,6 +35,7 @@ const fixOption: QuickPickItemWithSlashCommand = {
 const commandsSeparator: QuickPickItem = { kind: -1, label: 'commands' }
 const customCommandsSeparator: QuickPickItem = { kind: -1, label: 'custom commands (experimental)' }
 const settingsSeparator: QuickPickItem = { kind: -1, label: 'settings' }
+const lastUsedSeparator: QuickPickItem = { kind: -1, label: 'last used' }
 // Common options
 const configOption: QuickPickItem = {
     label: 'Configure Custom Commands...',
@@ -55,6 +56,7 @@ export const menu_separators = {
     commands: commandsSeparator,
     customCommands: customCommandsSeparator,
     settings: settingsSeparator,
+    lastUsed: lastUsedSeparator,
 }
 
 export const menu_options = {
