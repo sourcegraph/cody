@@ -108,7 +108,11 @@ export class AuthProvider {
                 if (!authStatus?.isLoggedIn) {
                     const newToken = await showAccessTokenInputBox(item.uri)
                     const authStatusFromToken = await this.auth(selectedEndpoint, newToken || null)
-                    this.showIsLoggedIn(authStatusFromToken?.authStatus || null)
+                    if (authStatusFromToken?.isLoggedIn) {
+                        this.showIsLoggedIn(authStatusFromToken?.authStatus || null)
+                    } else {
+                        void showAuthFailureMessage(selectedEndpoint)
+                    }
                 }
                 logDebug('AuthProvider:signinMenu', mode, selectedEndpoint)
             }
@@ -124,6 +128,7 @@ export class AuthProvider {
         telemetryService.log('CodyVSCodeExtension:auth:fromToken', {
             success: Boolean(authState?.isLoggedIn),
         })
+        await showAuthResultMessage(instanceUrl, authState?.authStatus)
     }
 
     private showIsLoggedIn(authStatus: AuthStatus | null): void {
@@ -323,6 +328,8 @@ export class AuthProvider {
         if (authState?.isLoggedIn) {
             const successMessage = isApp ? 'Connected to Cody App' : `Signed in to ${endpoint}`
             await vscode.window.showInformationMessage(successMessage)
+        } else {
+            await showAuthFailureMessage(endpoint)
         }
     }
 
@@ -407,4 +414,22 @@ function formatURL(uri: string): string | null {
         console.error('Invalid URL')
     }
     return null
+}
+
+async function showAuthResultMessage(endpoint: string, authStatus: AuthStatus | undefined): Promise<void> {
+    if (authStatus?.isLoggedIn) {
+        const authority = vscode.Uri.parse(endpoint).authority
+        const isApp = endpoint === LOCAL_APP_URL.href
+        const successMessage = isApp ? 'Connected to Cody App' : `Signed in to ${authority}`
+        await vscode.window.showInformationMessage(successMessage)
+    } else {
+        await showAuthFailureMessage(endpoint)
+    }
+}
+
+async function showAuthFailureMessage(endpoint: string): Promise<void> {
+    const authority = vscode.Uri.parse(endpoint).authority
+    await vscode.window.showErrorMessage(
+        `Authentication failed. Please ensure Cody is enabled for ${authority} and verify your email address if required.`
+    )
 }

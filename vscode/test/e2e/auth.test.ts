@@ -11,8 +11,7 @@ test.beforeEach(() => {
 })
 
 test('requires a valid auth token and allows logouts', async ({ page, sidebar }) => {
-    /* TODO(dpc): Add UX feedback for failed auth and re-enable this test.
-    await expect(sidebar.getByText('Invalid credentials')).not.toBeVisible()
+    await expect(page.getByText('Authentication failed.')).not.toBeVisible()
     await sidebar.getByRole('button', { name: 'Sign In to Enterprise Instance' }).click()
     await page.getByRole('option', { name: 'Sign in with URL and Access Token' }).click()
     await page.getByRole('combobox', { name: 'input' }).fill(SERVER_URL)
@@ -20,8 +19,7 @@ test('requires a valid auth token and allows logouts', async ({ page, sidebar })
     await page.getByRole('combobox', { name: 'input' }).fill('abcdefghijklmnopqrstuvwxyz')
     await page.getByRole('combobox', { name: 'input' }).press('Enter')
 
-    await expect(sidebar.getByText('Invalid credentials')).toBeVisible()
-    */
+    await expect(page.getByRole('alert').getByText('Authentication failed.')).toBeVisible()
 
     await sidebar.getByRole('button', { name: 'Sign In to Enterprise Instance' }).click()
     await page.getByRole('option', { name: 'Sign in with URL and Access Token' }).click()
