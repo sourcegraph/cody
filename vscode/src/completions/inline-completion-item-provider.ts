@@ -232,6 +232,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
                 tracer,
                 handleDidAcceptCompletionItem: this.handleDidAcceptCompletionItem.bind(this),
                 handleDidPartiallyAcceptCompletionItem: this.unstable_handleDidPartiallyAcceptCompletionItem.bind(this),
+                completeSuggestWidgetSelection: takeSuggestWidgetSelectionIntoAccount,
             })
 
             // Avoid any further work if the completion is invalidated already.
