@@ -1,0 +1,11 @@
+{
+  "name": "external-package-lodash",
+  "version": "1.0.0",
+  "license": "ISC",
+  "dependencies": {
+    "deep-equal": "^2.2.2"
+  },
+  "devDependencies": {
+    "@types/deep-equal": "^1.0.2"
+  }
+}

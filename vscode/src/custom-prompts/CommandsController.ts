@@ -116,6 +116,8 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
         // Start the command runner
         const codyCommand = new CommandRunner(command, input, isFixupRequest)
         this.commandRunners.set(codyCommand.id, codyCommand)
+
+        // Save command to command history
         this.lastUsedCommands.add(command.slashCommand)
 
         // Fixup request will be taken care by the fixup recipe in the CommandRunner
@@ -262,19 +264,16 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
         }
 
         try {
-            const recentlyUsed = this.getLastUsedCommands()
+            let recentlyUsed = getCustomMenuQuickPickItems(this.getLastUsedCommands()).reverse()
+            if (recentlyUsed.length > 0) {
+                recentlyUsed = [menu_separators.lastUsed, ...recentlyUsed]
+            }
 
             // Get the list of prompts from the cody.json file
             const commandsFromStore = this.custom.getCommands()
-            const promptList = recentlyUsed.length ? [...recentlyUsed, ...commandsFromStore] : commandsFromStore
+            const customCommands = getCustomMenuQuickPickItems(commandsFromStore)
 
-            const promptItems = promptList
-                ?.filter(command => command !== null && command?.[1]?.type !== 'default')
-                .map(commandItem => {
-                    const command = commandItem[1]
-                    const description = commandItem[0]
-                    return createQuickPickItem(command.description, description)
-                })
+            const promptItems = [...recentlyUsed, menu_separators.customCommands, ...customCommands]
 
             const configOption = menu_options.config
             const addOption = menu_options.add
@@ -283,9 +282,9 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
 
             // Show the list of prompts to the user using a quick pick
             const selected = await showCustomCommandMenu([...promptItems])
-            const commandKey = selected?.description
+            const commandKey = selected?.label
 
-            if (!selected || !commandKey) {
+            if (!commandKey) {
                 return
             }
 
@@ -325,12 +324,14 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
             case 'delete':
             case 'file':
             case 'open': {
-                const type = selected.type || (await showcommandTypeQuickPick(action, this.custom.promptSize))
-                await this.config(action, type)
+                await this.configFileAction(
+                    action,
+                    selected.type || (await showcommandTypeQuickPick(action, this.custom.promptSize))
+                )
                 break
             }
             case 'add': {
-                await this.config(action)
+                await this.configFileAction(action)
                 break
             }
             case 'list':
@@ -348,7 +349,7 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
      * Config file controller
      * handles operations on config files for user and workspace commands
      */
-    public async config(action: string, fileType?: CustomCommandType): Promise<void> {
+    public async configFileAction(action: string, fileType?: CustomCommandType): Promise<void> {
         switch (action) {
             case 'delete':
                 if ((await showRemoveConfirmationInput()) !== 'Yes') {
@@ -409,7 +410,7 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
             const uri = this.custom.jsonFileUris[filePath]
             const doesExist = await this.tools.doesUriExist(uri)
             // create file if it doesn't exist
-            return doesExist ? this.tools.openFile(uri) : this.config('file', filePath)
+            return doesExist ? this.tools.openFile(uri) : this.configFileAction('file', filePath)
         }
         const fileUri = constructFileUri(filePath, this.tools.getUserInfo()?.workspaceRoot)
 
@@ -420,20 +421,18 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
      * Get the list of recently used commands from the local storage
      */
     private getLastUsedCommands(): [string, CodyPrompt][] {
-        const commands = [...this.lastUsedCommands]?.map(id => [id, this.myPromptsMap.get(id) as CodyPrompt])?.reverse()
-        const filtered = commands?.filter(command => command[1] !== undefined) as [string, CodyPrompt][]
-
-        return filtered.length > 0 ? filtered : []
+        return [...this.lastUsedCommands]?.map(id => [id, this.default.get(id) as CodyPrompt]) || []
     }
 
     /**
      * Save the last used commands to local storage
      */
     private async saveLastUsedCommands(): Promise<void> {
-        // store the last 3 used commands
-        const commands = [...this.lastUsedCommands].filter(command => command !== 'separator').slice(0, 3)
+        const commands = [...this.lastUsedCommands].filter(key => this.default.get(key)?.slashCommand.length)
+
         if (commands.length > 0) {
-            await localStorage.setLastUsedCommands(commands)
+            // store the last 5 used commands
+            await localStorage.setLastUsedCommands(commands.slice(0, 5))
         }
 
         this.lastUsedCommands = new Set(commands)
@@ -508,4 +507,14 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
         this.commandRunners = new Map()
         logDebug('CommandsController:dispose', 'disposed')
     }
+}
+
+function getCustomMenuQuickPickItems(commands: [string, CodyPrompt][]): vscode.QuickPickItem[] {
+    return commands
+        ?.filter(command => command !== null && command?.[1]?.type !== 'default')
+        .map(commandItem => {
+            const label = commandItem[0]
+            const command = commandItem[1]
+            return createQuickPickItem(label, command.description)
+        })
 }

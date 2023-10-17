@@ -8,9 +8,9 @@ import assert from 'assert'
  */
 import { DATASETS_PATH } from './constants'
 
-assert(process.env.BENCHMARK_ENDPOINT)
-assert(process.env.BENCHMARK_ACCESS_TOKEN)
-assert(process.env.BENCHMARK_DOCKER_IMAGE)
+assert(process.env.BENCHMARK_ENDPOINT, 'BENCHMARK_ENDPOINT is required')
+assert(process.env.BENCHMARK_ACCESS_TOKEN, 'BENCHMARK_ACCESS_TOKEN is required')
+assert(process.env.BENCHMARK_DOCKER_IMAGE, 'BENCHMARK_DOCKER_IMAGE is required')
 
 export const BENCHMARK_ENDPOINT = process.env.BENCHMARK_ENDPOINT
 export const BENCHMARK_ACCESS_TOKEN = process.env.BENCHMARK_ACCESS_TOKEN

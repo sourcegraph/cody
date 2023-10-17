@@ -15,12 +15,14 @@ export interface ChatMessage extends Message {
     preciseContext?: PreciseContext[]
     buttons?: ChatButton[]
     data?: any
+    source?: string
 }
 
 export interface InteractionMessage extends Message {
     displayText?: string
     prefix?: string
     error?: string
+    source?: string
 }
 
 export interface UserLocalHistory {

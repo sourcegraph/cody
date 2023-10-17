@@ -39,16 +39,19 @@ export class ContextSearch implements Recipe {
         }
         const truncatedText = truncateText(query.replace('/search ', '').replace('/s ', ''), MAX_HUMAN_INPUT_TOKENS)
         const workspaceRootUri = context.editor.getWorkspaceRootUri()
+        const source = this.id
         return new Interaction(
             {
                 speaker: 'human',
                 text: '',
                 displayText: query,
+                source,
             },
             {
                 speaker: 'assistant',
                 text: '',
                 displayText: await this.displaySearchResults(truncatedText, context.codebaseContext, workspaceRootUri),
+                source,
             },
             new Promise(resolve => resolve([])),
             []
