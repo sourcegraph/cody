@@ -152,7 +152,7 @@ export class FixupController
         let diff = task.diff
         if (task.replacement !== undefined && bufferText !== diff?.bufferText) {
             // The buffer changed since we last computed the diff.
-            task.diff = diff = computeDiff(task.original, task.replacement, task.original, task.selectionRange.start)
+            task.diff = diff = computeDiff(task.original, task.replacement, bufferText, task.selectionRange.start)
             this.didUpdateDiff(task)
         }
         if (!diff?.clean) {
@@ -487,11 +487,10 @@ export class FixupController
                 continue
             }
             const bufferText = editor.document.getText(task.selectionRange)
-            // console.log('bufferText', bufferText)
 
             // Add new line at the end of bot text when running insert mode
             const newLine = task.insertMode ? '\n' : ''
-            task.diff = computeDiff(task.original, `${botText}${newLine}`, task.original, task.selectionRange.start)
+            task.diff = computeDiff(task.original, `${botText}${newLine}`, bufferText, task.selectionRange.start)
             this.didUpdateDiff(task)
         }
     }
@@ -533,7 +532,7 @@ export class FixupController
             return
         }
 
-        const diff = this.applicableDiffOrRespin(task, editor.document)
+        const diff = task.diff
         if (!diff || diff.mergedText === undefined) {
             return
         }
