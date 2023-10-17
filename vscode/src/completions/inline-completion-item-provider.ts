@@ -20,7 +20,7 @@ import {
     LastInlineCompletionCandidate,
     TriggerKind,
 } from './get-inline-completions'
-import { getLatency, LatencyFeatureFlags, resetLatency } from './latency'
+import { getLatency, LatencyFeatureFlags, lowPerformanceLanguageIds, resetLatency } from './latency'
 import * as CompletionLogger from './logger'
 import { CompletionEvent, READ_TIMEOUT_MS, SuggestionID } from './logger'
 import { ProviderConfig } from './providers/provider'
@@ -141,9 +141,10 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
 
         // We start feature flag requests early so that we have a high chance of getting a response
         // before we need it.
-        const [isIncreasedDebounceTimeEnabledPromise, syntacticTriggersPromise] = [
+        const [isIncreasedDebounceTimeEnabledPromise, syntacticTriggersPromise, lowPerformanceDebouncePromise] = [
             featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteIncreasedDebounceTimeEnabled),
             featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteSyntacticTriggers),
+            featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteLowPerformanceDebounce),
         ]
         const minLatencyFlagsPromises = {
             user: featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteUserLatency),
@@ -209,7 +210,23 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
             context: takeSuggestWidgetSelectionIntoAccount ? context : undefined,
         })
 
+        const isLowPerformanceLanguage =
+            triggerKind === TriggerKind.Automatic && lowPerformanceLanguageIds.has(document.languageId)
+
         const isIncreasedDebounceTimeEnabled = await isIncreasedDebounceTimeEnabledPromise
+        const isLowPerformanceDebounceTimeEnabled =
+            (await lowPerformanceDebouncePromise) && !(await minLatencyFlagsPromises.language)
+
+        const debounceInterval =
+            isLowPerformanceDebounceTimeEnabled && isLowPerformanceLanguage
+                ? {
+                      singleLine: 1000,
+                      multiLine: 1500,
+                  }
+                : {
+                      singleLine: isIncreasedDebounceTimeEnabled ? 75 : 25,
+                      multiLine: 125,
+                  }
 
         try {
             const result = await this.getInlineCompletions({
@@ -226,7 +243,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
                 documentHistory: this.config.history,
                 requestManager: this.requestManager,
                 lastCandidate: this.lastCandidate,
-                debounceInterval: { singleLine: isIncreasedDebounceTimeEnabled ? 75 : 25, multiLine: 125 },
+                debounceInterval,
                 setIsLoading,
                 abortSignal: abortController.signal,
                 tracer,
@@ -267,7 +284,7 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
             if (result.source !== InlineCompletionsResultSource.LastCandidate) {
                 const latencyFeatureFlags: LatencyFeatureFlags = {
                     user: await minLatencyFlagsPromises.user,
-                    language: await minLatencyFlagsPromises.language,
+                    language: (await minLatencyFlagsPromises.language) && !(await lowPerformanceDebouncePromise), // only one language flag should be enabled at a time
                     provider: await minLatencyFlagsPromises.provider,
                 }
                 // Do not apply the minimum latency if the last suggestion was not read, e.g when user was typing
