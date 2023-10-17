@@ -283,9 +283,9 @@ export class CommandsController implements VsCodeCommandsController, vscode.Disp
 
             // Show the list of prompts to the user using a quick pick
             const selected = await showCustomCommandMenu([...promptItems])
-            const commandKey = selected?.description
+            const commandKey = selected?.description || selected?.label
 
-            if (!selected || !commandKey) {
+            if (!commandKey) {
                 return
             }
 
