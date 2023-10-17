@@ -38,7 +38,9 @@ jobs:
         working-directory: agent
       - run: ./install-ldid.sh
       - run: ldid2 -S agent/dist/agent-macos-arm64
-      - run: zip -r agent.zip agent/dist/agent-*
-      - run: gh release upload --clobber --repo sourcegraph/bfg v0.1.0 agent.zip
-        env:
-          GH_TOKEN: ${{ github.token }}
+      - run: zip agent.zip agent/dist/agent-macos-arm64
+      - name: Upload Asset
+        uses: actions/upload-artifact@v2
+        with:
+          name: agent
+          path: agent.zip
