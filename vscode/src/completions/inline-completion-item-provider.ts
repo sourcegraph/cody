@@ -39,10 +39,14 @@ export interface CodyCompletionItemProviderConfig {
     statusBar: CodyStatusBar
     getCodebaseContext: () => CodebaseContext
     graphContextFetcher?: GraphContextFetcher | null
-    completeSuggestWidgetSelection?: boolean
     tracer?: ProvideInlineCompletionItemsTracer | null
     contextFetcher?: (options: GetContextOptions) => Promise<GetContextResult>
     triggerNotice: ((notice: { key: string }) => void) | null
+
+    // Feature flags
+    completeSuggestWidgetSelection?: boolean
+    disableNetworkCache?: boolean
+    disableRecyclingOfPreviousRequests?: boolean
 }
 
 interface CompletionRequest {
@@ -74,7 +78,9 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
 
     constructor({
         graphContextFetcher = null,
-        completeSuggestWidgetSelection = false,
+        completeSuggestWidgetSelection = true,
+        disableNetworkCache = false,
+        disableRecyclingOfPreviousRequests = false,
         tracer = null,
         ...config
     }: CodyCompletionItemProviderConfig) {
@@ -82,6 +88,8 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
             ...config,
             graphContextFetcher,
             completeSuggestWidgetSelection,
+            disableNetworkCache,
+            disableRecyclingOfPreviousRequests,
             tracer,
             contextFetcher: config.contextFetcher ?? getContext,
         }
@@ -103,6 +111,8 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
 
         this.requestManager = new RequestManager({
             completeSuggestWidgetSelection: this.config.completeSuggestWidgetSelection,
+            disableNetworkCache: this.config.disableNetworkCache,
+            disableRecyclingOfPreviousRequests: this.config.disableRecyclingOfPreviousRequests,
         })
 
         const chatHistory = localStorage.getChatHistory()?.chat

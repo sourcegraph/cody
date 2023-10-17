@@ -53,6 +53,7 @@ export interface InlineCompletionsParams {
 
     // Feature flags
     completeSuggestWidgetSelection?: boolean
+    enableNetworkCache?: boolean
 
     // Callbacks to accept completions
     handleDidAcceptCompletionItem?: (

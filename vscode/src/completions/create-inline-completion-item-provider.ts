@@ -51,10 +51,13 @@ export async function createInlineCompletionItemProvider({
 
     const disposables: vscode.Disposable[] = []
 
-    const [providerConfig, graphContextFlag] = await Promise.all([
-        createProviderConfig(config, client, authProvider.getAuthStatus().configOverwrites),
-        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteGraphContext),
-    ])
+    const [providerConfig, graphContextFlag, disableNetworkCache, disableRecyclingOfPreviousRequests] =
+        await Promise.all([
+            createProviderConfig(config, client, authProvider.getAuthStatus().configOverwrites),
+            featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteGraphContext),
+            true, // featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteDisableNetworkCache),
+            featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteDisableRecyclingOfPreviousRequests),
+        ])
     if (providerConfig) {
         const history = new VSCodeDocumentHistory()
         const lspLightGraphCache =
@@ -68,8 +71,9 @@ export async function createInlineCompletionItemProvider({
             statusBar,
             getCodebaseContext: () => contextProvider.context,
             graphContextFetcher: lspLightGraphCache,
-
             completeSuggestWidgetSelection: config.autocompleteCompleteSuggestWidgetSelection,
+            disableNetworkCache,
+            disableRecyclingOfPreviousRequests,
             triggerNotice,
         })
 

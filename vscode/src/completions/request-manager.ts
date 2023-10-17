@@ -45,13 +45,27 @@ export class RequestManager {
     private cache = new RequestCache()
     private readonly inflightRequests: Set<InflightRequest> = new Set()
     private completeSuggestWidgetSelection = true
+    private disableNetworkCache = false
+    private disableRecyclingOfPreviousRequests = false
 
     constructor(
-        { completeSuggestWidgetSelection = true }: { completeSuggestWidgetSelection: boolean } = {
+        {
+            completeSuggestWidgetSelection = true,
+            disableNetworkCache = false,
+            disableRecyclingOfPreviousRequests = false,
+        }: {
+            completeSuggestWidgetSelection?: boolean
+            disableNetworkCache?: boolean
+            disableRecyclingOfPreviousRequests?: boolean
+        } = {
             completeSuggestWidgetSelection: true,
+            disableNetworkCache: false,
+            disableRecyclingOfPreviousRequests: false,
         }
     ) {
         this.completeSuggestWidgetSelection = completeSuggestWidgetSelection
+        this.disableNetworkCache = disableNetworkCache
+        this.disableRecyclingOfPreviousRequests = disableRecyclingOfPreviousRequests
     }
 
     public async request(
@@ -60,9 +74,11 @@ export class RequestManager {
         context: ContextSnippet[],
         tracer?: CompletionProviderTracer
     ): Promise<RequestManagerResult> {
-        const cachedCompletions = this.cache.get(params)
-        if (cachedCompletions) {
-            return { completions: cachedCompletions, cacheHit: 'hit' }
+        if (!this.disableNetworkCache) {
+            const cachedCompletions = this.cache.get(params)
+            if (cachedCompletions) {
+                return { completions: cachedCompletions, cacheHit: 'hit' }
+            }
         }
 
         const request = new InflightRequest(params)
@@ -77,14 +93,18 @@ export class RequestManager {
                 processInlineCompletions(completions, params)
             )
             .then(processedCompletions => {
-                // Cache even if the request was aborted or already fulfilled.
-                this.cache.set(params, processedCompletions)
+                if (!this.disableNetworkCache) {
+                    // Cache even if the request was aborted or already fulfilled.
+                    this.cache.set(params, processedCompletions)
+                }
 
                 // A promise will never resolve twice, so we do not need to
                 // check if the request was already fulfilled.
                 request.resolve({ completions: processedCompletions, cacheHit: null })
 
-                this.testIfResultCanBeUsedForInflightRequests(request, processedCompletions)
+                if (!this.disableRecyclingOfPreviousRequests) {
+                    this.testIfResultCanBeRecycledForInflightRequests(request, processedCompletions)
+                }
 
                 return processedCompletions
             })
@@ -106,7 +126,7 @@ export class RequestManager {
      * Test if the result can be used for inflight requests. This only works
      * if a completion is a forward-typed version of a previous completion.
      */
-    private testIfResultCanBeUsedForInflightRequests(
+    private testIfResultCanBeRecycledForInflightRequests(
         resolvedRequest: InflightRequest,
         items: InlineCompletionItemWithAnalytics[]
     ): void {
