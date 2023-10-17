@@ -44,6 +44,8 @@ export type Requests = {
     'graphql/getRepoIdIfEmbeddingExists': [{ repoName: string }, string | null]
     'graphql/getRepoId': [{ repoName: string }, string | null]
 
+    'chat/complete': [{ transcriptID: string; humanChatInput: string; data: object }, null]
+
     // ================
     // Server -> Client
     // ================
