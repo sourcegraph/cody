@@ -1,10 +1,10 @@
+import levenshtein from 'js-levenshtein'
 import * as vscode from 'vscode'
 
 import { updateRangeMultipleChanges } from '../non-stop/tracked-range'
 
 import { CompletionID, logCompletionEvent } from './logger'
 import { lines } from './text-processing'
-import { LevenshteinCompare } from './text-processing/string-comparator'
 import { InlineCompletionItem } from './types'
 
 const MEASURE_TIMEOUTS = [
@@ -41,13 +41,18 @@ export class PersistenceTracker implements vscode.Disposable {
         this.disposables.push(workspace.onDidDeleteFiles(this.onDidDeleteFiles.bind(this)))
     }
 
-    public track(
-        id: CompletionID,
-        insertedAt: number,
-        completion: InlineCompletionItem,
+    public track({
+        id,
+        insertedAt,
+        completion,
+        document,
+    }: {
+        id: CompletionID
+        insertedAt: number
+        completion: InlineCompletionItem
         document: vscode.TextDocument
-    ): void {
-        if (!completion.range) {
+    }): void {
+        if (!completion.range || completion.insertText.length === 0) {
             return
         }
 
@@ -108,7 +113,7 @@ export class PersistenceTracker implements vscode.Disposable {
             logCompletionEvent('persistence:removed', { id: trackedCompletion.id })
         } else {
             const maxLength = Math.max(initialText.length, latestText.length)
-            const editOperations = LevenshteinCompare(initialText, latestText)
+            const editOperations = levenshtein(initialText, latestText)
             const difference = editOperations / maxLength
             const isMostlyUnchanged = difference < 0.33
 

@@ -4,8 +4,11 @@ import type * as vscode from 'vscode'
 import { telemetryService } from '../services/telemetry'
 import { range } from '../testutils/textDocument'
 
+import { CompletionID } from './logger'
 import { PersistenceTracker } from './persistence-tracker'
 import { document } from './test-helpers'
+
+const completionId = '123' as CompletionID
 
 describe('PersistenceTracker', () => {
     let logSpy: MockInstance
@@ -45,7 +48,7 @@ describe('PersistenceTracker', () => {
         // This document is in the state _after_ the completion was inserted
         const doc = document('foo')
 
-        tracker.track('123' as any, Date.now(), completion, doc)
+        tracker.track({ id: completionId, insertedAt: Date.now(), completion, document: doc })
 
         const sharedArgs = {
             id: '123',
@@ -88,7 +91,7 @@ describe('PersistenceTracker', () => {
         // This document is in the state _after_ the completion was inserted
         const doc = document('foo')
 
-        tracker.track('123' as any, Date.now(), completion, doc)
+        tracker.track({ id: completionId, insertedAt: Date.now(), completion, document: doc })
 
         const sharedArgs = {
             id: '123',
@@ -135,7 +138,7 @@ describe('PersistenceTracker', () => {
         // This document is in the state _after_ the completion was inserted
         const doc = document('foo')
 
-        tracker.track('123' as any, Date.now(), completion, doc)
+        tracker.track({ id: completionId, insertedAt: Date.now(), completion, document: doc })
 
         const renamedDoc = document('fo0', 'typescript', 'file:///test2.ts')
         onDidRenameFiles({
@@ -180,7 +183,7 @@ describe('PersistenceTracker', () => {
         // This document is in the state _after_ the completion was inserted
         const doc = document('foo')
 
-        tracker.track('123' as any, Date.now(), completion, doc)
+        tracker.track({ id: completionId, insertedAt: Date.now(), completion, document: doc })
 
         onDidDeleteFiles({ files: [doc.uri] })
 
@@ -196,7 +199,7 @@ describe('PersistenceTracker', () => {
         // This document is in the state _after_ the completion was inserted
         const doc = document('')
 
-        tracker.track('123' as any, Date.now(), completion, doc)
+        tracker.track({ id: completionId, insertedAt: Date.now(), completion, document: doc })
 
         vi.advanceTimersToNextTimer()
         expect(logSpy).toHaveBeenCalledWith('CodyVSCodeExtension:completion:persistence:removed', {

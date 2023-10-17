@@ -307,7 +307,7 @@ export function accept(id: SuggestionID, document: vscode.TextDocument, completi
     if (persistenceTracker === null) {
         persistenceTracker = new PersistenceTracker()
     }
-    persistenceTracker.track(completionEvent.params.id, Date.now(), completion, document)
+    persistenceTracker.track({ id: completionEvent.params.id, insertedAt: Date.now(), completion, document })
 }
 
 export function partiallyAccept(id: SuggestionID, completion: InlineCompletionItem, acceptedLength: number): void {
