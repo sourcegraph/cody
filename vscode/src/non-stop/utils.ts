@@ -3,7 +3,7 @@ export enum CodyTaskState {
     'working' = 2,
     'applying' = 3,
     'applied' = 4,
-    'done' = 5,
+    'finished' = 5,
     'error' = 6,
 }
 
@@ -39,10 +39,10 @@ export const fixupTaskList: CodyTaskList = {
         icon: 'pass-filled',
         description: 'Suggestions from Cody have been applied',
     },
-    [CodyTaskState.done]: {
-        id: 'done',
+    [CodyTaskState.finished]: {
+        id: 'finished',
         icon: 'pass-filled',
-        description: 'Suggestions from Cody have been applied and discarded',
+        description: 'The fixup is no longer visible in the document',
     },
     [CodyTaskState.error]: {
         id: 'error',

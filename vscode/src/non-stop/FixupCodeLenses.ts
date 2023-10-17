@@ -39,7 +39,7 @@ export class FixupCodeLenses implements vscode.CodeLensProvider {
     }
 
     public didUpdateTask(task: FixupTask): void {
-        if (task.state === CodyTaskState.done || task.state === CodyTaskState.error) {
+        if (task.state === CodyTaskState.finished || task.state === CodyTaskState.error) {
             this.removeLensesFor(task)
             return
         }
