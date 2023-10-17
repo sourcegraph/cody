@@ -169,7 +169,9 @@ export class AuthProvider {
         await localStorage.deleteEndpoint()
         await this.auth(endpoint, null)
         this.authStatus.endpoint = ''
+        await vscode.commands.executeCommand('setContext', 'cody.webviewPanel', false)
         await vscode.commands.executeCommand('setContext', 'cody.activated', false)
+        await vscode.commands.executeCommand('cody.chat.focus')
     }
 
     // Create Auth Status
