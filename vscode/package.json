@@ -224,7 +224,7 @@
           "type": "webview",
           "id": "cody.chat",
           "name": "Chat",
-          "when": "!cody.webviewPanel"
+          "when": "!cody.activated"
         },
         {
           "id": "cody.commands.tree.view",

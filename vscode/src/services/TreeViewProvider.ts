@@ -199,7 +199,7 @@ export function createCodyChatTreeItems(
             })
         }
     })
-    if (currentEmptyChatID) {
+    if (currentEmptyChatID && chatTreeItems.length) {
         chatTreeItems.push({
             id: currentEmptyChatID,
             title: 'New Chat',

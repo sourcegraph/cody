@@ -394,6 +394,12 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
      * Creates the webview panel for the Cody chat interface if it doesn't already exist.
      */
     public async createWebviewPanel(): Promise<void> {
+        // Create the webview panel only if the user is logged in.
+        // Allows users to login via the sidebar webview.
+        if (!this.authProvider.getAuthStatus()?.isLoggedIn) {
+            return
+        }
+
         // Checks if the webview panel already exists and is visible.
         // If so, returns early to avoid creating a duplicate.
         // Otherwise, reveals the existing panel or creates a new one.
