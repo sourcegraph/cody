@@ -32,7 +32,7 @@ export class ExplainCodeAction implements vscode.CodeActionProvider {
     }
 
     private getCodeActionInstruction = (diagnostics: vscode.Diagnostic[]): string =>
-        `Explain the following error${diagnostics.length > 1 ? 's' : ''}:\n${diagnostics
+        `Explain the following error${diagnostics.length > 1 ? 's' : ''}:\n\n${diagnostics
             .map(({ message }) => `\`\`\`${message}\`\`\``)
-            .join('\n')}`
+            .join('\n\n')}`
 }
