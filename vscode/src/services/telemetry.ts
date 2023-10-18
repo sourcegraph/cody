@@ -58,6 +58,8 @@ export async function createOrUpdateEventLogger(
 /**
  * Log a telemetry event.
  *
+ * DEPRECATED: use services/telemetryV2 instead.
+ *
  * PRIVACY: Do NOT include any potentially private information in `properties`. These properties may
  * get sent to analytics tools, so must not include private information, such as search queries or
  * repository names.
@@ -82,6 +84,9 @@ function logEvent(eventName: string, properties?: TelemetryEventProperties): voi
     }
 }
 
+/**
+ * Deprecated: use services/telemetryV2 instead.
+ */
 export const telemetryService: TelemetryService = {
     log(eventName, properties) {
         logEvent(eventName, properties)

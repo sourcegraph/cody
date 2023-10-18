@@ -3,6 +3,9 @@ import { TelemetryEventInput, TelemetryExporter } from '@sourcegraph/telemetry'
 import { isError } from '../../utils'
 import { SourcegraphGraphQLAPIClient } from '../graphql/client'
 
+/**
+ * GraphQLTelemetryExporter exports events via the
+ */
 export class GraphQLTelemetryExporter implements TelemetryExporter {
     private shouldUseLegacyEvents: boolean | undefined
     private legacySiteIdentification:
@@ -20,7 +23,14 @@ export class GraphQLTelemetryExporter implements TelemetryExporter {
         this.client.setAnonymousUserID(anonymousUserID)
     }
 
-    private async setShouldUseLegacyEventsOnce(): Promise<void> {
+    /**
+     * Checks if the connected server supports the new GraphQL mutations
+     * and sets the result to this.shouldUseLegacyEvents, and if we need to use
+     * legacy events, we also set this.legacySiteIdentification to the site ID
+     * of the connected instance - this is used to generate arguments for the
+     * legacy event-recording API.
+     */
+    private async setLegacyEventsStateOnce(): Promise<void> {
         if (this.shouldUseLegacyEvents === undefined) {
             const siteVersion = await this.client.getSiteVersion()
             if (isError(siteVersion)) {
@@ -35,10 +45,7 @@ export class GraphQLTelemetryExporter implements TelemetryExporter {
 
             this.shouldUseLegacyEvents = siteVersion >= '5.2.0'
         }
-    }
-
-    private async setLegacySiteIdentificationOnce(): Promise<void> {
-        if (this.legacySiteIdentification === undefined) {
+        if (this.shouldUseLegacyEvents && this.legacySiteIdentification === undefined) {
             const siteIdentification = await this.client.getSiteIdentification()
             if (isError(siteIdentification)) {
                 /**
@@ -52,11 +59,15 @@ export class GraphQLTelemetryExporter implements TelemetryExporter {
         }
     }
 
+    /**
+     * Implements export functionality by checking if the connected instance
+     * supports the new events record first - if it does, we use the new
+     * API, otherwise we translate the event into the old API and use that
+     * instead.
+     */
     public async exportEvents(events: TelemetryEventInput[]): Promise<void> {
-        await this.setShouldUseLegacyEventsOnce()
+        await this.setLegacyEventsStateOnce()
         if (this.shouldUseLegacyEvents) {
-            await this.setLegacySiteIdentificationOnce()
-
             // Swallow any problems, this is only a best-effort mechanism to
             // use the old export mechanism.
             await Promise.all(

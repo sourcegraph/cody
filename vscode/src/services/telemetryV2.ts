@@ -1,6 +1,7 @@
 import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
 import {
     ConsoleTelemetryRecorderProvider,
+    MockServerTelemetryRecorderProvider,
     NoOpTelemetryRecorderProvider,
     TelemetryRecorder,
     TelemetryRecorderProvider,
@@ -41,20 +42,23 @@ export async function createOrUpdateTelemetryRecorderProvider(
         return
     }
 
+    const { anonymousUserID, created } = await localStorage.anonymousUserID()
+
+    // In testing, send events to the mock server.
+    if (process.env.CODY_TESTING === 'true') {
+        updateGlobalInstances(new MockServerTelemetryRecorderProvider(extensionDetails, config, anonymousUserID))
+        return
+    }
+
     // In dev, log events to console.
-    //
-    // Check that CODY_TESTING is not true, because we want to log events when we are testing
-    if (isExtensionModeDevOrTest && process.env.CODY_TESTING !== 'true') {
+    if (isExtensionModeDevOrTest) {
         updateGlobalInstances(new ConsoleTelemetryRecorderProvider(extensionDetails, config))
         return
     }
 
-    const { anonymousUserID, created } = await localStorage.anonymousUserID()
-
     if (telemetryRecorderProvider === undefined) {
-        telemetryRecorderProvider = new TelemetryRecorderProvider(extensionDetails, config, anonymousUserID)
-        // Update default recorder instance
-        telemetryRecorder = telemetryRecorderProvider.getRecorder()
+        updateGlobalInstances(new TelemetryRecorderProvider(extensionDetails, config, anonymousUserID))
+        // Log some additional events on initial configuration of telemetryRecorderProvider
         if (created) {
             telemetryRecorder.recordEvent('cody', 'installed')
         } else {

@@ -9,7 +9,8 @@ import {
 
 import { ConfigurationWithAccessToken, getContextSelectionID } from '../configuration'
 import { SourcegraphGraphQLAPIClient } from '../sourcegraph-api/graphql'
-import { GraphQLTelemetryExporter } from '../sourcegraph-api/telemetry/exporter'
+import { GraphQLTelemetryExporter } from '../sourcegraph-api/telemetry/GraphQLTelemetryExporter'
+import { MockServerTelemetryExporter } from '../sourcegraph-api/telemetry/MockServerTelemetryExporter'
 
 import { BillingCategory, BillingProduct, EventAction, EventFeature, MetadataKey } from '.'
 
@@ -21,6 +22,9 @@ export interface ExtensionDetails {
     version: string
 }
 
+/**
+ * TelemetryRecorderProvider is the default provider implementation.
+ */
 export class TelemetryRecorderProvider extends BaseTelemetryRecorderProvider<
     EventFeature,
     EventAction,
@@ -68,6 +72,10 @@ export class NoOpTelemetryRecorderProvider extends BaseTelemetryRecorderProvider
 
 export const noOpTelemetryRecorder = new NoOpTelemetryRecorderProvider().getRecorder()
 
+/**
+ * ConsoleTelemetryRecorderProvider uses ConsoleTelemetryExporter to export
+ * events to console.
+ */
 export class ConsoleTelemetryRecorderProvider extends BaseTelemetryRecorderProvider<
     EventFeature,
     EventAction,
@@ -87,6 +95,33 @@ export class ConsoleTelemetryRecorderProvider extends BaseTelemetryRecorderProvi
     }
 }
 
+/**
+ * MockServerTelemetryRecorderProvider uses MockServerTelemetryExporter to export
+ * events.
+ */
+export class MockServerTelemetryRecorderProvider extends BaseTelemetryRecorderProvider<
+    EventFeature,
+    EventAction,
+    MetadataKey,
+    BillingCategory,
+    BillingProduct
+> {
+    constructor(extensionDetails: ExtensionDetails, config: ConfigurationWithAccessToken, anonymousUserID: string) {
+        super(
+            {
+                client: `${extensionDetails.ide}.${extensionDetails.ideExtensionType}`,
+                clientVersion: extensionDetails.version,
+            },
+            new MockServerTelemetryExporter(anonymousUserID),
+            [new ConfigurationMetadataProcessor(config)]
+        )
+    }
+}
+
+/**
+ * ConfigurationMetadataProcessor turns config into metadata that is
+ * automatically attached to all events.
+ */
 class ConfigurationMetadataProcessor implements TelemetryProcessor {
     constructor(private config: ConfigurationWithAccessToken) {}
 

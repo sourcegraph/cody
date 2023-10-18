@@ -79,8 +79,7 @@ const register = async (
     const isExtensionModeDevOrTest =
         context.extensionMode === vscode.ExtensionMode.Development ||
         context.extensionMode === vscode.ExtensionMode.Test
-    await createOrUpdateEventLogger(initialConfig, isExtensionModeDevOrTest)
-    await createOrUpdateTelemetryRecorderProvider(initialConfig, isExtensionModeDevOrTest)
+    await createOrUpdateEventsInfra(initialConfig, isExtensionModeDevOrTest)
 
     // Controller for inline Chat
     const commentController = new InlineController(context.extensionPath)
@@ -180,8 +179,7 @@ const register = async (
         contextProvider.configurationChangeEvent.event(async () => {
             const newConfig = await getFullConfig()
             externalServicesOnDidConfigurationChange(newConfig)
-            await createOrUpdateEventLogger(newConfig, isExtensionModeDevOrTest)
-            await createOrUpdateTelemetryRecorderProvider(newConfig, isExtensionModeDevOrTest)
+            await createOrUpdateEventsInfra(newConfig, isExtensionModeDevOrTest)
         })
     )
 
@@ -225,8 +223,13 @@ const register = async (
             return
         }
 
-        telemetryService.log('CodyVSCodeExtension:fixup:created')
+        // This is currently a test/demo of the new events system, using a
+        // presumably lower-volume feature.
         telemetryRecorder.recordEvent('cody.fixup', 'created')
+        // TODO: When we start adopting the new system properly, remove this
+        // old event - telemetryRecorder already exports events using the old
+        // API if it detects an older instance.
+        telemetryService.log('CodyVSCodeExtension:fixup:created')
 
         const provider = fixupManager.getProviderForTask(task)
         return provider.startFix()
@@ -523,10 +526,21 @@ const register = async (
             graphqlClient.onConfigurationChange(newConfig)
             contextProvider.onConfigurationChange(newConfig)
             externalServicesOnDidConfigurationChange(newConfig)
-            void createOrUpdateEventLogger(newConfig, isExtensionModeDevOrTest)
-            void createOrUpdateTelemetryRecorderProvider(initialConfig, isExtensionModeDevOrTest)
+            void createOrUpdateEventsInfra(newConfig, isExtensionModeDevOrTest)
             platform.onConfigurationChange?.(newConfig)
             symfRunner?.setAuthToken(newConfig.accessToken)
         },
     }
+}
+
+/**
+ * Create or update events infrastructure, both legacy (telemetryService) and
+ * new (telemetryRecorder)
+ */
+async function createOrUpdateEventsInfra(
+    config: ConfigurationWithAccessToken,
+    isExtensionModeDevOrTest: boolean
+): Promise<void> {
+    await createOrUpdateEventLogger(config, isExtensionModeDevOrTest)
+    await createOrUpdateTelemetryRecorderProvider(config, isExtensionModeDevOrTest)
 }
