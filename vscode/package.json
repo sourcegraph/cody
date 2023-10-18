@@ -937,13 +937,12 @@
           "markdownDescription": "Rank autocomplete results with tree-sitter."
         },
         "cody.autocomplete.experimental.graphContext": {
-          "type": "string",
-          "default": "none",
+          "type": "enum",
+          "default": null,
           "enum": [
-            "lsp",
+            null,
             "lsp-light",
-            "bfg",
-            null
+            "bfg"
           ],
           "markdownDescription": "Use the code graph to retrieve context for autocomplete requests."
         }
@@ -994,7 +993,6 @@
     "stream-json": "^1.8.0",
     "unzipper": "^0.10.14",
     "uuid": "^9.0.0",
-    "vscode-jsonrpc": "^8.2.0",
     "vscode-languageserver-textdocument": "^1.0.8",
     "vscode-uri": "^3.0.7",
     "web-tree-sitter": "^0.20.8",

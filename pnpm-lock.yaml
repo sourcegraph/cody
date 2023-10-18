@@ -442,9 +442,6 @@ importers:
       uuid:
         specifier: ^9.0.0
         version: 9.0.0
-      vscode-jsonrpc:
-        specifier: ^8.2.0
-        version: 8.2.0
       vscode-languageserver-textdocument:
         specifier: ^1.0.8
         version: 1.0.8
@@ -19689,12 +19686,6 @@ packages:
     dependencies:
       acorn: 8.10.0
       acorn-walk: 8.2.0
-
-  /vscode-jsonrpc@8.2.0:
-    resolution:
-      { integrity: sha512-C+r0eKJUIfiDIfwJhria30+TYWPtuHJXHtI7J0YlOmKAo7ogxP20T0zxB7HZQIFhIyvoBPwWskjxrvAtfjyZfA== }
-    engines: { node: '>=14.0.0' }
-    dev: false
 
   /vscode-languageserver-textdocument@1.0.8:
     resolution:

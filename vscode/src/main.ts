@@ -104,10 +104,7 @@ const register = async (
     }
 
     if (config.autocompleteExperimentalSyntacticPostProcessing) {
-        parseAllVisibleDocuments().then(
-            () => {},
-            () => {}
-        )
+        parseAllVisibleDocuments()
 
         disposables.push(vscode.window.onDidChangeVisibleTextEditors(parseAllVisibleDocuments))
         disposables.push(vscode.workspace.onDidChangeTextDocument(updateParseTreeOnEdit))

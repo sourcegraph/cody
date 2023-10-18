@@ -223,6 +223,7 @@ export class MessageHandler {
     private cancelTokens: Map<Id, vscode.CancellationTokenSource> = new Map()
     private notificationHandlers: Map<NotificationMethodName, NotificationCallback<any>> = new Map()
     private alive = true
+    private processExitedError = new Error('Process has exited')
     private responseHandlers: Map<
         Id,
         {
@@ -236,7 +237,7 @@ export class MessageHandler {
     public exit(): void {
         this.alive = false
         for (const { reject } of this.responseHandlers.values()) {
-            reject(new Error('Process has exited'))
+            reject(this.processExitedError)
         }
     }
 
@@ -332,6 +333,9 @@ export class MessageHandler {
     }
 
     public request<M extends RequestMethodName>(method: M, params: ParamsOf<M>): Promise<ResultOf<M>> {
+        if (!this.isAlive()) {
+            throw this.processExitedError
+        }
         const id = this.id++
 
         const data: RequestMessage<M> = {
@@ -348,6 +352,9 @@ export class MessageHandler {
     }
 
     public notify<M extends NotificationMethodName>(method: M, params: ParamsOf<M>): void {
+        if (!this.isAlive()) {
+            throw this.processExitedError
+        }
         const data: NotificationMessage<M> = {
             jsonrpc: '2.0',
             method,
@@ -361,6 +368,9 @@ export class MessageHandler {
      * to use the agent in-process without stdout/stdin transport mechanism.
      */
     public clientForThisInstance(): InProcessClient {
+        if (!this.isAlive()) {
+            throw this.processExitedError
+        }
         return new InProcessClient(this.requestHandlers, this.notificationHandlers)
     }
 }

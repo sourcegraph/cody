@@ -83,7 +83,7 @@ export async function fileExists(path: string): Promise<boolean> {
     }
 }
 
-export async function downloadFile(url: string, outputPath: string): Promise<void> {
+async function downloadFile(url: string, outputPath: string): Promise<void> {
     const response = await axios({
         url,
         method: 'GET',

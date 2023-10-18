@@ -10,7 +10,7 @@ import { fileExists } from '../../local-context/download-symf'
 import { logDebug } from '../../log'
 import { getOSArch } from '../../os'
 
-const bfgVersion = '0.1.0'
+const defaultBfgVersion = '0.1.0'
 
 export async function downloadBfg(context: vscode.ExtensionContext): Promise<string | null> {
     const config = vscode.workspace.getConfiguration()
@@ -33,6 +33,7 @@ export async function downloadBfg(context: vscode.ExtensionContext): Promise<str
     const { platform, arch } = osArch
 
     const bfgContainingDir = path.join(context.globalStorageUri.fsPath, 'bfg')
+    const bfgVersion = config.get<string>('cody.experimental.bfg.version', defaultBfgVersion)
     await fspromises.mkdir(bfgContainingDir, { recursive: true })
     const bfgFilename = `bfg-${bfgVersion}-${arch}-${platform}`
     const bfgPath = path.join(bfgContainingDir, bfgFilename)
@@ -80,6 +81,7 @@ async function unzipBfg(zipFile: string, destination: string): Promise<void> {
 }
 
 async function downloadBfgBinary(url: string, destination: string): Promise<void> {
+    logDebug('BFG', `Downloading from URL ${url}`)
     const response = await axios({
         url,
         method: 'GET',

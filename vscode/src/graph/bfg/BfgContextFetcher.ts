@@ -56,17 +56,24 @@ function loadBFG(context: vscode.ExtensionContext): Promise<MessageHandler> {
 
 export class BfgContextFetcher implements GraphContextFetcher {
     private loadedBFG: Promise<MessageHandler>
+    private didFailLoading = false
     private latestRepoIndexing: Promise<void[]> = Promise.resolve([])
     constructor(context: vscode.ExtensionContext, gitDirectoryUri: (uri: vscode.Uri) => vscode.Uri | undefined) {
         this.loadedBFG = loadBFG(context)
 
         this.loadedBFG.then(
             () => {},
-            error => logDebug('BFG', 'failed to initialize', error)
+            error => {
+                this.didFailLoading = true
+                logDebug('BFG', 'failed to initialize', error)
+            }
         )
 
         const indexedGitDirectories = new Set<string>()
         const didOpenDocumentUri = async (uri: vscode.Uri): Promise<void> => {
+            if (this.didFailLoading) {
+                return
+            }
             const gitdir = gitDirectoryUri(uri)?.toString()
             if (gitdir && !indexedGitDirectories.has(gitdir)) {
                 indexedGitDirectories.add(gitdir)
@@ -88,6 +95,9 @@ export class BfgContextFetcher implements GraphContextFetcher {
         maxChars: number,
         contextRange?: vscode.Range | undefined
     ): Promise<ContextSnippet[]> {
+        if (this.didFailLoading) {
+            return []
+        }
         const bfg = await this.loadedBFG
         if (!bfg.isAlive()) {
             logDebug('BFG', 'BFG is not alive')
@@ -108,6 +118,9 @@ export class BfgContextFetcher implements GraphContextFetcher {
     }
 
     public dispose(): void {
+        if (this.didFailLoading) {
+            return
+        }
         this.loadedBFG.then(
             bfg => bfg.request('bfg/shutdown', null),
             () => {}
