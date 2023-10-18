@@ -1018,7 +1018,7 @@
     "@types/vscode": "^1.79.0",
     "@types/vscode-webview": "^1.57.1",
     "@vscode/test-electron": "^2.3.2",
-    "@vscode/test-web": "^0.0.44",
+    "@vscode/test-web": "^0.0.47",
     "@vscode/vsce": "^2.19.0",
     "chalk": "^4.1.2",
     "cody-icons-font": "workspace:^",
