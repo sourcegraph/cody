@@ -134,7 +134,6 @@ export async function buildWorkSpaceSettings(workspaceDirectory: string): Promis
         'cody.serverEndpoint': 'http://localhost:49300',
         'cody.experimental.commandLenses': true,
         'cody.experimental.editorTitleCommandIcon': true,
-        'testing.simplified-onboarding': false,
     }
     // create a temporary directory with settings.json and add to the workspaceDirectory
     const workspaceSettingsPath = path.join(workspaceDirectory, '.vscode', 'settings.json')
@@ -158,4 +157,9 @@ export async function signOut(page: Page): Promise<void> {
     await page.keyboard.press('Enter')
     await page.waitForTimeout(1000)
     await page.keyboard.press('Enter')
+}
+
+export async function submitChat(sidebar: Frame, text: string): Promise<void> {
+    await sidebar.getByRole('textbox', { name: 'Chat message' }).fill(text)
+    await sidebar.getByTitle('Send Message').click()
 }

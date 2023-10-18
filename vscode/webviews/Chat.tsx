@@ -6,7 +6,6 @@ import classNames from 'classnames'
 import { ChatContextStatus } from '@sourcegraph/cody-shared/src/chat/context'
 import { CodyPrompt } from '@sourcegraph/cody-shared/src/chat/prompts'
 import { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
-import { isDotCom, isLocalApp } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
 import { TelemetryService } from '@sourcegraph/cody-shared/src/telemetry'
 import {
     ChatButtonProps,
@@ -19,7 +18,7 @@ import {
 } from '@sourcegraph/cody-ui/src/Chat'
 import { SubmitSvg } from '@sourcegraph/cody-ui/src/utils/icons'
 
-import { CODY_FEEDBACK_URL, OnboardingExperimentArm } from '../src/chat/protocol'
+import { CODY_FEEDBACK_URL } from '../src/chat/protocol'
 
 import { ChatCommandsComponent } from './ChatCommands'
 import { ChatInputContextSimplified } from './ChatInputContextSimplified'
@@ -47,7 +46,6 @@ interface ChatboxProps {
     chatCommands?: [string, CodyPrompt][]
     isTranscriptError: boolean
     applessOnboarding: {
-        arm: OnboardingExperimentArm
         endpoint: string | null
         embeddingsEndpoint?: string
         props: { isAppInstalled: boolean; onboardingPopupProps: OnboardingPopupProps }
@@ -129,11 +127,6 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
         [vscodeAPI]
     )
 
-    const useSimplifiedAppOnboarding =
-        applessOnboarding.arm === OnboardingExperimentArm.Simplified &&
-        applessOnboarding.endpoint &&
-        (isDotCom(applessOnboarding.endpoint) || isLocalApp(applessOnboarding.endpoint))
-
     return (
         <ChatUI
             messageInProgress={messageInProgress}
@@ -182,15 +175,11 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             chatCommands={chatCommands}
             filterChatCommands={filterChatCommands}
             ChatCommandsComponent={ChatCommandsComponent}
-            contextStatusComponent={useSimplifiedAppOnboarding ? ChatInputContextSimplified : undefined}
-            contextStatusComponentProps={
-                useSimplifiedAppOnboarding
-                    ? {
-                          contextStatus,
-                          ...applessOnboarding.props,
-                      }
-                    : undefined
-            }
+            contextStatusComponent={ChatInputContextSimplified}
+            contextStatusComponentProps={{
+                contextStatus,
+                ...applessOnboarding.props,
+            }}
         />
     )
 }
