@@ -2,6 +2,7 @@ import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/confi
 import {
     ConsoleTelemetryRecorderProvider,
     NoOpTelemetryRecorderProvider,
+    TelemetryRecorder,
     TelemetryRecorderProvider,
 } from '@sourcegraph/cody-shared/src/telemetry-v2/TelemetryRecorderProvider'
 
@@ -17,7 +18,7 @@ let telemetryRecorderProvider: TelemetryRecorderProvider | undefined
  * The default recorder throws an error if it is used before initialization
  * via createOrUpdateTelemetryRecorderProvider.
  */
-export let telemetryRecorder = new NoOpTelemetryRecorderProvider().getRecorder([
+export let telemetryRecorder: TelemetryRecorder = new NoOpTelemetryRecorderProvider().getRecorder([
     {
         processEvent: () => {
             throw new Error('telemetry recorder used before initialization')

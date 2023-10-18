@@ -45,6 +45,15 @@ export class TelemetryRecorderProvider extends BaseTelemetryRecorderProvider<
     }
 }
 
+/**
+ * TelemetryRecorder is the type of recorders returned by
+ * TelemetryRecorderProviders in this module. It's available as a type to work
+ * around type reference issues like:
+ *
+ *   The inferred type of 'telemetryRecorder' cannot be named without a reference <...>
+ */
+export type TelemetryRecorder = typeof noOpTelemetryRecorder
+
 export class NoOpTelemetryRecorderProvider extends BaseTelemetryRecorderProvider<
     EventFeature,
     EventAction,
@@ -56,6 +65,8 @@ export class NoOpTelemetryRecorderProvider extends BaseTelemetryRecorderProvider
         super({ client: '' }, new NoOpTelemetryExporter(), [])
     }
 }
+
+export const noOpTelemetryRecorder = new NoOpTelemetryRecorderProvider().getRecorder()
 
 export class ConsoleTelemetryRecorderProvider extends BaseTelemetryRecorderProvider<
     EventFeature,
