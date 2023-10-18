@@ -11,7 +11,7 @@ import {
 
 import { Agent } from './agent'
 import { DocumentOffsets } from './offsets'
-import { TextDocument } from './protocol'
+import { QuickPickItem, TextDocument } from './protocol'
 
 export class AgentEditor implements Editor {
     public controllers?: ActiveTextEditorViewControllers | undefined
@@ -122,8 +122,13 @@ export class AgentEditor implements Editor {
         throw new Error('Not implemented')
     }
 
-    public showQuickPick(): Promise<string | undefined> {
-        throw new Error('Not implemented')
+    public async showQuickPick(labels: string[]): Promise<string | undefined> {
+        const items: QuickPickItem[] = labels.map((title, idx) => ({
+            id: idx.toString(),
+            title,
+        }))
+
+        return this.agent.request('editor/quickpick', { items }).then(resp => resp.item)
     }
 
     public showWarningMessage(): Promise<void> {
