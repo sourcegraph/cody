@@ -59,7 +59,8 @@ export class FixupController
             vscode.commands.registerCommand('cody.fixup.diff', treeItem => this.showDiff(treeItem)),
             vscode.commands.registerCommand('cody.fixup.codelens.apply', id => this.apply(id)),
             vscode.commands.registerCommand('cody.fixup.codelens.diff', id => this.diff(id)),
-            vscode.commands.registerCommand('cody.fixup.codelens.cancel', id => this.cancel(id))
+            vscode.commands.registerCommand('cody.fixup.codelens.cancel', id => this.cancel(id)),
+            vscode.commands.registerCommand('cody.fixup.codelens.regenerate', async id => this.regenerate(id))
         )
         // Observe file renaming and deletion
         this.files = new FixupFileObserver()
@@ -629,6 +630,21 @@ export class FixupController
                 description: 'Cody Fixup Diff View: ' + task.fixupFile.uri.fsPath,
             }
         )
+    }
+
+    // Regenerate code with the same set of instruction
+    public async regenerate(id: taskID): Promise<void> {
+        telemetryService.log('CodyVSCodeExtension:fixup:codeLens:clicked', { op: 'regenerate' })
+        const task = this.tasks.get(id)
+        if (!task) {
+            return
+        }
+        const range = task.selectionRange
+        const instruction = task.instruction
+        const document = await vscode.workspace.openTextDocument(task.fixupFile.uri)
+        // Remove the previous task and code lenses
+        this.cancel(id)
+        void vscode.commands.executeCommand('cody.command.edit-code', { range, instruction, document }, 'regenerate')
     }
 
     private setTaskState(task: FixupTask, state: CodyTaskState): void {
