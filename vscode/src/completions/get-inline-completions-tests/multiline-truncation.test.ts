@@ -296,7 +296,10 @@ cases.forEach(isTreeSitterEnabled => {
                     await getInlineCompletionsInsertText(
                         params(
                             dedent`
-                    if (check) {
+                    function whatever() {
+                        console.log(123)
+                    }
+                    console.log(321); if (check) {
                         █
                     }
                 `,
@@ -338,31 +341,6 @@ cases.forEach(isTreeSitterEnabled => {
               "console.log('one')
               }"
             `)
-        })
-
-        it('stops when the next non-empty line of the suffix matches', async () => {
-            expect(
-                (
-                    await getInlineCompletionsInsertText(
-                        params(
-                            dedent`
-                function myFunction() {
-                    █
-                    console.log('three')
-                }
-                `,
-                            [
-                                completion`
-                        ├console.log('one')
-                        console.log('two')
-                        console.log('three')
-                        console.log('four')
-                    }┤`,
-                            ]
-                        )
-                    )
-                ).length
-            ).toBe(0)
         })
 
         describe('stops when the next non-empty line of the suffix matches partially', () => {
@@ -526,6 +504,37 @@ cases.forEach(isTreeSitterEnabled => {
         })
 
         if (isTreeSitterEnabled) {
+            it('stops when the next non-empty line of the suffix matches', async () => {
+                expect(
+                    await getInlineCompletionsInsertText(
+                        params(
+                            dedent`
+                                function myFunction() {
+                                    █
+                                }
+                        `,
+                            [
+                                completion`
+                                ├function nestedFunction() {
+                                    console.log('one')
+                                }
+
+                                nestedFunction()
+                                }┤`,
+                            ]
+                        )
+                    )
+                ).toMatchInlineSnapshot(`
+                  [
+                    "function nestedFunction() {
+                      console.log('one')
+                  }
+
+                  nestedFunction()",
+                  ]
+                `)
+            })
+
             it('truncates multiline completions with inconsistent indentation', async () => {
                 expect(
                     (
@@ -552,6 +561,50 @@ cases.forEach(isTreeSitterEnabled => {
                 console.log('oops')
                 }
             `)
+            })
+
+            it('truncates multiline completions with many nested block statements', async () => {
+                expect(
+                    (
+                        await getInlineCompletionsInsertText(
+                            params(
+                                dedent`
+                        class Animal {
+                            █
+                        }
+                    `,
+                                [
+                                    completion`
+                                        constructor(name: string) {}
+
+                                        bark() {
+                                            const barkData = { tone: 'loud' }
+                                            this.produceSound(barkData)
+                                        }
+
+                                        wasuup() {
+                                            this.bark()
+                                        }
+                                    }
+
+                                    redundantFunctionCall(123)
+                                    `,
+                                ]
+                            )
+                        )
+                    )[0]
+                ).toMatchInlineSnapshot(`
+                  "constructor(name: string) {}
+
+                      bark() {
+                          const barkData = { tone: 'loud' }
+                          this.produceSound(barkData)
+                      }
+
+                      wasuup() {
+                          this.bark()
+                      }"
+                `)
             })
         }
     })

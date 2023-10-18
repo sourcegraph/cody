@@ -4,10 +4,25 @@ import { getLanguageConfig } from '../language'
 
 import { getEditorTabSize, indentation, shouldIncludeClosingLine } from './utils'
 
-interface TruncateResult {
-    truncatedStart: boolean
-    truncatedEnd: boolean
-    text: string
+export function normalizeStartLine(completion: string, prefix: string): string {
+    const lines = completion.split('\n')
+
+    // We use a whitespace counting approach to finding the end of the
+    // completion. To find an end, we look for the first line that is below the
+    // start scope of the completion ( calculated by the number of leading
+    // spaces or tabs)
+    const prefixLastNewline = prefix.lastIndexOf('\n')
+    const prefixIndentationWithFirstCompletionLine = prefix.slice(prefixLastNewline + 1)
+    const startIndent = indentation(prefixIndentationWithFirstCompletionLine)
+
+    // Normalize responses that start with a newline followed by the exact
+    // indentation of the first line.
+    if (lines.length > 1 && lines[0] === '' && indentation(lines[1]) === startIndent) {
+        lines.shift()
+        lines[0] = lines[0].trimStart()
+    }
+
+    return lines.join('\n')
 }
 
 export function truncateMultilineCompletion(
@@ -15,16 +30,11 @@ export function truncateMultilineCompletion(
     prefix: string,
     suffix: string,
     languageId: string
-): TruncateResult {
+): string {
     const config = getLanguageConfig(languageId)
-    const result: TruncateResult = {
-        truncatedStart: false,
-        truncatedEnd: false,
-        text: completion,
-    }
 
     if (!config) {
-        return result
+        return completion
     }
 
     // Ensure that the completion has the same or larger indentation
@@ -42,14 +52,6 @@ export function truncateMultilineCompletion(
     const prefixIndentationWithFirstCompletionLine = prefix.slice(prefixLastNewline + 1)
     const startIndent = indentation(prefixIndentationWithFirstCompletionLine)
     const hasEmptyCompletionLine = prefixIndentationWithFirstCompletionLine.trim() === ''
-
-    // Normalize responses that start with a newline followed by the exact
-    // indentation of the first line.
-    if (lines.length > 1 && lines[0] === '' && indentation(lines[1]) === startIndent) {
-        lines.shift()
-        lines[0] = lines[0].trimStart()
-        result.truncatedStart = true
-    }
 
     const includeClosingLine = shouldIncludeClosingLine(prefixIndentationWithFirstCompletionLine, suffix)
 
@@ -76,12 +78,7 @@ export function truncateMultilineCompletion(
         }
     }
 
-    if (cutOffIndex < lines.length) {
-        result.truncatedEnd = true
-        result.text = lines.slice(0, cutOffIndex).join('\n')
-    }
-
-    return result
+    return lines.slice(0, cutOffIndex).join('\n')
 }
 
 /**

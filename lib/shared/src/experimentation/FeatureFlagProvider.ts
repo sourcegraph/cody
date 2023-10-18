@@ -20,6 +20,7 @@ export enum FeatureFlag {
     CodyAutocompleteLanguageLatency = 'cody-autocomplete-language-latency',
     CodyAutocompleteUserLatency = 'cody-autocomplete-user-latency',
     CodyAutocompleteProviderLatency = 'cody-autocomplete-provider-latency',
+    CodyAutocompleteDisableStreamingTruncation = 'cody-autocomplete-disable-streaming-truncation',
     CodyAutocompleteLowPerformanceDebounce = 'cody-autocomplete-low-performance-debounce',
 }
 

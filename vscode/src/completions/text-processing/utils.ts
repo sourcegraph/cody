@@ -165,7 +165,7 @@ export function trimUntilSuffix(insertion: string, prefix: string, suffix: strin
     const insertionLines = insertion.split('\n')
     let cutOffIndex = insertionLines.length
 
-    for (let i = 0; i < insertionLines.length; i++) {
+    for (let i = insertionLines.length - 1; i >= 0; i--) {
         let line = insertionLines[i]
 
         // Include the current indentation of the prefix in the first line
