@@ -47,15 +47,16 @@ export class InlineChat implements Recipe {
 
         // Text display in UI fpr human that includes the selected code
         const displayText = humanChatInput + InlineChat.displayPrompt.replace('{selectedText}', selection.selectedText)
-
+        const source = this.id
         return Promise.resolve(
             new Interaction(
                 {
                     speaker: 'human',
                     text: promptText,
                     displayText,
+                    source,
                 },
-                { speaker: 'assistant' },
+                { speaker: 'assistant', source },
                 this.getContextMessages(truncatedText, context.codebaseContext, selection, context.editor),
                 []
             )

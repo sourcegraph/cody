@@ -1,15 +1,18 @@
-import { DocumentContext } from './get-current-doc-context'
-import { trimUntilSuffix } from './text-processing'
-import { truncateMultilineCompletion } from './text-processing/truncate-multiline-completion'
+import { Position, TextDocument } from 'vscode'
 
-interface CanUsePartialCompletionParams {
-    document: { languageId: string }
-    multiline: boolean
+import { DocumentContext } from './get-current-doc-context'
+import { parseAndTruncateCompletion } from './text-processing/parse-and-truncate-completion'
+import { InlineCompletionItemWithAnalytics } from './text-processing/process-inline-completions'
+
+export interface CanUsePartialCompletionParams {
+    document: TextDocument
+    position: Position
     docContext: DocumentContext
+    multiline: boolean
 }
 
 /**
- * Evaluates a partial completion response and returns true when we can already use it. This is used
+ * Evaluates a partial completion response and returns it when we can already use it. This is used
  * to terminate any streaming responses where we can get a token-by-token access to the result and
  * want to terminate as soon as stop conditions are triggered.
  *
@@ -17,37 +20,30 @@ interface CanUsePartialCompletionParams {
  *  1. When a single line completion is requested, it terminates after the first full line was
  *     received.
  *  2. For a multi-line completion, it terminates when the completion will be truncated based on the
- *     multi-line indentation logic or an eventual match with a line already in the editor.
+ *     multi-line indentation logic.
  */
 export function canUsePartialCompletion(
     partialResponse: string,
-    { document, multiline, docContext: { prefix, suffix } }: CanUsePartialCompletionParams
-): boolean {
-    const lastNlIndex = partialResponse.lastIndexOf('\n')
+    params: CanUsePartialCompletionParams
+): InlineCompletionItemWithAnalytics | null {
+    const lastNewlineIndex = partialResponse.lastIndexOf('\n')
 
     // If there is no `\n` in the completion, we have not received a single full line yet
-    if (lastNlIndex === -1) {
-        return false
+    if (lastNewlineIndex === -1) {
+        return null
     }
 
     // The last line might not be complete yet, so we discard it
-    const completion = partialResponse.slice(0, lastNlIndex)
+    const item = parseAndTruncateCompletion(partialResponse.slice(0, lastNewlineIndex), {
+        ...params,
+        // The tree-sitter-based truncation is disabled until the next-new-sibling approach is implemented.
+        // See: https://github.com/sourcegraph/cody/issues/1402
+        useTreeSitter: false,
+    })
 
-    if (multiline) {
-        // `truncateMultilineCompletion` removes the leading new line in some cases
-        // so we explicitly check if lines the end of the completions were deleted.
-        const { truncatedEnd, text: withTruncatedBlock } = truncateMultilineCompletion(
-            completion,
-            prefix,
-            suffix,
-            document.languageId
-        )
-
-        const withTruncatedSuffix = trimUntilSuffix(withTruncatedBlock, prefix, suffix, document.languageId)
-
-        return truncatedEnd || withTruncatedSuffix.split('\n').length < withTruncatedBlock.split('\n').length
+    if (params.multiline) {
+        return (item.lineTruncatedCount || 0) > 0 ? item : null
     }
 
-    const isNonEmptyLine = completion.trim() !== ''
-    return isNonEmptyLine
+    return item.insertText.trim() === '' ? null : item
 }

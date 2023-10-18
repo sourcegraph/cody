@@ -31,9 +31,6 @@ export interface InlineCompletionsParams {
     providerConfig: ProviderConfig
     graphContextFetcher?: GraphContextFetcher
 
-    // Platform
-    toWorkspaceRelativePath: (uri: URI) => string
-
     // Injected
     contextFetcher?: (options: GetContextOptions) => Promise<GetContextResult>
     getCodebaseContext?: () => CodebaseContext
@@ -53,7 +50,7 @@ export interface InlineCompletionsParams {
 
     // Feature flags
     completeSuggestWidgetSelection?: boolean
-    enableNetworkCache?: boolean
+    disableStreamingTruncation?: boolean
 
     // Callbacks to accept completions
     handleDidAcceptCompletionItem?: (
@@ -171,7 +168,6 @@ async function doGetInlineCompletions(params: InlineCompletionsParams): Promise<
         docContext: { multilineTrigger, currentLineSuffix, currentLinePrefix },
         providerConfig,
         graphContextFetcher,
-        toWorkspaceRelativePath,
         contextFetcher,
         getCodebaseContext,
         documentHistory,
@@ -182,6 +178,7 @@ async function doGetInlineCompletions(params: InlineCompletionsParams): Promise<
         abortSignal,
         tracer,
         completeSuggestWidgetSelection = true,
+        disableStreamingTruncation = false,
         handleDidAcceptCompletionItem,
         handleDidPartiallyAcceptCompletionItem,
     } = params
@@ -276,10 +273,11 @@ async function doGetInlineCompletions(params: InlineCompletionsParams): Promise<
     // Completion providers
     const completionProviders = getCompletionProviders({
         document,
+        position,
         triggerKind,
         providerConfig,
         docContext,
-        toWorkspaceRelativePath,
+        disableStreamingTruncation,
     })
     tracer?.({ completers: completionProviders.map(({ options }) => options) })
 
@@ -318,17 +316,21 @@ async function doGetInlineCompletions(params: InlineCompletionsParams): Promise<
 }
 
 interface GetCompletionProvidersParams
-    extends Pick<InlineCompletionsParams, 'document' | 'triggerKind' | 'providerConfig' | 'toWorkspaceRelativePath'> {
+    extends Pick<InlineCompletionsParams, 'document' | 'position' | 'triggerKind' | 'providerConfig'> {
     docContext: DocumentContext
+    disableStreamingTruncation?: boolean
 }
 
 function getCompletionProviders(params: GetCompletionProvidersParams): Provider[] {
-    const { document, triggerKind, providerConfig, docContext, toWorkspaceRelativePath } = params
+    const { document, position, triggerKind, providerConfig, docContext, disableStreamingTruncation } = params
+
     const sharedProviderOptions: Omit<ProviderOptions, 'id' | 'n' | 'multiline'> = {
         docContext,
-        fileName: toWorkspaceRelativePath(document.uri),
-        languageId: document.languageId,
+        document,
+        position,
+        disableStreamingTruncation: Boolean(disableStreamingTruncation),
     }
+
     if (docContext.multilineTrigger) {
         return [
             providerConfig.create({

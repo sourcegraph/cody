@@ -10,6 +10,7 @@ import { telemetryService } from '../services/telemetry'
 
 import { ContextSummary } from './context/context'
 import { InlineCompletionsResultSource, TriggerKind } from './get-inline-completions'
+import { PersistenceTracker } from './persistence-tracker'
 import { RequestParams } from './request-manager'
 import * as statistics from './statistics'
 import { InlineCompletionItemWithAnalytics } from './text-processing/process-inline-completions'
@@ -18,7 +19,7 @@ import { InlineCompletionItem } from './types'
 
 // A completion ID is a unique identifier for a specific completion text displayed at a specific
 // point in the document. A single completion can be suggested multiple times.
-type CompletionID = string & { _opaque: typeof CompletionID }
+export type CompletionID = string & { _opaque: typeof CompletionID }
 declare const CompletionID: unique symbol
 
 // A suggestion ID is a unique identifier for a suggestion lifecycle.
@@ -123,6 +124,8 @@ function getRecentCompletionsKey(params: RequestParams, completion: string): str
 const completionIdsMarkedAsSuggested = new LRUCache<CompletionID, true>({
     max: 50,
 })
+
+let persistenceTracker: PersistenceTracker | null = null
 
 let completionsStartedSinceLastSuggestion = 0
 
@@ -243,7 +246,7 @@ export function suggested(
     }
 }
 
-export function accept(id: SuggestionID, completion: InlineCompletionItem): void {
+export function accept(id: SuggestionID, document: vscode.TextDocument, completion: InlineCompletionItem): void {
     const completionEvent = activeSuggestions.get(id)
     if (!completionEvent || completionEvent.acceptedAt) {
         // Log a debug event, this case should not happen in production
@@ -300,6 +303,11 @@ export function accept(id: SuggestionID, completion: InlineCompletionItem): void
         acceptedItem: { ...completionItemToItemInfo(completion) },
     })
     statistics.logAccepted()
+
+    if (persistenceTracker === null) {
+        persistenceTracker = new PersistenceTracker()
+    }
+    persistenceTracker.track({ id: completionEvent.params.id, insertedAt: Date.now(), completion, document })
 }
 
 export function partiallyAccept(id: SuggestionID, completion: InlineCompletionItem, acceptedLength: number): void {

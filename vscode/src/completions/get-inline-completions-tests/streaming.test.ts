@@ -76,7 +76,8 @@ describe('[getInlineCompletions] streaming', () => {
                         onPartialResponse?.(completion`
                                         ├console.log('what?')
                                     }
-                                    ┤
+
+                                    function never(){}┤
                                 `)
                         await nextTick()
                         expect(abortController.signal.aborted).toBe(true)
@@ -156,7 +157,7 @@ describe('[getInlineCompletions] streaming', () => {
                         await nextTick()
                         expect(abortController.signal.aborted).toBe(false)
                         onPartialResponse?.(
-                            completion`\nconst merge = (left, right) => {\n  let arr = [];\n  while (left.length && right.length) {\n    if (true) {}\n  }\n}\nconsole.log()`
+                            completion`\nconst merge = (left, right) => {\n  let arr = [];\n  while (left.length && right.length) {\n    if (true) {}\n  }\n}\nconsole.log()\n`
                         )
                         await nextTick()
                         expect(abortController.signal.aborted).toBe(true)

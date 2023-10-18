@@ -12,7 +12,6 @@ const expectedOrderedEvents = [
     'CodyVSCodeExtension:keywordContext:searchDuration',
     'CodyVSCodeExtension:recipe:fixup:executed',
     'CodyVSCodeExtension:fixupResponse:hasCode',
-    'CodyVSCodeExtension:chatResponse:noCode',
 ]
 
 test.beforeEach(() => {

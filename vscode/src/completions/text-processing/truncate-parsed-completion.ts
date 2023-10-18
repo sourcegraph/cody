@@ -1,13 +1,14 @@
 import { TextDocument } from 'vscode'
 
 import { getCachedParseTreeForDocument } from '../tree-sitter/parse-tree-cache'
-import { getDocumentQuerySDK } from '../tree-sitter/query-sdk'
+import { DocumentQuerySDK } from '../tree-sitter/query-sdk'
 
 import { ParsedCompletion } from './parse-completion'
 
 interface CompletionContext {
     completion: ParsedCompletion
     document: TextDocument
+    documentQuerySDK: DocumentQuerySDK
 }
 
 /**
@@ -18,21 +19,23 @@ interface CompletionContext {
  * Returns the original `insertText` if no truncation is needed or if syntactic post-processing isn't enabled.
  */
 export function truncateParsedCompletion(context: CompletionContext): string {
-    const { completion, document } = context
-
+    const { completion, document, documentQuerySDK } = context
     const parseTreeCache = getCachedParseTreeForDocument(document)
-    const documentQuerySDK = getDocumentQuerySDK(context.document.languageId)
 
-    if (!completion.tree || !completion.points || !parseTreeCache || !documentQuerySDK) {
+    if (!completion.tree || !completion.points || !parseTreeCache) {
         throw new Error('Expected completion and document to have tree-sitter data for truncation')
     }
 
     const { tree, points } = completion
 
+    const queryStart = points?.trigger || points?.start
     const [captureGroup] = documentQuerySDK.queries.blocks.getFirstMultilineBlockForTruncation(
         tree.rootNode,
-        points?.trigger || points?.start,
-        points?.end
+        queryStart,
+        {
+            row: queryStart.row,
+            column: queryStart.column + 1,
+        }
     )
 
     if (captureGroup) {

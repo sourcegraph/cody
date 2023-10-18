@@ -2,7 +2,12 @@ import { Meta, StoryObj } from '@storybook/react'
 
 import { VSCodeStoryDecorator } from '../storybook/VSCodeStoryDecorator'
 
-import { EmbeddingsEnabledPopup, EmbeddingsNotFoundPopup, InstallCodyAppPopup } from './OnboardingExperimentPopups'
+import {
+    EmbeddingsEnabledPopup,
+    EmbeddingsNotFoundEnterprisePopup,
+    EmbeddingsNotFoundPopup,
+    InstallCodyAppPopup,
+} from './OnboardingExperimentPopups'
 
 import styles from './Popup.module.css'
 
@@ -37,6 +42,23 @@ export const EmbeddingsNotFound: StoryObj<typeof EmbeddingsNotFoundPopup> = {
         <div style={{ background: 'lightgrey', height: '60vh', display: 'flex', alignItems: 'end' }}>
             <button className={styles.popupHost} style={{ width: '32px', height: '24px' }}>
                 <EmbeddingsNotFoundPopup
+                    isOpen={true}
+                    installApp={() => {}}
+                    onDismiss={() => {}}
+                    openApp={() => {}}
+                    reloadStatus={() => {}}
+                />
+                <span className="codicon codicon-rocket" />
+            </button>
+        </div>
+    ),
+}
+
+export const EmbeddingsNotFoundEnterprise: StoryObj<typeof EmbeddingsNotFoundEnterprisePopup> = {
+    render: () => (
+        <div style={{ background: 'lightgrey', height: '60vh', display: 'flex', alignItems: 'end' }}>
+            <button className={styles.popupHost} style={{ width: '32px', height: '24px' }}>
+                <EmbeddingsNotFoundEnterprisePopup
                     isOpen={true}
                     installApp={() => {}}
                     onDismiss={() => {}}

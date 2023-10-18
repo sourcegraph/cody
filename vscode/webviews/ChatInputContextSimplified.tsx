@@ -6,12 +6,13 @@ import classNames from 'classnames'
 import { URI } from 'vscode-uri'
 
 import { ChatContextStatus } from '@sourcegraph/cody-shared'
-import { LOCAL_APP_URL } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
+import { DOTCOM_URL, LOCAL_APP_URL } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
 import { formatFilePath } from '@sourcegraph/cody-ui/src/chat/inputContext/ChatInputContext'
 import { Icon } from '@sourcegraph/cody-ui/src/utils/Icon'
 
 import {
     EmbeddingsEnabledPopup,
+    EmbeddingsNotFoundEnterprisePopup,
     EmbeddingsNotFoundPopup,
     InstallCodyAppPopup,
     OnboardingPopupProps,
@@ -23,7 +24,6 @@ import popupStyles from './Popups/Popup.module.css'
 
 export interface ChatInputContextSimplifiedProps {
     contextStatus?: ChatContextStatus
-    // TODO(dpc): add 'endpoint' here to show enterprise-style prompts to enterprise users based on endpoint
     isAppInstalled: boolean
     onboardingPopupProps: OnboardingPopupProps
 }
@@ -90,19 +90,26 @@ export const ChatInputContextSimplified: React.FC<ChatInputContextSimplifiedProp
         )
     } else if (contextStatus?.codebase && !contextStatus?.embeddingsEndpoint) {
         // Codebase, but no embeddings
-        const repoName = contextStatus.codebase
-        const popup: React.FC<OnboardingPopupProps & PopupOpenProps> = isAppInstalled
-            ? EmbeddingsNotFoundPopup
-            : ({ installApp, isOpen, openApp, onDismiss, reloadStatus }) => (
-                  <InstallCodyAppPopup
-                      installApp={installApp}
-                      openApp={openApp}
-                      isOpen={isOpen}
-                      onDismiss={onDismiss}
-                      reloadStatus={reloadStatus}
-                      repoName={repoName}
-                  />
-              )
+        const isEnterprise =
+            contextStatus?.endpoint !== LOCAL_APP_URL.href && contextStatus?.endpoint !== DOTCOM_URL.href
+        let popup: React.FC<OnboardingPopupProps & PopupOpenProps>
+        if (isEnterprise) {
+            popup = EmbeddingsNotFoundEnterprisePopup
+        } else if (isAppInstalled) {
+            popup = EmbeddingsNotFoundPopup
+        } else {
+            const repoName = contextStatus.codebase
+            popup = ({ installApp, isOpen, openApp, onDismiss, reloadStatus }) => (
+                <InstallCodyAppPopup
+                    installApp={installApp}
+                    openApp={openApp}
+                    isOpen={isOpen}
+                    onDismiss={onDismiss}
+                    reloadStatus={reloadStatus}
+                    repoName={repoName}
+                />
+            )
+        }
         codebaseState = (
             <CodebaseState
                 codebase={contextStatus.codebase}
