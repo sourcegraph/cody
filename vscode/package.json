@@ -238,12 +238,7 @@
         },
         {
           "id": "cody.chat.tree.view",
-          "name": "Chat",
-          "when": "cody.activated"
-        },
-        {
-          "id": "cody.fixup.tree.view",
-          "name": "Edits",
+          "name": "Chats",
           "when": "cody.activated"
         },
         {
@@ -254,11 +249,6 @@
       ]
     },
     "viewsWelcome": [
-      {
-        "view": "cody.fixup.tree.view",
-        "contents": "No pending edits",
-        "when": "cody.nonstop.fixups.enabled && cody.activated"
-      },
       {
         "view": "cody.chat.tree.view",
         "contents": "Chat alongside your code, attach files, add additional context, and try out different LLM providers.\n[New Chat](command:cody.chat.panel.new)\nTo learn more about chat, [read the docs](https://docs.sourcegraph.com/).",
@@ -697,11 +687,6 @@
           "command": "cody.auth.signin",
           "when": "view == cody.support.tree.view && cody.activated",
           "group": "9_cody@0"
-        },
-        {
-          "command": "cody.fixup.apply-all",
-          "when": "cody.nonstop.fixups.enabled && view == cody.fixup.tree.view && cody.activated",
-          "group": "navigation"
         }
       ],
       "editor/title": [
@@ -750,20 +735,9 @@
       ],
       "view/item/context": [
         {
-          "command": "cody.fixup.apply-by-file",
-          "when": "cody.nonstop.fixups.enabled && view == cody.fixup.tree.view && cody.activated && viewItem == fsPath",
-          "enable": "cody.fixup.filesWithApplicableFixups",
+          "command": "cody.chat.history.clear",
+          "when": "view == cody.chat.tree.view && cody.activated",
           "group": "inline"
-        },
-        {
-          "command": "cody.fixup.apply",
-          "when": "cody.nonstop.fixups.enabled && view == cody.fixup.tree.view && cody.activated && viewItem == task",
-          "group": "inline@2"
-        },
-        {
-          "command": "cody.fixup.diff",
-          "when": "cody.nonstop.fixups.enabled && view == cody.fixup.tree.view && cody.activated && viewItem == task",
-          "group": "inline@1"
         }
       ]
     },
