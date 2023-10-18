@@ -44,7 +44,7 @@ export type Requests = {
     'graphql/getRepoIdIfEmbeddingExists': [{ repoName: string }, string | null]
     'graphql/getRepoId': [{ repoName: string }, string | null]
 
-    'convertGitCloneURLToCodebaseName': [{ cloneURL: string }, string | null]
+    'git/codebaseName': [{ cloneURL: string }, string | null]
 
     // ================
     // Server -> Client
