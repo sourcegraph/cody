@@ -4,13 +4,14 @@ import { promisify } from 'util'
 
 import * as vscode from 'vscode'
 
+import { getActiveEditor } from '../editor/vscode-editor'
 import { logDebug, logError } from '../log'
 
 import { UserWorkspaceInfo } from './utils'
 import { outputWrapper } from './utils/helpers'
 
 const rootPath = vscode.workspace.workspaceFolders?.[0].uri.fsPath
-const currentFilePath = vscode.window.activeTextEditor?.document.uri.fsPath
+const currentFilePath = getActiveEditor()?.document.uri.fsPath
 const homePath = os.homedir() || process.env.HOME || process.env.USERPROFILE || ''
 const _exec = promisify(exec)
 /**

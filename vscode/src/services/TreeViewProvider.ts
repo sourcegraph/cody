@@ -37,6 +37,7 @@ export class TreeViewProvider implements vscode.TreeDataProvider<vscode.TreeItem
         const updatedTree: vscode.TreeItem[] = []
         treeItems.forEach(item => {
             const treeItem = new vscode.TreeItem({ label: item.title })
+            treeItem.id = item.id
             treeItem.iconPath = new vscode.ThemeIcon(item.icon)
             treeItem.description = item.description
             treeItem.command = { command: item.command.command, title: item.title, arguments: item.command.args }
@@ -95,6 +96,7 @@ export class TreeViewProvider implements vscode.TreeDataProvider<vscode.TreeItem
 interface CodySidebarTreeItem {
     title: string
     icon: string
+    id?: string
     description?: string
     command: {
         command: string
@@ -189,6 +191,7 @@ export function createCodyChatTreeItems(
         const lastHumanMessage = entry.interactions.findLast(interaction => interaction.humanMessage)
         if (lastHumanMessage?.humanMessage.displayText && lastHumanMessage?.humanMessage.text) {
             chatTreeItems.push({
+                id,
                 title: lastHumanMessage.humanMessage.displayText.split('\n')[0],
                 icon: 'comment',
                 command: { command: 'cody.chat.panel.restore', args: [id] },
@@ -198,6 +201,7 @@ export function createCodyChatTreeItems(
     })
     if (currentEmptyChatID) {
         chatTreeItems.push({
+            id: currentEmptyChatID,
             title: 'New Chat',
             icon: 'comment',
             command: { command: 'cody.chat.panel.restore', args: [currentEmptyChatID] },

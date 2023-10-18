@@ -16,7 +16,7 @@ import { AuthStatus, CODY_FEEDBACK_URL } from './chat/protocol'
 import { createInlineCompletionItemProvider } from './completions/create-inline-completion-item-provider'
 import { parseAllVisibleDocuments, updateParseTreeOnEdit } from './completions/tree-sitter/parse-tree-cache'
 import { getConfiguration, getFullConfig } from './configuration'
-import { VSCodeEditor } from './editor/vscode-editor'
+import { getActiveEditor, VSCodeEditor } from './editor/vscode-editor'
 import { PlatformContext } from './extension.common'
 import { configureExternalServices } from './external-services'
 import { FixupController } from './non-stop/FixupController'
@@ -206,12 +206,13 @@ const register = async (
         source = 'editor' // where the command was triggered from
     ): Promise<void> => {
         telemetryService.log('CodyVSCodeExtension:command:edit:executed', { source })
-        const document = args.document || vscode.window.activeTextEditor?.document
+        const activeEditor = getActiveEditor()
+        const document = args.document || activeEditor?.document
         if (!document) {
             return
         }
 
-        const range = args.range || vscode.window.activeTextEditor?.selection
+        const range = args.range || activeEditor?.selection
         if (!range) {
             return
         }

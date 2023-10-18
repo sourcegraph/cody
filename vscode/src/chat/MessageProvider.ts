@@ -542,6 +542,8 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
                     // If no command found, send error message to view
                     await this.addCustomInteraction(`__${text}__ is not a valid command`, text)
                 }
+                // Run command in a new webview to avoid conflicts with context from previous chat
+                await vscode.commands.executeCommand('cody.chat.panel.new')
                 return { text: commandRunnerID, recipeId: 'custom-prompt' }
             }
         }

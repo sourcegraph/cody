@@ -9,6 +9,8 @@ import { IndexedKeywordContextFetcher, Result } from '@sourcegraph/cody-shared/s
 import { MAX_HUMAN_INPUT_TOKENS } from '@sourcegraph/cody-shared/src/prompt/constants'
 import { truncateText } from '@sourcegraph/cody-shared/src/prompt/truncation'
 
+import { getActiveEditor } from '../editor/vscode-editor'
+
 /**
  * Uses symf to run an LLM-enhanced indexed keyword search for the user's query
  */
@@ -166,7 +168,7 @@ ${firstNLines(text, 10)}
 }
 
 function getCurrentWorkspaceRoot(): string | null {
-    const uri = vscode.window.activeTextEditor?.document?.uri
+    const uri = getActiveEditor()?.document?.uri
     if (uri) {
         const wsFolder = vscode.workspace.getWorkspaceFolder(uri)
         if (wsFolder) {

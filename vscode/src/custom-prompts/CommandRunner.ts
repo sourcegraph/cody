@@ -3,6 +3,7 @@ import * as vscode from 'vscode'
 import { CodyPrompt } from '@sourcegraph/cody-shared'
 
 import { getSmartSelection } from '../editor/utils'
+import { getActiveEditor } from '../editor/vscode-editor'
 import { logDebug } from '../log'
 import { telemetryService } from '../services/telemetry'
 
@@ -44,7 +45,7 @@ export class CommandRunner implements vscode.Disposable {
         logDebug('CommandRunner:init', this.kind)
 
         // Commands only work in active editor / workspace unless context specifies otherwise
-        this.editor = vscode.window.activeTextEditor || undefined
+        this.editor = getActiveEditor()
         if (!this.editor || command.context?.none) {
             const errorMsg = 'Failed to create command: No active text editor found.'
             logDebug('CommandRunner:int:fail', errorMsg)

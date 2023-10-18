@@ -4,6 +4,7 @@ import { CodyPrompt, CustomCommandType } from '@sourcegraph/cody-shared/src/chat
 import { ChatMessage, UserLocalHistory } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 
 import { View } from '../../webviews/NavBar'
+import { getActiveEditor } from '../editor/vscode-editor'
 import { logDebug } from '../log'
 import { AuthProviderSimplified } from '../services/AuthProviderSimplified'
 import { LocalAppWatcher } from '../services/LocalAppWatcher'
@@ -48,7 +49,7 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
             vscode.commands.registerCommand('cody.chat.panel.new', async () => this.createWebviewPanel()),
             vscode.commands.registerCommand('cody.chat.panel.restore', async id => this.restorePanel(id)),
             vscode.commands.registerCommand('cody.chat.history.export', async () => this.exportHistory()),
-            vscode.commands.registerCommand('cody.chat.history.clear', async () => this.clearChatHistory()),
+            vscode.commands.registerCommand('cody.chat.history.clear', async item => this.clearChatHistory(item)),
             vscode.window.registerTreeDataProvider('cody.chat.tree.view', this.treeView)
         )
     }
@@ -278,8 +279,8 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
      * Note: Using workspaceEdit instead of 'editor.action.insertSnippet' as the later reformats the text incorrectly
      */
     private async handleInsertAtCursor(text: string): Promise<void> {
-        const selectionRange = vscode.window.activeTextEditor?.selection
-        const editor = vscode.window.activeTextEditor
+        const editor = getActiveEditor()
+        const selectionRange = editor?.selection
         if (!editor || !selectionRange) {
             this.handleError('No editor or selection found to insert text')
             return
@@ -393,10 +394,17 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
      * Creates the webview panel for the Cody chat interface if it doesn't already exist.
      */
     public async createWebviewPanel(): Promise<void> {
+        // Checks if the webview panel already exists and is visible.
+        // If so, returns early to avoid creating a duplicate.
+        // Otherwise, reveals the existing panel or creates a new one.
         if (this.webviewPanel) {
-            if (!this.webviewPanel.visible) {
-                this.webviewPanel.reveal(vscode.ViewColumn.Two)
+            if (this.webviewPanel.visible && this.transcript.isEmpty) {
+                return
             }
+            if (this.currentChatID && this.webviewPanel.visible) {
+                await this.clearAndRestartSession()
+            }
+            this.webviewPanel.reveal(vscode.ViewColumn.Two)
             return
         }
 
@@ -464,14 +472,22 @@ export class ChatViewProvider extends MessageProvider implements vscode.WebviewV
         if (!this.webviewPanel) {
             await this.createWebviewPanel()
         }
+        if (chatID !== this.currentChatID) {
+            await this.restoreSession(chatID)
+        }
         await this.restoreSession(chatID)
         this.webviewPanel?.reveal()
     }
 
-    /**
-     * Clears the chat history by calling clearHistory() and resetting the tree view.
-     */
-    private async clearChatHistory(): Promise<void> {
+    private async clearChatHistory(treeItem?: vscode.TreeItem): Promise<void> {
+        const chatID = treeItem?.id
+        if (chatID === this.currentChatID) {
+            await this.clearAndRestartSession()
+        }
+        if (chatID) {
+            await this.deleteHistory(chatID)
+            return
+        }
         await this.clearHistory()
         this.treeView.reset()
     }
