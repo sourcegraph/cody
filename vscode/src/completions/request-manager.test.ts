@@ -32,7 +32,6 @@ function createProvider(prefix: string) {
     return new MockProvider({
         id: 'mock-provider',
         docContext,
-        fileName: '',
         document,
         position,
         multiline: false,

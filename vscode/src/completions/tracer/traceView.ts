@@ -318,7 +318,7 @@ function jsonForDataset(data: ProvideInlineCompletionsItemTraceData | undefined)
 
     return `{
         context: ${JSON.stringify(data?.context?.context.map(c => ({ fileName: c.fileName, content: c.content })))},
-        fileName: ${JSON.stringify(completer.fileName)},
+        fileName: ${JSON.stringify(vscode.workspace.asRelativePath(completer.document.fileName))},
         languageId: ${JSON.stringify(completer.document.languageId)},
         content: \`${completer.docContext.prefix}$\{CURSOR}${completer.docContext.suffix}\`,
     }`

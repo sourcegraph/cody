@@ -64,7 +64,6 @@ export interface ProviderOptions {
     position: Position
     document: TextDocument
     docContext: DocumentContext
-    fileName: string
     multiline: boolean
     // Number of parallel LLM requests per completion.
     n: number

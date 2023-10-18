@@ -1,4 +1,5 @@
 import * as anthropic from '@anthropic-ai/sdk'
+import * as vscode from 'vscode'
 
 import { tokensToChars } from '@sourcegraph/cody-shared/src/prompt/constants'
 import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
@@ -71,6 +72,7 @@ export class AnthropicProvider extends Provider {
         const infillPrefix = head.raw
         // code after the cursor
         const infillSuffix = this.options.docContext.suffix
+        const relativeFilePath = vscode.workspace.asRelativePath(this.options.document.fileName)
 
         const prefixMessagesWithInfill: Message[] = [
             {
@@ -83,7 +85,7 @@ export class AnthropicProvider extends Provider {
             },
             {
                 speaker: 'human',
-                text: `Below is the code from file path ${this.options.fileName}. Review the code outside the XML tags to detect the functionality, formats, style, patterns, and logics in use. Then, use what you detect and reuse methods/libraries to complete and enclose completed code only inside XML tags precisely without duplicating existing implementations. Here is the code: \n\`\`\`\n${infillPrefix}${OPENING_CODE_TAG}${infillBlock}${CLOSING_CODE_TAG}${infillSuffix}\n\`\`\``,
+                text: `Below is the code from file path ${relativeFilePath}. Review the code outside the XML tags to detect the functionality, formats, style, patterns, and logics in use. Then, use what you detect and reuse methods/libraries to complete and enclose completed code only inside XML tags precisely without duplicating existing implementations. Here is the code: \n\`\`\`\n${infillPrefix}${OPENING_CODE_TAG}${infillBlock}${CLOSING_CODE_TAG}${infillSuffix}\n\`\`\``,
             },
             {
                 speaker: 'assistant',

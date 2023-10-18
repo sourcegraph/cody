@@ -1,3 +1,5 @@
+import * as vscode from 'vscode'
+
 import { tokensToChars } from '@sourcegraph/cody-shared/src/prompt/constants'
 import { CompletionResponse } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
 
@@ -100,7 +102,7 @@ export class FireworksProvider extends Provider {
 
         // In StarCoder we have a special token to announce the path of the file
         if (!isStarCoderFamily(this.model)) {
-            intro.push(`Path: ${this.options.fileName}`)
+            intro.push(`Path: ${this.options.document.fileName}`)
         }
 
         for (let snippetsToInclude = 0; snippetsToInclude < snippets.length + 1; snippetsToInclude++) {
@@ -123,7 +125,7 @@ export class FireworksProvider extends Provider {
             const suffixAfterFirstNewline = getSuffixAfterFirstNewline(suffix)
 
             const nextPrompt = this.createInfillingPrompt(
-                this.options.fileName,
+                vscode.workspace.asRelativePath(this.options.document.fileName),
                 introString,
                 prefix,
                 suffixAfterFirstNewline

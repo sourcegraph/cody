@@ -222,7 +222,6 @@ export class InlineCompletionItemProvider implements vscode.InlineCompletionItem
                 providerConfig: this.config.providerConfig,
                 useStreamingTruncation: await useStreamingTruncation,
                 graphContextFetcher,
-                toWorkspaceRelativePath: uri => vscode.workspace.asRelativePath(uri),
                 contextFetcher: this.config.contextFetcher,
                 getCodebaseContext: this.config.getCodebaseContext,
                 documentHistory: this.config.history,

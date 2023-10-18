@@ -31,9 +31,6 @@ export interface InlineCompletionsParams {
     providerConfig: ProviderConfig
     graphContextFetcher?: GraphContextFetcher
 
-    // Platform
-    toWorkspaceRelativePath: (uri: URI) => string
-
     // Injected
     contextFetcher?: (options: GetContextOptions) => Promise<GetContextResult>
     getCodebaseContext?: () => CodebaseContext
@@ -171,7 +168,6 @@ async function doGetInlineCompletions(params: InlineCompletionsParams): Promise<
         docContext: { multilineTrigger, currentLineSuffix, currentLinePrefix },
         providerConfig,
         graphContextFetcher,
-        toWorkspaceRelativePath,
         contextFetcher,
         getCodebaseContext,
         documentHistory,
@@ -281,7 +277,6 @@ async function doGetInlineCompletions(params: InlineCompletionsParams): Promise<
         triggerKind,
         providerConfig,
         docContext,
-        toWorkspaceRelativePath,
         useStreamingTruncation,
     })
     tracer?.({ completers: completionProviders.map(({ options }) => options) })
@@ -321,30 +316,18 @@ async function doGetInlineCompletions(params: InlineCompletionsParams): Promise<
 }
 
 interface GetCompletionProvidersParams
-    extends Pick<
-        InlineCompletionsParams,
-        'document' | 'position' | 'triggerKind' | 'providerConfig' | 'toWorkspaceRelativePath'
-    > {
+    extends Pick<InlineCompletionsParams, 'document' | 'position' | 'triggerKind' | 'providerConfig'> {
     docContext: DocumentContext
     useStreamingTruncation?: boolean
 }
 
 function getCompletionProviders(params: GetCompletionProvidersParams): Provider[] {
-    const {
-        document,
-        position,
-        triggerKind,
-        providerConfig,
-        docContext,
-        toWorkspaceRelativePath,
-        useStreamingTruncation,
-    } = params
+    const { document, position, triggerKind, providerConfig, docContext, useStreamingTruncation } = params
 
     const sharedProviderOptions: Omit<ProviderOptions, 'id' | 'n' | 'multiline'> = {
         docContext,
         document,
         position,
-        fileName: toWorkspaceRelativePath(document.uri),
         useStreamingTruncation: Boolean(useStreamingTruncation),
     }
 
