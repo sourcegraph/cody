@@ -34,13 +34,9 @@ export class InlineChatViewManager implements vscode.Disposable {
             return
         }
 
-        this.codeActionProvider = vscode.languages.registerCodeActionsProvider(
-            '*',
-            new ExplainCodeAction(config.inlineChat),
-            {
-                providedCodeActionKinds: ExplainCodeAction.providedCodeActionKinds,
-            }
-        )
+        this.codeActionProvider = vscode.languages.registerCodeActionsProvider('*', new ExplainCodeAction(), {
+            providedCodeActionKinds: ExplainCodeAction.providedCodeActionKinds,
+        })
     }
 
     public getProviderForThread(thread: vscode.CommentThread): InlineChatViewProvider {
