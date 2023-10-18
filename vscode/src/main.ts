@@ -27,6 +27,7 @@ import { GuardrailsProvider } from './services/GuardrailsProvider'
 import { Comment, InlineController } from './services/InlineController'
 import { LocalAppSetupPublisher } from './services/LocalAppSetupPublisher'
 import { localStorage } from './services/LocalStorageProvider'
+import * as OnboardingExperiment from './services/OnboardingExperiment'
 import { getAccessToken, secretStorage, VSCodeSecretStorage } from './services/SecretStorageProvider'
 import { createStatusBar } from './services/StatusBar'
 import { createOrUpdateEventLogger, telemetryService } from './services/telemetry'
@@ -215,7 +216,7 @@ const register = async (
         }
 
         const task = args.instruction?.replace('/edit', '').trim()
-            ? fixup.createTask(document.uri, args.instruction, range, args.auto, args.insertMode)
+            ? fixup.createTask(document.uri, args.instruction, range, args.auto, args.insertMode, source)
             : await fixup.promptUserForTask()
         if (!task) {
             return
@@ -506,6 +507,10 @@ const register = async (
     }
 
     await showSetupNotification(initialConfig)
+
+    // Clean up old onboarding experiment state
+    void OnboardingExperiment.cleanUpCachedSelection()
+
     return {
         disposable: vscode.Disposable.from(...disposables),
         onConfigurationChange: newConfig => {

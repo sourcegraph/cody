@@ -111,10 +111,11 @@ export class FixupController
         instruction: string,
         selectionRange: vscode.Range,
         autoApply = false,
-        insertMode?: boolean
+        insertMode?: boolean,
+        source?: string
     ): FixupTask {
         const fixupFile = this.files.forUri(documentUri)
-        const task = new FixupTask(fixupFile, instruction, selectionRange, autoApply, insertMode)
+        const task = new FixupTask(fixupFile, instruction, selectionRange, autoApply, insertMode, source)
         this.tasks.set(task.id, task)
         this.setTaskState(task, CodyTaskState.working)
         return task
@@ -294,8 +295,9 @@ export class FixupController
 
         const replacementText = task.replacement
         if (replacementText) {
-            const tokenCount = countCode(replacementText)
-            telemetryService.log('CodyVSCodeExtension:fixup:applied', tokenCount)
+            const codeCount = countCode(replacementText)
+            const source = task.source
+            telemetryService.log('CodyVSCodeExtension:fixup:applied', { ...codeCount, source })
         }
 
         // TODO: is this the right transition for being all done?
@@ -459,7 +461,10 @@ export class FixupController
                 task.inProgressReplacement = undefined
                 task.replacement = text
                 this.setTaskState(task, CodyTaskState.ready)
-                telemetryService.log('CodyVSCodeExtension:fixupResponse:hasCode', countCode(text))
+                telemetryService.log('CodyVSCodeExtension:fixupResponse:hasCode', {
+                    ...countCode(text),
+                    source: task.source,
+                })
                 break
         }
         this.textDidChange(task)

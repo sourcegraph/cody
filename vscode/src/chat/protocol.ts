@@ -30,9 +30,9 @@ export type WebviewMessage =
           range?: { startLine: number; startCharacter: number; endLine: number; endCharacter: number }
       }
     | { command: 'edit'; text: string }
-    | { command: 'insert'; text: string }
-    | { command: 'newFile'; text: string }
-    | { command: 'copy'; eventType: 'Button' | 'Keydown'; text: string; commandName?: string }
+    | { command: 'insert'; text: string; source?: string }
+    | { command: 'newFile'; text: string; source?: string }
+    | { command: 'copy'; eventType: 'Button' | 'Keydown'; text: string; source?: string }
     | {
           command: 'auth'
           type:
@@ -52,7 +52,7 @@ export type WebviewMessage =
     | { command: 'reload' }
     | {
           command: 'simplified-onboarding'
-          type: 'install-app' | 'open-app' | 'reload-state'
+          type: 'install-app' | 'open-app' | 'reload-state' | 'web-sign-in-token'
       }
 
 /**
@@ -75,9 +75,7 @@ export type ExtensionMessage =
 /**
  * The subset of configuration that is visible to the webview.
  */
-export interface ConfigurationSubsetForWebview
-    extends Pick<Configuration, 'debugEnable' | 'serverEndpoint'>,
-        Experiments {}
+export interface ConfigurationSubsetForWebview extends Pick<Configuration, 'debugEnable' | 'serverEndpoint'> {}
 
 /**
  * URLs for the Sourcegraph instance and app.
@@ -146,10 +144,6 @@ export const networkErrorAuthStatus = {
     siteVersion: '',
 }
 
-export interface Experiments {
-    experimentOnboarding: OnboardingExperimentArm
-}
-
 /** The local environment of the editor. */
 export interface LocalEnv {
     // The operating system kind
@@ -198,17 +192,4 @@ export function archConvertor(arch: string): string {
     return arch
 }
 
-// Simplified Onboarding types which are shared between WebView and extension.
-
 export type AuthMethod = 'dotcom' | 'github' | 'gitlab' | 'google'
-
-export enum OnboardingExperimentArm {
-    // Note, these values are persisted to local storage, see pickArm. Do not
-    // change these values. Adding values is OK but don't delete them.
-    Classic = 0, // Control
-    Simplified = 1, // Treatment: simplified onboarding flow
-
-    MinValue = Classic,
-    // Update this when adding an arm to the trial.
-    MaxValue = Simplified,
-}

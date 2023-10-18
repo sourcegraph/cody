@@ -51,6 +51,26 @@ export const EmbeddingsNotFoundPopup: React.FunctionComponent<OnboardingPopupPro
     />
 )
 
+export const EmbeddingsNotFoundEnterprisePopup: React.FunctionComponent<OnboardingPopupProps & PopupOpenProps> = ({
+    isOpen,
+    onDismiss,
+    reloadStatus,
+}) => (
+    <Popup
+        isOpen={isOpen}
+        onDismiss={onDismiss}
+        title="Embeddings Not Found"
+        text="This repository does not have Cody embeddings generated."
+        linkText="Learn more"
+        linkHref="https://docs.sourcegraph.com/cody/explanations/code_graph_context#configuring-embeddings"
+        actionButtons={
+            <>
+                <VSCodeButton onClick={reloadStatus}>Reload</VSCodeButton>
+            </>
+        }
+    />
+)
+
 export interface EmbeddingsEnabledPopupProps {
     repoName: string
     indexSource: string

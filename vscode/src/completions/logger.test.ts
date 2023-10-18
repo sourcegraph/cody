@@ -48,7 +48,7 @@ describe('logger', () => {
         CompletionLogger.networkRequestStarted(id, { duration: 0.1337 })
         CompletionLogger.loaded(id, defaultRequestParams, [item])
         CompletionLogger.suggested(id, InlineCompletionsResultSource.Network, item)
-        CompletionLogger.accept(id, item)
+        CompletionLogger.accept(id, document, item)
 
         const shared = {
             id: expect.any(String),
@@ -119,7 +119,7 @@ describe('logger', () => {
         CompletionLogger.networkRequestStarted(id2, { duration: 0 })
         CompletionLogger.loaded(id2, defaultRequestParams, [item])
         CompletionLogger.suggested(id2, InlineCompletionsResultSource.Cache, item)
-        CompletionLogger.accept(id2, item)
+        CompletionLogger.accept(id2, document, item)
 
         const loggerItem2 = CompletionLogger.getCompletionEvent(id2)
         expect(loggerItem2?.params.id).toBe(completionId)

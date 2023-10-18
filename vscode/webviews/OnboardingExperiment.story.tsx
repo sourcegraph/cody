@@ -25,8 +25,22 @@ export const Login: StoryObj<typeof LoginSimplified> = {
     render: () => (
         <div style={{ background: 'rgb(28, 33, 40)' }}>
             <LoginSimplified
-                telemetryService={NOOP_TELEMETRY_SERVICE}
                 simplifiedLoginRedirect={() => {}}
+                telemetryService={NOOP_TELEMETRY_SERVICE}
+                uiKindIsWeb={false}
+                vscodeAPI={vscodeAPI}
+            />
+        </div>
+    ),
+}
+
+export const LoginWeb: StoryObj<typeof LoginSimplified> = {
+    render: () => (
+        <div style={{ background: 'rgb(28, 33, 40)' }}>
+            <LoginSimplified
+                simplifiedLoginRedirect={() => {}}
+                telemetryService={NOOP_TELEMETRY_SERVICE}
+                uiKindIsWeb={true}
                 vscodeAPI={vscodeAPI}
             />
         </div>
