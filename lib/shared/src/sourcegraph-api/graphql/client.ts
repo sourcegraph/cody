@@ -1,7 +1,7 @@
 import fetch from 'isomorphic-fetch'
 
 import { ConfigurationWithAccessToken } from '../../configuration'
-import { isError } from '../../utils'
+import {convertGitCloneURLToCodebaseName, isError} from '../../utils'
 import { DOTCOM_URL, isDotCom, isLocalApp } from '../environments'
 
 import {
@@ -354,6 +354,10 @@ export class SourcegraphGraphQLAPIClient {
                 data.repository ? data.repository.id : new RepoNotFoundError(`repository ${repoName} not found`)
             )
         )
+    }
+
+    public convertGitCloneURLToCodebaseName(cloneURL: string) : string | null {
+        return convertGitCloneURLToCodebaseName(cloneURL)
     }
 
     public async getRepoNames(first: number): Promise<string[] | Error> {

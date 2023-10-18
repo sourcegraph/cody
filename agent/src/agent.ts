@@ -267,6 +267,12 @@ export class Agent extends MessageHandler {
             return typeof result === 'string' ? result : null
         })
 
+        this.registerRequest('convertGitCloneURLToCodebaseName', async ({ cloneURL }) => {
+            const client = await this.client;
+            const result = client?.graphqlClient.convertGitCloneURLToCodebaseName(cloneURL);
+            return typeof result === 'string' ? result : null;
+        });
+
         this.registerNotification('autocomplete/clearLastCandidate', async () => {
             const provider = await vscode_shim.completionProvider()
             if (!provider) {
