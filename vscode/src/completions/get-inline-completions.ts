@@ -31,9 +31,6 @@ export interface InlineCompletionsParams {
     providerConfig: ProviderConfig
     graphContextFetcher?: GraphContextFetcher
 
-    // Platform
-    toWorkspaceRelativePath: (uri: URI) => string
-
     // Injected
     contextFetcher?: (options: GetContextOptions) => Promise<GetContextResult>
     getCodebaseContext?: () => CodebaseContext
@@ -53,6 +50,7 @@ export interface InlineCompletionsParams {
 
     // Feature flags
     completeSuggestWidgetSelection?: boolean
+    disableStreamingTruncation?: boolean
 
     // Callbacks to accept completions
     handleDidAcceptCompletionItem?: (
@@ -170,7 +168,6 @@ async function doGetInlineCompletions(params: InlineCompletionsParams): Promise<
         docContext: { multilineTrigger, currentLineSuffix, currentLinePrefix },
         providerConfig,
         graphContextFetcher,
-        toWorkspaceRelativePath,
         contextFetcher,
         getCodebaseContext,
         documentHistory,
@@ -181,6 +178,7 @@ async function doGetInlineCompletions(params: InlineCompletionsParams): Promise<
         abortSignal,
         tracer,
         completeSuggestWidgetSelection = true,
+        disableStreamingTruncation = false,
         handleDidAcceptCompletionItem,
         handleDidPartiallyAcceptCompletionItem,
     } = params
@@ -200,6 +198,14 @@ async function doGetInlineCompletions(params: InlineCompletionsParams): Promise<
     // Do not trigger when the last character is a closing symbol
     if (triggerKind !== TriggerKind.Manual && /[)\]}]$/.test(currentLinePrefix.trim())) {
         return null
+    }
+
+    // Do not trigger when cursor is at the start of the file ending line and the line above is empty
+    if (triggerKind !== TriggerKind.Manual && position.line !== 0 && position.line === document.lineCount - 1) {
+        const lineAbove = Math.max(position.line - 1, 0)
+        if (document.lineAt(lineAbove).isEmptyOrWhitespace && !position.character) {
+            return null
+        }
     }
 
     // Check if the user is typing as suggested by the last candidate completion (that is shown as
@@ -267,10 +273,11 @@ async function doGetInlineCompletions(params: InlineCompletionsParams): Promise<
     // Completion providers
     const completionProviders = getCompletionProviders({
         document,
+        position,
         triggerKind,
         providerConfig,
         docContext,
-        toWorkspaceRelativePath,
+        disableStreamingTruncation,
     })
     tracer?.({ completers: completionProviders.map(({ options }) => options) })
 
@@ -281,6 +288,7 @@ async function doGetInlineCompletions(params: InlineCompletionsParams): Promise<
         docContext,
         position,
         selectedCompletionInfo,
+        abortSignal,
     }
 
     // Get the processed completions from providers
@@ -288,7 +296,6 @@ async function doGetInlineCompletions(params: InlineCompletionsParams): Promise<
         reqContext,
         completionProviders,
         contextResult?.context ?? [],
-
         tracer ? createCompletionProviderTracer(tracer) : undefined
     )
 
@@ -309,17 +316,21 @@ async function doGetInlineCompletions(params: InlineCompletionsParams): Promise<
 }
 
 interface GetCompletionProvidersParams
-    extends Pick<InlineCompletionsParams, 'document' | 'triggerKind' | 'providerConfig' | 'toWorkspaceRelativePath'> {
+    extends Pick<InlineCompletionsParams, 'document' | 'position' | 'triggerKind' | 'providerConfig'> {
     docContext: DocumentContext
+    disableStreamingTruncation?: boolean
 }
 
 function getCompletionProviders(params: GetCompletionProvidersParams): Provider[] {
-    const { document, triggerKind, providerConfig, docContext, toWorkspaceRelativePath } = params
+    const { document, position, triggerKind, providerConfig, docContext, disableStreamingTruncation } = params
+
     const sharedProviderOptions: Omit<ProviderOptions, 'id' | 'n' | 'multiline'> = {
         docContext,
-        fileName: toWorkspaceRelativePath(document.uri),
-        languageId: document.languageId,
+        document,
+        position,
+        disableStreamingTruncation: Boolean(disableStreamingTruncation),
     }
+
     if (docContext.multilineTrigger) {
         return [
             providerConfig.create({

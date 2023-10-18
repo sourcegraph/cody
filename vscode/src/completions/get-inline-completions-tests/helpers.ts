@@ -34,6 +34,7 @@ type Params = Partial<Omit<InlineCompletionsParams, 'document' | 'position' | 'd
         params: CompletionParameters,
         onPartialResponse?: (incompleteResponse: CompletionResponse) => void
     ) => void | Promise<void>
+    takeSuggestWidgetSelectionIntoAccount?: boolean
 }
 
 /**
@@ -49,6 +50,7 @@ export function params(
         onNetworkRequest,
         triggerKind = TriggerKind.Automatic,
         selectedCompletionInfo,
+        takeSuggestWidgetSelectionIntoAccount,
         ...params
     }: Params = {}
 ): InlineCompletionsParams {
@@ -78,6 +80,12 @@ export function params(
         maxPrefixLength: 1000,
         maxSuffixLength: 1000,
         enableExtendedTriggers: providerConfig.enableExtendedMultilineTriggers,
+        context: takeSuggestWidgetSelectionIntoAccount
+            ? {
+                  triggerKind: 0,
+                  selectedCompletionInfo,
+              }
+            : undefined,
     })
 
     if (docContext === null) {
@@ -91,7 +99,6 @@ export function params(
         triggerKind,
         selectedCompletionInfo,
         providerConfig,
-        toWorkspaceRelativePath: () => 'test.ts',
         requestManager: new RequestManager(),
         ...params,
     }

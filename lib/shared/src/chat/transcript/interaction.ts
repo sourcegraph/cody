@@ -29,7 +29,8 @@ export class Interaction {
     }
 
     public setAssistantMessage(assistantMessage: InteractionMessage): void {
-        this.assistantMessage = assistantMessage
+        const source = assistantMessage.source || this.assistantMessage.source
+        this.assistantMessage = { ...assistantMessage, source }
     }
 
     public getHumanMessage(): InteractionMessage {

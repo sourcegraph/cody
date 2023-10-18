@@ -33,6 +33,7 @@ export interface Configuration {
     customHeaders: Record<string, string>
     chatPreInstruction: string
     autocomplete: boolean
+    autocompleteLanguages: Record<string, boolean>
     inlineChat: boolean
     codeActions: boolean
     experimentalChatPredictions: boolean
@@ -41,13 +42,13 @@ export interface Configuration {
     experimentalGuardrails: boolean
     experimentalNonStop: boolean
     experimentalLocalSymbols: boolean
-    autocompleteAdvancedProvider: 'anthropic' | 'unstable-codegen' | 'unstable-fireworks' | 'unstable-openai' | null
+    autocompleteAdvancedProvider: 'anthropic' | 'fireworks' | 'unstable-openai' | null
     autocompleteAdvancedServerEndpoint: string | null
     autocompleteAdvancedModel: string | null
     autocompleteAdvancedAccessToken: string | null
     autocompleteCompleteSuggestWidgetSelection?: boolean
     autocompleteExperimentalSyntacticPostProcessing?: boolean
-    autocompleteExperimentalGraphContext?: boolean
+    autocompleteExperimentalGraphContext: 'lsp-light' | null
     isRunningInsideAgent?: boolean
 }
 

@@ -26,6 +26,7 @@ const config = {
       __dirname + '/vscode/tsconfig.json',
       __dirname + '/vscode/test/integration/tsconfig.json',
       __dirname + '/vscode/test/completions/tsconfig.json',
+      __dirname + '/vscode/test/benchmark/tsconfig.json',
       __dirname + '/vscode/scripts/tsconfig.json',
       __dirname + '/web/tsconfig.json',
       __dirname + '/tsconfig.json',
@@ -46,6 +47,7 @@ const config = {
     'unicorn/prefer-event-target': 'off',
     'unicorn/prefer-top-level-await': 'off',
     'unicorn/prefer-dom-node-remove': 'off',
+    'ban/ban': 'off',
   },
   overrides: [
     {

@@ -1,7 +1,7 @@
 import { expect } from '@playwright/test'
 
 import { codyEditorCommandButtonRole, sidebarExplorer, sidebarSignin } from './common'
-import { test } from './helpers'
+import { submitChat, test } from './helpers'
 
 test('checks if clear chat history button clears history and current session', async ({ page, sidebar }) => {
     // Sign into Cody
@@ -20,15 +20,12 @@ test('checks if clear chat history button clears history and current session', a
 
     await page.click('[aria-label="Start a New Chat Session"]')
     await expect(sidebar.getByText("Hello! I'm Cody. I can write code and answer questions for you.")).toBeVisible()
-
-    await sidebar.getByRole('textbox', { name: 'Chat message' }).fill('Hola')
-    await sidebar.locator('vscode-button').getByRole('img').click()
+    await submitChat(sidebar, 'Hola')
 
     await expect(sidebar.getByText('hello from the assistant')).toBeVisible()
 
     await page.click('[aria-label="Start a New Chat Session"]')
-    await sidebar.getByRole('textbox', { name: 'Chat message' }).fill('Hey')
-    await sidebar.locator('vscode-button').getByRole('img').click()
+    await submitChat(sidebar, 'Hey')
 
     await expect(sidebar.getByText('hello from the assistant')).toBeVisible()
     await expect(sidebar.getByText('Hola')).not.toBeVisible()

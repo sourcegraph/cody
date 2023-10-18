@@ -36,6 +36,24 @@ export function getConfiguration(config: ConfigGetter = vscode.workspace.getConf
         debugRegex = new RegExp('.*')
     }
 
+    let autocompleteExperimentalGraphContext: 'lsp-light' | null = config.get(
+        CONFIG_KEY.autocompleteExperimentalGraphContext,
+        null
+    )
+    // Handle the old `true` option
+    if (autocompleteExperimentalGraphContext === true) {
+        autocompleteExperimentalGraphContext = 'lsp-light'
+    }
+
+    let autocompleteAdvancedProvider: Configuration['autocompleteAdvancedProvider'] = config.get(
+        CONFIG_KEY.autocompleteAdvancedProvider,
+        null
+    )
+    // Handle the old `unstable-fireworks` option
+    if (autocompleteAdvancedProvider === 'unstable-fireworks') {
+        autocompleteAdvancedProvider = 'fireworks'
+    }
+
     return {
         // NOTE: serverEndpoint is now stored in Local Storage instead but we will still keep supporting the one in confg
         // to use as fallback for users who do not have access to local storage
@@ -49,6 +67,10 @@ export function getConfiguration(config: ConfigGetter = vscode.workspace.getConf
         debugFilter: debugRegex,
         telemetryLevel: config.get<'all' | 'off'>(CONFIG_KEY.telemetryLevel, 'all'),
         autocomplete: config.get(CONFIG_KEY.autocompleteEnabled, true),
+        autocompleteLanguages: config.get(CONFIG_KEY.autocompleteLanguages, {
+            '*': true,
+            scminput: false,
+        }),
         experimentalChatPredictions: config.get(CONFIG_KEY.experimentalChatPredictions, isTesting),
         inlineChat: config.get(CONFIG_KEY.inlineChatEnabled, true),
         codeActions: config.get(CONFIG_KEY.codeActionsEnabled, true),
@@ -58,7 +80,7 @@ export function getConfiguration(config: ConfigGetter = vscode.workspace.getConf
         experimentalLocalSymbols: config.get(CONFIG_KEY.experimentalLocalSymbols, false),
         experimentalCommandLenses: config.get(CONFIG_KEY.experimentalCommandLenses, false),
         experimentalEditorTitleCommandIcon: config.get(CONFIG_KEY.experimentalEditorTitleCommandIcon, false),
-        autocompleteAdvancedProvider: config.get(CONFIG_KEY.autocompleteAdvancedProvider, null),
+        autocompleteAdvancedProvider,
         autocompleteAdvancedServerEndpoint: config.get<string | null>(
             CONFIG_KEY.autocompleteAdvancedServerEndpoint,
             null
@@ -73,10 +95,7 @@ export function getConfiguration(config: ConfigGetter = vscode.workspace.getConf
             CONFIG_KEY.autocompleteExperimentalSyntacticPostProcessing,
             true
         ),
-        autocompleteExperimentalGraphContext: config.get<boolean>(
-            CONFIG_KEY.autocompleteExperimentalGraphContext,
-            false
-        ),
+        autocompleteExperimentalGraphContext,
 
         /**
          * UNDOCUMENTED FLAGS

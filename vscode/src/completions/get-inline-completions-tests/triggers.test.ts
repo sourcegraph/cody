@@ -179,4 +179,33 @@ describe('[getInlineCompletions] triggers', () => {
             })
         )
     })
+
+    describe('empty line at end of file', () => {
+        const insertText = 'console.log(foo)'
+
+        it('does not trigger when the line above is empty', async () =>
+            expect(
+                await getInlineCompletions(params('function foo(){\n console.log()\n}\n\n█', [completion`bar`]))
+            ).toBeNull())
+
+        it('does trigger for empty document', async () =>
+            expect(await getInlineCompletions(params('█', [completion`console.log(foo)`]))).toEqual<V>({
+                items: [{ insertText }],
+                source: InlineCompletionsResultSource.Network,
+            }))
+
+        it('does trigger for empty line with non-empty line above', async () =>
+            expect(
+                await getInlineCompletions(params('function log(foo: string){\n█', [completion`console.log(foo)`]))
+            ).toEqual<V>({
+                items: [{ insertText }],
+                source: InlineCompletionsResultSource.Network,
+            }))
+
+        it('does trigger when cursor beyond character position zero', async () =>
+            expect(await getInlineCompletions(params('\n   █', [completion`console.log(foo)`]))).toEqual<V>({
+                items: [{ insertText }],
+                source: InlineCompletionsResultSource.Network,
+            }))
+    })
 })

@@ -217,10 +217,27 @@ export class SourcegraphGraphQLAPIClient {
     private dotcomUrl = DOTCOM_URL
     public anonymousUserID: string | undefined
 
-    constructor(private config: GraphQLAPIClientConfig) {}
+    /**
+     * Should be set on extension activation via `localStorage.onConfigurationChange(config)`
+     * Done to avoid passing the graphql client around as a parameter and instead
+     * access it as a singleton via the module import.
+     */
+    private _config: GraphQLAPIClientConfig | null = null
+
+    private get config(): GraphQLAPIClientConfig {
+        if (!this._config) {
+            throw new Error('GraphQLAPIClientConfig is not set')
+        }
+
+        return this._config
+    }
+
+    constructor(config: GraphQLAPIClientConfig | null = null) {
+        this._config = config
+    }
 
     public onConfigurationChange(newConfig: GraphQLAPIClientConfig): void {
-        this.config = newConfig
+        this._config = newConfig
     }
 
     /**
@@ -239,9 +256,12 @@ export class SourcegraphGraphQLAPIClient {
         return isLocalApp(this.config.serverEndpoint)
     }
 
-    /**
-     * Example values: "5.1.0" or "222587_2023-05-30_5.0-39cbcf1a50f0" for insider builds
-     */
+    // Gets the server endpoint for this client. The UI uses this to display
+    // which endpoint provides embeddings.
+    public get endpoint(): string {
+        return this.config.serverEndpoint
+    }
+
     public async getSiteVersion(): Promise<string | Error> {
         return this.fetchSourcegraphAPI<APIResponse<SiteVersionResponse>>(CURRENT_SITE_VERSION_QUERY, {}).then(
             response =>
@@ -603,6 +623,12 @@ export class SourcegraphGraphQLAPIClient {
             .catch(error => new Error(`error fetching Testing Sourcegraph API: ${error} (${url})`))
     }
 }
+
+/**
+ * Singleton instance of the graphql client.
+ * Should be configured on the extension activation via `graphqlClient.onConfigurationChange(config)`.
+ */
+export const graphqlClient = new SourcegraphGraphQLAPIClient()
 
 function verifyResponseCode(response: Response): Response {
     if (!response.ok) {

@@ -1,0 +1,10 @@
+{
+  /* START - DO NOT MODIFY */
+  "cody.autocomplete.enabled": true,
+  "cody.debug.enable": true,
+  "cody.debug.verbose": true,
+  "git.openRepositoryInParentFolders": "never", // Stop extra notifications in VS Code window
+  /* END - DO NOT MODIFY */
+
+  /* ADD ANY ADDITIONAL SETTINGS FOR YOUR BENCHMARK BELOW */
+}

@@ -1,7 +1,7 @@
 import * as vscode from 'vscode'
 
 import { Configuration } from '@sourcegraph/cody-shared/src/configuration'
-import { FeatureFlag, FeatureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
+import { FeatureFlag, featureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
 
 import { ContextProvider } from '../chat/ContextProvider'
 import { logDebug } from '../log'
@@ -9,8 +9,8 @@ import type { AuthProvider } from '../services/AuthProvider'
 import { CodyStatusBar } from '../services/StatusBar'
 
 import { CodeCompletionsClient } from './client'
-import { GraphSectionObserver } from './context/graph-section-observer'
 import { VSCodeDocumentHistory } from './context/history'
+import { LspLightGraphCache } from './context/lsp-light-graph-cache'
 import { InlineCompletionItemProvider } from './inline-completion-item-provider'
 import { createProviderConfig } from './providers/createProvider'
 import { registerAutocompleteTraceView } from './tracer/traceView'
@@ -20,7 +20,6 @@ interface InlineCompletionItemProviderArgs {
     client: CodeCompletionsClient
     statusBar: CodyStatusBar
     contextProvider: ContextProvider
-    featureFlagProvider: FeatureFlagProvider
     authProvider: AuthProvider
     triggerNotice: ((notice: { key: string }) => void) | null
 }
@@ -30,7 +29,6 @@ export async function createInlineCompletionItemProvider({
     client,
     statusBar,
     contextProvider,
-    featureFlagProvider,
     authProvider,
     triggerNotice,
 }: InlineCompletionItemProviderArgs): Promise<vscode.Disposable> {
@@ -53,15 +51,18 @@ export async function createInlineCompletionItemProvider({
 
     const disposables: vscode.Disposable[] = []
 
-    const [providerConfig, graphContextFlag] = await Promise.all([
-        createProviderConfig(config, client, featureFlagProvider, authProvider.getAuthStatus().configOverwrites),
-        featureFlagProvider?.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteGraphContext),
-    ])
+    const [providerConfig, graphContextFlag, disableNetworkCache, disableRecyclingOfPreviousRequests] =
+        await Promise.all([
+            createProviderConfig(config, client, authProvider.getAuthStatus().configOverwrites),
+            featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteGraphContext),
+            featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteDisableNetworkCache),
+            featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteDisableRecyclingOfPreviousRequests),
+        ])
     if (providerConfig) {
         const history = new VSCodeDocumentHistory()
-        const sectionObserver =
-            config.autocompleteExperimentalGraphContext || graphContextFlag
-                ? GraphSectionObserver.createInstance()
+        const lspLightGraphCache =
+            config.autocompleteExperimentalGraphContext === 'lsp-light' || graphContextFlag
+                ? LspLightGraphCache.createInstance()
                 : undefined
 
         const completionsProvider = new InlineCompletionItemProvider({
@@ -69,11 +70,14 @@ export async function createInlineCompletionItemProvider({
             history,
             statusBar,
             getCodebaseContext: () => contextProvider.context,
-            graphContextFetcher: sectionObserver,
+            graphContextFetcher: lspLightGraphCache,
             completeSuggestWidgetSelection: config.autocompleteCompleteSuggestWidgetSelection,
-            featureFlagProvider,
+            disableNetworkCache,
+            disableRecyclingOfPreviousRequests,
             triggerNotice,
         })
+
+        const documentFilters = await getInlineCompletionItemProviderFilters(config.autocompleteLanguages)
 
         disposables.push(
             vscode.commands.registerCommand('cody.autocomplete.manual-trigger', () =>
@@ -86,13 +90,13 @@ export async function createInlineCompletionItemProvider({
                 }
             ),
             vscode.languages.registerInlineCompletionItemProvider(
-                [{ scheme: 'file', language: '*' }, { notebookType: '*' }],
+                [{ notebookType: '*' }, ...documentFilters],
                 completionsProvider
             ),
             registerAutocompleteTraceView(completionsProvider)
         )
-        if (sectionObserver) {
-            disposables.push(sectionObserver)
+        if (lspLightGraphCache) {
+            disposables.push(lspLightGraphCache)
         }
     } else if (config.isRunningInsideAgent) {
         throw new Error(
@@ -110,4 +114,17 @@ export async function createInlineCompletionItemProvider({
             }
         },
     }
+}
+
+export async function getInlineCompletionItemProviderFilters(
+    autocompleteLanguages: Record<string, boolean>
+): Promise<vscode.DocumentFilter[]> {
+    const { '*': isEnabledForAll, ...perLanguageConfig } = autocompleteLanguages
+    const languageIds = await vscode.languages.getLanguages()
+
+    return languageIds.flatMap(language => {
+        const enabled = language in perLanguageConfig ? perLanguageConfig[language] : isEnabledForAll
+
+        return enabled ? [{ language, scheme: 'file' }] : []
+    })
 }

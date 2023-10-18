@@ -1,6 +1,8 @@
 import * as vscode from 'vscode'
 
-import { commonKeywords, defaultGetDocumentSymbolRanges, identifierPattern } from './graph'
+import { getDocumentSections } from '../editor/utils/document-sections'
+
+import { commonKeywords, identifierPattern } from './lsp/languages'
 
 export interface DocumentSection {
     fuzzyName: string | null
@@ -13,13 +15,10 @@ export interface DocumentSection {
  * TODO(philipp-spiess): We need advanced heuristics here so that for very large sections we can
  * divide them into subsections.
  */
-export async function getDocumentSections(
-    document: vscode.TextDocument,
-    getDocumentSymbolRanges: typeof defaultGetDocumentSymbolRanges = defaultGetDocumentSymbolRanges
-): Promise<DocumentSection[]> {
+export async function getGraphDocumentSections(document: vscode.TextDocument): Promise<DocumentSection[]> {
     const label = 'build document symbols map'
     performance.mark(label)
-    const ranges = await getDocumentSymbolRanges(document.uri)
+    const ranges = await getDocumentSections(document)
 
     const sections: DocumentSection[] = []
 

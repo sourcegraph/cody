@@ -1,10 +1,10 @@
 import dedent from 'dedent'
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import * as vscode from 'vscode'
 
-import { FeatureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
 import { RateLimitError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
-import { SourcegraphGraphQLAPIClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
+import { graphqlClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
+import { GraphQLAPIClientConfig } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
 
 import { localStorage } from '../services/LocalStorageProvider'
 import { vsCodeMocks } from '../testutils/mocks'
@@ -40,13 +40,7 @@ const DUMMY_CONTEXT: vscode.InlineCompletionContext = {
     triggerKind: vsCodeMocks.InlineCompletionTriggerKind.Automatic,
 }
 
-const dummyFeatureFlagProvider = new FeatureFlagProvider(
-    new SourcegraphGraphQLAPIClient({
-        accessToken: 'access-token',
-        serverEndpoint: 'https://sourcegraph.com',
-        customHeaders: {},
-    })
-)
+graphqlClient.onConfigurationChange({} as unknown as GraphQLAPIClientConfig)
 
 class MockableInlineCompletionItemProvider extends InlineCompletionItemProvider {
     constructor(
@@ -68,7 +62,6 @@ class MockableInlineCompletionItemProvider extends InlineCompletionItemProvider 
                 // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-explicit-any
                 client: null as any,
             }),
-            featureFlagProvider: dummyFeatureFlagProvider,
             triggerNotice: null,
 
             ...superArgs,
@@ -151,6 +144,7 @@ describe('InlineCompletionItemProvider', () => {
               },
               "currentLinePrefix": "const foo = ",
               "currentLineSuffix": "",
+              "injectedPrefix": null,
               "multilineTrigger": null,
               "nextNonEmptyLine": "console.log(1)",
               "prefix": "const foo = ",
@@ -185,6 +179,7 @@ describe('InlineCompletionItemProvider', () => {
             },
             "uri": {
               "$mid": 1,
+              "external": "file:///test.ts",
               "path": "/test.ts",
               "scheme": "file",
             },
@@ -199,11 +194,15 @@ describe('InlineCompletionItemProvider', () => {
     describe('onboarding', () => {
         // Set up local storage backed by an object. Local storage is used to
         // track whether a completion was accepted for the first time.
-        const localStorageData: { [key: string]: unknown } = {}
+        let localStorageData: { [key: string]: unknown } = {}
         localStorage.setStorage({
             get: (key: string) => localStorageData[key],
             update: (key: string, value: unknown) => (localStorageData[key] = value),
         } as any as vscode.Memento)
+
+        beforeEach(() => {
+            localStorageData = {}
+        })
 
         it('triggers notice the first time an inline complation is accepted', async () => {
             const { document, position } = documentAndPosition('const foo = █', 'typescript')
@@ -246,6 +245,46 @@ describe('InlineCompletionItemProvider', () => {
             // Not called on second accept.
             provider.handleDidAcceptCompletionItem(logId, completions?.items[0] as InlineCompletionItem, requestParams)
             expect(triggerNotice).toHaveBeenCalledOnce()
+        })
+
+        it('does not triggers notice the first time an inline complation is accepted if not a new install', async () => {
+            await localStorage.setChatHistory({
+                chat: { a: null as any },
+                input: [''],
+            })
+
+            const { document, position } = documentAndPosition('const foo = █', 'typescript')
+            const requestParams: RequestParams = {
+                document,
+                position,
+                docContext: getCurrentDocContext({
+                    document,
+                    position,
+                    maxSuffixLength: 100,
+                    maxPrefixLength: 100,
+                    enableExtendedTriggers: true,
+                }),
+                selectedCompletionInfo: undefined,
+            }
+
+            const logId = '1' as SuggestionID
+            const fn = vi.fn(getInlineCompletions).mockResolvedValue({
+                logId,
+                items: [{ insertText: 'bar', range: new vsCodeMocks.Range(position, position) }],
+                source: InlineCompletionsResultSource.Network,
+            })
+
+            const triggerNotice = vi.fn()
+            const provider = new MockableInlineCompletionItemProvider(fn, {
+                triggerNotice,
+            })
+            const completions = await provider.provideInlineCompletionItems(document, position, DUMMY_CONTEXT)
+            expect(completions).not.toBeNull()
+            expect(completions?.items).not.toHaveLength(0)
+
+            // Accepting completion should not have triggered the notice.
+            provider.handleDidAcceptCompletionItem(logId, completions?.items[0] as InlineCompletionItem, requestParams)
+            expect(triggerNotice).not.toHaveBeenCalled()
         })
     })
 
@@ -407,7 +446,7 @@ describe('InlineCompletionItemProvider', () => {
             expect(items).toBe(null)
         })
 
-        it('appends the current selected widget item to the doc context for the completer and removes the injected prefix from the result when the context item was changed', async () => {
+        it('appends the current selected widget item to the doc context for the completer from the result when the context item was changed', async () => {
             const { document, position } = documentAndPosition(
                 dedent`
                     function foo() {
@@ -419,7 +458,7 @@ describe('InlineCompletionItemProvider', () => {
             )
             const fn = vi.fn(getInlineCompletions).mockResolvedValue({
                 logId: '1' as SuggestionID,
-                items: [{ insertText: "('hello world!')", range: new vsCodeMocks.Range(1, 12, 1, 13) }],
+                items: [{ insertText: "og('hello world!')", range: new vsCodeMocks.Range(1, 12, 1, 13) }],
                 source: InlineCompletionsResultSource.Network,
             })
 

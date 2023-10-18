@@ -95,6 +95,10 @@ export class CodebaseContext {
         return !!this.embeddings
     }
 
+    public get embeddingsEndpoint(): string | undefined {
+        return this.embeddings?.endpoint
+    }
+
     public getEmbeddingSearchErrors(): string {
         return this.embeddingResultsError.trim()
     }

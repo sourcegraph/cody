@@ -3,7 +3,9 @@ import * as vscode from 'vscode'
 import { commandRegex } from '@sourcegraph/cody-shared/src/chat/recipes/helpers'
 import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
+import { featureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
 import { newPromptMixin, PromptMixin } from '@sourcegraph/cody-shared/src/prompt/prompt-mixin'
+import { graphqlClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
 
 import { ChatViewProvider } from './chat/ChatViewProvider'
 import { ContextProvider } from './chat/ContextProvider'
@@ -25,12 +27,8 @@ import { GuardrailsProvider } from './services/GuardrailsProvider'
 import { Comment, InlineController } from './services/InlineController'
 import { LocalAppSetupPublisher } from './services/LocalAppSetupPublisher'
 import { localStorage } from './services/LocalStorageProvider'
-import {
-    CODY_ACCESS_TOKEN_SECRET,
-    getAccessToken,
-    secretStorage,
-    VSCodeSecretStorage,
-} from './services/SecretStorageProvider'
+import * as OnboardingExperiment from './services/OnboardingExperiment'
+import { getAccessToken, secretStorage, VSCodeSecretStorage } from './services/SecretStorageProvider'
 import { createStatusBar } from './services/StatusBar'
 import { createOrUpdateEventLogger, telemetryService } from './services/telemetry'
 import { createOrUpdateTelemetryRecorderProvider, telemetryRecorder } from './services/telemetryV2'
@@ -128,8 +126,10 @@ const register = async (
         })
     }
 
+    graphqlClient.onConfigurationChange(initialConfig)
+    void featureFlagProvider.syncAuthStatus()
+
     const {
-        featureFlagProvider,
         intentDetector,
         codebaseContext: initialCodebaseContext,
         chatClient,
@@ -219,7 +219,7 @@ const register = async (
         }
 
         const task = args.instruction?.replace('/edit', '').trim()
-            ? fixup.createTask(document.uri, args.instruction, range, args.auto, args.insertMode)
+            ? fixup.createTask(document.uri, args.instruction, range, args.auto, args.insertMode, source)
             : await fixup.promptUserForTask()
         if (!task) {
             return
@@ -311,9 +311,7 @@ const register = async (
         }),
         // Tests
         // Access token - this is only used in configuration tests
-        vscode.commands.registerCommand('cody.test.token', async token =>
-            secretStorage.store(CODY_ACCESS_TOKEN_SECRET, token)
-        ),
+        vscode.commands.registerCommand('cody.test.token', async (url, token) => authProvider.auth(url, token)),
         // Auth
         vscode.commands.registerCommand('cody.auth.signin', () => authProvider.signinMenu()),
         vscode.commands.registerCommand('cody.auth.signout', () => authProvider.signoutMenu()),
@@ -478,7 +476,6 @@ const register = async (
             client: codeCompletionsClient,
             statusBar,
             contextProvider,
-            featureFlagProvider,
             authProvider,
             triggerNotice: notice => sidebarChatProvider.triggerNotice(notice),
         })
@@ -516,9 +513,14 @@ const register = async (
     }
 
     await showSetupNotification(initialConfig)
+
+    // Clean up old onboarding experiment state
+    void OnboardingExperiment.cleanUpCachedSelection()
+
     return {
         disposable: vscode.Disposable.from(...disposables),
         onConfigurationChange: newConfig => {
+            graphqlClient.onConfigurationChange(newConfig)
             contextProvider.onConfigurationChange(newConfig)
             externalServicesOnDidConfigurationChange(newConfig)
             void createOrUpdateEventLogger(newConfig, isExtensionModeDevOrTest)

@@ -22,6 +22,8 @@ interface CodeBlocksProps {
 
     copyButtonOnSubmit?: CodeBlockActionsProps['copyButtonOnSubmit']
     insertButtonOnSubmit?: CodeBlockActionsProps['insertButtonOnSubmit']
+
+    source?: string // the name of the executed command that generated the code
 }
 
 function createButtons(
@@ -29,7 +31,8 @@ function createButtons(
     copyButtonClassName?: string,
     copyButtonOnSubmit?: CodeBlockActionsProps['copyButtonOnSubmit'],
     insertButtonClassName?: string,
-    insertButtonOnSubmit?: CodeBlockActionsProps['insertButtonOnSubmit']
+    insertButtonOnSubmit?: CodeBlockActionsProps['insertButtonOnSubmit'],
+    source?: string
 ): HTMLElement {
     const container = document.createElement('div')
     container.className = styles.container
@@ -53,7 +56,8 @@ function createButtons(
         'Copy Code',
         CopyCodeBlockIcon,
         codeBlockActions,
-        copyButtonClassName
+        copyButtonClassName,
+        source
     )
     buttons.append(copyButton)
 
@@ -66,7 +70,8 @@ function createButtons(
                 'Insert Code at Cursor',
                 InsertCodeBlockIcon,
                 codeBlockActions,
-                insertButtonClassName
+                insertButtonClassName,
+                source
             )
         )
 
@@ -77,7 +82,8 @@ function createButtons(
                 'Save Code to New File...',
                 SaveCodeBlockIcon,
                 codeBlockActions,
-                insertButtonClassName
+                insertButtonClassName,
+                source
             )
         )
     }
@@ -90,12 +96,6 @@ function createButtons(
 /**
  * Creates a button to perform an action on a code block.
  *
- * @param type - The type of action button: 'copy', 'insert', or 'new'.
- * @param text - The text content of the code block.
- * @param title - The title attribute for the button.
- * @param iconSvg - The SVG icon to display in the button.
- * @param codeBlockActions - The callback actions to perform on click.
- * @param className - Optional additional CSS class names for the button.
  * @returns The button element.
  */
 function createCodeBlockActionButton(
@@ -107,7 +107,8 @@ function createCodeBlockActionButton(
         copy: CodeBlockActionsProps['copyButtonOnSubmit']
         insert?: CodeBlockActionsProps['insertButtonOnSubmit']
     },
-    className?: string
+    className?: string,
+    source?: string
 ): HTMLElement {
     const button = document.createElement('button')
 
@@ -122,7 +123,7 @@ function createCodeBlockActionButton(
             button.innerHTML = CheckCodeBlockIcon
             navigator.clipboard.writeText(text).catch(error => console.error(error))
             button.className = classNames(styleClass, className)
-            codeBlockActions.copy(text, 'Button')
+            codeBlockActions.copy(text, 'Button', source)
             setTimeout(() => (button.innerHTML = iconSvg), 5000)
         })
     }
@@ -134,10 +135,10 @@ function createCodeBlockActionButton(
 
     switch (type) {
         case 'insert':
-            button.addEventListener('click', () => insertOnSubmit(text, false))
+            button.addEventListener('click', () => insertOnSubmit(text, false, source))
             break
         case 'new':
-            button.addEventListener('click', () => insertOnSubmit(text, true))
+            button.addEventListener('click', () => insertOnSubmit(text, true, source))
             break
     }
 
@@ -150,6 +151,7 @@ export const CodeBlocks: React.FunctionComponent<CodeBlocksProps> = React.memo(f
     copyButtonOnSubmit,
     insertButtonClassName,
     insertButtonOnSubmit,
+    source,
 }) {
     const rootRef = useRef<HTMLDivElement>(null)
 
@@ -167,7 +169,8 @@ export const CodeBlocks: React.FunctionComponent<CodeBlocksProps> = React.memo(f
                     copyButtonClassName,
                     copyButtonOnSubmit,
                     insertButtonClassName,
-                    insertButtonOnSubmit
+                    insertButtonOnSubmit,
+                    source
                 )
 
                 // Insert the buttons after the pre using insertBefore() because there is no insertAfter()
@@ -181,7 +184,15 @@ export const CodeBlocks: React.FunctionComponent<CodeBlocksProps> = React.memo(f
                 })
             }
         }
-    }, [displayText, copyButtonClassName, insertButtonClassName, rootRef, copyButtonOnSubmit, insertButtonOnSubmit])
+    }, [
+        displayText,
+        copyButtonClassName,
+        insertButtonClassName,
+        rootRef,
+        copyButtonOnSubmit,
+        insertButtonOnSubmit,
+        source,
+    ])
 
     return useMemo(
         () => <div ref={rootRef} dangerouslySetInnerHTML={{ __html: renderCodyMarkdown(displayText) }} />,

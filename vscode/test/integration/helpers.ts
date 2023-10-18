@@ -24,9 +24,7 @@ export async function beforeIntegrationTest(): Promise<void> {
     await new Promise(resolve => setTimeout(resolve, 200))
 
     // Configure extension.
-    const config = vscode.workspace.getConfiguration()
-    await config.update('cody.serverEndpoint', mockServer.SERVER_URL)
-    await ensureExecuteCommand('cody.test.token', mockServer.VALID_TOKEN)
+    await ensureExecuteCommand('cody.test.token', mockServer.SERVER_URL, mockServer.VALID_TOKEN)
 }
 
 /**

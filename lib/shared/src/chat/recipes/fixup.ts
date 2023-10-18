@@ -1,5 +1,5 @@
 import { ContextMessage, getContextMessageWithResponse } from '../../codebase-context/messages'
-import { VsCodeFixupTaskRecipeData } from '../../editor'
+import { VsCodeFixupController, VsCodeFixupTaskRecipeData } from '../../editor'
 import { IntentClassificationOption } from '../../intent-detector'
 import { MAX_CURRENT_FILE_TOKENS, MAX_HUMAN_INPUT_TOKENS } from '../../prompt/constants'
 import { populateCodeContextTemplate, populateCurrentEditorDiagnosticsTemplate } from '../../prompt/templates'
@@ -14,7 +14,7 @@ import { Recipe, RecipeContext, RecipeID } from './recipe'
  * This is either provided by the user, or inferred from their instructions
  */
 export type FixupIntent = 'add' | 'edit' | 'document'
-const FixupIntentClassification: IntentClassificationOption<FixupIntent>[] = [
+export const FixupIntentClassification: IntentClassificationOption<FixupIntent>[] = [
     {
         id: 'edit',
         rawCommand: '/edit',
@@ -52,21 +52,16 @@ export class Fixup implements Recipe {
             return null
         }
 
-        const fixupTask = await fixupController.getTaskRecipeData(taskId)
-        if (!fixupTask) {
-            await context.editor.showWarningMessage('Select some code to fixup.')
+        const intent = await this.fetchRecipeIntent(fixupController, taskId, context)
+        const enableSmartSelection = intent === 'edit'
+        const fixupTask = await fixupController.getTaskRecipeData(taskId, { enableSmartSelection })
+
+        if (!fixupTask || !intent) {
             return null
         }
 
-        const quarterFileContext = Math.floor(MAX_CURRENT_FILE_TOKENS / 4)
-        if (truncateText(fixupTask.selectedText, MAX_CURRENT_FILE_TOKENS) !== fixupTask.selectedText) {
-            const msg = "The amount of text selected exceeds Cody's current capacity."
-            await context.editor.showWarningMessage(msg)
-            return null
-        }
-
-        const intent = await this.getIntent(fixupTask, context)
         const promptText = this.getPrompt(fixupTask, intent)
+        const quarterFileContext = Math.floor(MAX_CURRENT_FILE_TOKENS / 4)
 
         return Promise.resolve(
             new Interaction(
@@ -83,24 +78,18 @@ export class Fixup implements Recipe {
         )
     }
 
-    private async getIntent(task: VsCodeFixupTaskRecipeData, context: RecipeContext): Promise<FixupIntent> {
-        if (task.selectedText.trim().length === 0) {
-            // Nothing selected, assume this is always 'add'.
-            return 'add'
+    public async fetchRecipeIntent(
+        fixupController: VsCodeFixupController,
+        taskId: string,
+        context: RecipeContext
+    ): Promise<FixupIntent | null> {
+        try {
+            const intent = await fixupController.getTaskIntent(taskId, context.intentDetector)
+            return intent
+        } catch (error) {
+            await context.editor.showWarningMessage((error as Error).message)
+            return null
         }
-
-        /**
-         * TODO(umpox): We should probably find a shorter way of detecting intent when possible.
-         * Possible methods:
-         * - Input -> Match first word against update|fix|add|delete verbs
-         * - Context -> Infer intent from context, e.g. Current file is a test -> Test intent, Current selection is a comment symbol -> Documentation intent
-         */
-        const intent = await context.intentDetector.classifyIntentFromOptions(
-            task.instruction,
-            FixupIntentClassification,
-            'edit'
-        )
-        return intent
     }
 
     public getPrompt(task: VsCodeFixupTaskRecipeData, intent: FixupIntent): string {

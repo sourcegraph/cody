@@ -1,5 +1,4 @@
 import { ConfigurationWithAccessToken } from '../../configuration'
-import { FeatureFlagProvider } from '../../experimentation/FeatureFlagProvider'
 
 import { CompletionCallbacks, CompletionParameters, CompletionResponse, Event } from './types'
 
@@ -26,7 +25,6 @@ export abstract class SourcegraphCompletionsClient {
 
     constructor(
         protected config: CompletionsClientConfig,
-        protected featureFlagProvider?: FeatureFlagProvider,
         protected logger?: CompletionLogger
     ) {}
 

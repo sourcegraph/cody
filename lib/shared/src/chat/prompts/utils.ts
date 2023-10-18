@@ -19,12 +19,13 @@ export async function newInteraction(args: {
     contextMessages?: Promise<ContextMessage[]>
     assistantText?: string
     assistantDisplayText?: string
+    source?: string
 }): Promise<Interaction> {
-    const { text, displayText, contextMessages, assistantText, assistantDisplayText } = args
+    const { text, displayText, contextMessages, assistantText, assistantDisplayText, source } = args
     return Promise.resolve(
         new Interaction(
-            { speaker: 'human', text, displayText },
-            { speaker: 'assistant', text: assistantText, displayText: assistantDisplayText },
+            { speaker: 'human', text, displayText, source },
+            { speaker: 'assistant', text: assistantText, displayText: assistantDisplayText, source },
             Promise.resolve(contextMessages || []),
             []
         )
@@ -217,12 +218,9 @@ export function isValidTestFileName(fsPath: string): boolean {
         return false
     }
 
-    const fileNameWithoutExt = basename(fsPath, extname(fsPath)).toLowerCase()
-    // Invalid test file name pattern
-    if (fileNameWithoutExt.startsWith('test-')) {
-        return false
-    }
+    const fileNameWithoutExt = basename(fsPath, extname(fsPath))
 
-    // Check if file name starts with 'test' or ends with 'test'
-    return fileNameWithoutExt.startsWith('test') || fileNameWithoutExt.endsWith('test')
+    const suffixTest = /([._-](test|spec))|Test|Spec$/
+
+    return fileNameWithoutExt.startsWith('test_') || suffixTest.test(fileNameWithoutExt)
 }

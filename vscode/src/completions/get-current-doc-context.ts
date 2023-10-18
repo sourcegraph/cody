@@ -18,6 +18,12 @@ export interface DocumentContext {
     prevNonEmptyLine: string
     nextNonEmptyLine: string
 
+    /**
+     * This is set when the document context is looking at the selected item in the
+     * suggestion widget and injects the item into the prefix.
+     */
+    injectedPrefix: string | null
+
     multilineTrigger: string | null
 }
 
@@ -27,6 +33,7 @@ interface GetCurrentDocContextParams {
     maxPrefixLength: number
     maxSuffixLength: number
     enableExtendedTriggers: boolean
+    syntacticTriggers?: boolean
     context?: vscode.InlineCompletionContext
 }
 
@@ -47,7 +54,8 @@ interface GetCurrentDocContextParams {
  * @returns An object containing the current document context or null if there are no lines in the document.
  */
 export function getCurrentDocContext(params: GetCurrentDocContextParams): DocumentContext {
-    const { document, position, maxPrefixLength, maxSuffixLength, enableExtendedTriggers, context } = params
+    const { document, position, maxPrefixLength, maxSuffixLength, enableExtendedTriggers, context, syntacticTriggers } =
+        params
     const offset = document.offsetAt(position)
 
     // TODO(philipp-spiess): This requires us to read the whole document. Can we limit our ranges
@@ -57,9 +65,14 @@ export function getCurrentDocContext(params: GetCurrentDocContextParams): Docume
 
     // Patch the document to contain the selected completion from the popup dialog already
     let completePrefixWithContextCompletion = completePrefix
+    let injectedPrefix = null
     if (context?.selectedCompletionInfo) {
         const { range, text } = context.selectedCompletionInfo
         completePrefixWithContextCompletion = completePrefix.slice(0, range.start.character - position.character) + text
+        injectedPrefix = completePrefixWithContextCompletion.slice(completePrefix.length)
+        if (injectedPrefix === '') {
+            injectedPrefix = null
+        }
     }
 
     const prefixLines = lines(completePrefixWithContextCompletion)
@@ -109,10 +122,11 @@ export function getCurrentDocContext(params: GetCurrentDocContextParams): Docume
         currentLineSuffix,
         prevNonEmptyLine,
         nextNonEmptyLine,
+        injectedPrefix,
     }
 
     return {
         ...docContext,
-        multilineTrigger: detectMultiline(docContext, document.languageId, enableExtendedTriggers),
+        multilineTrigger: detectMultiline({ docContext, document, enableExtendedTriggers, syntacticTriggers }),
     }
 }

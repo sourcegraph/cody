@@ -1,5 +1,5 @@
 import dedent from 'dedent'
-import { afterAll, beforeAll, describe, expect, it, test } from 'vitest'
+import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 import { completion, initTreeSitterParser } from '../test-helpers'
 import { resetParsersCache } from '../tree-sitter/parser'
@@ -10,7 +10,6 @@ const cases = [true, false]
 
 // Run truncation tests for both strategies: indentation-based and tree-sitter-based.
 // We cannot use `describe.each` here because `toMatchInlineSnapshot` is not supported with it.
-// eslint-disable-next-line ban/ban
 cases.forEach(isTreeSitterEnabled => {
     const label = isTreeSitterEnabled ? 'enabled' : 'disabled'
 
@@ -25,7 +24,7 @@ cases.forEach(isTreeSitterEnabled => {
             resetParsersCache()
         })
 
-        test('removes trailing spaces', async () => {
+        it('removes trailing spaces', async () => {
             expect(
                 (
                     await getInlineCompletionsInsertText(
@@ -51,12 +50,12 @@ cases.forEach(isTreeSitterEnabled => {
             `)
         })
 
-        test('honors a leading new line in the completion', async () => {
+        it('honors a leading new line in the completion', async () => {
             const items = await getInlineCompletionsInsertText(
                 params(
                     dedent`
                     describe('bubbleSort', () => {
-                        it('bubbleSort test case', () => {█
+                        it('bubbleSort it case', () => {█
 
                         })
                     })`,
@@ -80,12 +79,12 @@ cases.forEach(isTreeSitterEnabled => {
             `)
         })
 
-        test('cuts-off redundant closing brackets on the start indent level', async () => {
+        it('cuts-off redundant closing brackets on the start indent level', async () => {
             const items = await getInlineCompletionsInsertText(
                 params(
                     dedent`
                     describe('bubbleSort', () => {
-                        it('bubbleSort test case', () => {█
+                        it('bubbleSort it case', () => {█
 
                         })
                     })`,
@@ -107,7 +106,81 @@ cases.forEach(isTreeSitterEnabled => {
             `)
         })
 
-        test('keeps the closing bracket', async () => {
+        it('cuts-off redundant closing brackets for completions from extended triggers', async () => {
+            const items = await getInlineCompletionsInsertText(
+                params(
+                    dedent`function bubbleSort(█) {
+
+                    }`,
+                    [
+                        completion`
+                        array: string[]): string[] {
+                            let swapped
+                            do {
+                                swapped = false
+                                for (let i = 0; i < array.length - 1; i++) {
+                                    if (array[i] > array[i + 1]) {
+                                        const temp = array[i]
+                                        array[i] = array[i + 1]
+                                        array[i + 1] = temp
+                                        swapped = true
+                                    }
+                                }
+                            } while (swapped)
+
+                            return array
+                        }`,
+                    ]
+                )
+            )
+
+            expect(items[0]).toMatchInlineSnapshot(`
+              "array: string[]): string[] {
+                  let swapped
+                  do {
+                      swapped = false
+                      for (let i = 0; i < array.length - 1; i++) {
+                          if (array[i] > array[i + 1]) {
+                              const temp = array[i]
+                              array[i] = array[i + 1]
+                              array[i + 1] = temp
+                              swapped = true
+                          }
+                      }
+                  } while (swapped)
+
+                  return array"
+            `)
+        })
+
+        it('cuts-off redundant closing brackets on the start indent level', async () => {
+            const items = await getInlineCompletionsInsertText(
+                params(
+                    dedent`
+                    describe('bubbleSort', () => {
+                        it('bubbleSort it case', () => {█
+
+                        })
+                    })`,
+                    [
+                        completion`
+                            ├const unsortedArray = [4,3,78,2,0,2]
+                            const sortedArray = bubbleSort(unsortedArray)
+                            expect(sortedArray).toEqual([0,2,2,3,4,78])
+                        })
+                    }┤`,
+                    ]
+                )
+            )
+
+            expect(items[0]).toMatchInlineSnapshot(`
+              "const unsortedArray = [4,3,78,2,0,2]
+                      const sortedArray = bubbleSort(unsortedArray)
+                      expect(sortedArray).toEqual([0,2,2,3,4,78])"
+            `)
+        })
+
+        it('keeps the closing bracket', async () => {
             const items = await getInlineCompletionsInsertText(
                 params('function printHello(█)', [
                     completion`
@@ -124,7 +197,7 @@ cases.forEach(isTreeSitterEnabled => {
             `)
         })
 
-        test('uses an indentation based approach to cut-off completions', async () => {
+        it('uses an indentation based approach to cut-off completions', async () => {
             const items = await getInlineCompletionsInsertText(
                 params(
                     dedent`
@@ -161,7 +234,7 @@ cases.forEach(isTreeSitterEnabled => {
             expect(items[1]).toBe("console.log('foo')")
         })
 
-        test('cuts-off the whole completions when suffix is very similar to suffix line', async () => {
+        it('cuts-off the whole completions when suffix is very similar to suffix line', async () => {
             expect(
                 (
                     await getInlineCompletionsInsertText(
@@ -184,7 +257,7 @@ cases.forEach(isTreeSitterEnabled => {
             ).toBe(0)
         })
 
-        test('skips over empty lines', async () => {
+        it('skips over empty lines', async () => {
             expect(
                 (
                     await getInlineCompletionsInsertText(
@@ -217,13 +290,16 @@ cases.forEach(isTreeSitterEnabled => {
             `)
         })
 
-        test('skips over else blocks', async () => {
+        it('skips over else blocks', async () => {
             expect(
                 (
                     await getInlineCompletionsInsertText(
                         params(
                             dedent`
-                    if (check) {
+                    function whatever() {
+                        console.log(123)
+                    }
+                    console.log(321); if (check) {
                         █
                     }
                 `,
@@ -244,7 +320,7 @@ cases.forEach(isTreeSitterEnabled => {
             `)
         })
 
-        test('includes closing parentheses in the completion', async () => {
+        it('includes closing parentheses in the completion', async () => {
             expect(
                 (
                     await getInlineCompletionsInsertText(
@@ -267,39 +343,14 @@ cases.forEach(isTreeSitterEnabled => {
             `)
         })
 
-        test('stops when the next non-empty line of the suffix matches', async () => {
-            expect(
-                (
-                    await getInlineCompletionsInsertText(
-                        params(
-                            dedent`
-                function myFunction() {
-                    █
-                    console.log('three')
-                }
-                `,
-                            [
-                                completion`
-                        ├console.log('one')
-                        console.log('two')
-                        console.log('three')
-                        console.log('four')
-                    }┤`,
-                            ]
-                        )
-                    )
-                ).length
-            ).toBe(0)
-        })
-
         describe('stops when the next non-empty line of the suffix matches partially', () => {
-            test('simple example', async () => {
+            it('simple example', async () => {
                 expect(
                     (
                         await getInlineCompletionsInsertText(
                             params(
                                 dedent`
-                        path: $GITHUB_WORKSPACE/vscode/.vscode-test/█
+                        path: $GITHUB_WORKSPACE/vscode/.vscode-it/█
                         key: {{ runner.os }}-pnpm-store-{{ hashFiles('**/pnpm-lock.yaml') }}`,
                                 [
                                     completion`
@@ -312,7 +363,7 @@ cases.forEach(isTreeSitterEnabled => {
                 ).toBe('pnpm-store')
             })
 
-            test('example with return', async () => {
+            it('example with return', async () => {
                 expect(
                     (
                         await getInlineCompletionsInsertText(
@@ -333,7 +384,7 @@ cases.forEach(isTreeSitterEnabled => {
                 ).toBe("lastChange was delete')")
             })
 
-            test('example with inline comment', async () => {
+            it('example with inline comment', async () => {
                 expect(
                     (
                         await getInlineCompletionsInsertText(
@@ -355,7 +406,7 @@ cases.forEach(isTreeSitterEnabled => {
             })
         })
 
-        test('handles tab/newline interop in completion truncation', async () => {
+        it('handles tab/newline interop in completion truncation', async () => {
             expect(
                 (
                     await getInlineCompletionsInsertText(
@@ -388,7 +439,7 @@ cases.forEach(isTreeSitterEnabled => {
             `)
         })
 
-        test('does not include block end character if there is already closed bracket', async () => {
+        it('does not include block end character if there is already closed bracket', async () => {
             expect(
                 (
                     await getInlineCompletionsInsertText(
@@ -404,7 +455,7 @@ cases.forEach(isTreeSitterEnabled => {
             ).toBe(0)
         })
 
-        test('does not include block end character if there is already closed bracket [sort example]', async () => {
+        it('does not include block end character if there is already closed bracket [sort example]', async () => {
             expect(
                 (
                     await getInlineCompletionsInsertText(
@@ -431,13 +482,13 @@ cases.forEach(isTreeSitterEnabled => {
             ).toBe(0)
         })
 
-        test('normalizes Cody responses starting with an empty line and following the exact same indentation as the start line', async () => {
+        it('normalizes Cody responses starting with an empty line and following the exact same indentation as the start line', async () => {
             expect(
                 (
                     await getInlineCompletionsInsertText(
                         params(
                             dedent`
-                    function test() {
+                    function it() {
                         █
                 `,
                             [
@@ -453,13 +504,44 @@ cases.forEach(isTreeSitterEnabled => {
         })
 
         if (isTreeSitterEnabled) {
+            it('stops when the next non-empty line of the suffix matches', async () => {
+                expect(
+                    await getInlineCompletionsInsertText(
+                        params(
+                            dedent`
+                                function myFunction() {
+                                    █
+                                }
+                        `,
+                            [
+                                completion`
+                                ├function nestedFunction() {
+                                    console.log('one')
+                                }
+
+                                nestedFunction()
+                                }┤`,
+                            ]
+                        )
+                    )
+                ).toMatchInlineSnapshot(`
+                  [
+                    "function nestedFunction() {
+                      console.log('one')
+                  }
+
+                  nestedFunction()",
+                  ]
+                `)
+            })
+
             it('truncates multiline completions with inconsistent indentation', async () => {
                 expect(
                     (
                         await getInlineCompletionsInsertText(
                             params(
                                 dedent`
-                        function test() {
+                        function it() {
                             █
                     `,
                                 [
@@ -479,6 +561,50 @@ cases.forEach(isTreeSitterEnabled => {
                 console.log('oops')
                 }
             `)
+            })
+
+            it('truncates multiline completions with many nested block statements', async () => {
+                expect(
+                    (
+                        await getInlineCompletionsInsertText(
+                            params(
+                                dedent`
+                        class Animal {
+                            █
+                        }
+                    `,
+                                [
+                                    completion`
+                                        constructor(name: string) {}
+
+                                        bark() {
+                                            const barkData = { tone: 'loud' }
+                                            this.produceSound(barkData)
+                                        }
+
+                                        wasuup() {
+                                            this.bark()
+                                        }
+                                    }
+
+                                    redundantFunctionCall(123)
+                                    `,
+                                ]
+                            )
+                        )
+                    )[0]
+                ).toMatchInlineSnapshot(`
+                  "constructor(name: string) {}
+
+                      bark() {
+                          const barkData = { tone: 'loud' }
+                          this.produceSound(barkData)
+                      }
+
+                      wasuup() {
+                          this.bark()
+                      }"
+                `)
             })
         }
     })

@@ -3,3 +3,4 @@ dist/
 build/
 **/test-data/
 vscode/src/testutils/vscode/
+vscode/test/benchmark/datasets/

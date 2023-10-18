@@ -43,6 +43,11 @@ import { countGeneratedCode } from './utils'
 const SAFETY_PROMPT_TOKENS = 100
 
 /**
+ * Multiplexer topics that should not be displayed in chat view
+ */
+const nonDisplayTopics = new Set(['fixup'])
+
+/**
  * A derived class of MessageProvider must implement these handler methods.
  * This contract ensures that MessageProvider is focused solely on building, sending and receiving messages.
  * It does not assume anything about how those messages will be displayed to the user.
@@ -151,7 +156,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         this.cancelCompletion()
         this.currentChatID = chatID
         this.transcript = Transcript.fromJSON(MessageProvider.chatHistory[chatID])
-        await this.transcript.toJSON(undefined, true)
+        await this.transcript.toJSON()
         this.sendTranscript()
         this.sendHistory()
         telemetryService.log('CodyVSCodeExtension:restoreChatHistoryButton:clicked')
@@ -164,7 +169,8 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
     private sendPrompt(
         promptMessages: Message[],
         responsePrefix = '',
-        multiplexerTopic = BotResponseMultiplexer.DEFAULT_TOPIC
+        multiplexerTopic = BotResponseMultiplexer.DEFAULT_TOPIC,
+        recipeId: RecipeID
     ): void {
         this.cancelCompletion()
         void vscode.commands.executeCommand('setContext', 'cody.reply.pending', true)
@@ -190,17 +196,21 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
                 typewriter.close()
                 await typewriter.finished
                 const lastInteraction = this.transcript.getLastInteraction()
-                if (lastInteraction && multiplexerTopic !== 'fixup') {
-                    let displayText = reformatBotMessage(text, responsePrefix)
+                if (lastInteraction) {
+                    // remove display text from last interaction if this is a non-display topic
                     // TODO(keegancsmith) guardrails may be slow, we need to make this async update the interaction.
-                    displayText = await this.guardrailsAnnotateAttributions(displayText)
+                    const displayText = nonDisplayTopics.has(multiplexerTopic)
+                        ? undefined
+                        : await this.guardrailsAnnotateAttributions(reformatBotMessage(text, responsePrefix))
                     this.transcript.addAssistantResponse(text, displayText)
                 }
                 await this.onCompletionEnd()
                 // Count code generated from response
                 const codeCount = countGeneratedCode(text)
-                const op = codeCount ? 'hasCode' : 'noCode'
-                telemetryService.log('CodyVSCodeExtension:chatResponse:' + op, codeCount || {})
+                if (codeCount?.charCount) {
+                    const source = lastInteraction?.getHumanMessage().source || recipeId
+                    telemetryService.log('CodyVSCodeExtension:chatResponse:hasCode', { ...codeCount, source })
+                }
             },
         })
 
@@ -322,6 +332,11 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         this.isMessageInProgress = true
         this.transcript.addInteraction(interaction)
 
+        const contextSummary = {
+            embeddings: 0,
+            local: 0,
+        }
+
         // Check whether or not to connect to LLM backend for responses
         // Ex: performing fuzzy / context-search does not require responses from LLM backend
         switch (recipeId) {
@@ -338,11 +353,24 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
                     this.maxPromptTokens
                 )
                 this.transcript.setUsedContextFilesForLastInteraction(contextFiles, preciseContexts)
-                this.sendPrompt(prompt, interaction.getAssistantMessage().prefix ?? '', recipe.multiplexerTopic)
+                this.sendPrompt(
+                    prompt,
+                    interaction.getAssistantMessage().prefix ?? '',
+                    recipe.multiplexerTopic,
+                    recipeId
+                )
                 await this.saveTranscriptToChatHistory()
+
+                contextFiles.map(file => {
+                    if (file.source) {
+                        contextSummary.embeddings++
+                    } else {
+                        contextSummary.local++
+                    }
+                })
             }
         }
-        telemetryService.log(`CodyVSCodeExtension:recipe:${recipe.id}:executed`)
+        telemetryService.log(`CodyVSCodeExtension:recipe:${recipe.id}:executed`, { contextSummary })
     }
 
     protected async runRecipeForSuggestion(recipeId: RecipeID, humanChatInput: string = ''): Promise<void> {
@@ -456,7 +484,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
                 if (!type) {
                     break
                 }
-                await this.editor.controllers.command?.config('add', type)
+                await this.editor.controllers.command?.configFileAction('add', type)
                 telemetryService.log('CodyVSCodeExtension:addCommandButton:clicked')
                 break
         }
@@ -562,7 +590,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         if (this.transcript.isEmpty) {
             return
         }
-        MessageProvider.chatHistory[this.currentChatID] = await this.transcript.toJSON(undefined, true)
+        MessageProvider.chatHistory[this.currentChatID] = await this.transcript.toJSON()
         await this.saveChatHistory()
         this.sendHistory()
     }

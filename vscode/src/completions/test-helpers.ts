@@ -40,10 +40,18 @@ export function completion(string: TemplateStringsArray, ...values: unknown[]): 
 
 const CURSOR_MARKER = '█'
 
+export function document(
+    text: string,
+    languageId: string = 'typescript',
+    uriString = 'file:///test.ts'
+): VSCodeTextDocument {
+    return wrapVSCodeTextDocument(TextDocument.create(uriString, languageId, 0, text))
+}
+
 export function documentAndPosition(
     textWithCursor: string,
-    languageId = 'typescript',
-    uriString = 'file:///test.ts'
+    languageId?: string,
+    uriString?: string
 ): { document: VSCodeTextDocument; position: VSCodePosition } {
     const cursorIndex = textWithCursor.indexOf(CURSOR_MARKER)
     if (cursorIndex === -1) {
@@ -51,10 +59,9 @@ export function documentAndPosition(
     }
     const prefix = textWithCursor.slice(0, cursorIndex)
     const suffix = textWithCursor.slice(cursorIndex + CURSOR_MARKER.length)
-    const codeWithoutCursor = prefix + suffix
-    const document = wrapVSCodeTextDocument(TextDocument.create(uriString, languageId, 0, codeWithoutCursor))
-    const position = document.positionAt(cursorIndex)
-    return { document, position }
+    const doc = document(prefix + suffix, languageId, uriString)
+    const position = doc.positionAt(cursorIndex)
+    return { document: doc, position }
 }
 
 export const CUSTOM_WASM_LANGUAGE_DIR = path.resolve(ROOT_PATH, 'vscode/resources/wasm')

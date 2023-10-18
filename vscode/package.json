@@ -2,7 +2,7 @@
   "name": "cody-ai",
   "private": true,
   "displayName": "Cody AI",
-  "version": "0.12.4",
+  "version": "0.14.1",
   "publisher": "sourcegraph",
   "license": "Apache-2.0",
   "icon": "resources/cody.png",
@@ -35,10 +35,12 @@
     "storybook": "storybook dev -p 6007 --no-open --no-version-updates --no-release-notes",
     "test:e2e": "tsc --build && { pnpm exec playwright install chromium & install_pw_pid=$!; node dist/tsc/test/e2e/install-deps.js & install_vscode_pid=$!; wait $install_pw_pid && wait $install_vscode_pid; } && pnpm run -s build:dev:desktop && playwright test",
     "test:integration": "tsc --build ./test/integration && pnpm run -s build:dev:desktop && node --inspect -r ts-node/register dist/tsc/test/integration/main.js",
+    "test:benchmark": "BENCHMARK_DISABLE_FEATURE_FLAGS=true tsc --build ./test/benchmark && pnpm run -s build:dev:desktop && ./benchmark.sh",
+    "test:benchmark:copilot": "BENCHMARK_COMPARE_WITH=github.copilot pnpm run test:benchmark",
     "test:unit": "vitest",
     "vscode:prepublish": "pnpm -s run build",
     "generate:completions": "OUTFILE=/tmp/run-code-completions-on-dataset.js && esbuild ./test/completions/run-code-completions-on-dataset.ts --bundle --external:vscode --outfile=$OUTFILE --format=cjs --platform=node --sourcemap=inline && node --enable-source-maps $OUTFILE",
-    "test:unit:tree-sitter-queries": "vitest vscode/src/completions/tree-sitter/queries/**/*.test.ts"
+    "test:unit:tree-sitter-queries": "vitest vscode/src/completions/tree-sitter/query-tests/**/*.test.ts"
   },
   "categories": [
     "Programming Languages",
@@ -623,6 +625,7 @@
         },
         {
           "command": "cody.inline.new",
+          "when": "cody.activated",
           "group": "ask"
         }
       ],
@@ -745,7 +748,7 @@
         },
         "cody.proxy": {
           "type": "string",
-          "markdownDeprecationMessage": "The SOCKS proxy endpoint to access server endpoint. This is only supported with `unstable-codegen` provider and only for use with the Cody Agent (for instance with JetBrains plugin). For VS Code please use http.proxy instead."
+          "markdownDeprecationMessage": "The SOCKS proxy endpoint to access server endpoint. This is only supported with some autocomplete providers and only for use with the Cody Agent (for instance with JetBrains plugin). For VS Code please use http.proxy instead."
         },
         "cody.codebase": {
           "order": 2,
@@ -785,6 +788,15 @@
           "type": "boolean",
           "markdownDescription": "Enables inline code suggestions in your editor.",
           "default": true
+        },
+        "cody.autocomplete.languages": {
+          "order": 5,
+          "type": "object",
+          "markdownDescription": "Enable or disable inline code suggestions for specified [languages](https://code.visualstudio.com/docs/languages/identifiers).",
+          "default": {
+            "*": true,
+            "scminput": false
+          }
         },
         "cody.inlineChat.enabled": {
           "order": 6,
@@ -885,8 +897,7 @@
           "enum": [
             null,
             "anthropic",
-            "unstable-codegen",
-            "unstable-fireworks",
+            "fireworks",
             "unstable-openai"
           ],
           "markdownDescription": "The provider used for code autocomplete. Most providers other than `anthropic` require the `cody.autocomplete.advanced.serverEndpoint` and `cody.autocomplete.advanced.accessToken` settings to also be set. Check the Cody output channel for error messages if autocomplete is not working as expected."
@@ -913,13 +924,7 @@
             "llama-code-13b",
             "llama-code-13b-instruct"
           ],
-          "markdownDescription": "Overwrite the default model used for code autocompletion inference. This is only supported with the `unstable-fireworks` provider"
-        },
-        "cody.autocomplete.advanced.embeddings": {
-          "order": 99,
-          "type": "boolean",
-          "default": true,
-          "markdownDescription": "Enables the use of embeddings as code completions context."
+          "markdownDescription": "Overwrite the  model used for code autocompletion inference. This is only supported with the `unstable-fireworks` provider"
         },
         "cody.autocomplete.completeSuggestWidgetSelection": {
           "type": "boolean",
@@ -932,9 +937,13 @@
           "markdownDescription": "Rank autocomplete results with tree-sitter."
         },
         "cody.autocomplete.experimental.graphContext": {
-          "type": "boolean",
-          "default": false,
-          "markdownDescription": "Use the code graph to retrieve context for autocomplete requests."
+          "type": "enum",
+          "default": null,
+          "enum": [
+            null,
+            "lsp-light"
+          ],
+          "markdownDescription": "Retrieve information from the code graph to augment the autocomplete results. This is only supported with the `unstable-codegen` provider"
         }
       }
     },
@@ -973,6 +982,7 @@
     "detect-indent": "^7.0.1",
     "glob": "^7.2.3",
     "isomorphic-fetch": "^3.0.0",
+    "js-levenshtein": "^1.1.6",
     "lodash": "^4.17.21",
     "lru-cache": "^10.0.0",
     "mkdirp": "^3.0.1",
@@ -998,6 +1008,7 @@
     "@types/express": "^4.17.17",
     "@types/glob": "^8.0.0",
     "@types/isomorphic-fetch": "^0.0.36",
+    "@types/js-levenshtein": "^1.1.1",
     "@types/lodash": "^4.14.195",
     "@types/mocha": "^10.0.1",
     "@types/mock-require": "^2.0.1",
@@ -1008,8 +1019,9 @@
     "@types/vscode": "^1.79.0",
     "@types/vscode-webview": "^1.57.1",
     "@vscode/test-electron": "^2.3.2",
-    "@vscode/test-web": "^0.0.44",
+    "@vscode/test-web": "^0.0.47",
     "@vscode/vsce": "^2.19.0",
+    "chalk": "^4.1.2",
     "cody-icons-font": "workspace:^",
     "concurrently": "^8.2.0",
     "dedent": "^0.7.0",

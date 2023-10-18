@@ -1,5 +1,5 @@
 /* eslint-disable no-void */
-import { SourcegraphGraphQLAPIClient } from '../sourcegraph-api/graphql'
+import { graphqlClient, SourcegraphGraphQLAPIClient } from '../sourcegraph-api/graphql'
 import { isError } from '../utils'
 
 export enum FeatureFlag {
@@ -15,7 +15,15 @@ export enum FeatureFlag {
     CodyAutocompleteLlamaCode7B = 'cody-autocomplete-default-llama-code-7b',
     CodyAutocompleteLlamaCode13B = 'cody-autocomplete-default-llama-code-13b',
     CodyAutocompleteGraphContext = 'cody-autocomplete-graph-context',
-    CodyAutocompleteMinimumLatency = 'cody-autocomplete-minimum-latency',
+    CodyAutocompleteSyntacticTriggers = 'cody-autocomplete-syntactic-triggers',
+    CodyAutocompleteStarCoderExtendedTokenWindow = 'cody-autocomplete-starcoder-extended-token-window',
+    CodyAutocompleteLanguageLatency = 'cody-autocomplete-language-latency',
+    CodyAutocompleteUserLatency = 'cody-autocomplete-user-latency',
+    CodyAutocompleteProviderLatency = 'cody-autocomplete-provider-latency',
+    CodyAutocompleteDisableNetworkCache = 'cody-autocomplete-disable-network-cache',
+    CodyAutocompleteDisableRecyclingOfPreviousRequests = 'cody-autocomplete-disable-recycling-of-previous-requests',
+    CodyAutocompleteDisableStreamingTruncation = 'cody-autocomplete-disable-streaming-truncation',
+    CodyAutocompleteLowPerformanceDebounce = 'cody-autocomplete-low-performance-debounce',
 }
 
 const ONE_HOUR = 60 * 60 * 1000
@@ -24,9 +32,7 @@ export class FeatureFlagProvider {
     private featureFlags: Record<string, boolean> = {}
     private lastUpdated = 0
 
-    constructor(private apiClient: SourcegraphGraphQLAPIClient) {
-        void this.refreshFeatureFlags()
-    }
+    constructor(private apiClient: SourcegraphGraphQLAPIClient) {}
 
     private getFromCache(flagName: FeatureFlag): boolean | undefined {
         const now = Date.now()
@@ -39,7 +45,7 @@ export class FeatureFlagProvider {
     }
 
     public async evaluateFeatureFlag(flagName: FeatureFlag): Promise<boolean> {
-        if (!this.apiClient.isDotCom()) {
+        if (!this.apiClient.isDotCom() || process.env.BENCHMARK_DISABLE_FEATURE_FLAGS) {
             return false
         }
 
@@ -67,3 +73,5 @@ export class FeatureFlagProvider {
         this.lastUpdated = Date.now()
     }
 }
+
+export const featureFlagProvider = new FeatureFlagProvider(graphqlClient)

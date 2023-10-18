@@ -1,13 +1,12 @@
 import { tokensToChars } from '@sourcegraph/cody-shared/src/prompt/constants'
-import {
-    CompletionParameters,
-    CompletionResponse,
-} from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
+import { CompletionResponse } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
 
-import { CodeCompletionsClient } from '../client'
-import { canUsePartialCompletion } from '../streaming'
+import { canUsePartialCompletion } from '../can-use-partial-completion'
+import { CodeCompletionsClient, CodeCompletionsParams } from '../client'
 import { getHeadAndTail } from '../text-processing'
-import { Completion, ContextSnippet } from '../types'
+import { parseAndTruncateCompletion } from '../text-processing/parse-and-truncate-completion'
+import { InlineCompletionItemWithAnalytics } from '../text-processing/process-inline-completions'
+import { ContextSnippet } from '../types'
 import { forkSignal } from '../utils'
 
 import {
@@ -65,7 +64,7 @@ export class UnstableOpenAIProvider extends Provider {
         abortSignal: AbortSignal,
         snippets: ContextSnippet[],
         tracer?: CompletionProviderTracer
-    ): Promise<Completion[]> {
+    ): Promise<InlineCompletionItemWithAnalytics[]> {
         const prompt = this.createPrompt(snippets)
 
         const stopSequences = ['Human:', 'Assistant:']
@@ -73,42 +72,32 @@ export class UnstableOpenAIProvider extends Provider {
             stopSequences.push('\n')
         }
 
-        const args: CompletionParameters = {
+        const args: CodeCompletionsParams = {
             messages: [{ speaker: 'human', text: prompt }],
             maxTokensToSample: this.options.multiline ? MAX_RESPONSE_TOKENS : 50,
             temperature: 1,
             topP: 0.5,
             stopSequences,
+            timeoutMs: this.options.multiline ? 15000 : 5000,
         }
 
         tracer?.params(args)
 
-        // Issue request
-        const responses = await Promise.all(
+        const completions = await Promise.all(
             Array.from({ length: this.options.n }).map(() => {
                 return this.fetchAndProcessCompletions(this.client, args, abortSignal)
             })
         )
 
-        const ret = responses.map(resp => [
-            {
-                prefix: this.options.docContext.prefix,
-                content: resp.completion,
-                stopReason: resp.stopReason,
-            },
-        ])
-
-        const completions = ret.flat()
-        tracer?.result({ rawResponses: responses, completions })
-
+        tracer?.result({ completions })
         return completions
     }
 
     private async fetchAndProcessCompletions(
         client: Pick<CodeCompletionsClient, 'complete'>,
-        params: CompletionParameters,
+        params: CodeCompletionsParams,
         abortSignal: AbortSignal
-    ): Promise<CompletionResponse> {
+    ): Promise<InlineCompletionItemWithAnalytics> {
         // The Async executor is required to return the completion early if a partial result from SSE can be used.
         // eslint-disable-next-line @typescript-eslint/no-misused-promises, no-async-promise-executor
         return new Promise(async (resolve, reject) => {
@@ -118,22 +107,23 @@ export class UnstableOpenAIProvider extends Provider {
                 const result = await client.complete(
                     params,
                     (incompleteResponse: CompletionResponse) => {
-                        const processedCompletion = this.postProcess(incompleteResponse.completion)
-                        if (
-                            canUsePartialCompletion(processedCompletion, {
-                                document: { languageId: this.options.languageId },
-                                multiline: this.options.multiline,
-                                docContext: this.options.docContext,
-                            })
-                        ) {
-                            resolve({ ...incompleteResponse, completion: processedCompletion })
-                            abortController.abort()
+                        if (!this.options.disableStreamingTruncation) {
+                            const processedCompletion = this.postProcess(incompleteResponse.completion)
+                            const completion = canUsePartialCompletion(processedCompletion, this.options)
+
+                            if (completion) {
+                                resolve({ ...completion, stopReason: 'streaming-truncation' })
+                                abortController.abort()
+                            }
                         }
                     },
                     abortController.signal
                 )
 
-                resolve({ ...result, completion: this.postProcess(result.completion) })
+                const processedCompletion = this.postProcess(result.completion)
+                const completion = parseAndTruncateCompletion(processedCompletion, this.options)
+
+                resolve({ ...completion, stopReason: result.stopReason })
             } catch (error) {
                 reject(error)
             }
