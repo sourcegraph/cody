@@ -107,7 +107,7 @@ export class UnstableOpenAIProvider extends Provider {
                 const result = await client.complete(
                     params,
                     (incompleteResponse: CompletionResponse) => {
-                        if (this.options.useStreamingTruncation) {
+                        if (!this.options.disableStreamingTruncation) {
                             const processedCompletion = this.postProcess(incompleteResponse.completion)
                             const completion = canUsePartialCompletion(processedCompletion, this.options)
 

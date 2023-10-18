@@ -50,7 +50,7 @@ export interface InlineCompletionsParams {
 
     // Feature flags
     completeSuggestWidgetSelection?: boolean
-    useStreamingTruncation?: boolean
+    disableStreamingTruncation?: boolean
 
     // Callbacks to accept completions
     handleDidAcceptCompletionItem?: (
@@ -178,7 +178,7 @@ async function doGetInlineCompletions(params: InlineCompletionsParams): Promise<
         abortSignal,
         tracer,
         completeSuggestWidgetSelection = true,
-        useStreamingTruncation = true,
+        disableStreamingTruncation = false,
         handleDidAcceptCompletionItem,
         handleDidPartiallyAcceptCompletionItem,
     } = params
@@ -277,7 +277,7 @@ async function doGetInlineCompletions(params: InlineCompletionsParams): Promise<
         triggerKind,
         providerConfig,
         docContext,
-        useStreamingTruncation,
+        disableStreamingTruncation,
     })
     tracer?.({ completers: completionProviders.map(({ options }) => options) })
 
@@ -318,17 +318,17 @@ async function doGetInlineCompletions(params: InlineCompletionsParams): Promise<
 interface GetCompletionProvidersParams
     extends Pick<InlineCompletionsParams, 'document' | 'position' | 'triggerKind' | 'providerConfig'> {
     docContext: DocumentContext
-    useStreamingTruncation?: boolean
+    disableStreamingTruncation?: boolean
 }
 
 function getCompletionProviders(params: GetCompletionProvidersParams): Provider[] {
-    const { document, position, triggerKind, providerConfig, docContext, useStreamingTruncation } = params
+    const { document, position, triggerKind, providerConfig, docContext, disableStreamingTruncation } = params
 
     const sharedProviderOptions: Omit<ProviderOptions, 'id' | 'n' | 'multiline'> = {
         docContext,
         document,
         position,
-        useStreamingTruncation: Boolean(useStreamingTruncation),
+        disableStreamingTruncation: Boolean(disableStreamingTruncation),
     }
 
     if (docContext.multilineTrigger) {

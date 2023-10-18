@@ -69,7 +69,7 @@ export interface ProviderOptions {
     n: number
 
     // Use indentation-based or tree-sitter-based truncation strategies to stop streaming early.
-    useStreamingTruncation?: boolean
+    disableStreamingTruncation?: boolean
 }
 
 export abstract class Provider {
