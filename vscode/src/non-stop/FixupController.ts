@@ -52,9 +52,10 @@ export class FixupController
             vscode.commands.registerCommand('cody.fixup.apply-by-file', treeItem => this.applyFixups(treeItem)),
             vscode.commands.registerCommand('cody.fixup.apply-all', () => this.applyFixups()),
             vscode.commands.registerCommand('cody.fixup.diff', treeItem => this.showDiff(treeItem)),
-            vscode.commands.registerCommand('cody.fixup.codelens.apply', id => this.apply(id)),
+            vscode.commands.registerCommand('cody.fixup.codelens.cancel', id => this.cancel(id)),
             vscode.commands.registerCommand('cody.fixup.codelens.diff', id => this.diff(id)),
-            vscode.commands.registerCommand('cody.fixup.codelens.cancel', id => this.cancel(id))
+            vscode.commands.registerCommand('cody.fixup.codelens.undo', id => this.undo(id)),
+            vscode.commands.registerCommand('cody.fixup.codelens.accept', id => this.accept(id))
         )
         // Observe file renaming and deletion
         this.files = new FixupFileObserver()
@@ -102,13 +103,23 @@ export class FixupController
     }
 
     public createTask(
-        documentUri: vscode.Uri,
+        document: vscode.TextDocument,
         instruction: string,
         selectionRange: vscode.Range,
         insertMode?: boolean
     ): FixupTask {
-        const fixupFile = this.files.forUri(documentUri)
-        const task = new FixupTask(fixupFile, instruction, selectionRange, insertMode)
+        const fixupFile = this.files.forUri(document.uri)
+        // Create selection lines as Map<number, string>
+        const selectionLines = document
+            .getText(selectionRange)
+            .split('\n')
+            .reduce((acc, lineContent, index) => {
+                const lineNumber = selectionRange.start.line + index
+                acc.set(lineNumber, lineContent)
+                return acc
+            }, new Map())
+
+        const task = new FixupTask(fixupFile, instruction, selectionRange, selectionLines, insertMode)
         this.tasks.set(task.id, task)
         this.setTaskState(task, CodyTaskState.working)
         return task
@@ -161,6 +172,15 @@ export class FixupController
         return diff
     }
 
+    private updateTaskDiff(task: FixupTask, bufferText: string): Diff | undefined {
+        if (task.replacement !== undefined) {
+            task.diff = computeDiff(task.original, task.replacement, bufferText, task.selectionRange.start)
+            this.didUpdateDiff(task)
+        }
+
+        return task.diff
+    }
+
     // Schedule a re-spin for diffs with conflicts.
     private scheduleRespin(task: FixupTask): void {
         const MAX_SPIN_COUNT_PER_TASK = 5
@@ -174,6 +194,39 @@ export class FixupController
         void vscode.window.showInformationMessage('Cody will rewrite to include your changes')
         this.setTaskState(task, CodyTaskState.working)
         return undefined
+    }
+
+    private async applyTaskLine(task: FixupTask): Promise<void> {
+        let editor = vscode.window.visibleTextEditors.find(editor => editor.document.uri === task.fixupFile.uri)
+        if (!editor) {
+            editor = await vscode.window.showTextDocument(task.fixupFile.uri)
+        }
+
+        const existingLine = task.selectionLines.get(task.activeLine)
+        const incomingLine = task.replacementLine || ''
+
+        let editOk: boolean
+
+        if (existingLine) {
+            // We have a line that needs updating
+            const diff = computeDiff(existingLine, incomingLine, existingLine, new vscode.Position(task.activeLine, 0))
+            if (!diff) {
+                console.log('NO DIFF, DOING NOTHING')
+                return
+            }
+            editOk = await this.replaceEdit(editor, diff)
+        } else {
+            // Adding a new line, insert it and bump the active line by one
+            editOk = await editor.edit(editBuilder => {
+                editBuilder.insert(new vscode.Position(task.activeLine, 0), incomingLine)
+            })
+            task.activeLine = task.activeLine + 1
+        }
+
+        if (!editOk) {
+            console.log('EDIT NOT OK!!')
+            return
+        }
     }
 
     private async applyTask(task: FixupTask): Promise<void> {
@@ -210,6 +263,7 @@ export class FixupController
 
         // TODO: See if we can discard a FixupFile now.
         this.setTaskState(task, CodyTaskState.applied)
+        this.updateTaskDiff(task, editor.document.getText(task.selectionRange))
     }
 
     // Replace edit returned by Cody at task selection range
@@ -294,6 +348,25 @@ export class FixupController
         this.discard(task)
     }
 
+    private accept(id: taskID): void {
+        telemetryService.log('CodyVSCodeExtension:fixup:codeLens:clicked', { op: 'accept' })
+        const task = this.tasks.get(id)
+        if (!task) {
+            return
+        }
+        this.setTaskState(task, CodyTaskState.finished)
+        this.discard(task)
+    }
+
+    private undo(id: taskID): void {
+        telemetryService.log('CodyVSCodeExtension:fixup:codeLens:clicked', { op: 'undo' })
+        const task = this.tasks.get(id)
+        if (!task) {
+            return
+        }
+        console.log('TODO: Finish UNDO logic')
+    }
+
     private discard(task: FixupTask): void {
         this.needsDiffUpdate_.delete(task)
         this.codelenses.didDeleteTask(task)
@@ -336,6 +409,61 @@ export class FixupController
             followingText,
             selectionRange: task.selectionRange,
         }
+    }
+
+    /**
+     * Speculatively attempt to match the incoming line from the LLM with
+     * an existing line already in the document.
+     *
+     * If found, this will update the current active line for the fixup task.
+     **/
+    public updateActiveLine(task: FixupTask, activeContent: string): number {
+        let matchingLine
+
+        for (let i = task.activeLine; i < task.selectionRange.end.line; i++) {
+            const selectionLine = task.selectionLines.get(i)
+            if (selectionLine === activeContent) {
+                matchingLine = i
+                break
+            }
+        }
+
+        if (matchingLine === undefined) {
+            console.log('No match. We will expand the selection range only.', {
+                current: task.selectionLines.get(task.activeLine),
+                new: activeContent,
+            })
+            // No match, this means we are potentially adding new content.
+            // We need to keep the existing active line, but expand the selection range
+            task.selectionRange = new vscode.Range(
+                task.selectionRange.start.with(task.selectionRange.start.line + 1, 0),
+                task.selectionRange.end.with(task.selectionRange.end.line + 1, 0)
+            )
+        } else {
+            // Found a new active line, update where we believe the LLM is changing
+            console.log('We got a match! We will update the active line to the new match', {
+                current: task.selectionLines.get(matchingLine + task.activeLine),
+                new: activeContent,
+            })
+            task.activeLine = matchingLine
+        }
+
+        return task.activeLine
+    }
+
+    public async didReceiveFixupLine(id: string, line: string): Promise<void> {
+        const task = this.tasks.get(id)
+        if (!task) {
+            return Promise.resolve()
+        }
+
+        this.updateActiveLine(task, line)
+        task.replacementLine = line
+        console.log('Start of selection:', task.selectionRange.start.line)
+        console.log('Active line:', task.activeLine)
+        console.log('End of selection:', task.selectionRange.end.line)
+
+        return this.applyTaskLine(task)
     }
 
     public async didReceiveFixupText(id: string, text: string, state: 'streaming' | 'complete'): Promise<void> {

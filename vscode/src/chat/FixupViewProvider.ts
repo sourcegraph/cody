@@ -94,16 +94,23 @@ export class FixupProvider extends MessageProvider {
         const lastMessage = transcript.at(-1)
 
         // The users' messages are already added through the comments API.
-        if (lastMessage?.speaker !== 'assistant') {
+        if (lastMessage?.speaker !== 'assistant' || !lastMessage.text) {
             return
         }
 
-        if (lastMessage.text) {
-            void this.editor.controllers.fixups?.didReceiveFixupText(
-                this.task.id,
-                isMessageInProgress ? lastMessage.text : contentSanitizer(lastMessage.text),
-                isMessageInProgress ? 'streaming' : 'complete'
-            )
+        // Message is complete, send everything through
+        // if (!isMessageInProgress) {
+        //     void this.editor.controllers.fixups?.didReceiveFixupText(
+        //         this.task.id,
+        //         contentSanitizer(lastMessage.text),
+        //         'complete'
+        //     )
+        // }
+
+        // We have a complete line
+        if (lastMessage.text.endsWith('\n')) {
+            const lines = lastMessage.text.split('\n')
+            void this.editor.controllers.fixups?.didReceiveFixupLine(this.task.id, contentSanitizer(lines.at(-2) || ''))
         }
     }
 
