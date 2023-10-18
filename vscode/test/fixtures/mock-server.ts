@@ -128,9 +128,9 @@ export async function run<T>(around: () => Promise<T>): Promise<T> {
     return result
 }
 
-export async function logTestingData(version: string, data: string): Promise<void> {
+export async function logTestingData(type: 'legacy' | 'new', data: string): Promise<void> {
     const message = {
-        version,
+        type,
         event: data,
         timestamp: new Date().getTime(),
         test_name: currentTestName,
@@ -145,7 +145,7 @@ export async function logTestingData(version: string, data: string): Promise<voi
     const messageID = await topicPublisher.publishMessage({ data: dataBuffer }).catch(error => {
         console.error('Error publishing message:', error)
     })
-    console.log(`Message published - Version: ${version}, ID: ${messageID}, TestRunId: ${currentTestRunID}`)
+    console.log(`Message published - Type: ${type}, ID: ${messageID}, TestRunId: ${currentTestRunID}`)
 }
 
 let currentTestName: string

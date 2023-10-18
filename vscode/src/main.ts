@@ -223,13 +223,8 @@ const register = async (
             return
         }
 
-        // This is currently a test/demo of the new events system, using a
-        // presumably lower-volume feature.
+        // This is currently a test/demo of the new events system
         telemetryRecorder.recordEvent('cody.fixup', 'created')
-        // TODO: When we start adopting the new system properly, remove this
-        // old event - telemetryRecorder already exports events using the old
-        // API if it detects an older instance.
-        telemetryService.log('CodyVSCodeExtension:fixup:created')
 
         const provider = fixupManager.getProviderForTask(task)
         return provider.startFix()

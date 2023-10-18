@@ -6,7 +6,7 @@ import { sidebarExplorer, sidebarSignin } from './common'
 import { test } from './helpers'
 
 const expectedOrderedEvents = [
-    'CodyVSCodeExtension:fixup:created',
+    'cody.fixup - created',
     'CodyVSCodeExtension:keywordContext:searchDuration',
     'CodyVSCodeExtension:recipe:fixup:executed',
     'CodyVSCodeExtension:fixupResponse:hasCode',

@@ -7,6 +7,7 @@ import { test } from './helpers'
 
 const expectedOrderedEvents = [
     'CodyVSCodeExtension:command:edit:executed',
+    'cody.fixup - created',
     'CodyVSCodeExtension:keywordContext:searchDuration',
     'CodyVSCodeExtension:recipe:fixup:executed',
     'CodyVSCodeExtension:fixupResponse:hasCode',
