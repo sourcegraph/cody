@@ -112,8 +112,6 @@ export class BfgContextFetcher implements GraphContextFetcher {
             contextRange,
         })
 
-        logDebug('BFG', `graph symbol count ${responses.symbols.length}`)
-
         return [...responses.symbols, ...responses.files]
     }
 
