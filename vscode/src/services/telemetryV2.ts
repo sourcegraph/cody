@@ -7,6 +7,8 @@ import {
     TelemetryRecorderProvider,
 } from '@sourcegraph/cody-shared/src/telemetry-v2/TelemetryRecorderProvider'
 
+import { logDebug } from '../log'
+
 import { localStorage } from './LocalStorageProvider'
 import { extensionDetails } from './telemetry'
 
@@ -46,13 +48,17 @@ export async function createOrUpdateTelemetryRecorderProvider(
 
     // In testing, send events to the mock server.
     if (process.env.CODY_TESTING === 'true') {
+        logDebug('telemetryV2', 'using mock exporter')
         updateGlobalInstances(new MockServerTelemetryRecorderProvider(extensionDetails, config, anonymousUserID))
         return
     }
 
     // In dev, log events to console.
     if (isExtensionModeDevOrTest) {
-        updateGlobalInstances(new ConsoleTelemetryRecorderProvider(extensionDetails, config))
+        logDebug('telemetryV2', 'using console exporter')
+        updateGlobalInstances(
+            new ConsoleTelemetryRecorderProvider(extensionDetails, config, message => logDebug('telemetryV2', message))
+        )
         return
     }
 

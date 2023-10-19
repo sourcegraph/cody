@@ -1,9 +1,9 @@
 import {
     TelemetryRecorderProvider as BaseTelemetryRecorderProvider,
-    ConsoleTelemetryExporter,
     defaultEventRecordingOptions,
     NoOpTelemetryExporter,
     TelemetryEventInput,
+    TelemetryExporter,
     TelemetryProcessor,
 } from '@sourcegraph/telemetry'
 
@@ -83,15 +83,37 @@ export class ConsoleTelemetryRecorderProvider extends BaseTelemetryRecorderProvi
     BillingCategory,
     BillingProduct
 > {
-    constructor(extensionDetails: ExtensionDetails, config: ConfigurationWithAccessToken) {
+    constructor(
+        extensionDetails: ExtensionDetails,
+        config: ConfigurationWithAccessToken,
+        logToConsole: (message: string) => void
+    ) {
         super(
             {
                 client: `${extensionDetails.ide}.${extensionDetails.ideExtensionType}`,
                 clientVersion: extensionDetails.version,
             },
-            new ConsoleTelemetryExporter(),
+            new ConsoleTelemetryExporter(logToConsole),
             [new ConfigurationMetadataProcessor(config)]
         )
+    }
+}
+
+export class ConsoleTelemetryExporter implements TelemetryExporter {
+    constructor(private logToConsole: (message: string) => void) {}
+
+    public async exportEvents(events: TelemetryEventInput[]): Promise<void> {
+        let message = 'ConsoleTelemetryExporter.exportEvents'
+        events.forEach(event => {
+            message += `\n${event.feature} - ${event.action} ${JSON.stringify({
+                ...event,
+                // feature, action in sumary
+                feature: undefined,
+                action: undefined,
+            })})`
+        })
+        this.logToConsole(message)
+        return Promise.resolve()
     }
 }
 
