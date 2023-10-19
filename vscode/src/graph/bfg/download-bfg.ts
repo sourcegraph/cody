@@ -31,10 +31,27 @@ export async function downloadBfg(context: vscode.ExtensionContext): Promise<str
     }
     const { platform, arch } = osArch
 
+    if (!arch) {
+        logDebug('BFG', 'getOSArch returned undefined arch')
+        return null
+    }
+
+    if (!platform) {
+        logDebug('BFG', 'getOSArch returned undefined platform')
+        return null
+    }
+    // Rename returned architecture to match RFC 795 conventions
+    // https://docs.google.com/document/d/11cw-7dAp93JmasITNSNCtx31xrQsNB1L2OoxVE6zrTc/edit
+    const archRenames = new Map([
+        ['aarch64', 'arm64'],
+        ['x86_64', 'x86'],
+    ])
+    const rfc795Arch = archRenames.get(arch ?? '') ?? arch
+
     const bfgContainingDir = path.join(context.globalStorageUri.fsPath, 'bfg')
     const bfgVersion = config.get<string>('cody.experimental.bfg.version', defaultBfgVersion)
     await fspromises.mkdir(bfgContainingDir, { recursive: true })
-    const bfgFilename = `bfg-${bfgVersion}-${arch}-${platform}`
+    const bfgFilename = `bfg-${bfgVersion}-${platform}-${rfc795Arch}`
     const bfgPath = path.join(bfgContainingDir, bfgFilename)
     const isAlreadyDownloaded = await fileExists(bfgPath)
     if (isAlreadyDownloaded) {
@@ -42,7 +59,7 @@ export async function downloadBfg(context: vscode.ExtensionContext): Promise<str
         return bfgPath
     }
 
-    const bfgURL = `https://github.com/sourcegraph/bfg/releases/download/v${bfgVersion}/bfg-${arch}-${platform}.zip`
+    const bfgURL = `https://github.com/sourcegraph/bfg/releases/download/v${bfgVersion}/bfg-${platform}-${rfc795Arch}.zip`
     try {
         await vscode.window.withProgress(
             {
@@ -54,8 +71,14 @@ export async function downloadBfg(context: vscode.ExtensionContext): Promise<str
                 progress.report({ message: 'Downloading bfg and extracting bfg' })
                 const bfgZip = path.join(bfgContainingDir, 'bfg.zip')
                 await downloadBfgBinary(bfgURL, bfgZip)
-                await unzipBfg(bfgZip, bfgPath)
+                await unzipBfg(bfgZip, bfgContainingDir)
+                logDebug('BFG', bfgPath)
+                // The zip file contains a binary named `bfg` or `bfg.exe`. We unzip it with that name first and then rename into
+                // a version-specific binary so that we can delete old versions of bfg.
+                const unzipPath = platform === 'windows' ? 'bfg.exe' : 'bfg'
+                await fspromises.rename(path.join(bfgContainingDir, unzipPath), bfgPath)
                 await fspromises.chmod(bfgPath, 0o755)
+                await fspromises.rm(bfgZip)
                 logDebug('BFG', `downloaded bfg to ${bfgPath}`)
             }
         )
@@ -67,15 +90,13 @@ export async function downloadBfg(context: vscode.ExtensionContext): Promise<str
     return bfgPath
 }
 
-async function unzipBfg(zipFile: string, destination: string): Promise<void> {
+async function unzipBfg(zipFile: string, destinationDir: string): Promise<void> {
     const zip = fs.createReadStream(zipFile).pipe(unzipper.Parse({ forceStream: true }))
     for await (const entry of zip) {
-        const fileName = entry.path
-        if (fileName === path.basename(destination)) {
-            entry.pipe(fs.createWriteStream(destination))
-        } else {
-            entry.autodrain()
+        if (entry.path.endsWith('/')) {
+            continue
         }
+        entry.pipe(fs.createWriteStream(path.join(destinationDir, entry.path)))
     }
 }
 
@@ -99,7 +120,7 @@ async function downloadBfgBinary(url: string, destination: string): Promise<void
 
 async function removeOldBfgBinaries(containingDir: string, currentBfgPath: string): Promise<void> {
     const bfgDirContents = await fspromises.readdir(containingDir)
-    const oldBfgBinaries = bfgDirContents.filter(f => f.startsWith('bfg-') && f !== currentBfgPath)
+    const oldBfgBinaries = bfgDirContents.filter(f => f.startsWith('bfg') && f !== currentBfgPath)
     for (const oldBfgBinary of oldBfgBinaries) {
         await fspromises.rm(path.join(containingDir, oldBfgBinary))
     }
