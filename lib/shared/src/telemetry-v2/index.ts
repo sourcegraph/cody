@@ -6,14 +6,14 @@
  * 'vscode.cody.foobar', as we already know an event comes from VS Code - just
  * use 'cody.foobar' instead.
  */
-export type EventFeature = 'cody' | 'cody.savedLogin' | 'cody.fixup' | 'cody.keywordContext'
+export type EventFeature = 'cody' | 'cody.savedLogin' | 'cody.fixup' | 'cody.fixup.apply'
 
 /**
  * Actions should denote a generic action within the scope of a feature.
  */
-export type EventAction = 'installed' | 'executed' | 'created'
+export type EventAction = 'succeeded' | 'failed' | 'installed' | 'executed' | 'created'
 
-export type MetadataKey = 'metadata' | 'duration'
+export type MetadataKey = 'metadata' | 'duration' | 'lineCount' | 'charCount'
 
 export type BillingCategory = 'exampleBillingCategory'
 

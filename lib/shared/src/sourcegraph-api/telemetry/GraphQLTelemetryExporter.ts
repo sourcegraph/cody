@@ -3,11 +3,13 @@ import { TelemetryEventInput, TelemetryExporter } from '@sourcegraph/telemetry'
 import { isError } from '../../utils'
 import { SourcegraphGraphQLAPIClient } from '../graphql/client'
 
+type ExportMode = 'legacy' | '5.2.0-5.2.1' | '5.2.2+'
+
 /**
  * GraphQLTelemetryExporter exports events via the
  */
 export class GraphQLTelemetryExporter implements TelemetryExporter {
-    private shouldUseLegacyEvents: boolean | undefined
+    private exportMode: ExportMode | undefined
     private legacySiteIdentification:
         | {
               siteid: string
@@ -31,7 +33,7 @@ export class GraphQLTelemetryExporter implements TelemetryExporter {
      * legacy event-recording API.
      */
     private async setLegacyEventsStateOnce(): Promise<void> {
-        if (this.shouldUseLegacyEvents === undefined) {
+        if (this.exportMode === undefined) {
             const siteVersion = await this.client.getSiteVersion()
             if (isError(siteVersion)) {
                 return // swallow errors
@@ -39,13 +41,16 @@ export class GraphQLTelemetryExporter implements TelemetryExporter {
 
             const insiderBuild = siteVersion.length > 12 || siteVersion.includes('dev')
             if (insiderBuild) {
-                this.shouldUseLegacyEvents = false
-                return
+                this.exportMode = '5.2.0-5.2.1' // TODO: use '5.2.2+' after https://github.com/sourcegraph/sourcegraph/pull/57719
+            } else if (siteVersion === '5.2.0' || siteVersion === '5.2.1') {
+                this.exportMode = '5.2.0-5.2.1'
+            } else if (siteVersion > '5.2.2') {
+                this.exportMode = '5.2.2+'
+            } else {
+                this.exportMode = 'legacy'
             }
-
-            this.shouldUseLegacyEvents = siteVersion >= '5.2.0'
         }
-        if (this.shouldUseLegacyEvents && this.legacySiteIdentification === undefined) {
+        if (this.exportMode === 'legacy' && this.legacySiteIdentification === undefined) {
             const siteIdentification = await this.client.getSiteIdentification()
             if (isError(siteIdentification)) {
                 /**
@@ -67,7 +72,8 @@ export class GraphQLTelemetryExporter implements TelemetryExporter {
      */
     public async exportEvents(events: TelemetryEventInput[]): Promise<void> {
         await this.setLegacyEventsStateOnce()
-        if (this.shouldUseLegacyEvents) {
+
+        if (this.exportMode === 'legacy') {
             // Swallow any problems, this is only a best-effort mechanism to
             // use the old export mechanism.
             await Promise.all(
@@ -91,6 +97,15 @@ export class GraphQLTelemetryExporter implements TelemetryExporter {
             )
 
             return
+        }
+
+        // In early releases, the privateMetadata field is broken. Circumvent
+        // this by filtering out the privateMetadata field for now.
+        // https://github.com/sourcegraph/sourcegraph/pull/57719
+        if (this.exportMode === '5.2.0-5.2.1') {
+            events.forEach(event => {
+                event.parameters.privateMetadata = undefined
+            })
         }
 
         // Otherwise, use the new mechanism as intended.

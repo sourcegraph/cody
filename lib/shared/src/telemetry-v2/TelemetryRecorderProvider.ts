@@ -3,7 +3,6 @@ import {
     defaultEventRecordingOptions,
     NoOpTelemetryExporter,
     TelemetryEventInput,
-    TelemetryExporter,
     TelemetryProcessor,
 } from '@sourcegraph/telemetry'
 
@@ -71,51 +70,6 @@ export class NoOpTelemetryRecorderProvider extends BaseTelemetryRecorderProvider
 }
 
 export const noOpTelemetryRecorder = new NoOpTelemetryRecorderProvider().getRecorder()
-
-/**
- * ConsoleTelemetryRecorderProvider uses ConsoleTelemetryExporter to export
- * events to console.
- */
-export class ConsoleTelemetryRecorderProvider extends BaseTelemetryRecorderProvider<
-    EventFeature,
-    EventAction,
-    MetadataKey,
-    BillingCategory,
-    BillingProduct
-> {
-    constructor(
-        extensionDetails: ExtensionDetails,
-        config: ConfigurationWithAccessToken,
-        logToConsole: (message: string) => void
-    ) {
-        super(
-            {
-                client: `${extensionDetails.ide}.${extensionDetails.ideExtensionType}`,
-                clientVersion: extensionDetails.version,
-            },
-            new ConsoleTelemetryExporter(logToConsole),
-            [new ConfigurationMetadataProcessor(config)]
-        )
-    }
-}
-
-export class ConsoleTelemetryExporter implements TelemetryExporter {
-    constructor(private logToConsole: (message: string) => void) {}
-
-    public async exportEvents(events: TelemetryEventInput[]): Promise<void> {
-        let message = 'ConsoleTelemetryExporter.exportEvents'
-        events.forEach(event => {
-            message += `\n${event.feature} - ${event.action} ${JSON.stringify({
-                ...event,
-                // feature, action in sumary
-                feature: undefined,
-                action: undefined,
-            })})`
-        })
-        this.logToConsole(message)
-        return Promise.resolve()
-    }
-}
 
 /**
  * MockServerTelemetryRecorderProvider uses MockServerTelemetryExporter to export

@@ -61,7 +61,7 @@ export async function run<T>(around: () => Promise<T>): Promise<T> {
         const events = req.body as TelemetryEventInput[]
         events.forEach(event => {
             void logTestingData('new', JSON.stringify(event))
-            loggedEvents.push(`${event.feature} - ${event.action}`)
+            loggedV2Events.push(`${event.feature} - ${event.action}`)
         })
         res.status(200)
     })
@@ -160,8 +160,14 @@ export function sendTestInfo(testName: string, testID: string, testRunID: string
 
 export let loggedEvents: string[] = []
 
+// Events recorded using the new event recorders
+// Needs to be recorded separately from the legacy events to ensure ordering
+// is stable.
+export let loggedV2Events: string[] = []
+
 export function resetLoggedEvents(): void {
     loggedEvents = []
+    loggedV2Events = []
 }
 export function storeLoggedEvents(event: string): void {
     interface ParsedEvent {

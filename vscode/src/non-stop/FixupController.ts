@@ -10,6 +10,7 @@ import { getSmartSelection } from '../editor/utils'
 import { logDebug } from '../log'
 import { countCode } from '../services/InlineAssist'
 import { telemetryService } from '../services/telemetry'
+import { telemetryRecorder } from '../services/telemetryV2'
 
 import { computeDiff, Diff } from './diff'
 import { FixupCodeLenses } from './FixupCodeLenses'
@@ -295,6 +296,9 @@ export class FixupController
 
         if (!editOk) {
             telemetryService.log('CodyVSCodeExtension:fixup:apply:failed')
+            // This is currently a test/demo of the new events system
+            telemetryRecorder.recordEvent('cody.fixup.apply', 'failed')
+
             // TODO: Try to recover, for example by respinning
             void vscode.window.showWarningMessage('edit did not apply')
             return
@@ -305,6 +309,15 @@ export class FixupController
             const codeCount = countCode(replacementText)
             const source = task.source
             telemetryService.log('CodyVSCodeExtension:fixup:applied', { ...codeCount, source })
+
+            // This is currently a test/demo of the new events system
+            telemetryRecorder.recordEvent('cody.fixup.apply', 'succeeded', {
+                metadata: [
+                    ['lineCount', codeCount.lineCount],
+                    ['charCount', codeCount.charCount],
+                ],
+                privateMetadata: { source },
+            })
         }
 
         // TODO: is this the right transition for being all done?

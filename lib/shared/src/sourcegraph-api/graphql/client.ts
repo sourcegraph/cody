@@ -427,8 +427,8 @@ export class SourcegraphGraphQLAPIClient {
      * recordTelemetryEvents uses the new Telemetry API to record events that
      * gets exported.
      */
-    public async recordTelemetryEvents(events: TelemetryEventInput[]): Promise<void | Error> {
-        const initialResponse = await this.fetchSourcegraphAPI<APIResponse<void>>(
+    public async recordTelemetryEvents(events: TelemetryEventInput[]): Promise<{} | Error> {
+        const initialResponse = await this.fetchSourcegraphAPI<APIResponse<{}>>(
             RECORD_TELEMETRY_EVENTS_MUTATION,
             events
         )
@@ -580,6 +580,7 @@ export class SourcegraphGraphQLAPIClient {
         addCustomUserAgent(headers)
 
         const url = buildGraphQLUrl({ request: query, baseUrl: this.config.serverEndpoint })
+        console.log(JSON.stringify({ query, variables }))
         return fetch(url, {
             method: 'POST',
             body: JSON.stringify({ query, variables }),
@@ -630,9 +631,10 @@ export class SourcegraphGraphQLAPIClient {
  */
 export const graphqlClient = new SourcegraphGraphQLAPIClient()
 
-function verifyResponseCode(response: Response): Response {
+async function verifyResponseCode(response: Response): Promise<Response> {
     if (!response.ok) {
-        throw new Error(`HTTP status code: ${response.status}`)
+        const body = await response.text()
+        throw new Error(`HTTP status code ${response.status}${body ? `: ${body}` : ''}`)
     }
     return response
 }

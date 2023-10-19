@@ -1,12 +1,11 @@
 import { expect } from '@playwright/test'
 
-import { loggedEvents, resetLoggedEvents } from '../fixtures/mock-server'
+import { loggedEvents, loggedV2Events, resetLoggedEvents } from '../fixtures/mock-server'
 
 import { sidebarExplorer, sidebarSignin } from './common'
 import { test } from './helpers'
 
 const expectedOrderedEvents = [
-    'cody.fixup - created',
     'CodyVSCodeExtension:keywordContext:searchDuration',
     'CodyVSCodeExtension:recipe:fixup:executed',
     'CodyVSCodeExtension:fixupResponse:hasCode',
@@ -49,6 +48,7 @@ test.skip('start a fixup job from inline chat with valid auth', async ({ page, s
     // Check if a new file called index.cody.html is created
     await expect(page.getByText('index.cody.html')).toBeVisible()
     await expect.poll(() => loggedEvents).toEqual(expectedOrderedEvents)
+    await expect.poll(() => loggedV2Events).toEqual(['cody.fixup.apply - succeeded'])
 
     // TODO check if content is correct. Currently blocked by ability to highlight in test
 })

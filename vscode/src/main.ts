@@ -31,7 +31,7 @@ import * as OnboardingExperiment from './services/OnboardingExperiment'
 import { getAccessToken, secretStorage, VSCodeSecretStorage } from './services/SecretStorageProvider'
 import { createStatusBar } from './services/StatusBar'
 import { createOrUpdateEventLogger, telemetryService } from './services/telemetry'
-import { createOrUpdateTelemetryRecorderProvider, telemetryRecorder } from './services/telemetryV2'
+import { createOrUpdateTelemetryRecorderProvider } from './services/telemetryV2'
 import { TestSupport } from './test-support'
 
 /**
@@ -222,9 +222,6 @@ const register = async (
         if (!task) {
             return
         }
-
-        // This is currently a test/demo of the new events system
-        telemetryRecorder.recordEvent('cody.fixup', 'created')
 
         const provider = fixupManager.getProviderForTask(task)
         return provider.startFix()
@@ -537,5 +534,5 @@ async function createOrUpdateEventsInfra(
     isExtensionModeDevOrTest: boolean
 ): Promise<void> {
     await createOrUpdateEventLogger(config, isExtensionModeDevOrTest)
-    await createOrUpdateTelemetryRecorderProvider(config, isExtensionModeDevOrTest)
+    await createOrUpdateTelemetryRecorderProvider(config, false) // TODO revert to isExtensionModeDevOrTest
 }

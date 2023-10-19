@@ -1,11 +1,11 @@
 import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
 import {
-    ConsoleTelemetryRecorderProvider,
     MockServerTelemetryRecorderProvider,
     NoOpTelemetryRecorderProvider,
     TelemetryRecorder,
     TelemetryRecorderProvider,
 } from '@sourcegraph/cody-shared/src/telemetry-v2/TelemetryRecorderProvider'
+import { CallbackTelemetryProcessor } from '@sourcegraph/telemetry'
 
 import { logDebug } from '../log'
 
@@ -22,17 +22,28 @@ let telemetryRecorderProvider: TelemetryRecorderProvider | undefined
  * via createOrUpdateTelemetryRecorderProvider.
  */
 export let telemetryRecorder: TelemetryRecorder = new NoOpTelemetryRecorderProvider().getRecorder([
-    {
-        processEvent: () => {
-            throw new Error('telemetry recorder used before initialization')
-        },
-    },
+    new CallbackTelemetryProcessor(() => {
+        throw new Error('telemetryV2: recorder used before initialization')
+    }),
 ])
 
 function updateGlobalInstances(provider: TelemetryRecorderProvider): void {
     telemetryRecorderProvider?.complete()
     telemetryRecorderProvider = provider
-    telemetryRecorder = provider.getRecorder()
+    telemetryRecorder = provider.getRecorder([
+        // Log all events in debug for reference.
+        new CallbackTelemetryProcessor(event => {
+            logDebug(
+                'telemetryV2',
+                `recordEvent: ${event.feature} - ${event.action} (${JSON.stringify({
+                    ...event,
+                    // feature, action is in summary, just log rest of the metadata
+                    feature: undefined,
+                    action: undefined,
+                })})`
+            )
+        }),
+    ])
 }
 
 export async function createOrUpdateTelemetryRecorderProvider(
@@ -55,10 +66,8 @@ export async function createOrUpdateTelemetryRecorderProvider(
 
     // In dev, log events to console.
     if (isExtensionModeDevOrTest) {
-        logDebug('telemetryV2', 'using console exporter')
-        updateGlobalInstances(
-            new ConsoleTelemetryRecorderProvider(extensionDetails, config, message => logDebug('telemetryV2', message))
-        )
+        logDebug('telemetryV2', 'using no-op exports (see debug logs events)')
+        updateGlobalInstances(new NoOpTelemetryRecorderProvider())
         return
     }
 
