@@ -924,7 +924,7 @@
             "llama-code-13b",
             "llama-code-13b-instruct"
           ],
-          "markdownDescription": "Overwrite the  model used for code autocompletion inference. This is only supported with the `unstable-fireworks` provider"
+          "markdownDescription": "Overwrite the  model used for code autocompletion inference. This is only supported with the `fireworks` provider"
         },
         "cody.autocomplete.completeSuggestWidgetSelection": {
           "type": "boolean",
