@@ -36,14 +36,14 @@ export class GraphQLTelemetryExporter implements TelemetryExporter {
         if (this.exportMode === undefined) {
             const siteVersion = await this.client.getSiteVersion()
             if (isError(siteVersion)) {
-                return // swallow errors
+                return // swallow error, try again later
             }
 
             const insiderBuild = siteVersion.length > 12 || siteVersion.includes('dev')
             if (insiderBuild) {
-                this.exportMode = '5.2.0-5.2.1' // TODO: use '5.2.2+' after https://github.com/sourcegraph/sourcegraph/pull/57719
+                this.exportMode = '5.2.2+'
             } else if (siteVersion === '5.2.0' || siteVersion === '5.2.1') {
-                this.exportMode = '5.2.0-5.2.1'
+                this.exportMode = '5.2.0-5.2.1' // special handling required for https://github.com/sourcegraph/sourcegraph/pull/57719
             } else if (siteVersion > '5.2.2') {
                 this.exportMode = '5.2.2+'
             } else {

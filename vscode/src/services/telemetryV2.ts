@@ -55,7 +55,7 @@ export async function createOrUpdateTelemetryRecorderProvider(
         return
     }
 
-    const { anonymousUserID, created } = await localStorage.anonymousUserID()
+    const { anonymousUserID, created: newAnonymousUser } = await localStorage.anonymousUserID()
 
     // In testing, send events to the mock server.
     if (process.env.CODY_TESTING === 'true') {
@@ -74,7 +74,7 @@ export async function createOrUpdateTelemetryRecorderProvider(
     if (telemetryRecorderProvider === undefined) {
         updateGlobalInstances(new TelemetryRecorderProvider(extensionDetails, config, anonymousUserID))
         // Log some additional events on initial configuration of telemetryRecorderProvider
-        if (created) {
+        if (newAnonymousUser) {
             telemetryRecorder.recordEvent('cody', 'installed')
         } else {
             telemetryRecorder.recordEvent('cody.savedLogin', 'executed')

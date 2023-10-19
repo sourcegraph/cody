@@ -579,7 +579,6 @@ export class SourcegraphGraphQLAPIClient {
         addCustomUserAgent(headers)
 
         const url = buildGraphQLUrl({ request: query, baseUrl: this.config.serverEndpoint })
-        console.log(JSON.stringify({ query, variables }))
         return fetch(url, {
             method: 'POST',
             body: JSON.stringify({ query, variables }),
@@ -588,7 +587,6 @@ export class SourcegraphGraphQLAPIClient {
             .then(verifyResponseCode)
             .then(response => response.json() as T)
             .catch(error => {
-                console.log(error)
                 return new Error(`accessing Sourcegraph GraphQL API: ${error} (${url})`)
             })
     }

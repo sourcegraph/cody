@@ -79,7 +79,7 @@ const register = async (
     const isExtensionModeDevOrTest =
         context.extensionMode === vscode.ExtensionMode.Development ||
         context.extensionMode === vscode.ExtensionMode.Test
-    await createOrUpdateEventsInfra(initialConfig, isExtensionModeDevOrTest)
+    await configureEventsInfra(initialConfig, isExtensionModeDevOrTest)
 
     // Controller for inline Chat
     const commentController = new InlineController(context.extensionPath)
@@ -179,7 +179,7 @@ const register = async (
         contextProvider.configurationChangeEvent.event(async () => {
             const newConfig = await getFullConfig()
             externalServicesOnDidConfigurationChange(newConfig)
-            await createOrUpdateEventsInfra(newConfig, isExtensionModeDevOrTest)
+            await configureEventsInfra(newConfig, isExtensionModeDevOrTest)
         })
     )
 
@@ -522,7 +522,7 @@ const register = async (
             graphqlClient.onConfigurationChange(newConfig)
             contextProvider.onConfigurationChange(newConfig)
             externalServicesOnDidConfigurationChange(newConfig)
-            void createOrUpdateEventsInfra(newConfig, isExtensionModeDevOrTest)
+            void configureEventsInfra(newConfig, isExtensionModeDevOrTest)
             platform.onConfigurationChange?.(newConfig)
             symfRunner?.setAuthToken(newConfig.accessToken)
         },
@@ -533,10 +533,10 @@ const register = async (
  * Create or update events infrastructure, both legacy (telemetryService) and
  * new (telemetryRecorder)
  */
-async function createOrUpdateEventsInfra(
+async function configureEventsInfra(
     config: ConfigurationWithAccessToken,
     isExtensionModeDevOrTest: boolean
 ): Promise<void> {
     await createOrUpdateEventLogger(config, isExtensionModeDevOrTest)
-    await createOrUpdateTelemetryRecorderProvider(config, false) // TODO revert to isExtensionModeDevOrTest
+    await createOrUpdateTelemetryRecorderProvider(config, isExtensionModeDevOrTest)
 }

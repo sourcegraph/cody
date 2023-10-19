@@ -105,9 +105,6 @@ class ConfigurationMetadataProcessor implements TelemetryProcessor {
         if (!event.parameters.metadata) {
             event.parameters.metadata = []
         }
-        if (!event.parameters.privateMetadata) {
-            event.parameters.privateMetadata = {}
-        }
         event.parameters.metadata.push(
             {
                 key: 'contextSelection',
