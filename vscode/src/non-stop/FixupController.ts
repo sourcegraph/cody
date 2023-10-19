@@ -429,7 +429,6 @@ export class FixupController
 
     // Accepting fixups from tree item click
     private acceptFixups(treeItem?: FixupTaskTreeItem): void {
-        console.log('Accepting fixup', treeItem)
         // Accepting all fixup tasks
         if (!treeItem) {
             for (const task of this.tasks.values()) {
@@ -505,7 +504,6 @@ export class FixupController
 
         if (!editOk) {
             telemetryService.log('CodyVSCodeExtension:fixup:revert:failed')
-            // TODO: Try to recover, for example by respinning
             return
         }
 
@@ -734,7 +732,6 @@ export class FixupController
         if (!editor) {
             return
         }
-
         const diff = task.diff
         if (!diff || diff.mergedText === undefined) {
             return
