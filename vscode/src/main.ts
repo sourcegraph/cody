@@ -215,7 +215,7 @@ const register = async (
         }
 
         const task = args.instruction?.replace('/edit', '').trim()
-            ? fixup.createTask(document, args.instruction, range, args.insertMode, source)
+            ? fixup.createTask(document.uri, args.instruction, range, args.insertMode, source)
             : await fixup.promptUserForTask()
         if (!task) {
             return
@@ -236,22 +236,22 @@ const register = async (
              * TODO: Should we make fix the default for comments?
              * /chat or /ask could trigger a chat
              */
-            // if (isEditMode) {
-            //     const source = 'inline-chat'
-            //     void vscode.commands.executeCommand('workbench.action.collapseAllComments')
-            //     const activeDocument = await vscode.workspace.openTextDocument(comment.thread.uri)
-            //     return executeFixup(
-            //         {
-            //             document: activeDocument,
-            //             instruction: comment.text.replace(commandRegex.edit, ''),
-            //             range: comment.thread.range,
-            //         },
-            //         source
-            //     )
-            // }
+            if (isEditMode) {
+                const source = 'inline-chat'
+                void vscode.commands.executeCommand('workbench.action.collapseAllComments')
+                const activeDocument = await vscode.workspace.openTextDocument(comment.thread.uri)
+                return executeFixup(
+                    {
+                        document: activeDocument,
+                        instruction: comment.text.replace(commandRegex.edit, ''),
+                        range: comment.thread.range,
+                    },
+                    source
+                )
+            }
 
             const inlineChatProvider = inlineChatManager.getProviderForThread(comment.thread)
-            await inlineChatProvider.addChat(comment.text, isEditMode)
+            await inlineChatProvider.addChat(comment.text, false)
         }),
         vscode.commands.registerCommand('cody.comment.delete', (thread: vscode.CommentThread) => {
             inlineChatManager.removeProviderForThread(thread)

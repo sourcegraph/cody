@@ -67,7 +67,7 @@ export class FixupTypingUI {
             return null
         }
 
-        const task = this.taskFactory.createTask(editor.document, instruction, range)
+        const task = this.taskFactory.createTask(editor.document.uri, instruction, range)
 
         // Return focus to the editor
         void vscode.window.showTextDocument(editor.document)

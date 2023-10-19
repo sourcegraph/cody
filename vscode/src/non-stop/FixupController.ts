@@ -57,12 +57,26 @@ export class FixupController
             vscode.commands.registerCommand('cody.fixup.apply-by-file', treeItem => this.applyFixups(treeItem)),
             vscode.commands.registerCommand('cody.fixup.apply-all', () => this.applyFixups()),
             vscode.commands.registerCommand('cody.fixup.diff', treeItem => this.showDiff(treeItem)),
-            vscode.commands.registerCommand('cody.fixup.codelens.cancel', id => this.cancel(id)),
-            vscode.commands.registerCommand('cody.fixup.codelens.diff', id => this.diff(id)),
-            vscode.commands.registerCommand('cody.fixup.codelens.undo', id => this.undo(id)),
-            vscode.commands.registerCommand('cody.fixup.codelens.accept', id => this.accept(id)),
-            vscode.commands.registerCommand('cody.fixup.codelens.cancel', id => this.cancel(id)),
-            vscode.commands.registerCommand('cody.fixup.codelens.regenerate', async id => this.regenerate(id))
+            vscode.commands.registerCommand('cody.fixup.codelens.cancel', id => {
+                telemetryService.log('CodyVSCodeExtension:fixup:codeLens:clicked', { op: 'cancel' })
+                return this.cancel(id)
+            }),
+            vscode.commands.registerCommand('cody.fixup.codelens.diff', id => {
+                telemetryService.log('CodyVSCodeExtension:fixup:codeLens:clicked', { op: 'diff' })
+                return this.diff(id)
+            }),
+            vscode.commands.registerCommand('cody.fixup.codelens.undo', id => {
+                telemetryService.log('CodyVSCodeExtension:fixup:codeLens:clicked', { op: 'undo' })
+                return this.undo(id)
+            }),
+            vscode.commands.registerCommand('cody.fixup.codelens.regenerate', async id => {
+                telemetryService.log('CodyVSCodeExtension:fixup:codeLens:clicked', { op: 'regenerate' })
+                return this.regenerate(id)
+            }),
+            vscode.commands.registerCommand('cody.fixup.codelens.accept', id => {
+                telemetryService.log('CodyVSCodeExtension:fixup:codeLens:clicked', { op: 'accept' })
+                return this.accept(id)
+            })
         )
         // Observe file renaming and deletion
         this.files = new FixupFileObserver()
@@ -75,7 +89,16 @@ export class FixupController
         // Observe file edits
         this.editObserver = new FixupDocumentEditObserver(this)
         this._disposables.push(
-            vscode.workspace.onDidChangeTextDocument(this.editObserver.textDocumentChanged.bind(this.editObserver))
+            vscode.workspace.onDidChangeTextDocument(this.editObserver.textDocumentChanged.bind(this.editObserver)),
+            vscode.workspace.onDidSaveTextDocument(({ uri }) => {
+                // If we save the document, we consider the user to have accepted any applied tasks.
+                // This ensures the codelens doesn't stay around unnecessarily and become an annoyance.
+                for (const task of this.tasks.values()) {
+                    if (task.state === CodyTaskState.applied && task.fixupFile.uri.fsPath.endsWith(uri.fsPath)) {
+                        this.accept(task.id)
+                    }
+                }
+            })
         )
     }
 
@@ -110,24 +133,14 @@ export class FixupController
     }
 
     public createTask(
-        document: vscode.TextDocument,
+        documentUri: vscode.Uri,
         instruction: string,
         selectionRange: vscode.Range,
         insertMode?: boolean,
         source?: string
     ): FixupTask {
-        const fixupFile = this.files.forUri(document.uri)
-        // Create selection lines as Map<number, string>
-        const selectionLines = document
-            .getText(selectionRange)
-            .split('\n')
-            .reduce((acc, lineContent, index) => {
-                const lineNumber = selectionRange.start.line + index
-                acc.set(lineNumber, lineContent)
-                return acc
-            }, new Map())
-
-        const task = new FixupTask(fixupFile, instruction, selectionRange, selectionLines, insertMode, source)
+        const fixupFile = this.files.forUri(documentUri)
+        const task = new FixupTask(fixupFile, instruction, selectionRange, insertMode, source)
         this.tasks.set(task.id, task)
         this.setTaskState(task, CodyTaskState.working)
         return task
@@ -326,8 +339,11 @@ export class FixupController
         }
 
         // TODO: See if we can discard a FixupFile now.
+        // TODO: See if this is broken, we ideally want to display the final diff decorations on applied
+        const currentText = editor.document.getText(task.selectionRange)
         this.setTaskState(task, CodyTaskState.applied)
-        this.updateTaskDiff(task, editor.document.getText(task.selectionRange))
+        await new Promise(resolve => setTimeout(resolve, 500))
+        this.updateTaskDiff(task, currentText)
     }
 
     // Replace edit returned by Cody at task selection range
@@ -403,7 +419,6 @@ export class FixupController
     }
 
     private cancel(id: taskID): void {
-        telemetryService.log('CodyVSCodeExtension:fixup:codeLens:clicked', { op: 'cancel' })
         const task = this.tasks.get(id)
         if (!task) {
             return
@@ -413,7 +428,6 @@ export class FixupController
     }
 
     private accept(id: taskID): void {
-        telemetryService.log('CodyVSCodeExtension:fixup:codeLens:clicked', { op: 'accept' })
         const task = this.tasks.get(id)
         if (!task) {
             return
@@ -423,7 +437,6 @@ export class FixupController
     }
 
     private undo(id: taskID): void {
-        telemetryService.log('CodyVSCodeExtension:fixup:codeLens:clicked', { op: 'undo' })
         const task = this.tasks.get(id)
         if (!task) {
             return
@@ -483,94 +496,6 @@ export class FixupController
         }
     }
 
-    /**
-     * Speculatively attempt to match the incoming line from the LLM with
-     * an existing line already in the document.
-     *
-     * If found, this will update the current active line for the fixup task.
-     **/
-    public updateActiveLine(task: FixupTask, activeContent: string): number {
-        let matchingLine
-
-        for (let i = task.activeLine; i < task.selectionRange.end.line; i++) {
-            const selectionLine = task.selectionLines.get(i)
-            if (selectionLine === activeContent) {
-                matchingLine = i
-                break
-            }
-        }
-
-        if (matchingLine === undefined) {
-            console.log('No match. We will expand the selection range only.', {
-                current: task.selectionLines.get(task.activeLine),
-                new: activeContent,
-            })
-            // No match, this means we are potentially adding new content.
-            // We need to keep the existing active line, but expand the selection range
-            task.selectionRange = new vscode.Range(
-                task.selectionRange.start.with(task.selectionRange.start.line + 1, 0),
-                task.selectionRange.end.with(task.selectionRange.end.line + 1, 0)
-            )
-        } else {
-            // Found a new active line, update where we believe the LLM is changing
-            console.log('We got a match! We will update the active line to the new match', {
-                current: task.selectionLines.get(matchingLine + task.activeLine),
-                new: activeContent,
-            })
-            task.activeLine = matchingLine
-        }
-
-        return task.activeLine
-    }
-
-    public async didReceiveFixupLine(id: string, line: string): Promise<void> {
-        const task = this.tasks.get(id)
-        if (!task) {
-            return Promise.resolve()
-        }
-
-        this.updateActiveLine(task, line)
-        task.replacementLine = line
-        console.log('Start of selection:', task.selectionRange.start.line)
-        console.log('Active line:', task.activeLine)
-        console.log('End of selection:', task.selectionRange.end.line)
-
-        return this.applyTaskLine(task)
-    }
-
-    private async applyTaskLine(task: FixupTask): Promise<void> {
-        let editor = vscode.window.visibleTextEditors.find(editor => editor.document.uri === task.fixupFile.uri)
-        if (!editor) {
-            editor = await vscode.window.showTextDocument(task.fixupFile.uri)
-        }
-
-        const existingLine = task.selectionLines.get(task.activeLine)
-        const incomingLine = task.replacementLine || ''
-
-        let editOk: boolean
-
-        if (existingLine) {
-            // We have a line that needs updating
-            const diff = computeDiff(existingLine, incomingLine, existingLine, new vscode.Position(task.activeLine, 0))
-            if (!diff) {
-                console.log('NO DIFF, DOING NOTHING')
-                return
-            }
-            editOk = await this.replaceEdit(editor, diff)
-        } else {
-            // Adding a new line, insert it and bump the active line by one
-            editOk = await editor.edit(editBuilder => {
-                editBuilder.insert(new vscode.Position(task.activeLine, 0), incomingLine)
-            })
-            task.activeLine = task.activeLine + 1
-        }
-
-        if (!editOk) {
-            console.log('EDIT NOT OK!!')
-            return
-        }
-    }
-
     public async didReceiveFixupText(id: string, text: string, state: 'streaming' | 'complete'): Promise<void> {
         const task = this.tasks.get(id)
         if (!task) {
@@ -604,7 +529,13 @@ export class FixupController
     // Handles changes to the source document in the fixup selection, or the
     // replacement text generated by Cody.
     public textDidChange(task: FixupTask): void {
-        if (task.state === CodyTaskState.finished || task.state === CodyTaskState.applied) {
+        // User has changed an applied task, so we assume the user has accepted the change and wants to take control.
+        // This ensures the codelens doesn't stay around unnecessarily and become an annoyance.
+        // Note: This will also apply if the user attempts to undo the applied change.
+        if (task.state === CodyTaskState.applied) {
+            this.accept(task.id)
+        }
+        if (task.state === CodyTaskState.finished) {
             this.needsDiffUpdate_.delete(task)
         }
         if (this.needsDiffUpdate_.size === 0) {
@@ -617,6 +548,7 @@ export class FixupController
 
     // Handles when the range associated with a fixup task changes.
     public rangeDidChange(task: FixupTask): void {
+        console.log('RANGE CHANGED, DID NOTHING')
         this.codelenses.didUpdateTask(task)
         // We don't notify the decorator about this range change; vscode
         // updates any text decorations and we can recompute them, lazily,
@@ -720,12 +652,10 @@ export class FixupController
 
     // Show diff between before and after edits
     private async diff(id: taskID): Promise<void> {
-        telemetryService.log('CodyVSCodeExtension:fixup:codeLens:clicked', { op: 'diff' })
         const task = this.tasks.get(id)
         if (!task) {
             return
         }
-
         // Get an up-to-date diff
         const editor = vscode.window.visibleTextEditors.find(editor => editor.document.uri === task.fixupFile.uri)
         if (!editor) {
@@ -736,7 +666,6 @@ export class FixupController
         if (!diff || diff.mergedText === undefined) {
             return
         }
-
         // show diff view between the current document and replacement
         // Add replacement content to the temp document
         await this.contentStore.set(task.id, task.fixupFile.uri)
@@ -766,7 +695,6 @@ export class FixupController
 
     // Regenerate code with the same set of instruction
     public async regenerate(id: taskID): Promise<void> {
-        telemetryService.log('CodyVSCodeExtension:fixup:codeLens:clicked', { op: 'regenerate' })
         const task = this.tasks.get(id)
         if (!task) {
             return
@@ -796,7 +724,6 @@ export class FixupController
             this.discard(task)
             return
         }
-
         // Save states of the task
         this.codelenses.didUpdateTask(task)
         this.taskViewProvider.setTreeItem(task)

@@ -99,18 +99,12 @@ export class FixupProvider extends MessageProvider {
         }
 
         // Message is complete, send everything through
-        // if (!isMessageInProgress) {
-        //     void this.editor.controllers.fixups?.didReceiveFixupText(
-        //         this.task.id,
-        //         contentSanitizer(lastMessage.text),
-        //         'complete'
-        //     )
-        // }
-
-        // We have a complete line
-        if (lastMessage.text.endsWith('\n')) {
-            const lines = lastMessage.text.split('\n')
-            void this.editor.controllers.fixups?.didReceiveFixupLine(this.task.id, contentSanitizer(lines.at(-2) || ''))
+        if (!isMessageInProgress) {
+            void this.editor.controllers.fixups?.didReceiveFixupText(
+                this.task.id,
+                contentSanitizer(lastMessage.text),
+                'complete'
+            )
         }
     }
 
