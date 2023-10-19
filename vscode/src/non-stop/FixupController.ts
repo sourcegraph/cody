@@ -731,6 +731,10 @@ export class FixupController
         if (task.state === CodyTaskState.applying) {
             void this.apply(task.id)
         }
+
+        if (task.state === CodyTaskState.applied) {
+            this.decorator.didCompleteTask(task)
+        }
     }
 
     private reset(): void {

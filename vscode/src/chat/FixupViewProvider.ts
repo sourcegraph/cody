@@ -94,16 +94,15 @@ export class FixupProvider extends MessageProvider {
         const lastMessage = transcript.at(-1)
 
         // The users' messages are already added through the comments API.
-        if (lastMessage?.speaker !== 'assistant' || !lastMessage.text) {
+        if (lastMessage?.speaker !== 'assistant') {
             return
         }
 
-        // Message is complete, send everything through
-        if (!isMessageInProgress) {
+        if (lastMessage.text) {
             void this.editor.controllers.fixups?.didReceiveFixupText(
                 this.task.id,
-                contentSanitizer(lastMessage.text),
-                'complete'
+                isMessageInProgress ? lastMessage.text : contentSanitizer(lastMessage.text),
+                isMessageInProgress ? 'streaming' : 'complete'
             )
         }
     }

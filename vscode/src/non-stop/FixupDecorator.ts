@@ -76,7 +76,6 @@ export class FixupDecorator implements vscode.Disposable {
         this.updateTaskDecorations(task, task.diff)
     }
 
-    // TODO: Call this so we can delete old decorations some time.
     public didCompleteTask(task: FixupTask): void {
         this.updateTaskDecorations(task, undefined)
     }
