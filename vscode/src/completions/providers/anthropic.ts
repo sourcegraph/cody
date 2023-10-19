@@ -74,16 +74,14 @@ export class AnthropicProvider extends Provider {
         const infillSuffix = this.options.docContext.suffix
         const relativeFilePath = vscode.workspace.asRelativePath(this.options.document.fileName)
 
-        const hasTrailingWhiteSpace = tail.raw !== tail.raw?.trimEnd()
-
         const prefixMessagesWithInfill: Message[] = [
             {
                 speaker: 'human',
-                text: `Below is the code from file path ${relativeFilePath}. Review the code outside the XML tags to detect the functionality, formats, style, patterns, and logics in use. Then, use what you detect and reuse methods/libraries to complete and enclose completed code only inside XML tags precisely without duplicating existing implementations. Here is the code:\n\`\`\`\n${infillPrefix}${OPENING_CODE_TAG}${CLOSING_CODE_TAG}${infillSuffix}\n\`\`\``,
+                text: `Below is the code from file path ${relativeFilePath}. Review the code outside the XML tags to detect the functionality, formats, style, patterns, and logics in use. Then, use what you detect and reuse methods/libraries to complete and enclose completed code only inside XML tags precisely without duplicating existing implementations. Here is the code enclosed in <completion_request> tags:\n<completion_request>${infillPrefix}${infillBlock}${OPENING_CODE_TAG}${CLOSING_CODE_TAG}${infillSuffix}</completion_request>`,
             },
             {
                 speaker: 'assistant',
-                text: `${OPENING_CODE_TAG}${infillBlock}${hasTrailingWhiteSpace ? CLOSING_CODE_TAG : ''}`,
+                text: `${OPENING_CODE_TAG}`,
             },
         ]
 
@@ -114,8 +112,8 @@ export class AnthropicProvider extends Provider {
                     speaker: 'human',
                     text:
                         'symbol' in snippet && snippet.symbol !== ''
-                            ? `Documentation context for \`${snippet.symbol}\`:\n${snippet.content}`
-                            : `File context from '${snippet.fileName}':\n${snippet.content}`,
+                            ? `Documentation context for \`${snippet.symbol}\`: <shared_context>${snippet.content}</shared_context>`
+                            : `File context from '${snippet.fileName}': <shared_context>${snippet.content}</shared_context>`,
                 },
                 {
                     speaker: 'assistant',
