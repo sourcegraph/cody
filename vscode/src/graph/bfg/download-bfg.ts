@@ -17,17 +17,16 @@ export async function downloadBfg(context: vscode.ExtensionContext): Promise<str
     const userBfgPath = config.get<string>('cody.experimental.bfg.path')
     if (userBfgPath) {
         const bfgStat = await fspromises.stat(userBfgPath)
-        console.log({ stat: bfgStat.isFile() })
         if (!bfgStat.isFile()) {
             throw new Error(`not a file: ${userBfgPath}`)
         }
-        logDebug('bfg', `using user bfg: ${userBfgPath} ${bfgStat.isFile()}`)
+        logDebug('BFG', `using user bfg: ${userBfgPath} ${bfgStat.isFile()}`)
         return userBfgPath
     }
 
     const osArch = getOSArch()
     if (!osArch) {
-        logDebug('bfg', 'getOSArch returned nothing')
+        logDebug('BFG', 'getOSArch returned nothing')
         return null
     }
     const { platform, arch } = osArch
@@ -39,7 +38,7 @@ export async function downloadBfg(context: vscode.ExtensionContext): Promise<str
     const bfgPath = path.join(bfgContainingDir, bfgFilename)
     const isAlreadyDownloaded = await fileExists(bfgPath)
     if (isAlreadyDownloaded) {
-        logDebug('bfg', `using downloaded bfg "${bfgPath}"`)
+        logDebug('BFG', `using downloaded bfg "${bfgPath}"`)
         return bfgPath
     }
 
@@ -48,7 +47,7 @@ export async function downloadBfg(context: vscode.ExtensionContext): Promise<str
         await vscode.window.withProgress(
             {
                 location: vscode.ProgressLocation.Notification,
-                title: 'Downloading code graph utility "bfg"',
+                title: 'Downloading BFG code graph utility',
                 cancellable: false,
             },
             async progress => {
