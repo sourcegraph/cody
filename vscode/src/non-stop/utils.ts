@@ -32,17 +32,17 @@ export const fixupTaskList: CodyTaskList = {
     [CodyTaskState.applying]: {
         id: 'applying',
         icon: 'pencil',
-        description: 'The fixup is being applied to the document',
+        description: 'The edit is being applied to the document',
     },
     [CodyTaskState.applied]: {
         id: 'applied',
-        icon: 'pass-filled',
+        icon: 'pass',
         description: 'Suggestions from Cody have been applied',
     },
     [CodyTaskState.finished]: {
         id: 'finished',
         icon: 'pass-filled',
-        description: 'The fixup is no longer visible in the document',
+        description: 'The edit has been resolved and is no longer visible in the document',
     },
     [CodyTaskState.error]: {
         id: 'error',

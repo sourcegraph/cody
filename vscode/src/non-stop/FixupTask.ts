@@ -5,6 +5,7 @@ import { FixupFile } from './FixupFile'
 import { CodyTaskState } from './utils'
 
 export type taskID = string
+
 export class FixupTask {
     public id: taskID
     public state_: CodyTaskState = CodyTaskState.idle

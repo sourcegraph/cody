@@ -1,3 +1,5 @@
+import path from 'path'
+
 import * as vscode from 'vscode'
 
 /**
@@ -21,6 +23,10 @@ export class FixupFile {
     }
 
     public get fileName(): string {
+        return path.basename(this.uri_.fsPath)
+    }
+
+    public get filePath(): string {
         return this.uri_.fsPath
     }
 

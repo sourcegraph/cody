@@ -397,25 +397,25 @@
         "icon": "$(file-code)"
       },
       {
-        "command": "cody.fixup.apply",
+        "command": "cody.fixup.accept",
         "category": "Cody",
-        "title": "Apply fixup",
+        "title": "Accept fixup",
         "when": "cody.nonstop.fixups.enabled",
         "enablement": "!cody.fixup.view.isEmpty",
         "icon": "$(check)"
       },
       {
-        "command": "cody.fixup.apply-all",
+        "command": "cody.fixup.accept-all",
         "category": "Cody",
-        "title": "Apply all fixups",
+        "title": "Accept all fixups",
         "when": "cody.nonstop.fixups.enabled",
         "enablement": "!cody.fixup.view.isEmpty",
         "icon": "$(check-all)"
       },
       {
-        "command": "cody.fixup.apply-by-file",
+        "command": "cody.fixup.accept-by-file",
         "category": "Cody",
-        "title": "Apply fixups to selected directory",
+        "title": "Accept fixups in the selected directory",
         "when": "cody.nonstop.fixups.enabled",
         "enablement": "!cody.fixup.view.isEmpty",
         "icon": "$(check-all)"
@@ -548,15 +548,15 @@
           "when": "false"
         },
         {
-          "command": "cody.fixup.apply",
+          "command": "cody.fixup.accept",
           "when": "false"
         },
         {
-          "command": "cody.fixup.apply-all",
+          "command": "cody.fixup.accept-all",
           "when": "false"
         },
         {
-          "command": "cody.fixup.apply-by-file",
+          "command": "cody.fixup.accept-by-file",
           "when": "false"
         },
         {
@@ -666,7 +666,7 @@
           "group": "9_cody@0"
         },
         {
-          "command": "cody.fixup.apply-all",
+          "command": "cody.fixup.accept-all",
           "when": "cody.nonstop.fixups.enabled && view == cody.fixup.tree.view && cody.activated",
           "group": "navigation"
         }
@@ -717,13 +717,13 @@
       ],
       "view/item/context": [
         {
-          "command": "cody.fixup.apply-by-file",
+          "command": "cody.fixup.accept-by-file",
           "when": "cody.nonstop.fixups.enabled && view == cody.fixup.tree.view && cody.activated && viewItem == fsPath",
           "enable": "cody.fixup.filesWithApplicableFixups",
           "group": "inline"
         },
         {
-          "command": "cody.fixup.apply",
+          "command": "cody.fixup.accept",
           "when": "cody.nonstop.fixups.enabled && view == cody.fixup.tree.view && cody.activated && viewItem == task",
           "group": "inline@2"
         },

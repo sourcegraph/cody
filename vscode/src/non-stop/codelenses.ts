@@ -98,7 +98,7 @@ function getAppliedLens(codeLensRange: vscode.Range): vscode.CodeLens {
 function getDiffLens(codeLensRange: vscode.Range, id: string): vscode.CodeLens {
     const lens = new vscode.CodeLens(codeLensRange)
     lens.command = {
-        title: 'Diff',
+        title: 'Show Diff',
         command: 'cody.fixup.codelens.diff',
         arguments: [id],
     }
