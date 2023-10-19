@@ -47,6 +47,7 @@ const config = {
     'unicorn/prefer-event-target': 'off',
     'unicorn/prefer-top-level-await': 'off',
     'unicorn/prefer-dom-node-remove': 'off',
+    'ban/ban': 'off',
   },
   overrides: [
     {

@@ -61,6 +61,9 @@ export class CustomPrompt implements Recipe {
         const promptText = command.prompt
         const commandName = command?.slashCommand || command?.description || promptText
 
+        // Log all custom commands under 'custom'
+        const source = command?.type === 'default' ? command?.slashCommand.replace('/', '') : 'custom'
+
         if (!promptText || !commandName) {
             const errorMessage = 'Please enter a valid prompt for the custom command.'
             return newInteractionWithError(errorMessage, promptText || '')
@@ -78,7 +81,7 @@ export class CustomPrompt implements Recipe {
         // Attach code selection to prompt text if only selection is needed as context
         if (selection && isOnlySelectionRequired(contextConfig)) {
             const contextMessages = Promise.resolve(getCurrentFileContextFromEditorSelection(selection))
-            return newInteraction({ text, displayText, contextMessages })
+            return newInteraction({ text, displayText, contextMessages, source })
         }
 
         const commandOutput = command.context?.output
@@ -93,7 +96,7 @@ export class CustomPrompt implements Recipe {
             commandOutput
         )
 
-        return newInteraction({ text: truncatedText, displayText, contextMessages })
+        return newInteraction({ text: truncatedText, displayText, contextMessages, source })
     }
 
     private async getContextMessages(
@@ -124,17 +127,13 @@ export class CustomPrompt implements Recipe {
             const currentDirMessages = await getCurrentDirContext(isUnitTestRequest)
             contextMessages.push(...currentDirMessages)
         }
-        if (!promptContext.directoryPath) {
-            if (promptContext.directoryPath) {
-                const dirMessages = await getEditorDirContext(promptContext.directoryPath, selection?.fileName)
-                contextMessages.push(...dirMessages)
-            }
+        if (promptContext.directoryPath) {
+            const dirMessages = await getEditorDirContext(promptContext.directoryPath, selection?.fileName)
+            contextMessages.push(...dirMessages)
         }
-        if (!promptContext.filePath) {
-            if (promptContext.filePath) {
-                const fileMessages = await getFilePathContext(promptContext.filePath)
-                contextMessages.push(...fileMessages)
-            }
+        if (promptContext.filePath) {
+            const fileMessages = await getFilePathContext(promptContext.filePath)
+            contextMessages.push(...fileMessages)
         }
 
         // Context for unit tests requests

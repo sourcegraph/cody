@@ -9,8 +9,8 @@ import type { AuthProvider } from '../services/AuthProvider'
 import { CodyStatusBar } from '../services/StatusBar'
 
 import { CodeCompletionsClient } from './client'
-import { GraphSectionObserver } from './context/graph-section-observer'
 import { VSCodeDocumentHistory } from './context/history'
+import { LspLightGraphCache } from './context/lsp-light-graph-cache'
 import { InlineCompletionItemProvider } from './inline-completion-item-provider'
 import { createProviderConfig } from './providers/createProvider'
 import { registerAutocompleteTraceView } from './tracer/traceView'
@@ -51,15 +51,18 @@ export async function createInlineCompletionItemProvider({
 
     const disposables: vscode.Disposable[] = []
 
-    const [providerConfig, graphContextFlag] = await Promise.all([
-        createProviderConfig(config, client, authProvider.getAuthStatus().configOverwrites),
-        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteGraphContext),
-    ])
+    const [providerConfig, graphContextFlag, disableNetworkCache, disableRecyclingOfPreviousRequests] =
+        await Promise.all([
+            createProviderConfig(config, client, authProvider.getAuthStatus().configOverwrites),
+            featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteGraphContext),
+            featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteDisableNetworkCache),
+            featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteDisableRecyclingOfPreviousRequests),
+        ])
     if (providerConfig) {
         const history = new VSCodeDocumentHistory()
-        const sectionObserver =
-            config.autocompleteExperimentalGraphContext || graphContextFlag
-                ? GraphSectionObserver.createInstance()
+        const lspLightGraphCache =
+            config.autocompleteExperimentalGraphContext === 'lsp-light' || graphContextFlag
+                ? LspLightGraphCache.createInstance()
                 : undefined
 
         const completionsProvider = new InlineCompletionItemProvider({
@@ -67,8 +70,10 @@ export async function createInlineCompletionItemProvider({
             history,
             statusBar,
             getCodebaseContext: () => contextProvider.context,
-            graphContextFetcher: sectionObserver,
+            graphContextFetcher: lspLightGraphCache,
             completeSuggestWidgetSelection: config.autocompleteCompleteSuggestWidgetSelection,
+            disableNetworkCache,
+            disableRecyclingOfPreviousRequests,
             triggerNotice,
         })
 
@@ -90,8 +95,8 @@ export async function createInlineCompletionItemProvider({
             ),
             registerAutocompleteTraceView(completionsProvider)
         )
-        if (sectionObserver) {
-            disposables.push(sectionObserver)
+        if (lspLightGraphCache) {
+            disposables.push(lspLightGraphCache)
         }
     } else if (config.isRunningInsideAgent) {
         throw new Error(

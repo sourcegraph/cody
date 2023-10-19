@@ -14,7 +14,7 @@ export interface CompletionContext {
     docContext: DocumentContext
 }
 
-export interface ParsedCompletion extends InlineCompletionItem {
+export interface ParsedCompletion extends InlineCompletionItemWithAnalytics {
     tree?: Tree
     parseErrorCount?: number
     // Points for parse-tree queries.

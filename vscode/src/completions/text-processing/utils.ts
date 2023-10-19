@@ -3,7 +3,6 @@ import * as vscode from 'vscode'
 
 import { getLanguageConfig } from '../language'
 import { logCompletionEvent } from '../logger'
-import { SymbolContextSnippet } from '../types'
 
 import { isAlmostTheSameString } from './string-comparator'
 
@@ -166,7 +165,7 @@ export function trimUntilSuffix(insertion: string, prefix: string, suffix: strin
     const insertionLines = insertion.split('\n')
     let cutOffIndex = insertionLines.length
 
-    for (let i = 0; i < insertionLines.length; i++) {
+    for (let i = insertionLines.length - 1; i >= 0; i--) {
         let line = insertionLines[i]
 
         // Include the current indentation of the prefix in the first line
@@ -338,21 +337,6 @@ export function getPrevNonEmptyLine(prefix: string): string {
         return ''
     }
     return findLast(lines(prefix.slice(0, prevCrLf >= 0 ? prevCrLf : prevLf)), line => line.trim().length > 0) ?? ''
-}
-
-export const formatSymbolContextRelationship = (
-    relationship: SymbolContextSnippet['sourceSymbolAndRelationship']
-): string => {
-    if (relationship) {
-        switch (relationship.relationship) {
-            case 'typeDefinition':
-                return ` (the type of \`${relationship.symbol}\`)`
-            case 'implementation':
-                return ` (an implementation of \`${relationship.symbol}\`)`
-        }
-    }
-
-    return ''
 }
 
 export function lines(text: string): string[] {

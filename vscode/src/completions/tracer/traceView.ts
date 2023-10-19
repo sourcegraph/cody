@@ -4,9 +4,9 @@ import { isDefined } from '@sourcegraph/cody-shared'
 import { renderMarkdown } from '@sourcegraph/cody-shared/src/common/markdown'
 
 import {
-    GraphSectionObserver,
     registerDebugListener as registerSectionObserverDebugListener,
-} from '../context/graph-section-observer'
+    SectionObserver,
+} from '../context/section-observer'
 import { InlineCompletionsResultSource } from '../get-inline-completions'
 import { InlineCompletionItemProvider } from '../inline-completion-item-provider'
 import * as statistics from '../statistics'
@@ -109,7 +109,7 @@ function renderWebviewHtml(data: ProvideInlineCompletionsItemTraceData | undefin
 ## Completers
 
 ${data.completers?.map(
-    ({ id, docContext: { prefix, suffix }, ...otherOptions }) =>
+    ({ id, docContext: { prefix, suffix }, position, document, ...otherOptions }) =>
         `
 ### ${id}
 
@@ -181,7 +181,7 @@ ${
 
 ${markdownCodeBlock(data.error)}
 `,
-        GraphSectionObserver.instance
+        SectionObserver.instance
             ? `
 ## Document sections
 
@@ -211,10 +211,10 @@ function statisticSummary(): string {
 }
 
 function documentSections(): string {
-    if (!GraphSectionObserver.instance) {
+    if (!SectionObserver.instance) {
         return ''
     }
-    return `\`\`\`\n${GraphSectionObserver.instance.debugPrint()}\n\`\`\``
+    return `\`\`\`\n${SectionObserver.instance.debugPrint()}\n\`\`\``
 }
 
 function codeDetailsWithSummary(
@@ -318,8 +318,8 @@ function jsonForDataset(data: ProvideInlineCompletionsItemTraceData | undefined)
 
     return `{
         context: ${JSON.stringify(data?.context?.context.map(c => ({ fileName: c.fileName, content: c.content })))},
-        fileName: ${JSON.stringify(completer.fileName)},
-        languageId: ${JSON.stringify(completer.languageId)},
+        fileName: ${JSON.stringify(vscode.workspace.asRelativePath(completer.document.fileName))},
+        languageId: ${JSON.stringify(completer.document.languageId)},
         content: \`${completer.docContext.prefix}$\{CURSOR}${completer.docContext.suffix}\`,
     }`
 }
