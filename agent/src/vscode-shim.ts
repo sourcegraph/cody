@@ -28,7 +28,7 @@ import {
 
 import type { Agent } from './agent'
 import { AgentTabGroups } from './AgentTabGroups'
-import type { ExtensionConfiguration } from './protocol'
+import type { ExtensionConfiguration } from './protocol-alias'
 
 export {
     emptyEvent,
@@ -49,6 +49,7 @@ export {
     StatusBarAlignment,
     RelativePattern,
     MarkdownString,
+    ProgressLocation,
     CommentMode,
     CommentThreadCollapsibleState,
     OverviewRulerLane,
@@ -95,6 +96,8 @@ export function isAuthenticationChange(newConfig: ExtensionConfiguration): boole
     )
 }
 
+export const customConfiguration: Record<string, any> = {}
+
 const configuration: vscode.WorkspaceConfiguration = {
     has(section) {
         return true
@@ -135,7 +138,7 @@ const configuration: vscode.WorkspaceConfiguration = {
             case 'cody.codebase':
                 return connectionConfig?.codebase
             default:
-                return defaultValue
+                return customConfiguration[section] ?? defaultValue
         }
     },
     update(section, value, configurationTarget, overrideInLanguage) {
@@ -234,12 +237,28 @@ const _window: Partial<typeof vscode.window> = {
     registerWebviewViewProvider: () => emptyDisposable,
     createStatusBarItem: (() => statusBarItem) as any,
     visibleTextEditors,
+    withProgress: (_, handler) => handler({ report: () => {} }, 'window.withProgress.cancelationToken' as any),
     onDidChangeActiveTextEditor: onDidChangeActiveTextEditor.event,
     onDidChangeVisibleTextEditors: (() => ({})) as any,
     onDidChangeTextEditorSelection: (() => ({})) as any,
-    showErrorMessage: ((message: string, ...items: string[]) => {}) as any,
-    showWarningMessage: ((message: string, ...items: string[]) => {}) as any,
-    showInformationMessage: ((message: string, ...items: string[]) => {}) as any,
+    showErrorMessage: (message: string, ...items: any[]) => {
+        if (agent) {
+            agent.notify('debug/message', { channel: 'window.showErrorMessage', message })
+        }
+        return Promise.resolve(undefined)
+    },
+    showWarningMessage: (message: string, ...items: any[]) => {
+        if (agent) {
+            agent.notify('debug/message', { channel: 'window.showWarningMessage', message })
+        }
+        return Promise.resolve(undefined)
+    },
+    showInformationMessage: (message: string, ...items: any[]) => {
+        if (agent) {
+            agent.notify('debug/message', { channel: 'window.showInformationMessage', message })
+        }
+        return Promise.resolve(undefined)
+    },
     createOutputChannel: ((name: string) =>
         ({
             name,

@@ -5,13 +5,18 @@ import { ContextSnippet } from '../types'
 
 import { GetContextResult } from './context'
 
-export interface GraphContextFetcher {
+export interface GraphContextFetcher extends vscode.Disposable {
     getContextAtPosition(
         document: vscode.TextDocument,
         position: vscode.Position,
         maxChars: number,
         contextRange?: vscode.Range
     ): Promise<ContextSnippet[]>
+}
+
+export const emptyGraphContextFetcher: GraphContextFetcher = {
+    getContextAtPosition: () => Promise.resolve([]),
+    dispose: () => {},
 }
 
 interface Options {

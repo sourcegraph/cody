@@ -941,9 +941,10 @@
           "default": null,
           "enum": [
             null,
-            "lsp-light"
+            "lsp-light",
+            "bfg"
           ],
-          "markdownDescription": "Retrieve information from the code graph to augment the autocomplete results. This is only supported with the `unstable-codegen` provider"
+          "markdownDescription": "Use the code graph to retrieve context for autocomplete requests."
         }
       }
     },

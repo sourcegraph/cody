@@ -11,7 +11,7 @@ import {
 
 import { Agent } from './agent'
 import { DocumentOffsets } from './offsets'
-import { TextDocument } from './protocol'
+import { TextDocument } from './protocol-alias'
 
 export class AgentEditor implements Editor {
     public controllers?: ActiveTextEditorViewControllers | undefined
