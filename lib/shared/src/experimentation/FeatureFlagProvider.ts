@@ -46,7 +46,7 @@ export class FeatureFlagProvider {
     }
 
     public async evaluateFeatureFlag(flagName: FeatureFlag): Promise<boolean> {
-        if (!this.apiClient.isDotCom() || process.env.BENCHMARK_DISABLE_FEATURE_FLAGS) {
+        if (process.env.BENCHMARK_DISABLE_FEATURE_FLAGS) {
             return false
         }
 
@@ -65,12 +65,8 @@ export class FeatureFlagProvider {
     }
 
     private async refreshFeatureFlags(): Promise<void> {
-        if (this.apiClient.isDotCom()) {
-            const data = await this.apiClient.getEvaluatedFeatureFlags()
-            this.featureFlags = isError(data) ? {} : data
-        } else {
-            this.featureFlags = {}
-        }
+        const data = await this.apiClient.getEvaluatedFeatureFlags()
+        this.featureFlags = isError(data) ? {} : data
         this.lastUpdated = Date.now()
     }
 }
