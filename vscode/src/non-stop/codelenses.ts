@@ -20,11 +20,11 @@ export function getLensesForTask(task: FixupTask): vscode.CodeLens[] {
         }
         case CodyTaskState.applied: {
             const title = getAppliedLens(codeLensRange)
-            const diff = getDiffLens(codeLensRange, task.id)
-            const undo = getUndoLens(codeLensRange, task.id)
-            const accept = getAcceptLens(codeLensRange, task.id)
             const regenerate = getRegenerateLens(codeLensRange, task.id)
-            return [title, diff, undo, regenerate, accept]
+            const diff = getDiffLens(codeLensRange, task.id)
+            const undo = getRevertLens(codeLensRange, task.id)
+            const accept = getAcceptLens(codeLensRange, task.id)
+            return [title, regenerate, diff, undo, accept]
         }
         case CodyTaskState.error: {
             const title = getErrorLens(codeLensRange)
@@ -105,11 +105,11 @@ function getDiffLens(codeLensRange: vscode.Range, id: string): vscode.CodeLens {
     return lens
 }
 
-function getUndoLens(codeLensRange: vscode.Range, id: string): vscode.CodeLens {
+function getRevertLens(codeLensRange: vscode.Range, id: string): vscode.CodeLens {
     const lens = new vscode.CodeLens(codeLensRange)
     lens.command = {
-        title: 'Undo',
-        command: 'cody.fixup.codelens.undo',
+        title: 'Revert',
+        command: 'cody.fixup.codelens.revert',
         arguments: [id],
     }
     return lens

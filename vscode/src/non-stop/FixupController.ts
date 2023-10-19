@@ -65,9 +65,9 @@ export class FixupController
                 telemetryService.log('CodyVSCodeExtension:fixup:codeLens:clicked', { op: 'diff' })
                 return this.diff(id)
             }),
-            vscode.commands.registerCommand('cody.fixup.codelens.undo', id => {
-                telemetryService.log('CodyVSCodeExtension:fixup:codeLens:clicked', { op: 'undo' })
-                return this.undo(id)
+            vscode.commands.registerCommand('cody.fixup.codelens.revert', id => {
+                telemetryService.log('CodyVSCodeExtension:fixup:codeLens:clicked', { op: 'revert' })
+                return this.revert(id)
             }),
             vscode.commands.registerCommand('cody.fixup.codelens.regenerate', async id => {
                 telemetryService.log('CodyVSCodeExtension:fixup:codeLens:clicked', { op: 'regenerate' })
@@ -436,12 +436,48 @@ export class FixupController
         this.discard(task)
     }
 
-    private undo(id: taskID): void {
+    private async revert(id: taskID): Promise<void> {
         const task = this.tasks.get(id)
         if (!task) {
             return
         }
-        console.log('TODO: Finish UNDO logic')
+        return this.revertTask(task)
+    }
+
+    /**
+     * Reverts an applied fixup task by replacing the edited code range with the original code.
+     *
+     * TODO: It is possible the original code is out of date if the user edited it whilst the fixup was running.
+     * Handle this case better. Possibly take a copy of the previous code just before the fixup is applied.
+     */
+    private async revertTask(task: FixupTask): Promise<void> {
+        if (task.state !== CodyTaskState.applied) {
+            return
+        }
+
+        let editor = vscode.window.visibleTextEditors.find(editor => editor.document.uri === task.fixupFile.uri)
+        if (!editor) {
+            editor = await vscode.window.showTextDocument(task.fixupFile.uri)
+        }
+
+        editor.revealRange(task.selectionRange)
+        const editOk = await editor.edit(editBuilder => {
+            editBuilder.replace(task.selectionRange, task.original)
+        })
+
+        if (!editOk) {
+            telemetryService.log('CodyVSCodeExtension:fixup:revert:failed')
+            // TODO: Try to recover, for example by respinning
+            return
+        }
+
+        const replacementText = task.replacement
+        if (replacementText) {
+            const tokenCount = countCode(replacementText)
+            telemetryService.log('CodyVSCodeExtension:fixup:reverted', tokenCount)
+        }
+
+        this.setTaskState(task, CodyTaskState.finished)
     }
 
     private discard(task: FixupTask): void {
@@ -732,6 +768,9 @@ export class FixupController
             void this.apply(task.id)
         }
 
+        // We currently remove the decorations when the task is applied as they
+        // currently do not always show the correct positions for edits.
+        // TODO: Improve the diff handling so that decorations more accurately reflect the edits.
         if (task.state === CodyTaskState.applied) {
             this.decorator.didCompleteTask(task)
         }
