@@ -10,9 +10,9 @@ describe('convertGitCloneURLToCodebaseName', () => {
     })
 
     test('converts GitHub SSH URL with the port number', () => {
-        expect(
-            convertGitCloneURLToCodebaseName('git@mydomain.example:22/Users/my_user/dev/sourcegraph/sourcegraph.git')
-        ).toEqual('mydomain.example:22/Users/my_user/dev/sourcegraph/sourcegraph')
+        expect(convertGitCloneURLToCodebaseName('ssh://git@gitlab-my-company.net:20022/path/repo.git')).toEqual(
+            'gitlab-my-company.net/path/repo'
+        )
     })
 
     test('converts GitHub SSH URL no trailing .git', () => {
