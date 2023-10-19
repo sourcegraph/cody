@@ -36,7 +36,7 @@ export function getConfiguration(config: ConfigGetter = vscode.workspace.getConf
         debugRegex = new RegExp('.*')
     }
 
-    let autocompleteExperimentalGraphContext: 'lsp-light' | null = config.get(
+    let autocompleteExperimentalGraphContext: 'lsp-light' | 'bfg' | null = config.get(
         CONFIG_KEY.autocompleteExperimentalGraphContext,
         null
     )

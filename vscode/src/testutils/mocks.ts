@@ -699,3 +699,9 @@ export enum UIKind {
 export function emptyEvent<T>(): vscode_types.Event<T> {
     return () => emptyDisposable
 }
+
+export enum ProgressLocation {
+    SourceControl = 1,
+    Window = 10,
+    Notification = 15,
+}

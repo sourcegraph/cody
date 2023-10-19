@@ -1,8 +1,8 @@
 import * as vscode from 'vscode'
 
-import { getDocumentSections } from '../editor/utils/document-sections'
+import { getDocumentSections } from '../../editor/utils/document-sections'
 
-import { commonKeywords, identifierPattern } from './lsp/languages'
+import { commonKeywords, identifierPattern } from './languages'
 
 export interface DocumentSection {
     fuzzyName: string | null

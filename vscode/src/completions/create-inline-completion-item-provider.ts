@@ -4,11 +4,14 @@ import { Configuration } from '@sourcegraph/cody-shared/src/configuration'
 import { FeatureFlag, featureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
 
 import { ContextProvider } from '../chat/ContextProvider'
+import { PlatformContext } from '../extension.common'
 import { logDebug } from '../log'
+import { gitDirectoryUri } from '../repository/repositoryHelpers'
 import type { AuthProvider } from '../services/AuthProvider'
 import { CodyStatusBar } from '../services/StatusBar'
 
 import { CodeCompletionsClient } from './client'
+import { GraphContextFetcher } from './context/context-graph'
 import { VSCodeDocumentHistory } from './context/history'
 import { LspLightGraphCache } from './context/lsp-light-graph-cache'
 import { InlineCompletionItemProvider } from './inline-completion-item-provider'
@@ -24,14 +27,11 @@ interface InlineCompletionItemProviderArgs {
     triggerNotice: ((notice: { key: string }) => void) | null
 }
 
-export async function createInlineCompletionItemProvider({
-    config,
-    client,
-    statusBar,
-    contextProvider,
-    authProvider,
-    triggerNotice,
-}: InlineCompletionItemProviderArgs): Promise<vscode.Disposable> {
+export async function createInlineCompletionItemProvider(
+    { config, client, statusBar, contextProvider, authProvider, triggerNotice }: InlineCompletionItemProviderArgs,
+    context: vscode.ExtensionContext,
+    platform: Omit<PlatformContext, 'getRgPath'>
+): Promise<vscode.Disposable> {
     if (!authProvider.getAuthStatus().isLoggedIn) {
         logDebug('CodyCompletionProvider:notSignedIn', 'You are not signed in.')
 
@@ -51,18 +51,26 @@ export async function createInlineCompletionItemProvider({
 
     const disposables: vscode.Disposable[] = []
 
-    const [providerConfig, graphContextFlag, disableNetworkCache, disableRecyclingOfPreviousRequests] =
-        await Promise.all([
-            createProviderConfig(config, client, authProvider.getAuthStatus().configOverwrites),
-            featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteGraphContext),
-            featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteDisableNetworkCache),
-            featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteDisableRecyclingOfPreviousRequests),
-        ])
+    const [
+        providerConfig,
+        lspGraphContextFlag,
+        bfgGraphContextFlag,
+        disableNetworkCache,
+        disableRecyclingOfPreviousRequests,
+    ] = await Promise.all([
+        createProviderConfig(config, client, authProvider.getAuthStatus().configOverwrites),
+        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteGraphContext),
+        featureFlagProvider?.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteGraphContextBfg),
+        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteDisableNetworkCache),
+        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteDisableRecyclingOfPreviousRequests),
+    ])
     if (providerConfig) {
         const history = new VSCodeDocumentHistory()
-        const lspLightGraphCache =
-            config.autocompleteExperimentalGraphContext === 'lsp-light' || graphContextFlag
+        const graphContextFetcher: GraphContextFetcher | undefined =
+            config.autocompleteExperimentalGraphContext === 'lsp-light' || lspGraphContextFlag
                 ? LspLightGraphCache.createInstance()
+                : config.autocompleteExperimentalGraphContext === 'bfg' || bfgGraphContextFlag
+                ? platform.createBfgContextFetcher?.(context, gitDirectoryUri)
                 : undefined
 
         const completionsProvider = new InlineCompletionItemProvider({
@@ -70,7 +78,7 @@ export async function createInlineCompletionItemProvider({
             history,
             statusBar,
             getCodebaseContext: () => contextProvider.context,
-            graphContextFetcher: lspLightGraphCache,
+            graphContextFetcher,
             completeSuggestWidgetSelection: config.autocompleteCompleteSuggestWidgetSelection,
             disableNetworkCache,
             disableRecyclingOfPreviousRequests,
@@ -95,8 +103,8 @@ export async function createInlineCompletionItemProvider({
             ),
             registerAutocompleteTraceView(completionsProvider)
         )
-        if (lspLightGraphCache) {
-            disposables.push(lspLightGraphCache)
+        if (graphContextFetcher) {
+            disposables.push(graphContextFetcher)
         }
     } else if (config.isRunningInsideAgent) {
         throw new Error(

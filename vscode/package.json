@@ -924,7 +924,7 @@
             "llama-code-13b",
             "llama-code-13b-instruct"
           ],
-          "markdownDescription": "Overwrite the  model used for code autocompletion inference. This is only supported with the `unstable-fireworks` provider"
+          "markdownDescription": "Overwrite the  model used for code autocompletion inference. This is only supported with the `fireworks` provider"
         },
         "cody.autocomplete.completeSuggestWidgetSelection": {
           "type": "boolean",
@@ -937,13 +937,14 @@
           "markdownDescription": "Rank autocomplete results with tree-sitter."
         },
         "cody.autocomplete.experimental.graphContext": {
-          "type": "enum",
+          "type": "string",
           "default": null,
           "enum": [
             null,
-            "lsp-light"
+            "lsp-light",
+            "bfg"
           ],
-          "markdownDescription": "Retrieve information from the code graph to augment the autocomplete results. This is only supported with the `unstable-codegen` provider"
+          "markdownDescription": "Use the code graph to retrieve context for autocomplete requests."
         }
       }
     },
