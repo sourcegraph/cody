@@ -53,7 +53,7 @@ test('task tree view for non-stop cody', async ({ page, sidebar }) => {
     await page.keyboard.press('Enter')
 
     // Expect to see the fixup instruction in the task tree view
-    await expect(page.getByText('1 fixup, 1 ready')).toBeVisible()
+    await expect(page.getByText('1 fixup, 1 applied')).toBeVisible()
     await expect(page.getByText('No pending Cody fixups')).not.toBeVisible()
 
     // Close the file tab and then clicking on the tree item again should open the file again
