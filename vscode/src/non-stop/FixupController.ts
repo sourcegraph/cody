@@ -228,7 +228,8 @@ export class FixupController
     }
 
     /**
-     * This function retrieves a "smart" selection a FixupTask.
+     * This function retrieves a "smart" selection for a FixupTask when selectionRange is not available.
+     *
      * The idea of a "smart" selection is to look at both the start and end positions of the current selection,
      * and attempt to expand those positions to encompass more meaningful chunks of code, such as folding regions.
      *
@@ -242,6 +243,11 @@ export class FixupController
     private async getFixupTaskSmartSelection(task: FixupTask, selectionRange: vscode.Range): Promise<vscode.Range> {
         const fileName = task.fixupFile.uri.fsPath
         const documentUri = vscode.Uri.file(fileName)
+
+        // Use selectionRange when it's available
+        if (selectionRange && !selectionRange?.start.isEqual(selectionRange.end)) {
+            return selectionRange
+        }
 
         // Retrieve the start position of the current selection
         const activeCursorStartPosition = selectionRange.start
