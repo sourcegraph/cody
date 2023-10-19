@@ -61,7 +61,6 @@ export class FixupController
             vscode.commands.registerCommand('cody.fixup.codelens.diff', id => this.diff(id)),
             vscode.commands.registerCommand('cody.fixup.codelens.undo', id => this.undo(id)),
             vscode.commands.registerCommand('cody.fixup.codelens.accept', id => this.accept(id)),
-            vscode.commands.registerCommand('cody.fixup.codelens.cancel', id => this.cancel(id)),
             vscode.commands.registerCommand('cody.fixup.codelens.regenerate', async id => this.regenerate(id))
         )
         // Observe file renaming and deletion
