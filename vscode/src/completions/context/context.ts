@@ -22,6 +22,7 @@ export interface GetContextOptions {
 }
 
 export type ContextSummary = Readonly<{
+    strategy: string
     embeddings?: number
     local?: number
     graph?: number
@@ -79,6 +80,7 @@ export async function getContext(options: GetContextOptions): Promise<GetContext
     return {
         context,
         logSummary: {
+            strategy: 'local',
             ...(includedLocalMatches ? { local: includedLocalMatches } : {}),
             duration: performance.now() - start,
         },

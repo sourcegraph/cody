@@ -55,6 +55,7 @@ function loadBFG(context: vscode.ExtensionContext): Promise<MessageHandler> {
 }
 
 export class BfgContextFetcher implements GraphContextFetcher {
+    public identifier = 'bfg'
     private loadedBFG: Promise<MessageHandler>
     private didFailLoading = false
     private latestRepoIndexing: Promise<void[]> = Promise.resolve([])
