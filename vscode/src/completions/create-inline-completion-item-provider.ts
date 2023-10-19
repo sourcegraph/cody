@@ -66,9 +66,6 @@ export async function createInlineCompletionItemProvider(
     ])
     if (providerConfig) {
         const history = new VSCodeDocumentHistory()
-        logDebug('GraphContext', config.autocompleteExperimentalGraphContext ?? 'none')
-        logDebug('GraphContext', `bfg = ${bfgGraphContextFlag}`)
-        logDebug('GraphContext', `lsp=  ${lspGraphContextFlag}`)
         const graphContextFetcher: GraphContextFetcher | undefined =
             config.autocompleteExperimentalGraphContext === 'lsp-light' || lspGraphContextFlag
                 ? LspLightGraphCache.createInstance()
