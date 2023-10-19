@@ -428,10 +428,9 @@ export class SourcegraphGraphQLAPIClient {
      * gets exported.
      */
     public async recordTelemetryEvents(events: TelemetryEventInput[]): Promise<{} | Error> {
-        const initialResponse = await this.fetchSourcegraphAPI<APIResponse<{}>>(
-            RECORD_TELEMETRY_EVENTS_MUTATION,
-            events
-        )
+        const initialResponse = await this.fetchSourcegraphAPI<APIResponse<{}>>(RECORD_TELEMETRY_EVENTS_MUTATION, {
+            events,
+        })
         return extractDataOrError(initialResponse, data => data)
     }
 
@@ -588,7 +587,10 @@ export class SourcegraphGraphQLAPIClient {
         })
             .then(verifyResponseCode)
             .then(response => response.json() as T)
-            .catch(error => new Error(`accessing Sourcegraph GraphQL API: ${error} (${url})`))
+            .catch(error => {
+                console.log(error)
+                return new Error(`accessing Sourcegraph GraphQL API: ${error} (${url})`)
+            })
     }
 
     // make an anonymous request to the dotcom API
