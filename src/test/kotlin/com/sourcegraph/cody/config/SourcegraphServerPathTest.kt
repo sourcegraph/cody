@@ -1,68 +1,32 @@
 package com.sourcegraph.cody.config
 
 import com.sourcegraph.config.ConfigUtil
-import org.assertj.core.api.Assertions.assertThat
-import org.junit.jupiter.api.Test
+import junit.framework.TestCase
 
-class SourcegraphServerPathTest {
+class SourcegraphServerPathTest : TestCase() {
 
-  @Test
-  fun `should create server path for dotcom`() {
-    // given
-    val url = ConfigUtil.DOTCOM_URL
-
-    // when
-    val serverPath = SourcegraphServerPath.from(url, "")
-
-    // then
-    assertThat(serverPath.url).isEqualTo(url)
+  fun `test path for dotcom`() {
+    val path = SourcegraphServerPath.from(ConfigUtil.DOTCOM_URL, "")
+    assertEquals("https://sourcegraph.com/", path.url)
   }
 
-  @Test
-  fun `should create server path with additional slash at the end if missing`() {
-    // given
-    val url = "https://sourcegraph.com"
-
-    // then
-    val serverPath = SourcegraphServerPath.from(url, "")
-
-    // then
-    assertThat(serverPath.url).isEqualTo("https://sourcegraph.com/")
+  fun `test path with extra slash postfix`() {
+    val path = SourcegraphServerPath.from("https://sourcegraph.com", "")
+    assertEquals("https://sourcegraph.com/", path.url)
   }
 
-  @Test
-  fun `should create server path with additional https schema if it's missing`() {
-    // given
-    val url = "sourcegraph.com"
-
-    // then
-    val serverPath = SourcegraphServerPath.from(url, "")
-
-    // then
-    assertThat(serverPath.url).isEqualTo("https://sourcegraph.com/")
+  fun `test path with https prefix`() {
+    val path = SourcegraphServerPath.from("sourcegraph.com", "")
+    assertEquals("https://sourcegraph.com/", path.url)
   }
 
-  @Test
-  fun `should create server path with port`() {
-    // given
-    val url = "sourcegraph.com:80"
-
-    // then
-    val serverPath = SourcegraphServerPath.from(url, "")
-
-    // then
-    assertThat(serverPath.url).isEqualTo("https://sourcegraph.com:80/")
+  fun `test path with port`() {
+    val path = SourcegraphServerPath.from("sourcegraph.com:80", "")
+    assertEquals("https://sourcegraph.com:80/", path.url)
   }
 
-  @Test
-  fun `should create server path with url path`() {
-    // given
-    val url = "sourcegraph.com:80/some/path"
-
-    // then
-    val serverPath = SourcegraphServerPath.from(url, "")
-
-    // then
-    assertThat(serverPath.url).isEqualTo("https://sourcegraph.com:80/some/path/")
+  fun `test path with additional path segments`() {
+    val path = SourcegraphServerPath.from("sourcegraph.com:80/some/path", "")
+    assertEquals("https://sourcegraph.com:80/some/path/", path.url)
   }
 }

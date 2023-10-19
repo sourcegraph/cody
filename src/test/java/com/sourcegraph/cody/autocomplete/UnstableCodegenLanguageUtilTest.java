@@ -1,23 +1,18 @@
-package com.sourcegraph.cody.completions;
+package com.sourcegraph.cody.autocomplete;
 
-import static org.junit.jupiter.api.Assertions.*;
-
-import com.sourcegraph.cody.autocomplete.UnstableCodegenLanguageUtil;
-import com.sourcegraph.cody.vscode.TestTextDocument;
 import com.sourcegraph.cody.vscode.TextDocument;
 import java.net.URI;
+import junit.framework.TestCase;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.junit.jupiter.api.Test;
 
-public class UnstableCodegenLanguageUtilTest {
+public class UnstableCodegenLanguageUtilTest extends TestCase {
 
   private TextDocument textDocument(@Nullable String intelliJLanguageId, @NotNull String fileName) {
     return new TestTextDocument(URI.create("file://" + fileName), fileName, "", intelliJLanguageId);
   }
 
-  @Test
-  public void extensionUsedIfIntelliJLanguageIdUndefined() {
+  public void testExtensionUsedIfIntelliJLanguageIdUndefined() {
     // given
     var input = textDocument(null, "foo.js");
 
@@ -28,8 +23,7 @@ public class UnstableCodegenLanguageUtilTest {
     assertEquals("javascript", output);
   }
 
-  @Test
-  public void intellijLanguageIdTakesPriorityIfExtensionUknown() {
+  public void testIntellijLanguageIdTakesPriorityIfExtensionUknown() {
     // given
     var input = textDocument("JAVA", "foo.unknown");
 
@@ -40,8 +34,7 @@ public class UnstableCodegenLanguageUtilTest {
     assertEquals("java", output);
   }
 
-  @Test
-  public void intellijLanguageIdTakesPriorityIfSupported() {
+  public void testIntellijLanguageIdTakesPriorityIfSupported() {
     // given
     var input = textDocument("JAVA", "foo.js");
 
@@ -52,8 +45,7 @@ public class UnstableCodegenLanguageUtilTest {
     assertEquals("java", output);
   }
 
-  @Test
-  public void extensionLanguageIdTakesPriorityIfIntelliJUnsupported() {
+  public void testExtensionLanguageIdTakesPriorityIfIntelliJUnsupported() {
     // given
     var input = textDocument("something", "foo.js");
 
@@ -64,8 +56,7 @@ public class UnstableCodegenLanguageUtilTest {
     assertEquals("javascript", output);
   }
 
-  @Test
-  public void unsupportedExtensionUsedIfThereAreNoAlternatives() {
+  public void testUnsupportedExtensionUsedIfThereAreNoAlternatives() {
     // given
     var input = textDocument(null, "foo.unknown");
 
@@ -76,8 +67,7 @@ public class UnstableCodegenLanguageUtilTest {
     assertEquals("unknown", output);
   }
 
-  @Test
-  public void fallbackReturnedWhenExtensionAndLanguageIdCantBeDetermined() {
+  public void testFallbackReturnedWhenExtensionAndLanguageIdCantBeDetermined() {
     // given
     var input = textDocument(null, "foo");
 

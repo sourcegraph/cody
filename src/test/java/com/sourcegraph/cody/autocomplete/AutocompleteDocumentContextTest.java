@@ -1,12 +1,9 @@
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+package com.sourcegraph.cody.autocomplete;
 
-import com.sourcegraph.cody.autocomplete.AutocompleteDocumentContext;
-import org.junit.jupiter.api.Test;
+import junit.framework.TestCase;
 
-public class AutocompleteDocumentContextTest {
-  @Test
-  public void skipCompletionIfLineSuffixContainsWordChars() {
+public class AutocompleteDocumentContextTest extends TestCase {
+  public void testSkipCompletionIfLineSuffixContainsWordChars() {
     AutocompleteDocumentContext context1 = new AutocompleteDocumentContext("", "foo");
     assertFalse(context1.isCompletionTriggerValid());
     AutocompleteDocumentContext context2 = new AutocompleteDocumentContext("bar", "foo");
@@ -15,24 +12,21 @@ public class AutocompleteDocumentContextTest {
     assertFalse(context3.isCompletionTriggerValid());
   }
 
-  @Test
-  public void skipCompletionIfLinePrefixContainsText() {
+  public void testSkipCompletionIfLinePrefixContainsText() {
     AutocompleteDocumentContext context1 = new AutocompleteDocumentContext("foo", "");
     assertFalse(context1.isCompletionTriggerValid());
     AutocompleteDocumentContext context2 = new AutocompleteDocumentContext("foo", ");");
     assertFalse(context2.isCompletionTriggerValid());
   }
 
-  @Test
-  public void skipCompletionIfLinePrefixContainsTextPrecededByWhitespace() {
+  public void testSkipCompletionIfLinePrefixContainsTextPrecededByWhitespace() {
     AutocompleteDocumentContext context1 = new AutocompleteDocumentContext("  foo", "");
     assertFalse(context1.isCompletionTriggerValid());
     AutocompleteDocumentContext context2 = new AutocompleteDocumentContext("\t\tfoo", ");");
     assertFalse(context2.isCompletionTriggerValid());
   }
 
-  @Test
-  public void shouldTriggerCompletionIfLineSuffixIsSpecialCharsOnly() {
+  public void testShouldTriggerCompletionIfLineSuffixIsSpecialCharsOnly() {
     AutocompleteDocumentContext context = new AutocompleteDocumentContext("if(", ") {");
     assertTrue(context.isCompletionTriggerValid());
   }

@@ -1,12 +1,11 @@
-import static org.junit.jupiter.api.Assertions.*;
+package com.sourcegraph.cody.autocomplete;
 
-import com.sourcegraph.cody.autocomplete.CodyAutocompleteManager;
 import difflib.Patch;
-import org.junit.jupiter.api.Test;
+import junit.framework.TestCase;
 
-public class AutocompleteDiffTest {
-  @Test
-  public void minimalDiff() {
+public class AutocompleteDiffTest extends TestCase {
+
+  public void testMinimalDiff() {
     Patch<String> patch = CodyAutocompleteManager.diff("println()", "println(arrays());");
     // NOTE(olafurpg): ideally, we should get the delta size to 1. Myer's diff seems to emit
     // unnecessary deltas that we might be able to merge to reduce the number of displayed inlay
