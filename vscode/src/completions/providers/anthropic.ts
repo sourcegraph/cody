@@ -67,9 +67,9 @@ export class AnthropicProvider extends Provider {
         const { head, tail, overlap } = getHeadAndTail(this.options.docContext.prefix)
 
         // Infill block represents the code we want the model to complete
-        const infillBlock = tail.trimmed
+        const infillBlock = `${tail.raw}`
         // code before the cursor, without the code extracted for the infillBlock
-        const infillPrefix = head.raw
+        const infillPrefix = head.raw?.startsWith(tail.trimmed) ? '' : `${head.raw}`
         // code after the cursor
         const infillSuffix = this.options.docContext.suffix
         const relativeFilePath = vscode.workspace.asRelativePath(this.options.document.fileName)
@@ -77,19 +77,11 @@ export class AnthropicProvider extends Provider {
         const prefixMessagesWithInfill: Message[] = [
             {
                 speaker: 'human',
-                text: `You are a code completion AI designed to take the surrounding code and shared context into account in order to predict and suggest high-quality code to complete the code enclosed in ${OPENING_CODE_TAG} tags. You only response with code that works and fits seamlessly with surrounding code if any or use best practice and nothing else.`,
+                text: `Below is the code from file path ${relativeFilePath}. Review the code outside the XML tags to detect the functionality, formats, style, patterns, and logics in use. Then, use what you detect and reuse methods/libraries to complete and enclose completed code only inside XML tags precisely without duplicating existing implementations. Here is the code:\n\`\`\`\n${infillPrefix}${OPENING_CODE_TAG}${CLOSING_CODE_TAG}${infillSuffix}\n\`\`\``,
             },
             {
                 speaker: 'assistant',
-                text: 'I am a code completion AI with exceptional context-awareness designed to auto-complete nested code blocks with high-quality code that seamlessly integrates with surrounding code.',
-            },
-            {
-                speaker: 'human',
-                text: `Below is the code from file path ${relativeFilePath}. Review the code outside the XML tags to detect the functionality, formats, style, patterns, and logics in use. Then, use what you detect and reuse methods/libraries to complete and enclose completed code only inside XML tags precisely without duplicating existing implementations. Here is the code: \n\`\`\`\n${infillPrefix}${OPENING_CODE_TAG}${infillBlock}${CLOSING_CODE_TAG}${infillSuffix}\n\`\`\``,
-            },
-            {
-                speaker: 'assistant',
-                text: `${OPENING_CODE_TAG}${infillBlock}`,
+                text: `${OPENING_CODE_TAG}${infillBlock}${CLOSING_CODE_TAG}`,
             },
         ]
 
@@ -100,8 +92,17 @@ export class AnthropicProvider extends Provider {
     // list as possible.
     protected createPrompt(snippets: ContextSnippet[]): { messages: Message[]; prefix: PrefixComponents } {
         const { messages: prefixMessages, prefix } = this.createPromptPrefix()
-
-        const referenceSnippetMessages: Message[] = []
+        const introMessages: Message[] = [
+            {
+                speaker: 'human',
+                text: `You are a code completion AI designed to take the surrounding code and shared context into account in order to predict and suggest high-quality code to complete the code enclosed in ${OPENING_CODE_TAG} tags. You only response with code that works and fits seamlessly with surrounding code if any or use best practice and nothing else.`,
+            },
+            {
+                speaker: 'assistant',
+                text: 'I am a code completion AI with exceptional context-awareness designed to auto-complete nested code blocks with high-quality code that seamlessly integrates with surrounding code.',
+            },
+        ]
+        const referenceSnippetMessages: Message[] = [...introMessages]
 
         let remainingChars = this.promptChars - this.emptyPromptLength()
 
@@ -111,8 +112,8 @@ export class AnthropicProvider extends Provider {
                     speaker: 'human',
                     text:
                         'symbol' in snippet && snippet.symbol !== ''
-                            ? `Additional documentation for \`${snippet.symbol}\`: ${OPENING_CODE_TAG}${snippet.content}${CLOSING_CODE_TAG}`
-                            : `Codebase context from file path '${snippet.fileName}': ${OPENING_CODE_TAG}${snippet.content}${CLOSING_CODE_TAG}`,
+                            ? `Documentation context for \`${snippet.symbol}\`:\n${snippet.content}`
+                            : `File context from '${snippet.fileName}':\n${snippet.content}`,
                 },
                 {
                     speaker: 'assistant',
