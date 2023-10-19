@@ -74,6 +74,8 @@ export class AnthropicProvider extends Provider {
         const infillSuffix = this.options.docContext.suffix
         const relativeFilePath = vscode.workspace.asRelativePath(this.options.document.fileName)
 
+        const hasTrailingWhiteSpace = tail.raw !== tail.raw?.trimEnd()
+
         const prefixMessagesWithInfill: Message[] = [
             {
                 speaker: 'human',
@@ -81,7 +83,7 @@ export class AnthropicProvider extends Provider {
             },
             {
                 speaker: 'assistant',
-                text: `${OPENING_CODE_TAG}${infillBlock}${CLOSING_CODE_TAG}`,
+                text: `${OPENING_CODE_TAG}${infillBlock}${hasTrailingWhiteSpace ? CLOSING_CODE_TAG : ''}`,
             },
         ]
 
