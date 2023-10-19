@@ -94,7 +94,7 @@ export class FixupController
                 // If we save the document, we consider the user to have accepted any applied tasks.
                 // This helps ensure that the codelens doesn't stay around unnecessarily and become an annoyance.
                 for (const task of this.tasks.values()) {
-                    if (task.state === CodyTaskState.applied && task.fixupFile.uri.fsPath.endsWith(uri.fsPath)) {
+                    if (task.fixupFile.uri.fsPath.endsWith(uri.fsPath)) {
                         this.accept(task.id)
                     }
                 }
@@ -433,9 +433,7 @@ export class FixupController
         // Accepting all fixup tasks
         if (!treeItem) {
             for (const task of this.tasks.values()) {
-                if (task.state === CodyTaskState.applied) {
-                    this.accept(task.id)
-                }
+                this.accept(task.id)
             }
             return
         }
@@ -443,7 +441,7 @@ export class FixupController
         // Accepting all fixup tasks in a directory
         if (treeItem.contextValue === 'fsPath') {
             for (const task of this.tasks.values()) {
-                if (task.state === CodyTaskState.applied && task.fixupFile.uri.fsPath.endsWith(treeItem.fsPath)) {
+                if (task.fixupFile.uri.fsPath.endsWith(treeItem.fsPath)) {
                     this.accept(task.id)
                 }
             }
@@ -469,7 +467,7 @@ export class FixupController
 
     private accept(id: taskID): void {
         const task = this.tasks.get(id)
-        if (!task) {
+        if (!task || task.state !== CodyTaskState.applied) {
             return
         }
         this.setTaskState(task, CodyTaskState.finished)

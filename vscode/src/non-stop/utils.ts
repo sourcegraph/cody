@@ -36,7 +36,7 @@ export const fixupTaskList: CodyTaskList = {
     },
     [CodyTaskState.applied]: {
         id: 'applied',
-        icon: 'pass',
+        icon: 'pass-filled',
         description: 'Suggestions from Cody have been applied',
     },
     [CodyTaskState.finished]: {

@@ -166,28 +166,28 @@ export class FixupTaskTreeItem extends vscode.TreeItem {
         const tasksSize = this.tasks.size
         const failedSize = this.failed.size
         let text = `${tasksSize} ${tasksSize > 1 ? 'fixups' : 'fixup'}`
-        let ready = tasksSize - failedSize
+        let applied = tasksSize - failedSize
 
         switch (state) {
             case CodyTaskState.working:
                 text += ', 1 running'
-                ready--
+                applied--
                 break
             case CodyTaskState.applying:
                 text += ', 1 applying'
-                ready--
+                applied--
                 break
             case CodyTaskState.finished:
-                ready--
+                applied--
                 break
         }
         if (failedSize > 0) {
             text += `, ${failedSize} failed`
         }
-        if (ready > 0) {
-            text += `, ${ready} ready`
+        if (applied > 0) {
+            text += `, ${applied} applied`
         }
-        void vscode.commands.executeCommand('setContext', 'cody.fixup.filesWithApplicableFixups', ready < 1)
+        void vscode.commands.executeCommand('setContext', 'cody.fixup.filesWithApplicableFixups', applied < 1)
         return text
     }
 
