@@ -268,8 +268,8 @@ importers:
         specifier: ^2.0.1
         version: 2.0.1
       '@sourcegraph/telemetry':
-        specifier: ^0.8.0
-        version: 0.8.0
+        specifier: ^0.9.0
+        version: 0.9.0
       dompurify:
         specifier: ^3.0.4
         version: 3.0.6
@@ -387,8 +387,8 @@ importers:
         specifier: workspace:*
         version: link:../lib/ui
       '@sourcegraph/telemetry':
-        specifier: ^0.8.0
-        version: 0.8.0
+        specifier: ^0.9.0
+        version: 0.9.0
       '@types/stream-json':
         specifier: ^1.7.3
         version: 1.7.3
@@ -5038,8 +5038,8 @@ packages:
     resolution: {integrity: sha512-FQ1/Ued4I02R0JkrHHofDN163juVxUnPALzfxPZrDZUHv+c3jHjfZhmTHEz+Wd+g3b7MFk0fkj36nZSnvPyU8A==}
     dev: true
 
-  /@sourcegraph/telemetry@0.8.0:
-    resolution: {integrity: sha512-xQrYiwvBWf33LYM29MatjnHTjC/BYXm2aAsBYXfhB8SiSumzwctd/CKnTYDs5kfO0kIi3E19bPqyuWcZlGO9jg==}
+  /@sourcegraph/telemetry@0.9.0:
+    resolution: {integrity: sha512-b3m+JP1LArE8AH9FiZewsW4L/6e6qE6rS5hy2hkN5uJn/tw+PywrM5Uc0pztf2/Uhqh9c0Jz5MXZww7LODT1pw==}
     dependencies:
       rxjs: 7.8.1
     dev: false

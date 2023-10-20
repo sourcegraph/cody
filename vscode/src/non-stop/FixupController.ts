@@ -313,11 +313,15 @@ export class FixupController
             // This is currently a test/demo of the new events system, by
             // replicating the above legacy telemetryService.log call
             telemetryRecorder.recordEvent('cody.fixup.apply', 'succeeded', {
-                metadata: [
-                    ['lineCount', codeCount.lineCount],
-                    ['charCount', codeCount.charCount],
-                ],
-                privateMetadata: { source },
+                metadata: {
+                    lineCount: codeCount.lineCount,
+                    charCount: codeCount.charCount,
+                },
+                privateMetadata: {
+                    // TODO: generate numeric ID representing source so that it
+                    // can be included in metadata for default export.
+                    source,
+                },
             })
 
             // format the selected area after applying edits
