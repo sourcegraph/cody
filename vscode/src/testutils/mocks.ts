@@ -632,6 +632,7 @@ export const vsCodeMocks = {
     EventEmitter,
     EndOfLine,
     CancellationTokenSource,
+    ThemeColor,
     WorkspaceEdit,
     Uri,
     languages,
