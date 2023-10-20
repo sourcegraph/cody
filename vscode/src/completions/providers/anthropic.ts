@@ -96,7 +96,7 @@ export class AnthropicProvider extends Provider {
         const introMessages: Message[] = [
             {
                 speaker: 'human',
-                text: `You are a code completion AI designed to take the surrounding code and shared context into account in order to predict and suggest high-quality code that works and fits seamlessly with surrounding code if any or use best practice and nothing else.`,
+                text: 'You are a code completion AI designed to take the surrounding code and shared context into account in order to predict and suggest high-quality code that works and fits seamlessly with surrounding code if any or use best practice and nothing else.',
             },
             {
                 speaker: 'assistant',
