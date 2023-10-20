@@ -726,7 +726,7 @@ class FirstCompletionDecorationHandler {
     private readonly decorationType = vscode.window.createTextEditorDecorationType({
         after: {
             margin: '0 0 0 40px',
-            contentText: '    🎉 Accepted your "first" Cody autocomplete!',
+            contentText: '    🎉 You just accepted your first Cody autocomplete!',
             color: new vscode.ThemeColor('editorGhostText.foreground'),
         },
         isWholeLine: true,
