@@ -709,7 +709,7 @@ class FirstCompletionDecorationHandler {
      *
      * Modifying the document will also immediately hide.
      */
-    private static readonly decorationDurationMilliseconds = 3000
+    private static readonly decorationDurationMilliseconds = 10000
 
     /**
      * A subscription watching for file changes to automatically hide the decoration.
