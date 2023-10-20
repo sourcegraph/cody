@@ -180,6 +180,7 @@ export const TranscriptItem: React.FunctionComponent<
                             copyButtonOnSubmit={copyButtonOnSubmit}
                             insertButtonClassName={codeBlocksInsertButtonClassName}
                             insertButtonOnSubmit={insertButtonOnSubmit}
+                            source={message.source}
                         />
                     )
                 ) : inProgress ? (

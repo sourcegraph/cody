@@ -45,10 +45,10 @@ describe('logger', () => {
         expect(typeof id).toBe('string')
 
         CompletionLogger.start(id)
-        CompletionLogger.networkRequestStarted(id, { duration: 0.1337 })
+        CompletionLogger.networkRequestStarted(id, { strategy: 'fake', duration: 0.1337 })
         CompletionLogger.loaded(id, defaultRequestParams, [item])
         CompletionLogger.suggested(id, InlineCompletionsResultSource.Network, item)
-        CompletionLogger.accept(id, item)
+        CompletionLogger.accept(id, document, item)
 
         const shared = {
             id: expect.any(String),
@@ -65,6 +65,7 @@ describe('logger', () => {
             providerModel: 'blazing-fast-llm',
             charCount: 3,
             contextSummary: {
+                strategy: 'fake',
                 duration: 0.1337,
             },
             items: [
@@ -106,7 +107,7 @@ describe('logger', () => {
 
         const id1 = CompletionLogger.create(defaultArgs)
         CompletionLogger.start(id1)
-        CompletionLogger.networkRequestStarted(id1, { duration: 0 })
+        CompletionLogger.networkRequestStarted(id1, { strategy: 'fake', duration: 0 })
         CompletionLogger.loaded(id1, defaultRequestParams, [item])
         CompletionLogger.suggested(id1, InlineCompletionsResultSource.Network, item)
 
@@ -116,10 +117,10 @@ describe('logger', () => {
 
         const id2 = CompletionLogger.create(defaultArgs)
         CompletionLogger.start(id2)
-        CompletionLogger.networkRequestStarted(id2, { duration: 0 })
+        CompletionLogger.networkRequestStarted(id2, { strategy: 'fake', duration: 0 })
         CompletionLogger.loaded(id2, defaultRequestParams, [item])
         CompletionLogger.suggested(id2, InlineCompletionsResultSource.Cache, item)
-        CompletionLogger.accept(id2, item)
+        CompletionLogger.accept(id2, document, item)
 
         const loggerItem2 = CompletionLogger.getCompletionEvent(id2)
         expect(loggerItem2?.params.id).toBe(completionId)
@@ -149,7 +150,7 @@ describe('logger', () => {
         // After accepting the completion, the ID won't be reused a third time
         const id3 = CompletionLogger.create(defaultArgs)
         CompletionLogger.start(id3)
-        CompletionLogger.networkRequestStarted(id3, { duration: 0 })
+        CompletionLogger.networkRequestStarted(id3, { strategy: 'fake', duration: 0 })
         CompletionLogger.loaded(id3, defaultRequestParams, [item])
         CompletionLogger.suggested(id3, InlineCompletionsResultSource.Cache, item)
 

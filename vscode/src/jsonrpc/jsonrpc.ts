@@ -6,7 +6,11 @@ import { Readable, Writable } from 'stream'
 
 import * as vscode from 'vscode'
 
-import { Notifications, Requests } from './protocol'
+import * as agent from './agent-protocol'
+import * as bfg from './bfg-protocol'
+
+type Requests = bfg.Requests & agent.Requests
+type Notifications = bfg.Notifications & agent.Notifications
 
 // This file is a standalone implementation of JSON-RPC for Node.js
 // ReadStream/WriteStream, which conventionally map to stdin/stdout.
@@ -218,7 +222,24 @@ export class MessageHandler {
     private requestHandlers: Map<RequestMethodName, RequestCallback<any>> = new Map()
     private cancelTokens: Map<Id, vscode.CancellationTokenSource> = new Map()
     private notificationHandlers: Map<NotificationMethodName, NotificationCallback<any>> = new Map()
-    private responseHandlers: Map<Id, (params: any) => void> = new Map()
+    private alive = true
+    private processExitedError = new Error('Process has exited')
+    private responseHandlers: Map<
+        Id,
+        {
+            resolve: (params: any) => void
+            reject: (params: Error) => void
+        }
+    > = new Map()
+    public isAlive(): boolean {
+        return this.alive
+    }
+    public exit(): void {
+        this.alive = false
+        for (const { reject } of this.responseHandlers.values()) {
+            reject(this.processExitedError)
+        }
+    }
 
     // TODO: RPC error handling
     public messageDecoder: MessageDecoder = new MessageDecoder((err: Error | null, msg: Message | null) => {
@@ -237,7 +258,7 @@ export class MessageHandler {
             // Requests have ids and methods
             const handler = this.requestHandlers.get(msg.method)
             if (handler) {
-                const cancelToken = new vscode.CancellationTokenSource()
+                const cancelToken: vscode.CancellationTokenSource = new vscode.CancellationTokenSource()
                 this.cancelTokens.set(msg.id, cancelToken)
                 handler(msg.params, cancelToken.token)
                     .then(
@@ -276,7 +297,7 @@ export class MessageHandler {
             // Responses have ids
             const handler = this.responseHandlers.get(msg.id)
             if (handler) {
-                handler(msg.result)
+                handler.resolve(msg.result)
                 this.responseHandlers.delete(msg.id)
             } else {
                 console.error(`No handler for response with id ${msg.id}`)
@@ -312,6 +333,9 @@ export class MessageHandler {
     }
 
     public request<M extends RequestMethodName>(method: M, params: ParamsOf<M>): Promise<ResultOf<M>> {
+        if (!this.isAlive()) {
+            throw this.processExitedError
+        }
         const id = this.id++
 
         const data: RequestMessage<M> = {
@@ -322,12 +346,15 @@ export class MessageHandler {
         }
         this.messageEncoder.send(data)
 
-        return new Promise(resolve => {
-            this.responseHandlers.set(id, resolve)
+        return new Promise((resolve, reject) => {
+            this.responseHandlers.set(id, { resolve, reject })
         })
     }
 
     public notify<M extends NotificationMethodName>(method: M, params: ParamsOf<M>): void {
+        if (!this.isAlive()) {
+            throw this.processExitedError
+        }
         const data: NotificationMessage<M> = {
             jsonrpc: '2.0',
             method,
@@ -341,6 +368,9 @@ export class MessageHandler {
      * to use the agent in-process without stdout/stdin transport mechanism.
      */
     public clientForThisInstance(): InProcessClient {
+        if (!this.isAlive()) {
+            throw this.processExitedError
+        }
         return new InProcessClient(this.requestHandlers, this.notificationHandlers)
     }
 }

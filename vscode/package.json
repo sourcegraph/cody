@@ -2,7 +2,7 @@
   "name": "cody-ai",
   "private": true,
   "displayName": "Cody AI",
-  "version": "0.14.0",
+  "version": "0.14.1",
   "publisher": "sourcegraph",
   "license": "Apache-2.0",
   "icon": "resources/cody.png",
@@ -33,7 +33,7 @@
     "download-wasm": "ts-node-transpile-only ./scripts/download-wasm-modules.ts",
     "release:dry-run": "pnpm run download-wasm && CODY_RELEASE_DRY_RUN=1 ts-node ./scripts/release.ts",
     "storybook": "storybook dev -p 6007 --no-open --no-version-updates --no-release-notes",
-    "test:e2e": "tsc --build && { pnpm exec playwright install chromium & install_pw_pid=$!; node dist/tsc/test/e2e/install-deps.js & install_vscode_pid=$!; wait $install_pw_pid && wait $install_vscode_pid; } && pnpm run -s build:dev:desktop && playwright test",
+    "test:e2e": "tsc --build && node dist/tsc/test/e2e/install-deps.js && pnpm run -s build:dev:desktop && playwright test",
     "test:integration": "tsc --build ./test/integration && pnpm run -s build:dev:desktop && node --inspect -r ts-node/register dist/tsc/test/integration/main.js",
     "test:benchmark": "BENCHMARK_DISABLE_FEATURE_FLAGS=true tsc --build ./test/benchmark && pnpm run -s build:dev:desktop && ./benchmark.sh",
     "test:benchmark:copilot": "BENCHMARK_COMPARE_WITH=github.copilot pnpm run test:benchmark",
@@ -924,7 +924,7 @@
             "llama-code-13b",
             "llama-code-13b-instruct"
           ],
-          "markdownDescription": "Overwrite the  model used for code autocompletion inference. This is only supported with the `unstable-fireworks` provider"
+          "markdownDescription": "Overwrite the  model used for code autocompletion inference. This is only supported with the `fireworks` provider"
         },
         "cody.autocomplete.completeSuggestWidgetSelection": {
           "type": "boolean",
@@ -937,13 +937,14 @@
           "markdownDescription": "Rank autocomplete results with tree-sitter."
         },
         "cody.autocomplete.experimental.graphContext": {
-          "type": "enum",
+          "type": "string",
           "default": null,
           "enum": [
             null,
-            "lsp-light"
+            "lsp-light",
+            "bfg"
           ],
-          "markdownDescription": "Retrieve information from the code graph to augment the autocomplete results. This is only supported with the `unstable-codegen` provider"
+          "markdownDescription": "Use the code graph to retrieve context for autocomplete requests."
         }
       }
     },
@@ -981,6 +982,7 @@
     "detect-indent": "^7.0.1",
     "glob": "^7.2.3",
     "isomorphic-fetch": "^3.0.0",
+    "js-levenshtein": "^1.1.6",
     "lodash": "^4.17.21",
     "lru-cache": "^10.0.0",
     "mkdirp": "^3.0.1",
@@ -1006,6 +1008,7 @@
     "@types/express": "^4.17.17",
     "@types/glob": "^8.0.0",
     "@types/isomorphic-fetch": "^0.0.36",
+    "@types/js-levenshtein": "^1.1.1",
     "@types/lodash": "^4.14.195",
     "@types/mocha": "^10.0.1",
     "@types/mock-require": "^2.0.1",
@@ -1016,7 +1019,7 @@
     "@types/vscode": "^1.79.0",
     "@types/vscode-webview": "^1.57.1",
     "@vscode/test-electron": "^2.3.2",
-    "@vscode/test-web": "^0.0.44",
+    "@vscode/test-web": "^0.0.47",
     "@vscode/vsce": "^2.19.0",
     "chalk": "^4.1.2",
     "cody-icons-font": "workspace:^",

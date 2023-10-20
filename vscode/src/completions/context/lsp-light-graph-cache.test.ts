@@ -4,7 +4,7 @@ import * as vscode from 'vscode'
 import { URI } from 'vscode-uri'
 
 import { Position } from '../../testutils/mocks'
-import { range } from '../../testutils/textDocument'
+import { range, withPosixPaths } from '../../testutils/textDocument'
 import { document } from '../test-helpers'
 
 import { LspLightGraphCache } from './lsp-light-graph-cache'
@@ -128,7 +128,7 @@ describe('LSPLightGraphCache', () => {
 
         getGraphContextFromRange.mockClear()
 
-        expect(await cache.getContextAtPosition(testDocuments.document1, new Position(1, 0), 100))
+        expect(withPosixPaths(await cache.getContextAtPosition(testDocuments.document1, new Position(1, 0), 100)))
             .toMatchInlineSnapshot(`
           [
             {
@@ -168,7 +168,7 @@ describe('LSPLightGraphCache', () => {
             contentChanges: [],
         })
 
-        expect(await cache.getContextAtPosition(testDocuments.document1, new Position(1, 0), 100))
+        expect(withPosixPaths(await cache.getContextAtPosition(testDocuments.document1, new Position(1, 0), 100)))
             .toMatchInlineSnapshot(`
           [
             {

@@ -21,11 +21,12 @@ export class ChatQuestion implements Recipe {
 
     public async getInteraction(humanChatInput: string, context: RecipeContext): Promise<Interaction | null> {
         const truncatedText = truncateText(humanChatInput, MAX_HUMAN_INPUT_TOKENS)
+        const source = this.id
 
         return Promise.resolve(
             new Interaction(
-                { speaker: 'human', text: truncatedText, displayText: humanChatInput },
-                { speaker: 'assistant' },
+                { speaker: 'human', text: truncatedText, displayText: humanChatInput, source },
+                { speaker: 'assistant', source },
                 this.getContextMessages(
                     truncatedText,
                     context.editor,

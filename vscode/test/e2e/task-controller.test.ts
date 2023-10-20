@@ -10,7 +10,6 @@ const expectedOrderedEvents = [
     'CodyVSCodeExtension:keywordContext:searchDuration',
     'CodyVSCodeExtension:recipe:fixup:executed',
     'CodyVSCodeExtension:fixupResponse:hasCode',
-    'CodyVSCodeExtension:chatResponse:noCode',
     'CodyVSCodeExtension:fixup:codeLens:clicked',
     'CodyVSCodeExtension:fixup:codeLens:clicked',
     'CodyVSCodeExtension:fixup:applied',
