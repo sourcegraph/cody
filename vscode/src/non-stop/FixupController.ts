@@ -318,16 +318,18 @@ export class FixupController
                     task.selectionRange.end.character
                 )
             )
-            const formattingChanges = await vscode.commands.executeCommand<vscode.TextEdit[]>(
-                'vscode.executeFormatDocumentProvider',
-                editor.document.uri,
-                {}
-            )
 
-            const furtherChanges = formattingChanges.filter(change => editedRange.contains(change.range))
+            const formattingChanges = (
+                await vscode.commands.executeCommand<vscode.TextEdit[]>(
+                    'vscode.executeFormatDocumentProvider',
+                    editor.document.uri,
+                    {}
+                )
+            ).filter(change => editedRange.contains(change.range))
+
             await editor.edit(
                 editBuilder => {
-                    for (const change of furtherChanges) {
+                    for (const change of formattingChanges) {
                         editBuilder.replace(change.range, change.newText)
                     }
                 },
