@@ -16,6 +16,7 @@ import { SectionObserver } from './section-observer'
 import { CustomAbortController, CustomAbortSignal } from './utils'
 
 export class LspLightGraphCache implements GraphContextFetcher {
+    public identifier = 'lsp-light'
     private disposables: vscode.Disposable[] = []
     private cache: GraphCache = new GraphCache()
 
