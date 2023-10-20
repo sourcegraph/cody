@@ -308,9 +308,10 @@ export class FixupController
         if (replacementText) {
             const codeCount = countCode(replacementText)
             const source = task.source
-            telemetryService.log('CodyVSCodeExtension:fixup:applied', { ...codeCount, source })
 
-            // This is currently a test/demo of the new events system
+            telemetryService.log('CodyVSCodeExtension:fixup:applied', { ...codeCount, source })
+            // This is currently a test/demo of the new events system, by
+            // replicating the above legacy telemetryService.log call
             telemetryRecorder.recordEvent('cody.fixup.apply', 'succeeded', {
                 metadata: [
                     ['lineCount', codeCount.lineCount],
@@ -318,6 +319,16 @@ export class FixupController
                 ],
                 privateMetadata: { source },
             })
+
+            // format the selected area after applying edits
+            const range = new vscode.Range(
+                new vscode.Position(task.selectionRange.start.line, 0),
+                new vscode.Position(
+                    task.selectionRange.start.line + codeCount.lineCount,
+                    task.selectionRange.end.character
+                )
+            )
+            await vscode.commands.executeCommand('editor.action.formatDocument', range)
         }
 
         // TODO: is this the right transition for being all done?
