@@ -11,10 +11,8 @@ import {
     CLOSING_CODE_TAG,
     extractFromCodeBlock,
     fixBadCompletionStart,
-    getHeadAndTail,
     MULTILINE_STOP_SEQUENCE,
     OPENING_CODE_TAG,
-    PrefixComponents,
     trimLeadingWhitespaceUntilNewline,
 } from '../text-processing'
 import { parseAndTruncateCompletion } from '../text-processing/parse-and-truncate-completion'
@@ -58,18 +56,14 @@ export class AnthropicProvider extends Provider {
         return promptNoSnippets.length - 10 // extra 10 chars of buffer cuz who knows
     }
 
-    private createPromptPrefix(): { messages: Message[]; prefix: PrefixComponents } {
+    private createPromptPrefix(): { messages: Message[] } {
         const prefixLines = this.options.docContext.prefix.split('\n')
         if (prefixLines.length === 0) {
             throw new Error('no prefix lines')
         }
 
-        const { head, tail, overlap } = getHeadAndTail(this.options.docContext.prefix)
+        const infillPrefix = this.options.docContext.prefix
 
-        // Infill block represents the code we want the model to complete
-        const infillBlock = `${tail.raw}`
-        // code before the cursor, without the code extracted for the infillBlock
-        const infillPrefix = head.raw?.startsWith(tail.trimmed) ? '' : `${head.raw}`
         // code after the cursor
         const infillSuffix = this.options.docContext.suffix
         const relativeFilePath = vscode.workspace.asRelativePath(this.options.document.fileName)
@@ -77,7 +71,7 @@ export class AnthropicProvider extends Provider {
         const prefixMessagesWithInfill: Message[] = [
             {
                 speaker: 'human',
-                text: `Below is the code from file path ${relativeFilePath}. Review the code outside the XML tags to detect the functionality, formats, style, patterns, and logics in use. Then, use what you detect and reuse methods/libraries to complete and enclose completed code only inside XML tags precisely without duplicating existing implementations. Here is the code enclosed in <completion_request> tags:\n<completion_request>${infillPrefix}${infillBlock}${OPENING_CODE_TAG}${CLOSING_CODE_TAG}${infillSuffix}</completion_request>`,
+                text: `Here is the code from file path ${relativeFilePath} contained in <code_request> tags:\n\n<completion_request>${infillPrefix}${OPENING_CODE_TAG}${CLOSING_CODE_TAG}${infillSuffix}</completion_request>\n\nPlease locate the ${OPENING_CODE_TAG} tags in the code, and then review the code surrounding the tags to detect the functionality, formats, style, indent size, patterns, and logics in use. Then, use what you detect and reuse methods/libraries to predict and generate completed code that I can replace the tags with precisely without duplicating existing implementations and surrounding code. Enclose your response in ${OPENING_CODE_TAG} tags or leave it empty if no code is suggested.`,
             },
             {
                 speaker: 'assistant',
@@ -85,13 +79,13 @@ export class AnthropicProvider extends Provider {
             },
         ]
 
-        return { messages: prefixMessagesWithInfill, prefix: { head, tail, overlap } }
+        return { messages: prefixMessagesWithInfill }
     }
 
     // Creates the resulting prompt and adds as many snippets from the reference
     // list as possible.
-    protected createPrompt(snippets: ContextSnippet[]): { messages: Message[]; prefix: PrefixComponents } {
-        const { messages: prefixMessages, prefix } = this.createPromptPrefix()
+    protected createPrompt(snippets: ContextSnippet[]): { messages: Message[] } {
+        const { messages: prefixMessages } = this.createPromptPrefix()
         const introMessages: Message[] = [
             {
                 speaker: 'human',
@@ -128,7 +122,7 @@ export class AnthropicProvider extends Provider {
             remainingChars -= numSnippetChars
         }
 
-        return { messages: [...referenceSnippetMessages, ...prefixMessages], prefix }
+        return { messages: [...referenceSnippetMessages, ...prefixMessages] }
     }
 
     public async generateCompletions(
